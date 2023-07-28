@@ -1319,8 +1319,7 @@ int BambuParameter::Exec()
              * objectives, not the mode, hence the mode set from other options
              * has precedence
              */
-            if(!isOption(OPT_evaluation_mode) ||
-               getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::NONE)
+            if(getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::NONE)
             {
                setOption(OPT_evaluation_mode, Evaluation_Mode::EXACT);
             }
@@ -1340,8 +1339,7 @@ int BambuParameter::Exec()
             }
             if(optarg == nullptr)
             {
-               if(isOption(OPT_evaluation_mode) and
-                  getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::EXACT)
+               if(getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::EXACT)
                {
                   std::string to_add =
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT
@@ -1390,13 +1388,11 @@ int BambuParameter::Exec()
              * objectives, not the mode, hence the mode set from other options
              * has precedence
              */
-            if(!isOption(OPT_evaluation_mode) ||
-               getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::NONE)
+            if(getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::NONE)
             {
                setOption(OPT_evaluation_mode, Evaluation_Mode::EXACT);
             }
-            else if(isOption(OPT_evaluation_mode) &&
-                    getOption<Evaluation_Mode>(OPT_evaluation_mode) != Evaluation_Mode::EXACT)
+            else
             {
                THROW_ERROR("Simulation is only supported with EXACT evaluation mode");
             }
@@ -2069,7 +2065,7 @@ int BambuParameter::Exec()
 #endif
          case INPUT_OPT_DRY_RUN_EVALUATION:
          {
-            setOption(OPT_dry_run_evaluation, true);
+            setOption(OPT_evaluation_mode, Evaluation_Mode::DRY_RUN);
             break;
          }
          case OPT_INTERFACE_XML_FILENAME:
@@ -2988,6 +2984,24 @@ void BambuParameter::CheckParameters()
                setOption(OPT_generate_testbench, true);
                setOption(OPT_testbench_input_file, GetPath("test.xml"));
             }
+            if(isOption(OPT_top_functions_names) &&
+               getOption<const std::list<std::string>>(OPT_top_functions_names).size() > 1)
+            {
+               THROW_ERROR("Simulation cannot be enabled with multiple top functions");
+            }
+            if(isOption(OPT_device_string) && boost::starts_with(getOption<std::string>(OPT_device_string), "LFE"))
+            {
+               if(getOption<std::string>(OPT_simulator) == "VERILATOR")
+               {
+                  THROW_WARNING("Simulation of Lattice device may not work with VERILATOR. Recent versions ignore some "
+                                "issue in Verilog Lattice libraries.");
+               }
+               if(!isOption(OPT_lattice_settings))
+               {
+                  THROW_ERROR("Simulation of Lattice devices requires to enable Lattice support. See documentation "
+                              "about --lattice-root option.");
+               }
+            }
          }
          const auto is_valid_evaluation_mode = [](const std::string& s) -> bool {
             return s == "AREA" || s == "AREAxTIME" || s == "TIME" || s == "TOTAL_TIME" || s == "CYCLES" ||
@@ -2996,7 +3010,7 @@ void BambuParameter::CheckParameters()
          };
          if(!all_of(objective_vector.begin(), objective_vector.end(), is_valid_evaluation_mode))
          {
-            THROW_ERROR("BadParameters: evaluation mode EXACT don't support the evaluation objectives");
+            THROW_ERROR("BadParameters: evaluation mode EXACT don't support given evaluation objectives");
          }
       }
       else
@@ -3532,16 +3546,6 @@ void BambuParameter::CheckParameters()
          THROW_ERROR("Testbench generation required. (--generate-tb or --simulate undeclared).");
       }
    }
-   if((getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::EXACT &&
-       getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos) ||
-      (isOption(OPT_discrepancy) && getOption<bool>(OPT_discrepancy)))
-   {
-      if(isOption(OPT_top_functions_names) &&
-         getOption<const std::list<std::string>>(OPT_top_functions_names).size() > 1)
-      {
-         THROW_ERROR("Simulation cannot be enabled with multiple top functions");
-      }
-   }
    /// Disable proxy when there are multiple top functions
    if(isOption(OPT_top_functions_names) && getOption<const std::list<std::string>>(OPT_top_functions_names).size() > 1)
    {
@@ -3554,16 +3558,6 @@ void BambuParameter::CheckParameters()
                   "use --testbench-extra-gcc-flags=\"string\" to provide them");
    }
    setOption<unsigned int>(OPT_host_compiler, static_cast<unsigned int>(default_compiler));
-   if(isOption(OPT_evaluation_objectives) &&
-      getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos &&
-      isOption(OPT_device_string) && boost::starts_with(getOption<std::string>(OPT_device_string), "LFE"))
-   {
-      if(getOption<std::string>(OPT_simulator) == "VERILATOR")
-      {
-         THROW_WARNING("Simulation of Lattice device may not work with VERILATOR. Recent versions ignore some issue in "
-                       "Verilog Lattice libraries.");
-      }
-   }
    if(isOption(OPT_lattice_settings))
    {
       if(isOption(OPT_evaluation_objectives) &&
@@ -3573,26 +3567,6 @@ void BambuParameter::CheckParameters()
       {
          THROW_WARNING("--connect-iob must be used when target is a Lattice board");
       }
-   }
-   else
-   {
-      if(isOption(OPT_evaluation_objectives) &&
-         getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos &&
-         isOption(OPT_device_string) && boost::starts_with(getOption<std::string>(OPT_device_string), "LFE"))
-      {
-         THROW_ERROR("Simulation of Lattice devices requires to enable Lattice support. See documentation about "
-                     "--lattice-root option.");
-      }
-   }
-   if(isOption(OPT_evaluation_objectives) &&
-      getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos &&
-      (!isOption(OPT_simulator) || getOption<std::string>(OPT_simulator) == ""))
-   {
-      THROW_ERROR("At least a simulator must be enabled");
-   }
-   if(isOption(OPT_dry_run_evaluation) && getOption<bool>(OPT_dry_run_evaluation))
-   {
-      setOption(OPT_evaluation_mode, Evaluation_Mode::DRY_RUN);
    }
    /// When simd is enabled bit value analysis and optimization are disabled
    if(getOption<int>(OPT_gcc_openmp_simd))

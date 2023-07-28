@@ -1,1996 +1,1914 @@
 EXTRA_DIST= \
-CHStone/adpcm/adpcm.c \
-CHStone/aes/aes.c \
-CHStone/aes/aes.h \
-CHStone/aes/aes_dec.c \
-CHStone/aes/aes_enc.c \
-CHStone/aes/aes_func.c \
-CHStone/aes/aes_key.c \
-CHStone/blowfish/bf.c \
-CHStone/blowfish/bf_cfb64.c \
-CHStone/blowfish/bf_enc.c \
-CHStone/blowfish/bf_locl.h \
-CHStone/blowfish/bf_pi.h \
-CHStone/blowfish/bf_skey.c \
-CHStone/blowfish/blowfish.h \
-CHStone/dfadd/SPARC-GCC.h \
-CHStone/dfadd/dfadd.c \
-CHStone/dfadd/milieu.h \
-CHStone/dfadd/softfloat-macros \
-CHStone/dfadd/softfloat-specialize \
-CHStone/dfadd/softfloat.c \
-CHStone/dfadd/softfloat.h \
-CHStone/dfdiv/SPARC-GCC.h \
-CHStone/dfdiv/dfdiv.c \
-CHStone/dfdiv/milieu.h \
-CHStone/dfdiv/softfloat-macros \
-CHStone/dfdiv/softfloat-specialize \
-CHStone/dfdiv/softfloat.c \
-CHStone/dfdiv/softfloat.h \
-CHStone/dfmul/SPARC-GCC.h \
-CHStone/dfmul/dfmul.c \
-CHStone/dfmul/milieu.h \
-CHStone/dfmul/softfloat-macros \
-CHStone/dfmul/softfloat-specialize \
-CHStone/dfmul/softfloat.c \
-CHStone/dfmul/softfloat.h \
-CHStone/dfsin/SPARC-GCC.h \
-CHStone/dfsin/dfsin.c \
-CHStone/dfsin/milieu.h \
-CHStone/dfsin/softfloat-macros \
-CHStone/dfsin/softfloat-specialize \
-CHStone/dfsin/softfloat.c \
-CHStone/dfsin/softfloat.h \
-CHStone/gsm/add.c \
-CHStone/gsm/gsm.c \
-CHStone/gsm/lpc.c \
-CHStone/gsm/private.h \
-CHStone/jpeg/chenidct.c \
-CHStone/jpeg/decode.c \
-CHStone/jpeg/decode.h \
-CHStone/jpeg/global.h \
-CHStone/jpeg/huffman.c \
-CHStone/jpeg/huffman.h \
-CHStone/jpeg/init.h \
-CHStone/jpeg/jfif_read.c \
-CHStone/jpeg/jpeg2bmp.c \
-CHStone/jpeg/main.c \
-CHStone/jpeg/marker.c \
-CHStone/mips/imem.h \
-CHStone/mips/mips.c \
-CHStone/motion/config.h \
-CHStone/motion/getbits.c \
-CHStone/motion/getvlc.c \
-CHStone/motion/getvlc.h \
-CHStone/motion/global.h \
-CHStone/motion/motion.c \
-CHStone/motion/mpeg2.c \
-CHStone/motion/mpeg2dec.h \
-CHStone/sha/sha.c \
-CHStone/sha/sha.h \
-CHStone/sha/sha_driver.c \
-CHStone_experimental_setups.sh \
-CHStone_experimental_setups_list \
-CHStone_hlsdiv.sh \
-CHStone_hlsdiv_list \
-CHStone_list \
-CHStone_memarch_list \
-CHStone_proxy.sh \
-all_clang_CHStone-frontend.sh \
-all_clang_softfloat-tests.sh \
-all_gcc_CHStone-frontend.sh \
-all_gcc_softfloat-tests.sh \
-bambu_axi_verification.sh \
-bambu_axi_verification_list \
-bambu_axi_verification/axi_vip.tcl \
-bambu_axi_verification/mm_axi_tb.xml \
-bambu_axi_verification/mm_axi.c \
-bambu_specific_test.sh \
-bambu_specific_test/20020108-1.c.gimplePSSA \
-bambu_specific_test/990829-1.c.gimplePSSA \
-bambu_specific_test/pr35472.c.gimplePSSA \
-bambu_specific_test/unsafe-fp-assoc-1.c.gimplePSSA\
-bambu_specific_test/930608-1.c.gimplePSSA \
-bambu_specific_test/divconst-2.c.gimplePSSA \
-bambu_specific_test/pta-field-1.c.gimplePSSA \
-bambu_specific_test/bambu1.c \
-bambu_specific_test/chk.h \
-bambu_specific_test/memset-chk.c \
-bambu_specific_test/return_vector.c \
-bambu_specific_test2.sh \
-bambu_specific_test2/dd_test1.xml \
-bambu_specific_test2/duff_device.c \
-bambu_specific_test2/irr1_a.c \
-bambu_specific_test2/irr2.c \
-bambu_specific_test2/irr3_a.c \
-bambu_specific_test2/irr3_b.c \
-bambu_specific_test2/irr4_a.c \
-bambu_specific_test2/irr4_b.c \
-bambu_specific_test2/mod_test.c \
-bambu_specific_test2/mod_test_c.xml \
-bambu_specific_test2/multiarray.c \
-bambu_specific_test2/par-bool1.c \
-bambu_specific_test2/port_swapping_test.c \
-bambu_specific_test2/port_swapping_test2.c \
-bambu_specific_test2/ps_constraints.xml \
-bambu_specific_test2/reverse.c \
-bambu_specific_test2_list \
-bambu_specific_test3.sh \
-bambu_specific_test3_list \
-bambu_specific_test4.sh \
-bambu_specific_test4/ac_channels_64async.cpp \
-bambu_specific_test4/ac_channels_64.cpp \
-bambu_specific_test4/ac_channels.cpp \
-bambu_specific_test4/ac_fixed1.cpp \
-bambu_specific_test4/ac_fixed2_tb.cpp \
-bambu_specific_test4/ac_fixed2_tb.xml \
-bambu_specific_test4/ac_fixed3.cpp \
-bambu_specific_test4/ac_types1.cpp \
-bambu_specific_test4/ac_types2_array_32ubits.cpp \
-bambu_specific_test4/ac_types2_array_64ubits.cpp \
-bambu_specific_test4/ac_types2_array_7bits.cpp \
-bambu_specific_test4/ac_types2_array_7bits_fixed.cpp \
-bambu_specific_test4/ac_types3.cpp \
-bambu_specific_test4/axi_mm_big_buffer_cache.c \
-bambu_specific_test4/axi_mm_big_bus_cache.c \
-bambu_specific_test4/axi_mm_big_cache.c \
-bambu_specific_test4/axi_mm_big_line_cache.c \
-bambu_specific_test4/axi_mm_cache_tb.xml \
-bambu_specific_test4/axi_mm_fully_ass_cache.c \
-bambu_specific_test4/axi_mm_no_cache.c \
-bambu_specific_test4/axi_mm_set_ass_cache.c \
-bambu_specific_test4/axi_mm_simple_cache.c \
-bambu_specific_test4/axi_mm_small_line_cache.c \
-bambu_specific_test4/axi_mm_tiled_cache.c \
-bambu_specific_test4/axi_mm_wb_big_buffer_cache.c \
-bambu_specific_test4/axi_mm_wb_cache.c \
-bambu_specific_test4/duplicate_axi_m.c \
-bambu_specific_test4/ex1.cpp \
-bambu_specific_test4/hls_stream.cpp \
-bambu_specific_test4/iterative_merge_sort.c \
-bambu_specific_test4/iterative_merge_sort_sum.c \
-bambu_specific_test4/nested_axi_m.c \
-bambu_specific_test4/nested_axi_m.xml \
-bambu_specific_test4/simple2_axi_m.c \
-bambu_specific_test4/simple3_axi_m.c \
-bambu_specific_test4/simple3_axi_tb.xml \
-bambu_specific_test4/simple4_axi_m.c \
-bambu_specific_test4/simple4_axi_tb.xml \
-bambu_specific_test4/simple_axi_m.c \
-bambu_specific_test4/simple_c1_ack.c \
-bambu_specific_test4/simple_c1.c \
-bambu_specific_test4/simple_c1_in_ack.c \
-bambu_specific_test4/simple_c1_in_valid.c \
-bambu_specific_test4/simple_c1_none.c \
-bambu_specific_test4/simple_c1_valid_nested.c \
-bambu_specific_test4/simple_c2_none.c \
-bambu_specific_test4/simple_c3_none.c \
-bambu_specific_test4/simple_c3_ovalid.c \
-bambu_specific_test4/simple_c4_array_32bits.c \
-bambu_specific_test4/simple_c4_array_64bits.c \
-bambu_specific_test4/simple_c4_array_8bits.c \
-bambu_specific_test4/simple_c4_array.c \
-bambu_specific_test4/simple_c4_axis.c \
-bambu_specific_test4/simple_c4_axis_multiple.c \
-bambu_specific_test4/simple_c4_fifo.c \
-bambu_specific_test4/simple_c4_fifo_multiple.c \
-bambu_specific_test4/simple_c4_handshake.c \
-bambu_specific_test4/simpleif_c1_none.c \
-bambu_specific_test4/simpleif_c1_none_test.xml \
-bambu_specific_test4/simple_test.c \
-bambu_specific_test4/ac_range.cpp \
-bambu_specific_test4_list \
-bambu_specific_test5.sh \
-bambu_specific_test5/adders.c \
-bambu_specific_test5/function_call.c \
-bambu_specific_test5/if_clauses.c \
-bambu_specific_test5/memory.c \
-bambu_specific_test5/mixed_operations.c \
-bambu_specific_test5/multipliers.c \
-bambu_specific_test5_list \
-bambu_specific_test6.sh \
-bambu_specific_test6/sat_op.ll \
-bambu_specific_test6_list \
-bambu_specific_test_list \
-bambu_specific_test_modelsim.sh \
-bambu_specific_test_modelsim_list \
-bambu_specific_test_modelsim/test_open.c \
-bambu_specific_test_modelsim/bin_test.dat \
-discrepancy_list \
-function_pointers.sh \
-function_pointers/bsearch_glibc/bsearch-specialized.c \
-function_pointers/bsearch_glibc/bsearch.c \
-function_pointers/bsearch_musl/bsearch-specialized.c \
-function_pointers/bsearch_musl/bsearch.c \
-function_pointers/bsearch_newlib/bsearch-specialized.c \
-function_pointers/bsearch_newlib/bsearch.c \
-function_pointers/bsearch_uclibc/bsearch-specialized.c \
-function_pointers/bsearch_uclibc/bsearch.c \
-function_pointers/common/aggregate.h \
-function_pointers/common/bstest-specialized.c \
-function_pointers/common/bstest.c \
-function_pointers/common/bstest.xml \
-function_pointers/common/less.c \
-function_pointers/common/qstest-specialized.c \
-function_pointers/common/qstest.c \
-function_pointers/common/qstest.xml \
-function_pointers/qsort_glibc/qsort-specialized.c \
-function_pointers/qsort_glibc/qsort.c \
-function_pointers/qsort_musl/atomic.h \
-function_pointers/qsort_musl/qsort-specialized.c \
-function_pointers/qsort_musl/qsort.c \
-function_pointers/qsort_uclibc/qsort-specialized.c \
-function_pointers/qsort_uclibc/qsort.c \
-function_pointers_list_bsearch \
-function_pointers_list_qsort \
-gcc_regression_simple/20000112-1.c \
-gcc_regression_simple/20000113-1.c \
-gcc_regression_simple/20000121-1.c \
-gcc_regression_simple/20000217-1.c \
-gcc_regression_simple/20000223-1.c \
-gcc_regression_simple/20000224-1.c \
-gcc_regression_simple/20000225-1.c \
-gcc_regression_simple/20000227-1.c \
-gcc_regression_simple/20000313-1.c \
-gcc_regression_simple/20000314-1.c \
-gcc_regression_simple/20000314-2.c \
-gcc_regression_simple/20000314-3.c \
-gcc_regression_simple/20000402-1.c \
-gcc_regression_simple/20000403-1.c \
-gcc_regression_simple/20000412-1.c \
-gcc_regression_simple/20000412-3.c \
-gcc_regression_simple/20000412-4.c \
-gcc_regression_simple/20000412-5.c \
-gcc_regression_simple/20000412-6.c \
-gcc_regression_simple/20000419-1.c \
-gcc_regression_simple/20000422-1.c \
-gcc_regression_simple/20000503-1.c \
-gcc_regression_simple/20000511-1.c \
-gcc_regression_simple/20000519-2.c \
-gcc_regression_simple/20000523-1.c \
-gcc_regression_simple/20000528-1.c \
-gcc_regression_simple/20000603-1.c \
-gcc_regression_simple/20000605-1.c \
-gcc_regression_simple/20000605-2.c \
-gcc_regression_simple/20000605-3.c \
-gcc_regression_simple/20000622-1.c \
-gcc_regression_simple/20000706-1.c \
-gcc_regression_simple/20000706-2.c \
-gcc_regression_simple/20000706-3.c \
-gcc_regression_simple/20000706-4.c \
-gcc_regression_simple/20000706-5.c \
-gcc_regression_simple/20000707-1.c \
-gcc_regression_simple/20000715-1.c \
-gcc_regression_simple/20000715-2.c \
-gcc_regression_simple/20000717-1.c \
-gcc_regression_simple/20000717-2.c \
-gcc_regression_simple/20000717-3.c \
-gcc_regression_simple/20000717-4.c \
-gcc_regression_simple/20000717-5.c \
-gcc_regression_simple/20000722-1.c \
-gcc_regression_simple/20000726-1.c \
-gcc_regression_simple/20000731-1.c \
-gcc_regression_simple/20000731-2.c \
-gcc_regression_simple/20000801-1.c \
-gcc_regression_simple/20000801-2.c \
-gcc_regression_simple/20000801-3.c \
-gcc_regression_simple/20000808-1.c \
-gcc_regression_simple/20000818-1.c \
-gcc_regression_simple/20000910-1.c \
-gcc_regression_simple/20000910-2.c \
-gcc_regression_simple/20000914-1.c \
-gcc_regression_simple/20001009-1.c \
-gcc_regression_simple/20001011-1.c \
-gcc_regression_simple/20001013-1.c \
-gcc_regression_simple/20001017-1.c \
-gcc_regression_simple/20001017-2.c \
-gcc_regression_simple/20001024-1.c \
-gcc_regression_simple/20001027-1.c \
-gcc_regression_simple/20001031-1.c \
-gcc_regression_simple/20001101.c \
-gcc_regression_simple/20001108-1.c \
-gcc_regression_simple/20001111-1.c \
-gcc_regression_simple/20001112-1.c \
-gcc_regression_simple/20001121-1.c \
-gcc_regression_simple/20001130-2.c \
-gcc_regression_simple/20001203-1.c \
-gcc_regression_simple/20001203-2.c \
-gcc_regression_simple/20001221-1.c \
-gcc_regression_simple/20001228-1.c \
-gcc_regression_simple/20010106-1.c \
-gcc_regression_simple/20010114-1.c \
-gcc_regression_simple/20010116-1.c \
-gcc_regression_simple/20010118-1.c \
-gcc_regression_simple/20010123-1.c \
-gcc_regression_simple/20010124-1.c \
-gcc_regression_simple/20010129-1.c \
-gcc_regression_simple/20010206-1.c \
-gcc_regression_simple/20010221-1.c \
-gcc_regression_simple/20010222-1.c \
-gcc_regression_simple/20010224-1.c \
-gcc_regression_simple/20010329-1.c \
-gcc_regression_simple/20010403-1.c \
-gcc_regression_simple/20010409-1.c \
-gcc_regression_simple/20010422-1.c \
-gcc_regression_simple/20010518-1.c \
-gcc_regression_simple/20010518-2.c \
-gcc_regression_simple/20010520-1.c \
-gcc_regression_simple/20010604-1.c \
-gcc_regression_simple/20010605-2.c \
-gcc_regression_simple/20010711-1.c \
-gcc_regression_simple/20010717-1.c \
-gcc_regression_simple/20010723-1.c \
-gcc_regression_simple/20010904-1.c \
-gcc_regression_simple/20010904-2.c \
-gcc_regression_simple/20010910-1.c \
-gcc_regression_simple/20010915-1.c \
-gcc_regression_simple/20010924-1.c \
-gcc_regression_simple/20010925-1.c \
-gcc_regression_simple/20011008-3.c \
-gcc_regression_simple/20011019-1.c \
-gcc_regression_simple/20011024-1.c \
-gcc_regression_simple/20011109-1.c \
-gcc_regression_simple/20011109-2.c \
-gcc_regression_simple/20011113-1.c \
-gcc_regression_simple/20011114-1.c \
-gcc_regression_simple/20011115-1.c \
-gcc_regression_simple/20011126-1.c \
-gcc_regression_simple/20011126-2.c \
-gcc_regression_simple/20011128-1.c \
-gcc_regression_simple/20011217-1.c \
-gcc_regression_simple/20011219-1.c \
-gcc_regression_simple/20011223-1.c \
-gcc_regression_simple/20020103-1.c \
-gcc_regression_simple/20020108-1.c \
-gcc_regression_simple/20020118-1.c \
-gcc_regression_simple/20020127-1.c \
-gcc_regression_simple/20020129-1.c \
-gcc_regression_simple/20020201-1.c \
-gcc_regression_simple/20020206-2.c \
-gcc_regression_simple/20020213-1.c \
-gcc_regression_simple/20020216-1.c \
-gcc_regression_simple/20020219-1.c \
-gcc_regression_simple/20020225-1.c \
-gcc_regression_simple/20020225-2.c \
-gcc_regression_simple/20020226-1.c \
-gcc_regression_simple/20020227-1.c \
-gcc_regression_simple/20020307-1.c \
-gcc_regression_simple/20020314-1.c \
-gcc_regression_simple/20020320-1.c \
-gcc_regression_simple/20020321-1.c \
-gcc_regression_simple/20020328-1.c \
-gcc_regression_simple/20020402-1.c \
-gcc_regression_simple/20020402-2.c \
-gcc_regression_simple/20020402-3.c \
-gcc_regression_simple/20020404-1.c \
-gcc_regression_simple/20020423-1.c \
-gcc_regression_simple/20020503-1.c \
-gcc_regression_simple/20020506-1.c \
-gcc_regression_simple/20020508-1.c \
-gcc_regression_simple/20020508-2.c \
-gcc_regression_simple/20020508-3.c \
-gcc_regression_simple/20020510-1.c \
-gcc_regression_simple/20020529-1.c \
-gcc_regression_simple/20020611-1.c \
-gcc_regression_simple/20020614-1.c \
-gcc_regression_simple/20020615-1.c \
-gcc_regression_simple/20020716-1.c \
-gcc_regression_simple/20020720-1.c \
-gcc_regression_simple/20020805-1.c \
-gcc_regression_simple/20020819-1.c \
-gcc_regression_simple/20020904-1.c \
-gcc_regression_simple/20020911-1.c \
-gcc_regression_simple/20020916-1.c \
-gcc_regression_simple/20021010-1.c \
-gcc_regression_simple/20021010-2.c \
-gcc_regression_simple/20021015-1.c \
-gcc_regression_simple/20021024-1.c \
-gcc_regression_simple/20021118-1.c \
-gcc_regression_simple/20021118-2.c \
-gcc_regression_simple/20021118-3.c \
-gcc_regression_simple/20021119-1.c \
-gcc_regression_simple/20021120-1.c \
-gcc_regression_simple/20021120-2.c \
-gcc_regression_simple/20021127-1.c \
-gcc_regression_simple/20021204-1.c \
-gcc_regression_simple/20021219-1.c \
-gcc_regression_simple/20030105-1.c \
-gcc_regression_simple/20030109-1.c \
-gcc_regression_simple/20030117-1.c \
-gcc_regression_simple/20030120-1.c \
-gcc_regression_simple/20030120-2.c \
-gcc_regression_simple/20030128-1.c \
-gcc_regression_simple/20030203-1.c \
-gcc_regression_simple/20030209-1.c \
-gcc_regression_simple/20030216-1.c \
-gcc_regression_simple/20030218-1.c \
-gcc_regression_simple/20030224-2.c \
-gcc_regression_simple/20030307-1.c \
-gcc_regression_simple/20030313-1.c \
-gcc_regression_simple/20030316-1.c \
-gcc_regression_simple/20030401-1.c \
-gcc_regression_simple/20030403-1.c \
-gcc_regression_simple/20030404-1.c \
-gcc_regression_simple/20030606-1.c \
-gcc_regression_simple/20030626-1.c \
-gcc_regression_simple/20030714-1.c \
-gcc_regression_simple/20030715-1.c \
-gcc_regression_simple/20030718-1.c \
-gcc_regression_simple/20030821-1.c \
-gcc_regression_simple/20030828-1.c \
-gcc_regression_simple/20030828-2.c \
-gcc_regression_simple/20030903-1.c \
-gcc_regression_simple/20030909-1.c \
-gcc_regression_simple/20030910-1.c \
-gcc_regression_simple/20030913-1.c \
-gcc_regression_simple/20030916-1.c \
-gcc_regression_simple/20030920-1.c \
-gcc_regression_simple/20030928-1.c \
-gcc_regression_simple/20031003-1.c \
-gcc_regression_simple/20031010-1.c \
-gcc_regression_simple/20031011-1.c \
-gcc_regression_simple/20031012-1.c \
-gcc_regression_simple/20031020-1.c \
-gcc_regression_simple/20031201-1.c \
-gcc_regression_simple/20031204-1.c \
-gcc_regression_simple/20031211-1.c \
-gcc_regression_simple/20031211-2.c \
-gcc_regression_simple/20031214-1.c \
-gcc_regression_simple/20031215-1.c \
-gcc_regression_simple/20031216-1.c \
-gcc_regression_simple/20040218-1.c \
-gcc_regression_simple/20040307-1.c \
-gcc_regression_simple/20040309-1.c \
-gcc_regression_simple/20040311-1.c \
-gcc_regression_simple/20040313-1.c \
-gcc_regression_simple/20040319-1.c \
-gcc_regression_simple/20040331-1.c \
-gcc_regression_simple/20040409-1.c \
-gcc_regression_simple/20040409-2.c \
-gcc_regression_simple/20040409-3.c \
-gcc_regression_simple/20040411-1.c \
-gcc_regression_simple/20040423-1.c \
-gcc_regression_simple/20040625-1.c \
-gcc_regression_simple/20040629-1.c \
-gcc_regression_simple/20040704-1.c \
-gcc_regression_simple/20040705-1.c \
-gcc_regression_simple/20040705-2.c \
-gcc_regression_simple/20040706-1.c \
-gcc_regression_simple/20040707-1.c \
-gcc_regression_simple/20040805-1.c \
-gcc_regression_simple/20040820-1.c \
-gcc_regression_simple/20040823-1.c \
-gcc_regression_simple/20040831-1.c \
-gcc_regression_simple/20040917-1.c \
-gcc_regression_simple/20041011-1.c \
-gcc_regression_simple/20041019-1.c \
-gcc_regression_simple/20041112-1.c \
-gcc_regression_simple/20041114-1.c \
-gcc_regression_simple/20041126-1.c \
-gcc_regression_simple/20041201-1.c \
-gcc_regression_simple/20041210-1.c \
-gcc_regression_simple/20041213-2.c \
-gcc_regression_simple/20041218-2.c \
-gcc_regression_simple/20050104-1-32.c \
-gcc_regression_simple/20050104-1.c \
-gcc_regression_simple/20050106-1.c \
-gcc_regression_simple/20050107-1.c \
-gcc_regression_simple/20050111-1.c \
-gcc_regression_simple/20050119-1.c \
-gcc_regression_simple/20050119-2.c \
-gcc_regression_simple/20050124-1.c \
-gcc_regression_simple/20050125-1.c \
-gcc_regression_simple/20050131-1.c \
-gcc_regression_simple/20050215-1.c \
-gcc_regression_simple/20050218-1.c \
-gcc_regression_simple/20050224-1.c \
-gcc_regression_simple/20050410-1.c \
-gcc_regression_simple/20050502-1.c \
-gcc_regression_simple/20050502-2.c \
-gcc_regression_simple/20050607-1.c \
-gcc_regression_simple/20050613-1.c \
-gcc_regression_simple/20050713-1.c \
-gcc_regression_simple/20050826-1.c \
-gcc_regression_simple/20050826-2.c \
-gcc_regression_simple/20051021-1.c \
-gcc_regression_simple/20051104-1.c \
-gcc_regression_simple/20051110-1.c \
-gcc_regression_simple/20051110-2.c \
-gcc_regression_simple/20051113-1.c \
-gcc_regression_simple/20051215-1.c \
-gcc_regression_simple/20060102-1.c \
-gcc_regression_simple/20060110-1.c \
-gcc_regression_simple/20060110-2.c \
-gcc_regression_simple/20060127-1.c \
-gcc_regression_simple/20060412-1.c \
-gcc_regression_simple/20060905-1.c \
-gcc_regression_simple/20060910-1.c \
-gcc_regression_simple/20060929-1.c \
-gcc_regression_simple/20060930-1.c \
-gcc_regression_simple/20060930-2.c \
-gcc_regression_simple/20061101-1.c \
-gcc_regression_simple/20061101-2.c \
-gcc_regression_simple/20070212-1.c \
-gcc_regression_simple/20070212-2.c \
-gcc_regression_simple/20070212-3.c \
-gcc_regression_simple/20070424-1.c \
-gcc_regression_simple/20070517-1.c \
-gcc_regression_simple/20070614-1.c \
-gcc_regression_simple/20070623-1.c \
-gcc_regression_simple/20070724-1.c \
-gcc_regression_simple/20071011-1.c \
-gcc_regression_simple/20071018-1.c \
-gcc_regression_simple/20071029-1.c \
-gcc_regression_simple/20071030-1.c \
-gcc_regression_simple/20071108-1.c \
-gcc_regression_simple/20071120-1.c \
-gcc_regression_simple/20071202-1.c \
-gcc_regression_simple/20071205-1.c \
-gcc_regression_simple/20071216-1.c \
-gcc_regression_simple/20071219-1.c \
-gcc_regression_simple/20080117-1.c \
-gcc_regression_simple/20080222-1.c \
-gcc_regression_simple/20080408-1.c \
-gcc_regression_simple/20080424-1.c \
-gcc_regression_simple/20080506-1.c \
-gcc_regression_simple/20080506-2.c \
-gcc_regression_simple/20080519-1.c \
-gcc_regression_simple/20080522-1.c \
-gcc_regression_simple/20080529-1.c \
-gcc_regression_simple/20080604-1.c \
-gcc_regression_simple/20080719-1.c \
-gcc_regression_simple/20080813-1.c \
-gcc_regression_simple/20081103-1.c \
-gcc_regression_simple/20081112-1.c \
-gcc_regression_simple/20081218-1.c \
-gcc_regression_simple/20090113-1.c \
-gcc_regression_simple/20090113-2.c \
-gcc_regression_simple/20090113-3.c \
-gcc_regression_simple/20090207-1.c \
-gcc_regression_simple/20090527-1.c \
-gcc_regression_simple/20090623-1.c \
-gcc_regression_simple/20090711-1.c \
-gcc_regression_simple/20090814-1.c \
-gcc_regression_simple/20091229-1.c \
-gcc_regression_simple/20100209-1.c \
-gcc_regression_simple/20100316-1.c \
-gcc_regression_simple/20100416-1.c \
-gcc_regression_simple/20100430-1.c \
-gcc_regression_simple/20100708-1.c \
-gcc_regression_simple/20100805-1.c \
-gcc_regression_simple/20100827-1.c \
-gcc_regression_simple/20101013-1.c \
-gcc_regression_simple/20101025-1.c \
-gcc_regression_simple/900409-1.c \
-gcc_regression_simple/920202-1.c \
-gcc_regression_simple/920409-1.c \
-gcc_regression_simple/920410-1.c \
-gcc_regression_simple/920411-1.c \
-gcc_regression_simple/920428-1.c \
-gcc_regression_simple/920429-1.c \
-gcc_regression_simple/920501-2.c \
-gcc_regression_simple/920501-6.c \
-gcc_regression_simple/920506-1.c \
-gcc_regression_simple/920520-1.c \
-gcc_regression_simple/920603-1.c \
-gcc_regression_simple/920604-1.c \
-gcc_regression_simple/920612-1.c \
-gcc_regression_simple/920618-1.c \
-gcc_regression_simple/920710-1.c \
-gcc_regression_simple/920711-1.c \
-gcc_regression_simple/920721-1.c \
-gcc_regression_simple/920721-3.c \
-gcc_regression_simple/920728-1.c \
-gcc_regression_simple/920730-1.c \
-gcc_regression_simple/920731-1.c \
-gcc_regression_simple/920810-1.c \
-gcc_regression_simple/920812-1.c \
-gcc_regression_simple/920829-1.c \
-gcc_regression_simple/920909-1.c \
-gcc_regression_simple/920922-1.c \
-gcc_regression_simple/921006-1.c \
-gcc_regression_simple/921013-1.c \
-gcc_regression_simple/921016-1.c \
-gcc_regression_simple/921019-1.c \
-gcc_regression_simple/921019-2.c \
-gcc_regression_simple/921029-1.c \
-gcc_regression_simple/921104-1.c \
-gcc_regression_simple/921110-1.c \
-gcc_regression_simple/921112-1.c \
-gcc_regression_simple/921113-1.c \
-gcc_regression_simple/921117-1.c \
-gcc_regression_simple/921123-1.c \
-gcc_regression_simple/921123-2.c \
-gcc_regression_simple/921124-1.c \
-gcc_regression_simple/921202-1.c \
-gcc_regression_simple/921202-2.c \
-gcc_regression_simple/921207-1.c \
-gcc_regression_simple/921208-1.c \
-gcc_regression_simple/921208-2.c \
-gcc_regression_simple/921218-1.c \
-gcc_regression_simple/921218-2.c \
-gcc_regression_simple/930106-1.c \
-gcc_regression_simple/930111-1.c \
-gcc_regression_simple/930123-1.c \
-gcc_regression_simple/930208-1.c \
-gcc_regression_simple/930406-1.c \
-gcc_regression_simple/930408-1.c \
-gcc_regression_simple/930429-1.c \
-gcc_regression_simple/930429-2.c \
-gcc_regression_simple/930513-2.c \
-gcc_regression_simple/930518-1.c \
-gcc_regression_simple/930526-1.c \
-gcc_regression_simple/930527-1.c \
-gcc_regression_simple/930529-1.c \
-gcc_regression_simple/930603-1.c \
-gcc_regression_simple/930603-2.c \
-gcc_regression_simple/930603-3.c \
-gcc_regression_simple/930608-1.c \
-gcc_regression_simple/930614-1.c \
-gcc_regression_simple/930614-2.c \
-gcc_regression_simple/930622-1.c \
-gcc_regression_simple/930628-1.c \
-gcc_regression_simple/930630-1.c \
-gcc_regression_simple/930702-1.c \
-gcc_regression_simple/930718-1.c \
-gcc_regression_simple/930725-1.c \
-gcc_regression_simple/930818-1.c \
-gcc_regression_simple/930916-1.c \
-gcc_regression_simple/930921-1.c \
-gcc_regression_simple/930929-1.c \
-gcc_regression_simple/930930-1.c \
-gcc_regression_simple/930930-2.c \
-gcc_regression_simple/931004-1.c \
-gcc_regression_simple/931004-11.c \
-gcc_regression_simple/931004-13.c \
-gcc_regression_simple/931004-3.c \
-gcc_regression_simple/931004-5.c \
-gcc_regression_simple/931004-7.c \
-gcc_regression_simple/931004-9.c \
-gcc_regression_simple/931009-1.c \
-gcc_regression_simple/931012-1.c \
-gcc_regression_simple/931017-1.c \
-gcc_regression_simple/931018-1.c \
-gcc_regression_simple/931102-1.c \
-gcc_regression_simple/931102-2.c \
-gcc_regression_simple/931110-1.c \
-gcc_regression_simple/931110-2.c \
-gcc_regression_simple/931208-1.c \
-gcc_regression_simple/931228-1.c \
-gcc_regression_simple/940115-1.c \
-gcc_regression_simple/940122-1.c \
-gcc_regression_simple/941014-1.c \
-gcc_regression_simple/941014-2.c \
-gcc_regression_simple/941015-1.c \
-gcc_regression_simple/941021-1.c \
-gcc_regression_simple/941025-1.c \
-gcc_regression_simple/941031-1.c \
-gcc_regression_simple/941101-1.c \
-gcc_regression_simple/941110-1.c \
-gcc_regression_simple/950221-1.c \
-gcc_regression_simple/950322-1.c \
-gcc_regression_simple/950426-1.c \
-gcc_regression_simple/950426-2.c \
-gcc_regression_simple/950503-1.c \
-gcc_regression_simple/950511-1.c \
-gcc_regression_simple/950512-1.c \
-gcc_regression_simple/950605-1.c \
-gcc_regression_simple/950607-1.c \
-gcc_regression_simple/950607-2.c \
-gcc_regression_simple/950612-1.c \
-gcc_regression_simple/950621-1.c \
-gcc_regression_simple/950704-1.c \
-gcc_regression_simple/950706-1.c \
-gcc_regression_simple/950714-1.c \
-gcc_regression_simple/950809-1.c \
-gcc_regression_simple/950906-1.c \
-gcc_regression_simple/950915-1.c \
-gcc_regression_simple/950929-1.c \
-gcc_regression_simple/951003-1.c \
-gcc_regression_simple/951115-1.c \
-gcc_regression_simple/951204-1.c \
-gcc_regression_simple/960116-1.c \
-gcc_regression_simple/960117-1.c \
-gcc_regression_simple/960209-1.c \
-gcc_regression_simple/960218-1.c \
-gcc_regression_simple/960219-1.c \
-gcc_regression_simple/960301-1.c \
-gcc_regression_simple/960302-1.c \
-gcc_regression_simple/960311-1.c \
-gcc_regression_simple/960311-2.c \
-gcc_regression_simple/960311-3.c \
-gcc_regression_simple/960317-1.c \
-gcc_regression_simple/960321-1.c \
-gcc_regression_simple/960326-1.c \
-gcc_regression_simple/960327-1.c \
-gcc_regression_simple/960402-1.c \
-gcc_regression_simple/960419-2.c \
-gcc_regression_simple/960512-1.c \
-gcc_regression_simple/960521-1.c \
-gcc_regression_simple/960608-1.c \
-gcc_regression_simple/960801-1.c \
-gcc_regression_simple/960802-1.c \
-gcc_regression_simple/960909-1.c \
-gcc_regression_simple/961004-1.c \
-gcc_regression_simple/961017-1.c \
-gcc_regression_simple/961017-2.c \
-gcc_regression_simple/961026-1.c \
-gcc_regression_simple/961112-1.c \
-gcc_regression_simple/961122-1.c \
-gcc_regression_simple/961122-2.c \
-gcc_regression_simple/961125-1.c \
-gcc_regression_simple/961206-1.c \
-gcc_regression_simple/961213-1.c \
-gcc_regression_simple/961223-1.c \
-gcc_regression_simple/970214-1.c \
-gcc_regression_simple/970214-2.c \
-gcc_regression_simple/970217-1.c \
-gcc_regression_simple/970923-1.c \
-gcc_regression_simple/980424-1.c \
-gcc_regression_simple/980505-1.c \
-gcc_regression_simple/980505-2.c \
-gcc_regression_simple/980506-1.c \
-gcc_regression_simple/980506-2.c \
-gcc_regression_simple/980506-3.c \
-gcc_regression_simple/980526-2.c \
-gcc_regression_simple/980526-3.c \
-gcc_regression_simple/980602-1.c \
-gcc_regression_simple/980602-2.c \
-gcc_regression_simple/980604-1.c \
-gcc_regression_simple/980612-1.c \
-gcc_regression_simple/980617-1.c \
-gcc_regression_simple/980618-1.c \
-gcc_regression_simple/980701-1.c \
-gcc_regression_simple/980707-1.c \
-gcc_regression_simple/980709-1.c \
-gcc_regression_simple/980929-1.c \
-gcc_regression_simple/981019-1.c \
-gcc_regression_simple/981130-1.c \
-gcc_regression_simple/981206-1.c \
-gcc_regression_simple/990106-1.c \
-gcc_regression_simple/990106-2.c \
-gcc_regression_simple/990117-1.c \
-gcc_regression_simple/990127-1.c \
-gcc_regression_simple/990127-2.c \
-gcc_regression_simple/990128-1.c \
-gcc_regression_simple/990211-1.c \
-gcc_regression_simple/990222-1.c \
-gcc_regression_simple/990324-1.c \
-gcc_regression_simple/990404-1.c \
-gcc_regression_simple/990513-1.c \
-gcc_regression_simple/990524-1.c \
-gcc_regression_simple/990525-1.c \
-gcc_regression_simple/990527-1.c \
-gcc_regression_simple/990531-1.c \
-gcc_regression_simple/990604-1.c \
-gcc_regression_simple/990628-1.c \
-gcc_regression_simple/990804-1.c \
-gcc_regression_simple/990811-1.c \
-gcc_regression_simple/990826-0.c \
-gcc_regression_simple/990827-1.c \
-gcc_regression_simple/990829-1.c \
-gcc_regression_simple/990923-1.c \
-gcc_regression_simple/991014-1.c \
-gcc_regression_simple/991016-1.c \
-gcc_regression_simple/991023-1.c \
-gcc_regression_simple/991030-1.c \
-gcc_regression_simple/991201-1.c \
-gcc_regression_simple/991202-1.c \
-gcc_regression_simple/991202-2.c \
-gcc_regression_simple/991202-3.c \
-gcc_regression_simple/991216-1.c \
-gcc_regression_simple/991216-4.c \
-gcc_regression_simple/991221-1.c \
-gcc_regression_simple/991227-1.c \
-gcc_regression_simple/991228-1.c \
-gcc_regression_simple/COPYING3 \
-gcc_regression_simple/README \
-gcc_regression_simple/align-1.c \
-gcc_regression_simple/anon-1.c \
-gcc_regression_simple/arith-1.c \
-gcc_regression_simple/arith-rand-6432.c \
-gcc_regression_simple/arith-rand-ll.c \
-gcc_regression_simple/arith-rand.c \
-gcc_regression_simple/ashldi-1.c \
-gcc_regression_simple/ashrdi-1.c \
-gcc_regression_simple/bf-layout-1.c \
-gcc_regression_simple/bf-pack-1.c \
-gcc_regression_simple/bf-sign-1.c \
-gcc_regression_simple/bf-sign-2.c \
-gcc_regression_simple/bitfld-1.c \
-gcc_regression_simple/bitfld-2.c \
-gcc_regression_simple/bitfld-3.c \
-gcc_regression_simple/bitfld-4.c \
-gcc_regression_simple/builtins/abs-1.c \
-gcc_regression_simple/builtins/abs-2.c \
-gcc_regression_simple/builtins/abs-3.c \
-gcc_regression_simple/builtins/chk.h \
-gcc_regression_simple/builtins/complex-builtins-1.c \
-gcc_regression_simple/builtins/memchr.c \
-gcc_regression_simple/builtins/memcmp.c \
-gcc_regression_simple/builtins/memcpy-chk_test1.c \
-gcc_regression_simple/builtins/memcpy-chk_test2.c \
-gcc_regression_simple/builtins/memcpy-chk_test3.c \
-gcc_regression_simple/builtins/memcpy-chk_test4.c \
-gcc_regression_simple/builtins/memcpy-chk_test5.c \
-gcc_regression_simple/builtins/memcpy-chk_test6.c \
-gcc_regression_simple/builtins/memmove-2.c \
-gcc_regression_simple/builtins/memmove-chk_test1.c \
-gcc_regression_simple/builtins/memmove-chk_test2.c \
-gcc_regression_simple/builtins/memmove-chk_test3.c \
-gcc_regression_simple/builtins/memmove-chk_test4.c \
-gcc_regression_simple/builtins/memmove-chk_test5.c \
-gcc_regression_simple/builtins/memmove-chk_test6.c \
-gcc_regression_simple/builtins/memmove-chk_test7.c \
-gcc_regression_simple/builtins/memmove.c \
-gcc_regression_simple/builtins/memops-asm.c \
-gcc_regression_simple/builtins/mempcpy-2.c \
-gcc_regression_simple/builtins/mempcpy-chk_test1.c \
-gcc_regression_simple/builtins/mempcpy-chk_test2.c \
-gcc_regression_simple/builtins/mempcpy-chk_test3.c \
-gcc_regression_simple/builtins/mempcpy-chk_test4.c \
-gcc_regression_simple/builtins/mempcpy-chk_test5.c \
-gcc_regression_simple/builtins/mempcpy-chk_test6.c \
-gcc_regression_simple/builtins/mempcpy.c \
-gcc_regression_simple/builtins/memset.c \
-gcc_regression_simple/builtins/printf.c \
-gcc_regression_simple/builtins/stpcpy-chk_test1.c \
-gcc_regression_simple/builtins/stpcpy-chk_test2.c \
-gcc_regression_simple/builtins/stpcpy-chk_test3.c \
-gcc_regression_simple/builtins/stpcpy-chk_test4.c \
-gcc_regression_simple/builtins/strcat-chk.c \
-gcc_regression_simple/builtins/strcat.c \
-gcc_regression_simple/builtins/strchr.c \
-gcc_regression_simple/builtins/strcmp.c \
-gcc_regression_simple/builtins/strcpy-2.c \
-gcc_regression_simple/builtins/strcpy-chk_test1.c \
-gcc_regression_simple/builtins/strcpy-chk_test2.c \
-gcc_regression_simple/builtins/strcpy-chk_test3.c \
-gcc_regression_simple/builtins/strcpy-chk_test4.c \
-gcc_regression_simple/builtins/strcpy.c \
-gcc_regression_simple/builtins/strcspn.c \
-gcc_regression_simple/builtins/strlen-2.c \
-gcc_regression_simple/builtins/strlen-3.c \
-gcc_regression_simple/builtins/strlen.c \
-gcc_regression_simple/builtins/strncat-chk.c \
-gcc_regression_simple/builtins/strncat.c \
-gcc_regression_simple/builtins/strncmp-2.c \
-gcc_regression_simple/builtins/strncmp.c \
-gcc_regression_simple/builtins/strncpy-chk.c \
-gcc_regression_simple/builtins/strncpy.c \
-gcc_regression_simple/builtins/strpbrk.c \
-gcc_regression_simple/builtins/strpcpy-2.c \
-gcc_regression_simple/builtins/strpcpy.c \
-gcc_regression_simple/builtins/strrchr.c \
-gcc_regression_simple/builtins/strspn.c \
-gcc_regression_simple/builtins/strstr-asm.c \
-gcc_regression_simple/builtins/strstr.c \
-gcc_regression_simple/builtins/test.xml \
-gcc_regression_simple/call-trap-1.c \
-gcc_regression_simple/cbrt.c \
-gcc_regression_simple/cmpdi-1.c \
-gcc_regression_simple/cmpsf-1.c \
-gcc_regression_simple/cmpsi-1.c \
-gcc_regression_simple/cmpsi-2.c \
-gcc_regression_simple/compare-1.c \
-gcc_regression_simple/compare-2.c \
-gcc_regression_simple/compare-3.c \
-gcc_regression_simple/complex-1.c \
-gcc_regression_simple/complex-4.c \
-gcc_regression_simple/complex-5.c \
-gcc_regression_simple/complex-7.c \
-gcc_regression_simple/conversion.c \
-gcc_regression_simple/cvt-1.c \
-gcc_regression_simple/dbra-1.c \
-gcc_regression_simple/divcmp-1.c \
-gcc_regression_simple/divcmp-2.c \
-gcc_regression_simple/divcmp-3.c \
-gcc_regression_simple/divcmp-4.c \
-gcc_regression_simple/divcmp-5.c \
-gcc_regression_simple/divconst-1.c \
-gcc_regression_simple/divconst-2.c \
-gcc_regression_simple/divconst-3.c \
-gcc_regression_simple/divmod-1.c \
-gcc_regression_simple/enum-1.c \
-gcc_regression_simple/enum-2.c \
-gcc_regression_simple/enum-3.c \
-gcc_regression_simple/extzvsi.c \
-gcc_regression_simple/float-floor.c \
-gcc_regression_simple/floatunsisf-1.c \
-gcc_regression_simple/func-ptr-1.c \
-gcc_regression_simple/gofast.c \
-gcc_regression_simple/ieee/20001122-1.c \
-gcc_regression_simple/ieee/20010114-2.c \
-gcc_regression_simple/ieee/20011123-1.c \
-gcc_regression_simple/ieee/20030331-1.c \
-gcc_regression_simple/ieee/20041213-1.c \
-gcc_regression_simple/ieee/920518-1.c \
-gcc_regression_simple/ieee/980619-1.c \
-gcc_regression_simple/ieee/builtin-nan-1.c \
-gcc_regression_simple/ieee/compare-fp-2.c \
-gcc_regression_simple/ieee/fp-cmp-4e.c \
-gcc_regression_simple/ieee/fp-cmp-6.c \
-gcc_regression_simple/ieee/fp-cmp-7.c \
-gcc_regression_simple/ieee/fp-cmp-8e.c \
-gcc_regression_simple/ieee/hugeval.c \
-gcc_regression_simple/ieee/minuszero.c \
-gcc_regression_simple/ieee/mzero3.c \
-gcc_regression_simple/ieee/mzero4.c \
-gcc_regression_simple/ieee/mzero5.c \
-gcc_regression_simple/ieee/pr28634.c \
-gcc_regression_simple/ieee/pr30704.c \
-gcc_regression_simple/ieee/test.xml \
-gcc_regression_simple/ieee/unsafe-fp-assoc-1.c \
-gcc_regression_simple/ieee/unsafe-fp-assoc.c \
-gcc_regression_simple/ifcvt-onecmpl-abs-1.c \
-gcc_regression_simple/index-1.c \
-gcc_regression_simple/inst-check.c \
-gcc_regression_simple/int-compare.c \
-gcc_regression_simple/ipa-sra-1.c \
-gcc_regression_simple/ipa-sra-2.c \
-gcc_regression_simple/longlong.c \
-gcc_regression_simple/loop-1.c \
-gcc_regression_simple/loop-10.c \
-gcc_regression_simple/loop-11.c \
-gcc_regression_simple/loop-12.c \
-gcc_regression_simple/loop-13.c \
-gcc_regression_simple/loop-14.c \
-gcc_regression_simple/loop-15.c \
-gcc_regression_simple/loop-2.c \
-gcc_regression_simple/loop-2b.c \
-gcc_regression_simple/loop-2c.c \
-gcc_regression_simple/loop-2d.c \
-gcc_regression_simple/loop-2e.c \
-gcc_regression_simple/loop-3.c \
-gcc_regression_simple/loop-3b.c \
-gcc_regression_simple/loop-3c.c \
-gcc_regression_simple/loop-4.c \
-gcc_regression_simple/loop-4b.c \
-gcc_regression_simple/loop-5.c \
-gcc_regression_simple/loop-6.c \
-gcc_regression_simple/loop-7.c \
-gcc_regression_simple/loop-8.c \
-gcc_regression_simple/loop-9.c \
-gcc_regression_simple/loop-ivopts-1.c \
-gcc_regression_simple/loop-ivopts-2.c \
-gcc_regression_simple/lshrdi-1.c \
-gcc_regression_simple/mayalias-1.c \
-gcc_regression_simple/mayalias-2.c \
-gcc_regression_simple/mayalias-3.c \
-gcc_regression_simple/medce-1.c \
-gcc_regression_simple/memcpy-1.c \
-gcc_regression_simple/memcpy-2.c \
-gcc_regression_simple/memcpy-bi.c \
-gcc_regression_simple/memset-1.c \
-gcc_regression_simple/memset-2.c \
-gcc_regression_simple/memset-3.c \
-gcc_regression_simple/mod-1.c \
-gcc_regression_simple/mode-dependent-address.c \
-gcc_regression_simple/multdi-1.c \
-gcc_regression_simple/nest-align-1.c \
-gcc_regression_simple/p18298.c \
-gcc_regression_simple/packed-1.c \
-gcc_regression_simple/packed-2.c \
-gcc_regression_simple/pending-4.c \
-gcc_regression_simple/postmod-1.c \
-gcc_regression_simple/pr15262-1.c \
-gcc_regression_simple/pr15262-2.c \
-gcc_regression_simple/pr15262.c \
-gcc_regression_simple/pr15296.c \
-gcc_regression_simple/pr16790-1.c \
-gcc_regression_simple/pr17078-1.c \
-gcc_regression_simple/pr17133.c \
-gcc_regression_simple/pr17252.c \
-gcc_regression_simple/pr19005.c \
-gcc_regression_simple/pr19515.c \
-gcc_regression_simple/pr19606.c \
-gcc_regression_simple/pr19687.c \
-gcc_regression_simple/pr19689.c \
-gcc_regression_simple/pr20100-1.c \
-gcc_regression_simple/pr20187-1.c \
-gcc_regression_simple/pr20466-1.c \
-gcc_regression_simple/pr20527-1.c \
-gcc_regression_simple/pr20601-1.c \
-gcc_regression_simple/pr20621-1.c \
-gcc_regression_simple/pr21173.c \
-gcc_regression_simple/pr21331.c \
-gcc_regression_simple/pr22061-2.c \
-gcc_regression_simple/pr22098-1.c \
-gcc_regression_simple/pr22098-2.c \
-gcc_regression_simple/pr22098-3.c \
-gcc_regression_simple/pr22348.c \
-gcc_regression_simple/pr22429.c \
-gcc_regression_simple/pr22493-1.c \
-gcc_regression_simple/pr22630.c \
-gcc_regression_simple/pr23047.c \
-gcc_regression_simple/pr23135.c \
-gcc_regression_simple/pr23467.c \
-gcc_regression_simple/pr23604.c \
-gcc_regression_simple/pr23941.c \
-gcc_regression_simple/pr24141.c \
-gcc_regression_simple/pr24142.c \
-gcc_regression_simple/pr24716.c \
-gcc_regression_simple/pr24851.c \
-gcc_regression_simple/pr25125.c \
-gcc_regression_simple/pr25737.c \
-gcc_regression_simple/pr27073.c \
-gcc_regression_simple/pr27260.c \
-gcc_regression_simple/pr27285.c \
-gcc_regression_simple/pr27364.c \
-gcc_regression_simple/pr27671-1.c \
-gcc_regression_simple/pr28289.c \
-gcc_regression_simple/pr28403.c \
-gcc_regression_simple/pr28651.c \
-gcc_regression_simple/pr28778.c \
-gcc_regression_simple/pr28982a.c \
-gcc_regression_simple/pr28982b.c \
-gcc_regression_simple/pr29006.c \
-gcc_regression_simple/pr29156.c \
-gcc_regression_simple/pr29695-1.c \
-gcc_regression_simple/pr29695-2.c \
-gcc_regression_simple/pr29797-1.c \
-gcc_regression_simple/pr29797-2.c \
-gcc_regression_simple/pr29798.c \
-gcc_regression_simple/pr30778.c \
-gcc_regression_simple/pr31072.c \
-gcc_regression_simple/pr31136.c \
-gcc_regression_simple/pr31169.c \
-gcc_regression_simple/pr31448-2.c \
-gcc_regression_simple/pr31448.c \
-gcc_regression_simple/pr32244-1.c \
-gcc_regression_simple/pr32500.c \
-gcc_regression_simple/pr33142.c \
-gcc_regression_simple/pr33382.c \
-gcc_regression_simple/pr33631.c \
-gcc_regression_simple/pr33669.c \
-gcc_regression_simple/pr33779-1.c \
-gcc_regression_simple/pr33779-2.c \
-gcc_regression_simple/pr33870-1.c \
-gcc_regression_simple/pr33870.c \
-gcc_regression_simple/pr33992.c \
-gcc_regression_simple/pr34070-1.c \
-gcc_regression_simple/pr34070-2.c \
-gcc_regression_simple/pr34099-2.c \
-gcc_regression_simple/pr34099.c \
-gcc_regression_simple/pr34130.c \
-gcc_regression_simple/pr34154.c \
-gcc_regression_simple/pr34176.c \
-gcc_regression_simple/pr34415.c \
-gcc_regression_simple/pr34768-1.c \
-gcc_regression_simple/pr34768-2.c \
-gcc_regression_simple/pr34971.c \
-gcc_regression_simple/pr34982.c \
-gcc_regression_simple/pr35163.c \
-gcc_regression_simple/pr35231.c \
-gcc_regression_simple/pr35390.c \
-gcc_regression_simple/pr35456.c \
-gcc_regression_simple/pr35472.c \
-gcc_regression_simple/pr35800.c \
-gcc_regression_simple/pr36034-1.c \
-gcc_regression_simple/pr36034-2.c \
-gcc_regression_simple/pr36038.c \
-gcc_regression_simple/pr36077.c \
-gcc_regression_simple/pr36093.c \
-gcc_regression_simple/pr36321.c \
-gcc_regression_simple/pr36339.c \
-gcc_regression_simple/pr36343.c \
-gcc_regression_simple/pr36691.c \
-gcc_regression_simple/pr36765.c \
-gcc_regression_simple/pr37102.c \
-gcc_regression_simple/pr37125.c \
-gcc_regression_simple/pr37573.c \
-gcc_regression_simple/pr37882.c \
-gcc_regression_simple/pr37924.c \
-gcc_regression_simple/pr37931.c \
-gcc_regression_simple/pr38048-1.c \
-gcc_regression_simple/pr38048-2.c \
-gcc_regression_simple/pr38212.c \
-gcc_regression_simple/pr38236.c \
-gcc_regression_simple/pr38422.c \
-gcc_regression_simple/pr38819.c \
-gcc_regression_simple/pr38969.c \
-gcc_regression_simple/pr39100.c \
-gcc_regression_simple/pr39233.c \
-gcc_regression_simple/pr39240.c \
-gcc_regression_simple/pr39339.c \
-gcc_regression_simple/pr39501.c \
-gcc_regression_simple/pr40057.c \
-gcc_regression_simple/pr40386.c \
-gcc_regression_simple/pr40404.c \
-gcc_regression_simple/pr40493.c \
-gcc_regression_simple/pr40579.c \
-gcc_regression_simple/pr40668.c \
-gcc_regression_simple/pr40747.c \
-gcc_regression_simple/pr41317.c \
-gcc_regression_simple/pr41395-1.c \
-gcc_regression_simple/pr41395-2.c \
-gcc_regression_simple/pr41463.c \
-gcc_regression_simple/pr41750.c \
-gcc_regression_simple/pr41917.c \
-gcc_regression_simple/pr41919.c \
-gcc_regression_simple/pr41935.c \
-gcc_regression_simple/pr42006.c \
-gcc_regression_simple/pr42142.c \
-gcc_regression_simple/pr42154.c \
-gcc_regression_simple/pr42248.c \
-gcc_regression_simple/pr42269-2.c \
-gcc_regression_simple/pr42512.c \
-gcc_regression_simple/pr42570.c \
-gcc_regression_simple/pr42614.c \
-gcc_regression_simple/pr42691.c \
-gcc_regression_simple/pr42721.c \
-gcc_regression_simple/pr42833.c \
-gcc_regression_simple/pr43008.c \
-gcc_regression_simple/pr43236.c \
-gcc_regression_simple/pr43269.c \
-gcc_regression_simple/pr43438.c \
-gcc_regression_simple/pr43629.c \
-gcc_regression_simple/pr43783.c \
-gcc_regression_simple/pr43835.c \
-gcc_regression_simple/pr43987.c \
-gcc_regression_simple/pr44164.c \
-gcc_regression_simple/pr44202-1.c \
-gcc_regression_simple/pr44468.c \
-gcc_regression_simple/pr44555.c \
-gcc_regression_simple/pr44683.c \
-gcc_regression_simple/pr44828.c \
-gcc_regression_simple/pr44858.c \
-gcc_regression_simple/pr45034.c \
-gcc_regression_simple/pr45262.c \
-gcc_regression_simple/pr45830.c \
-gcc_regression_simple/pr46019.c \
-gcc_regression_simple/pr46316.c \
-gcc_regression_simple/pr46909-1.c \
-gcc_regression_simple/pr46909-2.c \
-gcc_regression_simple/pr47148.c \
-gcc_regression_simple/pr47155.c \
-gcc_regression_simple/pr47299.c \
-gcc_regression_simple/pr47337.c \
-gcc_regression_simple/pr47538.c \
-gcc_regression_simple/pr48717.c \
-gcc_regression_simple/pr48809.c \
-gcc_regression_simple/pr49039.c \
-gcc_regression_simple/pr49123.c \
-gcc_regression_simple/pr49161.c \
-gcc_regression_simple/pr49186.c \
-gcc_regression_simple/pr49419.c \
-gcc_regression_simple/pr7284-1.c \
-gcc_regression_simple/pta-field-1.c \
-gcc_regression_simple/pta-field-2.c \
-gcc_regression_simple/ptr-arith-1.c \
-gcc_regression_simple/pure-1.c \
-gcc_regression_simple/pushpop_macro.c \
-gcc_regression_simple/restrict-1.c \
-gcc_regression_simple/scope-1.c \
-gcc_regression_simple/shiftdi.c \
-gcc_regression_simple/shiftopt-1.c \
-gcc_regression_simple/strcmp-1.c \
-gcc_regression_simple/strcpy-1.c \
-gcc_regression_simple/strct-pack-1.c \
-gcc_regression_simple/strct-pack-2.c \
-gcc_regression_simple/strct-pack-3.c \
-gcc_regression_simple/strct-pack-4.c \
-gcc_regression_simple/string-opt-17.c \
-gcc_regression_simple/string-opt-18.c \
-gcc_regression_simple/string-opt-5.c \
-gcc_regression_simple/strlen-1.c \
-gcc_regression_simple/strncmp-1.c \
-gcc_regression_simple/struct-aliasing-1.c \
-gcc_regression_simple/struct-cpy-1.c \
-gcc_regression_simple/struct-ini-1.c \
-gcc_regression_simple/struct-ini-2.c \
-gcc_regression_simple/struct-ini-3.c \
-gcc_regression_simple/struct-ini-4.c \
-gcc_regression_simple/struct-ret-2.c \
-gcc_regression_simple/switch-1.c \
-gcc_regression_simple/test.xml \
-gcc_regression_simple/tstdi-1.c \
-gcc_regression_simple/unroll-1.c \
-gcc_regression_simple/usmul.c \
-gcc_regression_simple/vrp-1.c \
-gcc_regression_simple/vrp-2.c \
-gcc_regression_simple/vrp-3.c \
-gcc_regression_simple/vrp-4.c \
-gcc_regression_simple/vrp-5.c \
-gcc_regression_simple/vrp-6.c \
-gcc_regression_simple/vrp-7.c \
-gcc_regression_simple/widechar-1.c \
-gcc_regression_simple/zero-struct-1.c \
-gcc_regression_simple/zerolen-1.c \
-gcc_regression_simple/zerolen-2.c \
-gcc_regression_simple_CII.sh \
-gcc_regression_simple_CIIR.sh \
-gcc_regression_simple_ECP3.sh \
-gcc_regression_simple_Zynq.sh \
-gcc_regression_simple_Zynq_VVD.sh \
-gcc_regression_simple_reset.sh \
-gcc_regression_simple_verilator \
-generic_CHStone-frontend.sh \
-generic_CHStone-memarch.sh \
-generic_discrepancy_eg_bambu.sh \
-generic_gcc_regression_simple.sh \
-generic_gcc_regression_simple_bambu.sh \
-generic_gcc_regression_simple_bambu_pretty_print.sh \
-generic_gcc_regression_simple_bambu_vhdl.sh \
-generic_gcc_regression_simple_eg.sh \
-generic_gcc_regression_simple_eg_ext_pipelined.sh \
-generic_getopt.sh \
-generic_libm-tests.sh \
-generic_softfloat-tests.sh \
-libm-tests/conversion.c \
-libm-tests/libm-test.c \
-libm-tests/test-double.c \
-libm-tests/test-float.c \
-libm-tests/test.acos.xml \
-libm-tests/test.acosh.xml \
-libm-tests/test.asin.xml \
-libm-tests/test.asinh.xml \
-libm-tests/test.atan.xml \
-libm-tests/test.atan2.xml \
-libm-tests/test.atanh.xml \
-libm-tests/test.cbrt.xml \
-libm-tests/test.ceil.xml \
-libm-tests/test.copysign.xml \
-libm-tests/test.cos.xml \
-libm-tests/test.cosh.xml \
-libm-tests/test.erf.xml \
-libm-tests/test.erfc.xml \
-libm-tests/test.exp.xml \
-libm-tests/test.expm1.xml \
-libm-tests/test.fabs.xml \
-libm-tests/test.floor.xml \
-libm-tests/test.fmod.xml \
-libm-tests/test.fpclassify.xml \
-libm-tests/test.frexp.xml \
-libm-tests/test.gamma.xml \
-libm-tests/test.hypot.xml \
-libm-tests/test.ilogb.xml \
-libm-tests/test.isfinite.xml \
-libm-tests/test.isnormal.xml \
-libm-tests/test.ldexp.xml \
-libm-tests/test.lgamma.xml \
-libm-tests/test.log.xml \
-libm-tests/test.log10.xml \
-libm-tests/test.log1p.xml \
-libm-tests/test.logb.xml \
-libm-tests/test.modf.xml \
-libm-tests/test.pow.xml \
-libm-tests/test.remainder.xml \
-libm-tests/test.rint.xml \
-libm-tests/test.scalb.xml \
-libm-tests/test.scalbn.xml \
-libm-tests/test.signbit.xml \
-libm-tests/test.significand.xml \
-libm-tests/test.sin.xml \
-libm-tests/test.sincos.xml \
-libm-tests/test.sinh.xml \
-libm-tests/test.sqrt.xml \
-libm-tests/test.tan.xml \
-libm-tests/test.tanh.xml \
-libm-tests/test.tgamma.xml \
-libm-tests/uClib_impl/COPYING.LIB \
-libm-tests/uClib_impl/README_LIBM_TESTS.txt \
-libm-tests/uClib_impl/empty.c \
-libm-tests/uClib_impl/libm-test-ulps.h \
-libm-tests/uClib_impl/libm-test.c \
-libm-tests/uClib_impl/test-double.c \
-libm-tests/uClib_impl/test-float.c \
-libm-tests_list \
-multi_CHStone-frontend.sh \
-panda_regression_hls_all_gcc.sh \
-panda_regression_hls_all_gcc1.sh \
-panda_regression_hls_no_gcc.sh \
-panda_regression_hls_no_gcc1.sh \
-softfloat-tests/f64div.c \
-softfloat-tests/f64mul.c \
-softfloat-tests/f64sub.c \
-softfloat-tests/f64sum.c \
-softfloat-tests/fdiv.c \
-softfloat-tests/fmul.c \
-softfloat-tests/fsub.c \
-softfloat-tests/fsum.c \
-softfloat-tests/test.f64div.xml \
-softfloat-tests/test.f64divG.xml \
-softfloat-tests/test.f64mul.xml \
-softfloat-tests/test.f64sub.xml \
-softfloat-tests/test.f64sum.xml \
-softfloat-tests/test.fdiv.xml \
-softfloat-tests/test.fdivG.xml \
-softfloat-tests/test.fmul.xml \
-softfloat-tests/test.fsub.xml \
-softfloat-tests/test.fsum.xml \
-softfloat-tests_list \
-test_libm_expf.sh \
-test_libm_logf.sh \
-test_libm_powf.sh \
-test_libm_sinecosine.sh \
-test_libm_sqrt.sh \
-test_libm_sqrtf.sh \
-test_softfloat.sh \
-testfloat/COPYING.txt \
-testfloat/README.html \
-testfloat/README.md \
-testfloat/README.txt \
-testfloat/berkeley-softfloat/COPYING.txt \
-testfloat/berkeley-softfloat/README.html \
-testfloat/berkeley-softfloat/README.md \
-testfloat/berkeley-softfloat/README.txt \
-testfloat/berkeley-softfloat/build/Linux-386-GCC/Makefile \
-testfloat/berkeley-softfloat/build/Linux-386-GCC/platform.h \
-testfloat/berkeley-softfloat/build/Linux-386-SSE2-GCC/Makefile \
-testfloat/berkeley-softfloat/build/Linux-386-SSE2-GCC/platform.h \
-testfloat/berkeley-softfloat/build/Linux-ARM-VFPv2-GCC/Makefile \
-testfloat/berkeley-softfloat/build/Linux-ARM-VFPv2-GCC/platform.h \
-testfloat/berkeley-softfloat/build/Linux-x86_64-GCC/Makefile \
-testfloat/berkeley-softfloat/build/Linux-x86_64-GCC/platform.h \
-testfloat/berkeley-softfloat/build/Win32-MinGW/Makefile \
-testfloat/berkeley-softfloat/build/Win32-MinGW/platform.h \
-testfloat/berkeley-softfloat/build/Win32-SSE2-MinGW/Makefile \
-testfloat/berkeley-softfloat/build/Win32-SSE2-MinGW/platform.h \
-testfloat/berkeley-softfloat/build/Win64-MinGW-w64/Makefile \
-testfloat/berkeley-softfloat/build/Win64-MinGW-w64/platform.h \
-testfloat/berkeley-softfloat/build/bambu/Makefile \
-testfloat/berkeley-softfloat/build/bambu/platform.h \
-testfloat/berkeley-softfloat/build/template-FAST_INT64/Makefile \
-testfloat/berkeley-softfloat/build/template-FAST_INT64/platform.h \
-testfloat/berkeley-softfloat/build/template-not-FAST_INT64/Makefile \
-testfloat/berkeley-softfloat/build/template-not-FAST_INT64/platform.h \
-testfloat/berkeley-softfloat/doc/SoftFloat-history.html \
-testfloat/berkeley-softfloat/doc/SoftFloat-source.html \
-testfloat/berkeley-softfloat/doc/SoftFloat.html \
-testfloat/berkeley-softfloat/source/8086-SSE/extF80M_isSignalingNaN.c \
-testfloat/berkeley-softfloat/source/8086-SSE/f128M_isSignalingNaN.c \
-testfloat/berkeley-softfloat/source/8086-SSE/s_commonNaNToExtF80M.c \
-testfloat/berkeley-softfloat/source/8086-SSE/s_commonNaNToExtF80UI.c \
-testfloat/berkeley-softfloat/source/8086-SSE/s_commonNaNToF128M.c \
-testfloat/berkeley-softfloat/source/8086-SSE/s_commonNaNToF128UI.c \
-testfloat/berkeley-softfloat/source/8086-SSE/s_commonNaNToF16UI.c \
-testfloat/berkeley-softfloat/source/8086-SSE/s_commonNaNToF32UI.c \
-testfloat/berkeley-softfloat/source/8086-SSE/s_commonNaNToF64UI.c \
-testfloat/berkeley-softfloat/source/8086-SSE/s_extF80MToCommonNaN.c \
-testfloat/berkeley-softfloat/source/8086-SSE/s_extF80UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/8086-SSE/s_f128MToCommonNaN.c \
-testfloat/berkeley-softfloat/source/8086-SSE/s_f128UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/8086-SSE/s_f16UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/8086-SSE/s_f32UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/8086-SSE/s_f64UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/8086-SSE/s_propagateNaNExtF80M.c \
-testfloat/berkeley-softfloat/source/8086-SSE/s_propagateNaNExtF80UI.c \
-testfloat/berkeley-softfloat/source/8086-SSE/s_propagateNaNF128M.c \
-testfloat/berkeley-softfloat/source/8086-SSE/s_propagateNaNF128UI.c \
-testfloat/berkeley-softfloat/source/8086-SSE/s_propagateNaNF16UI.c \
-testfloat/berkeley-softfloat/source/8086-SSE/s_propagateNaNF32UI.c \
-testfloat/berkeley-softfloat/source/8086-SSE/s_propagateNaNF64UI.c \
-testfloat/berkeley-softfloat/source/8086-SSE/softfloat_raiseFlags.c \
-testfloat/berkeley-softfloat/source/8086-SSE/specialize.h \
-testfloat/berkeley-softfloat/source/8086/extF80M_isSignalingNaN.c \
-testfloat/berkeley-softfloat/source/8086/f128M_isSignalingNaN.c \
-testfloat/berkeley-softfloat/source/8086/s_commonNaNToExtF80M.c \
-testfloat/berkeley-softfloat/source/8086/s_commonNaNToExtF80UI.c \
-testfloat/berkeley-softfloat/source/8086/s_commonNaNToF128M.c \
-testfloat/berkeley-softfloat/source/8086/s_commonNaNToF128UI.c \
-testfloat/berkeley-softfloat/source/8086/s_commonNaNToF16UI.c \
-testfloat/berkeley-softfloat/source/8086/s_commonNaNToF32UI.c \
-testfloat/berkeley-softfloat/source/8086/s_commonNaNToF64UI.c \
-testfloat/berkeley-softfloat/source/8086/s_extF80MToCommonNaN.c \
-testfloat/berkeley-softfloat/source/8086/s_extF80UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/8086/s_f128MToCommonNaN.c \
-testfloat/berkeley-softfloat/source/8086/s_f128UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/8086/s_f16UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/8086/s_f32UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/8086/s_f64UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/8086/s_propagateNaNExtF80M.c \
-testfloat/berkeley-softfloat/source/8086/s_propagateNaNExtF80UI.c \
-testfloat/berkeley-softfloat/source/8086/s_propagateNaNF128M.c \
-testfloat/berkeley-softfloat/source/8086/s_propagateNaNF128UI.c \
-testfloat/berkeley-softfloat/source/8086/s_propagateNaNF16UI.c \
-testfloat/berkeley-softfloat/source/8086/s_propagateNaNF32UI.c \
-testfloat/berkeley-softfloat/source/8086/s_propagateNaNF64UI.c \
-testfloat/berkeley-softfloat/source/8086/softfloat_raiseFlags.c \
-testfloat/berkeley-softfloat/source/8086/specialize.h \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/extF80M_isSignalingNaN.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/f128M_isSignalingNaN.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_commonNaNToExtF80M.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_commonNaNToExtF80UI.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_commonNaNToF128M.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_commonNaNToF128UI.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_commonNaNToF16UI.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_commonNaNToF32UI.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_commonNaNToF64UI.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_extF80MToCommonNaN.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_extF80UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_f128MToCommonNaN.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_f128UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_f16UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_f32UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_f64UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_propagateNaNExtF80M.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_propagateNaNExtF80UI.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_propagateNaNF128M.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_propagateNaNF128UI.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_propagateNaNF16UI.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_propagateNaNF32UI.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_propagateNaNF64UI.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/softfloat_raiseFlags.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/specialize.h \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/extF80M_isSignalingNaN.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/f128M_isSignalingNaN.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/s_commonNaNToExtF80M.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/s_commonNaNToExtF80UI.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/s_commonNaNToF128M.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/s_commonNaNToF128UI.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/s_commonNaNToF16UI.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/s_commonNaNToF32UI.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/s_commonNaNToF64UI.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/s_extF80MToCommonNaN.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/s_extF80UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/s_f128MToCommonNaN.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/s_f128UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/s_f16UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/s_f32UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/s_f64UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/s_propagateNaNExtF80M.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/s_propagateNaNExtF80UI.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/s_propagateNaNF128M.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/s_propagateNaNF128UI.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/s_propagateNaNF16UI.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/s_propagateNaNF32UI.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/s_propagateNaNF64UI.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/softfloat_raiseFlags.c \
-testfloat/berkeley-softfloat/source/ARM-VFPv2/specialize.h \
-testfloat/berkeley-softfloat/source/RISCV/extF80M_isSignalingNaN.c \
-testfloat/berkeley-softfloat/source/RISCV/f128M_isSignalingNaN.c \
-testfloat/berkeley-softfloat/source/RISCV/s_commonNaNToExtF80M.c \
-testfloat/berkeley-softfloat/source/RISCV/s_commonNaNToExtF80UI.c \
-testfloat/berkeley-softfloat/source/RISCV/s_commonNaNToF128M.c \
-testfloat/berkeley-softfloat/source/RISCV/s_commonNaNToF128UI.c \
-testfloat/berkeley-softfloat/source/RISCV/s_commonNaNToF16UI.c \
-testfloat/berkeley-softfloat/source/RISCV/s_commonNaNToF32UI.c \
-testfloat/berkeley-softfloat/source/RISCV/s_commonNaNToF64UI.c \
-testfloat/berkeley-softfloat/source/RISCV/s_extF80MToCommonNaN.c \
-testfloat/berkeley-softfloat/source/RISCV/s_extF80UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/RISCV/s_f128MToCommonNaN.c \
-testfloat/berkeley-softfloat/source/RISCV/s_f128UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/RISCV/s_f16UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/RISCV/s_f32UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/RISCV/s_f64UIToCommonNaN.c \
-testfloat/berkeley-softfloat/source/RISCV/s_propagateNaNExtF80M.c \
-testfloat/berkeley-softfloat/source/RISCV/s_propagateNaNExtF80UI.c \
-testfloat/berkeley-softfloat/source/RISCV/s_propagateNaNF128M.c \
-testfloat/berkeley-softfloat/source/RISCV/s_propagateNaNF128UI.c \
-testfloat/berkeley-softfloat/source/RISCV/s_propagateNaNF16UI.c \
-testfloat/berkeley-softfloat/source/RISCV/s_propagateNaNF32UI.c \
-testfloat/berkeley-softfloat/source/RISCV/s_propagateNaNF64UI.c \
-testfloat/berkeley-softfloat/source/RISCV/softfloat_raiseFlags.c \
-testfloat/berkeley-softfloat/source/RISCV/specialize.h \
-testfloat/berkeley-softfloat/source/extF80M_add.c \
-testfloat/berkeley-softfloat/source/extF80M_div.c \
-testfloat/berkeley-softfloat/source/extF80M_eq.c \
-testfloat/berkeley-softfloat/source/extF80M_eq_signaling.c \
-testfloat/berkeley-softfloat/source/extF80M_le.c \
-testfloat/berkeley-softfloat/source/extF80M_le_quiet.c \
-testfloat/berkeley-softfloat/source/extF80M_lt.c \
-testfloat/berkeley-softfloat/source/extF80M_lt_quiet.c \
-testfloat/berkeley-softfloat/source/extF80M_mul.c \
-testfloat/berkeley-softfloat/source/extF80M_rem.c \
-testfloat/berkeley-softfloat/source/extF80M_roundToInt.c \
-testfloat/berkeley-softfloat/source/extF80M_sqrt.c \
-testfloat/berkeley-softfloat/source/extF80M_sub.c \
-testfloat/berkeley-softfloat/source/extF80M_to_f128M.c \
-testfloat/berkeley-softfloat/source/extF80M_to_f16.c \
-testfloat/berkeley-softfloat/source/extF80M_to_f32.c \
-testfloat/berkeley-softfloat/source/extF80M_to_f64.c \
-testfloat/berkeley-softfloat/source/extF80M_to_i32.c \
-testfloat/berkeley-softfloat/source/extF80M_to_i32_r_minMag.c \
-testfloat/berkeley-softfloat/source/extF80M_to_i64.c \
-testfloat/berkeley-softfloat/source/extF80M_to_i64_r_minMag.c \
-testfloat/berkeley-softfloat/source/extF80M_to_ui32.c \
-testfloat/berkeley-softfloat/source/extF80M_to_ui32_r_minMag.c \
-testfloat/berkeley-softfloat/source/extF80M_to_ui64.c \
-testfloat/berkeley-softfloat/source/extF80M_to_ui64_r_minMag.c \
-testfloat/berkeley-softfloat/source/extF80_add.c \
-testfloat/berkeley-softfloat/source/extF80_div.c \
-testfloat/berkeley-softfloat/source/extF80_eq.c \
-testfloat/berkeley-softfloat/source/extF80_eq_signaling.c \
-testfloat/berkeley-softfloat/source/extF80_isSignalingNaN.c \
-testfloat/berkeley-softfloat/source/extF80_le.c \
-testfloat/berkeley-softfloat/source/extF80_le_quiet.c \
-testfloat/berkeley-softfloat/source/extF80_lt.c \
-testfloat/berkeley-softfloat/source/extF80_lt_quiet.c \
-testfloat/berkeley-softfloat/source/extF80_mul.c \
-testfloat/berkeley-softfloat/source/extF80_rem.c \
-testfloat/berkeley-softfloat/source/extF80_roundToInt.c \
-testfloat/berkeley-softfloat/source/extF80_sqrt.c \
-testfloat/berkeley-softfloat/source/extF80_sub.c \
-testfloat/berkeley-softfloat/source/extF80_to_f128.c \
-testfloat/berkeley-softfloat/source/extF80_to_f16.c \
-testfloat/berkeley-softfloat/source/extF80_to_f32.c \
-testfloat/berkeley-softfloat/source/extF80_to_f64.c \
-testfloat/berkeley-softfloat/source/extF80_to_i32.c \
-testfloat/berkeley-softfloat/source/extF80_to_i32_r_minMag.c \
-testfloat/berkeley-softfloat/source/extF80_to_i64.c \
-testfloat/berkeley-softfloat/source/extF80_to_i64_r_minMag.c \
-testfloat/berkeley-softfloat/source/extF80_to_ui32.c \
-testfloat/berkeley-softfloat/source/extF80_to_ui32_r_minMag.c \
-testfloat/berkeley-softfloat/source/extF80_to_ui64.c \
-testfloat/berkeley-softfloat/source/extF80_to_ui64_r_minMag.c \
-testfloat/berkeley-softfloat/source/f128M_add.c \
-testfloat/berkeley-softfloat/source/f128M_div.c \
-testfloat/berkeley-softfloat/source/f128M_eq.c \
-testfloat/berkeley-softfloat/source/f128M_eq_signaling.c \
-testfloat/berkeley-softfloat/source/f128M_le.c \
-testfloat/berkeley-softfloat/source/f128M_le_quiet.c \
-testfloat/berkeley-softfloat/source/f128M_lt.c \
-testfloat/berkeley-softfloat/source/f128M_lt_quiet.c \
-testfloat/berkeley-softfloat/source/f128M_mul.c \
-testfloat/berkeley-softfloat/source/f128M_mulAdd.c \
-testfloat/berkeley-softfloat/source/f128M_rem.c \
-testfloat/berkeley-softfloat/source/f128M_roundToInt.c \
-testfloat/berkeley-softfloat/source/f128M_sqrt.c \
-testfloat/berkeley-softfloat/source/f128M_sub.c \
-testfloat/berkeley-softfloat/source/f128M_to_extF80M.c \
-testfloat/berkeley-softfloat/source/f128M_to_f16.c \
-testfloat/berkeley-softfloat/source/f128M_to_f32.c \
-testfloat/berkeley-softfloat/source/f128M_to_f64.c \
-testfloat/berkeley-softfloat/source/f128M_to_i32.c \
-testfloat/berkeley-softfloat/source/f128M_to_i32_r_minMag.c \
-testfloat/berkeley-softfloat/source/f128M_to_i64.c \
-testfloat/berkeley-softfloat/source/f128M_to_i64_r_minMag.c \
-testfloat/berkeley-softfloat/source/f128M_to_ui32.c \
-testfloat/berkeley-softfloat/source/f128M_to_ui32_r_minMag.c \
-testfloat/berkeley-softfloat/source/f128M_to_ui64.c \
-testfloat/berkeley-softfloat/source/f128M_to_ui64_r_minMag.c \
-testfloat/berkeley-softfloat/source/f128_add.c \
-testfloat/berkeley-softfloat/source/f128_div.c \
-testfloat/berkeley-softfloat/source/f128_eq.c \
-testfloat/berkeley-softfloat/source/f128_eq_signaling.c \
-testfloat/berkeley-softfloat/source/f128_isSignalingNaN.c \
-testfloat/berkeley-softfloat/source/f128_le.c \
-testfloat/berkeley-softfloat/source/f128_le_quiet.c \
-testfloat/berkeley-softfloat/source/f128_lt.c \
-testfloat/berkeley-softfloat/source/f128_lt_quiet.c \
-testfloat/berkeley-softfloat/source/f128_mul.c \
-testfloat/berkeley-softfloat/source/f128_mulAdd.c \
-testfloat/berkeley-softfloat/source/f128_rem.c \
-testfloat/berkeley-softfloat/source/f128_roundToInt.c \
-testfloat/berkeley-softfloat/source/f128_sqrt.c \
-testfloat/berkeley-softfloat/source/f128_sub.c \
-testfloat/berkeley-softfloat/source/f128_to_extF80.c \
-testfloat/berkeley-softfloat/source/f128_to_f16.c \
-testfloat/berkeley-softfloat/source/f128_to_f32.c \
-testfloat/berkeley-softfloat/source/f128_to_f64.c \
-testfloat/berkeley-softfloat/source/f128_to_i32.c \
-testfloat/berkeley-softfloat/source/f128_to_i32_r_minMag.c \
-testfloat/berkeley-softfloat/source/f128_to_i64.c \
-testfloat/berkeley-softfloat/source/f128_to_i64_r_minMag.c \
-testfloat/berkeley-softfloat/source/f128_to_ui32.c \
-testfloat/berkeley-softfloat/source/f128_to_ui32_r_minMag.c \
-testfloat/berkeley-softfloat/source/f128_to_ui64.c \
-testfloat/berkeley-softfloat/source/f128_to_ui64_r_minMag.c \
-testfloat/berkeley-softfloat/source/f16_add.c \
-testfloat/berkeley-softfloat/source/f16_div.c \
-testfloat/berkeley-softfloat/source/f16_eq.c \
-testfloat/berkeley-softfloat/source/f16_eq_signaling.c \
-testfloat/berkeley-softfloat/source/f16_isSignalingNaN.c \
-testfloat/berkeley-softfloat/source/f16_le.c \
-testfloat/berkeley-softfloat/source/f16_le_quiet.c \
-testfloat/berkeley-softfloat/source/f16_lt.c \
-testfloat/berkeley-softfloat/source/f16_lt_quiet.c \
-testfloat/berkeley-softfloat/source/f16_mul.c \
-testfloat/berkeley-softfloat/source/f16_mulAdd.c \
-testfloat/berkeley-softfloat/source/f16_rem.c \
-testfloat/berkeley-softfloat/source/f16_roundToInt.c \
-testfloat/berkeley-softfloat/source/f16_sqrt.c \
-testfloat/berkeley-softfloat/source/f16_sub.c \
-testfloat/berkeley-softfloat/source/f16_to_extF80.c \
-testfloat/berkeley-softfloat/source/f16_to_extF80M.c \
-testfloat/berkeley-softfloat/source/f16_to_f128.c \
-testfloat/berkeley-softfloat/source/f16_to_f128M.c \
-testfloat/berkeley-softfloat/source/f16_to_f32.c \
-testfloat/berkeley-softfloat/source/f16_to_f64.c \
-testfloat/berkeley-softfloat/source/f16_to_i32.c \
-testfloat/berkeley-softfloat/source/f16_to_i32_r_minMag.c \
-testfloat/berkeley-softfloat/source/f16_to_i64.c \
-testfloat/berkeley-softfloat/source/f16_to_i64_r_minMag.c \
-testfloat/berkeley-softfloat/source/f16_to_ui32.c \
-testfloat/berkeley-softfloat/source/f16_to_ui32_r_minMag.c \
-testfloat/berkeley-softfloat/source/f16_to_ui64.c \
-testfloat/berkeley-softfloat/source/f16_to_ui64_r_minMag.c \
-testfloat/berkeley-softfloat/source/f32_add.c \
-testfloat/berkeley-softfloat/source/f32_div.c \
-testfloat/berkeley-softfloat/source/f32_eq.c \
-testfloat/berkeley-softfloat/source/f32_eq_signaling.c \
-testfloat/berkeley-softfloat/source/f32_isSignalingNaN.c \
-testfloat/berkeley-softfloat/source/f32_le.c \
-testfloat/berkeley-softfloat/source/f32_le_quiet.c \
-testfloat/berkeley-softfloat/source/f32_lt.c \
-testfloat/berkeley-softfloat/source/f32_lt_quiet.c \
-testfloat/berkeley-softfloat/source/f32_mul.c \
-testfloat/berkeley-softfloat/source/f32_mulAdd.c \
-testfloat/berkeley-softfloat/source/f32_rem.c \
-testfloat/berkeley-softfloat/source/f32_roundToInt.c \
-testfloat/berkeley-softfloat/source/f32_sqrt.c \
-testfloat/berkeley-softfloat/source/f32_sub.c \
-testfloat/berkeley-softfloat/source/f32_to_extF80.c \
-testfloat/berkeley-softfloat/source/f32_to_extF80M.c \
-testfloat/berkeley-softfloat/source/f32_to_f128.c \
-testfloat/berkeley-softfloat/source/f32_to_f128M.c \
-testfloat/berkeley-softfloat/source/f32_to_f16.c \
-testfloat/berkeley-softfloat/source/f32_to_f64.c \
-testfloat/berkeley-softfloat/source/f32_to_i32.c \
-testfloat/berkeley-softfloat/source/f32_to_i32_r_minMag.c \
-testfloat/berkeley-softfloat/source/f32_to_i64.c \
-testfloat/berkeley-softfloat/source/f32_to_i64_r_minMag.c \
-testfloat/berkeley-softfloat/source/f32_to_ui32.c \
-testfloat/berkeley-softfloat/source/f32_to_ui32_r_minMag.c \
-testfloat/berkeley-softfloat/source/f32_to_ui64.c \
-testfloat/berkeley-softfloat/source/f32_to_ui64_r_minMag.c \
-testfloat/berkeley-softfloat/source/f64_add.c \
-testfloat/berkeley-softfloat/source/f64_div.c \
-testfloat/berkeley-softfloat/source/f64_eq.c \
-testfloat/berkeley-softfloat/source/f64_eq_signaling.c \
-testfloat/berkeley-softfloat/source/f64_isSignalingNaN.c \
-testfloat/berkeley-softfloat/source/f64_le.c \
-testfloat/berkeley-softfloat/source/f64_le_quiet.c \
-testfloat/berkeley-softfloat/source/f64_lt.c \
-testfloat/berkeley-softfloat/source/f64_lt_quiet.c \
-testfloat/berkeley-softfloat/source/f64_mul.c \
-testfloat/berkeley-softfloat/source/f64_mulAdd.c \
-testfloat/berkeley-softfloat/source/f64_rem.c \
-testfloat/berkeley-softfloat/source/f64_roundToInt.c \
-testfloat/berkeley-softfloat/source/f64_sqrt.c \
-testfloat/berkeley-softfloat/source/f64_sub.c \
-testfloat/berkeley-softfloat/source/f64_to_extF80.c \
-testfloat/berkeley-softfloat/source/f64_to_extF80M.c \
-testfloat/berkeley-softfloat/source/f64_to_f128.c \
-testfloat/berkeley-softfloat/source/f64_to_f128M.c \
-testfloat/berkeley-softfloat/source/f64_to_f16.c \
-testfloat/berkeley-softfloat/source/f64_to_f32.c \
-testfloat/berkeley-softfloat/source/f64_to_i32.c \
-testfloat/berkeley-softfloat/source/f64_to_i32_r_minMag.c \
-testfloat/berkeley-softfloat/source/f64_to_i64.c \
-testfloat/berkeley-softfloat/source/f64_to_i64_r_minMag.c \
-testfloat/berkeley-softfloat/source/f64_to_ui32.c \
-testfloat/berkeley-softfloat/source/f64_to_ui32_r_minMag.c \
-testfloat/berkeley-softfloat/source/f64_to_ui64.c \
-testfloat/berkeley-softfloat/source/f64_to_ui64_r_minMag.c \
-testfloat/berkeley-softfloat/source/i32_to_extF80.c \
-testfloat/berkeley-softfloat/source/i32_to_extF80M.c \
-testfloat/berkeley-softfloat/source/i32_to_f128.c \
-testfloat/berkeley-softfloat/source/i32_to_f128M.c \
-testfloat/berkeley-softfloat/source/i32_to_f16.c \
-testfloat/berkeley-softfloat/source/i32_to_f32.c \
-testfloat/berkeley-softfloat/source/i32_to_f64.c \
-testfloat/berkeley-softfloat/source/i64_to_extF80.c \
-testfloat/berkeley-softfloat/source/i64_to_extF80M.c \
-testfloat/berkeley-softfloat/source/i64_to_f128.c \
-testfloat/berkeley-softfloat/source/i64_to_f128M.c \
-testfloat/berkeley-softfloat/source/i64_to_f16.c \
-testfloat/berkeley-softfloat/source/i64_to_f32.c \
-testfloat/berkeley-softfloat/source/i64_to_f64.c \
-testfloat/berkeley-softfloat/source/include/internals.h \
-testfloat/berkeley-softfloat/source/include/opts-GCC.h \
-testfloat/berkeley-softfloat/source/include/primitiveTypes.h \
-testfloat/berkeley-softfloat/source/include/primitives.h \
-testfloat/berkeley-softfloat/source/include/softfloat.h \
-testfloat/berkeley-softfloat/source/include/softfloat_types.h \
-testfloat/berkeley-softfloat/source/s_add128.c \
-testfloat/berkeley-softfloat/source/s_add256M.c \
-testfloat/berkeley-softfloat/source/s_addCarryM.c \
-testfloat/berkeley-softfloat/source/s_addComplCarryM.c \
-testfloat/berkeley-softfloat/source/s_addExtF80M.c \
-testfloat/berkeley-softfloat/source/s_addF128M.c \
-testfloat/berkeley-softfloat/source/s_addM.c \
-testfloat/berkeley-softfloat/source/s_addMagsExtF80.c \
-testfloat/berkeley-softfloat/source/s_addMagsF128.c \
-testfloat/berkeley-softfloat/source/s_addMagsF16.c \
-testfloat/berkeley-softfloat/source/s_addMagsF32.c \
-testfloat/berkeley-softfloat/source/s_addMagsF64.c \
-testfloat/berkeley-softfloat/source/s_approxRecip32_1.c \
-testfloat/berkeley-softfloat/source/s_approxRecipSqrt32_1.c \
-testfloat/berkeley-softfloat/source/s_approxRecipSqrt_1Ks.c \
-testfloat/berkeley-softfloat/source/s_approxRecip_1Ks.c \
-testfloat/berkeley-softfloat/source/s_compare128M.c \
-testfloat/berkeley-softfloat/source/s_compare96M.c \
-testfloat/berkeley-softfloat/source/s_compareNonnormExtF80M.c \
-testfloat/berkeley-softfloat/source/s_countLeadingZeros16.c \
-testfloat/berkeley-softfloat/source/s_countLeadingZeros32.c \
-testfloat/berkeley-softfloat/source/s_countLeadingZeros64.c \
-testfloat/berkeley-softfloat/source/s_countLeadingZeros8.c \
-testfloat/berkeley-softfloat/source/s_eq128.c \
-testfloat/berkeley-softfloat/source/s_invalidExtF80M.c \
-testfloat/berkeley-softfloat/source/s_invalidF128M.c \
-testfloat/berkeley-softfloat/source/s_isNaNF128M.c \
-testfloat/berkeley-softfloat/source/s_le128.c \
-testfloat/berkeley-softfloat/source/s_lt128.c \
-testfloat/berkeley-softfloat/source/s_mul128By32.c \
-testfloat/berkeley-softfloat/source/s_mul128MTo256M.c \
-testfloat/berkeley-softfloat/source/s_mul128To256M.c \
-testfloat/berkeley-softfloat/source/s_mul64ByShifted32To128.c \
-testfloat/berkeley-softfloat/source/s_mul64To128.c \
-testfloat/berkeley-softfloat/source/s_mul64To128M.c \
-testfloat/berkeley-softfloat/source/s_mulAddF128.c \
-testfloat/berkeley-softfloat/source/s_mulAddF128M.c \
-testfloat/berkeley-softfloat/source/s_mulAddF16.c \
-testfloat/berkeley-softfloat/source/s_mulAddF32.c \
-testfloat/berkeley-softfloat/source/s_mulAddF64.c \
-testfloat/berkeley-softfloat/source/s_negXM.c \
-testfloat/berkeley-softfloat/source/s_normExtF80SigM.c \
-testfloat/berkeley-softfloat/source/s_normRoundPackMToExtF80M.c \
-testfloat/berkeley-softfloat/source/s_normRoundPackMToF128M.c \
-testfloat/berkeley-softfloat/source/s_normRoundPackToExtF80.c \
-testfloat/berkeley-softfloat/source/s_normRoundPackToF128.c \
-testfloat/berkeley-softfloat/source/s_normRoundPackToF16.c \
-testfloat/berkeley-softfloat/source/s_normRoundPackToF32.c \
-testfloat/berkeley-softfloat/source/s_normRoundPackToF64.c \
-testfloat/berkeley-softfloat/source/s_normSubnormalExtF80Sig.c \
-testfloat/berkeley-softfloat/source/s_normSubnormalF128Sig.c \
-testfloat/berkeley-softfloat/source/s_normSubnormalF128SigM.c \
-testfloat/berkeley-softfloat/source/s_normSubnormalF16Sig.c \
-testfloat/berkeley-softfloat/source/s_normSubnormalF32Sig.c \
-testfloat/berkeley-softfloat/source/s_normSubnormalF64Sig.c \
-testfloat/berkeley-softfloat/source/s_remStepMBy32.c \
-testfloat/berkeley-softfloat/source/s_roundMToI64.c \
-testfloat/berkeley-softfloat/source/s_roundMToUI64.c \
-testfloat/berkeley-softfloat/source/s_roundPackMToExtF80M.c \
-testfloat/berkeley-softfloat/source/s_roundPackMToF128M.c \
-testfloat/berkeley-softfloat/source/s_roundPackToExtF80.c \
-testfloat/berkeley-softfloat/source/s_roundPackToF128.c \
-testfloat/berkeley-softfloat/source/s_roundPackToF16.c \
-testfloat/berkeley-softfloat/source/s_roundPackToF32.c \
-testfloat/berkeley-softfloat/source/s_roundPackToF64.c \
-testfloat/berkeley-softfloat/source/s_roundToI32.c \
-testfloat/berkeley-softfloat/source/s_roundToI64.c \
-testfloat/berkeley-softfloat/source/s_roundToUI32.c \
-testfloat/berkeley-softfloat/source/s_roundToUI64.c \
-testfloat/berkeley-softfloat/source/s_shiftLeftM.c \
-testfloat/berkeley-softfloat/source/s_shiftNormSigF128M.c \
-testfloat/berkeley-softfloat/source/s_shiftRightJam128.c \
-testfloat/berkeley-softfloat/source/s_shiftRightJam128Extra.c \
-testfloat/berkeley-softfloat/source/s_shiftRightJam256M.c \
-testfloat/berkeley-softfloat/source/s_shiftRightJam32.c \
-testfloat/berkeley-softfloat/source/s_shiftRightJam64.c \
-testfloat/berkeley-softfloat/source/s_shiftRightJam64Extra.c \
-testfloat/berkeley-softfloat/source/s_shiftRightJamM.c \
-testfloat/berkeley-softfloat/source/s_shiftRightM.c \
-testfloat/berkeley-softfloat/source/s_shortShiftLeft128.c \
-testfloat/berkeley-softfloat/source/s_shortShiftLeft64To96M.c \
-testfloat/berkeley-softfloat/source/s_shortShiftLeftM.c \
-testfloat/berkeley-softfloat/source/s_shortShiftRight128.c \
-testfloat/berkeley-softfloat/source/s_shortShiftRightExtendM.c \
-testfloat/berkeley-softfloat/source/s_shortShiftRightJam128.c \
-testfloat/berkeley-softfloat/source/s_shortShiftRightJam128Extra.c \
-testfloat/berkeley-softfloat/source/s_shortShiftRightJam64.c \
-testfloat/berkeley-softfloat/source/s_shortShiftRightJam64Extra.c \
-testfloat/berkeley-softfloat/source/s_shortShiftRightJamM.c \
-testfloat/berkeley-softfloat/source/s_shortShiftRightM.c \
-testfloat/berkeley-softfloat/source/s_sub128.c \
-testfloat/berkeley-softfloat/source/s_sub1XM.c \
-testfloat/berkeley-softfloat/source/s_sub256M.c \
-testfloat/berkeley-softfloat/source/s_subM.c \
-testfloat/berkeley-softfloat/source/s_subMagsExtF80.c \
-testfloat/berkeley-softfloat/source/s_subMagsF128.c \
-testfloat/berkeley-softfloat/source/s_subMagsF16.c \
-testfloat/berkeley-softfloat/source/s_subMagsF32.c \
-testfloat/berkeley-softfloat/source/s_subMagsF64.c \
-testfloat/berkeley-softfloat/source/s_tryPropagateNaNExtF80M.c \
-testfloat/berkeley-softfloat/source/s_tryPropagateNaNF128M.c \
-testfloat/berkeley-softfloat/source/softfloat_state.c \
-testfloat/berkeley-softfloat/source/ui32_to_extF80.c \
-testfloat/berkeley-softfloat/source/ui32_to_extF80M.c \
-testfloat/berkeley-softfloat/source/ui32_to_f128.c \
-testfloat/berkeley-softfloat/source/ui32_to_f128M.c \
-testfloat/berkeley-softfloat/source/ui32_to_f16.c \
-testfloat/berkeley-softfloat/source/ui32_to_f32.c \
-testfloat/berkeley-softfloat/source/ui32_to_f64.c \
-testfloat/berkeley-softfloat/source/ui64_to_extF80.c \
-testfloat/berkeley-softfloat/source/ui64_to_extF80M.c \
-testfloat/berkeley-softfloat/source/ui64_to_f128.c \
-testfloat/berkeley-softfloat/source/ui64_to_f128M.c \
-testfloat/berkeley-softfloat/source/ui64_to_f16.c \
-testfloat/berkeley-softfloat/source/ui64_to_f32.c \
-testfloat/berkeley-softfloat/source/ui64_to_f64.c \
-testfloat/build/Linux-386-GCC/Makefile \
-testfloat/build/Linux-386-GCC/platform.h \
-testfloat/build/Linux-386-SSE2-GCC/Makefile \
-testfloat/build/Linux-386-SSE2-GCC/platform.h \
-testfloat/build/Linux-ARM-VFPv2-GCC/Makefile \
-testfloat/build/Linux-ARM-VFPv2-GCC/platform.h \
-testfloat/build/Linux-x86_64-GCC/Makefile \
-testfloat/build/Linux-x86_64-GCC/platform.h \
-testfloat/build/Win32-MinGW/Makefile \
-testfloat/build/Win32-MinGW/platform.h \
-testfloat/build/Win32-SSE2-MinGW/Makefile \
-testfloat/build/Win32-SSE2-MinGW/platform.h \
-testfloat/build/Win64-MinGW-w64/Makefile \
-testfloat/build/Win64-MinGW-w64/platform.h \
-testfloat/build/bambu/Makefile \
-testfloat/build/bambu/platform.h \
-testfloat/doc/TestFloat-general.html \
-testfloat/doc/TestFloat-history.html \
-testfloat/doc/TestFloat-source.html \
-testfloat/doc/testfloat.html \
-testfloat/doc/testfloat_gen.html \
-testfloat/doc/testfloat_ver.html \
-testfloat/doc/testsoftfloat.html \
-testfloat/doc/timesoftfloat.html \
-testfloat/source/fail.c \
-testfloat/source/fail.h \
-testfloat/source/functionInfos.c \
-testfloat/source/functions.h \
-testfloat/source/functions_common.c \
-testfloat/source/genCases.h \
-testfloat/source/genCases_common.c \
-testfloat/source/genCases_extF80.c \
-testfloat/source/genCases_f128.c \
-testfloat/source/genCases_f16.c \
-testfloat/source/genCases_f32.c \
-testfloat/source/genCases_f64.c \
-testfloat/source/genCases_i32.c \
-testfloat/source/genCases_i64.c \
-testfloat/source/genCases_ui32.c \
-testfloat/source/genCases_ui64.c \
-testfloat/source/genCases_writeTestsTotal.c \
-testfloat/source/genLoops.c \
-testfloat/source/genLoops.h \
-testfloat/source/random.c \
-testfloat/source/random.h \
-testfloat/source/readHex.c \
-testfloat/source/readHex.h \
-testfloat/source/slowfloat.c \
-testfloat/source/slowfloat.h \
-testfloat/source/standardFunctionInfos.c \
-testfloat/source/subj-C/subjfloat.c \
-testfloat/source/subj-C/subjfloat_config.h \
-testfloat/source/subjfloat.h \
-testfloat/source/subjfloat_functions.c \
-testfloat/source/testLoops.h \
-testfloat/source/testLoops_common.c \
-testfloat/source/test_a_extF80_z_f128.c \
-testfloat/source/test_a_extF80_z_f16.c \
-testfloat/source/test_a_extF80_z_f32.c \
-testfloat/source/test_a_extF80_z_f64.c \
-testfloat/source/test_a_extF80_z_i32_rx.c \
-testfloat/source/test_a_extF80_z_i32_x.c \
-testfloat/source/test_a_extF80_z_i64_rx.c \
-testfloat/source/test_a_extF80_z_i64_x.c \
-testfloat/source/test_a_extF80_z_ui32_rx.c \
-testfloat/source/test_a_extF80_z_ui32_x.c \
-testfloat/source/test_a_extF80_z_ui64_rx.c \
-testfloat/source/test_a_extF80_z_ui64_x.c \
-testfloat/source/test_a_f128_z_extF80.c \
-testfloat/source/test_a_f128_z_f16.c \
-testfloat/source/test_a_f128_z_f32.c \
-testfloat/source/test_a_f128_z_f64.c \
-testfloat/source/test_a_f128_z_i32_rx.c \
-testfloat/source/test_a_f128_z_i32_x.c \
-testfloat/source/test_a_f128_z_i64_rx.c \
-testfloat/source/test_a_f128_z_i64_x.c \
-testfloat/source/test_a_f128_z_ui32_rx.c \
-testfloat/source/test_a_f128_z_ui32_x.c \
-testfloat/source/test_a_f128_z_ui64_rx.c \
-testfloat/source/test_a_f128_z_ui64_x.c \
-testfloat/source/test_a_f16_z_extF80.c \
-testfloat/source/test_a_f16_z_f128.c \
-testfloat/source/test_a_f16_z_f32.c \
-testfloat/source/test_a_f16_z_f64.c \
-testfloat/source/test_a_f16_z_i32_rx.c \
-testfloat/source/test_a_f16_z_i32_x.c \
-testfloat/source/test_a_f16_z_i64_rx.c \
-testfloat/source/test_a_f16_z_i64_x.c \
-testfloat/source/test_a_f16_z_ui32_rx.c \
-testfloat/source/test_a_f16_z_ui32_x.c \
-testfloat/source/test_a_f16_z_ui64_rx.c \
-testfloat/source/test_a_f16_z_ui64_x.c \
-testfloat/source/test_a_f32_z_extF80.c \
-testfloat/source/test_a_f32_z_f128.c \
-testfloat/source/test_a_f32_z_f16.c \
-testfloat/source/test_a_f32_z_f64.c \
-testfloat/source/test_a_f32_z_i32_rx.c \
-testfloat/source/test_a_f32_z_i32_x.c \
-testfloat/source/test_a_f32_z_i64_rx.c \
-testfloat/source/test_a_f32_z_i64_x.c \
-testfloat/source/test_a_f32_z_ui32_rx.c \
-testfloat/source/test_a_f32_z_ui32_x.c \
-testfloat/source/test_a_f32_z_ui64_rx.c \
-testfloat/source/test_a_f32_z_ui64_x.c \
-testfloat/source/test_a_f64_z_extF80.c \
-testfloat/source/test_a_f64_z_f128.c \
-testfloat/source/test_a_f64_z_f16.c \
-testfloat/source/test_a_f64_z_f32.c \
-testfloat/source/test_a_f64_z_i32_rx.c \
-testfloat/source/test_a_f64_z_i32_x.c \
-testfloat/source/test_a_f64_z_i64_rx.c \
-testfloat/source/test_a_f64_z_i64_x.c \
-testfloat/source/test_a_f64_z_ui32_rx.c \
-testfloat/source/test_a_f64_z_ui32_x.c \
-testfloat/source/test_a_f64_z_ui64_rx.c \
-testfloat/source/test_a_f64_z_ui64_x.c \
-testfloat/source/test_a_i32_z_extF80.c \
-testfloat/source/test_a_i32_z_f128.c \
-testfloat/source/test_a_i32_z_f16.c \
-testfloat/source/test_a_i32_z_f32.c \
-testfloat/source/test_a_i32_z_f64.c \
-testfloat/source/test_a_i64_z_extF80.c \
-testfloat/source/test_a_i64_z_f128.c \
-testfloat/source/test_a_i64_z_f16.c \
-testfloat/source/test_a_i64_z_f32.c \
-testfloat/source/test_a_i64_z_f64.c \
-testfloat/source/test_a_ui32_z_extF80.c \
-testfloat/source/test_a_ui32_z_f128.c \
-testfloat/source/test_a_ui32_z_f16.c \
-testfloat/source/test_a_ui32_z_f32.c \
-testfloat/source/test_a_ui32_z_f64.c \
-testfloat/source/test_a_ui64_z_extF80.c \
-testfloat/source/test_a_ui64_z_f128.c \
-testfloat/source/test_a_ui64_z_f16.c \
-testfloat/source/test_a_ui64_z_f32.c \
-testfloat/source/test_a_ui64_z_f64.c \
-testfloat/source/test_ab_extF80_z_bool.c \
-testfloat/source/test_ab_f128_z_bool.c \
-testfloat/source/test_ab_f16_z_bool.c \
-testfloat/source/test_ab_f32_z_bool.c \
-testfloat/source/test_ab_f64_z_bool.c \
-testfloat/source/test_abcz_f128.c \
-testfloat/source/test_abcz_f16.c \
-testfloat/source/test_abcz_f32.c \
-testfloat/source/test_abcz_f64.c \
-testfloat/source/test_abz_extF80.c \
-testfloat/source/test_abz_f128.c \
-testfloat/source/test_abz_f16.c \
-testfloat/source/test_abz_f32.c \
-testfloat/source/test_abz_f64.c \
-testfloat/source/test_az_extF80.c \
-testfloat/source/test_az_extF80_rx.c \
-testfloat/source/test_az_f128.c \
-testfloat/source/test_az_f128_rx.c \
-testfloat/source/test_az_f16.c \
-testfloat/source/test_az_f16_rx.c \
-testfloat/source/test_az_f32.c \
-testfloat/source/test_az_f32_rx.c \
-testfloat/source/test_az_f64.c \
-testfloat/source/test_az_f64_rx.c \
-testfloat/source/testfloat.c \
-testfloat/source/testfloat_gen.c \
-testfloat/source/testfloat_ver.c \
-testfloat/source/testsoftfloat.c \
-testfloat/source/timesoftfloat.c \
-testfloat/source/uint128.c \
-testfloat/source/uint128.h \
-testfloat/source/uint128_inline.c \
-testfloat/source/verCases.h \
-testfloat/source/verCases_common.c \
-testfloat/source/verCases_inline.c \
-testfloat/source/verCases_writeFunctionName.c \
-testfloat/source/verLoops.c \
-testfloat/source/verLoops.h \
-testfloat/source/writeCase.h \
-testfloat/source/writeCase_a_extF80M.c \
-testfloat/source/writeCase_a_f128M.c \
-testfloat/source/writeCase_a_f16.c \
-testfloat/source/writeCase_a_f32.c \
-testfloat/source/writeCase_a_f64.c \
-testfloat/source/writeCase_a_ui32.c \
-testfloat/source/writeCase_a_ui64.c \
-testfloat/source/writeCase_ab_extF80M.c \
-testfloat/source/writeCase_ab_f128M.c \
-testfloat/source/writeCase_ab_f16.c \
-testfloat/source/writeCase_ab_f32.c \
-testfloat/source/writeCase_ab_f64.c \
-testfloat/source/writeCase_abc_f128M.c \
-testfloat/source/writeCase_abc_f16.c \
-testfloat/source/writeCase_abc_f32.c \
-testfloat/source/writeCase_abc_f64.c \
-testfloat/source/writeCase_z_bool.c \
-testfloat/source/writeCase_z_extF80M.c \
-testfloat/source/writeCase_z_f128M.c \
-testfloat/source/writeCase_z_f16.c \
-testfloat/source/writeCase_z_f32.c \
-testfloat/source/writeCase_z_f64.c \
-testfloat/source/writeCase_z_ui32.c \
-testfloat/source/writeCase_z_ui64.c \
-testfloat/source/writeHex.c \
-testfloat/source/writeHex.h \
-wb4_interface.sh
+   %D%/all_clang_CHStone-frontend.sh \
+   %D%/all_clang_softfloat-tests.sh \
+   %D%/all_gcc_CHStone-frontend.sh \
+   %D%/all_gcc_softfloat-tests.sh \
+   %D%/bambu_axi_verification/axi_vip.tcl \
+   %D%/bambu_axi_verification_list \
+   %D%/bambu_axi_verification/mm_axi.c \
+   %D%/bambu_axi_verification/mm_axi_tb.xml \
+   %D%/bambu_axi_verification.sh \
+   %D%/bambu_specific_test/20020108-1.c.gimplePSSA \
+   %D%/bambu_specific_test2/complex_test.c \
+   %D%/bambu_specific_test2/complex_test.xml \
+   %D%/bambu_specific_test2/complext_test.xml \
+   %D%/bambu_specific_test2/dd_test1.xml \
+   %D%/bambu_specific_test2/duff_device.c \
+   %D%/bambu_specific_test2/graph.h \
+   %D%/bambu_specific_test2/irr1_a.c \
+   %D%/bambu_specific_test2/irr2.c \
+   %D%/bambu_specific_test2/irr3_a.c \
+   %D%/bambu_specific_test2/irr3_b.c \
+   %D%/bambu_specific_test2/irr4_a.c \
+   %D%/bambu_specific_test2/irr4_b.c \
+   %D%/bambu_specific_test2_list \
+   %D%/bambu_specific_test2/mod_test.c \
+   %D%/bambu_specific_test2/mod_test_c.xml \
+   %D%/bambu_specific_test2/multiarray.c \
+   %D%/bambu_specific_test2/par-bool1.c \
+   %D%/bambu_specific_test2/port_swapping_test2.c \
+   %D%/bambu_specific_test2/port_swapping_test.c \
+   %D%/bambu_specific_test2/ps_constraints.xml \
+   %D%/bambu_specific_test2/reverse.c \
+   %D%/bambu_specific_test2.sh \
+   %D%/bambu_specific_test3_list \
+   %D%/bambu_specific_test3.sh \
+   %D%/bambu_specific_test4/ac_channels_64async.cpp \
+   %D%/bambu_specific_test4/ac_channels_64.cpp \
+   %D%/bambu_specific_test4/ac_channels_axis.cpp \
+   %D%/bambu_specific_test4/ac_channels.cpp \
+   %D%/bambu_specific_test4/ac_fixed1.cpp \
+   %D%/bambu_specific_test4/ac_fixed2_tb.cpp \
+   %D%/bambu_specific_test4/ac_fixed2_tb.xml \
+   %D%/bambu_specific_test4/ac_fixed3.cpp \
+   %D%/bambu_specific_test4/ac_range.cpp \
+   %D%/bambu_specific_test4/ac_types1.cpp \
+   %D%/bambu_specific_test4/ac_types2_array_32ubits.cpp \
+   %D%/bambu_specific_test4/ac_types2_array_64ubits.cpp \
+   %D%/bambu_specific_test4/ac_types2_array_7bits.cpp \
+   %D%/bambu_specific_test4/ac_types2_array_7bits_fixed.cpp \
+   %D%/bambu_specific_test4/ac_types3.cpp \
+   %D%/bambu_specific_test4/2mm.c \
+   %D%/bambu_specific_test4/duplicate_axi_m.c \
+   %D%/bambu_specific_test4/ex1.cpp \
+   %D%/bambu_specific_test4/hls_stream_axis.cpp \
+   %D%/bambu_specific_test4/hls_stream.cpp \
+   %D%/bambu_specific_test4/iterative_merge_sort.c \
+   %D%/bambu_specific_test4/iterative_merge_sort_sum.c \
+   %D%/bambu_specific_test4_list \
+   %D%/bambu_specific_test4/nested_axi_m.c \
+   %D%/bambu_specific_test4/nested_axi_m.xml \
+   %D%/bambu_specific_test4.sh \
+   %D%/bambu_specific_test4/simple2_axi_m.c \
+   %D%/bambu_specific_test4/simple3_axi_m.c \
+   %D%/bambu_specific_test4/simple3_axi_tb.xml \
+   %D%/bambu_specific_test4/simple4_axi_m.c \
+   %D%/bambu_specific_test4/simple4_axi_tb.xml \
+   %D%/bambu_specific_test4/simple_axi_m.c \
+   %D%/bambu_specific_test4/simple_c1_ack.c \
+   %D%/bambu_specific_test4/simple_c1.c \
+   %D%/bambu_specific_test4/simple_c1_in_ack.c \
+   %D%/bambu_specific_test4/simple_c1_in_valid.c \
+   %D%/bambu_specific_test4/simple_c1_none.c \
+   %D%/bambu_specific_test4/simple_c1_valid_nested.c \
+   %D%/bambu_specific_test4/simple_c2_none.c \
+   %D%/bambu_specific_test4/simple_c3_none.c \
+   %D%/bambu_specific_test4/simple_c3_ovalid.c \
+   %D%/bambu_specific_test4/simple_c4_array_32bits.c \
+   %D%/bambu_specific_test4/simple_c4_array_64bits.c \
+   %D%/bambu_specific_test4/simple_c4_array_8bits.c \
+   %D%/bambu_specific_test4/simple_c4_array.c \
+   %D%/bambu_specific_test4/simple_c4_axis.c \
+   %D%/bambu_specific_test4/simple_c4_axis_multiple.c \
+   %D%/bambu_specific_test4/simple_c4_fifo.c \
+   %D%/bambu_specific_test4/simple_c4_fifo_multiple.c \
+   %D%/bambu_specific_test4/simple_c4_handshake.c \
+   %D%/bambu_specific_test4/simpleif_c1_none.c \
+   %D%/bambu_specific_test4/simpleif_c1_none_test.xml \
+   %D%/bambu_specific_test4/simple_test.c \
+   %D%/bambu_specific_test5/adders.c \
+   %D%/bambu_specific_test5/function_call.c \
+   %D%/bambu_specific_test5/if_clauses.c \
+   %D%/bambu_specific_test5_list \
+   %D%/bambu_specific_test5/memory.c \
+   %D%/bambu_specific_test5/memory.xml \
+   %D%/bambu_specific_test5/mixed_operations.c \
+   %D%/bambu_specific_test5/multipliers.c \
+   %D%/bambu_specific_test5/outer_loop.c \
+   %D%/bambu_specific_test5.sh \
+   %D%/bambu_specific_test6/bin_testbench.c \
+   %D%/bambu_specific_test6/bin_test.dat \
+   %D%/bambu_specific_test6/bin_test.xml \
+   %D%/bambu_specific_test6/complex_t.h \
+   %D%/bambu_specific_test6/insert_extract_element.ll \
+   %D%/bambu_specific_test6_list \
+   %D%/bambu_specific_test6/sat_op.ll \
+   %D%/bambu_specific_test6.sh \
+   %D%/bambu_specific_test/930608-1.c.gimplePSSA \
+   %D%/bambu_specific_test/990829-1.c.gimplePSSA \
+   %D%/bambu_specific_test/bambu1.c \
+   %D%/bambu_specific_test/chk.h \
+   %D%/bambu_specific_test/divconst-2.c.gimplePSSA \
+   %D%/bambu_specific_test_list \
+   %D%/bambu_specific_test/memset-chk.c \
+   %D%/bambu_specific_test_modelsim/bin_test.dat \
+   %D%/bambu_specific_test_modelsim_list \
+   %D%/bambu_specific_test_modelsim.sh \
+   %D%/bambu_specific_test_modelsim/test_open.c \
+   %D%/bambu_specific_test/pr35472.c.gimplePSSA \
+   %D%/bambu_specific_test/pta-field-1.c.gimplePSSA \
+   %D%/bambu_specific_test/return_vector.c \
+   %D%/bambu_specific_test.sh \
+   %D%/bambu_specific_test/soft_mul.c \
+   %D%/bambu_specific_test/unsafe-fp-assoc-1.c.gimplePSSA \
+   %D%/chstone_memarch_list \
+   %D%/discrepancy_list \
+   %D%/function_pointers/bsearch_glibc/bsearch.c \
+   %D%/function_pointers/bsearch_glibc/bsearch-specialized.c \
+   %D%/function_pointers/bsearch_musl/bsearch.c \
+   %D%/function_pointers/bsearch_musl/bsearch-specialized.c \
+   %D%/function_pointers/bsearch_newlib/bsearch.c \
+   %D%/function_pointers/bsearch_newlib/bsearch-specialized.c \
+   %D%/function_pointers/bsearch_uclibc/bsearch.c \
+   %D%/function_pointers/bsearch_uclibc/bsearch-specialized.c \
+   %D%/function_pointers/common/aggregate.h \
+   %D%/function_pointers/common/bstest.c \
+   %D%/function_pointers/common/bstest-specialized.c \
+   %D%/function_pointers/common/bstest.xml \
+   %D%/function_pointers/common/less.c \
+   %D%/function_pointers/common/qstest.c \
+   %D%/function_pointers/common/qstest-specialized.c \
+   %D%/function_pointers/common/qstest.xml \
+   %D%/function_pointers_list_bsearch \
+   %D%/function_pointers_list_qsort \
+   %D%/function_pointers/qsort_glibc/qsort.c \
+   %D%/function_pointers/qsort_glibc/qsort-specialized.c \
+   %D%/function_pointers/qsort_musl/atomic.h \
+   %D%/function_pointers/qsort_musl/qsort.c \
+   %D%/function_pointers/qsort_musl/qsort-specialized.c \
+   %D%/function_pointers/qsort_uclibc/qsort.c \
+   %D%/function_pointers/qsort_uclibc/qsort-specialized.c \
+   %D%/function_pointers.sh \
+   %D%/gcc_regression_simple/20000112-1.c \
+   %D%/gcc_regression_simple/20000113-1.c \
+   %D%/gcc_regression_simple/20000121-1.c \
+   %D%/gcc_regression_simple/20000217-1.c \
+   %D%/gcc_regression_simple/20000223-1.c \
+   %D%/gcc_regression_simple/20000224-1.c \
+   %D%/gcc_regression_simple/20000225-1.c \
+   %D%/gcc_regression_simple/20000227-1.c \
+   %D%/gcc_regression_simple/20000313-1.c \
+   %D%/gcc_regression_simple/20000314-1.c \
+   %D%/gcc_regression_simple/20000314-2.c \
+   %D%/gcc_regression_simple/20000314-3.c \
+   %D%/gcc_regression_simple/20000402-1.c \
+   %D%/gcc_regression_simple/20000403-1.c \
+   %D%/gcc_regression_simple/20000412-1.c \
+   %D%/gcc_regression_simple/20000412-3.c \
+   %D%/gcc_regression_simple/20000412-4.c \
+   %D%/gcc_regression_simple/20000412-5.c \
+   %D%/gcc_regression_simple/20000412-6.c \
+   %D%/gcc_regression_simple/20000419-1.c \
+   %D%/gcc_regression_simple/20000422-1.c \
+   %D%/gcc_regression_simple/20000503-1.c \
+   %D%/gcc_regression_simple/20000511-1.c \
+   %D%/gcc_regression_simple/20000519-2.c \
+   %D%/gcc_regression_simple/20000523-1.c \
+   %D%/gcc_regression_simple/20000528-1.c \
+   %D%/gcc_regression_simple/20000603-1.c \
+   %D%/gcc_regression_simple/20000605-1.c \
+   %D%/gcc_regression_simple/20000605-2.c \
+   %D%/gcc_regression_simple/20000605-3.c \
+   %D%/gcc_regression_simple/20000622-1.c \
+   %D%/gcc_regression_simple/20000706-1.c \
+   %D%/gcc_regression_simple/20000706-2.c \
+   %D%/gcc_regression_simple/20000706-3.c \
+   %D%/gcc_regression_simple/20000706-4.c \
+   %D%/gcc_regression_simple/20000706-5.c \
+   %D%/gcc_regression_simple/20000707-1.c \
+   %D%/gcc_regression_simple/20000715-1.c \
+   %D%/gcc_regression_simple/20000715-2.c \
+   %D%/gcc_regression_simple/20000717-1.c \
+   %D%/gcc_regression_simple/20000717-2.c \
+   %D%/gcc_regression_simple/20000717-3.c \
+   %D%/gcc_regression_simple/20000717-4.c \
+   %D%/gcc_regression_simple/20000717-5.c \
+   %D%/gcc_regression_simple/20000722-1.c \
+   %D%/gcc_regression_simple/20000726-1.c \
+   %D%/gcc_regression_simple/20000731-1.c \
+   %D%/gcc_regression_simple/20000731-2.c \
+   %D%/gcc_regression_simple/20000801-1.c \
+   %D%/gcc_regression_simple/20000801-2.c \
+   %D%/gcc_regression_simple/20000801-3.c \
+   %D%/gcc_regression_simple/20000808-1.c \
+   %D%/gcc_regression_simple/20000818-1.c \
+   %D%/gcc_regression_simple/20000910-1.c \
+   %D%/gcc_regression_simple/20000910-2.c \
+   %D%/gcc_regression_simple/20000914-1.c \
+   %D%/gcc_regression_simple/20001009-1.c \
+   %D%/gcc_regression_simple/20001011-1.c \
+   %D%/gcc_regression_simple/20001013-1.c \
+   %D%/gcc_regression_simple/20001017-1.c \
+   %D%/gcc_regression_simple/20001017-2.c \
+   %D%/gcc_regression_simple/20001024-1.c \
+   %D%/gcc_regression_simple/20001027-1.c \
+   %D%/gcc_regression_simple/20001031-1.c \
+   %D%/gcc_regression_simple/20001101.c \
+   %D%/gcc_regression_simple/20001108-1.c \
+   %D%/gcc_regression_simple/20001111-1.c \
+   %D%/gcc_regression_simple/20001112-1.c \
+   %D%/gcc_regression_simple/20001121-1.c \
+   %D%/gcc_regression_simple/20001130-2.c \
+   %D%/gcc_regression_simple/20001203-1.c \
+   %D%/gcc_regression_simple/20001203-2.c \
+   %D%/gcc_regression_simple/20001221-1.c \
+   %D%/gcc_regression_simple/20001228-1.c \
+   %D%/gcc_regression_simple/20010106-1.c \
+   %D%/gcc_regression_simple/20010114-1.c \
+   %D%/gcc_regression_simple/20010116-1.c \
+   %D%/gcc_regression_simple/20010118-1.c \
+   %D%/gcc_regression_simple/20010123-1.c \
+   %D%/gcc_regression_simple/20010124-1.c \
+   %D%/gcc_regression_simple/20010129-1.c \
+   %D%/gcc_regression_simple/20010206-1.c \
+   %D%/gcc_regression_simple/20010221-1.c \
+   %D%/gcc_regression_simple/20010222-1.c \
+   %D%/gcc_regression_simple/20010224-1.c \
+   %D%/gcc_regression_simple/20010329-1.c \
+   %D%/gcc_regression_simple/20010403-1.c \
+   %D%/gcc_regression_simple/20010409-1.c \
+   %D%/gcc_regression_simple/20010422-1.c \
+   %D%/gcc_regression_simple/20010518-1.c \
+   %D%/gcc_regression_simple/20010518-2.c \
+   %D%/gcc_regression_simple/20010520-1.c \
+   %D%/gcc_regression_simple/20010604-1.c \
+   %D%/gcc_regression_simple/20010605-2.c \
+   %D%/gcc_regression_simple/20010711-1.c \
+   %D%/gcc_regression_simple/20010717-1.c \
+   %D%/gcc_regression_simple/20010723-1.c \
+   %D%/gcc_regression_simple/20010904-1.c \
+   %D%/gcc_regression_simple/20010904-2.c \
+   %D%/gcc_regression_simple/20010910-1.c \
+   %D%/gcc_regression_simple/20010915-1.c \
+   %D%/gcc_regression_simple/20010924-1.c \
+   %D%/gcc_regression_simple/20010925-1.c \
+   %D%/gcc_regression_simple/20011008-3.c \
+   %D%/gcc_regression_simple/20011019-1.c \
+   %D%/gcc_regression_simple/20011024-1.c \
+   %D%/gcc_regression_simple/20011109-1.c \
+   %D%/gcc_regression_simple/20011109-2.c \
+   %D%/gcc_regression_simple/20011113-1.c \
+   %D%/gcc_regression_simple/20011114-1.c \
+   %D%/gcc_regression_simple/20011115-1.c \
+   %D%/gcc_regression_simple/20011126-1.c \
+   %D%/gcc_regression_simple/20011126-2.c \
+   %D%/gcc_regression_simple/20011128-1.c \
+   %D%/gcc_regression_simple/20011217-1.c \
+   %D%/gcc_regression_simple/20011219-1.c \
+   %D%/gcc_regression_simple/20011223-1.c \
+   %D%/gcc_regression_simple/20020103-1.c \
+   %D%/gcc_regression_simple/20020108-1.c \
+   %D%/gcc_regression_simple/20020118-1.c \
+   %D%/gcc_regression_simple/20020127-1.c \
+   %D%/gcc_regression_simple/20020129-1.c \
+   %D%/gcc_regression_simple/20020201-1.c \
+   %D%/gcc_regression_simple/20020206-2.c \
+   %D%/gcc_regression_simple/20020213-1.c \
+   %D%/gcc_regression_simple/20020216-1.c \
+   %D%/gcc_regression_simple/20020219-1.c \
+   %D%/gcc_regression_simple/20020225-1.c \
+   %D%/gcc_regression_simple/20020225-2.c \
+   %D%/gcc_regression_simple/20020226-1.c \
+   %D%/gcc_regression_simple/20020227-1.c \
+   %D%/gcc_regression_simple/20020307-1.c \
+   %D%/gcc_regression_simple/20020314-1.c \
+   %D%/gcc_regression_simple/20020320-1.c \
+   %D%/gcc_regression_simple/20020321-1.c \
+   %D%/gcc_regression_simple/20020328-1.c \
+   %D%/gcc_regression_simple/20020402-1.c \
+   %D%/gcc_regression_simple/20020402-2.c \
+   %D%/gcc_regression_simple/20020402-3.c \
+   %D%/gcc_regression_simple/20020404-1.c \
+   %D%/gcc_regression_simple/20020423-1.c \
+   %D%/gcc_regression_simple/20020503-1.c \
+   %D%/gcc_regression_simple/20020506-1.c \
+   %D%/gcc_regression_simple/20020508-1.c \
+   %D%/gcc_regression_simple/20020508-2.c \
+   %D%/gcc_regression_simple/20020508-3.c \
+   %D%/gcc_regression_simple/20020510-1.c \
+   %D%/gcc_regression_simple/20020529-1.c \
+   %D%/gcc_regression_simple/20020611-1.c \
+   %D%/gcc_regression_simple/20020614-1.c \
+   %D%/gcc_regression_simple/20020615-1.c \
+   %D%/gcc_regression_simple/20020716-1.c \
+   %D%/gcc_regression_simple/20020720-1.c \
+   %D%/gcc_regression_simple/20020805-1.c \
+   %D%/gcc_regression_simple/20020819-1.c \
+   %D%/gcc_regression_simple/20020904-1.c \
+   %D%/gcc_regression_simple/20020911-1.c \
+   %D%/gcc_regression_simple/20020916-1.c \
+   %D%/gcc_regression_simple/20021010-1.c \
+   %D%/gcc_regression_simple/20021010-2.c \
+   %D%/gcc_regression_simple/20021015-1.c \
+   %D%/gcc_regression_simple/20021024-1.c \
+   %D%/gcc_regression_simple/20021118-1.c \
+   %D%/gcc_regression_simple/20021118-2.c \
+   %D%/gcc_regression_simple/20021118-3.c \
+   %D%/gcc_regression_simple/20021119-1.c \
+   %D%/gcc_regression_simple/20021120-1.c \
+   %D%/gcc_regression_simple/20021120-2.c \
+   %D%/gcc_regression_simple/20021127-1.c \
+   %D%/gcc_regression_simple/20021204-1.c \
+   %D%/gcc_regression_simple/20021219-1.c \
+   %D%/gcc_regression_simple/20030105-1.c \
+   %D%/gcc_regression_simple/20030109-1.c \
+   %D%/gcc_regression_simple/20030117-1.c \
+   %D%/gcc_regression_simple/20030120-1.c \
+   %D%/gcc_regression_simple/20030120-2.c \
+   %D%/gcc_regression_simple/20030128-1.c \
+   %D%/gcc_regression_simple/20030203-1.c \
+   %D%/gcc_regression_simple/20030209-1.c \
+   %D%/gcc_regression_simple/20030216-1.c \
+   %D%/gcc_regression_simple/20030218-1.c \
+   %D%/gcc_regression_simple/20030224-2.c \
+   %D%/gcc_regression_simple/20030307-1.c \
+   %D%/gcc_regression_simple/20030313-1.c \
+   %D%/gcc_regression_simple/20030316-1.c \
+   %D%/gcc_regression_simple/20030401-1.c \
+   %D%/gcc_regression_simple/20030403-1.c \
+   %D%/gcc_regression_simple/20030404-1.c \
+   %D%/gcc_regression_simple/20030606-1.c \
+   %D%/gcc_regression_simple/20030626-1.c \
+   %D%/gcc_regression_simple/20030714-1.c \
+   %D%/gcc_regression_simple/20030715-1.c \
+   %D%/gcc_regression_simple/20030718-1.c \
+   %D%/gcc_regression_simple/20030821-1.c \
+   %D%/gcc_regression_simple/20030828-1.c \
+   %D%/gcc_regression_simple/20030828-2.c \
+   %D%/gcc_regression_simple/20030903-1.c \
+   %D%/gcc_regression_simple/20030909-1.c \
+   %D%/gcc_regression_simple/20030910-1.c \
+   %D%/gcc_regression_simple/20030913-1.c \
+   %D%/gcc_regression_simple/20030916-1.c \
+   %D%/gcc_regression_simple/20030920-1.c \
+   %D%/gcc_regression_simple/20030928-1.c \
+   %D%/gcc_regression_simple/20031003-1.c \
+   %D%/gcc_regression_simple/20031010-1.c \
+   %D%/gcc_regression_simple/20031011-1.c \
+   %D%/gcc_regression_simple/20031012-1.c \
+   %D%/gcc_regression_simple/20031020-1.c \
+   %D%/gcc_regression_simple/20031201-1.c \
+   %D%/gcc_regression_simple/20031204-1.c \
+   %D%/gcc_regression_simple/20031211-1.c \
+   %D%/gcc_regression_simple/20031211-2.c \
+   %D%/gcc_regression_simple/20031214-1.c \
+   %D%/gcc_regression_simple/20031215-1.c \
+   %D%/gcc_regression_simple/20031216-1.c \
+   %D%/gcc_regression_simple/20040218-1.c \
+   %D%/gcc_regression_simple/20040307-1.c \
+   %D%/gcc_regression_simple/20040309-1.c \
+   %D%/gcc_regression_simple/20040311-1.c \
+   %D%/gcc_regression_simple/20040313-1.c \
+   %D%/gcc_regression_simple/20040319-1.c \
+   %D%/gcc_regression_simple/20040331-1.c \
+   %D%/gcc_regression_simple/20040409-1.c \
+   %D%/gcc_regression_simple/20040409-2.c \
+   %D%/gcc_regression_simple/20040409-3.c \
+   %D%/gcc_regression_simple/20040411-1.c \
+   %D%/gcc_regression_simple/20040423-1.c \
+   %D%/gcc_regression_simple/20040625-1.c \
+   %D%/gcc_regression_simple/20040629-1.c \
+   %D%/gcc_regression_simple/20040704-1.c \
+   %D%/gcc_regression_simple/20040705-1.c \
+   %D%/gcc_regression_simple/20040705-2.c \
+   %D%/gcc_regression_simple/20040706-1.c \
+   %D%/gcc_regression_simple/20040707-1.c \
+   %D%/gcc_regression_simple/20040805-1.c \
+   %D%/gcc_regression_simple/20040820-1.c \
+   %D%/gcc_regression_simple/20040823-1.c \
+   %D%/gcc_regression_simple/20040831-1.c \
+   %D%/gcc_regression_simple/20040917-1.c \
+   %D%/gcc_regression_simple/20041011-1.c \
+   %D%/gcc_regression_simple/20041019-1.c \
+   %D%/gcc_regression_simple/20041112-1.c \
+   %D%/gcc_regression_simple/20041114-1.c \
+   %D%/gcc_regression_simple/20041126-1.c \
+   %D%/gcc_regression_simple/20041201-1.c \
+   %D%/gcc_regression_simple/20041210-1.c \
+   %D%/gcc_regression_simple/20041213-2.c \
+   %D%/gcc_regression_simple/20041218-2.c \
+   %D%/gcc_regression_simple/20050104-1-32.c \
+   %D%/gcc_regression_simple/20050104-1.c \
+   %D%/gcc_regression_simple/20050106-1.c \
+   %D%/gcc_regression_simple/20050107-1.c \
+   %D%/gcc_regression_simple/20050111-1.c \
+   %D%/gcc_regression_simple/20050119-1.c \
+   %D%/gcc_regression_simple/20050119-2.c \
+   %D%/gcc_regression_simple/20050124-1.c \
+   %D%/gcc_regression_simple/20050125-1.c \
+   %D%/gcc_regression_simple/20050131-1.c \
+   %D%/gcc_regression_simple/20050215-1.c \
+   %D%/gcc_regression_simple/20050218-1.c \
+   %D%/gcc_regression_simple/20050224-1.c \
+   %D%/gcc_regression_simple/20050410-1.c \
+   %D%/gcc_regression_simple/20050502-1.c \
+   %D%/gcc_regression_simple/20050502-2.c \
+   %D%/gcc_regression_simple/20050607-1.c \
+   %D%/gcc_regression_simple/20050613-1.c \
+   %D%/gcc_regression_simple/20050713-1.c \
+   %D%/gcc_regression_simple/20050826-1.c \
+   %D%/gcc_regression_simple/20050826-2.c \
+   %D%/gcc_regression_simple/20051021-1.c \
+   %D%/gcc_regression_simple/20051104-1.c \
+   %D%/gcc_regression_simple/20051110-1.c \
+   %D%/gcc_regression_simple/20051110-2.c \
+   %D%/gcc_regression_simple/20051113-1.c \
+   %D%/gcc_regression_simple/20051215-1.c \
+   %D%/gcc_regression_simple/20060102-1.c \
+   %D%/gcc_regression_simple/20060110-1.c \
+   %D%/gcc_regression_simple/20060110-2.c \
+   %D%/gcc_regression_simple/20060127-1.c \
+   %D%/gcc_regression_simple/20060412-1.c \
+   %D%/gcc_regression_simple/20060905-1.c \
+   %D%/gcc_regression_simple/20060910-1.c \
+   %D%/gcc_regression_simple/20060929-1.c \
+   %D%/gcc_regression_simple/20060930-1.c \
+   %D%/gcc_regression_simple/20060930-2.c \
+   %D%/gcc_regression_simple/20061101-1.c \
+   %D%/gcc_regression_simple/20061101-2.c \
+   %D%/gcc_regression_simple/20070212-1.c \
+   %D%/gcc_regression_simple/20070212-2.c \
+   %D%/gcc_regression_simple/20070212-3.c \
+   %D%/gcc_regression_simple/20070424-1.c \
+   %D%/gcc_regression_simple/20070517-1.c \
+   %D%/gcc_regression_simple/20070614-1.c \
+   %D%/gcc_regression_simple/20070623-1.c \
+   %D%/gcc_regression_simple/20070724-1.c \
+   %D%/gcc_regression_simple/20071011-1.c \
+   %D%/gcc_regression_simple/20071018-1.c \
+   %D%/gcc_regression_simple/20071029-1.c \
+   %D%/gcc_regression_simple/20071030-1.c \
+   %D%/gcc_regression_simple/20071108-1.c \
+   %D%/gcc_regression_simple/20071120-1.c \
+   %D%/gcc_regression_simple/20071202-1.c \
+   %D%/gcc_regression_simple/20071205-1.c \
+   %D%/gcc_regression_simple/20071216-1.c \
+   %D%/gcc_regression_simple/20071219-1.c \
+   %D%/gcc_regression_simple/20080117-1.c \
+   %D%/gcc_regression_simple/20080222-1.c \
+   %D%/gcc_regression_simple/20080408-1.c \
+   %D%/gcc_regression_simple/20080424-1.c \
+   %D%/gcc_regression_simple/20080506-1.c \
+   %D%/gcc_regression_simple/20080506-2.c \
+   %D%/gcc_regression_simple/20080519-1.c \
+   %D%/gcc_regression_simple/20080522-1.c \
+   %D%/gcc_regression_simple/20080529-1.c \
+   %D%/gcc_regression_simple/20080604-1.c \
+   %D%/gcc_regression_simple/20080719-1.c \
+   %D%/gcc_regression_simple/20080813-1.c \
+   %D%/gcc_regression_simple/20081103-1.c \
+   %D%/gcc_regression_simple/20081112-1.c \
+   %D%/gcc_regression_simple/20081218-1.c \
+   %D%/gcc_regression_simple/20090113-1.c \
+   %D%/gcc_regression_simple/20090113-2.c \
+   %D%/gcc_regression_simple/20090113-3.c \
+   %D%/gcc_regression_simple/20090207-1.c \
+   %D%/gcc_regression_simple/20090527-1.c \
+   %D%/gcc_regression_simple/20090623-1.c \
+   %D%/gcc_regression_simple/20090711-1.c \
+   %D%/gcc_regression_simple/20090814-1.c \
+   %D%/gcc_regression_simple/20091229-1.c \
+   %D%/gcc_regression_simple/20100209-1.c \
+   %D%/gcc_regression_simple/20100316-1.c \
+   %D%/gcc_regression_simple/20100416-1.c \
+   %D%/gcc_regression_simple/20100430-1.c \
+   %D%/gcc_regression_simple/20100708-1.c \
+   %D%/gcc_regression_simple/20100805-1.c \
+   %D%/gcc_regression_simple/20100827-1.c \
+   %D%/gcc_regression_simple/20101013-1.c \
+   %D%/gcc_regression_simple/20101025-1.c \
+   %D%/gcc_regression_simple/900409-1.c \
+   %D%/gcc_regression_simple/920202-1.c \
+   %D%/gcc_regression_simple/920409-1.c \
+   %D%/gcc_regression_simple/920410-1.c \
+   %D%/gcc_regression_simple/920411-1.c \
+   %D%/gcc_regression_simple/920428-1.c \
+   %D%/gcc_regression_simple/920429-1.c \
+   %D%/gcc_regression_simple/920501-2.c \
+   %D%/gcc_regression_simple/920501-6.c \
+   %D%/gcc_regression_simple/920506-1.c \
+   %D%/gcc_regression_simple/920520-1.c \
+   %D%/gcc_regression_simple/920603-1.c \
+   %D%/gcc_regression_simple/920604-1.c \
+   %D%/gcc_regression_simple/920612-1.c \
+   %D%/gcc_regression_simple/920618-1.c \
+   %D%/gcc_regression_simple/920710-1.c \
+   %D%/gcc_regression_simple/920711-1.c \
+   %D%/gcc_regression_simple/920721-1.c \
+   %D%/gcc_regression_simple/920721-3.c \
+   %D%/gcc_regression_simple/920728-1.c \
+   %D%/gcc_regression_simple/920730-1.c \
+   %D%/gcc_regression_simple/920731-1.c \
+   %D%/gcc_regression_simple/920810-1.c \
+   %D%/gcc_regression_simple/920812-1.c \
+   %D%/gcc_regression_simple/920829-1.c \
+   %D%/gcc_regression_simple/920909-1.c \
+   %D%/gcc_regression_simple/920922-1.c \
+   %D%/gcc_regression_simple/921006-1.c \
+   %D%/gcc_regression_simple/921013-1.c \
+   %D%/gcc_regression_simple/921016-1.c \
+   %D%/gcc_regression_simple/921019-1.c \
+   %D%/gcc_regression_simple/921019-2.c \
+   %D%/gcc_regression_simple/921029-1.c \
+   %D%/gcc_regression_simple/921104-1.c \
+   %D%/gcc_regression_simple/921110-1.c \
+   %D%/gcc_regression_simple/921112-1.c \
+   %D%/gcc_regression_simple/921113-1.c \
+   %D%/gcc_regression_simple/921117-1.c \
+   %D%/gcc_regression_simple/921123-1.c \
+   %D%/gcc_regression_simple/921123-2.c \
+   %D%/gcc_regression_simple/921124-1.c \
+   %D%/gcc_regression_simple/921202-1.c \
+   %D%/gcc_regression_simple/921202-2.c \
+   %D%/gcc_regression_simple/921207-1.c \
+   %D%/gcc_regression_simple/921208-1.c \
+   %D%/gcc_regression_simple/921208-2.c \
+   %D%/gcc_regression_simple/921218-1.c \
+   %D%/gcc_regression_simple/921218-2.c \
+   %D%/gcc_regression_simple/930106-1.c \
+   %D%/gcc_regression_simple/930111-1.c \
+   %D%/gcc_regression_simple/930123-1.c \
+   %D%/gcc_regression_simple/930208-1.c \
+   %D%/gcc_regression_simple/930406-1.c \
+   %D%/gcc_regression_simple/930408-1.c \
+   %D%/gcc_regression_simple/930429-1.c \
+   %D%/gcc_regression_simple/930429-2.c \
+   %D%/gcc_regression_simple/930513-2.c \
+   %D%/gcc_regression_simple/930518-1.c \
+   %D%/gcc_regression_simple/930526-1.c \
+   %D%/gcc_regression_simple/930527-1.c \
+   %D%/gcc_regression_simple/930529-1.c \
+   %D%/gcc_regression_simple/930603-1.c \
+   %D%/gcc_regression_simple/930603-2.c \
+   %D%/gcc_regression_simple/930603-3.c \
+   %D%/gcc_regression_simple/930608-1.c \
+   %D%/gcc_regression_simple/930614-1.c \
+   %D%/gcc_regression_simple/930614-2.c \
+   %D%/gcc_regression_simple/930622-1.c \
+   %D%/gcc_regression_simple/930628-1.c \
+   %D%/gcc_regression_simple/930630-1.c \
+   %D%/gcc_regression_simple/930702-1.c \
+   %D%/gcc_regression_simple/930718-1.c \
+   %D%/gcc_regression_simple/930725-1.c \
+   %D%/gcc_regression_simple/930818-1.c \
+   %D%/gcc_regression_simple/930916-1.c \
+   %D%/gcc_regression_simple/930921-1.c \
+   %D%/gcc_regression_simple/930929-1.c \
+   %D%/gcc_regression_simple/930930-1.c \
+   %D%/gcc_regression_simple/930930-2.c \
+   %D%/gcc_regression_simple/931004-11.c \
+   %D%/gcc_regression_simple/931004-13.c \
+   %D%/gcc_regression_simple/931004-1.c \
+   %D%/gcc_regression_simple/931004-3.c \
+   %D%/gcc_regression_simple/931004-5.c \
+   %D%/gcc_regression_simple/931004-7.c \
+   %D%/gcc_regression_simple/931004-9.c \
+   %D%/gcc_regression_simple/931009-1.c \
+   %D%/gcc_regression_simple/931012-1.c \
+   %D%/gcc_regression_simple/931017-1.c \
+   %D%/gcc_regression_simple/931018-1.c \
+   %D%/gcc_regression_simple/931102-1.c \
+   %D%/gcc_regression_simple/931102-2.c \
+   %D%/gcc_regression_simple/931110-1.c \
+   %D%/gcc_regression_simple/931110-2.c \
+   %D%/gcc_regression_simple/931208-1.c \
+   %D%/gcc_regression_simple/931228-1.c \
+   %D%/gcc_regression_simple/940115-1.c \
+   %D%/gcc_regression_simple/940122-1.c \
+   %D%/gcc_regression_simple/941014-1.c \
+   %D%/gcc_regression_simple/941014-2.c \
+   %D%/gcc_regression_simple/941015-1.c \
+   %D%/gcc_regression_simple/941021-1.c \
+   %D%/gcc_regression_simple/941025-1.c \
+   %D%/gcc_regression_simple/941031-1.c \
+   %D%/gcc_regression_simple/941101-1.c \
+   %D%/gcc_regression_simple/941110-1.c \
+   %D%/gcc_regression_simple/950221-1.c \
+   %D%/gcc_regression_simple/950322-1.c \
+   %D%/gcc_regression_simple/950426-1.c \
+   %D%/gcc_regression_simple/950426-2.c \
+   %D%/gcc_regression_simple/950503-1.c \
+   %D%/gcc_regression_simple/950511-1.c \
+   %D%/gcc_regression_simple/950512-1.c \
+   %D%/gcc_regression_simple/950605-1.c \
+   %D%/gcc_regression_simple/950607-1.c \
+   %D%/gcc_regression_simple/950607-2.c \
+   %D%/gcc_regression_simple/950612-1.c \
+   %D%/gcc_regression_simple/950621-1.c \
+   %D%/gcc_regression_simple/950704-1.c \
+   %D%/gcc_regression_simple/950706-1.c \
+   %D%/gcc_regression_simple/950714-1.c \
+   %D%/gcc_regression_simple/950809-1.c \
+   %D%/gcc_regression_simple/950906-1.c \
+   %D%/gcc_regression_simple/950915-1.c \
+   %D%/gcc_regression_simple/950929-1.c \
+   %D%/gcc_regression_simple/951003-1.c \
+   %D%/gcc_regression_simple/951115-1.c \
+   %D%/gcc_regression_simple/951204-1.c \
+   %D%/gcc_regression_simple/960116-1.c \
+   %D%/gcc_regression_simple/960117-1.c \
+   %D%/gcc_regression_simple/960209-1.c \
+   %D%/gcc_regression_simple/960218-1.c \
+   %D%/gcc_regression_simple/960219-1.c \
+   %D%/gcc_regression_simple/960301-1.c \
+   %D%/gcc_regression_simple/960302-1.c \
+   %D%/gcc_regression_simple/960311-1.c \
+   %D%/gcc_regression_simple/960311-2.c \
+   %D%/gcc_regression_simple/960311-3.c \
+   %D%/gcc_regression_simple/960317-1.c \
+   %D%/gcc_regression_simple/960321-1.c \
+   %D%/gcc_regression_simple/960326-1.c \
+   %D%/gcc_regression_simple/960327-1.c \
+   %D%/gcc_regression_simple/960402-1.c \
+   %D%/gcc_regression_simple/960419-2.c \
+   %D%/gcc_regression_simple/960512-1.c \
+   %D%/gcc_regression_simple/960521-1.c \
+   %D%/gcc_regression_simple/960608-1.c \
+   %D%/gcc_regression_simple/960801-1.c \
+   %D%/gcc_regression_simple/960802-1.c \
+   %D%/gcc_regression_simple/960909-1.c \
+   %D%/gcc_regression_simple/961004-1.c \
+   %D%/gcc_regression_simple/961017-1.c \
+   %D%/gcc_regression_simple/961017-2.c \
+   %D%/gcc_regression_simple/961026-1.c \
+   %D%/gcc_regression_simple/961112-1.c \
+   %D%/gcc_regression_simple/961122-1.c \
+   %D%/gcc_regression_simple/961122-2.c \
+   %D%/gcc_regression_simple/961125-1.c \
+   %D%/gcc_regression_simple/961206-1.c \
+   %D%/gcc_regression_simple/961213-1.c \
+   %D%/gcc_regression_simple/961223-1.c \
+   %D%/gcc_regression_simple/970214-1.c \
+   %D%/gcc_regression_simple/970214-2.c \
+   %D%/gcc_regression_simple/970217-1.c \
+   %D%/gcc_regression_simple/970923-1.c \
+   %D%/gcc_regression_simple/980424-1.c \
+   %D%/gcc_regression_simple/980505-1.c \
+   %D%/gcc_regression_simple/980505-2.c \
+   %D%/gcc_regression_simple/980506-1.c \
+   %D%/gcc_regression_simple/980506-2.c \
+   %D%/gcc_regression_simple/980506-3.c \
+   %D%/gcc_regression_simple/980526-2.c \
+   %D%/gcc_regression_simple/980526-3.c \
+   %D%/gcc_regression_simple/980602-1.c \
+   %D%/gcc_regression_simple/980602-2.c \
+   %D%/gcc_regression_simple/980604-1.c \
+   %D%/gcc_regression_simple/980612-1.c \
+   %D%/gcc_regression_simple/980617-1.c \
+   %D%/gcc_regression_simple/980618-1.c \
+   %D%/gcc_regression_simple/980701-1.c \
+   %D%/gcc_regression_simple/980707-1.c \
+   %D%/gcc_regression_simple/980709-1.c \
+   %D%/gcc_regression_simple/980929-1.c \
+   %D%/gcc_regression_simple/981019-1.c \
+   %D%/gcc_regression_simple/981130-1.c \
+   %D%/gcc_regression_simple/981206-1.c \
+   %D%/gcc_regression_simple/990106-1.c \
+   %D%/gcc_regression_simple/990106-2.c \
+   %D%/gcc_regression_simple/990117-1.c \
+   %D%/gcc_regression_simple/990127-1.c \
+   %D%/gcc_regression_simple/990127-2.c \
+   %D%/gcc_regression_simple/990128-1.c \
+   %D%/gcc_regression_simple/990211-1.c \
+   %D%/gcc_regression_simple/990222-1.c \
+   %D%/gcc_regression_simple/990324-1.c \
+   %D%/gcc_regression_simple/990404-1.c \
+   %D%/gcc_regression_simple/990513-1.c \
+   %D%/gcc_regression_simple/990524-1.c \
+   %D%/gcc_regression_simple/990525-1.c \
+   %D%/gcc_regression_simple/990527-1.c \
+   %D%/gcc_regression_simple/990531-1.c \
+   %D%/gcc_regression_simple/990604-1.c \
+   %D%/gcc_regression_simple/990628-1.c \
+   %D%/gcc_regression_simple/990804-1.c \
+   %D%/gcc_regression_simple/990811-1.c \
+   %D%/gcc_regression_simple/990826-0.c \
+   %D%/gcc_regression_simple/990827-1.c \
+   %D%/gcc_regression_simple/990829-1.c \
+   %D%/gcc_regression_simple/990923-1.c \
+   %D%/gcc_regression_simple/991014-1.c \
+   %D%/gcc_regression_simple/991016-1.c \
+   %D%/gcc_regression_simple/991023-1.c \
+   %D%/gcc_regression_simple/991030-1.c \
+   %D%/gcc_regression_simple/991201-1.c \
+   %D%/gcc_regression_simple/991202-1.c \
+   %D%/gcc_regression_simple/991202-2.c \
+   %D%/gcc_regression_simple/991202-3.c \
+   %D%/gcc_regression_simple/991216-1.c \
+   %D%/gcc_regression_simple/991216-4.c \
+   %D%/gcc_regression_simple/991221-1.c \
+   %D%/gcc_regression_simple/991227-1.c \
+   %D%/gcc_regression_simple/991228-1.c \
+   %D%/gcc_regression_simple/align-1.c \
+   %D%/gcc_regression_simple/anon-1.c \
+   %D%/gcc_regression_simple/arith-1.c \
+   %D%/gcc_regression_simple/arith-rand-6432.c \
+   %D%/gcc_regression_simple/arith-rand.c \
+   %D%/gcc_regression_simple/arith-rand-ll.c \
+   %D%/gcc_regression_simple/ashldi-1.c \
+   %D%/gcc_regression_simple/ashrdi-1.c \
+   %D%/gcc_regression_simple/bf-layout-1.c \
+   %D%/gcc_regression_simple/bf-pack-1.c \
+   %D%/gcc_regression_simple/bf-sign-1.c \
+   %D%/gcc_regression_simple/bf-sign-2.c \
+   %D%/gcc_regression_simple/bitfld-1.c \
+   %D%/gcc_regression_simple/bitfld-2.c \
+   %D%/gcc_regression_simple/bitfld-3.c \
+   %D%/gcc_regression_simple/bitfld-4.c \
+   %D%/gcc_regression_simple/builtins/abs-1.c \
+   %D%/gcc_regression_simple/builtins/abs-2.c \
+   %D%/gcc_regression_simple/builtins/abs-3.c \
+   %D%/gcc_regression_simple/builtins/chk.h \
+   %D%/gcc_regression_simple/builtins/complex-builtins-1.c \
+   %D%/gcc_regression_simple/builtins/memchr.c \
+   %D%/gcc_regression_simple/builtins/memcmp.c \
+   %D%/gcc_regression_simple/builtins/memcpy-chk_test1.c \
+   %D%/gcc_regression_simple/builtins/memcpy-chk_test2.c \
+   %D%/gcc_regression_simple/builtins/memcpy-chk_test3.c \
+   %D%/gcc_regression_simple/builtins/memcpy-chk_test4.c \
+   %D%/gcc_regression_simple/builtins/memcpy-chk_test5.c \
+   %D%/gcc_regression_simple/builtins/memcpy-chk_test6.c \
+   %D%/gcc_regression_simple/builtins/memmove-2.c \
+   %D%/gcc_regression_simple/builtins/memmove.c \
+   %D%/gcc_regression_simple/builtins/memmove-chk_test1.c \
+   %D%/gcc_regression_simple/builtins/memmove-chk_test2.c \
+   %D%/gcc_regression_simple/builtins/memmove-chk_test3.c \
+   %D%/gcc_regression_simple/builtins/memmove-chk_test4.c \
+   %D%/gcc_regression_simple/builtins/memmove-chk_test5.c \
+   %D%/gcc_regression_simple/builtins/memmove-chk_test6.c \
+   %D%/gcc_regression_simple/builtins/memmove-chk_test7.c \
+   %D%/gcc_regression_simple/builtins/memops-asm.c \
+   %D%/gcc_regression_simple/builtins/mempcpy-2.c \
+   %D%/gcc_regression_simple/builtins/mempcpy.c \
+   %D%/gcc_regression_simple/builtins/mempcpy-chk_test1.c \
+   %D%/gcc_regression_simple/builtins/mempcpy-chk_test2.c \
+   %D%/gcc_regression_simple/builtins/mempcpy-chk_test3.c \
+   %D%/gcc_regression_simple/builtins/mempcpy-chk_test4.c \
+   %D%/gcc_regression_simple/builtins/mempcpy-chk_test5.c \
+   %D%/gcc_regression_simple/builtins/mempcpy-chk_test6.c \
+   %D%/gcc_regression_simple/builtins/memset.c \
+   %D%/gcc_regression_simple/builtins/printf.c \
+   %D%/gcc_regression_simple/builtins/stpcpy-chk_test1.c \
+   %D%/gcc_regression_simple/builtins/stpcpy-chk_test2.c \
+   %D%/gcc_regression_simple/builtins/stpcpy-chk_test3.c \
+   %D%/gcc_regression_simple/builtins/stpcpy-chk_test4.c \
+   %D%/gcc_regression_simple/builtins/strcat.c \
+   %D%/gcc_regression_simple/builtins/strcat-chk.c \
+   %D%/gcc_regression_simple/builtins/strchr.c \
+   %D%/gcc_regression_simple/builtins/strcmp.c \
+   %D%/gcc_regression_simple/builtins/strcpy-2.c \
+   %D%/gcc_regression_simple/builtins/strcpy.c \
+   %D%/gcc_regression_simple/builtins/strcpy-chk_test1.c \
+   %D%/gcc_regression_simple/builtins/strcpy-chk_test2.c \
+   %D%/gcc_regression_simple/builtins/strcpy-chk_test3.c \
+   %D%/gcc_regression_simple/builtins/strcpy-chk_test4.c \
+   %D%/gcc_regression_simple/builtins/strcspn.c \
+   %D%/gcc_regression_simple/builtins/strlen-2.c \
+   %D%/gcc_regression_simple/builtins/strlen-3.c \
+   %D%/gcc_regression_simple/builtins/strlen.c \
+   %D%/gcc_regression_simple/builtins/strncat.c \
+   %D%/gcc_regression_simple/builtins/strncat-chk.c \
+   %D%/gcc_regression_simple/builtins/strncmp-2.c \
+   %D%/gcc_regression_simple/builtins/strncmp.c \
+   %D%/gcc_regression_simple/builtins/strncpy.c \
+   %D%/gcc_regression_simple/builtins/strncpy-chk.c \
+   %D%/gcc_regression_simple/builtins/strpbrk.c \
+   %D%/gcc_regression_simple/builtins/strpcpy-2.c \
+   %D%/gcc_regression_simple/builtins/strpcpy.c \
+   %D%/gcc_regression_simple/builtins/strrchr.c \
+   %D%/gcc_regression_simple/builtins/strspn.c \
+   %D%/gcc_regression_simple/builtins/strstr-asm.c \
+   %D%/gcc_regression_simple/builtins/strstr.c \
+   %D%/gcc_regression_simple/builtins/test.xml \
+   %D%/gcc_regression_simple/call-trap-1.c \
+   %D%/gcc_regression_simple/cbrt.c \
+   %D%/gcc_regression_simple/cmpdi-1.c \
+   %D%/gcc_regression_simple/cmpsf-1.c \
+   %D%/gcc_regression_simple/cmpsi-1.c \
+   %D%/gcc_regression_simple/cmpsi-2.c \
+   %D%/gcc_regression_simple/compare-1.c \
+   %D%/gcc_regression_simple/compare-2.c \
+   %D%/gcc_regression_simple/compare-3.c \
+   %D%/gcc_regression_simple/complex-1.c \
+   %D%/gcc_regression_simple/complex-4.c \
+   %D%/gcc_regression_simple/complex-5.c \
+   %D%/gcc_regression_simple/complex-7.c \
+   %D%/gcc_regression_simple/conversion.c \
+   %D%/gcc_regression_simple/COPYING3 \
+   %D%/gcc_regression_simple/cvt-1.c \
+   %D%/gcc_regression_simple/dbra-1.c \
+   %D%/gcc_regression_simple/divcmp-1.c \
+   %D%/gcc_regression_simple/divcmp-2.c \
+   %D%/gcc_regression_simple/divcmp-3.c \
+   %D%/gcc_regression_simple/divcmp-4.c \
+   %D%/gcc_regression_simple/divcmp-5.c \
+   %D%/gcc_regression_simple/divconst-1.c \
+   %D%/gcc_regression_simple/divconst-2.c \
+   %D%/gcc_regression_simple/divconst-3.c \
+   %D%/gcc_regression_simple/divmod-1.c \
+   %D%/gcc_regression_simple/enum-1.c \
+   %D%/gcc_regression_simple/enum-2.c \
+   %D%/gcc_regression_simple/enum-3.c \
+   %D%/gcc_regression_simple/extzvsi.c \
+   %D%/gcc_regression_simple/float-floor.c \
+   %D%/gcc_regression_simple/floatunsisf-1.c \
+   %D%/gcc_regression_simple/func-ptr-1.c \
+   %D%/gcc_regression_simple/gofast.c \
+   %D%/gcc_regression_simple/ieee/20001122-1.c \
+   %D%/gcc_regression_simple/ieee/20010114-2.c \
+   %D%/gcc_regression_simple/ieee/20011123-1.c \
+   %D%/gcc_regression_simple/ieee/20030331-1.c \
+   %D%/gcc_regression_simple/ieee/20041213-1.c \
+   %D%/gcc_regression_simple/ieee/920518-1.c \
+   %D%/gcc_regression_simple/ieee/980619-1.c \
+   %D%/gcc_regression_simple/ieee/builtin-nan-1.c \
+   %D%/gcc_regression_simple/ieee/compare-fp-2.c \
+   %D%/gcc_regression_simple/ieee/fp-cmp-4e.c \
+   %D%/gcc_regression_simple/ieee/fp-cmp-6.c \
+   %D%/gcc_regression_simple/ieee/fp-cmp-7.c \
+   %D%/gcc_regression_simple/ieee/fp-cmp-8e.c \
+   %D%/gcc_regression_simple/ieee/hugeval.c \
+   %D%/gcc_regression_simple/ieee/minuszero.c \
+   %D%/gcc_regression_simple/ieee/mzero3.c \
+   %D%/gcc_regression_simple/ieee/mzero4.c \
+   %D%/gcc_regression_simple/ieee/mzero5.c \
+   %D%/gcc_regression_simple/ieee/pr28634.c \
+   %D%/gcc_regression_simple/ieee/pr30704.c \
+   %D%/gcc_regression_simple/ieee/test.xml \
+   %D%/gcc_regression_simple/ieee/unsafe-fp-assoc-1.c \
+   %D%/gcc_regression_simple/ieee/unsafe-fp-assoc.c \
+   %D%/gcc_regression_simple/ifcvt-onecmpl-abs-1.c \
+   %D%/gcc_regression_simple/index-1.c \
+   %D%/gcc_regression_simple/inst-check.c \
+   %D%/gcc_regression_simple/int-compare.c \
+   %D%/gcc_regression_simple/ipa-sra-1.c \
+   %D%/gcc_regression_simple/ipa-sra-2.c \
+   %D%/gcc_regression_simple/longlong.c \
+   %D%/gcc_regression_simple/loop-10.c \
+   %D%/gcc_regression_simple/loop-11.c \
+   %D%/gcc_regression_simple/loop-12.c \
+   %D%/gcc_regression_simple/loop-13.c \
+   %D%/gcc_regression_simple/loop-14.c \
+   %D%/gcc_regression_simple/loop-15.c \
+   %D%/gcc_regression_simple/loop-1.c \
+   %D%/gcc_regression_simple/loop-2b.c \
+   %D%/gcc_regression_simple/loop-2.c \
+   %D%/gcc_regression_simple/loop-2c.c \
+   %D%/gcc_regression_simple/loop-2d.c \
+   %D%/gcc_regression_simple/loop-2e.c \
+   %D%/gcc_regression_simple/loop-3b.c \
+   %D%/gcc_regression_simple/loop-3.c \
+   %D%/gcc_regression_simple/loop-3c.c \
+   %D%/gcc_regression_simple/loop-4b.c \
+   %D%/gcc_regression_simple/loop-4.c \
+   %D%/gcc_regression_simple/loop-5.c \
+   %D%/gcc_regression_simple/loop-6.c \
+   %D%/gcc_regression_simple/loop-7.c \
+   %D%/gcc_regression_simple/loop-8.c \
+   %D%/gcc_regression_simple/loop-9.c \
+   %D%/gcc_regression_simple/loop-ivopts-1.c \
+   %D%/gcc_regression_simple/loop-ivopts-2.c \
+   %D%/gcc_regression_simple/lshrdi-1.c \
+   %D%/gcc_regression_simple/mayalias-1.c \
+   %D%/gcc_regression_simple/mayalias-2.c \
+   %D%/gcc_regression_simple/mayalias-3.c \
+   %D%/gcc_regression_simple/medce-1.c \
+   %D%/gcc_regression_simple/memcpy-1.c \
+   %D%/gcc_regression_simple/memcpy-2.c \
+   %D%/gcc_regression_simple/memcpy-bi.c \
+   %D%/gcc_regression_simple/memset-1.c \
+   %D%/gcc_regression_simple/memset-2.c \
+   %D%/gcc_regression_simple/memset-3.c \
+   %D%/gcc_regression_simple/mod-1.c \
+   %D%/gcc_regression_simple/mode-dependent-address.c \
+   %D%/gcc_regression_simple/multdi-1.c \
+   %D%/gcc_regression_simple/nest-align-1.c \
+   %D%/gcc_regression_simple/p18298.c \
+   %D%/gcc_regression_simple/packed-1.c \
+   %D%/gcc_regression_simple/packed-2.c \
+   %D%/gcc_regression_simple/pending-4.c \
+   %D%/gcc_regression_simple/postmod-1.c \
+   %D%/gcc_regression_simple/pr15262-1.c \
+   %D%/gcc_regression_simple/pr15262-2.c \
+   %D%/gcc_regression_simple/pr15262.c \
+   %D%/gcc_regression_simple/pr15296.c \
+   %D%/gcc_regression_simple/pr16790-1.c \
+   %D%/gcc_regression_simple/pr17078-1.c \
+   %D%/gcc_regression_simple/pr17133.c \
+   %D%/gcc_regression_simple/pr17252.c \
+   %D%/gcc_regression_simple/pr19005.c \
+   %D%/gcc_regression_simple/pr19515.c \
+   %D%/gcc_regression_simple/pr19606.c \
+   %D%/gcc_regression_simple/pr19687.c \
+   %D%/gcc_regression_simple/pr19689.c \
+   %D%/gcc_regression_simple/pr20100-1.c \
+   %D%/gcc_regression_simple/pr20187-1.c \
+   %D%/gcc_regression_simple/pr20466-1.c \
+   %D%/gcc_regression_simple/pr20527-1.c \
+   %D%/gcc_regression_simple/pr20601-1.c \
+   %D%/gcc_regression_simple/pr20621-1.c \
+   %D%/gcc_regression_simple/pr21173.c \
+   %D%/gcc_regression_simple/pr21331.c \
+   %D%/gcc_regression_simple/pr22061-2.c \
+   %D%/gcc_regression_simple/pr22098-1.c \
+   %D%/gcc_regression_simple/pr22098-2.c \
+   %D%/gcc_regression_simple/pr22098-3.c \
+   %D%/gcc_regression_simple/pr22348.c \
+   %D%/gcc_regression_simple/pr22429.c \
+   %D%/gcc_regression_simple/pr22493-1.c \
+   %D%/gcc_regression_simple/pr22630.c \
+   %D%/gcc_regression_simple/pr23047.c \
+   %D%/gcc_regression_simple/pr23135.c \
+   %D%/gcc_regression_simple/pr23467.c \
+   %D%/gcc_regression_simple/pr23604.c \
+   %D%/gcc_regression_simple/pr23941.c \
+   %D%/gcc_regression_simple/pr24141.c \
+   %D%/gcc_regression_simple/pr24142.c \
+   %D%/gcc_regression_simple/pr24716.c \
+   %D%/gcc_regression_simple/pr24851.c \
+   %D%/gcc_regression_simple/pr25125.c \
+   %D%/gcc_regression_simple/pr25737.c \
+   %D%/gcc_regression_simple/pr27073.c \
+   %D%/gcc_regression_simple/pr27260.c \
+   %D%/gcc_regression_simple/pr27285.c \
+   %D%/gcc_regression_simple/pr27364.c \
+   %D%/gcc_regression_simple/pr27671-1.c \
+   %D%/gcc_regression_simple/pr28289.c \
+   %D%/gcc_regression_simple/pr28403.c \
+   %D%/gcc_regression_simple/pr28651.c \
+   %D%/gcc_regression_simple/pr28778.c \
+   %D%/gcc_regression_simple/pr28982a.c \
+   %D%/gcc_regression_simple/pr28982b.c \
+   %D%/gcc_regression_simple/pr29006.c \
+   %D%/gcc_regression_simple/pr29156.c \
+   %D%/gcc_regression_simple/pr29695-1.c \
+   %D%/gcc_regression_simple/pr29695-2.c \
+   %D%/gcc_regression_simple/pr29797-1.c \
+   %D%/gcc_regression_simple/pr29797-2.c \
+   %D%/gcc_regression_simple/pr29798.c \
+   %D%/gcc_regression_simple/pr30778.c \
+   %D%/gcc_regression_simple/pr31072.c \
+   %D%/gcc_regression_simple/pr31136.c \
+   %D%/gcc_regression_simple/pr31169.c \
+   %D%/gcc_regression_simple/pr31448-2.c \
+   %D%/gcc_regression_simple/pr31448.c \
+   %D%/gcc_regression_simple/pr32244-1.c \
+   %D%/gcc_regression_simple/pr32500.c \
+   %D%/gcc_regression_simple/pr33142.c \
+   %D%/gcc_regression_simple/pr33382.c \
+   %D%/gcc_regression_simple/pr33631.c \
+   %D%/gcc_regression_simple/pr33669.c \
+   %D%/gcc_regression_simple/pr33779-1.c \
+   %D%/gcc_regression_simple/pr33779-2.c \
+   %D%/gcc_regression_simple/pr33870-1.c \
+   %D%/gcc_regression_simple/pr33870.c \
+   %D%/gcc_regression_simple/pr33992.c \
+   %D%/gcc_regression_simple/pr34070-1.c \
+   %D%/gcc_regression_simple/pr34070-2.c \
+   %D%/gcc_regression_simple/pr34099-2.c \
+   %D%/gcc_regression_simple/pr34099.c \
+   %D%/gcc_regression_simple/pr34130.c \
+   %D%/gcc_regression_simple/pr34154.c \
+   %D%/gcc_regression_simple/pr34176.c \
+   %D%/gcc_regression_simple/pr34415.c \
+   %D%/gcc_regression_simple/pr34768-1.c \
+   %D%/gcc_regression_simple/pr34768-2.c \
+   %D%/gcc_regression_simple/pr34971.c \
+   %D%/gcc_regression_simple/pr34982.c \
+   %D%/gcc_regression_simple/pr35163.c \
+   %D%/gcc_regression_simple/pr35231.c \
+   %D%/gcc_regression_simple/pr35390.c \
+   %D%/gcc_regression_simple/pr35456.c \
+   %D%/gcc_regression_simple/pr35472.c \
+   %D%/gcc_regression_simple/pr35800.c \
+   %D%/gcc_regression_simple/pr36034-1.c \
+   %D%/gcc_regression_simple/pr36034-2.c \
+   %D%/gcc_regression_simple/pr36038.c \
+   %D%/gcc_regression_simple/pr36077.c \
+   %D%/gcc_regression_simple/pr36093.c \
+   %D%/gcc_regression_simple/pr36321.c \
+   %D%/gcc_regression_simple/pr36339.c \
+   %D%/gcc_regression_simple/pr36343.c \
+   %D%/gcc_regression_simple/pr36691.c \
+   %D%/gcc_regression_simple/pr36765.c \
+   %D%/gcc_regression_simple/pr37102.c \
+   %D%/gcc_regression_simple/pr37125.c \
+   %D%/gcc_regression_simple/pr37573.c \
+   %D%/gcc_regression_simple/pr37882.c \
+   %D%/gcc_regression_simple/pr37924.c \
+   %D%/gcc_regression_simple/pr37931.c \
+   %D%/gcc_regression_simple/pr38048-1.c \
+   %D%/gcc_regression_simple/pr38048-2.c \
+   %D%/gcc_regression_simple/pr38212.c \
+   %D%/gcc_regression_simple/pr38236.c \
+   %D%/gcc_regression_simple/pr38422.c \
+   %D%/gcc_regression_simple/pr38819.c \
+   %D%/gcc_regression_simple/pr38969.c \
+   %D%/gcc_regression_simple/pr39100.c \
+   %D%/gcc_regression_simple/pr39233.c \
+   %D%/gcc_regression_simple/pr39240.c \
+   %D%/gcc_regression_simple/pr39339.c \
+   %D%/gcc_regression_simple/pr39501.c \
+   %D%/gcc_regression_simple/pr40057.c \
+   %D%/gcc_regression_simple/pr40386.c \
+   %D%/gcc_regression_simple/pr40404.c \
+   %D%/gcc_regression_simple/pr40493.c \
+   %D%/gcc_regression_simple/pr40579.c \
+   %D%/gcc_regression_simple/pr40668.c \
+   %D%/gcc_regression_simple/pr40747.c \
+   %D%/gcc_regression_simple/pr41317.c \
+   %D%/gcc_regression_simple/pr41395-1.c \
+   %D%/gcc_regression_simple/pr41395-2.c \
+   %D%/gcc_regression_simple/pr41463.c \
+   %D%/gcc_regression_simple/pr41750.c \
+   %D%/gcc_regression_simple/pr41917.c \
+   %D%/gcc_regression_simple/pr41919.c \
+   %D%/gcc_regression_simple/pr41935.c \
+   %D%/gcc_regression_simple/pr42006.c \
+   %D%/gcc_regression_simple/pr42142.c \
+   %D%/gcc_regression_simple/pr42154.c \
+   %D%/gcc_regression_simple/pr42248.c \
+   %D%/gcc_regression_simple/pr42269-2.c \
+   %D%/gcc_regression_simple/pr42512.c \
+   %D%/gcc_regression_simple/pr42570.c \
+   %D%/gcc_regression_simple/pr42614.c \
+   %D%/gcc_regression_simple/pr42691.c \
+   %D%/gcc_regression_simple/pr42721.c \
+   %D%/gcc_regression_simple/pr42833.c \
+   %D%/gcc_regression_simple/pr43008.c \
+   %D%/gcc_regression_simple/pr43236.c \
+   %D%/gcc_regression_simple/pr43269.c \
+   %D%/gcc_regression_simple/pr43438.c \
+   %D%/gcc_regression_simple/pr43629.c \
+   %D%/gcc_regression_simple/pr43783.c \
+   %D%/gcc_regression_simple/pr43835.c \
+   %D%/gcc_regression_simple/pr43987.c \
+   %D%/gcc_regression_simple/pr44164.c \
+   %D%/gcc_regression_simple/pr44202-1.c \
+   %D%/gcc_regression_simple/pr44468.c \
+   %D%/gcc_regression_simple/pr44555.c \
+   %D%/gcc_regression_simple/pr44683.c \
+   %D%/gcc_regression_simple/pr44828.c \
+   %D%/gcc_regression_simple/pr44858.c \
+   %D%/gcc_regression_simple/pr45034.c \
+   %D%/gcc_regression_simple/pr45262.c \
+   %D%/gcc_regression_simple/pr45830.c \
+   %D%/gcc_regression_simple/pr46019.c \
+   %D%/gcc_regression_simple/pr46316.c \
+   %D%/gcc_regression_simple/pr46909-1.c \
+   %D%/gcc_regression_simple/pr46909-2.c \
+   %D%/gcc_regression_simple/pr47148.c \
+   %D%/gcc_regression_simple/pr47155.c \
+   %D%/gcc_regression_simple/pr47299.c \
+   %D%/gcc_regression_simple/pr47337.c \
+   %D%/gcc_regression_simple/pr47538.c \
+   %D%/gcc_regression_simple/pr48717.c \
+   %D%/gcc_regression_simple/pr48809.c \
+   %D%/gcc_regression_simple/pr49039.c \
+   %D%/gcc_regression_simple/pr49123.c \
+   %D%/gcc_regression_simple/pr49161.c \
+   %D%/gcc_regression_simple/pr49186.c \
+   %D%/gcc_regression_simple/pr49419.c \
+   %D%/gcc_regression_simple/pr7284-1.c \
+   %D%/gcc_regression_simple/pta-field-1.c \
+   %D%/gcc_regression_simple/pta-field-2.c \
+   %D%/gcc_regression_simple/ptr-arith-1.c \
+   %D%/gcc_regression_simple/pure-1.c \
+   %D%/gcc_regression_simple/pushpop_macro.c \
+   %D%/gcc_regression_simple/README \
+   %D%/gcc_regression_simple_reset.sh \
+   %D%/gcc_regression_simple/restrict-1.c \
+   %D%/gcc_regression_simple/scope-1.c \
+   %D%/gcc_regression_simple/shiftdi.c \
+   %D%/gcc_regression_simple/shiftopt-1.c \
+   %D%/gcc_regression_simple/strcmp-1.c \
+   %D%/gcc_regression_simple/strcpy-1.c \
+   %D%/gcc_regression_simple/strct-pack-1.c \
+   %D%/gcc_regression_simple/strct-pack-2.c \
+   %D%/gcc_regression_simple/strct-pack-3.c \
+   %D%/gcc_regression_simple/strct-pack-4.c \
+   %D%/gcc_regression_simple/string-opt-17.c \
+   %D%/gcc_regression_simple/string-opt-18.c \
+   %D%/gcc_regression_simple/string-opt-5.c \
+   %D%/gcc_regression_simple/strlen-1.c \
+   %D%/gcc_regression_simple/strncmp-1.c \
+   %D%/gcc_regression_simple/struct-aliasing-1.c \
+   %D%/gcc_regression_simple/struct-cpy-1.c \
+   %D%/gcc_regression_simple/struct-ini-1.c \
+   %D%/gcc_regression_simple/struct-ini-2.c \
+   %D%/gcc_regression_simple/struct-ini-3.c \
+   %D%/gcc_regression_simple/struct-ini-4.c \
+   %D%/gcc_regression_simple/struct-ret-2.c \
+   %D%/gcc_regression_simple/switch-1.c \
+   %D%/gcc_regression_simple/test.xml \
+   %D%/gcc_regression_simple/tstdi-1.c \
+   %D%/gcc_regression_simple/unroll-1.c \
+   %D%/gcc_regression_simple/usmul.c \
+   %D%/gcc_regression_simple_verilator \
+   %D%/gcc_regression_simple/vrp-1.c \
+   %D%/gcc_regression_simple/vrp-2.c \
+   %D%/gcc_regression_simple/vrp-3.c \
+   %D%/gcc_regression_simple/vrp-4.c \
+   %D%/gcc_regression_simple/vrp-5.c \
+   %D%/gcc_regression_simple/vrp-6.c \
+   %D%/gcc_regression_simple/vrp-7.c \
+   %D%/gcc_regression_simple/widechar-1.c \
+   %D%/gcc_regression_simple/zerolen-1.c \
+   %D%/gcc_regression_simple/zerolen-2.c \
+   %D%/gcc_regression_simple/zero-struct-1.c \
+   %D%/generic_CHStone-frontend.sh \
+   %D%/generic_CHStone-memarch.sh \
+   %D%/generic_discrepancy_eg_bambu.sh \
+   %D%/generic_gcc_regression_simple_bambu_pretty_print.sh \
+   %D%/generic_gcc_regression_simple_bambu.sh \
+   %D%/generic_gcc_regression_simple_bambu_vhdl.sh \
+   %D%/generic_gcc_regression_simple_eg_ext_pipelined.sh \
+   %D%/generic_gcc_regression_simple_eg.sh \
+   %D%/generic_gcc_regression_simple.sh \
+   %D%/generic_getopt.sh \
+   %D%/generic_libm-tests.sh \
+   %D%/generic_softfloat-tests.sh \
+   %D%/hw-discrepancy.sh \
+   %D%/libm-tests/conversion.c \
+   %D%/libm-tests/libm-test.c \
+   %D%/libm-tests_list \
+   %D%/libm-tests/test.acosh.xml \
+   %D%/libm-tests/test.acos.xml \
+   %D%/libm-tests/test.asinh.xml \
+   %D%/libm-tests/test.asin.xml \
+   %D%/libm-tests/test.atan2.xml \
+   %D%/libm-tests/test.atanh.xml \
+   %D%/libm-tests/test.atan.xml \
+   %D%/libm-tests/test.cbrt.xml \
+   %D%/libm-tests/test.ceil.xml \
+   %D%/libm-tests/test.copysign.xml \
+   %D%/libm-tests/test.cosh.xml \
+   %D%/libm-tests/test.cos.xml \
+   %D%/libm-tests/test-double.c \
+   %D%/libm-tests/test.erfc.xml \
+   %D%/libm-tests/test.erf.xml \
+   %D%/libm-tests/test.expm1.xml \
+   %D%/libm-tests/test.exp.xml \
+   %D%/libm-tests/test.fabs.xml \
+   %D%/libm-tests/test-float.c \
+   %D%/libm-tests/test.floor.xml \
+   %D%/libm-tests/test.fmod.xml \
+   %D%/libm-tests/test.fpclassify.xml \
+   %D%/libm-tests/test.frexp.xml \
+   %D%/libm-tests/test.gamma.xml \
+   %D%/libm-tests/test.hypot.xml \
+   %D%/libm-tests/test.ilogb.xml \
+   %D%/libm-tests/test.isfinite.xml \
+   %D%/libm-tests/test.isnormal.xml \
+   %D%/libm-tests/test.ldexp.xml \
+   %D%/libm-tests/test.lgamma.xml \
+   %D%/libm-tests/test.log10.xml \
+   %D%/libm-tests/test.log1p.xml \
+   %D%/libm-tests/test.logb.xml \
+   %D%/libm-tests/test.log.xml \
+   %D%/libm-tests/test.modf.xml \
+   %D%/libm-tests/test.pow.xml \
+   %D%/libm-tests/test.remainder.xml \
+   %D%/libm-tests/test.rint.xml \
+   %D%/libm-tests/test.scalbn.xml \
+   %D%/libm-tests/test.scalb.xml \
+   %D%/libm-tests/test.signbit.xml \
+   %D%/libm-tests/test.significand.xml \
+   %D%/libm-tests/test.sincos.xml \
+   %D%/libm-tests/test.sinh.xml \
+   %D%/libm-tests/test.sin.xml \
+   %D%/libm-tests/test.sqrt.xml \
+   %D%/libm-tests/test.tanh.xml \
+   %D%/libm-tests/test.tan.xml \
+   %D%/libm-tests/test.tgamma.xml \
+   %D%/libm-tests/uClib_impl/COPYING.LIB \
+   %D%/libm-tests/uClib_impl/empty.c \
+   %D%/libm-tests/uClib_impl/libm-test.c \
+   %D%/libm-tests/uClib_impl/libm-test-ulps.h \
+   %D%/libm-tests/uClib_impl/README_LIBM_TESTS.txt \
+   %D%/libm-tests/uClib_impl/test-double.c \
+   %D%/libm-tests/uClib_impl/test-float.c \
+   %D%/multi_CHStone-frontend.sh \
+   %D%/multi_softfloat-tests.sh \
+   %D%/softfloat-tests/f64div.c \
+   %D%/softfloat-tests/f64mul.c \
+   %D%/softfloat-tests/f64sub.c \
+   %D%/softfloat-tests/f64sum.c \
+   %D%/softfloat-tests/fdiv.c \
+   %D%/softfloat-tests/fmul.c \
+   %D%/softfloat-tests/fsub.c \
+   %D%/softfloat-tests/fsum.c \
+   %D%/softfloat-tests_list \
+   %D%/softfloat-tests/test.f64divG.xml \
+   %D%/softfloat-tests/test.f64div.xml \
+   %D%/softfloat-tests/test.f64mul.xml \
+   %D%/softfloat-tests/test.f64sub.xml \
+   %D%/softfloat-tests/test.f64sum.xml \
+   %D%/softfloat-tests/test.fdivG.xml \
+   %D%/softfloat-tests/test.fdiv.xml \
+   %D%/softfloat-tests/test.fmul.xml \
+   %D%/softfloat-tests/test.fsub.xml \
+   %D%/softfloat-tests/test.fsum.xml \
+   %D%/testfloat/berkeley-softfloat/build/bambu/Makefile \
+   %D%/testfloat/berkeley-softfloat/build/bambu/platform.h \
+   %D%/testfloat/berkeley-softfloat/build/Linux-386-GCC/Makefile \
+   %D%/testfloat/berkeley-softfloat/build/Linux-386-GCC/platform.h \
+   %D%/testfloat/berkeley-softfloat/build/Linux-386-SSE2-GCC/Makefile \
+   %D%/testfloat/berkeley-softfloat/build/Linux-386-SSE2-GCC/platform.h \
+   %D%/testfloat/berkeley-softfloat/build/Linux-ARM-VFPv2-GCC/Makefile \
+   %D%/testfloat/berkeley-softfloat/build/Linux-ARM-VFPv2-GCC/platform.h \
+   %D%/testfloat/berkeley-softfloat/build/Linux-x86_64-GCC/Makefile \
+   %D%/testfloat/berkeley-softfloat/build/Linux-x86_64-GCC/platform.h \
+   %D%/testfloat/berkeley-softfloat/build/template-FAST_INT64/Makefile \
+   %D%/testfloat/berkeley-softfloat/build/template-FAST_INT64/platform.h \
+   %D%/testfloat/berkeley-softfloat/build/template-not-FAST_INT64/Makefile \
+   %D%/testfloat/berkeley-softfloat/build/template-not-FAST_INT64/platform.h \
+   %D%/testfloat/berkeley-softfloat/build/Win32-MinGW/Makefile \
+   %D%/testfloat/berkeley-softfloat/build/Win32-MinGW/platform.h \
+   %D%/testfloat/berkeley-softfloat/build/Win32-SSE2-MinGW/Makefile \
+   %D%/testfloat/berkeley-softfloat/build/Win32-SSE2-MinGW/platform.h \
+   %D%/testfloat/berkeley-softfloat/build/Win64-MinGW-w64/Makefile \
+   %D%/testfloat/berkeley-softfloat/build/Win64-MinGW-w64/platform.h \
+   %D%/testfloat/berkeley-softfloat/COPYING.txt \
+   %D%/testfloat/berkeley-softfloat/doc/SoftFloat-history.html \
+   %D%/testfloat/berkeley-softfloat/doc/SoftFloat.html \
+   %D%/testfloat/berkeley-softfloat/doc/SoftFloat-source.html \
+   %D%/testfloat/berkeley-softfloat/README.html \
+   %D%/testfloat/berkeley-softfloat/README.md \
+   %D%/testfloat/berkeley-softfloat/README.txt \
+   %D%/testfloat/berkeley-softfloat/source/8086/extF80M_isSignalingNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/8086/f128M_isSignalingNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/8086/s_commonNaNToExtF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/8086/s_commonNaNToExtF80UI.c \
+   %D%/testfloat/berkeley-softfloat/source/8086/s_commonNaNToF128M.c \
+   %D%/testfloat/berkeley-softfloat/source/8086/s_commonNaNToF128UI.c \
+   %D%/testfloat/berkeley-softfloat/source/8086/s_commonNaNToF16UI.c \
+   %D%/testfloat/berkeley-softfloat/source/8086/s_commonNaNToF32UI.c \
+   %D%/testfloat/berkeley-softfloat/source/8086/s_commonNaNToF64UI.c \
+   %D%/testfloat/berkeley-softfloat/source/8086/s_extF80MToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/8086/s_extF80UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/8086/s_f128MToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/8086/s_f128UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/8086/s_f16UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/8086/s_f32UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/8086/s_f64UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/8086/softfloat_raiseFlags.c \
+   %D%/testfloat/berkeley-softfloat/source/8086/specialize.h \
+   %D%/testfloat/berkeley-softfloat/source/8086/s_propagateNaNExtF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/8086/s_propagateNaNExtF80UI.c \
+   %D%/testfloat/berkeley-softfloat/source/8086/s_propagateNaNF128M.c \
+   %D%/testfloat/berkeley-softfloat/source/8086/s_propagateNaNF128UI.c \
+   %D%/testfloat/berkeley-softfloat/source/8086/s_propagateNaNF16UI.c \
+   %D%/testfloat/berkeley-softfloat/source/8086/s_propagateNaNF32UI.c \
+   %D%/testfloat/berkeley-softfloat/source/8086/s_propagateNaNF64UI.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/extF80M_isSignalingNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/f128M_isSignalingNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/s_commonNaNToExtF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/s_commonNaNToExtF80UI.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/s_commonNaNToF128M.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/s_commonNaNToF128UI.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/s_commonNaNToF16UI.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/s_commonNaNToF32UI.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/s_commonNaNToF64UI.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/s_extF80MToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/s_extF80UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/s_f128MToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/s_f128UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/s_f16UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/s_f32UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/s_f64UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/softfloat_raiseFlags.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/specialize.h \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/s_propagateNaNExtF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/s_propagateNaNExtF80UI.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/s_propagateNaNF128M.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/s_propagateNaNF128UI.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/s_propagateNaNF16UI.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/s_propagateNaNF32UI.c \
+   %D%/testfloat/berkeley-softfloat/source/8086-SSE/s_propagateNaNF64UI.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/extF80M_isSignalingNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/f128M_isSignalingNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_commonNaNToExtF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_commonNaNToExtF80UI.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_commonNaNToF128M.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_commonNaNToF128UI.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_commonNaNToF16UI.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_commonNaNToF32UI.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_commonNaNToF64UI.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_extF80MToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_extF80UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_f128MToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_f128UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_f16UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_f32UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_f64UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/softfloat_raiseFlags.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/specialize.h \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_propagateNaNExtF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_propagateNaNExtF80UI.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_propagateNaNF128M.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_propagateNaNF128UI.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_propagateNaNF16UI.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_propagateNaNF32UI.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2-defaultNaN/s_propagateNaNF64UI.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/extF80M_isSignalingNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/f128M_isSignalingNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/s_commonNaNToExtF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/s_commonNaNToExtF80UI.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/s_commonNaNToF128M.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/s_commonNaNToF128UI.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/s_commonNaNToF16UI.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/s_commonNaNToF32UI.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/s_commonNaNToF64UI.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/s_extF80MToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/s_extF80UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/s_f128MToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/s_f128UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/s_f16UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/s_f32UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/s_f64UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/softfloat_raiseFlags.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/specialize.h \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/s_propagateNaNExtF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/s_propagateNaNExtF80UI.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/s_propagateNaNF128M.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/s_propagateNaNF128UI.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/s_propagateNaNF16UI.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/s_propagateNaNF32UI.c \
+   %D%/testfloat/berkeley-softfloat/source/ARM-VFPv2/s_propagateNaNF64UI.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_add.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_div.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_eq.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_eq_signaling.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_isSignalingNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_le.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_le_quiet.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_lt.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_lt_quiet.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_add.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_div.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_eq.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_eq_signaling.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_le.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_le_quiet.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_lt.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_lt_quiet.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_mul.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_rem.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_roundToInt.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_sqrt.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_sub.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_to_f128M.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_to_f16.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_to_f32.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_to_f64.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_to_i32.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_to_i32_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_to_i64.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_to_i64_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_to_ui32.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_to_ui32_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_to_ui64.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80M_to_ui64_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_mul.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_rem.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_roundToInt.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_sqrt.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_sub.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_to_f128.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_to_f16.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_to_f32.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_to_f64.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_to_i32.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_to_i32_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_to_i64.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_to_i64_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_to_ui32.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_to_ui32_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_to_ui64.c \
+   %D%/testfloat/berkeley-softfloat/source/extF80_to_ui64_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_add.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_div.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_eq.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_eq_signaling.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_isSignalingNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_le.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_le_quiet.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_lt.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_lt_quiet.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_add.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_div.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_eq.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_eq_signaling.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_le.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_le_quiet.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_lt.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_lt_quiet.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_mulAdd.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_mul.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_rem.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_roundToInt.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_sqrt.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_sub.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_to_extF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_to_f16.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_to_f32.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_to_f64.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_to_i32.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_to_i32_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_to_i64.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_to_i64_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_to_ui32.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_to_ui32_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_to_ui64.c \
+   %D%/testfloat/berkeley-softfloat/source/f128M_to_ui64_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_mulAdd.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_mul.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_rem.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_roundToInt.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_sqrt.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_sub.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_to_extF80.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_to_f16.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_to_f32.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_to_f64.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_to_i32.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_to_i32_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_to_i64.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_to_i64_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_to_ui32.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_to_ui32_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_to_ui64.c \
+   %D%/testfloat/berkeley-softfloat/source/f128_to_ui64_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_add.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_div.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_eq.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_eq_signaling.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_isSignalingNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_le.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_le_quiet.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_lt.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_lt_quiet.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_mulAdd.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_mul.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_rem.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_roundToInt.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_sqrt.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_sub.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_to_extF80.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_to_extF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_to_f128.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_to_f128M.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_to_f32.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_to_f64.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_to_i32.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_to_i32_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_to_i64.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_to_i64_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_to_ui32.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_to_ui32_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_to_ui64.c \
+   %D%/testfloat/berkeley-softfloat/source/f16_to_ui64_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_add.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_div.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_eq.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_eq_signaling.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_isSignalingNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_le.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_le_quiet.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_lt.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_lt_quiet.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_mulAdd.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_mul.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_rem.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_roundToInt.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_sqrt.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_sub.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_to_extF80.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_to_extF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_to_f128.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_to_f128M.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_to_f16.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_to_f64.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_to_i32.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_to_i32_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_to_i64.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_to_i64_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_to_ui32.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_to_ui32_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_to_ui64.c \
+   %D%/testfloat/berkeley-softfloat/source/f32_to_ui64_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_add.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_div.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_eq.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_eq_signaling.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_isSignalingNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_le.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_le_quiet.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_lt.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_lt_quiet.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_mulAdd.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_mul.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_rem.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_roundToInt.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_sqrt.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_sub.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_to_extF80.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_to_extF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_to_f128.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_to_f128M.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_to_f16.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_to_f32.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_to_i32.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_to_i32_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_to_i64.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_to_i64_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_to_ui32.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_to_ui32_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_to_ui64.c \
+   %D%/testfloat/berkeley-softfloat/source/f64_to_ui64_r_minMag.c \
+   %D%/testfloat/berkeley-softfloat/source/i32_to_extF80.c \
+   %D%/testfloat/berkeley-softfloat/source/i32_to_extF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/i32_to_f128.c \
+   %D%/testfloat/berkeley-softfloat/source/i32_to_f128M.c \
+   %D%/testfloat/berkeley-softfloat/source/i32_to_f16.c \
+   %D%/testfloat/berkeley-softfloat/source/i32_to_f32.c \
+   %D%/testfloat/berkeley-softfloat/source/i32_to_f64.c \
+   %D%/testfloat/berkeley-softfloat/source/i64_to_extF80.c \
+   %D%/testfloat/berkeley-softfloat/source/i64_to_extF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/i64_to_f128.c \
+   %D%/testfloat/berkeley-softfloat/source/i64_to_f128M.c \
+   %D%/testfloat/berkeley-softfloat/source/i64_to_f16.c \
+   %D%/testfloat/berkeley-softfloat/source/i64_to_f32.c \
+   %D%/testfloat/berkeley-softfloat/source/i64_to_f64.c \
+   %D%/testfloat/berkeley-softfloat/source/include/internals.h \
+   %D%/testfloat/berkeley-softfloat/source/include/opts-GCC.h \
+   %D%/testfloat/berkeley-softfloat/source/include/primitives.h \
+   %D%/testfloat/berkeley-softfloat/source/include/primitiveTypes.h \
+   %D%/testfloat/berkeley-softfloat/source/include/softfloat.h \
+   %D%/testfloat/berkeley-softfloat/source/include/softfloat_types.h \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/extF80M_isSignalingNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/f128M_isSignalingNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/s_commonNaNToExtF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/s_commonNaNToExtF80UI.c \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/s_commonNaNToF128M.c \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/s_commonNaNToF128UI.c \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/s_commonNaNToF16UI.c \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/s_commonNaNToF32UI.c \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/s_commonNaNToF64UI.c \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/s_extF80MToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/s_extF80UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/s_f128MToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/s_f128UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/s_f16UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/s_f32UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/s_f64UIToCommonNaN.c \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/softfloat_raiseFlags.c \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/specialize.h \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/s_propagateNaNExtF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/s_propagateNaNExtF80UI.c \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/s_propagateNaNF128M.c \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/s_propagateNaNF128UI.c \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/s_propagateNaNF16UI.c \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/s_propagateNaNF32UI.c \
+   %D%/testfloat/berkeley-softfloat/source/RISCV/s_propagateNaNF64UI.c \
+   %D%/testfloat/berkeley-softfloat/source/s_add128.c \
+   %D%/testfloat/berkeley-softfloat/source/s_add256M.c \
+   %D%/testfloat/berkeley-softfloat/source/s_addCarryM.c \
+   %D%/testfloat/berkeley-softfloat/source/s_addComplCarryM.c \
+   %D%/testfloat/berkeley-softfloat/source/s_addExtF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/s_addF128M.c \
+   %D%/testfloat/berkeley-softfloat/source/s_addMagsExtF80.c \
+   %D%/testfloat/berkeley-softfloat/source/s_addMagsF128.c \
+   %D%/testfloat/berkeley-softfloat/source/s_addMagsF16.c \
+   %D%/testfloat/berkeley-softfloat/source/s_addMagsF32.c \
+   %D%/testfloat/berkeley-softfloat/source/s_addMagsF64.c \
+   %D%/testfloat/berkeley-softfloat/source/s_addM.c \
+   %D%/testfloat/berkeley-softfloat/source/s_approxRecip_1Ks.c \
+   %D%/testfloat/berkeley-softfloat/source/s_approxRecip32_1.c \
+   %D%/testfloat/berkeley-softfloat/source/s_approxRecipSqrt_1Ks.c \
+   %D%/testfloat/berkeley-softfloat/source/s_approxRecipSqrt32_1.c \
+   %D%/testfloat/berkeley-softfloat/source/s_compare128M.c \
+   %D%/testfloat/berkeley-softfloat/source/s_compare96M.c \
+   %D%/testfloat/berkeley-softfloat/source/s_compareNonnormExtF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/s_countLeadingZeros16.c \
+   %D%/testfloat/berkeley-softfloat/source/s_countLeadingZeros32.c \
+   %D%/testfloat/berkeley-softfloat/source/s_countLeadingZeros64.c \
+   %D%/testfloat/berkeley-softfloat/source/s_countLeadingZeros8.c \
+   %D%/testfloat/berkeley-softfloat/source/s_eq128.c \
+   %D%/testfloat/berkeley-softfloat/source/s_invalidExtF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/s_invalidF128M.c \
+   %D%/testfloat/berkeley-softfloat/source/s_isNaNF128M.c \
+   %D%/testfloat/berkeley-softfloat/source/s_le128.c \
+   %D%/testfloat/berkeley-softfloat/source/s_lt128.c \
+   %D%/testfloat/berkeley-softfloat/source/s_mul128By32.c \
+   %D%/testfloat/berkeley-softfloat/source/s_mul128MTo256M.c \
+   %D%/testfloat/berkeley-softfloat/source/s_mul128To256M.c \
+   %D%/testfloat/berkeley-softfloat/source/s_mul64ByShifted32To128.c \
+   %D%/testfloat/berkeley-softfloat/source/s_mul64To128.c \
+   %D%/testfloat/berkeley-softfloat/source/s_mul64To128M.c \
+   %D%/testfloat/berkeley-softfloat/source/s_mulAddF128.c \
+   %D%/testfloat/berkeley-softfloat/source/s_mulAddF128M.c \
+   %D%/testfloat/berkeley-softfloat/source/s_mulAddF16.c \
+   %D%/testfloat/berkeley-softfloat/source/s_mulAddF32.c \
+   %D%/testfloat/berkeley-softfloat/source/s_mulAddF64.c \
+   %D%/testfloat/berkeley-softfloat/source/s_negXM.c \
+   %D%/testfloat/berkeley-softfloat/source/s_normExtF80SigM.c \
+   %D%/testfloat/berkeley-softfloat/source/s_normRoundPackMToExtF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/s_normRoundPackMToF128M.c \
+   %D%/testfloat/berkeley-softfloat/source/s_normRoundPackToExtF80.c \
+   %D%/testfloat/berkeley-softfloat/source/s_normRoundPackToF128.c \
+   %D%/testfloat/berkeley-softfloat/source/s_normRoundPackToF16.c \
+   %D%/testfloat/berkeley-softfloat/source/s_normRoundPackToF32.c \
+   %D%/testfloat/berkeley-softfloat/source/s_normRoundPackToF64.c \
+   %D%/testfloat/berkeley-softfloat/source/s_normSubnormalExtF80Sig.c \
+   %D%/testfloat/berkeley-softfloat/source/s_normSubnormalF128Sig.c \
+   %D%/testfloat/berkeley-softfloat/source/s_normSubnormalF128SigM.c \
+   %D%/testfloat/berkeley-softfloat/source/s_normSubnormalF16Sig.c \
+   %D%/testfloat/berkeley-softfloat/source/s_normSubnormalF32Sig.c \
+   %D%/testfloat/berkeley-softfloat/source/s_normSubnormalF64Sig.c \
+   %D%/testfloat/berkeley-softfloat/source/softfloat_state.c \
+   %D%/testfloat/berkeley-softfloat/source/s_remStepMBy32.c \
+   %D%/testfloat/berkeley-softfloat/source/s_roundMToI64.c \
+   %D%/testfloat/berkeley-softfloat/source/s_roundMToUI64.c \
+   %D%/testfloat/berkeley-softfloat/source/s_roundPackMToExtF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/s_roundPackMToF128M.c \
+   %D%/testfloat/berkeley-softfloat/source/s_roundPackToExtF80.c \
+   %D%/testfloat/berkeley-softfloat/source/s_roundPackToF128.c \
+   %D%/testfloat/berkeley-softfloat/source/s_roundPackToF16.c \
+   %D%/testfloat/berkeley-softfloat/source/s_roundPackToF32.c \
+   %D%/testfloat/berkeley-softfloat/source/s_roundPackToF64.c \
+   %D%/testfloat/berkeley-softfloat/source/s_roundToI32.c \
+   %D%/testfloat/berkeley-softfloat/source/s_roundToI64.c \
+   %D%/testfloat/berkeley-softfloat/source/s_roundToUI32.c \
+   %D%/testfloat/berkeley-softfloat/source/s_roundToUI64.c \
+   %D%/testfloat/berkeley-softfloat/source/s_shiftLeftM.c \
+   %D%/testfloat/berkeley-softfloat/source/s_shiftNormSigF128M.c \
+   %D%/testfloat/berkeley-softfloat/source/s_shiftRightJam128.c \
+   %D%/testfloat/berkeley-softfloat/source/s_shiftRightJam128Extra.c \
+   %D%/testfloat/berkeley-softfloat/source/s_shiftRightJam256M.c \
+   %D%/testfloat/berkeley-softfloat/source/s_shiftRightJam32.c \
+   %D%/testfloat/berkeley-softfloat/source/s_shiftRightJam64.c \
+   %D%/testfloat/berkeley-softfloat/source/s_shiftRightJam64Extra.c \
+   %D%/testfloat/berkeley-softfloat/source/s_shiftRightJamM.c \
+   %D%/testfloat/berkeley-softfloat/source/s_shiftRightM.c \
+   %D%/testfloat/berkeley-softfloat/source/s_shortShiftLeft128.c \
+   %D%/testfloat/berkeley-softfloat/source/s_shortShiftLeft64To96M.c \
+   %D%/testfloat/berkeley-softfloat/source/s_shortShiftLeftM.c \
+   %D%/testfloat/berkeley-softfloat/source/s_shortShiftRight128.c \
+   %D%/testfloat/berkeley-softfloat/source/s_shortShiftRightExtendM.c \
+   %D%/testfloat/berkeley-softfloat/source/s_shortShiftRightJam128.c \
+   %D%/testfloat/berkeley-softfloat/source/s_shortShiftRightJam128Extra.c \
+   %D%/testfloat/berkeley-softfloat/source/s_shortShiftRightJam64.c \
+   %D%/testfloat/berkeley-softfloat/source/s_shortShiftRightJam64Extra.c \
+   %D%/testfloat/berkeley-softfloat/source/s_shortShiftRightJamM.c \
+   %D%/testfloat/berkeley-softfloat/source/s_shortShiftRightM.c \
+   %D%/testfloat/berkeley-softfloat/source/s_sub128.c \
+   %D%/testfloat/berkeley-softfloat/source/s_sub1XM.c \
+   %D%/testfloat/berkeley-softfloat/source/s_sub256M.c \
+   %D%/testfloat/berkeley-softfloat/source/s_subMagsExtF80.c \
+   %D%/testfloat/berkeley-softfloat/source/s_subMagsF128.c \
+   %D%/testfloat/berkeley-softfloat/source/s_subMagsF16.c \
+   %D%/testfloat/berkeley-softfloat/source/s_subMagsF32.c \
+   %D%/testfloat/berkeley-softfloat/source/s_subMagsF64.c \
+   %D%/testfloat/berkeley-softfloat/source/s_subM.c \
+   %D%/testfloat/berkeley-softfloat/source/s_tryPropagateNaNExtF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/s_tryPropagateNaNF128M.c \
+   %D%/testfloat/berkeley-softfloat/source/ui32_to_extF80.c \
+   %D%/testfloat/berkeley-softfloat/source/ui32_to_extF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/ui32_to_f128.c \
+   %D%/testfloat/berkeley-softfloat/source/ui32_to_f128M.c \
+   %D%/testfloat/berkeley-softfloat/source/ui32_to_f16.c \
+   %D%/testfloat/berkeley-softfloat/source/ui32_to_f32.c \
+   %D%/testfloat/berkeley-softfloat/source/ui32_to_f64.c \
+   %D%/testfloat/berkeley-softfloat/source/ui64_to_extF80.c \
+   %D%/testfloat/berkeley-softfloat/source/ui64_to_extF80M.c \
+   %D%/testfloat/berkeley-softfloat/source/ui64_to_f128.c \
+   %D%/testfloat/berkeley-softfloat/source/ui64_to_f128M.c \
+   %D%/testfloat/berkeley-softfloat/source/ui64_to_f16.c \
+   %D%/testfloat/berkeley-softfloat/source/ui64_to_f32.c \
+   %D%/testfloat/berkeley-softfloat/source/ui64_to_f64.c \
+   %D%/testfloat/build/bambu/Makefile \
+   %D%/testfloat/build/bambu/platform.h \
+   %D%/testfloat/build/Linux-386-GCC/Makefile \
+   %D%/testfloat/build/Linux-386-GCC/platform.h \
+   %D%/testfloat/build/Linux-386-SSE2-GCC/Makefile \
+   %D%/testfloat/build/Linux-386-SSE2-GCC/platform.h \
+   %D%/testfloat/build/Linux-ARM-VFPv2-GCC/Makefile \
+   %D%/testfloat/build/Linux-ARM-VFPv2-GCC/platform.h \
+   %D%/testfloat/build/Linux-x86_64-GCC/Makefile \
+   %D%/testfloat/build/Linux-x86_64-GCC/platform.h \
+   %D%/testfloat/build/Win32-MinGW/Makefile \
+   %D%/testfloat/build/Win32-MinGW/platform.h \
+   %D%/testfloat/build/Win32-SSE2-MinGW/Makefile \
+   %D%/testfloat/build/Win32-SSE2-MinGW/platform.h \
+   %D%/testfloat/build/Win64-MinGW-w64/Makefile \
+   %D%/testfloat/build/Win64-MinGW-w64/platform.h \
+   %D%/testfloat/COPYING.txt \
+   %D%/testfloat/doc/TestFloat-general.html \
+   %D%/testfloat/doc/testfloat_gen.html \
+   %D%/testfloat/doc/TestFloat-history.html \
+   %D%/testfloat/doc/testfloat.html \
+   %D%/testfloat/doc/TestFloat-source.html \
+   %D%/testfloat/doc/testfloat_ver.html \
+   %D%/testfloat/doc/testsoftfloat.html \
+   %D%/testfloat/doc/timesoftfloat.html \
+   %D%/testfloat/README.html \
+   %D%/testfloat/README.md \
+   %D%/testfloat/README.txt \
+   %D%/testfloat/source/fail.c \
+   %D%/testfloat/source/fail.h \
+   %D%/testfloat/source/functionInfos.c \
+   %D%/testfloat/source/functions_common.c \
+   %D%/testfloat/source/functions.h \
+   %D%/testfloat/source/genCases_common.c \
+   %D%/testfloat/source/genCases_extF80.c \
+   %D%/testfloat/source/genCases_f128.c \
+   %D%/testfloat/source/genCases_f16.c \
+   %D%/testfloat/source/genCases_f32.c \
+   %D%/testfloat/source/genCases_f64.c \
+   %D%/testfloat/source/genCases.h \
+   %D%/testfloat/source/genCases_i32.c \
+   %D%/testfloat/source/genCases_i64.c \
+   %D%/testfloat/source/genCases_ui32.c \
+   %D%/testfloat/source/genCases_ui64.c \
+   %D%/testfloat/source/genCases_writeTestsTotal.c \
+   %D%/testfloat/source/genLoops.c \
+   %D%/testfloat/source/genLoops.h \
+   %D%/testfloat/source/random.c \
+   %D%/testfloat/source/random.h \
+   %D%/testfloat/source/readHex.c \
+   %D%/testfloat/source/readHex.h \
+   %D%/testfloat/source/slowfloat.c \
+   %D%/testfloat/source/slowfloat.h \
+   %D%/testfloat/source/standardFunctionInfos.c \
+   %D%/testfloat/source/subj-C/subjfloat.c \
+   %D%/testfloat/source/subj-C/subjfloat_config.h \
+   %D%/testfloat/source/subjfloat_functions.c \
+   %D%/testfloat/source/subjfloat.h \
+   %D%/testfloat/source/test_abcz_f128.c \
+   %D%/testfloat/source/test_abcz_f16.c \
+   %D%/testfloat/source/test_abcz_f32.c \
+   %D%/testfloat/source/test_abcz_f64.c \
+   %D%/testfloat/source/test_ab_extF80_z_bool.c \
+   %D%/testfloat/source/test_ab_f128_z_bool.c \
+   %D%/testfloat/source/test_ab_f16_z_bool.c \
+   %D%/testfloat/source/test_ab_f32_z_bool.c \
+   %D%/testfloat/source/test_ab_f64_z_bool.c \
+   %D%/testfloat/source/test_abz_extF80.c \
+   %D%/testfloat/source/test_abz_f128.c \
+   %D%/testfloat/source/test_abz_f16.c \
+   %D%/testfloat/source/test_abz_f32.c \
+   %D%/testfloat/source/test_abz_f64.c \
+   %D%/testfloat/source/test_a_extF80_z_f128.c \
+   %D%/testfloat/source/test_a_extF80_z_f16.c \
+   %D%/testfloat/source/test_a_extF80_z_f32.c \
+   %D%/testfloat/source/test_a_extF80_z_f64.c \
+   %D%/testfloat/source/test_a_extF80_z_i32_rx.c \
+   %D%/testfloat/source/test_a_extF80_z_i32_x.c \
+   %D%/testfloat/source/test_a_extF80_z_i64_rx.c \
+   %D%/testfloat/source/test_a_extF80_z_i64_x.c \
+   %D%/testfloat/source/test_a_extF80_z_ui32_rx.c \
+   %D%/testfloat/source/test_a_extF80_z_ui32_x.c \
+   %D%/testfloat/source/test_a_extF80_z_ui64_rx.c \
+   %D%/testfloat/source/test_a_extF80_z_ui64_x.c \
+   %D%/testfloat/source/test_a_f128_z_extF80.c \
+   %D%/testfloat/source/test_a_f128_z_f16.c \
+   %D%/testfloat/source/test_a_f128_z_f32.c \
+   %D%/testfloat/source/test_a_f128_z_f64.c \
+   %D%/testfloat/source/test_a_f128_z_i32_rx.c \
+   %D%/testfloat/source/test_a_f128_z_i32_x.c \
+   %D%/testfloat/source/test_a_f128_z_i64_rx.c \
+   %D%/testfloat/source/test_a_f128_z_i64_x.c \
+   %D%/testfloat/source/test_a_f128_z_ui32_rx.c \
+   %D%/testfloat/source/test_a_f128_z_ui32_x.c \
+   %D%/testfloat/source/test_a_f128_z_ui64_rx.c \
+   %D%/testfloat/source/test_a_f128_z_ui64_x.c \
+   %D%/testfloat/source/test_a_f16_z_extF80.c \
+   %D%/testfloat/source/test_a_f16_z_f128.c \
+   %D%/testfloat/source/test_a_f16_z_f32.c \
+   %D%/testfloat/source/test_a_f16_z_f64.c \
+   %D%/testfloat/source/test_a_f16_z_i32_rx.c \
+   %D%/testfloat/source/test_a_f16_z_i32_x.c \
+   %D%/testfloat/source/test_a_f16_z_i64_rx.c \
+   %D%/testfloat/source/test_a_f16_z_i64_x.c \
+   %D%/testfloat/source/test_a_f16_z_ui32_rx.c \
+   %D%/testfloat/source/test_a_f16_z_ui32_x.c \
+   %D%/testfloat/source/test_a_f16_z_ui64_rx.c \
+   %D%/testfloat/source/test_a_f16_z_ui64_x.c \
+   %D%/testfloat/source/test_a_f32_z_extF80.c \
+   %D%/testfloat/source/test_a_f32_z_f128.c \
+   %D%/testfloat/source/test_a_f32_z_f16.c \
+   %D%/testfloat/source/test_a_f32_z_f64.c \
+   %D%/testfloat/source/test_a_f32_z_i32_rx.c \
+   %D%/testfloat/source/test_a_f32_z_i32_x.c \
+   %D%/testfloat/source/test_a_f32_z_i64_rx.c \
+   %D%/testfloat/source/test_a_f32_z_i64_x.c \
+   %D%/testfloat/source/test_a_f32_z_ui32_rx.c \
+   %D%/testfloat/source/test_a_f32_z_ui32_x.c \
+   %D%/testfloat/source/test_a_f32_z_ui64_rx.c \
+   %D%/testfloat/source/test_a_f32_z_ui64_x.c \
+   %D%/testfloat/source/test_a_f64_z_extF80.c \
+   %D%/testfloat/source/test_a_f64_z_f128.c \
+   %D%/testfloat/source/test_a_f64_z_f16.c \
+   %D%/testfloat/source/test_a_f64_z_f32.c \
+   %D%/testfloat/source/test_a_f64_z_i32_rx.c \
+   %D%/testfloat/source/test_a_f64_z_i32_x.c \
+   %D%/testfloat/source/test_a_f64_z_i64_rx.c \
+   %D%/testfloat/source/test_a_f64_z_i64_x.c \
+   %D%/testfloat/source/test_a_f64_z_ui32_rx.c \
+   %D%/testfloat/source/test_a_f64_z_ui32_x.c \
+   %D%/testfloat/source/test_a_f64_z_ui64_rx.c \
+   %D%/testfloat/source/test_a_f64_z_ui64_x.c \
+   %D%/testfloat/source/test_a_i32_z_extF80.c \
+   %D%/testfloat/source/test_a_i32_z_f128.c \
+   %D%/testfloat/source/test_a_i32_z_f16.c \
+   %D%/testfloat/source/test_a_i32_z_f32.c \
+   %D%/testfloat/source/test_a_i32_z_f64.c \
+   %D%/testfloat/source/test_a_i64_z_extF80.c \
+   %D%/testfloat/source/test_a_i64_z_f128.c \
+   %D%/testfloat/source/test_a_i64_z_f16.c \
+   %D%/testfloat/source/test_a_i64_z_f32.c \
+   %D%/testfloat/source/test_a_i64_z_f64.c \
+   %D%/testfloat/source/test_a_ui32_z_extF80.c \
+   %D%/testfloat/source/test_a_ui32_z_f128.c \
+   %D%/testfloat/source/test_a_ui32_z_f16.c \
+   %D%/testfloat/source/test_a_ui32_z_f32.c \
+   %D%/testfloat/source/test_a_ui32_z_f64.c \
+   %D%/testfloat/source/test_a_ui64_z_extF80.c \
+   %D%/testfloat/source/test_a_ui64_z_f128.c \
+   %D%/testfloat/source/test_a_ui64_z_f16.c \
+   %D%/testfloat/source/test_a_ui64_z_f32.c \
+   %D%/testfloat/source/test_a_ui64_z_f64.c \
+   %D%/testfloat/source/test_az_extF80.c \
+   %D%/testfloat/source/test_az_extF80_rx.c \
+   %D%/testfloat/source/test_az_f128.c \
+   %D%/testfloat/source/test_az_f128_rx.c \
+   %D%/testfloat/source/test_az_f16.c \
+   %D%/testfloat/source/test_az_f16_rx.c \
+   %D%/testfloat/source/test_az_f32.c \
+   %D%/testfloat/source/test_az_f32_rx.c \
+   %D%/testfloat/source/test_az_f64.c \
+   %D%/testfloat/source/test_az_f64_rx.c \
+   %D%/testfloat/source/testfloat.c \
+   %D%/testfloat/source/testfloat_gen.c \
+   %D%/testfloat/source/testfloat_ver.c \
+   %D%/testfloat/source/testLoops_common.c \
+   %D%/testfloat/source/testLoops.h \
+   %D%/testfloat/source/testsoftfloat.c \
+   %D%/testfloat/source/timesoftfloat.c \
+   %D%/testfloat/source/uint128.c \
+   %D%/testfloat/source/uint128.h \
+   %D%/testfloat/source/uint128_inline.c \
+   %D%/testfloat/source/verCases_common.c \
+   %D%/testfloat/source/verCases.h \
+   %D%/testfloat/source/verCases_inline.c \
+   %D%/testfloat/source/verCases_writeFunctionName.c \
+   %D%/testfloat/source/verLoops.c \
+   %D%/testfloat/source/verLoops.h \
+   %D%/testfloat/source/writeCase_abc_f128M.c \
+   %D%/testfloat/source/writeCase_abc_f16.c \
+   %D%/testfloat/source/writeCase_abc_f32.c \
+   %D%/testfloat/source/writeCase_abc_f64.c \
+   %D%/testfloat/source/writeCase_ab_extF80M.c \
+   %D%/testfloat/source/writeCase_ab_f128M.c \
+   %D%/testfloat/source/writeCase_ab_f16.c \
+   %D%/testfloat/source/writeCase_ab_f32.c \
+   %D%/testfloat/source/writeCase_ab_f64.c \
+   %D%/testfloat/source/writeCase_a_extF80M.c \
+   %D%/testfloat/source/writeCase_a_f128M.c \
+   %D%/testfloat/source/writeCase_a_f16.c \
+   %D%/testfloat/source/writeCase_a_f32.c \
+   %D%/testfloat/source/writeCase_a_f64.c \
+   %D%/testfloat/source/writeCase_a_ui32.c \
+   %D%/testfloat/source/writeCase_a_ui64.c \
+   %D%/testfloat/source/writeCase.h \
+   %D%/testfloat/source/writeCase_z_bool.c \
+   %D%/testfloat/source/writeCase_z_extF80M.c \
+   %D%/testfloat/source/writeCase_z_f128M.c \
+   %D%/testfloat/source/writeCase_z_f16.c \
+   %D%/testfloat/source/writeCase_z_f32.c \
+   %D%/testfloat/source/writeCase_z_f64.c \
+   %D%/testfloat/source/writeCase_z_ui32.c \
+   %D%/testfloat/source/writeCase_z_ui64.c \
+   %D%/testfloat/source/writeHex.c \
+   %D%/testfloat/source/writeHex.h \
+   %D%/test_libm_expf.sh \
+   %D%/test_libm_logf.sh \
+   %D%/test_libm_powf.sh \
+   %D%/test_libm_sinecosine.sh \
+   %D%/test_libm_sqrtf.sh \
+   %D%/test_libm_sqrt.sh \
+   %D%/test_softfloat.sh
 
 TESTS = test_libm_expf.sh test_libm_logf.sh test_libm_powf.sh test_libm_sinecosine.sh test_libm_sqrt.sh test_libm_sqrtf.sh test_softfloat.sh

@@ -6,8 +6,8 @@ rm -rf search
 mkdir -p search
 cd search
 echo "#simulation of search function"
-bambu $root_dir/tree.c --top-fname=main --top-rtldesign-name=search \
-   -DNDEBUG -DBAMBU_PROFILING \
+bambu $root_dir/tree.c --top-fname=search \
+   -DNDEBUG \
    -O3 --experimental-setup=BAMBU \
-   --generate-tb=$root_dir/test_search.xml --simulator=ICARUS --simulate \
+   --generate-tb=$root_dir/tree.c --simulator=VERILATOR --simulate \
    --print-dot -v2 "$@" |& tee log.txt

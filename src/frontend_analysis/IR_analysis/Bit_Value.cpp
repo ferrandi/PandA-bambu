@@ -1399,7 +1399,7 @@ void Bit_Value::initialize()
                                  }
                                  else
                                  {
-                                    current_inf.push_back(bit_lattice::ZERO);
+                                    current_inf.push_back(bit_lattice::X);
                                  }
                                  INDENT_DBG_MEX(
                                      DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -1424,40 +1424,12 @@ void Bit_Value::initialize()
                                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                                          "---Not handled by bitvalue");
                                           cur_bitstring = create_u_bitstring(BitLatticeManipulator::Size(cur_node));
-                                          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                                         "---bitstring = " + bitstring_to_string(cur_bitstring));
                                        }
                                        else
                                        {
                                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                                          "---Is handled by bitvalue");
                                           cur_bitstring = string_to_bitstring(ssa->bit_values);
-                                          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                                         "---bitstring = " + bitstring_to_string(cur_bitstring));
-                                          if(cur_bitstring.size() != 0)
-                                          {
-                                             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                                            "---bitstring not empty");
-                                             if(cur_bitstring.size() < source_type_size &&
-                                                source_is_signed != lhs_signed)
-                                             {
-                                                cur_bitstring = sign_extend_bitstring(cur_bitstring, source_is_signed,
-                                                                                      source_type_size);
-                                                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                                               "---bitstring = " + bitstring_to_string(cur_bitstring));
-                                             }
-                                             sign_reduce_bitstring(cur_bitstring, lhs_signed);
-                                             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                                            "---bitstring = " + bitstring_to_string(cur_bitstring));
-                                          }
-                                          else
-                                          {
-                                             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                                            "---bitstring empty --> using U");
-                                             cur_bitstring = create_u_bitstring(BitLatticeManipulator::Size(cur_node));
-                                             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                                            "---bitstring = " + bitstring_to_string(cur_bitstring));
-                                          }
                                        }
                                     }
                                     else if(cur_node->get_kind() == integer_cst_K)
@@ -1466,14 +1438,30 @@ void Bit_Value::initialize()
                                        const auto cst_val = tree_helper::GetConstValue(cur_node);
                                        cur_bitstring =
                                            create_bitstring_from_constant(cst_val, source_type_size, lhs_signed);
+                                    }
+                                    else
+                                    {
+                                       cur_bitstring = create_u_bitstring(BitLatticeManipulator::Size(cur_node));
+                                    }
+                                    if(cur_bitstring.size() != 0)
+                                    {
                                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                                       "---bitstring = " + bitstring_to_string(cur_bitstring));
+                                       if(cur_bitstring.size() < source_type_size && source_is_signed != lhs_signed)
+                                       {
+                                          cur_bitstring =
+                                              sign_extend_bitstring(cur_bitstring, source_is_signed, source_type_size);
+                                          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                                         "---bitstring = " + bitstring_to_string(cur_bitstring));
+                                       }
                                        sign_reduce_bitstring(cur_bitstring, lhs_signed);
                                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                                       "---bitstring = " + bitstring_to_string(cur_bitstring));
                                     }
                                     else
                                     {
+                                       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                                      "---bitstring empty --> using U");
                                        cur_bitstring = create_u_bitstring(BitLatticeManipulator::Size(cur_node));
                                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                                       "---bitstring = " + bitstring_to_string(cur_bitstring));
@@ -1482,6 +1470,17 @@ void Bit_Value::initialize()
                                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                                    "---inf = " + bitstring_to_string(current_inf));
                                  }
+                                 while(current_inf.front() == bit_lattice::X)
+                                 {
+                                    current_inf.pop_front();
+                                 }
+                                 if(current_inf.empty())
+                                 {
+                                    current_inf.push_back(bit_lattice::ZERO);
+                                 }
+                                 THROW_ASSERT(std::find(current_inf.begin(), current_inf.end(), bit_lattice::X) ==
+                                                  current_inf.end(),
+                                              "Init bitstring must not contain X: " + bitstring_to_string(current_inf));
                                  vd->bit_values = bitstring_to_string(current_inf);
                                  INDENT_DBG_MEX(
                                      DEBUG_LEVEL_PEDANTIC, debug_level,

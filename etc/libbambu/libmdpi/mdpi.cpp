@@ -56,7 +56,7 @@
 volatile pthread_t __m_main_tid;
 
 #ifndef __M_OUT_LVL
-#define __M_OUT_LVL 5
+#define __M_OUT_LVL 4
 #endif
 
 #if __M_OUT_LVL >= 3
@@ -65,7 +65,7 @@ volatile pthread_t __m_main_tid;
 #define info(...)
 #endif
 
-#if __M_OUT_LVL >= 4
+#if __M_OUT_LVL > 4
 #define debug(str, ...) \
    fprintf(stdout, "%s %10s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", __func__, ##__VA_ARGS__)
 #define error(str, ...) debug("ERROR: " str, ##__VA_ARGS__)

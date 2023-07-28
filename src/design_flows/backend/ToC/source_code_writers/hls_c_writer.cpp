@@ -126,10 +126,20 @@ extern void exit(int status);
 using namespace __AC_NAMESPACE;
 #endif
 
+#ifdef __clang__
+#define GCC_VERSION 0
+#else
+#define GCC_VERSION (__GNUC__ * 10000 \
+                     + __GNUC_MINOR__ * 100 \
+                     + __GNUC_PATCHLEVEL__)
+#endif
+
 )");
 
    // get the root function to be tested by the testbench
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
+   CustomOrderedSet<std::string> includes;
+   CustomSet<std::string> top_fnames;
    for(auto function_id : top_function_ids)
    {
       const auto fnode = TM->CGetTreeNode(function_id);
@@ -138,20 +148,28 @@ using namespace __AC_NAMESPACE;
       auto& DesignInterfaceInclude = HLSMgr->design_interface_typenameinclude;
       if(DesignInterfaceInclude.find(fname) != DesignInterfaceInclude.end())
       {
-         CustomOrderedSet<std::string> includes;
          const auto& DesignInterfaceArgsInclude = DesignInterfaceInclude.find(fname)->second;
          for(const auto& argInclude : DesignInterfaceArgsInclude)
          {
             const auto incls = convert_string_to_vector<std::string>(argInclude.second, ";");
             includes.insert(incls.begin(), incls.end());
          }
-         for(const auto& inc : includes)
-         {
-            if(inc != "")
-            {
-               indented_output_stream->Append("#include \"" + inc + "\"\n");
-            }
-         }
+         top_fnames.insert(fname);
+      }
+   }
+   if(includes.size())
+   {
+      for(const auto& fname : top_fnames)
+      {
+         indented_output_stream->Append("#define " + fname + " __keep_your_declaration_out_of_my_code\n");
+      }
+      for(const auto& inc : includes)
+      {
+         indented_output_stream->Append("#include \"" + inc + "\"\n");
+      }
+      for(const auto& fname : top_fnames)
+      {
+         indented_output_stream->Append("#undef " + fname + "\n");
       }
    }
 }
@@ -410,6 +428,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
    const auto mem_vars = HLSMgr->Rmem->get_ext_memory_variables();
    const auto BH = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
    const auto parameters = BH->get_parameters();
+   const auto align = std::max(8ULL, HLSMgr->Rmem->get_bus_data_bitsize() / 8ULL);
    indented_output_stream->Append(R"(
 typedef struct
 {
@@ -454,7 +473,7 @@ size_t i;
       }
    }
    indented_output_stream->Append("};\n");
-   indented_output_stream->Append("const ptr_t align = 8;\n");
+   indented_output_stream->Append("const ptr_t align = " + STR(align) + ";\n");
    indented_output_stream->Append("ptr_t base_addr = " + STR(base_addr) + ";\n");
 
    indented_output_stream->Append(R"(
@@ -500,8 +519,7 @@ base_addr += size;
 }
 if(error)
 {
-__m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
-pthread_exit((void*)((size_t)(MDPI_COSIM_ABORT)));
+abort();
 }
 }
 
@@ -541,9 +559,9 @@ void HLSCWriter::WriteMainTestbench()
    const auto args_decl_size = top_params.size() + (return_type != nullptr);
    const auto has_subnormals = Param->isOption(OPT_fp_subnormal) && Param->getOption<bool>(OPT_fp_subnormal);
    const auto cmp_type = [&](tree_nodeConstRef t, const std::string& tname) -> std::string {
-      if(boost::starts_with(tname, "struct") || boost::starts_with(tname, "union"))
+      if(boost::regex_search(tname, boost::regex("^a[pc]_u?(int|fixed)")))
       {
-         return "mem";
+         return "val";
       }
       else if(t)
       {
@@ -559,7 +577,8 @@ void HLSCWriter::WriteMainTestbench()
          {
             return has_subnormals ? "flts" : "flt";
          }
-         else if(tree_helper::IsVoidType(t))
+         else if(tree_helper::IsStructType(t) || tree_helper::IsUnionType(t) || tree_helper::IsVoidType(t) ||
+                 boost::starts_with(tname, "void"))
          {
             return "mem";
          }
@@ -911,8 +930,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
    indented_output_stream->Append("if(state != MDPI_COSIM_INIT)\n");
    indented_output_stream->Append("{\n");
    indented_output_stream->Append("error(\"Unexpected simulator state : %s\\n\", mdpi_state_str(state));\n");
-   indented_output_stream->Append("__m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);\n");
-   indented_output_stream->Append("pthread_exit((void*)((size_t)(MDPI_COSIM_ABORT)));\n");
+   indented_output_stream->Append("abort();\n");
    indented_output_stream->Append("}\n");
 
    if(gold_cmp.size() || return_type)
@@ -921,7 +939,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpointer-type-mismatch"
-#else
+#elif GCC_VERSION >= 40600
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpointer-type-mismatch"
 #endif
@@ -938,13 +956,12 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 if(mismatch_count)
 {
 error("Memory parameter mismatch has been found.\n");
-__m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
-pthread_exit((void*)((size_t)(MDPI_COSIM_ABORT)));
+abort();
 }
 
 #ifdef __clang__
 #pragma clang diagnostic pop
-#else
+#elif GCC_VERSION >= 40600
 #pragma GCC diagnostic pop
 #endif
 )");

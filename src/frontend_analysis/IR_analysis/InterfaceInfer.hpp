@@ -96,23 +96,20 @@ class InterfaceInfer : public ApplicationFrontendFlowStep
                           const tree_manipulationRef tree_man, const tree_managerRef TM);
 
    void create_resource_Read_simple(const std::set<std::string>& operations, const std::string& arg_name,
-                                    const interface_info& info, bool IO_port, unsigned int top_id) const;
+                                    const interface_info& info, bool IO_port) const;
 
    void create_resource_Write_simple(const std::set<std::string>& operations, const std::string& arg_name,
-                                     const interface_info& info, bool IO_port, unsigned int top_id) const;
+                                     const interface_info& info, bool IO_port) const;
 
    void create_resource_array(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
-                              const std::string& bundle_name, const interface_info& info, unsigned int arraySize,
-                              unsigned int top_id) const;
+                              const std::string& bundle_name, const interface_info& info, unsigned int arraySize) const;
 
    void create_resource_m_axi(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
                               const std::string& arg_name, const std::string& bundle_name, const interface_info& info,
-                              m_axi_type mat, unsigned int top_id,
-                              const std::map<interface_attributes, std::string>& bundle_attr_map) const;
+                              m_axi_type mat, const std::map<interface_attributes, std::string>& bundle_attr_map) const;
 
    void create_resource(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
-                        const std::string& arg_name, const interface_info& info, const std::string& fname,
-                        unsigned int top_id) const;
+                        const std::string& arg_name, const interface_info& info, const std::string& fname) const;
 
  public:
    /**

@@ -399,7 +399,7 @@ DesignFlowStep_Status Evaluation::Exec()
 #endif
       {
 #ifndef NDEBUG
-         if(parameters->isOption(OPT_dry_run_evaluation) and parameters->getOption<bool>(OPT_dry_run_evaluation))
+         if(parameters->getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::DRY_RUN)
          {
             if(bench_name == "")
             {

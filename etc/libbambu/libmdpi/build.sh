@@ -40,7 +40,7 @@ objs=($(echo "$@" | grep -oE "[^ ]+\.o"))
 for obj in "${objs[@]}"
 do
    echo "Redefine symbols in '$obj'"
-   objcopy --redefine-sym main=m_cosim_main --redefine-sym exit=__m_exit  --redefine-sym abort=__m_abort $obj
+   objcopy --redefine-sym main=m_cosim_main --redefine-sym exit=__m_exit --redefine-sym abort=__m_abort --redefine-sym __assert_fail=__m_assert_fail $obj
    args="${args/$obj}"
 done
 

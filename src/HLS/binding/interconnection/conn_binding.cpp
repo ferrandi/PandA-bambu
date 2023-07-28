@@ -1126,7 +1126,8 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
                const auto multiplicity = GetPointer<module>(call.first->get_owner())->get_multi_unit_multiplicity();
 #endif
                THROW_ASSERT(multiplicity == GetPointer<port_o>(call.first)->get_ports_size(), "unexpected condition");
-               THROW_ASSERT(index < multiplicity, "unexpected condition");
+               THROW_ASSERT(index < multiplicity,
+                            "unexpected condition: index: " + STR(index) + ", multiplicity: " + STR(multiplicity));
                auto sp_i = GetPointer<port_o>(call.first)->get_port(index);
                toOred[sp_i].push_back(*ports_it);
 
