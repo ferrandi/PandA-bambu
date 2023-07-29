@@ -70,7 +70,6 @@
 #include "var_pp_functor.hpp"
 
 #include <boost/algorithm/string/trim_all.hpp>
-#include <boost/filesystem/operations.hpp>
 #include <boost/regex.hpp>
 
 #include <list>
@@ -316,17 +315,9 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
       else
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Inline initialization");
-         const auto parm_type_bitsize = tree_helper::Size(parm_type);
          if(tree_helper::IsRealType(parm_type) && test_v == "-0")
          {
-            if(parm_type_bitsize == 32)
-            {
-               indented_output_stream->Append(param + " = copysignf(0.0, -1.0);\n");
-            }
-            else
-            {
-               indented_output_stream->Append(param + " = copysign(0.0, -1.0);\n");
-            }
+            indented_output_stream->Append(param + " = -0.0;\n");
          }
          else
          {
