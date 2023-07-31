@@ -70,7 +70,7 @@
 #include "var_pp_functor.hpp"
 
 #include <boost/algorithm/string/trim_all.hpp>
-#include <boost/regex.hpp>
+#include <regex>
 
 #include <list>
 #include <string>
@@ -78,7 +78,7 @@
 
 REF_FORWARD_DECL(memory_symbol);
 
-static const boost::regex wrapper_def("(ac_channel|stream|hls::stream)<(.*)>");
+static const std::regex wrapper_def("(ac_channel|stream|hls::stream)<(.*)>");
 #define WRAPPER_GROUP_WTYPE 2
 
 HLSCWriter::HLSCWriter(const CBackendInformationConstRef _c_backend_info, const HLS_managerConstRef _HLSMgr,
@@ -214,7 +214,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
          if(function_if)
          {
             const auto& type_name = function_if->at(param).at(attr_typename);
-            return boost::regex_search(type_name.c_str(), wrapper_def);
+            return std::regex_search(type_name.c_str(), wrapper_def);
          }
          return false;
       }();
@@ -269,8 +269,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
          }
          THROW_ASSERT(temp_var_decl.size() && var_ptdtype.size(),
                       "var_decl: " + temp_var_decl + ", ptd_type: " + var_ptdtype);
-         const auto arg_channel =
-             boost::regex_search(var_ptdtype, boost::regex("(ac_channel|stream|hls::stream)<(.*)>"));
+         const auto arg_channel = std::regex_search(var_ptdtype, std::regex("(ac_channel|stream|hls::stream)<(.*)>"));
          const auto ptd_type = tree_helper::GetRealType(tree_helper::CGetPointedType(parm_type));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Pointed type: " + GET_CONST_NODE(ptd_type)->get_kind_text() + " - " + STR(ptd_type));
@@ -539,7 +538,7 @@ void HLSCWriter::WriteMainTestbench()
    const auto args_decl_size = top_params.size() + (return_type != nullptr);
    const auto has_subnormals = Param->isOption(OPT_fp_subnormal) && Param->getOption<bool>(OPT_fp_subnormal);
    const auto cmp_type = [&](tree_nodeConstRef t, const std::string& tname) -> std::string {
-      if(boost::regex_search(tname, boost::regex("^a[pc]_u?(int|fixed)")))
+      if(std::regex_search(tname, std::regex("^a[pc]_u?(int|fixed)")))
       {
          return "val";
       }
@@ -574,8 +573,8 @@ void HLSCWriter::WriteMainTestbench()
          for(const auto& param : top_bh->GetParameters())
          {
             const auto param_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(param));
-            boost::cmatch what;
-            if(boost::regex_search(param_size_str.c_str(), what, boost::regex("\\b" + param_name + ":(\\d+)")))
+            std::cmatch what;
+            if(std::regex_search(param_size_str.c_str(), what, std::regex("\\b" + param_name + ":(\\d+)")))
             {
                idx_size[param_idx] = what[1u].str();
             }
@@ -661,9 +660,9 @@ void HLSCWriter::WriteMainTestbench()
          const auto is_reference_type = arg_typename.back() == '&';
          top_decl += arg_typename + " " + arg_name + ", ";
          gold_decl += arg_typename + ", ";
-         boost::cmatch what;
+         std::cmatch what;
          const auto arg_is_channel =
-             boost::regex_search(arg_typename.data(), what, boost::regex("(ac_channel|stream|hls::stream)<(.*)>"));
+             std::regex_search(arg_typename.data(), what, std::regex("(ac_channel|stream|hls::stream)<(.*)>"));
          if(arg_is_channel)
          {
             THROW_ASSERT(is_pointer_type || is_reference_type, "Channel parameters must be pointers or references.");

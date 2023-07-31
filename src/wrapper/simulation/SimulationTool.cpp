@@ -59,8 +59,8 @@
 #include "utility.hpp"
 
 #include <boost/lexical_cast/try_lexical_convert.hpp>
-#include <boost/regex.hpp>
 #include <cmath>
+#include <regex>
 #include <string>
 #include <vector>
 
@@ -355,9 +355,9 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       return flags;
    }();
    cflags = compiler_wrapper->GetCompilerParameters(extra_compiler_flags);
-   boost::cmatch what;
+   std::cmatch what;
    std::string kill_printf;
-   if(boost::regex_search(cflags.c_str(), what, boost::regex("\\s*(\\-D'?printf[^=]*='?)'*")))
+   if(std::regex_search(cflags.c_str(), what, std::regex("\\s*(\\-D'?printf[^=]*='?)'*")))
    {
       kill_printf.append(what[1].first, what[1].second);
       cflags.erase(static_cast<size_t>(what[0].first - cflags.c_str()),
@@ -403,8 +403,8 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
           << "#endif // M_COSIM_ARGV_H\n"
           << "EOF\n";
 
-   auto compiler_env = boost::regex_replace("\n" + compiler_wrapper->GetCompiler().gcc,
-                                            boost::regex("([\\w\\d]+=(\".*\"|[^\\s]+))\\s*"), "export $1\n");
+   auto compiler_env = std::regex_replace("\n" + compiler_wrapper->GetCompiler().gcc,
+                                          std::regex("([\\w\\d]+=(\".*\"|[^\\s]+))\\s*"), "export $1\n");
    boost::replace_last(compiler_env, "\n", "\nexport CC=\"");
    compiler_env += "\"";
    script << compiler_env << "\n"

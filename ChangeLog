@@ -7,7 +7,7 @@ New features introduced:
 - C/C++ co-simulation support added for Mentor Questasim/Modelsim, Xilinx XSim, and Verilator
 - Memory mapped top interface support
 - C++17 is now required to build PandA Bambu
-- Removed dependecy from boost filesystem
+- Removed dependecy from boost filesystem and boost regex
 
 =========== PANDA 2023.01 ===========
 Tenth public release of PandA framework.

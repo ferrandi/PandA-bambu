@@ -436,7 +436,7 @@
 #include "fileIO.hpp"
 #include "string_manipulation.hpp"
 #include "utility.hpp"
-#include <boost/regex.hpp>
+#include <regex>
 
 /// XML includes used for writing and reading the configuration file
 #include "polixml.hpp"
@@ -445,7 +445,7 @@
 
 static std::string __escape_define(const std::string& str)
 {
-   return boost::regex_replace(str, boost::regex("([\\(\\) ])"), "\\\\$1");
+   return std::regex_replace(str, std::regex("([\\(\\) ])"), "\\\\$1");
 }
 
 std::string CompilerWrapper::current_compiler_version;
@@ -3087,7 +3087,7 @@ void CompilerWrapper::CreateExecutable(const std::list<std::string>& file_names,
 
    if(!has_cpp_file)
    {
-      command = boost::regex_replace(command, boost::regex("[-]{1,2}std=c\\+\\+\\w+"), "");
+      command = std::regex_replace(command, std::regex("[-]{1,2}std=c\\+\\+\\w+"), "");
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Compilation command is " + command);

@@ -64,7 +64,7 @@
 #include "xml_dom_parser.hpp"
 
 #include <boost/algorithm/string.hpp>
-#include <boost/regex.hpp>
+#include <regex>
 #include <tuple>
 #include <utility>
 

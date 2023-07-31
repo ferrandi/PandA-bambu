@@ -36,8 +36,6 @@ build/config_headers/config_HAVE_BOOLEAN_PARSER_BUILT.hpp
 build/config_headers/config_HAVE_BOOST.hpp
 build/config_headers/config_HAVE_BOOST.hpp.in
 build/config_headers/config_HAVE_BOOST_DATE_TIME.hpp
-build/config_headers/config_HAVE_BOOST_FILESYSTEM.hpp
-build/config_headers/config_HAVE_BOOST_REGEX.hpp
 build/config_headers/config_HAVE_BOOST_SYSTEM.hpp
 build/config_headers/config_HAVE_BRIDGE_BUILT.hpp
 build/config_headers/config_HAVE_BSG_HELPERS_BUILT.hpp

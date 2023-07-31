@@ -67,9 +67,9 @@
 #include "string_manipulation.hpp" // for STR
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/regex.hpp>
 #include <filesystem>
 #include <iostream>
+#include <regex>
 #include <set>
 
 /// built in type without parameter
@@ -5141,19 +5141,18 @@ unsigned int tree_helper::get_var_alignment(const tree_managerConstRef& TM, unsi
 
 std::string tree_helper::NormalizeTypename(const std::string& id)
 {
-   static const boost::regex rbase("[.:$]+");
-   static const boost::regex rtmpl("[*&<>\\-]|[, ]+");
+   static const std::regex rbase("[.:$]+");
+   static const std::regex rtmpl("[*&<>\\-]|[, ]+");
    std::string norm_typename;
-   boost::regex_replace(std::back_inserter(norm_typename), id.cbegin(), id.cend(), rbase, "_");
+   std::regex_replace(std::back_inserter(norm_typename), id.cbegin(), id.cend(), rbase, "_");
    const auto tmpl_start = norm_typename.find_first_of('<');
    if(tmpl_start != std::string::npos)
    {
       const auto tmpl_end = norm_typename.find_last_of('>');
       THROW_ASSERT(tmpl_end != std::string::npos, "");
       auto norm_template = norm_typename.substr(0, tmpl_start);
-      boost::regex_replace(std::back_inserter(norm_template),
-                           norm_typename.cbegin() + static_cast<long int>(tmpl_start),
-                           norm_typename.cbegin() + static_cast<long int>(tmpl_end + 1U), rtmpl, "_");
+      std::regex_replace(std::back_inserter(norm_template), norm_typename.cbegin() + static_cast<long int>(tmpl_start),
+                         norm_typename.cbegin() + static_cast<long int>(tmpl_end + 1U), rtmpl, "_");
       return norm_template;
    }
    return norm_typename;
