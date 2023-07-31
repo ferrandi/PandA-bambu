@@ -990,6 +990,24 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
       }
       return call_type::ct_forward;
    };
+   const auto push_stmt = [&](tree_nodeRef stmt, call_type ct) {
+      if(ct == call_type::ct_forward)
+      {
+         return;
+      }
+      THROW_ASSERT(tree_helper::IsPointerType(ssa_node), "unexpected condition");
+      info.update(ssa_node, "", parameters);
+      if(ct == call_type::ct_read)
+      {
+         readStmt.push_back(stmt);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  LOAD OPERATION");
+      }
+      else if(ct == call_type::ct_write)
+      {
+         writeStmt.push_back(stmt);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  STORE OPERATION");
+      }
+   };
    if(!Visited.insert(GET_INDEX_CONST_NODE(ssa_node)).second)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -997,22 +1015,17 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
       return;
    }
 
-   std::queue<tree_nodeRef> pointer_ssa;
-   pointer_ssa.push(ssa_node);
-   while(pointer_ssa.size())
+   std::queue<tree_nodeRef> chase_ssa;
+   chase_ssa.push(ssa_node);
+   while(chase_ssa.size())
    {
-      const auto ptr_node = pointer_ssa.front();
-      const auto ptr_ssa = GetPointer<const ssa_name>(GET_CONST_NODE(ptr_node));
-      pointer_ssa.pop();
+      ssa_node = chase_ssa.front();
+      const auto ssa_var = GetPointer<const ssa_name>(GET_CONST_NODE(ssa_node));
+      chase_ssa.pop();
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                     "-->SSA VARIABLE: " + ptr_ssa->ToString() + " with " + STR(ptr_ssa->CGetUseStmts().size()) +
+                     "-->SSA VARIABLE: " + ssa_var->ToString() + " with " + STR(ssa_var->CGetUseStmts().size()) +
                          " use statements");
-      THROW_ASSERT(tree_helper::IsPointerType(ptr_node), "unexpected condition");
-      if(Visited.size())
-      {
-         info.update(ptr_node, "", parameters);
-      }
-      for(const auto& stmt_count : ptr_ssa->CGetUseStmts())
+      for(const auto& stmt_count : ssa_var->CGetUseStmts())
       {
          const auto use_stmt = GET_CONST_NODE(stmt_count.first);
          const auto& use_count = stmt_count.second;
@@ -1032,19 +1045,19 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
                   THROW_ASSERT(op1_kind == ssa_name_K || GetPointer<const cst_node>(GET_CONST_NODE(ga->op1)),
                                "unexpected condition");
                   if(GetPointer<const cst_node>(GET_CONST_NODE(ga->op1)) ||
-                     GetPointer<const ssa_name>(GET_CONST_NODE(ga->op1)) != ptr_ssa)
+                     GetPointer<const ssa_name>(GET_CONST_NODE(ga->op1)) != ssa_var)
                   {
-                     writeStmt.push_back(stmt_count.first);
+                     push_stmt(stmt_count.first, call_type::ct_write);
                   }
                }
             }
             else if(op1_kind == mem_ref_K)
             {
-               readStmt.push_back(stmt_count.first);
+               push_stmt(stmt_count.first, call_type::ct_read);
                if(tree_helper::IsPointerType(ga->op0))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Pointer to pointer interface propagation");
-                  pointer_ssa.push(ga->op0);
+                  chase_ssa.push(ga->op0);
                }
             }
             else if(op1_kind == call_expr_K)
@@ -1055,26 +1068,29 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
                {
                   THROW_ERROR("unexpected pattern");
                }
-               const auto ct = propagate_arg_use(ptr_node, use_count, ce->fn, ce->args);
-               if(ct == call_type::ct_read)
-               {
-                  readStmt.push_back(stmt_count.first);
-               }
-               else if(ct == call_type::ct_write)
-               {
-                  writeStmt.push_back(stmt_count.first);
-               }
+               const auto ct = propagate_arg_use(ssa_node, use_count, ce->fn, ce->args);
+               push_stmt(stmt_count.first, ct);
             }
-            else if(tree_helper::IsPointerType(ga->op0) &&
-                    (op1_kind == nop_expr_K || op1_kind == view_convert_expr_K || op1_kind == ssa_name_K ||
-                     op1_kind == pointer_plus_expr_K || op1_kind == cond_expr_K))
+            else if(op1_kind == eq_expr_K || op1_kind == ne_expr_K || op1_kind == gt_expr_K || op1_kind == lt_expr_K ||
+                    op1_kind == ge_expr_K || op1_kind == le_expr_K)
             {
-               ChasePointerInterfaceRecurse(Visited, ga->op0, writeStmt, readStmt, info);
+               THROW_WARNING("Pattern potentially not supported: pointer parameter is used in a compare statement: " +
+                             use_stmt->ToString() + ":" + GET_CONST_NODE(ga->op1)->get_kind_text());
             }
             else
             {
-               THROW_WARNING("Pattern potentially not supported: parameter used in a non-supported statement " +
-                             use_stmt->ToString() + ":" + GET_CONST_NODE(ga->op1)->get_kind_text());
+               if(!tree_helper::IsPointerType(ga->op0))
+               {
+                  THROW_WARNING("Pattern potentially not supported: parameter converted to non-pointer type: " +
+                                use_stmt->ToString() + ":" + GET_CONST_NODE(ga->op1)->get_kind_text());
+               }
+               else if(op1_kind != nop_expr_K && op1_kind != view_convert_expr_K && op1_kind != ssa_name_K &&
+                       op1_kind != pointer_plus_expr_K && op1_kind != cond_expr_K)
+               {
+                  THROW_WARNING("Pattern potentially not supported: parameter used in a non-supported statement: " +
+                                use_stmt->ToString() + ":" + GET_CONST_NODE(ga->op1)->get_kind_text());
+               }
+               ChasePointerInterfaceRecurse(Visited, ga->op0, writeStmt, readStmt, info);
             }
          }
          else if(const auto gc = GetPointer<const gimple_call>(use_stmt))
@@ -1087,15 +1103,8 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
                const auto ae_op = GET_CONST_NODE(ae->op);
                if(ae_op->get_kind() == function_decl_K)
                {
-                  const auto ct = propagate_arg_use(ptr_node, use_count, ae->op, gc->args);
-                  if(ct == call_type::ct_read)
-                  {
-                     readStmt.push_back(stmt_count.first);
-                  }
-                  else if(ct == call_type::ct_write)
-                  {
-                     writeStmt.push_back(stmt_count.first);
-                  }
+                  const auto ct = propagate_arg_use(ssa_node, use_count, ae->op, gc->args);
+                  push_stmt(stmt_count.first, ct);
                }
                else
                {
@@ -1113,25 +1122,25 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
          }
          else if(const auto gp = GetPointer<const gimple_phi>(use_stmt))
          {
-            THROW_ASSERT(ptr_ssa, "unexpected condition");
-            THROW_ASSERT(!ptr_ssa->virtual_flag, "unexpected condition");
+            THROW_ASSERT(ssa_var, "unexpected condition");
+            THROW_ASSERT(!ssa_var->virtual_flag, "unexpected condition");
             ChasePointerInterfaceRecurse(Visited, gp->res, writeStmt, readStmt, info);
          }
          else
          {
-            THROW_ERROR("USE PATTERN unexpected" + use_stmt->ToString());
+            THROW_ERROR("USE PATTERN unexpected: " + use_stmt->ToString());
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
    }
 }
 
-void InterfaceInfer::ChasePointerInterface(tree_nodeRef ptr_ssa, std::list<tree_nodeRef>& writeStmt,
+void InterfaceInfer::ChasePointerInterface(tree_nodeRef ssa_node, std::list<tree_nodeRef>& writeStmt,
                                            std::list<tree_nodeRef>& readStmt, interface_info& info)
 {
    CustomOrderedSet<unsigned> Visited;
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Parameter uses:");
-   ChasePointerInterfaceRecurse(Visited, ptr_ssa, writeStmt, readStmt, info);
+   ChasePointerInterfaceRecurse(Visited, ssa_node, writeStmt, readStmt, info);
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
 }
 
