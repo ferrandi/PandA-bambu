@@ -44,30 +44,26 @@
  *
  */
 #include "hls_constraints.hpp"
+
+#include "Parameter.hpp"
+#include "custom_map.hpp"
+#include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
+#include "fileIO.hpp"
+#include "polixml.hpp"
+#include "string_manipulation.hpp"
 #include "technology_manager.hpp"
 #include "utility.hpp"
-
-#include "custom_map.hpp"
-#include "polixml.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-
-#include "fileIO.hpp"
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <iosfwd>
 #include <string>
-
-/// STL includes
 #include <utility>
 #include <vector>
-
-/// utility include
-#include "fileIO.hpp"
-#include "string_manipulation.hpp"
 
 /// function used to extract the functional unit name and its library from a string.
 void DECODE_FU_LIB(std::string& fu_name, std::string& fu_library, const std::string& combined)

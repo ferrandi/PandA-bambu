@@ -147,14 +147,14 @@ void SimulationTool::Simulate(unsigned long long int& accum_cycles, unsigned lon
 
    /// remove previous simulation results
    auto result_file = Param->getOption<std::string>(OPT_simulation_output);
-   if(boost::filesystem::exists(result_file))
+   if(std::filesystem::exists(result_file))
    {
-      boost::filesystem::remove_all(result_file);
+      std::filesystem::remove_all(result_file);
    }
    auto profiling_result_file = Param->getOption<std::string>(OPT_profiling_output);
-   if(boost::filesystem::exists(profiling_result_file))
+   if(std::filesystem::exists(profiling_result_file))
    {
-      boost::filesystem::remove_all(profiling_result_file);
+      std::filesystem::remove_all(profiling_result_file);
    }
    ToolManagerRef tool(new ToolManager(Param));
    tool->configure(generated_script, "");
@@ -178,8 +178,8 @@ void SimulationTool::DetermineCycles(unsigned long long int& accum_cycles, unsig
    const auto result_file = Param->getOption<std::string>(OPT_simulation_output);
    const auto profiling_result_file = Param->getOption<std::string>(OPT_profiling_output);
    const auto discrepancy_enabled = Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy);
-   const auto profiling_enabled = boost::filesystem::exists(profiling_result_file);
-   if(!boost::filesystem::exists(result_file))
+   const auto profiling_enabled = std::filesystem::exists(profiling_result_file);
+   if(!std::filesystem::exists(result_file))
    {
       THROW_ERROR("The simulation does not end correctly");
    }
@@ -442,7 +442,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
    if(Param->isOption(OPT_pretty_print))
    {
       const auto m_pp_top_fname = add_fname_prefix("__m_pp_");
-      const auto pp_file = boost::filesystem::path(Param->getOption<std::string>(OPT_pretty_print));
+      const auto pp_file = std::filesystem::path(Param->getOption<std::string>(OPT_pretty_print));
       const auto pp_fileo = output_dir + "/" + pp_file.stem().string() + ".o";
       script << "${CC} -c ${CFLAGS} -fno-strict-aliasing -fPIC";
       if(CompilerWrapper::isClangCheck(default_compiler))

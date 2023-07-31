@@ -39,8 +39,6 @@
 #ifndef LUT_TRANSFORMATION_HPP
 #define LUT_TRANSFORMATION_HPP
 
-#include "config_HAVE_STDCXX_17.hpp"
-
 /// Super class include
 #include "function_frontend_flow_step.hpp"
 
@@ -80,8 +78,6 @@ class lut_transformation : public FunctionFrontendFlowStep
 
    /// The maximum number of inputs of a lut
    size_t max_lut_size;
-
-#if HAVE_STDCXX_17
 
    /// The list of all operation that can be converted to a lut.
    const std::vector<enum kind> lutBooleanExpressibleOperations = {
@@ -125,8 +121,6 @@ class lut_transformation : public FunctionFrontendFlowStep
 
    tree_nodeRef CreateBitSelectionNodeOrCast(const tree_nodeRef source, int index,
                                              std::vector<tree_nodeRef>& prev_stmts_to_add);
-
-#endif
 
    /**
     * Return the set of analyses in relationship with this design step

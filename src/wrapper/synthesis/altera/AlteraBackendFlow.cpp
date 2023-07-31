@@ -53,6 +53,7 @@
 #include "Parameter.hpp"
 #include "area_model.hpp"
 #include "clb_model.hpp"
+#include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
 #include "string_manipulation.hpp"
 #include "structural_objects.hpp"
@@ -93,7 +94,7 @@ AlteraBackendFlow::AlteraBackendFlow(const ParameterConstRef _Param, const std::
    if(Param->isOption(OPT_target_device_script))
    {
       auto xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
-      if(!boost::filesystem::exists(xml_file_path))
+      if(!std::filesystem::exists(xml_file_path))
       {
          THROW_ERROR("File \"" + xml_file_path + "\" does not exist!");
       }

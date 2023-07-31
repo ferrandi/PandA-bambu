@@ -70,10 +70,10 @@ libm_gcc46_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC46 $
 
 pkglib_LIBRARIES += libm_gcc46_subnormals.a libm_gcc46_subnormals_std.a
 libm_gcc46_subnormals_a_SOURCES = $(common_libm_src) $(common_libm_src_fr)
-libm_gcc46_subnormals_a_CFLAGS = $(compiler_flags)  --compiler=I386_GCC46
+libm_gcc46_subnormals_a_CFLAGS = $(compiler_flags) --compiler=I386_GCC46
 libm_gcc46_subnormals_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC46 $(common_treegccflags) -C
 libm_gcc46_subnormals_std_a_SOURCES = $(common_libm_src) $(common_libm_src_std)
-libm_gcc46_subnormals_std_a_CFLAGS = $(compiler_flags)  --compiler=I386_GCC46
+libm_gcc46_subnormals_std_a_CFLAGS = $(compiler_flags) --compiler=I386_GCC46
 libm_gcc46_subnormals_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC46 $(common_treegccflags) -C
 endif
 
@@ -88,20 +88,20 @@ libm_gcc47_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC47 $
 
 pkglib_LIBRARIES += libm_gcc47_subnormals.a libm_gcc47_subnormals_std.a
 libm_gcc47_subnormals_a_SOURCES = $(common_libm_src) $(common_libm_src_fr)
-libm_gcc47_subnormals_a_CFLAGS = $(compiler_flags)  --compiler=I386_GCC47
+libm_gcc47_subnormals_a_CFLAGS = $(compiler_flags) --compiler=I386_GCC47
 libm_gcc47_subnormals_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC47 $(common_treegccflags) -C
 libm_gcc47_subnormals_std_a_SOURCES = $(common_libm_src) $(common_libm_src_std)
-libm_gcc47_subnormals_std_a_CFLAGS = $(compiler_flags)  --compiler=I386_GCC47
+libm_gcc47_subnormals_std_a_CFLAGS = $(compiler_flags) --compiler=I386_GCC47
 libm_gcc47_subnormals_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC47 $(common_treegccflags) -C
 endif
 
 if BUILD_I386_GCC48
 pkglib_LIBRARIES += libm_gcc48.a libm_gcc48_std.a
 libm_gcc48_a_SOURCES = $(common_libm_src) $(common_libm_src_fr)
-libm_gcc48_a_CFLAGS = $(compiler_flags_nosub) -ftree-partial-pre -fno-tree-loop-distribute-patterns  --compiler=I386_GCC48
+libm_gcc48_a_CFLAGS = $(compiler_flags_nosub) -ftree-partial-pre -fno-tree-loop-distribute-patterns --compiler=I386_GCC48
 libm_gcc48_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC48 $(common_treegccflags) -C
 libm_gcc48_std_a_SOURCES = $(common_libm_src) $(common_libm_src_std)
-libm_gcc48_std_a_CFLAGS = $(compiler_flags_nosub) -ftree-partial-pre -fno-tree-loop-distribute-patterns  --compiler=I386_GCC48
+libm_gcc48_std_a_CFLAGS = $(compiler_flags_nosub) -ftree-partial-pre -fno-tree-loop-distribute-patterns --compiler=I386_GCC48
 libm_gcc48_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_GCC48 $(common_treegccflags) -C
 
 pkglib_LIBRARIES += libm_gcc48_subnormals.a libm_gcc48_subnormals_std.a

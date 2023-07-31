@@ -44,7 +44,7 @@
  */
 #include "schedule.hpp"
 
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
 #include <ostream>
 
 #include "behavioral_helper.hpp"
@@ -203,9 +203,9 @@ void Schedule::WriteDot(const std::string& file_name) const
    const BehavioralHelperConstRef helper = op_graph->CGetOpGraphInfo()->BH;
    std::string output_directory =
        parameters->getOption<std::string>(OPT_dot_directory) + "/" + helper->get_function_name() + "/";
-   if(!boost::filesystem::exists(output_directory))
+   if(!std::filesystem::exists(output_directory))
    {
-      boost::filesystem::create_directories(output_directory);
+      std::filesystem::create_directories(output_directory);
    }
    const VertexWriterConstRef op_label_writer(new OpWriter(op_graph.get(), 0));
    const EdgeWriterConstRef op_edge_property_writer(new OpEdgeWriter(op_graph.get()));

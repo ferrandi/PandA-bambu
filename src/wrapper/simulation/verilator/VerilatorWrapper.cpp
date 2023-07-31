@@ -54,8 +54,8 @@
 #include "utility.hpp"
 
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 #include <cerrno>
+#include <filesystem>
 #include <fstream>
 #include <thread>
 #include <unistd.h>
@@ -70,11 +70,11 @@ VerilatorWrapper::VerilatorWrapper(const ParameterConstRef& _Param, const std::s
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating the VERILATOR wrapper...");
    std::string verilator_beh_dir = SIM_SUBDIR + suffix;
-   if(boost::filesystem::exists(verilator_beh_dir))
+   if(std::filesystem::exists(verilator_beh_dir))
    {
-      boost::filesystem::remove_all(verilator_beh_dir);
+      std::filesystem::remove_all(verilator_beh_dir);
    }
-   boost::filesystem::create_directory(verilator_beh_dir + "/");
+   std::filesystem::create_directory(verilator_beh_dir + "/");
 }
 
 // destructor

@@ -120,6 +120,10 @@ appimage-build : buildenv-sync
 	@docker-compose -f .devcontainer/docker-compose.yml exec -e J=$J buildenv bash /workspace/.devcontainer/library-scripts/appimage-build.sh /appimage /panda_dist/bambu.AppImage $(APP_CONFIGURE)
 	@docker-compose -f .devcontainer/docker-compose.yml exec buildenv chown -R $(shell id -u):$(shell id -g) /panda_dist
 
+appimage-init : buildenv-sync
+	@echo "Initializing PandA build environment"
+	@docker-compose -f .devcontainer/docker-compose.yml exec buildenv make --directory=/workspace -f Makefile.init
+
 appimage-setup : buildenv-sync
 	@docker-compose -f .devcontainer/docker-compose.yml exec buildenv bash /workspace/.devcontainer/library-scripts/compiler-download.sh / $(APP_COMPILERS) /compilers
 	@docker-compose -f .devcontainer/docker-compose.yml exec buildenv bash /workspace/.devcontainer/library-scripts/compiler-setup.sh

@@ -45,6 +45,7 @@
 #include "SynthesisTool.hpp"
 #include "area_model.hpp"
 #include "clb_model.hpp"
+#include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
 #include "string_manipulation.hpp"
 #include "structural_objects.hpp"
@@ -74,7 +75,7 @@ BashBackendFlow::BashBackendFlow(const ParameterConstRef _Param, const std::stri
    if(Param->isOption(OPT_target_device_script))
    {
       auto xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
-      if(!boost::filesystem::exists(xml_file_path))
+      if(!std::filesystem::exists(xml_file_path))
       {
          THROW_ERROR("File \"" + xml_file_path + "\" does not exist!");
       }
@@ -243,7 +244,7 @@ void BashBackendFlow::InitDesignParameters()
          sources_macro_list += " ";
       }
       sources_macro_list += file_list[v];
-      boost::filesystem::path file_path(file_list[v]);
+      std::filesystem::path file_path(file_list[v]);
    }
 
    actual_parameters->parameter_values[PARAM_bash_sources_macro_list] = sources_macro_list;
@@ -286,7 +287,7 @@ void BashBackendFlow::CheckSynthesisResults()
        (Param->IsParameter("DumpingTimingReport") and Param->GetParameter<int>("DumpingTimingReport"))) and
       ((actual_parameters->parameter_values.find(PARAM_bash_backend_timing_report) !=
             actual_parameters->parameter_values.end() and
-        ExistFile(actual_parameters->parameter_values.find(PARAM_bash_backend_timing_report)->second))))
+        std::filesystem::exists(actual_parameters->parameter_values.find(PARAM_bash_backend_timing_report)->second))))
    {
       CopyStdout(actual_parameters->parameter_values.find(PARAM_bash_backend_timing_report)->second);
    }

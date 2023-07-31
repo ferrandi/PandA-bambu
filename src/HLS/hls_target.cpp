@@ -52,6 +52,7 @@
 #include "target_technology.hpp"
 
 #include "Parameter.hpp"
+#include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
 #include "polixml.hpp"
 #include "xml_dom_parser.hpp"

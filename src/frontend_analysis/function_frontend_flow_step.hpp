@@ -46,7 +46,6 @@
 #define FUNCTION_FRONTEND_FLOW_STEP_HPP
 
 #include "config_HAVE_BAMBU_BUILT.hpp" // for HAVE_BAMBU_BUILT
-#include "config_HAVE_STDCXX_11.hpp"   // for HAVE_STDCXX_11
 
 #include "design_flow_step.hpp"   // for DesignFlowStep_S...
 #include "frontend_flow_step.hpp" // for FrontendFlowStep...
@@ -139,11 +138,7 @@ class FunctionFrontendFlowStep : public FrontendFlowStep
     * Execute the step
     * @return the exit status of this step
     */
-   DesignFlowStep_Status Exec()
-#if HAVE_STDCXX_11
-       final
-#endif
-       ;
+   DesignFlowStep_Status Exec() final;
 
    /**
     * Compute the signature of a function frontend flow step
