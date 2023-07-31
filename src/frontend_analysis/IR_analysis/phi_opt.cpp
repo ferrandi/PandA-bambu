@@ -41,9 +41,6 @@
  *
  */
 
-/// Autoheader include
-#include "config_HAVE_STDCXX_11.hpp"
-
 /// header include
 #include "phi_opt.hpp"
 
@@ -327,11 +324,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
       bool removePhiOnlyP = false;
       restart = false;
       /// Workaround to avoid invalidation of pointer
-#if HAVE_STDCXX_11
       CustomSet<decltype(sl->list_of_bloc)::key_type> blocks_to_be_analyzed;
-#else
-      CustomSet<unsigned int> blocks_to_be_analyzed;
-#endif
       for(const auto& block : sl->list_of_bloc)
       {
          blocks_to_be_analyzed.insert(block.first);
@@ -721,11 +714,7 @@ void PhiOpt::ApplyDiffNothing(const unsigned int bb_index)
       }
       for(auto pred : created_bbs)
       {
-#if HAVE_STDCXX_11
          new_list_of_def_edge.push_back(decltype(new_list_of_def_edge)::value_type(curr_value, pred));
-#else
-         new_list_of_def_edge.push_back(gimple_phi::DefEdge(curr_value, pred));
-#endif
       }
       gp->SetDefEdgeList(TM, new_list_of_def_edge);
    }

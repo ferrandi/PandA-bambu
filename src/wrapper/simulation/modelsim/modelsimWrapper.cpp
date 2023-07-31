@@ -55,9 +55,9 @@
 #include "utility.hpp"
 
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 #include <cerrno>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <unistd.h>
 #include <utility>
@@ -87,7 +87,7 @@ modelsimWrapper::modelsimWrapper(const ParameterConstRef& _Param, const std::str
       THROW_WARNING("Mentor license file has not been specified. User must set LM_LICENSE_FILE variable to point to "
                     "the license file location.");
    }
-   boost::filesystem::create_directory(SIM_SUBDIR + suffix + "/");
+   std::filesystem::create_directory(SIM_SUBDIR + suffix + "/");
 }
 
 // destructor
@@ -163,9 +163,9 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
    for(const auto& file : file_list)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Examining " + file);
-      boost::filesystem::path file_path(file);
-      const auto extension = GetExtension(file_path);
-      if(extension == "vhd" || extension == "vhdl" || extension == "HD" || extension == "VHDL")
+      std::filesystem::path file_path(file);
+      const auto extension = file_path.extension().string();
+      if(extension == ".vhd" || extension == ".vhdl" || extension == ".VHD" || extension == ".VHDL")
       {
          script << MODELSIM_VCOM << " " << vflags << " " << MODELSIM_OPTIMIZER_FLAGS_DEF;
          if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
@@ -177,7 +177,7 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
          script << "   exit 1;" << std::endl;
          script << "fi" << std::endl << std::endl;
       }
-      else if(extension == "v" || extension == "V" || extension == "sv")
+      else if(extension == ".v" || extension == ".V" || extension == ".sv" || extension == ".SV")
       {
          script << MODELSIM_VLOG << " " << vflags << " " << MODELSIM_OPTIMIZER_FLAGS_DEF << " -sv";
          if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
@@ -223,8 +223,8 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
 
 void modelsimWrapper::Clean() const
 {
-   if(boost::filesystem::exists(SIM_SUBDIR + suffix))
+   if(std::filesystem::exists(SIM_SUBDIR + suffix))
    {
-      boost::filesystem::remove_all(SIM_SUBDIR + suffix);
+      std::filesystem::remove_all(SIM_SUBDIR + suffix);
    }
 }

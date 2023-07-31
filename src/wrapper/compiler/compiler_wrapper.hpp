@@ -54,7 +54,7 @@
 #include "config_HAVE_ZEBU_BUILT.hpp"
 
 /// boost include
-#include <boost/filesystem/path.hpp>
+#include <filesystem>
 
 /// STD include
 #include <iosfwd>
@@ -65,7 +65,7 @@
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
 #include "refcount.hpp"
-#include <boost/filesystem/path.hpp>
+#include <filesystem>
 
 REF_FORWARD_DECL(application_manager);
 CONSTREF_FORWARD_DECL(Parameter);

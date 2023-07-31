@@ -196,9 +196,6 @@ build/config_headers/config_HAVE_SPARC_ELF_GCC.hpp
 build/config_headers/config_HAVE_SPIDER_BUILT.hpp
 build/config_headers/config_HAVE_SQRT.hpp
 build/config_headers/config_HAVE_STDBOOL_H.hpp
-build/config_headers/config_HAVE_STDCXX_0X.hpp
-build/config_headers/config_HAVE_STDCXX_11.hpp
-build/config_headers/config_HAVE_STDCXX_17.hpp
 build/config_headers/config_HAVE_STDDEF_H.hpp
 build/config_headers/config_HAVE_STDINT_H.hpp
 build/config_headers/config_HAVE_STDLIB_H.hpp

@@ -40,7 +40,7 @@ ltmain.sh
 /texinfo.tex
 
 /ext/**/*m4
-/ext/**/configure.ac
+/ext/flopoco/configure.ac
 /ext/flopoco/Makefile.am
 /ext/flopoco/src/FPExpressions/ExpressionParser.h
 /ext/flopoco/src/FPExpressions/FlopocoScanner.h
@@ -48,6 +48,7 @@ ltmain.sh
 QTCreator-PandA-GitHub.creator.user
 
 .vscode/
+.env
 build/
 build_release/
 obj/

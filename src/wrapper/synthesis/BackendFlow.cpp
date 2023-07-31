@@ -105,7 +105,7 @@
 
 #include "exceptions.hpp"
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #include <iosfwd>
 #include <utility>
@@ -124,7 +124,7 @@
 void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_PARAMETER(Param),
                                                   const std::string& xml_file)
 {
-   if(!boost::filesystem::exists(xml_file))
+   if(!std::filesystem::exists(xml_file))
       THROW_ERROR("File \"" + xml_file + "\" does not exist!");
 #ifndef NDEBUG
    unsigned int debug_level = Param->getOption<unsigned int>(OPT_debug_level);
@@ -213,9 +213,9 @@ BackendFlow::BackendFlow(const ParameterConstRef _Param, std::string _flow_name,
 {
    debug_level = Param->get_class_debug_level(GET_CLASS(*this));
 
-   if(!boost::filesystem::exists(out_dir))
+   if(!std::filesystem::exists(out_dir))
    {
-      boost::filesystem::create_directories(out_dir);
+      std::filesystem::create_directories(out_dir);
    }
 }
 
@@ -746,11 +746,11 @@ std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
       script << "# STEP: " << step->name << std::endl;
 
       /// output directory
-      if(!boost::filesystem::exists(step->out_dir))
+      if(!std::filesystem::exists(step->out_dir))
       {
          THROW_ERROR("Output directory \"" + step->out_dir + "\" has not been created!");
       }
-      boost::filesystem::create_directory(step->out_dir);
+      std::filesystem::create_directory(step->out_dir);
 
       script << "cd " << GetCurrentPath() << std::endl;
 
@@ -841,7 +841,7 @@ BackendFlowRef BackendFlow::xload_generator_chain(const ParameterConstRef, const
    DesignParametersRef params(new DesignParameters);
    CustomOrderedSet<std::string> undefined_parameters;
 
-   if (!boost::filesystem::exists(xml_file)) THROW_ERROR("File \"" + xml_file + "\" does not exist!");
+   if (!std::filesystem::exists(xml_file)) THROW_ERROR("File \"" + xml_file + "\" does not exist!");
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->parsing of generator_chain " + xml_file);
    fileIO_istreamRef sname = fileIO_istream_open(xml_file);
    xml_dom_parser parser;

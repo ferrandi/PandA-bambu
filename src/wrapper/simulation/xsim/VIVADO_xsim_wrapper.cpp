@@ -46,16 +46,17 @@
 #include "Parameter.hpp"
 #include "ToolManager.hpp"
 #include "constant_strings.hpp"
+#include "dbgPrintHelper.hpp"
+#include "fileIO.hpp"
+#include "polixml.hpp"
 #include "utility.hpp"
+#include "xml_dom_parser.hpp"
+#include "xml_helper.hpp"
 
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
-#include <fileIO.hpp>
+#include <filesystem>
 #include <fstream>
-#include <polixml.hpp>
 #include <utility>
-#include <xml_dom_parser.hpp>
-#include <xml_helper.hpp>
 
 #define XSIM_VLOG "xvlog"
 #define XSIM_VHDL "xvhdl"
@@ -67,7 +68,7 @@ VIVADO_xsim_wrapper::VIVADO_xsim_wrapper(const ParameterConstRef& _Param, const 
     : SimulationTool(_Param, _top_fname), suffix(_suffix)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the XSIM wrapper...");
-   boost::filesystem::create_directory(XSIM_SUBDIR + suffix + "/");
+   std::filesystem::create_directory(XSIM_SUBDIR + suffix + "/");
 }
 
 // destructor
@@ -83,13 +84,13 @@ static const std::string& create_project_file(const std::string& project_filenam
    std::ofstream prj_file(project_filename);
    for(auto const& file : file_list)
    {
-      boost::filesystem::path file_path(file);
-      const auto extension = GetExtension(file_path);
-      if(extension == "vhd" || extension == "vhdl" || extension == "VHD" || extension == "VHDL")
+      std::filesystem::path file_path(file);
+      const auto extension = file_path.extension().string();
+      if(extension == ".vhd" || extension == ".vhdl" || extension == ".VHD" || extension == ".VHDL")
       {
          prj_file << "VHDL";
       }
-      else if(extension == "v" || extension == "V" || extension == "sv")
+      else if(extension == ".v" || extension == ".V" || extension == ".sv" || extension == ".SV")
       {
          prj_file << "SV";
       }
@@ -101,7 +102,7 @@ static const std::string& create_project_file(const std::string& project_filenam
       const auto filename = file_path.string();
       if(filename[0] != '/')
       {
-         prj_file << boost::filesystem::path(GetCurrentPath()).string() << "/";
+         prj_file << std::filesystem::path(GetCurrentPath()).string() << "/";
       }
       prj_file << filename << std::endl;
    }

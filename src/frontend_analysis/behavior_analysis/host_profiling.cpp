@@ -75,11 +75,8 @@
 #include "hash_helper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 #include <boost/cast.hpp>
-#include <boost/filesystem/convenience.hpp>
-#include <boost/filesystem/fstream.hpp>
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
 #include <boost/lexical_cast.hpp>
+#include <filesystem>
 
 HostProfiling_Method operator&(const HostProfiling_Method first, const HostProfiling_Method second)
 {
