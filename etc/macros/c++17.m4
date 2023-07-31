@@ -10,7 +10,6 @@ AC_DEFUN([AC_COMPILE_STDCXX_17], [
   #include <unordered_map>
   #include <unordered_set>
   #include <filesystem>
-  #include <regex>
   template <typename T>
     struct check final
     {
@@ -49,7 +48,6 @@ AC_DEFUN([AC_COMPILE_STDCXX_17], [
   #include <unordered_map>
   #include <unordered_set>
   #include <filesystem>
-  #include <regex>
   template <typename T>
     struct check final
     {
@@ -89,7 +87,6 @@ AC_DEFUN([AC_COMPILE_STDCXX_17], [
   #include <unordered_map>
   #include <unordered_set>
   #include <filesystem>
-  #include <regex>
   template <typename T>
     struct check final
     {
@@ -129,7 +126,6 @@ AC_DEFUN([AC_COMPILE_STDCXX_17], [
   #include <unordered_map>
   #include <unordered_set>
   #include <filesystem>
-  #include <regex>
   template <typename T>
     struct check final
     {

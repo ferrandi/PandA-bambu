@@ -2663,11 +2663,11 @@ AC_CONFIG_FILES(ext/Makefile)
 
 ############### Final check for static linking #############################################
 if test "x$panda_ALLSTATIC" = xyes ;then
-  AM_LDFLAGS="-all-static -pthread";
+  AM_LDFLAGS="-lstdc++fs -all-static -pthread";
   LDFLAGS+=" -static";
   AC_SUBST(AM_LDFLAGS)
 else
-  AM_LDFLAGS="-pthread";
+  AM_LDFLAGS="-lstdc++fs -pthread";
 fi
 
 AC_MSG_CHECKING([if std::filesystem requires linking stdc++fs])
