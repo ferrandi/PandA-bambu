@@ -2531,6 +2531,12 @@ void BambuParameter::CheckParameters()
 {
    Parameter::CheckParameters();
 
+   if(isOption(OPT_aligned_access) && getOption<bool>(OPT_aligned_access) && isOption(OPT_unaligned_access) &&
+      getOption<bool>(OPT_unaligned_access))
+   {
+      THROW_ERROR("Both --unaligned-access and --aligned-access have been specified");
+   }
+
    if(!isOption(OPT_top_functions_names))
    {
       setOption(OPT_top_functions_names, "main");
@@ -3787,6 +3793,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_host_compiler, CompilerWrapper::getDefaultCompiler());
 #endif
    setOption(OPT_clock_period, 10.0);
+   setOption(OPT_clock_period_resource_fraction, "1.0");
    setOption(OPT_mixed_design, true);
 #if HAVE_TASTE
    setOption(OPT_generate_taste_architecture, false);
