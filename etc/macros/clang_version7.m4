@@ -78,64 +78,76 @@ for compiler in $CLANG_TO_BE_CHECKED; do
          echo "checking llvm-opt...no"
          continue
       fi
-      ac_save_CC="$CC"
-      ac_save_CFLAGS="$CFLAGS"
-      ac_save_LDFLAGS="$LDFLAGS"
-      ac_save_LIBS="$LIBS"
-      CC=$I386_CLANG7_EXE
-      CFLAGS="-m32"
-      LDFLAGS=
-      LIBS=
-      AC_LANG_PUSH([C])
-      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_CLANG7_M32=yes,I386_CLANG7_M32=no)
-      AC_LANG_POP([C])
-      CC=$ac_save_CC
-      CFLAGS=$ac_save_CFLAGS
-      LDFLAGS=$ac_save_LDFLAGS
-      LIBS=$ac_save_LIBS
-      if test "x$I386_CLANG7_M32" == xyes; then
+      AC_CACHE_CHECK(clang 7.0 supports -m32,
+        ax_cv_clang7_m32,
+        [
+          ac_save_CC="$CC"
+          ac_save_CFLAGS="$CFLAGS"
+          ac_save_LDFLAGS="$LDFLAGS"
+          ac_save_LIBS="$LIBS"
+          CC=$I386_CLANG7_EXE
+          CFLAGS="-m32"
+          LDFLAGS=
+          LIBS=
+          AC_LANG_PUSH([C])
+          AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],ax_cv_clang7_m32=yes,ax_cv_clang7_m32=no)
+          AC_LANG_POP([C])
+          CC=$ac_save_CC
+          CFLAGS=$ac_save_CFLAGS
+          LDFLAGS=$ac_save_LDFLAGS
+          LIBS=$ac_save_LIBS
+        ])
+      if test "x$ax_cv_clang7_m32" == xyes; then
          AC_DEFINE(HAVE_I386_CLANG7_M32,1,[Define if clang 7.0 supports -m32 ])
          echo "checking support to -m32... yes"
       else
          echo "checking support to -m32... no"
       fi
-      ac_save_CC="$CC"
-      ac_save_CFLAGS="$CFLAGS"
-      ac_save_LDFLAGS="$LDFLAGS"
-      ac_save_LIBS="$LIBS"
-      CC=$I386_CLANG7_EXE
-      CFLAGS="-mx32"
-      LDFLAGS=
-      LIBS=
-      AC_LANG_PUSH([C])
-      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_CLANG7_MX32=yes,I386_CLANG7_MX32=no)
-      AC_LANG_POP([C])
-      CC=$ac_save_CC
-      CFLAGS=$ac_save_CFLAGS
-      LDFLAGS=$ac_save_LDFLAGS
-      LIBS=$ac_save_LIBS
-      if test "x$I386_CLANG7_MX32" == xyes; then
+      AC_CACHE_CHECK(clang 7.0 supports -mx32,
+        ax_cv_clang7_mx32,
+        [
+          ac_save_CC="$CC"
+          ac_save_CFLAGS="$CFLAGS"
+          ac_save_LDFLAGS="$LDFLAGS"
+          ac_save_LIBS="$LIBS"
+          CC=$I386_CLANG7_EXE
+          CFLAGS="-mx32"
+          LDFLAGS=
+          LIBS=
+          AC_LANG_PUSH([C])
+          AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],ax_cv_clang7_mx32=yes,ax_cv_clang7_mx32=no)
+          AC_LANG_POP([C])
+          CC=$ac_save_CC
+          CFLAGS=$ac_save_CFLAGS
+          LDFLAGS=$ac_save_LDFLAGS
+          LIBS=$ac_save_LIBS
+        ])
+      if test "x$ax_cv_clang7_mx32" == xyes; then
          AC_DEFINE(HAVE_I386_CLANG7_MX32,1,[Define if clang 7.0 supports -mx32 ])
          echo "checking support to -mx32... yes"
       else
          echo "checking support to -mx32... no"
       fi
-      ac_save_CC="$CC"
-      ac_save_CFLAGS="$CFLAGS"
-      ac_save_LDFLAGS="$LDFLAGS"
-      ac_save_LIBS="$LIBS"
-      CC=$I386_CLANG7_EXE
-      CFLAGS="-m64"
-      LDFLAGS=
-      LIBS=
-      AC_LANG_PUSH([C])
-      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_CLANG7_M64=yes,I386_CLANG7_M64=no)
-      AC_LANG_POP([C])
-      CC=$ac_save_CC
-      CFLAGS=$ac_save_CFLAGS
-      LDFLAGS=$ac_save_LDFLAGS
-      LIBS=$ac_save_LIBS
-      if test "x$I386_CLANG7_M64" == xyes; then
+      AC_CACHE_CHECK(clang 7.0 supports -m64,
+        ax_cv_clang7_m64,
+        [
+          ac_save_CC="$CC"
+          ac_save_CFLAGS="$CFLAGS"
+          ac_save_LDFLAGS="$LDFLAGS"
+          ac_save_LIBS="$LIBS"
+          CC=$I386_CLANG7_EXE
+          CFLAGS="-m64"
+          LDFLAGS=
+          LIBS=
+          AC_LANG_PUSH([C])
+          AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],ax_cv_clang7_m64=yes,ax_cv_clang7_m64=no)
+          AC_LANG_POP([C])
+          CC=$ac_save_CC
+          CFLAGS=$ac_save_CFLAGS
+          LDFLAGS=$ac_save_LDFLAGS
+          LIBS=$ac_save_LIBS
+        ])
+      if test "x$ax_cv_clang7_m64" == xyes; then
          AC_DEFINE(HAVE_I386_CLANG7_M64,1,[Define if clang 7.0 supports -m64 ])
          echo "checking support to -m64... yes"
       else
@@ -273,75 +285,79 @@ static FrontendPluginRegistry::Add<PrintFunctionNamesAction>
 X1("print-fns", "print function names");
 #endif
 PLUGIN_TEST
-      for plugin_compiler in $I386_CLANGPP7_EXE; do
-         plugin_option=
-         case $host_os in
-           mingw*) 
-             echo plugin_option="-shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$I386_LLVM_CONFIG7_EXE --ldflags --libs --system-libs`"
-           ;;
-           darwin*)
-             plugin_option='-fPIC -shared -undefined dynamic_lookup '
-           ;;
-           *)
-             plugin_option='-fPIC -shared '
-           ;;
-         esac
-         if test -f plugin_test.so; then
-            rm plugin_test.so
-         fi
-         echo "compiling plugin $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM7_CXXFLAGS -c plugin_test.cpp -o plugin_test.o -std=c++11 -fPIC"
-         case $host_os in
-           mingw*) 
-             I386_CLANG7_PLUGIN_COMPILER=$plugin_compiler
-             ;;
-           *)
-             $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM7_CXXFLAGS -c plugin_test.cpp -o plugin_test.o -std=c++11 -fPIC 2> /dev/null
-             $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so 2> /dev/null
-             if test ! -f plugin_test.so; then
-               echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... no... Package libclang-7.0-dev missing?"
-              continue
-             fi
-             echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... yes"
-             ac_save_CC="$CC"
-             ac_save_CFLAGS="$CFLAGS"
-             CC=$I386_CLANG7_EXE
-             CFLAGS="-fplugin=$BUILDDIR/plugin_test.so -Xclang -add-plugin -Xclang print-fns"
-             AC_LANG_PUSH([C])
-             AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
-               ]],[[
-                  return 0;
-               ]])],
-             I386_CLANG7_PLUGIN_COMPILER=$plugin_compiler,I386_CLANG7_PLUGIN_COMPILER=)
-             AC_LANG_POP([C])
-             CC=$ac_save_CC
-             CFLAGS=$ac_save_CFLAGS
-             #If plugin compilation fails, skip this executable
-             if test "x$I386_CLANG7_PLUGIN_COMPILER" = x; then
-               echo "plugin compilation does not work... $I386_CLANG7_EXE -fplugin=$BUILDDIR/plugin_test.so -Xclang -add-plugin -Xclang print-fns ?"
-              continue
-             fi
-           ;;
-         esac
-         echo "OK, we have found the compiler"
-         build_I386_CLANG7=yes;
-         build_I386_CLANG7_EMPTY_PLUGIN=yes;
-         build_I386_CLANG7_SSA_PLUGIN=yes;
-         build_I386_CLANG7_SSA_PLUGINCPP=yes;
-         build_I386_CLANG7_EXPANDMEMOPS_PLUGIN=yes;
-         build_I386_CLANG7_GEPICANON_PLUGIN=yes;
-         build_I386_CLANG7_CSROA_PLUGIN=yes;
-         build_I386_CLANG7_TOPFNAME_PLUGIN=yes;
-         build_I386_CLANG7_ASTANALYZER_PLUGIN=yes;
-      done
-      if test "x$I386_CLANG7_PLUGIN_COMPILER" != x; then
+      AC_CACHE_CHECK(clang 7.0 supports plugins, 
+        ax_cv_clang7_plugin_compiler,
+        [
+          for plugin_compiler in $I386_CLANGPP7_EXE; do
+            plugin_option=
+            case $host_os in
+              mingw*) 
+                echo plugin_option="-shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$I386_LLVM_CONFIG7_EXE --ldflags --libs --system-libs`"
+              ;;
+              darwin*)
+                plugin_option='-fPIC -shared -undefined dynamic_lookup '
+              ;;
+              *)
+                plugin_option='-fPIC -shared '
+              ;;
+            esac
+            if test -f plugin_test.so; then
+                rm plugin_test.so
+            fi
+            echo "compiling plugin $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM7_CXXFLAGS -c plugin_test.cpp -o plugin_test.o -std=c++11 -fPIC"
+            case $host_os in
+              mingw*) 
+                ax_cv_clang7_plugin_compiler=$plugin_compiler
+                ;;
+              *)
+                $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM7_CXXFLAGS -c plugin_test.cpp -o plugin_test.o -std=c++11 -fPIC 2> /dev/null
+                $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so 2> /dev/null
+                if test ! -f plugin_test.so; then
+                  echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... no... Package libclang-7.0-dev missing?"
+                  continue
+                fi
+                echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... yes"
+                ac_save_CC="$CC"
+                ac_save_CFLAGS="$CFLAGS"
+                CC=$I386_CLANG7_EXE
+                CFLAGS="-fplugin=$BUILDDIR/plugin_test.so -Xclang -add-plugin -Xclang print-fns"
+                AC_LANG_PUSH([C])
+                AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+                  ]],[[
+                      return 0;
+                  ]])],
+                ax_cv_clang7_plugin_compiler=$plugin_compiler,ax_cv_clang7_plugin_compiler=)
+                AC_LANG_POP([C])
+                CC=$ac_save_CC
+                CFLAGS=$ac_save_CFLAGS
+                #If plugin compilation fails, skip this executable
+                if test "x$ax_cv_clang7_plugin_compiler" = x; then
+                  echo "plugin compilation does not work... $I386_CLANG7_EXE -fplugin=$BUILDDIR/plugin_test.so -Xclang -add-plugin -Xclang print-fns ?"
+                  continue
+                fi
+              ;;
+            esac
+          done
+        ])
+      if test "x$ax_cv_clang7_plugin_compiler" != x; then
          break;
       fi
    else
       echo "checking $compiler... not found"
    fi
 done
-if test x$I386_CLANG7_PLUGIN_COMPILER != x; then
+if test x$ax_cv_clang7_plugin_compiler != x; then
   dnl set configure and makefile variables
+  echo "OK, we have found the compiler"
+  build_I386_CLANG7=yes;
+  build_I386_CLANG7_EMPTY_PLUGIN=yes;
+  build_I386_CLANG7_SSA_PLUGIN=yes;
+  build_I386_CLANG7_SSA_PLUGINCPP=yes;
+  build_I386_CLANG7_EXPANDMEMOPS_PLUGIN=yes;
+  build_I386_CLANG7_GEPICANON_PLUGIN=yes;
+  build_I386_CLANG7_CSROA_PLUGIN=yes;
+  build_I386_CLANG7_TOPFNAME_PLUGIN=yes;
+  build_I386_CLANG7_ASTANALYZER_PLUGIN=yes;
   I386_CLANG7_EMPTY_PLUGIN=clang7_plugin_dumpGimpleEmpty
   I386_CLANG7_SSA_PLUGIN=clang7_plugin_dumpGimpleSSA
   I386_CLANG7_SSA_PLUGINCPP=clang7_plugin_dumpGimpleSSACpp
@@ -350,6 +366,7 @@ if test x$I386_CLANG7_PLUGIN_COMPILER != x; then
   I386_CLANG7_CSROA_PLUGIN=clang7_plugin_CSROA
   I386_CLANG7_TOPFNAME_PLUGIN=clang7_plugin_topfname
   I386_CLANG7_ASTANALYZER_PLUGIN=clang7_plugin_ASTAnalyzer
+  I386_CLANG7_PLUGIN_COMPILER=$ax_cv_clang7_plugin_compiler
   AC_SUBST(I386_CLANG7_EMPTY_PLUGIN)
   AC_SUBST(I386_CLANG7_SSA_PLUGIN)
   AC_SUBST(I386_CLANG7_SSA_PLUGINCPP)
