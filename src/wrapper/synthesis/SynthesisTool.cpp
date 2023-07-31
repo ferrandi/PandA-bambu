@@ -62,7 +62,7 @@
 
 #include "Parameter.hpp"
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #include "exceptions.hpp"
 
@@ -184,18 +184,18 @@ void SynthesisTool::create_output_directory(const std::string& sub_dir)
    output_dir = general_output_dir + std::string("/") + output_dir;
 
    std::string candidate_dir;
-   if(boost::filesystem::exists(output_dir))
+   if(std::filesystem::exists(output_dir))
    {
       unsigned int progressive = 0;
       do
       {
          candidate_dir = output_dir + "_" + boost::lexical_cast<std::string>(progressive++);
-      } while(boost::filesystem::exists(candidate_dir));
+      } while(std::filesystem::exists(candidate_dir));
       output_dir = candidate_dir;
    }
-   boost::filesystem::create_directories(output_dir);
-   boost::filesystem::create_directories(output_dir + "/input");
-   boost::filesystem::create_directories(output_dir + "/output");
+   std::filesystem::create_directories(output_dir);
+   std::filesystem::create_directories(output_dir + "/input");
+   std::filesystem::create_directories(output_dir + "/output");
 }
 
 void SynthesisTool::xload_scripts(const xml_element* child)

@@ -90,9 +90,9 @@
 #include "Bit_Value_opt.hpp"
 #include "bit_lattice.hpp"
 
-#include "dbgPrintHelper.hpp"              // for DEBUG_LEVEL_
-#include "string_manipulation.hpp"         // for GET_CLASS
-#include <boost/filesystem/operations.hpp> // for create_directories
+#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "string_manipulation.hpp" // for GET_CLASS
+#include <filesystem>              // for create_directories
 
 #define RA_JUMPSET
 //    #define EARLY_DEAD_CODE_RESTART     // Abort analysis when dead code is detected instead of waiting step's end
@@ -6226,9 +6226,9 @@ class ConstraintGraph : public NodeContainer
    std::string printToFile(const std::string& file_name, const ParameterConstRef parameters) const
    {
       std::string output_directory = parameters->getOption<std::string>(OPT_dot_directory) + "RangeAnalysis/";
-      if(!boost::filesystem::exists(output_directory))
+      if(!std::filesystem::exists(output_directory))
       {
-         boost::filesystem::create_directories(output_directory);
+         std::filesystem::create_directories(output_directory);
       }
       const std::string full_name = output_directory + file_name;
       std::ofstream file(full_name);

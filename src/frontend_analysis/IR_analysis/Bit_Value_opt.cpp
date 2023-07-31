@@ -50,7 +50,6 @@
 
 /// Autoheader include
 #include "config_HAVE_FROM_DISCREPANCY_BUILT.hpp"
-#include "config_HAVE_STDCXX_17.hpp"
 
 // Behavior include
 #include "application_manager.hpp"
@@ -2002,90 +2001,6 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                      };
                      cond_expr_BVO();
                   }
-#if !HAVE_STDCXX_17
-
-                  else if(GET_CONST_NODE(ga->op1)->get_kind() == truth_not_expr_K)
-                  {
-                     auto tne_BVO = [&] {
-                        const auto tne = GetPointer<const truth_not_expr>(GET_CONST_NODE(ga->op1));
-                        if(GET_CONST_NODE(tne->op)->get_kind() == integer_cst_K)
-                        {
-                           const auto const_value = tree_helper::GetConstValue(tne->op) == 0 ? 1LL : 0LL;
-                           const auto val = TM->CreateUniqueIntegerCst(const_value, ga_op_type);
-                           propagateValue(ssa, TM, ga->op0, val, DEBUG_CALLSITE);
-                        }
-                     };
-                     tne_BVO();
-                  }
-                  else if(GET_CONST_NODE(ga->op1)->get_kind() == truth_and_expr_K)
-                  {
-                     auto tae_BVO = [&] {
-                        const auto tae = GetPointer<const truth_and_expr>(GET_CONST_NODE(ga->op1));
-                        if(GET_CONST_NODE(tae->op0)->get_kind() == integer_cst_K ||
-                           GET_CONST_NODE(tae->op1)->get_kind() == integer_cst_K ||
-                           GET_INDEX_CONST_NODE(tae->op0) == GET_INDEX_CONST_NODE(tae->op1))
-                        {
-                           tree_nodeRef val;
-                           if(GET_CONST_NODE(tae->op0)->get_kind() == integer_cst_K)
-                           {
-                              const auto cst_val = tree_helper::GetConstValue(tae->op0);
-                              if(cst_val == 0)
-                                 val = tae->op0;
-                              else
-                                 val = tae->op1;
-                           }
-                           else if(GET_CONST_NODE(tae->op1)->get_kind() == integer_cst_K)
-                           {
-                              const auto cst_val = tree_helper::GetConstValue(tae->op1);
-                              if(cst_val == 0)
-                                 val = tae->op1;
-                              else
-                                 val = tae->op0;
-                           }
-                           else
-                           {
-                              val = tae->op0;
-                           }
-                           condPropageValue(val, DEBUG_CALLSITE);
-                        }
-                     };
-                     tae_BVO();
-                  }
-                  else if(GET_CONST_NODE(ga->op1)->get_kind() == truth_or_expr_K)
-                  {
-                     auto toe_BVO = [&] {
-                        const auto toe = GetPointer<const truth_or_expr>(GET_CONST_NODE(ga->op1));
-                        if(GET_CONST_NODE(toe->op0)->get_kind() == integer_cst_K ||
-                           GET_CONST_NODE(toe->op1)->get_kind() == integer_cst_K ||
-                           GET_INDEX_CONST_NODE(toe->op0) == GET_INDEX_CONST_NODE(toe->op1))
-                        {
-                           tree_nodeRef val;
-                           if(GET_CONST_NODE(toe->op0)->get_kind() == integer_cst_K)
-                           {
-                              const auto cst_val = tree_helper::GetConstValue(toe->op0);
-                              if(cst_val == 0)
-                                 val = toe->op1;
-                              else
-                                 val = toe->op0;
-                           }
-                           else if(GET_CONST_NODE(toe->op1)->get_kind() == integer_cst_K)
-                           {
-                              const auto cst_val = tree_helper::GetConstValue(toe->op1);
-                              if(cst_val == 0)
-                                 val = toe->op0;
-                              else
-                                 val = toe->op1;
-                           }
-                           else
-                           {
-                              val = toe->op0;
-                           }
-                           condPropageValue(val, DEBUG_CALLSITE);
-                        }
-                     };
-                     toe_BVO();
-                  }
-#endif
                   else if(GET_CONST_NODE(ga->op1)->get_kind() == bit_ior_expr_K)
                   {
                      auto bit_ior_expr_BVO = [&] {

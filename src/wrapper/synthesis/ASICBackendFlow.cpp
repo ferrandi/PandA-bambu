@@ -41,21 +41,19 @@
  * Last modified by $Author$
  *
  */
-/// Header include
 #include "ASICBackendFlow.hpp"
 
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
 #include "DesignCompilerWrapper.hpp"
-#include "SynthesisTool.hpp"
-
-#include "area_model.hpp"
-#include "target_device.hpp"
-#include "time_model.hpp"
-
 #include "Parameter.hpp"
+#include "SynthesisTool.hpp"
+#include "area_model.hpp"
+#include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
 #include "structural_objects.hpp"
+#include "target_device.hpp"
+#include "time_model.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_script_command.hpp"
 
@@ -71,7 +69,7 @@ ASICBackendFlow::ASICBackendFlow(const ParameterConstRef _Param, const std::stri
    if(Param->isOption(OPT_target_device_script))
    {
       auto xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
-      if(!boost::filesystem::exists(xml_file_path))
+      if(!std::filesystem::exists(xml_file_path))
       {
          THROW_ERROR("File \"" + xml_file_path + "\" does not exist!");
       }

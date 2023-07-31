@@ -68,14 +68,13 @@
 #include "tree_reindex.hpp"
 
 /// Utility include
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
+#include <filesystem>
 
 /// Wrapper include
 #include "compiler_wrapper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-#define FILENAME_NORM(name) ((boost::filesystem::path(name)).lexically_normal().string())
+#define FILENAME_NORM(name) ((std::filesystem::path(name)).lexically_normal().string())
 
 std::vector<std::string> CheckSystemType::systemIncPath;
 
@@ -984,7 +983,7 @@ void CheckSystemType::build_include_structures(ParameterConstRef parameters)
          {
             const std::string app_prefix = getenv("APPDIR");
             temp = FILENAME_NORM(tok_iter);
-            systemIncPath.push_back(boost::filesystem::weakly_canonical(temp).string());
+            systemIncPath.push_back(std::filesystem::weakly_canonical(temp).string());
             if(temp.find(app_prefix) != 0)
             {
                temp = app_prefix + "/" + FILENAME_NORM(tok_iter);
@@ -998,7 +997,7 @@ void CheckSystemType::build_include_structures(ParameterConstRef parameters)
          {
             temp = FILENAME_NORM(tok_iter);
          }
-         systemIncPath.push_back(boost::filesystem::weakly_canonical(temp).string());
+         systemIncPath.push_back(std::filesystem::weakly_canonical(temp).string());
       }
    }
    systemIncPath.push_back("/usr/local/share/hframework/include");

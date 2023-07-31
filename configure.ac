@@ -56,15 +56,11 @@ fi
 
 # Check if compiler support c++17
 AC_COMPILE_STDCXX_17
-# Check if compiler support c++11
-AC_COMPILE_STDCXX_11
-# Check if compiler support c++0x
-AC_COMPILE_STDCXX_0X
 # Check if compiler support std::hexfloat
 AC_HEXFLOAT
 
 
-############################### c++0x/11 checking ##############################
+############################### c++17 checking ##############################
 if test "x$ac_cv_cxx_compile_cxx17_native" = xno; then
    if test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes; then
       CXXFLAGS+=" --std=c++17 "
@@ -78,23 +74,8 @@ if test "x$ac_cv_cxx_compile_cxx17_native" = xno; then
       CXXFLAGS+=" --std=c++1z "
       CXXFLAGS_EXT+=" --std=c++1z "
       CXXFLAGS_STD+=" --std=c++1z "
-   elif test "x$ac_cv_cxx_compile_cxx11_native" = xyes; then
-      CXXFLAGS+=" "
-      CXXFLAGS_EXT+=" "
-   elif test "x$ac_cv_cxx_compile_cxx11_cxx" = xyes; then
-      CXXFLAGS+=" --std=c++11 "
-      CXXFLAGS_EXT+=" --std=c++11 "
-   elif test "x$ac_cv_cxx_compile_cxx11_gxx" = xyes; then
-      CXXFLAGS+=" --std=g++11 "
-      CXXFLAGS_EXT+=" --std=g++11 "
-   elif test "x$ac_cv_cxx_compile_cxx11_cxx1x" = xyes; then
-      CXXFLAGS+=" --std=c++1x "
-      CXXFLAGS_EXT+=" --std=c++1x "
-   elif test "x$ac_cv_cxx_compile_cxx0x_cxx" = xyes; then
-      CXXFLAGS+=" --std=c++0x "
-      CXXFLAGS_EXT+=" --std=c++0x "
    else
-      AC_MSG_ERROR("Compiler does not support C++17 nor C++11 nor C++0X")
+      AC_MSG_ERROR("Compiler does not support C++17")
    fi
 fi
 AC_SUBST(CXXFLAGS_STD)
@@ -189,16 +170,9 @@ AC_SUBST(DOCUMENTATION_OUTPUTDIR)
 AX_BOOST_BASE([1.48.0])
 AX_BOOST_SYSTEM
 AX_BOOST_DATE_TIME
-AX_BOOST_FILESYSTEM
 AX_BOOST_REGEX
 
 AC_DEFINE_UNQUOTED(BOOST_INCLUDE_DIR, "${BOOST_DIR}", "Define the boost include dir")
-
-PANDA_CHECK_BOOST_SCOPED_ENUMS
-if test "x$panda_boost_no_scoped_enums" = xyes; then
-   CXXFLAGS+=" -DBOOST_NO_SCOPED_ENUMS -DBOOST_NO_CXX11_SCOPED_ENUMS "
-fi
-PANDA_CHECK_RPATH_FLAVOR
 
 AC_LINUX_DISTRO
 
@@ -388,7 +362,6 @@ panda_USE_LIB_WRAPPER=no;
 panda_USE_LIB_VCD_PARSER=no;
 panda_USE_LIB_VCD=no;
 
-boost_USE_FILESYSTEM=no;
 panda_USE_LIB_2LEV=no;
 panda_USE_SPARC_ELF_GCC=no;
 
@@ -2691,11 +2664,11 @@ AC_CONFIG_FILES(ext/Makefile)
 
 ############### Final check for static linking #############################################
 if test "x$panda_ALLSTATIC" = xyes ;then
-  AM_LDFLAGS="-all-static -pthread";
+  AM_LDFLAGS="-lstdc++fs -all-static -pthread";
   LDFLAGS+=" -static";
   AC_SUBST(AM_LDFLAGS)
 else
-  AM_LDFLAGS="-pthread";
+  AM_LDFLAGS="-lstdc++fs -pthread";
 fi
 
 case "${host_os}" in

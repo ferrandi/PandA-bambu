@@ -55,7 +55,7 @@
 
 /// includes all needed Boost.Filesystem declarations
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #include <cerrno>
 #include <fstream>
@@ -85,7 +85,7 @@ IcarusWrapper::IcarusWrapper(const ParameterConstRef& _Param, const std::string&
     : SimulationTool(_Param, _top_fname), suffix(_suffix)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating the Icarus wrapper...");
-   boost::filesystem::create_directory(SIM_SUBDIR + suffix + "/");
+   std::filesystem::create_directory(SIM_SUBDIR + suffix + "/");
 }
 
 // destructor
@@ -154,7 +154,7 @@ unsigned int IcarusWrapper::convert_to_xml(const std::string& SourceFileName, co
               std::string(" ") + TmpFileName;
    int err = PandaSystem(Param, command, output_file);
    if(temp_file)
-      boost::filesystem::remove_all(TmpFileName);
+      std::filesystem::remove_all(TmpFileName);
    if(!err)
    {
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,

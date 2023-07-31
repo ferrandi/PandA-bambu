@@ -42,42 +42,36 @@
  * Last modified by $Author$
  *
  */
+#include "technology_manager.hpp"
 
-/// Autoheader include
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
 #include "config_HAVE_FROM_LIBERTY.hpp"
 
-#include "library_manager.hpp"
-#include "structural_manager.hpp"
-#include "technology_manager.hpp"
-#include "technology_node.hpp"
-
+#include "Parameter.hpp"
 #include "area_model.hpp"
+#include "constant_strings.hpp"
+#include "custom_map.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
+#include "fileIO.hpp"
 #include "graph.hpp"
+#include "library_manager.hpp"
+#include "polixml.hpp"
+#include "simple_indent.hpp"
+#include "string_manipulation.hpp"
+#include "structural_manager.hpp"
+#include "technology_node.hpp"
 #include "time_model.hpp"
-
-#include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/lexical_cast.hpp>
+#include "utility.hpp"
+#include "xml_helper.hpp"
 
 #if HAVE_FROM_LIBERTY
 #include "lib2xml.hpp"
 #endif
 
-#include "exceptions.hpp"
-#include "fileIO.hpp"
-#include "polixml.hpp"
-#include "utility.hpp"
-#include "xml_helper.hpp"
-
-#include "Parameter.hpp"
-#include "constant_strings.hpp"
-
-#include "simple_indent.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-
-/// STL include
-#include "custom_map.hpp"
+#include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
+#include <filesystem>
 
 const unsigned int technology_manager::XML = 1 << 0;
 #if HAVE_FROM_LIBERTY
@@ -439,7 +433,7 @@ void technology_manager::lib_write(const std::string& filename, TargetDevice_Typ
 
       xml2lib(library_fname, filename, output_level, debug_level);
       if(debug_level < DEBUG_LEVEL_PEDANTIC)
-         boost::filesystem::remove(library_fname);
+         std::filesystem::remove(library_fname);
       for(CustomOrderedSet<std::string>::const_iterator l = local_libraries.begin(); l != local_libraries.end(); ++l)
       {
          if(!is_library_manager(*l))

@@ -49,7 +49,7 @@
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 #include "config_NPROFILE.hpp"
 
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
 
 ///. includes
 #include "BambuParameter.hpp"
@@ -155,7 +155,7 @@ int main(int argc, char* argv[])
          {
             if(not(parameters->getOption<bool>(OPT_no_clean)))
             {
-               boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
+               std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
             }
             return EXIT_SUCCESS;
          }
@@ -190,7 +190,7 @@ int main(int argc, char* argv[])
          }
          if(not(parameters->getOption<bool>(OPT_no_clean)))
          {
-            boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
+            std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
          }
          return EXIT_SUCCESS;
       }
@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
          compiler_wrapper->GetCompilerConfig();
          if(not(parameters->getOption<bool>(OPT_no_clean)))
          {
-            boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
+            std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
          }
          return EXIT_SUCCESS;
       }
@@ -211,7 +211,7 @@ int main(int argc, char* argv[])
          PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "no input files\n");
          if(not(parameters->getOption<bool>(OPT_no_clean)))
          {
-            boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
+            std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
          }
          return EXIT_SUCCESS;
       }
@@ -294,7 +294,7 @@ int main(int argc, char* argv[])
       design_flow_manager->Exec();
       if(not(parameters->getOption<bool>(OPT_no_clean)))
       {
-         boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
+         std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
       }
       if(parameters->isOption(OPT_serialize_output) && parameters->isOption(OPT_output_file))
       {
@@ -367,7 +367,7 @@ int main(int argc, char* argv[])
    }
    if(parameters && not(parameters->getOption<bool>(OPT_no_clean)))
    {
-      boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
+      std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
    }
    return exit_code;
 }

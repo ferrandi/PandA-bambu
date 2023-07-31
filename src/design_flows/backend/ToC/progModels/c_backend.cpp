@@ -83,14 +83,13 @@
 #endif
 
 #include <boost/config.hpp>
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/graph_utility.hpp>
 #include <boost/graph/topological_sort.hpp>
 #include <boost/lexical_cast.hpp>
 #include <deque>
+#include <filesystem>
 #include <fstream>
 #include <iosfwd>
 #include <list>
@@ -323,11 +322,11 @@ bool CBackend::HasToBeExecuted() const
 void CBackend::Initialize()
 {
    writer->Initialize();
-   boost::filesystem::path src_filename(c_backend_info->src_filename);
-   boost::filesystem::create_directories(src_filename.parent_path());
-   if(boost::filesystem::exists(c_backend_info->src_filename))
+   std::filesystem::path src_filename(c_backend_info->src_filename);
+   std::filesystem::create_directories(src_filename.parent_path());
+   if(std::filesystem::exists(c_backend_info->src_filename))
    {
-      boost::filesystem::remove_all(c_backend_info->src_filename);
+      std::filesystem::remove_all(c_backend_info->src_filename);
    }
    already_visited.clear();
    if(c_backend_info->type != CBackendInformation::CB_HLS)

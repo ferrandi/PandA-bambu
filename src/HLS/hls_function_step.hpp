@@ -41,9 +41,6 @@
 #ifndef HLS_FUNCION_STEP_HPP
 #define HLS_FUNCION_STEP_HPP
 
-/// Autoheader include
-#include "config_HAVE_STDCXX_11.hpp"
-
 /// Superclass include
 #include "hls_step.hpp"
 
@@ -139,10 +136,6 @@ class HLSFunctionStep : public HLS_step
     * Execute the step
     * @return the exit status of this step
     */
-   DesignFlowStep_Status Exec()
-#if HAVE_STDCXX_11
-       final
-#endif
-       ;
+   DesignFlowStep_Status Exec() final;
 };
 #endif

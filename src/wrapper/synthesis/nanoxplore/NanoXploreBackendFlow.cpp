@@ -37,27 +37,23 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-/// Header include
 #include "NanoXploreBackendFlow.hpp"
 
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
-/// constants include
-#include "synthesis_constants.hpp"
-
 #include "LUT_model.hpp"
+#include "NanoXploreWrapper.hpp"
+#include "Parameter.hpp"
 #include "area_model.hpp"
 #include "clb_model.hpp"
+#include "dbgPrintHelper.hpp"
+#include "fileIO.hpp"
+#include "string_manipulation.hpp"
+#include "synthesis_constants.hpp"
 #include "target_device.hpp"
 #include "target_manager.hpp"
 #include "time_model.hpp"
 #include "utility.hpp"
-
-#include "NanoXploreWrapper.hpp"
-
-#include "Parameter.hpp"
-#include "fileIO.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
 #include "xml_dom_parser.hpp"
 #include "xml_script_command.hpp"
 
@@ -103,7 +99,7 @@ NanoXploreBackendFlow::NanoXploreBackendFlow(const ParameterConstRef _Param, con
    if(Param->isOption(OPT_target_device_script))
    {
       auto xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
-      if(!boost::filesystem::exists(xml_file_path))
+      if(!std::filesystem::exists(xml_file_path))
       {
          THROW_ERROR("File \"" + xml_file_path + "\" does not exist!");
       }
@@ -265,7 +261,7 @@ void NanoXploreBackendFlow::CheckSynthesisResults()
        (Param->IsParameter("DumpingTimingReport") && Param->GetParameter<int>("DumpingTimingReport"))) &&
       ((actual_parameters->parameter_values.find(PARAM_nxpython_timing_report) !=
             actual_parameters->parameter_values.end() &&
-        ExistFile(GetPath(actual_parameters->parameter_values.at(PARAM_nxpython_timing_report))))))
+        std::filesystem::exists(GetPath(actual_parameters->parameter_values.at(PARAM_nxpython_timing_report))))))
    {
       CopyStdout(GetPath(actual_parameters->parameter_values.at(PARAM_nxpython_timing_report)));
    }

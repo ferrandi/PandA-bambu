@@ -45,14 +45,13 @@
 /// Includes the class definition
 #include "xst_wrapper.hpp"
 
-#include "ToolManager.hpp"
-#include "xml_script_command.hpp"
-
 #include "Parameter.hpp"
-
+#include "ToolManager.hpp"
+#include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "string_manipulation.hpp"
 #include "utility.hpp"
+#include "xml_script_command.hpp"
 
 // constructor
 xst_wrapper::xst_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir,
@@ -86,15 +85,15 @@ void xst_wrapper::GenerateProjectFile(const DesignParametersRef& dp)
    for(unsigned int v = 0; v < file_number; v++)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding file " + files[v]);
-      boost::filesystem::path file_path(files[v]);
-      std::string extension = GetExtension(file_path);
+      std::filesystem::path file_path(files[v]);
+      std::string extension = file_path.extension().string();
       std::string filename;
       std::string language;
-      if(extension == "vhd" || extension == "vhdl" || extension == "VHD" || extension == "VHDL")
+      if(extension == ".vhd" || extension == ".vhdl" || extension == ".VHD" || extension == ".VHDL")
       {
          language = "VHDL";
       }
-      else if(extension == "v" || extension == "V" || extension == "sv" || extension == "SV")
+      else if(extension == ".v" || extension == ".V" || extension == ".sv" || extension == ".SV")
       {
          language = "VERILOG";
       }

@@ -45,10 +45,10 @@
 #include "custom_map.hpp"                     // for _Rb_tree_const_iter...
 #include "design_flow_step.hpp"               // for DesignFlowStep_Status
 #include "exceptions.hpp"                     // for THROW_UNREACHABLE
-#include <boost/filesystem/operations.hpp>    // for create_directories
 #include <boost/graph/adjacency_list.hpp>     // for adjacency_list, source
 #include <boost/graph/filtered_graph.hpp>     // for source, target
 #include <boost/iterator/iterator_facade.hpp> // for operator!=, operator++
+#include <filesystem>                         // for create_directories
 #include <ostream>                            // for operator<<, ostream
 #include <utility>                            // for pair
 
@@ -119,9 +119,9 @@ void DesignFlowGraph::WriteDot(const std::string& file_name, const int) const
 {
    const std::string output_directory =
        collection->parameters->getOption<std::string>(OPT_dot_directory) + "/design_flow/";
-   if(!boost::filesystem::exists(output_directory))
+   if(!std::filesystem::exists(output_directory))
    {
-      boost::filesystem::create_directories(output_directory);
+      std::filesystem::create_directories(output_directory);
    }
    const std::string full_name = output_directory + file_name + ".dot";
    VertexWriterConstRef design_flow_step_writer(new DesignFlowStepWriter(this));
@@ -139,9 +139,9 @@ void DesignFlowGraph::WriteDot(const std::string& file_name,
 {
    const std::string output_directory =
        collection->parameters->getOption<std::string>(OPT_dot_directory) + "/design_flow/";
-   if(!boost::filesystem::exists(output_directory))
+   if(!std::filesystem::exists(output_directory))
    {
-      boost::filesystem::create_directories(output_directory);
+      std::filesystem::create_directories(output_directory);
    }
    const std::string full_name = output_directory + file_name + ".dot";
    VertexWriterConstRef design_flow_step_writer(

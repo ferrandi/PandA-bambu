@@ -50,8 +50,8 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include <boost/filesystem/operations.hpp> // for create_directories
-#include <boost/tuple/tuple.hpp>           // for tie
+#include <boost/tuple/tuple.hpp> // for tie
+#include <filesystem>            // for create_directories
 #include <fstream>
 #include <utility> // for pair
 
@@ -339,9 +339,9 @@ void OpGraph::WriteDot(const std::string& file_name, const int detail_level) con
    const BehavioralHelperConstRef helper = CGetOpGraphInfo()->BH;
    std::string output_directory =
        collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + helper->get_function_name() + "/";
-   if(!boost::filesystem::exists(output_directory))
+   if(!std::filesystem::exists(output_directory))
    {
-      boost::filesystem::create_directories(output_directory);
+      std::filesystem::create_directories(output_directory);
    }
    const std::string full_name = output_directory + file_name;
    const VertexWriterConstRef op_label_writer(new OpWriter(this, detail_level));
@@ -426,9 +426,9 @@ void OpGraph::WriteDot(const std::string& file_name, const hlsConstRef HLS,
    const BehavioralHelperConstRef helper = CGetOpGraphInfo()->BH;
    std::string output_directory =
        collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + helper->get_function_name() + "/";
-   if(!boost::filesystem::exists(output_directory))
+   if(!std::filesystem::exists(output_directory))
    {
-      boost::filesystem::create_directories(output_directory);
+      std::filesystem::create_directories(output_directory);
    }
    const std::string full_name = output_directory + file_name;
    const VertexWriterConstRef op_label_writer(new TimedOpWriter(this, HLS, critical_paths));

@@ -282,7 +282,7 @@ void InterfaceInfer::Initialize()
    const auto HLSMgr = GetPointer<HLS_manager>(AppM);
    THROW_ASSERT(HLSMgr, "");
    const auto parseInterfaceXML = [&](const std::string& XMLfilename) {
-      if(boost::filesystem::exists(boost::filesystem::path(XMLfilename)))
+      if(std::filesystem::exists(std::filesystem::path(XMLfilename)))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
          XMLDomParser parser(XMLfilename);
@@ -520,7 +520,8 @@ void InterfaceInfer::Initialize()
       for(const auto& source_file : AppM->input_files)
       {
          const auto output_temporary_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
-         const std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
+         const std::string leaf_name =
+             source_file.second == "-" ? "stdin-" : std::filesystem::path(source_file.second).filename().string();
          const auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".interface.xml";
          parseInterfaceXML(XMLfilename);
       }
