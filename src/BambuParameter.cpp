@@ -155,7 +155,7 @@
 /// Wrapper include
 #include "compiler_wrapper.hpp"
 
-#include <boost/regex.hpp>
+#include <regex>
 
 /// Design Space Exploration
 #define OPT_ACCEPT_NONZERO_RETURN 256
@@ -1683,7 +1683,7 @@ int BambuParameter::Exec()
          }
          case OPT_MAX_ULP:
          {
-            if(boost::regex_search(std::string(optarg), boost::regex("^\\d+(\\.\\d+)?$")))
+            if(std::regex_search(std::string(optarg), std::regex("^\\d+(\\.\\d+)?$")))
             {
                setOption(OPT_max_ulp, optarg);
             }
@@ -1855,7 +1855,7 @@ int BambuParameter::Exec()
          case OPT_TESTBENCH_PARAM_SIZE:
          {
             std::string param_size(optarg);
-            if(!boost::regex_match(param_size, boost::regex("^([\\w\\d]+:\\d+)(,[\\w\\d]+:\\d+)*$")))
+            if(!std::regex_match(param_size, std::regex("^([\\w\\d]+:\\d+)(,[\\w\\d]+:\\d+)*$")))
             {
                THROW_ERROR("BadParameters: testbench top-level parameter size format not valid");
             }

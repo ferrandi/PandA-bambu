@@ -81,7 +81,7 @@
 #include "xml_helper.hpp"
 
 #include <boost/lexical_cast/try_lexical_convert.hpp>
-#include <boost/regex.hpp>
+#include <regex>
 
 #define EPSILON 0.000000001
 #define ENCODE_FDNAME(arg_name, MODE, interface_type) \
@@ -129,8 +129,7 @@ struct InterfaceInfer::interface_info
       const auto ptd_type = tree_helper::CGetPointedType(tree_helper::CGetType(tn));
       bool is_signed = tree_helper::IsSignedIntegerType(ptd_type);
       bool is_fixed = false;
-      const auto type_name =
-          boost::regex_replace(_type_name, boost::regex("(ac_channel|stream|hls::stream)<(.*)>"), "$2");
+      const auto type_name = std::regex_replace(_type_name, std::regex("(ac_channel|stream|hls::stream)<(.*)>"), "$2");
       const auto ac_bitwidth = ac_type_bitwidth(type_name, is_signed, is_fixed);
       const auto _type = ac_bitwidth != 0ULL ? datatype::ac_type :
                                                (tree_helper::IsRealType(ptd_type) ? datatype::real : datatype::generic);
@@ -270,7 +269,7 @@ void InterfaceInfer::ComputeRelationships(DesignFlowStepSet& relationship,
    ApplicationFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }
 
-static const boost::regex signature_param_typename("((?:\\w+\\s*)+(?:<[^>]*>)?\\s*[\\*&]?\\s*)");
+static const std::regex signature_param_typename("((?:\\w+\\s*)+(?:<[^>]*>)?\\s*[\\*&]?\\s*)");
 
 bool InterfaceInfer::HasToBeExecuted() const
 {
@@ -562,7 +561,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Extracting interface from signature " + fname);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Demangled as " + dfname);
-            boost::sregex_token_iterator typename_it(dfname.begin(), dfname.end(), signature_param_typename, 0), end;
+            std::sregex_token_iterator typename_it(dfname.begin(), dfname.end(), signature_param_typename, 0), end;
             ++typename_it; // First match is the function name
             auto& top_design_interface_typename_signature = HLSMgr->design_interface_typename_signature[fname];
             auto& top_design_interface_typename_orig_signature =
