@@ -445,7 +445,7 @@
 
 static std::string __escape_define(const std::string& str)
 {
-   return std::regex_replace(str, std::regex("([\\(\\) ])"), "\\\\$1");
+   return std::regex_replace(str, std::regex("([\\(\\) ])"), "\\$1");
 }
 
 std::string CompilerWrapper::current_compiler_version;
