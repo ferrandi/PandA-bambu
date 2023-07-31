@@ -64,7 +64,7 @@
 #include "call_graph_manager.hpp"
 
 // HLS/simulation include
-#include "testbench_generation_base_step.hpp"
+#include "testbench_generation.hpp"
 
 /// STD include
 #include <string>
@@ -166,10 +166,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
        HLSMgr->Rmem->has_intern_shared_data() ||
        (memory_allocation_policy == MemoryAllocation_Policy::EXT_PIPELINED_BRAM) ||
        (memory_allocation_policy == MemoryAllocation_Policy::NO_BRAM) ||
-       (top_function_ids.count(funId) ?
-            parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION :
-            HLSMgr->hasToBeInterfaced(funId)) ||
-       parameters->getOption<bool>(OPT_memory_mapped_top);
+       (top_function_ids.count(funId) ? parameters->getOption<bool>(OPT_memory_mapped_top) :
+                                        HLSMgr->hasToBeInterfaced(funId));
    bool with_master = false;
    bool with_slave = false;
    for(auto i = 0U; i < GetPointerS<module>(wrappedObj)->get_in_port_size(); ++i)
@@ -215,7 +213,6 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       portsToConstant.insert(wrappedObj->find_member("Min_addr_ram", port_o_K, wrappedObj));
       portsToConstant.insert(wrappedObj->find_member("Min_Wdata_ram", port_o_K, wrappedObj));
       portsToConstant.insert(wrappedObj->find_member("Min_data_ram_size", port_o_K, wrappedObj));
-      portsToConstant.insert(wrappedObj->find_member("M_back_pressure", port_o_K, wrappedObj));
    }
 
    std::map<structural_objectRef, structural_objectRef> portsToConnect;
@@ -553,8 +550,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             std::list<std::pair<unsigned int, memory_symbolRef>>::const_iterator m_next;
             for(auto m = mem_variables.begin(); m != mem_variables.end(); ++m)
             {
-               init_v = TestbenchGenerationBaseStep::print_var_init(HLSMgr->get_tree_manager(), m->first, HLSMgr->Rmem);
-               std::vector<std::string> splitted = SplitString(init_v, ",");
+               const auto splitted =
+                   TestbenchGeneration::print_var_init(HLSMgr->get_tree_manager(), m->first, HLSMgr->Rmem);
                unsigned int byte_allocated = 0;
                unsigned long long int actual_byte =
                    tree_helper::Size(HLSMgr->get_tree_manager()->CGetTreeReindex(m->first)) / 8;

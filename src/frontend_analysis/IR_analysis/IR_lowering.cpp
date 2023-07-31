@@ -1189,11 +1189,7 @@ tree_nodeRef IR_lowering::expand_MC(const tree_nodeRef& op0, const integer_cst* 
          use64bitMul = true;
       }
       const technology_managerRef TechManager = HLS_T->get_technology_manager();
-      auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
-      if(fu_prec == 1)
-      {
-         fu_prec = 8;
-      }
+      auto fu_prec = std::max(8ull, ceil_pow2(data_bitsize));
       if(fu_prec >= 64 && use64bitMul)
       {
          fu_prec = 32;

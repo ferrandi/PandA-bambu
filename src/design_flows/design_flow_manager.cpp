@@ -971,7 +971,7 @@ vertex DesignFlowManager::GetDesignFlowStep(const std::string& signature) const
    return design_flow_graphs_collection->GetDesignFlowStep(signature);
 }
 
-const DesignFlowStepFactoryConstRef DesignFlowManager::CGetDesignFlowStepFactory(const std::string& prefix) const
+DesignFlowStepFactoryConstRef DesignFlowManager::CGetDesignFlowStepFactory(const std::string& prefix) const
 {
    THROW_ASSERT(design_flow_step_factories.find(prefix) != design_flow_step_factories.end(),
                 "No factory to create steps with prefix " + prefix + " found");

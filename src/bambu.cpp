@@ -64,8 +64,8 @@
 #include "design_flow_manager.hpp"
 
 /// design_flows/c_backend/ToC includes
+#include "c_backend_information.hpp"
 #include "c_backend_step_factory.hpp"
-#include "hls_c_backend_information.hpp"
 
 #if HAVE_ACTOR_GRAPHS_BUILT
 /// design_flows/codesign include
@@ -77,6 +77,7 @@
 #include "frontend_flow_step_factory.hpp"
 
 /// HLS includes
+#include "evaluation.hpp"
 #include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
 #include "hls_step.hpp"
@@ -248,7 +249,7 @@ int main(int argc, char* argv[])
       design_flow_manager->RegisterFactory(parser_flow_step_factory);
 #endif
 
-      if(parameters->isOption(OPT_dry_run_evaluation) and parameters->getOption<bool>(OPT_dry_run_evaluation))
+      if(parameters->getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::DRY_RUN)
       {
          design_flow_manager->AddStep(GetPointer<const HLSFlowStepFactory>(hls_flow_step_factory)
                                           ->CreateHLSFlowStep(HLSFlowStep_Type::EVALUATION, 0));
@@ -279,10 +280,10 @@ int main(int argc, char* argv[])
       /// pretty printing
       if(parameters->isOption(OPT_pretty_print))
       {
-         const auto filename = parameters->getOption<std::string>(OPT_pretty_print);
          const auto c_backend =
              GetPointer<const CBackendStepFactory>(c_backend_step_factory)
-                 ->CreateCBackendStep(CBackend::CB_SEQUENTIAL, filename, CBackendInformationConstRef());
+                 ->CreateCBackendStep(CBackendInformationConstRef(new CBackendInformation(
+                     CBackendInformation::CB_SEQUENTIAL, parameters->getOption<std::string>(OPT_pretty_print))));
          design_flow_manager->AddStep(c_backend);
       }
 

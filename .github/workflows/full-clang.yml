@@ -28,7 +28,7 @@ jobs:
     runs-on: [self-hosted, long, mentor]
     env:
       report-dir: test-reports
-      args: -c=--simulator=MODELSIM
+      args: -c=--simulator=MODELSIM -c=--assert-debug
     strategy:
       fail-fast: false
       matrix:
@@ -44,6 +44,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodule: 'true'
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:

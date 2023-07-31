@@ -767,7 +767,6 @@ void allocation::BuildProxyFunctionVerilog(functional_unit* current_fu)
       verilog_description =
           verilog_description + "assign " + fix_identifier(port_name, writer) + " = " + PROXY_PREFIX + port_name + ";";
    }
-   add_escape(verilog_description, "\\");
    CM->add_NP_functionality(top, NP_functionality::VERILOG_PROVIDED, verilog_description);
 }
 
@@ -855,7 +854,6 @@ void allocation::BuildProxyFunctionVHDL(functional_unit* current_fu)
       VHDL_description = VHDL_description + fix_identifier(port_name, writer) +
                          " <= " + fix_identifier(PROXY_PREFIX + port_name, writer) + ";";
    }
-   add_escape(VHDL_description, "\\");
    CM->add_NP_functionality(top, NP_functionality::VHDL_PROVIDED, VHDL_description);
 }
 
@@ -2244,7 +2242,7 @@ DesignFlowStep_Status allocation::InternalExec()
                   {
                      if(varargs_fu)
                      {
-                        modGen->specialize_fu(fu_name, vert, lib_name, FB, specialized_fuName, new_fu);
+                        modGen->specialize_fu(fu_name, vert, FB, lib_name, specialized_fuName, new_fu);
                      }
                      else
                      {

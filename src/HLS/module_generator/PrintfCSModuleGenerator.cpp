@@ -53,8 +53,9 @@ PrintfCSModuleGenerator::PrintfCSModuleGenerator(const HLS_managerRef& _HLSMgr) 
 {
 }
 
-void PrintfCSModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */, unsigned int /* function_id */,
-                                           vertex /* op_v */, const HDLWriter_Language /* language */,
+void PrintfCSModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */,
+                                           unsigned int /* function_id */, vertex /* op_v */,
+                                           const HDLWriter_Language /* language */,
                                            const std::vector<ModuleGenerator::parameter>& _p,
                                            const std::vector<ModuleGenerator::parameter>& /* _ports_in */,
                                            const std::vector<ModuleGenerator::parameter>& /* _ports_out */,
@@ -125,9 +126,9 @@ void PrintfCSModuleGenerator::InternalExec(std::ostream& out, const module* /* m
        "end\n"
        "endfunction\n"
        "// synthesis translate_on\n"
-       "reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer 1INIT_ZERO_VALUE;\n"
+       "reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer;\n"
        "reg [BITSIZE_Mout_addr_ram-1:0] _next_pointer;\n"
-       "reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer1 1INIT_ZERO_VALUE;\n"
+       "reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer1;\n"
        "reg [BITSIZE_Mout_addr_ram-1:0] _next_pointer1;\n"
        "reg mem_sel_LOAD;\n"
        "reg start_memory_op;\n"
@@ -168,16 +169,16 @@ void PrintfCSModuleGenerator::InternalExec(std::ostream& out, const module* /* m
        "  S_8 = 4'd8,\n"
        "  S_9 = 4'd9,\n"
        "  S_10 = 4'd10;\n"
-       "reg [3:0] _present_state 1INIT_ZERO_VALUE;\n"
+       "reg [3:0] _present_state;\n"
        "reg [3:0] _next_state;\n"
        "reg [" +
        selector_left +
-       ":0] _present_selector 1INIT_ZERO_VALUE;\n"
+       ":0] _present_selector;\n"
        "reg [" +
        selector_left +
        ":0] _next_selector;\n"
        "reg [63:0] data1;\n"
-       "reg [7:0] _present_data2 1INIT_ZERO_VALUE;\n"
+       "reg [7:0] _present_data2;\n"
        "reg [7:0] _next_data2;\n"
        "reg [7:0] data1_size;\n"
        "reg write_done;\n"
@@ -233,7 +234,7 @@ void PrintfCSModuleGenerator::InternalExec(std::ostream& out, const module* /* m
        "                _next_state=S_1;  \n"
        "                _next_selector=" +
        selector_dimension +
-       "'d2;\n "
+       "'d2;\n"
        "              end\n"
        "            \n"
        "         S_1:\n"
@@ -899,7 +900,7 @@ void PrintfCSModuleGenerator::InternalExec(std::ostream& out, const module* /* m
        "             else\n"
        "               _next_state=S_6;\n"
        "           end\n"
-       "      endcase\n "
+       "      endcase\n"
        "  end\n";
 
    out << fsm;

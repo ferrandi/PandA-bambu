@@ -4,29 +4,25 @@
     <name>STD_FU</name>
     <cell>
       <name>FFdata_converter_FU</name>
-      <operation operation_name="nop_expr" />
+      <operation operation_name="nop_expr"/>
       <circuit>
         <component_o id="FFdata_converter_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="FFdata_converter_FU"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="X" dir="IN">
-            <structural_type_descriptor type="REAL" size="1" />
-            <connected_objects/>
+            <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
           <port_o id="R" dir="OUT">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="FFdata_converter_FU X R" FLOPOCO_PROVIDED="FF_CONV"/>
         </component_o>
@@ -34,12 +30,12 @@
     </cell>
     <cell>
       <name>fp_assert_expr_FU</name>
-      <operation operation_name="assert_expr" supported_types="REAL:32,64" />
+      <operation operation_name="assert_expr" supported_types="REAL:32,64"/>
       <circuit>
         <component_o id="fp_assert_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_assert_expr_FU"/>
           <port_o id="in1" dir="IN">
@@ -48,33 +44,36 @@
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="fp_assert_expr_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin\n  out1 &lt;= in1;"/>
+          <NP_functionality LIBRARY="fp_assert_expr_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
+  out1 &lt;= in1;"/>
         </component_o>
       </circuit>
     </cell>
     <template>
       <name>fp_cond_expr_FU</name>
-      <operation operation_name="cond_expr" supported_types="REAL:32,64" />
+      <operation operation_name="cond_expr" supported_types="REAL:32,64"/>
       <circuit>
         <component_o id="fp_cond_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_cond_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="REAL" size="1" />
+            <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
           <port_o id="in3" dir="IN">
-            <structural_type_descriptor type="REAL" size="1" />
+            <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="REAL" size="1" />
+            <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="fp_cond_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="assign out1 = in1 != 0 ? in2 : in3;" VHDL_PROVIDED="begin\n  out1 &lt;= in2 when(unsigned(in1) /= 0) else in3;\n"/>
+          <NP_functionality LIBRARY="fp_cond_expr_FU in1 in2 in3 out1" VERILOG_PROVIDED="assign out1 = in1 != 0 ? in2 : in3;" VHDL_PROVIDED="begin
+  out1 &lt;= in2 when(unsigned(in1) /= 0) else in3;
+"/>
         </component_o>
       </circuit>
     </template>
@@ -84,32 +83,27 @@
       <circuit>
         <component_o id="fp_ge_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_ge_expr_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="X" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Y" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="R" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="fp_ge_expr_FU X Y R"  FLOPOCO_PROVIDED="FPge_expr"/>
+          <NP_functionality LIBRARY="fp_ge_expr_FU X Y R" FLOPOCO_PROVIDED="FPge_expr"/>
         </component_o>
       </circuit>
     </template>
@@ -119,32 +113,27 @@
       <circuit>
         <component_o id="fp_lt_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_lt_expr_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="X" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Y" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="R" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="fp_lt_expr_FU X Y R"  FLOPOCO_PROVIDED="FPlt_expr"/>
+          <NP_functionality LIBRARY="fp_lt_expr_FU X Y R" FLOPOCO_PROVIDED="FPlt_expr"/>
         </component_o>
       </circuit>
     </template>
@@ -154,45 +143,44 @@
       <circuit>
         <component_o id="fp_negate_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_negate_expr_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="fp_negate_expr_FU in1 out1" VERILOG_PROVIDED="assign out1 = {~in1[BITSIZE_in1-1],in1[BITSIZE_in1-2:0]};" VHDL_PROVIDED="begin\n  out1 &lt;= not in1(BITSIZE_in1-1) &amp; in1(BITSIZE_in1-2 downto 0);\n"/>
+          <NP_functionality LIBRARY="fp_negate_expr_FU in1 out1" VERILOG_PROVIDED="assign out1 = {~in1[BITSIZE_in1-1],in1[BITSIZE_in1-2:0]};" VHDL_PROVIDED="begin
+  out1 &lt;= not in1(BITSIZE_in1-1) &amp; in1(BITSIZE_in1-2 downto 0);
+"/>
         </component_o>
       </circuit>
     </template>
     <template>
       <name>fp_eq_expr_FU</name>
-      <operation operation_name="eq_expr"  supported_types="REAL:32,64" commutative="1"/>
+      <operation operation_name="eq_expr" supported_types="REAL:32,64" commutative="1"/>
       <circuit>
         <component_o id="fp_eq_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_eq_expr_FU"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="REAL" size="1" />
-            <connected_objects/>
+            <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="REAL" size="1" />
-            <connected_objects/>
+            <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="fp_eq_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 == in2 || (in1[BITSIZE_in1-2:0] == in2[BITSIZE_in2-2:0] &amp;&amp; in1[BITSIZE_in1-2:0] == {BITSIZE_in1-2{1&apos;b0}});" VHDL_PROVIDED="begin\n  out1 &lt;= (0 =&gt; &apos;1&apos;, others =&gt; &apos;0&apos;) when ((in1 = in2) or (in1(BITSIZE_in1-2 downto 0) = in2(BITSIZE_in2-2 downto 0) and unsigned(in1(BITSIZE_in1-2 downto 0)) = 0)) else (others =&gt; &apos;0&apos;);\n" />
+          <NP_functionality LIBRARY="fp_eq_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 == in2 || (in1[BITSIZE_in1-2:0] == in2[BITSIZE_in2-2:0] &amp;&amp; in1[BITSIZE_in1-2:0] == {BITSIZE_in1-2{1&apos;b0}});" VHDL_PROVIDED="begin
+  out1 &lt;= (0 =&gt; &apos;1&apos;, others =&gt; &apos;0&apos;) when ((in1 = in2) or (in1(BITSIZE_in1-2 downto 0) = in2(BITSIZE_in2-2 downto 0) and unsigned(in1(BITSIZE_in1-2 downto 0)) = 0)) else (others =&gt; &apos;0&apos;);
+"/>
         </component_o>
       </circuit>
     </template>
@@ -203,31 +191,26 @@
         <component_o id="fp_le_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_le_expr_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="X" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Y" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="R" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="fp_le_expr_FU X Y R"  FLOPOCO_PROVIDED="FPle_expr"/>
+          <NP_functionality LIBRARY="fp_le_expr_FU X Y R" FLOPOCO_PROVIDED="FPle_expr"/>
         </component_o>
       </circuit>
     </template>
@@ -237,32 +220,27 @@
       <circuit>
         <component_o id="fp_gt_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_gt_expr_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="X" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Y" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="R" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="fp_gt_expr_FU X Y R"  FLOPOCO_PROVIDED="FPgt_expr"/>
+          <NP_functionality LIBRARY="fp_gt_expr_FU X Y R" FLOPOCO_PROVIDED="FPgt_expr"/>
         </component_o>
       </circuit>
     </template>
@@ -272,24 +250,23 @@
       <circuit>
         <component_o id="fp_ne_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_ne_expr_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="fp_ne_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = !(in1 == in2 || (in1[BITSIZE_in1-2:0] == in2[BITSIZE_in2-2:0] &amp;&amp; in1[BITSIZE_in1-2:0] == {BITSIZE_in1-2{1&apos;b0}}));" VHDL_PROVIDED="begin\n  out1 &lt;= (others =&gt; &apos;0&apos;) when ((in1 = in2) or (in1(BITSIZE_in1-2 downto 0) = in2(BITSIZE_in2-2 downto 0) and unsigned(in1(BITSIZE_in1-2 downto 0)) = 0)) else (0 =&gt; &apos;1&apos;, others =&gt; &apos;0&apos;);\n" />
+          <NP_functionality LIBRARY="fp_ne_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = !(in1 == in2 || (in1[BITSIZE_in1-2:0] == in2[BITSIZE_in2-2:0] &amp;&amp; in1[BITSIZE_in1-2:0] == {BITSIZE_in1-2{1&apos;b0}}));" VHDL_PROVIDED="begin
+  out1 &lt;= (others =&gt; &apos;0&apos;) when ((in1 = in2) or (in1(BITSIZE_in1-2 downto 0) = in2(BITSIZE_in2-2 downto 0) and unsigned(in1(BITSIZE_in1-2 downto 0)) = 0)) else (0 =&gt; &apos;1&apos;, others =&gt; &apos;0&apos;);
+"/>
         </component_o>
       </circuit>
     </template>
@@ -299,30 +276,25 @@
       <circuit>
         <component_o id="fp_plus_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_plus_expr_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="X" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Y" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="R" dir="OUT">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="fp_plus_expr_FU X Y R" FLOPOCO_PROVIDED="FPAdder"/>
         </component_o>
@@ -334,30 +306,25 @@
       <circuit>
         <component_o id="fp_minus_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Christian Pilato &lt;christian.pilato@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Christian Pilato &lt;christian.pilato@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_minus_expr_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="X" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Y" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="R" dir="OUT">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="fp_minus_expr_FU X Y R" FLOPOCO_PROVIDED="FPSub"/>
         </component_o>
@@ -369,30 +336,25 @@
       <circuit>
         <component_o id="fp_mult_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_mult_expr_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="X" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Y" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="R" dir="OUT">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="fp_mult_expr_FU X Y R" FLOPOCO_PROVIDED="FPMultiplier"/>
         </component_o>
@@ -405,30 +367,25 @@
       <circuit>
         <component_o id="fp_rdiv_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_rdiv_expr_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="X" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="Y" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="R" dir="OUT">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="fp_rdiv_expr_FU X Y R" FLOPOCO_PROVIDED="FPDiv"/>
         </component_o>
@@ -440,26 +397,22 @@
       <circuit>
         <component_o id="fp_float_expr_32_32_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_float_expr_32_32_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="I" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="O" dir="OUT">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="fp_float_expr_32_32_FU I O" FLOPOCO_PROVIDED="Fix2FP_32_32"/>
         </component_o>
@@ -471,26 +424,22 @@
       <circuit>
         <component_o id="fp_float_expr_32_64_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_float_expr_32_64_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="I" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="O" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="fp_float_expr_32_64_FU I O" FLOPOCO_PROVIDED="Fix2FP_32_64"/>
         </component_o>
@@ -502,26 +451,22 @@
       <circuit>
         <component_o id="fp_float_expr_64_32_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_float_expr_64_32_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="I" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="O" dir="OUT" is_halved="1">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="fp_float_expr_64_32_FU I O" FLOPOCO_PROVIDED="Fix2FP_64_32"/>
         </component_o>
@@ -533,26 +478,22 @@
       <circuit>
         <component_o id="fp_float_expr_64_64_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_float_expr_64_64_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="I" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="O" dir="OUT">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="fp_float_expr_64_64_FU I O" FLOPOCO_PROVIDED="Fix2FP_64_64"/>
         </component_o>
@@ -564,26 +505,22 @@
       <circuit>
         <component_o id="ui_fp_float_expr_32_32_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_fp_float_expr_32_32_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="I" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="O" dir="OUT">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_fp_float_expr_32_32_FU I O" FLOPOCO_PROVIDED="UFix2FP_32_32"/>
         </component_o>
@@ -595,26 +532,22 @@
       <circuit>
         <component_o id="ui_fp_float_expr_32_64_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_fp_float_expr_32_64_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="I" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="O" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_fp_float_expr_32_64_FU I O" FLOPOCO_PROVIDED="UFix2FP_32_64"/>
         </component_o>
@@ -626,26 +559,22 @@
       <circuit>
         <component_o id="ui_fp_float_expr_64_32_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_fp_float_expr_64_32_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="I" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="O" dir="OUT" is_halved="1">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_fp_float_expr_64_32_FU I O" FLOPOCO_PROVIDED="UFix2FP_64_32"/>
         </component_o>
@@ -657,26 +586,22 @@
       <circuit>
         <component_o id="ui_fp_float_expr_64_64_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_fp_float_expr_64_64_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="I" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="O" dir="OUT">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_fp_float_expr_64_64_FU I O" FLOPOCO_PROVIDED="UFix2FP_64_64"/>
         </component_o>
@@ -688,26 +613,22 @@
       <circuit>
         <component_o id="fp_fix_trunc_expr_32_32_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_fix_trunc_expr_32_32_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="I" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="O" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="fp_fix_trunc_expr_32_32_FU I O" FLOPOCO_PROVIDED="FP2Fix_32_32"/>
         </component_o>
@@ -719,26 +640,22 @@
       <circuit>
         <component_o id="fp_fix_trunc_expr_32_u32_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_fix_trunc_expr_32_u32_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="I" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="O" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="fp_fix_trunc_expr_32_u32_FU I O" FLOPOCO_PROVIDED="FP2Fix_32_u32"/>
         </component_o>
@@ -750,26 +667,22 @@
       <circuit>
         <component_o id="fp_fix_trunc_expr_32_64_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_fix_trunc_expr_32_64_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="I" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="O" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="fp_fix_trunc_expr_32_64_FU I O" FLOPOCO_PROVIDED="FP2Fix_32_64"/>
         </component_o>
@@ -781,26 +694,22 @@
       <circuit>
         <component_o id="fp_fix_trunc_expr_32_u64_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_fix_trunc_expr_32_u64_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="I" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="O" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="fp_fix_trunc_expr_32_u64_FU I O" FLOPOCO_PROVIDED="FP2Fix_32_u64"/>
         </component_o>
@@ -812,26 +721,22 @@
       <circuit>
         <component_o id="fp_fix_trunc_expr_64_32_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_fix_trunc_expr_64_32_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="I" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="O" dir="OUT" is_halved="1">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="fp_fix_trunc_expr_64_32_FU I O" FLOPOCO_PROVIDED="FP2Fix_64_32"/>
         </component_o>
@@ -843,26 +748,22 @@
       <circuit>
         <component_o id="fp_fix_trunc_expr_64_u32_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_fix_trunc_expr_64_u32_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="I" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="O" dir="OUT" is_halved="1">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="fp_fix_trunc_expr_64_u32_FU I O" FLOPOCO_PROVIDED="FP2Fix_64_u32"/>
         </component_o>
@@ -874,26 +775,22 @@
       <circuit>
         <component_o id="fp_fix_trunc_expr_64_64_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_fix_trunc_expr_64_64_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="I" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="O" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="fp_fix_trunc_expr_64_64_FU I O" FLOPOCO_PROVIDED="FP2Fix_64_64"/>
         </component_o>
@@ -905,26 +802,22 @@
       <circuit>
         <component_o id="fp_fix_trunc_expr_64_u64_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_fix_trunc_expr_64_u64_FU"/>
           <parameter name="PIPE_PARAMETER">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="I" dir="IN">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="O" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="fp_fix_trunc_expr_64_u64_FU I O" FLOPOCO_PROVIDED="FP2Fix_64_u64"/>
         </component_o>
@@ -937,38 +830,31 @@
       <circuit>
         <component_o id="__builtin_signbit">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="__builtin_signbit"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="X" dir="IN">
-            <structural_type_descriptor type="REAL" size="1" />
-            <connected_objects/>
+            <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="R" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="__builtin_signbit X R" VERILOG_PROVIDED=
-"assign R = X[BITSIZE_X-1];\nassign done_port = start_port;"
-VHDL_PROVIDED=
-"begin
+          <NP_functionality LIBRARY="__builtin_signbit X R" VERILOG_PROVIDED="assign R = X[BITSIZE_X-1];
+assign done_port = start_port;"
+            VHDL_PROVIDED="begin
   R &lt;= (others =&gt; X(BITSIZE_X-1));
   done_port &lt;= start_port;
 "/>
@@ -983,35 +869,32 @@ VHDL_PROVIDED=
       <circuit>
         <component_o id="__builtin_fabs">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="__builtin_fabs"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="X" dir="IN">
-            <structural_type_descriptor type="REAL" size="1" />
-            <connected_objects/>
+            <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="R" dir="OUT">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="__builtin_fabs X R" VERILOG_PROVIDED="assign R = {1&apos;b0,X[BITSIZE_X-2:0]};\nassign done_port = start_port;" VHDL_PROVIDED="begin\n  R &lt;= &apos;0&apos; &amp; X(BITSIZE_X-2 downto 0);\n  done_port &lt;= start_port;"/>
+          <NP_functionality LIBRARY="__builtin_fabs X R" VERILOG_PROVIDED="assign R = {1&apos;b0,X[BITSIZE_X-2:0]};
+assign done_port = start_port;" VHDL_PROVIDED="begin
+  R &lt;= &apos;0&apos; &amp; X(BITSIZE_X-2 downto 0);
+  done_port &lt;= start_port;"/>
         </component_o>
       </circuit>
     </cell>
@@ -1023,35 +906,32 @@ VHDL_PROVIDED=
       <circuit>
         <component_o id="__builtin_fabsf">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="__builtin_fabsf"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="X" dir="IN">
-            <structural_type_descriptor type="REAL" size="1" />
-            <connected_objects/>
+            <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="R" dir="OUT">
             <structural_type_descriptor type="REAL" size="1"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="__builtin_fabsf X R" VERILOG_PROVIDED="assign R = {1&apos;b0,X[BITSIZE_X-2:0]};\nassign done_port = start_port;" VHDL_PROVIDED="begin\n  R &lt;= &apos;0&apos; &amp; X(BITSIZE_X-2 downto 0);\n  done_port &lt;= start_port;"/>
+          <NP_functionality LIBRARY="__builtin_fabsf X R" VERILOG_PROVIDED="assign R = {1&apos;b0,X[BITSIZE_X-2:0]};
+assign done_port = start_port;" VHDL_PROVIDED="begin
+  R &lt;= &apos;0&apos; &amp; X(BITSIZE_X-2 downto 0);
+  done_port &lt;= start_port;"/>
         </component_o>
       </circuit>
     </cell>
@@ -1061,27 +941,25 @@ VHDL_PROVIDED=
       <circuit>
         <component_o id="__builtin_cond_expr32">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2014-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2014-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="__builtin_cond_expr32"/>
           <port_o id="sel" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="a" dir="IN">
-            <structural_type_descriptor type="UINT" size="32" />
-            <connected_objects/>
+            <structural_type_descriptor type="UINT" size="32"/>
           </port_o>
           <port_o id="b" dir="IN">
-            <structural_type_descriptor type="UINT" size="32" />
-            <connected_objects/>
+            <structural_type_descriptor type="UINT" size="32"/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="32"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="__builtin_cond_expr32 sel" VERILOG_PROVIDED="assign out1 = sel != 0 ? a : b;" VHDL_PROVIDED="begin\n  out1 &lt;= a when (sel /= 0) else b;\n"/>
+          <NP_functionality LIBRARY="__builtin_cond_expr32 sel" VERILOG_PROVIDED="assign out1 = sel != 0 ? a : b;" VHDL_PROVIDED="begin
+  out1 &lt;= a when (sel /= 0) else b;
+"/>
         </component_o>
       </circuit>
     </cell>
@@ -1091,25 +969,20 @@ VHDL_PROVIDED=
       <circuit>
         <component_o id="unordered_expr_FU32">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2014-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2014-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="unordered_expr_FU32"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="REAL" size="1" />
-            <connected_objects/>
+            <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="REAL" size="1" />
-            <connected_objects/>
+            <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="unordered_expr_FU32 in1 in2 out1" VERILOG_PROVIDED=
-"assign out1 = (in1[BITSIZE_in1-2:BITSIZE_in1-9] == 255 &amp;&amp; in1[BITSIZE_in1-10:0] != 0) || (in2[BITSIZE_in2-2:BITSIZE_in2-9] == 255 &amp;&amp; in2[BITSIZE_in2-10:0] != 0);" VHDL_PROVIDED=
-"begin
+          <NP_functionality LIBRARY="unordered_expr_FU32 in1 in2 out1" VERILOG_PROVIDED="assign out1 = (in1[BITSIZE_in1-2:BITSIZE_in1-9] == 255 &amp;&amp; in1[BITSIZE_in1-10:0] != 0) || (in2[BITSIZE_in2-2:BITSIZE_in2-9] == 255 &amp;&amp; in2[BITSIZE_in2-10:0] != 0);" VHDL_PROVIDED="begin
    process(in1, in2)
    begin
       out1 &lt;= (others =&gt; &apos;0&apos;);
@@ -1119,7 +992,7 @@ VHDL_PROVIDED=
          out1(0) &lt;= &apos;0&apos;;
       end if;
    end process;"
-/>
+          />
         </component_o>
       </circuit>
     </cell>
@@ -1129,24 +1002,20 @@ VHDL_PROVIDED=
       <circuit>
         <component_o id="unordered_expr_FU64">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2014-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2014-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="unordered_expr_FU64"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="REAL" size="1" />
-            <connected_objects/>
+            <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="REAL" size="1" />
-            <connected_objects/>
+            <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="unordered_expr_FU64 in1 in2 out1" VERILOG_PROVIDED="assign out1 = (in1[BITSIZE_in1-2:BITSIZE_in1-12] == 2047 &amp;&amp; in1[BITSIZE_in1-13:0] != 0) || (in2[BITSIZE_in2-2:BITSIZE_in2-12] == 2047 &amp;&amp; in2[BITSIZE_in2-13:0] != 0);" VHDL_PROVIDED=
-"begin
+          <NP_functionality LIBRARY="unordered_expr_FU64 in1 in2 out1" VERILOG_PROVIDED="assign out1 = (in1[BITSIZE_in1-2:BITSIZE_in1-12] == 2047 &amp;&amp; in1[BITSIZE_in1-13:0] != 0) || (in2[BITSIZE_in2-2:BITSIZE_in2-12] == 2047 &amp;&amp; in2[BITSIZE_in2-13:0] != 0);" VHDL_PROVIDED="begin
    process(in1, in2)
    begin
       out1 &lt;= (others =&gt; &apos;0&apos;);
@@ -1156,7 +1025,7 @@ VHDL_PROVIDED=
          out1(0) &lt;= &apos;0&apos;;
       end if;
    end process;"
-             />
+          />
         </component_o>
       </circuit>
     </cell>
@@ -1171,19 +1040,15 @@ VHDL_PROVIDED=
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ordered_expr_FU32"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="REAL" size="1" />
-            <connected_objects/>
+            <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="REAL" size="1" />
-            <connected_objects/>
+            <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="ordered_expr_FU32 in1 in2 out1" IP_COMPONENT="unordered_expr_FU32" VERILOG_PROVIDED=
-"wire [BITSIZE_out1-1:0] temp_out1;
+          <NP_functionality LIBRARY="ordered_expr_FU32 in1 in2 out1" IP_COMPONENT="unordered_expr_FU32" VERILOG_PROVIDED="wire [BITSIZE_out1-1:0] temp_out1;
 assign out1 = !temp_out1;
 unordered_expr_FU32 #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2) ,.BITSIZE_out1(BITSIZE_out1)) unordered_expr_FU32_instance (.in1(in1), .in2(in2), .out1(temp_out1));
 "/>
@@ -1201,19 +1066,15 @@ unordered_expr_FU32 #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2) ,.BIT
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ordered_expr_FU64"/>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="REAL" size="1" />
-            <connected_objects/>
+            <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
-            <structural_type_descriptor type="REAL" size="1" />
-            <connected_objects/>
+            <structural_type_descriptor type="REAL" size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="ordered_expr_FU64 in1 in2 out1" IP_COMPONENT="unordered_expr_FU64" VERILOG_PROVIDED=
-"wire [BITSIZE_out1-1:0] temp_out1;
+          <NP_functionality LIBRARY="ordered_expr_FU64 in1 in2 out1" IP_COMPONENT="unordered_expr_FU64" VERILOG_PROVIDED="wire [BITSIZE_out1-1:0] temp_out1;
 assign out1 = !temp_out1;
 unordered_expr_FU64 #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2) ,.BITSIZE_out1(BITSIZE_out1)) unordered_expr_FU64_instance (.in1(in1), .in2(in2), .out1(temp_out1));
 "/>

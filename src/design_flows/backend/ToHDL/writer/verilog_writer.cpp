@@ -77,7 +77,7 @@ const std::map<std::string, std::string> verilog_writer::builtin_to_verilog_keyw
     {NOT_GATE_STD, "not"}, {DFF_GATE_STD, "dff"},   {BUFF_GATE_STD, "buf"},
 };
 
-const char* verilog_writer::tokenNames[] = {
+const std::set<std::string> verilog_writer::keywords = {
     "abs", "abstol", "access", "acos", "acosh", "always", "analog", "and", "asin", "asinh", "assign", "atan", "atan2",
     "atanh", "automatic", "begin", "bool", "buf", "bufif0", "bufif1", "case", "casex", "casez", "ceil", "cell", "cmos",
     "config", "continuous", "cos", "cosh", "ddt_nature", "deassign", "default", "defparam", "design", "disable",
@@ -2058,7 +2058,6 @@ void verilog_writer::write_NP_functionalities(const structural_objectRef& cir)
    std::string beh_desc = np->get_NP_functionality(NP_functionality::VERILOG_PROVIDED);
    THROW_ASSERT(beh_desc != "", "VERILOG behavioral description is missing for module: " +
                                     HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)));
-   remove_escaped(beh_desc);
    /// manage reset by preprocessing the behavioral description
    if(!parameters->getOption<bool>(OPT_reset_level))
    {
@@ -2224,17 +2223,18 @@ verilog_writer::verilog_writer(const ParameterConstRef _parameters)
     : language_writer(STD_OPENING_CHAR, STD_CLOSING_CHAR, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
-   for(auto& tokenName : tokenNames)
-   {
-      keywords.insert(tokenName);
-   }
 }
 
 verilog_writer::~verilog_writer() = default;
 
-bool verilog_writer::check_keyword(std::string id) const
+bool verilog_writer::check_keyword(const std::string& id) const
 {
-   return keywords.find(id) != keywords.end();
+   return check_keyword_verilog(id);
+}
+
+bool verilog_writer::check_keyword_verilog(const std::string& id)
+{
+   return keywords.count(id);
 }
 
 void verilog_writer::write_timing_specification(const technology_managerConstRef TM, const structural_objectRef& circ)
@@ -2308,25 +2308,28 @@ void verilog_writer::write_timing_specification(const technology_managerConstRef
 
 void verilog_writer::write_header()
 {
-   indented_output_stream->Append("`ifdef __ICARUS__\n");
-   indented_output_stream->Append("  `define _SIM_HAVE_CLOG2\n");
-   indented_output_stream->Append("`endif\n");
-   indented_output_stream->Append("`ifdef VERILATOR\n");
-   indented_output_stream->Append("  `define _SIM_HAVE_CLOG2\n");
-   indented_output_stream->Append("`endif\n");
-   indented_output_stream->Append("`ifdef MODEL_TECH\n");
-   indented_output_stream->Append("  `define _SIM_HAVE_CLOG2\n");
-   indented_output_stream->Append("`endif\n");
-   indented_output_stream->Append("`ifdef VCS\n");
-   indented_output_stream->Append("  `define _SIM_HAVE_CLOG2\n");
-   indented_output_stream->Append("`endif\n");
-   indented_output_stream->Append("`ifdef NCVERILOG\n");
-   indented_output_stream->Append("  `define _SIM_HAVE_CLOG2\n");
-   indented_output_stream->Append("`endif\n");
-   indented_output_stream->Append("`ifdef XILINX_SIMULATOR\n");
-   indented_output_stream->Append("  `define _SIM_HAVE_CLOG2\n");
-   indented_output_stream->Append("`endif\n");
-   indented_output_stream->Append("`ifdef XILINX_ISIM\n");
-   indented_output_stream->Append("  `define _SIM_HAVE_CLOG2\n");
-   indented_output_stream->Append("`endif\n\n");
+   indented_output_stream->Append(R"(
+`ifdef __ICARUS__
+  `define _SIM_HAVE_CLOG2
+`endif
+`ifdef VERILATOR
+  `define _SIM_HAVE_CLOG2
+`endif
+`ifdef MODEL_TECH
+  `define _SIM_HAVE_CLOG2
+`endif
+`ifdef VCS
+  `define _SIM_HAVE_CLOG2
+`endif
+`ifdef NCVERILOG
+  `define _SIM_HAVE_CLOG2
+`endif
+`ifdef XILINX_SIMULATOR
+  `define _SIM_HAVE_CLOG2
+`endif
+`ifdef XILINX_ISIM
+  `define _SIM_HAVE_CLOG2
+`endif
+
+)");
 }

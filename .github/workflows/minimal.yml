@@ -70,7 +70,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        id: ["", "2", "3", "4", "5", "6"]
+        id: ["", "2", "3", "5", "6"]
     env:
       args: -c=--simulator=VERILATOR
     steps:
@@ -121,8 +121,13 @@ jobs:
   specific-test-modelsim:
     needs: [build]
     runs-on: [self-hosted,mentor]
+    strategy:
+      fail-fast: false
+      matrix:
+        id: ["4", "_modelsim"]
     env:
-      args: -c=--simulator=MODELSIM
+      script: ./panda_regressions/hls/bambu_specific_test${{matrix.id}}.sh
+      args: -c=--simulator=MODELSIM -c=--assert-debug
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -141,20 +146,34 @@ jobs:
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
           echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
-      - name: Launch Bambu specific tests
+      - name: Launch Bambu specific tests ${{matrix.id}}
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
-          ./panda_regressions/hls/bambu_specific_test_modelsim.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          ${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: bambu_specific_test${{matrix.id}}
+          new-results: ${{env.report-dir}}/perf.csv
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        shell: bash
+        run: |
+          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v3
         with:
-          name: bambu_specific_test_modelsim
+          name: bambu_specific_test${{matrix.id}}
           path: ${{env.report-dir}}
 
-  specific-test-AXI:
+  AXI4-verification:
     needs: [build]
     runs-on: [self-hosted,mentor]
     steps:
@@ -179,8 +198,7 @@ jobs:
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          mkdir ${{env.report-dir}}
-          ./panda_regressions/hls/bambu_axi_test.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          ./panda_regressions/hls/bambu_axi_verification.sh
 
 
   gcc_regression_simple:
@@ -197,13 +215,13 @@ jobs:
             args: -c=--compiler=I386_GCC49 -c=--reset-type=sync -c=--simulator=VERILATOR
           - setup: clang-4.0
             script: generic_gcc_regression_simple_eg.sh
-            args: -c=--compiler=I386_CLANG4 -c=--simulator=MODELSIM
+            args: -c=--compiler=I386_CLANG4 -c=--simulator=MODELSIM -c=--assert-debug
           - setup: clang-5.0
             script: generic_gcc_regression_simple_eg_ext_pipelined.sh
             args: -c=--compiler=I386_CLANG5 -c=--simulator=VERILATOR
           - setup: clang-6.0
             script: generic_gcc_regression_simple_bambu.sh
-            args: -c=--compiler=I386_CLANG6 -c=--simulator=MODELSIM
+            args: -c=--compiler=I386_CLANG6 -c=--simulator=MODELSIM -c=--assert-debug
           - setup: clang-7
             script: generic_gcc_regression_simple_bambu.sh
             args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR
@@ -324,7 +342,7 @@ jobs:
     env:
       setup: gcc-7
       script: generic_gcc_regression_simple_bambu_vhdl.sh
-      args: -c=--compiler=I386_GCC7 -c=--simulator=MODELSIM
+      args: -c=--compiler=I386_GCC7 -c=--simulator=MODELSIM -c=--assert-debug
       outname: gcc-7_regression_simple-vhdl
     steps:
       - name: Checkout repository
@@ -513,7 +531,7 @@ jobs:
       matrix:
         include:
           - setup: gcc-4.9
-            args: -c=--compiler=I386_GCC49 -c=--simulator=MODELSIM
+            args: -c=--compiler=I386_GCC49 -c=--simulator=MODELSIM -c=--assert-debug
           - setup: clang-4.0
             args: -c=--compiler=I386_CLANG4 -c=--simulator=VERILATOR
           - setup: clang-5.0
@@ -523,7 +541,7 @@ jobs:
           - setup: clang-7
             args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR
           - setup: clang-11
-            args: -c=--compiler=I386_CLANG11 -c=--simulator=MODELSIM
+            args: -c=--compiler=I386_CLANG11 -c=--simulator=MODELSIM -c=--assert-debug
           - setup: clang-13
             args: -c=--compiler=I386_CLANG13 -c=--simulator=VERILATOR
           - setup: clang-16
@@ -584,11 +602,13 @@ jobs:
     runs-on: [self-hosted, mentor]
     env:
       script: multi_CHStone-frontend.sh
-      args: -c=--simulator=MODELSIM
+      args: -c=--simulator=MODELSIM -c=--assert-debug
       outname: multi_CHStone-frontend
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: 'true'
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -687,7 +707,7 @@ jobs:
 
   CHStone-memarch:
     needs: [build, CHStone-multi]
-    runs-on: [self-hosted, altera, intelFPGA, lattice, mentor, xilinx]
+    runs-on: [self-hosted, mentor]
     strategy:
       fail-fast: false
       matrix:
@@ -700,10 +720,12 @@ jobs:
             args: "-c=--speculative-sdc-scheduling"
     env:
       script: generic_CHStone-memarch.sh
-      args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}}
+      args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}} -c=--assert-debug
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: 'true'
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -761,7 +783,7 @@ jobs:
     env:
       outname: omp_simd_${{matrix.device}}
       script: ./examples/omp_simd/generic_omp_simd.sh
-      args: -c=--simulator=MODELSIM -c=--compiler=I386_GCC49 -c=--clock-period=10 -c=--device-name=${{matrix.device}}
+      args: -c=--simulator=MODELSIM -c=--compiler=I386_GCC49 -c=--clock-period=10 -c=--device-name=${{matrix.device}} -c=--assert-debug
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -834,6 +856,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: 'true'
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:

@@ -101,7 +101,7 @@ DesignFlowStep_Status SymbolicApplicationFrontendFlowStep::Exec()
    return DesignFlowStep_Status::EMPTY;
 }
 
-const std::string SymbolicApplicationFrontendFlowStep::GetKindText() const
+std::string SymbolicApplicationFrontendFlowStep::GetKindText() const
 {
    return "SymbolicApplicationFrontendFlowStep(" + EnumToKindText(represented_frontend_flow_step_type) + ")";
 }
@@ -113,7 +113,7 @@ SymbolicApplicationFrontendFlowStep::ComputeSignature(const FrontendFlowStepType
           boost::lexical_cast<std::string>(represented_frontend_flow_step_type) + ")";
 }
 
-const std::string SymbolicApplicationFrontendFlowStep::GetSignature() const
+std::string SymbolicApplicationFrontendFlowStep::GetSignature() const
 {
    return ComputeSignature(represented_frontend_flow_step_type);
 }

@@ -3988,7 +3988,7 @@ static RangeRef constructor_range(const tree_managerConstRef TM, const tree_node
       const auto el = GET_CONST_NODE(i.second);
       THROW_ASSERT(el, "unexpected condition");
 
-      if(el->get_kind() == constructor_K && GetPointer<array_type>(GET_CONST_NODE(GetPointer<constructor>(el)->type)))
+      if(el->get_kind() == constructor_K && tree_helper::IsArrayEquivType(GetPointerS<const constructor>(el)->type))
       {
          THROW_ASSERT(array_dims.size() > 1 || GET_CONST_NODE(c->type)->get_kind() == record_type_K,
                       "invalid nested constructors:" + tn->ToString() + " " + STR(array_dims.size()));

@@ -65,6 +65,10 @@ REF_FORWARD_DECL(BackendFlow);
 enum interface_attributes
 {
    attr_interface_type,
+   attr_interface_dir,
+   attr_interface_bitwidth,
+   attr_interface_alignment,
+   attr_interface_factor,
    attr_size,
    attr_offset,
    attr_bundle_name,

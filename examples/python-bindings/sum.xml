@@ -17,7 +17,6 @@
           </port_o>
           <port_o dir="IN" id="start_port">
             <structural_type_descriptor size="1" type="BOOL" />
-            <connected_objects />
           </port_o>
           <port_o dir="IN" id="a">
             <structural_type_descriptor size="32" type="INT" />
@@ -27,11 +26,9 @@
           </port_o>
           <port_o dir="OUT" id="done_port">
             <structural_type_descriptor size="1" type="BOOL" />
-            <connected_objects />
           </port_o>
           <port_o dir="OUT" id="return_port">
             <structural_type_descriptor size="32" type="INT" />
-            <connected_objects />
           </port_o>
           <NP_functionality LIBRARY="sum" VERILOG_FILE_PROVIDED="sum.v" />
         </component_o>

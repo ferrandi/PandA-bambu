@@ -71,7 +71,7 @@ Write_acknowledgeModuleGenerator::Write_acknowledgeModuleGenerator(const HLS_man
 {
 }
 
-void Write_acknowledgeModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */,
+void Write_acknowledgeModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */,
                                                     unsigned int /* function_id */, vertex /* op_v */,
                                                     const HDLWriter_Language /* language */,
                                                     const std::vector<ModuleGenerator::parameter>& /* _p */,
@@ -81,40 +81,26 @@ void Write_acknowledgeModuleGenerator::InternalExec(std::ostream& out, const mod
 {
    THROW_ASSERT(_ports_in.size() >= i_last, "");
    THROW_ASSERT(_ports_out.size() >= o_last, "");
-   out << "reg started 1INIT_ZERO_VALUE;\n";
-   out << "reg started0 1INIT_ZERO_VALUE;\n";
-   out << "reg [" << _ports_out[o_out1].type_size << "-1:0] " << _ports_out[o_out1].name << "_0;\n";
-   out << "reg " << _ports_out[o_done].name << " 1INIT_ZERO_VALUE;\n\n";
+   out << "reg started, started0;\n\n";
 
-   out << "always @(*)\n";
-   out << "  started0 <= (started | " << _ports_in[i_start].name << ") & !(" << _ports_in[i_ack].name << ");\n";
    out << "always @(posedge clock 1RESET_EDGE)\n";
-   out << "  if (1RESET_VALUE)\n";
-   out << "    started <= 0;\n";
-   out << "  else\n";
-   out << "    started <= started0;\n\n";
-
-   out << "assign " << _ports_out[o_out1].name << " = " << _ports_out[o_out1].name << "_0;\n";
-   out << "always @(*)\n";
    out << "begin\n";
-   out << "  " << _ports_out[o_out1].name << "_0 = 0;\n";
-   out << "  " << _ports_out[o_out1].name << "_0 = (" << _ports_in[i_in1].name << ">=" << _ports_out[o_out1].type_size
-       << ")?" << _ports_in[i_in2].name << ":(" << _ports_out[o_out1].name << "_0^((((BITSIZE_" << _ports_in[i_in2].name
-       << ">=" << _ports_out[o_out1].type_size << "?" << _ports_in[i_in2].name << ":{{(" << _ports_out[o_out1].type_size
-       << "<BITSIZE_" << _ports_in[i_in2].name << " ? 1 : " << _ports_out[o_out1].type_size << "-BITSIZE_"
-       << _ports_in[i_in2].name << "){1'b0}}," << _ports_in[i_in2].name << "})<<" << _ports_in[i_in3].name << "*8)^"
-       << _ports_out[o_out1].name << "_0) & (((" << _ports_in[i_in1].name << "+" << _ports_in[i_in3].name << "*8)>"
-       << _ports_out[o_out1].type_size << ") ? ((({(" << _ports_out[o_out1].type_size << "){1'b1}})>>("
-       << _ports_in[i_in3].name << "*8))<<(" << _ports_in[i_in3].name << "*8)) : ((((({("
-       << _ports_out[o_out1].type_size << "){1'b1}})>>(" << _ports_in[i_in3].name << "*8))<<(" << _ports_in[i_in3].name
-       << "*8))<<(" << _ports_out[o_out1].type_size << "-" << _ports_in[i_in1].name << "-" << _ports_in[i_in3].name
-       << "*8))>>(" << _ports_out[o_out1].type_size << "-" << _ports_in[i_in1].name << "-" << _ports_in[i_in3].name
-       << "*8)))));\n";
+   out << "  if (1RESET_VALUE)\n";
+   out << "  begin\n";
+   out << "    started <= 0;\n";
+   out << "  end\n";
+   out << "  else\n";
+   out << "  begin\n";
+   out << "    started <= started0;\n";
+   out << "  end\n";
    out << "end\n\n";
 
    out << "always @(*)\n";
    out << "begin\n";
-   out << "  " << _ports_out[o_done].name << " = (" << _ports_in[i_start].name << " & " << _ports_in[i_ack].name
-       << ") | (started & " << _ports_in[i_ack].name << ");\n";
-   out << "end\n";
+   out << "  started0 = (" << _ports_in[i_start].name << " | started) & ~" << _ports_in[i_ack].name << ";\n";
+   out << "end\n\n";
+
+   out << "assign " << _ports_out[o_out1].name << " = " << _ports_in[i_in2].name << ";\n";
+   out << "assign " << _ports_out[o_done].name << " = (" << _ports_in[i_start].name << " | started) & "
+       << _ports_in[i_ack].name << ";\n";
 }

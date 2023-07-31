@@ -633,25 +633,7 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
          {
             defines = getOption<std::string>(OPT_gcc_defines) + STR_CST_string_separator;
          }
-         if(std::string(optarg_param).find('=') != std::string::npos)
-         {
-            bool has_parenthesis = std::string(optarg_param).find('(') != std::string::npos &&
-                                   std::string(optarg_param).find(')') != std::string::npos;
-            std::string temp_var = std::string(optarg_param);
-            boost::replace_first(temp_var, "=", "=\'");
-            if(has_parenthesis)
-            {
-               defines += "\'" + temp_var + "\'" + "\'";
-            }
-            else
-            {
-               defines += temp_var + "\'";
-            }
-         }
-         else
-         {
-            defines += std::string(optarg_param);
-         }
+         defines += std::string(optarg_param);
          setOption(OPT_gcc_defines, defines);
          break;
       }
@@ -1381,8 +1363,8 @@ void Parameter::PrintOutputOptionsUsage(std::ostream& os) const
       << "    --max-transformations=<number>\n"
       << "        Set a maximum number of transformations.\n\n"
       << "        To reduce the disk usage two PandA parameter could be used:\n"
-      << "          --panda-parameter=print-tree-manager=1\n"
-      << "          --panda-parameter=print-dot-FF=1\n\n"
+      << "          --panda-parameter=print-tree-manager=0\n"
+      << "          --panda-parameter=print-dot-FF=0\n\n"
       << "    --find-max-transformations\n"
       << "        Find the maximum number of transformations raising an exception.\n\n"
 #endif

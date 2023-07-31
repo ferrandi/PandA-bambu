@@ -80,12 +80,12 @@ AddLibrarySpecialization::AddLibrarySpecialization(const bool _interfaced) : int
 {
 }
 
-const std::string AddLibrarySpecialization::GetKindText() const
+std::string AddLibrarySpecialization::GetKindText() const
 {
    return interfaced ? "Interfaced" : "";
 }
 
-const std::string AddLibrarySpecialization::GetSignature() const
+std::string AddLibrarySpecialization::GetSignature() const
 {
    return interfaced ? "Interfaced" : "";
 }
@@ -165,10 +165,8 @@ add_library::ComputeHLSRelationships(const DesignFlowStep::RelationshipType rela
                {
                   const auto cg_man = HLSMgr->CGetCallGraphManager();
                   const HLSFlowStep_Type top_entity_type =
-                      HLSMgr->hasToBeInterfaced(funId) and
-                              (cg_man->ExistsAddressedFunction() or
-                               parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-                                   HLSFlowStep_Type::WB4_INTERFACE_GENERATION) ?
+                      HLSMgr->hasToBeInterfaced(funId) && (cg_man->ExistsAddressedFunction() ||
+                                                           parameters->getOption<bool>(OPT_memory_mapped_top)) ?
                           HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION :
                           HLSFlowStep_Type::TOP_ENTITY_CREATION;
                   ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(),

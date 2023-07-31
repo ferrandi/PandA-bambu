@@ -41,7 +41,7 @@ float __hide_ieee754_jnf(int n, float x)
    ix = 0x7fffffff & hx;
    /* if J(n,NaN) is NaN */
    if(FLT_UWORD_IS_NAN(ix))
-      return x + x;
+      return X_PLUS_X(x);
    if(n < 0)
    {
       n = -n;
@@ -201,7 +201,7 @@ float __hide_ieee754_ynf(int n, float x)
    ix = 0x7fffffff & hx;
    /* if Y(n,NaN) is NaN */
    if(FLT_UWORD_IS_NAN(ix))
-      return x + x;
+      return X_PLUS_X(x);
    if(FLT_UWORD_IS_ZERO(ix))
       return -one / zero;
    if(hx < 0)

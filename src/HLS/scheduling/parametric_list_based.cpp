@@ -336,7 +336,7 @@ ParametricListBasedSpecialization::ParametricListBasedSpecialization(
 {
 }
 
-const std::string ParametricListBasedSpecialization::GetKindText() const
+std::string ParametricListBasedSpecialization::GetKindText() const
 {
    switch(parametric_list_based_metric)
    {
@@ -352,7 +352,7 @@ const std::string ParametricListBasedSpecialization::GetKindText() const
    return "";
 }
 
-const std::string ParametricListBasedSpecialization::GetSignature() const
+std::string ParametricListBasedSpecialization::GetSignature() const
 {
    return GetKindText();
 }
@@ -775,10 +775,9 @@ bool parametric_list_based::compute_minmaxII(std::list<vertex>& bb_operations, c
                return fsm_correction + connection_contrib +
                       (isPipelined ? (cycles - 1) * clock_cycle + timeLatency.second : timeLatency.first);
             }();
-            //               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-            //                              "---dependence delay " + GET_NAME(flow_graph_with_feedbacks, operation) +
-            //                              "-" +
-            //                                  GET_NAME(flow_graph_with_feedbacks, tgt) + " " + STR(edge_delay));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---dependence delay " + GET_NAME(flow_graph_with_feedbacks, operation) + "-" +
+                               GET_NAME(flow_graph_with_feedbacks, tgt) + " " + STR(edge_delay));
             ssspSolver.add_edge(op_varindex, operation_to_varindex.at(tgt), -edge_delay);
          }
          if((edge_type & FB_DFG_SELECTOR))
@@ -2000,7 +1999,9 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "operation pair " + GET_NAME(flow_graph, first_vertex) + " <- " +
                                      GET_NAME(flow_graph, last_vertex) +
-                                     " not satisfying the loop pipelining constraints-2");
+                                     " not satisfying the loop pipelining constraints:" + STR(cs_first_vertex) + "-" +
+                                     STR(cs_last_vertex) + "-" + STR(latest_cs) + "-" + STR(last_vertex_n_cycles) +
+                                     "-" + STR(initialCycle));
                   return false;
                }
             }
@@ -2029,7 +2030,7 @@ unsigned parametric_list_based::computeLatestStep(unsigned cs_last_vertex, const
          const auto target_index = opDFG->CGetOpNodeInfo(target)->GetNodeId();
          const auto target_starting_time = schedule->GetStartingTime(target_index);
          const auto target_ending_time = schedule->GetEndingTime(target_index);
-         if((target_ending_time - target_starting_time) < EPSILON)
+         if((target_ending_time - target_starting_time) < 10 * EPSILON)
          {
             unsigned fu_id;
             unsigned int number_fu = INFINITE_UINT;
@@ -2051,6 +2052,9 @@ unsigned parametric_list_based::computeLatestStep(unsigned cs_last_vertex, const
             }
          }
          auto cs_tgt_vertex = from_strongtype_cast<unsigned>(schedule->get_cstep(target).second);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "cs_tgt_vertex " + STR(cs_tgt_vertex) + " of vertex " + GET_NAME(flow_graph, target) +
+                            " latest_cs=" + STR(latest_cs));
          if(cs_tgt_vertex < latest_cs)
          {
             latest_cs = cs_tgt_vertex;
@@ -2356,7 +2360,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    {
       START_TIME(step_time);
    }
-   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
+   FunctionBehaviorRef FB = HLSMgr->GetFunctionBehavior(funId);
    const BBGraphConstRef bbg = FB->CGetBBGraph();
    const OpGraphConstRef op_graph = FB->CGetOpGraph(FunctionBehavior::CFG);
    std::deque<vertex> vertices;
@@ -2477,17 +2481,13 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
              compute_minmaxII(bb_operations, operations, ctrl_steps, BBI->block->number, minII, maxII, toBeScheduled);
          if(FB->is_function_pipelined())
          {
-            if(!doLP)
+            if(!doLP && FB->get_initiation_time() != maxII)
             {
                THROW_ERROR("Function pipelining not possible with II=" + STR(FB->get_initiation_time()));
             }
             if(FB->get_initiation_time() > minII)
             {
                minII = FB->get_initiation_time();
-            }
-            if(!doLP || FB->get_initiation_time() != minII)
-            {
-               THROW_ERROR("Function pipelining not possible with II=" + STR(minII));
             }
          }
          if(doLP)
@@ -2541,6 +2541,18 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
                bool stopSearch;
                exec<false>(operations, ctrl_steps, 0, emptyVector, stopSearch);
             }
+         }
+         else if(FB->is_function_pipelined())
+         {
+            /// revert to the no solution case
+            for(auto& op : operations)
+            {
+               HLS->Rsch->remove_sched(op);
+            }
+            std::vector<std::pair<vertex, vertex>> emptyVector;
+            bool stopSearch;
+            exec<false>(operations, ctrl_steps, 0, emptyVector, stopSearch);
+            FB->disable_function_pipelining();
          }
       }
       else

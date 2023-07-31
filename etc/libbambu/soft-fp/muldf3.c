@@ -1,6 +1,6 @@
 /* Software floating-point emulation.
    Return a * b
-   Copyright (C) 1997-2018 Free Software Foundation, Inc.
+   Copyright (C) 1997-2023 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Richard Henderson (rth@cygnus.com) and
         Jakub Jelinek (jj@ultra.linux.cz).
@@ -26,7 +26,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
 
 static __FORCE_INLINE DFtype __muldf3(DFtype a, DFtype b)
 {

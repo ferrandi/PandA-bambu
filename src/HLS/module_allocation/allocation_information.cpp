@@ -48,7 +48,7 @@
 #include "fu_binding.hpp"           // for fu_binding, fu_binding::UNKNOWN
 #include "hls_manager.hpp"          // for HLS_manager, HLS_manager::io_bin...
 #include "hls_step.hpp"             // for hlsRef
-#include "math_function.hpp"        // for resize_to_1_8_16_32_64_128_256_512
+#include "math_function.hpp"        // for ceil_pow2
 #include "schedule.hpp"             // for ControlStep, AbsControlStep, HLS...
 #include "string_manipulation.hpp"  // for STR GET_CLASS
 #include "structural_manager.hpp"
@@ -699,13 +699,13 @@ double AllocationInformation::GetStatementArea(const unsigned int statement_inde
                       "Cond expr not allocated " + ga->op1->ToString());
          /// Computing time of cond_expr as time of cond_expr_FU - setup_time
          const auto data_bitsize = tree_helper::Size(ga->op0);
-         const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+         const auto fu_prec = resize_1_8_pow2(data_bitsize);
          const auto op_area = mux_area_unit_raw(fu_prec);
          return op_area;
       }
 
       const auto data_bitsize = tree_helper::Size(ga->op0);
-      const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+      const auto fu_prec = resize_1_8_pow2(data_bitsize);
       std::string fu_name;
       if(op1_kind == widen_mult_expr_K || op1_kind == mult_expr_K)
       {
@@ -1073,7 +1073,7 @@ double AllocationInformation::get_stage_period(const unsigned int fu_name, const
 double AllocationInformation::estimate_mux_time(unsigned int fu_name) const
 {
    auto fu_prec = get_prec(fu_name);
-   fu_prec = resize_to_1_8_16_32_64_128_256_512(fu_prec);
+   fu_prec = resize_1_8_pow2(fu_prec);
    return mux_time_unit(fu_prec);
 }
 
@@ -1083,7 +1083,7 @@ double AllocationInformation::estimate_muxNto1_delay(unsigned long long fu_prec,
    {
       return 0;
    }
-   fu_prec = resize_to_1_8_16_32_64_128_256_512(fu_prec);
+   fu_prec = resize_1_8_pow2(fu_prec);
    if(mux_ins > MAX_MUX_N_INPUTS)
    {
       return HLS_C->get_clock_period();
@@ -1113,7 +1113,7 @@ double AllocationInformation::estimate_muxNto1_area(unsigned long long fu_prec, 
    {
       return 0;
    }
-   fu_prec = resize_to_1_8_16_32_64_128_256_512(fu_prec);
+   fu_prec = resize_1_8_pow2(fu_prec);
    if(mux_ins > MAX_MUX_N_INPUTS)
    {
       return std::numeric_limits<double>::max();
@@ -1302,7 +1302,8 @@ bool AllocationInformation::is_one_cycle_direct_access_memory_unit(unsigned int 
 {
    technology_nodeRef current_fu = get_fu(fu_type);
    return GetPointer<functional_unit>(current_fu)->memory_type == MEMORY_TYPE_ASYNCHRONOUS ||
-          GetPointer<functional_unit>(current_fu)->memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY;
+          GetPointer<functional_unit>(current_fu)->memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY ||
+          GetPointer<functional_unit>(current_fu)->memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN;
 }
 
 void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphConstRef g, node_kind_prec_infoRef info,
@@ -1495,7 +1496,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
    }
    // if(tree_helper::is_simple_pointer_plus_test(TreeM, g->CGetOpNodeInfo(node)->GetNodeId()))
    // info->is_simple_pointer_plus_expr = true;
-   max_size_in = resize_to_1_8_16_32_64_128_256_512(max_size_in_true);
+   max_size_in = resize_1_8_pow2(max_size_in_true);
    /// DSPs based components have to be managed in a different way
    if(current_op == "widen_mult_expr" || current_op == "mult_expr")
    {
@@ -1506,7 +1507,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       {
          const auto element_type = tree_helper::CGetElements(type);
          const auto element_size = tree_helper::Size(element_type);
-         const auto output_size = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(out_node));
+         const auto output_size = resize_1_8_pow2(tree_helper::Size(out_node));
          info->real_output_nelem = output_size / element_size;
          info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;
@@ -1531,12 +1532,12 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          }
          bool resized = false;
 
-         const auto resized_second_index = resize_to_1_8_16_32_64_128_256_512(info->input_prec[1]);
+         const auto resized_second_index = resize_1_8_pow2(info->input_prec[1]);
          /// After first match we exit to prevent matching with larger mults
          for(size_t ind = 0; ind < DSP_y_db.size() && !resized; ind++)
          {
             const auto y_dsp_size = DSP_y_db[ind];
-            const auto resized_y_dsp_size = resize_to_1_8_16_32_64_128_256_512(y_dsp_size);
+            const auto resized_y_dsp_size = resize_1_8_pow2(y_dsp_size);
             if(info->input_prec[1] < y_dsp_size && resized_y_dsp_size == resized_second_index)
             {
                if(info->input_prec[0] < DSP_x_db[ind])
@@ -1550,16 +1551,16 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          if(!resized)
          {
             max_size_in = std::max(info->input_prec[0], info->input_prec[1]);
-            max_size_in = resize_to_1_8_16_32_64_128_256_512(max_size_in);
+            max_size_in = resize_1_8_pow2(max_size_in);
             info->input_prec[0] = max_size_in;
             info->input_prec[1] = max_size_in;
             info->output_prec = max_size_in;
          }
          else
          {
-            if(resize_to_1_8_16_32_64_128_256_512(output_size_true) < max_size_in)
+            if(resize_1_8_pow2(output_size_true) < max_size_in)
             {
-               max_size_in = resize_to_1_8_16_32_64_128_256_512(output_size_true);
+               max_size_in = resize_1_8_pow2(output_size_true);
             }
             info->output_prec = max_size_in;
          }
@@ -1593,7 +1594,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          }
          else
          {
-            info->output_prec = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(out_node));
+            info->output_prec = resize_1_8_pow2(tree_helper::Size(out_node));
             if(tree_helper::IsVectorType(type))
             {
                const auto element_type = tree_helper::CGetElements(type);
@@ -1643,7 +1644,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       {
          const auto element_type = tree_helper::CGetElements(type);
          const auto element_size = tree_helper::Size(element_type);
-         const auto output_size = resize_to_1_8_16_32_64_128_256_512(out_prec);
+         const auto output_size = resize_1_8_pow2(out_prec);
          info->real_output_nelem = output_size / element_size;
          info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;
@@ -1666,7 +1667,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
             /// timing does not change for these operations
             out_prec = std::min(out_prec, 64ull);
          }
-         info->output_prec = resize_to_1_8_16_32_64_128_256_512(out_prec);
+         info->output_prec = resize_1_8_pow2(out_prec);
          info->real_output_nelem = 0;
          info->base128_output_nelem = 0;
       }
@@ -1694,7 +1695,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       THROW_ASSERT(nodeOutput_id, "unexpected condition");
       const auto out_node = TreeM->CGetTreeReindex(nodeOutput_id);
       type = tree_helper::CGetType(out_node);
-      info->output_prec = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(out_node));
+      info->output_prec = resize_1_8_pow2(tree_helper::Size(out_node));
       if(tree_helper::IsVectorType(type))
       {
          const auto element_type = tree_helper::CGetElements(type);
@@ -1947,7 +1948,7 @@ unsigned int AllocationInformation::GetCycleLatency(const unsigned int operation
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "<--Latency of not allocated fu is 1: possibly inaccurate");
          const auto data_bitsize = tree_helper::Size(ga->op0);
-         const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+         const auto fu_prec = resize_1_8_pow2(data_bitsize);
          const auto in_prec = right_kind == mult_expr_K ? fu_prec : (fu_prec / 2);
          const auto fu_name =
              tree_node::GetString(right_kind) + "_FU_" + STR(in_prec) + "_" + STR(in_prec) + "_" + STR(fu_prec) + "_0";
@@ -2167,7 +2168,7 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
                          "Cond expr not allocated " + ga->op1->ToString());
             /// Computing time of cond_expr as time of cond_expr_FU - setup_time
             const auto data_bitsize = tree_helper::Size(ga->op0);
-            const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+            const auto fu_prec = resize_1_8_pow2(data_bitsize);
             const auto op_execution_time = mux_time_unit(fu_prec);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "<--Time is mux time (precision is " + STR(fu_prec) + ") " + STR(op_execution_time) +
@@ -2176,7 +2177,7 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
          }
 
          const auto data_bitsize = tree_helper::Size(ga->op0);
-         const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+         const auto fu_prec = resize_1_8_pow2(data_bitsize);
          std::string fu_name;
          if(op1_kind == widen_mult_expr_K || op1_kind == mult_expr_K)
          {
@@ -2316,7 +2317,7 @@ double AllocationInformation::GetPhiConnectionLatency(const unsigned int stateme
    THROW_ASSERT(statement->get_kind() == gimple_assign_K, statement->ToString());
    const auto sn = GetPointerS<const gimple_assign>(statement)->op0;
    THROW_ASSERT(sn, "");
-   const auto precision = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(sn));
+   const auto precision = resize_1_8_pow2(tree_helper::Size(sn));
    const auto mux_time = estimate_muxNto1_delay(precision, static_cast<unsigned int>(phi_in_degree));
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "<--Delay (" + STR(phi_in_degree) + " with " + STR(precision) + " bits) is " + STR(mux_time));
@@ -2332,7 +2333,7 @@ double AllocationInformation::GetCondExprTimeLatency(const unsigned int operatio
    /// In this way we are correctly estimating only phi with two inputs
    const auto type = tree_helper::CGetType(tn);
    const auto data_bitsize = tree_helper::Size(type);
-   const auto fu_prec = resize_to_1_8_16_32_64_128_256_512(data_bitsize);
+   const auto fu_prec = resize_1_8_pow2(data_bitsize);
    return mux_time_unit(fu_prec);
 }
 
@@ -2382,7 +2383,7 @@ double AllocationInformation::mux_area_unit_raw(unsigned long long fu_prec) cons
 double AllocationInformation::estimate_mux_area(unsigned int fu_name) const
 {
    auto fu_prec = get_prec(fu_name);
-   fu_prec = resize_to_1_8_16_32_64_128_256_512(fu_prec);
+   fu_prec = resize_1_8_pow2(fu_prec);
    return estimate_muxNto1_area(fu_prec, 2);
 }
 
@@ -2542,7 +2543,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
          if(dims.size() > 1 && n_not_power_of_two > 0)
          {
             const technology_managerRef TM = HLS_T->get_technology_manager();
-            auto bus_addr_bitsize = resize_to_1_8_16_32_64_128_256_512(address_bitsize);
+            auto bus_addr_bitsize = resize_1_8_pow2(address_bitsize);
             technology_nodeRef f_unit =
                 TM->get_fu(ADDER_STD + std::string("_" + STR(bus_addr_bitsize) + "_" + STR(bus_addr_bitsize) + "_" +
                                                    STR(bus_addr_bitsize)),
@@ -2590,7 +2591,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
          if((dims.size() > 1 && n_not_power_of_two > 0))
          {
             const technology_managerRef TM = HLS_T->get_technology_manager();
-            auto bus_addr_bitsize = resize_to_1_8_16_32_64_128_256_512(address_bitsize);
+            auto bus_addr_bitsize = resize_1_8_pow2(address_bitsize);
             technology_nodeRef f_unit =
                 TM->get_fu(ADDER_STD + std::string("_" + STR(bus_addr_bitsize) + "_" + STR(bus_addr_bitsize) + "_" +
                                                    STR(bus_addr_bitsize)),
@@ -2631,7 +2632,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
          if((dims.size() > 1 && n_not_power_of_two > 0))
          {
             const technology_managerRef TM = HLS_T->get_technology_manager();
-            auto bus_addr_bitsize = resize_to_1_8_16_32_64_128_256_512(address_bitsize);
+            auto bus_addr_bitsize = resize_1_8_pow2(address_bitsize);
             technology_nodeRef f_unit =
                 TM->get_fu(ADDER_STD + std::string("_" + STR(bus_addr_bitsize) + "_" + STR(bus_addr_bitsize) + "_" +
                                                    STR(bus_addr_bitsize)),
@@ -2752,7 +2753,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
          if(dims.size() > 1 && n_not_power_of_two > 0)
          {
             const technology_managerRef TM = HLS_T->get_technology_manager();
-            auto bus_addr_bitsize = resize_to_1_8_16_32_64_128_256_512(address_bitsize);
+            auto bus_addr_bitsize = resize_1_8_pow2(address_bitsize);
             technology_nodeRef f_unit =
                 TM->get_fu(ADDER_STD + std::string("_" + STR(bus_addr_bitsize) + "_" + STR(bus_addr_bitsize) + "_" +
                                                    STR(bus_addr_bitsize)),
@@ -2776,7 +2777,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
    else if(is_single_bool_test_cond_expr_units(fu))
    {
       auto prec = get_prec(fu);
-      auto fu_prec = resize_to_1_8_16_32_64_128_256_512(prec);
+      auto fu_prec = resize_1_8_pow2(prec);
       if(fu_prec > 1)
       {
          const technology_managerRef TM = HLS_T->get_technology_manager();
@@ -2911,7 +2912,9 @@ double AllocationInformation::estimate_call_delay() const
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Estimating call delay");
    double clock_budget = HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period();
    double scheduling_mux_margins = parameters->getOption<double>(OPT_scheduling_mux_margins) * mux_time_unit(32);
-   double call_delay = clock_budget;
+   auto dfp_P =
+       parameters->isOption(OPT_disable_function_proxy) && parameters->getOption<bool>(OPT_disable_function_proxy);
+   double call_delay = hls->registered_inputs && dfp_P ? 0 : clock_budget;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "---Minimum slack " +
                       STR(minimumSlack > 0.0 && minimumSlack != std::numeric_limits<double>::max() ? minimumSlack : 0));

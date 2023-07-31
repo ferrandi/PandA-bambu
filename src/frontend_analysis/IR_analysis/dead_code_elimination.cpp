@@ -510,11 +510,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                      const auto mr = GetPointerS<mem_ref>(op0);
                      THROW_ASSERT(GET_NODE(mr->op1)->get_kind() == integer_cst_K, "unexpected condition");
                      const auto type_w = tree_helper::CGetType(ga->op1);
-                     auto written_bw = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(type_w));
-                     if(written_bw == 1)
-                     {
-                        written_bw = 8;
-                     }
+                     const auto written_bw = std::max(8ULL, ceil_pow2(tree_helper::Size(type_w)));
                      if(tree_helper::GetConstValue(mr->op1) == 0)
                      {
                         if(GET_NODE(mr->op0)->get_kind() == integer_cst_K)
@@ -595,18 +591,20 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                             tree_helper::GetConstValue(mr_used->op1))
                                                          {
                                                             const auto type_r = tree_helper::CGetType(ga_used->op0);
-                                                            auto read_bw = resize_to_1_8_16_32_64_128_256_512(
-                                                                tree_helper::Size(type_r));
-                                                            if(read_bw == 1)
-                                                            {
-                                                               read_bw = 8;
-                                                            }
+                                                            const auto read_bw =
+                                                                std::max(8ULL, ceil_pow2(tree_helper::Size(type_r)));
                                                             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                                            "---read_bw: " + STR(read_bw) +
                                                                                " written_bw: " + STR(written_bw));
                                                             if(GET_INDEX_NODE(mr->op0) ==
                                                                    GET_INDEX_NODE(mr_used->op0) &&
-                                                               written_bw == read_bw)
+                                                               written_bw == read_bw &&
+                                                               tree_helper::IsSameType(
+                                                                   type_r,
+                                                                   type_w)) /// TODO in case read and write values are
+                                                                            /// integers but of different signedness a
+                                                                            /// cast could allow the load/store
+                                                                            /// simplification
                                                             {
                                                                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                                               "---found a candidate " +

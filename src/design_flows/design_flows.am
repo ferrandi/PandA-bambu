@@ -123,6 +123,7 @@ endif
    -I$(top_srcdir)/src/design_flows/backend/ToC/progModels \
    -I$(top_srcdir)/src/design_flows/backend/ToC/source_code_writers \
    -I$(top_srcdir)/src/graph \
+   -I$(top_srcdir)/src/HLS \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)
   lib_ToC_la_SOURCES = \
@@ -131,13 +132,6 @@ endif
 noinst_HEADERS += \
    design_flows/backend/ToC/c_backend_information.hpp \
    design_flows/backend/ToC/c_backend_step_factory.hpp
-
-if BUILD_BAMBU
-   lib_ToC_la_SOURCES += \
-      design_flows/backend/ToC/hls_c_backend_information.cpp
-   noinst_HEADERS += \
-      design_flows/backend/ToC/hls_c_backend_information.hpp
-endif
 
 if BUILD_LIB_ACTOR_GRAPHS
    lib_ToC_la_CPPFLAGS += \

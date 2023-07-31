@@ -41,30 +41,30 @@
  * Last modified by $Author$
  *
  */
-
-/// Includes the class definition
 #include "VIVADO_xsim_wrapper.hpp"
 
-#include "ToolManager.hpp"
-
 #include "Parameter.hpp"
+#include "ToolManager.hpp"
 #include "constant_strings.hpp"
 #include "utility.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
-
 #include <fileIO.hpp>
+#include <fstream>
 #include <polixml.hpp>
 #include <utility>
 #include <xml_dom_parser.hpp>
 #include <xml_helper.hpp>
 
-#include <fstream>
+#define XSIM_VLOG "xvlog"
+#define XSIM_VHDL "xvhdl"
+#define XSIM_XELAB "xelab"
 
 // constructor
-VIVADO_xsim_wrapper::VIVADO_xsim_wrapper(const ParameterConstRef& _Param, std::string _suffix)
-    : SimulationTool(_Param), suffix(std::move(_suffix))
+VIVADO_xsim_wrapper::VIVADO_xsim_wrapper(const ParameterConstRef& _Param, const std::string& _suffix,
+                                         const std::string& _top_fname)
+    : SimulationTool(_Param, _top_fname), suffix(_suffix)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the XSIM wrapper...");
    boost::filesystem::create_directory(XSIM_SUBDIR + suffix + "/");
@@ -77,42 +77,33 @@ void VIVADO_xsim_wrapper::CheckExecution()
 {
 }
 
-std::string VIVADO_xsim_wrapper::create_project_script(const std::string& top_filename,
-                                                       const std::list<std::string>& file_list)
+static const std::string& create_project_file(const std::string& project_filename,
+                                              const std::list<std::string>& file_list)
 {
-   std::string project_filename = XSIM_SUBDIR + suffix + "/" + top_filename + ".prj";
-   std::ofstream prj_file(project_filename.c_str());
+   std::ofstream prj_file(project_filename);
    for(auto const& file : file_list)
    {
       boost::filesystem::path file_path(file);
-      std::string extension = GetExtension(file_path);
-      std::string filename;
-      std::string language;
+      const auto extension = GetExtension(file_path);
       if(extension == "vhd" || extension == "vhdl" || extension == "VHD" || extension == "VHDL")
       {
-         language = "VHDL";
+         prj_file << "VHDL";
       }
       else if(extension == "v" || extension == "V" || extension == "sv")
       {
-         language = "VERILOG";
+         prj_file << "SV";
       }
       else
       {
          THROW_ERROR("Extension not recognized! " + extension);
       }
-      filename = file_path.string();
-      if(filename[0] == '/')
+      prj_file << " work ";
+      const auto filename = file_path.string();
+      if(filename[0] != '/')
       {
-         prj_file << language << " "
-                  << "work"
-                  << " " << filename << std::endl;
+         prj_file << boost::filesystem::path(GetCurrentPath()).string() << "/";
       }
-      else
-      {
-         prj_file << language << " "
-                  << "work"
-                  << " " << boost::filesystem::path(GetCurrentPath()).string() << "/" << filename << std::endl;
-      }
+      prj_file << filename << std::endl;
    }
    prj_file.close();
    return project_filename;
@@ -121,39 +112,59 @@ std::string VIVADO_xsim_wrapper::create_project_script(const std::string& top_fi
 void VIVADO_xsim_wrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename,
                                          const std::list<std::string>& file_list)
 {
-   std::string project_file = create_project_script(top_filename, file_list);
-   PRINT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "Project file: " + project_file);
+   const auto xilinx_root = Param->isOption(OPT_xilinx_root) ? Param->getOption<std::string>(OPT_xilinx_root) : "";
+   std::string cflags =
+       "-DXILINX_SIMULATOR " + (xilinx_root.size() ? (" -I" + xilinx_root + "/data/xsim/include") : "");
 
-   log_file = XSIM_SUBDIR + suffix + "/" + top_filename + "_xsim.log";
+   log_file = "${work_dir}/" + top_filename + "_xsim.log";
    script << "#configuration" << std::endl;
-   auto setupscr =
+   script << "work_dir=\"" << XSIM_SUBDIR << suffix << "\"" << std::endl;
+   const auto setupscr =
        Param->isOption(OPT_xilinx_vivado_settings) ? Param->getOption<std::string>(OPT_xilinx_vivado_settings) : "";
-   if(!setupscr.empty() && setupscr != "0")
+   if(!setupscr.empty())
    {
-      if(boost::algorithm::starts_with(setupscr, "export"))
-      {
-         script << setupscr + " >& /dev/null; ";
-      }
-      else
-      {
-         script << ". " << setupscr << " >& /dev/null;";
-      }
-      script << std::endl << std::endl;
+      script << ". " << setupscr << " >& /dev/null;" << std::endl << std::endl;
    }
 
+   const auto prj_file = create_project_file(XSIM_SUBDIR + suffix + "/" + top_filename + ".prj", file_list);
+   std::string libtb_filename = GenerateLibraryBuildScript(script, "${work_dir}", cflags);
+   libtb_filename = libtb_filename.substr(12, libtb_filename.size() - 15);
+   const auto vflags = [&]() {
+      std::string flags;
+      if(cflags.find("-m32") != std::string::npos)
+      {
+         flags += " -define M32";
+      }
+      else if(cflags.find("-mx32") != std::string::npos)
+      {
+         flags += " -define MX32";
+      }
+      else if(cflags.find("-m64") != std::string::npos)
+      {
+         flags += " -define M64";
+      }
+      if(Param->isOption(OPT_generate_vcd) && Param->getOption<bool>(OPT_generate_vcd))
+      {
+         flags += " -define GENERATE_VCD";
+      }
+      if(Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy))
+      {
+         flags += " -define GENERATE_VCD_DISCREPANCY";
+      }
+      return flags;
+   }();
+
+   script << XSIM_XELAB " -sv_root ${work_dir} -sv_lib " << libtb_filename << " " << vflags << " -prj " << prj_file;
    if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
    {
-      script << "xelab --debug all --rangecheck -L work -L unifast_ver -L unisims_ver -L unimacro_ver -L secureip "
-                "--snapshot " +
-                    top_filename + "tb_behav --prj " + project_file + " work." + top_filename +
-                    "_tb_top -O2 -nolog -stat -R";
+      script << " --debug all --rangecheck -O2";
    }
    else
    {
-      script << "xelab --debug off -L work -L unifast_ver -L unisims_ver -L unimacro_ver -L secureip --snapshot " +
-                    top_filename + "tb_behav --prj " + project_file + " work." + top_filename +
-                    "_tb_top -O3 -nolog -stat -R";
+      script << " --debug off -O3";
    }
+   script << " -L work -L unifast_ver -L unisims_ver -L unimacro_ver -L secureip --snapshot " + top_filename +
+                 "tb_behav work.clocked_bambu_testbench -nolog -stat -R";
    script << " 2>&1 | tee " << log_file << std::endl << std::endl;
 }
 

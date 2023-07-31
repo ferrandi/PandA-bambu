@@ -1,49 +1,40 @@
-EXTRA_DIST +=\
-             %D%/README.txt\
-             %D%/gcd_example/bambu.sh\
-             %D%/gcd_example/gcd.cc\
-             %D%/gcd_example/test.xml\
-             %D%/fir_filter/bambu.sh\
-             %D%/fir_filter/coef1.cpp\
-             %D%/fir_filter/input.pcm\
-             %D%/fir_filter/outputFixed.gold.pcm\
-             %D%/fir_filter/test.xml\
-             %D%/tb_exporter/bambu.sh\
-             %D%/tb_exporter/bambu_tb_exporter.hpp\
-             %D%/tb_exporter/sum3numbers.cpp\
-             %D%/tb_exporter/tb.cpp\
-             %D%/Xilinx_Examples/Math/fp_accum/3_FP_accum.pdf\
-             %D%/Xilinx_Examples/Math/fp_accum/bambu.sh\
-             %D%/Xilinx_Examples/Math/fp_accum/CONTRIBUTING.md\
-             %D%/Xilinx_Examples/Math/fp_accum/fp_accum.cpp\
-             %D%/Xilinx_Examples/Math/fp_accum/LICENSE.md\
-             %D%/Xilinx_Examples/Math/fp_accum/README.md\
-             %D%/Xilinx_Examples/Math/fp_accum/run_3_FP_accum_script.tcl\
-             %D%/Xilinx_Examples/Math/atan2_cordic/CONTRIBUTING.md\
-             %D%/Xilinx_Examples/Math/atan2_cordic/LICENSE.md\
-             %D%/Xilinx_Examples/Math/atan2_cordic/README.md\
-             %D%/Xilinx_Examples/Math/atan2_cordic/cordic.h\
-             %D%/Xilinx_Examples/Math/atan2_cordic/cordic_atan2.cpp\
-             %D%/Xilinx_Examples/Math/atan2_cordic/9a_cordic_atan2.pdf\
-             %D%/Xilinx_Examples/Math/atan2_cordic/run_atan2_hls_script.tcl\
-             %D%/Xilinx_Examples/Math/atan2_cordic/cordic_test.cpp\
-             %D%/Xilinx_Examples/Math/atan2_cordic/read_file.h\
-             %D%/Xilinx_Examples/Math/atan2_cordic/M/cpf_atan2_data.txt\
-             %D%/Xilinx_Examples/Math/atan2_cordic/M/db_cordic_atan2.m\
-             %D%/Xilinx_Examples/Math/atan2_cordic/M/short_cpf_atan2.m\
-             %D%/Xilinx_Examples/Math/atan2_cordic/M/cpf_atan2.m\
-             %D%/Xilinx_Examples/Math/atan2_cordic/test_data/input_data.txt\
-             %D%/Xilinx_Examples/Math/atan2_cordic/test_data/ref_results.txt\
-             %D%/Xilinx_Examples/Math/atan2_cordic/test_data/vector.dat\
-             %D%/Xilinx_Examples/Math/atan2_cordic/test_data/check_res.m\
-             %D%/Xilinx_Examples/Math/atan2_cordic/bambu.sh\
-             %D%/Xilinx_Examples/Math/squared_difference_accumulate/CONTRIBUTING.md\
-             %D%/Xilinx_Examples/Math/squared_difference_accumulate/tb\
-             %D%/Xilinx_Examples/Math/squared_difference_accumulate/tb/diff_sq_acc_tb.cpp\
-             %D%/Xilinx_Examples/Math/squared_difference_accumulate/LICENSE.md\
-             %D%/Xilinx_Examples/Math/squared_difference_accumulate/README.md\
-             %D%/Xilinx_Examples/Math/squared_difference_accumulate/run.tcl\
-             %D%/Xilinx_Examples/Math/squared_difference_accumulate/src\
-             %D%/Xilinx_Examples/Math/squared_difference_accumulate/src/diff_sq_acc.h\
-             %D%/Xilinx_Examples/Math/squared_difference_accumulate/src/diff_sq_acc.cpp\
-             %D%/Xilinx_Examples/Math/squared_difference_accumulate/bambu.sh
+EXTRA_DIST += \
+   %D%/README.txt \
+   %D%/fir_filter/bambu.sh \
+   %D%/fir_filter/coef1.cpp \
+   %D%/fir_filter/input.pcm \
+   %D%/fir_filter/outputFixed.gold.pcm \
+   %D%/gcd_example/bambu.sh \
+   %D%/gcd_example/gcd.cc \
+   %D%/gcd_example/test.xml \
+   %D%/Xilinx_Examples/Math/atan2_cordic/9a_cordic_atan2.pdf \
+   %D%/Xilinx_Examples/Math/atan2_cordic/bambu.sh \
+   %D%/Xilinx_Examples/Math/atan2_cordic/CONTRIBUTING.md \
+   %D%/Xilinx_Examples/Math/atan2_cordic/cordic_atan2.cpp \
+   %D%/Xilinx_Examples/Math/atan2_cordic/cordic_test.cpp \
+   %D%/Xilinx_Examples/Math/atan2_cordic/cordic.h \
+   %D%/Xilinx_Examples/Math/atan2_cordic/input_data.txt \
+   %D%/Xilinx_Examples/Math/atan2_cordic/LICENSE.md \
+   %D%/Xilinx_Examples/Math/atan2_cordic/read_file.h \
+   %D%/Xilinx_Examples/Math/atan2_cordic/README.md \
+   %D%/Xilinx_Examples/Math/atan2_cordic/ref_results.txt \
+   %D%/Xilinx_Examples/Math/atan2_cordic/run_atan2_hls_script.tcl \
+   %D%/Xilinx_Examples/Math/atan2_cordic/M/cpf_atan2_data.txt \
+   %D%/Xilinx_Examples/Math/atan2_cordic/M/cpf_atan2.m \
+   %D%/Xilinx_Examples/Math/atan2_cordic/M/db_cordic_atan2.m \
+   %D%/Xilinx_Examples/Math/atan2_cordic/M/short_cpf_atan2.m \
+   %D%/Xilinx_Examples/Math/fp_accum/3_FP_accum.pdf \
+   %D%/Xilinx_Examples/Math/fp_accum/bambu.sh \
+   %D%/Xilinx_Examples/Math/fp_accum/CONTRIBUTING.md \
+   %D%/Xilinx_Examples/Math/fp_accum/fp_accum.cpp \
+   %D%/Xilinx_Examples/Math/fp_accum/LICENSE.md \
+   %D%/Xilinx_Examples/Math/fp_accum/README.md \
+   %D%/Xilinx_Examples/Math/fp_accum/run_3_FP_accum_script.tcl \
+   %D%/Xilinx_Examples/Math/squared_difference_accumulate/bambu.sh \
+   %D%/Xilinx_Examples/Math/squared_difference_accumulate/CONTRIBUTING.md \
+   %D%/Xilinx_Examples/Math/squared_difference_accumulate/LICENSE.md \
+   %D%/Xilinx_Examples/Math/squared_difference_accumulate/README.md \
+   %D%/Xilinx_Examples/Math/squared_difference_accumulate/run.tcl \
+   %D%/Xilinx_Examples/Math/squared_difference_accumulate/src/diff_sq_acc.cpp \
+   %D%/Xilinx_Examples/Math/squared_difference_accumulate/src/diff_sq_acc.h \
+   %D%/Xilinx_Examples/Math/squared_difference_accumulate/tb/diff_sq_acc_tb.cpp

@@ -610,7 +610,7 @@ FunctionFrontendFlowStep_Movable Schedule::CanBeMoved(const unsigned int stateme
    if(not behavioral_helper->CanBeMoved(statement_index))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "<--No because it is artifical and cannot be moved by default");
+                     "<--No because it is artificial and cannot be moved by default");
       return FunctionFrontendFlowStep_Movable::UNMOVABLE;
    }
    const auto clock_period = hls->HLS_C->get_clock_period() * hls->HLS_C->get_clock_period_resource_fraction();
@@ -622,8 +622,25 @@ FunctionFrontendFlowStep_Movable Schedule::CanBeMoved(const unsigned int stateme
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking if " + ga->ToString() + " can be moved");
    if(behavioral_helper->IsLoad(statement_index))
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because it is a load");
-      return FunctionFrontendFlowStep_Movable::UNMOVABLE;
+      bool loadCanBePredicated = false;
+      auto var = tree_helper::get_base_index(TM, GET_INDEX_NODE(ga->op1));
+      if(var)
+      {
+         const auto vd = GetPointer<const var_decl>(TM->get_tree_node_const(var));
+         if(vd && !tree_helper::is_volatile(TM, var))
+         {
+            if(vd->static_flag || (vd->scpe && GET_NODE(vd->scpe)->get_kind() != translation_unit_decl_K))
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---LOAD can be predicated");
+               loadCanBePredicated = true;
+            }
+         }
+      }
+      if(!loadCanBePredicated)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because it is a load");
+         return FunctionFrontendFlowStep_Movable::UNMOVABLE;
+      }
    }
 
    const bool unbounded_operation = not allocation_information->is_operation_bounded(statement_index);
@@ -636,7 +653,7 @@ FunctionFrontendFlowStep_Movable Schedule::CanBeMoved(const unsigned int stateme
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Cycles: " + STR(cycles));
    if(cycles > 1)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because it is multicycle");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because it is multi-cycle");
       return FunctionFrontendFlowStep_Movable::UNMOVABLE;
    }
    const auto latency = allocation_information->GetTimeLatency(ga->index, fu_binding::UNKNOWN).first;
@@ -703,7 +720,7 @@ FunctionFrontendFlowStep_Movable Schedule::CanBeMoved(const unsigned int stateme
       if(ceil(bb_ending_time / clock_period) * clock_period < (ceil(new_ending_time / clock_period) * clock_period))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "<--No because it can increase the latency of a previus BB: " + STR(bb_ending_time) + " vs. " +
+                        "<--No because it can increase the latency of a previous BB: " + STR(bb_ending_time) + " vs. " +
                             STR(new_ending_time));
          return FunctionFrontendFlowStep_Movable::TIMING;
       }
@@ -1132,7 +1149,23 @@ double Schedule::GetBBEndingTime(const unsigned int basic_block_index) const
    }
    const auto ending_time =
        std::max_element(stmt_list.begin(), stmt_list.end(), [=](const tree_nodeRef first, const tree_nodeRef second) {
-          return ending_times.at(first->index) < ending_times.at(second->index);
+          if(ending_times.find(first->index) != ending_times.end() &&
+             ending_times.find(second->index) != ending_times.end())
+          {
+             return ending_times.at(first->index) < ending_times.at(second->index);
+          }
+          else
+          {
+             if(ending_times.find(first->index) == ending_times.end() &&
+                ending_times.find(second->index) == ending_times.end())
+             {
+                return first->index < second->index;
+             }
+             else
+             {
+                return ending_times.find(first->index) == ending_times.end();
+             }
+          }
        });
    THROW_ASSERT(ending_time != stmt_list.end(), "");
    return ceil((ending_times.at((*ending_time)->index) + margin) / clock_period) * clock_period;

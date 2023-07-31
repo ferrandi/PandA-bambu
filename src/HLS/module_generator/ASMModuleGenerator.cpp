@@ -59,8 +59,8 @@ ASMModuleGenerator::ASMModuleGenerator(const HLS_managerRef& _HLSMgr) : Registra
 {
 }
 
-void ASMModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */, unsigned int function_id, vertex op_v,
-                                      const HDLWriter_Language language,
+void ASMModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */, unsigned int function_id,
+                                      vertex op_v, const HDLWriter_Language language,
                                       const std::vector<ModuleGenerator::parameter>& /* _p */,
                                       const std::vector<ModuleGenerator::parameter>& /* _ports_in */,
                                       const std::vector<ModuleGenerator::parameter>& /* _ports_out */,
@@ -71,7 +71,7 @@ void ASMModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */
    std::string asm_string = FB->CGetBehavioralHelper()->get_asm_string(cfg->CGetOpNodeInfo(op_v)->GetNodeId());
    boost::replace_all(asm_string, "%%", "&percent;");
    boost::replace_all(asm_string, "&percent;", "%");
-   boost::replace_all(asm_string, "\n", "\\n");
+   boost::replace_all(asm_string, "\\n", "\n");
    boost::replace_all(asm_string, "\\\"", "\"");
    boost::replace_all(asm_string, "\\\'", "\'");
 

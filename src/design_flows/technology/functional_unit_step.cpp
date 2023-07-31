@@ -457,8 +457,8 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                            else if((fu_base_name == "mult_expr_FU" or fu_base_name == "ui_mult_expr_FU") and
                                    DSP_y_to_DSP_x.find(prec) != DSP_y_to_DSP_x.end())
                            {
-                              fu_name += "_" + STR(resize_to_1_8_16_32_64_128_256_512(prec));
-                              template_parameters += " " + STR(resize_to_1_8_16_32_64_128_256_512(prec));
+                              fu_name += "_" + STR(resize_1_8_pow2(prec));
+                              template_parameters += " " + STR(resize_1_8_pow2(prec));
                            }
                            else if(GetPointer<port_o>(port)->get_is_doubled())
                            {

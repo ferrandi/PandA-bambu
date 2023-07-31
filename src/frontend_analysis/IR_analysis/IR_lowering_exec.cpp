@@ -1985,16 +1985,14 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         const auto right_shift_val = op1_val % 8;
                         if(GET_NODE(cr->type)->get_kind() == boolean_type_K)
                         {
-                           type = tree_man->GetCustomIntegerType(
-                               std::max(8ull, resize_to_1_8_16_32_64_128_256_512(1 + right_shift_val)), true);
+                           type = tree_man->GetCustomIntegerType(std::max(8ull, ceil_pow2(1 + right_shift_val)), true);
                         }
                         else
                         {
                            const auto it = GetPointer<integer_type>(GET_NODE(cr->type));
                            THROW_ASSERT(it, "unexpected pattern");
-                           type = tree_man->GetCustomIntegerType(
-                               std::max(8ull, resize_to_1_8_16_32_64_128_256_512(it->prec + right_shift_val)),
-                               it->unsigned_flag);
+                           type = tree_man->GetCustomIntegerType(std::max(8ull, ceil_pow2(it->prec + right_shift_val)),
+                                                                 it->unsigned_flag);
                         }
                      }
                      else
@@ -2294,16 +2292,14 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            tree_nodeRef type;
                            if(GET_NODE(bfr->type)->get_kind() == boolean_type_K)
                            {
-                              type = tree_man->GetCustomIntegerType(
-                                  std::max(8u, resize_to_1_8_16_32_64_128_256_512(1 + right_shift_val)), true);
+                              type = tree_man->GetCustomIntegerType(std::max(8u, ceil_pow2(1 + right_shift_val)), true);
                            }
                            else
                            {
                               const auto it = GetPointer<integer_type>(GET_NODE(bfr->type));
                               THROW_ASSERT(it, "unexpected pattern");
-                              type = tree_man->GetCustomIntegerType(
-                                  std::max(8u, resize_to_1_8_16_32_64_128_256_512(it->prec + right_shift_val)),
-                                  it->unsigned_flag);
+                              type = tree_man->GetCustomIntegerType(std::max(8u, ceil_pow2(it->prec + right_shift_val)),
+                                                                    it->unsigned_flag);
                            }
                            tree_nodeRef pt = tree_man->GetPointerType(type, 8);
                            tree_nodeRef ae = tree_man->create_unary_operation(pt, ga->op1, srcp_default, addr_expr_K);
@@ -2421,8 +2417,8 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            if(is_scalar)
                            {
                               auto data_size = tree_helper::Size(type_node);
-                              const auto type_vc = tree_man->GetCustomIntegerType(
-                                  std::max(8ull, resize_to_1_8_16_32_64_128_256_512(data_size)), true);
+                              const auto type_vc =
+                                  tree_man->GetCustomIntegerType(std::max(8ull, ceil_pow2(data_size)), true);
                               const auto vc_expr = tree_man->create_unary_operation(type_vc, bfr->op0, srcp_default,
                                                                                     view_convert_expr_K);
                               const auto vc_ga = tree_man->CreateGimpleAssign(type_vc, tree_nodeRef(), tree_nodeRef(),
@@ -2438,8 +2434,8 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                                   type_vc, tree_nodeRef(), tree_nodeRef(), vc_shift_expr, function_id, srcp_default);
                               block.second->PushBefore(vc_shift_ga, *it_los, AppM);
                               const auto vc_shift_ga_var = GetPointer<gimple_assign>(GET_NODE(vc_shift_ga))->op0;
-                              const auto sel_type = tree_man->GetCustomIntegerType(
-                                  std::max(8ull, resize_to_1_8_16_32_64_128_256_512(sel_size)), true);
+                              const auto sel_type =
+                                  tree_man->GetCustomIntegerType(std::max(8ull, ceil_pow2(sel_size)), true);
                               const auto vc_nop_expr =
                                   tree_man->create_unary_operation(sel_type, vc_shift_ga_var, srcp_default, nop_expr_K);
                               const auto vc_nop_ga = tree_man->CreateGimpleAssign(
@@ -2500,17 +2496,17 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            {
                               /// check if a mult_expr may become a widen_mult_expr
                               auto dw_out = tree_helper::Size(ga->op0);
-                              auto data_bitsize_out = resize_to_1_8_16_32_64_128_256_512(dw_out);
+                              auto data_bitsize_out = ceil_pow2(dw_out);
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                              "---data_bitsize_out " + STR(data_bitsize_out) + " <- " + STR(dw_out) +
                                                  "\n");
                               auto dw_in0 = tree_helper::Size(GetPointer<binary_expr>(GET_NODE(ga->op1))->op0);
-                              auto data_bitsize_in0 = resize_to_1_8_16_32_64_128_256_512(dw_in0);
+                              auto data_bitsize_in0 = ceil_pow2(dw_in0);
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                              "---data_bitsize_in0 " + STR(data_bitsize_in0) + " <- " + STR(dw_in0) +
                                                  "\n");
                               auto dw_in1 = tree_helper::Size(GetPointer<binary_expr>(GET_NODE(ga->op1))->op1);
-                              auto data_bitsize_in1 = resize_to_1_8_16_32_64_128_256_512(dw_in1);
+                              auto data_bitsize_in1 = ceil_pow2(dw_in1);
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                              "---data_bitsize_in1 " + STR(data_bitsize_in1) + " <- " + STR(dw_in1) +
                                                  "\n");
@@ -2933,16 +2929,14 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         auto right_shift_val = op1_val % 8;
                         if(GET_NODE(cr->type)->get_kind() == boolean_type_K)
                         {
-                           type = tree_man->GetCustomIntegerType(
-                               std::max(8ull, resize_to_1_8_16_32_64_128_256_512(1 + right_shift_val)), true);
+                           type = tree_man->GetCustomIntegerType(std::max(8ull, ceil_pow2(1 + right_shift_val)), true);
                         }
                         else
                         {
                            auto* it = GetPointer<integer_type>(GET_NODE(cr->type));
                            THROW_ASSERT(it, "unexpected pattern");
-                           type = tree_man->GetCustomIntegerType(
-                               std::max(8ull, resize_to_1_8_16_32_64_128_256_512(it->prec + right_shift_val)),
-                               it->unsigned_flag);
+                           type = tree_man->GetCustomIntegerType(std::max(8ull, ceil_pow2(it->prec + right_shift_val)),
+                                                                 it->unsigned_flag);
                         }
                      }
                      else
@@ -3241,16 +3235,14 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      tree_nodeRef type;
                      if(GET_NODE(bfr->type)->get_kind() == boolean_type_K)
                      {
-                        type = tree_man->GetCustomIntegerType(
-                            std::max(8u, resize_to_1_8_16_32_64_128_256_512(1 + right_shift_val)), true);
+                        type = tree_man->GetCustomIntegerType(std::max(8u, ceil_pow2(1 + right_shift_val)), true);
                      }
                      else
                      {
                         auto* it = GetPointer<integer_type>(GET_NODE(bfr->type));
                         THROW_ASSERT(it, "unexpected pattern");
-                        type = tree_man->GetCustomIntegerType(
-                            std::max(8u, resize_to_1_8_16_32_64_128_256_512(it->prec + right_shift_val)),
-                            it->unsigned_flag);
+                        type = tree_man->GetCustomIntegerType(std::max(8u, ceil_pow2(it->prec + right_shift_val)),
+                                                              it->unsigned_flag);
                      }
                      tree_nodeRef pt = tree_man->GetPointerType(type, 8);
                      tree_nodeRef ae = tree_man->create_unary_operation(pt, ga->op0, srcp_default, addr_expr_K);

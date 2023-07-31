@@ -965,9 +965,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             const auto tgt = boost::target(e, *top_cg);
             const auto tgt_fu_name = functions::GetFUName(CGM->get_function(tgt), HLSMgr);
             if(HLSMgr->Rfuns->is_a_proxied_function(tgt_fu_name) ||
-               (parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-                    HLSFlowStep_Type::WB4_INTERFACE_GENERATION &&
-                HLSMgr->hasToBeInterfaced(f_id)))
+               (parameters->getOption<bool>(OPT_memory_mapped_top) && HLSMgr->hasToBeInterfaced(f_id)))
             {
                num_instances.at(top_id)[tgt] = 1;
             }
@@ -1300,15 +1298,13 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
          }
       }
       /// Round up to the next highest power of 2
-      max_byte_size = round_to_power2(max_byte_size);
+      max_byte_size = ceil_pow2(max_byte_size);
       HLSMgr->Rmem->set_internal_base_address_alignment(max_byte_size);
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
                      "Sparse memory alignemnt set to " + STR(max_byte_size) + " bytes");
    }
 
-   const auto memory_mapped_top_if =
-       parameters->getOption<bool>(OPT_memory_mapped_top) ||
-       parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION;
+   const auto memory_mapped_top_if = parameters->getOption<bool>(OPT_memory_mapped_top);
    const auto allocate_function_mem = [&](const func_id_t f_id, const top_id_t top_id, const memoryRef& Rmem) {
 #ifndef NDEBUG
       const auto dbg_lvl = Rmem == HLSMgr->Rmem ? debug_level : DEBUG_LEVEL_NONE;

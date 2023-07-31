@@ -369,13 +369,13 @@ DesignFlowStep_Status Evaluation::Exec()
    xml_element* nodeRoot = document.create_root_node("bambu_results");
 
    std::string bench_name;
-   if(parameters->isOption(OPT_configuration_name))
-   {
-      bench_name += parameters->getOption<std::string>(OPT_configuration_name) + ":";
-   }
    if(parameters->isOption(OPT_benchmark_name))
    {
-      bench_name += parameters->getOption<std::string>(OPT_benchmark_name);
+      bench_name += parameters->getOption<std::string>(OPT_benchmark_name) + ":";
+   }
+   if(parameters->isOption(OPT_configuration_name))
+   {
+      bench_name += parameters->getOption<std::string>(OPT_configuration_name);
    }
    if(bench_name == "" || !parameters->IsParameter("simple-benchmark-name") ||
       parameters->GetParameter<int>("simple-benchmark-name") == 0)
@@ -399,7 +399,7 @@ DesignFlowStep_Status Evaluation::Exec()
 #endif
       {
 #ifndef NDEBUG
-         if(parameters->isOption(OPT_dry_run_evaluation) and parameters->getOption<bool>(OPT_dry_run_evaluation))
+         if(parameters->getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::DRY_RUN)
          {
             if(bench_name == "")
             {
@@ -408,6 +408,20 @@ DesignFlowStep_Status Evaluation::Exec()
          }
          else
 #endif
+             if(parameters->isOption(OPT_top_functions_names))
+         {
+            if(bench_name == "")
+            {
+               bench_name += parameters->getOption<std::string>(OPT_top_functions_names);
+            }
+            else
+            {
+               bench_name += ":" + parameters->getOption<std::string>(OPT_top_functions_names);
+            }
+
+            bench_name += "_" + STR(progressive - 1);
+         }
+         else
          {
             THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
             const auto top_fun_id = *(top_function_ids.begin());

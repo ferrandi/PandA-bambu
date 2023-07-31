@@ -323,12 +323,12 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
    return "";
 }
 
-const std::string ApplicationFrontendFlowStep::GetSignature() const
+std::string ApplicationFrontendFlowStep::GetSignature() const
 {
    return ComputeSignature(frontend_flow_step_type);
 }
 
-const std::string ApplicationFrontendFlowStep::GetName() const
+std::string ApplicationFrontendFlowStep::GetName() const
 {
    return "Frontend::" + GetKindText();
 }

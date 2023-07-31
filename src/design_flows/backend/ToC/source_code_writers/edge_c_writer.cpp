@@ -37,48 +37,31 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "edge_c_writer.hpp"
 
-/// algorithms/dominance include
 #include "Dominance.hpp"
-
-/// Backend include
-#include "instruction_writer.hpp"
-
-/// Behavior include
-#include "application_manager.hpp"
+#include "Parameter.hpp"
+#include "basic_block.hpp"
+#include "behavioral_helper.hpp"
+#include "custom_map.hpp"
+#include "ext_tree_node.hpp"
 #include "function_behavior.hpp"
+#include "graph.hpp"
+#include "hls_manager.hpp"
+#include "indented_output_stream.hpp"
+#include "instruction_writer.hpp"
 #include "loop.hpp"
 #include "loops.hpp"
 #include "op_graph.hpp"
 #include "profiling_information.hpp"
-
-/// Graph include
-#include "basic_block.hpp"
-#include "graph.hpp"
-
-/// Parameter include
-#include "Parameter.hpp"
-
-/// tree includes
-#include "behavioral_helper.hpp"
-#include "ext_tree_node.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
 
-/// STL include
-#include "custom_map.hpp"
-
-/// utility include
-#include "indented_output_stream.hpp"
-
-EdgeCWriter::EdgeCWriter(const application_managerConstRef _AppM, const InstructionWriterRef _instruction_writer,
+EdgeCWriter::EdgeCWriter(const HLS_managerConstRef _HLSMgr, const InstructionWriterRef _instruction_writer,
                          const IndentedOutputStreamRef _indented_output_stream, const ParameterConstRef _Param,
                          bool _verbose)
-    : CWriter(_AppM, _instruction_writer, _indented_output_stream, _Param, _verbose),
+    : CWriter(_HLSMgr, _instruction_writer, _indented_output_stream, _Param, _verbose),
       dumped_edges(ltedge<BBGraph>(nullptr)),
       counter(0)
 {
@@ -93,9 +76,9 @@ void EdgeCWriter::Initialize()
    counter = 0;
    fun_loop_to_index.clear();
    // Iterating over all functions
-   for(const auto f : AppM->get_functions_with_body())
+   for(const auto f : HLSMgr->get_functions_with_body())
    {
-      const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(f);
+      const auto FB = HLSMgr->CGetFunctionBehavior(f);
       const std::list<LoopConstRef> loops = FB->CGetLoops()->GetList();
       std::list<LoopConstRef>::const_iterator l, l_end = loops.end();
       for(l = loops.begin(); l != l_end; ++l)
@@ -361,11 +344,11 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
          unsigned int second_depth = 0;
          if(first_loop_index)
          {
-            first_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
+            first_depth = HLSMgr->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
          }
          if(second_loop_index)
          {
-            second_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
+            second_depth = HLSMgr->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
          }
          // Second vertex is an header
          if(first_depth < second_depth)
@@ -397,7 +380,7 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
          indented_output_stream->Append(
              "//Starting of a loop - average iteration number " +
              boost::lexical_cast<std::string>(
-                 AppM->CGetFunctionBehavior(funId)->CGetProfilingInformation()->GetLoopAvgIterations(bb_number)) +
+                 HLSMgr->CGetFunctionBehavior(funId)->CGetProfilingInformation()->GetLoopAvgIterations(bb_number)) +
              "\n");
       }
    }
@@ -605,12 +588,12 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                         if(first_loop_index)
                         {
                            first_depth =
-                               AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
+                               HLSMgr->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
                         }
                         if(second_loop_index)
                         {
                            second_depth =
-                               AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
+                               HLSMgr->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
                         }
                         // Second vertex is an header
                         if(first_depth < second_depth)
@@ -657,11 +640,12 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                   unsigned int second_depth = 0;
                   if(first_loop_index)
                   {
-                     first_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
+                     first_depth = HLSMgr->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
                   }
                   if(second_loop_index)
                   {
-                     second_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
+                     second_depth =
+                         HLSMgr->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
                   }
                   // Second vertex is an header
                   if(first_depth < second_depth)
@@ -722,12 +706,12 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                         if(first_loop_index)
                         {
                            first_depth =
-                               AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
+                               HLSMgr->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
                         }
                         if(second_loop_index)
                         {
                            second_depth =
-                               AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
+                               HLSMgr->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
                         }
                         // Second vertex is an header
                         if(first_depth < second_depth)
@@ -795,11 +779,12 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                   unsigned int second_depth = 0;
                   if(first_loop_index)
                   {
-                     first_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
+                     first_depth = HLSMgr->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
                   }
                   if(second_loop_index)
                   {
-                     second_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
+                     second_depth =
+                         HLSMgr->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
                   }
                   // Second vertex is an header
                   if(first_depth < second_depth)
@@ -868,7 +853,7 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                unsigned int second_depth = 0;
                if(first_loop_index)
                {
-                  first_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
+                  first_depth = HLSMgr->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
                }
                else
                {
@@ -876,7 +861,7 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                }
                if(second_loop_index)
                {
-                  second_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
+                  second_depth = HLSMgr->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
                }
                // Second vertex is an header
                if(first_depth < second_depth)
@@ -999,12 +984,12 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                            if(first_loop_index)
                            {
                               first_depth =
-                                  AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
+                                  HLSMgr->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
                            }
                            if(second_loop_index)
                            {
                               second_depth =
-                                  AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
+                                  HLSMgr->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
                            }
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                           "---Depth of first loop is " + STR(first_depth));
@@ -1056,12 +1041,13 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                      unsigned int second_depth = 0;
                      if(first_loop_index)
                      {
-                        first_depth = AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
+                        first_depth =
+                            HLSMgr->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(first_loop_index)->depth;
                      }
                      if(second_loop_index)
                      {
                         second_depth =
-                            AppM->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
+                            HLSMgr->CGetFunctionBehavior(funId)->CGetLoops()->CGetLoop(second_loop_index)->depth;
                      }
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "---Depth of first loop is " + STR(first_depth));
@@ -1403,7 +1389,7 @@ void EdgeCWriter::writeRoutineInstructions(const unsigned int function_index, co
                                            const var_pp_functorConstRef variableFunctor, vertex bb_start,
                                            CustomOrderedSet<vertex> bb_end)
 {
-   const FunctionBehaviorConstRef function_behavior = AppM->CGetFunctionBehavior(function_index);
+   const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(function_index);
    const BehavioralHelperConstRef behavioral_helper = function_behavior->CGetBehavioralHelper();
    const BBGraphConstRef bb_fcfgGraph = function_behavior->CGetBBGraph(FunctionBehavior::FBB);
    fun_id = behavioral_helper->get_function_index();

@@ -44,25 +44,11 @@
 #ifndef C_BACKEND_STEP_FACTORY_HPP
 #define C_BACKEND_STEP_FACTORY_HPP
 
-/// Autoheader include
-#include "config_HAVE_GRAPH_PARTITIONING_BUILT.hpp"
-#include "config_HAVE_TARGET_PROFILING.hpp"
-
-/// Superclass include
 #include "design_flow_step_factory.hpp"
-
-/// design_flows/backend/ToC/progModels
-#include "c_backend.hpp"
-
-/// graph include
-#include "graph.hpp"
-
-/// utility include
 #include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(application_manager);
 CONSTREF_FORWARD_DECL(CBackendInformation);
-REF_FORWARD_DECL(DesignFlowStep);
 
 class CBackendStepFactory : public DesignFlowStepFactory
 {
@@ -78,23 +64,12 @@ class CBackendStepFactory : public DesignFlowStepFactory
    CBackendStepFactory(const DesignFlowManagerConstRef design_flow_manager,
                        const application_managerConstRef application_manager, const ParameterConstRef _parameters);
 
-   /**
-    * Destructor
-    */
-   ~CBackendStepFactory() override;
-
-   /**
-    * Return the prefix of the steps created by the factory
-    */
    const std::string GetPrefix() const override;
 
    /**
     * Create a backend c step
-    * @param c_backend_type is the type of c backend to be created
-    * @param file_name is the name of the file to be written
     * @param c_backend_information is the information about the frontend to be generated
     */
-   const DesignFlowStepRef CreateCBackendStep(const CBackend::Type c_backend_type, const std::string& file_name,
-                                              const CBackendInformationConstRef c_backend_information) const;
+   const DesignFlowStepRef CreateCBackendStep(const CBackendInformationConstRef c_backend_information) const;
 };
 #endif

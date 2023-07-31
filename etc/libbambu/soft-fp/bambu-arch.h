@@ -21,7 +21,6 @@
 
 #define __FORCE_INLINE __attribute__((always_inline)) inline
 
-#define __WORDSIZE 32
 #define __BYTE_ORDER __LITTLE_ENDIAN
 #define __bambu__
 

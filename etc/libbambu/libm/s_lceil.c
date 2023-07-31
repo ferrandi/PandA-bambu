@@ -59,20 +59,18 @@ long int lceil(double x)
       {
          i = (0x000fffff) >> j0;
          if(((i0 & i) | i1) == 0)
-            return x; /* x is integral */
-         if(huge + x > 0.0)
-         { /* raise inexact flag */
-            if(i0 > 0)
-               i0 += (0x00100000) >> j0;
-            i0 &= (~i);
-            i1 = 0;
-         }
+            return x;               /* x is integral */
+         math_force_eval(huge + x); /* raise inexact flag */
+         if(i0 > 0)
+            i0 += (0x00100000) >> j0;
+         i0 &= (~i);
+         i1 = 0;
       }
    }
    else if(j0 > 51)
    {
       if(j0 == 0x400)
-         return x; /* inf or NaN */
+         return X_PLUS_X(x); /* inf or NaN */
       else
          return x; /* x is integral */
    }
@@ -80,23 +78,21 @@ long int lceil(double x)
    {
       i = ((unsigned)(0xffffffff)) >> (j0 - 20);
       if((i1 & i) == 0)
-         return x; /* x is integral */
-      if(huge + x > 0.0)
-      { /* raise inexact flag */
-         if(i0 > 0)
+         return x;               /* x is integral */
+      math_force_eval(huge + x); /* raise inexact flag */
+      if(i0 > 0)
+      {
+         if(j0 == 20)
+            i0 += 1;
+         else
          {
-            if(j0 == 20)
-               i0 += 1;
-            else
-            {
-               j = i1 + (1 << (52 - j0));
-               if(j < i1)
-                  i0 += 1; /* got a carry */
-               i1 = j;
-            }
+            j = i1 + (1 << (52 - j0));
+            if(j < i1)
+               i0 += 1; /* got a carry */
+            i1 = j;
          }
-         i1 &= (~i);
       }
+      i1 &= (~i);
    }
    INSERT_WORDS(x, i0, i1);
    return (long int)x;

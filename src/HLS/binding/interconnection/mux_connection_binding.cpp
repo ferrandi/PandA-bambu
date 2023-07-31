@@ -1262,7 +1262,11 @@ void mux_connection_binding::create_connections()
             /// adding activation's state of selector related to operation op
             const auto tmp_ops_node_size =
                 GetPointer<functional_unit>(HLS->allocation_information->get_fu(fu))->get_operations().size();
-            if(tmp_ops_node_size > 1U)
+            bool is_starting_operation = std::find(astg->CGetStateInfo(rstate)->starting_operations.begin(),
+                                                   astg->CGetStateInfo(rstate)->starting_operations.end(),
+                                                   *op) != astg->CGetStateInfo(rstate)->starting_operations.end();
+
+            if(tmp_ops_node_size > 1U && (!(GET_TYPE(data, *op) & (TYPE_LOAD | TYPE_STORE)) || is_starting_operation))
             {
                if(!GetPointer<funit_obj>(HLS->Rfu->get(fu, idx)))
                {
@@ -1310,15 +1314,27 @@ void mux_connection_binding::create_connections()
                   {
                      Prec = GetPointerS<const integer_type>(GET_CONST_NODE(type))->prec;
                   }
+                  else if(type && (GET_CONST_NODE(type)->get_kind() == boolean_type_K))
+                  {
+                     Prec = 8;
+                  }
+                  else if(type && (GET_CONST_NODE(type)->get_kind() == enumeral_type_K))
+                  {
+                     Prec = GetPointerS<const enumeral_type>(GET_CONST_NODE(type))->prec;
+                  }
                   unsigned int algn = 0;
                   if(type && (GET_CONST_NODE(type)->get_kind() == integer_type_K))
                   {
                      algn = GetPointerS<const integer_type>(GET_CONST_NODE(type))->algn;
                   }
+                  else if(type && (GET_CONST_NODE(type)->get_kind() == boolean_type_K))
+                  {
+                     algn = 8;
+                  }
 #if USE_ALIGNMENT_INFO
                   if(type && GetPointer<const type_node>(GET_CONST_NODE(type)))
                   {
-                     alignment = GetPointerS<const type_node>(GET_CONST_NODE(type))->algn;
+                     algn = alignment = GetPointerS<const type_node>(GET_CONST_NODE(type))->algn;
                   }
 #endif
                   if(GET_TYPE(data, *op) & TYPE_STORE)
@@ -1428,6 +1444,7 @@ void mux_connection_binding::create_connections()
                                        bus_addr_bitsize, alignment, rstate, NULL_VERTEX, 0);
                   if(Prec != algn && Prec % algn)
                   {
+                     HLS_manager::check_bitwidth(Prec);
                      determine_connection(
                          *op, HLS_manager::io_binding_type(0, Prec), fu_obj, 2, port_index, data,
                          static_cast<unsigned>(object_bitsize(TreeM, HLS_manager::io_binding_type(0, Prec))), 0, rstate,
@@ -1435,22 +1452,12 @@ void mux_connection_binding::create_connections()
                   }
                   else
                   {
-                     const auto IR_var_bitsize = tree_helper::Size(tn);
+                     const auto IR_var_bitsize = Prec != 0 ? Prec : tree_helper::Size(tn);
+                     HLS_manager::check_bitwidth(IR_var_bitsize);
                      unsigned int var_bitsize;
-                     if(Prec != algn && Prec % algn)
-                     {
-                        HLS_manager::check_bitwidth(Prec);
-                        var_bitsize = static_cast<unsigned int>(Prec);
-                     }
-                     else
-                     {
-                        var_bitsize = static_cast<unsigned int>(IR_var_bitsize);
-                     }
+                     var_bitsize = static_cast<unsigned int>(IR_var_bitsize);
                      determine_connection(
-                         *op,
-                         HLS_manager::io_binding_type(
-                             GET_INDEX_NODE(GetPointerS<const type_node>(GET_CONST_NODE(tn))->size), 0),
-                         fu_obj, 2, port_index, data,
+                         *op, HLS_manager::io_binding_type(0, var_bitsize), fu_obj, 2, port_index, data,
                          static_cast<unsigned>(object_bitsize(TreeM, HLS_manager::io_binding_type(0, var_bitsize))), 0,
                          rstate, NULL_VERTEX, 0);
                   }

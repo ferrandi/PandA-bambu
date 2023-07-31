@@ -41,27 +41,19 @@
 #ifndef EDGE_C_WRITER_HPP
 #define EDGE_C_WRITER_HPP
 
-/// Super class include
-#include "c_writer.hpp"
-
-/// Graph include
 #include "basic_block.hpp"
-
-/// STD include
-#include <fstream>
-#include <iosfwd>
-#include <ostream>
-#include <string>
-
-/// STL include
-#include <deque>
-#include <list>
-#include <set>
-#include <vector>
-
-/// Utility include
+#include "c_writer.hpp"
 #include "graph.hpp"
 #include "refcount.hpp"
+
+#include <deque>
+#include <fstream>
+#include <iosfwd>
+#include <list>
+#include <ostream>
+#include <set>
+#include <string>
+#include <vector>
 
 CONSTREF_FORWARD_DECL(application_manager);
 CONSTREF_FORWARD_DECL(OpGraph);
@@ -70,9 +62,45 @@ CONSTREF_FORWARD_DECL(Parameter);
 /**
  * Class use to write the C code with instrumented edges
  */
-class EdgeCWriter : public virtual CWriter
+class EdgeCWriter : public CWriter
 {
  protected:
+   /// Increment which should be added before the label in a basic block
+   std::map<vertex, EdgeDescriptor> local_inc;
+
+   /// Set of already dumped edges
+   std::set<EdgeDescriptor, ltedge<BBGraph>> dumped_edges;
+
+   /// Map a pair function - loop to an unique index
+   std::map<unsigned int, std::map<unsigned int, unsigned int>> fun_loop_to_index;
+
+   /// The size of fun_loop_to_index
+   unsigned int counter;
+
+   /// Special control flow graphs
+   BBGraphConstRef support_cfg;
+
+   /// Index of the current function
+   unsigned int fun_id;
+
+   /**
+    * Dump operations requested for record information about a loop path which ends
+    * @param e is the feedback or outgoing edge
+    */
+   virtual void print_loop_ending(EdgeDescriptor e);
+
+   /**
+    * Dump operations requested for record information about a path which exit from a loop
+    * @param e is the feedback or outgoing edge
+    */
+   virtual void print_loop_escaping(EdgeDescriptor e);
+
+   /**
+    * Dump initializations of variable for recording a loop path
+    * @param e is the incoming edged
+    */
+   virtual void print_loop_starting(EdgeDescriptor e);
+
    /**
     * Dump operation requested for instrument an edges
     * @param e is the edge
@@ -115,75 +143,29 @@ class EdgeCWriter : public virtual CWriter
                                  const var_pp_functorConstRef variableFunctor, vertex bb_start = NULL_VERTEX,
                                  CustomOrderedSet<vertex> bb_end = CustomOrderedSet<vertex>()) override;
 
- protected:
-   /// Increment which should be added before the label in a basic block
-   std::map<vertex, EdgeDescriptor> local_inc;
-
-   /// Set of already dumped edges
-   std::set<EdgeDescriptor, ltedge<BBGraph>> dumped_edges;
-
-   /// Map a pair function - loop to an unique index
-   std::map<unsigned int, std::map<unsigned int, unsigned int>> fun_loop_to_index;
-
-   /// The size of fun_loop_to_index
-   unsigned int counter;
-
-   /// Special control flow graphs
-   BBGraphConstRef support_cfg;
-
-   /// Index of the current function
-   unsigned int fun_id;
-
-   /**
-    * Dump operations requested for record information about a loop path which ends
-    * @param e is the feedback or outgoing edge
-    */
-   virtual void print_loop_ending(EdgeDescriptor e);
-
-   /**
-    * Dump operations requested for record information about a path which exit from a loop
-    * @param e is the feedback or outgoing edge
-    */
-   virtual void print_loop_escaping(EdgeDescriptor e);
-
-   /**
-    * Dump initializations of variable for recording a loop path
-    * @param e is the incoming edged
-    */
-   virtual void print_loop_starting(EdgeDescriptor e);
-
  public:
    /**
     * Constructor of the class
-    * @param AppM is the application manager
+    * @param HLSMgr is the hls manager
     * @param instruction_writer is the instruction writer to use to print the single instruction
     * @param indented_output_stream is the output stream
     * @param Param is the set of parameters
     * @param verbose tells if annotations
     */
-   EdgeCWriter(const application_managerConstRef _AppM, const InstructionWriterRef instruction_writer,
+   EdgeCWriter(const HLS_managerConstRef _HLSMgr, const InstructionWriterRef instruction_writer,
                const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef Param,
                bool verbose = true);
 
-   /**
-    * Destructor
-    */
-   ~EdgeCWriter() override;
+   virtual ~EdgeCWriter() override;
+
+   virtual void Initialize() override;
+
+   virtual void WriteHeader() override;
 
    /**
     * Returns the map which associates to each loop a unique id
     * @return the map which associates to each loop a unique id
     */
    const std::map<unsigned int, std::map<unsigned int, unsigned int>>& CGetFunctionLoopToId() const;
-
-   /**
-    * Initialize data structure
-    */
-   void Initialize() override;
-
-   /**
-    * Writes the header of the file
-    */
-   void WriteHeader() override;
 };
 #endif

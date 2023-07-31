@@ -256,12 +256,12 @@ CDFCModuleBindingSpecialization::CDFCModuleBindingSpecialization(
 {
 }
 
-const std::string CDFCModuleBindingSpecialization::GetKindText() const
+std::string CDFCModuleBindingSpecialization::GetKindText() const
 {
    return CliqueCovering_AlgorithmToString(clique_covering_algorithm);
 }
 
-const std::string CDFCModuleBindingSpecialization::GetSignature() const
+std::string CDFCModuleBindingSpecialization::GetSignature() const
 {
    return STR(static_cast<unsigned int>(clique_covering_algorithm));
 }
@@ -1769,25 +1769,15 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                                                        cd_levels[boost::get(boost::vertex_index, *CG, cand_tgt)]);
                   size_t cand_out_degree = boost::out_degree(cand_src, *CG) + boost::out_degree(cand_tgt, *CG);
                   int cand_edge_weight = (*CG)[cand_e].weight;
-                  if(allocation_information->get_number_channels(
-                         fu->get_assign(c2s[boost::get(boost::vertex_index, *CG, cand_src)])) >= 1)
-                  {
-                     if(allocation_information->is_readonly_memory_unit(
-                            fu->get_assign(c2s[boost::get(boost::vertex_index, *CG, cand_src)])))
-                     {
-                        cand_level_difference = -2;
-                     }
-                     else
-                     {
-                        cand_level_difference = -1;
-                     }
-                  }
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "-->Analyzing compatibility between operations " +
-                                     GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, cand_src)]) + " and " +
-                                     GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, cand_tgt)]) +
-                                     " - ld = " + STR(cand_level_difference) + " - d= " + STR(cand_out_degree) +
-                                     " - w = " + STR(cand_edge_weight));
+                  INDENT_DBG_MEX(
+                      DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                      "-->Analyzing compatibility between operations " +
+                          GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, cand_src)]) + "(" +
+                          sdg->CGetOpNodeInfo(c2s[boost::get(boost::vertex_index, *CG, cand_src)])->GetOperation() +
+                          ")" + " and " + GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, cand_tgt)]) + "(" +
+                          sdg->CGetOpNodeInfo(c2s[boost::get(boost::vertex_index, *CG, cand_tgt)])->GetOperation() +
+                          ")" + " - ld = " + STR(cand_level_difference) + " - d= " + STR(cand_out_degree) +
+                          " - w = " + STR(cand_edge_weight));
 
                   for(; ce_it != ce_it_end; ++ce_it)
                   {
@@ -1798,17 +1788,15 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                                                      cd_levels[boost::get(boost::vertex_index, *CG, tgt)]);
                      size_t out_degree = boost::out_degree(src, *CG) + boost::out_degree(tgt, *CG);
                      int edge_weight = (*CG)[e].weight;
-                     if(allocation_information->get_number_channels(
-                            fu->get_assign(c2s[boost::get(boost::vertex_index, *CG, src)])) >= 1)
-                     {
-                        level_difference = -1;
-                     }
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---Analyzing compatibility between operations " +
-                                        GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, src)]) + " and " +
-                                        GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, tgt)]) +
-                                        " - ld = " + STR(level_difference) + " - d= " + STR(out_degree) +
-                                        " - w = " + STR(edge_weight));
+                     INDENT_DBG_MEX(
+                         DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                         "---Analyzing compatibility between operations " +
+                             GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, src)]) + "(" +
+                             sdg->CGetOpNodeInfo(c2s[boost::get(boost::vertex_index, *CG, src)])->GetOperation() + ")" +
+                             " and " + GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, tgt)]) + "(" +
+                             sdg->CGetOpNodeInfo(c2s[boost::get(boost::vertex_index, *CG, tgt)])->GetOperation() + ")" +
+                             " - ld = " + STR(level_difference) + " - d= " + STR(out_degree) +
+                             " - w = " + STR(edge_weight));
                      if(level_difference > cand_level_difference ||
                         (level_difference == cand_level_difference && out_degree > cand_out_degree) ||
                         (level_difference == cand_level_difference && out_degree == cand_out_degree &&
@@ -1835,7 +1823,9 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                       "---Removed compatibility between operations " +
                           GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, cand_src)]) + "(" +
                           sdg->CGetOpNodeInfo(c2s[boost::get(boost::vertex_index, *CG, cand_src)])->GetOperation() +
-                          ")" + " and " + GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, cand_tgt)]));
+                          ")" + " and " + GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, cand_tgt)]) + "(" +
+                          sdg->CGetOpNodeInfo(c2s[boost::get(boost::vertex_index, *CG, cand_tgt)])->GetOperation() +
+                          ")");
                   candidate_edges.clear();
 
                   /// search another loop
@@ -2136,6 +2126,10 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                {
                   module_clique->max_resources(allocation_information->get_number_channels(partition.first));
                }
+               else if(!dfp_P && (lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY))
+               {
+                  module_clique->max_resources(allocation_information->get_number_fu(partition.first));
+               }
             }
 
             /// Specify the minimum number of resources in case we have to use all the memory ports.
@@ -2256,6 +2250,10 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                      if(allocation_information->get_number_channels(partition.first) > 0)
                      {
                         module_clique->max_resources(allocation_information->get_number_channels(partition.first));
+                     }
+                     else if(!dfp_P && (lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY))
+                     {
+                        module_clique->max_resources(allocation_information->get_number_fu(partition.first));
                      }
                   }
 

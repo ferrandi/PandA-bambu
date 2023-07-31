@@ -563,6 +563,10 @@ namespace llvm
                   case llvm::Intrinsic::lifetime_start:
                   case llvm::Intrinsic::lifetime_end:
                   case llvm::Intrinsic::dbg_value:
+#ifdef VVD
+                  case llvm::Intrinsic::directive_scope_entry:
+                  case llvm::Intrinsic::directive_scope_exit:
+#endif
                      return assignCode(t, GT(GIMPLE_NOPMEM));
                   case llvm::Intrinsic::memcpy:
                   case llvm::Intrinsic::memset:
@@ -828,7 +832,6 @@ namespace llvm
             report_fatal_error("Plugin Error");
          }
 #endif
-
          case llvm::Intrinsic::rint:
          {
             if(fd->getReturnType()->isFloatTy())
@@ -871,6 +874,16 @@ namespace llvm
             fd->print(llvm::errs());
             report_fatal_error("Plugin Error");
          }
+#ifdef VVD
+         case llvm::Intrinsic::directive_scope_entry:
+         {
+            return "directive_scope_entry";
+         }
+         case llvm::Intrinsic::directive_scope_exit:
+         {
+            return "directive_scope_exit";
+         }
+#endif
          default:
             fd->print(llvm::errs());
             report_fatal_error("Plugin Error");
@@ -1615,7 +1628,16 @@ namespace llvm
       auto op0Value = inst->getAggregateOperand();
       auto op0 = getOperand(op0Value, currentFunction);
       auto op1 = getOperand(inst->getInsertedValueOperand(), currentFunction);
-      llvm::APInt Offset(DL->getPointerTypeSizeInBits(op0Value->getType()), 0);
+      unsigned SizeInBits;
+      if(op0Value->getType()->isPtrOrPtrVectorTy())
+      {
+         SizeInBits = DL->getPointerTypeSizeInBits(op0Value->getType());
+      }
+      else
+      {
+         SizeInBits = 64;
+      }
+      llvm::APInt Offset(SizeInBits, 0);
       accumulateConstantOffset(DL, Offset, inst);
       auto offset_node = assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), Offset));
       return build3(GT(INSERTVALUE), type, op0, op1, offset_node);
@@ -1629,7 +1651,16 @@ namespace llvm
       auto currentFunction = inst->getFunction();
       auto op0 = getOperand(inst->getAggregateOperand(), currentFunction);
       auto op0Value = inst->getAggregateOperand();
-      llvm::APInt Offset(DL->getPointerTypeSizeInBits(op0Value->getType()), 0);
+      unsigned SizeInBits;
+      if(op0Value->getType()->isPtrOrPtrVectorTy())
+      {
+         SizeInBits = DL->getPointerTypeSizeInBits(op0Value->getType());
+      }
+      else
+      {
+         SizeInBits = 64;
+      }
+      llvm::APInt Offset(SizeInBits, 0);
       accumulateConstantOffset(DL, Offset, inst);
       auto offset_node = assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), Offset));
       return build2(GT(EXTRACTVALUE), type, op0, offset_node);
@@ -3305,6 +3336,14 @@ namespace llvm
          if(st->hasName())
          {
             std::string declname = st->getName().data();
+            if(declname.find("struct.") == 0)
+            {
+               declname = declname.substr(sizeof("struct.") - 1U);
+            }
+            else if(declname.find("class.") == 0)
+            {
+               declname = declname.substr(sizeof("class.") - 1U);
+            }
             if(identifierTable.find(declname) == identifierTable.end())
                identifierTable.insert(declname);
             const void* dn = identifierTable.find(declname)->c_str();
@@ -5505,7 +5544,12 @@ namespace llvm
          case llvm::Intrinsic::bitreverse:
 #endif
 #endif
+#ifdef VVD
+         case llvm::Intrinsic::directive_scope_entry:
+         case llvm::Intrinsic::directive_scope_exit:
+#endif
             return true;
+
          default:
             return false;
       }
@@ -6353,10 +6397,14 @@ namespace llvm
       {
          PRINT_DBG("Building metadata\n");
          buildMetaDataMap(M);
+         PRINT_DBG("Metadata built\n");
 
+         PRINT_DBG("Rebuilding Constants\n");
          res |= RebuildConstants(M);
 
+         PRINT_DBG("Lowering Intrinsics\n");
          res |= lowerIntrinsics(M);
+         PRINT_DBG("done\n");
 #if __clang_major__ < 16
 #if HAVE_LIBBDD
          if(!onlyGlobals)
@@ -6375,6 +6423,7 @@ namespace llvm
          }
 #endif
 #endif
+         PRINT_DBG("done\n");
       }
 
       if(!earlyAnalysis)

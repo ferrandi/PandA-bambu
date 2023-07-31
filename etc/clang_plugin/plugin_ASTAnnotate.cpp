@@ -282,7 +282,6 @@ namespace clang
             parsePragma pp(getName(), Tok, PP, {{"recursive", inline_opt_recursice}, {"off", inline_opt_off}});
             pp.analyzePragma();
             bool has_recursive = pp.hasIdentifier(inline_opt_off);
-            bool has_off = pp.hasIdentifier(inline_opt_recursice);
             if(has_recursive)
             {
                print_warning("recursive clause not yet implemented");

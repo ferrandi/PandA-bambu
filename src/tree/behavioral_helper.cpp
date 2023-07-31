@@ -97,10 +97,10 @@
 #endif
 
 /// Utility include
-#include <boost/lexical_cast.hpp>
 #include "exceptions.hpp"
 #include "string_manipulation.hpp" // for STR
 #include "var_pp_functor.hpp"
+#include <boost/lexical_cast.hpp>
 
 #include "type_casting.hpp"
 
@@ -1075,6 +1075,11 @@ unsigned long long BehavioralHelper::get_size(unsigned int var) const
 std::string BehavioralHelper::get_function_name() const
 {
    return function_name;
+}
+
+std::string BehavioralHelper::GetMangledFunctionName() const
+{
+   return tree_helper::GetMangledFunctionName(GetPointerS<const function_decl>(TM->CGetTreeNode(function_index)));
 }
 
 unsigned int BehavioralHelper::get_function_index() const

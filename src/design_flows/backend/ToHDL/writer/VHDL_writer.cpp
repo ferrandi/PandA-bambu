@@ -38,18 +38,18 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_FROM_C_BUILT.hpp"
-
 #include "VHDL_writer.hpp"
 
 #include "HDL_manager.hpp"
-
 #include "NP_functionality.hpp"
+#include "Parameter.hpp"
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
+#include "indented_output_stream.hpp"
+#include "state_transition_graph_manager.hpp"
+#include "string_manipulation.hpp"
 #include "structural_objects.hpp"
+#include "technology_node.hpp"
 
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
@@ -59,50 +59,30 @@
 #include <fstream>
 #include <functional>
 #include <iosfwd>
-#include <vector>
-
-///. include
-#include "Parameter.hpp"
-
-/// HLS/stg include
-#include "state_transition_graph_manager.hpp"
-
-/// STL include
 #include <utility>
 
-/// technology/physical_library include
-#include "technology_node.hpp"
-
-/// utility include
-#include "indented_output_stream.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-
-const char* VHDL_writer::tokenNames[] = {
-    "abs",          "access",     "after",   "alias",     "all",       "and",
-    "architecture", "array",      "assert",  "attribute", "begin",     "block",
-    "body",         "buffer",     "bus",     "case",      "component", "configuration",
-    "constant",     "disconnect", "downto",  "else",      "elsif",     "end",
-    "entity",       "exit",       "file",    "for",       "function",  "generate",
-    "generic",      "group",      "guarded", "if",        "impure",    "in",
-    "inertial",     "inout",      "is",      "label",     "library",   "linkage",
-    "literal",      "loop",       "map",     "mod",       "nand",      "new",
-    "next",         "nor",        "not",     "null",      "of",        "on",
-    "open",         "or",         "others",  "out",       "package",   "port",
-    "postponed",    "procedure",  "process", "pure",      "range",     "record",
-    "register",     "reject",     "rem",     "return",    "rol",       "ror",
-    "select",       "severity",   "signal",  "shared",    "sla",       "sli",
-    "sra",          "srl",        "subtype", "then",      "to",        "transport",
-    "type",         "unaffected", "units",   "until",     "use",       "variable",
-    "wait",         "when",       "while",   "with",      "xnor",      "xor"};
+const std::set<std::string> VHDL_writer::keywords = {
+    "ABS",          "ACCESS",     "AFTER",   "ALIAS",     "ALL",       "AND",
+    "ARCHITECTURE", "ARRAY",      "ASSERT",  "ATTRIBUTE", "BEGIN",     "BLOCK",
+    "BODY",         "BUFFER",     "BUS",     "CASE",      "COMPONENT", "CONFIGURATION",
+    "CONSTANT",     "DISCONNECT", "DOWNTO",  "ELSE",      "ELSIF",     "END",
+    "ENTITY",       "EXIT",       "FILE",    "FOR",       "FUNCTION",  "GENERATE",
+    "GENERIC",      "GROUP",      "GUARDED", "IF",        "IMPURE",    "IN",
+    "INERTIAL",     "INOUT",      "IS",      "LABEL",     "LIBRARY",   "LINKAGE",
+    "LITERAL",      "LOOP",       "MAP",     "MOD",       "NAND",      "NEW",
+    "NEXT",         "NOR",        "NOT",     "NULL",      "OF",        "ON",
+    "OPEN",         "OR",         "OTHERS",  "OUT",       "PACKAGE",   "PORT",
+    "POSTPONED",    "PROCEDURE",  "PROCESS", "PURE",      "RANGE",     "RECORD",
+    "REGISTER",     "REJECT",     "REM",     "RETURN",    "ROL",       "ROR",
+    "SELECT",       "SEVERITY",   "SIGNAL",  "SHARED",    "SLA",       "SLI",
+    "SRA",          "SRL",        "SUBTYPE", "THEN",      "TO",        "TRANSPORT",
+    "TYPE",         "UNAFFECTED", "UNITS",   "UNTIL",     "USE",       "VARIABLE",
+    "WAIT",         "WHEN",       "WHILE",   "WITH",      "XNOR",      "XOR"};
 
 VHDL_writer::VHDL_writer(const technology_managerConstRef _TM, const ParameterConstRef _parameters)
     : language_writer(STD_OPENING_CHAR, STD_OPENING_CHAR, _parameters), TM(_TM)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
-   for(auto& tokenName : tokenNames)
-   {
-      keywords.insert(boost::to_upper_copy<std::string>(tokenName));
-   }
 }
 
 VHDL_writer::~VHDL_writer() = default;
@@ -843,11 +823,11 @@ void VHDL_writer::write_vector_port_binding(const structural_objectRef& port, bo
 void VHDL_writer::write_port_binding(const structural_objectRef& port, const structural_objectRef& object_bounded,
                                      bool first_port_analyzed)
 {
+   THROW_ASSERT(port, "NULL object_bounded received");
    INDENT_DBG_MEX(
        DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
        "-->Write port binding " + port->get_id() + " (" + port->get_typeRef()->get_name() + ") => " +
            (object_bounded ? object_bounded->get_id() + " (" + object_bounded->get_typeRef()->get_name() + ")" : ""));
-   THROW_ASSERT(port, "NULL object_bounded received");
    THROW_ASSERT(port->get_kind() == port_o_K, "Expected a port got something of different");
    THROW_ASSERT(port->get_owner(), "The port has to have an owner");
    if(first_port_analyzed)
@@ -858,7 +838,7 @@ void VHDL_writer::write_port_binding(const structural_objectRef& port, const str
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Vector port");
       const auto port_name = HDL_manager::convert_to_identifier(this, port->get_owner()->get_id());
-      if(object_bounded->get_typeRef()->type == structural_type_descriptor::BOOL)
+      if(object_bounded && object_bounded->get_typeRef()->type == structural_type_descriptor::BOOL)
       {
          indented_output_stream->Append(port_name + "(" + STR(port->get_id()) + ") => ");
       }
@@ -870,9 +850,9 @@ void VHDL_writer::write_port_binding(const structural_objectRef& port, const str
              STR(boost::lexical_cast<unsigned int>(port->get_id()) * GET_TYPE_SIZE(port)) + ") => ");
       }
    }
-   else if((port->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL or
-            port->get_typeRef()->type == structural_type_descriptor::UINT) and
-           object_bounded->get_typeRef()->type == structural_type_descriptor::BOOL)
+   else if((port->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL ||
+            port->get_typeRef()->type == structural_type_descriptor::UINT) &&
+           object_bounded && object_bounded->get_typeRef()->type == structural_type_descriptor::BOOL)
    {
       indented_output_stream->Append(HDL_manager::convert_to_identifier(this, port->get_id()) + "(0) => ");
    }
@@ -1371,6 +1351,7 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
                   break;
                }
                case structural_type_descriptor::INT:
+               case structural_type_descriptor::REAL:
                {
                   if(parameter.front() == '\"' and parameter.back() == '\"')
                   {
@@ -1401,7 +1382,6 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
                }
                case structural_type_descriptor::BOOL:
                case structural_type_descriptor::UINT:
-               case structural_type_descriptor::REAL:
                case structural_type_descriptor::USER:
                case structural_type_descriptor::VECTOR_INT:
                case structural_type_descriptor::VECTOR_UINT:
@@ -2034,7 +2014,6 @@ void VHDL_writer::write_NP_functionalities(const structural_objectRef& cir)
    std::string beh_desc = np->get_NP_functionality(NP_functionality::VHDL_PROVIDED);
    THROW_ASSERT(beh_desc != "", "VHDL behavioral description is missing for module: " +
                                     HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)));
-   remove_escaped(beh_desc);
    /// manage reset by preprocessing the behavioral description
    if(!parameters->getOption<bool>(OPT_reset_level))
    {
@@ -2170,9 +2149,13 @@ void VHDL_writer::write_module_parametrization_decl(const structural_objectRef& 
                   indented_output_stream->Append(" " + name + ": std_logic_vector");
                   break;
                }
+               case structural_type_descriptor::REAL:
+               {
+                  indented_output_stream->Append(" " + name + ": real");
+                  break;
+               }
                case structural_type_descriptor::BOOL:
                case structural_type_descriptor::UINT:
-               case structural_type_descriptor::REAL:
                case structural_type_descriptor::USER:
                case structural_type_descriptor::VECTOR_INT:
                case structural_type_descriptor::VECTOR_UINT:
@@ -2195,9 +2178,14 @@ void VHDL_writer::write_module_parametrization_decl(const structural_objectRef& 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written generics of entity " + cir->get_id());
 }
 
-bool VHDL_writer::check_keyword(std::string id) const
+bool VHDL_writer::check_keyword(const std::string& id) const
 {
-   return keywords.find(boost::to_upper_copy<std::string>(id)) != keywords.end();
+   return check_keyword_vhdl(id);
+}
+
+bool VHDL_writer::check_keyword_vhdl(const std::string& id)
+{
+   return keywords.count(boost::to_upper_copy(id));
 }
 
 void VHDL_writer::WriteBuiltin(const structural_objectConstRef component)
