@@ -219,7 +219,7 @@ class string_separator
 /**
  * Macro which "pretty prints" a multi-line string
  */
-#define PP_ONE_LINE(multi_line_string) boost::regex_replace(multi_line_string, boost::regex("\\n"), "\\\\n")
+#define PP_ONE_LINE(multi_line_string) std::regex_replace(multi_line_string, std::regex("\\n"), "\\\\n")
 
 /**
  * Concept checking class

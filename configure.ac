@@ -170,7 +170,6 @@ AC_SUBST(DOCUMENTATION_OUTPUTDIR)
 AX_BOOST_BASE([1.48.0])
 AX_BOOST_SYSTEM
 AX_BOOST_DATE_TIME
-AX_BOOST_REGEX
 
 AC_DEFINE_UNQUOTED(BOOST_INCLUDE_DIR, "${BOOST_DIR}", "Define the boost include dir")
 
@@ -2664,11 +2663,32 @@ AC_CONFIG_FILES(ext/Makefile)
 
 ############### Final check for static linking #############################################
 if test "x$panda_ALLSTATIC" = xyes ;then
-  AM_LDFLAGS="-lstdc++fs -all-static -pthread";
+  AM_LDFLAGS="-all-static -pthread";
   LDFLAGS+=" -static";
   AC_SUBST(AM_LDFLAGS)
 else
-  AM_LDFLAGS="-lstdc++fs -pthread";
+  AM_LDFLAGS="-pthread";
+fi
+
+AC_MSG_CHECKING([if std::filesystem requires linking stdc++fs])
+AC_LANG_PUSH([C++])
+AC_LINK_IFELSE(
+    [AC_LANG_SOURCE([
+        #include <filesystem>
+        int main() {
+            std::error_code ec;
+            std::filesystem::create_directory("/dev/null", &ec);
+        }
+    ])],
+    [ac_cv_fs_stdlib=no],
+    [ac_cv_fs_stdlib=yes]
+)
+AC_LANG_POP([C++])
+if test "x$ac_cv_fs_stdlib" = xyes; then
+    AC_MSG_RESULT(yes)
+    AM_LDFLAGS="$AM_LDFLAGS -lstdc++fs"
+else
+    AC_MSG_RESULT(no)
 fi
 
 case "${host_os}" in

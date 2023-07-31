@@ -72,11 +72,11 @@
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/iterator/iterator_traits.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/regex.hpp>
 #include <climits>
 #include <iostream>
 #include <list>
 #include <memory>
+#include <regex>
 #include <utility>
 
 inline std::string legalize(const std::string& id)
@@ -867,7 +867,7 @@ structural_type_descriptor::s_type module::get_parameter_type(const technology_m
       }
       return structural_type_descriptor::VECTOR_BOOL;
    }
-   if(boost::regex_search(default_value, boost::regex("^\\d+\\.\\d+$")))
+   if(std::regex_search(default_value, std::regex("^\\d+\\.\\d+$")))
    {
       return structural_type_descriptor::REAL;
    }

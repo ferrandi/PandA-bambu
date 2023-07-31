@@ -91,7 +91,7 @@
 #include "math.h"
 #include "string_manipulation.hpp" // for GET_CLASS
 #include <boost/multiprecision/integer.hpp>
-#include <boost/regex.hpp>
+#include <regex>
 
 CustomMap<CallGraph::vertex_descriptor, FunctionVersionRef> soft_float_cg_ext::funcFF;
 CustomMap<unsigned int, std::array<tree_nodeRef, 8>> soft_float_cg_ext::versioning_args;
@@ -2800,9 +2800,9 @@ std::string FloatFormat::ToString() const
 FloatFormatRef FloatFormat::FromString(std::string ff_str)
 {
    std::replace(ff_str.begin(), ff_str.end(), '_', '-');
-   static const boost::regex fp_format("^e(\\d+)m(\\d+)b([_-]?\\d+)(\\D)(\\D)(\\D*)(\\d?)$");
-   boost::cmatch what;
-   if(boost::regex_search(ff_str.data(), what, fp_format))
+   static const std::regex fp_format("^e(\\d+)m(\\d+)b([_-]?\\d+)(\\D)(\\D)(\\D*)(\\d?)$");
+   std::cmatch what;
+   if(std::regex_search(ff_str.data(), what, fp_format))
    {
       const auto e = boost::lexical_cast<int>(
           what[FP_FORMAT_EXP].first, static_cast<size_t>(what[FP_FORMAT_EXP].second - what[FP_FORMAT_EXP].first));

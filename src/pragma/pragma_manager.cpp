@@ -123,7 +123,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/graph/depth_first_search.hpp>
 #include <boost/graph/reverse_graph.hpp>
-#include <boost/regex.hpp>
+#include <regex>
 
 const std::string pragma_manager::omp_directive_keywords[pragma_manager::OMP_UNKNOWN] = {
     "atomic",   "barrier",  "critical", "declare simd", "for",    "parallel for", "parallel sections",
@@ -193,11 +193,11 @@ void pragma_manager::AddFunctionDefinitionPragmas(const std::string& function_na
 {
    for(const auto& pragma : pragmas)
    {
-      boost::match_results<std::string::const_iterator> what;
-      boost::regex expr;
+      std::match_results<std::string::const_iterator> what;
+      std::regex expr;
 #if HAVE_MAPPING_BUILT
-      expr = boost::regex(".*" STR_CST_pragma_keyword_call_hw ".*$", boost::regex::grep);
-      boost::regex_match(pragma, what, expr, boost::match_default | boost::match_partial);
+      expr = std::regex(".*" STR_CST_pragma_keyword_call_hw ".*$", std::regex::grep);
+      std::regex_match(pragma, what, expr, std::regex_constants::match_default | std::regex_constants::match_partial);
       if(what[0].matched)
       {
          std::vector<std::string> splitted = SplitString(pragma, " \t\n");
@@ -225,21 +225,23 @@ void pragma_manager::AddFunctionDefinitionPragmas(const std::string& function_na
              ->AddPragmaMappingAnnotation(function_name, mapping_annotation);
          continue;
       }
-      expr = boost::regex(".*issue.*$", boost::regex::grep);
-      boost::regex_match(pragma, what, expr, boost::match_default | boost::match_partial);
+      expr = std::regex(".*issue.*$", std::regex::grep);
+      std::regex_match(pragma, what, expr, std::regex_constants::match_default | std::regex_constants::match_partial);
       if(what[0].matched)
       {
-         boost::match_results<std::string::const_iterator> local_what;
-         expr = boost::regex(".*blackbox.*$", boost::regex::grep);
-         boost::regex_match(pragma, local_what, expr, boost::match_default | boost::match_partial);
+         std::match_results<std::string::const_iterator> local_what;
+         expr = std::regex(".*blackbox.*$", std::regex::grep);
+         std::regex_match(pragma, local_what, expr,
+                          std::regex_constants::match_default | std::regex_constants::match_partial);
          if(local_what[0].matched)
          {
             function_definition_pragmas[function_name].push_back(pragma);
          }
          else
          {
-            expr = boost::regex(".*mappable.*$", boost::regex::grep);
-            boost::regex_match(pragma, local_what, expr, boost::match_default | boost::match_partial);
+            expr = std::regex(".*mappable.*$", std::regex::grep);
+            std::regex_match(pragma, local_what, expr,
+                             std::regex_constants::match_default | std::regex_constants::match_partial);
             if(not local_what[0].matched)
             {
                THROW_ERROR("Malformed \"issue\" pragma: " + pragma);
