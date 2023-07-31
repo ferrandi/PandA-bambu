@@ -1155,7 +1155,6 @@ int BambuParameter::Exec()
       // no more options are available
       if(next_option == -1)
       {
-         std::cout << "completed\n";
          break;
       }
 
