@@ -2,7 +2,6 @@
 
 CLANG13_LIBS=-Wl,--start-group $(CLANG_LIBS) -lclangCrossTU -lclangToolingInclusions -Wl,--end-group
 CLANG13_LIBSD=$(CLANG_LIBS) -lclangCrossTU -lclangToolingInclusions
-compile_options=' -fPIC $(I386_LLVM13_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'
 
 if BUILD_I386_CLANG13_EMPTY_PLUGIN
 all: $(I386_CLANG13_EMPTY_PLUGIN)
