@@ -72,7 +72,7 @@
 
 /// STD includes
 #include <algorithm>
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
 #include <limits>
 #include <list>
 #include <string>
@@ -205,9 +205,10 @@ void mem_dominator_allocation::Initialize()
       for(const auto& source_file : HLSMgr->input_files)
       {
          const auto output_temporary_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
-         const std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
+         const std::string leaf_name =
+             source_file.second == "-" ? "stdin-" : std::filesystem::path(source_file.second).filename().string();
          const auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".memory_allocation.xml";
-         if((boost::filesystem::exists(boost::filesystem::path(XMLfilename))))
+         if((std::filesystem::exists(std::filesystem::path(XMLfilename))))
          {
             xml_files.push_back(XMLfilename);
          }

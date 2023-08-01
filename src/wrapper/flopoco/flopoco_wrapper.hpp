@@ -47,10 +47,6 @@
 #ifndef FLOPOCOWRAPPER_HPP
 #define FLOPOCOWRAPPER_HPP
 
-/// Autoheader include
-#include "config_HAVE_STDCXX_0X.hpp"
-#include "config_HAVE_STDCXX_11.hpp"
-
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
@@ -292,11 +288,7 @@ class flopoco_wrapper
     */
    static void DECODE_BITS(unsigned int FU_prec, unsigned int& n_mant, unsigned int& n_exp);
 
-#if HAVE_STDCXX_11 || HAVE_STDCXX_0X
    static constexpr double DEFAULT_TARGET_FREQUENCY = 100.0;
-#else
-   static const double DEFAULT_TARGET_FREQUENCY = 100.0;
-#endif
 };
 
 /// Refcount definition for the flopoco_wrapper class

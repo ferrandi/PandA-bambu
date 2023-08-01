@@ -97,9 +97,9 @@ void bash_flow_wrapper::generate_synthesis_script(const DesignParametersRef& dp,
    remove_escaped(script_string);
 
    // Save the generated script
-   if(boost::filesystem::exists(file_name))
+   if(std::filesystem::exists(file_name))
    {
-      boost::filesystem::remove_all(file_name);
+      std::filesystem::remove_all(file_name);
    }
    script_name = file_name;
    std::ofstream file_stream(file_name.c_str());

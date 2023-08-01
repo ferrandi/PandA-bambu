@@ -40,7 +40,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
    # Built and install boost libraries
    && git clone --depth 1 --branch boost-1.82.0 --recurse-submodules https://github.com/boostorg/boost.git \
    && cd boost \
-   && ./bootstrap.sh --with-libraries=date_time,filesystem,graph,headers,iostreams,program_options,regex,system,wave --prefix=/usr \
+   && ./bootstrap.sh --with-libraries=date_time,graph,headers,iostreams,program_options,system --prefix=/usr \
    && ./b2 release install \
    && cd .. \
    && rm -rf boost

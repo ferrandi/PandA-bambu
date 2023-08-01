@@ -37,42 +37,25 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "generate_taste_hdl_architecture.hpp"
 
-/// Autoheader include
 #include "config_PACKAGE_BUGREPORT.hpp"
 #include "config_PACKAGE_NAME.hpp"
 #include "config_PACKAGE_VERSION.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// behavior includes
+#include "aadl_information.hpp"
+#include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
+#include "fileIO.hpp"
 #include "function_behavior.hpp"
-
-/// circuit include
-#include "structural_manager.hpp"
-
-/// design_flows/backend/ToHDL
-#include "language_writer.hpp"
-
-/// HLS includes
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
-
-/// intermediate_representation/aadl include
-#include "aadl_information.hpp"
-
-/// technology/target_device include
+#include "language_writer.hpp"
+#include "string_manipulation.hpp"
+#include "structural_manager.hpp"
 #include "target_device.hpp"
-
-/// tree includes
-#include "behavioral_helper.hpp"
-#include "fileIO.hpp"
 #include "tree_manager.hpp"
 
 GenerateTasteHDLArchitecture::GenerateTasteHDLArchitecture(const ParameterConstRef _parameters,

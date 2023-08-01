@@ -41,8 +41,6 @@
 
 #include "lut_transformation.hpp"
 
-#if HAVE_STDCXX_17
-
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wswitch-enum"
 
@@ -96,7 +94,6 @@
 
 #if USE_SAT
 #include <mockturtle/algorithms/satlut_mapping.hpp>
-#endif
 #endif
 
 /// Autoheader include
@@ -152,8 +149,6 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_reindex.hpp"
-
-#if HAVE_STDCXX_17
 
 #pragma region Macros declaration
 
@@ -1925,8 +1920,6 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
 
 #pragma region Life cycle
 
-#endif
-
 lut_transformation::lut_transformation(const ParameterConstRef Param, const application_managerRef _AppM,
                                        unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, LUT_TRANSFORMATION, _design_flow_manager, Param),
@@ -2024,7 +2017,6 @@ DesignFlowStep_Status lut_transformation::InternalExec()
    {
       return DesignFlowStep_Status::UNCHANGED;
    }
-#if HAVE_STDCXX_17
    const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function_id));
    THROW_ASSERT(fd && fd->body, "Node is not a function or it has not a body");
    const auto sl = GetPointer<const statement_list>(GET_CONST_NODE(fd->body));
@@ -2044,13 +2036,9 @@ DesignFlowStep_Status lut_transformation::InternalExec()
       function_behavior->UpdateBBVersion();
       return DesignFlowStep_Status::SUCCESS;
    }
-#endif
    return DesignFlowStep_Status::UNCHANGED;
 }
 
-#if HAVE_STDCXX_17
 #pragma endregion
 
 #pragma GCC diagnostic pop
-
-#endif

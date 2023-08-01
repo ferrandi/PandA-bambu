@@ -17,8 +17,6 @@ noinst_HEADERS = PragmaParser.hpp
 
 lib_pragmaparser_la_SOURCES = PragmaParser.cpp
 
-lib_pragmaparser_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB) $(BOOST_REGEX_LIB)
-
 #DOCUMENTATION STUFF
 DOX_TAGFILES=
 

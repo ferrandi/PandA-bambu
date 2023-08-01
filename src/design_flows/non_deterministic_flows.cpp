@@ -39,12 +39,12 @@
  */
 
 #include "non_deterministic_flows.hpp"
-#include "Parameter.hpp"                   // for Parameter, OPT_output_tem...
-#include "dbgPrintHelper.hpp"              // for DEBUG_LEVEL_VERY_PEDANTIC
-#include "exceptions.hpp"                  // for IsError, THROW_ASSERT
-#include "fileIO.hpp"                      // for PandaSystem
-#include "string_manipulation.hpp"         // for STR
-#include <boost/filesystem/operations.hpp> // for create_directory, exists
+#include "Parameter.hpp"           // for Parameter, OPT_output_tem...
+#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_VERY_PEDANTIC
+#include "exceptions.hpp"          // for IsError, THROW_ASSERT
+#include "fileIO.hpp"              // for PandaSystem
+#include "string_manipulation.hpp" // for STR
+#include <filesystem>              // for create_directory, exists
 
 const std::string NonDeterministicFlows::ComputeArgString(const size_t seed) const
 {
@@ -78,11 +78,11 @@ bool NonDeterministicFlows::ExecuteTool(const size_t seed) const
    const auto arg_string = ComputeArgString(seed);
    const auto temp_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
    const auto new_directory = temp_directory + "/" + STR(seed);
-   if(boost::filesystem::exists(new_directory))
+   if(std::filesystem::exists(new_directory))
    {
-      boost::filesystem::remove_all(new_directory);
+      std::filesystem::remove_all(new_directory);
    }
-   boost::filesystem::create_directory(new_directory);
+   std::filesystem::create_directory(new_directory);
    const auto ret = PandaSystem(parameters, "cd " + new_directory + "; " + arg_string, false,
                                 new_directory + "/tool_execution_output");
    if(IsError(ret))

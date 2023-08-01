@@ -75,6 +75,7 @@
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
 #include <climits>
+#include <filesystem>
 #include <list>
 #include <string>
 #include <vector>
@@ -745,7 +746,7 @@ class Parameter
     * @param check_cml_root_node tells xml file has to be analyzed
     * @return the type of the file format
     */
-   Parameters_FileFormat GetFileFormat(const std::string& file, bool check_cml_root_node = false) const;
+   Parameters_FileFormat GetFileFormat(const std::filesystem::path& file, bool check_cml_root_node = false) const;
 
    /**
     * Returns the value of a parameter

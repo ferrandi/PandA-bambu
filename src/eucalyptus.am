@@ -41,9 +41,7 @@ lib_eucalyptus_la_LIBADD += \
    lib_technology.la \
    lib_utility.la \
    lib_wrapper.la \
-   $(BOOST_FILESYSTEM_LIB) \
-   $(BOOST_SYSTEM_LIB) \
-   $(BOOST_REGEX_LIB)
+   $(BOOST_SYSTEM_LIB)
 
 if BUILD_LIB_CODE_ESTIMATION
    eucalyptus_CPPFLAGS += \

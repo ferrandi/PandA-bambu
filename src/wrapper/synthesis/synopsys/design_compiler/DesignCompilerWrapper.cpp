@@ -72,7 +72,7 @@
 #include "utility.hpp"
 
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #include <cpu_time.hpp>
 #include <utility.hpp>
@@ -305,7 +305,7 @@ std::string DesignCompilerWrapper::import_input_design(const DesignParametersRef
       xml_set_entry_tRef entry = xml_set_entry_tRef(new xml_set_entry_t(v, nullptr));
       var_file_set->multiValues.push_back(entry);
 
-      boost::filesystem::path verilog(v);
+      std::filesystem::path verilog(v);
       const auto extension = verilog.extension().string();
       if(extension == ".v" || extension == ".verilog")
       {
@@ -321,7 +321,7 @@ std::string DesignCompilerWrapper::import_input_design(const DesignParametersRef
       }
       if(top.size() == 0)
       {
-         std::string name_v = GetLeafFileName(verilog);
+         std::string name_v = verilog.filename().string();
          std::string base_name = name_v.substr(0, name_v.find_last_of('.'));
          target = base_name + "_synth.v";
       }
@@ -466,7 +466,7 @@ void DesignCompilerWrapper::write_reports(const DesignParametersRef)
 
 void DesignCompilerWrapper::parse_cell_reports()
 {
-   if(report_files.find(REPORT_CELL) == report_files.end() || !boost::filesystem::exists(report_files[REPORT_CELL]))
+   if(report_files.find(REPORT_CELL) == report_files.end() || !std::filesystem::exists(report_files[REPORT_CELL]))
    {
       return;
    }
@@ -515,7 +515,7 @@ void DesignCompilerWrapper::parse_cell_reports()
 
 time_modelRef DesignCompilerWrapper::parse_time_reports()
 {
-   if(report_files.find(REPORT_TIME) == report_files.end() || !boost::filesystem::exists(report_files[REPORT_TIME]))
+   if(report_files.find(REPORT_TIME) == report_files.end() || !std::filesystem::exists(report_files[REPORT_TIME]))
    {
       return time_modelRef();
    }
@@ -632,7 +632,7 @@ time_modelRef DesignCompilerWrapper::parse_time_reports()
 
 void DesignCompilerWrapper::parse_synthesis_reports()
 {
-   if(report_files.find(SYNTHESIS_LOG) == report_files.end() || !boost::filesystem::exists(report_files[SYNTHESIS_LOG]))
+   if(report_files.find(SYNTHESIS_LOG) == report_files.end() || !std::filesystem::exists(report_files[SYNTHESIS_LOG]))
    {
       synthesis_time = 0;
       return;
@@ -679,7 +679,7 @@ void DesignCompilerWrapper::parse_synthesis_reports()
 
 area_modelRef DesignCompilerWrapper::parse_area_reports()
 {
-   if(report_files.find(REPORT_AREA) == report_files.end() || !boost::filesystem::exists(report_files[REPORT_AREA]))
+   if(report_files.find(REPORT_AREA) == report_files.end() || !std::filesystem::exists(report_files[REPORT_AREA]))
    {
       return area_modelRef();
    }

@@ -1,5 +1,6 @@
 noinst_LTLIBRARIES += lib_utility.la
 lib_utility_la_CPPFLAGS =  \
+   -I$(top_srcdir)/src/constants \
    $(AM_CPPFLAGS)
 noinst_HEADERS += \
    utility/APInt.hpp \
@@ -30,6 +31,7 @@ lib_utility_la_SOURCES = \
    utility/APInt.cpp \
    utility/cpu_stats.cpp \
    utility/exceptions.cpp \
+   utility/fileIO.cpp \
    utility/indented_output_stream.cpp \
    utility/simple_indent.cpp \
    utility/Statistics.cpp \

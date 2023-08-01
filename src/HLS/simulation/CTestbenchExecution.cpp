@@ -56,7 +56,7 @@
 #include "hls_manager.hpp"
 #include "string_manipulation.hpp"
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <list>
 #include <string>
 #include <tuple>
@@ -175,7 +175,7 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
       }
    }
 
-   auto exec_name = boost::filesystem::path(c_backend_info->src_filename).replace_extension().string();
+   auto exec_name = std::filesystem::path(c_backend_info->src_filename).replace_extension().string();
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "---create executable: " + exec_name);
    // compile the source file to get an executable
    compiler_wrapper->CreateExecutable(file_sources, exec_name, compiler_flags);

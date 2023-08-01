@@ -29,7 +29,6 @@ if BUILD_LIB_RTL
     lib_compilerwrapper_la_CPPFLAGS += -I$(top_srcdir)/src/rtl\
       -I$(top_srcdir)/src/parser/rtlgcc
 endif
-  lib_compilerwrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB) $(BOOST_REGEX_LIB)
   noinst_HEADERS += wrapper/compiler/compiler_wrapper.hpp
   lib_compilerwrapper_la_SOURCES = wrapper/compiler/compiler_wrapper.cpp
   lib_wrapper_la_LIBADD += lib_compilerwrapper.la
@@ -53,7 +52,6 @@ if BUILD_SIMULATION
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper/simulation \
    $(AM_CPPFLAGS)
-  lib_verilatorwrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
   noinst_HEADERS += wrapper/simulation/verilator/VerilatorWrapper.hpp
   lib_verilatorwrapper_la_SOURCES = wrapper/simulation/verilator/VerilatorWrapper.cpp
 
@@ -68,7 +66,6 @@ if BUILD_SIMULATION
     -I$(top_srcdir)/src/wrapper \
     -I$(top_srcdir)/src/wrapper/simulation \
     $(AM_CPPFLAGS)
-  lib_isimwrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
   noinst_HEADERS += wrapper/simulation/isim/ISE_isim_wrapper.hpp
   lib_isimwrapper_la_SOURCES = wrapper/simulation/isim/ISE_isim_wrapper.cpp
 
@@ -83,7 +80,6 @@ if BUILD_SIMULATION
     -I$(top_srcdir)/src/wrapper \
     -I$(top_srcdir)/src/wrapper/simulation \
     $(AM_CPPFLAGS)
-  lib_xsimwrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
   noinst_HEADERS += wrapper/simulation/xsim/VIVADO_xsim_wrapper.hpp
   lib_xsimwrapper_la_SOURCES = wrapper/simulation/xsim/VIVADO_xsim_wrapper.cpp
 
@@ -96,7 +92,6 @@ if BUILD_SIMULATION
     -I$(top_srcdir)/src/design_flows/backend/ToHDL \
     -I$(top_srcdir)/src/utility \
     $(AM_CPPFLAGS)
-  lib_modelsimwrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
   noinst_HEADERS += wrapper/simulation/modelsim/modelsimWrapper.hpp
   lib_modelsimwrapper_la_SOURCES = wrapper/simulation/modelsim/modelsimWrapper.cpp
 
@@ -111,7 +106,6 @@ if BUILD_SIMULATION
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper/simulation \
    $(AM_CPPFLAGS)
-  lib_icaruswrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
   noinst_HEADERS += wrapper/simulation/icarus/IcarusWrapper.hpp
   lib_icaruswrapper_la_SOURCES = wrapper/simulation/icarus/IcarusWrapper.cpp 
 
@@ -173,7 +167,6 @@ if BUILD_SYNTHESIS
     -I$(top_srcdir)/src/wrapper/synthesis \
     -I$(top_builddir)/src/wrapper/synthesis/nanoxplore \
     $(AM_CPPFLAGS)
-  lib_NanoXplorewrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
 wrapper/synthesis/nanoxplore/NanoXploreBackendFlow.cpp : wrapper/synthesis/nanoxplore/NG.data 
 #The tab in this rule can't be replaced by blanks
 wrapper/synthesis/nanoxplore/NG.data: $(top_srcdir)/etc/devices/NanoXplore_devices/NG.xml
@@ -218,8 +211,6 @@ lib_Alterawrapper_la_CPPFLAGS = \
     -I$(top_srcdir)/src/wrapper/synthesis \
     -I$(top_builddir)/src/wrapper/synthesis/altera \
     $(AM_CPPFLAGS)
-
-lib_Alterawrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
 
 wrapper/synthesis/altera/AlteraBackendFlow.cpp : wrapper/synthesis/altera/CycloneII.data wrapper/synthesis/altera/CycloneII-R.data wrapper/synthesis/altera/CycloneV.data wrapper/synthesis/altera/StratixIV.data wrapper/synthesis/altera/StratixV.data
 #The tab in this rule can't be replaced by blanks
@@ -279,7 +270,6 @@ lib_xilinx_ise_la_CPPFLAGS = \
     -I$(top_srcdir)/src/wrapper/simulation/modelsim \
     -I$(top_builddir)/src/wrapper/synthesis/xilinx \
     $(AM_CPPFLAGS)
-lib_xilinx_ise_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
 noinst_HEADERS += wrapper/synthesis/xilinx/ise/xst_wrapper.hpp \
                  wrapper/synthesis/xilinx/ise/ngdbuild_wrapper.hpp \
                  wrapper/synthesis/xilinx/ise/map_wrapper.hpp \
@@ -420,7 +410,6 @@ endif
     -I$(top_srcdir)/src/wrapper/synthesis \
     -I$(top_builddir)/src/wrapper/synthesis/lattice \
     $(AM_CPPFLAGS)
-  lib_Latticewrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
 
 wrapper/synthesis/lattice/LatticeBackendFlow.cpp : wrapper/synthesis/lattice/LatticeECP3.data wrapper/synthesis/lattice/LatticeECP5.data
 #The tab in this rule can't be replaced by blanks

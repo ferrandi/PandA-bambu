@@ -44,23 +44,20 @@
 
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
-/// technology includes
 #include "BackendFlow.hpp"
 #include "CMOS_technology.hpp"
-#include "technology_manager.hpp"
-/// design includes
-#include "structural_manager.hpp"
-/// XML includes
-#include "fileIO.hpp"
-#include "polixml.hpp"
-#include "xml_dom_parser.hpp"
-#include "xml_helper.hpp"
-/// parameters' includes
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
-/// boost includes for file manipulations
-#include "string_manipulation.hpp" // for GET_CLASS
-#include <boost/filesystem.hpp>
+#include "dbgPrintHelper.hpp"
+#include "fileIO.hpp"
+#include "polixml.hpp"
+#include "string_manipulation.hpp"
+#include "structural_manager.hpp"
+#include "technology_manager.hpp"
+#include "xml_dom_parser.hpp"
+#include "xml_helper.hpp"
+
+#include <filesystem>
 
 IC_device::IC_device(const ParameterConstRef _Param, const technology_managerRef _TM)
     : target_device(_Param, _TM, TargetDevice_Type::IC)
@@ -173,7 +170,7 @@ void IC_device::load_devices(const target_deviceRef device)
       if(Param->isOption(OPT_target_device_file))
       {
          const auto file_name = GetPath(Param->getOption<std::string>(OPT_target_device_file));
-         if(!boost::filesystem::exists(file_name))
+         if(!std::filesystem::exists(file_name))
          {
             THROW_ERROR("Device information file " + file_name + " does not exist!");
          }
