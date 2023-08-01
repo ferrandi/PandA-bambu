@@ -88,6 +88,7 @@
 /// polixml include
 #include "xml_document.hpp"
 
+#include "Parameter.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp" // for CallGraphManager, CallGrap...
 #include "fileIO.hpp"
