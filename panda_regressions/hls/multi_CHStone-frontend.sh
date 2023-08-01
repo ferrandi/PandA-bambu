@@ -9,7 +9,6 @@ BENCHMARKS_ROOT="${script_dir}/../../examples/CHStone/CHStone"
 python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=GCC49-O0-wp-NN   --compiler=I386_GCC49 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=CLANG4-O0-wp-NN  --compiler=I386_CLANG4 ${BATCH_ARGS[*]}" \
-   --args="--configuration-name=CLANG5-O0-wp-NN  --compiler=I386_CLANG5 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=CLANG6-O0-wp-NN  --compiler=I386_CLANG6 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=CLANG7-O0-wp-NN  --compiler=I386_CLANG7 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=CLANG11-O0-wp-NN --compiler=I386_CLANG11 ${BATCH_ARGS[*]}" \
