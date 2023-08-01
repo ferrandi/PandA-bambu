@@ -408,7 +408,9 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
    boost::replace_last(compiler_env, "\n", "\nexport CC=\"");
    compiler_env += "\"";
    script << compiler_env << "\n"
-          << "export CFLAGS=\"" << cflags << "\"\n\n";
+          << "export CFLAGS=\"" << cflags << "\"\n"
+          << "objcopy_common=\"--redefine-sym exit=__m_exit --redefine-sym abort=__m_abort --redefine-sym "
+             "__assert_fail=__m_assert_fail\"\n\n";
 
    if(!Param->isOption(OPT_input_format) ||
       Param->getOption<Parameters_FileFormat>(OPT_input_format) != Parameters_FileFormat::FF_RAW)
@@ -432,7 +434,8 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
              << "  *)\n"
              << "    obj=\"" << output_dir << "/${obj%.*}.o\"\n"
              << "    ${CC} -c ${CFLAGS} " << kill_printf << " -fPIC -o ${obj} ${src}\n"
-             << "    objcopy --weaken --redefine-sym " << top_fname << "=" << m_top_fname << " ${obj}\n"
+             << "    objcopy --weaken --redefine-sym " << top_fname << "=" << m_top_fname
+             << " ${objcopy_common} ${obj}\n"
              << "    objs+=(\"${obj}\")\n"
              << "    ;;\n"
              << "  esac\n"
@@ -454,7 +457,8 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
           << "objcopy --keep-global-symbol " << top_fname << " $(nm " << pp_fileo
           << " | grep -o '[^[:space:]]*get_pc_thunk[^[:space:]]*' | sed 's/^/--keep-global-symbol /' | tr '\\n' ' ') "
           << pp_fileo << "\n"
-          << "objcopy --redefine-sym " << top_fname << "=" << m_pp_top_fname << " " << pp_fileo << "\n"
+          << "objcopy --redefine-sym " << top_fname << "=" << m_pp_top_fname << " ${objcopy_common} " << pp_fileo
+          << "\n"
           << "objs+=(\"" << pp_fileo << "\")\n\n";
    }
 
@@ -466,6 +470,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       script << " -DPP_VERIFICATION";
    }
    script << " -fPIC -o " << output_dir << "/m_wrapper.o " << dpi_cwrapper_file << "\n"
+          << "objcopy --redefine-sym main=m_cosim_main ${objcopy_common} " << output_dir << "/m_wrapper.o\n"
           << "objs+=(\"" << output_dir << "/m_wrapper.o\")\n\n";
 
    if(tb_srcs.size())
@@ -493,7 +498,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
              << "  *.cpp)\n"
              << "    obj=\"" << output_dir << "/${obj%.*}.tb.o\"\n"
              << "    ${CC} -c ${CFLAGS} ${TB_CFLAGS} -fPIC -o ${obj} ${src}\n"
-             << "    objcopy -W " << top_fname << " ${obj}\n"
+             << "    objcopy -W " << top_fname << " --redefine-sym main=m_cosim_main ${objcopy_common} ${obj}\n"
              << "    objs+=(\"${obj}\")\n"
              << "    ;;\n"
              << "  *)\n"
