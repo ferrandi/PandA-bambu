@@ -24,7 +24,7 @@ jobs:
     uses: ./.github/workflows/build-appimage.yml
     with:
       package-name: bambu-minimal
-      compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,clang-4,clang-5,clang-6,clang-7,clang-11,clang-13,clang-16
+      compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,clang-4,clang-6,clang-7,clang-11,clang-13,clang-16
     secrets: inherit
 
   ACMath-tests:
@@ -216,9 +216,6 @@ jobs:
           - setup: clang-4.0
             script: generic_gcc_regression_simple_eg.sh
             args: -c=--compiler=I386_CLANG4 -c=--simulator=MODELSIM -c=--assert-debug
-          - setup: clang-5.0
-            script: generic_gcc_regression_simple_eg_ext_pipelined.sh
-            args: -c=--compiler=I386_CLANG5 -c=--simulator=VERILATOR
           - setup: clang-6.0
             script: generic_gcc_regression_simple_bambu.sh
             args: -c=--compiler=I386_CLANG6 -c=--simulator=MODELSIM -c=--assert-debug
@@ -534,8 +531,6 @@ jobs:
             args: -c=--compiler=I386_GCC49 -c=--simulator=MODELSIM -c=--assert-debug
           - setup: clang-4.0
             args: -c=--compiler=I386_CLANG4 -c=--simulator=VERILATOR
-          - setup: clang-5.0
-            args: -c=--compiler=I386_CLANG5 -c=--simulator=VERILATOR
           - setup: clang-6.0
             args: -c=--compiler=I386_CLANG6 -c=--simulator=VERILATOR
           - setup: clang-7
