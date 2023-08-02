@@ -303,38 +303,33 @@ DesignFlowStep_Status create_tree_manager::Exec()
       for(const auto& archive_file : archive_files)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Reading " + archive_file);
-         if(!boost::filesystem::exists(boost::filesystem::path(archive_file)))
+         if(!std::filesystem::exists(std::filesystem::path(archive_file)))
          {
             THROW_ERROR("File " + archive_file + " does not exist");
          }
-         std::string temporary_directory_pattern;
-         temporary_directory_pattern =
-             parameters->getOption<std::string>(OPT_output_temporary_directory) + "/temp-archive-dir";
-         // The %s are required by the mkdtemp function
-         boost::filesystem::path temp_path = temporary_directory_pattern + "-%%%%-%%%%-%%%%-%%%%";
-         boost::filesystem::path temp_path_obtained = boost::filesystem::unique_path(temp_path);
-         boost::filesystem::create_directories(temp_path_obtained);
-         boost::filesystem::path local_archive_file = GetPath(archive_file);
+         const std::filesystem::path temp_path(parameters->getOption<std::string>(OPT_output_temporary_directory) +
+                                               unique_path("/temp-archive-dir-%%%%-%%%%-%%%%-%%%%").string());
+         const std::filesystem::path local_archive_file(GetPath(archive_file));
+         std::filesystem::create_directories(temp_path);
 
-         std::string command = "cd " + temp_path_obtained.string() + "; ar x " + local_archive_file.string();
-         int ret = PandaSystem(parameters, command);
-         if(IsError(ret))
+         const auto command = "cd " + temp_path.string() + "; ar x " + local_archive_file.string();
+         if(IsError(PandaSystem(parameters, command)))
          {
             THROW_ERROR("ar returns an error during archive extraction ");
          }
-         for(auto& entry : boost::make_iterator_range(boost::filesystem::directory_iterator(temp_path_obtained), {}))
+         for(const auto& entry : std::filesystem::directory_iterator{temp_path})
          {
-            auto fileExtension = GetExtension(entry.path());
-            if(fileExtension != "o" && fileExtension != "O")
+            const auto fileExtension = entry.path().extension().string();
+            if(fileExtension != ".o" && fileExtension != ".O")
             {
                continue;
             }
-            const tree_managerRef TM_new = ParseTreeFile(parameters, entry.path().string());
+            const auto TM_new = ParseTreeFile(parameters, entry.path().string());
             TreeM->merge_tree_managers(TM_new);
          }
-         if(not(parameters->getOption<bool>(OPT_no_clean)))
+         if(!parameters->getOption<bool>(OPT_no_clean))
          {
-            boost::filesystem::remove_all(temp_path_obtained);
+            std::filesystem::remove_all(temp_path);
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Read " + archive_file);
       }
@@ -367,7 +362,7 @@ DesignFlowStep_Status create_tree_manager::Exec()
       for(const auto& raw_file : raw_files)
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Parsing " + raw_file);
-         if(!boost::filesystem::exists(boost::filesystem::path(raw_file)))
+         if(!std::filesystem::exists(std::filesystem::path(raw_file)))
          {
             THROW_ERROR("File " + raw_file + " does not exist");
          }

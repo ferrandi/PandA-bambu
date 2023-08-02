@@ -54,8 +54,7 @@
 
 #include "hash_helper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
+#include <filesystem>
 
 PragmaSubstitution::PragmaSubstitution(const application_managerRef _AppM,
                                        const DesignFlowManagerConstRef _design_flow_manager,
@@ -99,7 +98,7 @@ DesignFlowStep_Status PragmaSubstitution::Exec()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "---Patching file " + input_file.first + "(" + input_file.second + ")");
-      if(not boost::filesystem::exists(boost::filesystem::path(input_file.second)))
+      if(not std::filesystem::exists(std::filesystem::path(input_file.second)))
       {
          THROW_ERROR("File " + input_file.second + " does not exist");
       }

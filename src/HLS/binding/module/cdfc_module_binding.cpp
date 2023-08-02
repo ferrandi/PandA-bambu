@@ -42,7 +42,7 @@
  */
 #include "cdfc_module_binding.hpp"
 
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
 
 ///. include
 #include "Parameter.hpp"
@@ -840,9 +840,9 @@ void CdfcGraph::WriteDot(const std::string& file_name, const int) const
    const BehavioralHelperConstRef behavioral_helper = cdfc_graph_info->operation_graph->CGetOpGraphInfo()->BH;
    const std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" +
                                         behavioral_helper->get_function_name() + "/";
-   if(!boost::filesystem::exists(output_directory))
+   if(!std::filesystem::exists(output_directory))
    {
-      boost::filesystem::create_directories(output_directory);
+      std::filesystem::create_directories(output_directory);
    }
    const std::string full_name = output_directory + file_name;
    const VertexWriterConstRef cdfc_writer(new CdfcWriter(this));
@@ -2102,9 +2102,9 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             {
                const auto output_directory =
                    parameters->getOption<std::string>(OPT_dot_directory) + "/" + functionName + "/";
-               if(!boost::filesystem::exists(output_directory))
+               if(!std::filesystem::exists(output_directory))
                {
-                  boost::filesystem::create_directories(output_directory);
+                  std::filesystem::create_directories(output_directory);
                }
                const auto file_name =
                    output_directory + "MB_" + allocation_information->get_string_name(partition.first) + ".dot";

@@ -71,7 +71,7 @@
 
 /// boost include
 #include <boost/algorithm/string/replace.hpp>
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
 
 /// constants include
 #if HAVE_R
@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
          {
             if(not(parameters->getOption<bool>(OPT_no_clean)))
             {
-               boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
+               std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
             }
             return EXIT_SUCCESS;
          }
@@ -178,7 +178,7 @@ int main(int argc, char* argv[])
          {
             if(not(parameters->getOption<bool>(OPT_no_clean)))
             {
-               boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
+               std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
             }
             THROW_ERROR("Bad Parameters parsing");
          }
@@ -832,7 +832,7 @@ int main(int argc, char* argv[])
    }
    if(!parameters->getOption<bool>(OPT_no_clean))
    {
-      boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
+      std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
    }
 
    return exit_code;

@@ -40,24 +40,25 @@
  * Last modified by $Author$
  *
  */
-
-/// Autoheader include
 #include "config_HAVE_RTL_BUILT.hpp"
 
-/// Header include
-#include "translator.hpp"
-
-/// Constant include
+#include "Parameter.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
+#include "evaluation.hpp"
+#include "exceptions.hpp"
 #include "experimental_setup_xml.hpp"
+#include "fileIO.hpp"
 #include "latex_table_constants.hpp"
 #include "latex_table_xml.hpp"
+#include "polixml.hpp"
+#include "string_manipulation.hpp"
+#include "translator.hpp"
+#include "utility.hpp"
 #include "weights_xml.hpp"
-
-/// HLS/evaluation include
-#include "evaluation.hpp"
-
-/// Parameter include
-#include "Parameter.hpp"
+#include "xml_dom_parser.hpp"
+#include "xml_helper.hpp"
 
 #if HAVE_RTL_BUILT
 /// RTL include
@@ -65,29 +66,12 @@
 #include "rtl_node.hpp"
 #endif
 
-/// STD include
+#include <boost/algorithm/string/replace.hpp>
 #include <cmath>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <string>
-
-/// STL include
-#include <string>
-
-/// Utility include
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-#include "exceptions.hpp"
-#include "fileIO.hpp"
-#include "utility.hpp"
-#include <boost/algorithm/string/replace.hpp>
-#include <boost/filesystem/operations.hpp>
-
-/// XML include
-#include "polixml.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-#include "xml_dom_parser.hpp"
-#include "xml_helper.hpp"
 
 #define CSV_COL_SEPARATOR ","
 

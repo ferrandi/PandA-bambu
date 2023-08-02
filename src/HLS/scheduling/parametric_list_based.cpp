@@ -40,59 +40,44 @@
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
  */
-
 #include "parametric_list_based.hpp"
 
 #include "config_HAVE_ASSERTS.hpp"
 
-#include <utility>
-// #include "call_graph.hpp"
-#include "DAG_SSSP.hpp"
-#include "exceptions.hpp"
-#include "function_behavior.hpp"
-#include "utility.hpp"
-
 #include "ASLAP.hpp"
+#include "DAG_SSSP.hpp"
+#include "Parameter.hpp"
 #include "allocation.hpp"
+#include "allocation_information.hpp"
+#include "basic_block.hpp"
+#include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
+#include "cpu_time.hpp"
+#include "design_flow_graph.hpp"
+#include "design_flow_manager.hpp"
+#include "exceptions.hpp"
+#include "fileIO.hpp"
 #include "fu_binding.hpp"
+#include "function_behavior.hpp"
+#include "function_frontend_flow_step.hpp"
+#include "functions.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
-#include "schedule.hpp"
-#include "technology_node.hpp"
-
-#include "basic_block.hpp"
 #include "loop.hpp"
 #include "loops.hpp"
+#include "memory.hpp"
+#include "schedule.hpp"
+#include "string_manipulation.hpp"
+#include "structural_objects.hpp"
+#include "technology_node.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-
-#include "cpu_time.hpp"
-#include "functions.hpp"
-#include "memory.hpp"
-
-/// circuit include
-#include "structural_objects.hpp"
-
-/// design_flows includes
-#include "design_flow_graph.hpp"
-#include "design_flow_manager.hpp"
-
-/// frontend_flow include
-#include "function_frontend_flow_step.hpp"
-
-/// HLS/module_allocation include
-#include "allocation_information.hpp"
-
-/// polixml include
+#include "utility.hpp"
 #include "xml_document.hpp"
 
-#include "behavioral_helper.hpp"
-#include "call_graph_manager.hpp" // for CallGraphManager, CallGrap...
-#include "fileIO.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-#include "utility.hpp"
+#include <utility>
 
 #if !HAVE_UNORDERED
 PrioritySorter::PrioritySorter(refcount<priority_data<int>> _priority, const OpGraphConstRef _op_graph)

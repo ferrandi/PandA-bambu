@@ -57,11 +57,10 @@
 
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/predicate.hpp>
-#include <boost/filesystem/convenience.hpp>
-#include <boost/filesystem/path.hpp>
 #include <boost/lexical_cast.hpp>
 #include <climits>
 #include <cstring>
+#include <filesystem>
 #include <getopt.h>
 #include <iosfwd>
 #include <vector>
@@ -334,7 +333,7 @@ int tree_panda_gcc_parameter::Exec()
 #endif
    while(optind < argc)
    {
-      if(GetExtension(argv[optind]) == "o")
+      if(std::filesystem::path(argv[optind]).extension() == ".o")
       {
          std::string object_files;
          if(isOption(OPT_obj_files))
@@ -343,7 +342,7 @@ int tree_panda_gcc_parameter::Exec()
          }
          setOption(OPT_obj_files, object_files + GetPath(argv[optind]));
       }
-      else if(GetExtension(argv[optind]) == "a")
+      else if(std::filesystem::path(argv[optind]).extension() == ".a")
       {
          std::string archive_files;
          if(isOption(OPT_archive_files))

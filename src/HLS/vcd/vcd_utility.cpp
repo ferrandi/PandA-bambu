@@ -68,8 +68,8 @@
 #include "vcd_trace_head.hpp"
 
 #include <boost/algorithm/string/case_conv.hpp>
-#include <boost/filesystem/operations.hpp>
 #include <cfloat>
+#include <filesystem>
 #include <fstream>
 #include <iterator>
 #include <utility>
@@ -257,9 +257,9 @@ DesignFlowStep_Status vcd_utility::Exec()
       {
          if(!parameters->isOption(OPT_generate_vcd) || !parameters->getOption<bool>(OPT_generate_vcd))
          {
-            boost::filesystem::remove(vcd_filename);
+            std::filesystem::remove(vcd_filename);
          }
-         boost::filesystem::remove(discrepancy_data_filename);
+         std::filesystem::remove(discrepancy_data_filename);
       }
       disc_stat_file << "Possibly lost address checks = 0 (empty trace)\n";
       disc_stat_file << "Mismatched integers = 0 (empty trace)\n";
@@ -512,9 +512,9 @@ DesignFlowStep_Status vcd_utility::Exec()
       {
          if((!parameters->isOption(OPT_generate_vcd)) || (!parameters->getOption<bool>(OPT_generate_vcd)))
          {
-            boost::filesystem::remove(vcd_filename);
+            std::filesystem::remove(vcd_filename);
          }
-         boost::filesystem::remove(discrepancy_data_filename);
+         std::filesystem::remove(discrepancy_data_filename);
       }
    }
 

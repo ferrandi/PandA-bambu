@@ -40,7 +40,7 @@
  *
  */
 
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
 
 /// design_flows include
 #include "design_flow_graph.hpp"
@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
          {
             if(not(parameters->getOption<bool>(OPT_no_clean)))
             {
-               boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
+               std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
             }
             return EXIT_SUCCESS;
          }
@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
 
       if(not(parameters->getOption<bool>(OPT_no_clean)))
       {
-         boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
+         std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
       }
       return EXIT_SUCCESS; // Eucalyptus tool has completed execution without errors
    }
@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
    }
    if(parameters and not(parameters->getOption<bool>(OPT_no_clean)))
    {
-      boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
+      std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
    }
    return exit_code;
 }

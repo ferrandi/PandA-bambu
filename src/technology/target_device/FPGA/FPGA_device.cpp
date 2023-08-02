@@ -45,21 +45,17 @@
 
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
-#include "target_technology.hpp"
-
-/// XML includes
+#include "Parameter.hpp"
+#include "constant_strings.hpp"
+#include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
 #include "polixml.hpp"
+#include "string_manipulation.hpp"
+#include "target_technology.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
 
-/// parameters' includes
-#include "Parameter.hpp"
-#include "constant_strings.hpp"
-
-/// Boost includes
-#include "string_manipulation.hpp" // for GET_CLASS
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 FPGA_device::FPGA_device(const ParameterConstRef& _Param, const technology_managerRef& _TM)
     : target_device(_Param, _TM, TargetDevice_Type::FPGA)

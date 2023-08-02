@@ -42,20 +42,12 @@
 /// Header include
 #include "load_device_technology.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// parser/polixml include
-#include "xml_dom_parser.hpp"
-
-/// polixml include
-#include "xml_document.hpp"
-
-/// technology/target_device include
-#include "target_device.hpp"
-
-/// utility include
+#include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
+#include "target_device.hpp"
+#include "xml_document.hpp"
+#include "xml_dom_parser.hpp"
 
 LoadDeviceTechnology::LoadDeviceTechnology(const technology_managerRef _TM, const target_deviceRef _target,
                                            const DesignFlowManagerConstRef _design_flow_manager,

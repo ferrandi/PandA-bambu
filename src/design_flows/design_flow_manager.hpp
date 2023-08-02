@@ -41,8 +41,6 @@
 #ifndef DESIGN_FLOW_MANAGER_HPP
 #define DESIGN_FLOW_MANAGER_HPP
 
-#include "config_HAVE_STDCXX_11.hpp" // for HAVE_STDCXX_11
-
 #include "custom_map.hpp"
 #include "graph.hpp"    // for vertex, Paramete...
 #include "refcount.hpp" // for REF_FORWARD_DECL
@@ -87,10 +85,7 @@ class DesignFlowStepNecessitySorter : std::binary_function<vertex, vertex, bool>
    bool operator()(const vertex x, const vertex y) const;
 };
 
-class DesignFlowManager
-#if HAVE_STDCXX_11
-    final
-#endif
+class DesignFlowManager final
 {
  private:
    /// NOTE: static should be removed when all the design flow managers will be merged
@@ -191,11 +186,7 @@ class DesignFlowManager
    /**
     * Execute the design flow
     */
-   void virtual Exec()
-#if HAVE_STDCXX_11
-       final
-#endif
-       ;
+   void virtual Exec() final;
 
    /**
     * Add step and corresponding dependencies to the design flow

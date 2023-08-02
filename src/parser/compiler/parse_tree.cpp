@@ -87,7 +87,7 @@ tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string&
          source_name.erase(source_name.length() - trailer.length(), trailer.length());
          source_name.append(".pipeline.xml");
          auto XMLfilename = source_name;
-         if((boost::filesystem::exists(boost::filesystem::path(XMLfilename))))
+         if((std::filesystem::exists(std::filesystem::path(XMLfilename))))
          {
             XMLDomParser parser(XMLfilename);
             parser.Exec();

@@ -41,9 +41,9 @@
 #ifndef TEST_VECTOR_PARSER_HPP
 #define TEST_VECTOR_PARSER_HPP
 
-#include "custom_map.hpp"
 #include "hls_step.hpp"
 
+#include <filesystem>
 #include <map>
 #include <string>
 #include <vector>
@@ -59,7 +59,7 @@ class TestVectorParser : public HLS_step
    /**
     * Parse a user defined xml file extracting the test vectors
     */
-   std::vector<std::map<std::string, std::string>> ParseXMLFile(const std::string& input_xml) const;
+   std::vector<std::map<std::string, std::string>> ParseXMLFile(const std::filesystem::path& input_xml) const;
 
    const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
    ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;

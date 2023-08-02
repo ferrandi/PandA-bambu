@@ -37,35 +37,20 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "xilinx_taste_backend_flow.hpp"
 
-/// Autoheader include
 #include "config_GRLIB_DIR.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// technology includes
+#include "SynthesisTool.hpp"
+#include "XilinxWrapper.hpp"
+#include "dbgPrintHelper.hpp"
+#include "fileIO.hpp"
+#include "string_manipulation.hpp"
+#include "structural_objects.hpp"
 #include "target_manager.hpp"
 #include "technology_manager.hpp"
-
-/// utility include
-#include "fileIO.hpp"
-
-/// wrapper/synthesis include
-#include "SynthesisTool.hpp"
-
-/// wrapper/synthesis/xilinx include
-#include "XilinxWrapper.hpp"
-
-/// wrapper/synthesis/xilinx/ise include
-#include "string_manipulation.hpp" // for GET_CLASS
 #include "xst_wrapper.hpp"
-
-#include "fileIO.hpp"
-#include "structural_objects.hpp"
 
 XilinxTasteBackendFlow::XilinxTasteBackendFlow(const ParameterConstRef& _parameters, const std::string& _flow_name,
                                                const target_managerRef& _manager)
