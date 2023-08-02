@@ -88,10 +88,6 @@ HLSCWriter::HLSCWriter(const CBackendInformationConstRef _c_backend_info, const 
     : CWriter(_HLSMgr, _instruction_writer, _indented_output_stream, _parameters, _verbose),
       c_backend_info(_c_backend_info)
 {
-   /// include from cpp
-   flag_cpp = TM->is_CPP() && !Param->isOption(OPT_pretty_print) &&
-              (!Param->isOption(OPT_discrepancy) || !Param->getOption<bool>(OPT_discrepancy) ||
-               !Param->isOption(OPT_discrepancy_hw) || !Param->getOption<bool>(OPT_discrepancy_hw));
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
@@ -236,7 +232,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
          std::string var_ptdtype;
          std::string temp_var_decl;
          bool is_a_true_pointer = true;
-         if(flag_cpp && !is_binary_init && is_interface_inferred)
+         if(!is_binary_init && is_interface_inferred)
          {
             var_ptdtype = arg_signature_typename->second.at(par_idx);
             is_a_true_pointer = var_ptdtype.back() == '*';
