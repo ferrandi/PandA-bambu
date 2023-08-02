@@ -86,8 +86,6 @@ class HLS_constraints
 
    /// current value of the resource fraction
    double clock_period_resource_fraction;
-   /// default resource fraction for the clock period
-   static const double clock_period_resource_fraction_DEFAULT;
 
    /// Variable storing the number of registers.
    unsigned int registers;

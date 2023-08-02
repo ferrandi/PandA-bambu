@@ -139,8 +139,7 @@
 #include "refcount.hpp"
 #include "string_manipulation.hpp"
 #include "xml_helper.hpp"
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
+#include <filesystem>
 
 /// XML include
 #include "polixml.hpp"
@@ -201,30 +200,30 @@ Parameter::Parameter(const Parameter& other)
 void Parameter::CheckParameters()
 {
    const auto temporary_directory = getOption<std::string>(OPT_output_temporary_directory);
-   if(boost::filesystem::exists(temporary_directory))
+   if(std::filesystem::exists(temporary_directory))
    {
-      boost::filesystem::remove_all(temporary_directory);
+      std::filesystem::remove_all(temporary_directory);
    }
-   boost::filesystem::create_directory(temporary_directory);
+   std::filesystem::create_directory(temporary_directory);
    /// Output directory is not removed since it can be the current one
    const auto output_directory = getOption<std::string>(OPT_output_directory);
-   if(!boost::filesystem::exists(output_directory))
+   if(!std::filesystem::exists(output_directory))
    {
-      boost::filesystem::create_directory(output_directory);
+      std::filesystem::create_directory(output_directory);
    }
-   if(!boost::filesystem::exists(output_directory))
+   if(!std::filesystem::exists(output_directory))
    {
       THROW_ERROR("not able to create directory " + output_directory);
    }
    if(getOption<bool>(OPT_print_dot))
    {
       const auto dot_directory = getOption<std::string>(OPT_dot_directory);
-      if(boost::filesystem::exists(dot_directory))
+      if(std::filesystem::exists(dot_directory))
       {
-         boost::filesystem::remove_all(dot_directory);
+         std::filesystem::remove_all(dot_directory);
       }
-      boost::filesystem::create_directory(dot_directory);
-      if(!boost::filesystem::exists(dot_directory))
+      std::filesystem::create_directory(dot_directory);
+      if(!std::filesystem::exists(dot_directory))
       {
          THROW_ERROR("not able to create directory " + dot_directory);
       }
@@ -349,7 +348,7 @@ void Parameter::SetCommonDefaults()
 {
    setOption(STR_OPT_benchmark_fake_parameters, "<none>");
    std::string current_dir = GetCurrentPath();
-   std::string temporary_directory = current_dir + "/" + std::string(STR_CST_temporary_directory);
+   std::string temporary_directory = current_dir + "/" STR_CST_temporary_directory;
 
    setOption(OPT_dot_directory, current_dir + "/dot/");
    setOption(OPT_output_temporary_directory, temporary_directory + "/");
@@ -582,18 +581,10 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
       case OPT_OUTPUT_TEMPORARY_DIRECTORY:
       {
          /// If the path is not absolute, make it into absolute
-         std::string path(optarg_param);
-         std::string temporary_directory_pattern;
-         temporary_directory_pattern = GetPath(path) + "/" + std::string(STR_CST_temporary_directory);
-         // The %s are required by the mkdtemp function
-         boost::filesystem::path temp_path = temporary_directory_pattern + "-%%%%-%%%%-%%%%-%%%%";
-
-         boost::filesystem::path temp_path_obtained = boost::filesystem::unique_path(temp_path);
-         boost::filesystem::create_directories(temp_path_obtained.string());
-
-         path = temp_path_obtained.string();
-         path = path + "/";
-         setOption(OPT_output_temporary_directory, path);
+         const auto path =
+             unique_path(GetPath(std::string(optarg_param)) + "/" STR_CST_temporary_directory "-%%%%-%%%%-%%%%-%%%%");
+         std::filesystem::create_directories(path);
+         setOption(OPT_output_temporary_directory, path.string() + "/");
          break;
       }
       case INPUT_OPT_PANDA_PARAMETER:
@@ -1051,59 +1042,59 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
 }
 #endif
 
-Parameters_FileFormat Parameter::GetFileFormat(const std::string& file_name, const bool check_xml_root_node) const
+Parameters_FileFormat Parameter::GetFileFormat(const std::filesystem::path& file_name,
+                                               const bool check_xml_root_node) const
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Getting file format of file " + file_name);
-   std::string extension = GetExtension(file_name);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Getting file format of file " + file_name.string());
+   const auto extension = file_name.extension().string();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Extension is " + extension);
 #if HAVE_FROM_AADL_ASN_BUILT
-   if(extension == "aadl" or extension == "AADL")
+   if(extension == ".aadl" or extension == ".AADL")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--aadl file");
       return Parameters_FileFormat::FF_AADL;
    }
-   if(extension == "asn" or extension == "ASN")
+   if(extension == ".asn" or extension == ".ASN")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--asn file");
       return Parameters_FileFormat::FF_ASN;
    }
 #endif
 #if HAVE_FROM_C_BUILT
-   if(extension == "c" or extension == "i")
+   if(extension == ".c" or extension == ".i")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--C source file");
       return Parameters_FileFormat::FF_C;
    }
-   if(extension == "m" or extension == "mi")
+   if(extension == ".m" or extension == ".mi")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Objective C source file");
       return Parameters_FileFormat::FF_OBJECTIVEC;
    }
-   if(extension == "mm" or extension == "M" or extension == "mii")
+   if(extension == ".mm" or extension == ".M" or extension == ".mii")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Objective C++ source file");
       return Parameters_FileFormat::FF_OBJECTIVECPP;
    }
-   if(extension == "ii" or extension == "cc" or extension == "cp" or extension == "cxx" or extension == "cpp" or
-      extension == "CPP" or extension == "c++" or extension == "C")
+   if(extension == ".ii" or extension == ".cc" or extension == ".cp" or extension == ".cxx" or extension == ".cpp" or
+      extension == ".CPP" or extension == ".c++" or extension == ".C")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--C++ source file");
       return Parameters_FileFormat::FF_CPP;
    }
-   if(extension == "f" or extension == "for" or extension == "ftn" or extension == "F" or extension == "FOR" or
-      extension == "fpp" or extension == "FPP" or extension == "FTN" or extension == "f90" or extension == "f95" or
-      extension == "f03" or extension == "f08" or extension == "F90" or extension == "F95" or extension == "F03" or
-      extension == "F08")
+   if(extension == ".f" or extension == ".for" or extension == ".ftn" or extension == ".F" or extension == ".FOR" or
+      extension == ".fpp" or extension == ".FPP" or extension == ".FTN" or extension == ".f90" or extension == ".f95" or
+      extension == ".f03" or extension == ".f08" or extension == ".F90" or extension == ".F95" or extension == ".F03" or
+      extension == ".F08")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Fortran source file");
       return Parameters_FileFormat::FF_FORTRAN;
    }
-   if(extension == "ll")
+   if(extension == ".ll")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--LLVM bitcode source file");
-      auto removed_ll = file_name.substr(0, file_name.size() - 3);
-      extension = GetExtension(removed_ll);
-      if(extension == "cpp")
+      const auto sub_extension = std::filesystem::path(file_name).replace_extension().extension().string();
+      if(sub_extension == ".cpp")
       {
          return Parameters_FileFormat::FF_LLVM_CPP;
       }
@@ -1112,75 +1103,71 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::string& file_name, con
          return Parameters_FileFormat::FF_LLVM;
       }
    }
-   if(extension == "LL")
+   if(extension == ".LL")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--LLVM bitcode source file");
 
       return Parameters_FileFormat::FF_LLVM_CPP;
    }
 #endif
-   if(extension == "csv")
+   if(extension == ".csv")
    {
-      std::string base_name = GetLeafFileName(file_name);
+      const auto sub_extension = std::filesystem::path(file_name).replace_extension().extension().string();
 #if HAVE_FROM_CSV_BUILT
-      if(base_name.find('.') != std::string::npos)
+      if(sub_extension == ".rtl")
       {
-         std::string local_extension = GetExtension(base_name);
-         if(local_extension == "rtl")
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--CSV of RTL operations");
-            return Parameters_FileFormat::FF_CSV_RTL;
-         }
-         else if(local_extension == "tree")
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--CSV of TREE operations");
-            return Parameters_FileFormat::FF_CSV_TRE;
-         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--CSV of RTL operations");
+         return Parameters_FileFormat::FF_CSV_RTL;
+      }
+      else if(sub_extension == ".tree")
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--CSV of TREE operations");
+         return Parameters_FileFormat::FF_CSV_TRE;
       }
 #endif
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--generic CSV");
       return Parameters_FileFormat::FF_CSV;
    }
 #if HAVE_FROM_LIBERTY
-   if(extension == "lib")
+   if(extension == ".lib")
    {
       return Parameters_FileFormat::FF_LIB;
    }
 #endif
 #if HAVE_FROM_PSPLIB_BUILT
-   if(extension == "mm")
+   if(extension == ".mm")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Multi mode project scheduling problem");
       return Parameters_FileFormat::FF_PSPLIB_MM;
    }
-   if(extension == "sm")
+   if(extension == ".sm")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Single-mode project scheduling problem");
       return Parameters_FileFormat::FF_PSPLIB_SM;
    }
 #endif
-   if(extension == "tex")
+   if(extension == ".tex")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latex table");
       return Parameters_FileFormat::FF_TEX;
    }
-   if(extension == "v")
+   if(extension == ".v")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--verilog");
       return Parameters_FileFormat::FF_VERILOG;
    }
-   if(extension == "vhd" or extension == "vhdl")
+   if(extension == ".vhd" or extension == ".vhdl")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--vhdl");
       return Parameters_FileFormat::FF_VHDL;
    }
-   if(extension == "xml")
+   if(extension == ".xml")
    {
       if(check_xml_root_node)
       {
-         XMLDomParser parser(file_name);
+         XMLDomParser parser(file_name.string());
          parser.Exec();
-         THROW_ASSERT(parser, "Impossible to parse xml file " + file_name);
+         THROW_ASSERT(parser, "Impossible to parse xml file " + file_name.string());
 
 #if HAVE_DESIGN_ANALYSIS_BUILT || HAVE_SOURCE_CODE_STATISTICS_XML || HAVE_FROM_IPXACT_BUILT || HAVE_FROM_SDF3_BUILT || \
     HAVE_TO_DATAFILE_BUILT || HAVE_PERFORMANCE_METRICS_XML || HAVE_WEIGHT_MODELS_XML
@@ -1294,9 +1281,9 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::string& file_name, con
       return Parameters_FileFormat::FF_XML;
    }
 #if HAVE_FROM_C_BUILT
-   if(boost::filesystem::exists(file_name))
+   if(std::filesystem::exists(file_name))
    {
-      const auto opened_file = fileIO_istream_open(file_name);
+      const auto opened_file = fileIO_istream_open(file_name.string());
       std::string line;
       if(!opened_file->eof())
       {

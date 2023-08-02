@@ -48,7 +48,7 @@
 #include "xml_script_command.hpp"
 
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
@@ -88,9 +88,9 @@ void LatticeWrapper::generate_synthesis_script(const DesignParametersRef& dp, co
    remove_escaped(script_string);
 
    // Save the generated script
-   if(boost::filesystem::exists(file_name))
+   if(std::filesystem::exists(file_name))
    {
-      boost::filesystem::remove_all(file_name);
+      std::filesystem::remove_all(file_name);
    }
    script_name = file_name;
    std::ofstream file_stream(file_name.c_str());

@@ -42,7 +42,7 @@
  */
 #include "weighted_clique_register.hpp"
 
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
 
 #include "check_clique.hpp"
 #include "clique_covering.hpp"
@@ -154,9 +154,9 @@ DesignFlowStep_Status weighted_clique_register::RegisterBinding()
       {
          const auto functionName = FB->CGetBehavioralHelper()->get_function_name();
          const auto output_directory = parameters->getOption<std::string>(OPT_dot_directory) + "/" + functionName + "/";
-         if(!boost::filesystem::exists(output_directory))
+         if(!std::filesystem::exists(output_directory))
          {
-            boost::filesystem::create_directories(output_directory);
+            std::filesystem::create_directories(output_directory);
          }
          const auto file_name = output_directory + "HLS_RegisterBinding.dot";
          register_clique->writeDot(file_name);

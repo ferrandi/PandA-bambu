@@ -47,7 +47,7 @@
 
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
 
 ///. include
 #include "Parameter.hpp"
@@ -405,16 +405,16 @@ void StateTransitionGraph::WriteDot(const std::string& file_name, const int deta
           si->HLSMgr.lock()->get_HLS(si->funId)->Rsch->ComputeCriticalPath(CGetStateInfo(*state));
       critical_paths.insert(critical_path.begin(), critical_path.end());
    }
-   if(!boost::filesystem::exists(output_directory))
+   if(!std::filesystem::exists(output_directory))
    {
-      boost::filesystem::create_directories(output_directory);
+      std::filesystem::create_directories(output_directory);
    }
    const OpGraphConstRef op_function_graph = CGetStateTransitionGraphInfo()->op_function_graph;
    const std::string function_name = op_function_graph->CGetOpGraphInfo()->BH->get_function_name();
    const std::string complete_file_name = output_directory + function_name + "/";
-   if(!boost::filesystem::exists(complete_file_name))
+   if(!std::filesystem::exists(complete_file_name))
    {
-      boost::filesystem::create_directories(complete_file_name);
+      std::filesystem::create_directories(complete_file_name);
    }
    const VertexWriterConstRef state_writer(new StateWriter(this, op_function_graph, detail_level));
    const EdgeWriterConstRef transition_writer(new TransitionWriter(this, op_function_graph, detail_level));

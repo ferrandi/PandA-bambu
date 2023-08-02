@@ -2,7 +2,6 @@
 
 CLANG16_LIBS=-Wl,--start-group $(CLANG_LIBS) -lclangCrossTU -lclangToolingInclusions -Wl,--end-group
 CLANG16_LIBSD=$(CLANG_LIBS) -lclangCrossTU -lclangToolingInclusions
-compile_options=' -fPIC $(I386_LLVM16_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'
 
 if BUILD_I386_CLANG16_EMPTY_PLUGIN
 all: $(I386_CLANG16_EMPTY_PLUGIN)

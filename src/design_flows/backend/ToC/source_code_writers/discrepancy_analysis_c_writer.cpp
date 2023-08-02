@@ -63,7 +63,7 @@
 #include "tree_reindex.hpp"
 #include "utility.hpp"
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #define INT_TYPE 0
 #define UINT_TYPE 1
@@ -919,7 +919,7 @@ void DiscrepancyAnalysisCWriter::WriteExtraInitCode()
    const auto top_fun_id = *(top_function_ids.begin());
    const auto fun_behavior = HLSMgr->CGetFunctionBehavior(top_fun_id);
    const auto behavioral_helper = fun_behavior->CGetBehavioralHelper();
-   Discrepancy->c_trace_filename = boost::filesystem::path(c_backend_info->out_filename).parent_path().string() +
+   Discrepancy->c_trace_filename = std::filesystem::path(c_backend_info->out_filename).parent_path().string() +
                                    behavioral_helper->get_function_name() + "_discrepancy.data";
 
    indented_output_stream->Append("__standard_exit = 0;\n");

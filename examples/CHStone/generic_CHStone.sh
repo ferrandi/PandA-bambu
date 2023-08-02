@@ -5,7 +5,7 @@ ggo_require_device=1
 ggo_require_period=1
 . ${script_dir}/../../panda_regressions/hls/generic_getopt.sh
 
-BATCH_ARGS=("-fwhole-program" "-fno-delete-null-pointer-checks" "--aligned-access" "--simulate" "-s")
+BATCH_ARGS=("-fwhole-program" "-fno-delete-null-pointer-checks" "--simulate" "-s")
 configuration="${device}_$(printf "%04.1f" $period)_$(echo $compiler | tr '[:upper:]' '[:lower:]')"
 OUT_SUFFIX="${configuration}_CHStone"
 BENCHMARKS_ROOT="${script_dir}/CHStone"

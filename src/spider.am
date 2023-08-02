@@ -68,9 +68,7 @@ lib_spider_la_LIBADD += \
       $(top_builddir)/src/parser/polixml/lib_xml_dom_parser.la \
       lib_polixml.la \
       lib_utility.la \
-      $(BOOST_FILESYSTEM_LIB) \
       $(BOOST_SYSTEM_LIB) \
-      $(BOOST_REGEX_LIB) \
       $(GSL_LIBS)
 
 if BUILD_LIB_ALGORITHMS

@@ -42,25 +42,21 @@
  * Last modified by $Author$
  *
  */
-
-/// Includes the class definition
 #include "ISE_isim_wrapper.hpp"
 
-#include "ToolManager.hpp"
-
 #include "Parameter.hpp"
+#include "ToolManager.hpp"
 #include "constant_strings.hpp"
+#include "dbgPrintHelper.hpp"
+#include "fileIO.hpp"
+#include "polixml.hpp"
+#include "utility"
 #include "utility.hpp"
+#include "xml_dom_parser.hpp"
+#include "xml_helper.hpp"
 
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
-
-#include <fileIO.hpp>
-#include <polixml.hpp>
-#include <utility>
-#include <xml_dom_parser.hpp>
-#include <xml_helper.hpp>
-
+#include <filesystem>
 #include <fstream>
 
 // constructor
@@ -69,7 +65,7 @@ ISE_isim_wrapper::ISE_isim_wrapper(const ParameterConstRef& _Param, const std::s
     : SimulationTool(_Param, _top_fname), suffix(_suffix)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the ISIM wrapper...");
-   boost::filesystem::create_directory(ISIM_SUBDIR + suffix + "/");
+   std::filesystem::create_directory(ISIM_SUBDIR + suffix + "/");
 }
 
 // destructor
@@ -86,15 +82,15 @@ std::string ISE_isim_wrapper::create_project_script(const std::string& top_filen
    std::ofstream prj_file(project_filename.c_str());
    for(const auto& file : file_list)
    {
-      boost::filesystem::path file_path(file);
-      std::string extension = GetExtension(file_path);
+      std::filesystem::path file_path(file);
+      std::string extension = file_path.extension().string();
       std::string filename;
       std::string language;
-      if(extension == "vhd" || extension == "vhdl" || extension == "VHD" || extension == "VHDL")
+      if(extension == ".vhd" || extension == ".vhdl" || extension == ".VHD" || extension == ".VHDL")
       {
          language = "VHDL";
       }
-      else if(extension == "v" || extension == "V" || extension == "sv")
+      else if(extension == ".v" || extension == ".V" || extension == ".sv" || extension == ".SV")
       {
          language = "VERILOG";
       }
@@ -113,7 +109,7 @@ std::string ISE_isim_wrapper::create_project_script(const std::string& top_filen
       {
          prj_file << language << " "
                   << "work"
-                  << " " << boost::filesystem::path(GetCurrentPath()).string() << "/" << filename << std::endl;
+                  << " " << std::filesystem::path(GetCurrentPath()).string() << "/" << filename << std::endl;
       }
    }
    prj_file.close();

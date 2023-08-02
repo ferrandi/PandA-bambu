@@ -217,11 +217,6 @@ class string_separator
 };
 
 /**
- * Macro which "pretty prints" a multi-line string
- */
-#define PP_ONE_LINE(multi_line_string) boost::regex_replace(multi_line_string, boost::regex("\\n"), "\\\\n")
-
-/**
  * Concept checking class
  * This class is used to check that an object can be converted into long double
  */

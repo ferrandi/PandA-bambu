@@ -39,6 +39,7 @@
  */
 #include "test_vector_parser.hpp"
 
+#include "Parameter.hpp"
 #include "SimulationInformation.hpp"
 #include "application_frontend_flow_step.hpp"
 #include "behavioral_helper.hpp"
@@ -63,7 +64,7 @@
 #include "xml_dom_parser.hpp"
 
 #include <boost/algorithm/string.hpp>
-#include <boost/regex.hpp>
+#include <regex>
 #include <tuple>
 #include <utility>
 
@@ -181,7 +182,7 @@ std::vector<std::map<std::string, std::string>> TestVectorParser::ParseUserStrin
 }
 
 std::vector<std::map<std::string, std::string>>
-TestVectorParser::ParseXMLFile(const std::string& input_xml_filename) const
+TestVectorParser::ParseXMLFile(const std::filesystem::path& input_xml_filename) const
 {
    const auto CGM = HLSMgr->CGetCallGraphManager();
    THROW_ASSERT(boost::num_vertices(*(CGM->CGetCallGraph())) != 0, "The call graph has not been computed yet");
@@ -190,9 +191,10 @@ TestVectorParser::ParseXMLFile(const std::string& input_xml_filename) const
    const auto top_id = *(top_function_ids.begin());
    const auto BH = HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper();
 
-   if(!boost::filesystem::exists(input_xml_filename))
+   if(!std::filesystem::exists(input_xml_filename))
    {
-      THROW_WARNING("XML file \"" + input_xml_filename + "\" cannot be opened, creating a stub with random values");
+      THROW_WARNING("XML file \"" + input_xml_filename.string() +
+                    "\" cannot be opened, creating a stub with random values");
       xml_document document;
       const auto nodeRoot = document.create_root_node("function");
       const auto node = nodeRoot->add_child_element("testbench");
@@ -219,7 +221,7 @@ TestVectorParser::ParseXMLFile(const std::string& input_xml_filename) const
    }
    try
    {
-      XMLDomParser parser(input_xml_filename);
+      XMLDomParser parser(input_xml_filename.string());
       parser.Exec();
       if(parser)
       {
@@ -251,9 +253,8 @@ TestVectorParser::ParseXMLFile(const std::string& input_xml_filename) const
                }
                else if((Enode)->get_attribute(param + ":init_file"))
                {
-                  const auto test_directory = GetPath(GetDirectory(input_xml_filename));
-                  const auto input_file_name =
-                      BuildPath(test_directory, Enode->get_attribute(param + ":init_file")->get_value());
+                  const auto input_file_name = GetPath(input_xml_filename.parent_path()) + "/" +
+                                               Enode->get_attribute(param + ":init_file")->get_value();
                   if(boost::ends_with(input_file_name, ".dat"))
                   {
                      test_vector[param] = input_file_name;
@@ -291,6 +292,6 @@ TestVectorParser::ParseXMLFile(const std::string& input_xml_filename) const
    {
       std::cerr << "unknown exception" << std::endl;
    }
-   THROW_ERROR("Error parsing the test vectors file " + input_xml_filename);
+   THROW_ERROR("Error parsing the test vectors file " + input_xml_filename.string());
    return std::vector<std::map<std::string, std::string>>();
 }

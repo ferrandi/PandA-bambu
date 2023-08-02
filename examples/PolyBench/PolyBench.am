@@ -1,4 +1,4 @@
-EXTRA_DIST = \
+EXTRA_DIST += \
    %D%/PolyBenchC/LICENSE.txt \
    %D%/PolyBenchC/CHANGELOG \
    %D%/PolyBenchC/datamining/correlation/correlation.c \

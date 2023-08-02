@@ -102,10 +102,10 @@ void BasicBlocksProfiling::Initialize()
 
 DesignFlowStep_Status BasicBlocksProfiling::Exec()
 {
-   boost::filesystem::path temporary_path(parameters->getOption<std::string>(OPT_output_temporary_directory));
+   std::filesystem::path temporary_path(parameters->getOption<std::string>(OPT_output_temporary_directory));
 
-   boost::filesystem::path run_name = temporary_path / ("run.tmp");
-   boost::filesystem::path profile_data_name = temporary_path / STR_CST_host_profiling_data;
+   std::filesystem::path run_name = temporary_path / ("run.tmp");
+   std::filesystem::path profile_data_name = temporary_path / STR_CST_host_profiling_data;
 
    const CompilerWrapperConstRef compiler_wrapper(
        new CompilerWrapper(this->parameters, parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_host_compiler),
@@ -126,7 +126,7 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Running with parameters: " + exec_argv);
       // The argument
-      boost::filesystem::remove(profile_data_name);
+      std::filesystem::remove(profile_data_name);
 
       const auto command = change_directory + "\"" + run_name.string() + "\" " + exec_argv + " ";
       const auto ret = PandaSystem(parameters, command, false, temporary_path.string() + STR_CST_host_profiling_output);
