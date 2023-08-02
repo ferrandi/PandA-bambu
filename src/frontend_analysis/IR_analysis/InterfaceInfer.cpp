@@ -97,8 +97,7 @@ enum class InterfaceInfer::m_axi_type
 enum class InterfaceInfer::datatype
 {
    generic,
-   ac_type,
-   real
+   ac_type
 };
 
 struct InterfaceInfer::interface_info
@@ -126,73 +125,74 @@ struct InterfaceInfer::interface_info
 
    void update(const tree_nodeRef& tn, const std::string& _type_name, ParameterConstRef parameters)
    {
-      const auto ptd_type = tree_helper::CGetPointedType(tree_helper::CGetType(tn));
-      bool is_signed = tree_helper::IsSignedIntegerType(ptd_type);
-      bool is_fixed = false;
+      bool is_signed, is_fixed;
       const auto type_name = std::regex_replace(_type_name, std::regex("(ac_channel|stream|hls::stream)<(.*)>"), "$2");
       const auto ac_bitwidth = ac_type_bitwidth(type_name, is_signed, is_fixed);
-      const auto _type = ac_bitwidth != 0ULL ? datatype::ac_type :
-                                               (tree_helper::IsRealType(ptd_type) ? datatype::real : datatype::generic);
+      auto _type = ac_bitwidth != 0ULL ? datatype::ac_type : datatype::generic;
       if(type != datatype::ac_type)
       {
-         unsigned long long _bitwidth;
+         unsigned long long _bitwidth = 0;
          if(_type == datatype::ac_type)
          {
             _bitwidth = ac_bitwidth;
+            type = datatype::ac_type;
+            alignment = static_cast<unsigned>(get_aligned_ac_bitsize(_bitwidth));
          }
-         else if(tree_helper::IsArrayEquivType(ptd_type))
+         else if(_type_name.empty())
          {
-            if(tree_helper::IsStructType(ptd_type))
+            const auto ptd_type = tree_helper::CGetType(tn);
+            if(tree_helper::IsArrayEquivType(ptd_type))
             {
-               const auto fld_count = tree_helper::GetArrayTotalSize(ptd_type);
-               if(factor != 1 && factor != fld_count)
+               if(tree_helper::IsStructType(ptd_type))
                {
-                  THROW_ERROR("Unexpected struct type aliasing");
-               }
-               factor = fld_count;
-               _bitwidth = tree_helper::Size(tree_helper::CGetArrayBaseType(ptd_type));
-            }
-            else
-            {
-               const auto elt_type = tree_helper::CGetArrayBaseType(ptd_type);
-               if(tree_helper::IsStructType(elt_type))
-               {
-                  if(!tree_helper::IsArrayEquivType(elt_type))
-                  {
-                     THROW_ERROR("Struct type not supported for interfacing: " + STR(elt_type));
-                  }
-                  const auto fld_count = tree_helper::GetArrayTotalSize(elt_type);
+                  const auto fld_count = tree_helper::GetArrayTotalSize(ptd_type);
                   if(factor != 1 && factor != fld_count)
                   {
                      THROW_ERROR("Unexpected struct type aliasing");
                   }
                   factor = fld_count;
-                  _bitwidth = tree_helper::Size(tree_helper::CGetArrayBaseType(elt_type));
+                  _bitwidth = tree_helper::Size(tree_helper::CGetArrayBaseType(ptd_type));
                }
                else
                {
-                  _bitwidth = tree_helper::Size(elt_type);
+                  const auto elt_type = tree_helper::CGetArrayBaseType(ptd_type);
+                  if(tree_helper::IsStructType(elt_type))
+                  {
+                     if(!tree_helper::IsArrayEquivType(elt_type))
+                     {
+                        THROW_ERROR("Struct type not supported for interfacing: " + STR(elt_type));
+                     }
+                     const auto fld_count = tree_helper::GetArrayTotalSize(elt_type);
+                     if(factor != 1 && factor != fld_count)
+                     {
+                        THROW_ERROR("Unexpected struct type aliasing");
+                     }
+                     factor = fld_count;
+                     _bitwidth = tree_helper::Size(tree_helper::CGetArrayBaseType(elt_type));
+                  }
+                  else
+                  {
+                     _bitwidth = tree_helper::Size(elt_type);
+                  }
                }
             }
-         }
-         else if(tree_helper::IsPointerType(ptd_type) || tree_helper::IsStructType(ptd_type))
-         {
-            _bitwidth = static_cast<unsigned long long>(CompilerWrapper::CGetPointerSize(parameters));
-         }
-         else
-         {
-            _bitwidth = tree_helper::Size(ptd_type);
+            else if(tree_helper::IsPointerType(ptd_type) || tree_helper::IsStructType(ptd_type))
+            {
+               _bitwidth = static_cast<unsigned long long>(CompilerWrapper::CGetPointerSize(parameters));
+            }
+            else
+            {
+               _bitwidth = tree_helper::Size(ptd_type);
+            }
+            const auto _alignment = static_cast<unsigned>(get_aligned_bitsize(_bitwidth) >> 3);
+            alignment = std::max(alignment, _alignment);
          }
 
-         const auto _alignment = static_cast<unsigned>(
-             (_type == datatype::ac_type ? get_aligned_ac_bitsize(_bitwidth) : get_aligned_bitsize(_bitwidth)) >> 3);
-         alignment = std::max(alignment, _alignment);
          if(_fixed_size && bitwidth && bitwidth != _bitwidth)
          {
             THROW_ERROR("Unaligned access not allowed for required interface!");
          }
          bitwidth = std::max(bitwidth, _bitwidth);
-         type = (_type == datatype::ac_type || _type == type) ? _type : datatype::generic;
       }
    }
 };
@@ -996,15 +996,19 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
          return;
       }
       THROW_ASSERT(tree_helper::IsPointerType(ssa_node), "unexpected condition");
-      info.update(ssa_node, "", parameters);
+
       if(ct == call_type::ct_read)
       {
          readStmt.push_back(stmt);
+         const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
+         info.update(ga->op0, "", parameters);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  LOAD OPERATION");
       }
       else if(ct == call_type::ct_write)
       {
          writeStmt.push_back(stmt);
+         const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
+         info.update(ga->op1, "", parameters);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  STORE OPERATION");
       }
    };
@@ -1662,10 +1666,6 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
       const auto address_bitsize = HLSMgr->get_address_bitsize();
       structural_type_descriptorRef addrType(new structural_type_descriptor("bool", address_bitsize));
       structural_type_descriptorRef dataType(new structural_type_descriptor("bool", info.bitwidth));
-      if(info.type == datatype::real)
-      {
-         dataType->type = structural_type_descriptor::REAL;
-      }
       const auto nbitDataSize = 64u - static_cast<unsigned>(__builtin_clzll(info.bitwidth));
       structural_type_descriptorRef rwsize(new structural_type_descriptor("bool", nbitDataSize));
       structural_type_descriptorRef rwtype(new structural_type_descriptor("bool", info.bitwidth));
@@ -1833,10 +1833,6 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
       const structural_type_descriptorRef addrType(new structural_type_descriptor("bool", address_bitsize));
       const structural_type_descriptorRef address_interface_datatype(new structural_type_descriptor("bool", nbit));
       const structural_type_descriptorRef dataType(new structural_type_descriptor("bool", info.bitwidth));
-      if(info.type == datatype::real)
-      {
-         dataType->type = structural_type_descriptor::REAL;
-      }
       const structural_type_descriptorRef size1(new structural_type_descriptor("bool", 1));
       const structural_type_descriptorRef rwsize(new structural_type_descriptor("bool", nbitDataSize));
       const structural_type_descriptorRef rwtype(new structural_type_descriptor("bool", info.bitwidth));
