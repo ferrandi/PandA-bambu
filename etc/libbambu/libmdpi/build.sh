@@ -22,11 +22,6 @@ if [ -z "$CC" ]; then
    CC="gcc"
 fi
 
-if [ -z "$LD" ]; then
-   echo "Linker not provided, fallback to compiler $CC"
-   LD="$CC"
-fi
-
 # Retrieve -m option if present
 m_option="$(grep -oE '(-mx?[0-9]+)' <<< ${CFLAGS})"
 if [ -z "${m_option}" ]; then
@@ -35,41 +30,24 @@ fi
 includes="$(grep -oE '((-I|-isystem) ?[^ ]+)' <<< ${CFLAGS} | tr '\n' ' ')"
 defines="$(grep -oE '(-D(\\.|[^ ])+)' <<< ${CFLAGS} | tr '\n' ' ')"
 CFLAGS="${m_option} -fPIC -funroll-loops -O2 ${includes} ${defines}"
-
-objs=($(echo "$@" | grep -oE "[^ ]+\.o"))
-for obj in "${objs[@]}"
-do
-   echo "Redefine symbols in '$obj'"
-   objcopy --redefine-sym main=m_cosim_main --redefine-sym exit=__m_exit --redefine-sym abort=__m_abort --redefine-sym __assert_fail=__m_assert_fail $obj
-   args="${args/$obj}"
-done
-
-srcs=(
-   "${script_dir}/mdpi_cosim.cpp"
-   "${script_dir}/mdpi_user.cpp"
-   "${script_dir}/mdpi_wrapper.cpp"
-   "${script_dir}/mdpi.cpp"
-   )
-build_dir="$(mktemp -d /tmp/build_XXXX)"
-for file in "${srcs[@]}"
-do
-   if [ "$CC" = "xsc" ]; then
-      $CC -c -work work -i $file ${CFLAGS}
-   else
-      fileo="${build_dir}/$(basename ${file//.cpp/.o})"
-      $CC -c -o ${fileo} $file ${CFLAGS}
-      objs+=("${fileo}")
-   fi
-done
-
 LDFLAGS="-lpthread -lstdc++ -lm"
-if [ "$LD" = "xsc" ]; then
+mdpi_src="${script_dir}/mdpi.cpp"
+build_dir="$(dirname $(echo "$@" | sed -E 's/.*-o ([^ ]+).*/\1/'))"
+
+if [ "$CC" = "xsc" ]; then
    IFS=' ' read -r -a LDFLAGS <<< "${LDFLAGS}"
    LDFLAGS="-shared -work work ${LDFLAGS[@]/#/-gcc_link_options=}"
+   objs=($(echo "$@" | grep -oE "[^ ]+\.o"))
+   for obj in "${objs[@]}"
+   do
+      args="${args/$obj}"
+   done
    objs=( "${objs[@]/#/-i }" )
+   $CC -c -work work -i ${mdpi_src} ${CFLAGS}
+   $CC ${objs[*]} ${args} ${LDFLAGS}
 else
    LDFLAGS="${m_option} -shared -fPIC -Bsymbolic -Wl,-z,defs ${LDFLAGS}"
+   mdpi_obj="${build_dir}/$(basename ${mdpi_src//.cpp/.o})"
+   $CC -c -o ${mdpi_obj} ${mdpi_src} ${CFLAGS}
+   $CC ${args} ${mdpi_obj} ${LDFLAGS}
 fi
-
-$LD ${objs[*]} ${args} ${LDFLAGS}
-rm -rf ${build_dir}
