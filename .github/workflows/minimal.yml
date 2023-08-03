@@ -991,7 +991,7 @@ jobs:
         if: ${{ needs.gcc_regression_simple-pretty_print.result != 'success' }}
         run: exit 1
       - name: Check Interface Test status
-        if: ${{ needs.specific-test-interface.result != 'success' }}
+        if: ${{ needs.interface-test.result != 'success' }}
         run: exit 1
       - name: Check LibM Multi status
         if: ${{ needs.libm-tests.result != 'success' }}
