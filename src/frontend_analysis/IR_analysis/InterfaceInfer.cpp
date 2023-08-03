@@ -1368,11 +1368,11 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
          const auto ga_valid = tree_man->CreateNopExpr(v_mask, valid_type, nullptr, nullptr, fd->index);
          curr_bb->PushBefore(ga_valid, stmt, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- VALID: " + ga_valid->ToString());
-         const auto valid_var = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_valid))->op0;
+         const auto valid_ref = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_valid))->op0;
          const auto valid_memref = tree_man->create_binary_operation(
              valid_type, valid_ptr, TM->CreateUniqueIntegerCst(0, valid_ptr_type), BUILTIN_SRCP, mem_ref_K);
          const auto ga_valid_store =
-             tree_man->create_gimple_modify_stmt(valid_memref, valid_var, fd->index, BUILTIN_SRCP);
+             tree_man->create_gimple_modify_stmt(valid_memref, valid_ref, fd->index, BUILTIN_SRCP);
          curr_bb->Replace(stmt, ga_valid_store, true, AppM);
          if(!ret_call)
          {
