@@ -64,7 +64,6 @@ these four paragraphs for those parts of this code that are retained.
 #define IEEE64_FRAC_BITS 52
 #define IEEE64_EXP_BITS 11
 #define IEEE64_EXP_BIAS -1023
-#define IEEE_SIGN -1
 #define IEEE_RND FLOAT_RND_NEVN
 #define IEEE_EXC FLOAT_EXC_STD
 #define IEEE_ONE 1
@@ -4024,8 +4023,6 @@ __float __float_divG(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bi
    GOLDSCHMIDT_MANTISSA_DIVISION_64();
    if(z_c == FP_CLS_NORMAL)
       return __roundAndPackFloat64(zSign, zExp, zSig, __exp_bits, __frac_bits, __exc, 1);
-   else if(z_c == FP_CLS_ZERO)
-      return ((__bits64)zSign) << ((__exp_bits + __frac_bits));
    else if(z_c == FP_CLS_NAN)
       return (((__bits64)(a_c_nan ? aSign : bSign) | (a_c_inf & b_c_inf) | (a_c_zero & b_c_zero))
               << (__exp_bits + __frac_bits)) |
@@ -4035,6 +4032,7 @@ __float __float_divG(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bi
    else if(z_c == FP_CLS_INF)
       return (((__bits64)zSign) << (__exp_bits + __frac_bits)) | (((1ULL << __exp_bits) - 1) << __frac_bits) |
              ((__exc == FLOAT_EXC_STD) ? 0ULL : ((1ULL << __frac_bits) - 1));
+   return ((__bits64)zSign) << ((__exp_bits + __frac_bits));
 }
 
 /*----------------------------------------------------------------------------

@@ -1,4 +1,11 @@
-
+/**
+ * SoftFloat package modified by:
+ *    Fabrizio Ferrandi - Politecnico di Milano
+ *    Michele Fiorito - Politecnico di Milano
+ * Changes made are mainly oriented to improve the results of a generic high
+ * level synthesis framework and to add support for custom floating-point
+ * data types.
+ */
 /*============================================================================
 
 This C header file is part of the SoftFloat IEC/IEEE Floating-point Arithmetic
