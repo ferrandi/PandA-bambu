@@ -1951,8 +1951,9 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
             auto last_vertex = op.first;
             const auto cs_first_vertex = from_strongtype_cast<unsigned>(schedule->get_cstep(first_vertex).second);
             const auto cs_last_vertex = from_strongtype_cast<unsigned>(schedule->get_cstep(last_vertex).second);
-            auto last_vertex_n_cycles =
-                1 + from_strongtype_cast<unsigned>(schedule->get_cstep_end(last_vertex).second) - cs_last_vertex;
+            auto last_vertex_n_cycles = (GET_TYPE(flow_graph, last_vertex) & (TYPE_PHI | TYPE_VPHI) ? 0 : 1) +
+                                        from_strongtype_cast<unsigned>(schedule->get_cstep_end(last_vertex).second) -
+                                        cs_last_vertex;
             if(cs_first_vertex + LP_II < cs_last_vertex + last_vertex_n_cycles)
             {
                if((GET_TYPE(flow_graph, first_vertex) & (TYPE_PHI | TYPE_VPHI)) == 0)
@@ -1967,7 +1968,21 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                /// try to legalize PHIs
                /// compute ALAP of first_vertex
                const OpGraphConstRef opDFG = FB->CGetOpGraph(FunctionBehavior::DFG);
-               auto latest_cs = computeLatestStep(cs_last_vertex, opDFG, first_vertex, Operations, schedule);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "starting computeLatestStep from vertex=" + GET_NAME(flow_graph, first_vertex) +
+                                  " to vertex" + GET_NAME(flow_graph, last_vertex));
+               std::list<vertex> phi_list;
+               auto latest_cs =
+                   computeLatestStep(cs_last_vertex, opDFG, first_vertex, Operations, schedule, 0, phi_list);
+               for(auto p : phi_list)
+               {
+                  schedule->remove_sched(p);
+                  schedule->set_execution(p, ControlStep(latest_cs));
+                  schedule->set_execution_end(p, ControlStep(latest_cs));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "vertex=" + GET_NAME(flow_graph, p) + " rescheduled at pos=" + STR(latest_cs));
+               }
+
                auto cs_ratio = (latest_cs - from_strongtype_cast<unsigned>(initialCycle)) / LP_II;
                if(cs_ratio != 0 && (latest_cs > (cs_ratio * LP_II + from_strongtype_cast<unsigned>(initialCycle))))
                {
@@ -1978,6 +1993,9 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   schedule->remove_sched(first_vertex);
                   schedule->set_execution(first_vertex, ControlStep(latest_cs));
                   schedule->set_execution_end(first_vertex, ControlStep(latest_cs));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "vertex=" + GET_NAME(flow_graph, first_vertex) +
+                                     " rescheduled at pos=" + STR(latest_cs));
                }
                else
                {
@@ -2003,36 +2021,54 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
 // approximate function. It works in most of the cases. A more complex function is needed.
 unsigned parametric_list_based::computeLatestStep(unsigned cs_last_vertex, const OpGraphConstRef opDFG,
                                                   vertex first_vertex, const OpVertexSet& Operations,
-                                                  const ScheduleRef schedule)
+                                                  const ScheduleRef schedule, unsigned level,
+                                                  std::list<vertex>& phi_list)
 {
    OutEdgeIterator eo, eo_end;
    auto latest_cs = cs_last_vertex;
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "first vertex " + GET_NAME(flow_graph, first_vertex));
    for(boost::tie(eo, eo_end) = boost::out_edges(first_vertex, *opDFG); eo != eo_end; eo++)
    {
       vertex target = boost::target(*eo, *opDFG);
       if(Operations.find(target) != Operations.end())
       {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "target vertex " + GET_NAME(flow_graph, target));
          const auto target_index = opDFG->CGetOpNodeInfo(target)->GetNodeId();
          const auto target_starting_time = schedule->GetStartingTime(target_index);
          const auto target_ending_time = schedule->GetEndingTime(target_index);
          if((target_ending_time - target_starting_time) < 10 * EPSILON)
          {
-            unsigned fu_id;
-            unsigned int number_fu = INFINITE_UINT;
-            // in case it is bounded then it is equivalent to having infinite resources
-            if(!HLS->allocation_information->is_vertex_bounded_with(target, fu_id))
+            if(level == 1 && GET_TYPE(flow_graph, target) & (TYPE_PHI | TYPE_VPHI))
             {
-               number_fu = HLS->allocation_information->min_number_of_resources(target);
+               /// do not move second level PHIs
             }
-            if(number_fu == INFINITE_UINT)
+            else
             {
-               auto currentCSTarget = from_strongtype_cast<unsigned>(schedule->get_cstep(target).second);
-               auto latestCSTarget = computeLatestStep(cs_last_vertex, opDFG, target, Operations, schedule);
-               if(latestCSTarget > currentCSTarget)
+               unsigned fu_id;
+               unsigned int number_fu = INFINITE_UINT;
+               // in case it is bounded then it is equivalent to having infinite resources
+               if(!HLS->allocation_information->is_vertex_bounded_with(target, fu_id))
                {
-                  schedule->remove_sched(target);
-                  schedule->set_execution(target, ControlStep(latestCSTarget));
-                  schedule->set_execution_end(target, ControlStep(latestCSTarget));
+                  number_fu = HLS->allocation_information->min_number_of_resources(target);
+               }
+               else if(number_fu == INFINITE_UINT)
+               {
+                  auto currentCSTarget = from_strongtype_cast<unsigned>(schedule->get_cstep(target).second);
+                  auto latestCSTarget =
+                      computeLatestStep(cs_last_vertex, opDFG, target, Operations, schedule, level + 1, phi_list);
+                  if(latestCSTarget > currentCSTarget)
+                  {
+                     if(level == 0 && GET_TYPE(flow_graph, target) & (TYPE_PHI | TYPE_VPHI))
+                     {
+                        phi_list.push_back(target);
+                     }
+                     schedule->remove_sched(target);
+                     schedule->set_execution(target, ControlStep(latestCSTarget));
+                     schedule->set_execution_end(target, ControlStep(latestCSTarget));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "vertex=" + GET_NAME(flow_graph, target) +
+                                        " rescheduled at pos=" + STR(latestCSTarget));
+                  }
                }
             }
          }

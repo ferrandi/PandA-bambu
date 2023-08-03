@@ -357,10 +357,11 @@ unsigned liveness::GetStepPhiIn(vertex op, unsigned int var, unsigned BB_src, un
          auto II = BB2II.at(op_BB_index);
          auto step = op_step.at(def_op);
          auto ostep = op_step.at(op);
-         THROW_ASSERT((ostep % II == 0 ? II : ostep % II) > (step % II), "unexpected condition");
+         THROW_ASSERT((ostep % II == 0 ? II : ostep % II) >= (step % II), "unexpected condition");
          auto offset = (ostep % II == 0 ? II : ostep % II) - (step % II);
-         THROW_ASSERT(offset > 0, "unexpected condition ostep=" + STR(ostep) + " II=" + STR(II) + " step=" + STR(step));
-         return step + offset - 1;
+         THROW_ASSERT(step + offset >= 1,
+                      "unexpected condition ostep=" + STR(ostep) + " II=" + STR(II) + " step=" + STR(step));
+         return step + (offset > 0 ? offset - 1 : 0);
       }
       else
       {
@@ -389,10 +390,9 @@ unsigned liveness::GetStepPhiOut(vertex op, unsigned int var) const
          auto II = BB2II.at(op_BB_index);
          auto step = op_step.at(def_op);
          auto ostep = op_step.at(op);
-         THROW_ASSERT((ostep % II == 0 ? II : ostep % II) > (step % II),
+         THROW_ASSERT((ostep % II == 0 ? II : ostep % II) >= (step % II),
                       "unexpected condition: ostep=" + STR(ostep) + " II=" + STR(II) + " step=" + STR(step));
          auto offset = (ostep % II == 0 ? II : ostep % II) - (step % II);
-         THROW_ASSERT(offset > 0, "unexpected condition");
          return step + offset;
       }
       else
