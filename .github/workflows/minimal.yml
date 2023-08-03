@@ -95,7 +95,7 @@ jobs:
 
   specific-test:
     needs: [build, ACMath-tests]
-    if: always() && ${{needs.build.result == 'success'}}
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: [self-hosted]
     strategy:
       fail-fast: false
@@ -142,13 +142,13 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: bambu_specific_test${{matrix.id}}
           path: ${{env.report-dir}}
   
-  specific-test-modelsim:
+  specific-test-interface:
     needs: [build]
     runs-on: [self-hosted,mentor]
     strategy:
@@ -197,7 +197,7 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: bambu_specific_test${{matrix.id}}
@@ -301,7 +301,7 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -356,7 +356,7 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -411,7 +411,7 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -452,7 +452,7 @@ jobs:
           echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
           ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -479,7 +479,7 @@ jobs:
 
   softfloat-tests:
     needs: [build, softfloat-preliminary]
-    if: always() && ${{needs.build.result == 'success'}}
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: [self-hosted, mentor]
     env:
       script: multi_softfloat-tests.sh
@@ -526,7 +526,7 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -556,7 +556,7 @@ jobs:
 
   libm-tests:
     needs: [build, libm-preliminary, softfloat-tests]
-    if: always() && ${{needs.build.result == 'success'}}
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: [self-hosted, mentor]
     strategy:
       fail-fast: false
@@ -621,7 +621,7 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -677,7 +677,7 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -729,7 +729,7 @@ jobs:
         with:
           script: ./docker_exec.sh
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -780,7 +780,7 @@ jobs:
           echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
           ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}} ${{matrix.args}}
       - name: Generate out name
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         id: get
         shell: bash
         run: |
@@ -797,7 +797,7 @@ jobs:
           fi
           echo "outname=$OUTNAME" >> $GITHUB_OUTPUT
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{steps.get.outputs.outname}}
@@ -853,7 +853,7 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -927,7 +927,7 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -964,12 +964,13 @@ jobs:
           ./examples/crypto_designs/multi.sh
 
   success:
-    if: ${{always()}}
+    if: ${{ !cancelled() }}
     needs:
       [
         gcc_regression_simple,
         gcc_regression_simple-vhdl,
         gcc_regression_simple-pretty_print,
+        specific-test-interface,
         libm-tests,
         discrepancy-test,
         omp-simd,
@@ -988,6 +989,9 @@ jobs:
         run: exit 1
       - name: Check GCC Regression Simple pretty print status
         if: ${{ needs.gcc_regression_simple-pretty_print.result != 'success' }}
+        run: exit 1
+      - name: Check Specific Test Interface status
+        if: ${{ needs.specific-test-interface.result != 'success' }}
         run: exit 1
       - name: Check LibM Multi status
         if: ${{ needs.libm-tests.result != 'success' }}

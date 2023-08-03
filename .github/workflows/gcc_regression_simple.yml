@@ -49,7 +49,7 @@ jobs:
     secrets: inherit
 
   success:
-    if: ${{always()}}
+    if: ${{ !cancelled() }}
     needs: [test-suite]
     runs-on: [self-hosted]
     steps:
