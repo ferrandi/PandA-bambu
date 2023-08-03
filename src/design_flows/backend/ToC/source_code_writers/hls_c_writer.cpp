@@ -851,12 +851,73 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 #define _m_pp_retvalcmp(...)
 #endif
 
+#ifdef DUMP_COSIM_OUTPUT
+static size_t __m_call_count = 0;
+
+#ifndef CUSTOM_VERIFICATION
+#define _m_golddump(idx)                                                                                            \
+   do                                                                                                               \
+   {                                                                                                                \
+      char filename[32];                                                                                            \
+      sprintf(filename, "P" #idx "_gold.%zu.dat", __m_call_count);                                                  \
+      FILE* out = fopen(filename, "wb");                                                                            \
+      if(out != NULL)                                                                                               \
+      {                                                                                                             \
+         fwrite(P##idx##_gold, 1, __m_param_size(idx), out);                                                        \
+         fclose(out);                                                                                               \
+         debug("Parameter " #idx " gold output dump for execution %zu stored in '%s'\n", __m_call_count, filename); \
+      }                                                                                                             \
+      else                                                                                                          \
+      {                                                                                                             \
+         error("Unable to open parameter dump file '%s'\n", filename);                                              \
+      }                                                                                                             \
+      sprintf(filename, "P" #idx "_gold.%zu.dat", __m_call_count);                                                  \
+      out = fopen(filename, "wb");                                                                                  \
+      if(out != NULL)                                                                                               \
+      {                                                                                                             \
+         fwrite(P##idx##_gold, 1, __m_param_size(idx), out);                                                        \
+         fclose(out);                                                                                               \
+         debug("Parameter " #idx " gold output dump for execution %zu stored in '%s'\n", __m_call_count, filename); \
+      }                                                                                                             \
+      else                                                                                                          \
+      {                                                                                                             \
+         error("Unable to open parameter dump file '%s'\n", filename);                                              \
+      }                                                                                                             \
+   } while(0)
+#else
+#define _m_golddump(idx)
+#endif
+
+#define _m_argdump(idx)                                                                                        \
+   do                                                                                                          \
+   {                                                                                                           \
+      char filename[32];                                                                                       \
+      sprintf(filename, "P" #idx ".%zu.dat", __m_call_count);                                                  \
+      FILE* out = fopen(filename, "wb");                                                                       \
+      if(out != NULL)                                                                                          \
+      {                                                                                                        \
+         fwrite(P##idx, 1, __m_param_size(idx), out);                                                          \
+         fclose(out);                                                                                          \
+         debug("Parameter " #idx " output dump for execution %zu stored in '%s'\n", __m_call_count, filename); \
+      }                                                                                                        \
+      else                                                                                                     \
+      {                                                                                                        \
+         error("Unable to open parameter dump file '%s'\n", filename);                                         \
+      }                                                                                                        \
+   } while(0)
+#else
+#define _m_argdump(idx)
+#define _m_golddump(idx)
+#endif
+
 #define m_setargptr(idx, ptr, ptrsize) \
    __m_setargptr(idx, ptr, ptrsize);   \
    _m_pp_setargptr(idx, ptr);          \
    _m_setargptr(idx, ptr)
 
 #define m_argcmp(idx, cmp) \
+   _m_argdump(idx);        \
+   _m_golddump(idx);       \
    _m_pp_argcmp(idx, cmp); \
    _m_argcmp(idx, cmp)
 
@@ -937,6 +998,10 @@ if(mismatch_count)
 error("Memory parameter mismatch has been found.\n");
 abort();
 }
+
+#ifdef DUMP_COSIM_OUTPUT
+++__m_call_count;
+#endif
 
 #ifdef __clang__
 #pragma clang diagnostic pop
