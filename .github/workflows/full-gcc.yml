@@ -72,7 +72,7 @@ jobs:
           echo "test-reports-dir=$out_dir" >> $GITHUB_OUTPUT
           ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{matrix.outname}}
@@ -104,7 +104,7 @@ jobs:
     secrets: inherit
 
   success:
-    if: ${{always()}}
+    if: ${{ !cancelled() }}
     needs: [grs, grs-vhdl, examples]
     runs-on: [self-hosted]
     steps:
