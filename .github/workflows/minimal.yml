@@ -94,8 +94,7 @@ jobs:
         run: ./ac_math_test.sh $(mktemp -d /tmp/ac_math_XXX) CXX=${{matrix.compiler}} CXXUSERFLAGS="${{matrix.flags}}"
 
   specific-test:
-    needs: [build, ACMath-tests]
-    if: ${{ !cancelled() && needs.build.result == 'success' }}
+    needs: [build]
     runs-on: [self-hosted]
     strategy:
       fail-fast: false
@@ -121,7 +120,7 @@ jobs:
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
           echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
-      - name: Launch Bambu specific tests ${{matrix.id}}
+      - name: Launch Bambu specific test ${{matrix.id}}
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
@@ -148,15 +147,16 @@ jobs:
           name: bambu_specific_test${{matrix.id}}
           path: ${{env.report-dir}}
   
-  specific-test-interface:
-    needs: [build]
+  interface-test:
+    needs: [build, ACMath-tests]
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: [self-hosted,mentor]
     strategy:
       fail-fast: false
       matrix:
-        id: ["4", "_modelsim"]
+        id: [""]
     env:
-      script: ./panda_regressions/hls/bambu_specific_test${{matrix.id}}.sh
+      script: ./panda_regressions/hls/bambu_interface_test${{matrix.id}}.sh
       args: -c=--simulator=MODELSIM -c=--assert-debug
     steps:
       - name: Checkout repository
@@ -176,7 +176,7 @@ jobs:
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
           echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
-      - name: Launch Bambu specific tests ${{matrix.id}}
+      - name: Launch Bambu interface test ${{matrix.id}}
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
@@ -419,7 +419,7 @@ jobs:
 
   discrepancy-test:
     needs: [build, specific-test]
-    runs-on: [self-hosted, classA]
+    runs-on: [self-hosted]
     env:
       setup: gcc-7
       script: generic_discrepancy_eg_bambu.sh
@@ -970,7 +970,7 @@ jobs:
         gcc_regression_simple,
         gcc_regression_simple-vhdl,
         gcc_regression_simple-pretty_print,
-        specific-test-interface,
+        interface-test,
         libm-tests,
         discrepancy-test,
         omp-simd,
@@ -990,7 +990,7 @@ jobs:
       - name: Check GCC Regression Simple pretty print status
         if: ${{ needs.gcc_regression_simple-pretty_print.result != 'success' }}
         run: exit 1
-      - name: Check Specific Test Interface status
+      - name: Check Interface Test status
         if: ${{ needs.specific-test-interface.result != 'success' }}
         run: exit 1
       - name: Check LibM Multi status
