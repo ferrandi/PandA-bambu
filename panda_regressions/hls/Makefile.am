@@ -35,6 +35,8 @@ EXTRA_DIST= \
    %D%/bambu_specific_test3.sh \
    %D%/bambu_specific_test4/ac_channels_64async.cpp \
    %D%/bambu_specific_test4/ac_channels_64.cpp \
+   %D%/bambu_specific_test4/ac_channels_64async-LL.cpp \
+   %D%/bambu_specific_test4/ac_channels_64-LL.cpp \
    %D%/bambu_specific_test4/ac_channels_axis.cpp \
    %D%/bambu_specific_test4/ac_channels.cpp \
    %D%/bambu_specific_test4/ac_fixed1.cpp \

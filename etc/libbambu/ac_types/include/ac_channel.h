@@ -51,7 +51,10 @@
 #include <deque>
 #include <fstream>
 #include <initializer_list>
+#include <initializer_list>
+#if !defined(__BAMBU__) || defined(__BAMBU_SIM__)
 #include <iostream>
+#endif
 #include <string>
 
 #if !defined(AC_USER_DEFINED_ASSERT) && !defined(AC_ASSERT_THROW_EXCEPTION)
@@ -288,8 +291,9 @@ class ac_channel
       };
 
 #if defined(__BAMBU__) && !defined(__BAMBU_SIM__)
-      bool _read(T& t);
-      bool _write(T t);
+      const T _read(void);
+      const T _read(bool& res);
+      bool _write(const T t);
 #else
       struct fifo_abstract
       {
@@ -678,13 +682,13 @@ class ac_channel
 #if defined(__BAMBU__) && !defined(__BAMBU_SIM__)
       __FORCE_INLINE T read()
       {
-         T val;
-         _read(val);
-         return val;
+         return _read();
       }
       __FORCE_INLINE bool nb_read(T& t)
       {
-         return _read(t);
+         bool res;
+         t = _read(res);
+         return res;
       }
 
       __FORCE_INLINE void write(const T& t)
