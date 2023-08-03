@@ -195,11 +195,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
       }
       return nullptr;
    }();
-   const auto interface_type = Param->getOption<HLSFlowStep_Type>(OPT_interface_type);
-   const auto is_interface_inferred = interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
    const auto arg_signature_typename = HLSMgr->design_interface_typename_orig_signature.find(fname);
-   THROW_ASSERT(
-       !is_interface_inferred || arg_signature_typename != HLSMgr->design_interface_typename_orig_signature.end(), "");
    const auto params = BH->GetParameters();
    for(auto par_idx = 0U; par_idx < params.size(); ++par_idx)
    {
@@ -232,8 +228,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
          std::string var_ptdtype;
          std::string temp_var_decl;
          bool is_a_true_pointer = true;
-         if(!is_binary_init &&
-            (is_interface_inferred || arg_signature_typename != HLSMgr->design_interface_typename_orig_signature.end()))
+         if(!is_binary_init && arg_signature_typename != HLSMgr->design_interface_typename_orig_signature.end())
          {
             var_ptdtype = arg_signature_typename->second.at(par_idx);
             is_a_true_pointer = var_ptdtype.back() == '*';
@@ -535,9 +530,13 @@ void HLSCWriter::WriteMainTestbench()
    const auto args_decl_size = top_params.size() + (return_type != nullptr);
    const auto has_subnormals = Param->isOption(OPT_fp_subnormal) && Param->getOption<bool>(OPT_fp_subnormal);
    const auto cmp_type = [&](tree_nodeConstRef t, const std::string& tname) -> std::string {
-      if(std::regex_search(tname, std::regex("^a[pc]_u?(int|fixed)")))
+      if(std::regex_search(tname, std::regex("^a[pc]_u?(int|fixed)<")))
       {
          return "val";
+      }
+      else if(std::regex_search(tname, std::regex("^(float|double)")))
+      {
+         return has_subnormals ? "flts" : "flt";
       }
       else if(t)
       {
