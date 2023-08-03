@@ -232,7 +232,8 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
          std::string var_ptdtype;
          std::string temp_var_decl;
          bool is_a_true_pointer = true;
-         if(!is_binary_init && is_interface_inferred)
+         if(!is_binary_init &&
+            (is_interface_inferred || arg_signature_typename != HLSMgr->design_interface_typename_orig_signature.end()))
          {
             var_ptdtype = arg_signature_typename->second.at(par_idx);
             is_a_true_pointer = var_ptdtype.back() == '*';
