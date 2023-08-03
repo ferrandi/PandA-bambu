@@ -27,7 +27,36 @@ jobs:
       compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,clang-4,clang-6,clang-7,clang-11,clang-13,clang-16
     secrets: inherit
 
+  changes:
+    runs-on: [self-hosted]
+    permissions:
+      pull-requests: read
+    outputs:
+      softfloat: ${{ steps.filter.outputs.softfloat }}
+      libm: ${{ steps.filter.outputs.libm }}
+      ac_types: ${{ steps.filter.outputs.ac_types }}
+    steps:
+      - name: Detect changes
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            softfloat:
+              - 'etc/libbambu/bambu_macros.h'
+              - 'etc/libbambu/mul64.c'
+              - 'etc/libbambu/softfloat/**'
+            libm:
+              - 'etc/libbambu/bambu_macros.h'
+              - 'etc/libbambu/mul64.c'
+              - 'etc/libbambu/libm/**'
+              - 'etc/libbambu/softfloat/**'
+            ac_types:
+              - 'etc/libbambu/ac_math/**'
+              - 'etc/libbambu/ac_types/**'
+
   ACMath-tests:
+    needs: [changes]
+    if: ${{needs.changes.outputs.ac_types == 'true'}}
     runs-on: [self-hosted]
     container:
       image: bambuhls/dev:focal-23.04
@@ -66,6 +95,7 @@ jobs:
 
   specific-test:
     needs: [build, ACMath-tests]
+    if: always() && ${{needs.build.result == 'success'}}
     runs-on: [self-hosted]
     strategy:
       fail-fast: false
@@ -199,7 +229,6 @@ jobs:
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           ./panda_regressions/hls/bambu_axi_verification.sh
-
 
   gcc_regression_simple:
     needs: [build, specific-test]
@@ -430,6 +459,8 @@ jobs:
           path: ${{steps.suite.outputs.test-reports-dir}}
 
   softfloat-preliminary:
+    needs: [changes]
+    if: ${{needs.changes.outputs.softfloat == 'true'}}
     runs-on: [self-hosted]
     steps:
       - name: Checkout repository
@@ -448,6 +479,7 @@ jobs:
 
   softfloat-tests:
     needs: [build, softfloat-preliminary]
+    if: always() && ${{needs.build.result == 'success'}}
     runs-on: [self-hosted, mentor]
     env:
       script: multi_softfloat-tests.sh
@@ -501,6 +533,8 @@ jobs:
           path: ${{steps.suite.outputs.test-reports-dir}}
 
   libm-preliminary:
+    needs: [changes]
+    if: ${{needs.changes.outputs.libm == 'true'}}
     runs-on: [self-hosted]
     strategy:
       matrix:
@@ -522,6 +556,7 @@ jobs:
 
   libm-tests:
     needs: [build, libm-preliminary, softfloat-tests]
+    if: always() && ${{needs.build.result == 'success'}}
     runs-on: [self-hosted, mentor]
     strategy:
       fail-fast: false
