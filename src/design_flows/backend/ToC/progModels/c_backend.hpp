@@ -45,7 +45,6 @@
 #ifndef C_BACKEND_HPP
 #define C_BACKEND_HPP
 
-#include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "design_flow_step.hpp"
 #include "graph.hpp"
@@ -127,8 +126,8 @@ class CBackend : public DesignFlowStep
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   virtual void ComputeRelationships(DesignFlowStepSet& relationship,
-                                     const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
  private:
    // CBackendStepFactory is the only class allowed to construct CBackend
@@ -156,15 +155,15 @@ class CBackend : public DesignFlowStep
  public:
    const CBackendInformationConstRef c_backend_info;
 
-   virtual bool HasToBeExecuted() const override;
+   bool HasToBeExecuted() const override;
 
-   virtual void Initialize() override;
+   void Initialize() override;
 
-   virtual DesignFlowStep_Status Exec() override;
+   DesignFlowStep_Status Exec() override;
 
-   std::string GetSignature() const override final;
+   std::string GetSignature() const final;
 
-   std::string GetName() const override final;
+   std::string GetName() const final;
 
    DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
 

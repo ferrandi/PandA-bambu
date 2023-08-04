@@ -88,10 +88,6 @@ HLSCWriter::HLSCWriter(const CBackendInformationConstRef _c_backend_info, const 
     : CWriter(_HLSMgr, _instruction_writer, _indented_output_stream, _parameters, _verbose),
       c_backend_info(_c_backend_info)
 {
-   /// include from cpp
-   flag_cpp = TM->is_CPP() && !Param->isOption(OPT_pretty_print) &&
-              (!Param->isOption(OPT_discrepancy) || !Param->getOption<bool>(OPT_discrepancy) ||
-               !Param->isOption(OPT_discrepancy_hw) || !Param->getOption<bool>(OPT_discrepancy_hw));
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
@@ -211,11 +207,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
       }
       return nullptr;
    }();
-   const auto interface_type = Param->getOption<HLSFlowStep_Type>(OPT_interface_type);
-   const auto is_interface_inferred = interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
    const auto arg_signature_typename = HLSMgr->design_interface_typename_orig_signature.find(fname);
-   THROW_ASSERT(
-       !is_interface_inferred || arg_signature_typename != HLSMgr->design_interface_typename_orig_signature.end(), "");
    const auto params = BH->GetParameters();
    for(auto par_idx = 0U; par_idx < params.size(); ++par_idx)
    {
@@ -248,15 +240,28 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
          std::string var_ptdtype;
          std::string temp_var_decl;
          bool is_a_true_pointer = true;
-         if(flag_cpp && !is_binary_init && is_interface_inferred)
+         if(!is_binary_init && arg_signature_typename != HLSMgr->design_interface_typename_orig_signature.end())
          {
             var_ptdtype = arg_signature_typename->second.at(par_idx);
+            static const std::regex voidP = std::regex(R"(\bvoid\b)");
+            while(std::regex_search(var_ptdtype, voidP))
+            {
+               var_ptdtype = std::regex_replace(var_ptdtype, voidP, "char");
+            }
             is_a_true_pointer = var_ptdtype.back() == '*';
             if(is_a_true_pointer || var_ptdtype.back() == '&')
             {
                var_ptdtype.pop_back();
             }
-            temp_var_decl = var_ptdtype + " " + param + "_temp" + (is_a_true_pointer ? "[]" : "");
+            if(var_ptdtype.find("(*)") != std::string::npos)
+            {
+               temp_var_decl = var_ptdtype;
+               temp_var_decl.replace(var_ptdtype.find("(*)"), 3, param + "_temp" + "[]");
+            }
+            else
+            {
+               temp_var_decl = var_ptdtype + " " + param + "_temp" + (is_a_true_pointer ? "[]" : "");
+            }
          }
          if(temp_var_decl == "")
          {
@@ -549,9 +554,13 @@ void HLSCWriter::WriteMainTestbench()
    const auto args_decl_size = top_params.size() + (return_type != nullptr);
    const auto has_subnormals = Param->isOption(OPT_fp_subnormal) && Param->getOption<bool>(OPT_fp_subnormal);
    const auto cmp_type = [&](tree_nodeConstRef t, const std::string& tname) -> std::string {
-      if(std::regex_search(tname, std::regex("^a[pc]_u?(int|fixed)")))
+      if(std::regex_search(tname, std::regex("^a[pc]_u?(int|fixed)<")))
       {
          return "val";
+      }
+      else if(std::regex_search(tname, std::regex(R"((\bfloat\b|\bdouble\b))")))
+      {
+         return has_subnormals ? "flts" : "flt";
       }
       else if(t)
       {
