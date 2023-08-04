@@ -47,7 +47,7 @@
 /**
  * Class use to write the C code with instruented edges for basic blocks profiling
  */
-class BasicBlocksProfilingCWriter : public EdgeCWriter
+class BasicBlocksProfilingCWriter final : public EdgeCWriter
 {
    /**
     * Dump operations requested for record information about a loop path which ends
@@ -94,8 +94,8 @@ class BasicBlocksProfilingCWriter : public EdgeCWriter
                                const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef Param,
                                bool verbose = true);
 
-   ~BasicBlocksProfilingCWriter() override final;
+   ~BasicBlocksProfilingCWriter() final;
 
-   void WriteGlobalDeclarations() override final;
+   void WriteGlobalDeclarations() final;
 };
 #endif

@@ -67,6 +67,7 @@
 #include <llvm/Transforms/IPO/GlobalOpt.h>
 #include <llvm/Transforms/InstCombine/InstCombine.h>
 #if __clang_major__ >= 16
+#include <llvm/Analysis/ScalarEvolution.h>
 #include <llvm/Transforms/Scalar/LowerAtomicPass.h>
 #else
 #include <llvm/Transforms/Scalar/LowerAtomic.h>
@@ -453,7 +454,12 @@ llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::CLANG_VERSION_SYMBOL(_plugin_e
 #endif
 
 bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::exec(
-    Module& M, llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> GetTTI)
+    Module& M, llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> GetTTI
+#if __clang_major__ >= 16
+    ,
+    llvm::function_ref<llvm::ScalarEvolution&(llvm::Function&)> GetSE
+#endif
+)
 {
 #if __clang_major__ < 13
    if(skipModule(M))
@@ -510,7 +516,8 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::exec(
          do_erase = false;
          if(auto Memcpy = dyn_cast<llvm::MemCpyInst>(MemCall))
          {
-            if(auto CI = dyn_cast<llvm::ConstantInt>(Memcpy->getLength()))
+            auto CI = dyn_cast<llvm::ConstantInt>(Memcpy->getLength());
+            if(__clang_major__ < 16 && CI)
             {
                PRINT_DBG("Expanding memcpy constant\n");
                createMemCpyLoopKnownSizeLocal(Memcpy, Memcpy->getRawSource(), Memcpy->getRawDest(), CI,
@@ -530,8 +537,16 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::exec(
             else
             {
                PRINT_DBG("Expanding memcpy as loop\n");
-               const llvm::TargetTransformInfo& TTI = GetTTI(F);
-               llvm::expandMemCpyAsLoop(Memcpy, TTI);
+               const auto& TTI = GetTTI(F);
+#if __clang_major__ >= 16
+               auto& SE = GetSE(F);
+#endif
+               llvm::expandMemCpyAsLoop(Memcpy, TTI
+#if __clang_major__ >= 16
+                                        ,
+                                        &SE
+#endif
+               );
                do_erase = true;
                res = true;
             }
@@ -549,7 +564,11 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::exec(
          else if(auto Memset = dyn_cast<llvm::MemSetInst>(MemCall))
          {
             PRINT_DBG("Expanding memset\n");
+#if __clang_major__ >= 16
+            expandMemSetAsLoop(Memset);
+#else
             expandMemSetAsLoopLocal(Memset, DL);
+#endif
             do_erase = true;
             res = true;
          }
@@ -568,7 +587,17 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::runOnModule(Module& M)
    auto GetTTI = [&](llvm::Function& F) -> llvm::TargetTransformInfo& {
       return getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
    };
-   return exec(M, GetTTI);
+#if __clang_major__ >= 16
+   auto GetSE = [&](llvm::Function& F) -> llvm::ScalarEvolution& {
+      return getAnalysis<llvm::ScalarEvolutionWrapperPass>(F).getSE();
+   };
+#endif
+   return exec(M, GetTTI
+#if __clang_major__ >= 16
+               ,
+               GetSE
+#endif
+   );
 }
 
 llvm::StringRef llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::getPassName() const
@@ -580,6 +609,9 @@ void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::getAnalysisUsage(Analysis
 {
    getLoopAnalysisUsage(AU);
    AU.addRequired<TargetTransformInfoWrapperPass>();
+#if __clang_major__ >= 16
+   AU.addRequired<ScalarEvolutionWrapperPass>();
+#endif
 }
 
 #if __clang_major__ >= 13
@@ -591,8 +623,15 @@ llvm::PreservedAnalyses llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::run(ll
    auto GetTTI = [&](llvm::Function& F) -> llvm::TargetTransformInfo& {
       return FAM.getResult<llvm::TargetIRAnalysis>(F);
    };
-
-   const auto changed = exec(M, GetTTI);
+#if __clang_major__ >= 16
+   auto GetSE = [&](llvm::Function& F) -> llvm::ScalarEvolution& { return FAM.getResult<ScalarEvolutionAnalysis>(F); };
+#endif
+   const auto changed = exec(M, GetTTI
+#if __clang_major__ >= 16
+                             ,
+                             GetSE
+#endif
+   );
    return (changed ? llvm::PreservedAnalyses::none() : llvm::PreservedAnalyses::all());
 }
 #endif

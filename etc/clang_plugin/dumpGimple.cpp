@@ -3158,7 +3158,7 @@ namespace llvm
 #if __clang_major__ < 16
                return assignCodeType(cast<llvm::PointerType>(ty)->getElementType());
 #else
-               return assignCodeType(ty->isOpaquePointerTy() ? llvm::Type::getInt8Ty(*moduleContext) :
+               return assignCodeType(ty->isOpaquePointerTy() ? llvm::Type::getVoidTy(*moduleContext) :
                                                                ty->getNonOpaquePointerElementType());
 #endif
 #if __clang_major__ >= 11

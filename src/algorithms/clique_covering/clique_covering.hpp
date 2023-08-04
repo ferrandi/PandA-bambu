@@ -1806,7 +1806,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                // std::cerr << "restart assignment problem " << num_cols << "\n";
                THROW_ASSERT(max_num_cols == 0 || max_num_cols > num_cols,
                             "Module binding does not have a solution\n  Current number of resources=" + STR(num_cols) +
-                                " Maximum number of resources" + STR(max_num_cols));
+                                " Maximum number of resources " + STR(max_num_cols));
                for(unsigned sindex = 0; sindex < 1; ++sindex)
                {
                   ++num_cols;
@@ -1824,7 +1824,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
                }
                THROW_ASSERT(max_num_cols == 0 || max_num_cols >= num_cols,
                             "Module binding does not have a solution\n  Current number of resources=" + STR(num_cols) +
-                                " Maximum number of resources" + STR(max_num_cols));
+                                " Maximum number of resources " + STR(max_num_cols));
                restart_bipartite = true;
                break;
             }
