@@ -236,7 +236,15 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
             {
                var_ptdtype.pop_back();
             }
-            temp_var_decl = var_ptdtype + " " + param + "_temp" + (is_a_true_pointer ? "[]" : "");
+            if(var_ptdtype.find("(*)") != std::string::npos)
+            {
+               temp_var_decl = var_ptdtype;
+               temp_var_decl.replace(var_ptdtype.find("(*)"), 3, param + "_temp" + "[]");
+            }
+            else
+            {
+               temp_var_decl = var_ptdtype + " " + param + "_temp" + (is_a_true_pointer ? "[]" : "");
+            }
          }
          if(temp_var_decl == "")
          {
