@@ -3052,7 +3052,8 @@ void BambuParameter::CheckParameters()
 
    const auto default_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
    const auto flag_cpp = isOption(OPT_input_format) &&
-                         getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP;
+                         (getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
+                          getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP);
    if(flag_cpp)
    {
       /// add -I <ac_types_dir> and -I <ac_math_dir>
