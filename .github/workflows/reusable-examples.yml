@@ -58,7 +58,7 @@ jobs:
             batch: "5CSEMA5F31C6_10.0,5CSEMA5F31C6_15.0,5SGXEA7N2F45C1_5.0,5SGXEA7N2F45C1_10.0"
           - basename: CHStone_O3
             script: ./examples/CHStone/generic_CHStone.sh
-            args: -c=--experimental-setup=BAMBU-PERFORMANCE-MP -lchstone_list.altera
+            args: -c=--experimental-setup=BAMBU-PERFORMANCE-MP -l./examples/CHStone/chstone_list.altera
             batch: "5CSEMA5F31C6_10.0,5CSEMA5F31C6_15.0,5SGXEA7N2F45C1_5.0,5SGXEA7N2F45C1_10.0"
           - basename: hls_study
             script: ./examples/hls_study/generic_hls_study.sh
@@ -119,7 +119,7 @@ jobs:
             echo "::endgroup::"
           done
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{steps.get.outputs.outname}}
@@ -222,7 +222,7 @@ jobs:
             echo "::endgroup::"
           done
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{steps.get.outputs.outname}}
@@ -254,12 +254,12 @@ jobs:
           - basename: CHStone_O2
             script: ./examples/CHStone/generic_CHStone.sh
             known-issues: true
-            args: -c=--experimental-setup=BAMBU-BALANCED-MP -c=--aligned-access -lchstone_list.lattice
+            args: -c=--experimental-setup=BAMBU-BALANCED-MP -c=--aligned-access -l./examples/CHStone/chstone_list.lattice
             batch: "LFE335EA8FN484C_15.0"
           - basename: CHStone_O3
             script: ./examples/CHStone/generic_CHStone.sh
             known-issues: true
-            args: -c=--experimental-setup=BAMBU-PERFORMANCE-MP -lchstone_list.lattice
+            args: -c=--experimental-setup=BAMBU-PERFORMANCE-MP -l./examples/CHStone/chstone_list.lattice
             batch: "LFE335EA8FN484C_15.0"
     steps:
       - name: Checkout repository
@@ -313,7 +313,7 @@ jobs:
             echo "::endgroup::"
           done
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{steps.get.outputs.outname}}

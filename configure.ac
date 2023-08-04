@@ -4,7 +4,7 @@
 #                                                                              #
 ################################################################################
 AC_PREREQ(2.57)
-AC_INIT(PandA, 2023.06, panda-info@polimi.it)
+AC_INIT(PandA, 2023.08, panda-info@polimi.it)
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wno-portability 1.9 tar-pax subdir-objects])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
