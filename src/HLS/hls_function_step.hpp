@@ -68,8 +68,8 @@ class HLSFunctionStep : public HLS_step
    /// The version of memory representation on which this step was applied
    unsigned int memory_version;
 
-   virtual void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
-                                     const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
     * Execute the step
@@ -96,7 +96,7 @@ class HLSFunctionStep : public HLS_step
    /**
     * Destructor
     */
-   virtual ~HLSFunctionStep() override;
+   ~HLSFunctionStep() override;
 
    /**
     * Check if this step has actually to be executed
@@ -113,7 +113,7 @@ class HLSFunctionStep : public HLS_step
     * Return a unified identifier of this design step
     * @return the signature of the design step
     */
-   std::string GetSignature() const override final;
+   std::string GetSignature() const final;
 
    /**
     * Compute the signature of a hls flow step
@@ -130,7 +130,7 @@ class HLSFunctionStep : public HLS_step
     * Return the name of this design step
     * @return the name of the pass (for debug purpose)
     */
-   std::string GetName() const override final;
+   std::string GetName() const final;
 
    /**
     * Execute the step

@@ -32,7 +32,7 @@
  */
 /**
  * @file discrepancy_instruction_writer.hpp
- * @brief specialization of the instrunction writer for the discrepancy analysis
+ * @brief specialization of the instruction writer for the discrepancy analysis
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
@@ -58,6 +58,6 @@ class discrepancy_instruction_writer : public HLSInstructionWriter
                                   const IndentedOutputStreamRef indented_output_stream,
                                   const ParameterConstRef parameters);
 
-   void declareFunction(const unsigned int function_id) override final;
+   void declareFunction(const unsigned int function_id) final;
 };
 #endif

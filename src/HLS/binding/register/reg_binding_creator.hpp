@@ -60,8 +60,7 @@ class reg_binding_creator : public HLSFunctionStep
 
    virtual DesignFlowStep_Status RegisterBinding() = 0;
 
-   virtual const CustomUnorderedSet<
-       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
    ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
@@ -75,7 +74,7 @@ class reg_binding_creator : public HLSFunctionStep
        const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
        const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
 
-   DesignFlowStep_Status InternalExec() override final;
+   DesignFlowStep_Status InternalExec() final;
 };
 /// refcount definition of the class
 using reg_binding_creatorRef = refcount<reg_binding_creator>;
