@@ -1385,7 +1385,7 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
          curr_bb->PushBefore(ga_vmask, stmt, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- VMASK: " + ga_vmask->ToString());
          const auto v_mask = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_vmask))->op0;
-         const auto valid_ptr_type = tree_helper::CGetType(valid_ptr);
+         const auto valid_ptr_type = tree_man->GetPointerType(tree_man->GetBooleanType());
          THROW_ASSERT(tree_helper::IsPointerType(valid_ptr_type), "unexpected condition");
          const auto valid_type = tree_helper::CGetPointedType(valid_ptr_type);
          const auto ga_valid = tree_man->CreateNopExpr(v_mask, valid_type, nullptr, nullptr, fd->index);
