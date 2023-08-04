@@ -146,12 +146,6 @@ struct InterfaceInfer::interface_info
             {
                if(tree_helper::IsStructType(ptd_type))
                {
-                  const auto fld_count = tree_helper::GetArrayTotalSize(ptd_type);
-                  if(factor != 1 && factor != fld_count)
-                  {
-                     THROW_ERROR("Unexpected struct type aliasing");
-                  }
-                  factor = fld_count;
                   _bitwidth = tree_helper::Size(tree_helper::CGetArrayBaseType(ptd_type));
                }
                else
@@ -163,12 +157,6 @@ struct InterfaceInfer::interface_info
                      {
                         THROW_ERROR("Struct type not supported for interfacing: " + STR(elt_type));
                      }
-                     const auto fld_count = tree_helper::GetArrayTotalSize(elt_type);
-                     if(factor != 1 && factor != fld_count)
-                     {
-                        THROW_ERROR("Unexpected struct type aliasing");
-                     }
-                     factor = fld_count;
                      _bitwidth = tree_helper::Size(tree_helper::CGetArrayBaseType(elt_type));
                   }
                   else
@@ -187,6 +175,40 @@ struct InterfaceInfer::interface_info
             }
             const auto _alignment = static_cast<unsigned>(get_aligned_bitsize(_bitwidth) >> 3);
             alignment = std::max(alignment, _alignment);
+         }
+         else
+         {
+            const auto ptd_type = tree_helper::CGetPointedType(tree_helper::CGetType(tn));
+            ;
+            if(tree_helper::IsArrayEquivType(ptd_type))
+            {
+               if(tree_helper::IsStructType(ptd_type))
+               {
+                  const auto fld_count = tree_helper::GetArrayTotalSize(ptd_type);
+                  if(factor != 1 && factor != fld_count)
+                  {
+                     THROW_ERROR("Unexpected struct type aliasing");
+                  }
+                  factor = fld_count;
+               }
+               else
+               {
+                  const auto elt_type = tree_helper::CGetArrayBaseType(ptd_type);
+                  if(tree_helper::IsStructType(elt_type))
+                  {
+                     if(!tree_helper::IsArrayEquivType(elt_type))
+                     {
+                        THROW_ERROR("Struct type not supported for interfacing: " + STR(elt_type));
+                     }
+                     const auto fld_count = tree_helper::GetArrayTotalSize(elt_type);
+                     if(factor != 1 && factor != fld_count)
+                     {
+                        THROW_ERROR("Unexpected struct type aliasing");
+                     }
+                     factor = fld_count;
+                  }
+               }
+            }
          }
 
          if(_fixed_size && bitwidth && bitwidth != _bitwidth)
@@ -790,7 +812,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   {
                      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                                     "---Size      : " +
-                                        STR(boost::lexical_cast<unsigned>(arg_attributes.at(attr_size)) * info.factor));
+                                        STR(boost::lexical_cast<unsigned>(arg_attributes.at(attr_size)) * info.factor) +
+                                        " factor: " + STR(info.factor));
                   }
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Alignment : " + STR(info.alignment));
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
