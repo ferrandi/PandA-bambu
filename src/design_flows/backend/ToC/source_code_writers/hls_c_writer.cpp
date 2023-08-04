@@ -231,6 +231,11 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
          if(!is_binary_init && arg_signature_typename != HLSMgr->design_interface_typename_orig_signature.end())
          {
             var_ptdtype = arg_signature_typename->second.at(par_idx);
+            static const std::regex voidP = std::regex(R"(\bvoid\b)");
+            while(std::regex_search(var_ptdtype, voidP))
+            {
+               var_ptdtype = std::regex_replace(var_ptdtype, voidP, "char");
+            }
             is_a_true_pointer = var_ptdtype.back() == '*';
             if(is_a_true_pointer || var_ptdtype.back() == '&')
             {
@@ -542,7 +547,7 @@ void HLSCWriter::WriteMainTestbench()
       {
          return "val";
       }
-      else if(std::regex_search(tname, std::regex("^(float|double)")))
+      else if(std::regex_search(tname, std::regex(R"((\bfloat\b|\bdouble\b))")))
       {
          return has_subnormals ? "flts" : "flt";
       }
