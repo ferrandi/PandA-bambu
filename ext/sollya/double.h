@@ -81,5 +81,5 @@ void mpfr_round_to_format(mpfr_t rop, mpfr_t op, int format);
 int mpfr_mant_exp(mpfr_t rop, mp_exp_t *expo, mpfr_t op);
 int roundRangeCorrectly(mpfr_t rop, mpfr_t a, mpfr_t b);
 node *rationalApprox(mpfr_t x, unsigned int n);
-
+int mpfr_round_to_doubleextended_mode(mpfr_t rop, mpfr_t op, mp_rnd_t mode);
 #endif /* ifdef DOUBLE_H*/
