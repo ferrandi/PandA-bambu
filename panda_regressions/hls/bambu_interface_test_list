@@ -1,0 +1,73 @@
+bambu_interface_test/ac_fixed1.cpp --benchmark-name=ac_fixed1-c++17 --generate-tb=a={0.1,1.1,2.2,3.3,4.4,5.5,6.6,7.7},b={0.1,1.1,2.2,3.3,4.4,5.5,6.6,7.7},c={0.1,1.1,2.2,3.3,4.4,5.5,6.6,7.7},d={0,0,0,0,0,0,0,0} --top-fname=sum3numbers --std=c++17
+bambu_interface_test/ac_fixed1.cpp --generate-tb=a={0.1,1.1,2.2,3.3,4.4,5.5,6.6,7.7},b={0.1,1.1,2.2,3.3,4.4,5.5,6.6,7.7},c={0.1,1.1,2.2,3.3,4.4,5.5,6.6,7.7},d={0,0,0,0,0,0,0,0} --top-fname=sum3numbers
+bambu_interface_test/ac_fixed2_tb.cpp --benchmark-name=ac_fixed2_tb-c++17 --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/ac_fixed2_tb.xml --top-fname=sum3numbers --std=c++17
+bambu_interface_test/ac_fixed2_tb.cpp --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/ac_fixed2_tb.xml --top-fname=sum3numbers
+bambu_interface_test/ac_fixed3.cpp --benchmark-name=ac_fixed3-c++17 --generate-tb=a=1.1,b=2.2,c=3.3,d={0.0} --top-fname=sum3numbers --std=c++17
+bambu_interface_test/ac_fixed3.cpp --generate-tb=a=1.1,b=2.2,c=3.3,d={0.0} --top-fname=sum3numbers
+bambu_interface_test/ac_types1.cpp --benchmark-name=ac_types1-c++17 --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers --std=c++17
+bambu_interface_test/ac_types1.cpp --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers
+bambu_interface_test/ac_types2_array_32ubits.cpp --benchmark-name=ac_types2_array_32ubits-c++17 --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers --std=c++17
+bambu_interface_test/ac_types2_array_32ubits.cpp --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers
+bambu_interface_test/ac_types2_array_64ubits.cpp --benchmark-name=ac_types2_array_64ubits-c++17 --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers --std=c++17
+bambu_interface_test/ac_types2_array_64ubits.cpp --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers --std=c++17
+bambu_interface_test/ac_types2_array_7bits.cpp --benchmark-name=ac_types2_array_7ubits-c++17 --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers --std=c++17
+bambu_interface_test/ac_types2_array_7bits.cpp --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers --std=c++17
+bambu_interface_test/ac_types3.cpp --benchmark-name=ac_types3-c++17 --generate-tb=a=01234,b=0x1ABCDaBCD,c=3,d=6 --top-fname=sum3numbers --std=c++17
+bambu_interface_test/ac_types3.cpp --generate-tb=a=01234,b=0x1ABCDaBCD,c=3,d=6 --top-fname=sum3numbers --std=c++17
+bambu_interface_test/ex1.cpp --benchmark-name=ex1-c++17 --generate-tb="bit_stream={0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},a_out={0}" --top-fname=test_func --std=c++17
+bambu_interface_test/ex1.cpp --generate-tb="bit_stream={0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},a_out={0}" --top-fname=test_func
+bambu_interface_test/iterative_merge_sort.c --generate-tb=arr="{8,7,6,5,4,3,2,1}",n=8 --top-fname=mergeSort  -fno-unroll-loops --benchmark-name=mergeSort
+bambu_interface_test/iterative_merge_sort_sum.c --generate-tb=arr="{8,7,6,5,4,3,2,1}",n=8 --top-fname=mergeSort  -fno-unroll-loops --benchmark-name=mergeSortAndSum
+bambu_interface_test/simple_c1.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers
+bambu_interface_test/simple_c1_ack.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers 
+bambu_interface_test/simple_c1_in_ack.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers 
+bambu_interface_test/simple_c1_in_valid.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers --benchmark-name=simple_c1_in_valid
+bambu_interface_test/simple_c1_none.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers
+bambu_interface_test/simple_c1_valid_nested.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers --benchmark-name=simple_c1_valid_nested
+bambu_interface_test/simple_c2_none.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers
+bambu_interface_test/simple_c3_none.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers
+bambu_interface_test/simple_c3_ovalid.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers 
+bambu_interface_test/simple_c4_array.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers 
+bambu_interface_test/simple_c4_array.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers -funroll-loops --benchmark-name=simple_c4_array_unroll
+bambu_interface_test/simple_c4_array_32bits.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers 
+bambu_interface_test/simple_c4_array_32bits.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers  -funroll-loops --benchmark-name=simple_c4_array_32bits_unroll
+bambu_interface_test/simple_c4_array_64bits.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers 
+bambu_interface_test/simple_c4_array_64bits.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers  -funroll-loops --benchmark-name=simple_c4_array_64bits_unroll
+bambu_interface_test/simple_c4_array_8bits.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers 
+bambu_interface_test/simple_c4_array_8bits.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers  -funroll-loops --benchmark-name=simple_c4_array_8bits_unroll
+bambu_interface_test/simple_c4_axis_multiple.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{2,3,4,5,6,7,8,9}",c="{3,4,5,6,7,8,9,10}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers 
+bambu_interface_test/simple_c4_axis.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers 
+bambu_interface_test/simple_c4_fifo_multiple.c --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{2,3,4,5,6,7,8,9}",c="{3,4,5,6,7,8,9,10}",d="{0,0,0,0,0,0,0,0}" --top-fname=sum3numbers 
+bambu_interface_test/simple_c4_fifo.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers 
+bambu_interface_test/simple_c4_handshake.c --generate-tb=a=1,b=2,c=3,d=0 --top-fname=sum3numbers 
+bambu_interface_test/simple_test.c --generate-tb=a="-7",b="{0}" --top-fname=test
+bambu_interface_test/simpleif_c1_none.c --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/simpleif_c1_none_test.xml --top-fname=kim --benchmark-name=simpleif_c1_none_xml
+bambu_interface_test/simpleif_c1_none.c --generate-tb=i1=9,i2=1,i3=5,i4=6,i5=17,i6=19,c1=2,c2=6,c3=13,c4=17,c6=9,COND1=1,COND2=1,o1=0,o2=0 --top-fname=kim --benchmark-name=simpleif_c1_none_no_xml
+bambu_interface_test/simple_axi_m.c --top-fname=maxNumbers --generate-tb=a="{1,2,3,4,5}",n_ptr="{5}"
+bambu_interface_test/simple2_axi_m.c --top-fname=maxNumbers --generate-tb=a="{1,2,3,4,5}",n_ptr="{5}"
+bambu_interface_test/simple3_axi_m.c --top-fname=maxNumbers --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/simple3_axi_tb.xml
+bambu_interface_test/simple4_axi_m.c --top-fname=maxNumbers --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/simple4_axi_tb.xml
+bambu_interface_test/nested_axi_m.c --top-fname=main_module --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/nested_axi_m.xml --panda-parameter=function-opt=0
+bambu_interface_test/duplicate_axi_m.c --top-fname=main_module --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/nested_axi_m.xml --panda-parameter=function-opt=0
+bambu_interface_test/ac_channels.cpp --top-fname=sum3numbers --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}"
+bambu_interface_test/ac_channels_64.cpp --top-fname=sum3numbers --generate-tb=a="{0x8000000000000001,0x8000000000000002,0x8000000000000003,0x8000000000000004,0x8000000000000005,0x8000000000000006,0x8000000000000007,0x8000000000000008}",b="{0x8000000000000001,0x8000000000000002,0x8000000000000003,0x8000000000000004,0x8000000000000005,0x8000000000000006,0x8000000000000007,0x8000000000000008}",c="{0x8000000000000001,0x8000000000000002,0x8000000000000003,0x8000000000000004,0x8000000000000005,0x8000000000000006,0x8000000000000007,0x8000000000000008}",d="{0,0,0,0,0,0,0,0}"
+bambu_interface_test/ac_channels_64async.cpp --top-fname=count_async --generate-tb=a="{0x8000000000000001,0x8000000000000002,0x8000000000000003,0x8000000000000004,0x8000000000000005,0x8000000000000006,0x8000000000000007,0x8000000000000008}",b="{0x8000000000000002,0x8000000000000004,0x8000000000000006,0x8000000000000008,0x8000000000000010,0x8000000000000012,0x8000000000000014,0x8000000000000016}",d="{0,0,0,0,0,0,0}",e="{0,0,0,0,0,0,0,0}"
+bambu_interface_test/ac_channels_64-LL.cpp --top-fname=sum3numbers --generate-tb=a="{0x8000000000000001,0x8000000000000002,0x8000000000000003,0x8000000000000004,0x8000000000000005,0x8000000000000006,0x8000000000000007,0x8000000000000008}",b="{0x8000000000000001,0x8000000000000002,0x8000000000000003,0x8000000000000004,0x8000000000000005,0x8000000000000006,0x8000000000000007,0x8000000000000008}",c="{0x8000000000000001,0x8000000000000002,0x8000000000000003,0x8000000000000004,0x8000000000000005,0x8000000000000006,0x8000000000000007,0x8000000000000008}",d="{0,0,0,0,0,0,0,0}"
+bambu_interface_test/ac_channels_64async-LL.cpp --top-fname=count_async --generate-tb=a="{0x8000000000000001,0x8000000000000002,0x8000000000000003,0x8000000000000004,0x8000000000000005,0x8000000000000006,0x8000000000000007,0x8000000000000008}",b="{0x8000000000000002,0x8000000000000004,0x8000000000000006,0x8000000000000008,0x8000000000000010,0x8000000000000012,0x8000000000000014,0x8000000000000016}",d="{0,0,0,0,0,0,0}",e="{0,0,0,0,0,0,0,0}"
+bambu_interface_test/hls_stream.cpp --top-fname=sum3numbers --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}"
+bambu_interface_test/hls_stream_axis.cpp --top-fname=sum3numbers --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}"
+bambu_interface_test/ac_range.cpp --top-fname=check_range --generate-tb=a=-1,b=2,c=0
+# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG_BUFFER --benchmark-name=2mm_cache_big_buffer
+# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG_BUS --benchmark-name=2mm_cache_big_bus
+# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG --benchmark-name=2mm_cache_big
+# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG_LINE --benchmark-name=2mm_cache_big_line
+# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DFULLY_ASS --benchmark-name=2mm_cache_fully_ass
+# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c
+# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DSET_ASS --benchmark-name=2mm_cache_set_ass
+# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DSIMPLE --benchmark-name=2mm_cache_simple
+# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DSMALL_LINE --benchmark-name=2mm_cache_small_line
+# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG_BUFFER_WB --benchmark-name=2mm_cache_big_buffer_wb
+# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DWRITE_BACK --benchmark-name=2mm_cache_write_back
+# bambu_interface_test/2mm.c --top-fname=mmult_tile --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DTILED --benchmark-name=2mm_tiled_cache
+bambu_interface_test/test_open.c --benchmark-name=open  --top-fname=main --expose-globals --generate-interface=MINIMAL --file-input-data=BENCHMARKS_ROOT/bambu_interface_test/bin_test.dat --channels-type=MEM_ACC_11
+bambu_interface_test/test_open.c --benchmark-name=openn --top-fname=main --expose-globals --generate-interface=MINIMAL --file-input-data=BENCHMARKS_ROOT/bambu_interface_test/bin_test.dat --channels-type=MEM_ACC_NN

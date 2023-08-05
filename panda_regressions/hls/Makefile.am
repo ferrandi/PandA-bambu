@@ -33,59 +33,63 @@ EXTRA_DIST= \
    %D%/bambu_specific_test2.sh \
    %D%/bambu_specific_test3_list \
    %D%/bambu_specific_test3.sh \
-   %D%/bambu_specific_test4/ac_channels_64async.cpp \
-   %D%/bambu_specific_test4/ac_channels_64.cpp \
-   %D%/bambu_specific_test4/ac_channels_axis.cpp \
-   %D%/bambu_specific_test4/ac_channels.cpp \
-   %D%/bambu_specific_test4/ac_fixed1.cpp \
-   %D%/bambu_specific_test4/ac_fixed2_tb.cpp \
-   %D%/bambu_specific_test4/ac_fixed2_tb.xml \
-   %D%/bambu_specific_test4/ac_fixed3.cpp \
-   %D%/bambu_specific_test4/ac_range.cpp \
-   %D%/bambu_specific_test4/ac_types1.cpp \
-   %D%/bambu_specific_test4/ac_types2_array_32ubits.cpp \
-   %D%/bambu_specific_test4/ac_types2_array_64ubits.cpp \
-   %D%/bambu_specific_test4/ac_types2_array_7bits.cpp \
-   %D%/bambu_specific_test4/ac_types2_array_7bits_fixed.cpp \
-   %D%/bambu_specific_test4/ac_types3.cpp \
-   %D%/bambu_specific_test4/2mm.c \
-   %D%/bambu_specific_test4/duplicate_axi_m.c \
-   %D%/bambu_specific_test4/ex1.cpp \
-   %D%/bambu_specific_test4/hls_stream_axis.cpp \
-   %D%/bambu_specific_test4/hls_stream.cpp \
-   %D%/bambu_specific_test4/iterative_merge_sort.c \
-   %D%/bambu_specific_test4/iterative_merge_sort_sum.c \
-   %D%/bambu_specific_test4_list \
-   %D%/bambu_specific_test4/nested_axi_m.c \
-   %D%/bambu_specific_test4/nested_axi_m.xml \
-   %D%/bambu_specific_test4.sh \
-   %D%/bambu_specific_test4/simple2_axi_m.c \
-   %D%/bambu_specific_test4/simple3_axi_m.c \
-   %D%/bambu_specific_test4/simple3_axi_tb.xml \
-   %D%/bambu_specific_test4/simple4_axi_m.c \
-   %D%/bambu_specific_test4/simple4_axi_tb.xml \
-   %D%/bambu_specific_test4/simple_axi_m.c \
-   %D%/bambu_specific_test4/simple_c1_ack.c \
-   %D%/bambu_specific_test4/simple_c1.c \
-   %D%/bambu_specific_test4/simple_c1_in_ack.c \
-   %D%/bambu_specific_test4/simple_c1_in_valid.c \
-   %D%/bambu_specific_test4/simple_c1_none.c \
-   %D%/bambu_specific_test4/simple_c1_valid_nested.c \
-   %D%/bambu_specific_test4/simple_c2_none.c \
-   %D%/bambu_specific_test4/simple_c3_none.c \
-   %D%/bambu_specific_test4/simple_c3_ovalid.c \
-   %D%/bambu_specific_test4/simple_c4_array_32bits.c \
-   %D%/bambu_specific_test4/simple_c4_array_64bits.c \
-   %D%/bambu_specific_test4/simple_c4_array_8bits.c \
-   %D%/bambu_specific_test4/simple_c4_array.c \
-   %D%/bambu_specific_test4/simple_c4_axis.c \
-   %D%/bambu_specific_test4/simple_c4_axis_multiple.c \
-   %D%/bambu_specific_test4/simple_c4_fifo.c \
-   %D%/bambu_specific_test4/simple_c4_fifo_multiple.c \
-   %D%/bambu_specific_test4/simple_c4_handshake.c \
-   %D%/bambu_specific_test4/simpleif_c1_none.c \
-   %D%/bambu_specific_test4/simpleif_c1_none_test.xml \
-   %D%/bambu_specific_test4/simple_test.c \
+   %D%/bambu_interface_test/2mm.c \
+   %D%/bambu_interface_test/ac_channels_64async.cpp \
+   %D%/bambu_interface_test/ac_channels_64.cpp \
+   %D%/bambu_interface_test/ac_channels_64async-LL.cpp \
+   %D%/bambu_interface_test/ac_channels_64-LL.cpp \
+   %D%/bambu_interface_test/ac_channels_axis.cpp \
+   %D%/bambu_interface_test/ac_channels.cpp \
+   %D%/bambu_interface_test/ac_fixed1.cpp \
+   %D%/bambu_interface_test/ac_fixed2_tb.cpp \
+   %D%/bambu_interface_test/ac_fixed2_tb.xml \
+   %D%/bambu_interface_test/ac_fixed3.cpp \
+   %D%/bambu_interface_test/ac_range.cpp \
+   %D%/bambu_interface_test/ac_types1.cpp \
+   %D%/bambu_interface_test/ac_types2_array_32ubits.cpp \
+   %D%/bambu_interface_test/ac_types2_array_64ubits.cpp \
+   %D%/bambu_interface_test/ac_types2_array_7bits.cpp \
+   %D%/bambu_interface_test/ac_types2_array_7bits_fixed.cpp \
+   %D%/bambu_interface_test/ac_types3.cpp \
+   %D%/bambu_interface_test/bin_test.dat \
+   %D%/bambu_interface_test/duplicate_axi_m.c \
+   %D%/bambu_interface_test/ex1.cpp \
+   %D%/bambu_interface_test/hls_stream_axis.cpp \
+   %D%/bambu_interface_test/hls_stream.cpp \
+   %D%/bambu_interface_test/iterative_merge_sort.c \
+   %D%/bambu_interface_test/iterative_merge_sort_sum.c \
+   %D%/bambu_interface_test_list \
+   %D%/bambu_interface_test/nested_axi_m.c \
+   %D%/bambu_interface_test/nested_axi_m.xml \
+   %D%/bambu_interface_test.sh \
+   %D%/bambu_interface_test/simple2_axi_m.c \
+   %D%/bambu_interface_test/simple3_axi_m.c \
+   %D%/bambu_interface_test/simple3_axi_tb.xml \
+   %D%/bambu_interface_test/simple4_axi_m.c \
+   %D%/bambu_interface_test/simple4_axi_tb.xml \
+   %D%/bambu_interface_test/simple_axi_m.c \
+   %D%/bambu_interface_test/simple_c1_ack.c \
+   %D%/bambu_interface_test/simple_c1.c \
+   %D%/bambu_interface_test/simple_c1_in_ack.c \
+   %D%/bambu_interface_test/simple_c1_in_valid.c \
+   %D%/bambu_interface_test/simple_c1_none.c \
+   %D%/bambu_interface_test/simple_c1_valid_nested.c \
+   %D%/bambu_interface_test/simple_c2_none.c \
+   %D%/bambu_interface_test/simple_c3_none.c \
+   %D%/bambu_interface_test/simple_c3_ovalid.c \
+   %D%/bambu_interface_test/simple_c4_array_32bits.c \
+   %D%/bambu_interface_test/simple_c4_array_64bits.c \
+   %D%/bambu_interface_test/simple_c4_array_8bits.c \
+   %D%/bambu_interface_test/simple_c4_array.c \
+   %D%/bambu_interface_test/simple_c4_axis.c \
+   %D%/bambu_interface_test/simple_c4_axis_multiple.c \
+   %D%/bambu_interface_test/simple_c4_fifo.c \
+   %D%/bambu_interface_test/simple_c4_fifo_multiple.c \
+   %D%/bambu_interface_test/simple_c4_handshake.c \
+   %D%/bambu_interface_test/simpleif_c1_none.c \
+   %D%/bambu_interface_test/simpleif_c1_none_test.xml \
+   %D%/bambu_interface_test/simple_test.c \
+   %D%/bambu_interface_test/test_open.c \
    %D%/bambu_specific_test5/adders.c \
    %D%/bambu_specific_test5/function_call.c \
    %D%/bambu_specific_test5/if_clauses.c \
@@ -111,10 +115,6 @@ EXTRA_DIST= \
    %D%/bambu_specific_test/divconst-2.c.gimplePSSA \
    %D%/bambu_specific_test_list \
    %D%/bambu_specific_test/memset-chk.c \
-   %D%/bambu_specific_test_modelsim/bin_test.dat \
-   %D%/bambu_specific_test_modelsim_list \
-   %D%/bambu_specific_test_modelsim.sh \
-   %D%/bambu_specific_test_modelsim/test_open.c \
    %D%/bambu_specific_test/pr35472.c.gimplePSSA \
    %D%/bambu_specific_test/pta-field-1.c.gimplePSSA \
    %D%/bambu_specific_test/return_vector.c \

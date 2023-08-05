@@ -1,4 +1,4 @@
-=========== PANDA 2023.06 ===========
+=========== PANDA 2023.08 ===========
 Eleventh public release of PandA framework.
 
 New features introduced:
@@ -7,7 +7,9 @@ New features introduced:
 - C/C++ co-simulation support added for Mentor Questasim/Modelsim, Xilinx XSim, and Verilator
 - Memory mapped top interface support
 - C++17 is now required to build PandA Bambu
-- Removed dependecy from boost filesystem and boost regex
+- Dependencies from Boost Filesystem and Boost Regex have been dropped (CentOS based system now supported)
+- MachSuite benchmarks updated
+- Fixed issues with Bambu LibM implementation
 
 =========== PANDA 2023.01 ===========
 Tenth public release of PandA framework.

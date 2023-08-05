@@ -52,9 +52,6 @@ CONSTREF_FORWARD_DECL(HLSCBackendInformation);
 class HLSCWriter : public CWriter
 {
  protected:
-   /// True if the input code is c++
-   bool flag_cpp;
-
    /// Backend information
    const CBackendInformationConstRef c_backend_info;
 

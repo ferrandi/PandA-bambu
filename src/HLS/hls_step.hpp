@@ -237,19 +237,19 @@ class HLS_step : public DesignFlowStep
    /**
     * Destructor
     */
-   virtual ~HLS_step() override;
+   ~HLS_step() override;
 
    /**
     * Return a unified identifier of this design step
     * @return the signature of the design step
     */
-   virtual std::string GetSignature() const override;
+   std::string GetSignature() const override;
 
    /**
     * Return the name of this design step
     * @return the name of the pass (for debug purpose)
     */
-   virtual std::string GetName() const override;
+   std::string GetName() const override;
 
    /**
     * Return the name of the type of this frontend flow step
@@ -266,15 +266,15 @@ class HLS_step : public DesignFlowStep
    /**
     * Return the factory to create this type of steps
     */
-   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override final;
+   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const final;
 
    /**
     * Compute the relationships of a step with other steps
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   virtual void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
-                                     const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
     * Compute the signature of a hls flow step
