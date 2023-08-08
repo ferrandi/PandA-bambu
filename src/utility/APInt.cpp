@@ -342,14 +342,33 @@ bw_t APInt::leadingZeros(bw_t bw) const
    {
       return bw;
    }
-   bw_t lzc = (bw < backend::limb_bits) ? (bw - backend::limb_bits) : 0;
+   THROW_ASSERT(_data.backend().size() > 0, "unexpected condition");
    const auto limbs = _data.backend().limbs();
-   for(int i = (bw - 1U) / backend::limb_bits; i >= 0; --i)
+   THROW_ASSERT((bw % backend::limb_bits) == 0, "unexpected condition");
+   auto nchunks = bw / backend::limb_bits;
+   THROW_ASSERT(_data.backend().size() <= nchunks, "unexpected condition");
+   bw_t lzc = 0;
+   if(_data.backend().size() < nchunks)
+   {
+      lzc += bw - _data.backend().size() * backend::limb_bits;
+   }
+   for(int i = _data.backend().size() - 1; i >= 0; --i)
    {
       const auto& val = limbs[i];
       if(val != 0)
       {
-         return lzc + __builtin_clzll(val);
+         if(backend::limb_bits == 64)
+         {
+            return lzc + __builtin_clzll(val);
+         }
+         else if(backend::limb_bits == 32)
+         {
+            return lzc + __builtin_clz(val);
+         }
+         else
+         {
+            THROW_ERROR("backend::limb_bits size not supported");
+         }
       }
       lzc += backend::limb_bits;
    }
