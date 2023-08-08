@@ -880,18 +880,6 @@ static size_t __m_call_count = 0;
       {                                                                                                             \
          error("Unable to open parameter dump file '%s'\n", filename);                                              \
       }                                                                                                             \
-      sprintf(filename, "P" #idx "_gold.%zu.dat", __m_call_count);                                                  \
-      out = fopen(filename, "wb");                                                                                  \
-      if(out != NULL)                                                                                               \
-      {                                                                                                             \
-         fwrite(P##idx##_gold, 1, __m_param_size(idx), out);                                                        \
-         fclose(out);                                                                                               \
-         debug("Parameter " #idx " gold output dump for execution %zu stored in '%s'\n", __m_call_count, filename); \
-      }                                                                                                             \
-      else                                                                                                          \
-      {                                                                                                             \
-         error("Unable to open parameter dump file '%s'\n", filename);                                              \
-      }                                                                                                             \
    } while(0)
 #else
 #define _m_golddump(idx)
