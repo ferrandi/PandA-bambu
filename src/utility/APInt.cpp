@@ -344,13 +344,17 @@ bw_t APInt::leadingZeros(bw_t bw) const
    }
    THROW_ASSERT(_data.backend().size() > 0, "unexpected condition");
    const auto limbs = _data.backend().limbs();
-   THROW_ASSERT((bw % backend::limb_bits) == 0, "unexpected condition");
-   auto nchunks = bw / backend::limb_bits;
+   auto nchunks = bw / backend::limb_bits + ((bw % backend::limb_bits) ? 1 : 0);
    THROW_ASSERT(_data.backend().size() <= nchunks, "unexpected condition");
    bw_t lzc = 0;
+   bw_t offset = 0;
    if(_data.backend().size() < nchunks)
    {
       lzc += bw - _data.backend().size() * backend::limb_bits;
+   }
+   else
+   {
+      offset += (bw % backend::limb_bits) ? backend::limb_bits - (bw % backend::limb_bits) : 0;
    }
    for(int i = _data.backend().size() - 1; i >= 0; --i)
    {
@@ -359,11 +363,11 @@ bw_t APInt::leadingZeros(bw_t bw) const
       {
          if(backend::limb_bits == 64)
          {
-            return lzc + __builtin_clzll(val);
+            return lzc + __builtin_clzll(val) - offset;
          }
          else if(backend::limb_bits == 32)
          {
-            return lzc + __builtin_clz(val);
+            return lzc + __builtin_clz(val) - offset;
          }
          else
          {
