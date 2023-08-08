@@ -17546,6 +17546,7 @@ wire valid,tagsmatch;
    wire [BE_DATA_W-1:0]                                                    read_rdata;
    
    //cache-control
+   `define CTRL_IO
    wire                                                                    ctrl_valid, ctrl_ready;   
    wire [`CTRL_ADDR_W-1:0]                                                 ctrl_addr;
    wire                                                                    wtbuf_full, wtbuf_empty;
@@ -17565,11 +17566,10 @@ wire valid,tagsmatch;
    reg [BITSIZE_Min_addr_ram - 1 : 0]                                      addr_reg;
 
    reg                                                                     done;
-   reg [BITSIZE_Min_Rdata_ram - 1 : 0]                                     rdata;
 
    always @(*) begin
      done_input_next = done_input ? 1'b1 : done_input_reg;
-     if((Min_oe_ram || Min_we_ram) &amp;&amp; !data_valid_reg) begin
+     if((Min_oe_ram || Min_we_ram) &amp;&amp; !Min_back_pressure_in) begin
        addr_reg = Min_addr_ram;
      end
    end
@@ -17587,7 +17587,6 @@ wire valid,tagsmatch;
    end
 
    assign Min_accelerator_context = acc_ctxt;
-   assign Min_Rdata_ram = Min_datardy &amp;&amp; data_wstrb_reg == 'b0 ? rdata : 'b0;
 
    IOB_front_end
      #(
@@ -17615,7 +17614,7 @@ wire valid,tagsmatch;
       .addr  (addr_reg[FE_ADDR_W - 1 : FE_BYTE_W]),
       .wdata (Min_Wdata_ram),
       .wstrb ({FE_NBYTES{Min_we_ram}}),
-      .rdata (rdata),
+      .rdata (Min_Rdata_ram),
       .ready (Min_datardy),
       //cache-memory input signals
       .data_valid (data_valid),
@@ -17770,7 +17769,11 @@ wire valid,tagsmatch;
          .addr  (ctrl_addr),
          //write data
          .wtbuf_full (wtbuf_full),
-         .wtbuf_empty (wtbuf_empty), 
+`ifdef CTRL_IO
+         .wtbuf_empty (wtbuf_empty &amp; wtb_empty_in),
+`else
+         .wtbuf_empty (wtbuf_empty),
+`endif
          .write_hit  (write_hit),
          .write_miss (write_miss),
          .read_hit   (read_hit),
@@ -17790,7 +17793,7 @@ wire valid,tagsmatch;
    endgenerate
    `undef CTRL_ADDR_W
    `undef WORD_ADDR
-     
+   `undef CTRL_IO
 "/>
         </component_o>
       </circuit>
