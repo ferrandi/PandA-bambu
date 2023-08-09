@@ -1350,8 +1350,8 @@ void Parameter::PrintOutputOptionsUsage(std::ostream& os) const
       << "    --max-transformations=<number>\n"
       << "        Set a maximum number of transformations.\n\n"
       << "        To reduce the disk usage two PandA parameter could be used:\n"
-      << "          --panda-parameter=print-tree-manager=1\n"
-      << "          --panda-parameter=print-dot-FF=1\n\n"
+      << "          --panda-parameter=print-tree-manager=0\n"
+      << "          --panda-parameter=print-dot-FF=0\n\n"
       << "    --find-max-transformations\n"
       << "        Find the maximum number of transformations raising an exception.\n\n"
 #endif
