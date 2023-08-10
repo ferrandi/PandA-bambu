@@ -973,9 +973,9 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                continue;
             }
             if((gn->vuses.size() || (GetPointer<gimple_assign>(tn) &&
-                                     GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K))
-               // && (!schedule)
-               && !isFunctionPipelined && !parallel_bb)
+                                     (GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == call_expr_K ||
+                                      GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K))) &&
+               !isFunctionPipelined && !parallel_bb)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of vuses");
                continue; /// load cannot be code moved
