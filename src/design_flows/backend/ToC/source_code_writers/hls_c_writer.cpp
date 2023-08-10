@@ -694,22 +694,26 @@ void HLSCWriter::WriteMainTestbench()
             }
             else
             {
-               const auto array_size = [&]() {
-                  if(is_interface_inferred)
-                  {
-                     const auto param_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
-                     THROW_ASSERT(arg_attributes->second.count(param_name),
-                                  "Attributes missing for parameter " + param_name + " in function " + top_fname);
-                     return arg_attributes->second.at(param_name).count(attr_size) ?
-                                boost::lexical_cast<unsigned long long>(
-                                    arg_attributes->second.at(param_name).at(attr_size)) :
-                                1ULL;
-                  }
-                  const auto ptd_type = tree_helper::CGetPointedType(arg_type);
-                  return tree_helper::IsArrayType(ptd_type) ? tree_helper::GetArrayTotalSize(ptd_type) : 1ULL;
-               }();
-               args_init +=
-                   "__m_param_alloc(" + STR(param_idx) + ", sizeof(*" + arg_name + ") * " + STR(array_size) + ");\n";
+               if(is_interface_inferred)
+               {
+                  const auto param_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
+                  THROW_ASSERT(arg_attributes->second.count(param_name),
+                               "Attributes missing for parameter " + param_name + " in function " + top_fname);
+                  THROW_ASSERT(arg_attributes->second.at(param_name).count(attr_size_in_bytes),
+                               "Attributes attr_size_in_bytes missing for parameter " + param_name + " in function " +
+                                   top_fname);
+                  auto size_in_bytes = arg_attributes->second.at(param_name).at(attr_size_in_bytes);
+                  args_init += "__m_param_alloc(" + STR(param_idx) + ", " + STR(size_in_bytes) + ");\n";
+               }
+               else
+               {
+                  const auto array_size = [&]() {
+                     const auto ptd_type = tree_helper::CGetPointedType(arg_type);
+                     return tree_helper::IsArrayType(ptd_type) ? tree_helper::GetArrayTotalSize(ptd_type) : 1ULL;
+                  }();
+                  args_init +=
+                      "__m_param_alloc(" + STR(param_idx) + ", sizeof(*" + arg_name + ") * " + STR(array_size) + ");\n";
+               }
             }
             args_decl += "(void*)" + arg_name + ", ";
             args_set += "m_setargptr";
