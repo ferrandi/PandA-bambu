@@ -312,7 +312,7 @@ class parametric_list_based : public Scheduling
        const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond, bool& cannotBeChained0,
        bool& chainingRetCond, bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2, bool& cannotBeChained3,
        bool& MultiCond0, bool& MultiCond1, bool& LoadStoreFunctionConflict, bool& FunctionStoreconflict,
-       bool& proxyFunCond, bool unbounded_RW);
+       bool& proxyFunCond, bool unbounded_RW, bool seeMulticycle);
 
    const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
    ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
