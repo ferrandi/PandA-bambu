@@ -78,7 +78,7 @@ SDCScheduling::SDCScheduling(const ParameterConstRef _parameters, const HLS_mana
                              unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager,
                              const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
     : SDCScheduling_base(_parameters, _HLSMgr, _function_id, _design_flow_manager, HLSFlowStep_Type::SDC_SCHEDULING,
-                 _hls_flow_step_specialization),
+                         _hls_flow_step_specialization),
       clock_period(0.0),
       margin(0.0)
 {
@@ -450,28 +450,8 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
    const LoopsConstRef loops = FB->CGetLoops();
    const std::map<vertex, unsigned int>& bb_map_levels = FB->get_bb_map_levels();
    auto initial_ctrl_step = ControlStep(0u);
-   auto flow_graph = FB->CGetOpGraph(FunctionBehavior::FLSAODG);
    CustomUnorderedSet<vertex> RW_stmts;
-   if(HLSMgr->design_interface_io.find(fname) != HLSMgr->design_interface_io.end())
-   {
-      for(const auto& bb2arg2stmtsR : HLSMgr->design_interface_io.at(fname))
-      {
-         for(const auto& arg2stms : bb2arg2stmtsR.second)
-         {
-            if(arg2stms.second.size() > 0)
-            {
-               for(const auto& stmt : arg2stms.second)
-               {
-                  const auto op_it = flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt);
-                  if(op_it != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end())
-                  {
-                     RW_stmts.insert(op_it->second);
-                  }
-               }
-            }
-         }
-      }
-   }
+   compute_RW_stmts(RW_stmts, op_graph, HLSMgr, funId);
    for(const auto& loop : loops->GetList())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Scheduling loop " + STR(loop->GetId()));
@@ -1300,8 +1280,6 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
       /// Phi cannot be moved
       /// Operations which depend from the phi cannot be moved before the phi and so on
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking which operations have to be moved");
-      CustomUnorderedSet<vertex> RW_stmts;
-      compute_RW_stmts(RW_stmts, op_graph, HLSMgr, funId);
       CustomMap<vertex, CustomSet<vertex>> bb_barrier;
       for(const auto loop_bb : loop_bbs)
       {
