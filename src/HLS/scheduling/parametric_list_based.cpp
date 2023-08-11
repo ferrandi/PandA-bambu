@@ -399,7 +399,7 @@ void parametric_list_based::CheckSchedulabilityConditions(
     const fu_bindingRef res_binding, const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond,
     bool& cannotBeChained0, bool& chainingRetCond, bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2,
     bool& cannotBeChained3, bool& MultiCond0, bool& MultiCond1, bool& LoadStoreFunctionConflict,
-    bool& FunctionLoadStoreConflict, bool& proxyFunCond, bool unbounded_RW)
+    bool& FunctionLoadStoreConflict, bool& proxyFunCond, bool unbounded_RW, bool seeMulticycle)
 {
    predecessorsCond = current_ASAP.find(current_vertex) != current_ASAP.end() and
                       current_ASAP.find(current_vertex)->second > current_cycle;
@@ -460,11 +460,13 @@ void parametric_list_based::CheckSchedulabilityConditions(
    {
       return;
    }
-   MultiCond0 = (n_cycles > 1 && (unbounded_RW || unbounded)) ||
-                ((!is_pipelined && n_cycles > 0 && current_starting_time > (current_cycle_starting_time)) &&
-                 current_ending_time - (n_cycles - 1) * clock_cycle + setup_hold_time + phi_extra_time +
-                         (complex_op ? scheduling_mux_margins : 0) >
-                     current_cycle_ending_time);
+   MultiCond0 =
+       (n_cycles > 1 && (unbounded_RW || unbounded)) ||
+       (seeMulticycle && !HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type)) ||
+       ((!is_pipelined && n_cycles > 0 && current_starting_time > (current_cycle_starting_time)) &&
+        current_ending_time - (n_cycles - 1) * clock_cycle + setup_hold_time + phi_extra_time +
+                (complex_op ? scheduling_mux_margins : 0) >
+            current_cycle_ending_time);
    if(MultiCond0)
    {
       return;
@@ -1017,7 +1019,10 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    {
       bool unbounded = false;
       bool unbounded_RW = false;
+      bool seeMulticycle = false;
       unsigned int n_scheduled_ops = 0;
+      const auto current_cycle_starting_time = from_strongtype_cast<double>(current_cycle) * clock_cycle;
+      const auto current_cycle_ending_time = from_strongtype_cast<double>(current_cycle + 1) * clock_cycle;
       cstep_has_RET_conflict =
           ((schedule->num_scheduled() - already_sch) != operations_number - 1) ? registering_output_p : false;
       std::set<std::string> proxy_functions_used;
@@ -1028,7 +1033,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                     "      operations_number " + std::to_string(operations_number));
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                     "      Scheduling in control step " + STR(current_cycle) +
-                        " (Time: " + STR(from_strongtype_cast<double>(current_cycle) * clock_cycle) + ")");
+                        " (Time: " + STR(current_cycle_starting_time) + ")");
       used_resources.init(current_cycle - initialCycle, LP_II);
 
       /// Operations which can be scheduled in this control step because precedences are satisfied, but they can't be
@@ -1040,7 +1045,11 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "         Considering live vertices...");
       while(live_vertex_it != live_vertices.end())
       {
-         if(ending_time.find(*live_vertex_it)->second <= from_strongtype_cast<double>(current_cycle) * clock_cycle)
+         if(ending_time.find(*live_vertex_it)->second > current_cycle_ending_time)
+         {
+            seeMulticycle = true;
+         }
+         if(ending_time.find(*live_vertex_it)->second <= current_cycle_starting_time)
          {
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                           "            Vertex " + GET_NAME(flow_graph, *live_vertex_it) + " dies");
@@ -1388,9 +1397,6 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                /// stage period for pipelined units
                double current_stage_period;
 
-               const auto current_cycle_starting_time = from_strongtype_cast<double>(current_cycle) * clock_cycle;
-               const auto current_cycle_ending_time = from_strongtype_cast<double>(current_cycle + 1) * clock_cycle;
-
                double phi_extra_time;
                CustomMap<std::pair<unsigned int, unsigned int>, double> local_connection_map;
 
@@ -1410,7 +1416,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                    proxy_functions_used, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule,
                    predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond, cannotBeChained1, asyncCond,
                    cannotBeChained2, cannotBeChained3, MultiCond0, MultiCond1, LoadStoreFunctionConflict,
-                   FunctionLoadStoreConflict, proxyFunCond, unbounded_RW);
+                   FunctionLoadStoreConflict, proxyFunCond, unbounded_RW, seeMulticycle);
 
                /// checking if predecessors have finished
                if(predecessorsCond)
@@ -1752,6 +1758,13 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                                            current_cycle + ControlStep(static_cast<unsigned int>(
                                                                floor(ending_time[current_vertex] / clock_cycle) -
                                                                from_strongtype_cast<double>(current_cycle))));
+               /// check if we have operations taking more than one cycle
+               if(HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) &&
+                  ending_time[current_vertex] > current_cycle_ending_time)
+               {
+                  seeMulticycle = true;
+               }
+
                for(auto edge_connection_pair : local_connection_map)
                {
                   schedule->AddConnectionTimes(edge_connection_pair.first.first, edge_connection_pair.first.second,

@@ -64,6 +64,8 @@
 #include "simple_code_motion.hpp"
 #include "string_manipulation.hpp"
 #include "tree_basic_block.hpp"
+#include "tree_helper.hpp"
+#include "tree_manager.hpp"
 #include "utility.hpp"
 
 #include <boost/range/adaptor/reversed.hpp>
@@ -439,11 +441,17 @@ bool SDCScheduling::HasToBeExecuted() const
 
 DesignFlowStep_Status SDCScheduling::InternalExec()
 {
+   const auto TM = HLSMgr->get_tree_manager();
+   auto fnode = TM->get_tree_node_const(funId);
+   auto fd = GetPointer<function_decl>(fnode);
+   const auto fname = tree_helper::GetMangledFunctionName(fd);
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const BBGraphConstRef dominators = FB->CGetBBGraph(FunctionBehavior::DOM_TREE);
    const LoopsConstRef loops = FB->CGetLoops();
    const std::map<vertex, unsigned int>& bb_map_levels = FB->get_bb_map_levels();
    auto initial_ctrl_step = ControlStep(0u);
+   CustomUnorderedSet<vertex> RW_stmts;
+   compute_RW_stmts(RW_stmts, op_graph, HLSMgr, funId);
    for(const auto& loop : loops->GetList())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Scheduling loop " + STR(loop->GetId()));
@@ -1272,8 +1280,6 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
       /// Phi cannot be moved
       /// Operations which depend from the phi cannot be moved before the phi and so on
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking which operations have to be moved");
-      CustomUnorderedSet<vertex> RW_stmts;
-      compute_RW_stmts(RW_stmts, op_graph, HLSMgr, funId);
       CustomMap<vertex, CustomSet<vertex>> bb_barrier;
       for(const auto loop_bb : loop_bbs)
       {
@@ -1304,6 +1310,11 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                continue;
             }
             if((curr_vertex_type & (TYPE_STORE)) != 0)
+            {
+               bb_barrier[loop_operation].insert(loop_bb);
+               continue;
+            }
+            if(RW_stmts.find(loop_operation) != RW_stmts.end())
             {
                bb_barrier[loop_operation].insert(loop_bb);
                continue;

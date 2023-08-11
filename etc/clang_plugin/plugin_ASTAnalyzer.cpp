@@ -45,8 +45,10 @@
 
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTConsumer.h>
+#include <clang/AST/ASTContext.h>
 #include <clang/AST/DeclCXX.h>
 #include <clang/AST/Mangle.h>
+#include <clang/AST/RecordLayout.h>
 #include <clang/AST/RecursiveASTVisitor.h>
 #include <clang/AST/Type.h>
 #include <clang/Frontend/CompilerInstance.h>
@@ -455,9 +457,28 @@ namespace clang
                          paramTypeRemTD.getAsString(pp) + (Dimensions == "" ? " *" : " (*)" + Dimensions);
                      ParamTypeInclude = getIncludes(paramTypeRemTD);
                   };
+                  const auto getSizeInBytes = [&](QualType T) {
+                     if(T->isIncompleteType() || T->isTemplateTypeParmType() || isa<TemplateSpecializationType>(T))
+                     {
+                        attr_val["SizeInBytes"] = "1";
+                        return;
+                     }
+                     attr_val["SizeInBytes"] = std::to_string(FD->getASTContext()
+                                                                  .getTypeInfoDataSizeInChars(T)
+                                                                  .
+#if __clang_major__ <= 11
+                                                              first
+#else
+                                                              Width
+#endif
+                                                                  .getQuantity());
+                     //llvm::errs() << attr_val["SizeInBytes"] << "\n";
+                  };
+
                   if(isa<DecayedType>(argType))
                   {
                      const auto DT = cast<DecayedType>(argType)->getOriginalType().IgnoreParens();
+                     getSizeInBytes(DT);
                      if(isa<ConstantArrayType>(DT))
                      {
                         manageArray(cast<ConstantArrayType>(DT), true);
@@ -490,12 +511,14 @@ namespace clang
                   {
                      if(isa<ConstantArrayType>(argType->getPointeeType().IgnoreParens()))
                      {
+                        getSizeInBytes(argType->getPointeeType().IgnoreParens());
                         manageArray(cast<ConstantArrayType>(argType->getPointeeType().IgnoreParens()), false);
                         }
                         else
                         {
                         const auto suffix = argType->isPointerType() ? "*" : "&";
                         const auto paramTypeRemTD = RemoveTypedef(argType->getPointeeType());
+                        getSizeInBytes(paramTypeRemTD);
                         ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + suffix;
                         ParamTypeNameOrig = paramTypeRemTD.getAsString(pp) + suffix;
                         ParamTypeInclude = getIncludes(paramTypeRemTD);
@@ -522,6 +545,7 @@ namespace clang
                   else
                   {
                      const auto paramTypeRemTD = RemoveTypedef(argType);
+                     getSizeInBytes(paramTypeRemTD);
                      ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
                      ParamTypeNameOrig = paramTypeRemTD.getAsString(pp);
                      ParamTypeInclude = getIncludes(paramTypeRemTD);
