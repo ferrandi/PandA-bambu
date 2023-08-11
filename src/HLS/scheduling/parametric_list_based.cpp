@@ -346,11 +346,11 @@ parametric_list_based::parametric_list_based(const ParameterConstRef _parameters
                                              unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager,
                                              const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
     : schedulingBaseStep(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::LIST_BASED_SCHEDULING,
-                         _hls_flow_step_specialization ?
-                             _hls_flow_step_specialization :
-                             HLSFlowStepSpecializationConstRef(
-                                 new ParametricListBasedSpecialization(static_cast<ParametricListBased_Metric>(
-                                     _parameters->getOption<unsigned int>(OPT_scheduling_priority))))),
+                 _hls_flow_step_specialization ?
+                     _hls_flow_step_specialization :
+                     HLSFlowStepSpecializationConstRef(
+                         new ParametricListBasedSpecialization(static_cast<ParametricListBased_Metric>(
+                             _parameters->getOption<unsigned int>(OPT_scheduling_priority))))),
       parametric_list_based_metric(GetPointer<const ParametricListBasedSpecialization>(hls_flow_step_specialization)
                                        ->parametric_list_based_metric),
       ending_time(OpGraphConstRef()),
@@ -399,7 +399,7 @@ void parametric_list_based::CheckSchedulabilityConditions(
     const fu_bindingRef res_binding, const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond,
     bool& cannotBeChained0, bool& chainingRetCond, bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2,
     bool& cannotBeChained3, bool& MultiCond0, bool& MultiCond1, bool& LoadStoreFunctionConflict,
-    bool& FunctionLoadStoreConflict, bool& proxyFunCond, bool unbounded_RW)
+    bool& FunctionLoadStoreConflict, bool& proxyFunCond, bool unbounded_RW, bool seeMulticycle)
 {
    predecessorsCond = current_ASAP.find(current_vertex) != current_ASAP.end() and
                       current_ASAP.find(current_vertex)->second > current_cycle;
@@ -460,7 +460,9 @@ void parametric_list_based::CheckSchedulabilityConditions(
    {
       return;
    }
-   MultiCond0 = (n_cycles > 1 && (unbounded_RW || unbounded)) ||
+   MultiCond0 =
+       (n_cycles > 1 && (unbounded_RW || unbounded)) ||
+       (seeMulticycle && !HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type)) ||
                 ((!is_pipelined && n_cycles > 0 && current_starting_time > (current_cycle_starting_time)) &&
                  current_ending_time - (n_cycles - 1) * clock_cycle + setup_hold_time + phi_extra_time +
                          (complex_op ? scheduling_mux_margins : 0) >
@@ -891,8 +893,8 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    /// select the type of graph
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Selecting the type of the graph...");
 
-   flow_graph = FB->CGetOpGraph(FunctionBehavior::FLSAODG);
-   flow_graph_with_feedbacks = FB->CGetOpGraph(FunctionBehavior::FFLSAODG);
+      flow_graph = FB->CGetOpGraph(FunctionBehavior::FLSAODG);
+      flow_graph_with_feedbacks = FB->CGetOpGraph(FunctionBehavior::FFLSAODG);
 
    /// Number of operation to be scheduled
    size_t operations_number = Operations.size();
@@ -1017,7 +1019,10 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    {
       bool unbounded = false;
       bool unbounded_RW = false;
+      bool seeMulticycle = false;
       unsigned int n_scheduled_ops = 0;
+      const auto current_cycle_starting_time = from_strongtype_cast<double>(current_cycle) * clock_cycle;
+      const auto current_cycle_ending_time = from_strongtype_cast<double>(current_cycle + 1) * clock_cycle;
       cstep_has_RET_conflict =
           ((schedule->num_scheduled() - already_sch) != operations_number - 1) ? registering_output_p : false;
       std::set<std::string> proxy_functions_used;
@@ -1028,7 +1033,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                     "      operations_number " + std::to_string(operations_number));
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                     "      Scheduling in control step " + STR(current_cycle) +
-                        " (Time: " + STR(from_strongtype_cast<double>(current_cycle) * clock_cycle) + ")");
+                        " (Time: " + STR(current_cycle_starting_time) + ")");
       used_resources.init(current_cycle - initialCycle, LP_II);
 
       /// Operations which can be scheduled in this control step because precedences are satisfied, but they can't be
@@ -1040,7 +1045,11 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "         Considering live vertices...");
       while(live_vertex_it != live_vertices.end())
       {
-         if(ending_time.find(*live_vertex_it)->second <= from_strongtype_cast<double>(current_cycle) * clock_cycle)
+         if(ending_time.find(*live_vertex_it)->second > current_cycle_ending_time)
+         {
+            seeMulticycle = true;
+         }
+         if(ending_time.find(*live_vertex_it)->second <= current_cycle_starting_time)
          {
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                           "            Vertex " + GET_NAME(flow_graph, *live_vertex_it) + " dies");
@@ -1081,7 +1090,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                }
                schedulable =
                    BB_update_resources_use(used_resources.getRefResource(res_binding->get_assign(*live_vertex_it)),
-                                           res_binding->get_assign(*live_vertex_it));
+                                                     res_binding->get_assign(*live_vertex_it));
                auto is_a_RWFunctions = (live_vertex_type & TYPE_EXTERNAL) && (live_vertex_type & TYPE_RW) &&
                                        RW_stmts.find(*live_vertex_it) == RW_stmts.end();
                auto& attrib = used_resources.getRefAttribute();
@@ -1210,7 +1219,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   if(!schedulable)
                   {
                      if(update_Infeasible())
-                     {
+               {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "<--Schedule of operation " + GET_NAME(flow_graph, current_vertex) +
                                            " not feasible given this II=" + STR(LP_II));
@@ -1321,8 +1330,8 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   continue;
                }
                else if((curr_vertex_type & TYPE_RET) &&
-                       ((schedule->num_scheduled() - already_sch) == operations_number - 1) && n_scheduled_ops != 0 &&
-                       registering_output_p)
+                  ((schedule->num_scheduled() - already_sch) == operations_number - 1) && n_scheduled_ops != 0 &&
+                  registering_output_p)
                {
                   if(black_list.find(fu_type) == black_list.end())
                   {
@@ -1336,7 +1345,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   continue;
                }
                else if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) &&
-                       RW_stmts.find(current_vertex) == RW_stmts.end() && (unbounded_RW || is_live))
+                  RW_stmts.find(current_vertex) == RW_stmts.end() && (unbounded_RW || is_live))
                {
                   if(black_list.find(fu_type) == black_list.end())
                   {
@@ -1349,7 +1358,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   schedulable = false;
                }
                else if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) &&
-                       RW_stmts.find(current_vertex) != RW_stmts.end() && unbounded)
+                  RW_stmts.find(current_vertex) != RW_stmts.end() && unbounded)
                {
                   if(black_list.find(fu_type) == black_list.end())
                   {
@@ -1388,9 +1397,6 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                /// stage period for pipelined units
                double current_stage_period;
 
-               const auto current_cycle_starting_time = from_strongtype_cast<double>(current_cycle) * clock_cycle;
-               const auto current_cycle_ending_time = from_strongtype_cast<double>(current_cycle + 1) * clock_cycle;
-
                double phi_extra_time;
                CustomMap<std::pair<unsigned int, unsigned int>, double> local_connection_map;
 
@@ -1410,7 +1416,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                    proxy_functions_used, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule,
                    predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond, cannotBeChained1, asyncCond,
                    cannotBeChained2, cannotBeChained3, MultiCond0, MultiCond1, LoadStoreFunctionConflict,
-                   FunctionLoadStoreConflict, proxyFunCond, unbounded_RW);
+                   FunctionLoadStoreConflict, proxyFunCond, unbounded_RW, seeMulticycle);
 
                /// checking if predecessors have finished
                if(predecessorsCond)
@@ -1752,6 +1758,13 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                                            current_cycle + ControlStep(static_cast<unsigned int>(
                                                                floor(ending_time[current_vertex] / clock_cycle) -
                                                                from_strongtype_cast<double>(current_cycle))));
+               /// check if we have operations taking more than one cycle
+               if(HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) &&
+                  ending_time[current_vertex] > current_cycle_ending_time)
+               {
+                  seeMulticycle = true;
+               }
+
                for(auto edge_connection_pair : local_connection_map)
                {
                   schedule->AddConnectionTimes(edge_connection_pair.first.first, edge_connection_pair.first.second,
@@ -1920,11 +1933,11 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
       /// move to the next cycle
       ++current_cycle;
       if(LPBB_predicate && !LPBB_satisfied && from_strongtype_cast<unsigned>(current_cycle - initialCycle) / LP_II)
-      {
+   {
          for(const auto& op : toBeScheduled)
-         {
+      {
             if(op.first != NULL_VERTEX && op.second == NULL_VERTEX && !schedule->is_scheduled(op.first))
-            {
+         {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "operation " + GET_NAME(flow_graph, op.first) + " not scheduled before the last stage");
                return false;
@@ -1932,13 +1945,13 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
          }
          LPBB_satisfied = true;
       }
-   }
+         }
    if(LPBB_predicate && (from_strongtype_cast<unsigned>(current_cycle - initialCycle) + 1) <= LP_II)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "number of control steps equal to the II " + STR(LP_II));
       stopSearch = true;
       return false;
-   }
+      }
    /// check if FB edge meet the loop pipelining constraints
    if(LPBB_predicate)
    {
@@ -1955,15 +1968,15 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                                         from_strongtype_cast<unsigned>(schedule->get_cstep_end(last_vertex).second) -
                                         cs_last_vertex;
             if(cs_first_vertex + LP_II < cs_last_vertex + last_vertex_n_cycles)
-            {
+      {
                if((GET_TYPE(flow_graph, first_vertex) & (TYPE_PHI | TYPE_VPHI)) == 0)
-               {
+         {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "operation pair " + GET_NAME(flow_graph, first_vertex) + " <- " +
                                      GET_NAME(flow_graph, last_vertex) +
                                      " not satisfying the loop pipelining constraints-1");
                   return false;
-               }
+         }
                /// first vertex is a PHI vertex so we may move as we wish
                /// try to legalize PHIs
                /// compute ALAP of first_vertex
@@ -1981,7 +1994,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   schedule->set_execution_end(p, ControlStep(latest_cs));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "vertex=" + GET_NAME(flow_graph, p) + " rescheduled at pos=" + STR(latest_cs));
-               }
+      }
 
                auto cs_ratio = (latest_cs - from_strongtype_cast<unsigned>(initialCycle)) / LP_II;
                if(cs_ratio != 0 && (latest_cs > (cs_ratio * LP_II + from_strongtype_cast<unsigned>(initialCycle))))
@@ -1998,7 +2011,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                                      " rescheduled at pos=" + STR(latest_cs));
                }
                else
-               {
+      {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "operation pair " + GET_NAME(flow_graph, first_vertex) + " <- " +
                                      GET_NAME(flow_graph, last_vertex) +

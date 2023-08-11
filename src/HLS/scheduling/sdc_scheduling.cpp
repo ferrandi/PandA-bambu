@@ -64,6 +64,8 @@
 #include "simple_code_motion.hpp"
 #include "string_manipulation.hpp"
 #include "tree_basic_block.hpp"
+#include "tree_helper.hpp"
+#include "tree_manager.hpp"
 #include "utility.hpp"
 
 #include <boost/range/adaptor/reversed.hpp>
@@ -76,7 +78,7 @@ SDCScheduling::SDCScheduling(const ParameterConstRef _parameters, const HLS_mana
                              unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager,
                              const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
     : SDCScheduling_base(_parameters, _HLSMgr, _function_id, _design_flow_manager, HLSFlowStep_Type::SDC_SCHEDULING,
-                         _hls_flow_step_specialization),
+                 _hls_flow_step_specialization),
       clock_period(0.0),
       margin(0.0)
 {
@@ -439,11 +441,37 @@ bool SDCScheduling::HasToBeExecuted() const
 
 DesignFlowStep_Status SDCScheduling::InternalExec()
 {
+   const auto TM = HLSMgr->get_tree_manager();
+   auto fnode = TM->get_tree_node_const(funId);
+   auto fd = GetPointer<function_decl>(fnode);
+   const auto fname = tree_helper::GetMangledFunctionName(fd);
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const BBGraphConstRef dominators = FB->CGetBBGraph(FunctionBehavior::DOM_TREE);
    const LoopsConstRef loops = FB->CGetLoops();
    const std::map<vertex, unsigned int>& bb_map_levels = FB->get_bb_map_levels();
    auto initial_ctrl_step = ControlStep(0u);
+   auto flow_graph = FB->CGetOpGraph(FunctionBehavior::FLSAODG);
+   CustomUnorderedSet<vertex> RW_stmts;
+   if(HLSMgr->design_interface_io.find(fname) != HLSMgr->design_interface_io.end())
+   {
+      for(const auto& bb2arg2stmtsR : HLSMgr->design_interface_io.at(fname))
+      {
+         for(const auto& arg2stms : bb2arg2stmtsR.second)
+         {
+            if(arg2stms.second.size() > 0)
+            {
+               for(const auto& stmt : arg2stms.second)
+               {
+                  const auto op_it = flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt);
+                  if(op_it != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end())
+                  {
+                     RW_stmts.insert(op_it->second);
+                  }
+               }
+            }
+         }
+      }
+   }
    for(const auto& loop : loops->GetList())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Scheduling loop " + STR(loop->GetId()));
@@ -1304,6 +1332,11 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                continue;
             }
             if((curr_vertex_type & (TYPE_STORE)) != 0)
+            {
+               bb_barrier[loop_operation].insert(loop_bb);
+               continue;
+            }
+            if(RW_stmts.find(loop_operation) != RW_stmts.end())
             {
                bb_barrier[loop_operation].insert(loop_bb);
                continue;

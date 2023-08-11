@@ -474,7 +474,7 @@ static bptr_t __m_memaddr(ptr_t sim_addr)
       mmu_base = mmu_it;
       --mmu_base;
    }
-   error("Nearest memory space is " PTR_FORMAT "->" BPTR_FORMAT " to " PTR_FORMAT "->" BPTR_FORMAT " (%u bytes).\n",
+   error("Nearest memory space is " PTR_FORMAT "->" BPTR_FORMAT " to " PTR_FORMAT "->" BPTR_FORMAT " (" PTR_FORMAT " bytes).\n",
          mmu_base->first, bptr_to_int(mmu_base->second + mmu_base->first), mmu_it->first,
          bptr_to_int(mmu_base->second + mmu_it->first), mmu_it->first - mmu_base->first);
    return 0;

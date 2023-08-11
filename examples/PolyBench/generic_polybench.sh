@@ -5,7 +5,7 @@ ggo_require_device=1
 ggo_require_period=1
 . ${script_dir}/../../panda_regressions/hls/generic_getopt.sh
 
-BATCH_ARGS=(" --generate-interface=INFER" "--simulate" "-DPOLYBENCH_USE_RESTRICT" "-DPOLYBENCH_STACK_ARRAYS" "-DMINI_DATASET" "-p=__float_mul,__float_add,__float_sub,sqrtf,expf" "-lm" "-s" "--panda-parameter=simple-benchmark-name=1")
+BATCH_ARGS=(" --generate-interface=INFER" "--simulate" "-DPOLYBENCH_USE_RESTRICT" "-DPOLYBENCH_STACK_ARRAYS" "-DMINI_DATASET" "-p=__float_mul,__float_add,__float_sub,expf" "-lm" "-s" "--panda-parameter=simple-benchmark-name=1")
 configuration="${device}_$(printf "%04.1f" $period)_$(echo $compiler | tr '[:upper:]' '[:lower:]')"
 OUT_SUFFIX="${configuration}_Polybench"
 BENCHMARKS_ROOT="${script_dir}/PolyBenchC"

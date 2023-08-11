@@ -109,13 +109,11 @@ void ReadWrite_arrayModuleGenerator::InternalExec(std::ostream& out, structural_
    THROW_ASSERT(HLSMgr->design_attributes.count(top_fname) && HLSMgr->design_attributes.at(top_fname).count(arg_name),
                 "Parameter " + arg_name + " not found in function " + top_fname);
    const auto DesignAttributes = HLSMgr->design_attributes.at(top_fname).at(arg_name);
-   THROW_ASSERT(DesignAttributes.count(attr_interface_factor), "");
    THROW_ASSERT(DesignAttributes.count(attr_size), "");
-   const auto factor = boost::lexical_cast<unsigned>(DesignAttributes.at(attr_interface_factor));
    const auto arraySize = boost::lexical_cast<unsigned>(DesignAttributes.at(attr_size));
 
    const auto isAlignedPowerOfTwo = _ports_in[i_in4].alignment == ceil_pow2(_ports_in[i_in4].alignment);
-   const auto addressMaxValue = factor * _ports_in[i_in4].alignment * arraySize - 1U;
+   const auto addressMaxValue = _ports_in[i_in4].alignment * arraySize - 1U;
    const auto nbitAddress =
        addressMaxValue <= 1U ? 1U : (64u - static_cast<unsigned>(__builtin_clzll(addressMaxValue)));
 

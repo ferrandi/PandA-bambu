@@ -176,40 +176,6 @@ struct InterfaceInfer::interface_info
             const auto _alignment = static_cast<unsigned>(get_aligned_bitsize(_bitwidth) >> 3);
             alignment = std::max(alignment, _alignment);
          }
-         else
-         {
-            const auto ptd_type = tree_helper::CGetPointedType(tree_helper::CGetType(tn));
-            ;
-            if(tree_helper::IsArrayEquivType(ptd_type))
-            {
-               if(tree_helper::IsStructType(ptd_type))
-               {
-                  const auto fld_count = tree_helper::GetArrayTotalSize(ptd_type);
-                  if(factor != 1 && factor != fld_count)
-                  {
-                     THROW_ERROR("Unexpected struct type aliasing");
-                  }
-                  factor = fld_count;
-               }
-               else
-               {
-                  const auto elt_type = tree_helper::CGetArrayBaseType(ptd_type);
-                  if(tree_helper::IsStructType(elt_type))
-                  {
-                     if(!tree_helper::IsArrayEquivType(elt_type))
-                     {
-                        THROW_ERROR("Struct type not supported for interfacing: " + STR(elt_type));
-                     }
-                     const auto fld_count = tree_helper::GetArrayTotalSize(elt_type);
-                     if(factor != 1 && factor != fld_count)
-                     {
-                        THROW_ERROR("Unexpected struct type aliasing");
-                     }
-                     factor = fld_count;
-                  }
-               }
-            }
-         }
 
          if(_fixed_size && bitwidth && bitwidth != _bitwidth)
          {
@@ -348,6 +314,7 @@ void InterfaceInfer::Initialize()
                         std::string argName;
                         std::string interface_type;
                         std::string interfaceSize;
+                        std::string interfaceSizeInBytes;
                         std::string offset;
                         std::string bundleName;
                         bool bundle_p = false;
@@ -383,6 +350,10 @@ void InterfaceInfer::Initialize()
                            if(key == "size")
                            {
                               interfaceSize = value;
+                           }
+                           if(key == "SizeInBytes")
+                           {
+                              interfaceSizeInBytes = value;
                            }
                            if(key == "offset")
                            {
@@ -461,6 +432,10 @@ void InterfaceInfer::Initialize()
                            if(interface_type == "array")
                            {
                               HLSMgr->design_attributes[fname][argName][attr_size] = interfaceSize;
+                           }
+                           if(interfaceSizeInBytes != "")
+                           {
+                              HLSMgr->design_attributes[fname][argName][attr_size_in_bytes] = interfaceSizeInBytes;
                            }
                            if(interface_type == "m_axi")
                            {
@@ -666,7 +641,6 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             arg_attributes[attr_interface_dir] = port_o::GetString(port_o::IN);
             arg_attributes[attr_interface_bitwidth] = STR(tree_helper::Size(arg_type));
             arg_attributes[attr_interface_alignment] = STR(get_aligned_bitsize(tree_helper::Size(arg_type)));
-            arg_attributes[attr_interface_factor] = "1";
             auto& interface_type = arg_attributes.at(attr_interface_type);
             if(interface_type == "bus")
             {
@@ -721,16 +695,45 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                                  "' since no load/store is associated with it");
                   }
 
+                  if(arg_attributes.find(attr_size_in_bytes) != arg_attributes.end())
+                  {
+                     auto temp_factor = info.type == datatype::generic ?
+                                            (8 * boost::lexical_cast<unsigned>(arg_attributes.at(attr_size_in_bytes))) /
+                                                info.bitwidth :
+                                            1;
+                     if(temp_factor > 1)
+                     {
+                        info.factor = temp_factor;
+                     }
+                     //                     std::cerr << "size in bytes="
+                     //                               <<
+                     //                               boost::lexical_cast<unsigned>(arg_attributes.at(attr_size_in_bytes))
+                     //                               << " info.factor=" << info.factor << " info.bitwidth=" <<
+                     //                               info.bitwidth << "\n";
+                     //                     std::cerr << "interface_type=" << interface_type << "\n";
+                  }
+                  else
+                  {
+                     info.factor = 1;
+                  }
                   info.name = [&]() -> std::string {
                      if(isRead && isWrite)
                      {
                         arg_attributes[attr_interface_dir] = port_o::GetString(port_o::IO);
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---I/O interface");
-                        if(interface_type == "ptrdefault")
+                        if(interface_type == "array")
                         {
                            if(info.factor > 1)
                            {
-                              arg_attributes[attr_size] = "1";
+                              arg_attributes[attr_size] = STR(info.factor);
+                           }
+                           return "array";
+                        }
+                        else if(interface_type == "ptrdefault")
+                        {
+                           if(info.factor > 1)
+                           {
+                              arg_attributes[attr_size] = STR(info.factor);
                               return "array";
                            }
                            else if(parameters->IsParameter("none-ptrdefault") &&
@@ -755,11 +758,19 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      {
                         arg_attributes[attr_interface_dir] = port_o::GetString(port_o::IN);
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Read-only interface");
-                        if(interface_type == "ptrdefault")
+                        if(interface_type == "array")
                         {
                            if(info.factor > 1)
                            {
-                              arg_attributes[attr_size] = "1";
+                              arg_attributes[attr_size] = STR(info.factor);
+                           }
+                           return "array";
+                        }
+                        else if(interface_type == "ptrdefault")
+                        {
+                           if(info.factor > 1)
+                           {
+                              arg_attributes[attr_size] = STR(info.factor);
                               return "array";
                            }
                            return "none";
@@ -774,11 +785,19 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      {
                         arg_attributes[attr_interface_dir] = port_o::GetString(port_o::OUT);
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Write-only interface");
-                        if(interface_type == "ptrdefault")
+                        if(interface_type == "array")
                         {
                            if(info.factor > 1)
                            {
-                              arg_attributes[attr_size] = "1";
+                              arg_attributes[attr_size] = STR(info.factor);
+                           }
+                           return "array";
+                        }
+                        else if(interface_type == "ptrdefault")
+                        {
+                           if(info.factor > 1)
+                           {
+                              arg_attributes[attr_size] = STR(info.factor);
                               return "array";
                            }
                            else if(parameters->IsParameter("none-ptrdefault") &&
@@ -798,7 +817,6 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   }();
                   arg_attributes[attr_interface_bitwidth] = STR(info.bitwidth);
                   arg_attributes[attr_interface_alignment] = STR(info.alignment);
-                  arg_attributes[attr_interface_factor] = STR(info.factor);
                   interface_type = info.name;
 
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Interface specification:");
@@ -812,8 +830,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   {
                      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                                     "---Size      : " +
-                                        STR(boost::lexical_cast<unsigned>(arg_attributes.at(attr_size)) * info.factor) +
-                                        " factor: " + STR(info.factor));
+                                        STR(boost::lexical_cast<unsigned>(arg_attributes.at(attr_size))));
                   }
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Alignment : " + STR(info.alignment));
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
@@ -2010,7 +2027,7 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
       GetPointerS<module>(interface_top)->set_license(GENERATED_LICENSE);
       GetPointerS<module>(interface_top)->set_multi_unit_multiplicity(n_resources);
       const auto address_bitsize = HLSMgr->get_address_bitsize();
-      const auto nbit = 64u - static_cast<unsigned>(__builtin_clzll(info.factor * arraySize - 1U));
+      const auto nbit = 64u - static_cast<unsigned>(__builtin_clzll(arraySize - 1U));
       const auto nbitDataSize = 64u - static_cast<unsigned>(__builtin_clzll(info.bitwidth));
       const structural_type_descriptorRef addrType(new structural_type_descriptor("bool", address_bitsize));
       const structural_type_descriptorRef address_interface_datatype(new structural_type_descriptor("bool", nbit));
