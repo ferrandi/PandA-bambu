@@ -42,7 +42,6 @@
  */
 
 #include "symbolic_application_frontend_flow_step.hpp"
-#include "config_HAVE_ZEBU_BUILT.hpp" // for HAVE_ZEBU_BUILT
 
 #include "Parameter.hpp"                   // for Parameter, ParameterCon...
 #include "application_manager.hpp"         // for application_managerRef
@@ -77,9 +76,6 @@ SymbolicApplicationFrontendFlowStep::ComputeFrontendRelationships(
          relationships.insert(std::make_pair(represented_frontend_flow_step_type, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
-#if HAVE_ZEBU_BUILT
-         relationships.insert(std::make_pair(FUNCTION_POINTER_CALLGRAPH_COMPUTATION, WHOLE_APPLICATION));
-#endif
          break;
       }
       case(INVALIDATION_RELATIONSHIP):

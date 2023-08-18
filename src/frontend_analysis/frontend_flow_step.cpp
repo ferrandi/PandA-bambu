@@ -165,10 +165,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case ADD_ARTIFICIAL_CALL_FLOW_EDGES:
          return "AddArtificialCallFlowEdges";
 #endif
-#if HAVE_ZEBU_BUILT
-      case(ADD_OP_ECFG_EDGES):
-         return "AddOpEcfgEdges";
-#endif
       case(ADD_OP_EXIT_FLOW_EDGES):
          return "AddOpExitFlowEdges";
       case(ADD_OP_LOOP_FLOW_EDGES):
@@ -176,10 +172,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #if HAVE_BAMBU_BUILT
       case(ADD_OP_PHI_FLOW_EDGES):
          return "AddOpPhiFlowEdges";
-#endif
-#if HAVE_ZEBU_BUILT
-      case(ARRAY_REF_FIX):
-         return "ArrayRefFix";
 #endif
 #if HAVE_BAMBU_BUILT
       case(BAMBU_FRONTEND_FLOW):
@@ -213,19 +205,11 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "BlockFix";
       case BUILD_VIRTUAL_PHI:
          return "BuildVirtualPhi";
-#if HAVE_ZEBU_BUILT
-      case(CALL_ARGS_STRUCTURING):
-         return "CallArgsStructuring";
-#endif
       case(CALL_EXPR_FIX):
          return "CallExprFix";
 #if HAVE_BAMBU_BUILT
       case CALL_GRAPH_BUILTIN_CALL:
          return "CallGraphBuiltinCall";
-#endif
-#if HAVE_ZEBU_BUILT
-      case(CHECK_PIPELINABLE_LOOPS):
-         return "CheckPipelinableLoops";
 #endif
       case(CHECK_SYSTEM_TYPE):
          return "CheckSystemType";
@@ -249,7 +233,7 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #endif
       case(CREATE_TREE_MANAGER):
          return "CreateTreeManager";
-#if HAVE_ZEBU_BUILT || HAVE_BAMBU_BUILT
+#if HAVE_BAMBU_BUILT
       case(DEAD_CODE_ELIMINATION):
          return "DeadCodeElimination";
       case(DEAD_CODE_ELIMINATION_IPA):
@@ -301,21 +285,11 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case FUNCTION_CALL_OPT:
          return "FunctionCallOpt";
 #endif
-#if HAVE_ZEBU_BUILT
-      case(FUNCTION_POINTER_CALLGRAPH_COMPUTATION):
-         return "FunctionPointerCallGraphComputation";
-      case(GLOBAL_VARIABLES_ANALYSIS):
-         return "GlobalVariablesAnalysis";
-#endif
 #if HAVE_BAMBU_BUILT
       case(HDL_FUNCTION_DECL_FIX):
          return "HDLFunctionDeclFix";
       case(HDL_VAR_DECL_FIX):
          return "HDLVarDeclFix";
-#endif
-#if HAVE_ZEBU_BUILT
-      case(HEADER_STRUCTURING):
-         return "HeaderStructuring";
 #endif
 #if HAVE_BAMBU_BUILT
       case(HLS_DIV_CG_EXT):
@@ -327,10 +301,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case(HOST_PROFILING):
          return "HostProfiling";
 #endif
-#if HAVE_ZEBU_BUILT
-      case(INSTRUCTION_SEQUENCES_COMPUTATION):
-         return "InstructionSequencesComputation";
-#endif
 #if HAVE_BAMBU_BUILT
       case(INTERFACE_INFER):
          return "InterfaceInfer";
@@ -339,26 +309,12 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #endif
       case(LOOP_COMPUTATION):
          return "LoopComputation";
-#if HAVE_ZEBU_BUILT
-      case(LOOP_REGIONS_COMPUTATION):
-         return "LoopRegionsComputation";
-      case(LOOP_REGIONS_FLOW_COMPUTATION):
-         return "LoopRegionsFlowComputation";
-#endif
 #if HAVE_BAMBU_BUILT
       case(LOOPS_ANALYSIS_BAMBU):
          return "LoopsAnalysisBambu";
 #endif
-#if HAVE_ZEBU_BUILT
-      case(LOOPS_ANALYSIS_ZEBU):
-         return "LoopsAnalysisZebu";
-#endif
       case(LOOPS_COMPUTATION):
          return "LoopsComputation";
-#if HAVE_ZEBU_BUILT
-      case(LOOPS_REBUILDING):
-         return "LoopsRebuilding";
-#endif
 #if HAVE_BAMBU_BUILT
       case(LUT_TRANSFORMATION):
          return "LutTransformation";
@@ -387,12 +343,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case PHI_OPT:
          return "PhiOpt";
 #endif
-#if HAVE_ZEBU_BUILT
-      case(POINTED_DATA_COMPUTATION):
-         return "PointedDataComputation";
-      case(POINTED_DATA_EVALUATION):
-         return "PointedDataEvaluation";
-#endif
 #if HAVE_FROM_PRAGMA_BUILT
       case(PRAGMA_ANALYSIS):
          return "PragmaAnalysis";
@@ -402,12 +352,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #if HAVE_BAMBU_BUILT
       case PREDICATE_STATEMENTS:
          return "PredicateStatements";
-#endif
-#if HAVE_ZEBU_BUILT
-      case(PREDICTABILITY_ANALYSIS):
-         return "PredictabilityAnalysis";
-      case(PROBABILITY_PATH):
-         return "ProbabilityPath";
 #endif
 #if HAVE_BAMBU_BUILT
       case RANGE_ANALYSIS:
@@ -425,10 +369,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case REMOVE_ENDING_IF:
          return "RemoveEndingIf";
 #endif
-#if HAVE_ZEBU_BUILT
-      case(REVERSE_RESTRICT_COMPUTATION):
-         return "ReverseRestrictComputation";
-#endif
 #if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
       case SDC_CODE_MOTION:
          return "SdcCodeMotion";
@@ -436,12 +376,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #if HAVE_BAMBU_BUILT
       case SERIALIZE_MUTUAL_EXCLUSIONS:
          return "SerializeMutualExclusions";
-#endif
-#if HAVE_ZEBU_BUILT
-      case(SHORT_CIRCUIT_STRUCTURING):
-         return "ShortCircuitStructuring";
-      case(SIZEOF_SUBSTITUTION):
-         return "SizeofSubstitution";
 #endif
 
 #if HAVE_BAMBU_BUILT
@@ -453,14 +387,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "SimpleCodeMotion";
       case(SOFT_FLOAT_CG_EXT):
          return "SoftFloatCgExt";
-#endif
-#if HAVE_ZEBU_BUILT
-      case(SOURCE_CODE_STATISTICS):
-         return "SourceCodeStatistics";
-#endif
-#if HAVE_ZEBU_BUILT
-      case(SPLIT_PHINODES):
-         return "SplitPhinodes";
 #endif
       case(SCALAR_SSA_DATA_FLOW_ANALYSIS):
          return "ScalarSsaDataFlowAnalysis";
@@ -478,17 +404,9 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case(UNROLLING_DEGREE):
          return "UnrollingDegree";
 #endif
-#if HAVE_RTL_BUILT && HAVE_ZEBU_BUILT
-      case(UPDATE_RTL_WEIGHT):
-         return "UpdateRtlWeight";
-#endif
 #if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
       case UPDATE_SCHEDULE:
          return "UpdateSchedule";
-#endif
-#if HAVE_ZEBU_BUILT
-      case(UPDATE_TREE_WEIGHT):
-         return "UpdateTreeWeight";
 #endif
       case(USE_COUNTING):
          return "UseCounting";

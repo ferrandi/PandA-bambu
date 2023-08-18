@@ -53,7 +53,6 @@
 #include "config_HAVE_PRAGMA_BUILT.hpp" // for HAVE_PRAGMA_B...
 #include "config_HAVE_RTL_BUILT.hpp"    // for HAVE_RTL_BUILT
 #include "config_HAVE_TASTE.hpp"        // for HAVE_TASTE
-#include "config_HAVE_ZEBU_BUILT.hpp"
 
 #include "exceptions.hpp" // for THROW_UNREACH...
 
@@ -63,16 +62,10 @@
 #if HAVE_BAMBU_BUILT
 #include "AddArtificialCallFlowEdges.hpp"
 #endif
-#if HAVE_ZEBU_BUILT
-#include "add_op_ecfg_edges.hpp"
-#endif
 #include "add_op_exit_flow_edges.hpp"
 #include "add_op_loop_flow_edges.hpp"
 #if HAVE_BAMBU_BUILT
 #include "add_op_phi_flow_edges.hpp"
-#endif
-#if HAVE_ZEBU_BUILT
-#include "array_ref_fix.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
 #include "bambu_frontend_flow.hpp"
@@ -93,17 +86,11 @@
 #endif
 #include "block_fix.hpp"
 #include "build_virtual_phi.hpp"
-#if HAVE_ZEBU_BUILT
-#include "call_args_structuring.hpp"
-#endif
 #include "call_expr_fix.hpp"
 #if HAVE_BAMBU_BUILT
 #include "call_graph_builtin_call.hpp"
 #endif
 #include "call_graph_computation.hpp"
-#if HAVE_HOST_PROFILING_BUILT && HAVE_ZEBU_BUILT
-#include "check_pipelinable_loops.hpp"
-#endif
 #include "check_system_type.hpp"
 #include "complete_bb_graph.hpp"
 #include "complete_call_graph.hpp"
@@ -117,7 +104,7 @@
 #include "create_address_translation.hpp"
 #endif
 #include "create_tree_manager.hpp"
-#if HAVE_ZEBU_BUILT || HAVE_BAMBU_BUILT
+#if HAVE_BAMBU_BUILT
 #include "dead_code_elimination.hpp"
 #include "dead_code_eliminationIPA.hpp"
 #endif
@@ -141,18 +128,9 @@
 #include "extract_patterns.hpp"
 #include "fanout_opt.hpp"
 #endif
-#if HAVE_ZEBU_BUILT
-#include "FunctionPointerCallGraphComputation.hpp"
-#endif
-#if HAVE_ZEBU_BUILT
-#include "global_variables_analysis.hpp"
-#endif
 #if HAVE_BAMBU_BUILT
 #include "hdl_function_decl_fix.hpp"
 #include "hdl_var_decl_fix.hpp"
-#endif
-#if HAVE_ZEBU_BUILT
-#include "header_structuring.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
 #include "HWCallInjection.hpp"
@@ -162,21 +140,10 @@
 #include "IR_lowering.hpp"
 #include "InterfaceInfer.hpp"
 #endif
-#if HAVE_ZEBU_BUILT
-#include "instruction_sequences_computation.hpp"
-#include "loop_regions_computation.hpp"
-#include "loop_regions_flow_computation.hpp"
-#endif
 #if HAVE_BAMBU_BUILT
 #include "loops_analysis_bambu.hpp"
 #endif
-#if HAVE_ZEBU_BUILT
-#include "loops_analysis_zebu.hpp"
-#endif
 #include "loops_computation.hpp"
-#if HAVE_ZEBU_BUILT
-#include "loops_rebuilding.hpp"
-#endif
 #if HAVE_BAMBU_BUILT
 #include "lut_transformation.hpp"
 #endif
@@ -195,21 +162,11 @@
 #include "parm_decl_taken_address_fix.hpp"
 #include "phi_opt.hpp"
 #endif
-#if HAVE_ZEBU_BUILT
-#include "pointed_data_computation.hpp"
-#include "pointed_data_evaluation.hpp"
-#endif
 #if HAVE_FROM_PRAGMA_BUILT
 #include "pragma_substitution.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
 #include "predicate_statements.hpp"
-#endif
-#if HAVE_ZEBU_BUILT
-#include "predictability_analysis.hpp"
-#endif
-#if HAVE_ZEBU_BUILT
-#include "probability_path.hpp"
 #endif
 #if HAVE_HOST_PROFILING_BUILT
 #include "host_profiling.hpp"
@@ -227,9 +184,6 @@
 #if HAVE_BAMBU_BUILT
 #include "remove_ending_if.hpp"
 #endif
-#if HAVE_ZEBU_BUILT
-#include "reverse_restrict_computation.hpp"
-#endif
 #include "scalar_ssa_data_dependence_computation.hpp"
 #if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
 #include "sdc_code_motion.hpp"
@@ -237,35 +191,19 @@
 #if HAVE_BAMBU_BUILT
 #include "serialize_mutual_exclusions.hpp"
 #endif
-#if HAVE_ZEBU_BUILT
-#include "short_circuit_structuring.hpp"
-#include "sizeof_substitution.hpp"
-#endif
 #if HAVE_BAMBU_BUILT
 #include "short_circuit_taf.hpp"
 #include "simple_code_motion.hpp"
 #include "soft_float_cg_ext.hpp"
 #include "split_return.hpp"
 #endif
-#if HAVE_ZEBU_BUILT
-#include "source_code_statistics.hpp"
-#endif
-#if HAVE_ZEBU_BUILT
-#include "split_phi_nodes.hpp"
-#endif
 #include "string_cst_fix.hpp"
 #include "switch_fix.hpp"
 #if HAVE_BAMBU_BUILT
 #include "un_comparison_lowering.hpp"
 #endif
-#if HAVE_ZEBU_BUILT && HAVE_RTL_BUILT
-#include "update_rtl_weight.hpp"
-#endif
 #if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
 #include "update_schedule.hpp"
-#endif
-#if HAVE_ZEBU_BUILT
-#include "update_tree_weight.hpp"
 #endif
 #include "use_counting.hpp"
 #include "var_computation.hpp"
@@ -324,16 +262,10 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
 #if HAVE_BAMBU_BUILT
       case ADD_ARTIFICIAL_CALL_FLOW_EDGES:
 #endif
-#if HAVE_ZEBU_BUILT
-      case ADD_OP_ECFG_EDGES:
-#endif
       case ADD_OP_EXIT_FLOW_EDGES:
       case ADD_OP_LOOP_FLOW_EDGES:
 #if HAVE_BAMBU_BUILT
       case ADD_OP_PHI_FLOW_EDGES:
-#endif
-#if HAVE_ZEBU_BUILT
-      case(ARRAY_REF_FIX):
 #endif
       case BASIC_BLOCKS_CFG_COMPUTATION:
       case BB_CONTROL_DEPENDENCE_COMPUTATION:
@@ -347,15 +279,9 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
 #endif
       case BLOCK_FIX:
       case BUILD_VIRTUAL_PHI:
-#if HAVE_ZEBU_BUILT
-      case CALL_ARGS_STRUCTURING:
-#endif
       case CALL_EXPR_FIX:
 #if HAVE_BAMBU_BUILT
       case CALL_GRAPH_BUILTIN_CALL:
-#endif
-#if HAVE_ZEBU_BUILT
-      case CHECK_PIPELINABLE_LOOPS:
 #endif
       case CHECK_SYSTEM_TYPE:
       case COMPLETE_BB_GRAPH:
@@ -365,7 +291,7 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
       case COND_EXPR_RESTRUCTURING:
       case CSE_STEP:
 #endif
-#if HAVE_ZEBU_BUILT || HAVE_BAMBU_BUILT
+#if HAVE_BAMBU_BUILT
       case DEAD_CODE_ELIMINATION:
 #endif
 #if HAVE_BAMBU_BUILT
@@ -391,15 +317,8 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
       case FIX_STRUCTS_PASSED_BY_VALUE:
       case FIX_VDEF:
 #endif
-#if HAVE_ZEBU_BUILT
-      case GLOBAL_VARIABLES_ANALYSIS:
-#endif
 #if HAVE_BAMBU_BUILT
       case HDL_VAR_DECL_FIX:
-#endif
-#if HAVE_ZEBU_BUILT
-      case HEADER_STRUCTURING:
-      case INSTRUCTION_SEQUENCES_COMPUTATION:
 #endif
 #if HAVE_BAMBU_BUILT
       case HLS_DIV_CG_EXT:
@@ -407,20 +326,10 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
       case IR_LOWERING:
 #endif
       case LOOP_COMPUTATION:
-#if HAVE_ZEBU_BUILT
-      case LOOP_REGIONS_COMPUTATION:
-      case LOOP_REGIONS_FLOW_COMPUTATION:
-#endif
 #if HAVE_BAMBU_BUILT
       case LOOPS_ANALYSIS_BAMBU:
 #endif
-#if HAVE_ZEBU_BUILT
-      case LOOPS_ANALYSIS_ZEBU:
-#endif
       case LOOPS_COMPUTATION:
-#if HAVE_ZEBU_BUILT
-      case LOOPS_REBUILDING:
-#endif
 #if HAVE_BAMBU_BUILT
       case LUT_TRANSFORMATION:
 #endif
@@ -438,15 +347,8 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
       case PARM_DECL_TAKEN_ADDRESS:
       case PHI_OPT:
 #endif
-#if HAVE_ZEBU_BUILT
-      case POINTED_DATA_COMPUTATION:
-#endif
 #if HAVE_BAMBU_BUILT
       case PREDICATE_STATEMENTS:
-#endif
-#if HAVE_ZEBU_BUILT
-      case PREDICTABILITY_ANALYSIS:
-      case PROBABILITY_PATH:
 #endif
 #if HAVE_BAMBU_BUILT
       case REBUILD_INITIALIZATION:
@@ -458,17 +360,11 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
 #if HAVE_BAMBU_BUILT
       case REMOVE_ENDING_IF:
 #endif
-#if HAVE_ZEBU_BUILT
-      case REVERSE_RESTRICT_COMPUTATION:
-#endif
 #if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
       case SDC_CODE_MOTION:
 #endif
 #if HAVE_BAMBU_BUILT
       case SERIALIZE_MUTUAL_EXCLUSIONS:
-#endif
-#if HAVE_ZEBU_BUILT
-      case SHORT_CIRCUIT_STRUCTURING:
 #endif
 #if HAVE_BAMBU_BUILT
       case SPLIT_RETURN:
@@ -476,19 +372,10 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
       case SIMPLE_CODE_MOTION:
       case SOFT_FLOAT_CG_EXT:
 #endif
-#if HAVE_ZEBU_BUILT
-      case SPLIT_PHINODES:
-#endif
       case SCALAR_SSA_DATA_FLOW_ANALYSIS:
       case SWITCH_FIX:
 #if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
       case UPDATE_SCHEDULE:
-#endif
-#if HAVE_RTL_BUILT && HAVE_ZEBU_BUILT
-      case UPDATE_RTL_WEIGHT:
-#endif
-#if HAVE_ZEBU_BUILT
-      case UPDATE_TREE_WEIGHT:
 #endif
 #if HAVE_BAMBU_BUILT
       case UN_COMPARISON_LOWERING:
@@ -526,24 +413,18 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
       case CREATE_ADDRESS_TRANSLATION:
 #endif
       case(CREATE_TREE_MANAGER):
-#if HAVE_BAMBU_BUILT || HAVE_ZEBU_BUILT
+#if HAVE_BAMBU_BUILT
       case DEAD_CODE_ELIMINATION_IPA:
 #endif
 #if HAVE_BAMBU_BUILT
       case FIND_MAX_TRANSFORMATIONS:
 #endif
       case FUNCTION_ANALYSIS:
-#if HAVE_ZEBU_BUILT
-      case(FUNCTION_POINTER_CALLGRAPH_COMPUTATION):
-#endif
 #if HAVE_BAMBU_BUILT
       case HDL_FUNCTION_DECL_FIX:
 #endif
 #if HAVE_HOST_PROFILING_BUILT
       case HOST_PROFILING:
-#endif
-#if HAVE_ZEBU_BUILT
-      case POINTED_DATA_EVALUATION:
 #endif
 #if HAVE_FROM_PRAGMA_BUILT
       case PRAGMA_ANALYSIS:
@@ -554,14 +435,8 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
 #if HAVE_BAMBU_BUILT
       case RANGE_ANALYSIS:
 #endif
-#if HAVE_ZEBU_BUILT
-      case(SOURCE_CODE_STATISTICS):
-#endif
       case STRING_CST_FIX:
       case(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP):
-#if HAVE_ZEBU_BUILT
-      case(SIZEOF_SUBSTITUTION):
-#endif
       {
          return CreateApplicationFrontendFlowStep(frontend_flow_step_type);
       }
@@ -610,7 +485,7 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
       {
          return DesignFlowStepRef(new create_tree_manager(parameters, AppM, design_flow_manager.lock()));
       }
-#if HAVE_ZEBU_BUILT || HAVE_BAMBU_BUILT
+#if HAVE_BAMBU_BUILT
       case DEAD_CODE_ELIMINATION_IPA:
       {
          return DesignFlowStepRef(new dead_code_eliminationIPA(AppM, design_flow_manager.lock(), parameters));
@@ -626,13 +501,6 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
       {
          return DesignFlowStepRef(new call_graph_computation(parameters, AppM, design_flow_manager.lock()));
       }
-#if HAVE_ZEBU_BUILT
-      case(FUNCTION_POINTER_CALLGRAPH_COMPUTATION):
-      {
-         return DesignFlowStepRef(
-             new FunctionPointerCallGraphComputation(parameters, AppM, design_flow_manager.lock()));
-      }
-#endif
 #if HAVE_BAMBU_BUILT
       case HDL_FUNCTION_DECL_FIX:
       {
@@ -643,12 +511,6 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
       case(HOST_PROFILING):
       {
          return DesignFlowStepRef(new HostProfiling(AppM, design_flow_manager.lock(), parameters));
-      }
-#endif
-#if HAVE_ZEBU_BUILT
-      case(POINTED_DATA_EVALUATION):
-      {
-         return DesignFlowStepRef(new PointedDataEvaluation(AppM, design_flow_manager.lock(), parameters));
       }
 #endif
 #if HAVE_PRAGMA_BUILT
@@ -669,18 +531,6 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
          return DesignFlowStepRef(new RangeAnalysis(AppM, design_flow_manager.lock(), parameters));
       }
 #endif
-#if HAVE_ZEBU_BUILT
-      case(SIZEOF_SUBSTITUTION):
-      {
-         return DesignFlowStepRef(new SizeofSubstitution(AppM, design_flow_manager.lock(), parameters));
-      }
-#endif
-#if HAVE_ZEBU_BUILT
-      case(SOURCE_CODE_STATISTICS):
-      {
-         return DesignFlowStepRef(new SourceCodeStatistics(AppM, design_flow_manager.lock(), parameters));
-      }
-#endif
       case STRING_CST_FIX:
       {
          return DesignFlowStepRef(new string_cst_fix(AppM, design_flow_manager.lock(), parameters));
@@ -689,16 +539,10 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
 #if HAVE_BAMBU_BUILT
       case ADD_ARTIFICIAL_CALL_FLOW_EDGES:
 #endif
-#if HAVE_ZEBU_BUILT
-      case ADD_OP_ECFG_EDGES:
-#endif
       case ADD_OP_EXIT_FLOW_EDGES:
       case ADD_OP_LOOP_FLOW_EDGES:
 #if HAVE_BAMBU_BUILT
       case ADD_OP_PHI_FLOW_EDGES:
-#endif
-#if HAVE_ZEBU_BUILT
-      case(ARRAY_REF_FIX):
 #endif
       case BASIC_BLOCKS_CFG_COMPUTATION:
       case BB_CONTROL_DEPENDENCE_COMPUTATION:
@@ -712,15 +556,9 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
 #endif
       case BLOCK_FIX:
       case BUILD_VIRTUAL_PHI:
-#if HAVE_ZEBU_BUILT
-      case CALL_ARGS_STRUCTURING:
-#endif
       case CALL_EXPR_FIX:
 #if HAVE_BAMBU_BUILT
       case CALL_GRAPH_BUILTIN_CALL:
-#endif
-#if HAVE_ZEBU_BUILT
-      case CHECK_PIPELINABLE_LOOPS:
 #endif
       case CHECK_SYSTEM_TYPE:
       case COMPLETE_BB_GRAPH:
@@ -730,7 +568,7 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
       case COND_EXPR_RESTRUCTURING:
       case CSE_STEP:
 #endif
-#if HAVE_ZEBU_BUILT || HAVE_BAMBU_BUILT
+#if HAVE_BAMBU_BUILT
       case DEAD_CODE_ELIMINATION:
 #endif
 #if HAVE_BAMBU_BUILT
@@ -756,15 +594,8 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
       case FIX_STRUCTS_PASSED_BY_VALUE:
       case FIX_VDEF:
 #endif
-#if HAVE_ZEBU_BUILT
-      case GLOBAL_VARIABLES_ANALYSIS:
-#endif
 #if HAVE_BAMBU_BUILT
       case HDL_VAR_DECL_FIX:
-#endif
-#if HAVE_ZEBU_BUILT
-      case HEADER_STRUCTURING:
-      case INSTRUCTION_SEQUENCES_COMPUTATION:
 #endif
 #if HAVE_BAMBU_BUILT
       case HLS_DIV_CG_EXT:
@@ -772,20 +603,10 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
       case IR_LOWERING:
 #endif
       case LOOP_COMPUTATION:
-#if HAVE_ZEBU_BUILT
-      case LOOP_REGIONS_COMPUTATION:
-      case LOOP_REGIONS_FLOW_COMPUTATION:
-#endif
 #if HAVE_BAMBU_BUILT
       case LOOPS_ANALYSIS_BAMBU:
 #endif
-#if HAVE_ZEBU_BUILT
-      case LOOPS_ANALYSIS_ZEBU:
-#endif
       case LOOPS_COMPUTATION:
-#if HAVE_ZEBU_BUILT
-      case LOOPS_REBUILDING:
-#endif
 #if HAVE_BAMBU_BUILT
       case LUT_TRANSFORMATION:
 #endif
@@ -803,15 +624,8 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
       case PARM_DECL_TAKEN_ADDRESS:
       case PHI_OPT:
 #endif
-#if HAVE_ZEBU_BUILT
-      case POINTED_DATA_COMPUTATION:
-#endif
 #if HAVE_BAMBU_BUILT
       case PREDICATE_STATEMENTS:
-#endif
-#if HAVE_ZEBU_BUILT
-      case PREDICTABILITY_ANALYSIS:
-      case PROBABILITY_PATH:
 #endif
 #if HAVE_BAMBU_BUILT
       case REBUILD_INITIALIZATION:
@@ -823,26 +637,17 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
 #if HAVE_BAMBU_BUILT
       case REMOVE_ENDING_IF:
 #endif
-#if HAVE_ZEBU_BUILT
-      case REVERSE_RESTRICT_COMPUTATION:
-#endif
 #if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
       case SDC_CODE_MOTION:
 #endif
 #if HAVE_BAMBU_BUILT
       case SERIALIZE_MUTUAL_EXCLUSIONS:
 #endif
-#if HAVE_ZEBU_BUILT
-      case SHORT_CIRCUIT_STRUCTURING:
-#endif
 #if HAVE_BAMBU_BUILT
       case SPLIT_RETURN:
       case SHORT_CIRCUIT_TAF:
       case SIMPLE_CODE_MOTION:
       case SOFT_FLOAT_CG_EXT:
-#endif
-#if HAVE_ZEBU_BUILT
-      case SPLIT_PHINODES:
 #endif
       case SCALAR_SSA_DATA_FLOW_ANALYSIS:
       case SWITCH_FIX:
@@ -852,14 +657,8 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
 #if HAVE_BAMBU_BUILT
       case UNROLLING_DEGREE:
 #endif
-#if HAVE_RTL_BUILT && HAVE_ZEBU_BUILT
-      case UPDATE_RTL_WEIGHT:
-#endif
 #if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
       case UPDATE_SCHEDULE:
-#endif
-#if HAVE_ZEBU_BUILT
-      case UPDATE_TREE_WEIGHT:
 #endif
       case USE_COUNTING:
       case VAR_ANALYSIS:
@@ -907,12 +706,6 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
              new AddArtificialCallFlowEdges(AppM, function_id, design_flow_manager.lock(), parameters));
       }
 #endif
-#if HAVE_ZEBU_BUILT
-      case ADD_OP_ECFG_EDGES:
-      {
-         return DesignFlowStepRef(new AddOpEcfgEdges(AppM, function_id, design_flow_manager.lock(), parameters));
-      }
-#endif
       case ADD_OP_EXIT_FLOW_EDGES:
       {
          return DesignFlowStepRef(new AddOpExitFlowEdges(parameters, AppM, function_id, design_flow_manager.lock()));
@@ -925,12 +718,6 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
       case ADD_OP_PHI_FLOW_EDGES:
       {
          return DesignFlowStepRef(new AddOpPhiFlowEdges(AppM, function_id, design_flow_manager.lock(), parameters));
-      }
-#endif
-#if HAVE_ZEBU_BUILT
-      case(ARRAY_REF_FIX):
-      {
-         return DesignFlowStepRef(new array_ref_fix(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #endif
       case BASIC_BLOCKS_CFG_COMPUTATION:
@@ -978,12 +765,6 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
       {
          return DesignFlowStepRef(new BuildVirtualPhi(AppM, function_id, design_flow_manager.lock(), parameters));
       }
-#if HAVE_ZEBU_BUILT
-      case CALL_ARGS_STRUCTURING:
-      {
-         return DesignFlowStepRef(new CallArgsStructuring(AppM, function_id, design_flow_manager.lock(), parameters));
-      }
-#endif
       case CALL_EXPR_FIX:
       {
          return DesignFlowStepRef(new call_expr_fix(AppM, function_id, design_flow_manager.lock(), parameters));
@@ -992,12 +773,6 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
       {
          return DesignFlowStepRef(new CallGraphBuiltinCall(AppM, function_id, design_flow_manager.lock(), parameters));
       }
-#if HAVE_ZEBU_BUILT
-      case CHECK_PIPELINABLE_LOOPS:
-      {
-         return DesignFlowStepRef(new CheckPipelinableLoops(AppM, function_id, design_flow_manager.lock(), parameters));
-      }
-#endif
       case CHECK_SYSTEM_TYPE:
       {
          return DesignFlowStepRef(new CheckSystemType(parameters, AppM, function_id, design_flow_manager.lock()));
@@ -1026,7 +801,7 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
          return DesignFlowStepRef(new CSE(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #endif
-#if HAVE_ZEBU_BUILT || HAVE_BAMBU_BUILT
+#if HAVE_BAMBU_BUILT
       case DEAD_CODE_ELIMINATION:
       {
          return DesignFlowStepRef(new dead_code_elimination(parameters, AppM, function_id, design_flow_manager.lock()));
@@ -1099,28 +874,10 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
          return DesignFlowStepRef(new FunctionCallOpt(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #endif
-#if HAVE_ZEBU_BUILT
-      case GLOBAL_VARIABLES_ANALYSIS:
-      {
-         return DesignFlowStepRef(
-             new GlobalVariablesAnalysis(parameters, AppM, function_id, design_flow_manager.lock()));
-      }
-#endif
 #if HAVE_BAMBU_BUILT
       case HDL_VAR_DECL_FIX:
       {
          return DesignFlowStepRef(new HDLVarDeclFix(AppM, function_id, design_flow_manager.lock(), parameters));
-      }
-#endif
-#if HAVE_ZEBU_BUILT
-      case HEADER_STRUCTURING:
-      {
-         return DesignFlowStepRef(new header_structuring(parameters, AppM, function_id, design_flow_manager.lock()));
-      }
-      case INSTRUCTION_SEQUENCES_COMPUTATION:
-      {
-         return DesignFlowStepRef(
-             new InstructionSequencesComputation(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #endif
 #if HAVE_BAMBU_BUILT
@@ -1141,40 +898,16 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
       {
          return DesignFlowStepRef(new loops_computation(parameters, AppM, function_id, design_flow_manager.lock()));
       }
-#if HAVE_ZEBU_BUILT
-      case LOOP_REGIONS_COMPUTATION:
-      {
-         return DesignFlowStepRef(
-             new loop_regions_computation(parameters, AppM, function_id, design_flow_manager.lock()));
-      }
-      case LOOP_REGIONS_FLOW_COMPUTATION:
-      {
-         return DesignFlowStepRef(
-             new loop_regions_flow_computation(parameters, AppM, function_id, design_flow_manager.lock()));
-      }
-#endif
 #if HAVE_BAMBU_BUILT
       case LOOPS_ANALYSIS_BAMBU:
       {
          return DesignFlowStepRef(new LoopsAnalysisBambu(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #endif
-#if HAVE_ZEBU_BUILT
-      case LOOPS_ANALYSIS_ZEBU:
-      {
-         return DesignFlowStepRef(new LoopsAnalysisZebu(parameters, AppM, function_id, design_flow_manager.lock()));
-      }
-#endif
       case LOOPS_COMPUTATION:
       {
          return DesignFlowStepRef(new loops_computation(parameters, AppM, function_id, design_flow_manager.lock()));
       }
-#if HAVE_ZEBU_BUILT
-      case LOOPS_REBUILDING:
-      {
-         return DesignFlowStepRef(new LoopsRebuilding(AppM, function_id, design_flow_manager.lock(), parameters));
-      }
-#endif
 #if HAVE_BAMBU_BUILT
       case LUT_TRANSFORMATION:
       {
@@ -1229,30 +962,10 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
          return DesignFlowStepRef(new PhiOpt(AppM, function_id, design_flow_manager.lock(), parameters));
       }
 #endif
-#if HAVE_ZEBU_BUILT
-      case POINTED_DATA_COMPUTATION:
-      {
-         return DesignFlowStepRef(
-             new PointedDataComputation(AppM, function_id, design_flow_manager.lock(), parameters));
-      }
-#endif
 #if HAVE_BAMBU_BUILT
       case PREDICATE_STATEMENTS:
       {
          return DesignFlowStepRef(new PredicateStatements(AppM, function_id, design_flow_manager.lock(), parameters));
-      }
-#endif
-#if HAVE_ZEBU_BUILT
-      case PREDICTABILITY_ANALYSIS:
-      {
-         return DesignFlowStepRef(
-             new predictability_analysis(parameters, AppM, function_id, design_flow_manager.lock()));
-      }
-#endif
-#if HAVE_ZEBU_BUILT
-      case PROBABILITY_PATH:
-      {
-         return DesignFlowStepRef(new probability_path(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #endif
 #if HAVE_BAMBU_BUILT
@@ -1279,13 +992,6 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
          return DesignFlowStepRef(new RemoveEndingIf(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #endif
-#if HAVE_ZEBU_BUILT
-      case REVERSE_RESTRICT_COMPUTATION:
-      {
-         return DesignFlowStepRef(
-             new ReverseRestrictComputation(AppM, function_id, design_flow_manager.lock(), parameters));
-      }
-#endif
 #if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
       case SDC_CODE_MOTION:
       {
@@ -1297,13 +1003,6 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
       {
          return DesignFlowStepRef(
              new SerializeMutualExclusions(AppM, function_id, design_flow_manager.lock(), parameters));
-      }
-#endif
-#if HAVE_ZEBU_BUILT
-      case SHORT_CIRCUIT_STRUCTURING:
-      {
-         return DesignFlowStepRef(
-             new short_circuit_structuring(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #endif
 #if HAVE_BAMBU_BUILT
@@ -1322,12 +1021,6 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
       case SOFT_FLOAT_CG_EXT:
       {
          return DesignFlowStepRef(new soft_float_cg_ext(parameters, AppM, function_id, design_flow_manager.lock()));
-      }
-#endif
-#if HAVE_ZEBU_BUILT
-      case SPLIT_PHINODES:
-      {
-         return DesignFlowStepRef(new split_phi_nodes(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #endif
       case SCALAR_SSA_DATA_FLOW_ANALYSIS:
@@ -1352,24 +1045,10 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
          break;
       }
 #endif
-#if HAVE_RTL_BUILT && HAVE_ZEBU_BUILT
-      case UPDATE_RTL_WEIGHT:
-      {
-         return DesignFlowStepRef(
-             new update_rtl_weight(parameters, AppM, arch_manager, function_id, design_flow_manager.lock()));
-      }
-#endif
 #if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
       case UPDATE_SCHEDULE:
       {
          return DesignFlowStepRef(new UpdateSchedule(AppM, function_id, design_flow_manager.lock(), parameters));
-      }
-#endif
-#if HAVE_ZEBU_BUILT
-      case UPDATE_TREE_WEIGHT:
-      {
-         return DesignFlowStepRef(
-             new update_tree_weight(parameters, AppM, arch_manager, function_id, design_flow_manager.lock()));
       }
 #endif
       case USE_COUNTING:
@@ -1422,24 +1101,18 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
       case CREATE_ADDRESS_TRANSLATION:
 #endif
       case(CREATE_TREE_MANAGER):
-#if HAVE_BAMBU_BUILT || HAVE_ZEBU_BUILT
+#if HAVE_BAMBU_BUILT
       case DEAD_CODE_ELIMINATION_IPA:
 #endif
 #if HAVE_BAMBU_BUILT
       case FIND_MAX_TRANSFORMATIONS:
 #endif
       case(FUNCTION_ANALYSIS):
-#if HAVE_ZEBU_BUILT
-      case(FUNCTION_POINTER_CALLGRAPH_COMPUTATION):
-#endif
 #if HAVE_BAMBU_BUILT
       case HDL_FUNCTION_DECL_FIX:
 #endif
 #if HAVE_HOST_PROFILING_BUILT
       case(HOST_PROFILING):
-#endif
-#if HAVE_ZEBU_BUILT
-      case(POINTED_DATA_EVALUATION):
 #endif
 #if HAVE_PRAGMA_BUILT
       case(PRAGMA_ANALYSIS):
@@ -1449,12 +1122,6 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
 #endif
 #if HAVE_BAMBU_BUILT
       case RANGE_ANALYSIS:
-#endif
-#if HAVE_ZEBU_BUILT
-      case(SIZEOF_SUBSTITUTION):
-#endif
-#if HAVE_ZEBU_BUILT
-      case(SOURCE_CODE_STATISTICS):
 #endif
       case STRING_CST_FIX:
       case(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP):

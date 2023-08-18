@@ -53,7 +53,6 @@
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 #include "config_HAVE_RTL_BUILT.hpp"
 #include "config_HAVE_TASTE.hpp"
-#include "config_HAVE_ZEBU_BUILT.hpp"
 
 #include "custom_set.hpp" // for unordered_set
 #include <cstddef>        // for size_t
@@ -83,24 +82,15 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
    FIND_MAX_TRANSFORMATIONS,
 #endif
    FUNCTION_ANALYSIS, //! Creation of the call graph
-#if HAVE_ZEBU_BUILT
-   FUNCTION_POINTER_CALLGRAPH_COMPUTATION,
-#endif
 #if HAVE_HOST_PROFILING_BUILT
    HOST_PROFILING,
 #endif
 #if HAVE_FROM_PRAGMA_BUILT
    PRAGMA_SUBSTITUTION,
 #endif
-#if HAVE_ZEBU_BUILT
-   SIZEOF_SUBSTITUTION,
-#endif
    SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP,
    /// Function frontend flow steps
    ADD_BB_ECFG_EDGES,
-#if HAVE_ZEBU_BUILT
-   ADD_OP_ECFG_EDGES,
-#endif
 #if HAVE_BAMBU_BUILT
    ADD_ARTIFICIAL_CALL_FLOW_EDGES,
 #endif
@@ -108,9 +98,6 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
    ADD_OP_LOOP_FLOW_EDGES,
 #if HAVE_BAMBU_BUILT
    ADD_OP_PHI_FLOW_EDGES,
-#endif
-#if HAVE_ZEBU_BUILT
-   ARRAY_REF_FIX,
 #endif
 #if HAVE_BAMBU_BUILT
    BAMBU_FRONTEND_FLOW,
@@ -128,15 +115,9 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #endif
    BLOCK_FIX,
    BUILD_VIRTUAL_PHI,
-#if HAVE_ZEBU_BUILT
-   CALL_ARGS_STRUCTURING,
-#endif
    CALL_EXPR_FIX,
 #if HAVE_BAMBU_BUILT
    CALL_GRAPH_BUILTIN_CALL,
-#endif
-#if HAVE_ZEBU_BUILT
-   CHECK_PIPELINABLE_LOOPS,
 #endif
    CHECK_SYSTEM_TYPE, //! Set the system flag to variables and types
    COMPLETE_BB_GRAPH,
@@ -152,7 +133,7 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #if HAVE_BAMBU_BUILT
    CSE_STEP,
 #endif
-#if HAVE_ZEBU_BUILT || HAVE_BAMBU_BUILT
+#if HAVE_BAMBU_BUILT
    DEAD_CODE_ELIMINATION,
    DEAD_CODE_ELIMINATION_IPA,
 #endif
@@ -175,42 +156,23 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
    FANOUT_OPT,
    FIX_VDEF,
 #endif
-#if HAVE_ZEBU_BUILT
-   GLOBAL_VARIABLES_ANALYSIS,
-#endif
 #if HAVE_BAMBU_BUILT
    HDL_FUNCTION_DECL_FIX,
    HDL_VAR_DECL_FIX,
 #endif
-#if HAVE_ZEBU_BUILT
-   HEADER_STRUCTURING,
-#endif
 #if HAVE_BAMBU_BUILT
    HLS_DIV_CG_EXT,
    HWCALL_INJECTION,
-#endif
-#if HAVE_ZEBU_BUILT
-   INSTRUCTION_SEQUENCES_COMPUTATION,
 #endif
 #if HAVE_BAMBU_BUILT
    INTERFACE_INFER,
    IR_LOWERING,
 #endif
    LOOP_COMPUTATION,
-#if HAVE_ZEBU_BUILT
-   LOOP_REGIONS_COMPUTATION,
-   LOOP_REGIONS_FLOW_COMPUTATION,
-#endif
 #if HAVE_BAMBU_BUILT
    LOOPS_ANALYSIS_BAMBU,
 #endif
-#if HAVE_ZEBU_BUILT
-   LOOPS_ANALYSIS_ZEBU,
-#endif
    LOOPS_COMPUTATION,
-#if HAVE_ZEBU_BUILT
-   LOOPS_REBUILDING,
-#endif
 #if HAVE_BAMBU_BUILT
    LUT_TRANSFORMATION,
 #endif
@@ -229,21 +191,11 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
    PARM_DECL_TAKEN_ADDRESS,
    PHI_OPT,
 #endif
-#if HAVE_ZEBU_BUILT
-   POINTED_DATA_COMPUTATION,
-   POINTED_DATA_EVALUATION,
-#endif
 #if HAVE_PRAGMA_BUILT
    PRAGMA_ANALYSIS,
 #endif
 #if HAVE_BAMBU_BUILT
    PREDICATE_STATEMENTS,
-#endif
-#if HAVE_ZEBU_BUILT
-   PREDICTABILITY_ANALYSIS,
-#endif
-#if HAVE_ZEBU_BUILT
-   PROBABILITY_PATH,
 #endif
 #if HAVE_BAMBU_BUILT
    ESSA,
@@ -259,9 +211,6 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #if HAVE_BAMBU_BUILT
    REMOVE_ENDING_IF,
 #endif
-#if HAVE_ZEBU_BUILT
-   REVERSE_RESTRICT_COMPUTATION,
-#endif
    SCALAR_SSA_DATA_FLOW_ANALYSIS,
 #if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
    SDC_CODE_MOTION,
@@ -269,20 +218,11 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #if HAVE_BAMBU_BUILT
    SERIALIZE_MUTUAL_EXCLUSIONS,
 #endif
-#if HAVE_ZEBU_BUILT
-   SHORT_CIRCUIT_STRUCTURING,
-#endif
 #if HAVE_BAMBU_BUILT
    SPLIT_RETURN,
    SHORT_CIRCUIT_TAF,
    SIMPLE_CODE_MOTION,
    SOFT_FLOAT_CG_EXT,
-#endif
-#if HAVE_ZEBU_BUILT
-   SOURCE_CODE_STATISTICS,
-#endif
-#if HAVE_ZEBU_BUILT
-   SPLIT_PHINODES,
 #endif
    STRING_CST_FIX,
    SWITCH_FIX,
@@ -292,14 +232,8 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #if HAVE_BAMBU_BUILT
    UNROLLING_DEGREE,
 #endif
-#if HAVE_RTL_BUILT && HAVE_ZEBU_BUILT
-   UPDATE_RTL_WEIGHT,
-#endif
 #if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
    UPDATE_SCHEDULE,
-#endif
-#if HAVE_ZEBU_BUILT
-   UPDATE_TREE_WEIGHT,
 #endif
    USE_COUNTING,
    VAR_ANALYSIS,

@@ -48,7 +48,6 @@
 #include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_HLS_BUILT.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-#include "config_HAVE_ZEBU_BUILT.hpp"
 
 #include "hls_step.hpp"
 #include "refcount.hpp"
@@ -72,9 +71,6 @@ class CBackendInformation : public HLSFlowStepSpecialization
 #endif
 #if HAVE_BAMBU_BUILT
       CB_HLS, /** Sequential c code for HLS testing */
-#endif
-#if HAVE_ZEBU_BUILT
-      CB_POINTED_DATA_EVALUATION, /** Sequential instrumented for pointed data evaluation*/
 #endif
       CB_SEQUENTIAL, /**< Sequential c without instrumentation */
    };

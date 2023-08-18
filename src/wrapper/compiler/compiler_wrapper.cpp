@@ -1405,11 +1405,8 @@ void CompilerWrapper::InitializeCompilerParameters()
             break;
          case(CompilerWrapper_OptimizationSet::OBAMBU):
 #endif
-#if HAVE_ZEBU_BUILT
-         case(CompilerWrapper_OptimizationSet::OZEBU):
-#endif
             /// Filling optimizations map
-#if HAVE_BAMBU_BUILT || HAVE_ZEBU_BUILT
+#if HAVE_BAMBU_BUILT
             SetCompilerDefault();
 
             switch(OS)
@@ -1417,11 +1414,6 @@ void CompilerWrapper::InitializeCompilerParameters()
 #if HAVE_BAMBU_BUILT
                case(CompilerWrapper_OptimizationSet::OBAMBU):
                   SetBambuDefault();
-                  break;
-#endif
-#if HAVE_ZEBU_BUILT
-               case(CompilerWrapper_OptimizationSet::OZEBU):
-                  SetZebuDefault();
                   break;
 #endif
                case(CompilerWrapper_OptimizationSet::O0):
@@ -1576,65 +1568,6 @@ void CompilerWrapper::InitializeCompilerParameters()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Initialized gcc parameters");
 }
 
-#if HAVE_ZEBU_BUILT
-void CompilerWrapper::SetZebuDefault()
-{
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Setting parameters for Zebu tool...");
-   const CompilerWrapper_OptimizationSet opt_level =
-       Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Optimization level: " + WriteOptimizationLevel(opt_level));
-
-   /// parameters with enable
-   optimization_flags["ivopts"] =
-       false; /// introduce target_memory_ref as gimple_assign operands. The default GCC value is true
-   optimization_flags["tree-loop-im"] =
-       false; /// Execution error in 20040307-1.c example. The default GCC value is true
-   optimization_flags["tree-loop-ivcanon"] = false; /// this is requested for rebuild while and for
-   optimization_flags["tree-sink"] = true;          /// this is requested for rebuild while and for
-   optimization_flags["trapping-math"] =
-       true; ///-fno-trapping-math compiles code assuming that floating-point operations cannot generate user-visible
-             /// traps.  These traps include division by zero, overflow, underflow, inexact result and invalid
-             /// operation.
-             /// This option implies -fno-signaling-nans.  Setting this option may allow faster code if one relies on
-             /// "non-stop" IEEE arithmetic, for example. This option should never be turned on by any -O option since
-             /// it can result in incorrect output for programs which depend on an exact implementation of IEEE or ISO
-             /// rules/specifications for math functions.
-   optimization_flags["signed-zeros"] =
-       true; ///-fno-signed-zeros allows optimizations for floating point arithmetic that ignore the signedness of zero.
-             /// IEEE arithmetic specifies the behavior of distinct +0.0 and -0.0 values, which then prohibits
-             /// simplification of expressions such as x+0.0 or 0.0*x (even with -ffinite-math-only).
-   optimization_flags["rename-registers"] = false; /// cross compilation problems
-
-   /// builtin function;
-   optimization_flags["builtin"] = false;
-
-   // optimization_flags["openmp"] = true;
-
-   /// parameters with values
-   // FIXME: to be replaced with plugin; deactivated since it does not work with sparc-elf-gcc
-   //   optimization_values["tree-parallelize-loops"]=1;///requires tree-loop-optimize
-
-   if(opt_level == CompilerWrapper_OptimizationSet::O1 || opt_level == CompilerWrapper_OptimizationSet::O2 ||
-      opt_level == CompilerWrapper_OptimizationSet::O3)
-   {
-      optimization_flags["guess-branch-probability"] =
-          false; /// error in declaration of structure used probably by profiling.
-      optimization_flags["tree-ch"] = false;
-      optimization_flags["tree-copy-prop"] = false;      /// va_list undeclared - problem with split of phi nodes
-      optimization_flags["tree-dominator-opts"] = false; /// va_list undeclared
-      optimization_flags["tree-sra"] = false;            /// Introduces conversion from struct to scalar
-      optimization_flags["rename-registers"] = false;    /// cross compilation problems
-   }
-   if(opt_level == CompilerWrapper_OptimizationSet::O2 || opt_level == CompilerWrapper_OptimizationSet::O3)
-   {
-      optimization_flags["optimize-sibling-calls"] = false; /// Execution error on 20020406-1.c
-      optimization_flags["tree-pre"] = false;               /// some loop are incorrecty identified
-      optimization_flags["tree-vrp"] = false;               /// create several irriducible loops
-   }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for Zebu tool");
-}
-#endif
 
 #if HAVE_BAMBU_BUILT
 void CompilerWrapper::SetBambuDefault()
@@ -2027,9 +1960,6 @@ void CompilerWrapper::SetCompilerDefault()
       }
 #if HAVE_BAMBU_BUILT
       case(CompilerWrapper_OptimizationSet::OBAMBU):
-#endif
-#if HAVE_ZEBU_BUILT
-      case(CompilerWrapper_OptimizationSet::OZEBU):
 #endif
       {
          THROW_UNREACHABLE("Unepected optimization level: " + WriteOptimizationLevel(optimization_level));
@@ -3174,10 +3104,6 @@ std::string CompilerWrapper::WriteOptimizationLevel(const CompilerWrapper_Optimi
          return "bambu";
       case(CompilerWrapper_OptimizationSet::OSF):
          return "softfloat";
-#endif
-#if HAVE_ZEBU_BUILT
-      case(CompilerWrapper_OptimizationSet::OZEBU):
-         return "zebu";
 #endif
       default:
       {

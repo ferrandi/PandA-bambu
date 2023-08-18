@@ -66,10 +66,6 @@ std::string CBackendInformation::GetKindText() const
       case(CBackendInformation::CB_HLS):
          return "HighLevelSynthesis";
 #endif
-#if HAVE_ZEBU_BUILT
-      case(CBackendInformation::CB_POINTED_DATA_EVALUATION):
-         return "PointedDataEvaluation";
-#endif
       case(CBackendInformation::CB_SEQUENTIAL):
          return "Sequential";
       default:

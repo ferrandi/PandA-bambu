@@ -51,7 +51,6 @@
 #include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_FROM_RTL_BUILT.hpp"
 #include "config_HAVE_SPARC_COMPILER.hpp"
-#include "config_HAVE_ZEBU_BUILT.hpp"
 
 /// boost include
 #include <filesystem>
@@ -88,9 +87,6 @@ enum class CompilerWrapper_OptimizationSet
 #if HAVE_BAMBU_BUILT
    OBAMBU, /**< Bambu optimizationss + OPT_compiler_opt_level */
    OSF,    /**< Bambu optimizations for soft float: O3 + -finline-limit=10000 */
-#endif
-#if HAVE_ZEBU_BUILT
-   OZEBU, /**< Zebu optimizations + OPT_compiler_opt_level */
 #endif
 };
 
@@ -261,7 +257,7 @@ class CompilerWrapper
     */
    void InitializeCompilerParameters();
 
-#if HAVE_BAMBU_BUILT || HAVE_ZEBU_BUILT
+#if HAVE_BAMBU_BUILT
    /**
     * Analyze the command line options
     */
@@ -278,14 +274,6 @@ class CompilerWrapper
     * Set the default options for the frontend compiler in bambu
     */
    void SetBambuDefault();
-#endif
-
-#if HAVE_ZEBU_BUILT
-   /**
-    * Set the default options for the frontend compiler in zebu
-    */
-   // cppcheck-suppress unusedPrivateFunction
-   void SetZebuDefault();
 #endif
 
    /**

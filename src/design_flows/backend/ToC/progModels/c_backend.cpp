@@ -216,9 +216,6 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships,
                break;
             }
 #endif
-#if HAVE_ZEBU_BUILT
-            case(CBackendInformation::CB_POINTED_DATA_EVALUATION):
-#endif
             default:
             {
                THROW_UNREACHABLE("");
@@ -292,9 +289,6 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships,
             {
                break;
             }
-#endif
-#if HAVE_ZEBU_BUILT
-            case(CBackendInformation::CB_POINTED_DATA_EVALUATION):
 #endif
             default:
             {

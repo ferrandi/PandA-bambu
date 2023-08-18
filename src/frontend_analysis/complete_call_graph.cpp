@@ -41,7 +41,6 @@
 
 #include "config_HAVE_BAMBU_BUILT.hpp"       // for HAVE_BAMBU_BUILT
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp" // for HAVE_FROM_PRAGMA_BUILT
-#include "config_HAVE_ZEBU_BUILT.hpp"        // for HAVE_ZEBU_BUILT
 
 #include "Parameter.hpp"           // for Parameter, OPT_hls_div
 #include "exceptions.hpp"          // for THROW_UNREACHABLE

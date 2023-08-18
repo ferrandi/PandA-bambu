@@ -126,10 +126,6 @@ operations_cfg_computation::ComputeFrontendRelationships(const DesignFlowStep::R
 #if HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(COND_EXPR_RESTRUCTURING, SAME_FUNCTION));
 #endif
-#if HAVE_ZEBU_BUILT
-         relationships.insert(std::make_pair(LOOPS_ANALYSIS_ZEBU, SAME_FUNCTION));
-         relationships.insert(std::make_pair(LOOP_REGIONS_COMPUTATION, SAME_FUNCTION));
-#endif
          relationships.insert(std::make_pair(VECTORIZE, SAME_FUNCTION));
          break;
       }

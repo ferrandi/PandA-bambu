@@ -179,9 +179,6 @@ create_tree_manager::ComputeFrontendRelationships(const DesignFlowStep::Relation
 #if HAVE_FROM_PRAGMA_BUILT
          relationships.insert(std::make_pair(PRAGMA_SUBSTITUTION, WHOLE_APPLICATION));
 #endif
-#if HAVE_ZEBU_BUILT
-         relationships.insert(std::make_pair(SIZEOF_SUBSTITUTION, WHOLE_APPLICATION));
-#endif
          break;
       }
       case(INVALIDATION_RELATIONSHIP):

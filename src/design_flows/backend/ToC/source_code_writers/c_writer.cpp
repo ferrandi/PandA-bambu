@@ -52,7 +52,6 @@
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 #include "config_HAVE_SPARC_COMPILER.hpp"
 #include "config_HAVE_TASK_GRAPHS_BUILT.hpp"
-#include "config_HAVE_ZEBU_BUILT.hpp"
 #include "config_PACKAGE_NAME.hpp"
 #include "config_PACKAGE_VERSION.hpp"
 #include "config_RELEASE.hpp"
@@ -90,10 +89,6 @@
 #include "discrepancy_instruction_writer.hpp"
 #include "hls_c_writer.hpp"
 #include "hls_instruction_writer.hpp"
-#endif
-#if HAVE_ZEBU_BUILT
-#include "memory_profiling_c_writer.hpp"
-#include "memory_profiling_instruction_writer.hpp"
 #endif
 
 #include <boost/range/adaptor/reversed.hpp>
@@ -200,14 +195,6 @@ CWriterRef CWriter::CreateCWriter(const CBackendInformationConstRef c_backend_in
              new HLSInstructionWriter(app_man, indented_output_stream, parameters));
          return CWriterRef(
              new HLSCWriter(c_backend_info, hls_man, instruction_writer, indented_output_stream, parameters, verbose));
-      }
-#endif
-#if HAVE_ZEBU_BUILT
-      case(CBackendInformation::CB_POINTED_DATA_EVALUATION):
-      {
-         const InstructionWriterRef instruction_writer(
-             new MemoryProfilingInstructionWriter(app_man, indented_output_stream, parameters));
-         return CWriterRef(new MemoryProfilingCWriter(hls_man, instruction_writer, indented_output_stream, parameters));
       }
 #endif
       case(CBackendInformation::CB_SEQUENTIAL):
