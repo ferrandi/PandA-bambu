@@ -1657,13 +1657,8 @@ void CompilerWrapper::SetBambuDefault()
       optimization_flags["builtin-memset"] = false;
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
-      const auto flag_cpp =
-          Param->isOption(OPT_input_format) &&
-          (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
-           Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP);
-      if(!flag_cpp && opt_level != CompilerWrapper_OptimizationSet::O3 &&
-         opt_level != CompilerWrapper_OptimizationSet::O4 && opt_level != CompilerWrapper_OptimizationSet::Ofast &&
-         opt_level != CompilerWrapper_OptimizationSet::OSF)
+      if(opt_level != CompilerWrapper_OptimizationSet::O3 && opt_level != CompilerWrapper_OptimizationSet::O4 &&
+         opt_level != CompilerWrapper_OptimizationSet::Ofast && opt_level != CompilerWrapper_OptimizationSet::OSF)
       {
          optimization_flags["unroll-loops"] =
              false; // it is preferable to have unrolling disabled by default as with GCC
