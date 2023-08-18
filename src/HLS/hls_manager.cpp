@@ -125,7 +125,7 @@ hlsRef HLS_manager::create_HLS(const HLS_managerRef HLSMgr, unsigned int functio
       {
          if(HLS_C->get_number_fu(globalRC.first.first, globalRC.first.second) == INFINITE_UINT)
          {
-            HLS_C->set_number_fu(globalRC.first.first, globalRC.first.second, globalRC.second);
+            HLS_C->set_number_fu(globalRC.first.first, globalRC.first.second, globalRC.second.first);
          }
       }
       HLSMgr->hlsMap[functionId] =

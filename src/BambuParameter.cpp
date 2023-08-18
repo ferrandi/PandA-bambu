@@ -176,7 +176,8 @@
 #define OPT_CLOCK_PERIOD_RESOURCE_FRACTION (1 + OPT_CHANNELS_TYPE)
 #define OPT_DEVICE_NAME (1 + OPT_CLOCK_PERIOD_RESOURCE_FRACTION)
 #define OPT_DISABLE_BOUNDED_FUNCTION (1 + OPT_DEVICE_NAME)
-#define OPT_DISABLE_FUNCTION_PROXY (1 + OPT_DISABLE_BOUNDED_FUNCTION)
+#define OPT_ENABLE_FUNCTION_PROXY (1 + OPT_DISABLE_BOUNDED_FUNCTION)
+#define OPT_DISABLE_FUNCTION_PROXY (1 + OPT_ENABLE_FUNCTION_PROXY)
 #define OPT_CONNECT_IOB (1 + OPT_DISABLE_FUNCTION_PROXY)
 #define OPT_DISTRAM_THRESHOLD (1 + OPT_CONNECT_IOB)
 #define OPT_DO_NOT_CHAIN_MEMORIES (1 + OPT_DISTRAM_THRESHOLD)
@@ -538,15 +539,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Set the bitsize of the external address bus.\n\n"
       << std::endl;
 
-   // Interconnection options
-#if HAVE_EXPERIMENTAL
-   os << "  Interconnection:\n\n"
-      << "    --interconnection, -C[<type>]\n"
-      << "        Perform interconnection binding. Possible values for <type> are:\n"
-      << "            M - mux-based architecture (default)\n\n"
-      << std::endl;
-#endif
-
    // Options for Evaluation of HLS results
    os << "  Evaluation of HLS results:\n\n"
       << "    --simulate\n"
@@ -863,9 +855,19 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Perform host-profiling.\n\n";
 #endif
    os << "    --disable-bitvalue-ipa\n"
-      << "        Disable inter-procedural bitvalue analysis.\n";
+      << "        Disable inter-procedural bitvalue analysis.\n\n";
+   os << "    --enable-function-proxy\n"
+      << "        Enable function proxy. May reduce the resource usage.\n\n";
    os << "    --disable-function-proxy\n"
       << "        Disable function proxy. May increase FSMD parallelism.\n\n";
+   os << "    --constraints,-C=<func_name>[=<num_resources>][,<func_name>[=<num_resources>]]*\n"
+      << "        Perform resource sharing of functions inside the datapath,\n"
+      << "        limiting the number of function instances to 'num_resources'.\n"
+      << "        Functions are specified as a comma-separated list with an optional\n"
+      << "        number of resources. (num_resources is by default equal to 1 when not specified).\n"
+      << "        If the first character of func_name is '*', then 'num_resources'\n"
+      << "        applies to all functions that match with 'func_name' with the first\n"
+      << "        character removed.\n\n";
    os << std::endl;
 
    // Checks and debugging options
@@ -1024,8 +1026,8 @@ int BambuParameter::Exec()
       {"memory-ctrl-type", required_argument, nullptr, 0},
       {"sparse-memory", optional_argument, nullptr, 0},
       {"expose-globals", no_argument, nullptr, OPT_EXPOSE_GLOBALS},
-      // interconnections
-      {"interconnection", required_argument, nullptr, 'C'},
+      // parameter based resource constraints
+      {"constraints", required_argument, nullptr, 'C'},
       /// evaluation options
       {"evaluation", optional_argument, nullptr, OPT_EVALUATION},
 #if HAVE_EXPERIMENTAL
@@ -1101,6 +1103,7 @@ int BambuParameter::Exec()
       {"simulate", no_argument, nullptr, OPT_SIMULATE},
       {"mentor-visualizer", no_argument, nullptr, OPT_VISUALIZER},
       {"simulator", required_argument, nullptr, 0},
+      {"enable-function-proxy", no_argument, nullptr, OPT_ENABLE_FUNCTION_PROXY},
       {"disable-function-proxy", no_argument, nullptr, OPT_DISABLE_FUNCTION_PROXY},
       {"disable-bounded-function", no_argument, nullptr, OPT_DISABLE_BOUNDED_FUNCTION},
       {"memory-mapped-top", no_argument, nullptr, OPT_MEMORY_MAPPED_TOP},
@@ -1298,16 +1301,16 @@ int BambuParameter::Exec()
             break;
          }
 #endif
-         // interconnection
+         // parameter based function constraints
          case 'C':
          {
-            if(std::string(optarg) == "M")
+            if(optarg)
             {
-               setOption(OPT_datapath_interconnection_algorithm, HLSFlowStep_Type::MUX_INTERCONNECTION_BINDING);
+               setOption(OPT_constraints_functions, optarg);
             }
             else
             {
-               throw "BadParameters: interconnection binding not correctly specified";
+               THROW_ERROR("BadParameters: -C option not correctly specified");
             }
             break;
          }
@@ -1885,6 +1888,11 @@ int BambuParameter::Exec()
          case OPT_ADDITIONAL_TOP:
          {
             setOption(OPT_additional_top, optarg);
+            break;
+         }
+         case OPT_ENABLE_FUNCTION_PROXY:
+         {
+            setOption(OPT_disable_function_proxy, false);
             break;
          }
          case OPT_DISABLE_FUNCTION_PROXY:
@@ -3110,6 +3118,44 @@ void BambuParameter::CheckParameters()
       setOption(OPT_gcc_warnings, gcc_warnings);
    }
 #endif
+   if(getOption<bool>(OPT_parse_pragma))
+   {
+      if(isOption(OPT_disable_function_proxy) && !getOption<bool>(OPT_disable_function_proxy))
+      {
+         THROW_ERROR("function proxy has to be disabled when pragmas are parsed");
+      }
+      setOption(OPT_disable_function_proxy, true);
+   }
+   if(isOption(OPT_discrepancy_hw) && getOption<bool>(OPT_discrepancy_hw))
+   {
+      if(isOption(OPT_disable_function_proxy))
+      {
+         if(getOption<bool>(OPT_disable_function_proxy))
+         {
+            THROW_ERROR("--discrepancy-hw Hardware Discrepancy Analysis only works with function proxies");
+         }
+      }
+      else
+      {
+         setOption(OPT_disable_function_proxy, false);
+      }
+   }
+   /// Disable proxy when there are multiple top functions
+   if(isOption(OPT_top_functions_names) && getOption<const std::list<std::string>>(OPT_top_functions_names).size() > 1)
+   {
+      if(isOption(OPT_disable_function_proxy))
+      {
+         if(!getOption<bool>(OPT_disable_function_proxy))
+         {
+            THROW_ERROR("multiple top functions does not work with function proxies");
+         }
+      }
+      else
+      {
+         setOption(OPT_disable_function_proxy, true);
+      }
+   }
+
    /// add experimental setup options
    if(getOption<std::string>(OPT_experimental_setup) == "VVD")
    {
@@ -3137,6 +3183,10 @@ void BambuParameter::CheckParameters()
          setOption(OPT_distram_threshold, 256);
       }
       add_experimental_setup_compiler_options(!flag_cpp);
+      if(!isOption(OPT_disable_function_proxy))
+      {
+         setOption(OPT_disable_function_proxy, true);
+      }
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU092")
    {
@@ -3153,6 +3203,10 @@ void BambuParameter::CheckParameters()
          setOption(OPT_distram_threshold, 256);
       }
       add_experimental_setup_compiler_options(!flag_cpp);
+      if(!isOption(OPT_disable_function_proxy))
+      {
+         setOption(OPT_disable_function_proxy, true);
+      }
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-BALANCED" ||
            getOption<std::string>(OPT_experimental_setup) == "BAMBU-BALANCED-MP" ||
@@ -3248,6 +3302,10 @@ void BambuParameter::CheckParameters()
             setOption(OPT_input_file, concat_filename);
          }
       }
+      if(!isOption(OPT_disable_function_proxy))
+      {
+         setOption(OPT_disable_function_proxy, true);
+      }
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-PERFORMANCE-MP")
    {
@@ -3272,7 +3330,10 @@ void BambuParameter::CheckParameters()
          setOption(OPT_distram_threshold, 512);
       }
       add_experimental_setup_compiler_options(!flag_cpp);
-      setOption(OPT_disable_function_proxy, true);
+      if(!isOption(OPT_disable_function_proxy))
+      {
+         setOption(OPT_disable_function_proxy, true);
+      }
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-PERFORMANCE")
    {
@@ -3289,13 +3350,31 @@ void BambuParameter::CheckParameters()
          setOption(OPT_distram_threshold, 512);
       }
       add_experimental_setup_compiler_options(!flag_cpp);
-      setOption(OPT_disable_function_proxy, true);
+      if(!isOption(OPT_disable_function_proxy))
+      {
+         setOption(OPT_disable_function_proxy, true);
+      }
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-AREA-MP")
    {
       if(!isOption(OPT_compiler_opt_level))
       {
          setOption(OPT_compiler_opt_level, CompilerWrapper_OptimizationSet::Os);
+      }
+      std::string optimizations;
+      if(isOption(OPT_gcc_optimizations))
+      {
+         optimizations += getOption<std::string>(OPT_gcc_optimizations);
+      }
+      std::string tuning_optimizations = "no-unroll-loops";
+      if(optimizations != "" && tuning_optimizations != "")
+      {
+         optimizations += STR_CST_string_separator;
+      }
+      optimizations += tuning_optimizations;
+      if(optimizations != "")
+      {
+         setOption(OPT_gcc_optimizations, optimizations);
       }
       if(!isOption(OPT_channels_type))
       {
@@ -3315,12 +3394,31 @@ void BambuParameter::CheckParameters()
          setOption(OPT_distram_threshold, 256);
       }
       add_experimental_setup_compiler_options(!flag_cpp);
+      if(!isOption(OPT_disable_function_proxy))
+      {
+         setOption(OPT_disable_function_proxy, false);
+      }
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-AREA")
    {
       if(!isOption(OPT_compiler_opt_level))
       {
          setOption(OPT_compiler_opt_level, CompilerWrapper_OptimizationSet::Os);
+      }
+      std::string optimizations;
+      if(isOption(OPT_gcc_optimizations))
+      {
+         optimizations += getOption<std::string>(OPT_gcc_optimizations);
+      }
+      std::string tuning_optimizations = "no-unroll-loops";
+      if(optimizations != "" && tuning_optimizations != "")
+      {
+         optimizations += STR_CST_string_separator;
+      }
+      optimizations += tuning_optimizations;
+      if(optimizations != "")
+      {
+         setOption(OPT_gcc_optimizations, optimizations);
       }
       if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::NONE)
       {
@@ -3332,6 +3430,10 @@ void BambuParameter::CheckParameters()
          setOption(OPT_distram_threshold, 256);
       }
       add_experimental_setup_compiler_options(!flag_cpp);
+      if(!isOption(OPT_disable_function_proxy))
+      {
+         setOption(OPT_disable_function_proxy, false);
+      }
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU")
    {
@@ -3344,6 +3446,10 @@ void BambuParameter::CheckParameters()
          setOption(OPT_distram_threshold, 256);
       }
       add_experimental_setup_compiler_options(false);
+      if(!isOption(OPT_disable_function_proxy))
+      {
+         setOption(OPT_disable_function_proxy, false);
+      }
    }
    else
    {
@@ -3380,7 +3486,6 @@ void BambuParameter::CheckParameters()
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
    if(getOption<bool>(OPT_parse_pragma))
    {
-      setOption(OPT_disable_function_proxy, true);
       if(isOption(OPT_context_switch))
       {
          if(getOption<unsigned int>(OPT_channels_number) >= getOption<unsigned int>(OPT_memory_banks_number))
@@ -3537,11 +3642,6 @@ void BambuParameter::CheckParameters()
    {
       THROW_ERROR("--discrepancy-hw Hardware Discrepancy Analysis only works with dominator function allocation");
    }
-   if(isOption(OPT_discrepancy_hw) && getOption<bool>(OPT_discrepancy_hw) && isOption(OPT_disable_function_proxy) &&
-      getOption<bool>(OPT_disable_function_proxy))
-   {
-      THROW_ERROR("--discrepancy-hw Hardware Discrepancy Analysis only works with function proxies");
-   }
    if(isOption(OPT_discrepancy) && getOption<bool>(OPT_discrepancy))
    {
       if(default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC45 ||
@@ -3561,11 +3661,6 @@ void BambuParameter::CheckParameters()
       {
          THROW_ERROR("Testbench generation required. (--generate-tb or --simulate undeclared).");
       }
-   }
-   /// Disable proxy when there are multiple top functions
-   if(isOption(OPT_top_functions_names) && getOption<const std::list<std::string>>(OPT_top_functions_names).size() > 1)
-   {
-      setOption(OPT_disable_function_proxy, true);
    }
 
    if(isOption(OPT_no_parse_c_python) && !isOption(OPT_testbench_extra_gcc_flags))
@@ -3636,7 +3731,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_max_sim_cycles, 200000000);
    setOption(OPT_chaining, true);
 
-   /// High-level synthesis contraints dump -- //
+   /// High-level synthesis constraints dump -- //
    setOption("dumpConstraints", false);
    setOption("dumpConstraints_file", "Constraints.xml");
 
@@ -3687,7 +3782,6 @@ void BambuParameter::SetDefaults()
    setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION);
 
    /// Enable function proxy by default
-   setOption(OPT_disable_function_proxy, false);
    setOption(OPT_disable_bounded_function, false);
 
    /// Disable memory mapped interface for top function by default
