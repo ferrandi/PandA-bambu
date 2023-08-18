@@ -46,15 +46,9 @@
 
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp"
-#include "config_HAVE_FROM_LIBERTY.hpp"
-#include "config_HAVE_KOALA_BUILT.hpp"
-#include "config_HAVE_LIBRARY_COMPILER.hpp"
 
 #include "area_model.hpp"
 #include "technology_node.hpp"
-#if HAVE_LIBRARY_COMPILER
-#include "LibraryCompilerWrapper.hpp"
-#endif
 #include "parse_technology.hpp"
 
 #include "Parameter.hpp"
@@ -202,34 +196,6 @@ void attribute::xwrite(xml_element* xml_node, const std::string& name)
 
 void library_manager::set_default_attributes()
 {
-#if HAVE_KOALA_BUILT
-   std::vector<attributeRef> content;
-   /// creating default schema
-   ordered_attributes.push_back("time_unit");
-   ordered_attributes.push_back("voltage_unit");
-   ordered_attributes.push_back("current_unit");
-   ordered_attributes.push_back("pulling_resistance_unit");
-   ordered_attributes.push_back("leakage_power_unit");
-   ordered_attributes.push_back("capacitive_load_unit");
-   ordered_attributes.push_back("define");
-
-   attributes["time_unit"] = attributeRef(new attribute(attribute::STRING, "1ps"));
-   attributes["voltage_unit"] = attributeRef(new attribute(attribute::STRING, "1V"));
-   attributes["current_unit"] = attributeRef(new attribute(attribute::STRING, "1uA"));
-   attributes["pulling_resistance_unit"] = attributeRef(new attribute(attribute::STRING, "1kohm"));
-   attributes["leakage_power_unit"] = attributeRef(new attribute(attribute::STRING, "1pW"));
-
-   content.clear();
-   content.push_back(attributeRef(new attribute(attribute::INT32, "1")));
-   content.push_back(attributeRef(new attribute(attribute::STRING, "ff")));
-   attributes["capacitive_load_unit"] = attributeRef(new attribute(content));
-
-   content.clear();
-   content.push_back(attributeRef(new attribute(attribute::STRING, "drive_strength")));
-   content.push_back(attributeRef(new attribute(attribute::STRING, "cell")));
-   content.push_back(attributeRef(new attribute(attribute::STRING, "float")));
-   attributes["define"] = attributeRef(new attribute(content));
-#endif
 }
 
 library_manager::library_manager(ParameterConstRef _Param, bool std) : Param(std::move(_Param)), is_std(std)
@@ -262,16 +228,6 @@ void library_manager::xload(const xml_element* node, const library_managerRef& L
       }
       if(EnodeC->get_name() == "information")
       {
-#if HAVE_FROM_LIBERTY
-         const attribute_sequence::attribute_list& attr_list = EnodeC->get_attributes();
-         for(attribute_sequence::attribute_list::const_iterator a = attr_list.begin(); a != attr_list.end(); ++a)
-         {
-            std::string key = (*a)->get_name();
-            std::string value = (*a)->get_value();
-            if(key == "liberty_file")
-               LM->info[LIBERTY] = value;
-         }
-#endif
       }
       if(EnodeC->get_name() == "name")
       {
@@ -357,15 +313,6 @@ void library_manager::xload(const xml_element* node, const library_managerRef& L
 void library_manager::xwrite(xml_element* node, TargetDevice_Type dv_type)
 {
    xml_element* library = node->add_child_element("library");
-
-#if HAVE_FROM_LIBERTY
-   xml_element* info_xml = library->add_child_element("information");
-   for(std::map<unsigned int, std::string>::iterator i = info.begin(); i != info.end(); ++i)
-   {
-      if(i->first == LIBERTY)
-         info_xml->set_attribute("liberty_file", i->second);
-   }
-#endif
 
    xml_element* xml_name = library->add_child_element("name");
    xml_name->add_child_text(name);
@@ -549,13 +496,6 @@ std::string library_manager::get_info(info_t type, const TargetDevice_Type dv_ty
             write_xml_technology_File(get_library_name() + ".xml", this, dv_type);
             break;
          }
-#if HAVE_FROM_LIBERTY
-         case LIBERTY:
-         {
-            write_lib_technology_File(get_library_name() + ".lib", this, dv_type);
-            break;
-         }
-#endif
          default:
             THROW_ERROR("Not enough information to return the library information");
       }

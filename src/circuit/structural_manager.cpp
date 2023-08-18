@@ -47,7 +47,6 @@
 #include "structural_manager.hpp"
 
 #include "config_HAVE_BAMBU_BUILT.hpp"      // for HAVE_BAM...
-#include "config_HAVE_KOALA_BUILT.hpp"      // for HAVE_KOA...
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp" // for HAVE_TEC...
 
 #include "Parameter.hpp"                        // for Parameter
@@ -73,7 +72,7 @@
 #include <ostream>                              // for operator<<
 #include <utility>                              // for swap, pair
 #include <vector>                               // for vector
-#if HAVE_BAMBU_BUILT || HAVE_KOALA_BUILT || HAVE_EUCALYPTUS_BUILT
+#if HAVE_BAMBU_BUILT || HAVE_EUCALYPTUS_BUILT
 #include "technology_manager.hpp" // for technolo...
 #include "technology_node.hpp"    // for function...
 #endif
@@ -132,7 +131,7 @@ void structural_manager::set_top_info(std::string id, structural_type_descriptor
    circ->set_type(module_type);
 }
 
-#if HAVE_BAMBU_BUILT || HAVE_KOALA_BUILT
+#if HAVE_BAMBU_BUILT
 void structural_manager::set_top_info(const std::string& id, const technology_managerRef& LM,
                                       const std::string& Library)
 {
@@ -1067,7 +1066,7 @@ void structural_manager::INIT(bool permissive)
    build_graph(circuit, og);
 }
 
-#if HAVE_BAMBU_BUILT || HAVE_KOALA_BUILT || HAVE_EUCALYPTUS_BUILT
+#if HAVE_BAMBU_BUILT || HAVE_EUCALYPTUS_BUILT
 structural_objectRef structural_manager::add_module_from_technology_library(const std::string& id,
                                                                             const std::string& fu_name,
                                                                             const std::string& library_name,
@@ -1764,15 +1763,8 @@ void structural_manager::xload(const xml_element* node, structural_managerRef co
 }
 
 void structural_manager::xwrite(xml_element* rootnode, const technology_nodeRef&
-#if HAVE_KOALA_BUILT
-                                                           tn
-#endif
 ) const
 {
-#if HAVE_KOALA_BUILT
-   get_circ()->xwrite_attributes(rootnode, tn);
-#endif
-
    xml_element* CMnode = rootnode->add_child_element("circuit");
    get_circ()->xwrite(CMnode);
 }

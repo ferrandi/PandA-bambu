@@ -45,9 +45,9 @@
 /// Header include
 #include "trce_wrapper.hpp"
 
+#include "DesignParameters.hpp"
 #include "ToolManager.hpp"
 #include "xml_script_command.hpp"
-
 #include "Parameter.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include <iostream>

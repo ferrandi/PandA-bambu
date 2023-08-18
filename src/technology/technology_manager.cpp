@@ -45,7 +45,6 @@
 #include "technology_manager.hpp"
 
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
-#include "config_HAVE_FROM_LIBERTY.hpp"
 
 #include "Parameter.hpp"
 #include "area_model.hpp"
@@ -65,20 +64,11 @@
 #include "utility.hpp"
 #include "xml_helper.hpp"
 
-#if HAVE_FROM_LIBERTY
-#include "lib2xml.hpp"
-#endif
-
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <filesystem>
 
 const unsigned int technology_manager::XML = 1 << 0;
-#if HAVE_FROM_LIBERTY
-#define LIBERTY_VERSION "0.1"
-const unsigned int technology_manager::LIB = 1 << 1;
-#endif
-const unsigned int technology_manager::LEF = 1 << 2;
 
 technology_manager::technology_manager(const ParameterConstRef _Param) : Param(_Param)
 {
@@ -260,16 +250,6 @@ void technology_manager::xload(const xml_element* node, const target_deviceRef d
       }
       if(Enode->get_name() == "information")
       {
-         const attribute_sequence::attribute_list& attr_list = Enode->get_attributes();
-         for(auto a = attr_list.begin(); a != attr_list.end(); ++a)
-         {
-#if HAVE_FROM_LIBERTY
-            std::string key = (*a)->get_name();
-            std::string value = (*a)->get_value();
-            if(key == "liberty_file")
-               info[library_manager::LIBERTY] = value;
-#endif
-         }
       }
       if(Enode->get_name() == "library")
       {
@@ -354,45 +334,6 @@ void technology_manager::xload(const xml_element* node, const target_deviceRef d
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Loaded xml technology");
 }
 
-#if HAVE_BOOLEAN_PARSER_BUILT
-void technology_manager::gload(const std::string& file_name, const fileIO_istreamRef file,
-                               const technology_managerRef TM, const ParameterConstRef Param)
-{
-   std::string library_name = file_name.substr(0, file_name.find_last_of("."));
-
-   unsigned int gate = 0;
-
-   while(*file)
-   {
-      char tmp[255];
-      file->getline(tmp, 255); // delim defaults to '\n'
-      std::string line = tmp;
-      if(!file or line.size() == 0 or boost::algorithm::starts_with(line, "#"))
-         continue;
-
-      std::vector<std::string> splitted = SplitString(line, " ; \t");
-      if(splitted[0] == "PIN")
-         continue;
-
-      std::string fu_name = splitted[1];
-      if(fu_name.find("\"") != std::string::npos)
-         fu_name = "gate_" + boost::lexical_cast<std::string>(gate++);
-
-      technology_nodeRef fu_curr = TM->get_fu(fu_name, library_name);
-      if(fu_curr)
-      {
-         GetPointer<functional_unit>(fu_curr)->gload(line, fu_name, fu_curr, Param);
-      }
-      else
-      {
-         fu_curr = technology_nodeRef(new functional_unit());
-         GetPointer<functional_unit>(fu_curr)->gload(line, fu_name, fu_curr, Param);
-         TM->add(fu_curr, library_name);
-      }
-   }
-}
-#endif
-
 void technology_manager::xwrite(xml_element* rootnode, TargetDevice_Type dv_type,
                                 const CustomOrderedSet<std::string>& _libraries)
 {
@@ -418,48 +359,6 @@ void technology_manager::xwrite(xml_element* rootnode, TargetDevice_Type dv_type
    }
 }
 
-#if HAVE_FROM_LIBERTY
-void technology_manager::lib_write(const std::string& filename, TargetDevice_Type dv_type,
-                                   const CustomOrderedSet<std::string>& local_libraries)
-{
-   const auto output_level = Param->getOption<unsigned int>(OPT_output_level);
-   const auto library_fname = GetPath("__library__.xml");
-   try
-   {
-      xml_document document;
-      xml_element* nodeRoot = document.create_root_node("technology");
-      xwrite(nodeRoot, dv_type, local_libraries);
-      document.write_to_file_formatted(library_fname);
-
-      xml2lib(library_fname, filename, output_level, debug_level);
-      if(debug_level < DEBUG_LEVEL_PEDANTIC)
-         std::filesystem::remove(library_fname);
-      for(CustomOrderedSet<std::string>::const_iterator l = local_libraries.begin(); l != local_libraries.end(); ++l)
-      {
-         if(!is_library_manager(*l))
-            continue;
-         const library_managerRef LM = get_library_manager(*l);
-         LM->set_info(library_manager::LIBERTY, filename);
-      }
-   }
-   catch(const char* msg)
-   {
-      std::cerr << msg << std::endl;
-   }
-   catch(const std::string& msg)
-   {
-      std::cerr << msg << std::endl;
-   }
-   catch(const std::exception& ex)
-   {
-      std::cout << "Exception caught: " << ex.what() << std::endl;
-   }
-   catch(...)
-   {
-      std::cerr << "unknown exception" << std::endl;
-   }
-}
-#endif
 
 std::string technology_manager::get_library(const std::string& Name) const
 {

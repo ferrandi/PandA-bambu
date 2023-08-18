@@ -222,7 +222,6 @@ src/intermediate_representations/actor_graphs/sdf_graphs
 src/intermediate_representations/actor_graphs/task_graphs
 src/intermediate_representations/hls
 src/intermediate_representations/mapping_annotations
-src/ip_xact
 src/logic_node
 src/logic_synthesis
 src/logic_synthesis/2lev
@@ -280,7 +279,6 @@ src/parser/data_xml
 src/parser/discrepancy
 src/parser/edif
 src/parser/estimation
-src/parser/ip_xact
 src/parser/machine
 src/parser/polixml
 src/parser/pragma

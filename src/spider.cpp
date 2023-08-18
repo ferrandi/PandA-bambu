@@ -40,10 +40,8 @@
  */
 
 /// Autoheader include
-#include "config_HAVE_CMOS_BUILT.hpp"
 #include "config_HAVE_FROM_ARCH_BUILT.hpp"
 #include "config_HAVE_FROM_CSV_BUILT.hpp"
-#include "config_HAVE_FROM_LIBERTY.hpp"
 #include "config_HAVE_FROM_PROFILING_ANALYIS_BUILT.hpp"
 #include "config_HAVE_R.hpp"
 
@@ -60,9 +58,6 @@
 
 /// algorithms/regressors/preprocessing includes
 #include "cell_selection.hpp"
-#if HAVE_FROM_LIBERTY
-#include "cell_area_preprocessing.hpp"
-#endif
 #include "performance_estimation_preprocessing.hpp"
 #if HAVE_R
 #include "significance_preprocessing.hpp"
@@ -76,9 +71,6 @@
 /// constants include
 #if HAVE_R
 #include "regressors_constants.hpp"
-#endif
-#if HAVE_FROM_LIBERTY
-#include "physical_library_models_constants.hpp"
 #endif
 
 /// design_flows include
@@ -132,10 +124,6 @@
 #include "technology_manager.hpp"
 #endif
 
-#if HAVE_FROM_LIBERTY
-/// technology/physical_library/models include
-#include "features_extractor.hpp"
-#endif
 
 /// utility includes
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
@@ -232,9 +220,6 @@ int main(int argc, char* argv[])
                case(Parameters_FileFormat::FF_CSV):
                case(Parameters_FileFormat::FF_CSV_RTL):
                case(Parameters_FileFormat::FF_CSV_TRE):
-#if HAVE_FROM_LIBERTY
-               case(Parameters_FileFormat::FF_LIB):
-#endif
                case(Parameters_FileFormat::FF_LOG):
                case(Parameters_FileFormat::FF_PA):
 #if HAVE_FROM_C_BUILT
@@ -249,17 +234,10 @@ int main(int argc, char* argv[])
                case(Parameters_FileFormat::FF_XML_ARCHITECTURE):
 #endif
                case(Parameters_FileFormat::FF_XML_BAMBU_RESULTS):
-#if HAVE_FROM_LIBERTY
-               case(Parameters_FileFormat::FF_XML_CELLS):
-#endif
 #if HAVE_HLS_BUILT
                case(Parameters_FileFormat::FF_XML_CON):
 #endif
                case Parameters_FileFormat::FF_XML_EXPERIMENTAL_SETUP:
-               case(Parameters_FileFormat::FF_XML_IP_XACT_COMPONENT):
-               case(Parameters_FileFormat::FF_XML_IP_XACT_CONFIG):
-               case(Parameters_FileFormat::FF_XML_IP_XACT_DESIGN):
-               case(Parameters_FileFormat::FF_XML_IP_XACT_GENERATOR):
                case(Parameters_FileFormat::FF_XML_SKIP_ROW):
                case(Parameters_FileFormat::FF_XML_STAT):
 #if HAVE_TECHNOLOGY_BUILT
@@ -312,9 +290,6 @@ int main(int argc, char* argv[])
                case(Parameters_FileFormat::FF_CSV_RTL):
                case(Parameters_FileFormat::FF_CSV_TRE):
 #endif
-#if HAVE_FROM_LIBERTY
-               case(Parameters_FileFormat::FF_LIB):
-#endif
 #if HAVE_FROM_C_BUILT
                case(Parameters_FileFormat::FF_RAW):
 #endif
@@ -328,17 +303,10 @@ int main(int argc, char* argv[])
                case(Parameters_FileFormat::FF_XML_ARCHITECTURE):
 #endif
                case(Parameters_FileFormat::FF_XML_BAMBU_RESULTS):
-#if HAVE_FROM_LIBERTY
-               case(Parameters_FileFormat::FF_XML_CELLS):
-#endif
 #if HAVE_HLS_BUILT
                case(Parameters_FileFormat::FF_XML_CON):
 #endif
                case Parameters_FileFormat::FF_XML_EXPERIMENTAL_SETUP:
-               case(Parameters_FileFormat::FF_XML_IP_XACT_COMPONENT):
-               case(Parameters_FileFormat::FF_XML_IP_XACT_CONFIG):
-               case(Parameters_FileFormat::FF_XML_IP_XACT_DESIGN):
-               case(Parameters_FileFormat::FF_XML_IP_XACT_GENERATOR):
                case(Parameters_FileFormat::FF_XML_SKIP_ROW):
 #if HAVE_SOURCE_CODE_STATISTICS_XML
                case(Parameters_FileFormat::FF_XML_STAT):
@@ -357,109 +325,6 @@ int main(int argc, char* argv[])
             }
             break;
          }
-#if HAVE_FROM_LIBERTY && HAVE_R && HAVE_CMOS_BUILT
-         case(Parameters_FileFormat::FF_LIB):
-         case(Parameters_FileFormat::FF_XML_CELLS):
-         {
-            if(output_format != Parameters_FileFormat::FF_XML)
-               THROW_ERROR("Not supported combination input file - output file types");
-            int output_level = parameters->getOption<int>(OPT_output_level);
-            if(output_level >= OUTPUT_LEVEL_MINIMUM)
-            {
-               if(output_level >= OUTPUT_LEVEL_VERBOSE)
-               {
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                                 "*******************************************************************************");
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                                 "*                        Computing cell area and time models                  *");
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                                 "*******************************************************************************");
-               }
-               else
-               {
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                                 " ======================= Computing cell area and time models ================= ");
-               }
-            }
-            const technology_managerRef TM = technology_managerRef(new technology_manager(parameters));
-
-            /// read the technology library
-            read_technology_library(TM, parameters, target_device::create_device(target_device::IC, parameters, TM));
-
-            /// Generate features
-            std::map<std::string, std::map<std::string, long double>> data, preprocessed_data;
-            FeaturesExtractorRef features_extractor(new FeaturesExtractor(parameters));
-            CustomOrderedSet<std::string> column_names;
-            features_extractor->ExtractAreaFeatures(TM, data, column_names);
-            /*
-               const CellAreaPreprocessingConstRef preprocessing(new CellAreaPreprocessing(parameters));
-               preprocessing->Exec(data, preprocessed_data, column_names);
-               data = preprocessed_data;*/
-            const PreprocessingConstRef cell_selection(new CellSelection(parameters));
-            cell_selection->Exec(data, preprocessed_data, column_names, STR_CST_physical_library_models_area);
-            const RegressorConstRef linear_regression = RegressorConstRef(new LinearRegression(parameters));
-            if(parameters->getOption<int>(OPT_cross_validation) > 1)
-            {
-               const RegressorConstRef cross_validation_regression(new CrossValidation(linear_regression, parameters));
-               const RegressionResultsRef results = cross_validation_regression->Exec(
-                   column_names, STR_CST_physical_library_models_area, preprocessed_data);
-               if(output_level >= OUTPUT_LEVEL_MINIMUM)
-               {
-                  if(output_level >= OUTPUT_LEVEL_VERBOSE)
-                  {
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                                    "*******************************************************************************");
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                                    "*                             Cross validation results                        *");
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                                    "*******************************************************************************");
-                  }
-                  else
-                  {
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                                    " ============================ Cross validation results ======================= ");
-                  }
-                  results->Print(std::cerr);
-               }
-            }
-            else
-            {
-               const RegressionResultsRef results =
-                   linear_regression->Exec(column_names, STR_CST_physical_library_models_area, preprocessed_data);
-               if(output_level >= OUTPUT_LEVEL_MINIMUM)
-               {
-                  if(output_level >= OUTPUT_LEVEL_VERBOSE)
-                  {
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "");
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                                    "*******************************************************************************");
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                                    "*                                Regression results                           *");
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                                    "*******************************************************************************");
-                  }
-                  else
-                  {
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                                    " =============================== Regression results ========================== ");
-                  }
-                  results->Print(std::cerr);
-               }
-            }
-            break;
-         }
-#endif
          case(Parameters_FileFormat::FF_XML_BAMBU_RESULTS):
 #if HAVE_SOURCE_CODE_STATISTICS_XML
          case(Parameters_FileFormat::FF_XML_STAT):
@@ -502,9 +367,6 @@ int main(int argc, char* argv[])
                case(Parameters_FileFormat::FF_CSV_RTL):
                case(Parameters_FileFormat::FF_CSV_TRE):
 #endif
-#if HAVE_FROM_LIBERTY
-               case(Parameters_FileFormat::FF_LIB):
-#endif
 #if HAVE_FROM_C_BUILT
                case(Parameters_FileFormat::FF_RAW):
 #endif
@@ -519,17 +381,10 @@ int main(int argc, char* argv[])
                case(Parameters_FileFormat::FF_XML_ARCHITECTURE):
 #endif
                case(Parameters_FileFormat::FF_XML_BAMBU_RESULTS):
-#if HAVE_FROM_LIBERTY
-               case(Parameters_FileFormat::FF_XML_CELLS):
-#endif
 #if HAVE_HLS_BUILT
                case(Parameters_FileFormat::FF_XML_CON):
 #endif
                case Parameters_FileFormat::FF_XML_EXPERIMENTAL_SETUP:
-               case(Parameters_FileFormat::FF_XML_IP_XACT_COMPONENT):
-               case(Parameters_FileFormat::FF_XML_IP_XACT_CONFIG):
-               case(Parameters_FileFormat::FF_XML_IP_XACT_DESIGN):
-               case(Parameters_FileFormat::FF_XML_IP_XACT_GENERATOR):
                case(Parameters_FileFormat::FF_XML_SKIP_ROW):
 #if HAVE_SOURCE_CODE_STATISTICS_XML
                case(Parameters_FileFormat::FF_XML_STAT):
@@ -776,9 +631,6 @@ int main(int argc, char* argv[])
          case(Parameters_FileFormat::FF_CSV_RTL):
          case(Parameters_FileFormat::FF_CSV_TRE):
 #endif
-#if HAVE_FROM_LIBERTY
-         case(Parameters_FileFormat::FF_LIB):
-#endif
 #if HAVE_FROM_C_BUILT
          case(Parameters_FileFormat::FF_RAW):
 #endif
@@ -792,17 +644,10 @@ int main(int argc, char* argv[])
 #if HAVE_FROM_ARCH_BUILT
          case(Parameters_FileFormat::FF_XML_ARCHITECTURE):
 #endif
-#if HAVE_FROM_LIBERTY
-         case(Parameters_FileFormat::FF_XML_CELLS):
-#endif
 #if HAVE_HLS_BUILT
          case(Parameters_FileFormat::FF_XML_CON):
 #endif
          case Parameters_FileFormat::FF_XML_EXPERIMENTAL_SETUP:
-         case(Parameters_FileFormat::FF_XML_IP_XACT_COMPONENT):
-         case(Parameters_FileFormat::FF_XML_IP_XACT_CONFIG):
-         case(Parameters_FileFormat::FF_XML_IP_XACT_DESIGN):
-         case(Parameters_FileFormat::FF_XML_IP_XACT_GENERATOR):
          case(Parameters_FileFormat::FF_XML_SKIP_ROW):
 #if !HAVE_R
          case(Parameters_FileFormat::FF_XML_SYM_SIM):

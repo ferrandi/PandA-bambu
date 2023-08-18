@@ -45,7 +45,6 @@
 #include "config_HAVE_FROM_ARCH_BUILT.hpp"
 #include "config_HAVE_FROM_CSV_BUILT.hpp"
 #include "config_HAVE_FROM_C_BUILT.hpp"
-#include "config_HAVE_FROM_IPXACT_BUILT.hpp"
 #include "config_HAVE_FROM_PSPLIB_BUILT.hpp"
 #include "config_HAVE_FROM_SDF3_BUILT.hpp"
 #include "config_HAVE_I386_CLANG10_COMPILER.hpp"
@@ -69,7 +68,6 @@
 #include "config_HAVE_I386_GCC6_COMPILER.hpp"
 #include "config_HAVE_I386_GCC7_COMPILER.hpp"
 #include "config_HAVE_I386_GCC8_COMPILER.hpp"
-#include "config_HAVE_IPXACT_BUILT.hpp"
 #include "config_HAVE_PERFORMANCE_METRICS_XML.hpp"
 #include "config_HAVE_REGRESSORS_BUILT.hpp"
 #include "config_HAVE_SOURCE_CODE_STATISTICS_XML.hpp"
@@ -144,11 +142,6 @@
 /// XML include
 #include "polixml.hpp"
 #include "xml_dom_parser.hpp"
-#if HAVE_FROM_IPXACT_BUILT
-#include "ip_xact_xml.hpp"
-/// Constants include
-#include "design_analysis_xml.hpp"
-#endif
 
 #include "fileIO.hpp"
 
@@ -1128,12 +1121,6 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::filesystem::path& file
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--generic CSV");
       return Parameters_FileFormat::FF_CSV;
    }
-#if HAVE_FROM_LIBERTY
-   if(extension == ".lib")
-   {
-      return Parameters_FileFormat::FF_LIB;
-   }
-#endif
 #if HAVE_FROM_PSPLIB_BUILT
    if(extension == ".mm")
    {
@@ -1169,7 +1156,7 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::filesystem::path& file
          parser.Exec();
          THROW_ASSERT(parser, "Impossible to parse xml file " + file_name.string());
 
-#if HAVE_DESIGN_ANALYSIS_BUILT || HAVE_SOURCE_CODE_STATISTICS_XML || HAVE_FROM_IPXACT_BUILT || HAVE_FROM_SDF3_BUILT || \
+#if HAVE_DESIGN_ANALYSIS_BUILT || HAVE_SOURCE_CODE_STATISTICS_XML ||HAVE_FROM_SDF3_BUILT || \
     HAVE_TO_DATAFILE_BUILT || HAVE_PERFORMANCE_METRICS_XML || HAVE_WEIGHT_MODELS_XML
          const xml_element* root = parser.get_document()->get_root_node();
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Root node is " + root->get_name());
@@ -1218,28 +1205,6 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::filesystem::path& file
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Source code statistics");
             return Parameters_FileFormat::FF_XML_STAT;
-         }
-#endif
-#if HAVE_FROM_IPXACT_BUILT
-         if(root->get_name() == STR_XML_ip_xact_component)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--IP-XACT component");
-            return Parameters_FileFormat::FF_XML_IP_XACT_COMPONENT;
-         }
-         if(root->get_name() == STR_XML_ip_xact_design)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--IP-XACT design");
-            return Parameters_FileFormat::FF_XML_IP_XACT_DESIGN;
-         }
-         if(root->get_name() == STR_XML_ip_xact_generator_chain)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--IP-XACT generator chain");
-            return Parameters_FileFormat::FF_XML_IP_XACT_GENERATOR;
-         }
-         if(root->get_name() == STR_XML_ip_xact_design_configuration)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--IP-XACT design configuration");
-            return Parameters_FileFormat::FF_XML_IP_XACT_CONFIG;
          }
 #endif
 #if HAVE_TECHNOLOGY_BUILT

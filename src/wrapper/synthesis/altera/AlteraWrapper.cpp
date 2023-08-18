@@ -44,17 +44,15 @@
 /// Header include
 #include "AlteraWrapper.hpp"
 
+#include "DesignParameters.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_script_command.hpp"
-
 #include <boost/algorithm/string.hpp>
 #include <filesystem>
-
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
 #include "fileIO.hpp"
 #include "utility.hpp"
-
 #include <fstream>
 
 AlteraWrapper::AlteraWrapper(const ParameterConstRef& _Param, const std::string& _tool_exec,

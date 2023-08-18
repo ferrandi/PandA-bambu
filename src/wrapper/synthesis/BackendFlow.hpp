@@ -42,8 +42,6 @@
 #ifndef _BACKEND_FLOW_HPP_
 #define _BACKEND_FLOW_HPP_
 
-/// Autoheader include
-#include "config_HAVE_IPXACT_BUILT.hpp"
 #include "config_HAVE_SIMULATION_WRAPPER_BUILT.hpp"
 #include "config_HAVE_TASTE.hpp"
 
@@ -58,21 +56,18 @@ REF_FORWARD_DECL(area_model);
 REF_FORWARD_DECL(time_model);
 REF_FORWARD_DECL(Design_manager);
 REF_FORWARD_DECL(BackendFlow);
-REF_FORWARD_DECL(DesignParameters);
 REF_FORWARD_DECL(HDL_manager);
 REF_FORWARD_DECL(language_writer);
 REF_FORWARD_DECL(structural_manager);
 REF_FORWARD_DECL(technology_node);
 REF_FORWARD_DECL(XMLDomParser);
+REF_FORWARD_DECL(DesignParameters);
 class xml_element;
 using fileIO_istreamRef = refcount<std::istream>;
 
-#include "custom_map.hpp"
 #include "custom_set.hpp"
 #include <string>
 #include <vector>
-
-#include "DesignParameters.hpp"
 
 struct BackendStep
 {
@@ -251,13 +246,6 @@ class BackendFlow
     * Returns the name of the flow
     */
    std::string get_flow_name() const;
-
-#if HAVE_IPXACT_BUILT
-   /**
-    * Parses an XML-based configuration based on IP-XACT standard
-    */
-   static BackendFlowRef xload_generator_chain(const ParameterConstRef Param, const std::string& xml_file);
-#endif
 
    /**
     * Sets parameters

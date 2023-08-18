@@ -104,10 +104,6 @@ HLS_targetRef HLS_target::create_target(const ParameterRef& Param)
                      LOAD_XVM(type, Enode);
                   }
                   TargetDevice_Type type_device = TargetDevice_Type::FPGA;
-                  if(type == "IC")
-                  {
-                     type_device = TargetDevice_Type::IC;
-                  }
                   Param->setOption(OPT_target_device_type, static_cast<int>(type_device));
 
                   target_deviceRef target = target_device::create_device(type_device, Param, TM);

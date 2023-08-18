@@ -52,7 +52,6 @@
 #include "config_HAVE_FROM_AADL_ASN_BUILT.hpp"
 #include "config_HAVE_FROM_ARCH_BUILT.hpp"
 #include "config_HAVE_FROM_C_BUILT.hpp"
-#include "config_HAVE_FROM_LIBERTY.hpp"
 #include "config_HAVE_FROM_PSPLIB_BUILT.hpp"
 #include "config_HAVE_FROM_SDF3_BUILT.hpp"
 #include "config_HAVE_HLS_BUILT.hpp"
@@ -182,7 +181,7 @@ enum class DiopsisInstrumentWriter_Type;
 #define SYNTHESIS_OPTIONS                                                                                              \
    (clock_period)(clock_name)(reset_name)(start_name)(done_name)(design_analysis_steps)(design_compiler_compile_log)(  \
        design_compiler_split_log)(design_parameters)(design_hierarchy)(device_string)(dump_genlib)(estimate_library)(  \
-       export_ip_core)(import_ip_core)(input_liberty_library_file)(ip_xact_architecture_template)(ip_xact_parameters)( \
+       export_ip_core)(import_ip_core)(input_liberty_library_file)( \
        is_structural)(lib2xml)(min_metric)(parse_edif)(rtl)(synthesis_flow)(structural_HDL)(target_device)(            \
        target_library)(target_library_source)(target_technology)(target_technology_file)(target_device_file)(          \
        target_device_script)(target_device_type)(top_component)(uniquify)(writer_language)
@@ -333,9 +332,6 @@ enum class Parameters_FileFormat
    FF_LLVM_CPP,     /**< (Input/Output) LLVM source bitcode file generated from c++ source code*/
 #endif
    FF_CSV, /**< (Input) comma separated value */
-#if HAVE_FROM_LIBERTY
-   FF_LIB, /**< (Input) Liberty file */
-#endif
 #if HAVE_FROM_PSPLIB_BUILT
    FF_PSPLIB_MM, /**< (Input) Multi-mode Project Scheduling Problem */
    FF_PSPLIB_SM, /**< (Input) Single-mode Project Scheduling Problem */
@@ -357,9 +353,6 @@ enum class Parameters_FileFormat
 #if HAVE_BAMBU_RESULTS_XML
    FF_XML_BAMBU_RESULTS, /**< (Input) XML bambu results*/
 #endif
-#if HAVE_FROM_LIBERTY
-   FF_XML_CELLS, /**< (Input) XML describing list of cells */
-#endif
 #if HAVE_HLS_BUILT
    FF_XML_CON, /**< (Input) XML storing constraints */
 #endif
@@ -367,10 +360,6 @@ enum class Parameters_FileFormat
    FF_XML_DESIGN_HIERARCHY, /**< (Input) XML storing hierarchy of a design */
 #endif
    FF_XML_EXPERIMENTAL_SETUP, /**< (Input) XML storing experimental setup */
-   FF_XML_IP_XACT_COMPONENT,  /**< (Input) XML storing IP-XACT component */
-   FF_XML_IP_XACT_DESIGN,     /**< (Input) XML storing IP-XACT design */
-   FF_XML_IP_XACT_GENERATOR,  /**< (Input) XML storing IP-XACT generator chain */
-   FF_XML_IP_XACT_CONFIG,     /**< (Input) XML storing IP-XACT design configuration */
 #if HAVE_FROM_SDF3_BUILT
    FF_XML_SDF3, /**< (Input) XML storing synchronous data flow graph */
 #endif

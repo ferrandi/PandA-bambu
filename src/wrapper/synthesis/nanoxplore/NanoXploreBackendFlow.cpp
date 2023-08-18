@@ -41,6 +41,7 @@
 
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
+#include "DesignParameters.hpp"
 #include "LUT_model.hpp"
 #include "NanoXploreWrapper.hpp"
 #include "Parameter.hpp"

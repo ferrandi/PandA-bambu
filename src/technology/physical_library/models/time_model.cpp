@@ -40,7 +40,6 @@
  * Last modified by $Author$
  *
  */
-#include "config_HAVE_CMOS_BUILT.hpp"
 
 #include "time_model.hpp"
 
@@ -51,9 +50,6 @@
 #include "target_device.hpp"
 #include "xml_helper.hpp"
 
-#if HAVE_CMOS_BUILT
-#include "liberty_model.hpp"
-#endif
 
 const double time_model::execution_time_DEFAULT = 0;
 const ControlStep time_model::initiation_time_DEFAULT =
@@ -126,10 +122,6 @@ time_modelRef time_model::create_model(TargetDevice_Type dv_type, const Paramete
    {
       case TargetDevice_Type::FPGA:
          return time_modelRef(new LUT_model(Param));
-#if HAVE_CMOS_BUILT
-      case TargetDevice_Type::IC:
-         return time_modelRef(new liberty_model(Param));
-#endif
       default:
          THROW_UNREACHABLE("");
    }

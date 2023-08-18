@@ -45,9 +45,7 @@
 #define TECHNOLOGYIO_HPP
 
 /// Autoheader include
-#include "config_HAVE_BOOLEAN_PARSER_BUILT.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp"
-#include "config_HAVE_FROM_LIBERTY.hpp"
 #include "config_HAVE_PHYSICAL_LIBRARY_MODELS_BUILT.hpp"
 
 #include "refcount.hpp"
@@ -67,16 +65,6 @@ class library_manager;
 #include <string>
 
 #include "target_device.hpp"
-
-#if HAVE_BOOLEAN_PARSER_BUILT
-/**
- * Read a file describing the technology data structures in genlib format.
- * @param f the input file name
- * @param TM is the initial technology manager.
- * @return the technology manager.
- */
-void read_genlib_technology_File(const std::string& fn, const technology_managerRef TM, const ParameterConstRef Param);
-#endif
 
 /**
  * Read an xml file describing the technology data structures.
@@ -102,23 +90,6 @@ void read_technology_library(const technology_managerRef& TM, const ParameterCon
  */
 void write_xml_technology_File(const std::string& f, library_manager* LM, TargetDevice_Type dv_type);
 
-#if HAVE_FROM_LIBERTY
-/**
- * Write a liberty file describing the technology data structures.
- * @param f the output file name
- * @param TM is the technology manager.
- * @param libraries names of the libraries to dump. If empty or not given, it dumps all libraries
- */
-void write_lib_technology_File(const std::string& f, technology_managerRef const& TM,
-                               const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
-
-/**
- * Write a liberty file describing a single library
- * @param f the output file name
- * @param LM is the pointer to the library to be written
- */
-void write_lib_technology_File(const std::string& f, library_manager* LM, TargetDevice_Type dv_type);
-#endif
 
 #if HAVE_EXPERIMENTAL
 /**

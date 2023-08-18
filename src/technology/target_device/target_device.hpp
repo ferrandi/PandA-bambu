@@ -44,9 +44,6 @@
 #ifndef _TARGET_DEVICE_HPP_
 #define _TARGET_DEVICE_HPP_
 
-/// Autoheader include
-#include "config_HAVE_CMOS_BUILT.hpp"
-
 #include "custom_map.hpp"
 #include "exceptions.hpp"
 #include "refcount.hpp"
@@ -63,9 +60,6 @@ class xml_element;
 /// definition of the supported types for target devices
 enum class TargetDevice_Type
 {
-#if HAVE_CMOS_BUILT
-   IC = 0, //! the target device is an integrated circuit
-#endif
    FPGA //! the target device is a reconfigurable component (e.g., an FPGA)
 };
 

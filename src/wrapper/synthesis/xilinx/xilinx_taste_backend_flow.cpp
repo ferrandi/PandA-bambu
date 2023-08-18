@@ -41,6 +41,7 @@
 
 #include "config_GRLIB_DIR.hpp"
 
+#include "DesignParameters.hpp"
 #include "Parameter.hpp"
 #include "SynthesisTool.hpp"
 #include "XilinxWrapper.hpp"

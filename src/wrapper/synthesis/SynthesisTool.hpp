@@ -44,20 +44,20 @@
 
 #include <string>
 #include <vector>
-
+#include <map>
 #include "refcount.hpp"
+
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(SynthesisTool);
 REF_FORWARD_DECL(ToolManager);
-REF_FORWARD_DECL(DesignParameters);
 REF_FORWARD_DECL(xml_node);
 REF_FORWARD_DECL(xml_script_node_t);
 REF_FORWARD_DECL(xml_set_variable_t);
 REF_FORWARD_DECL(xml_parameter_t);
 REF_FORWARD_DECL(target_device);
+REF_FORWARD_DECL(DesignParameters);
 class xml_element;
 
-#include "DesignParameters.hpp"
 #define ADD_RES_VAR(name) \
    xml_reserved_vars.push_back(xml_set_variable_tRef(new xml_set_variable_t((name), nullptr, nullptr)))
 

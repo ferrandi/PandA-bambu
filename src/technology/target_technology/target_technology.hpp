@@ -45,9 +45,6 @@
 #ifndef _TARGET_TECHNOLOGY_HPP_
 #define _TARGET_TECHNOLOGY_HPP_
 
-/// Autoheader include
-#include "config_HAVE_CMOS_BUILT.hpp"
-
 #include "custom_map.hpp"
 #include "exceptions.hpp"
 #include "refcount.hpp"
@@ -63,9 +60,6 @@ class target_technology
  public:
    /// target technologies currently implemented
    using target_t = enum {
-#if HAVE_CMOS_BUILT
-      CMOS = 0, /// integrated circuits through CMOS technology
-#endif
       FPGA = 1 /// FPGA devices
    };
 

@@ -53,7 +53,6 @@
 #include "constant_strings.hpp"
 
 #include "area_model.hpp"
-#include "cell_model.hpp"
 #include "library_manager.hpp"
 #include "structural_manager.hpp"
 #include "target_device.hpp"

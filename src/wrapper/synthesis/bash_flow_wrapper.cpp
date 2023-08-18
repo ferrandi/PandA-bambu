@@ -43,16 +43,15 @@
  */
 /// Header include
 #include "bash_flow_wrapper.hpp"
-#include "BashBackendFlow.hpp"
 
+#include "BashBackendFlow.hpp"
+#include "DesignParameters.hpp"
 #include "ToolManager.hpp"
 #include "xml_script_command.hpp"
-
 #include "Parameter.hpp"
-#include "constant_strings.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "fileIO.hpp"
-#include "utility.hpp"
+#include "string_manipulation.hpp"
 
 #define PARAM_bash_outdir "bash_outdir"
 

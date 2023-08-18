@@ -42,11 +42,12 @@
 /// Header include
 #include "quartus_13_report_wrapper.hpp"
 
+#include "DesignParameters.hpp"
 #include "ToolManager.hpp"
 #include "xml_script_command.hpp"
-
 #include "Parameter.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+
 #define PARAM_quartus_report "quartus_report"
 
 // constructor

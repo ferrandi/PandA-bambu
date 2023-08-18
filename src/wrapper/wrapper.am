@@ -508,23 +508,14 @@ endif
                  wrapper/synthesis/DesignParameters.hpp \
                  wrapper/synthesis/BackendFlow.hpp \
                  wrapper/synthesis/SynthesisTool.hpp \
-                 wrapper/synthesis/ASICBackendFlow.hpp \
                  wrapper/synthesis/BashBackendFlow.hpp \
                  wrapper/synthesis/bash_flow_wrapper.hpp
 
   lib_synthesis_la_SOURCES = wrapper/synthesis/xml_script_command.cpp \
-                           wrapper/synthesis/DesignParameters.cpp \
                            wrapper/synthesis/BackendFlow.cpp \
                            wrapper/synthesis/SynthesisTool.cpp \
-                           wrapper/synthesis/ASICBackendFlow.cpp \
                            wrapper/synthesis/BashBackendFlow.cpp \
                            wrapper/synthesis/bash_flow_wrapper.cpp
-
-wrapper/synthesis/ASICBackendFlow.cpp : wrapper/synthesis/Nangate.data
-#The tab in this rule can't be replaced by blanks
-wrapper/synthesis/Nangate.data: $(top_srcdir)/etc/devices/ASIC_devices/Nangate.xml
-	gzip -c  $(top_srcdir)/etc/devices/ASIC_devices/Nangate.xml > wrapper/synthesis/Nangate.data
-
 
 
 wrapper/synthesis/BashBackendFlow.cpp : wrapper/synthesis/Generic-yosysOpenROAD.data

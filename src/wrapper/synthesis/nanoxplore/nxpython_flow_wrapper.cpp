@@ -43,11 +43,11 @@
  */
 /// Header include
 #include "nxpython_flow_wrapper.hpp"
-#include "NanoXploreBackendFlow.hpp"
 
+#include "NanoXploreBackendFlow.hpp"
+#include "DesignParameters.hpp"
 #include "ToolManager.hpp"
 #include "xml_script_command.hpp"
-
 #include "Parameter.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 

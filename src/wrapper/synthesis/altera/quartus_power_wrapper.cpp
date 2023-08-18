@@ -36,12 +36,12 @@
 /// Header include
 #include "quartus_power_wrapper.hpp"
 
+#include "DesignParameters.hpp"
 #include "Parameter.hpp"
 #include "ToolManager.hpp"
 #include "dbgPrintHelper.hpp"
 #include "string_manipulation.hpp"
 #include "xml_script_command.hpp"
-
 #include <filesystem>
 
 // constructor

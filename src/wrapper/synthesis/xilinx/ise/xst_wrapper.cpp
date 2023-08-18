@@ -45,6 +45,7 @@
 /// Includes the class definition
 #include "xst_wrapper.hpp"
 
+#include "DesignParameters.hpp"
 #include "Parameter.hpp"
 #include "ToolManager.hpp"
 #include "dbgPrintHelper.hpp"

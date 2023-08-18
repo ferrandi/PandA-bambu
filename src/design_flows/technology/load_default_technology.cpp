@@ -40,7 +40,6 @@
  */
 #include "load_default_technology.hpp"
 
-#include "config_HAVE_KOALA_BUILT.hpp"
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
 #include "custom_set.hpp"

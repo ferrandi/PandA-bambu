@@ -43,8 +43,6 @@
 #ifndef TECHNOLOGY_NODE_HPP
 #define TECHNOLOGY_NODE_HPP
 
-/// Autoheader include
-#include "config_HAVE_BOOLEAN_PARSER_BUILT.hpp"
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
@@ -690,16 +688,6 @@ struct functional_unit : public technology_node
     */
    void xload(const xml_element* node, const technology_nodeRef fu, const ParameterConstRef Param,
               const target_deviceRef device) override;
-
-#if HAVE_BOOLEAN_PARSER_BUILT
-   /**
-    * Load a functional unit starting from a genlib string definition.
-    * @param definition is a string representing the functional unit
-    * @param owner is the refcount version of this.
-    */
-   void gload(const std::string& definition, const std::string& fu_name, technology_nodeRef owner,
-              const ParameterConstRef Param);
-#endif
 
    /**
     * Add a functional unit to an xml tree.

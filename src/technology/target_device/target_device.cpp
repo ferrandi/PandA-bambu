@@ -42,27 +42,17 @@
  */
 #include "target_device.hpp"
 
-/// Autoheader include
-#include "config_HAVE_CMOS_BUILT.hpp"
-#if HAVE_CMOS_BUILT
-#include "IC_device.hpp"
-#endif
 #include "FPGA_device.hpp"
-
 #include "target_technology.hpp"
 #include "technology_manager.hpp"
-
 #include "exceptions.hpp"
-
-/// XML includes
 #include "fileIO.hpp"
 #include "polixml.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
-/// parameters' includes
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
-/// boost includes for file manipulations
+
 #include "string_manipulation.hpp" // for GET_CLASS
 #include <filesystem>
 
@@ -84,10 +74,6 @@ target_deviceRef target_device::create_device(const TargetDevice_Type type, cons
 {
    switch(type)
    {
-#if HAVE_CMOS_BUILT
-      case TargetDevice_Type::IC:
-         return target_deviceRef(new IC_device(param, TM));
-#endif
       case TargetDevice_Type::FPGA:
          return target_deviceRef(new FPGA_device(param, TM));
       default:

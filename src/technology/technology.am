@@ -60,25 +60,6 @@ if BUILD_LIB_TARGET
   lib_target_technology_la_SOURCES = technology/target_technology/target_technology.cpp
   lib_target_technology_la_LIBADD = lib_target_technology_FPGA.la
 
-if BUILD_LIB_CMOS
-
-  noinst_LTLIBRARIES += lib_target_technology_CMOS.la
-  lib_target_technology_CMOS_la_CPPFLAGS = \
-   -I$(top_srcdir)/src \
-   -I$(top_srcdir)/src/constants \
-   -I$(top_srcdir)/src/parser/polixml \
-   -I$(top_srcdir)/src/polixml \
-   -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/target_technology \
-   -I$(top_srcdir)/src/utility \
-   $(AM_CPPFLAGS)
-  noinst_HEADERS += technology/target_technology/CMOS/CMOS_technology.hpp
-  lib_target_technology_CMOS_la_SOURCES = technology/target_technology/CMOS/CMOS_technology.cpp
-  lib_target_technology_la_CPPFLAGS += \
-                 -I$(top_srcdir)/src/technology/target_technology/CMOS
-  lib_target_technology_la_LIBADD += lib_target_technology_CMOS.la
-endif
-
   noinst_LTLIBRARIES += lib_FPGA_device.la
   lib_FPGA_device_la_CPPFLAGS = \
    -I$(top_srcdir)/src \
@@ -266,40 +247,6 @@ technology_target_device_FPGA__DATA = technology/target_device/FPGA/xc4vlx100-10
   lib_target_device_la_SOURCES = technology/target_device/target_device.cpp
   lib_target_device_la_LIBADD = lib_FPGA_device.la
 
-if BUILD_LIB_CMOS
-  noinst_LTLIBRARIES += lib_IC_device.la
-  lib_IC_device_la_CPPFLAGS = \
-   -I$(top_srcdir)/src \
-   -I$(top_srcdir)/src/circuit \
-   -I$(top_srcdir)/src/constants \
-   -I$(top_srcdir)/src/graph \
-   -I$(top_srcdir)/src/polixml \
-   -I$(top_srcdir)/src/parser/polixml \
-   -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/target_device \
-   -I$(top_srcdir)/src/technology/target_technology \
-   -I$(top_srcdir)/src/technology/target_technology/CMOS \
-   -I$(top_srcdir)/src/utility \
-   -I$(top_srcdir)/src/wrapper/synthesis \
-   -I$(top_builddir)/src/technology/target_device/IC \
-   $(AM_CPPFLAGS)
-  noinst_HEADERS += technology/target_device/IC/IC_device.hpp
-  lib_IC_device_la_SOURCES = technology/target_device/IC/IC_device.cpp
-  lib_target_device_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/technology/target_device/IC
-
-technology/target_device/IC/IC_device.cpp : technology/target_device/IC/Nangate.data
-#The tab in this rule can't be replaced by blanks
-technology/target_device/IC/Nangate.data: $(top_srcdir)/etc/devices/ASIC_devices/Nangate_device.xml
-	gzip -c $(top_srcdir)/etc/devices/ASIC_devices/Nangate_device.xml > technology/target_device/IC/Nangate.data
-
-  technology_target_device_IC_dir = $(technology_target_device_dir)/IC
-  technology_target_device_IC__DATA = technology/target_device/IC/Nangate.data
-
-  lib_target_device_la_LIBADD += lib_IC_device.la
-endif
-
    lib_technology_la_LIBADD += lib_target_technology.la lib_target_device.la
 endif
 
@@ -342,12 +289,6 @@ if BUILD_LIB_PHYSICAL_LIBRARY_MODELS
   noinst_HEADERS += technology/physical_library/models/area/clb_model.hpp
   lib_area_models_la_SOURCES = technology/physical_library/models/area/clb_model.cpp
 
-if BUILD_LIB_CMOS
-   noinst_HEADERS += technology/physical_library/models/area/cell_model.hpp
-   lib_area_models_la_SOURCES += technology/physical_library/models/area/cell_model.cpp
-   lib_area_models_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/technology/target_technology/CMOS
-endif
 
   noinst_LTLIBRARIES += lib_time_models.la
   lib_time_models_la_CPPFLAGS = \
@@ -361,11 +302,6 @@ endif
    $(AM_CPPFLAGS)
   noinst_HEADERS += technology/physical_library/models/time/LUT_model.hpp
   lib_time_models_la_SOURCES = technology/physical_library/models/time/LUT_model.cpp
-
-if BUILD_LIB_CMOS
-   noinst_HEADERS += technology/physical_library/models/time/liberty_model.hpp technology/physical_library/models/time/timing_group.hpp
-   lib_time_models_la_SOURCES += technology/physical_library/models/time/liberty_model.cpp technology/physical_library/models/time/timing_group.cpp
-endif
 
   noinst_LTLIBRARIES += lib_models.la
   lib_models_la_CPPFLAGS = \
@@ -387,18 +323,6 @@ endif
   lib_models_la_LIBADD = lib_area_models.la lib_time_models.la
 
   lib_physical_library_la_LIBADD += lib_models.la
-endif
-
-if BUILD_LIB_CMOS
-  lib_physical_library_la_CPPFLAGS += \
-              -I$(top_srcdir)/src/technology/target_technology/CMOS
-endif
-
-if BUILD_LIBRARY_COMPILER
-  lib_physical_library_la_CPPFLAGS += \
-              -I$(top_srcdir)/src/wrapper/synthesis \
-              -I$(top_srcdir)/src/wrapper/synthesis/synopsys \
-              -I$(top_srcdir)/src/wrapper/synthesis/synopsys/library_compiler
 endif
 
    lib_technology_la_LIBADD += lib_physical_library.la

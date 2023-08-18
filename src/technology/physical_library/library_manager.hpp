@@ -45,9 +45,6 @@
 #ifndef _LIBRARY_MANAGER_HPP
 #define _LIBRARY_MANAGER_HPP
 
-#include "config_HAVE_FROM_LIBERTY.hpp"
-#include "config_HAVE_LIBRARY_COMPILER.hpp"
-
 #include "refcount.hpp"
 #include <boost/lexical_cast.hpp>
 
@@ -133,12 +130,6 @@ class library_manager
    /// available information for the library
    using info_t = enum {
       XML,
-#if HAVE_FROM_LIBERTY
-      LIBERTY,
-#endif
-#if HAVE_LIBRARY_COMPILER
-      DB,
-#endif
    };
    //@}
 

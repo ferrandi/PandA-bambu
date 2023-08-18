@@ -42,9 +42,7 @@
  */
 
 /// Autoheader include
-#include "config_HAVE_BOOLEAN_PARSER_BUILT.hpp"
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
-#include "config_HAVE_CMOS_BUILT.hpp"
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
 
 #include "technology_node.hpp"
@@ -54,18 +52,12 @@
 #include "time_model.hpp"
 
 #include "clb_model.hpp"
-#if HAVE_CMOS_BUILT
-#include "liberty_model.hpp"
-#endif
 #include "library_manager.hpp"
 #include "technology_manager.hpp"
 
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 
-#if HAVE_CMOS_BUILT
-#include "timing_group.hpp"
-#endif
 #include "Parameter.hpp"
 #include "exceptions.hpp"
 #include "polixml.hpp"
@@ -480,260 +472,6 @@ technology_nodeRef functional_unit::get_operation(const std::string& op_name) co
    return i->second;
 }
 
-#if HAVE_BOOLEAN_PARSER_BUILT
-void functional_unit::gload(const std::string& definition, const std::string& fu_name,
-                            technology_nodeRef
-#if HAVE_CIRCUIT_BUILT
-                                owner
-#endif
-                            ,
-                            const ParameterConstRef
-#if HAVE_CIRCUIT_BUILT
-                                Param
-#endif
-)
-{
-   std::list<std::string> splitted = SplitString(definition, " ;\t");
-
-#if HAVE_CIRCUIT_BUILT
-   CustomOrderedSet<std::string> inputs;
-   std::string output;
-#endif
-   // std::map<std::string, std::map<std::string, TimingModelRef> > pin_models;
-
-   unsigned int n = 0;
-   for(std::list<std::string>::iterator s = splitted.begin(); s != splitted.end(); ++s)
-   {
-      if(s->size() == 0)
-         continue;
-      switch(n)
-      {
-         case 0:
-         {
-            if(*s == "GATE")
-            {
-               logical_type = COMBINATIONAL;
-               n++;
-            }
-            if(*s == "PIN")
-            {
-               n = 5;
-            }
-            break;
-         }
-         case 1:
-         {
-            functional_unit_name = fu_name;
-            n++;
-            break;
-         }
-         case 2:
-         {
-#if 0
-            double area = boost::lexical_cast<double>(*s);
-            double height = Param->getOption<double>("cell-height");
-            double width = area / height;
-#endif
-            n++;
-            break;
-         }
-         case 3:
-         {
-#if HAVE_CIRCUIT_BUILT
-            int debug_level = Param->getOption<int>(OPT_debug_level);
-            CM = structural_managerRef(new structural_manager(Param));
-            structural_type_descriptorRef build_type =
-                structural_type_descriptorRef(new structural_type_descriptor(functional_unit_name));
-            CM->set_top_info(functional_unit_name + "IDLIB", build_type);
-
-            structural_objectRef obj = CM->get_circ();
-            module* mobj = GetPointer<module>(obj);
-            structural_type_descriptorRef bool_type =
-                structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
-
-            /// FIXME: the implementation of the following function does not exist
-            //            boolean_parseY(*s, inputs, output, 0);
-
-            // std::cerr << "Output= " << output << std::endl;
-            structural_objectRef new_port = structural_objectRef(new port_o(debug_level, obj, port_o::OUT));
-            new_port->set_id(output);
-            new_port->set_type(bool_type);
-            mobj->add_out_port(new_port);
-            for(CustomOrderedSet<std::string>::iterator i = inputs.begin(); i != inputs.end(); ++i)
-            {
-               if(i->find("CONST") != std::string::npos)
-                  continue;
-
-               // std::cerr << "  Input= " << *n << std::endl;
-               structural_objectRef p = structural_objectRef(new port_o(debug_level, obj, port_o::IN));
-               p->set_id(*i);
-               p->set_type(bool_type);
-               mobj->add_in_port(p);
-            }
-
-            std::string eq = *s + ";";
-            if(eq.find("CONST") != std::string::npos)
-            {
-               eq = output + "=" + eq.substr(eq.find("CONST") + 5, eq.size());
-            }
-            // std::cerr << "eq= " << eq << std::endl;
-
-            CM->add_NP_functionality(CM->get_circ(), NP_functionality::EQUATION, eq);
-#endif
-            n++;
-            break;
-         }
-         case 4: // PIN token
-         {
-            n++;
-            break;
-         }
-         case 5: // pin name
-         {
-#if 0
-            //analyzing the pin name or the wildcard *
-            if (*s == "*")
-            {
-               for(CustomOrderedSet<std::string>::iterator i = inputs.begin(); i != inputs.end(); i++)
-               {
-                  pin_models[*i][output] = TimingModel::create_model(TimingModel::GENLIB_LIBRARY, Param);
-               }
-            }
-            else
-            {
-               pin_models[*s][output] = TimingModel::create_model(TimingModel::GENLIB_LIBRARY, Param);
-            }
-#endif
-            n++;
-            break;
-         }
-         case 6: // phase
-         {
-#if 0
-            for(std::map<std::string, std::map<std::string, TimingModelRef> >::iterator i = pin_models.begin(); i != pin_models.end(); i++)
-            {
-               for(std::map<std::string, TimingModelRef>::iterator o = i->second.begin(); o != i->second.end(); o++)
-               {
-                  if (*s == "INV")
-                     GetPointer<TimingGenlib>(o->second)->phase = TimingGenlib::INV;
-                  else if (*s == "NONINV")
-                     GetPointer<TimingGenlib>(o->second)->phase = TimingGenlib::NONINV;
-                  else if (*s == "UNKNOWN")
-                     GetPointer<TimingGenlib>(o->second)->phase = TimingGenlib::UNKNOWN;
-                  else
-                     THROW_ERROR("Not supported phase: " + *s);
-               }
-            }
-#endif
-            n++;
-            break;
-         }
-         case 7: // input load
-         {
-#if 0
-            for(std::map<std::string, std::map<std::string, TimingModelRef> >::iterator i = pin_models.begin(); i != pin_models.end(); i++)
-            {
-               for(std::map<std::string, TimingModelRef>::iterator o = i->second.begin(); o != i->second.end(); o++)
-               {
-                  GetPointer<TimingGenlib>(o->second)->input_load = boost::lexical_cast<double>(*s);
-               }
-            }
-#endif
-            n++;
-            break;
-         }
-         case 8: // maximum load
-         {
-#if 0
-            for(std::map<std::string, std::map<std::string, TimingModelRef> >::iterator i = pin_models.begin(); i != pin_models.end(); i++)
-            {
-               for(std::map<std::string, TimingModelRef>::iterator o = i->second.begin(); o != i->second.end(); o++)
-               {
-                  GetPointer<TimingGenlib>(o->second)->max_load = boost::lexical_cast<double>(*s);
-               }
-            }
-#endif
-            n++;
-            break;
-         }
-         case 9: // rise-block
-         {
-#if 0
-            for(std::map<std::string, std::map<std::string, TimingModelRef> >::iterator i = pin_models.begin(); i != pin_models.end(); i++)
-            {
-               for(std::map<std::string, TimingModelRef>::iterator o = i->second.begin(); o != i->second.end(); o++)
-               {
-                  GetPointer<TimingGenlib>(o->second)->rise_block_delay = boost::lexical_cast<double>(*s);
-               }
-            }
-#endif
-            n++;
-            break;
-         }
-         case 10: // rise-fanout
-         {
-#if 0
-            for(std::map<std::string, std::map<std::string, TimingModelRef> >::iterator i = pin_models.begin(); i != pin_models.end(); i++)
-            {
-               for(std::map<std::string, TimingModelRef>::iterator o = i->second.begin(); o != i->second.end(); o++)
-               {
-                  GetPointer<TimingGenlib>(o->second)->rise_fanout_delay = boost::lexical_cast<double>(*s);
-               }
-            }
-#endif
-            n++;
-            break;
-         }
-         case 11: // fall-block
-         {
-#if 0
-            for(std::map<std::string, std::map<std::string, TimingModelRef> >::iterator i = pin_models.begin(); i != pin_models.end(); i++)
-            {
-               for(std::map<std::string, TimingModelRef>::iterator o = i->second.begin(); o != i->second.end(); o++)
-               {
-                  GetPointer<TimingGenlib>(o->second)->fall_block_delay = boost::lexical_cast<double>(*s);
-               }
-            }
-#endif
-            n++;
-            break;
-         }
-         case 12: // fall-fanout
-         {
-#if 0
-            for(std::map<std::string, std::map<std::string, TimingModelRef> >::iterator i = pin_models.begin(); i != pin_models.end(); i++)
-            {
-               for(std::map<std::string, TimingModelRef>::iterator o = i->second.begin(); o != i->second.end(); o++)
-               {
-                  GetPointer<TimingGenlib>(o->second)->fall_fanout_delay = boost::lexical_cast<double>(*s);
-               }
-            }
-#endif
-            n = 0;
-            break;
-         }
-         default:
-         {
-            THROW_ERROR("Malformed library: " + *s);
-         }
-      }
-   }
-
-#if 0
-   for(std::map<std::string, std::map<std::string, TimingModelRef> >::iterator i = pin_models.begin(); i != pin_models.end(); i++)
-   {
-      for(std::map<std::string, TimingModelRef>::iterator k = i->second.begin(); k != i->second.end(); k++)
-      {
-         pin_timing_models[i->first][k->first] = k->second;
-      }
-   }
-#endif
-
-   technology_nodeRef op_curr = technology_nodeRef(new operation());
-   GetPointer<operation>(op_curr)->operation_name = functional_unit_name;
-   add(op_curr);
-}
-#endif
 
 void functional_unit::xload(const xml_element* Enode, const technology_nodeRef fu, const ParameterConstRef Param,
                             const target_deviceRef device)
@@ -741,12 +479,6 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
    TargetDevice_Type dv_type = device->get_type();
 #ifndef NDEBUG
    auto debug_level = Param->get_class_debug_level(GET_CLASS(*this));
-#endif
-#if HAVE_TECHNOLOGY_BUILT && HAVE_CMOS_BUILT
-   int output_pin_counter = 0;
-   std::map<std::string, std::vector<std::string>> attribute_list;
-   std::map<std::string, std::map<std::string, attributeRef>> attribute_map;
-   std::map<unsigned int, std::string> NP_functionalities;
 #endif
 #if HAVE_CIRCUIT_BUILT
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
@@ -930,18 +662,6 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
       else if(EnodeC->get_name() == "attribute")
       {
          attribute::xload(EnodeC, ordered_attributes, attributes);
-#if HAVE_CMOS_BUILT
-         /// check the attributes to determine if the cell is physical and, thus, it has not to be used for the logic
-         /// synthesis
-         if(dv_type == TargetDevice_Type::IC && attributes.find("dont_use") != attributes.end())
-         {
-            auto value = attributes["dont_use"]->get_content<bool>();
-            if(value)
-            {
-               logical_type = PHYSICAL;
-            }
-         }
-#endif
          if(attributes.find("clock_period") != attributes.end())
          {
             clock_period = attributes["clock_period"]->get_content<double>();
@@ -951,118 +671,6 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
             clock_period_resource_fraction = attributes["clock_period_resource_fraction"]->get_content<double>();
          }
       }
-#if HAVE_TECHNOLOGY_BUILT && HAVE_CMOS_BUILT
-      else if(dv_type == TargetDevice_Type::IC && EnodeC->get_name() == "pin")
-      {
-         std::string pin_name;
-
-         const xml_node::node_list& pin_list = EnodeC->get_children();
-         for(const auto& iter_int1 : pin_list)
-         {
-            const auto* EnodeP = GetPointer<const xml_element>(iter_int1);
-            if(!EnodeP)
-            {
-               continue;
-            }
-            if(EnodeP->get_name() == "name")
-            {
-               const xml_text_node* text = EnodeP->get_child_text();
-               pin_name = text->get_content();
-            }
-            else if(EnodeP->get_name() == "attribute")
-            {
-               THROW_ASSERT(pin_name.size(), "Pin name has to be specified before the attributes");
-               attribute::xload(EnodeP, attribute_list[pin_name], attribute_map[pin_name]);
-            }
-         }
-
-         if(attribute_map[pin_name].find("function") != attribute_map[pin_name].end())
-         {
-            const std::string this_function_attribute =
-                functional_unit_name + "_" + boost::lexical_cast<std::string>(output_pin_counter);
-            output_pin_counter++;
-            ordered_attributes.push_back(this_function_attribute);
-            attributes[this_function_attribute] = attribute_map[pin_name]["function"];
-         }
-
-         THROW_ASSERT(attribute_map[pin_name].find("direction") != attribute_map[pin_name].end(),
-                      "Direction not stored for pin: " + functional_unit_name + "/" + pin_name);
-
-         std::string direction = attribute_map[pin_name]["direction"]->get_content_str();
-         port_o::port_direction pdir = port_o::GEN;
-         if(direction == "input")
-         {
-            pdir = port_o::IN;
-         }
-         else if(direction == "output")
-         {
-            pdir = port_o::OUT;
-         }
-         else if(direction != "internal")
-         {
-            THROW_ERROR("not supported port type: " + direction);
-         }
-#if HAVE_CIRCUIT_BUILT
-         if(!CM)
-         {
-            CM = structural_managerRef(new structural_manager(Param));
-            structural_type_descriptorRef build_type =
-                structural_type_descriptorRef(new structural_type_descriptor(functional_unit_name));
-            CM->set_top_info(functional_unit_name, build_type);
-         }
-         structural_objectRef port = CM->add_port(pin_name, pdir, CM->get_circ(), bool_type);
-         for(unsigned int v = 0; v < attribute_list[pin_name].size(); v++)
-         {
-            port->add_attribute(attribute_list[pin_name][v], attribute_map[pin_name][attribute_list[pin_name][v]]);
-         }
-#endif
-
-         if(pdir == port_o::OUT and attribute_map[pin_name].find("function") != attribute_map[pin_name].end())
-         {
-            std::string equation;
-            if(NP_functionalities.find(NP_functionality::EQUATION) != NP_functionalities.end())
-            {
-               equation = NP_functionalities[NP_functionality::EQUATION];
-            }
-
-            std::string function = attribute_map[pin_name]["function"]->get_content_str();
-            xml_node::convert_escaped(function);
-            equation = equation + pin_name + "=" + function + ";";
-            NP_functionalities[NP_functionality::EQUATION] = equation;
-            if(dv_type == TargetDevice_Type::FPGA and
-               NP_functionalities.find(NP_functionality::VERILOG_PROVIDED) == NP_functionalities.end())
-            {
-               std::string verilog = equation;
-               boost::replace_all(verilog, "=", " = ");
-               boost::replace_all(verilog, "+", "|");
-               boost::replace_all(verilog, "*", "&");
-               NP_functionalities[NP_functionality::VERILOG_PROVIDED] = "assign " + verilog;
-            }
-         }
-      }
-      else if(dv_type == TargetDevice_Type::IC && EnodeC->get_name() == "leakage_power")
-      {
-      }
-      else if(dv_type == TargetDevice_Type::IC && EnodeC->get_name() == "pg_pin")
-      {
-      }
-      else if(dv_type == TargetDevice_Type::IC && EnodeC->get_name() == "ff")
-      {
-         logical_type = FF;
-      }
-      else if(dv_type == TargetDevice_Type::IC && EnodeC->get_name() == "latch")
-      {
-         logical_type = LATCH;
-      }
-      else if(dv_type == TargetDevice_Type::IC && EnodeC->get_name() == "statetable")
-      {
-         logical_type = STATETABLE;
-      }
-      else if(dv_type == TargetDevice_Type::IC && EnodeC->get_name() == "layout")
-      {
-         logical_type = COMBINATIONAL; // do nothing
-      }
-#endif
       else
       {
          THROW_ERROR("functional_unit - not yet supported: " + EnodeC->get_name());
@@ -1084,15 +692,6 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
       }
    }
 
-#if HAVE_CIRCUIT_BUILT && HAVE_TECHNOLOGY_BUILT && HAVE_CMOS_BUILT
-   for(auto& NP_functionalitie : NP_functionalities)
-   {
-      CM->add_NP_functionality(CM->get_circ(),
-                               static_cast<NP_functionality::NP_functionaly_type>(NP_functionalitie.first),
-                               NP_functionalitie.second);
-   }
-#endif
-
    if(get_operations_num() == 0)
    {
       technology_nodeRef op_curr = technology_nodeRef(new operation);
@@ -1101,57 +700,6 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
    }
 
    area_m = area_model::create_model(dv_type, Param);
-#if HAVE_CMOS_BUILT
-   /// CMOS technology
-   if(dv_type == TargetDevice_Type::IC)
-   {
-      /// area stuff
-      if(attributes.find("area") != attributes.end())
-      {
-         area_m->set_area_value(attributes["area"]->get_content<double>());
-      }
-      else
-      {
-         area_m->set_area_value(0.0);
-      }
-      /// time stuff
-      if(!list_of_operation.size())
-      {
-         technology_nodeRef curr_op = technology_nodeRef(new operation);
-         GetPointer<operation>(curr_op)->operation_name = functional_unit_name;
-         add(curr_op);
-      }
-      for(auto& v : list_of_operation)
-      {
-         if(!GetPointer<operation>(v)->time_m)
-         {
-            GetPointer<operation>(v)->time_m = time_model::create_model(dv_type, Param);
-         }
-         if(attributes.find("drive_strength") != attributes.end())
-         {
-            GetPointer<liberty_model>(GetPointer<operation>(v)->time_m)
-                ->set_drive_strength(attributes["drive_strength"]->get_content<double>());
-         }
-#if HAVE_CIRCUIT_BUILT
-         if(!GetPointer<liberty_model>(GetPointer<operation>(v)->time_m)->has_timing_groups() && CM && CM->get_circ())
-         {
-            for(unsigned int l = 0; l < GetPointer<module>(CM->get_circ())->get_out_port_size(); l++)
-            {
-               std::string output_name = GetPointer<module>(CM->get_circ())->get_out_port(l)->get_id();
-               CustomOrderedSet<std::string> inputs;
-               for(unsigned int m = 0; m < GetPointer<module>(CM->get_circ())->get_in_port_size(); m++)
-               {
-                  inputs.insert(GetPointer<module>(CM->get_circ())->get_in_port(m)->get_id());
-               }
-               GetPointer<liberty_model>(GetPointer<operation>(v)->time_m)
-                   ->add_timing_group(output_name, inputs, timing_groupRef(new timing_group));
-            }
-         }
-#endif
-      }
-   }
-   else
-#endif
    {
       /// FPGA technology
       if(dv_type == TargetDevice_Type::FPGA)
@@ -1188,116 +736,6 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
          }
       }
    }
-#if 0
-
-   std::string type = "UNKNOWN";
-   if(CE_XVM(type, Enode)) LOAD_XVM(type, Enode);
-   if (type == "COMBINATIONAL")
-      logical_type = COMBINATIONAL;
-   else if (type == "FF")
-      logical_type = SEQUENTIAL;
-   else if (type == "LATCH")
-      logical_type = UNKNOWN;
-   else
-      THROW_ERROR("Logic type of cell " + functional_unit_name + " is not supported: " + type);
-
-   //Recurse through child nodes:
-   const xml_node::node_list list = Enode->get_children();
-   for (xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
-   {
-      const xml_element* EnodeC = GetPointer<const xml_element>(*iter);
-      if(!EnodeC) continue;
-      if(EnodeC->get_name() == GET_CLASS_NAME(operation))
-      {
-         technology_nodeRef op_curr = technology_nodeRef(new operation);
-         op_curr->xload(EnodeC, op_curr, Param);
-         add(op_curr);
-      }
-      else if(EnodeC->get_name() == "circuit")
-      {
-         CM = structural_managerRef(new structural_manager);
-         structural_type_descriptorRef build_type = structural_type_descriptorRef(new structural_type_descriptor("BUILD"));
-         CM->set_top_info("BUILD", build_type);
-         //top must be a component_o
-         const xml_node::node_list listC = EnodeC->get_children();
-         for (xml_node::node_list::const_iterator iterC = listC.begin(); iterC != listC.end(); ++iterC)
-         {
-            const xml_element* EnodeCC = GetPointer<const xml_element>(*iterC);
-            if(!EnodeCC) continue;
-            if(EnodeCC->get_name() == GET_CLASS_NAME(component_o))
-               CM->get_circ()->xload(EnodeCC, CM->get_circ(), CM);
-         }
-      }
-#if HAVE_TECHNOLOGY_MAPPING
-      else if(EnodeC->get_name() == "timing_model") //TODO: move into TimingModel::xload
-      {
-         std::string type;
-         LOAD_XVM(type, EnodeC);
-
-         THROW_ASSERT(type == "genlib_library", "Only genlib timing model is currently supported");
-
-         const xml_node::node_list listC = EnodeC->get_children();
-         for (xml_node::node_list::const_iterator iterC = listC.begin(); iterC != listC.end(); ++iterC)
-         {
-            const xml_element* EnodeCC = GetPointer<const xml_element>(*iterC);
-            if(!EnodeCC) continue;
-            if(EnodeCC->get_name() == "pin")
-            {
-               std::string input;
-               LOAD_XVM(input, EnodeCC);
-
-               std::string output;
-               LOAD_XVM(output, EnodeCC);
-
-               std::string phase;
-               LOAD_XVM(phase, EnodeCC);
-
-               double input_load;
-               LOAD_XVM(input_load, EnodeCC);
-
-               double max_load;
-               LOAD_XVM(max_load, EnodeCC);
-
-               double rise_block_delay;
-               LOAD_XVM(rise_block_delay, EnodeCC);
-
-               double rise_fanout_delay;
-               LOAD_XVM(rise_fanout_delay, EnodeCC);
-
-               double fall_block_delay;
-               LOAD_XVM(fall_block_delay, EnodeCC);
-
-               double fall_fanout_delay;
-               LOAD_XVM(fall_fanout_delay, EnodeCC);
-
-               TimingModelRef model = TimingModel::create_model(TimingModel::GENLIB_LIBRARY, Param);
-               TimingGenlib* tm = GetPointer<TimingGenlib>(model);
-
-               if (phase == "INV")
-                  tm->phase = TimingGenlib::INV;
-               else if (phase == "NONINV")
-                  tm->phase = TimingGenlib::NONINV;
-               else if (phase == "UNKNOWN")
-                  tm->phase = TimingGenlib::UNKNOWN;
-               else
-                  THROW_ERROR("malformed");
-
-               tm->input_load = input_load;
-               tm->max_load = max_load;
-
-               tm->rise_block_delay = rise_block_delay;
-               tm->rise_fanout_delay = rise_fanout_delay;
-
-               tm->fall_block_delay = fall_block_delay;
-               tm->fall_fanout_delay = fall_fanout_delay;
-
-               pin_timing_models[input][output] = model;
-            }
-         }
-      }
-#endif
-   }
-#endif
 }
 
 void functional_unit::xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param,
@@ -1358,20 +796,6 @@ void functional_unit::xwrite(xml_element* rootnode, const technology_nodeRef tn,
       }
    }
 
-#if HAVE_CMOS_BUILT
-   /// CMOS time attributes
-   time_modelRef time_m = GetPointer<operation>(list_of_operation.front())->time_m;
-   if(time_m && GetPointer<liberty_model>(time_m))
-   {
-      if(std::find(ordered_attributes.begin(), ordered_attributes.end(), "drive_strength") == ordered_attributes.end())
-      {
-         ordered_attributes.push_back("drive_strength");
-      }
-      attributes["drive_strength"] = attributeRef(
-          new attribute(attribute::FLOAT64,
-                        boost::lexical_cast<std::string>(GetPointer<liberty_model>(time_m)->get_drive_strength())));
-   }
-#endif
 
    /// dumping of attributes
    for(const auto& ordered_attribute : ordered_attributes)
@@ -1380,27 +804,6 @@ void functional_unit::xwrite(xml_element* rootnode, const technology_nodeRef tn,
       attr->xwrite(rootnode, ordered_attribute);
    }
 
-   /// writing logical type
-   if(area_m)
-   {
-#if HAVE_CMOS_BUILT
-      if(dv_type == TargetDevice_Type::IC)
-      {
-         if(logical_type == STATETABLE)
-         {
-            rootnode->add_child_element("statetable");
-         }
-         else if(logical_type == FF)
-         {
-            rootnode->add_child_element("ff");
-         }
-         else if(logical_type == LATCH)
-         {
-            rootnode->add_child_element("latch");
-         }
-      }
-#endif
-   }
 
    /// template stuff
    if(fu_template_name != "" && fu_template_parameters != "")

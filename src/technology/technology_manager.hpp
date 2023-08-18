@@ -44,9 +44,7 @@
 
 /// Autoheader include
 #include "config_HAVE_BEAGLE.hpp"
-#include "config_HAVE_BOOLEAN_PARSER_BUILT.hpp"
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
-#include "config_HAVE_FROM_LIBERTY.hpp"
 #include "config_HAVE_PHYSICAL_LIBRARY_MODELS_BUILT.hpp"
 
 #include "custom_map.hpp"
@@ -120,8 +118,6 @@ class technology_manager
     */
    //@{
    const static unsigned int XML;
-   const static unsigned int LIB;
-   const static unsigned int LEF;
    //@}
 
    /// definition of the type for identifying the libraries
@@ -329,30 +325,12 @@ class technology_manager
     */
    void xload(const xml_element* node, const target_deviceRef device);
 
-#if HAVE_BOOLEAN_PARSER_BUILT
-   /**
-    * Load a technology manager from a genlib file.
-    * @param file is the stream associated of the file
-    * @param TM is the refcount version of this.
-    */
-   static void gload(const std::string& file_name, const fileIO_istreamRef file, const technology_managerRef TM,
-                     const ParameterConstRef Param);
-#endif
-
    /**
     * add library elements operation node to an xml tree.
     * @param rootnode is the root node at which the xml representation of the operation is attached.
     */
    void xwrite(xml_element* rootnode, TargetDevice_Type dv_type,
                const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
-
-#if HAVE_FROM_LIBERTY
-   /**
-    * Write the technology libraries in the liberty format
-    */
-   void lib_write(const std::string& filename, TargetDevice_Type dv_type,
-                  const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
-#endif
 
    /**
     * @name Print functions.

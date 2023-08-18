@@ -48,7 +48,6 @@
 
 /// Autoheader include
 #include "config_HAVE_BAMBU_BUILT.hpp"
-#include "config_HAVE_KOALA_BUILT.hpp"
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
 
 #include "NP_functionality.hpp"
@@ -56,10 +55,6 @@
 #include "exceptions.hpp"
 #include "refcount.hpp"
 #include "simple_indent.hpp"
-
-#if HAVE_KOALA_BUILT
-#include "custom_set.hpp"
-#endif
 
 #include <boost/preprocessor/seq/for_each.hpp>
 #include <ostream>
@@ -419,16 +414,6 @@ class structural_object
     * @param s is a string identifying the structural_object.
     */
    void set_id(const std::string& s);
-
-#if HAVE_KOALA_BUILT
-   /**
-    * Return the equation associated with the output port of the component
-    */
-   std::string get_equation(const structural_objectRef out_obj, const technology_managerConstRef TM,
-                            CustomOrderedSet<structural_objectRef>& analyzed,
-                            const CustomOrderedSet<structural_objectRef>& input_ports,
-                            const CustomOrderedSet<structural_objectRef>& output_ports) const;
-#endif
 
    /**
     * Return the identifier associated with the structural_object.

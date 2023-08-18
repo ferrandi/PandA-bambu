@@ -44,14 +44,12 @@
 /// Header include
 #include "SynopsysWrapper.hpp"
 
+#include "DesignParameters.hpp"
 #include "DesignCompilerWrapper.hpp"
-
 #include "xml_script_command.hpp"
-
-#include "utility.hpp"
-
 #include <filesystem>
 #include <fstream>
+#include "string_manipulation.hpp"
 
 SynopsysWrapper::SynopsysWrapper(const ParameterConstRef& _Param, const std::string& _tool_exec,
                                  const target_deviceRef& _device, const std::string& _output_dir,

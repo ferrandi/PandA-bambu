@@ -43,13 +43,7 @@
 /// Header include
 #include "area_model.hpp"
 
-/// Autoheader include
-#include "config_HAVE_CMOS_BUILT.hpp"
-
 /// available models
-#if HAVE_CMOS_BUILT
-#include "cell_model.hpp"
-#endif
 #include "clb_model.hpp"
 
 #include "target_device.hpp"
@@ -70,10 +64,6 @@ area_modelRef area_model::create_model(const TargetDevice_Type type, const Param
    {
       case TargetDevice_Type::FPGA:
          return area_modelRef(new clb_model(Param));
-#if HAVE_CMOS_BUILT
-      case TargetDevice_Type::IC:
-         return area_modelRef(new cell_model(Param));
-#endif
       default:
          THROW_UNREACHABLE("");
    }

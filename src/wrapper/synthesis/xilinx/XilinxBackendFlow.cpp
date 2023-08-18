@@ -45,6 +45,7 @@
 
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
+#include "DesignParameters.hpp"
 #include "LUT_model.hpp"
 #include "Parameter.hpp"
 #include "XilinxWrapper.hpp"

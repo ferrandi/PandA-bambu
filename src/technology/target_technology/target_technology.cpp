@@ -42,14 +42,8 @@
  * Last modified by $Author$
  */
 
-/// Autoheader include
-#include "config_HAVE_CMOS_BUILT.hpp"
-
 #include "target_technology.hpp"
 
-#if HAVE_CMOS_BUILT
-#include "CMOS_technology.hpp"
-#endif
 #include "FPGA_technology.hpp"
 
 #include "Parameter.hpp"
@@ -72,10 +66,6 @@ target_technologyRef target_technology::create_technology(const target_t type, c
 {
    switch(type)
    {
-#if HAVE_CMOS_BUILT
-      case CMOS:
-         return target_technologyRef(new CMOS_technology(param));
-#endif
       case FPGA:
          return target_technologyRef(new FPGA_technology(param));
       default:
