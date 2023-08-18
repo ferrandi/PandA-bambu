@@ -2894,11 +2894,22 @@ double AllocationInformation::estimate_call_delay() const
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Estimating call delay");
    double clock_budget = HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period();
    double scheduling_mux_margins = parameters->getOption<double>(OPT_scheduling_mux_margins) * mux_time_unit(32);
-   double call_delay = clock_budget;
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "---Minimum slack " +
-                      STR(minimumSlack > 0.0 && minimumSlack != std::numeric_limits<double>::max() ? minimumSlack : 0));
-   call_delay -= minimumSlack > 0.0 && minimumSlack != std::numeric_limits<double>::max() ? minimumSlack : 0;
+   auto dfp_P =
+       parameters->isOption(OPT_disable_function_proxy) && parameters->getOption<bool>(OPT_disable_function_proxy);
+   double call_delay;
+   if(!dfp_P)
+   {
+      call_delay = clock_budget;
+   }
+   else
+   {
+      call_delay = hls->registered_inputs ? 0 : clock_budget;
+      INDENT_DBG_MEX(
+          DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+          "---Minimum slack " +
+              STR(minimumSlack > 0.0 && minimumSlack != std::numeric_limits<double>::max() ? minimumSlack : 0));
+      call_delay -= minimumSlack > 0.0 && minimumSlack != std::numeric_limits<double>::max() ? minimumSlack : 0;
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call delay without slack " + STR(call_delay));
    if(call_delay < 0.0)
    {
