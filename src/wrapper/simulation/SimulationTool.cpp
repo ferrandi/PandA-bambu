@@ -355,6 +355,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       return flags;
    }();
    cflags = compiler_wrapper->GetCompilerParameters(extra_compiler_flags);
+   boost::replace_all(cflags, "-fno-exceptions", "");
    std::cmatch what;
    std::string kill_printf;
    if(std::regex_search(cflags.c_str(), what, std::regex("\\s*(\\-D'?printf[^=]*='?)'*")))
