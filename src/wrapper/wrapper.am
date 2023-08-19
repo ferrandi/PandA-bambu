@@ -487,7 +487,6 @@ endif
                  -I$(top_srcdir)/src/technology/physical_library/models/time \
                  -I$(top_srcdir)/src/technology/physical_library/models/area \
                  -I$(top_srcdir)/src/technology/target_device \
-                 -I$(top_srcdir)/src/technology/target_device/IC \
                  -I$(top_srcdir)/src/technology/target_device/FPGA \
                  -I$(top_srcdir)/src/wrapper \
                  -I$(top_srcdir)/src/wrapper/simulation \

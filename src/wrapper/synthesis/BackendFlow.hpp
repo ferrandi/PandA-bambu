@@ -94,7 +94,6 @@ class BackendFlow
    /// implemented flow
    using type_t = enum {
       UNKNOWN,
-      ASIC,
       XILINX_FPGA,
 #if HAVE_TASTE
       XILINX_TASTE_FPGA,
