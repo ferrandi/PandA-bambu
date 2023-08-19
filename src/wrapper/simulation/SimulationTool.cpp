@@ -59,8 +59,8 @@
 #include "utility.hpp"
 
 #include <boost/lexical_cast/try_lexical_convert.hpp>
-#include <boost/regex.hpp>
 #include <cmath>
+#include <regex>
 #include <string>
 #include <vector>
 
@@ -147,14 +147,14 @@ void SimulationTool::Simulate(unsigned long long int& accum_cycles, unsigned lon
 
    /// remove previous simulation results
    auto result_file = Param->getOption<std::string>(OPT_simulation_output);
-   if(boost::filesystem::exists(result_file))
+   if(std::filesystem::exists(result_file))
    {
-      boost::filesystem::remove_all(result_file);
+      std::filesystem::remove_all(result_file);
    }
    auto profiling_result_file = Param->getOption<std::string>(OPT_profiling_output);
-   if(boost::filesystem::exists(profiling_result_file))
+   if(std::filesystem::exists(profiling_result_file))
    {
-      boost::filesystem::remove_all(profiling_result_file);
+      std::filesystem::remove_all(profiling_result_file);
    }
    ToolManagerRef tool(new ToolManager(Param));
    tool->configure(generated_script, "");
@@ -178,8 +178,8 @@ void SimulationTool::DetermineCycles(unsigned long long int& accum_cycles, unsig
    const auto result_file = Param->getOption<std::string>(OPT_simulation_output);
    const auto profiling_result_file = Param->getOption<std::string>(OPT_profiling_output);
    const auto discrepancy_enabled = Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy);
-   const auto profiling_enabled = boost::filesystem::exists(profiling_result_file);
-   if(!boost::filesystem::exists(result_file))
+   const auto profiling_enabled = std::filesystem::exists(profiling_result_file);
+   if(!std::filesystem::exists(result_file))
    {
       THROW_ERROR("The simulation does not end correctly");
    }
@@ -355,9 +355,9 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       return flags;
    }();
    cflags = compiler_wrapper->GetCompilerParameters(extra_compiler_flags);
-   boost::cmatch what;
+   std::cmatch what;
    std::string kill_printf;
-   if(boost::regex_search(cflags.c_str(), what, boost::regex("\\s*(\\-D'?printf[^=]*='?)'*")))
+   if(std::regex_search(cflags.c_str(), what, std::regex("\\s*(\\-D'?printf[^=]*='?)'*")))
    {
       kill_printf.append(what[1].first, what[1].second);
       cflags.erase(static_cast<size_t>(what[0].first - cflags.c_str()),
@@ -403,12 +403,14 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
           << "#endif // M_COSIM_ARGV_H\n"
           << "EOF\n";
 
-   auto compiler_env = boost::regex_replace("\n" + compiler_wrapper->GetCompiler().gcc,
-                                            boost::regex("([\\w\\d]+=(\".*\"|[^\\s]+))\\s*"), "export $1\n");
+   auto compiler_env = std::regex_replace("\n" + compiler_wrapper->GetCompiler().gcc,
+                                          std::regex("([\\w\\d]+=(\".*\"|[^\\s]+))\\s*"), "export $1\n");
    boost::replace_last(compiler_env, "\n", "\nexport CC=\"");
    compiler_env += "\"";
    script << compiler_env << "\n"
-          << "export CFLAGS=\"" << cflags << "\"\n\n";
+          << "export CFLAGS=\"" << cflags << "\"\n"
+          << "objcopy_common=\"--redefine-sym exit=__m_exit --redefine-sym abort=__m_abort --redefine-sym "
+             "__assert_fail=__m_assert_fail\"\n\n";
 
    if(!Param->isOption(OPT_input_format) ||
       Param->getOption<Parameters_FileFormat>(OPT_input_format) != Parameters_FileFormat::FF_RAW)
@@ -432,7 +434,8 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
              << "  *)\n"
              << "    obj=\"" << output_dir << "/${obj%.*}.o\"\n"
              << "    ${CC} -c ${CFLAGS} " << kill_printf << " -fPIC -o ${obj} ${src}\n"
-             << "    objcopy --weaken --redefine-sym " << top_fname << "=" << m_top_fname << " ${obj}\n"
+             << "    objcopy --weaken --redefine-sym " << top_fname << "=" << m_top_fname
+             << " ${objcopy_common} ${obj}\n"
              << "    objs+=(\"${obj}\")\n"
              << "    ;;\n"
              << "  esac\n"
@@ -442,14 +445,20 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
    if(Param->isOption(OPT_pretty_print))
    {
       const auto m_pp_top_fname = add_fname_prefix("__m_pp_");
-      const auto pp_file = boost::filesystem::path(Param->getOption<std::string>(OPT_pretty_print));
+      const auto pp_file = std::filesystem::path(Param->getOption<std::string>(OPT_pretty_print));
       const auto pp_fileo = output_dir + "/" + pp_file.stem().string() + ".o";
+      script << "${CC} -c ${CFLAGS} -fno-strict-aliasing -fPIC";
+      if(CompilerWrapper::isClangCheck(default_compiler))
+      {
+         script << " -fbracket-depth=1024";
+      }
       script
-          << "${CC} -c ${CFLAGS} -fno-strict-aliasing -fPIC -o " << pp_fileo << " " << pp_file.string() << "\n"
+          << " -o " << pp_fileo << " " << pp_file.string() << "\n"
           << "objcopy --keep-global-symbol " << top_fname << " $(nm " << pp_fileo
           << " | grep -o '[^[:space:]]*get_pc_thunk[^[:space:]]*' | sed 's/^/--keep-global-symbol /' | tr '\\n' ' ') "
           << pp_fileo << "\n"
-          << "objcopy --redefine-sym " << top_fname << "=" << m_pp_top_fname << " " << pp_fileo << "\n"
+          << "objcopy --redefine-sym " << top_fname << "=" << m_pp_top_fname << " ${objcopy_common} " << pp_fileo
+          << "\n"
           << "objs+=(\"" << pp_fileo << "\")\n\n";
    }
 
@@ -461,6 +470,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       script << " -DPP_VERIFICATION";
    }
    script << " -fPIC -o " << output_dir << "/m_wrapper.o " << dpi_cwrapper_file << "\n"
+          << "objcopy --redefine-sym main=m_cosim_main ${objcopy_common} " << output_dir << "/m_wrapper.o\n"
           << "objs+=(\"" << output_dir << "/m_wrapper.o\")\n\n";
 
    if(tb_srcs.size())
@@ -488,7 +498,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
              << "  *.cpp)\n"
              << "    obj=\"" << output_dir << "/${obj%.*}.tb.o\"\n"
              << "    ${CC} -c ${CFLAGS} ${TB_CFLAGS} -fPIC -o ${obj} ${src}\n"
-             << "    objcopy -W " << top_fname << " ${obj}\n"
+             << "    objcopy -W " << top_fname << " --redefine-sym main=m_cosim_main ${objcopy_common} ${obj}\n"
              << "    objs+=(\"${obj}\")\n"
              << "    ;;\n"
              << "  *)\n"

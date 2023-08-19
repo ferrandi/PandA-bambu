@@ -142,8 +142,8 @@
 /// Utility include
 #include <getopt.h>
 
-#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
+#include <filesystem>
 
 #include "compiler_constants.hpp"
 #include "cpu_time.hpp"
@@ -155,7 +155,7 @@
 /// Wrapper include
 #include "compiler_wrapper.hpp"
 
-#include <boost/regex.hpp>
+#include <regex>
 
 /// Design Space Exploration
 #define OPT_ACCEPT_NONZERO_RETURN 256
@@ -1161,7 +1161,6 @@ int BambuParameter::Exec()
       // no more options are available
       if(next_option == -1)
       {
-         std::cout << "completed\n";
          break;
       }
 
@@ -1213,11 +1212,11 @@ int BambuParameter::Exec()
             const auto in_files = convert_string_to_vector<std::string>(optarg, ",");
             for(const auto& in_file : in_files)
             {
-               boost::filesystem::path file_path(GetPath(in_file));
-               boost::filesystem::path local_file(GetPath(file_path.filename().string()));
-               if(!boost::filesystem::exists(local_file))
+               std::filesystem::path file_path(GetPath(in_file));
+               std::filesystem::path local_file(GetPath(file_path.filename().string()));
+               if(!std::filesystem::exists(local_file))
                {
-                  boost::filesystem::create_symlink(file_path.lexically_normal(), local_file);
+                  std::filesystem::create_symlink(file_path.lexically_normal(), local_file);
                }
             }
             break;
@@ -1330,8 +1329,7 @@ int BambuParameter::Exec()
              * objectives, not the mode, hence the mode set from other options
              * has precedence
              */
-            if(!isOption(OPT_evaluation_mode) ||
-               getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::NONE)
+            if(getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::NONE)
             {
                setOption(OPT_evaluation_mode, Evaluation_Mode::EXACT);
             }
@@ -1351,8 +1349,7 @@ int BambuParameter::Exec()
             }
             if(optarg == nullptr)
             {
-               if(isOption(OPT_evaluation_mode) and
-                  getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::EXACT)
+               if(getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::EXACT)
                {
                   std::string to_add =
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT
@@ -1401,13 +1398,11 @@ int BambuParameter::Exec()
              * objectives, not the mode, hence the mode set from other options
              * has precedence
              */
-            if(!isOption(OPT_evaluation_mode) ||
-               getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::NONE)
+            if(getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::NONE)
             {
                setOption(OPT_evaluation_mode, Evaluation_Mode::EXACT);
             }
-            else if(isOption(OPT_evaluation_mode) &&
-                    getOption<Evaluation_Mode>(OPT_evaluation_mode) != Evaluation_Mode::EXACT)
+            else
             {
                THROW_ERROR("Simulation is only supported with EXACT evaluation mode");
             }
@@ -1687,7 +1682,7 @@ int BambuParameter::Exec()
          }
          case OPT_MAX_ULP:
          {
-            if(boost::regex_search(std::string(optarg), boost::regex("^\\d+(\\.\\d+)?$")))
+            if(std::regex_search(std::string(optarg), std::regex("^\\d+(\\.\\d+)?$")))
             {
                setOption(OPT_max_ulp, optarg);
             }
@@ -1805,7 +1800,7 @@ int BambuParameter::Exec()
          }
          case OPT_PRETTY_PRINT:
          {
-            boost::filesystem::path pp_src(GetPath(optarg));
+            std::filesystem::path pp_src(GetPath(optarg));
             if(!pp_src.has_extension())
             {
                pp_src.append(".c");
@@ -1826,7 +1821,8 @@ int BambuParameter::Exec()
          {
             setOption(OPT_generate_testbench, true);
             const auto arg = TrimSpaces(std::string(optarg));
-            if(boost::filesystem::exists(GetPath(arg)))
+            std::error_code ec;
+            if(std::filesystem::exists(GetPath(arg), ec))
             {
                std::string prev;
                if(isOption(OPT_testbench_input_file))
@@ -1859,7 +1855,7 @@ int BambuParameter::Exec()
          case OPT_TESTBENCH_PARAM_SIZE:
          {
             std::string param_size(optarg);
-            if(!boost::regex_match(param_size, boost::regex("^([\\w\\d]+:\\d+)(,[\\w\\d]+:\\d+)*$")))
+            if(!std::regex_match(param_size, std::regex("^([\\w\\d]+:\\d+)(,[\\w\\d]+:\\d+)*$")))
             {
                THROW_ERROR("BadParameters: testbench top-level parameter size format not valid");
             }
@@ -2080,13 +2076,13 @@ int BambuParameter::Exec()
 #endif
          case INPUT_OPT_DRY_RUN_EVALUATION:
          {
-            setOption(OPT_dry_run_evaluation, true);
+            setOption(OPT_evaluation_mode, Evaluation_Mode::DRY_RUN);
             break;
          }
          case OPT_INTERFACE_XML_FILENAME:
          {
             auto XMLfilename = GetPath(optarg);
-            if(!boost::filesystem::exists(boost::filesystem::path(XMLfilename)))
+            if(!std::filesystem::exists(std::filesystem::path(XMLfilename)))
             {
                THROW_ERROR("The file " + XMLfilename + " passed to --interface-xml-filename option does not exist");
             }
@@ -2547,6 +2543,12 @@ void BambuParameter::CheckParameters()
 {
    Parameter::CheckParameters();
 
+   if(isOption(OPT_aligned_access) && getOption<bool>(OPT_aligned_access) && isOption(OPT_unaligned_access) &&
+      getOption<bool>(OPT_unaligned_access))
+   {
+      THROW_ERROR("Both --unaligned-access and --aligned-access have been specified");
+   }
+
    if(!isOption(OPT_top_functions_names))
    {
       setOption(OPT_top_functions_names, "main");
@@ -2571,8 +2573,8 @@ void BambuParameter::CheckParameters()
    }
 
    const auto sorted_dirs = [](const std::string& parent_dir) {
-      std::vector<boost::filesystem::path> sorted_paths;
-      std::copy(boost::filesystem::directory_iterator(parent_dir), boost::filesystem::directory_iterator(),
+      std::vector<std::filesystem::path> sorted_paths;
+      std::copy(std::filesystem::directory_iterator(parent_dir), std::filesystem::directory_iterator(),
                 std::back_inserter(sorted_paths));
       std::sort(sorted_paths.begin(), sorted_paths.end(), NaturalVersionOrder);
       return sorted_paths;
@@ -2581,7 +2583,7 @@ void BambuParameter::CheckParameters()
    const auto altera_dirs = SplitString(getOption<std::string>(OPT_altera_root), ":");
    removeOption(OPT_altera_root);
    const auto search_quartus = [&](const std::string& dir) {
-      if(boost::filesystem::exists(dir + "/quartus/bin/quartus_sh"))
+      if(std::filesystem::exists(dir + "/quartus/bin/quartus_sh"))
       {
          if(system(STR("bash -c \"if [ $(" + dir +
                        "/quartus/bin/quartus_sh --version | grep Version | sed -E 's/Version ([0-9]+).*/\\1/') -lt 14 "
@@ -2607,11 +2609,11 @@ void BambuParameter::CheckParameters()
    };
    for(const auto& altera_dir : altera_dirs)
    {
-      if(boost::filesystem::is_directory(altera_dir))
+      if(std::filesystem::is_directory(altera_dir))
       {
          for(const auto& ver_dir : sorted_dirs(altera_dir))
          {
-            if(boost::filesystem::is_directory(ver_dir))
+            if(std::filesystem::is_directory(ver_dir))
             {
                search_quartus(ver_dir.string());
             }
@@ -2625,36 +2627,36 @@ void BambuParameter::CheckParameters()
    removeOption(OPT_lattice_root);
    auto has_lattice = 0; // 0 = not found, 1 = 32-bit version, 2 = 64-bit version
    const auto search_lattice = [&](const std::string& dir) {
-      if(boost::filesystem::exists(dir + "/bin/lin/diamondc"))
+      if(std::filesystem::exists(dir + "/bin/lin/diamondc"))
       {
          has_lattice = 1;
          setOption(OPT_lattice_root, dir);
       }
-      else if(boost::filesystem::exists(dir + "/bin/lin64/diamondc"))
+      else if(std::filesystem::exists(dir + "/bin/lin64/diamondc"))
       {
          has_lattice = 2;
          setOption(OPT_lattice_root, dir);
       }
-      if(boost::filesystem::exists(dir + "/cae_library/synthesis/verilog/pmi_def.v"))
+      if(std::filesystem::exists(dir + "/cae_library/synthesis/verilog/pmi_def.v"))
       {
          setOption(OPT_lattice_pmi_def, dir + "/cae_library/synthesis/verilog/pmi_def.v");
       }
-      if(boost::filesystem::exists(dir + "/cae_library/simulation/verilog/pmi/pmi_ram_dp_true_be.v"))
+      if(std::filesystem::exists(dir + "/cae_library/simulation/verilog/pmi/pmi_ram_dp_true_be.v"))
       {
          setOption(OPT_lattice_pmi_tdpbe, dir + "/cae_library/simulation/verilog/pmi/pmi_ram_dp_true_be.v");
       }
-      if(boost::filesystem::exists(dir + "/cae_library/simulation/verilog/pmi/pmi_dsp_mult.v"))
+      if(std::filesystem::exists(dir + "/cae_library/simulation/verilog/pmi/pmi_dsp_mult.v"))
       {
          setOption(OPT_lattice_pmi_mul, dir + "/cae_library/simulation/verilog/pmi/pmi_dsp_mult.v");
       }
    };
    for(const auto& lattice_dir : lattice_dirs)
    {
-      if(boost::filesystem::is_directory(lattice_dir))
+      if(std::filesystem::is_directory(lattice_dir))
       {
          for(const auto& ver_dir : sorted_dirs(lattice_dir))
          {
-            if(boost::filesystem::is_directory(ver_dir))
+            if(std::filesystem::is_directory(ver_dir))
             {
                search_lattice(ver_dir.string());
             }
@@ -2695,22 +2697,22 @@ void BambuParameter::CheckParameters()
    const auto mentor_dirs = SplitString(getOption<std::string>(OPT_mentor_root), ":");
    removeOption(OPT_mentor_root);
    const auto search_mentor = [&](const std::string& dir) {
-      if(boost::filesystem::exists(dir + "/bin/vsim"))
+      if(std::filesystem::exists(dir + "/bin/vsim"))
       {
          setOption(OPT_mentor_modelsim_bin, dir + "/bin");
       }
-      if(boost::filesystem::exists(dir + "/bin/visualizer"))
+      if(std::filesystem::exists(dir + "/bin/visualizer"))
       {
          setOption(OPT_mentor_visualizer, dir + "/bin/visualizer");
       }
    };
    for(const auto& mentor_dir : mentor_dirs)
    {
-      if(boost::filesystem::is_directory(mentor_dir))
+      if(std::filesystem::is_directory(mentor_dir))
       {
          for(const auto& ver_dir : sorted_dirs(mentor_dir))
          {
-            if(boost::filesystem::is_directory(ver_dir))
+            if(std::filesystem::is_directory(ver_dir))
             {
                search_mentor(ver_dir.string());
             }
@@ -2727,18 +2729,18 @@ void BambuParameter::CheckParameters()
    const auto nanox_dirs = SplitString(getOption<std::string>(OPT_nanoxplore_root), ":");
    removeOption(OPT_nanoxplore_root);
    const auto search_xmap = [&](const std::string& dir) {
-      if(boost::filesystem::exists(dir + "/bin/nxpython"))
+      if(std::filesystem::exists(dir + "/bin/nxpython"))
       {
          setOption(OPT_nanoxplore_root, dir);
       }
    };
    for(const auto& nanox_dir : nanox_dirs)
    {
-      if(boost::filesystem::is_directory(nanox_dir))
+      if(std::filesystem::is_directory(nanox_dir))
       {
          for(const auto& ver_dir : sorted_dirs(nanox_dir))
          {
-            if(boost::filesystem::is_directory(ver_dir))
+            if(std::filesystem::is_directory(ver_dir))
             {
                search_xmap(ver_dir.string());
             }
@@ -2752,38 +2754,38 @@ void BambuParameter::CheckParameters()
    const auto xilinx_dirs = SplitString(getOption<std::string>(OPT_xilinx_root), ":");
    removeOption(OPT_xilinx_root);
    const auto search_xilinx = [&](const std::string& dir) {
-      if(boost::filesystem::exists(dir + "/ISE"))
+      if(std::filesystem::exists(dir + "/ISE"))
       {
-         if(target_64 && boost::filesystem::exists(dir + "/settings64.sh"))
+         if(target_64 && std::filesystem::exists(dir + "/settings64.sh"))
          {
             setOption(OPT_xilinx_settings, dir + "/settings64.sh");
             setOption(OPT_xilinx_root, dir);
          }
-         else if(boost::filesystem::exists(dir + "/settings32.sh"))
+         else if(std::filesystem::exists(dir + "/settings32.sh"))
          {
             setOption(OPT_xilinx_settings, dir + "/settings32.sh");
             setOption(OPT_xilinx_root, dir);
          }
-         if(boost::filesystem::exists(dir + "/ISE/verilog/src/glbl.v"))
+         if(std::filesystem::exists(dir + "/ISE/verilog/src/glbl.v"))
          {
             setOption(OPT_xilinx_glbl, dir + "/ISE/verilog/src/glbl.v");
          }
       }
    };
    const auto search_xilinx_vivado = [&](const std::string& dir) {
-      if(boost::filesystem::exists(dir + "/ids_lite"))
+      if(std::filesystem::exists(dir + "/ids_lite"))
       {
-         if(target_64 && boost::filesystem::exists(dir + "/settings64.sh"))
+         if(target_64 && std::filesystem::exists(dir + "/settings64.sh"))
          {
             setOption(OPT_xilinx_vivado_settings, dir + "/settings64.sh");
             setOption(OPT_xilinx_root, dir);
          }
-         else if(boost::filesystem::exists(dir + "/settings32.sh"))
+         else if(std::filesystem::exists(dir + "/settings32.sh"))
          {
             setOption(OPT_xilinx_vivado_settings, dir + "/settings32.sh");
             setOption(OPT_xilinx_root, dir);
          }
-         if(boost::filesystem::exists(dir + "/data/verilog/src/glbl.v"))
+         if(std::filesystem::exists(dir + "/data/verilog/src/glbl.v"))
          {
             setOption(OPT_xilinx_glbl, dir + "/data/verilog/src/glbl.v");
          }
@@ -2791,16 +2793,16 @@ void BambuParameter::CheckParameters()
    };
    for(const auto& xilinx_dir : xilinx_dirs)
    {
-      if(boost::filesystem::is_directory(xilinx_dir))
+      if(std::filesystem::is_directory(xilinx_dir))
       {
          for(const auto& ver_dir : sorted_dirs(xilinx_dir))
          {
-            if(boost::filesystem::is_directory(ver_dir))
+            if(std::filesystem::is_directory(ver_dir))
             {
-               for(const auto& ise_dir : boost::filesystem::directory_iterator(ver_dir))
+               for(const auto& ise_dir : std::filesystem::directory_iterator(ver_dir))
                {
                   const auto ise_path = ise_dir.path().string();
-                  if(boost::filesystem::is_directory(ise_dir) && ise_path.find("ISE") > ise_path.find_last_of('/'))
+                  if(std::filesystem::is_directory(ise_dir) && ise_path.find("ISE") > ise_path.find_last_of('/'))
                   {
                      search_xilinx(ise_path);
                   }
@@ -2812,17 +2814,16 @@ void BambuParameter::CheckParameters()
    }
    for(const auto& xilinx_dir : xilinx_dirs)
    {
-      if(boost::filesystem::is_directory(xilinx_dir))
+      if(std::filesystem::is_directory(xilinx_dir))
       {
-         for(const auto& vivado_dir : boost::filesystem::directory_iterator(xilinx_dir))
+         for(const auto& vivado_dir : std::filesystem::directory_iterator(xilinx_dir))
          {
             const auto vivado_path = vivado_dir.path().string();
-            if(boost::filesystem::is_directory(vivado_dir) &&
-               vivado_path.find("Vivado") > vivado_path.find_last_of('/'))
+            if(std::filesystem::is_directory(vivado_dir) && vivado_path.find("Vivado") > vivado_path.find_last_of('/'))
             {
                for(const auto& ver_dir : sorted_dirs(vivado_path))
                {
-                  if(boost::filesystem::is_directory(ver_dir))
+                  if(std::filesystem::is_directory(ver_dir))
                   {
                      search_xilinx_vivado(ver_dir.string());
                   }
@@ -2999,6 +3000,24 @@ void BambuParameter::CheckParameters()
                setOption(OPT_generate_testbench, true);
                setOption(OPT_testbench_input_file, GetPath("test.xml"));
             }
+            if(isOption(OPT_top_functions_names) &&
+               getOption<const std::list<std::string>>(OPT_top_functions_names).size() > 1)
+            {
+               THROW_ERROR("Simulation cannot be enabled with multiple top functions");
+            }
+            if(isOption(OPT_device_string) && boost::starts_with(getOption<std::string>(OPT_device_string), "LFE"))
+            {
+               if(getOption<std::string>(OPT_simulator) == "VERILATOR")
+               {
+                  THROW_WARNING("Simulation of Lattice device may not work with VERILATOR. Recent versions ignore some "
+                                "issue in Verilog Lattice libraries.");
+               }
+               if(!isOption(OPT_lattice_settings))
+               {
+                  THROW_ERROR("Simulation of Lattice devices requires to enable Lattice support. See documentation "
+                              "about --lattice-root option.");
+               }
+            }
          }
          const auto is_valid_evaluation_mode = [](const std::string& s) -> bool {
             return s == "AREA" || s == "AREAxTIME" || s == "TIME" || s == "TOTAL_TIME" || s == "CYCLES" ||
@@ -3007,7 +3026,7 @@ void BambuParameter::CheckParameters()
          };
          if(!all_of(objective_vector.begin(), objective_vector.end(), is_valid_evaluation_mode))
          {
-            THROW_ERROR("BadParameters: evaluation mode EXACT don't support the evaluation objectives");
+            THROW_ERROR("BadParameters: evaluation mode EXACT don't support given evaluation objectives");
          }
       }
       else
@@ -3033,7 +3052,8 @@ void BambuParameter::CheckParameters()
 
    const auto default_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
    const auto flag_cpp = isOption(OPT_input_format) &&
-                         getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP;
+                         (getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
+                          getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP);
    if(flag_cpp)
    {
       /// add -I <ac_types_dir> and -I <ac_math_dir>
@@ -3216,10 +3236,9 @@ void BambuParameter::CheckParameters()
          if(source_files.size() > 1 && isOption(OPT_input_format) &&
             getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C)
          {
-            auto concat_filename =
-                boost::filesystem::path(getOption<std::string>(OPT_output_temporary_directory) + "/" +
-                                        boost::filesystem::unique_path(std::string(STR_CST_concat_c_file)).string())
-                    .string();
+            auto concat_filename = std::filesystem::path(getOption<std::string>(OPT_output_temporary_directory) + "/" +
+                                                         unique_path(std::string(STR_CST_concat_c_file)).string())
+                                       .string();
             std::ofstream filestream(concat_filename.c_str());
             for(const auto& source_file : source_files)
             {
@@ -3543,16 +3562,6 @@ void BambuParameter::CheckParameters()
          THROW_ERROR("Testbench generation required. (--generate-tb or --simulate undeclared).");
       }
    }
-   if((getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::EXACT &&
-       getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos) ||
-      (isOption(OPT_discrepancy) && getOption<bool>(OPT_discrepancy)))
-   {
-      if(isOption(OPT_top_functions_names) &&
-         getOption<const std::list<std::string>>(OPT_top_functions_names).size() > 1)
-      {
-         THROW_ERROR("Simulation cannot be enabled with multiple top functions");
-      }
-   }
    /// Disable proxy when there are multiple top functions
    if(isOption(OPT_top_functions_names) && getOption<const std::list<std::string>>(OPT_top_functions_names).size() > 1)
    {
@@ -3565,16 +3574,6 @@ void BambuParameter::CheckParameters()
                   "use --testbench-extra-gcc-flags=\"string\" to provide them");
    }
    setOption<unsigned int>(OPT_host_compiler, static_cast<unsigned int>(default_compiler));
-   if(isOption(OPT_evaluation_objectives) &&
-      getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos &&
-      isOption(OPT_device_string) && boost::starts_with(getOption<std::string>(OPT_device_string), "LFE"))
-   {
-      if(getOption<std::string>(OPT_simulator) == "VERILATOR")
-      {
-         THROW_WARNING("Simulation of Lattice device may not work with VERILATOR. Recent versions ignore some issue in "
-                       "Verilog Lattice libraries.");
-      }
-   }
    if(isOption(OPT_lattice_settings))
    {
       if(isOption(OPT_evaluation_objectives) &&
@@ -3584,26 +3583,6 @@ void BambuParameter::CheckParameters()
       {
          THROW_WARNING("--connect-iob must be used when target is a Lattice board");
       }
-   }
-   else
-   {
-      if(isOption(OPT_evaluation_objectives) &&
-         getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos &&
-         isOption(OPT_device_string) && boost::starts_with(getOption<std::string>(OPT_device_string), "LFE"))
-      {
-         THROW_ERROR("Simulation of Lattice devices requires to enable Lattice support. See documentation about "
-                     "--lattice-root option.");
-      }
-   }
-   if(isOption(OPT_evaluation_objectives) &&
-      getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos &&
-      (!isOption(OPT_simulator) || getOption<std::string>(OPT_simulator) == ""))
-   {
-      THROW_ERROR("At least a simulator must be enabled");
-   }
-   if(isOption(OPT_dry_run_evaluation) && getOption<bool>(OPT_dry_run_evaluation))
-   {
-      setOption(OPT_evaluation_mode, Evaluation_Mode::DRY_RUN);
    }
    /// When simd is enabled bit value analysis and optimization are disabled
    if(getOption<int>(OPT_gcc_openmp_simd))
@@ -3622,8 +3601,8 @@ void BambuParameter::SetDefaults()
 {
    // ---------- general options ----------- //
    /// Revision
-   setOption(OPT_dot_directory, GetCurrentPath() + "/HLS_output/dot/");
-   setOption(OPT_output_directory, GetCurrentPath() + "/HLS_output/");
+   setOption(OPT_dot_directory, GetPath("./HLS_output/dot/"));
+   setOption(OPT_output_directory, GetPath("./HLS_output/"));
    setOption(OPT_simulation_output, GetPath("results.txt"));
    setOption(OPT_profiling_output, GetPath("profiling_results.txt"));
    /// Debugging level
@@ -3827,6 +3806,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_host_compiler, CompilerWrapper::getDefaultCompiler());
 #endif
    setOption(OPT_clock_period, 10.0);
+   setOption(OPT_clock_period_resource_fraction, "1.0");
    setOption(OPT_mixed_design, true);
 #if HAVE_TASTE
    setOption(OPT_generate_taste_architecture, false);

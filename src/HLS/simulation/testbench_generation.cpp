@@ -77,7 +77,7 @@
 #include "utility.hpp"
 
 #include <algorithm>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <fstream>
 #include <iterator>
 #include <list>
@@ -751,8 +751,8 @@ typedef longint unsigned ptr_t;
          bambu_tb_dpi << "// verilator lint_on BLKSEQ\n";
       }
    }
-   boost::filesystem::remove(HLSMgr->RSim->filename_bench);
-   boost::filesystem::rename(HLSMgr->RSim->filename_bench + ".dpi", HLSMgr->RSim->filename_bench);
+   std::filesystem::remove(HLSMgr->RSim->filename_bench);
+   std::filesystem::rename(HLSMgr->RSim->filename_bench + ".dpi", HLSMgr->RSim->filename_bench);
 
    if(parameters->getOption<std::string>(OPT_simulator) == "VERILATOR")
    {

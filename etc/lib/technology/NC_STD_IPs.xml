@@ -320,7 +320,7 @@ begin
       $fclose(res_file);
       `ifndef NDEBUG
       if(setup_next)
-        $display(&quot;Sim: Argument setup\\nSim: Simulation started at cycle %0d&quot;, start_cycle);
+        $display(&quot;Sim: Argument setup\nSim: Simulation started at cycle %0d&quot;, start_cycle);
       `endif
       over_time &lt;= start_cycle + MAX_SIM_CYCLES;
     end
@@ -346,7 +346,7 @@ begin
       $fwrite(res_file, &quot;%0d,&quot;, curr_time);
       $fclose(res_file);
       `ifndef NDEBUG
-      $display(&quot;Sim: DUT port writeback\\nSim: Simulation ended at cycle %0d&quot;, curr_cycle);
+      $display(&quot;Sim: DUT port writeback\nSim: Simulation ended at cycle %0d&quot;, curr_cycle);
       `endif
     end
   COSIM_END:
@@ -356,12 +356,12 @@ begin
       res_file = $fopen(RESFILE, &quot;a&quot;);
       if(r[$bits(SIM_READY)-1:0] == COSIM_ABORT)
       begin
-        $fwrite(res_file, &quot;\\nA\\n&quot;);
+        $fwrite(res_file, &quot;\nA\n&quot;);
         $display(&quot;Sim: Testbench aborted&quot;);
       end
       else
       begin
-        $fwrite(res_file, &quot;\\n%0d\\n&quot;, r[15:8]);
+        $fwrite(res_file, &quot;\n%0d\n&quot;, r[15:8]);
         $display(&quot;Sim: Testbench returned: %0d&quot;, r[15:8]);
       end
       $fclose(res_file);
@@ -545,7 +545,7 @@ generate
     initial
     begin
       dump_file = $fopen(MEM_DUMP_FILE, &quot;w&quot;);
-      $fwrite(dump_file, &quot;Channel,Operation,Address,Bitwidth,Data\\n&quot;);
+      $fwrite(dump_file, &quot;Channel,Operation,Address,Bitwidth,Data\n&quot;);
     end
 
     always@(posedge clock)
@@ -666,7 +666,7 @@ generate
           Rready &lt;= 1;
           if(MEM_DUMP)
           begin
-            $fwrite(dump_file, &quot;%0d,r,%0X,%0d,%0X\\n&quot;, i, Raddr, BITSIZE_Rdata, data);
+            $fwrite(dump_file, &quot;%0d,r,%0X,%0d,%0X\n&quot;, i, Raddr, BITSIZE_Rdata, data);
           end
         end
       end
@@ -685,7 +685,7 @@ generate
           Rready &lt;= 1;
           if(MEM_DUMP)
           begin
-            $fwrite(dump_file, &quot;%0d,r,%0X,%0d,%0X\\n&quot;, i, Raddr, BITSIZE_Rdata, data);
+            $fwrite(dump_file, &quot;%0d,r,%0X,%0d,%0X\n&quot;, i, Raddr, BITSIZE_Rdata, data);
           end
         end
       end
@@ -707,7 +707,7 @@ generate
           Wready &lt;= 1;
           if(MEM_DUMP)
           begin
-            $fwrite(dump_file, &quot;%0d,w,%0X,%0d,%0X\\n&quot;, i, Waddr, Wsize, Wdata);
+            $fwrite(dump_file, &quot;%0d,w,%0X,%0d,%0X\n&quot;, i, Waddr, Wsize, Wdata);
           end
         end
       end
@@ -723,7 +723,7 @@ generate
           Wready &lt;= 1;
           if(MEM_DUMP)
           begin
-            $fwrite(dump_file, &quot;%0d,w,%0X,%0d,%0X\\n&quot;, i, Waddr, Wsize, Wdata);
+            $fwrite(dump_file, &quot;%0d,w,%0X,%0d,%0X\n&quot;, i, Waddr, Wsize, Wdata);
           end
         end
       end

@@ -420,6 +420,7 @@
 
 /// STL include
 #include <list>
+#include <random>
 
 /// Tree includes
 #include "parse_tree.hpp"
@@ -435,7 +436,7 @@
 #include "fileIO.hpp"
 #include "string_manipulation.hpp"
 #include "utility.hpp"
-#include <boost/regex.hpp>
+#include <regex>
 
 /// XML includes used for writing and reading the configuration file
 #include "polixml.hpp"
@@ -444,7 +445,7 @@
 
 static std::string __escape_define(const std::string& str)
 {
-   return boost::regex_replace(str, boost::regex("([\\(\\) ])"), "\\\\$1");
+   return std::regex_replace(str, std::regex("([\\(\\) ])"), "\\$1");
 }
 
 std::string CompilerWrapper::current_compiler_version;
@@ -635,11 +636,10 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
             else
             {
                /// load xml memory allocation file
-               auto source_file = real_file_name;
                const auto output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
-               std::string leaf_name = GetLeafFileName(source_file);
+               std::string leaf_name = std::filesystem::path(real_file_name).filename().string();
                auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".memory_allocation.xml";
-               if((boost::filesystem::exists(boost::filesystem::path(XMLfilename))))
+               if((std::filesystem::exists(std::filesystem::path(XMLfilename))))
                {
                   xml_files.push_back(XMLfilename);
                }
@@ -748,11 +748,6 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
             command += " -mllvm -panda-topfname=" + fname;
          }
          command += "  -emit-llvm";
-         if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-            CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
-         {
-            command += " -Xclang -no-opaque-pointers";
-         }
       }
       else
       {
@@ -762,13 +757,8 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    }
    else if(cm == CompilerWrapper_CompilerMode::CM_LTO)
    {
-      if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-         CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
-      {
-         command += " -Xclang -no-opaque-pointers";
-      }
       command += " -c -flto -o " + Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
-                 GetBaseName(real_file_name) + ".o ";
+                 std::filesystem::path(real_file_name).stem().string() + ".o ";
    }
    else
    {
@@ -789,10 +779,9 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       }
       else
       {
-         temporary_file_run_o =
-             boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
-                                     boost::filesystem::unique_path(std::string(STR_CST_gcc_obj_file)).string())
-                 .string();
+         temporary_file_run_o = std::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) +
+                                                      "/" + unique_path(std::string(STR_CST_gcc_obj_file)).string())
+                                    .string();
          command += " -o " + temporary_file_run_o;
       }
    }
@@ -808,10 +797,10 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    }
    else
    {
-      boost::filesystem::path file_path(original_file_name);
-      std::string extension = GetExtension(file_path);
+      std::filesystem::path file_path(original_file_name);
+      std::string extension = file_path.extension().string();
       /// assembler files are not allowed so in some cases we pass a C file renamed with extension .S
-      if(extension == "S")
+      if(extension == ".S")
       {
          command += "-x c ";
       }
@@ -843,7 +832,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    if(IsError(ret))
    {
       PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in compilation");
-      if(boost::filesystem::exists(boost::filesystem::path(gcc_output_file_name)))
+      if(std::filesystem::exists(std::filesystem::path(gcc_output_file_name)))
       {
          CopyStdout(gcc_output_file_name);
          THROW_ERROR_CODE(COMPILING_EC, "Front-end compiler returns an error during compilation " +
@@ -899,7 +888,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
 
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER ||    \
     HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER ||    \
-    HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG11_COMPILER || \
+    HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANG12_COMPILER || \
     HAVE_I386_CLANG13_COMPILER || HAVE_I386_CLANG16_COMPILER || HAVE_I386_CLANGVVD_COMPILER
    if(Param->IsParameter("disable-pragma-parsing") && Param->GetParameter<int>("disable-pragma-parsing") == 1)
    {
@@ -972,44 +961,47 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
       {
          already_processed_files.insert(source_file.first);
       }
-      std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
+      std::string leaf_name =
+          source_file.second == "-" ? "stdin-" : std::filesystem::path(source_file.second).filename().string();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Compiling file " + source_file.second);
       /// create obj
       CompileFile(source_file.first, source_file.second, frontend_compiler_parameters, source_files.size() > 1,
                   enable_LTO ? CompilerWrapper_CompilerMode::CM_LTO : CompilerWrapper_CompilerMode::CM_STD, costTable);
       if(!Param->isOption(OPT_gcc_E) && !Param->isOption(OPT_gcc_S) && !enable_LTO)
       {
-         if(!(boost::filesystem::exists(
-                boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix))))
+         if(!(std::filesystem::exists(
+                std::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix))))
          {
             THROW_WARNING("Raw not created for file " + output_temporary_directory + "/" + leaf_name);
             CompileFile(source_file.first, source_file.second, frontend_compiler_parameters, source_files.size() > 1,
                         CompilerWrapper_CompilerMode::CM_EMPTY, costTable);
             /// Recomputing leaf_name since source_file.second should be modified in the previous call
-            leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
-            if(not(boost::filesystem::exists(
-                   boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_empty_suffix))))
+            leaf_name =
+                source_file.second == "-" ? "stdin-" : std::filesystem::path(source_file.second).filename().string();
+            if(not(std::filesystem::exists(
+                   std::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_empty_suffix))))
             {
                THROW_ERROR(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_empty_suffix +
                            " not found: impossible to create raw file for " + source_file.second);
             }
-            rename_file(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_empty_suffix,
-                        output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
+            std::filesystem::rename(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_empty_suffix,
+                                    output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Renaming " + source_file.second + STR_CST_gcc_empty_suffix + " in " +
                                source_file.second + STR_CST_gcc_tree_suffix);
          }
-         boost::filesystem::path obj =
-             boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
+         std::filesystem::path obj =
+             std::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
          tree_managerRef TreeM = ParseTreeFile(Param, obj.string());
 
 #if HAVE_FROM_RTL_BUILT
          if((Param->getOption<bool>(OPT_use_rtl)) &&
-            boost::filesystem::exists(boost::filesystem::path(leaf_name + STR_CST_gcc_rtl_suffix)))
+            std::filesystem::exists(std::filesystem::path(leaf_name + STR_CST_gcc_rtl_suffix)))
          {
-            obj = boost::filesystem::path(leaf_name + STR_CST_gcc_rtl_suffix);
+            obj = std::filesystem::path(leaf_name + STR_CST_gcc_rtl_suffix);
             parse_rtl_File(obj.string(), TreeM, debug_level);
-            rename_file(obj, boost::filesystem::path(output_temporary_directory + leaf_name + STR_CST_gcc_rtl_suffix));
+            std::filesystem::rename(
+                obj, std::filesystem::path(output_temporary_directory + leaf_name + STR_CST_gcc_rtl_suffix));
          }
 #endif
 #if !NPROFILE
@@ -1033,16 +1025,15 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
       for(const auto& source_file : source_files)
       {
          std::string leaf_name =
-             source_file.second == "-" ? "stdin-" : GetBaseName(GetLeafFileName(source_file.second));
-         if((boost::filesystem::exists(boost::filesystem::path(output_temporary_directory + "/" + leaf_name + ".o"))))
+             source_file.second == "-" ? "stdin-" : std::filesystem::path(source_file.second).stem().string();
+         if((std::filesystem::exists(std::filesystem::path(output_temporary_directory + "/" + leaf_name + ".o"))))
          {
-            object_files += boost::filesystem::path(output_temporary_directory + "/" + leaf_name + ".o").string() + " ";
+            object_files += std::filesystem::path(output_temporary_directory + "/" + leaf_name + ".o").string() + " ";
          }
       }
-      auto temporary_file_o_bc =
-          boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
-                                  boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string())
-              .string();
+      auto temporary_file_o_bc = std::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) +
+                                                       "/" + unique_path(std::string(STR_CST_llvm_obj_file)).string())
+                                     .string();
       auto command = compiler.llvm_link + " " + object_files + " -o " + temporary_file_o_bc;
       const auto llvm_link_output_file_name =
           Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
@@ -1050,7 +1041,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
       if(IsError(ret))
       {
          PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in llvm-link");
-         if(boost::filesystem::exists(boost::filesystem::path(llvm_link_output_file_name)))
+         if(std::filesystem::exists(std::filesystem::path(llvm_link_output_file_name)))
          {
             CopyStdout(llvm_link_output_file_name);
             THROW_ERROR_CODE(COMPILING_EC, "llvm-link returns an error during compilation " +
@@ -1110,10 +1101,9 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             }
             else
             {
-               for(const auto& entry :
-                   boost::make_iterator_range(boost::filesystem::directory_iterator(output_temporary_directory), {}))
+               for(const auto& entry : std::filesystem::directory_iterator{output_temporary_directory})
                {
-                  const auto source_file = GetLeafFileName(entry.path().string());
+                  const auto source_file = entry.path().filename().string();
                   if(source_file.find(".memory_allocation.xml") != std::string::npos)
                   {
                      xml_files.push_back(source_file);
@@ -1188,10 +1178,9 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             }
             command += plugin_prefix + compiler.topfname_plugin_name;
             command += " " + temporary_file_o_bc;
-            temporary_file_o_bc =
-                boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
-                                        boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string())
-                    .string();
+            temporary_file_o_bc = std::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) +
+                                                        "/" + unique_path(std::string(STR_CST_llvm_obj_file)).string())
+                                      .string();
             command += " -o " + temporary_file_o_bc;
             const auto tfn_output_file_name =
                 Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
@@ -1199,7 +1188,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             if(IsError(ret))
             {
                PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in opt");
-               if(boost::filesystem::exists(boost::filesystem::path(tfn_output_file_name)))
+               if(std::filesystem::exists(std::filesystem::path(tfn_output_file_name)))
                {
                   CopyStdout(tfn_output_file_name);
                   THROW_ERROR_CODE(COMPILING_EC, "opt returns an error during compilation " +
@@ -1217,10 +1206,9 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             command +=
                 " --internalize-public-api-file=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
                 "external-symbols.txt " + plugin_prefix + "internalize ";
-            temporary_file_o_bc =
-                boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
-                                        boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string())
-                    .string();
+            temporary_file_o_bc = std::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) +
+                                                        "/" + unique_path(std::string(STR_CST_llvm_obj_file)).string())
+                                      .string();
             command += " -o " + temporary_file_o_bc;
             const auto int_output_file_name =
                 Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
@@ -1228,7 +1216,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             if(IsError(ret))
             {
                PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in opt");
-               if(boost::filesystem::exists(boost::filesystem::path(int_output_file_name)))
+               if(std::filesystem::exists(std::filesystem::path(int_output_file_name)))
                {
                   CopyStdout(int_output_file_name);
                   THROW_ERROR_CODE(COMPILING_EC, "opt returns an error during compilation " +
@@ -1253,10 +1241,9 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
              compiler.expandMemOps_plugin_obj, compiler.expandMemOps_plugin_name, compiler.GepiCanon_plugin_obj,
              compiler.GepiCanon_plugin_name, compiler.CSROA_plugin_obj, compiler.CSROA_plugin_name, fname);
          command = compiler.llvm_opt + recipe + temporary_file_o_bc;
-         temporary_file_o_bc =
-             boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
-                                     boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string())
-                 .string();
+         temporary_file_o_bc = std::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) +
+                                                     "/" + unique_path(std::string(STR_CST_llvm_obj_file)).string())
+                                   .string();
          command += " -o " + temporary_file_o_bc;
          const auto o2_output_file_name =
              Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
@@ -1264,7 +1251,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          if(IsError(ret))
          {
             PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in opt");
-            if(boost::filesystem::exists(boost::filesystem::path(o2_output_file_name)))
+            if(std::filesystem::exists(std::filesystem::path(o2_output_file_name)))
             {
                CopyStdout(o2_output_file_name);
                THROW_ERROR_CODE(COMPILING_EC,
@@ -1326,10 +1313,9 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
                     plugin_prefix + "mem2reg  " + plugin_prefix + "globalopt " + plugin_prefix + "break-crit-edges " +
                     plugin_prefix + "dse " + plugin_prefix + "adce " + plugin_prefix + "loop-load-elim";
          command += " " + temporary_file_o_bc;
-         temporary_file_o_bc =
-             boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
-                                     boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string())
-                 .string();
+         temporary_file_o_bc = std::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) +
+                                                     "/" + unique_path(std::string(STR_CST_llvm_obj_file)).string())
+                                   .string();
          command += " -o " + temporary_file_o_bc;
          command += add_plugin_prefix(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)) +
                     compiler.ssa_plugin_name;
@@ -1339,7 +1325,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          if(IsError(ret))
          {
             PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in opt");
-            if(boost::filesystem::exists(boost::filesystem::path(gimpledump_output_file_name)))
+            if(std::filesystem::exists(std::filesystem::path(gimpledump_output_file_name)))
             {
                CopyStdout(gimpledump_output_file_name);
                THROW_ERROR_CODE(COMPILING_EC,
@@ -1356,9 +1342,9 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
       {
          THROW_ERROR("LTO compilation not yet implemented for the chosen front-end compiler");
       }
-      std::string leaf_name = GetLeafFileName(source_files.begin()->second);
-      const auto obj = boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
-      if(!boost::filesystem::exists(obj))
+      std::string leaf_name = std::filesystem::path(source_files.begin()->second).filename().string();
+      const auto obj = std::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
+      if(!std::filesystem::exists(obj))
       {
          THROW_ERROR(obj.string() + " not found: impossible to create raw file for " + real_file_names);
       }
@@ -3008,7 +2994,7 @@ size_t CompilerWrapper::GetSourceCodeLines(const ParameterConstRef Param)
    const auto source_files = Param->getOption<const CustomSet<std::string>>(OPT_input_file);
    for(const auto& source_file : source_files)
    {
-      boost::filesystem::path absolute_path = boost::filesystem::system_complete(source_file);
+      std::filesystem::path absolute_path = std::filesystem::absolute(source_file);
       command += absolute_path.parent_path().string() + "/*\\.h ";
       command += source_file + " ";
    }
@@ -3101,7 +3087,7 @@ void CompilerWrapper::CreateExecutable(const std::list<std::string>& file_names,
 
    if(!has_cpp_file)
    {
-      command = boost::regex_replace(command, boost::regex("[-]{1,2}std=c\\+\\+\\w+"), "");
+      command = std::regex_replace(command, std::regex("[-]{1,2}std=c\\+\\+\\w+"), "");
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Compilation command is " + command);
@@ -3564,7 +3550,7 @@ const std::string CompilerWrapper::AddSourceCodeIncludes(const std::list<std::st
    /// Adding includes of original source code files
    for(const auto& source_file : source_files)
    {
-      boost::filesystem::path absolute_path = boost::filesystem::system_complete(source_file);
+      std::filesystem::path absolute_path = std::filesystem::absolute(source_file);
       std::string new_path = "-iquote " + absolute_path.parent_path().string() + " ";
 #ifdef _WIN32
       boost::replace_all(new_path, "\\", "/");

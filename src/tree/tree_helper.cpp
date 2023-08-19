@@ -66,10 +66,10 @@
 #include "exceptions.hpp"
 #include "string_manipulation.hpp" // for STR
 #include <boost/algorithm/string/replace.hpp>
-#include <boost/filesystem/operations.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/regex.hpp>
+#include <filesystem>
 #include <iostream>
+#include <regex>
 #include <set>
 
 /// built in type without parameter
@@ -636,7 +636,7 @@ std::tuple<std::string, unsigned int, unsigned int> tree_helper::GetSourcePath(c
    }
    if(include_name != "<built-in>")
    {
-      include_name = boost::filesystem::weakly_canonical(include_name).string();
+      include_name = std::filesystem::weakly_canonical(include_name).string();
    }
    return std::tuple<std::string, unsigned int, unsigned int>(include_name, line_number, column_number);
 }
@@ -2450,22 +2450,14 @@ static bool same_size_fields(const tree_nodeConstRef& t)
       }
    }
 
-   auto sizeFlds = 0ull;
+   const auto sizeFlds = tree_helper::Size(listOfTypes.front());
+   if(ceil_pow2(sizeFlds) != sizeFlds)
+   {
+      return false;
+   }
    for(const auto& fldType : listOfTypes)
    {
-      if(!sizeFlds)
-      {
-         sizeFlds = tree_helper::Size(fldType);
-      }
-      else if(sizeFlds != tree_helper::Size(fldType))
-      {
-         return false;
-      }
-      else if(ceil_pow2(sizeFlds) != sizeFlds)
-      {
-         return false;
-      }
-      else if(1 != sizeFlds)
+      if(sizeFlds != tree_helper::Size(fldType))
       {
          return false;
       }
@@ -5149,19 +5141,18 @@ unsigned int tree_helper::get_var_alignment(const tree_managerConstRef& TM, unsi
 
 std::string tree_helper::NormalizeTypename(const std::string& id)
 {
-   static const boost::regex rbase("[.:$]+");
-   static const boost::regex rtmpl("[*&<>\\-]|[, ]+");
+   static const std::regex rbase("[.:$]+");
+   static const std::regex rtmpl("[*&<>\\-]|[, ]+");
    std::string norm_typename;
-   boost::regex_replace(std::back_inserter(norm_typename), id.cbegin(), id.cend(), rbase, "_");
+   std::regex_replace(std::back_inserter(norm_typename), id.cbegin(), id.cend(), rbase, "_");
    const auto tmpl_start = norm_typename.find_first_of('<');
    if(tmpl_start != std::string::npos)
    {
       const auto tmpl_end = norm_typename.find_last_of('>');
       THROW_ASSERT(tmpl_end != std::string::npos, "");
       auto norm_template = norm_typename.substr(0, tmpl_start);
-      boost::regex_replace(std::back_inserter(norm_template),
-                           norm_typename.cbegin() + static_cast<long int>(tmpl_start),
-                           norm_typename.cbegin() + static_cast<long int>(tmpl_end + 1U), rtmpl, "_");
+      std::regex_replace(std::back_inserter(norm_template), norm_typename.cbegin() + static_cast<long int>(tmpl_start),
+                         norm_typename.cbegin() + static_cast<long int>(tmpl_end + 1U), rtmpl, "_");
       return norm_template;
    }
    return norm_typename;
@@ -6189,12 +6180,12 @@ tree_nodeConstRef tree_helper::GetFormalIth(const tree_nodeConstRef& _obj, unsig
       {
          const auto pt = GetPointerS<const pointer_type>(fn_type);
          THROW_ASSERT(pt->ptd, "unexpected pattern");
-         const auto ft = GetPointerS<const function_type>(GET_CONST_NODE(pt->ptd));
-         if(ft->varargs_flag)
+         const auto ft = GetPointer<const function_type>(GET_CONST_NODE(pt->ptd));
+         if(ft && ft->varargs_flag)
          {
             return tree_nodeConstRef();
          }
-         else if(ft->prms)
+         else if(ft && ft->prms)
          {
             auto tl = GetPointerS<const tree_list>(GET_CONST_NODE(ft->prms));
             THROW_ASSERT(tl, "unexpected condition");
@@ -6245,12 +6236,12 @@ tree_nodeConstRef tree_helper::GetFormalIth(const tree_nodeConstRef& _obj, unsig
       {
          const auto pt = GetPointerS<const pointer_type>(fn_type);
          THROW_ASSERT(pt->ptd, "unexpected pattern");
-         const auto ft = GetPointerS<const function_type>(GET_CONST_NODE(pt->ptd));
-         if(ft->varargs_flag)
+         const auto ft = GetPointer<const function_type>(GET_CONST_NODE(pt->ptd));
+         if(ft && ft->varargs_flag)
          {
             return tree_nodeConstRef();
          }
-         else if(ft->prms)
+         else if(ft && ft->prms)
          {
             auto tl = GetPointerS<const tree_list>(GET_CONST_NODE(ft->prms));
             unsigned int ith = 0;

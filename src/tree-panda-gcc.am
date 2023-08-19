@@ -42,7 +42,7 @@ lib_treepandagcc_la_LIBADD += \
    lib_tree_manipulation.la \
    lib_utility.la \
    lib_wrapper.la \
-   $(BOOST_FILESYSTEM_LIB) $(BOOST_SYSTEM_LIB)
+   $(BOOST_SYSTEM_LIB)
 
 if BUILD_LIB_ARCH
    lib_treepandagcc_la_LIBADD += \
@@ -60,8 +60,7 @@ if BUILD_LIB_CODE_ESTIMATION
 endif
 
 if BUILD_LIB_FROM_PRAGMA
-   lib_treepandagcc_la_LIBADD += libpragma.la \
-      $(BOOST_REGEX_LIB)
+   lib_treepandagcc_la_LIBADD += libpragma.la
 endif
 
 if BUILD_LIB_HLS

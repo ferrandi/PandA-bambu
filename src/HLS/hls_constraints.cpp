@@ -44,32 +44,26 @@
  *
  */
 #include "hls_constraints.hpp"
+
+#include "Parameter.hpp"
+#include "custom_map.hpp"
+#include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
+#include "fileIO.hpp"
+#include "polixml.hpp"
+#include "string_manipulation.hpp"
 #include "technology_manager.hpp"
 #include "utility.hpp"
-
-#include "custom_map.hpp"
-#include "polixml.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-
-#include "fileIO.hpp"
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <iosfwd>
 #include <string>
-
-/// STL includes
 #include <utility>
 #include <vector>
-
-/// utility include
-#include "fileIO.hpp"
-#include "string_manipulation.hpp"
-
-const double HLS_constraints::clock_period_resource_fraction_DEFAULT = 1.0;
 
 /// function used to extract the functional unit name and its library from a string.
 void DECODE_FU_LIB(std::string& fu_name, std::string& fu_library, const std::string& combined)
@@ -81,7 +75,7 @@ void DECODE_FU_LIB(std::string& fu_name, std::string& fu_library, const std::str
 
 HLS_constraints::HLS_constraints(const ParameterConstRef& _Param, std::string _fun_name)
     : clock_period(_Param->getOption<double>(OPT_clock_period)),
-      clock_period_resource_fraction(clock_period_resource_fraction_DEFAULT),
+      clock_period_resource_fraction(_Param->getOption<double>(OPT_clock_period_resource_fraction)),
       registers(INFINITE_UINT),
       fun_name(std::move(_fun_name)),
       parameters(_Param)
@@ -202,22 +196,19 @@ void HLS_constraints::set_number_fu(const std::string& name, const std::string& 
 
 unsigned int HLS_constraints::get_number_fu(const std::string& name, const std::string& library) const
 {
-   if(tech_constraints.find(ENCODE_FU_LIB(name, library)) == tech_constraints.end())
+   return get_number_fu(ENCODE_FU_LIB(name, library));
+}
+
+unsigned int HLS_constraints::get_number_fu(const std::string& combined) const
+{
+   if(tech_constraints.find(combined) == tech_constraints.end())
    {
       return INFINITE_UINT;
    }
    else
    {
-      return tech_constraints.find(ENCODE_FU_LIB(name, library))->second;
+      return tech_constraints.find(combined)->second;
    }
-}
-
-unsigned int HLS_constraints::get_number_fu(const std::string& combined) const
-{
-   std::string fu_name;
-   std::string lib_name;
-   DECODE_FU_LIB(fu_name, lib_name, combined);
-   return get_number_fu(fu_name, lib_name);
 }
 
 void HLS_constraints::bind_vertex_to_fu(const std::string& vertex_name, const std::string& fu_name,

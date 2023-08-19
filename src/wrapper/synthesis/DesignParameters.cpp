@@ -61,7 +61,7 @@
 void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_PARAMETER(Param),
                                                   const std::string& xml_file)
 {
-   if(!boost::filesystem::exists(xml_file))
+   if(!std::filesystem::exists(xml_file))
       THROW_ERROR("File \"" + xml_file + "\" does not exist!");
 #ifndef NDEBUG
    unsigned int debug_level = Param->getOption<unsigned int>(OPT_debug_level);

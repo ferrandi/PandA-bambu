@@ -1,0 +1,10 @@
+[submodule "MachSuite"]
+	path = examples/MachSuite/MachSuite
+	url = https://github.com/breagen/MachSuite.git
+[submodule "CHStone"]
+	path = examples/CHStone/CHStone
+	url = https://github.com/ferrandi/CHStone.git
+[submodule "PolyBenchC"]
+	path = examples/PolyBench/PolyBenchC
+	url = https://github.com/ferrandi/PolyBenchC.git
+	branch = dev/panda-hls

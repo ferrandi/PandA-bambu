@@ -61,7 +61,7 @@
 #include "xml_document.hpp"
 #include "xml_helper.hpp"
 
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
 
 Evaluation::Evaluation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                        const DesignFlowManagerConstRef _design_flow_manager)
@@ -361,7 +361,7 @@ DesignFlowStep_Status Evaluation::Exec()
       do
       {
          candidate_out_file_name = GetPath("bambu_results_" + STR(progressive++) + ".xml");
-      } while(boost::filesystem::exists(candidate_out_file_name));
+      } while(std::filesystem::exists(candidate_out_file_name));
       return candidate_out_file_name;
    }();
 
@@ -399,7 +399,7 @@ DesignFlowStep_Status Evaluation::Exec()
 #endif
       {
 #ifndef NDEBUG
-         if(parameters->isOption(OPT_dry_run_evaluation) and parameters->getOption<bool>(OPT_dry_run_evaluation))
+         if(parameters->getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::DRY_RUN)
          {
             if(bench_name == "")
             {

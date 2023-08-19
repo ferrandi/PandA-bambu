@@ -61,10 +61,10 @@
 #include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/version.hpp>
+#include <filesystem>
 #include <fstream>
 
 unsigned int PragmaParser::number = 0;
@@ -88,12 +88,12 @@ PragmaParser::~PragmaParser() = default;
 std::string PragmaParser::substitutePragmas(const std::string& OldFile)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Substituting pragma in " + OldFile);
-   THROW_ASSERT(boost::filesystem::exists(boost::filesystem::path(OldFile)),
+   THROW_ASSERT(std::filesystem::exists(std::filesystem::path(OldFile)),
                 "Input file \"" + OldFile + "\" does not exist");
 
-   boost::filesystem::path old_path(OldFile);
+   std::filesystem::path old_path(OldFile);
    std::string FileName = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_pragma_prefix +
-                          boost::lexical_cast<std::string>(file_counter) + "_" + GetLeafFileName(old_path);
+                          boost::lexical_cast<std::string>(file_counter) + "_" + old_path.filename().string();
    std::ofstream fileOutput(FileName, std::ios::out);
 
    file_counter++;

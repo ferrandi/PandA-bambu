@@ -69,7 +69,6 @@ void system_verilog_writer::write_NP_functionalities(const structural_objectRef&
    std::string beh_desc = np->get_NP_functionality(NP_functionality::SYSTEM_VERILOG_PROVIDED);
    THROW_ASSERT(beh_desc != "", "SYSTEM VERILOG behavioral description is missing for module: " +
                                     HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)));
-   remove_escaped(beh_desc);
    /// manage reset by preprocessing the behavioral description
    if(!parameters->getOption<bool>(OPT_reset_level))
    {

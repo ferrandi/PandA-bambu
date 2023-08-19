@@ -209,7 +209,7 @@ void OpenNModuleGenerator::InternalExec(std::ostream& out, structural_objectRef 
        "             done_port = 1'b1;\n"
        "             _next_state = S_0;\n"
        "           end\n"
-       "      endcase\n "
+       "      endcase\n"
        "  end\n";
 
    out << fsm;

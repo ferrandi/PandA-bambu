@@ -46,6 +46,7 @@
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
 #include "memory.hpp"
+#include "string_manipulation.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"

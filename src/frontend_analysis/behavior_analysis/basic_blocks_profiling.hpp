@@ -54,7 +54,7 @@ class BasicBlocksProfiling : public ApplicationFrontendFlowStep
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    void ComputeRelationships(DesignFlowStepSet& relationship,
-                             const DesignFlowStep::RelationshipType relationship_type) override final;
+                             const DesignFlowStep::RelationshipType relationship_type) final;
 
  public:
    /**
@@ -66,8 +66,8 @@ class BasicBlocksProfiling : public ApplicationFrontendFlowStep
    BasicBlocksProfiling(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager,
                         const ParameterConstRef parameters);
 
-   void Initialize() override final;
+   void Initialize() final;
 
-   DesignFlowStep_Status Exec() override final;
+   DesignFlowStep_Status Exec() final;
 };
 #endif

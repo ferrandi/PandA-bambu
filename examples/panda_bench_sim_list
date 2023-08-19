@@ -1,6 +1,6 @@
 --configuration-name=arf arf/module.c --top-fname=arf --generate-tb=BENCHMARKS_ROOT/arf/test.xml 
 
---configuration-name=CHStone_dfadd CHStone/dfadd/dfadd.c --top-fname=main --benchmark-name=sdc --device-name=xc7z020,-1,clg484,VVD -fwhole-program -fno-delete-null-pointer-checks --clock-period=15 --experimental-setup=BAMBU-PERFORMANCE-MP --speculative-sdc-scheduling --host-profiling
+--configuration-name=CHStone_dfadd CHStone/CHStone/dfadd/dfadd.c --top-fname=main -fwhole-program -fno-delete-null-pointer-checks --experimental-setup=BAMBU-PERFORMANCE-MP -s --host-profiling --benchmark-name=sdc --device-name=xc7z020,-1,clg484,VVD --clock-period=15 
 
 --configuration-name=file_simulate file_simulate/module.c --top-fname=check_printf --benchmark-name=MEM_ACC_11 --experimental-setup=BAMBU --generate-tb=BENCHMARKS_ROOT/file_simulate/test.xml --file-input-data=BENCHMARKS_ROOT/file_simulate/test.xml --channels-type=MEM_ACC_11
 --configuration-name=file_simulate file_simulate/module.c --top-fname=check_printf --benchmark-name=MEM_ACC_NN --experimental-setup=BAMBU --generate-tb=BENCHMARKS_ROOT/file_simulate/test.xml --file-input-data=BENCHMARKS_ROOT/file_simulate/test.xml --channels-type=MEM_ACC_NN
@@ -11,4 +11,4 @@
 
 --configuration-name=simple_asm simple_asm/asm.c --top-fname=main --generate-tb=BENCHMARKS_ROOT/simple_asm/test.xml --C-no-parse=BENCHMARKS_ROOT/simple_asm/c_stub.c
 
---configuration-name=aes MachSuite/aes/aes/aes.c --benchmark-name=aes --generate-tb=BENCHMARKS_ROOT/MachSuite/common/harness.c --tb-arg=BENCHMARKS_ROOT/MachSuite/aes/aes/input.data --tb-arg=BENCHMARKS_ROOT/MachSuite/aes/aes/check.data --experimental-setup=BAMBU-PERFORMANCE-MP --top-fname=run_benchmark -mx32 -fno-tree-vectorize --simulator=VERILATOR
+--configuration-name=aes MachSuite/MachSuite/aes/aes/aes.c --top-fname=aes256_encrypt_ecb -mx32 -fno-tree-vectorize -fno-unroll-loops --experimental-setup=BAMBU-PERFORMANCE-MP -s --generate-interface=INFER -IBENCHMARKS_ROOT/MachSuite/MachSuite/common --benchmark-name=aes --generate-tb=BENCHMARKS_ROOT/MachSuite/MachSuite/aes/aes/local_support.c --generate-tb=BENCHMARKS_ROOT/MachSuite/MachSuite/common/harness.c --generate-tb=BENCHMARKS_ROOT/MachSuite/MachSuite/common/support.c --tb-arg=BENCHMARKS_ROOT/MachSuite/MachSuite/aes/aes/input.data --tb-arg=BENCHMARKS_ROOT/MachSuite/MachSuite/aes/aes/check.data --simulator=VERILATOR

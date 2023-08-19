@@ -70,8 +70,7 @@
 #include "var_pp_functor.hpp"
 
 #include <boost/algorithm/string/trim_all.hpp>
-#include <boost/filesystem/operations.hpp>
-#include <boost/regex.hpp>
+#include <regex>
 
 #include <list>
 #include <string>
@@ -79,7 +78,7 @@
 
 REF_FORWARD_DECL(memory_symbol);
 
-static const boost::regex wrapper_def("(ac_channel|stream|hls::stream)<(.*)>");
+static const std::regex wrapper_def("(ac_channel|stream|hls::stream)<(.*)>");
 #define WRAPPER_GROUP_WTYPE 2
 
 HLSCWriter::HLSCWriter(const CBackendInformationConstRef _c_backend_info, const HLS_managerConstRef _HLSMgr,
@@ -89,10 +88,6 @@ HLSCWriter::HLSCWriter(const CBackendInformationConstRef _c_backend_info, const 
     : CWriter(_HLSMgr, _instruction_writer, _indented_output_stream, _parameters, _verbose),
       c_backend_info(_c_backend_info)
 {
-   /// include from cpp
-   flag_cpp = TM->is_CPP() && !Param->isOption(OPT_pretty_print) &&
-              (!Param->isOption(OPT_discrepancy) || !Param->getOption<bool>(OPT_discrepancy) ||
-               !Param->isOption(OPT_discrepancy_hw) || !Param->getOption<bool>(OPT_discrepancy_hw));
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
@@ -126,6 +121,14 @@ extern void exit(int status);
 using namespace __AC_NAMESPACE;
 #endif
 
+#ifdef __clang__
+#define GCC_VERSION 0
+#else
+#define GCC_VERSION (__GNUC__ * 10000 \
+                     + __GNUC_MINOR__ * 100 \
+                     + __GNUC_PATCHLEVEL__)
+#endif
+
 )");
 
    // get the root function to be tested by the testbench
@@ -145,10 +148,12 @@ using namespace __AC_NAMESPACE;
          const auto incls = convert_string_to_vector<std::string>(argInclude.second, ";");
          includes.insert(incls.begin(), incls.end());
       }
+      indented_output_stream->Append("#define " + fname + " __keep_your_declaration_out_of_my_code\n");
       for(const auto& inc : includes)
       {
          indented_output_stream->Append("#include \"" + inc + "\"\n");
       }
+      indented_output_stream->Append("#undef " + fname + "\n");
    }
 }
 
@@ -190,11 +195,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
       }
       return nullptr;
    }();
-   const auto interface_type = Param->getOption<HLSFlowStep_Type>(OPT_interface_type);
-   const auto is_interface_inferred = interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
    const auto arg_signature_typename = HLSMgr->design_interface_typename_orig_signature.find(fname);
-   THROW_ASSERT(
-       !is_interface_inferred || arg_signature_typename != HLSMgr->design_interface_typename_orig_signature.end(), "");
    const auto params = BH->GetParameters();
    for(auto par_idx = 0U; par_idx < params.size(); ++par_idx)
    {
@@ -205,7 +206,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
          if(function_if)
          {
             const auto& type_name = function_if->at(param).at(attr_typename);
-            return boost::regex_search(type_name.c_str(), wrapper_def);
+            return std::regex_search(type_name.c_str(), wrapper_def);
          }
          return false;
       }();
@@ -227,15 +228,28 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
          std::string var_ptdtype;
          std::string temp_var_decl;
          bool is_a_true_pointer = true;
-         if(flag_cpp && !is_binary_init && is_interface_inferred)
+         if(!is_binary_init && arg_signature_typename != HLSMgr->design_interface_typename_orig_signature.end())
          {
             var_ptdtype = arg_signature_typename->second.at(par_idx);
+            static const std::regex voidP = std::regex(R"(\bvoid\b)");
+            while(std::regex_search(var_ptdtype, voidP))
+            {
+               var_ptdtype = std::regex_replace(var_ptdtype, voidP, "char");
+            }
             is_a_true_pointer = var_ptdtype.back() == '*';
             if(is_a_true_pointer || var_ptdtype.back() == '&')
             {
                var_ptdtype.pop_back();
             }
-            temp_var_decl = var_ptdtype + " " + param + "_temp" + (is_a_true_pointer ? "[]" : "");
+            if(var_ptdtype.find("(*)") != std::string::npos)
+            {
+               temp_var_decl = var_ptdtype;
+               temp_var_decl.replace(var_ptdtype.find("(*)"), 3, param + "_temp" + "[]");
+            }
+            else
+            {
+               temp_var_decl = var_ptdtype + " " + param + "_temp" + (is_a_true_pointer ? "[]" : "");
+            }
          }
          if(temp_var_decl == "")
          {
@@ -260,8 +274,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
          }
          THROW_ASSERT(temp_var_decl.size() && var_ptdtype.size(),
                       "var_decl: " + temp_var_decl + ", ptd_type: " + var_ptdtype);
-         const auto arg_channel =
-             boost::regex_search(var_ptdtype, boost::regex("(ac_channel|stream|hls::stream)<(.*)>"));
+         const auto arg_channel = std::regex_search(var_ptdtype, std::regex("(ac_channel|stream|hls::stream)<(.*)>"));
          const auto ptd_type = tree_helper::GetRealType(tree_helper::CGetPointedType(parm_type));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Pointed type: " + GET_CONST_NODE(ptd_type)->get_kind_text() + " - " + STR(ptd_type));
@@ -306,17 +319,9 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
       else
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Inline initialization");
-         const auto parm_type_bitsize = tree_helper::Size(parm_type);
          if(tree_helper::IsRealType(parm_type) && test_v == "-0")
          {
-            if(parm_type_bitsize == 32)
-            {
-               indented_output_stream->Append(param + " = copysignf(0.0, -1.0);\n");
-            }
-            else
-            {
-               indented_output_stream->Append(param + " = copysign(0.0, -1.0);\n");
-            }
+            indented_output_stream->Append(param + " = -0.0;\n");
          }
          else
          {
@@ -406,6 +411,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
    const auto mem_vars = HLSMgr->Rmem->get_ext_memory_variables();
    const auto BH = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
    const auto parameters = BH->get_parameters();
+   const auto align = std::max(8ULL, HLSMgr->Rmem->get_bus_data_bitsize() / 8ULL);
    indented_output_stream->Append(R"(
 typedef struct
 {
@@ -450,7 +456,7 @@ size_t i;
       }
    }
    indented_output_stream->Append("};\n");
-   indented_output_stream->Append("const ptr_t align = 8;\n");
+   indented_output_stream->Append("const ptr_t align = " + STR(align) + ";\n");
    indented_output_stream->Append("ptr_t base_addr = " + STR(base_addr) + ";\n");
 
    indented_output_stream->Append(R"(
@@ -496,8 +502,7 @@ base_addr += size;
 }
 if(error)
 {
-__m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
-pthread_exit((void*)((size_t)(MDPI_COSIM_ABORT)));
+abort();
 }
 }
 
@@ -538,9 +543,13 @@ void HLSCWriter::WriteMainTestbench()
    const auto args_decl_size = top_params.size() + (return_type != nullptr);
    const auto has_subnormals = Param->isOption(OPT_fp_subnormal) && Param->getOption<bool>(OPT_fp_subnormal);
    const auto cmp_type = [&](tree_nodeConstRef t, const std::string& tname) -> std::string {
-      if(boost::starts_with(tname, "struct") || boost::starts_with(tname, "union"))
+      if(std::regex_search(tname, std::regex("^a[pc]_u?(int|fixed)<")))
       {
-         return "mem";
+         return "val";
+      }
+      else if(std::regex_search(tname, std::regex(R"((\bfloat\b|\bdouble\b))")))
+      {
+         return has_subnormals ? "flts" : "flt";
       }
       else if(t)
       {
@@ -556,7 +565,8 @@ void HLSCWriter::WriteMainTestbench()
          {
             return has_subnormals ? "flts" : "flt";
          }
-         else if(tree_helper::IsVoidType(t))
+         else if(tree_helper::IsStructType(t) || tree_helper::IsUnionType(t) || tree_helper::IsVoidType(t) ||
+                 boost::starts_with(tname, "void"))
          {
             return "mem";
          }
@@ -572,8 +582,8 @@ void HLSCWriter::WriteMainTestbench()
          for(const auto& param : top_bh->GetParameters())
          {
             const auto param_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(param));
-            boost::cmatch what;
-            if(boost::regex_search(param_size_str.c_str(), what, boost::regex("\\b" + param_name + ":(\\d+)")))
+            std::cmatch what;
+            if(std::regex_search(param_size_str.c_str(), what, std::regex("\\b" + param_name + ":(\\d+)")))
             {
                idx_size[param_idx] = what[1u].str();
             }
@@ -659,9 +669,9 @@ void HLSCWriter::WriteMainTestbench()
          const auto is_reference_type = arg_typename.back() == '&';
          top_decl += arg_typename + " " + arg_name + ", ";
          gold_decl += arg_typename + ", ";
-         boost::cmatch what;
+         std::cmatch what;
          const auto arg_is_channel =
-             boost::regex_search(arg_typename.data(), what, boost::regex("(ac_channel|stream|hls::stream)<(.*)>"));
+             std::regex_search(arg_typename.data(), what, std::regex("(ac_channel|stream|hls::stream)<(.*)>"));
          if(arg_is_channel)
          {
             THROW_ASSERT(is_pointer_type || is_reference_type, "Channel parameters must be pointers or references.");
@@ -684,22 +694,26 @@ void HLSCWriter::WriteMainTestbench()
             }
             else
             {
-               const auto array_size = [&]() {
-                  if(is_interface_inferred)
-                  {
-                     const auto param_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
-                     THROW_ASSERT(arg_attributes->second.count(param_name),
-                                  "Attributes missing for parameter " + param_name + " in function " + top_fname);
-                     return arg_attributes->second.at(param_name).count(attr_size) ?
-                                boost::lexical_cast<unsigned long long>(
-                                    arg_attributes->second.at(param_name).at(attr_size)) :
-                                1ULL;
-                  }
-                  const auto ptd_type = tree_helper::CGetPointedType(arg_type);
-                  return tree_helper::IsArrayType(ptd_type) ? tree_helper::GetArrayTotalSize(ptd_type) : 1ULL;
-               }();
-               args_init +=
-                   "__m_param_alloc(" + STR(param_idx) + ", sizeof(*" + arg_name + ") * " + STR(array_size) + ");\n";
+               if(is_interface_inferred)
+               {
+                  const auto param_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
+                  THROW_ASSERT(arg_attributes->second.count(param_name),
+                               "Attributes missing for parameter " + param_name + " in function " + top_fname);
+                  THROW_ASSERT(arg_attributes->second.at(param_name).count(attr_size_in_bytes),
+                               "Attributes attr_size_in_bytes missing for parameter " + param_name + " in function " +
+                                   top_fname);
+                  auto size_in_bytes = arg_attributes->second.at(param_name).at(attr_size_in_bytes);
+                  args_init += "__m_param_alloc(" + STR(param_idx) + ", " + STR(size_in_bytes) + ");\n";
+               }
+               else
+               {
+                  const auto array_size = [&]() {
+                     const auto ptd_type = tree_helper::CGetPointedType(arg_type);
+                     return tree_helper::IsArrayType(ptd_type) ? tree_helper::GetArrayTotalSize(ptd_type) : 1ULL;
+                  }();
+                  args_init +=
+                      "__m_param_alloc(" + STR(param_idx) + ", sizeof(*" + arg_name + ") * " + STR(array_size) + ");\n";
+               }
             }
             args_decl += "(void*)" + arg_name + ", ";
             args_set += "m_setargptr";
@@ -850,12 +864,61 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 #define _m_pp_retvalcmp(...)
 #endif
 
+#ifdef DUMP_COSIM_OUTPUT
+static size_t __m_call_count = 0;
+
+#ifndef CUSTOM_VERIFICATION
+#define _m_golddump(idx)                                                                                            \
+   do                                                                                                               \
+   {                                                                                                                \
+      char filename[32];                                                                                            \
+      sprintf(filename, "P" #idx "_gold.%zu.dat", __m_call_count);                                                  \
+      FILE* out = fopen(filename, "wb");                                                                            \
+      if(out != NULL)                                                                                               \
+      {                                                                                                             \
+         fwrite(P##idx##_gold, 1, __m_param_size(idx), out);                                                        \
+         fclose(out);                                                                                               \
+         debug("Parameter " #idx " gold output dump for execution %zu stored in '%s'\n", __m_call_count, filename); \
+      }                                                                                                             \
+      else                                                                                                          \
+      {                                                                                                             \
+         error("Unable to open parameter dump file '%s'\n", filename);                                              \
+      }                                                                                                             \
+   } while(0)
+#else
+#define _m_golddump(idx)
+#endif
+
+#define _m_argdump(idx)                                                                                        \
+   do                                                                                                          \
+   {                                                                                                           \
+      char filename[32];                                                                                       \
+      sprintf(filename, "P" #idx ".%zu.dat", __m_call_count);                                                  \
+      FILE* out = fopen(filename, "wb");                                                                       \
+      if(out != NULL)                                                                                          \
+      {                                                                                                        \
+         fwrite(P##idx, 1, __m_param_size(idx), out);                                                          \
+         fclose(out);                                                                                          \
+         debug("Parameter " #idx " output dump for execution %zu stored in '%s'\n", __m_call_count, filename); \
+      }                                                                                                        \
+      else                                                                                                     \
+      {                                                                                                        \
+         error("Unable to open parameter dump file '%s'\n", filename);                                         \
+      }                                                                                                        \
+   } while(0)
+#else
+#define _m_argdump(idx)
+#define _m_golddump(idx)
+#endif
+
 #define m_setargptr(idx, ptr, ptrsize) \
    __m_setargptr(idx, ptr, ptrsize);   \
    _m_pp_setargptr(idx, ptr);          \
    _m_setargptr(idx, ptr)
 
 #define m_argcmp(idx, cmp) \
+   _m_argdump(idx);        \
+   _m_golddump(idx);       \
    _m_pp_argcmp(idx, cmp); \
    _m_argcmp(idx, cmp)
 
@@ -908,8 +971,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
    indented_output_stream->Append("if(state != MDPI_COSIM_INIT)\n");
    indented_output_stream->Append("{\n");
    indented_output_stream->Append("error(\"Unexpected simulator state : %s\\n\", mdpi_state_str(state));\n");
-   indented_output_stream->Append("__m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);\n");
-   indented_output_stream->Append("pthread_exit((void*)((size_t)(MDPI_COSIM_ABORT)));\n");
+   indented_output_stream->Append("abort();\n");
    indented_output_stream->Append("}\n");
 
    if(gold_cmp.size() || return_type)
@@ -918,7 +980,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpointer-type-mismatch"
-#else
+#elif GCC_VERSION >= 40600
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpointer-type-mismatch"
 #endif
@@ -935,13 +997,16 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 if(mismatch_count)
 {
 error("Memory parameter mismatch has been found.\n");
-__m_signal_to(MDPI_ENTITY_SIM, MDPI_COSIM_END);
-pthread_exit((void*)((size_t)(MDPI_COSIM_ABORT)));
+abort();
 }
+
+#ifdef DUMP_COSIM_OUTPUT
+++__m_call_count;
+#endif
 
 #ifdef __clang__
 #pragma clang diagnostic pop
-#else
+#elif GCC_VERSION >= 40600
 #pragma GCC diagnostic pop
 #endif
 )");

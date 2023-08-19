@@ -70,7 +70,7 @@
 
 #include "simple_indent.hpp"
 #include <boost/algorithm/string/trim.hpp>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #include "Parameter.hpp"
 #include "cpu_time.hpp"
@@ -172,7 +172,7 @@ void read_technology_library(const technology_managerRef& TM, const ParameterCon
          {
             LibraryFile = SplittedLib[1];
          }
-         if(!boost::filesystem::exists(LibraryFile))
+         if(!std::filesystem::exists(LibraryFile))
             THROW_ERROR("Liberty file \"" + LibraryFile + "\" does not exists!");
          START_TIME(lib2xmlTime);
          std::string TargetXML = Param->getOption<std::string>(OPT_output_temporary_directory) + "/library_" +
@@ -281,10 +281,10 @@ void read_genlib_technology_File(const std::string& fn, const technology_manager
 {
    try
    {
-      boost::filesystem::path sourceLib(fn);
-      if(!boost::filesystem::exists(sourceLib))
+      std::filesystem::path sourceLib(fn);
+      if(!std::filesystem::exists(sourceLib))
          THROW_ERROR("Library \"" + fn + "\" cannot be found");
-      std::string Name = GetLeafFileName(sourceLib);
+      std::string Name = sourceLib.filename().string();
 
       fileIO_istreamRef sname = fileIO_istream_open(fn);
       technology_manager::gload(Name, sname, TM, Param);
@@ -429,7 +429,7 @@ void write_lib_technology_File(const std::string& f, library_manager* LM, Target
    const auto library_xml = GetPath("__xml_library__.xml");
    write_xml_technology_File(library_xml, LM, dv_type);
    xml2lib(library_xml, f, 0, 0);
-   boost::filesystem::remove(library_xml);
+   std::filesystem::remove(library_xml);
    LM->set_info(library_manager::LIBERTY, f);
 }
 #endif

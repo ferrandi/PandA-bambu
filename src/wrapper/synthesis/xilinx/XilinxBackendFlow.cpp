@@ -41,7 +41,6 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-/// Header include
 #include "XilinxBackendFlow.hpp"
 
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
@@ -51,6 +50,7 @@
 #include "XilinxWrapper.hpp"
 #include "area_model.hpp"
 #include "clb_model.hpp"
+#include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
 #include "map_wrapper.hpp"
 #include "string_manipulation.hpp"
@@ -86,7 +86,7 @@ XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Creating Xilinx Backend Flow ::.");
-   boost::filesystem::create_directories(UCF_SUBDIR);
+   std::filesystem::create_directories(UCF_SUBDIR);
 
    default_data["Virtex-4"] = "Virtex-4.data";
 #if HAVE_TASTE
@@ -107,7 +107,7 @@ XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::
    if(Param->isOption(OPT_target_device_script))
    {
       auto xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
-      if(!boost::filesystem::exists(xml_file_path))
+      if(!std::filesystem::exists(xml_file_path))
       {
          THROW_ERROR("File \"" + xml_file_path + "\" does not exist!");
       }
@@ -629,15 +629,15 @@ void XilinxBackendFlow::CheckSynthesisResults()
 
    if(!is_vivado)
    {
-      if(boost::filesystem::exists(actual_parameters->parameter_values[PARAM_map_report]))
+      if(std::filesystem::exists(actual_parameters->parameter_values[PARAM_map_report]))
       {
          xparse_map_utilization(actual_parameters->parameter_values[PARAM_map_report]);
       }
-      else if(boost::filesystem::exists(actual_parameters->parameter_values[PARAM_xst_report]))
+      else if(std::filesystem::exists(actual_parameters->parameter_values[PARAM_xst_report]))
       {
          xparse_xst_utilization(actual_parameters->parameter_values[PARAM_xst_report]);
          if(actual_parameters->parameter_values.find(PARAM_xst_log_file) != actual_parameters->parameter_values.end() &&
-            boost::filesystem::exists(actual_parameters->parameter_values[PARAM_xst_log_file]))
+            std::filesystem::exists(actual_parameters->parameter_values[PARAM_xst_log_file]))
          {
             parse_DSPs(actual_parameters->parameter_values[PARAM_xst_log_file]);
          }
@@ -649,19 +649,19 @@ void XilinxBackendFlow::CheckSynthesisResults()
 
       if(actual_parameters->parameter_values.find(PARAM_trce_report_post) !=
              actual_parameters->parameter_values.end() &&
-         boost::filesystem::exists(actual_parameters->parameter_values[PARAM_trce_report_post]))
+         std::filesystem::exists(actual_parameters->parameter_values[PARAM_trce_report_post]))
       {
          xparse_timing(actual_parameters->parameter_values[PARAM_trce_report_post], true);
       }
       else if(actual_parameters->parameter_values.find(PARAM_trce_report_pre) !=
                   actual_parameters->parameter_values.end() &&
-              boost::filesystem::exists(actual_parameters->parameter_values[PARAM_trce_report_pre]))
+              std::filesystem::exists(actual_parameters->parameter_values[PARAM_trce_report_pre]))
       {
          xparse_timing(actual_parameters->parameter_values[PARAM_trce_report_pre], false);
       }
       else if(actual_parameters->parameter_values.find(PARAM_xst_log_file) !=
                   actual_parameters->parameter_values.end() &&
-              boost::filesystem::exists(actual_parameters->parameter_values[PARAM_xst_log_file]))
+              std::filesystem::exists(actual_parameters->parameter_values[PARAM_xst_log_file]))
       {
          parse_timing(actual_parameters->parameter_values[PARAM_xst_log_file]);
       }
@@ -702,7 +702,7 @@ void XilinxBackendFlow::CheckSynthesisResults()
          if(design_values[VIVADO_XILINX_DESIGN_DELAY] > Param->getOption<double>(OPT_clock_period) and
             actual_parameters->parameter_values.find(PARAM_vivado_timing_report) !=
                 actual_parameters->parameter_values.end() and
-            ExistFile(actual_parameters->parameter_values.find(PARAM_vivado_timing_report)->second))
+            std::filesystem::exists(actual_parameters->parameter_values.find(PARAM_vivado_timing_report)->second))
          {
             CopyFile(actual_parameters->parameter_values[PARAM_vivado_timing_report],
                      Param->getOption<std::string>(OPT_output_directory) + "/" + flow_name + "/" +
@@ -718,7 +718,7 @@ void XilinxBackendFlow::CheckSynthesisResults()
        (Param->IsParameter("DumpingTimingReport") and Param->GetParameter<int>("DumpingTimingReport"))) and
       ((actual_parameters->parameter_values.find(PARAM_vivado_timing_report) !=
             actual_parameters->parameter_values.end() and
-        ExistFile(actual_parameters->parameter_values.find(PARAM_vivado_timing_report)->second))))
+        std::filesystem::exists(actual_parameters->parameter_values.find(PARAM_vivado_timing_report)->second))))
    {
       CopyStdout(actual_parameters->parameter_values.find(PARAM_vivado_timing_report)->second);
    }
@@ -902,9 +902,9 @@ void XilinxBackendFlow::InitDesignParameters()
          {
             sources_macro_list += "\n";
          }
-         boost::filesystem::path file_path(file_list[v]);
-         std::string extension = GetExtension(file_path);
-         if(extension == "vhd" || extension == "vhdl" || extension == "VHD" || extension == "VHDL")
+         std::filesystem::path file_path(file_list[v]);
+         std::string extension = file_path.extension().string();
+         if(extension == ".vhd" || extension == ".vhdl" || extension == ".VHD" || extension == ".VHDL")
          {
             if(has_vhdl_library)
             {
@@ -915,11 +915,11 @@ void XilinxBackendFlow::InitDesignParameters()
                sources_macro_list += "read_vhdl " + file_list[v];
             }
          }
-         else if(extension == "v" || extension == "V")
+         else if(extension == ".v" || extension == ".V")
          {
             sources_macro_list += "read_verilog " + file_list[v];
          }
-         else if(extension == "sv" || extension == "SV")
+         else if(extension == ".sv" || extension == ".SV")
          {
             sources_macro_list += "read_verilog -sv " + file_list[v];
          }
@@ -945,13 +945,13 @@ void XilinxBackendFlow::InitDesignParameters()
             {
                sources_macro_list += " -p ";
             }
-            boost::filesystem::path file_path(file_list[v]);
-            std::string extension = GetExtension(file_path);
-            if(extension == "v" || extension == "V")
+            std::filesystem::path file_path(file_list[v]);
+            std::string extension = file_path.extension().string();
+            if(extension == ".v" || extension == ".V")
             {
                sources_macro_list += "\\\"read_verilog -defer " + file_list[v] + "\\\"";
             }
-            else if(extension == "sv" || extension == "SV")
+            else if(extension == ".sv" || extension == ".SV")
             {
                sources_macro_list += "\\\"read_verilog -sv -defer " + file_list[v] + "\\\"";
             }

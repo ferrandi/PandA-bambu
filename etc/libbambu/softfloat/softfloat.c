@@ -64,7 +64,6 @@ these four paragraphs for those parts of this code that are retained.
 #define IEEE64_FRAC_BITS 52
 #define IEEE64_EXP_BITS 11
 #define IEEE64_EXP_BIAS -1023
-#define IEEE_SIGN -1
 #define IEEE_RND FLOAT_RND_NEVN
 #define IEEE_EXC FLOAT_EXC_STD
 #define IEEE_ONE 1
@@ -3724,44 +3723,44 @@ __float __float_mul(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bit
 | the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-#define LOOP_BODY_F_DIV(z, n, data)                                 \
-   current_sel = (((current >> (__frac_p3 - 4)) & 15) << 1) | MsbB; \
-   q_i0 = (0xF1FFFF6C >> current_sel) & 1;                          \
-   q_i1 = (0xFE00FFD0 >> current_sel) & 1;                          \
-   q_i2 = SELECT_BIT(current_sel, 4);                               \
-   nq_i2 = !q_i2;                                                   \
-   /*q_i = tableR4[current_sel];*/                                  \
-   q_i = (q_i2 << 2) | (q_i1 << 1) | q_i0;                          \
-   positive |= (q_i1 << 1) | q_i0;                                  \
-   positive <<= 2;                                                  \
-   negative |= q_i2 << 1;                                           \
-   negative <<= 2;                                                  \
-   switch(q_i)                                                      \
-   {                                                                \
-      case 1:                                                       \
-         w = nbSig;                                                 \
-         break;                                                     \
-      case 7:                                                       \
-         w = bSig;                                                  \
-         break;                                                     \
-      case 2:                                                       \
-         w = nbSigx2;                                               \
-         break;                                                     \
-      case 6:                                                       \
-         w = bSigx2;                                                \
-         break;                                                     \
-      case 3:                                                       \
-         w = nbSigx3;                                               \
-         break;                                                     \
-      case 5:                                                       \
-         w = bSigx3;                                                \
-         break;                                                     \
-      default: /*case 0: case 4:*/                                  \
-         w = 0;                                                     \
-         break;                                                     \
-   }                                                                \
-   current = (current << 1) + w;                                    \
-   current = current & ((1ULL << (__frac_p3 - 1)) - 1);             \
+#define LOOP_BODY_F_DIV(z, n, data)                                \
+   current_sel = (((current >> (__div_p3 - 4)) & 15) << 1) | MsbB; \
+   q_i0 = (0xF1FFFF6C >> current_sel) & 1;                         \
+   q_i1 = (0xFE00FFD0 >> current_sel) & 1;                         \
+   q_i2 = SELECT_BIT(current_sel, 4);                              \
+   nq_i2 = !q_i2;                                                  \
+   /*q_i = tableR4[current_sel];*/                                 \
+   q_i = (q_i2 << 2) | (q_i1 << 1) | q_i0;                         \
+   positive |= (q_i1 << 1) | q_i0;                                 \
+   positive <<= 2;                                                 \
+   negative |= q_i2 << 1;                                          \
+   negative <<= 2;                                                 \
+   switch(q_i)                                                     \
+   {                                                               \
+      case 1:                                                      \
+         w = nbSig;                                                \
+         break;                                                    \
+      case 7:                                                      \
+         w = bSig;                                                 \
+         break;                                                    \
+      case 2:                                                      \
+         w = nbSigx2;                                              \
+         break;                                                    \
+      case 6:                                                      \
+         w = bSigx2;                                               \
+         break;                                                    \
+      case 3:                                                      \
+         w = nbSigx3;                                              \
+         break;                                                    \
+      case 5:                                                      \
+         w = bSigx3;                                               \
+         break;                                                    \
+      default: /*case 0: case 4:*/                                 \
+         w = 0;                                                    \
+         break;                                                    \
+   }                                                               \
+   current = (current << 1) + w;                                   \
+   current = current & ((1ULL << (__div_p3 - 1)) - 1);             \
    current <<= 1;
 
 #define FLOAT_SRT4_UNROLL 1
@@ -3780,9 +3779,10 @@ __float __float_divSRT4(__float a, __float b, __bits8 __exp_bits, __bits8 __frac
    __bits8 current_sel, q_i, index;
    _Bool LSB_bit, Guard_bit, Round_bit, round;
    _Bool MSB1zExp, MSB0zExp, MSBzExp, ovfCond;
-   __bits8 __frac_p3, __div_it, __div_bits, __div_waste;
+   __bits8 __frac_p3, __div_p3, __div_it, __div_bits, __div_waste;
    _Bool __frac_odd;
    __frac_p3 = (__rnd == FLOAT_RND_NEVN) ? (__frac_bits + 3) : (__frac_bits + 1);
+   __div_p3 = __frac_bits + 3;
    __frac_odd = __frac_p3 & 1;
    __div_it = __frac_p3 / (FLOAT_SRT4_UNROLL * 2);
    __div_it = (__frac_p3 % (FLOAT_SRT4_UNROLL * 2)) != 0 ? (__div_it + 1) : __div_it;
@@ -4023,8 +4023,6 @@ __float __float_divG(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bi
    GOLDSCHMIDT_MANTISSA_DIVISION_64();
    if(z_c == FP_CLS_NORMAL)
       return __roundAndPackFloat64(zSign, zExp, zSig, __exp_bits, __frac_bits, __exc, 1);
-   else if(z_c == FP_CLS_ZERO)
-      return ((__bits64)zSign) << ((__exp_bits + __frac_bits));
    else if(z_c == FP_CLS_NAN)
       return (((__bits64)(a_c_nan ? aSign : bSign) | (a_c_inf & b_c_inf) | (a_c_zero & b_c_zero))
               << (__exp_bits + __frac_bits)) |
@@ -4034,6 +4032,7 @@ __float __float_divG(__float a, __float b, __bits8 __exp_bits, __bits8 __frac_bi
    else if(z_c == FP_CLS_INF)
       return (((__bits64)zSign) << (__exp_bits + __frac_bits)) | (((1ULL << __exp_bits) - 1) << __frac_bits) |
              ((__exc == FLOAT_EXC_STD) ? 0ULL : ((1ULL << __frac_bits) - 1));
+   return ((__bits64)zSign) << ((__exp_bits + __frac_bits));
 }
 
 /*----------------------------------------------------------------------------

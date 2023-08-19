@@ -51,6 +51,7 @@
 #include "Parameter.hpp"
 #include "area_model.hpp"
 #include "clb_model.hpp"
+#include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
 #include "structural_objects.hpp"
 #include "target_device.hpp"
@@ -79,7 +80,7 @@ LatticeBackendFlow::LatticeBackendFlow(const ParameterConstRef _Param, const std
    if(Param->isOption(OPT_target_device_script))
    {
       auto xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
-      if(!boost::filesystem::exists(xml_file_path))
+      if(!std::filesystem::exists(xml_file_path))
       {
          THROW_ERROR("File \"" + xml_file_path + "\" does not exist!");
       }
@@ -302,9 +303,9 @@ void LatticeBackendFlow::InitDesignParameters()
    }
    for(auto& v : file_list)
    {
-      boost::filesystem::path file_path(v);
-      std::string extension = GetExtension(file_path);
-      if(extension == "vhd" || extension == "vhdl" || extension == "VHD" || extension == "VHDL")
+      std::filesystem::path file_path(v);
+      std::string extension = file_path.extension().string();
+      if(extension == ".vhd" || extension == ".vhdl" || extension == ".VHD" || extension == ".VHDL")
       {
          if(has_vhdl_library)
          {
@@ -315,7 +316,7 @@ void LatticeBackendFlow::InitDesignParameters()
             sources_macro_list += "prj_src add -format VHDL " + v + "\n";
          }
       }
-      else if(extension == "v" || extension == "V" || extension == "sv" || extension == "SV")
+      else if(extension == ".v" || extension == ".V" || extension == ".sv" || extension == ".SV")
       {
          sources_macro_list += "prj_src add -format VERILOG " + v + "\n";
       }

@@ -102,7 +102,12 @@ namespace llvm
       CLANG_VERSION_SYMBOL(_plugin_expandMemOps)(const CLANG_VERSION_SYMBOL(_plugin_expandMemOps) &);
 #endif
 
-      bool exec(Module& M, llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> GetTTI);
+      bool exec(Module& M, llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> GetTTI
+#if __clang_major__ >= 16
+                ,
+                llvm::function_ref<llvm::ScalarEvolution&(llvm::Function&)> GetSE
+#endif
+      );
 
       bool runOnModule(Module& M) override;
 

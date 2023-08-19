@@ -211,7 +211,6 @@ void bloc::manageCallGraph(const application_managerRef& AppM, const tree_nodeRe
    if((ga && (GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K)) ||
       GET_NODE(statement)->get_kind() == gimple_call_K)
    {
-      THROW_ASSERT(AppM, "");
       const auto cg_man = AppM->GetCallGraphManager();
       THROW_ASSERT(cg_man, "");
       THROW_ASSERT(GetPointerS<const gimple_node>(GET_NODE(statement))->scpe, "statement " + statement->ToString());
@@ -234,7 +233,10 @@ void bloc::update_new_stmt(const application_managerRef& AppM, const tree_nodeRe
    /// This check is necessary since during parsing of statement list statement has not yet been filled
    if(GET_NODE(new_stmt))
    {
-      manageCallGraph(AppM, new_stmt);
+      if(AppM)
+      {
+         manageCallGraph(AppM, new_stmt);
+      }
       const auto gn = GetPointer<gimple_node>(GET_NODE(new_stmt));
       THROW_ASSERT(gn, "");
       gn->bb_index = number;

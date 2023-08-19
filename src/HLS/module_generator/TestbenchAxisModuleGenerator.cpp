@@ -107,7 +107,7 @@ function automatic integer log2;
 endfunction
 
 parameter BITSIZE_data=BITSIZE_)"
-       << port_prefix << "_TDATA,\n  ";
+       << port_prefix << "_TDATA,\n";
    if(if_alignment == DesignAttributes.end())
    {
       out << "ALIGNMENT=log2(BITSIZE_data) > 3 ? (1<<(log2(BITSIZE_data)-3)) : 1;\n";

@@ -40,7 +40,7 @@ cleanAll: clean cleanIN cleanOrig
 checkCompile :
 	make -f etc/scripts/Makeall all CHECKS_FILE=./check_compilation
 
-J=1
+J ?= $(shell grep -c ^processor /proc/cpuinfo)
 CONFIGURE_OPTIONS:=--enable-flopoco --enable-opt --enable-release
 export LM_LICENSE_FILE=
 
@@ -108,19 +108,25 @@ compose-down :
 
 buildenv-sync : 
 	@echo "Syncing local environment..."
-	@docker-compose -f .devcontainer/docker-compose.yml exec buildenv rsync -avuq --filter=':- .gitignore' --include='/configure.ac' --exclude='/.git*' /mirror/ /workspace/
+	@docker-compose -f .devcontainer/docker-compose.yml exec buildenv rsync -avuq --filter=':- .gitignore' --exclude='/.git*' /mirror/ /workspace/
 	@echo "Sync completed"
 
+buildenv-bash :
+	@echo "Max threads count: $J"
+	@docker-compose -f .devcontainer/docker-compose.yml exec -i -e J=$J buildenv bash
 
-APP_COMPILERS:=gcc-4.9,gcc-5,gcc-6,gcc-7,clang-4,clang-5,clang-6,clang-7,clang-11,clang-13,clang-16
-APP_CONFIGURE:=--enable-flopoco --enable-glpk --enable-opt --enable-release --enable-Werror
 appimage-build : buildenv-sync
 	@echo "Configure options: $(APP_CONFIGURE)"
 	@docker-compose -f .devcontainer/docker-compose.yml exec -e J=$J buildenv bash /workspace/.devcontainer/library-scripts/appimage-build.sh /appimage /panda_dist/bambu.AppImage $(APP_CONFIGURE)
-	@docker-compose -f .devcontainer/docker-compose.yml exec buildenv chown -R $(id -u):$(id -g) /panda_dist
+	@docker-compose -f .devcontainer/docker-compose.yml exec buildenv chown -R $(shell id -u):$(shell id -g) /panda_dist
+
+appimage-init : buildenv-sync
+	@echo "Initializing PandA build environment"
+	@docker-compose -f .devcontainer/docker-compose.yml exec buildenv make --directory=/workspace -f Makefile.init
 
 appimage-setup : buildenv-sync
 	@docker-compose -f .devcontainer/docker-compose.yml exec buildenv bash /workspace/.devcontainer/library-scripts/compiler-download.sh / $(APP_COMPILERS) /compilers
 	@docker-compose -f .devcontainer/docker-compose.yml exec buildenv bash /workspace/.devcontainer/library-scripts/compiler-setup.sh
 	@docker-compose -f .devcontainer/docker-compose.yml exec buildenv bash /workspace/.devcontainer/library-scripts/appimage-setup.sh /appimage $(APP_COMPILERS) /compilers
+	@echo "Initializing PandA build environment"
 	@docker-compose -f .devcontainer/docker-compose.yml exec buildenv make --directory=/workspace -f Makefile.init

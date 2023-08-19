@@ -40,27 +40,17 @@
  */
 #include "load_default_technology.hpp"
 
-/// Autoheader include
 #include "config_HAVE_KOALA_BUILT.hpp"
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
-/// parser/polixml include
+#include "custom_set.hpp"
+#include "fileIO.hpp"
+#include "string_manipulation.hpp"
+#include "technology_manager.hpp"
+#include "xml_document.hpp"
 #include "xml_dom_parser.hpp"
 
-/// polixml include
-#include "xml_document.hpp"
-
-/// STD include
 #include <string>
-
-/// STL include
-#include "custom_set.hpp"
-
-/// technology include
-#include "technology_manager.hpp"
-
-/// utility include
-#include "fileIO.hpp"
 
 LoadDefaultTechnology::LoadDefaultTechnology(const technology_managerRef _TM, const target_deviceRef _target,
                                              const DesignFlowManagerConstRef _design_flow_manager,

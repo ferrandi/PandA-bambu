@@ -51,11 +51,9 @@ EXTERN_C void __m_setarg(uint8_t index, void* bits, uint16_t bitsize);
 EXTERN_C void __m_setptrarg(uint8_t index, bptr_t* bits, uint16_t bitsize);
 EXTERN_C void __m_memmap_init();
 EXTERN_C int __m_memmap(ptr_t dst, void* src, size_t bytes);
-EXTERN_C bptr_t __m_memaddr(ptr_t sim_addr);
 EXTERN_C void __m_param_alloc(uint8_t idx, size_t size);
 EXTERN_C size_t __m_param_size(uint8_t idx);
 
-EXTERN_C void __m_signal_init();
 EXTERN_C void __m_signal_to(enum mdpi_entity entity, enum mdpi_state state);
 EXTERN_C enum mdpi_state __m_wait_for(enum mdpi_entity entity);
 

@@ -1,2 +1,0 @@
-bambu_specific_test_modelsim/test_open.c --benchmark-name=open --top-fname=main --experimental-setup=BAMBU-BALANCED-MP --file-input-data=BENCHMARKS_ROOT/bambu_specific_test_modelsim/bin_test.dat --channels-type=MEM_ACC_11
-bambu_specific_test_modelsim/test_open.c --benchmark-name=openn --top-fname=main --experimental-setup=BAMBU-BALANCED-MP --file-input-data=BENCHMARKS_ROOT/bambu_specific_test_modelsim/bin_test.dat --channels-type=MEM_ACC_NN
