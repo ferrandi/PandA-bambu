@@ -46,12 +46,12 @@
 
 #include "BashBackendFlow.hpp"
 #include "DesignParameters.hpp"
-#include "ToolManager.hpp"
-#include "xml_script_command.hpp"
 #include "Parameter.hpp"
+#include "ToolManager.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "fileIO.hpp"
 #include "string_manipulation.hpp"
+#include "xml_script_command.hpp"
 
 #define PARAM_bash_outdir "bash_outdir"
 

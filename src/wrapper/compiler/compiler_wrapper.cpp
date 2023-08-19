@@ -1568,7 +1568,6 @@ void CompilerWrapper::InitializeCompilerParameters()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Initialized gcc parameters");
 }
 
-
 #if HAVE_BAMBU_BUILT
 void CompilerWrapper::SetBambuDefault()
 {

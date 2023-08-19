@@ -45,11 +45,11 @@
 #include "vivado_flow_wrapper.hpp"
 
 #include "DesignParameters.hpp"
-#include "XilinxBackendFlow.hpp"
-#include "ToolManager.hpp"
-#include "xml_script_command.hpp"
 #include "Parameter.hpp"
+#include "ToolManager.hpp"
+#include "XilinxBackendFlow.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "xml_script_command.hpp"
 
 #define PARAM_vivado_outdir "vivado_outdir"
 

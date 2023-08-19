@@ -39,8 +39,8 @@
  */
 #include "BashBackendFlow.hpp"
 
-#include "DesignParameters.hpp"
 #include "DesignCompilerWrapper.hpp"
+#include "DesignParameters.hpp"
 #include "LUT_model.hpp"
 #include "Parameter.hpp"
 #include "SynthesisTool.hpp"

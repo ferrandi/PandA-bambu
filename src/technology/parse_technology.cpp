@@ -44,12 +44,12 @@
 
 #include "parse_technology.hpp"
 
-#include "library_manager.hpp"
-#include "technology_manager.hpp"
-#include "technology_node.hpp"
 #include "exceptions.hpp"
 #include "fileIO.hpp"
+#include "library_manager.hpp"
 #include "polixml.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
 #include "xml_dom_parser.hpp"
 
 #include <iosfwd>
@@ -155,15 +155,8 @@ void read_technology_library(const technology_managerRef& TM, const ParameterCon
    }
 }
 
-
-void write_technology_File(unsigned int type,
-                           const std::string&
-                           ,
-                           const technology_managerRef&
-                           ,
-                           TargetDevice_Type,
-                           const CustomOrderedSet<std::string>&
-)
+void write_technology_File(unsigned int type, const std::string&, const technology_managerRef&, TargetDevice_Type,
+                           const CustomOrderedSet<std::string>&)
 {
    if((type & technology_manager::XML) != 0)
    {

@@ -90,7 +90,6 @@ void read_technology_library(const technology_managerRef& TM, const ParameterCon
  */
 void write_xml_technology_File(const std::string& f, library_manager* LM, TargetDevice_Type dv_type);
 
-
 #if HAVE_EXPERIMENTAL
 /**
  * Write a file describing the technology data structures.

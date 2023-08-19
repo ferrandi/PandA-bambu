@@ -46,10 +46,10 @@
 #include "par_wrapper.hpp"
 
 #include "DesignParameters.hpp"
-#include "ToolManager.hpp"
-#include "xml_script_command.hpp"
 #include "Parameter.hpp"
+#include "ToolManager.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "xml_script_command.hpp"
 #include <iostream>
 
 // constructor

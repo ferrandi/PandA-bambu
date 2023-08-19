@@ -124,7 +124,6 @@
 #include "technology_manager.hpp"
 #endif
 
-
 /// utility includes
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "exceptions.hpp"

@@ -48,8 +48,8 @@
 
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
-#include "DesignParameters.hpp"
 #include "AlteraWrapper.hpp"
+#include "DesignParameters.hpp"
 #include "LUT_model.hpp"
 #include "Parameter.hpp"
 #include "area_model.hpp"

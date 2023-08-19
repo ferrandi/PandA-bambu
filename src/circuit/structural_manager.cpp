@@ -1762,8 +1762,7 @@ void structural_manager::xload(const xml_element* node, structural_managerRef co
    }
 }
 
-void structural_manager::xwrite(xml_element* rootnode, const technology_nodeRef&
-) const
+void structural_manager::xwrite(xml_element* rootnode, const technology_nodeRef&) const
 {
    xml_element* CMnode = rootnode->add_child_element("circuit");
    get_circ()->xwrite(CMnode);

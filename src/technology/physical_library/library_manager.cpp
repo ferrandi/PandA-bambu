@@ -48,8 +48,8 @@
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
 #include "area_model.hpp"
-#include "technology_node.hpp"
 #include "parse_technology.hpp"
+#include "technology_node.hpp"
 
 #include "Parameter.hpp"
 #include "constant_strings.hpp"

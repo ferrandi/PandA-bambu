@@ -42,10 +42,10 @@
 #ifndef _SYNTHESIS_TOOL_HPP_
 #define _SYNTHESIS_TOOL_HPP_
 
+#include "refcount.hpp"
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
-#include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(SynthesisTool);

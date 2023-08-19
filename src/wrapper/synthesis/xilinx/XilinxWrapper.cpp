@@ -45,13 +45,13 @@
 #include "XilinxWrapper.hpp"
 
 #include "DesignParameters.hpp"
+#include "Parameter.hpp"
+#include "fileIO.hpp"
+#include "string_manipulation.hpp"
 #include "xml_script_command.hpp"
 #include <boost/algorithm/string.hpp>
 #include <filesystem>
-#include "Parameter.hpp"
-#include "fileIO.hpp"
 #include <fstream>
-#include "string_manipulation.hpp"
 
 XilinxWrapper::XilinxWrapper(const ParameterConstRef& _Param, const std::string& _tool_exec,
                              const target_deviceRef& _device, const std::string& _output_dir,

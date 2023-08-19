@@ -44,9 +44,9 @@
 
 #include "exceptions.hpp"
 
+#include "DesignParameters.hpp"
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string/trim.hpp>
-#include "DesignParameters.hpp"
 
 #include "xml_script_command.hpp"
 #include <boost/algorithm/string/predicate.hpp>

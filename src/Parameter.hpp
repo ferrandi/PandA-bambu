@@ -181,10 +181,10 @@ enum class DiopsisInstrumentWriter_Type;
 #define SYNTHESIS_OPTIONS                                                                                              \
    (clock_period)(clock_name)(reset_name)(start_name)(done_name)(design_analysis_steps)(design_compiler_compile_log)(  \
        design_compiler_split_log)(design_parameters)(design_hierarchy)(device_string)(dump_genlib)(estimate_library)(  \
-       export_ip_core)(import_ip_core)(input_liberty_library_file)( \
-       is_structural)(lib2xml)(min_metric)(parse_edif)(rtl)(synthesis_flow)(structural_HDL)(target_device)(            \
-       target_library)(target_library_source)(target_technology)(target_technology_file)(target_device_file)(          \
-       target_device_script)(target_device_type)(top_component)(uniquify)(writer_language)
+       export_ip_core)(import_ip_core)(input_liberty_library_file)(is_structural)(lib2xml)(min_metric)(parse_edif)(    \
+       rtl)(synthesis_flow)(structural_HDL)(target_device)(target_library)(target_library_source)(target_technology)(  \
+       target_technology_file)(target_device_file)(target_device_script)(target_device_type)(top_component)(uniquify)( \
+       writer_language)
 
 #define SPIDER_OPTIONS                                                                                            \
    (accuracy)(aggregated_features)(cross_validation)(experimental_setup_file)(interval_level)(latex_format_file)( \

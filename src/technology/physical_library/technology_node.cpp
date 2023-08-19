@@ -472,7 +472,6 @@ technology_nodeRef functional_unit::get_operation(const std::string& op_name) co
    return i->second;
 }
 
-
 void functional_unit::xload(const xml_element* Enode, const technology_nodeRef fu, const ParameterConstRef Param,
                             const target_deviceRef device)
 {
@@ -796,14 +795,12 @@ void functional_unit::xwrite(xml_element* rootnode, const technology_nodeRef tn,
       }
    }
 
-
    /// dumping of attributes
    for(const auto& ordered_attribute : ordered_attributes)
    {
       const attributeRef attr = attributes[ordered_attribute];
       attr->xwrite(rootnode, ordered_attribute);
    }
-
 
    /// template stuff
    if(fu_template_name != "" && fu_template_parameters != "")

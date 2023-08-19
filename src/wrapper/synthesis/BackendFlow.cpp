@@ -107,7 +107,6 @@
 #include <iosfwd>
 #include <utility>
 
-
 #include "Parameter.hpp"
 #include "cpu_time.hpp"
 #include "fileIO.hpp"
@@ -728,7 +727,6 @@ void BackendFlow::create_xml_scripts(const std::string& xml_file)
 
    doc.write_to_file_formatted(xml_file);
 }
-
 
 void BackendFlow::InitDesignParameters()
 {

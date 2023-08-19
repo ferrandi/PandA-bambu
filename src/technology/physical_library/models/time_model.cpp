@@ -50,7 +50,6 @@
 #include "target_device.hpp"
 #include "xml_helper.hpp"
 
-
 const double time_model::execution_time_DEFAULT = 0;
 const ControlStep time_model::initiation_time_DEFAULT =
     ControlStep(0u); /// zero means that the operation is not pipelined

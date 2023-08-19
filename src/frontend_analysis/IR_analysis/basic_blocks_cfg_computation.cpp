@@ -39,11 +39,11 @@
  */
 #include "basic_blocks_cfg_computation.hpp"
 
-#include "config_HAVE_BAMBU_BUILT.hpp"
 #include "Parameter.hpp"
 #include "application_manager.hpp"
 #include "basic_block.hpp"
 #include "basic_blocks_graph_constructor.hpp"
+#include "config_HAVE_BAMBU_BUILT.hpp"
 #include "function_behavior.hpp"
 #include "op_graph.hpp"
 #if HAVE_HOST_PROFILING_BUILT

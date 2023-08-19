@@ -43,15 +43,15 @@
 #include "target_device.hpp"
 
 #include "FPGA_device.hpp"
-#include "target_technology.hpp"
-#include "technology_manager.hpp"
+#include "Parameter.hpp"
+#include "constant_strings.hpp"
 #include "exceptions.hpp"
 #include "fileIO.hpp"
 #include "polixml.hpp"
+#include "target_technology.hpp"
+#include "technology_manager.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
-#include "Parameter.hpp"
-#include "constant_strings.hpp"
 
 #include "string_manipulation.hpp" // for GET_CLASS
 #include <filesystem>

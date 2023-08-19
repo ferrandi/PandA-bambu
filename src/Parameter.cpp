@@ -1156,8 +1156,8 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::filesystem::path& file
          parser.Exec();
          THROW_ASSERT(parser, "Impossible to parse xml file " + file_name.string());
 
-#if HAVE_DESIGN_ANALYSIS_BUILT || HAVE_SOURCE_CODE_STATISTICS_XML ||HAVE_FROM_SDF3_BUILT || \
-    HAVE_TO_DATAFILE_BUILT || HAVE_PERFORMANCE_METRICS_XML || HAVE_WEIGHT_MODELS_XML
+#if HAVE_DESIGN_ANALYSIS_BUILT || HAVE_SOURCE_CODE_STATISTICS_XML || HAVE_FROM_SDF3_BUILT || HAVE_TO_DATAFILE_BUILT || \
+    HAVE_PERFORMANCE_METRICS_XML || HAVE_WEIGHT_MODELS_XML
          const xml_element* root = parser.get_document()->get_root_node();
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Root node is " + root->get_name());
 #if HAVE_REGRESSORS_BUILT

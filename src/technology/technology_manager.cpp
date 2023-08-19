@@ -359,7 +359,6 @@ void technology_manager::xwrite(xml_element* rootnode, TargetDevice_Type dv_type
    }
 }
 
-
 std::string technology_manager::get_library(const std::string& Name) const
 {
    std::string Library;

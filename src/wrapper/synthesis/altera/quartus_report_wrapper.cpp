@@ -46,10 +46,10 @@
 #include "quartus_report_wrapper.hpp"
 
 #include "DesignParameters.hpp"
-#include "ToolManager.hpp"
-#include "xml_script_command.hpp"
 #include "Parameter.hpp"
+#include "ToolManager.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "xml_script_command.hpp"
 
 // constructor
 QuartusReportWrapper::QuartusReportWrapper(const ParameterConstRef& _Param, const std::string& _output_dir,
