@@ -523,7 +523,7 @@ wrapper/synthesis/BashBackendFlow.cpp : wrapper/synthesis/Generic-yosysOpenROAD.
 wrapper/synthesis/Generic-yosysOpenROAD.data: $(top_srcdir)/etc/devices/Generic_devices/Generic-yosysOpenROAD.xml
 	gzip -c  $(top_srcdir)/etc/devices/Generic_devices/Generic-yosysOpenROAD.xml > wrapper/synthesis/Generic-yosysOpenROAD.data
 
-wrapper_synthesis__DATA = wrapper/synthesis/Nangate.data wrapper/synthesis/Generic-yosysOpenROAD.data
+wrapper_synthesis__DATA = wrapper/synthesis/Generic-yosysOpenROAD.data
 
   lib_synthesis_la_LIBADD = \
                         lib_Xilinxwrapper.la \
