@@ -228,7 +228,7 @@ void SimulationTool::DetermineCycles(unsigned long long int& accum_cycles, unsig
          num_cycles += sim_cycles;
          ++i;
          PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                       i << ". Simulation completed with SUCCESS; Execution time " << sim_cycles << " cycles;");
+                       "Run " << i << " execution time " << sim_cycles << " cycles;");
       }
    }
 
@@ -259,8 +259,7 @@ void SimulationTool::DetermineCycles(unsigned long long int& accum_cycles, unsig
          num_cycles += sim_cycles;
          ++i;
          PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                       i << ". Simulation completed with SUCCESS; Profiled execution time " << sim_cycles
-                         << " cycles;");
+                       "Run " << i << " profiled execution time " << sim_cycles << " cycles;");
       }
    }
 
