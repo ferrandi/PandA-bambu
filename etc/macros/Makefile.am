@@ -6,7 +6,6 @@ EXTRA_DIST= \
    ac_prog_javac_works.m4 acx_blas.m4 acx_compile_warn.m4 acx_lapack.m4 acx_lapackpp.m4 \
    acx_windows_paths.m4 as-scrub-include.m4 atlas.m4 ax_blas.m4 ax_cflags_gcc_option.m4 \
    ax_check_compile_flag.m4 ax_lapack.m4 ax_openmp.m4 boost_base.m4 \
-   boost_iostreams.m4 boost_program_options.m4 boost_system.m4 boost_time.m4 \
    c++17.m4 clang_version4.m4 clang_version5.m4 clang_version6.m4 clang_version7.m4 \
    clang_version8.m4 clang_version9.m4 clang_version10.m4 clang_version11.m4 clang_version12.m4 \
    clang_version13.m4 clang_version16.m4 codeset.m4 gcc_version.m4 \

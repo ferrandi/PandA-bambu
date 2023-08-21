@@ -107,8 +107,7 @@ lib_bambu_la_LIBADD += \
    lib_tree.la \
    lib_tree_manipulation.la \
    lib_utility.la \
-   lib_wrapper.la \
-   $(BOOST_SYSTEM_LIB)
+   lib_wrapper.la
 
 if BUILD_FLOPOCO
    lib_bambu_la_LIBADD += \
