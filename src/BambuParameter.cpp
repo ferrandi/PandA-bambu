@@ -2524,15 +2524,15 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
       {
          setOption(OPT_gcc_m32_mx32, "-m64");
       }
-      if(CompilerWrapper::hasCompilerMX32(default_compiler))
+      else if(CompilerWrapper::hasCompilerMX32(default_compiler))
       {
          setOption(OPT_gcc_m32_mx32, "-mx32");
       }
-      if(CompilerWrapper::hasCompilerGCCM32(default_compiler))
+      else if(CompilerWrapper::hasCompilerGCCM32(default_compiler))
       {
          setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
       }
-      if(CompilerWrapper::hasCompilerCLANGM32(default_compiler))
+      else if(CompilerWrapper::hasCompilerCLANGM32(default_compiler))
       {
          setOption(OPT_gcc_m32_mx32, "-m32");
       }
