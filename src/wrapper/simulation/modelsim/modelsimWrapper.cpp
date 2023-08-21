@@ -195,7 +195,7 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
       }
    }
 
-   script << MODELSIM_VSIM << " " << vflags << " -dpicpppath \"${CC}\" -sv_lib " << libtb_filename;
+   script << MODELSIM_VSIM << " " << vflags << " -noautoldlibpath -sv_lib " << libtb_filename;
    if(Param->isOption(OPT_mentor_visualizer) && Param->isOption(OPT_visualizer) &&
       Param->getOption<bool>(OPT_visualizer))
    {
