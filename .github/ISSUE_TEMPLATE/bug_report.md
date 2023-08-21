@@ -8,8 +8,9 @@ assignees: ''
 ---
 
 - **Tool Version:** [Specify the AppImage url or commit hash of the PandA Bambu tool]
-- **OS Version:** [Mention the operating system and its version]
+- **OS Version:** [Mention the operating system, its version and architecture (x86/x86-64)]
 - **Frontend Compiler Version:** [Provide the version of the frontend compiler used, if different from the one distributed [here](https://release.bambuhls.eu/)]
+- **Simulator:** [Provide the name and version of the simulator you have installed (Mentor QuestaSim 10.4c/Verilator 5.002/...)]
 
 **Command Line Used:** [Include the full command-line command you used to call the PandA Bambu tool]
 
