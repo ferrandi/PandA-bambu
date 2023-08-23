@@ -242,10 +242,9 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet& steps, cons
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Adding dependencies of " + design_flow_step->GetName());
       design_flow_step->ComputeRelationships(relationships, DesignFlowStep::DEPENDENCE_RELATIONSHIP);
       RecursivelyAddSteps(relationships, unnecessary);
-      DesignFlowStepSet::const_iterator relationship, relationship_end = relationships.end();
-      for(relationship = relationships.begin(); relationship != relationship_end; ++relationship)
+      for(const auto& relationship : relationships)
       {
-         const std::string relationship_signature = (*relationship)->GetSignature();
+         const std::string relationship_signature = relationship->GetSignature();
          vertex relationship_vertex = GetDesignFlowStep(relationship_signature);
          design_flow_graphs_collection->AddDesignFlowDependence(relationship_vertex, step_vertex,
                                                                 DesignFlowGraph::DEPENDENCE_SELECTOR);
