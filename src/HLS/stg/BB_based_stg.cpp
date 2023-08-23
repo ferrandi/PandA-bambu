@@ -73,11 +73,10 @@
 #include "structural_manager.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
-#include "time_model.hpp"
+#include "time_info.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-
 #include <boost/foreach.hpp>
 #include <boost/graph/depth_first_search.hpp>
 #include <boost/graph/graph_traits.hpp>

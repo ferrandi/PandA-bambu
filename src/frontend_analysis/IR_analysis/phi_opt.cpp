@@ -40,50 +40,30 @@
  * Last modified by $Author$
  *
  */
-
-/// header include
 #include "phi_opt.hpp"
-
-///. include
 #include "Parameter.hpp"
-
-/// behavior includes
 #include "application_manager.hpp"
 #include "function_behavior.hpp"
-
-#if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
-/// HLS includes
+#if HAVE_ILP_BUILT
+#include "allocation_information.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_manager.hpp"
 #include "hls_step.hpp"
-
-/// HLS/module_allocation include
-#include "allocation_information.hpp"
-
-/// HLS/scheduling include
 #include "schedule.hpp"
 #endif
-
-/// parser/compiler include
-#include "token_interface.hpp"
-
-/// STD include
-#include <fstream>
-
-/// tree includes
+#include "dbgPrintHelper.hpp"
 #include "ext_tree_node.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
+#include "token_interface.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-
-/// utility include
-#include "dbgPrintHelper.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
 #include <boost/range/adaptor/reversed.hpp>
+#include <fstream>
 
 PhiOpt::PhiOpt(const application_managerRef _AppM, unsigned int _function_id,
                const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
@@ -132,7 +112,7 @@ void PhiOpt::Initialize()
    tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters, AppM));
    const auto fd = GetPointerS<const function_decl>(TM->CGetTreeNode(function_id));
    sl = GetPointerS<statement_list>(GET_NODE(fd->body));
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
    if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING &&
       GetPointer<const HLS_manager>(AppM) && GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
       GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
@@ -1672,12 +1652,9 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
                            "---First condition is " + (first_condition ? first_condition->ToString() : "default"));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Second condition is " + (second_condition ? second_condition->ToString() : "default"));
-            if(!first_condition || !second_condition
-#if HAVE_BAMBU_BUILT
-               || schedule->EvaluateCondsMerging(pred_last_stmt->index, first_condition->index, second_condition->index,
-                                                 function_id)
-#endif
-            )
+            if(!first_condition || !second_condition ||
+               schedule->EvaluateCondsMerging(pred_last_stmt->index, first_condition->index, second_condition->index,
+                                              function_id))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Empty path to phi to be removed");
                return PhiOpt_PatternType::MULTI_REMOVE;
@@ -1784,7 +1761,6 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
                 tree_man->create_gimple_modify_stmt(first_value, cond_expr_node, function_id, BUILTIN_SRCP);
 
             /// Created statement is not added to the predecessor
-#if HAVE_BAMBU_BUILT
             if(schedule && schedule->CanBeMoved(GET_INDEX_CONST_NODE(gimple_assign_node), pred_block->number) !=
                                FunctionFrontendFlowStep_Movable::MOVABLE)
             {
@@ -1794,7 +1770,6 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
                    "<--Empty path to phi to be merged, but modifying would increase the latency of predecessor");
                return PhiOpt_PatternType::UNCHANGED;
             }
-#endif
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }

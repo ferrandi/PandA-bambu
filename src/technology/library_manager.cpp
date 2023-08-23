@@ -47,19 +47,14 @@
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp"
 
-#include "area_model.hpp"
-#include "parse_technology.hpp"
-#include "technology_node.hpp"
-
 #include "Parameter.hpp"
+#include "area_info.hpp"
 #include "constant_strings.hpp"
-#include "exceptions.hpp"
-#include "polixml.hpp"
-
-#include "target_device.hpp"
-
-#include "clb_model.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "exceptions.hpp"
+#include "parse_technology.hpp"
+#include "polixml.hpp"
+#include "technology_node.hpp"
 #include <iosfwd>
 #include <utility>
 
@@ -211,8 +206,7 @@ library_manager::library_manager(std::string library_name, ParameterConstRef _Pa
 
 library_manager::~library_manager() = default;
 
-void library_manager::xload(const xml_element* node, const library_managerRef& LM, const ParameterConstRef& Param,
-                            const target_deviceRef& device)
+void library_manager::xload(const xml_element* node, const library_managerRef& LM, const ParameterConstRef& Param)
 {
 #ifndef NDEBUG
    int debug_level = Param->get_class_debug_level("library_manager");
@@ -256,7 +250,7 @@ void library_manager::xload(const xml_element* node, const library_managerRef& L
       else if(EnodeC->get_name() == "cell")
       {
          technology_nodeRef fu_curr = technology_nodeRef(new functional_unit(iter_int));
-         fu_curr->xload(EnodeC, fu_curr, Param, device);
+         fu_curr->xload(EnodeC, fu_curr, Param);
 
          const auto cell_name = fu_curr->get_name();
 
@@ -267,7 +261,7 @@ void library_manager::xload(const xml_element* node, const library_managerRef& L
       else if(EnodeC->get_name() == "template")
       {
          technology_nodeRef fut_curr = technology_nodeRef(new functional_unit_template(iter_int));
-         fut_curr->xload(EnodeC, fut_curr, Param, device);
+         fut_curr->xload(EnodeC, fut_curr, Param);
          LM->add(fut_curr);
       }
 #ifndef NDEBUG
@@ -310,7 +304,7 @@ void library_manager::xload(const xml_element* node, const library_managerRef& L
    }
 }
 
-void library_manager::xwrite(xml_element* node, TargetDevice_Type dv_type)
+void library_manager::xwrite(xml_element* node)
 {
    xml_element* library = node->add_child_element("library");
 
@@ -334,7 +328,7 @@ void library_manager::xwrite(xml_element* node, TargetDevice_Type dv_type)
       {
          xml_cell = library->add_child_element("template");
       }
-      f.second->xwrite(xml_cell, f.second, Param, dv_type);
+      f.second->xwrite(xml_cell, f.second, Param);
    }
 }
 
@@ -374,10 +368,6 @@ void library_manager::update(const technology_nodeRef& fu_node)
    {
       current_fu->area_m = GetPointer<functional_unit>(node)->area_m;
    }
-#if HAVE_EXPERIMENTAL
-   if(GetPointer<functional_unit>(node)->layout_m)
-      current_fu->layout_m = GetPointer<functional_unit>(node)->layout_m;
-#endif
    const functional_unit::operation_vec& operations = GetPointer<functional_unit>(node)->get_operations();
    for(const auto& o : operations)
    {
@@ -485,7 +475,7 @@ void library_manager::erase_info()
    info.clear();
 }
 
-std::string library_manager::get_info(info_t type, const TargetDevice_Type dv_type)
+std::string library_manager::get_info(info_t type)
 {
    if(!is_info(type))
    {
@@ -493,7 +483,7 @@ std::string library_manager::get_info(info_t type, const TargetDevice_Type dv_ty
       {
          case XML:
          {
-            write_xml_technology_File(get_library_name() + ".xml", this, dv_type);
+            write_xml_technology_File(get_library_name() + ".xml", this);
             break;
          }
          default:

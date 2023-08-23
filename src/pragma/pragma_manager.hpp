@@ -142,8 +142,8 @@ class pragma_manager
    virtual ~pragma_manager();
 
    /**
-    * Check if the datastructure information are compliant with the pragma reference manual
-    * @return true if the datastructure is compliant, false otherwise
+    * Check if the data-structure information are compliant with the pragma reference manual
+    * @return true if the data-structure is compliant, false otherwise
     */
    bool checkCompliant() const;
 

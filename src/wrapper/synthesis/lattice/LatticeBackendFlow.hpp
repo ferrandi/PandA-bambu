@@ -63,7 +63,7 @@ class LatticeBackendFlow : public BackendFlow
    void xparse_utilization(const std::string& fn);
 
    /**
-    * Checks the synthesis results and fills the corresponding datastructures
+    * Checks the synthesis results and fills the corresponding data-structures
     */
    void CheckSynthesisResults() override;
 
@@ -76,7 +76,7 @@ class LatticeBackendFlow : public BackendFlow
    /**
     * Constructor
     */
-   LatticeBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef target);
+   LatticeBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const generic_deviceRef _device);
 
    /**
     * Destructor

@@ -124,7 +124,7 @@ if test "x$have_qt" = xyes; then
 fi
 
 if test "x$panda_USE_GLPK" = xyes -o "x$panda_USE_COIN_OR" = xyes 
-	-o "x$panda_USE_LP_SOLVE" = xyes -o "x$panda_USE_BEAGLE" = xyes 
+	-o "x$panda_USE_LP_SOLVE" = xyes
 	-o "x$panda_USE_ABC" = xyes ; then
   AC_CONFIG_FILES(ext/Makefile)
 fi

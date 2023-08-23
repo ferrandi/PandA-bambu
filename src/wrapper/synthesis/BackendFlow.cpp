@@ -42,83 +42,56 @@
  */
 #include "BackendFlow.hpp"
 
-#include "DesignParameters.hpp"
-
-/// wrapper/synthesis/altera includes
 #include "AlteraBackendFlow.hpp"
+#include "DesignParameters.hpp"
+#include "XilinxBackendFlow.hpp"
 #include "quartus_13_wrapper.hpp"
 #include "quartus_wrapper.hpp"
-
-/// wrapper/synthesis/xilinx includes
-#include "XilinxBackendFlow.hpp"
 #if HAVE_TASTE
 #include "xilinx_taste_backend_flow.hpp"
 #endif
-
-#include "HDL_manager.hpp"
-#include "structural_manager.hpp"
-#include "structural_objects.hpp"
-#include "target_manager.hpp"
-#include "technology_manager.hpp"
-
-/// implemented flows
 #include "BashBackendFlow.hpp"
+#include "HDL_manager.hpp"
 #include "LatticeBackendFlow.hpp"
 #include "NanoXploreBackendFlow.hpp"
-
-/// target devices
-#include "FPGA_device.hpp"
-
-#include "ToolManager.hpp"
-/// supported synthesis steps
+#include "Parameter.hpp"
 #include "SynthesisTool.hpp"
-// ASIC
-#include "DesignCompilerWrapper.hpp"
-// Xilinx
+#include "ToolManager.hpp"
+#include "area_info.hpp"
+#include "bash_flow_wrapper.hpp"
+#include "cpu_time.hpp"
+#include "exceptions.hpp"
+#include "fileIO.hpp"
+#include "generic_device.hpp"
+#include "lattice_flow_wrapper.hpp"
 #include "map_wrapper.hpp"
 #include "ngdbuild_wrapper.hpp"
+#include "nxpython_flow_wrapper.hpp"
 #include "par_wrapper.hpp"
-#include "trce_wrapper.hpp"
-#include "vivado_flow_wrapper.hpp"
-#include "xst_wrapper.hpp"
-// Altera
+#include "polixml.hpp"
 #include "quartus_13_report_wrapper.hpp"
 #include "quartus_report_wrapper.hpp"
-// Lattice
-#include "lattice_flow_wrapper.hpp"
-// NanoXplore
-#include "nxpython_flow_wrapper.hpp"
-// Generic
-#include "bash_flow_wrapper.hpp"
-
-#include "area_model.hpp"
-#include "target_device.hpp"
+#include "structural_manager.hpp"
+#include "structural_objects.hpp"
+#include "technology_manager.hpp"
 #include "technology_node.hpp"
-#include "time_model.hpp"
-
-#include "polixml.hpp"
+#include "time_info.hpp"
+#include "trce_wrapper.hpp"
+#include "vivado_flow_wrapper.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
-
-#include "exceptions.hpp"
-
+#include "xst_wrapper.hpp"
+#include <boost/algorithm/string/case_conv.hpp>
 #include <filesystem>
-
 #include <iosfwd>
 #include <utility>
 
-#include "Parameter.hpp"
-#include "cpu_time.hpp"
-#include "fileIO.hpp"
-
-#include <boost/algorithm/string/case_conv.hpp>
-
-BackendFlow::BackendFlow(const ParameterConstRef _Param, std::string _flow_name, const target_managerRef _manager)
+BackendFlow::BackendFlow(const ParameterConstRef _Param, std::string _flow_name, const generic_deviceRef _device)
     : Param(_Param),
       output_level(_Param->getOption<unsigned int>(OPT_output_level)),
       flow_name(std::move(_flow_name)),
       out_dir(Param->getOption<std::string>(OPT_output_directory) + "/" + flow_name),
-      target(_manager),
+      device(_device),
       root(nullptr),
       default_flow_parameters(DesignParametersRef(new DesignParameters))
 {
@@ -132,17 +105,17 @@ BackendFlow::BackendFlow(const ParameterConstRef _Param, std::string _flow_name,
 
 BackendFlow::~BackendFlow() = default;
 
-BackendFlow::type_t BackendFlow::DetermineBackendFlowType(const target_deviceRef device, const ParameterConstRef
+BackendFlow::type_t BackendFlow::DetermineBackendFlowType(const generic_deviceRef device, const ParameterConstRef
 #if HAVE_TASTE
-                                                                                             parameters
+                                                                                              parameters
 #endif
 )
 {
-   if(GetPointer<FPGA_device>(device))
+   if(device)
    {
       if(!device->has_parameter("vendor"))
       {
-         THROW_ERROR("FPGA device vendor not specified");
+         THROW_ERROR("Device vendor not specified");
       }
       auto vendor = device->get_parameter<std::string>("vendor");
       boost::algorithm::to_lower(vendor);
@@ -175,32 +148,32 @@ BackendFlow::type_t BackendFlow::DetermineBackendFlowType(const target_deviceRef
       }
       else
       {
-         THROW_ERROR("FPGA device vendor \"" + vendor + "\" not supported");
+         THROW_ERROR("Device vendor \"" + vendor + "\" not supported");
       }
    }
    return UNKNOWN;
 }
 
 BackendFlowRef BackendFlow::CreateFlow(const ParameterConstRef Param, const std::string& flow_name,
-                                       const target_managerRef target)
+                                       const generic_deviceRef _device)
 {
-   type_t type = DetermineBackendFlowType(target->get_target_device(), Param);
+   type_t type = DetermineBackendFlowType(_device, Param);
    switch(type)
    {
       case XILINX_FPGA:
-         return BackendFlowRef(new XilinxBackendFlow(Param, flow_name, target));
+         return BackendFlowRef(new XilinxBackendFlow(Param, flow_name, _device));
 #if HAVE_TASTE
       case XILINX_TASTE_FPGA:
-         return BackendFlowRef(new XilinxTasteBackendFlow(Param, flow_name, target));
+         return BackendFlowRef(new XilinxTasteBackendFlow(Param, flow_name, _device));
 #endif
       case ALTERA_FPGA:
-         return BackendFlowRef(new AlteraBackendFlow(Param, flow_name, target));
+         return BackendFlowRef(new AlteraBackendFlow(Param, flow_name, _device));
       case LATTICE_FPGA:
-         return BackendFlowRef(new LatticeBackendFlow(Param, flow_name, target));
+         return BackendFlowRef(new LatticeBackendFlow(Param, flow_name, _device));
       case NANOXPLORE_FPGA:
-         return BackendFlowRef(new NanoXploreBackendFlow(Param, flow_name, target));
+         return BackendFlowRef(new NanoXploreBackendFlow(Param, flow_name, _device));
       case GENERIC:
-         return BackendFlowRef(new BashBackendFlow(Param, flow_name, target));
+         return BackendFlowRef(new BashBackendFlow(Param, flow_name, _device));
       case UNKNOWN:
       default:
          THROW_UNREACHABLE("Backend flow not supported");
@@ -232,11 +205,11 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
       synthesis_file_list += aux_file + ";";
    }
    actual_parameters->parameter_values[PARAM_HDL_files] = synthesis_file_list;
-   const technology_managerRef TM = target->get_technology_manager();
+   const technology_managerRef TM = device->get_technology_manager();
    std::string library = TM->get_library(resource_name);
    bool is_combinational = false;
-   auto is_time_unit_PS = target->get_target_device()->has_parameter("USE_TIME_UNIT_PS") &&
-                          target->get_target_device()->get_parameter<int>("USE_TIME_UNIT_PS") == 1;
+   auto is_time_unit_PS =
+       device->has_parameter("USE_TIME_UNIT_PS") && device->get_parameter<int>("USE_TIME_UNIT_PS") == 1;
    if(library.size())
    {
       const technology_nodeRef tn = TM->get_fu(resource_name, library);
@@ -370,12 +343,12 @@ void BackendFlow::ExecuteSynthesis()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Executed synthesis");
 }
 
-area_modelRef BackendFlow::get_used_resources() const
+area_infoRef BackendFlow::get_used_resources() const
 {
    return area_m;
 }
 
-time_modelRef BackendFlow::get_timing_results() const
+time_infoRef BackendFlow::get_timing_results() const
 {
    return time_m;
 }
@@ -447,15 +420,7 @@ void BackendFlow::xload(const xml_element* node)
          }
 
          SynthesisTool::type_t type = SynthesisTool::UNKNOWN;
-         if(id == DESIGN_COMPILER_TOOL_ID)
-         {
-            type = SynthesisTool::DESIGN_COMPILER;
-            if(step->script_name.size() == 0)
-            {
-               step->script_name = "script.dc";
-            }
-         }
-         else if(id == XST_TOOL_ID)
+         if(id == XST_TOOL_ID)
          {
             type = SynthesisTool::XST;
             if(step->script_name.size() == 0)
@@ -572,7 +537,7 @@ void BackendFlow::xload(const xml_element* node)
             THROW_ERROR("Step <" + id + "> is currently not supported");
          }
 
-         step->tool = SynthesisTool::create_synthesis_tool(type, Param, flow_name, target->get_target_device());
+         step->tool = SynthesisTool::create_synthesis_tool(type, Param, flow_name, device);
          /// update with the actual name of the output directory
          step->out_dir = step->tool->get_output_directory();
 

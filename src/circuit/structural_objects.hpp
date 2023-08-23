@@ -47,7 +47,6 @@
 #define STRUCTURAL_OBJECTS_HPP
 
 /// Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
 
 #include "NP_functionality.hpp"
@@ -66,9 +65,7 @@
  * @name Forward declarations.
  */
 //@{
-#if HAVE_BAMBU_BUILT
 CONSTREF_FORWARD_DECL(BehavioralHelper);
-#endif
 REF_FORWARD_DECL(structural_manager);
 REF_FORWARD_DECL(NP_functionality);
 CONSTREF_FORWARD_DECL(structural_object);
@@ -192,14 +189,12 @@ struct structural_type_descriptor
    {
    }
 
-#if HAVE_BAMBU_BUILT
    /**
     * Object factory used in HLS
     * @param index is the index descriptor of the type
     * @param helper is the BehavioralHelper
     */
    structural_type_descriptor(unsigned int index, const BehavioralHelperConstRef helper);
-#endif
 
    /**
     * Destructor
@@ -2214,7 +2209,7 @@ class module : public structural_object
 
    /**
     * Return a non-empty string when the component has been specialized.
-    * The string identify with respect what the component has been specialized (e.g., target_device, behavior...)
+    * The string identify with respect what the component has been specialized (e.g., generic_device, behavior...)
     */
    const std::string get_specialized() const
    {

@@ -45,7 +45,6 @@
 #ifndef C_BACKEND_INFORMATION_HPP
 #define C_BACKEND_INFORMATION_HPP
 
-#include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_HLS_BUILT.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 
@@ -69,9 +68,7 @@ class CBackendInformation : public HLSFlowStepSpecialization
        */
       CB_DISCREPANCY_ANALYSIS,
 #endif
-#if HAVE_BAMBU_BUILT
-      CB_HLS, /** Sequential c code for HLS testing */
-#endif
+      CB_HLS,        /** Sequential c code for HLS testing */
       CB_SEQUENTIAL, /**< Sequential c without instrumentation */
    };
 

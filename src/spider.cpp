@@ -39,92 +39,62 @@
  *
  */
 
-/// Autoheader include
+#include "SpiderParameter.hpp"
 #include "config_HAVE_FROM_ARCH_BUILT.hpp"
 #include "config_HAVE_FROM_CSV_BUILT.hpp"
 #include "config_HAVE_FROM_PROFILING_ANALYIS_BUILT.hpp"
 #include "config_HAVE_R.hpp"
-
-///. includes
-#include "SpiderParameter.hpp"
-
 #if HAVE_REGRESSORS_BUILT
 /// algorithms/regressors include
 #include "cross_validation.hpp"
 #if HAVE_R
 #include "linear_regression.hpp"
 #endif
-#include "regressor.hpp"
-
-/// algorithms/regressors/preprocessing includes
 #include "cell_selection.hpp"
 #include "performance_estimation_preprocessing.hpp"
+#include "regressor.hpp"
 #if HAVE_R
 #include "significance_preprocessing.hpp"
 #endif
 #endif
-
-/// boost include
 #include <boost/algorithm/string/replace.hpp>
 #include <filesystem>
-
-/// constants include
 #if HAVE_R
 #include "regressors_constants.hpp"
 #endif
-
-/// design_flows include
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-
-/// design_flows/backend/ToDataFile includes
 #if HAVE_TECHNOLOGY_BUILT
 #include "to_data_file_step.hpp"
 #include "to_data_file_step_factory.hpp"
 #endif
 #include "translator.hpp"
-
 #if HAVE_TECHNOLOGY_BUILT
-/// design_flows/technology include
 #include "technology_flow_step.hpp"
 #include "technology_flow_step_factory.hpp"
 #endif
-
-/// parser/data_xml include
 #include "data_xml_parser.hpp"
-
 #if HAVE_FROM_CSV_BUILT
-/// parser/csv include
 #include "parse_csv.hpp"
 #endif
-
 #if HAVE_FROM_PROFILING_ANALYIS_BUILT
 /// parser/rapid_miner include
 #include "parse_rapid_miner.hpp"
 #endif
-
 #if HAVE_RTL_BUILT
 /// RTL include
 #include "rtl_node.hpp"
 #endif
-
-/// STD include
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <fstream>
 #include <iosfwd>
 #include <string>
-
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-
 #if HAVE_TECHNOLOGY_BUILT
-/// technology include
+#include "generic_device.hpp"
 #include "parse_technology.hpp"
-#include "target_manager.hpp"
-#include "target_technology.hpp"
 #include "technology_manager.hpp"
 #endif
-
-/// utility includes
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "exceptions.hpp"
 #include "fileIO.hpp"
@@ -526,9 +496,8 @@ int main(int argc, char* argv[])
             // Technology library manager
             technology_managerRef TM = technology_managerRef(new technology_manager(parameters));
 
-            /// creating the datastructure representing the target device
-            target_deviceRef device = target_device::create_device(TargetDevice_Type::FPGA, parameters, TM);
-            target_managerRef target = target_managerRef(new target_manager(parameters, TM, device));
+            /// creating the data-structure representing the target device
+            generic_deviceRef device = generic_device::factory(parameters, TM);
 
             const DesignFlowManagerRef design_flow_manager(new DesignFlowManager(parameters));
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager->CGetDesignFlowGraph();
@@ -578,9 +547,8 @@ int main(int argc, char* argv[])
             // Technology library manager
             technology_managerRef TM = technology_managerRef(new technology_manager(parameters));
 
-            /// creating the datastructure representing the target device
-            target_deviceRef device = target_device::create_device(TargetDevice_Type::FPGA, parameters, TM);
-            target_managerRef target = target_managerRef(new target_manager(parameters, TM, device));
+            /// creating the data-structure representing the target device
+            generic_deviceRef device = generic_device::factory(parameters, TM);
 
             const DesignFlowManagerRef design_flow_manager(new DesignFlowManager(parameters));
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager->CGetDesignFlowGraph();
@@ -590,7 +558,7 @@ int main(int argc, char* argv[])
             design_flow_manager->RegisterFactory(technology_flow_step_factory);
 
             const DesignFlowStepFactoryConstRef to_data_file_step_factory(
-                new ToDataFileStepFactory(target, design_flow_manager, parameters));
+                new ToDataFileStepFactory(device, design_flow_manager, parameters));
             design_flow_manager->RegisterFactory(to_data_file_step_factory);
 
             const std::string to_data_file_step_signature =

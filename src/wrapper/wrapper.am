@@ -154,11 +154,6 @@ if BUILD_SYNTHESIS
     -I$(top_srcdir)/src/parser/polixml \
     -I$(top_srcdir)/src/polixml \
     -I$(top_srcdir)/src/technology \
-    -I$(top_srcdir)/src/technology/target_device \
-    -I$(top_srcdir)/src/technology/physical_library \
-    -I$(top_srcdir)/src/technology/physical_library/models \
-    -I$(top_srcdir)/src/technology/physical_library/models/time \
-    -I$(top_srcdir)/src/technology/physical_library/models/area \
     -I$(top_srcdir)/src/tree \
     -I$(top_srcdir)/src/utility \
     -I$(top_srcdir)/src/wrapper \
@@ -198,11 +193,6 @@ lib_Alterawrapper_la_CPPFLAGS = \
     -I$(top_srcdir)/src/parser/polixml \
     -I$(top_srcdir)/src/polixml \
     -I$(top_srcdir)/src/technology \
-    -I$(top_srcdir)/src/technology/target_device \
-    -I$(top_srcdir)/src/technology/physical_library \
-    -I$(top_srcdir)/src/technology/physical_library/models \
-    -I$(top_srcdir)/src/technology/physical_library/models/time \
-    -I$(top_srcdir)/src/technology/physical_library/models/area \
     -I$(top_srcdir)/src/tree \
     -I$(top_srcdir)/src/utility \
     -I$(top_srcdir)/src/wrapper \
@@ -259,10 +249,7 @@ lib_xilinx_ise_la_CPPFLAGS = \
     -I$(top_srcdir)/src/tree \
     -I$(top_srcdir)/src/utility \
     -I$(top_srcdir)/src/design_flows/backend/ToHDL \
-    -I$(top_srcdir)/src/technology/target_device \
-    -I$(top_srcdir)/src/technology/physical_library/models \
-    -I$(top_srcdir)/src/technology/physical_library/models/area \
-    -I$(top_srcdir)/src/technology/physical_library/models/time \
+    -I$(top_srcdir)/src/technology \
     -I$(top_srcdir)/src/wrapper \
     -I$(top_srcdir)/src/wrapper/simulation \
     -I$(top_srcdir)/src/wrapper/synthesis \
@@ -294,11 +281,6 @@ lib_Xilinxwrapper_la_CPPFLAGS = \
    -I$(top_srcdir)/src/polixml  \
    -I$(top_srcdir)/src/utility  \
    -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/target_device \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/physical_library/models \
-   -I$(top_srcdir)/src/technology/physical_library/models/area \
-   -I$(top_srcdir)/src/technology/physical_library/models/time \
    -I$(top_srcdir)/src/wrapper \
    -I$(top_srcdir)/src/wrapper/synthesis \
    -I$(top_srcdir)/src/wrapper/synthesis/xilinx \
@@ -397,11 +379,6 @@ endif
     -I$(top_srcdir)/src/parser/polixml \
     -I$(top_srcdir)/src/polixml \
     -I$(top_srcdir)/src/technology \
-    -I$(top_srcdir)/src/technology/target_device \
-    -I$(top_srcdir)/src/technology/physical_library \
-    -I$(top_srcdir)/src/technology/physical_library/models \
-    -I$(top_srcdir)/src/technology/physical_library/models/time \
-    -I$(top_srcdir)/src/technology/physical_library/models/area \
     -I$(top_srcdir)/src/tree \
     -I$(top_srcdir)/src/utility \
     -I$(top_srcdir)/src/wrapper \
@@ -426,50 +403,6 @@ wrapper_synthesis_lattice__DATA = wrapper/synthesis/lattice/LatticeECP3.data wra
   lib_Latticewrapper_la_SOURCES = wrapper/synthesis/lattice/LatticeBackendFlow.cpp wrapper/synthesis/lattice/LatticeWrapper.cpp wrapper/synthesis/lattice/lattice_flow_wrapper.cpp 
 
 
-  noinst_LTLIBRARIES += lib_designcompiler.la
-  lib_designcompiler_la_CPPFLAGS = \
-                 -I$(top_srcdir)/src \
-                 -I$(top_srcdir)/src/circuit \
-                 -I$(top_srcdir)/src/constants \
-                 -I$(top_srcdir)/src/design_flows/ \
-                 -I$(top_srcdir)/src/design_flows/backend/ToHDL \
-                 -I$(top_srcdir)/src/graph \
-                 -I$(top_srcdir)/src/HLS/scheduling \
-                 -I$(top_srcdir)/src/polixml \
-                 -I$(top_srcdir)/src/parser/polixml \
-                 -I$(top_srcdir)/src/technology \
-                 -I$(top_srcdir)/src/technology/physical_library \
-                 -I$(top_srcdir)/src/technology/physical_library/models \
-                 -I$(top_srcdir)/src/technology/physical_library/models/area \
-                 -I$(top_srcdir)/src/technology/target_device \
-                 -I$(top_srcdir)/src/wrapper \
-                 -I$(top_srcdir)/src/wrapper/synthesis \
-                 -I$(top_srcdir)/src/wrapper/synthesis/synopsys \
-                 -I$(top_srcdir)/src/utility \
-                 $(AM_CPPFLAGS)
-  noinst_HEADERS += wrapper/synthesis/synopsys/design_compiler/DesignCompilerWrapper.hpp
-  lib_designcompiler_la_SOURCES = wrapper/synthesis/synopsys/design_compiler/DesignCompilerWrapper.cpp
-
-if BUILD_LIB_EXPERIMENTAL
-lib_designcompiler_la_CPPFLAGS += -I$(top_srcdir)/src/circuit/aig\
-                 -I$(top_srcdir)/src/logic_synthesis
-endif
-
-  noinst_LTLIBRARIES += lib_Synopsyswrapper.la
-  lib_Synopsyswrapper_la_CPPFLAGS = \
-                                 -I$(top_srcdir)/src \
-                                 -I$(top_srcdir)/src/polixml \
-                                 -I$(top_srcdir)/src/utility \
-                                 -I$(top_srcdir)/src/wrapper/synthesis \
-                                 -I$(top_srcdir)/src/wrapper/synthesis/synopsys \
-                                 -I$(top_srcdir)/src/wrapper/synthesis/synopsys/design_compiler \
-                                 $(AM_CPPFLAGS)
-
-  lib_Synopsyswrapper_la_LIBADD = lib_designcompiler.la
-  noinst_HEADERS += wrapper/synthesis/synopsys/SynopsysWrapper.hpp
-  lib_Synopsyswrapper_la_SOURCES = wrapper/synthesis/synopsys/SynopsysWrapper.cpp
-
-
   noinst_LTLIBRARIES += lib_synthesis.la
   lib_synthesis_la_CPPFLAGS = \
                  -I$(top_srcdir)/src \
@@ -482,25 +415,15 @@ endif
                  -I$(top_srcdir)/src/polixml \
                  -I$(top_srcdir)/src/parser/polixml \
                  -I$(top_srcdir)/src/technology \
-                 -I$(top_srcdir)/src/technology/physical_library \
-                 -I$(top_srcdir)/src/technology/physical_library/models \
-                 -I$(top_srcdir)/src/technology/physical_library/models/time \
-                 -I$(top_srcdir)/src/technology/physical_library/models/area \
-                 -I$(top_srcdir)/src/technology/target_device \
-                 -I$(top_srcdir)/src/technology/target_device/FPGA \
                  -I$(top_srcdir)/src/wrapper \
                  -I$(top_srcdir)/src/wrapper/simulation \
                  -I$(top_builddir)/src/wrapper/synthesis \
                  -I$(top_srcdir)/src/wrapper/synthesis \
-                 -I$(top_srcdir)/src/wrapper/synthesis/synopsys \
-                 -I$(top_srcdir)/src/wrapper/synthesis/synopsys/design_compiler \
                  -I$(top_srcdir)/src/wrapper/synthesis/xilinx \
                  -I$(top_srcdir)/src/wrapper/synthesis/xilinx/ise \
                  -I$(top_srcdir)/src/wrapper/synthesis/altera \
                  -I$(top_srcdir)/src/wrapper/synthesis/lattice \
                  -I$(top_srcdir)/src/wrapper/synthesis/nanoxplore \
-                 -I$(top_srcdir)/src/technology \
-                 -I$(top_srcdir)/src/technology/physical_library \
                  -I$(top_srcdir)/src/utility \
                  $(AM_CPPFLAGS)
   noinst_HEADERS += wrapper/synthesis/xml_script_command.hpp \
@@ -528,8 +451,7 @@ wrapper_synthesis__DATA = wrapper/synthesis/Generic-yosysOpenROAD.data
                         lib_Xilinxwrapper.la \
                         lib_Alterawrapper.la \
                         lib_Latticewrapper.la \
-                        lib_NanoXplorewrapper.la \
-                        lib_Synopsyswrapper.la
+                        lib_NanoXplorewrapper.la 
   lib_wrapper_la_LIBADD += lib_synthesis.la
 endif
 
@@ -543,8 +465,7 @@ lib_flopocowrapper_la_CPPFLAGS = \
     -I$(top_srcdir)/src/circuit \
     -I$(top_srcdir)/src/constants \
     -I$(top_srcdir)/src/utility \
-    -I$(top_srcdir)/src/technology/physical_library \
-    -I$(top_srcdir)/src/technology/target_device \
+    -I$(top_srcdir)/src/technology \
     -isystem $(FLOPOCO_OBJDIR) \
     -isystem $(FLOPOCO_DIR)/src \
     $(AM_CPPFLAGS)

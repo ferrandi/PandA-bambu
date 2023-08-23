@@ -52,7 +52,7 @@
 /// utility include
 #include "refcount.hpp"
 
-REF_FORWARD_DECL(target_device);
+REF_FORWARD_DECL(generic_device);
 REF_FORWARD_DECL(technology_manager);
 
 enum class TechnologyFlowStep_Type
@@ -97,7 +97,7 @@ class TechnologyFlowStep : public DesignFlowStep
    const technology_managerRef TM;
 
    /// The target device
-   const target_deviceRef target;
+   const generic_deviceRef target;
 
    /**
     * Return the set of analyses in relationship with this design step
@@ -115,7 +115,7 @@ class TechnologyFlowStep : public DesignFlowStep
     * @param technology_flow_step_type is the type of this step
     * @param parameters is the set of input parameters
     */
-   TechnologyFlowStep(const technology_managerRef _TM, const target_deviceRef target,
+   TechnologyFlowStep(const technology_managerRef _TM, const generic_deviceRef target,
                       const DesignFlowManagerConstRef design_flow_manager,
                       const TechnologyFlowStep_Type technology_flow_step_type, const ParameterConstRef parameters);
 

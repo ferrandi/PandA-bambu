@@ -38,9 +38,6 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-
-/// Autoheader
-#include "config_HAVE_BEAGLE.hpp"
 #include "config_HAVE_COIN_OR.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FLOPOCO.hpp"
@@ -55,106 +52,49 @@
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 #include "config_PANDA_LIB_INSTALLDIR.hpp"
 #include "config_SKIP_WARNING_SECTIONS.hpp"
-
-/// algorithms/clique_covering
 #include "clique_covering.hpp"
-
-/// constants include
 #include "allocation_constants.hpp"
 #include "constants.hpp"
-
 #if HAVE_HOST_PROFILING_BUILT
-/// frontend_flow/behavior_analysis
 #include "host_profiling.hpp"
 #endif
-
-/// HLS/binding/module
 #include "cdfc_module_binding.hpp"
-
-/// HLS/evaluation include
 #include "evaluation.hpp"
-
-/// HLS/memory include
 #include "memory_allocation.hpp"
-
-/// HLS/scheduling include
 #include "parametric_list_based.hpp"
 #if HAVE_ILP_BUILT
 #include "sdc_scheduling.hpp"
 #endif
-
 #if HAVE_ILP_BUILT
-/// ilp includes
 #include "meilp_solver.hpp"
 #endif
-
-/// tree include
 #include "tree_helper.hpp"
-
-/// Header include
 #include "BambuParameter.hpp"
-
-/// creation of the target architecture
 #include "chaining.hpp"
 #include "datapath_creator.hpp"
-
-#if HAVE_BEAGLE
-#if SKIP_WARNING_SECTIONS
-#pragma GCC diagnostic ignored "-Wshadow"
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#pragma GCC diagnostic ignored "-Wconversion"
-#pragma GCC diagnostic ignored "-Woverloaded-virtual"
-#pragma GCC diagnostic ignored "-Wtype-limits"
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-#pragma GCC diagnostic ignored "-Wextra"
-#pragma GCC diagnostic ignored "-Wignored-qualifiers"
-#pragma GCC diagnostic ignored "-Wsign-compare"
-#pragma GCC diagnostic ignored "-Wsign-promo"
-#endif
-#include "FitnessFunction.hpp"
-#include "dse_hls.hpp"
-#endif
-
-/// Constant option include
 #include "constant_strings.hpp"
-
-/// STD include
 #include <cstdlib>
 #include <cstring>
 #include <iosfwd>
 #include <string>
-
-/// STL includes
 #include <algorithm>
 #include <list>
 #include <vector>
-
-/// Technology include
+#include "generic_device.hpp"
 #include "language_writer.hpp"
 #include "parse_technology.hpp"
-#include "target_device.hpp"
 #include "technology_manager.hpp"
-
-/// technology/physical_library
 #include "technology_node.hpp"
-
-/// Utility include
 #include <getopt.h>
-
 #include <boost/lexical_cast.hpp>
 #include <filesystem>
-
 #include "compiler_constants.hpp"
 #include "cpu_time.hpp"
 #include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
 #include "string_manipulation.hpp"
 #include "utility.hpp"
-
-/// Wrapper include
 #include "compiler_wrapper.hpp"
-
 #include <regex>
 
 /// Design Space Exploration
@@ -589,8 +529,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                    - CLOCK_SLACK\n"
       << "                    - TIME\n"
       << "\n"
-      << "    --timing-simulation\n"
-      << "        Perform a simulation considering the timing delays.\n\n"
       << "    --timing-violation\n"
       << "        Aborts if synthesized circuit does not meet the timing.\n\n"
 #endif
@@ -841,7 +779,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
    os << "    --pragma-parse\n"
       << "        Perform source code parsing to extract information about pragmas.\n"
       << "        (default=no).\n\n";
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
    os << "    --num-accelerators\n"
       << "        Set the number of physical accelerator instantiated in parallel sections. It must\n"
       << "        be a power of two (default=4).\n\n";
@@ -1033,8 +971,8 @@ int BambuParameter::Exec()
 #if HAVE_EXPERIMENTAL
       {"evaluation-mode", required_argument, nullptr, OPT_EVALUATION_MODE},
       {"timing-simulation", no_argument, nullptr, 0},
-      {"timing-violation", no_argument, nullptr, OPT_TIMING_VIOLATION},
 #endif
+      {"timing-violation", no_argument, nullptr, OPT_TIMING_VIOLATION},
       {"assert-debug", no_argument, nullptr, 0},
       {"device-name", required_argument, nullptr, OPT_DEVICE_NAME},
       {"clock-period", required_argument, nullptr, OPT_PERIOD_CLOCK},
@@ -1121,7 +1059,7 @@ int BambuParameter::Exec()
       {"fp-format", optional_argument, nullptr, OPT_FP_FORMAT},
       {"fp-format-propagate", optional_argument, nullptr, OPT_FP_FORMAT_PROPAGATE},
       {"fp-format-interface", optional_argument, nullptr, OPT_FP_FORMAT_INTERFACE},
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
       {"num-accelerators", required_argument, nullptr, OPT_NUM_ACCELERATORS},
       {"context_switch", optional_argument, nullptr, OPT_INPUT_CONTEXT_SWITCH},
 #endif
@@ -1294,13 +1232,11 @@ int BambuParameter::Exec()
             }
             break;
          }
-#if HAVE_EXPERIMENTAL
          case OPT_TIMING_VIOLATION:
          {
             setOption(OPT_timing_violation_abort, true);
             break;
          }
-#endif
          // parameter based function constraints
          case 'C':
          {
@@ -1998,7 +1934,7 @@ int BambuParameter::Exec()
             setOption(OPT_fp_format_interface, true);
             break;
          }
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
          case OPT_NUM_ACCELERATORS:
          {
             auto num_acc = boost::lexical_cast<unsigned>(std::string(optarg));
@@ -2322,13 +2258,6 @@ int BambuParameter::Exec()
                }
                break;
             }
-#if HAVE_EXPERIMENTAL
-            if(strcmp(long_options[option_index].name, "timing-simulation") == 0)
-            {
-               setOption(OPT_timing_simulation, true);
-               break;
-            }
-#endif
             if(strcmp(long_options[option_index].name, "assert-debug") == 0)
             {
                setOption(OPT_assert_debug, true);
@@ -3483,7 +3412,7 @@ void BambuParameter::CheckParameters()
       add_bambu_library("hls-div" + getOption<std::string>(OPT_hls_div));
    }
    add_bambu_library("hls-cdiv");
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
    if(getOption<bool>(OPT_parse_pragma))
    {
       if(isOption(OPT_context_switch))
@@ -3834,14 +3763,11 @@ void BambuParameter::SetDefaults()
    setOption(OPT_xilinx_root, "/opt/Xilinx");
 
    /// -- Module Synthesis -- //
-   setOption(OPT_rtl, true); /// the resulting specification will be a RTL description
    setOption("device_name", "xc7z020");
    setOption("device_speed", "-1");
    setOption("device_package", "clg484");
    setOption("device_synthesis_tool", "VVD");
-   setOption(OPT_timing_simulation, false);
    setOption(OPT_timing_violation_abort, false);
-   setOption(OPT_target_device_type, static_cast<int>(TargetDevice_Type::FPGA));
    setOption(OPT_export_core, false);
    setOption(OPT_connect_iob, false);
 
@@ -3858,7 +3784,6 @@ void BambuParameter::SetDefaults()
    setOption(OPT_gcc_openmp_simd, 0);
    setOption(OPT_gcc_optimization_set, CompilerWrapper_OptimizationSet::OBAMBU);
    setOption(OPT_gcc_include_sysdir, false);
-   setOption(OPT_model_costs, false);
 
    std::string defines;
    if(isOption(OPT_gcc_defines))
@@ -3905,7 +3830,7 @@ void BambuParameter::SetDefaults()
 #if HAVE_TASTE
    setOption(OPT_generate_taste_architecture, false);
 #endif
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
    setOption(OPT_num_accelerators, 4);
 #endif
    setOption(OPT_memory_banks_number, 1);

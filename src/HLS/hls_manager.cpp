@@ -50,7 +50,7 @@
 #include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
-#include "hls_target.hpp"
+#include "hls_device.hpp"
 #include "memory.hpp"
 #include "op_graph.hpp"
 #include "polixml.hpp"
@@ -67,9 +67,9 @@
 #endif
 #define MAX_BITWIDTH_SIZE 4096
 
-HLS_manager::HLS_manager(const ParameterConstRef _Param, const HLS_targetRef _HLS_T)
+HLS_manager::HLS_manager(const ParameterConstRef _Param, const HLS_deviceRef _HLS_D)
     : application_manager(FunctionExpanderConstRef(new FunctionExpander()), false, _Param),
-      HLS_T(_HLS_T),
+      HLS_D(_HLS_D),
       memory_version(1),
       base_address(0),
       HLS_execution_time(0)
@@ -105,9 +105,9 @@ hlsRef HLS_manager::get_HLS(unsigned int funId) const
    return hlsMap.find(funId)->second;
 }
 
-HLS_targetRef HLS_manager::get_HLS_target() const
+HLS_deviceRef HLS_manager::get_HLS_device() const
 {
-   return HLS_T;
+   return HLS_D;
 }
 
 hlsRef HLS_manager::create_HLS(const HLS_managerRef HLSMgr, unsigned int functionId)
@@ -129,7 +129,7 @@ hlsRef HLS_manager::create_HLS(const HLS_managerRef HLSMgr, unsigned int functio
          }
       }
       HLSMgr->hlsMap[functionId] =
-          hlsRef(new hls(HLSMgr->get_parameter(), functionId, Operations, HLSMgr->get_HLS_target(), HLS_C));
+          hlsRef(new hls(HLSMgr->get_parameter(), functionId, Operations, HLSMgr->get_HLS_device(), HLS_C));
       if(HLSMgr->design_interface_constraints.find(functionId) != HLSMgr->design_interface_constraints.end())
       {
          const auto& function_design_interface_constraints =
@@ -227,7 +227,7 @@ const BackendFlowRef HLS_manager::get_backend_flow()
 {
    if(!back_flow)
    {
-      back_flow = BackendFlow::CreateFlow(Param, "Synthesis", HLS_T);
+      back_flow = BackendFlow::CreateFlow(Param, "Synthesis", HLS_D);
    }
    return back_flow;
 }
@@ -299,8 +299,8 @@ bool HLS_manager::IsSingleWriteMemory() const
    {
       return true;
    }
-   return get_HLS_target() and get_HLS_target()->get_target_device()->has_parameter("is_single_write_memory") and
-          get_HLS_target()->get_target_device()->get_parameter<std::string>("is_single_write_memory") == "1";
+   return get_HLS_device() and get_HLS_device()->has_parameter("is_single_write_memory") and
+          get_HLS_device()->get_parameter<std::string>("is_single_write_memory") == "1";
 }
 
 unsigned int HLS_manager::GetMemVersion() const

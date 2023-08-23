@@ -54,18 +54,16 @@
  */
 //@{
 // parameters
-REF_FORWARD_DECL(area_model);
+REF_FORWARD_DECL(area_info);
 CONSTREF_FORWARD_DECL(Parameter);
-REF_FORWARD_DECL(target_device);
-REF_FORWARD_DECL(target_manager);
-REF_FORWARD_DECL(target_technology);
+REF_FORWARD_DECL(generic_device);
 REF_FORWARD_DECL(technology_manager);
 REF_FORWARD_DECL(technology_node);
 REF_FORWARD_DECL(library_manager);
 REF_FORWARD_DECL(language_writer);
 REF_FORWARD_DECL(structural_object);
 REF_FORWARD_DECL(structural_manager);
-REF_FORWARD_DECL(time_model);
+REF_FORWARD_DECL(time_info);
 class xml_element;
 class module;
 //@}
@@ -83,10 +81,10 @@ class RTLCharacterization : public FunctionalUnitStep
    const CustomSet<std::string> cells;
 
    /// The area model of the last characterization
-   area_modelRef prev_area_characterization;
+   area_infoRef prev_area_characterization;
 
    /// The time model of the last characterization
-   time_modelRef prev_timing_characterization;
+   time_infoRef prev_timing_characterization;
 
 #ifndef NDEBUG
    /// True if we are performing dummy synthesis
@@ -113,12 +111,12 @@ class RTLCharacterization : public FunctionalUnitStep
    /**
     * Generate the output file
     */
-   void xwrite_device_file(const target_deviceRef device);
+   void xwrite_device_file();
 
    /**
     * Add the characterization to the output file
     */
-   void xwrite_characterization(const target_deviceRef device, xml_element* nodeRoot);
+   void xwrite_characterization(xml_element* nodeRoot);
 
    /// set of units completed with success
    CustomOrderedSet<std::string> completed;
@@ -178,12 +176,12 @@ class RTLCharacterization : public FunctionalUnitStep
  public:
    /**
     * Constructor
-    * @param target is the target
-    * @param component is the component to be characterized
+    * @param _device is the device
+    * @param _cells is the component to be characterized
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   RTLCharacterization(const target_managerRef target, const std::string& _cells,
+   RTLCharacterization(const generic_deviceRef _device, const std::string& _cells,
                        const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**

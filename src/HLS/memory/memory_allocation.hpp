@@ -138,7 +138,7 @@ class memory_allocation : public HLS_step
    void setup_memory_allocation();
 
    /**
-    * Performs a final analysis of the memory allocation to finalize the datastructure
+    * Performs a final analysis of the memory allocation to finalize the data-structure
     */
    void finalize_memory_allocation();
 

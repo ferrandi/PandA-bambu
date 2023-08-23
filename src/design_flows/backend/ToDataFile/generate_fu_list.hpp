@@ -40,14 +40,11 @@
 #ifndef GENERATE_FU_LIST_HPP
 #define GENERATE_FU_LIST_HPP
 
-/// Superclass include
 #include "functional_unit_step.hpp"
+#include "refcount.hpp"
 #include "to_data_file_step.hpp"
 
-/// utility include
-#include "refcount.hpp"
-
-REF_FORWARD_DECL(target_manager);
+REF_FORWARD_DECL(generic_device);
 
 class GenerateFuList : public ToDataFileStep, public FunctionalUnitStep
 {
@@ -67,11 +64,11 @@ class GenerateFuList : public ToDataFileStep, public FunctionalUnitStep
  public:
    /**
     * The constructor
-    * @param target is the target manager
+    * @param _device is the device
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   GenerateFuList(const target_managerRef target, const DesignFlowManagerConstRef design_flow_manager,
+   GenerateFuList(const generic_deviceRef _device, const DesignFlowManagerConstRef design_flow_manager,
                   const ParameterConstRef parameters);
 
    /**

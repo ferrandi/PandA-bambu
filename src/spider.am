@@ -40,10 +40,6 @@ if BUILD_LIB_REGRESSORS
       -I$(top_srcdir)/src/algorithms/regressors/preprocessing
 endif
 
-if BUILD_LIBERTY_PARSER
-   spider_CPPFLAGS += \
-      -I$(top_srcdir)/src/technology/physical_library/models
-endif
 
 if BUILD_LIB_CODE_ESTIMATION
    spider_CPPFLAGS += \
@@ -54,10 +50,7 @@ endif
 if BUILD_LIB_TECHNOLOGY
    spider_CPPFLAGS += \
       -I$(top_srcdir)/src/design_flows/technology \
-      -I$(top_srcdir)/src/technology \
-      -I$(top_srcdir)/src/technology/physical_library \
-      -I$(top_srcdir)/src/technology/target_device \
-      -I$(top_srcdir)/src/technology/target_technology
+      -I$(top_srcdir)/src/technology
 endif
 
 lib_spider_la_LIBADD += \

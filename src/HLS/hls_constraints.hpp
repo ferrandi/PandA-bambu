@@ -58,7 +58,7 @@
 
 REF_FORWARD_DECL(HLS_constraints);
 CONSTREF_FORWARD_DECL(Parameter);
-REF_FORWARD_DECL(target_device);
+REF_FORWARD_DECL(generic_device);
 class xml_element;
 
 /// macro used to convert the functional unit name and the library in an unique string.

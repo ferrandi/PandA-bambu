@@ -42,7 +42,6 @@
  */
 #include "application_frontend_flow_step.hpp"
 
-#include "config_HAVE_BAMBU_BUILT.hpp"          // for HAVE_BAMBU_BUILT
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"    // for HAVE_FROM_PRA...
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp" // for HAVE_HOST_PRO...
 #include "config_HAVE_ILP_BUILT.hpp"            // for HAVE_ILP_BUILT
@@ -72,151 +71,95 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
    switch(frontend_flow_step_type)
    {
       case ADD_BB_ECFG_EDGES:
-#if HAVE_BAMBU_BUILT
       case ADD_ARTIFICIAL_CALL_FLOW_EDGES:
-#endif
       case ADD_OP_EXIT_FLOW_EDGES:
       case ADD_OP_LOOP_FLOW_EDGES:
-#if HAVE_BAMBU_BUILT
       case ADD_OP_PHI_FLOW_EDGES:
-#endif
       case BASIC_BLOCKS_CFG_COMPUTATION:
       case BB_CONTROL_DEPENDENCE_COMPUTATION:
       case BB_FEEDBACK_EDGES_IDENTIFICATION:
       case BB_ORDER_COMPUTATION:
       case BB_REACHABILITY_COMPUTATION:
-#if HAVE_BAMBU_BUILT
       case BIT_VALUE:
       case BIT_VALUE_OPT:
       case BITVALUE_RANGE:
-#endif
       case BLOCK_FIX:
       case BUILD_VIRTUAL_PHI:
       case CALL_EXPR_FIX:
-#if HAVE_BAMBU_BUILT
       case CALL_GRAPH_BUILTIN_CALL:
-#endif
       case CHECK_SYSTEM_TYPE:
       case COMPLETE_BB_GRAPH:
-#if HAVE_BAMBU_BUILT
       case COMPUTE_IMPLICIT_CALLS:
       case COMMUTATIVE_EXPR_RESTRUCTURING:
       case COND_EXPR_RESTRUCTURING:
       case CSE_STEP:
-#endif
-#if HAVE_BAMBU_BUILT
       case DEAD_CODE_ELIMINATION:
-#endif
-#if HAVE_BAMBU_BUILT
       case DETERMINE_MEMORY_ACCESSES:
-#endif
       case DOM_POST_DOM_COMPUTATION:
-#if HAVE_BAMBU_BUILT
       case ESSA:
       case(FANOUT_OPT):
       case MULTIPLE_ENTRY_IF_REDUCTION:
-#endif
-#if HAVE_BAMBU_BUILT
       case EXTRACT_GIMPLE_COND_OP:
-#endif
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
       case EXTRACT_OMP_ATOMIC:
       case EXTRACT_OMP_FOR:
 #endif
-#if HAVE_BAMBU_BUILT
       case EXTRACT_PATTERNS:
       case FIX_STRUCTS_PASSED_BY_VALUE:
       case FIX_VDEF:
       case FUNCTION_CALL_TYPE_CLEANUP:
       case FUNCTION_CALL_OPT:
-#endif
-#if HAVE_BAMBU_BUILT
       case HDL_VAR_DECL_FIX:
-#endif
-#if HAVE_BAMBU_BUILT
       case HLS_DIV_CG_EXT:
       case HWCALL_INJECTION:
       case IR_LOWERING:
-#endif
       case LOOP_COMPUTATION:
-#if HAVE_BAMBU_BUILT
       case LOOPS_ANALYSIS_BAMBU:
-#endif
       case LOOPS_COMPUTATION:
-#if HAVE_BAMBU_BUILT
       case LUT_TRANSFORMATION:
-#endif
-#if HAVE_BAMBU_BUILT
       case MULTI_WAY_IF:
       case NI_SSA_LIVENESS:
-#endif
       case OP_CONTROL_DEPENDENCE_COMPUTATION:
       case OP_FEEDBACK_EDGES_IDENTIFICATION:
       case OP_ORDER_COMPUTATION:
       case OP_REACHABILITY_COMPUTATION:
       case OPERATIONS_CFG_COMPUTATION:
       case PARM2SSA:
-#if HAVE_BAMBU_BUILT
       case PARM_DECL_TAKEN_ADDRESS:
       case PHI_OPT:
-#endif
-#if HAVE_BAMBU_BUILT
       case PREDICATE_STATEMENTS:
-#endif
-#if HAVE_BAMBU_BUILT
       case REBUILD_INITIALIZATION:
       case REBUILD_INITIALIZATION2:
-#endif
-#if HAVE_BAMBU_BUILT
       case REMOVE_CLOBBER_GA:
-#endif
-#if HAVE_BAMBU_BUILT
       case REMOVE_ENDING_IF:
-#endif
       case SCALAR_SSA_DATA_FLOW_ANALYSIS:
-#if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_ILP_BUILT
       case SDC_CODE_MOTION:
 #endif
-#if HAVE_BAMBU_BUILT
       case SERIALIZE_MUTUAL_EXCLUSIONS:
-#endif
-#if HAVE_BAMBU_BUILT
       case SPLIT_RETURN:
       case SHORT_CIRCUIT_TAF:
       case SIMPLE_CODE_MOTION:
       case SOFT_FLOAT_CG_EXT:
-#endif
       case SWITCH_FIX:
-#if HAVE_BAMBU_BUILT
       case UN_COMPARISON_LOWERING:
-#endif
-#if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_ILP_BUILT
       case UPDATE_SCHEDULE:
 #endif
-#if HAVE_BAMBU_BUILT
       case UNROLLING_DEGREE:
-#endif
       case USE_COUNTING:
       case VAR_ANALYSIS:
       case VAR_DECL_FIX:
-#if HAVE_BAMBU_BUILT
       case VECTORIZE:
-#endif
-#if HAVE_BAMBU_BUILT
       case VERIFICATION_OPERATION:
-#endif
       case VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS:
-#if HAVE_BAMBU_BUILT
       case VIRTUAL_PHI_NODES_SPLIT:
-#endif
       {
          return SymbolicApplicationFrontendFlowStep::ComputeSignature(frontend_flow_step_type);
       }
-#if HAVE_BAMBU_BUILT
       case(BAMBU_FRONTEND_FLOW):
       case BIT_VALUE_IPA:
       case INTERFACE_INFER:
-#endif
 #if HAVE_HOST_PROFILING_BUILT
       case BASIC_BLOCKS_PROFILING:
 #endif
@@ -225,16 +168,10 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case CREATE_ADDRESS_TRANSLATION:
 #endif
       case(CREATE_TREE_MANAGER):
-#if HAVE_BAMBU_BUILT
       case DEAD_CODE_ELIMINATION_IPA:
-#endif
-#if HAVE_BAMBU_BUILT
       case FIND_MAX_TRANSFORMATIONS:
-#endif
       case(FUNCTION_ANALYSIS):
-#if HAVE_BAMBU_BUILT
       case HDL_FUNCTION_DECL_FIX:
-#endif
 #if HAVE_HOST_PROFILING_BUILT
       case(HOST_PROFILING):
 #endif
@@ -244,9 +181,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_FROM_PRAGMA_BUILT
       case(PRAGMA_SUBSTITUTION):
 #endif
-#if HAVE_BAMBU_BUILT
       case RANGE_ANALYSIS:
-#endif
       case(STRING_CST_FIX):
       case(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP):
       {

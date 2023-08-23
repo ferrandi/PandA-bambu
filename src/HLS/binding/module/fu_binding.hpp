@@ -105,7 +105,7 @@ class fu_binding
    /// allocation manager. Used to retrieve the string name of the functional units.
    AllocationInformationRef allocation_information;
 
-   /// information about the tree datastructure
+   /// information about the tree data-structure
    const tree_managerConstRef TreeM;
 
    /// The operation graph

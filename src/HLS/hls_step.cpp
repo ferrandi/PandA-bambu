@@ -61,10 +61,10 @@
 
 /// HLS include
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_flow_step_factory.hpp"
 #include "hls_function_step.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 
 /// HLS/memory include
 #include "memory.hpp"
@@ -173,10 +173,6 @@ std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type)
          return "DominatorFunctionAllocation";
       case HLSFlowStep_Type::DRY_RUN_EVALUATION:
          return "DryRunEvaluation";
-#if HAVE_BEAGLE
-      case HLSFlowStep_Type::DSE_DESIGN_FLOW:
-         return "DseDesignFlow";
-#endif
       case HLSFlowStep_Type::EASY_MODULE_BINDING:
          return "EasyModuleBinding";
       case HLSFlowStep_Type::EVALUATION:
@@ -312,8 +308,8 @@ void HLS_step::ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
    const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
    CustomOrderedSet<unsigned int> functions = call_graph_manager->GetReachedBodyFunctions();
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
-   const HLS_targetRef HLS_T = HLSMgr->get_HLS_target();
-   const technology_managerRef TM = HLS_T->get_technology_manager();
+   const HLS_deviceRef HLS_D = HLSMgr->get_HLS_device();
+   const technology_managerRef TM = HLS_D->get_technology_manager();
 
    /// check if __builtin_memcpy has to be synthesized
    if(HLSMgr->Rmem && HLSMgr->Rmem->has_implicit_memcpy())

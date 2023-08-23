@@ -42,18 +42,15 @@
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
 #include "DesignParameters.hpp"
-#include "LUT_model.hpp"
 #include "NanoXploreWrapper.hpp"
 #include "Parameter.hpp"
-#include "area_model.hpp"
-#include "clb_model.hpp"
+#include "area_info.hpp"
 #include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
+#include "generic_device.hpp"
 #include "string_manipulation.hpp"
 #include "synthesis_constants.hpp"
-#include "target_device.hpp"
-#include "target_manager.hpp"
-#include "time_model.hpp"
+#include "time_info.hpp"
 #include "utility.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_script_command.hpp"
@@ -68,8 +65,8 @@
 #define NANOXPLORE_POWER "NANOXPLORE_POWER"
 
 NanoXploreBackendFlow::NanoXploreBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name,
-                                             const target_managerRef _target)
-    : BackendFlow(_Param, _flow_name, _target)
+                                             const generic_deviceRef _device)
+    : BackendFlow(_Param, _flow_name, _device)
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Creating NanoXplore Backend Flow ::.");
@@ -109,7 +106,6 @@ NanoXploreBackendFlow::NanoXploreBackendFlow(const ParameterConstRef _Param, con
    }
    else
    {
-      const target_deviceRef device = target->get_target_device();
       std::string device_string;
       if(device->has_parameter("family"))
       {
@@ -231,18 +227,16 @@ void NanoXploreBackendFlow::CheckSynthesisResults()
    xparse_utilization(report_filename);
 
    THROW_ASSERT(design_values.find(NANOXPLORE_FE) != design_values.end(), "Missing logic elements");
-   area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
+   area_m = area_info::factory(Param);
    area_m->set_area_value(design_values[NANOXPLORE_FE]);
-   auto* area_clb_model = GetPointer<clb_model>(area_m);
-   area_clb_model->set_resource_value(clb_model::FUNCTIONAL_ELEMENTS, design_values[NANOXPLORE_FE]);
-   area_clb_model->set_resource_value(clb_model::SLICE_LUTS, design_values[NANOXPLORE_LUTS]);
-   area_clb_model->set_resource_value(clb_model::REGISTERS, design_values[NANOXPLORE_REGISTERS]);
-   area_clb_model->set_resource_value(clb_model::DSP, design_values[NANOXPLORE_DSP]);
-   area_clb_model->set_resource_value(clb_model::BRAM, design_values[NANOXPLORE_MEM]);
-   area_clb_model->set_resource_value(clb_model::POWER, design_values[NANOXPLORE_POWER]);
+   area_m->set_resource_value(area_info::FUNCTIONAL_ELEMENTS, design_values[NANOXPLORE_FE]);
+   area_m->set_resource_value(area_info::SLICE_LUTS, design_values[NANOXPLORE_LUTS]);
+   area_m->set_resource_value(area_info::REGISTERS, design_values[NANOXPLORE_REGISTERS]);
+   area_m->set_resource_value(area_info::DSP, design_values[NANOXPLORE_DSP]);
+   area_m->set_resource_value(area_info::BRAM, design_values[NANOXPLORE_MEM]);
+   area_m->set_resource_value(area_info::POWER, design_values[NANOXPLORE_POWER]);
 
-   time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
-   auto* lut_m = GetPointer<LUT_model>(time_m);
+   time_m = time_info::factory(Param);
    if(design_values[NANOXPLORE_SLACK] != 0.0)
    {
       auto clk_val = boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]);
@@ -252,11 +246,11 @@ void NanoXploreBackendFlow::CheckSynthesisResults()
       {
          THROW_ERROR("the timing analysis is not consistent with the specified clock period");
       }
-      lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, exec_time);
+      time_m->set_execution_time(exec_time);
    }
    else
    {
-      lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, 0);
+      time_m->set_execution_time(0);
    }
    if((output_level >= OUTPUT_LEVEL_VERY_PEDANTIC ||
        (Param->IsParameter("DumpingTimingReport") && Param->GetParameter<int>("DumpingTimingReport"))) &&
@@ -306,7 +300,6 @@ void NanoXploreBackendFlow::InitDesignParameters()
       xpwr_enabled = true;
    }
    actual_parameters->parameter_values[PARAM_power_optimization] = STR(xpwr_enabled);
-   const auto device = target->get_target_device();
    const auto family = device->get_parameter<std::string>("family");
    const auto device_name = device->get_parameter<std::string>("model");
    const auto package = device->get_parameter<std::string>("package");

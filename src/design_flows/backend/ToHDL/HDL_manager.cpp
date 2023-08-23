@@ -56,8 +56,7 @@
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 
-#include "FPGA_device.hpp"
-#include "target_device.hpp"
+#include "generic_device.hpp"
 
 #if HAVE_FLOPOCO
 #include "flopoco_wrapper.hpp"
@@ -97,7 +96,7 @@
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 
-HDL_manager::HDL_manager(const HLS_managerRef _HLSMgr, const target_deviceRef _device, const structural_managerRef _SM,
+HDL_manager::HDL_manager(const HLS_managerRef _HLSMgr, const generic_deviceRef _device, const structural_managerRef _SM,
                          const ParameterConstRef _parameters)
     : HLSMgr(_HLSMgr),
       device(_device),
@@ -112,7 +111,7 @@ HDL_manager::HDL_manager(const HLS_managerRef _HLSMgr, const target_deviceRef _d
 {
 }
 
-HDL_manager::HDL_manager(const HLS_managerRef _HLSMgr, const target_deviceRef _device,
+HDL_manager::HDL_manager(const HLS_managerRef _HLSMgr, const generic_deviceRef _device,
                          const ParameterConstRef _parameters)
     : HLSMgr(_HLSMgr),
       device(_device),
@@ -714,13 +713,6 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
 
    /// close the interface declaration and start the implementation
    writer->write_module_internal_declaration(cir);
-
-   /// specify the timing annotations to the components
-   if(parameters->getOption<bool>(OPT_timing_simulation))
-   {
-      /// specify timing characterization
-      writer->write_timing_specification(TM, cir);
-   }
 
    if(equation)
    {

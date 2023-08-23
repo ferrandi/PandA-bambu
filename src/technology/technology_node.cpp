@@ -35,46 +35,27 @@
  * @brief Class implementation of the technology node description.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_CIRCUIT_BUILT.hpp"
-#include "config_HAVE_TECHNOLOGY_BUILT.hpp"
-
 #include "technology_node.hpp"
-
-#include "area_model.hpp"
-#include "target_device.hpp"
-#include "time_model.hpp"
-
-#include "clb_model.hpp"
+#include "Parameter.hpp"
+#include "area_info.hpp"
+#include "config_HAVE_CIRCUIT_BUILT.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "exceptions.hpp"
 #include "library_manager.hpp"
-#include "technology_manager.hpp"
-
+#include "polixml.hpp"
+#include "string_manipulation.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
-
-#include "Parameter.hpp"
-#include "exceptions.hpp"
-#include "polixml.hpp"
+#include "technology_manager.hpp"
+#include "time_info.hpp"
 #include "xml_helper.hpp"
-
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include <algorithm>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-
-/// STL include
-#include "custom_set.hpp"
-#include <algorithm>
 #include <list>
 #include <utility>
-
-/// utility include
-#include "string_manipulation.hpp"
 
 simple_indent technology_node::PP('[', ']', 3);
 
@@ -88,8 +69,7 @@ operation::operation() : commutative(false), bounded(true), primary_inputs_regis
 
 operation::~operation() = default;
 
-void operation::xload(const xml_element* Enode, const technology_nodeRef fu, const ParameterConstRef Param,
-                      const target_deviceRef device)
+void operation::xload(const xml_element* Enode, const technology_nodeRef fu, const ParameterConstRef Param)
 {
    THROW_ASSERT(CE_XVM(operation_name, Enode), "An operation must have a name");
    /// name of the operation
@@ -161,11 +141,11 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
    }
 
    /// time characterization
-   time_m = time_model::create_model(device->get_type(), Param);
-   double execution_time = time_model::execution_time_DEFAULT;
-   auto initiation_time = from_strongtype_cast<unsigned int>(time_model::initiation_time_DEFAULT);
-   unsigned int cycles = time_model::cycles_time_DEFAULT;
-   double stage_period = time_model::stage_period_DEFAULT;
+   time_m = time_info::factory(Param);
+   double execution_time = time_info::execution_time_DEFAULT;
+   auto initiation_time = from_strongtype_cast<unsigned int>(time_info::initiation_time_DEFAULT);
+   unsigned int cycles = time_info::cycles_time_DEFAULT;
+   double stage_period = time_info::stage_period_DEFAULT;
    if(CE_XVM(execution_time, Enode))
    {
       LOAD_XVM(execution_time, Enode);
@@ -202,8 +182,6 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
    time_m->set_initiation_time(ii);
    time_m->set_synthesis_dependent(synthesis_dependent);
    time_m->set_stage_period(stage_period);
-   /// timing path
-   double max_delay = 0.0;
    const xml_node::node_list list_int = Enode->get_children();
    for(const auto& iter_int : list_int)
    {
@@ -212,22 +190,10 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
       {
          continue;
       }
-      if(EnodeC->get_name() == "timing_path")
-      {
-         std::string source, target;
-         double delay;
-         LOAD_XVM(source, EnodeC);
-         LOAD_XVM(target, EnodeC);
-         LOAD_XVM(delay, EnodeC);
-         max_delay = std::max(delay, max_delay);
-         time_m->set_execution_time(max_delay, time_model::cycles_time_DEFAULT);
-         time_m->pin_to_pin_delay[source][target] = delay;
-      }
    }
 }
 
-void operation::xwrite(xml_element* rootnode, const technology_nodeRef, const ParameterConstRef,
-                       const TargetDevice_Type /*type*/)
+void operation::xwrite(xml_element* rootnode, const technology_nodeRef, const ParameterConstRef)
 {
    xml_element* Enode = rootnode->add_child_element(get_kind_text());
 
@@ -288,23 +254,23 @@ void operation::xwrite(xml_element* rootnode, const technology_nodeRef, const Pa
    /// timing characterization, if any
    if(time_m)
    {
-      if(time_m->get_cycles() != time_model::cycles_time_DEFAULT)
+      if(time_m->get_cycles() != time_info::cycles_time_DEFAULT)
       {
          unsigned int cycles = time_m->get_cycles();
          WRITE_XVM(cycles, Enode);
       }
-      else if(time_m->get_execution_time() != time_model::execution_time_DEFAULT)
+      else if(time_m->get_execution_time() != time_info::execution_time_DEFAULT)
       {
          double execution_time = time_m->get_execution_time();
          WRITE_XVM(execution_time, Enode);
       }
 
-      if(time_m->get_initiation_time() != time_model::initiation_time_DEFAULT)
+      if(time_m->get_initiation_time() != time_info::initiation_time_DEFAULT)
       {
          auto initiation_time = from_strongtype_cast<unsigned int>(time_m->get_initiation_time());
          WRITE_XVM(initiation_time, Enode);
       }
-      if(time_m->get_stage_period() != time_model::stage_period_DEFAULT)
+      if(time_m->get_stage_period() != time_info::stage_period_DEFAULT)
       {
          double stage_period = time_m->get_stage_period();
          WRITE_XVM(stage_period, Enode);
@@ -319,16 +285,6 @@ void operation::xwrite(xml_element* rootnode, const technology_nodeRef, const Pa
          WRITE_XVM(primary_inputs_registered, Enode);
       }
    }
-}
-
-void operation::lib_write(std::ofstream&, const simple_indentRef)
-{
-   THROW_UNREACHABLE("This function has not to be called");
-}
-
-void operation::lef_write(std::ofstream&, const simple_indentRef)
-{
-   THROW_UNREACHABLE("This function has not to be called");
 }
 
 void operation::print(std::ostream& os) const
@@ -385,12 +341,6 @@ std::string operation::get_type_supported_string() const
       result += supported_type_it->first;
    }
    return result;
-}
-
-std::map<std::string, std::map<std::string, double>> operation::get_pin_to_pin_delay() const
-{
-   THROW_ASSERT(time_m, "timing information not yet specified for operation " + operation_name);
-   return time_m->pin_to_pin_delay;
 }
 
 functional_unit::functional_unit()
@@ -472,10 +422,8 @@ technology_nodeRef functional_unit::get_operation(const std::string& op_name) co
    return i->second;
 }
 
-void functional_unit::xload(const xml_element* Enode, const technology_nodeRef fu, const ParameterConstRef Param,
-                            const target_deviceRef device)
+void functional_unit::xload(const xml_element* Enode, const technology_nodeRef fu, const ParameterConstRef Param)
 {
-   TargetDevice_Type dv_type = device->get_type();
 #ifndef NDEBUG
    auto debug_level = Param->get_class_debug_level(GET_CLASS(*this));
 #endif
@@ -686,7 +634,7 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
       if(EnodeC->get_name() == "operation")
       {
          technology_nodeRef op_curr = technology_nodeRef(new operation);
-         op_curr->xload(EnodeC, fu, Param, device);
+         op_curr->xload(EnodeC, fu, Param);
          add(op_curr);
       }
    }
@@ -698,47 +646,38 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
       add(op_curr);
    }
 
-   area_m = area_model::create_model(dv_type, Param);
+   area_m = area_info::factory(Param);
+   if(attributes.find("area") != attributes.end())
    {
-      /// FPGA technology
-      if(dv_type == TargetDevice_Type::FPGA)
-      {
-         /// area stuff
-         if(attributes.find("area") != attributes.end())
-         {
-            area_m->set_area_value(attributes["area"]->get_content<double>());
-         }
-         auto* clb = GetPointer<clb_model>(area_m);
-         if(attributes.find("REGISTERS") != attributes.end())
-         {
-            clb->set_resource_value(clb_model::REGISTERS, attributes["REGISTERS"]->get_content<double>());
-         }
-         if(attributes.find("SLICE_LUTS") != attributes.end())
-         {
-            clb->set_resource_value(clb_model::SLICE_LUTS, attributes["SLICE_LUTS"]->get_content<double>());
-         }
-         if(attributes.find("SLICE") != attributes.end())
-         {
-            clb->set_resource_value(clb_model::SLICE, attributes["SLICE"]->get_content<double>());
-         }
-         if(attributes.find("LUT_FF_PAIRS") != attributes.end())
-         {
-            clb->set_resource_value(clb_model::LUT_FF_PAIRS, attributes["LUT_FF_PAIRS"]->get_content<double>());
-         }
-         if(attributes.find("DSP") != attributes.end())
-         {
-            clb->set_resource_value(clb_model::DSP, attributes["DSP"]->get_content<double>());
-         }
-         if(attributes.find("BRAM") != attributes.end())
-         {
-            clb->set_resource_value(clb_model::BRAM, attributes["BRAM"]->get_content<double>());
-         }
-      }
+      area_m->set_area_value(attributes["area"]->get_content<double>());
+   }
+   if(attributes.find("REGISTERS") != attributes.end())
+   {
+      area_m->set_resource_value(area_info::REGISTERS, attributes["REGISTERS"]->get_content<double>());
+   }
+   if(attributes.find("SLICE_LUTS") != attributes.end())
+   {
+      area_m->set_resource_value(area_info::SLICE_LUTS, attributes["SLICE_LUTS"]->get_content<double>());
+   }
+   if(attributes.find("SLICE") != attributes.end())
+   {
+      area_m->set_resource_value(area_info::SLICE, attributes["SLICE"]->get_content<double>());
+   }
+   if(attributes.find("LUT_FF_PAIRS") != attributes.end())
+   {
+      area_m->set_resource_value(area_info::LUT_FF_PAIRS, attributes["LUT_FF_PAIRS"]->get_content<double>());
+   }
+   if(attributes.find("DSP") != attributes.end())
+   {
+      area_m->set_resource_value(area_info::DSP, attributes["DSP"]->get_content<double>());
+   }
+   if(attributes.find("BRAM") != attributes.end())
+   {
+      area_m->set_resource_value(area_info::BRAM, attributes["BRAM"]->get_content<double>());
    }
 }
 
-void functional_unit::xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param,
-                             const TargetDevice_Type dv_type)
+void functional_unit::xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param)
 {
    xml_element* xml_name = rootnode->add_child_element("name");
    /// functional unit name
@@ -762,35 +701,35 @@ void functional_unit::xwrite(xml_element* rootnode, const technology_nodeRef tn,
       }
       attributes["area"] =
           attributeRef(new attribute(attribute::FLOAT64, boost::lexical_cast<std::string>(area_value)));
-      /// FPGA
-      auto* clb = GetPointer<clb_model>(area_m);
-      if(clb)
+      if(area_m)
       {
-         if(clb->get_resource_value(clb_model::REGISTERS) != 0.0)
+         if(area_m->get_resource_value(area_info::REGISTERS) != 0.0)
          {
-            attributes["REGISTERS"] = attributeRef(new attribute(
-                attribute::FLOAT64, boost::lexical_cast<std::string>(clb->get_resource_value(clb_model::REGISTERS))));
+            attributes["REGISTERS"] = attributeRef(
+                new attribute(attribute::FLOAT64,
+                              boost::lexical_cast<std::string>(area_m->get_resource_value(area_info::REGISTERS))));
          }
-         if(clb->get_resource_value(clb_model::SLICE_LUTS) != 0.0)
+         if(area_m->get_resource_value(area_info::SLICE_LUTS) != 0.0)
          {
-            attributes["SLICE_LUTS"] = attributeRef(new attribute(
-                attribute::FLOAT64, boost::lexical_cast<std::string>(clb->get_resource_value(clb_model::SLICE_LUTS))));
+            attributes["SLICE_LUTS"] = attributeRef(
+                new attribute(attribute::FLOAT64,
+                              boost::lexical_cast<std::string>(area_m->get_resource_value(area_info::SLICE_LUTS))));
          }
-         if(clb->get_resource_value(clb_model::LUT_FF_PAIRS) != 0.0)
+         if(area_m->get_resource_value(area_info::LUT_FF_PAIRS) != 0.0)
          {
             attributes["LUT_FF_PAIRS"] = attributeRef(
                 new attribute(attribute::FLOAT64,
-                              boost::lexical_cast<std::string>(clb->get_resource_value(clb_model::LUT_FF_PAIRS))));
+                              boost::lexical_cast<std::string>(area_m->get_resource_value(area_info::LUT_FF_PAIRS))));
          }
-         if(clb->get_resource_value(clb_model::DSP) != 0.0)
+         if(area_m->get_resource_value(area_info::DSP) != 0.0)
          {
             attributes["DSP"] = attributeRef(new attribute(
-                attribute::FLOAT64, boost::lexical_cast<std::string>(clb->get_resource_value(clb_model::DSP))));
+                attribute::FLOAT64, boost::lexical_cast<std::string>(area_m->get_resource_value(area_info::DSP))));
          }
-         if(clb->get_resource_value(clb_model::BRAM) != 0.0)
+         if(area_m->get_resource_value(area_info::BRAM) != 0.0)
          {
             attributes["BRAM"] = attributeRef(new attribute(
-                attribute::FLOAT64, boost::lexical_cast<std::string>(clb->get_resource_value(clb_model::BRAM))));
+                attribute::FLOAT64, boost::lexical_cast<std::string>(area_m->get_resource_value(area_info::BRAM))));
          }
       }
    }
@@ -847,7 +786,7 @@ void functional_unit::xwrite(xml_element* rootnode, const technology_nodeRef tn,
    auto it_end = list_of_operation.end();
    for(auto it = list_of_operation.begin(); it != it_end; ++it)
    {
-      GetPointer<operation>(*it)->xwrite(rootnode, tn, Param, dv_type);
+      GetPointer<operation>(*it)->xwrite(rootnode, tn, Param);
    }
 
    /// circuit stuff
@@ -857,27 +796,6 @@ void functional_unit::xwrite(xml_element* rootnode, const technology_nodeRef tn,
       CM->xwrite(rootnode, tn);
    }
 #endif
-}
-
-void functional_unit::lib_write(std::ofstream& os, const simple_indentRef _PP)
-{
-   (*_PP)(os, "cell (" + functional_unit_name + ") {\n\n");
-
-   (*_PP)(os, "#area characterization\n");
-   (*_PP)(os, "area               	: " + boost::lexical_cast<std::string>(area_m->get_area_value()) + "\n");
-   (*_PP)(os, "\n");
-
-   (*_PP)(os, "#power characterization\n");
-   (*_PP)(os, "\n");
-
-   (*_PP)(os, "#pin-to-pin timing characterization\n");
-   (*_PP)(os, "\n");
-
-   (*_PP)(os, "}\n\n");
-}
-
-void functional_unit::lef_write(std::ofstream&, const simple_indentRef)
-{
 }
 
 functional_unit_template::functional_unit_template() : FU(new functional_unit), no_constant_characterization(false)
@@ -890,7 +808,7 @@ functional_unit_template::functional_unit_template(const xml_nodeRef XML_descrip
 }
 
 void functional_unit_template::xload(const xml_element* Enode, const technology_nodeRef tnd,
-                                     const ParameterConstRef Param, const target_deviceRef device)
+                                     const ParameterConstRef Param)
 {
    const xml_node::node_list list_int = Enode->get_children();
    for(const auto& iter_int : list_int)
@@ -965,11 +883,11 @@ void functional_unit_template::xload(const xml_element* Enode, const technology_
          no_constant_characterization = true;
       }
    }
-   FU->xload(Enode, tnd, Param, device);
+   FU->xload(Enode, tnd, Param);
 }
 
 void functional_unit_template::xwrite(xml_element* rootnode, const technology_nodeRef tnd,
-                                      const ParameterConstRef Param, TargetDevice_Type type)
+                                      const ParameterConstRef Param)
 {
    if(specialized != "")
    {
@@ -1005,17 +923,7 @@ void functional_unit_template::xwrite(xml_element* rootnode, const technology_no
    {
       rootnode->add_child_element(GET_CLASS_NAME(no_constant_characterization));
    }
-   FU->xwrite(rootnode, tnd, Param, type);
-}
-
-void functional_unit_template::lib_write(std::ofstream&, const simple_indentRef)
-{
-   THROW_UNREACHABLE("This function has not to be called");
-}
-
-void functional_unit_template::lef_write(std::ofstream&, const simple_indentRef)
-{
-   THROW_UNREACHABLE("This function has not to be called");
+   FU->xwrite(rootnode, tnd, Param);
 }
 
 void functional_unit_template::print(std::ostream& os) const

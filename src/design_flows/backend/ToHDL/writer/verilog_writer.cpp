@@ -57,7 +57,7 @@
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 #include "testbench_generation_constants.hpp"
-#include "time_model.hpp"
+#include "time_info.hpp"
 
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
@@ -2235,75 +2235,6 @@ bool verilog_writer::check_keyword(const std::string& id) const
 bool verilog_writer::check_keyword_verilog(const std::string& id)
 {
    return keywords.count(id);
-}
-
-void verilog_writer::write_timing_specification(const technology_managerConstRef TM, const structural_objectRef& circ)
-{
-   auto* mod_inst = GetPointer<module>(circ);
-   if(mod_inst->get_internal_objects_size() > 0)
-   {
-      return;
-   }
-   const NP_functionalityRef& np = mod_inst->get_NP_functionality();
-   if(np && (np->exist_NP_functionality(NP_functionality::FSM) or np->exist_NP_functionality(NP_functionality::FSM_CS)))
-   {
-      return;
-   }
-
-   std::string library = TM->get_library(circ->get_typeRef()->id_type);
-   const technology_nodeRef& fu = TM->get_fu(circ->get_typeRef()->id_type, library);
-
-   if(!GetPointer<functional_unit>(fu))
-   {
-      return;
-   }
-
-   indented_output_stream->Append("\n");
-   write_comment("Timing annotations\n");
-   indented_output_stream->Append("specify\n");
-   indented_output_stream->Indent();
-   const functional_unit::operation_vec& ops = GetPointer<functional_unit>(fu)->get_operations();
-   for(unsigned int i = 0; i < ops.size(); i++)
-   {
-      std::map<std::string, std::map<std::string, double>> delays =
-          GetPointer<operation>(ops[i])->get_pin_to_pin_delay();
-      if(delays.size() == 0)
-      {
-         for(unsigned int out = 0; out < mod_inst->get_out_port_size(); out++)
-         {
-            for(unsigned int in = 0; in < mod_inst->get_in_port_size(); in++)
-            {
-               if(ops.size() > 1)
-               {
-                  indented_output_stream->Append("if (sel_" + GetPointer<operation>(ops[i])->operation_name +
-                                                 " == 1'b1) ");
-               }
-               THROW_ASSERT(GetPointer<operation>(ops[i])->time_m,
-                            "the operation has not any timing information associated with");
-               indented_output_stream->Append(
-                   "(" + mod_inst->get_in_port(in)->get_id() + " *> " + mod_inst->get_out_port(out)->get_id() +
-                   ") = " + STR(GetPointer<operation>(ops[i])->time_m->get_execution_time()) + ";\n");
-            }
-         }
-      }
-      else
-      {
-         for(auto& delay : delays)
-         {
-            for(auto o = delay.second.begin(); o != delay.second.end(); ++o)
-            {
-               if(ops.size() > 1)
-               {
-                  indented_output_stream->Append("if (sel_" + GetPointer<operation>(ops[i])->operation_name +
-                                                 " == 1'b1) ");
-               }
-               indented_output_stream->Append("(" + delay.first + " *> " + o->first + ") = " + STR(o->second) + ";\n");
-            }
-         }
-      }
-   }
-   indented_output_stream->Deindent();
-   indented_output_stream->Append("endspecify\n\n");
 }
 
 void verilog_writer::write_header()

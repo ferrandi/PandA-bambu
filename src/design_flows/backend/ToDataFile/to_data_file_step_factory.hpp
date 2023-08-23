@@ -41,38 +41,25 @@
 #ifndef TO_DATA_FILE_STEP_FACTORY_HPP
 #define TO_DATA_FILE_STEP_FACTORY_HPP
 
-/// Autoheader include
-#include "config_HAVE_CIRCUIT_BUILT.hpp"
-
-/// Superclass include
 #include "design_flow_step_factory.hpp"
-
-/// utility include
 #include "refcount.hpp"
 
 REF_FORWARD_DECL(DesignFlowStep);
-REF_FORWARD_DECL(target_manager);
+REF_FORWARD_DECL(generic_device);
 
 class ToDataFileStepFactory : public DesignFlowStepFactory
 {
- private:
-#if HAVE_CIRCUIT_BUILT
-   /// The target device
-   const target_managerRef target;
-#endif
+   const generic_deviceRef device;
 
  public:
    /**
     * Constructor
-    * @param target is the target device
+    * @param _device is the device
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   ToDataFileStepFactory(
-#if HAVE_CIRCUIT_BUILT
-       const target_managerRef target,
-#endif
-       const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   ToDataFileStepFactory(const generic_deviceRef _device, const DesignFlowManagerConstRef design_flow_manager,
+                         const ParameterConstRef parameters);
 
    /**
     * Destructor

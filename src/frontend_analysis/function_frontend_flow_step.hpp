@@ -45,8 +45,6 @@
 #ifndef FUNCTION_FRONTEND_FLOW_STEP_HPP
 #define FUNCTION_FRONTEND_FLOW_STEP_HPP
 
-#include "config_HAVE_BAMBU_BUILT.hpp" // for HAVE_BAMBU_BUILT
-
 #include "design_flow_step.hpp"   // for DesignFlowStep_S...
 #include "frontend_flow_step.hpp" // for FrontendFlowStep...
 #include "refcount.hpp"           // for REF_FORWARD_DECL
@@ -56,7 +54,6 @@ REF_FORWARD_DECL(ArchManager);
 CONSTREF_FORWARD_DECL(DesignFlowManager);
 REF_FORWARD_DECL(FunctionBehavior);
 
-#if HAVE_BAMBU_BUILT
 /**
  * Enum class used to specify if a statement can be moved
  */
@@ -66,7 +63,6 @@ enum class FunctionFrontendFlowStep_Movable
    TIMING,    /**< Operation cannot be moved because of timing */
    MOVABLE    /**< Operation can be moved */
 };
-#endif
 
 class FunctionFrontendFlowStep : public FrontendFlowStep
 {

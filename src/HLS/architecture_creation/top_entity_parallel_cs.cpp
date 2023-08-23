@@ -42,8 +42,8 @@
 #include "behavioral_helper.hpp"
 #include "copyrights_strings.hpp"
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "loop.hpp"
 #include "loops.hpp"
 #include "memory.hpp"
@@ -156,10 +156,10 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating datapath object");
    std::string parallel_controller_model = "__controller_parallel";
    std::string parallel_controller_name = "__controller_parallel";
-   std::string par_ctrl_library = HLS->HLS_T->get_technology_manager()->get_library(parallel_controller_model);
+   std::string par_ctrl_library = HLS->HLS_D->get_technology_manager()->get_library(parallel_controller_model);
    structural_objectRef controller_circuit =
        SM->add_module_from_technology_library(parallel_controller_name, parallel_controller_model, par_ctrl_library,
-                                              circuit, HLS->HLS_T->get_technology_manager());
+                                              circuit, HLS->HLS_D->get_technology_manager());
    controller_circuit->set_owner(circuit);
    auto loopBW = BW_loop_iter(circuit);
    resize_controller_parallel(controller_circuit, loopBW);
@@ -220,7 +220,7 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
                                     parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) ==
                                         HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR))
    {
-      const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
+      const technology_managerRef TM = HLS->HLS_D->get_technology_manager();
       std::string delay_unit;
       auto reset_type = parameters->getOption<std::string>(OPT_reset_type);
       if(reset_type == "sync")

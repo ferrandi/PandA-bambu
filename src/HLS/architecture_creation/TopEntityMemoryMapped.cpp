@@ -46,8 +46,8 @@
 #include "fu_binding.hpp"
 #include "functions.hpp"
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "memory.hpp"
 #include "memory_allocation.hpp"
 #include "memory_cs.hpp"
@@ -243,8 +243,8 @@ void TopEntityMemoryMapped::insertMemoryMappedRegister(structural_managerRef SM_
       const auto component_name = multi_channel_bus ? MEMORY_MAPPED_REGISTERN_FU : MEMORY_MAPPED_REGISTER_FU;
       const auto memoryMappedRegister =
           SM_mm->add_module_from_technology_library("mm_register_" + signalName, component_name,
-                                                    HLS->HLS_T->get_technology_manager()->get_library(component_name),
-                                                    interfaceObj, HLS->HLS_T->get_technology_manager());
+                                                    HLS->HLS_D->get_technology_manager()->get_library(component_name),
+                                                    interfaceObj, HLS->HLS_D->get_technology_manager());
       if(multi_channel_bus)
       {
          resizing_IO(GetPointerS<module>(memoryMappedRegister), _channels_number);
@@ -268,8 +268,8 @@ void TopEntityMemoryMapped::insertMemoryMappedRegister(structural_managerRef SM_
       {
          // insert wDataMux
          const auto pMux = SM_mm->add_module_from_technology_library(
-             "pMux_" + signalName, MUX_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(MUX_GATE_STD),
-             interfaceObj, HLS->HLS_T->get_technology_manager());
+             "pMux_" + signalName, MUX_GATE_STD, HLS->HLS_D->get_technology_manager()->get_library(MUX_GATE_STD),
+             interfaceObj, HLS->HLS_D->get_technology_manager());
 
          const auto pMuxIn1 = pMux->find_member("in1", port_o_K, pMux);
          GetPointerS<port_o>(pMuxIn1)->type_resize(STD_GET_SIZE(port_out1->get_typeRef()));
@@ -301,8 +301,8 @@ void TopEntityMemoryMapped::insertMemoryMappedRegister(structural_managerRef SM_
       const auto component_name = multi_channel_bus ? RETURN_MM_REGISTERN_FU : RETURN_MM_REGISTER_FU;
       const auto returnRegister =
           SM_mm->add_module_from_technology_library("mm_register_" + STR(RETURN_PORT_NAME), component_name,
-                                                    HLS->HLS_T->get_technology_manager()->get_library(component_name),
-                                                    interfaceObj, HLS->HLS_T->get_technology_manager());
+                                                    HLS->HLS_D->get_technology_manager()->get_library(component_name),
+                                                    interfaceObj, HLS->HLS_D->get_technology_manager());
       if(multi_channel_bus)
       {
          resizing_IO(GetPointer<module>(returnRegister), _channels_number);
@@ -346,8 +346,8 @@ void TopEntityMemoryMapped::insertStartDoneLogic(structural_managerRef SM_mm, st
    if(if_start_port)
    {
       const auto merge_start = SM_mm->add_module_from_technology_library(
-          "merge_start", OR_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD), interfaceObj,
-          HLS->HLS_T->get_technology_manager());
+          "merge_start", OR_GATE_STD, HLS->HLS_D->get_technology_manager()->get_library(OR_GATE_STD), interfaceObj,
+          HLS->HLS_D->get_technology_manager());
       const auto merge_in = merge_start->find_member("in", port_o_K, merge_start);
       const auto merge_in_port = GetPointer<port_o>(merge_in);
       merge_in_port->add_n_ports(2, merge_in);
@@ -376,8 +376,8 @@ void TopEntityMemoryMapped::insertStartDoneLogic(structural_managerRef SM_mm, st
       const auto multi_channel_bus = _channels_type == MemoryAllocation_ChannelsType::MEM_ACC_NN;
       const auto component_name = multi_channel_bus ? NOTYFY_CALLER_MINIMALN_FU : NOTYFY_CALLER_MINIMAL_FU;
       const auto notifyCaller = SM_mm->add_module_from_technology_library(
-          "notifyCaller", component_name, HLS->HLS_T->get_technology_manager()->get_library(component_name),
-          interfaceObj, HLS->HLS_T->get_technology_manager());
+          "notifyCaller", component_name, HLS->HLS_D->get_technology_manager()->get_library(component_name),
+          interfaceObj, HLS->HLS_D->get_technology_manager());
       if(multi_channel_bus)
       {
          resizing_IO(GetPointerS<module>(notifyCaller), _channels_number);
@@ -409,8 +409,8 @@ void TopEntityMemoryMapped::insertStatusRegister(structural_managerRef SM_mm, st
       return multi_channel_bus ? STATUS_REGISTER_NO_NOTIFIEDN_FU : STATUS_REGISTER_NO_NOTIFIED_FU;
    }();
    const auto statusRegister = SM_mm->add_module_from_technology_library(
-       "StatusRegister", status_reg_name, HLS->HLS_T->get_technology_manager()->get_library(status_reg_name),
-       interfaceObj, HLS->HLS_T->get_technology_manager());
+       "StatusRegister", status_reg_name, HLS->HLS_D->get_technology_manager()->get_library(status_reg_name),
+       interfaceObj, HLS->HLS_D->get_technology_manager());
    if(multi_channel_bus)
    {
       resizing_IO(GetPointer<module>(statusRegister), _channels_number);

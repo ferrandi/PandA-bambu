@@ -45,9 +45,9 @@
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "memory.hpp"
 #include "technology_manager.hpp"
 #include "tree_helper.hpp"
@@ -149,8 +149,8 @@ void HLSFunctionStep::ComputeRelationships(DesignFlowStepSet& design_flow_step_s
    const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
    const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
-   const HLS_targetRef HLS_T = HLSMgr->get_HLS_target();
-   const technology_managerRef TM = HLS_T->get_technology_manager();
+   const HLS_deviceRef HLS_D = HLSMgr->get_HLS_device();
+   const technology_managerRef TM = HLS_D->get_technology_manager();
 
    const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
        steps_to_be_created = ComputeHLSRelationships(relationship_type);

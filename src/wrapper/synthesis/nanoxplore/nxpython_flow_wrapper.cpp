@@ -55,7 +55,7 @@
 
 // constructor
 nxpython_flow_wrapper::nxpython_flow_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir,
-                                             const target_deviceRef& _device)
+                                             const generic_deviceRef& _device)
     : NanoXploreWrapper(_Param, NXPYTHON_FLOW_TOOL_EXEC, _device, _output_dir, NXPYTHON_FLOW_TOOL_ID)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the nxpython_flow wrapper...");

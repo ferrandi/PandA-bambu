@@ -115,10 +115,6 @@ void language_writer::write_header()
 {
 }
 
-void language_writer::write_timing_specification(const technology_managerConstRef, const structural_objectRef&)
-{
-}
-
 const std::string language_writer::WriteString() const
 {
    return indented_output_stream->WriteString();

@@ -42,8 +42,6 @@
 #ifndef _DESIGN_PARAMETERS_HPP_
 #define _DESIGN_PARAMETERS_HPP_
 
-#include "config_HAVE_DESIGN_COMPILER.hpp"
-
 #include "custom_map.hpp"
 #include <string>
 

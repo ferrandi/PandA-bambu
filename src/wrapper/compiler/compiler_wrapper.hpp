@@ -48,7 +48,6 @@
 
 /// Autoheader include
 #include "config_HAVE_ARM_COMPILER.hpp"
-#include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_FROM_RTL_BUILT.hpp"
 #include "config_HAVE_SPARC_COMPILER.hpp"
 
@@ -74,20 +73,18 @@ REF_FORWARD_DECL(tree_manager);
 /// Possible optimization sets
 enum class CompilerWrapper_OptimizationSet
 {
-   O0,    /**< -O0 */
-   O1,    /**< -O1 */
-   O2,    /**< -O2 */
-   O3,    /**< -O3 */
-   O4,    /**< -O4 */
-   O5,    /**< -O5 */
-   Og,    /**< -Og */
-   Os,    /**< -Os */
-   Oz,    /**< -Oz */
-   Ofast, /**< -Ofast */
-#if HAVE_BAMBU_BUILT
+   O0,     /**< -O0 */
+   O1,     /**< -O1 */
+   O2,     /**< -O2 */
+   O3,     /**< -O3 */
+   O4,     /**< -O4 */
+   O5,     /**< -O5 */
+   Og,     /**< -Og */
+   Os,     /**< -Os */
+   Oz,     /**< -Oz */
+   Ofast,  /**< -Ofast */
    OBAMBU, /**< Bambu optimizationss + OPT_compiler_opt_level */
    OSF,    /**< Bambu optimizations for soft float: O3 + -finline-limit=10000 */
-#endif
 };
 
 /**
@@ -257,7 +254,6 @@ class CompilerWrapper
     */
    void InitializeCompilerParameters();
 
-#if HAVE_BAMBU_BUILT
    /**
     * Analyze the command line options
     */
@@ -267,14 +263,11 @@ class CompilerWrapper
     * Set the default options for the frontend compiler
     */
    void SetCompilerDefault();
-#endif
 
-#if HAVE_BAMBU_BUILT
    /**
     * Set the default options for the frontend compiler in bambu
     */
    void SetBambuDefault();
-#endif
 
    /**
     * Write the string containing the frontend compiler optimization options

@@ -61,8 +61,8 @@
 /// hls includes
 #include "hls.hpp"
 #include "hls_constraints.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 
 /// hls/module_allocation
 #include "allocation_information.hpp"

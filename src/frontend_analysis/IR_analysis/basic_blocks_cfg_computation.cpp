@@ -43,7 +43,6 @@
 #include "application_manager.hpp"
 #include "basic_block.hpp"
 #include "basic_blocks_graph_constructor.hpp"
-#include "config_HAVE_BAMBU_BUILT.hpp"
 #include "function_behavior.hpp"
 #include "op_graph.hpp"
 #if HAVE_HOST_PROFILING_BUILT
@@ -101,19 +100,15 @@ BasicBlocksCfgComputation::ComputeFrontendRelationships(const DesignFlowStep::Re
       case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(COMPLETE_BB_GRAPH, SAME_FUNCTION));
-#if HAVE_BAMBU_BUILT
          if(parameters->isOption(OPT_writer_language))
          {
             relationships.insert(std::make_pair(HDL_VAR_DECL_FIX, SAME_FUNCTION));
          }
          else
-#endif
          {
             relationships.insert(std::make_pair(VAR_DECL_FIX, SAME_FUNCTION));
          }
-#if HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(EXTRACT_PATTERNS, SAME_FUNCTION));
-#endif
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -122,17 +117,15 @@ BasicBlocksCfgComputation::ComputeFrontendRelationships(const DesignFlowStep::Re
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-#if HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(COND_EXPR_RESTRUCTURING, SAME_FUNCTION));
          relationships.insert(std::make_pair(CSE_STEP, SAME_FUNCTION));
          relationships.insert(std::make_pair(FANOUT_OPT, SAME_FUNCTION));
          relationships.insert(std::make_pair(FUNCTION_CALL_OPT, SAME_FUNCTION));
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
-#if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_ILP_BUILT
          relationships.insert(std::make_pair(SDC_CODE_MOTION, SAME_FUNCTION));
 #endif
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
-#endif
          break;
       }
       default:

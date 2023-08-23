@@ -37,46 +37,27 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-/// Header include
 #include "generate_fu_list.hpp"
-
-///. include
 #include "Parameter.hpp"
-
-/// circuit includes
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
-
-/// design_flows includes
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-
-/// design_flows/technology includes
 #include "technology_flow_step.hpp"
 #include "technology_flow_step_factory.hpp"
-
-/// STD include
 #include <string>
-
-/// STL include
 #include <vector>
-
-/// technology include
 #include "technology_manager.hpp"
-
-/// technology/physical_library includes
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_VERY_PEDANTIC
 #include "library_manager.hpp"
 #include "technology_node.hpp"
-
-/// utility include
 #include "string_manipulation.hpp"
 
-GenerateFuList::GenerateFuList(const target_managerRef _target, const DesignFlowManagerConstRef _design_flow_manager,
+GenerateFuList::GenerateFuList(const generic_deviceRef _device, const DesignFlowManagerConstRef _design_flow_manager,
                                const ParameterConstRef _parameters)
     : DesignFlowStep(_design_flow_manager, _parameters),
       ToDataFileStep(_design_flow_manager, ToDataFileStep_Type::GENERATE_FU_LIST, _parameters),
-      FunctionalUnitStep(_target, _design_flow_manager, _parameters)
+      FunctionalUnitStep(_device, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
    if(parameters->getOption<std::string>(OPT_component_name) != "all")

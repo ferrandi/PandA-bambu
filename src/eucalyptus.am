@@ -22,10 +22,6 @@ eucalyptus_CPPFLAGS = -DPKGLIBDIR="\"$(pkglibdir)\"" -DPKGDATADIR="\"$(pkgdatadi
  -I$(top_srcdir)/src/HLS \
  -I$(top_srcdir)/src/parser/polixml \
  -I$(top_srcdir)/src/technology \
- -I$(top_srcdir)/src/technology/characterization \
- -I$(top_srcdir)/src/technology/physical_library \
- -I$(top_srcdir)/src/technology/target_device \
- -I$(top_srcdir)/src/technology/target_technology \
  -I$(top_srcdir)/src/utility \
  -I$(top_srcdir)/src/wrapper/compiler \
  $(AM_CPPFLAGS)

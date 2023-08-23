@@ -161,22 +161,16 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
    {
       case(ADD_BB_ECFG_EDGES):
          return "AddBbEcfgdges";
-#if HAVE_BAMBU_BUILT
       case ADD_ARTIFICIAL_CALL_FLOW_EDGES:
          return "AddArtificialCallFlowEdges";
-#endif
       case(ADD_OP_EXIT_FLOW_EDGES):
          return "AddOpExitFlowEdges";
       case(ADD_OP_LOOP_FLOW_EDGES):
          return "AddOpLoopFlowEdges";
-#if HAVE_BAMBU_BUILT
       case(ADD_OP_PHI_FLOW_EDGES):
          return "AddOpPhiFlowEdges";
-#endif
-#if HAVE_BAMBU_BUILT
       case(BAMBU_FRONTEND_FLOW):
          return "BambuFrontendFlow";
-#endif
       case(BASIC_BLOCKS_CFG_COMPUTATION):
          return "BasicBlocksCfgComputation";
       case(BB_CONTROL_DEPENDENCE_COMPUTATION):
@@ -191,7 +185,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #endif
       case(BB_REACHABILITY_COMPUTATION):
          return "BBReachabilityComputation";
-#if HAVE_BAMBU_BUILT
       case(BIT_VALUE):
          return "BitValue";
       case(BIT_VALUE_OPT):
@@ -200,24 +193,20 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "BitValueRange";
       case BIT_VALUE_IPA:
          return "BitValueIPA";
-#endif
       case(BLOCK_FIX):
          return "BlockFix";
       case BUILD_VIRTUAL_PHI:
          return "BuildVirtualPhi";
       case(CALL_EXPR_FIX):
          return "CallExprFix";
-#if HAVE_BAMBU_BUILT
       case CALL_GRAPH_BUILTIN_CALL:
          return "CallGraphBuiltinCall";
-#endif
       case(CHECK_SYSTEM_TYPE):
          return "CheckSystemType";
       case(COMPLETE_BB_GRAPH):
          return "CompleteBBGraph";
       case(COMPLETE_CALL_GRAPH):
          return "CompleteCallGraph";
-#if HAVE_BAMBU_BUILT
       case COMPUTE_IMPLICIT_CALLS:
          return "ComputeImplicitCalls";
       case COMMUTATIVE_EXPR_RESTRUCTURING:
@@ -226,56 +215,40 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "CondExprRestructuring";
       case CSE_STEP:
          return "CSE";
-#endif
 #if HAVE_TASTE
       case CREATE_ADDRESS_TRANSLATION:
          return "CreateAddressTranslation";
 #endif
       case(CREATE_TREE_MANAGER):
          return "CreateTreeManager";
-#if HAVE_BAMBU_BUILT
       case(DEAD_CODE_ELIMINATION):
          return "DeadCodeElimination";
       case(DEAD_CODE_ELIMINATION_IPA):
          return "DeadCodeEliminationIPA";
-#endif
-#if HAVE_BAMBU_BUILT
       case(DETERMINE_MEMORY_ACCESSES):
          return "DetermineMemoryAccesses";
-#endif
       case(DOM_POST_DOM_COMPUTATION):
          return "DomPostDomComputation";
-#if HAVE_BAMBU_BUILT
       case(FANOUT_OPT):
          return "FanoutOpt";
       case(MULTIPLE_ENTRY_IF_REDUCTION): // modified here
          return "MultipleEntryIfReduction";
-#endif
-#if HAVE_BAMBU_BUILT
       case ESSA:
          return "eSSA";
-#endif
-#if HAVE_BAMBU_BUILT
       case(EXTRACT_GIMPLE_COND_OP):
          return "ExtractGimpleCondOp";
-#endif
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
       case(EXTRACT_OMP_ATOMIC):
          return "ExtractOmpAtomic";
       case(EXTRACT_OMP_FOR):
          return "ExtractOmpFor";
 #endif
-#if HAVE_BAMBU_BUILT
       case(EXTRACT_PATTERNS):
          return "ExtractPatterns";
-#endif
-#if HAVE_BAMBU_BUILT
       case FIND_MAX_TRANSFORMATIONS:
          return "FindMaxTransformations";
-#endif
       case(FUNCTION_ANALYSIS):
          return "CallGraphComputation";
-#if HAVE_BAMBU_BUILT
       case FIX_STRUCTS_PASSED_BY_VALUE:
          return "FixStructsPassedByValue";
       case FIX_VDEF:
@@ -284,47 +257,34 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "FunctionCallTypeCleanup";
       case FUNCTION_CALL_OPT:
          return "FunctionCallOpt";
-#endif
-#if HAVE_BAMBU_BUILT
       case(HDL_FUNCTION_DECL_FIX):
          return "HDLFunctionDeclFix";
       case(HDL_VAR_DECL_FIX):
          return "HDLVarDeclFix";
-#endif
-#if HAVE_BAMBU_BUILT
       case(HLS_DIV_CG_EXT):
          return "HLSDivCGExt";
       case(HWCALL_INJECTION):
          return "HWCallInjection";
-#endif
 #if HAVE_HOST_PROFILING_BUILT
       case(HOST_PROFILING):
          return "HostProfiling";
 #endif
-#if HAVE_BAMBU_BUILT
       case(INTERFACE_INFER):
          return "InterfaceInfer";
       case(IR_LOWERING):
          return "IrLowering";
-#endif
       case(LOOP_COMPUTATION):
          return "LoopComputation";
-#if HAVE_BAMBU_BUILT
       case(LOOPS_ANALYSIS_BAMBU):
          return "LoopsAnalysisBambu";
-#endif
       case(LOOPS_COMPUTATION):
          return "LoopsComputation";
-#if HAVE_BAMBU_BUILT
       case(LUT_TRANSFORMATION):
          return "LutTransformation";
-#endif
-#if HAVE_BAMBU_BUILT
       case MULTI_WAY_IF:
          return "MultiWayIf";
       case NI_SSA_LIVENESS:
          return "NiSsaLiveness";
-#endif
       case(OP_CONTROL_DEPENDENCE_COMPUTATION):
          return "OpControlDependenceComputation";
       case(OP_FEEDBACK_EDGES_IDENTIFICATION):
@@ -337,48 +297,35 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "OperationsCfgComputation";
       case PARM2SSA:
          return "Parm2SSA";
-#if HAVE_BAMBU_BUILT
       case PARM_DECL_TAKEN_ADDRESS:
          return "ParmDeclTakenAddressFix";
       case PHI_OPT:
          return "PhiOpt";
-#endif
 #if HAVE_FROM_PRAGMA_BUILT
       case(PRAGMA_ANALYSIS):
          return "PragmaAnalysis";
       case(PRAGMA_SUBSTITUTION):
          return "PragmaSubstitution";
 #endif
-#if HAVE_BAMBU_BUILT
       case PREDICATE_STATEMENTS:
          return "PredicateStatements";
-#endif
-#if HAVE_BAMBU_BUILT
       case RANGE_ANALYSIS:
          return "RangeAnalysis";
       case(REBUILD_INITIALIZATION):
          return "RebuildInitialization";
       case(REBUILD_INITIALIZATION2):
          return "RebuildInitialization2";
-#endif
-#if HAVE_BAMBU_BUILT
       case REMOVE_CLOBBER_GA:
          return "RemoveClobberGA";
-#endif
-#if HAVE_BAMBU_BUILT
       case REMOVE_ENDING_IF:
          return "RemoveEndingIf";
-#endif
-#if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_ILP_BUILT
       case SDC_CODE_MOTION:
          return "SdcCodeMotion";
 #endif
-#if HAVE_BAMBU_BUILT
       case SERIALIZE_MUTUAL_EXCLUSIONS:
          return "SerializeMutualExclusions";
-#endif
 
-#if HAVE_BAMBU_BUILT
       case SPLIT_RETURN:
          return "SplitReturn";
       case SHORT_CIRCUIT_TAF:
@@ -387,7 +334,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "SimpleCodeMotion";
       case(SOFT_FLOAT_CG_EXT):
          return "SoftFloatCgExt";
-#endif
       case(SCALAR_SSA_DATA_FLOW_ANALYSIS):
          return "ScalarSsaDataFlowAnalysis";
       case(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP):
@@ -396,15 +342,11 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "StringCstFix";
       case(SWITCH_FIX):
          return "SwitchFix";
-#if HAVE_BAMBU_BUILT
       case UN_COMPARISON_LOWERING:
          return "UnComparisonLowering";
-#endif
-#if HAVE_BAMBU_BUILT
       case(UNROLLING_DEGREE):
          return "UnrollingDegree";
-#endif
-#if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_ILP_BUILT
       case UPDATE_SCHEDULE:
          return "UpdateSchedule";
 #endif
@@ -414,20 +356,14 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "VarAnalysis";
       case(VAR_DECL_FIX):
          return "VarDeclFix";
-#if HAVE_BAMBU_BUILT
       case(VECTORIZE):
          return "Vectorize";
-#endif
-#if HAVE_BAMBU_BUILT
       case(VERIFICATION_OPERATION):
          return "VerificationOperation";
-#endif
       case(VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS):
          return "VirtualAggregateDataFlowAnalysis";
-#if HAVE_BAMBU_BUILT
       case VIRTUAL_PHI_NODES_SPLIT:
          return "VirtualPhiNodesSplit";
-#endif
       default:
          THROW_UNREACHABLE("Frontend flow step type does not exist");
    }

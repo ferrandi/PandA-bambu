@@ -59,7 +59,7 @@ class XilinxTasteBackendFlow : public XilinxBackendFlow
     * @param manager is the target manager
     */
    XilinxTasteBackendFlow(const ParameterConstRef& parameters, const std::string& flow_name,
-                          const target_managerRef& manager);
+                          const generic_deviceRef _device);
 
    /**
     * Generates the synthesis scripts for the specified design

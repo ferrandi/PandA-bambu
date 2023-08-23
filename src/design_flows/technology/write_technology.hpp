@@ -47,7 +47,7 @@
 /// utility include
 #include "refcount.hpp"
 
-REF_FORWARD_DECL(target_device);
+REF_FORWARD_DECL(generic_device);
 REF_FORWARD_DECL(technology_manager);
 
 /**
@@ -70,7 +70,7 @@ class WriteTechnology : public TechnologyFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   WriteTechnology(const technology_managerRef TM, const target_deviceRef target,
+   WriteTechnology(const technology_managerRef TM, const generic_deviceRef target,
                    const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**

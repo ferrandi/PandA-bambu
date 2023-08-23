@@ -46,8 +46,7 @@
  */
 #include "IR_lowering.hpp"
 
-#include "config_HAVE_ASSERTS.hpp"     // for HAVE_ASSERTS
-#include "config_HAVE_BAMBU_BUILT.hpp" // for HAVE_BAMBU_BUILT
+#include "config_HAVE_ASSERTS.hpp" // for HAVE_ASSERTS
 
 #include "Parameter.hpp"                    // for Parameter
 #include "application_manager.hpp"          // for application_manager, app...
@@ -59,15 +58,15 @@
 #include "exceptions.hpp"                   // for THROW_ASSERT, THROW_UNRE...
 #include "graph.hpp"                        // for vertex
 #include "hash_helper.hpp"                  // for hash
+#include "hls_device.hpp"                   // for HLS_device, HLS_deviceRef
 #include "hls_manager.hpp"                  // for HLS_manager
-#include "hls_target.hpp"                   // for HLS_target, HLS_targetRef
 #include "math_function.hpp"                // for floor_log2, exact_log2
 #include "string_manipulation.hpp"          // for STR, GET_CLASS
 #include "technology_flow_step.hpp"         // for TechnologyFlowStep_Type
 #include "technology_flow_step_factory.hpp" // for TechnologyFlowStepFactory
 #include "technology_manager.hpp"           // for LIBRARY_STD_FU, technolo...
 #include "technology_node.hpp"              // for functional_unit, operation
-#include "time_model.hpp"                   // for time_model
+#include "time_info.hpp"                   // for time_info
 #include "tree_basic_block.hpp"             // for bloc
 #include "tree_common.hpp"                  // for plus_expr_K, lshift_expr_K
 #include "tree_helper.hpp"                  // for tree_helper
@@ -1178,17 +1177,15 @@ tree_nodeRef IR_lowering::expand_MC(const tree_nodeRef& op0, const integer_cst* 
       ext_op1 <<= 64 - typeSize;
       ext_op1 >>= 64 - typeSize;
    }
-#if HAVE_BAMBU_BUILT
    if(GetPointer<HLS_manager>(AppM))
    {
-      const HLS_targetRef HLS_T = GetPointer<HLS_manager>(AppM)->get_HLS_target();
+      const HLS_deviceRef HLS_D = GetPointer<HLS_manager>(AppM)->get_HLS_device();
       bool use64bitMul = false;
-      if(HLS_T->get_target_device()->has_parameter("use_soft_64_mul") &&
-         HLS_T->get_target_device()->get_parameter<size_t>("use_soft_64_mul"))
+      if(HLS_D->has_parameter("use_soft_64_mul") && HLS_D->get_parameter<size_t>("use_soft_64_mul"))
       {
          use64bitMul = true;
       }
-      const technology_managerRef TechManager = HLS_T->get_technology_manager();
+      const technology_managerRef TechManager = HLS_D->get_technology_manager();
       auto fu_prec = std::max(8ull, ceil_pow2(data_bitsize));
       if(fu_prec >= 64 && use64bitMul)
       {
@@ -1213,7 +1210,6 @@ tree_nodeRef IR_lowering::expand_MC(const tree_nodeRef& op0, const integer_cst* 
       double add_delay = add_op->time_m->get_execution_time();
       mult_plus_ratio = static_cast<short int>(ceil(mult_delay / add_delay));
    }
-#endif
 
    /// very special case op1 == 0
    if(ext_op1 == 0)

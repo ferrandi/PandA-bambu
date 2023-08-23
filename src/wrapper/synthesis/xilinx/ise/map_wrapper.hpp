@@ -79,7 +79,7 @@ class map_wrapper : public XilinxWrapper
     * Constructor
     * @param Param is the set of parameters
     */
-   map_wrapper(const ParameterConstRef& Param, const std::string& _output_dir, const target_deviceRef& _device);
+   map_wrapper(const ParameterConstRef& Param, const std::string& _output_dir, const generic_deviceRef& _device);
 
    /**
     * Destructor

@@ -35,9 +35,6 @@
  * @brief Class specification of the data structures used to manage technology information.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 #ifndef TECHNOLOGY_NODE_HPP
@@ -49,7 +46,6 @@
 #include "refcount.hpp"
 #include "simple_indent.hpp"
 #include "utility.hpp"
-
 #include <map>
 #include <ostream>
 #include <string>
@@ -74,15 +70,13 @@ REF_FORWARD_DECL(technology_manager);
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(attribute);
 /// RefCount definition of the resource information of the component
-REF_FORWARD_DECL(area_model);
+REF_FORWARD_DECL(area_info);
 /// RefCount definition of the layout information of the component
 REF_FORWARD_DECL(layout_model);
 /// RefCount definition of the timing information of the component
-REF_FORWARD_DECL(time_model);
+REF_FORWARD_DECL(time_info);
 /// RefCount definition of the power information of the component
 REF_FORWARD_DECL(power_model);
-REF_FORWARD_DECL(target_device);
-enum class TargetDevice_Type;
 //@}
 
 /// FPGA modules
@@ -273,8 +267,7 @@ enum tec_kind
 {
    operation_K,
    functional_unit_K,
-   functional_unit_template_K,
-   storage_unit_K
+   functional_unit_template_K
 };
 
 /**
@@ -313,25 +306,13 @@ struct technology_node
     * @param owner is the refcount version of this.
     * @param TM is the technology manager.
     */
-   virtual void xload(const xml_element* Enode, const technology_nodeRef owner, const ParameterConstRef Param,
-                      const target_deviceRef device) = 0;
+   virtual void xload(const xml_element* Enode, const technology_nodeRef owner, const ParameterConstRef Param) = 0;
 
    /**
     * Add a technology_node to an xml tree.
     * @param rootnode is the root node at which the xml representation of the technology node is attached.
     */
-   virtual void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param,
-                       TargetDevice_Type type) = 0;
-
-   /**
-    * Append a technology_node to a liberty file.
-    */
-   virtual void lib_write(std::ofstream& os, const simple_indentRef PP) = 0;
-
-   /**
-    * Append a technology_node to a LEF file.
-    */
-   virtual void lef_write(std::ofstream& os, const simple_indentRef PP) = 0;
+   virtual void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param) = 0;
 
    /**
     * Virtual function that prints the class.
@@ -382,7 +363,7 @@ struct operation : public technology_node
    std::string operation_name;
 
    /// class representing the timing information associated with this operation
-   time_modelRef time_m;
+   time_infoRef time_m;
 
 #if HAVE_EXPERIMENTAL
    /// This variable stores the power information of the component with respect to this operation
@@ -461,30 +442,13 @@ struct operation : public technology_node
     * @param owner is the refcount version of this.
     * @param TM is the technology manager.
     */
-   void xload(const xml_element* Enode, const technology_nodeRef fu, const ParameterConstRef Param,
-              const target_deviceRef device) override;
+   void xload(const xml_element* Enode, const technology_nodeRef fu, const ParameterConstRef Param) override;
 
    /**
     * Add a operation node to an xml tree.
     * @param rootnode is the root node at which the xml representation of the operation is attached.
     */
-   void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param,
-               const TargetDevice_Type type) override;
-
-   /**
-    * Append a technology_node to a liberty file.
-    */
-   void lib_write(std::ofstream& os, const simple_indentRef PP) override;
-
-   /**
-    * Append a technology_node to a LEF file.
-    */
-   void lef_write(std::ofstream& os, const simple_indentRef PP) override;
-
-   /**
-    * Return the datastructure containing the pin-to-pin delay for this operation
-    */
-   std::map<std::string, std::map<std::string, double>> get_pin_to_pin_delay() const;
+   void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param) override;
 
    bool is_bounded() const
    {
@@ -542,12 +506,7 @@ struct functional_unit : public technology_node
    double clock_period_resource_fraction;
 
    /// This variable stores the resource information of the component.
-   area_modelRef area_m;
-
-#if HAVE_EXPERIMENTAL
-   /// layout information of the component.
-   layout_modelRef layout_m;
-#endif
+   area_infoRef area_m;
 
 #if HAVE_CIRCUIT_BUILT
    /// The current structural representation of the component.
@@ -686,25 +645,13 @@ struct functional_unit : public technology_node
     * @param node is a node of the xml tree.
     * @param owner is the refcount version of this.
     */
-   void xload(const xml_element* node, const technology_nodeRef fu, const ParameterConstRef Param,
-              const target_deviceRef device) override;
+   void xload(const xml_element* node, const technology_nodeRef fu, const ParameterConstRef Param) override;
 
    /**
     * Add a functional unit to an xml tree.
     * @param rootnode is the root node at which the xml representation of the functional unit is attached.
     */
-   void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param,
-               const TargetDevice_Type type) override;
-
-   /**
-    * Append a technology_node to a liberty file.
-    */
-   void lib_write(std::ofstream& os, const simple_indentRef PP) override;
-
-   /**
-    * Append a technology_node to a LEF file.
-    */
-   void lef_write(std::ofstream& os, const simple_indentRef PP) override;
+   void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param) override;
 
    /**
     * function that prints the class functional_unit.
@@ -784,25 +731,13 @@ struct functional_unit_template : public technology_node
     * @param node is a node of the xml tree.
     * @param owner is the refcount version of this.
     */
-   void xload(const xml_element* Enode, const technology_nodeRef tnd, const ParameterConstRef Param,
-              const target_deviceRef device) override;
+   void xload(const xml_element* Enode, const technology_nodeRef tnd, const ParameterConstRef Param) override;
 
    /**
     * Add a functional unit to an xml tree.
     * @param rootnode is the root node at which the xml representation of the functional unit is attached.
     */
-   void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param,
-               TargetDevice_Type type) override;
-
-   /**
-    * Append a technology_node to a liberty file.
-    */
-   void lib_write(std::ofstream& os, const simple_indentRef PP) override;
-
-   /**
-    * Append a technology_node to a LEF file.
-    */
-   void lef_write(std::ofstream& os, const simple_indentRef PP) override;
+   void xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param) override;
 
    /**
     * function that prints the class functional_unit.
@@ -819,116 +754,6 @@ struct functional_unit_template : public technology_node
     * Redefinition of get_kind()
     */
    GET_TEC_KIND(functional_unit_template)
-};
-
-/**
- * This class specifies the characteristic of a particular storage unit.
- */
-struct storage_unit : public technology_node
-{
-   /// name of the storage_unit.
-   std::string storage_unit_name;
-
-   double bits;
-
-   double words;
-
-   unsigned int read_ports;
-   double read_latency;
-
-   unsigned int write_ports;
-   double write_latency;
-
-   unsigned int readwrite_ports;
-   double readwrite_latency;
-
-   double area;
-
-#if HAVE_CIRCUIT_BUILT
-   structural_managerRef CM;
-#endif
-
-   /// Constructor
-   storage_unit()
-       : bits(0),
-         words(0),
-         read_ports(0),
-         read_latency(0),
-         write_ports(0),
-         write_latency(0),
-         readwrite_ports(0),
-         readwrite_latency(0),
-         area(0)
-   {
-   }
-
-   /// Destructor
-   ~storage_unit() override = default;
-
-   const std::string& get_name() const override
-   {
-      return storage_unit_name;
-   }
-   /**
-    * Load a storage_unit starting from an xml file.
-    * @param node is a node of the xml tree.
-    * @param owner is the refcount version of this.
-    * @param TM is the technology manager.
-    */
-   void xload(const xml_element*, const technology_nodeRef, const ParameterConstRef, const target_deviceRef) override
-   {
-      abort();
-   }
-
-   /**
-    * Add a storage_unit to an xml tree.
-    * @param rootnode is the root node at which the xml representation of the storage_unit unit is attached.
-    */
-   void xwrite(xml_element*, const technology_nodeRef, const ParameterConstRef, TargetDevice_Type) override
-   {
-      abort();
-   }
-   /**
-    * Append a technology_node to a liberty file.
-    */
-   void lib_write(std::ofstream&, const simple_indentRef) override
-   {
-      abort();
-   }
-   /**
-    * Append a technology_node to a LEF file.
-    */
-   void lef_write(std::ofstream&, const simple_indentRef) override
-   {
-      abort();
-   }
-   /**
-    * function that prints the class storage_unit.
-    * @param os is the output stream.
-    */
-   void print(std::ostream&) const override
-   {
-      abort();
-   }
-
-   /**
-    * Redefinition of get_kind_text()
-    */
-   GET_TEC_KIND_TEXT(storage_unit)
-   /**
-    * Redefinition of get_kind()
-    */
-   GET_TEC_KIND(storage_unit)
-
- private:
-   friend class technology_manager;
-
-   /**
-    * @name default values associated with the members of the functional_unit class.
-    */
-   //@{
-   static const double area_DEFAULT;
-   //@}
 };
 
 #endif

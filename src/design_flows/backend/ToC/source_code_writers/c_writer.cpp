@@ -84,12 +84,10 @@
 #if HAVE_HOST_PROFILING_BUILT
 #include "basic_blocks_profiling_c_writer.hpp"
 #endif
-#if HAVE_BAMBU_BUILT
 #include "discrepancy_analysis_c_writer.hpp"
 #include "discrepancy_instruction_writer.hpp"
 #include "hls_c_writer.hpp"
 #include "hls_instruction_writer.hpp"
-#endif
 
 #include <boost/range/adaptor/reversed.hpp>
 
@@ -188,7 +186,6 @@ CWriterRef CWriter::CreateCWriter(const CBackendInformationConstRef c_backend_in
                                                           indented_output_stream, parameters, verbose));
       }
 #endif
-#if HAVE_BAMBU_BUILT
       case(CBackendInformation::CB_HLS):
       {
          const InstructionWriterRef instruction_writer(
@@ -196,7 +193,6 @@ CWriterRef CWriter::CreateCWriter(const CBackendInformationConstRef c_backend_in
          return CWriterRef(
              new HLSCWriter(c_backend_info, hls_man, instruction_writer, indented_output_stream, parameters, verbose));
       }
-#endif
       case(CBackendInformation::CB_SEQUENTIAL):
       {
          const auto instruction_writer = InstructionWriter::CreateInstructionWriter(
@@ -1325,11 +1321,7 @@ void CWriter::DeclareType(const tree_nodeConstRef& varType, const BehavioralHelp
       locally_declared_types.insert(type_name);
       bool is_system;
       const auto decl = std::get<0>(tree_helper::GetSourcePath(varType, is_system));
-      if(!decl.empty() && decl != "<built-in>" && is_system
-#if HAVE_BAMBU_BUILT
-         && !tree_helper::IsInLibbambu(varType)
-#endif
-      )
+      if(!decl.empty() && decl != "<built-in>" && is_system && !tree_helper::IsInLibbambu(varType))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "<--Type has not to be declared since it is declared in included " + decl);
@@ -1387,11 +1379,7 @@ void CWriter::DeclareVariable(const tree_nodeConstRef& curVar, CustomSet<unsigne
    const auto variable_type = tree_helper::CGetType(curVar);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Type is " + STR(variable_type));
    DeclareType(variable_type, behavioral_helper, locally_declared_types);
-   if(!tree_helper::IsSystemType(curVar)
-#if HAVE_BAMBU_BUILT
-      || tree_helper::IsInLibbambu(curVar)
-#endif
-   )
+   if(!tree_helper::IsSystemType(curVar) || tree_helper::IsInLibbambu(curVar))
    {
       if(verbose)
       {

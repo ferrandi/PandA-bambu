@@ -284,9 +284,7 @@ decl_node::decl_node(unsigned int i)
       packed_flag(false),
       operating_system_flag(false),
       library_system_flag(false),
-#if HAVE_BAMBU_BUILT
       libbambu_flag(false),
-#endif
       C_flag(false),
       uid(0)
 {
@@ -417,11 +415,8 @@ type_node::type_node(unsigned int i)
       qual(TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN),
       algn(0),
       packed_flag(false),
-      system_flag(false)
-#if HAVE_BAMBU_BUILT
-      ,
+      system_flag(false),
       libbambu_flag(false)
-#endif
 {
 }
 

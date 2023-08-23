@@ -49,10 +49,9 @@
 
 #include "refcount.hpp"
 CONSTREF_FORWARD_DECL(Parameter);
-REF_FORWARD_DECL(target_device);
+REF_FORWARD_DECL(generic_device);
 REF_FORWARD_DECL(ToolManager);
-REF_FORWARD_DECL(area_model);
-REF_FORWARD_DECL(time_model);
+REF_FORWARD_DECL(area_info);
 class xml_element;
 
 #include "custom_map.hpp"
@@ -97,7 +96,7 @@ class xst_wrapper : public XilinxWrapper
     * Constructor
     * @param Param is the set of parameters
     */
-   xst_wrapper(const ParameterConstRef& Param, const std::string& _output_dir, const target_deviceRef& _device);
+   xst_wrapper(const ParameterConstRef& Param, const std::string& _output_dir, const generic_deviceRef& _device);
 
    /**
     * Destructor

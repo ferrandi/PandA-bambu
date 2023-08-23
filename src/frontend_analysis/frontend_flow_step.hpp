@@ -45,8 +45,6 @@
 #ifndef FRONTEND_FLOW_STEP_HPP
 #define FRONTEND_FLOW_STEP_HPP
 
-/// Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 #include "config_HAVE_ILP_BUILT.hpp"
@@ -54,17 +52,14 @@
 #include "config_HAVE_RTL_BUILT.hpp"
 #include "config_HAVE_TASTE.hpp"
 
-#include "custom_set.hpp" // for unordered_set
-#include <cstddef>        // for size_t
-#include <string>         // for string
-#include <typeindex>      // for hash
-#include <utility>        // for pair
-
+#include "custom_set.hpp"       // for unordered_set
 #include "design_flow_step.hpp" // for DesignFlowStep
 #include "refcount.hpp"         // for REF_FORWARD_DECL
-
-/// STD include
+#include <cstddef>              // for size_t
 #include <functional>
+#include <string>    // for string
+#include <typeindex> // for hash
+#include <utility>   // for pair
 
 /// Forward declaration
 CONSTREF_FORWARD_DECL(application_manager);
@@ -78,9 +73,7 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
    BASIC_BLOCKS_PROFILING,
 #endif
    CREATE_TREE_MANAGER,
-#if HAVE_BAMBU_BUILT
    FIND_MAX_TRANSFORMATIONS,
-#endif
    FUNCTION_ANALYSIS, //! Creation of the call graph
 #if HAVE_HOST_PROFILING_BUILT
    HOST_PROFILING,
@@ -91,163 +84,103 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
    SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP,
    /// Function frontend flow steps
    ADD_BB_ECFG_EDGES,
-#if HAVE_BAMBU_BUILT
    ADD_ARTIFICIAL_CALL_FLOW_EDGES,
-#endif
    ADD_OP_EXIT_FLOW_EDGES,
    ADD_OP_LOOP_FLOW_EDGES,
-#if HAVE_BAMBU_BUILT
    ADD_OP_PHI_FLOW_EDGES,
-#endif
-#if HAVE_BAMBU_BUILT
    BAMBU_FRONTEND_FLOW,
-#endif
    BASIC_BLOCKS_CFG_COMPUTATION,
    BB_CONTROL_DEPENDENCE_COMPUTATION,
    BB_FEEDBACK_EDGES_IDENTIFICATION,
    BB_ORDER_COMPUTATION,
    BB_REACHABILITY_COMPUTATION,
-#if HAVE_BAMBU_BUILT
    BIT_VALUE,
    BIT_VALUE_OPT,
    BITVALUE_RANGE,
    BIT_VALUE_IPA,
-#endif
    BLOCK_FIX,
    BUILD_VIRTUAL_PHI,
    CALL_EXPR_FIX,
-#if HAVE_BAMBU_BUILT
    CALL_GRAPH_BUILTIN_CALL,
-#endif
    CHECK_SYSTEM_TYPE, //! Set the system flag to variables and types
    COMPLETE_BB_GRAPH,
    COMPLETE_CALL_GRAPH,
-#if HAVE_BAMBU_BUILT
    COMPUTE_IMPLICIT_CALLS,
    COMMUTATIVE_EXPR_RESTRUCTURING,
    COND_EXPR_RESTRUCTURING,
-#endif
 #if HAVE_TASTE
    CREATE_ADDRESS_TRANSLATION,
 #endif
-#if HAVE_BAMBU_BUILT
    CSE_STEP,
-#endif
-#if HAVE_BAMBU_BUILT
    DEAD_CODE_ELIMINATION,
    DEAD_CODE_ELIMINATION_IPA,
-#endif
-#if HAVE_BAMBU_BUILT
    DETERMINE_MEMORY_ACCESSES,
-#endif
    DOM_POST_DOM_COMPUTATION,
-#if HAVE_BAMBU_BUILT
    EXTRACT_GIMPLE_COND_OP,
-#endif
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
    EXTRACT_OMP_ATOMIC,
    EXTRACT_OMP_FOR,
 #endif
-#if HAVE_BAMBU_BUILT
    EXTRACT_PATTERNS,
    FIX_STRUCTS_PASSED_BY_VALUE,
    FUNCTION_CALL_TYPE_CLEANUP,
    FUNCTION_CALL_OPT,
    FANOUT_OPT,
    FIX_VDEF,
-#endif
-#if HAVE_BAMBU_BUILT
    HDL_FUNCTION_DECL_FIX,
    HDL_VAR_DECL_FIX,
-#endif
-#if HAVE_BAMBU_BUILT
    HLS_DIV_CG_EXT,
    HWCALL_INJECTION,
-#endif
-#if HAVE_BAMBU_BUILT
    INTERFACE_INFER,
    IR_LOWERING,
-#endif
    LOOP_COMPUTATION,
-#if HAVE_BAMBU_BUILT
    LOOPS_ANALYSIS_BAMBU,
-#endif
    LOOPS_COMPUTATION,
-#if HAVE_BAMBU_BUILT
    LUT_TRANSFORMATION,
-#endif
-#if HAVE_BAMBU_BUILT
    MULTI_WAY_IF,
    MULTIPLE_ENTRY_IF_REDUCTION,
    NI_SSA_LIVENESS,
-#endif
    OP_CONTROL_DEPENDENCE_COMPUTATION,
    OP_FEEDBACK_EDGES_IDENTIFICATION,
    OP_ORDER_COMPUTATION,
    OP_REACHABILITY_COMPUTATION,
    OPERATIONS_CFG_COMPUTATION,
    PARM2SSA,
-#if HAVE_BAMBU_BUILT
    PARM_DECL_TAKEN_ADDRESS,
    PHI_OPT,
-#endif
 #if HAVE_PRAGMA_BUILT
    PRAGMA_ANALYSIS,
 #endif
-#if HAVE_BAMBU_BUILT
    PREDICATE_STATEMENTS,
-#endif
-#if HAVE_BAMBU_BUILT
    ESSA,
    RANGE_ANALYSIS,
-#endif
-#if HAVE_BAMBU_BUILT
    REBUILD_INITIALIZATION,
    REBUILD_INITIALIZATION2,
-#endif
-#if HAVE_BAMBU_BUILT
    REMOVE_CLOBBER_GA,
-#endif
-#if HAVE_BAMBU_BUILT
    REMOVE_ENDING_IF,
-#endif
    SCALAR_SSA_DATA_FLOW_ANALYSIS,
-#if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_ILP_BUILT
    SDC_CODE_MOTION,
 #endif
-#if HAVE_BAMBU_BUILT
    SERIALIZE_MUTUAL_EXCLUSIONS,
-#endif
-#if HAVE_BAMBU_BUILT
    SPLIT_RETURN,
    SHORT_CIRCUIT_TAF,
    SIMPLE_CODE_MOTION,
    SOFT_FLOAT_CG_EXT,
-#endif
    STRING_CST_FIX,
    SWITCH_FIX,
-#if HAVE_BAMBU_BUILT
    UN_COMPARISON_LOWERING,
-#endif
-#if HAVE_BAMBU_BUILT
    UNROLLING_DEGREE,
-#endif
-#if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_ILP_BUILT
    UPDATE_SCHEDULE,
 #endif
    USE_COUNTING,
    VAR_ANALYSIS,
    VAR_DECL_FIX,
-#if HAVE_BAMBU_BUILT
    VECTORIZE,
-#endif
-#if HAVE_BAMBU_BUILT
    VERIFICATION_OPERATION,
-#endif
    VIRTUAL_AGGREGATE_DATA_FLOW_ANALYSIS,
-#if HAVE_BAMBU_BUILT
    VIRTUAL_PHI_NODES_SPLIT
-#endif
 };
 
 #if NO_ABSEIL_HASH

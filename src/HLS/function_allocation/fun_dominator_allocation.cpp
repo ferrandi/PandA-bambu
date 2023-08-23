@@ -60,8 +60,8 @@
 #include "functions.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "library_manager.hpp"
 #include "op_graph.hpp"
 #include "string_manipulation.hpp"
@@ -141,8 +141,8 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
 {
    already_executed = true;
    const auto CGM = HLSMgr->GetCallGraphManager();
-   const auto HLS_T = HLSMgr->get_HLS_target();
-   const auto TechM = HLS_T->get_technology_manager();
+   const auto HLS_D = HLSMgr->get_HLS_device();
+   const auto TechM = HLS_D->get_technology_manager();
    const auto io_proxies_only =
        parameters->isOption(OPT_disable_function_proxy) && parameters->getOption<bool>(OPT_disable_function_proxy);
 

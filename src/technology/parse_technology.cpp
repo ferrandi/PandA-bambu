@@ -44,33 +44,24 @@
 
 #include "parse_technology.hpp"
 
+#include "Parameter.hpp"
+#include "cpu_time.hpp"
 #include "exceptions.hpp"
 #include "fileIO.hpp"
 #include "library_manager.hpp"
 #include "polixml.hpp"
+#include "string_manipulation.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
+#include "utility.hpp"
 #include "xml_dom_parser.hpp"
-
-#include <iosfwd>
-#include <string>
-
-#include "simple_indent.hpp"
 #include <boost/algorithm/string/trim.hpp>
 #include <filesystem>
-
-#include "Parameter.hpp"
-#include "cpu_time.hpp"
-#include "utility.hpp"
-
-/// STL include
+#include <iosfwd>
+#include <string>
 #include <vector>
 
-/// utility include
-#include "string_manipulation.hpp"
-
-void read_technology_File(const std::string& fn, const technology_managerRef& TM, const ParameterConstRef& Param,
-                          const target_deviceRef& device)
+void read_technology_File(const std::string& fn, const technology_managerRef& TM, const ParameterConstRef& Param)
 {
    try
    {
@@ -80,7 +71,7 @@ void read_technology_File(const std::string& fn, const technology_managerRef& TM
       {
          // Walk the tree:
          const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
-         TM->xload(node, device);
+         TM->xload(node);
 
          std::vector<std::string> input_libraries;
          if(Param->isOption(OPT_input_libraries))
@@ -123,8 +114,7 @@ void read_technology_File(const std::string& fn, const technology_managerRef& TM
    }
 }
 
-void read_technology_library(const technology_managerRef& TM, const ParameterConstRef& Param,
-                             const target_deviceRef& device)
+void read_technology_library(const technology_managerRef& TM, const ParameterConstRef& Param)
 {
 #ifndef NDEBUG
    int debug_level = Param->get_class_debug_level("parse_technology");
@@ -146,7 +136,7 @@ void read_technology_library(const technology_managerRef& TM, const ParameterCon
          LibraryName = SplittedLibs[i];
          long xmlTime;
          START_TIME(xmlTime);
-         read_technology_File(SplittedLibs[i], TM, Param, device);
+         read_technology_File(SplittedLibs[i], TM, Param);
          STOP_TIME(xmlTime);
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                        "(koala) Read the XML technology library file \"" + LibraryName + "\" in " +
@@ -155,32 +145,13 @@ void read_technology_library(const technology_managerRef& TM, const ParameterCon
    }
 }
 
-void write_technology_File(unsigned int type, const std::string&, const technology_managerRef&, TargetDevice_Type,
-                           const CustomOrderedSet<std::string>&)
-{
-   if((type & technology_manager::XML) != 0)
-   {
-      THROW_UNREACHABLE("Unexpected case");
-   }
-}
-
-#if HAVE_EXPERIMENTAL
-void write_technology_File(unsigned int type, const std::string& f, library_manager* LM, TargetDevice_Type dv_type)
-{
-   if((type & technology_manager::XML) != 0)
-   {
-      write_xml_technology_File(f + ".xml", LM, dv_type);
-   }
-}
-#endif
-
-void write_xml_technology_File(const std::string& f, library_manager* LM, TargetDevice_Type dv_type)
+void write_xml_technology_File(const std::string& f, library_manager* LM)
 {
    try
    {
       xml_document document;
       xml_element* nodeRoot = document.create_root_node("technology");
-      LM->xwrite(nodeRoot, dv_type);
+      LM->xwrite(nodeRoot);
       document.write_to_file_formatted(f);
       LM->set_info(library_manager::XML, f);
    }

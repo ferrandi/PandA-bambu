@@ -55,8 +55,8 @@
 #include "language_writer.hpp"
 
 /// HLS includes
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 
 /// tree includes
 #include "behavioral_helper.hpp"
@@ -95,7 +95,7 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
 
    /// Preload backend names
    const auto hdl_writer = language_writer::create_writer(
-       hdl_writer_type, GetPointer<HLS_manager>(AppM)->get_HLS_target()->get_technology_manager(), parameters);
+       hdl_writer_type, GetPointer<HLS_manager>(AppM)->get_HLS_device()->get_technology_manager(), parameters);
    const auto hdl_reserved_names = hdl_writer->GetHDLReservedNames();
    already_examinated_names.insert(hdl_reserved_names.begin(), hdl_reserved_names.end());
 

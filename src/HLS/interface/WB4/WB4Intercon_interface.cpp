@@ -43,8 +43,8 @@
 #include "copyrights_strings.hpp"
 #include "fileIO.hpp"
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "memory.hpp"
 #include "string_manipulation.hpp"
 #include "structural_manager.hpp"
@@ -199,7 +199,7 @@ static void buildCircuit(structural_managerRef SM, structural_objectRef wrappedO
    const tree_managerRef TM = HLSMgr->get_tree_manager();
 
    structural_objectRef interconnect = SM->add_module_from_technology_library(
-       "intercon", WB4_INTERCON, WBLIBRARY, interfaceObj, HLS->HLS_T->get_technology_manager());
+       "intercon", WB4_INTERCON, WBLIBRARY, interfaceObj, HLS->HLS_D->get_technology_manager());
 
    auto* interconModule = GetPointer<module>(interconnect);
    unsigned int interconPortsNumber = interconModule->get_num_ports();
@@ -272,7 +272,7 @@ static void buildCircuit(structural_managerRef SM, structural_objectRef wrappedO
       baseAddressFile << std::bitset<8 * sizeof(unsigned int)>(HLSMgr->Rmem->get_first_address(itr)) << '\n'
                       << std::bitset<8 * sizeof(unsigned int)>(HLSMgr->Rmem->get_last_address(itr, HLSMgr)) << '\n';
       structural_objectRef additionalTop = SM->add_module_from_technology_library(
-          functionName, moduleName, WORK_LIBRARY, interfaceObj, HLS->HLS_T->get_technology_manager());
+          functionName, moduleName, WORK_LIBRARY, interfaceObj, HLS->HLS_D->get_technology_manager());
 
       std::string acceleratorBaseAddress = STR(WB_BASE_ADDRESS) + "_" + functionName;
       additionalTop->SetParameter(acceleratorBaseAddress, topModuleBaseAddress + " + " + acceleratorBaseAddress);

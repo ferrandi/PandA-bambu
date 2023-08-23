@@ -70,7 +70,7 @@ class nxpython_flow_wrapper : public NanoXploreWrapper
     * @param Param is the set of parameters
     */
    nxpython_flow_wrapper(const ParameterConstRef& Param, const std::string& _output_dir,
-                         const target_deviceRef& _device);
+                         const generic_deviceRef& _device);
 
    /**
     * Destructor

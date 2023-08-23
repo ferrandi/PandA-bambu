@@ -32,8 +32,6 @@ lib_simulation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/parser/polixml \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper/flopoco \

@@ -440,7 +440,7 @@ if test "x$panda_USE_BAMBU" = xyes; then
   panda_USE_SYNTHESIS_TOOL=yes;
 
   #characterization requires to configure at least one synthesis toolchain
-  if test "x$panda_USE_GENERIC_BASHBACKEND" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes; then
+  if test "x$panda_USE_GENERIC_BASHBACKEND" = xyes; then
     AC_APPEND(ENABLE_DOC,"EUCALYPTUS")
     panda_USE_EUCALYPTUS=yes;
   fi
@@ -468,8 +468,6 @@ if test "x$panda_USE_BAMBU" = xyes; then
   fi
 
   AC_APPEND(ENABLE_DOC,"BAMBU")
-  AC_DEFINE(HAVE_BAMBU_BUILT, 1, "Define if bambu is built")
-
 fi
 AM_CONDITIONAL(BUILD_BAMBU,       test "x$panda_USE_BAMBU" = xyes)
 AM_CONDITIONAL(BUILD_PTAA,        test "x$panda_USE_LIBBDD" = xyes)
@@ -511,10 +509,6 @@ if test "x$panda_USE_SPIDER" = xyes; then
      panda_USE_LIB_REGRESSORS=yes;
      panda_USE_SOURCE_CODE_STATISTICS_XML=yes;
      panda_USE_LIB_TREE=yes;
-     if test "x$panda_USE_LIB_FROM_LIBERTY" = xyes; then
-        panda_USE_LIB_FROM_BOOLEAN=yes;
-        panda_USE_LIB_TECHNOLOGY=yes;
-     fi
   fi
 fi
 AM_CONDITIONAL(BUILD_SPIDER,      test "x$panda_USE_SPIDER" = xyes)
@@ -660,7 +654,7 @@ if test "x$panda_USE_LIB_TARGET_PROFILING" != xyes && test "x$panda_USE_LIB_COMP
    panda_USE_LIB_COMPARE_MODELS=no;
 fi
 
-if (test "x$panda_USE_LIB_HLS" = xyes && (test "x$panda_USE_GENERIC_BASHBACKEND" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes)) then
+if (test "x$panda_USE_LIB_HLS" = xyes && (test "x$panda_USE_GENERIC_BASHBACKEND" = xyes)) then
    panda_USE_LIB_RTL_CHARACTERIZATION=yes;
 fi
 
@@ -679,7 +673,7 @@ if test "x$panda_USE_LIB_CODE_ESTIMATION" = xyes && test "x$panda_USE_LIB_FROM_C
    panda_USE_LIB_HOST_PROFILING=yes;
 fi
 
-if test "x$panda_USE_SYNTHESIS_TOOL" = xyes || test "x$panda_USE_CORE_TOOLS" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes || test "x$panda_USE_GENERIC_BASHBACKEND" = xyes; then
+if test "x$panda_USE_SYNTHESIS_TOOL" = xyes || test "x$panda_USE_CORE_TOOLS" = xyes || test "x$panda_USE_GENERIC_BASHBACKEND" = xyes; then
    panda_USE_LIB_SYNTHESIS_WRAPPER=yes;
 fi
 
@@ -855,12 +849,6 @@ if test "x$panda_USE_SPARC_ELF_GCC" = xyes; then
 fi
 
 
-################################# Synthesis tools ##############################
-if test "x$panda_USE_DESIGN_COMPILER" = xyes; then
-  AC_CHECK_DC
-fi
-
-
 ################################## TSIM stuff ##################################
 if test "x$panda_USE_TSIM" = xyes; then
   AC_CHECK_TSIM
@@ -887,19 +875,6 @@ if test ! -d ext ; then
    mkdir ext;
 fi
 
-
-############################### OpenBeagle stuff ###############################
-if test "x$panda_USE_BEAGLE" = xyes; then
-   AC_APPEND(ENABLE_DOC,"BEAGLE")
-   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/beagle $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'"
-   if test $? != 0; then
-      AC_MSG_ERROR("Error in beagle configuration")
-   fi
-   AC_DEFINE(HAVE_BEAGLE, 1, "Define if beagle is used")
-   BEAGLE_DIR="$TOPSRCDIR/ext/beagle"
-fi
-AC_SUBST(BEAGLE_DIR)
-AM_CONDITIONAL(BUILD_BEAGLE, test "x$panda_USE_BEAGLE" = xyes)
 
 ################################## ARM Check ###################################
 if test "x$panda_USE_ARM_GCC" = xyes; then
@@ -1060,17 +1035,6 @@ AC_SUBST(LAPACK_LIBS)
 AM_CONDITIONAL(BUILD_COIN_OR, test "x$panda_USE_COIN_OR" = xyes)
 
 
-################################# Liberty stuff ################################
-if test "x$panda_USE_LIB_FROM_LIBERTY" = xyes; then
-   $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/liberty_parser $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'"
-   if test $? != 0; then
-      AC_MSG_ERROR("Error in liberty parser configuration")
-   fi
-   AC_DEFINE(HAVE_FROM_LIBERTY, 1, "Define if liberty parser is used")
-fi
-AM_CONDITIONAL(BUILD_LIBERTY_PARSER, test "x$panda_USE_LIB_FROM_LIBERTY" = xyes)
-
-
 ################################# TASTE ################################
 if test "x$panda_USE_TASTE" = xyes; then
    AC_DEFINE(HAVE_TASTE, 1, "Define if TASTE has to be used")
@@ -1172,9 +1136,9 @@ AC_SUBST(VFLIB_DIR)
 
 
 #################################### Ext Libraries #############################
-if test test "x$ac_cv_cxx_compile_cxx17_native" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_gxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx1z" = xyes || "x$panda_USE_ABSEIL" = xyes || test "x$panda_USE_BEAGLE" = xyes || test "x$panda_USE_COIN_OR" = xyes || test "x$panda_USE_CROSSTOOL_NG" = xyes || test "x$panda_USE_FLOPOCO" = xyes || test "x$panda_USE_LIB_FROM_LIBERTY" = xyes || test "x$panda_USE_LP_SOLVE" = xyes || test "x$panda_USE_NODELIB" = xyes || test "x$panda_USE_R" = xyes || test "x$panda_USE_RAPIDMINER" = xyes || test "x$panda_USE_SIMIT" = xyes || test "x$panda_USE_VFLIB" = xyes || test "x$build_ARM_GCC" || test "x$build_SPARC_GCC" = xyes || test "x$panda_USE_TRNG" = xyes; then
+if test test "x$ac_cv_cxx_compile_cxx17_native" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_gxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx1z" = xyes || "x$panda_USE_ABSEIL" = xyes || test "x$panda_USE_COIN_OR" = xyes || test "x$panda_USE_CROSSTOOL_NG" = xyes || test "x$panda_USE_FLOPOCO" = xyes || test test "x$panda_USE_LP_SOLVE" = xyes || test "x$panda_USE_NODELIB" = xyes || test "x$panda_USE_R" = xyes || test "x$panda_USE_RAPIDMINER" = xyes || test "x$panda_USE_SIMIT" = xyes || test "x$panda_USE_VFLIB" = xyes || test "x$build_ARM_GCC" || test "x$build_SPARC_GCC" = xyes || test "x$panda_USE_TRNG" = xyes; then
   panda_USE_LIB_EXT=yes;
-fi
+fi 
 AM_CONDITIONAL(BUILD_EXT, test "x$panda_USE_LIB_EXT" = xyes)
 
 
@@ -1490,7 +1454,6 @@ AM_CONDITIONAL(BUILD_LIB_GRAPH,  test "x$panda_USE_LIB_GRAPH" = xyes)
 #################################### HLS/backend ###############################
 
 ############### Bambu ##########################################################
-AM_CONDITIONAL(BUILD_DSE,   test "x$panda_USE_BAMBU" = xyes && test "x$panda_USE_BEAGLE" = xyes)
 
 ################ HLS stuff #########################
 if test "x$panda_USE_LIB_HLS" = xyes; then
@@ -1753,7 +1716,7 @@ fi
 AM_CONDITIONAL(BUILD_LIB_VCD_PARSER, test "x$panda_USE_LIB_VCD_PARSER" = xyes)
 
 ################ parser stuff #########################
-if test "x$panda_USE_FROM_C" = xyes || test "x$panda_USE_LIB_FROM_ESTIMATION" = xyes || test "x$panda_USE_LIB_FROM_TGFF" = xyes || test "x$panda_USE_LIB_FROM_PRAGMA" = xyes || test "x$panda_USE_LIB_HLS" = xyes || test "x$panda_USE_LIB_FROM_BENCH" = xyes || test "x$panda_USE_LIB_EDIF" = xyes || test "x$panda_USE_LIB_FROM_ARCH" = xyes || test "x$panda_USE_LIB_POLIXML" = xyes || test "x$panda_USE_LIB_LIBERTY" = xyes || test "x$panda_USE_LIB_FROM_BOOLEAN" = xyes || test "x$panda_USE_LIB_FROM_RTL" = xyes || test "x$panda_USE_LIB_FROM_DEEP_PROFILING" = xyes || test "x$panda_USE_LIB_VCD_PARSER" = xyes; then
+if test "x$panda_USE_FROM_C" = xyes || test "x$panda_USE_LIB_FROM_ESTIMATION" = xyes || test "x$panda_USE_LIB_FROM_TGFF" = xyes || test "x$panda_USE_LIB_FROM_PRAGMA" = xyes || test "x$panda_USE_LIB_HLS" = xyes || test "x$panda_USE_LIB_FROM_BENCH" = xyes || test "x$panda_USE_LIB_EDIF" = xyes || test "x$panda_USE_LIB_FROM_ARCH" = xyes || test "x$panda_USE_LIB_POLIXML" = xyes || test "x$panda_USE_LIB_FROM_BOOLEAN" = xyes || test "x$panda_USE_LIB_FROM_RTL" = xyes || test "x$panda_USE_LIB_FROM_DEEP_PROFILING" = xyes || test "x$panda_USE_LIB_VCD_PARSER" = xyes; then
    panda_USE_LIB_PARSER=yes;
 fi
 
@@ -1923,11 +1886,6 @@ AM_CONDITIONAL(BUILD_LIB_UTILITY,  test "x$panda_USE_LIB_UTILITY" = xyes)
 ################ Synthesis stuff #########################
 AM_CONDITIONAL(BUILD_SYNTHESIS, test "x$panda_USE_LIB_SYNTHESIS_WRAPPER" = xyes)
 
-
-################ Design Compiler stuff #####################
-if test "x$panda_USE_DESIGN_COMPILER" = xyes; then
-  AC_DEFINE(HAVE_DESIGN_COMPILER, 1, "Define if Synopsys Design Compiler is correctly configured")
-fi
 
 ################ Check for simulation ########################
 if test "x$panda_USE_LIB_SIMULATION_WRAPPER" = xyes; then

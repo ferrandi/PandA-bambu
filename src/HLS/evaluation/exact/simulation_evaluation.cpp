@@ -37,36 +37,18 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "simulation_evaluation.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// HLS include
-#include "hls_manager.hpp"
-
-// include from HLS/simulation
 #include "SimulationInformation.hpp"
-
-/// STD include
-#include <string>
-
-/// STL include
+#include "SimulationTool.hpp"
 #include "custom_set.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "hls_manager.hpp"
+#include "utility.hpp"
+#include <string>
 #include <tuple>
 #include <vector>
-
-/// technology/physical_library/models includes
-#include "time_model.hpp"
-
-// include from wrapper/simulation
-#include "SimulationTool.hpp"
-
-/// utility includes
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
-#include "utility.hpp"
 
 SimulationEvaluation::SimulationEvaluation(const ParameterConstRef _Param, const HLS_managerRef _hls_mgr,
                                            const DesignFlowManagerConstRef _design_flow_manager)

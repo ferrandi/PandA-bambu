@@ -59,7 +59,7 @@
 /// utility include
 #include "fileIO.hpp"
 
-LoadBuiltinTechnology::LoadBuiltinTechnology(const technology_managerRef _TM, const target_deviceRef _target,
+LoadBuiltinTechnology::LoadBuiltinTechnology(const technology_managerRef _TM, const generic_deviceRef _target,
                                              const DesignFlowManagerConstRef _design_flow_manager,
                                              const ParameterConstRef _parameters)
     : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_BUILTIN_TECHNOLOGY,

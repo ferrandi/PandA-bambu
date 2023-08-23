@@ -1399,23 +1399,18 @@ void CompilerWrapper::InitializeCompilerParameters()
          case(CompilerWrapper_OptimizationSet::Oz):
             frontend_compiler_parameters += (" -O" + WriteOptimizationLevel(optimization_set) + " ");
             break;
-#if HAVE_BAMBU_BUILT
          case CompilerWrapper_OptimizationSet::OSF:
             frontend_compiler_parameters += (" -O3 -finline-limit=10000 --param inline-unit-growth=100000 ");
             break;
          case(CompilerWrapper_OptimizationSet::OBAMBU):
-#endif
             /// Filling optimizations map
-#if HAVE_BAMBU_BUILT
             SetCompilerDefault();
 
             switch(OS)
             {
-#if HAVE_BAMBU_BUILT
                case(CompilerWrapper_OptimizationSet::OBAMBU):
                   SetBambuDefault();
                   break;
-#endif
                case(CompilerWrapper_OptimizationSet::O0):
                case(CompilerWrapper_OptimizationSet::O1):
                case(CompilerWrapper_OptimizationSet::O2):
@@ -1426,9 +1421,7 @@ void CompilerWrapper::InitializeCompilerParameters()
                case(CompilerWrapper_OptimizationSet::Os):
                case(CompilerWrapper_OptimizationSet::Ofast):
                case(CompilerWrapper_OptimizationSet::Oz):
-#if HAVE_BAMBU_BUILT
                case(CompilerWrapper_OptimizationSet::OSF):
-#endif
                {
                   THROW_UNREACHABLE("Unsupported optimization level " + WriteOptimizationLevel(OS));
                   break;
@@ -1478,7 +1471,6 @@ void CompilerWrapper::InitializeCompilerParameters()
             frontend_compiler_parameters += (" " + WriteOptimizationsString() + " ");
 
             break;
-#endif
          default:
          {
             THROW_UNREACHABLE("Unexpected optimization level");
@@ -1533,12 +1525,10 @@ void CompilerWrapper::InitializeCompilerParameters()
          }
       }
    }
-#if HAVE_BAMBU_BUILT
    if(OS == CompilerWrapper_OptimizationSet::OBAMBU)
    {
       frontend_compiler_parameters += "-Wuninitialized ";
    }
-#endif
 
    /// Adding includes
    if(Param->isOption(OPT_gcc_includes))
@@ -1568,7 +1558,6 @@ void CompilerWrapper::InitializeCompilerParameters()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Initialized gcc parameters");
 }
 
-#if HAVE_BAMBU_BUILT
 void CompilerWrapper::SetBambuDefault()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Setting parameters for Bambu tool...");
@@ -1737,7 +1726,6 @@ void CompilerWrapper::SetBambuDefault()
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
 }
-#endif
 
 void CompilerWrapper::SetCompilerDefault()
 {
@@ -1761,11 +1749,9 @@ void CompilerWrapper::SetCompilerDefault()
          frontend_compiler_parameters += (" -O" + WriteOptimizationLevel(optimization_level) + " ");
          break;
       }
-#if HAVE_BAMBU_BUILT
       case CompilerWrapper_OptimizationSet::OSF:
          frontend_compiler_parameters += (" -O3 -finline-limit=10000");
          break;
-#endif
       case(CompilerWrapper_OptimizationSet::O0):
       {
          frontend_compiler_parameters += " -O1 ";
@@ -1957,9 +1943,7 @@ void CompilerWrapper::SetCompilerDefault()
          }
          break;
       }
-#if HAVE_BAMBU_BUILT
       case(CompilerWrapper_OptimizationSet::OBAMBU):
-#endif
       {
          THROW_UNREACHABLE("Unepected optimization level: " + WriteOptimizationLevel(optimization_level));
          break;
@@ -3098,12 +3082,10 @@ std::string CompilerWrapper::WriteOptimizationLevel(const CompilerWrapper_Optimi
          return "fast";
       case(CompilerWrapper_OptimizationSet::Oz):
          return "z";
-#if HAVE_BAMBU_BUILT
       case(CompilerWrapper_OptimizationSet::OBAMBU):
          return "bambu";
       case(CompilerWrapper_OptimizationSet::OSF):
          return "softfloat";
-#endif
       default:
       {
          THROW_UNREACHABLE("");

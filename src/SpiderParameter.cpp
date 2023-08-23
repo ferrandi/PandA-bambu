@@ -357,7 +357,6 @@ void SpiderParameter::SetDefaults()
 #else
    setOption(OPT_debug_level, DEBUG_LEVEL_MINIMUM);
 #endif
-   setOption(OPT_dump_genlib, false);
 #if HAVE_REGRESSORS_BUILT
    setOption(OPT_interval_level, NUM_CST_default_prediction_interval_value);
 #endif

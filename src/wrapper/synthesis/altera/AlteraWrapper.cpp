@@ -56,7 +56,7 @@
 #include <fstream>
 
 AlteraWrapper::AlteraWrapper(const ParameterConstRef& _Param, const std::string& _tool_exec,
-                             const target_deviceRef& _device, const std::string& _output_dir,
+                             const generic_deviceRef& _device, const std::string& _output_dir,
                              const std::string& _default_output_dir)
     : SynthesisTool(_Param, _tool_exec, _device, _output_dir, _default_output_dir)
 {

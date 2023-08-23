@@ -55,13 +55,13 @@
 #include "memory.hpp"
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
+#include "string_manipulation.hpp"
 #include "structural_objects.hpp"
 #include "technology_node.hpp"
-#include "time_model.hpp"
+#include "time_info.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
-#include "utility.hpp"
 
 #include <filesystem>
 

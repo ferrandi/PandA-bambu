@@ -42,12 +42,12 @@
 #include "structural_objects.hpp"
 
 #include "config_HAVE_ASSERTS.hpp"
-#include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
 #include "config_RELEASE.hpp"
 
 #include "HDL_manager.hpp"
 #include "NP_functionality.hpp"
+#include "behavioral_helper.hpp"
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
@@ -63,9 +63,6 @@
 #include "xml_helper.hpp"
 #include "xml_node.hpp"
 #include "xml_text_node.hpp"
-#if HAVE_BAMBU_BUILT
-#include "behavioral_helper.hpp"
-#endif
 
 #include <algorithm>
 #include <boost/algorithm/string/replace.hpp>
@@ -399,7 +396,6 @@ structural_type_descriptor::structural_type_descriptor(const std::string& type_n
    }
 }
 
-#if HAVE_BAMBU_BUILT
 structural_type_descriptor::structural_type_descriptor(unsigned int index, const BehavioralHelperConstRef helper)
 {
    unsigned int type_index = helper->get_type(index);
@@ -512,7 +508,6 @@ structural_type_descriptor::structural_type_descriptor(unsigned int index, const
       }
    }
 }
-#endif
 
 bool structural_type_descriptor::check_type(structural_type_descriptorRef src_type,
                                             structural_type_descriptorRef dest_type)

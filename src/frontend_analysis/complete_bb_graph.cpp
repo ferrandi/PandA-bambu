@@ -39,8 +39,6 @@
  */
 #include "complete_bb_graph.hpp"
 
-#include "config_HAVE_BAMBU_BUILT.hpp" // for HAVE_BAMBU_BUILT
-
 #include "Parameter.hpp"           // for Parameter, ParameterConstRef
 #include "exceptions.hpp"          // for THROW_UNREACHABLE
 #include "hash_helper.hpp"         // for hash
@@ -66,18 +64,12 @@ CompleteBBGraph::ComputeFrontendRelationships(const DesignFlowStep::Relationship
       case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(BLOCK_FIX, SAME_FUNCTION));
-#if HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(MULTI_WAY_IF, SAME_FUNCTION));
          relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
          relationships.insert(std::make_pair(REMOVE_ENDING_IF, SAME_FUNCTION));
-#endif
-#if HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(SHORT_CIRCUIT_TAF, SAME_FUNCTION));
-#endif
          relationships.insert(std::make_pair(SWITCH_FIX, SAME_FUNCTION));
-#if HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(SPLIT_RETURN, SAME_FUNCTION));
-#endif
          if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
             relationships.insert(std::make_pair(BITVALUE_RANGE, SAME_FUNCTION));
@@ -91,9 +83,7 @@ CompleteBBGraph::ComputeFrontendRelationships(const DesignFlowStep::Relationship
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-#if HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(SDC_CODE_MOTION, SAME_FUNCTION));
-#endif
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, CALLED_FUNCTIONS));
          relationships.insert(std::make_pair(LUT_TRANSFORMATION, SAME_FUNCTION));

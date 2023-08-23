@@ -67,7 +67,7 @@
 
 /// HLS include
 #include "hls_manager.hpp"
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
 /// HLS includes
 #include "hls.hpp"
 
@@ -128,9 +128,7 @@ CSE::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relatio
       {
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
-#if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(SDC_CODE_MOTION, SAME_FUNCTION));
-#endif
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
          break;
       }
@@ -170,7 +168,7 @@ CSE::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relatio
 
 void CSE::Initialize()
 {
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
    if(GetPointer<const HLS_manager>(AppM) && GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id) &&
       GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
    {

@@ -46,20 +46,17 @@
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
 #include "DesignParameters.hpp"
-#include "LUT_model.hpp"
 #include "Parameter.hpp"
 #include "XilinxWrapper.hpp"
-#include "area_model.hpp"
-#include "clb_model.hpp"
+#include "area_info.hpp"
 #include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
+#include "generic_device.hpp"
 #include "map_wrapper.hpp"
 #include "string_manipulation.hpp"
 #include "structural_objects.hpp"
 #include "synthesis_constants.hpp"
-#include "target_device.hpp"
-#include "target_manager.hpp"
-#include "time_model.hpp"
+#include "time_info.hpp"
 #include "trce_wrapper.hpp"
 #include "utility.hpp"
 #include "xml_dom_parser.hpp"
@@ -82,8 +79,8 @@
 #define VIVADO_XILINX_DESIGN_DELAY "XILINX_DESIGN_DELAY"
 
 XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name,
-                                     const target_managerRef _target)
-    : BackendFlow(_Param, _flow_name, _target)
+                                     const generic_deviceRef _device)
+    : BackendFlow(_Param, _flow_name, _device)
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Creating Xilinx Backend Flow ::.");
@@ -117,7 +114,6 @@ XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::
    }
    else
    {
-      const target_deviceRef device = target->get_target_device();
       std::string device_string;
       if(device->has_parameter("family"))
       {
@@ -167,10 +163,9 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             boost::replace_all(token, ",", "");
             if(!area_m)
             {
-               area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
+               area_m = area_info::factory(Param);
             }
-            auto* clb_m = GetPointer<clb_model>(area_m);
-            clb_m->set_resource_value(clb_model::REGISTERS, boost::lexical_cast<unsigned int>(token));
+            area_m->set_resource_value(area_info::REGISTERS, boost::lexical_cast<unsigned int>(token));
          }
          else if(line.size() and line.find("Number of Slice Flip Flops:") != std::string::npos)
          {
@@ -182,10 +177,9 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             boost::replace_all(token, ",", "");
             if(!area_m)
             {
-               area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
+               area_m = area_info::factory(Param);
             }
-            auto* clb_m = GetPointer<clb_model>(area_m);
-            clb_m->set_resource_value(clb_model::REGISTERS, boost::lexical_cast<unsigned int>(token));
+            area_m->set_resource_value(area_info::REGISTERS, boost::lexical_cast<unsigned int>(token));
          }
          else if(line.size() and line.find("Number of 4 input LUTs:") != std::string::npos)
          {
@@ -197,10 +191,9 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             boost::replace_all(token, ",", "");
             if(!area_m)
             {
-               area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
+               area_m = area_info::factory(Param);
             }
-            auto* clb_m = GetPointer<clb_model>(area_m);
-            clb_m->set_resource_value(clb_model::SLICE_LUTS, boost::lexical_cast<unsigned int>(token));
+            area_m->set_resource_value(area_info::SLICE_LUTS, boost::lexical_cast<unsigned int>(token));
          }
          else if(line.size() and line.find("Number of Slice LUTs:") != std::string::npos)
          {
@@ -212,10 +205,9 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             boost::replace_all(token, ",", "");
             if(!area_m)
             {
-               area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
+               area_m = area_info::factory(Param);
             }
-            auto* clb_m = GetPointer<clb_model>(area_m);
-            clb_m->set_resource_value(clb_model::SLICE_LUTS, boost::lexical_cast<unsigned int>(token));
+            area_m->set_resource_value(area_info::SLICE_LUTS, boost::lexical_cast<unsigned int>(token));
          }
          else if(line.size() and line.find("Number of occupied Slices:") != std::string::npos)
          {
@@ -227,10 +219,9 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             boost::replace_all(token, ",", "");
             if(!area_m)
             {
-               area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
+               area_m = area_info::factory(Param);
             }
-            auto* clb_m = GetPointer<clb_model>(area_m);
-            clb_m->set_resource_value(clb_model::SLICE, boost::lexical_cast<unsigned int>(token));
+            area_m->set_resource_value(area_info::SLICE, boost::lexical_cast<unsigned int>(token));
          }
          else if(line.size() and line.find("Number of LUT Flip Flop pairs used:") != std::string::npos)
          {
@@ -242,11 +233,10 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             boost::replace_all(token, ",", "");
             if(!area_m)
             {
-               area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
+               area_m = area_info::factory(Param);
             }
-            auto* clb_m = GetPointer<clb_model>(area_m);
-            clb_m->set_resource_value(clb_model::LUT_FF_PAIRS, boost::lexical_cast<unsigned int>(token));
-            clb_m->set_area_value(boost::lexical_cast<unsigned int>(token));
+            area_m->set_resource_value(area_info::LUT_FF_PAIRS, boost::lexical_cast<unsigned int>(token));
+            area_m->set_area_value(boost::lexical_cast<unsigned int>(token));
          }
          else if(line.size() and line.find("Number of DSP48Es:") != std::string::npos)
          {
@@ -258,10 +248,9 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             boost::replace_all(token, ",", "");
             if(!area_m)
             {
-               area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
+               area_m = area_info::factory(Param);
             }
-            auto* clb_m = GetPointer<clb_model>(area_m);
-            clb_m->set_resource_value(clb_model::DSP, boost::lexical_cast<unsigned int>(token));
+            area_m->set_resource_value(area_info::DSP, boost::lexical_cast<unsigned int>(token));
          }
          else if(line.size() and line.find("Number of DSP48E1s:") != std::string::npos)
          {
@@ -273,10 +262,9 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             boost::replace_all(token, ",", "");
             if(!area_m)
             {
-               area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
+               area_m = area_info::factory(Param);
             }
-            auto* clb_m = GetPointer<clb_model>(area_m);
-            clb_m->set_resource_value(clb_model::DSP, boost::lexical_cast<unsigned int>(token));
+            area_m->set_resource_value(area_info::DSP, boost::lexical_cast<unsigned int>(token));
          }
          else if(line.size() and line.find("Number of BlockRAM/FIFO:") != std::string::npos)
          {
@@ -288,10 +276,9 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             boost::replace_all(token, ",", "");
             if(!area_m)
             {
-               area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
+               area_m = area_info::factory(Param);
             }
-            auto* clb_m = GetPointer<clb_model>(area_m);
-            clb_m->set_resource_value(clb_model::BRAM, boost::lexical_cast<unsigned int>(token));
+            area_m->set_resource_value(area_info::BRAM, boost::lexical_cast<unsigned int>(token));
          }
          else if(line.size() and line.find("Number of RAMB36E1/FIFO36E1s:") != std::string::npos)
          {
@@ -303,10 +290,9 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             boost::replace_all(token, ",", "");
             if(!area_m)
             {
-               area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
+               area_m = area_info::factory(Param);
             }
-            auto* clb_m = GetPointer<clb_model>(area_m);
-            clb_m->set_resource_value(clb_model::BRAM, boost::lexical_cast<unsigned int>(token));
+            area_m->set_resource_value(area_info::BRAM, boost::lexical_cast<unsigned int>(token));
          }
          else if(line.size() and line.find("Number of FIFO16/RAMB16s:") != std::string::npos)
          {
@@ -318,10 +304,9 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             boost::replace_all(token, ",", "");
             if(!area_m)
             {
-               area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
+               area_m = area_info::factory(Param);
             }
-            auto* clb_m = GetPointer<clb_model>(area_m);
-            clb_m->set_resource_value(clb_model::BRAM, boost::lexical_cast<unsigned int>(token));
+            area_m->set_resource_value(area_info::BRAM, boost::lexical_cast<unsigned int>(token));
          }
       }
    }
@@ -399,19 +384,18 @@ void XilinxBackendFlow::xparse_xst_utilization(const std::string& fn)
             }
          }
 
-         area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
-         auto* clb_m = GetPointer<clb_model>(area_m);
+         area_m = area_info::factory(Param);
          if(design_values.find(XST_NUMBER_OF_SLICE_REGISTERS) != design_values.end())
          {
-            clb_m->set_resource_value(clb_model::REGISTERS, design_values[XST_NUMBER_OF_SLICE_REGISTERS]);
+            area_m->set_resource_value(area_info::REGISTERS, design_values[XST_NUMBER_OF_SLICE_REGISTERS]);
          }
          if(design_values.find(XST_NUMBER_OF_SLICE_LUTS) != design_values.end())
          {
-            clb_m->set_resource_value(clb_model::SLICE_LUTS, design_values[XST_NUMBER_OF_SLICE_LUTS]);
+            area_m->set_resource_value(area_info::SLICE_LUTS, design_values[XST_NUMBER_OF_SLICE_LUTS]);
          }
          if(design_values.find(XST_NUMBER_OF_BLOCK_RAMFIFO) != design_values.end())
          {
-            clb_m->set_resource_value(clb_model::BRAM, design_values[XST_NUMBER_OF_BLOCK_RAMFIFO]);
+            area_m->set_resource_value(area_info::BRAM, design_values[XST_NUMBER_OF_BLOCK_RAMFIFO]);
          }
 
          /// setting the global area occupation as the number of LUT/FF pairs when possible
@@ -421,7 +405,7 @@ void XilinxBackendFlow::xparse_xst_utilization(const std::string& fn)
                 0; // it may happen when the component will be completely "destroyed" by the logic synthesisstep
          }
 
-         clb_m->set_resource_value(clb_model::LUT_FF_PAIRS, design_values[XST_NUMBER_OF_LUT_FLIP_FLOP_PAIRS_USED]);
+         area_m->set_resource_value(area_info::LUT_FF_PAIRS, design_values[XST_NUMBER_OF_LUT_FLIP_FLOP_PAIRS_USED]);
          area_m->set_area_value(design_values[XST_NUMBER_OF_LUT_FLIP_FLOP_PAIRS_USED]);
 
          return;
@@ -459,9 +443,8 @@ void XilinxBackendFlow::parse_timing(const std::string& log_file)
          {
             if(line.find("No path found") != std::string::npos)
             {
-               time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
-               auto* lut_m = GetPointer<LUT_model>(time_m);
-               lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, 0.0);
+               time_m = time_info::factory(Param);
+               time_m->set_execution_time(0.0);
             }
             else
             {
@@ -470,9 +453,8 @@ void XilinxBackendFlow::parse_timing(const std::string& log_file)
                boost::trim(tk);
                tk = tk.substr(0, tk.find_first_of(' '));
                boost::replace_all(tk, "ns", "");
-               time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
-               auto* lut_m = GetPointer<LUT_model>(time_m);
-               lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, boost::lexical_cast<double>(tk));
+               time_m = time_info::factory(Param);
+               time_m->set_execution_time(boost::lexical_cast<double>(tk));
                if(boost::lexical_cast<double>(tk) > Param->getOption<double>(OPT_clock_period))
                {
                   CopyFile(Param->getOption<std::string>(OPT_output_directory) + "/Synthesis/xst/" +
@@ -487,7 +469,7 @@ void XilinxBackendFlow::parse_timing(const std::string& log_file)
       if(!time_m)
       {
          THROW_WARNING("Something wrong happened during synthesis.");
-         time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
+         time_m = time_info::factory(Param);
       }
    }
 }
@@ -507,15 +489,14 @@ void XilinxBackendFlow::parse_DSPs(const std::string& log_file)
             std::string tk = line.substr(line.find(token) + token.size() + 1, line.size());
             boost::trim(tk);
             tk = tk.substr(0, tk.find_first_of(' '));
-            auto* clb_m = GetPointer<clb_model>(area_m);
-            THROW_ASSERT(clb_m, "missing area model");
-            clb_m->set_resource_value(clb_model::DSP, boost::lexical_cast<double>(tk));
+            THROW_ASSERT(area_m, "missing area model");
+            area_m->set_resource_value(area_info::DSP, boost::lexical_cast<double>(tk));
          }
       }
    }
 }
 
-void XilinxBackendFlow::xparse_timing(const std::string& fn, bool post)
+void XilinxBackendFlow::xparse_timing(const std::string& fn)
 {
    try
    {
@@ -585,16 +566,8 @@ void XilinxBackendFlow::xparse_timing(const std::string& fn, bool post)
             return nullptr;
          }();
          double period = std::abs(boost::lexical_cast<double>(child_text->get_content()));
-         time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
-         auto* lut_m = GetPointer<LUT_model>(time_m);
-         if(post)
-         {
-            lut_m->set_timing_value(LUT_model::MINIMUM_PERIOD_POST_PAR, period);
-         }
-         else
-         {
-            lut_m->set_timing_value(LUT_model::MINIMUM_PERIOD_POST_MAP, period);
-         }
+         time_m = time_info::factory(Param);
+         time_m->set_execution_time(period);
          return;
       }
    }
@@ -620,7 +593,6 @@ void XilinxBackendFlow::CheckSynthesisResults()
 {
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Analyzing Xilinx synthesis results");
    bool is_vivado = false;
-   const target_deviceRef device = target->get_target_device();
    std::string device_string;
    device_string = device->get_parameter<std::string>("family");
    if(device_string.find("-VVD") != std::string::npos)
@@ -652,13 +624,13 @@ void XilinxBackendFlow::CheckSynthesisResults()
              actual_parameters->parameter_values.end() &&
          std::filesystem::exists(actual_parameters->parameter_values[PARAM_trce_report_post]))
       {
-         xparse_timing(actual_parameters->parameter_values[PARAM_trce_report_post], true);
+         xparse_timing(actual_parameters->parameter_values[PARAM_trce_report_post]);
       }
       else if(actual_parameters->parameter_values.find(PARAM_trce_report_pre) !=
                   actual_parameters->parameter_values.end() &&
               std::filesystem::exists(actual_parameters->parameter_values[PARAM_trce_report_pre]))
       {
-         xparse_timing(actual_parameters->parameter_values[PARAM_trce_report_pre], false);
+         xparse_timing(actual_parameters->parameter_values[PARAM_trce_report_pre]);
       }
       else if(actual_parameters->parameter_values.find(PARAM_xst_log_file) !=
                   actual_parameters->parameter_values.end() &&
@@ -675,31 +647,28 @@ void XilinxBackendFlow::CheckSynthesisResults()
    {
       std::string report_filename = actual_parameters->parameter_values[PARAM_vivado_report];
       vivado_xparse_utilization(report_filename);
-      area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
+      area_m = area_info::factory(Param);
       area_m->set_area_value(design_values[VIVADO_XILINX_SLICE_LUTS]);
-      auto* area_clb_model = GetPointer<clb_model>(area_m);
       if(design_values[VIVADO_XILINX_LUT_FLIP_FLOP_PAIRS_USED] != 0.0)
       {
-         area_clb_model->set_resource_value(clb_model::LUT_FF_PAIRS,
-                                            design_values[VIVADO_XILINX_LUT_FLIP_FLOP_PAIRS_USED]);
+         area_m->set_resource_value(area_info::LUT_FF_PAIRS, design_values[VIVADO_XILINX_LUT_FLIP_FLOP_PAIRS_USED]);
       }
 
       if(design_values[VIVADO_XILINX_SLICE_LUTS] != 0.0)
       {
-         area_clb_model->set_resource_value(clb_model::SLICE_LUTS, design_values[VIVADO_XILINX_SLICE_LUTS]);
+         area_m->set_resource_value(area_info::SLICE_LUTS, design_values[VIVADO_XILINX_SLICE_LUTS]);
       }
 
-      area_clb_model->set_resource_value(clb_model::SLICE, design_values[VIVADO_XILINX_SLICE]);
-      area_clb_model->set_resource_value(clb_model::REGISTERS, design_values[VIVADO_XILINX_SLICE_REGISTERS]);
-      area_clb_model->set_resource_value(clb_model::DSP, design_values[VIVADO_XILINX_DSPS]);
-      area_clb_model->set_resource_value(clb_model::BRAM, design_values[VIVADO_XILINX_BLOCK_RAMFIFO]);
-      area_clb_model->set_resource_value(clb_model::POWER, design_values[VIVADO_XILINX_POWER]);
+      area_m->set_resource_value(area_info::SLICE, design_values[VIVADO_XILINX_SLICE]);
+      area_m->set_resource_value(area_info::REGISTERS, design_values[VIVADO_XILINX_SLICE_REGISTERS]);
+      area_m->set_resource_value(area_info::DSP, design_values[VIVADO_XILINX_DSPS]);
+      area_m->set_resource_value(area_info::BRAM, design_values[VIVADO_XILINX_BLOCK_RAMFIFO]);
+      area_m->set_resource_value(area_info::POWER, design_values[VIVADO_XILINX_POWER]);
 
-      time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
-      auto* lut_m = GetPointer<LUT_model>(time_m);
+      time_m = time_info::factory(Param);
       if(design_values[VIVADO_XILINX_DESIGN_DELAY] != 0.0)
       {
-         lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, design_values[VIVADO_XILINX_DESIGN_DELAY]);
+         time_m->set_execution_time(design_values[VIVADO_XILINX_DESIGN_DELAY]);
          if(design_values[VIVADO_XILINX_DESIGN_DELAY] > Param->getOption<double>(OPT_clock_period) and
             actual_parameters->parameter_values.find(PARAM_vivado_timing_report) !=
                 actual_parameters->parameter_values.end() and
@@ -712,7 +681,7 @@ void XilinxBackendFlow::CheckSynthesisResults()
       }
       else
       {
-         lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, 0);
+         time_m->set_execution_time(0.0);
       }
    }
    if((output_level >= OUTPUT_LEVEL_VERY_PEDANTIC or
@@ -818,7 +787,6 @@ void XilinxBackendFlow::vivado_xparse_utilization(const std::string& fn)
 void XilinxBackendFlow::WriteFlowConfiguration(std::ostream& script)
 {
    std::string setupscr;
-   const target_deviceRef device = target->get_target_device();
    std::string device_string;
    device_string = device->get_parameter<std::string>("family");
    if(device_string.find("-VVD") != std::string::npos)
@@ -872,7 +840,6 @@ void XilinxBackendFlow::InitDesignParameters()
       xpwr_enabled = true;
    }
    actual_parameters->parameter_values[PARAM_power_optimization] = STR(xpwr_enabled);
-   const target_deviceRef device = target->get_target_device();
    auto device_name = device->get_parameter<std::string>("model");
    auto package = device->get_parameter<std::string>("package");
    auto speed_grade = device->get_parameter<std::string>("speed_grade");

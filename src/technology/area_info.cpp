@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2023 Politecnico di Milano
+ *              Copyright (C) 2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -30,51 +30,63 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
 /**
- * @file FPGA_device.hpp
- * @brief This class represents an FPGA as target device for the synthesis process
+ * @file area_info.cpp
+ * @brief Collect information about resource area
  *
- * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ *
  */
-#ifndef _FPGA_DEVICE_HPP_
-#define _FPGA_DEVICE_HPP_
+#include "area_info.hpp"
+#include "exceptions.hpp"
+#include "generic_device.hpp"
 
-#include "target_device.hpp"
+const double area_info::area_DEFAULT = 1.0;
 
-class FPGA_device : public target_device
+area_info::area_info(const ParameterConstRef& _Param) : Param(_Param)
 {
- public:
-   /**
-    * Constructor
-    * @param Param is the reference to the class that contains all the parameters
-    * @param TM is the reference to the class containing all the technology libraries
-    */
-   FPGA_device(const ParameterConstRef& Param, const technology_managerRef& TM);
+}
 
-   /**
-    * Destructor
-    */
-   ~FPGA_device() override;
+area_info::~area_info() = default;
 
-   /**
-    * Initializes the target device based on the given parameters
-    */
-   void initialize() override;
+area_infoRef area_info::factory(const ParameterConstRef& Param)
+{
+   return area_infoRef(new area_info(Param));
+}
 
-   /**
-    * Method to write an XML node
-    * @param node is the node for writing the information
-    */
-   void xwrite(xml_element* node) override;
+double area_info::get_area_value() const
+{
+   return static_cast<double>(area);
+}
 
-   /**
-    * load all the data for the given FPGA
-    */
-   void load_devices(const target_deviceRef device) override;
-};
+void area_info::set_area_value(const double& _area)
+{
+   area = _area;
+}
 
-#endif
+void area_info::set_resource_value(value_t val, double num)
+{
+   used_resources[val] = num;
+}
+
+bool area_info::is_used_resource(value_t val) const
+{
+   return used_resources.find(val) != used_resources.end();
+}
+
+double area_info::get_resource_value(value_t val) const
+{
+   if(!is_used_resource(val))
+   {
+      return 0;
+   }
+   return used_resources.find(val)->second;
+}
+
+void area_info::print(std::ostream& os) const
+{
+   if(used_resources.find(LUT_FF_PAIRS) != used_resources.end())
+   {
+      os << "LUT/FF pairs: " << used_resources.find(LUT_FF_PAIRS)->second << std::endl;
+   }
+}

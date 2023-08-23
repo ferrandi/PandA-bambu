@@ -45,17 +45,9 @@
  */
 #ifndef _MODULE_GENERATOR_HPP_
 #define _MODULE_GENERATOR_HPP_
-
-/// graph include
-#include "graph.hpp"
-
-/// STL include
 #include "custom_map.hpp"
-
-/// technology/target_device include
-#include "target_device.hpp"
-
-/// utility include
+#include "generic_device.hpp"
+#include "graph.hpp"
 #include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(FunctionBehavior);

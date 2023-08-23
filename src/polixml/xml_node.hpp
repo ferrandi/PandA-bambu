@@ -253,7 +253,7 @@ class xml_child : public xml_node
    xml_element* add_child_element(const std::string& name);
 
    /** Add a child element to this node starting from a given node
-    * @param node is the given datastructure to be added
+    * @param node is the given data-structure to be added
     * @returns The newly-created element
     */
    xml_element* add_child_element(const xml_nodeRef& node);

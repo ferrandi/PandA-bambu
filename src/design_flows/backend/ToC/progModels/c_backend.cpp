@@ -77,10 +77,8 @@
 #include "utility.hpp"
 #include "var_pp_functor.hpp"
 
-#if HAVE_BAMBU_BUILT
 #include "hls_flow_step_factory.hpp"
 #include "hls_function_step.hpp"
-#endif
 
 #include <boost/config.hpp>
 #include <boost/graph/adjacency_list.hpp>
@@ -232,7 +230,6 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships,
             case(CBackendInformation::CB_BBP):
 #endif
             {
-#if HAVE_BAMBU_BUILT
                CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
                    frontend_relationships;
                frontend_relationships.insert(
@@ -280,7 +277,6 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships,
                      relationships.insert(hls_top_function_step);
                   }
                }
-#endif
                break;
             }
 #if HAVE_HLS_BUILT
@@ -390,7 +386,6 @@ void CBackend::WriteGlobalDeclarations()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "-->Writing function prototype of " + BH->get_function_name());
 
-#if HAVE_BAMBU_BUILT
       if(parameters->isOption(OPT_pretty_print))
       {
          const auto f_name = BH->get_function_name();
@@ -399,7 +394,6 @@ void CBackend::WriteGlobalDeclarations()
             indented_output_stream->Append("#define " + f_name + " _bambu_" + f_name + "\n");
          }
       }
-#endif
 
       if(BH->function_has_to_be_printed(it))
       {
@@ -512,11 +506,7 @@ void CBackend::AnalyzeInclude(const tree_nodeConstRef& tn, const BehavioralHelpe
    already_visited.insert(tn->index);
    bool is_system;
    const auto decl = std::get<0>(tree_helper::GetSourcePath(tn, is_system));
-   if(!decl.empty() && decl != "<built-in>" && is_system
-#if HAVE_BAMBU_BUILT
-      && !tree_helper::IsInLibbambu(tn)
-#endif
-   )
+   if(!decl.empty() && decl != "<built-in>" && is_system && !tree_helper::IsInLibbambu(tn))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding " + decl + " to the list of includes");
       includes_to_write.insert(decl);
