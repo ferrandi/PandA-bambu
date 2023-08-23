@@ -216,6 +216,23 @@ class tree_node
 using tree_nodeRef = refcount<tree_node>;
 using tree_nodeConstRef = refcount<const tree_node>;
 
+class TreeNodeConstSorter : std::binary_function<tree_nodeConstRef, tree_nodeConstRef, bool>
+{
+ public:
+   /**
+    * Constructor
+    */
+   TreeNodeConstSorter();
+
+   /**
+    * Compare position of two const tree nodes
+    * @param x is the first tree node
+    * @param y is the second tree node
+    * @return true if index of x is less than y
+    */
+   bool operator()(const tree_nodeConstRef& x, const tree_nodeConstRef& y) const;
+};
+
 /**
  * A set of const tree node
  */
@@ -250,22 +267,6 @@ class TreeNodeConstSet : public CustomUnorderedSet<tree_nodeConstRef, TreeNodeCo
 {
 };
 #else
-class TreeNodeConstSorter : std::binary_function<tree_nodeConstRef, tree_nodeConstRef, bool>
-{
- public:
-   /**
-    * Constructor
-    */
-   TreeNodeConstSorter();
-
-   /**
-    * Compare position of two const tree nodes
-    * @param x is the first tree node
-    * @param y is the second tree node
-    * @return true if index of x is less than y
-    */
-   bool operator()(const tree_nodeConstRef& x, const tree_nodeConstRef& y) const;
-};
 
 class TreeNodeConstSet : public OrderedSetStd<tree_nodeConstRef, TreeNodeConstSorter>
 {
