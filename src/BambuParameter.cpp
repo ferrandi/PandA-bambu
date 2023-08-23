@@ -38,6 +38,8 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
+#include "allocation_constants.hpp"
+#include "clique_covering.hpp"
 #include "config_HAVE_COIN_OR.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FLOPOCO.hpp"
@@ -52,8 +54,6 @@
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 #include "config_PANDA_LIB_INSTALLDIR.hpp"
 #include "config_SKIP_WARNING_SECTIONS.hpp"
-#include "clique_covering.hpp"
-#include "allocation_constants.hpp"
 #include "constants.hpp"
 #if HAVE_HOST_PROFILING_BUILT
 #include "host_profiling.hpp"
@@ -68,34 +68,34 @@
 #if HAVE_ILP_BUILT
 #include "meilp_solver.hpp"
 #endif
-#include "tree_helper.hpp"
 #include "BambuParameter.hpp"
 #include "chaining.hpp"
-#include "datapath_creator.hpp"
+#include "compiler_constants.hpp"
+#include "compiler_wrapper.hpp"
 #include "constant_strings.hpp"
-#include <cstdlib>
-#include <cstring>
-#include <iosfwd>
-#include <string>
-#include <algorithm>
-#include <list>
-#include <vector>
+#include "cpu_time.hpp"
+#include "datapath_creator.hpp"
+#include "dbgPrintHelper.hpp"
+#include "fileIO.hpp"
 #include "generic_device.hpp"
 #include "language_writer.hpp"
 #include "parse_technology.hpp"
+#include "string_manipulation.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
-#include <getopt.h>
-#include <boost/lexical_cast.hpp>
-#include <filesystem>
-#include "compiler_constants.hpp"
-#include "cpu_time.hpp"
-#include "dbgPrintHelper.hpp"
-#include "fileIO.hpp"
-#include "string_manipulation.hpp"
+#include "tree_helper.hpp"
 #include "utility.hpp"
-#include "compiler_wrapper.hpp"
+#include <algorithm>
+#include <boost/lexical_cast.hpp>
+#include <cstdlib>
+#include <cstring>
+#include <filesystem>
+#include <getopt.h>
+#include <iosfwd>
+#include <list>
 #include <regex>
+#include <string>
+#include <vector>
 
 /// Design Space Exploration
 #define OPT_ACCEPT_NONZERO_RETURN 256

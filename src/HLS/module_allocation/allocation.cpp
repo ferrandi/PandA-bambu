@@ -78,7 +78,7 @@
 #include "structural_objects.hpp" // for PROXY_PREFIX, module, CLOCK_...
 #include "technology_manager.hpp" // for PROXY_LIBRARY, WORK_LIBRARY
 #include "technology_node.hpp"    // for functional_unit, operation
-#include "time_info.hpp"         // for ParameterConstRef
+#include "time_info.hpp"          // for ParameterConstRef
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp" // for GET_NODE, GET_INDEX_NODE

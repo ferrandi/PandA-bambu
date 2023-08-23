@@ -42,26 +42,26 @@
 #include "BambuParameter.hpp"
 #include "behavioral_helper.hpp"
 #include "copyrights_strings.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
 #include "loop.hpp"
 #include "loops.hpp"
+#include "math_function.hpp"
 #include "memory.hpp"
 #include "memory_cs.hpp"
+#include "omp_functions.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
-#include "omp_functions.hpp"
+#include "utility.hpp"
 #include <cmath>
 #include <list>
 #include <string>
 #include <tuple>
-#include "custom_set.hpp"
-#include "dbgPrintHelper.hpp"
-#include "math_function.hpp"
-#include "utility.hpp"
 
 datapath_parallel_cs::datapath_parallel_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                                            unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager,

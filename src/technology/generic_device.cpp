@@ -52,9 +52,7 @@
 #include <filesystem>
 
 generic_device::generic_device(const ParameterConstRef& _Param, const technology_managerRef& _TM)
-    : Param(_Param),
-      TM(_TM),
-      debug_level(_Param->get_class_debug_level(GET_CLASS(*this)))
+    : Param(_Param), TM(_TM), debug_level(_Param->get_class_debug_level(GET_CLASS(*this)))
 {
 }
 

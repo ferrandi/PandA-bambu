@@ -39,19 +39,19 @@
  */
 #include "generate_fu_list.hpp"
 #include "Parameter.hpp"
-#include "structural_manager.hpp"
-#include "structural_objects.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_VERY_PEDANTIC
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
+#include "library_manager.hpp"
+#include "string_manipulation.hpp"
+#include "structural_manager.hpp"
+#include "structural_objects.hpp"
 #include "technology_flow_step.hpp"
 #include "technology_flow_step_factory.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
 #include <string>
 #include <vector>
-#include "technology_manager.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_VERY_PEDANTIC
-#include "library_manager.hpp"
-#include "technology_node.hpp"
-#include "string_manipulation.hpp"
 
 GenerateFuList::GenerateFuList(const generic_deviceRef _device, const DesignFlowManagerConstRef _design_flow_manager,
                                const ParameterConstRef _parameters)

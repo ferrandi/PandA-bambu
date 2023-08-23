@@ -66,7 +66,7 @@
 #include "technology_flow_step_factory.hpp" // for TechnologyFlowStepFactory
 #include "technology_manager.hpp"           // for LIBRARY_STD_FU, technolo...
 #include "technology_node.hpp"              // for functional_unit, operation
-#include "time_info.hpp"                   // for time_info
+#include "time_info.hpp"                    // for time_info
 #include "tree_basic_block.hpp"             // for bloc
 #include "tree_common.hpp"                  // for plus_expr_K, lshift_expr_K
 #include "tree_helper.hpp"                  // for tree_helper

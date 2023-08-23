@@ -48,8 +48,7 @@
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
 
-HLS_device::HLS_device(const ParameterConstRef& _Param, const technology_managerRef& _TM)
-    : generic_device(_Param, _TM)
+HLS_device::HLS_device(const ParameterConstRef& _Param, const technology_managerRef& _TM) : generic_device(_Param, _TM)
 {
    if(_Param->isOption(OPT_clock_period))
    {

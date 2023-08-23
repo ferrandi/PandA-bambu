@@ -43,39 +43,39 @@
  *
  */
 #include "ModuleGeneratorManager.hpp"
-#include "config_BOOST_INCLUDE_DIR.hpp"
+#include "ModuleGenerator.hpp"
 #include "Parameter.hpp"
+#include "area_info.hpp"
+#include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
+#include "compiler_wrapper.hpp"
+#include "config_BOOST_INCLUDE_DIR.hpp"
+#include "constant_strings.hpp"
+#include "fileIO.hpp"
 #include "function_behavior.hpp"
-#include "op_graph.hpp"
-#include "structural_manager.hpp"
-#include "structural_objects.hpp"
-#include "language_writer.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
+#include "language_writer.hpp"
+#include "library_manager.hpp"
+#include "math_function.hpp"
 #include "memory.hpp"
 #include "memory_cs.hpp"
+#include "op_graph.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
+#include "structural_manager.hpp"
+#include "structural_objects.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
+#include "tree_helper.hpp"
+#include "tree_manager.hpp"
+#include "tree_node.hpp"
+#include "tree_reindex.hpp"
 #include <filesystem>
 #include <iosfwd>
 #include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
-#include "technology_manager.hpp"
-#include "library_manager.hpp"
-#include "technology_node.hpp"
-#include "area_info.hpp"
-#include "behavioral_helper.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
-#include "tree_reindex.hpp"
-#include "ModuleGenerator.hpp"
-#include "call_graph_manager.hpp"
-#include "hls_device.hpp"
-#include "compiler_wrapper.hpp"
-#include "constant_strings.hpp"
-#include "fileIO.hpp"
-#include "math_function.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
 
 ModuleGeneratorManager::ModuleGeneratorManager(const HLS_managerRef _HLSMgr, const ParameterConstRef _parameters)
     : HLSMgr(_HLSMgr), parameters(_parameters), debug_level(_parameters->get_class_debug_level(GET_CLASS(*this)))
