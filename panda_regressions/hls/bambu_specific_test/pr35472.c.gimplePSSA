@@ -1,6 +1,6 @@
 GCC_VERSION: "4.5.3"
 PLUGIN_VERSION: "0.12"
-@1      var_decl         name: @2       type: @3       srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":4:11     
+@1      var_decl         name: @2       type: @3       srcp: "<orig-file>":4:11     
                          uid : 1235     static         size: @4      
                          algn: 32       used: 1        addr_not_taken 
 @2      identifier_node  strg: "p" lngt: 1       
@@ -15,7 +15,7 @@ PLUGIN_VERSION: "0.12"
 @8      integer_cst      type: @6       value: 512
 @9      translation_unit_decl srcp: "<built-in>":0:0 uid : 1247    
 @10     field_decl       name: @15      type: @16      scpe: @5      
-                         srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":3:16     
+                         srcp: "<orig-file>":3:16     
                          uid : 1234     size: @8       algn: 32      
                          bpos: @13     
 @11     identifier_node  strg: "bit_size_type"        lngt: 13      
@@ -53,11 +53,11 @@ PLUGIN_VERSION: "0.12"
 
 ;; foo.clone.0 (int * ISRA.1, struct S * b)
 @32     function_decl    name: @33      orig: @34      type: @35     
-                         srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":6:1      
+                         srcp: "<orig-file>":6:1      
                          artificial     uid : 2010     arg : @36     
                          arg : @37      static         body: @38     
 @33     identifier_node  strg: "foo.clone.0"          lngt: 11      
-@34     function_decl    name: @39      type: @40      srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":6:1      
+@34     function_decl    name: @39      type: @40      srcp: "<orig-file>":6:1      
                          uid : 1238     arg : @41      arg : @42     
                          static        
 @35     function_type    size: @43      algn: 8        retn: @44     
@@ -67,7 +67,7 @@ PLUGIN_VERSION: "0.12"
                          uid : 2015     argt: @47      size: @4      
                          algn: 32       used: 1       
 @37     parm_decl        name: @48      orig: @42      type: @3      
-                         scpe: @32      srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":6:28     
+                         scpe: @32      srcp: "<orig-file>":6:28     
                          uid : 2013     argt: @3       size: @4      
                          algn: 32       used: 1       
 @38     statement_list   
@@ -78,11 +78,11 @@ PLUGIN_VERSION: "0.12"
 @40     function_type    size: @43      algn: 8        retn: @44     
                          prms: @52     
 @41     parm_decl        name: @53      type: @3       scpe: @34     
-                         srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":6:15     
+                         srcp: "<orig-file>":6:15     
                          uid : 1236     argt: @3       size: @4      
                          algn: 32       used: 1       
 @42     parm_decl        name: @48      type: @3       scpe: @34     
-                         srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":6:28     
+                         srcp: "<orig-file>":6:28     
                          uid : 1237     argt: @3       size: @4      
                          algn: 32       used: 1       
 @43     integer_cst      type: @6       value: 8
@@ -93,15 +93,15 @@ PLUGIN_VERSION: "0.12"
 @48     identifier_node  strg: "b" lngt: 1       
 @49     gimple_assign    scpe: @32      bb_index: 2        memuse: @56     
                          memdef: @57      vuse: @56      vdef: @57     
-                         vover: @57      srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":6:41     
+                         vover: @57      srcp: "<orig-file>":6:41     
                          time_weight: 1        size_weight: 1        op  : @58     
                          op  : @59     
 @50     gimple_assign    scpe: @32      bb_index: 2        memuse: @57     
                          memdef: @60      vdef: @60      vover: @60     
-                         srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":6:49     
+                         srcp: "<orig-file>":6:49     
                          time_weight: 1        size_weight: 1        op  : @1      
                          op  : @61     
-@51     gimple_return    scpe: @32      bb_index: 2        srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":6:25     
+@51     gimple_return    scpe: @32      bb_index: 2        srcp: "<orig-file>":6:25     
                          time_weight: 0        size_weight: 0       
 @52     tree_list        valu: @3       chan: @62     
 @53     identifier_node  strg: "a" lngt: 1       
@@ -137,7 +137,7 @@ PLUGIN_VERSION: "0.12"
 ;; Function main (main)
 
 ;; main ()
-@71     function_decl    name: @72      type: @73      srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":18:5      
+@71     function_decl    name: @72      type: @73      srcp: "<orig-file>":18:5      
                          uid : 1245     body: @74     
 @72     identifier_node  strg: "main" lngt: 4       
 @73     function_type    unql: @75      size: @43      algn: 8       
@@ -155,28 +155,28 @@ PLUGIN_VERSION: "0.12"
 @75     function_type    size: @43      algn: 8        retn: @17     
 @76     gimple_call      scpe: @71      bb_index: 2        memuse: @86     
                          memdef: @87      vuse: @86      vdef: @87     
-                         vover: @87      srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":10:10     
+                         vover: @87      srcp: "<orig-file>":10:10     
                          time_weight: 14       size_weight: 5        fn  : @88     
                          arg : @89      arg : @90      arg : @91     
 @77     gimple_call      scpe: @71      bb_index: 2        memuse: @87     
                          memdef: @92      vdef: @92      vover: @92     
-                         vover: @87      srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":11:10     
+                         vover: @87      srcp: "<orig-file>":11:10     
                          time_weight: 14       size_weight: 5        fn  : @93     
                          arg : @94      arg : @90      arg : @91     
 @78     gimple_call      scpe: @71      bb_index: 2        memuse: @92     
                          memdef: @95      vuse: @92      vuse: @87     
-                         vdef: @95      vover: @95      srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":12:7      
+                         vdef: @95      vover: @95      srcp: "<orig-file>":12:7      
                          time_weight: 12       size_weight: 3        fn  : @96     
                          arg : @97      arg : @98     
 @79     gimple_assign    scpe: @71      bb_index: 2        memuse: @95     
-                         vuse: @95      srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":13:3      
+                         vuse: @95      srcp: "<orig-file>":13:3      
                          time_weight: 1        size_weight: 1        op  : @99     
                          op  : @1      
 @80     gimple_assign    scpe: @71      bb_index: 2        memuse: @95     
                          memdef: @100     vuse: @95      vuse: @87     
                          vdef: @100     vover: @100     vover: @95     
                          vover: @95      vover: @92      vover: @87     
-                         srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":13:6      
+                         srcp: "<orig-file>":13:6      
                          time_weight: 32       size_weight: 32       op  : @101    
                          op  : @102    
 @81     gimple_assign    scpe: @71      bb_index: 2        memuse: @100    
@@ -184,19 +184,19 @@ PLUGIN_VERSION: "0.12"
                          vuse: @92      vdef: @103     vover: @103    
                          vover: @100     vover: @95      vover: @100    
                          vover: @95      vover: @92      vover: @87     
-                         srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":14:6      
+                         srcp: "<orig-file>":14:6      
                          time_weight: 32       size_weight: 32       op  : @104    
                          op  : @105    
 @82     gimple_assign    scpe: @71      bb_index: 2        memuse: @103    
                          vuse: @103     vuse: @100     vuse: @95     
-                         vuse: @92      srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":15:10     
+                         vuse: @92      srcp: "<orig-file>":15:10     
                          time_weight: 1        size_weight: 1        op  : @106    
                          op  : @107    
-@83     gimple_cond      scpe: @71      bb_index: 2        srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":15:6      
+@83     gimple_cond      scpe: @71      bb_index: 2        srcp: "<orig-file>":15:6      
                          time_weight: 2        size_weight: 2        op  : @108    
 @84     gimple_call      scpe: @71      bb_index: 3        memuse: @103    
                          vuse: @103     vuse: @100     vuse: @95     
-                         vuse: @92      vuse: @87      srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":16:11     
+                         vuse: @92      vuse: @87      srcp: "<orig-file>":16:11     
                          time_weight: 10       size_weight: 1        fn  : @109    
 @85     gimple_return    scpe: @71      bb_index: 4        time_weight: 0       
                          size_weight: 0        op  : @90     
@@ -205,20 +205,20 @@ PLUGIN_VERSION: "0.12"
 @87     ssa_name         type: @44      var : @110     vers: 7       
                          def_stmt: @76      virtual       
 @88     addr_expr        type: @112     op  : @113    
-@89     addr_expr        type: @114     srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":10:11     
+@89     addr_expr        type: @114     srcp: "<orig-file>":10:11     
                          op  : @115    
 @90     integer_cst      type: @17      value: 0
 @91     integer_cst      type: @30      value: 64
 @92     ssa_name         type: @44      var : @110     vers: 8       
                          def_stmt: @77      virtual       
 @93     addr_expr        type: @112     op  : @113    
-@94     addr_expr        type: @114     srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":11:11     
+@94     addr_expr        type: @114     srcp: "<orig-file>":11:11     
                          op  : @116    
 @95     ssa_name         type: @44      var : @110     vers: 9       
                          def_stmt: @78      virtual       
 @96     addr_expr        type: @117     op  : @32     
 @97     addr_expr        type: @47      op  : @118    
-@98     addr_expr        type: @3       srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":12:7      
+@98     addr_expr        type: @3       srcp: "<orig-file>":12:7      
                          op  : @105    
 @99     ssa_name         type: @3       var : @119     vers: 4       
                          def_stmt: @79     
@@ -226,19 +226,19 @@ PLUGIN_VERSION: "0.12"
                          def_stmt: @80      virtual       
 @101    indirect_ref     type: @5       op  : @99     
 @102    var_decl         name: @53      orig: @120     type: @5      
-                         scpe: @71      srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":9:12     
+                         scpe: @71      srcp: "<orig-file>":9:12     
                          uid : 2020     size: @8       algn: 32      
                          used: 1       
 @103    ssa_name         type: @44      var : @110     vers: 11      
                          def_stmt: @81      virtual       
 @104    indirect_ref     type: @5       op  : @99     
 @105    var_decl         name: @48      orig: @121     type: @5      
-                         scpe: @71      srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":9:15     
+                         scpe: @71      srcp: "<orig-file>":9:15     
                          uid : 2021     size: @8       algn: 32      
                          used: 1       
 @106    ssa_name         type: @17      var : @122     vers: 6       
                          def_stmt: @82     
-@107    array_ref        type: @17      srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":15:10     
+@107    array_ref        type: @17      srcp: "<orig-file>":15:10     
                          op  : @123     op  : @90     
 @108    ne_expr          type: @124     op  : @106     op  : @59     
 @109    addr_expr        type: @125     op  : @126    
@@ -248,36 +248,36 @@ PLUGIN_VERSION: "0.12"
 @111    gimple_nop       scpe: @71      bb_index: 0        time_weight: 0       
                          size_weight: 0       
 @112    pointer_type     size: @4       algn: 32       ptd : @127    
-@113    function_decl    name: @128     type: @127     srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":2:14     
+@113    function_decl    name: @128     type: @127     srcp: "<orig-file>":2:14     
                          uid : 668      undefined      builtin       
 @114    pointer_type     size: @4       algn: 32       ptd : @16     
-@115    component_ref    type: @16      srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":10:13     
+@115    component_ref    type: @16      srcp: "<orig-file>":10:13     
                          op  : @102     op  : @10     
-@116    component_ref    type: @16      srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":11:13     
+@116    component_ref    type: @16      srcp: "<orig-file>":11:13     
                          op  : @105     op  : @10     
 @117    pointer_type     size: @4       algn: 32       ptd : @35     
 @118    array_ref        type: @17      op  : @129     op  : @130    
 @119    var_decl         name: @131     orig: @132     type: @3      
-                         scpe: @71      srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":13:3      
+                         scpe: @71      srcp: "<orig-file>":13:3      
                          artificial     uid : 2023     size: @4      
                          algn: 32       used: 1        addr_not_taken 
 @120    var_decl         name: @53      type: @5       scpe: @133    
-                         srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":9:12     
+                         srcp: "<orig-file>":9:12     
                          uid : 1243     size: @8       algn: 32      
                          used: 1       
 @121    var_decl         name: @48      type: @5       scpe: @133    
-                         srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":9:15     
+                         srcp: "<orig-file>":9:15     
                          uid : 1244     size: @8       algn: 32      
                          used: 1       
 @122    var_decl         orig: @134     type: @17      scpe: @71     
-                         srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":15:10     
+                         srcp: "<orig-file>":15:10     
                          artificial     uid : 2022     size: @4      
                          algn: 32       used: 1        addr_not_taken 
-@123    component_ref    type: @16      srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":15:8      
+@123    component_ref    type: @16      srcp: "<orig-file>":15:8      
                          op  : @105     op  : @10     
 @124    boolean_type     name: @135     size: @43      algn: 8       
 @125    pointer_type     size: @4       algn: 32       ptd : @136    
-@126    function_decl    name: @137     type: @136     srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":1:13     
+@126    function_decl    name: @137     type: @136     srcp: "<orig-file>":1:13     
                          uid : 826      undefined      builtin       
 @127    function_type    size: @43      algn: 8        retn: @138    
                          prms: @139    
@@ -286,12 +286,12 @@ PLUGIN_VERSION: "0.12"
 @130    integer_cst      type: @18      value: 0
 @131    identifier_node  strg: "p.0" lngt: 3       
 @132    var_decl         name: @131     type: @3       scpe: @133    
-                         srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":13:3      
+                         srcp: "<orig-file>":13:3      
                          artificial     uid : 2005     size: @4      
                          algn: 32       used: 1        addr_not_taken 
-@133    function_decl    name: @140     type: @136     srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":7:6      
+@133    function_decl    name: @140     type: @136     srcp: "<orig-file>":7:6      
                          uid : 1241     static        
-@134    var_decl         type: @17      scpe: @133     srcp: "/data1/home/ferrandi/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/pr35472.c":15:10     
+@134    var_decl         type: @17      scpe: @133     srcp: "<orig-file>":15:10     
                          artificial     uid : 2006     size: @4      
                          algn: 32       used: 1        addr_not_taken 
 @135    type_decl        name: @141     type: @124     srcp: "<built-in>":0:0 
