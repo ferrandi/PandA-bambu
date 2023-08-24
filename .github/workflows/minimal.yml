@@ -186,7 +186,7 @@ jobs:
         id: perf-check
         uses: ./.github/actions/perf-check
         with:
-          test-id: bambu_specific_test${{matrix.id}}
+          test-id: bambu_interface_test${{matrix.id}}
           new-results: ${{env.report-dir}}/perf.csv
           storage-url: "${{env.storage-url}}"
           username: "${{env.storage-user}}"
@@ -200,7 +200,7 @@ jobs:
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
-          name: bambu_specific_test${{matrix.id}}
+          name: bambu_interface_test${{matrix.id}}
           path: ${{env.report-dir}}
 
   AXI4-verification:
