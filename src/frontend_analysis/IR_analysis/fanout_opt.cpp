@@ -42,34 +42,17 @@
  *
  */
 
-/// Header include
 #include "fanout_opt.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// boost include
-#include <boost/graph/topological_sort.hpp>
-
-/// behavior includes
 #include "application_manager.hpp"
 #include "function_behavior.hpp"
-
-/// HLS include
 #include "hls_manager.hpp"
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
-/// HLS includes
+#include <boost/graph/topological_sort.hpp>
+#if HAVE_ILP_BUILT
 #include "hls.hpp"
-
-/// HLS/scheduling include
 #include "schedule.hpp"
 #endif
-
-/// STD include
-#include <cmath>
-#include <fstream>
-#include <string>
-
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
@@ -78,6 +61,9 @@
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include <cmath>
+#include <fstream>
+#include <string>
 
 fanout_opt::fanout_opt(const ParameterConstRef _parameters, const application_managerRef _AppM,
                        unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
@@ -300,7 +286,7 @@ DesignFlowStep_Status fanout_opt::InternalExec()
 
 void fanout_opt::Initialize()
 {
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
    if(GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
       GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
    {

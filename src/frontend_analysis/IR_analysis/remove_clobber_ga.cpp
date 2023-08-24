@@ -59,8 +59,8 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 
 /// utility include
 #include "dbgPrintHelper.hpp"

@@ -333,8 +333,6 @@ class language_writer
     */
    virtual void WriteBuiltin(const structural_objectConstRef component) = 0;
 
-   virtual void write_timing_specification(const technology_managerConstRef TM, const structural_objectRef& cir);
-
    /**
     * Dump the content of the write as a string
     */

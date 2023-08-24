@@ -44,15 +44,15 @@
 /// Header include
 #include "lattice_flow_wrapper.hpp"
 
-#include "ToolManager.hpp"
-#include "xml_script_command.hpp"
-
+#include "DesignParameters.hpp"
 #include "Parameter.hpp"
+#include "ToolManager.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "xml_script_command.hpp"
 
 // constructor
 lattice_flow_wrapper::lattice_flow_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir,
-                                           const target_deviceRef& _device)
+                                           const generic_deviceRef& _device)
     : LatticeWrapper(_Param, LATTICE_FLOW_TOOL_EXEC, _device, _output_dir, LATTICE_FLOW_TOOL_ID)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the LATTICE_FLOW wrapper...");

@@ -267,8 +267,6 @@ class verilog_writer : public language_writer
 
    bool check_keyword(const std::string& id) const override;
 
-   void write_timing_specification(const technology_managerConstRef TM, const structural_objectRef& cir) override;
-
    void write_header() override;
 
    /**

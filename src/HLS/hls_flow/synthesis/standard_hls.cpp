@@ -55,8 +55,8 @@
 
 #include "hls.hpp"
 #include "hls_constraints.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 
 /// HLS include
 #include "hls_flow_step_factory.hpp"

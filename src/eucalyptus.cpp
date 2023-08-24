@@ -39,32 +39,20 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-#include <filesystem>
-
-/// design_flows include
+#include "EucalyptusParameter.hpp"
+#include "RTL_characterization.hpp"
+#include "cpu_time.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "design_flow_step.hpp"
-
-/// design_flows/technology include
-#include "technology_flow_step_factory.hpp"
-
-#include "EucalyptusParameter.hpp"
-
-#include "parse_technology.hpp"
-#include "target_device.hpp"
-#include "target_manager.hpp"
-#include "technology_manager.hpp"
-
-#include "RTL_characterization.hpp"
-
-#include "cpu_time.hpp"
-#include "utility.hpp"
-
-/// technology include
+#include "generic_device.hpp"
 #include "load_builtin_technology.hpp"
 #include "load_default_technology.hpp"
+#include "parse_technology.hpp"
+#include "technology_flow_step_factory.hpp"
+#include "technology_manager.hpp"
+#include "utility.hpp"
+#include <filesystem>
 
 int main(int argc, char* argv[])
 {
@@ -129,13 +117,9 @@ int main(int argc, char* argv[])
       // Technology library manager
       technology_managerRef TM = technology_managerRef(new technology_manager(parameters));
 
-      /// creating the datastructure representing the target device
-      const auto target_device =
-          static_cast<TargetDevice_Type>(parameters->getOption<unsigned int>(OPT_target_device_type));
-      target_deviceRef device = target_device::create_device(target_device, parameters, TM);
+      /// creating the data-structure representing the target device
+      generic_deviceRef device = generic_device::factory(parameters, TM);
       device->set_parameter("clock_period", parameters->getOption<double>(OPT_clock_period));
-      target_managerRef target = target_managerRef(new target_manager(parameters, TM, device));
-
       const DesignFlowManagerRef design_flow_manager(new DesignFlowManager(parameters));
       const DesignFlowGraphConstRef design_flow_graph = design_flow_manager->CGetDesignFlowGraph();
 
@@ -155,7 +139,7 @@ int main(int argc, char* argv[])
       if(parameters->isOption(OPT_component_name))
       {
          const DesignFlowStepRef design_flow_step(new RTLCharacterization(
-             target, parameters->getOption<std::string>(OPT_component_name), design_flow_manager, parameters));
+             device, parameters->getOption<std::string>(OPT_component_name), design_flow_manager, parameters));
          design_flow_manager->AddStep(design_flow_step);
       }
       design_flow_manager->Exec();

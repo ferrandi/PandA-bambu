@@ -53,9 +53,9 @@
 
 /// HLS includes
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
 #include "hls_step.hpp"
-#include "hls_target.hpp"
 
 /// HLS/binding/module
 #include "fu_binding.hpp"
@@ -202,10 +202,10 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
    bool modified = false;
    static size_t counter = 0;
 
-   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
-   const auto hls_target = GetPointerS<const HLS_manager>(AppM)->get_HLS_target();
-   THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "unexpected condition");
-   const auto max_lut_size = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
+   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_device(), "unexpected condition");
+   const auto hls_d = GetPointerS<const HLS_manager>(AppM)->get_HLS_device();
+   THROW_ASSERT(hls_d->has_parameter("max_lut_size"), "unexpected condition");
+   const auto max_lut_size = hls_d->get_parameter<size_t>("max_lut_size");
 
    const tree_manipulationConstRef tree_man(new tree_manipulation(TM, parameters, AppM));
    const auto fd = GetPointerS<const function_decl>(TM->CGetTreeNode(function_id));

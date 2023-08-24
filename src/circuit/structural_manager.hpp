@@ -46,9 +46,7 @@
 #ifndef STRUCTURAL_MANAGER_HPP
 #define STRUCTURAL_MANAGER_HPP
 
-#include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_EUCALYPTUS_BUILT.hpp"
-#include "config_HAVE_KOALA_BUILT.hpp"
 
 #include "NP_functionality.hpp"
 #include "graph.hpp"
@@ -148,9 +146,7 @@ class structural_manager
     */
    explicit structural_manager(const ParameterConstRef Param);
 
-#if HAVE_BAMBU_BUILT || HAVE_KOALA_BUILT
    void set_top_info(const std::string& id, const technology_managerRef& LM, const std::string& Library = "");
-#endif
 
    /**
     * Destructor.
@@ -191,7 +187,6 @@ class structural_manager
    structural_objectRef create(std::string id, so_kind ctype, structural_objectRef owner,
                                structural_type_descriptorRef obj_type, unsigned int treenode = 0);
 
-#if HAVE_BAMBU_BUILT || HAVE_KOALA_BUILT || HAVE_EUCALYPTUS_BUILT
    /**
     * Create a new object starting from a library component.
     * @param id is the name of the object.
@@ -205,7 +200,6 @@ class structural_manager
                                                            const std::string& library_name,
                                                            const structural_objectRef owner,
                                                            const technology_managerConstRef TM);
-#endif
 
    void remove_module(structural_objectRef obj);
 

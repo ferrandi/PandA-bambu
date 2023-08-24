@@ -44,7 +44,6 @@
 #define HLS_STEP_HPP
 
 /// Autoheader include
-#include "config_HAVE_BEAGLE.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "config_HAVE_ILP_BUILT.hpp"
 #include "config_HAVE_LIBRARY_CHARACTERIZATION_BUILT.hpp"
@@ -114,9 +113,6 @@ enum class HLSFlowStep_Type
    DOMINATOR_MEMORY_ALLOCATION,
    DOMINATOR_MEMORY_ALLOCATION_CS,
    DRY_RUN_EVALUATION,
-#if HAVE_BEAGLE
-   DSE_DESIGN_FLOW,
-#endif
    EASY_MODULE_BINDING,
    EVALUATION,
    FSM_CONTROLLER_CREATOR,
@@ -226,7 +222,7 @@ class HLS_step : public DesignFlowStep
    /**
     * Constructor
     * @param Param class containing all the parameters
-    * @param HLS class containing all the HLS datastructures
+    * @param HLS class containing all the HLS data-structures
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type is the type of this hls flow step
     */

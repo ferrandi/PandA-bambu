@@ -108,12 +108,6 @@ HostProfiling::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
          {
             relationships.insert(std::make_pair(BASIC_BLOCKS_PROFILING, WHOLE_APPLICATION));
          }
-#if HAVE_ZEBU_BUILT
-         if(static_cast<int>(profiling_method) & static_cast<int>(HostProfiling_Method::PM_PATH_PROBABILITY))
-         {
-            relationships.insert(std::make_pair(PROBABILITY_PATH, WHOLE_APPLICATION));
-         }
-#endif
          break;
       }
       case(INVALIDATION_RELATIONSHIP):

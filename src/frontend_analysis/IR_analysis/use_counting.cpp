@@ -38,29 +38,13 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
-
-/// Header include
 #include "use_counting.hpp"
 
-/// Behavior include
+#include "Parameter.hpp"
 #include "application_manager.hpp"
-
-/// design_flow_manager includes
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-
-/// Parameter include
-#include "Parameter.hpp"
-
-/// STL includes
-#include <list>
-#include <utility>
-
-/// tree include
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "ext_tree_node.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
@@ -68,6 +52,8 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include <list>
+#include <utility>
 
 use_counting::use_counting(const ParameterConstRef _parameters, const application_managerRef _AppM,
                            unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)

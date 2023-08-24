@@ -2899,7 +2899,7 @@ parametric_list_based::ComputeHLSRelationships(const DesignFlowStep::Relationshi
       {
 #if HAVE_ILP_BUILT
          if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
             and HLSMgr->get_HLS(funId) and
             HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->GetOmpForDegree() == 0
 #endif

@@ -42,12 +42,12 @@
 #include "structural_objects.hpp"
 
 #include "config_HAVE_ASSERTS.hpp"
-#include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
 #include "config_RELEASE.hpp"
 
 #include "HDL_manager.hpp"
 #include "NP_functionality.hpp"
+#include "behavioral_helper.hpp"
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
@@ -63,9 +63,6 @@
 #include "xml_helper.hpp"
 #include "xml_node.hpp"
 #include "xml_text_node.hpp"
-#if HAVE_BAMBU_BUILT
-#include "behavioral_helper.hpp"
-#endif
 
 #include <algorithm>
 #include <boost/algorithm/string/replace.hpp>
@@ -399,7 +396,6 @@ structural_type_descriptor::structural_type_descriptor(const std::string& type_n
    }
 }
 
-#if HAVE_BAMBU_BUILT
 structural_type_descriptor::structural_type_descriptor(unsigned int index, const BehavioralHelperConstRef helper)
 {
    unsigned int type_index = helper->get_type(index);
@@ -512,7 +508,6 @@ structural_type_descriptor::structural_type_descriptor(unsigned int index, const
       }
    }
 }
-#endif
 
 bool structural_type_descriptor::check_type(structural_type_descriptorRef src_type,
                                             structural_type_descriptorRef dest_type)
@@ -5255,203 +5250,6 @@ void port_o::fix_port_properties(structural_objectRef port_i, structural_objectR
       GetPointer<port_o>(cir_port)->set_is_halved(true);
    }
 }
-
-#if HAVE_KOALA_BUILT
-std::string structural_object::get_equation(const structural_objectRef out_obj, const technology_managerConstRef TM,
-                                            CustomOrderedSet<structural_objectRef>& analyzed,
-                                            const CustomOrderedSet<structural_objectRef>& input_ports,
-                                            const CustomOrderedSet<structural_objectRef>& output_ports) const
-{
-   analyzed.insert(out_obj);
-
-   std::string EQ = out_obj->get_id();
-
-   if(input_ports.find(out_obj) != input_ports.end())
-   {
-      return EQ;
-   }
-
-   //    const structural_objectRef obj_owner = out_obj->get_owner();
-
-   switch(out_obj->get_kind())
-   {
-      case port_o_K:
-      {
-         const structural_objectRef owner = this->get_owner();
-         if(owner and GetPointer<port_o>(out_obj)->get_port_direction() == port_o::OUT)
-         {
-            const structural_type_descriptorRef STD = owner->get_typeRef();
-            std::string Library = TM->get_library(STD->id_type);
-            const technology_nodeRef& TN = TM->get_fu(STD->id_type, Library);
-            THROW_ASSERT(TN, "Module " + owner->get_path() + " is not stored into library");
-            functional_unit* fu = GetPointer<functional_unit>(TN);
-            THROW_ASSERT(fu, "Module " + owner->get_path() + " is not a functional unit");
-            const structural_objectRef strobj = fu->CM->get_circ();
-            NP_functionalityRef NPF = GetPointer<module>(owner)->get_NP_functionality();
-            if(!NPF)
-            {
-               NPF = GetPointer<module>(strobj)->get_NP_functionality();
-               THROW_ASSERT(NPF, "Functionality not available for element " + owner->get_id());
-            }
-            std::string tmp = NPF->get_NP_functionality(NP_functionality::EQUATION);
-            /*if (GetPointer<module>(strobj)->get_out_port_size() > 1)
-               THROW_ERROR("Multi-out module not supported");
-            */
-            std::vector<std::string> tokens = SplitString(tmp, ";");
-            for(unsigned int i = 0; i < tokens.size(); i++)
-            {
-               if(boost::algorithm::starts_with(tokens[i], out_obj->get_id()))
-                  EQ = tokens[i].substr(tokens[i].find("=") + 1, tokens[i].size());
-            }
-            // EQ = NPF->get_NP_functionality(NP_functionality::EQUATION);
-            for(unsigned int p = 0; p < GetPointer<module>(owner)->get_in_port_size(); p++)
-            {
-               const structural_objectRef inobj = GetPointer<module>(owner)->get_in_port(p);
-               std::string In = inobj->get_equation(inobj, TM, analyzed, input_ports, output_ports);
-               bool in_port = false;
-               for(CustomOrderedSet<structural_objectRef>::iterator k = input_ports.begin();
-                   k != input_ports.end() and !in_port; ++k)
-                  if((*k)->get_id() == In)
-                     in_port = true;
-               if(!in_port)
-                  In = "(" + In + ")";
-               boost::replace_all(EQ, GetPointer<module>(strobj)->get_in_port(p)->get_id(), In);
-            }
-         }
-         else
-         {
-            for(unsigned int p = 0; p < GetPointer<port_o>(out_obj)->get_connections_size(); p++)
-            {
-               const structural_objectRef obj = GetPointer<port_o>(out_obj)->get_connection(p);
-               if(output_ports.find(obj) != output_ports.end())
-                  continue;
-               if(obj /* and analyzed.find(obj) == analyzed.end()*/)
-               {
-                  EQ = obj->get_equation(obj, TM, analyzed, input_ports, output_ports);
-               }
-               else
-                  EQ = out_obj->get_id();
-            }
-         }
-         break;
-      }
-      case signal_o_K:
-      {
-         for(unsigned int p = 0; p < GetPointer<signal_o>(out_obj)->get_connected_objects_size(); p++)
-         {
-            const structural_objectRef obj = GetPointer<signal_o>(out_obj)->get_port(p);
-            if(obj and out_obj != obj /* and analyzed.find(obj) == analyzed.end()*/)
-            {
-               if(output_ports.find(obj) != output_ports.end() and analyzed.find(obj) == analyzed.end())
-               {
-                  return obj->get_id();
-               }
-               if(GetPointer<port_o>(obj)->get_port_direction() != port_o::OUT || obj->get_owner() == get_owner())
-                  continue;
-               EQ = obj->get_equation(obj, TM, analyzed, input_ports, output_ports);
-            }
-         }
-         break;
-      }
-      default:
-         THROW_ERROR("Not supported component " + std::string(out_obj->get_kind_text()));
-   }
-
-   return EQ;
-
-#if 0
-   switch (out_obj->get_kind())
-   {
-      case port_o_K:
-      {
-         /// get the module owner of the port
-         const structural_objectRef owner = this->get_owner();
-         ///this is the top of the hierarchy, it won't be in the library
-         if (!owner)
-         {
-            THROW_ASSERT(this == out_obj->get_owner().get(), "Malformed structure");
-            const structural_objectRef owner = out_obj->get_owner();
-            for(unsigned int p = 0; p < GetPointer<port_o>(out_obj)->get_connections_size(); p++)
-            {
-               const structural_objectRef obj = GetPointer<port_o>(out_obj)->get_connection(p);
-               if (obj and analyzed.find(obj) == analyzed.end())
-               {
-                  analyzed.insert(obj);
-                  EQ = obj->get_equation(obj, TM, analyzed, input_ports);
-               }
-               else
-                  EQ = out_obj->get_id();
-            }
-         }
-         ///if it is an output port, compute the internal equation of the component
-         else if (owner and GetPointer<port_o>(out_obj)->get_port_direction() == port_o::OUT)
-         {
-            analyzed.insert(owner);
-            const structural_type_descriptorRef STD = owner->get_typeRef();
-            const technology_nodeRef& TN = TM->get_fu(STD->id_type, "EDIF_LIB");
-            THROW_ASSERT(TN, "Module " + owner->get_path() + " is not stored into library");
-            functional_unit* fu = GetPointer<functional_unit>(TN);
-            THROW_ASSERT(fu, "Module " + owner->get_path() + " is not a functional unit");
-            const structural_objectRef strobj = fu->CM->get_circ();
-            NP_functionalityRef NPF = GetPointer<module>(owner)->get_NP_functionality();
-            if (!NPF)
-            {
-               NPF = GetPointer<module>(strobj)->get_NP_functionality();
-               THROW_ASSERT(NPF, "Functionality not available for element " + owner->get_id());
-            }
-               std::string tmp = NPF->get_NP_functionality(NP_functionality::EQUATION);
-               if (GetPointer<module>(strobj)->get_out_port_size() > 1)
-                  THROW_ERROR("Multi-out module not supported");
-               std::vector<std::string> tokens = SplitString(tmp, ";");
-               for(unsigned int i = 0; i < tokens.size(); i++)
-               {
-                  if (tokens[i].find(GetPointer<module>(strobj)->get_out_port(0)->get_id()) == 0)
-                     EQ = tokens[i].substr(tokens[i].find("=") + 1, tokens[i].size());
-               }
-               //EQ = NPF->get_NP_functionality(NP_functionality::EQUATION);
-               for(unsigned int p = 0; p < GetPointer<module>(owner)->get_in_port_size(); p++)
-               {
-                  const structural_objectRef inobj = GetPointer<module>(owner)->get_in_port(p);
-                  analyzed.insert(inobj);
-                  std::string In = inobj->get_equation(inobj, TM, analyzed, input_ports);
-                  boost::replace_all(EQ, GetPointer<module>(strobj)->get_in_port(p)->get_id(), In);
-               }
-            }
-            else
-            {
-               for(unsigned int p = 0; p < GetPointer<port_o>(out_obj)->get_connections_size(); p++)
-               {
-                  const structural_objectRef obj = GetPointer<port_o>(out_obj)->get_connection(p);
-                  if (obj and analyzed.find(obj) == analyzed.end())
-                  {
-                     analyzed.insert(obj);
-                     EQ = obj->get_equation(obj, TM, analyzed, input_ports);
-                  }
-                  else
-                     EQ = out_obj->get_id();
-               }
-            }
-            break;
-         }
-         case signal_o_K:
-         {
-            for(unsigned int p = 0; p < GetPointer<signal_o>(out_obj)->get_connected_objects_size(); p++)
-            {
-               const structural_objectRef obj = GetPointer<signal_o>(out_obj)->get_port(p);
-               if (obj  and analyzed.find(obj) == analyzed.end())
-               {
-                  analyzed.insert(obj);
-                  EQ = obj->get_equation(obj, TM, analyzed, input_ports);
-               }
-            }
-            break;
-         }
-         default:
-            THROW_ERROR("Not supported component " + std::string(out_obj->get_kind_text()));
-      }
-#endif
-}
-#endif
 
 #define __TO_STRING_HELPER(r, data, elem)                                           \
    name = #elem;                                                                    \

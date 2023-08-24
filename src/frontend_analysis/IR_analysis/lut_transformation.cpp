@@ -43,17 +43,13 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wswitch-enum"
-
 #define USE_SAT 0
-
 #pragma region needed by mockturtle / algorithms / satlut_mapping.hpp
 #define LIN64
 #define ABC_NAMESPACE pabc
 #define ABC_NO_USE_READLINE
 #pragma endregion
-
 #define FMT_HEADER_ONLY 1
-
 #define PHMAP_BIDIRECTIONAL 0
 #define MCDBGQ_NOLOCKFREE_FREELIST 0
 #define MCDBGQ_TRACKMEM 0
@@ -61,10 +57,7 @@
 #define MCDBGQ_NOLOCKFREE_IMPLICITPRODHASH 0
 #define MCDBGQ_USEDEBUGFREELIST 0
 #define DISABLE_NAUTY
-
 #define MIG_SYNTHESIS 0
-
-#include <type_traits>
 
 #include <kitty/print.hpp>
 #include <mockturtle/algorithms/aig_resub.hpp>
@@ -86,69 +79,38 @@
 #include <mockturtle/networks/aig.hpp>
 #include <mockturtle/networks/klut.hpp>
 #include <mockturtle/views/mapping_view.hpp>
-
+#include <type_traits>
 #if MIG_SYNTHESIS
 #include <mockturtle/algorithms/mig_algebraic_rewriting.hpp>
 #include <mockturtle/algorithms/node_resynthesis/mig_npn.hpp>
 #endif
-
 #if USE_SAT
 #include <mockturtle/algorithms/satlut_mapping.hpp>
 #endif
 
-/// Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
-
-///. include
 #include "Parameter.hpp"
-
-/// behavior includes
-#include "application_manager.hpp"
-#include "function_behavior.hpp"
-
-/// constants include
 #include "allocation_constants.hpp"
-
-/// design_flows includes
+#include "application_manager.hpp"
+#include "behavioral_helper.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-
-/// design_flows/technology includes
+#include "function_behavior.hpp"
+#include "hls_device.hpp"
+#include "hls_manager.hpp"
+#include "math_function.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "technology_flow_step.hpp"
 #include "technology_flow_step_factory.hpp"
-
-/// HLS includes
-#include "hls_manager.hpp"
-#include "hls_target.hpp"
-
-/// STD include
-#include <fstream>
-
-#if HAVE_BAMBU_BUILT
-/// technology include
 #include "technology_manager.hpp"
-
-/// technology/physical_library/modes include
-#include "time_model.hpp"
-#endif
-
-/// tree includes
-#include "behavioral_helper.hpp"
-
-/// technology/physical_library include
 #include "technology_node.hpp"
-
-/// utility include
-#include "math_function.hpp"
-
-/// tree includes
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "time_info.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_reindex.hpp"
+#include <fstream>
 
 #pragma region Macros declaration
 
@@ -2004,10 +1966,10 @@ void lut_transformation::Initialize()
 {
    TM = AppM->get_tree_manager();
    tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
-   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
-   const auto hls_target = GetPointerS<const HLS_manager>(AppM)->get_HLS_target();
-   THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "unexpected condition");
-   max_lut_size = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
+   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_device(), "unexpected condition");
+   const auto hls_d = GetPointerS<const HLS_manager>(AppM)->get_HLS_device();
+   THROW_ASSERT(hls_d->has_parameter("max_lut_size"), "unexpected condition");
+   max_lut_size = hls_d->get_parameter<size_t>("max_lut_size");
 }
 
 DesignFlowStep_Status lut_transformation::InternalExec()

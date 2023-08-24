@@ -62,7 +62,7 @@ CONSTREF_FORWARD_DECL(BehavioralHelper);
 UINT_STRONG_TYPEDEF_FORWARD_DECL(ControlStep);
 CONSTREF_FORWARD_DECL(HLS_constraints);
 CONSTREF_FORWARD_DECL(HLS_manager);
-CONSTREF_FORWARD_DECL(HLS_target);
+CONSTREF_FORWARD_DECL(HLS_device);
 CONSTREF_FORWARD_DECL(Parameter);
 CONSTREF_FORWARD_DECL(Schedule);
 enum class Allocation_MinMax;
@@ -144,7 +144,7 @@ class AllocationInformation : public HLSFunctionIR
    HLS_constraintsConstRef HLS_C;
 
    /// reference to the information representing the target for the synthesis
-   HLS_targetConstRef HLS_T;
+   HLS_deviceConstRef HLS_D;
 
    /// The behavioral helper
    BehavioralHelperConstRef behavioral_helper;

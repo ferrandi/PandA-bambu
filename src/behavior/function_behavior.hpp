@@ -188,7 +188,6 @@ class FunctionBehavior
    friend class loops_computation;
    friend class instr_sequences_detection;
    friend struct loop_regions_computation;
-   friend class LoopsAnalysisZebu;
    friend class LoopsProfiling;
    friend class probability_path;
    friend class HostProfiling;

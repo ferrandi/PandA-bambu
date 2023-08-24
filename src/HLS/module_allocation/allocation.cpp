@@ -38,21 +38,23 @@
  *
  */
 
-/// Header include
 #include "allocation.hpp"
+
 #include "HDL_manager.hpp"            // for structural_managerRef, langu...
 #include "ModuleGeneratorManager.hpp" // for structural_objectRef, struct...
 #include "NP_functionality.hpp"       // for NP_functionalityRef
 #include "Parameter.hpp"              // for ParameterConstRef
 #include "allocation_information.hpp" // for technology_nodeRef, node_kin...
 #include "application_frontend_flow_step.hpp"
+#include "area_info.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
-#include "clb_model.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp" // for HAVE_EXPERIMENTAL
 #include "config_HAVE_FLOPOCO.hpp"      // for HAVE_FLOPOCO
 #include "cpu_time.hpp"                 // for START_TIME, STOP_TIME
-#include "dbgPrintHelper.hpp"           // for DEBUG_LEVEL_VERY_PEDANTIC
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_VERY_PEDANTIC
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "design_flow_step_factory.hpp" // for DesignFlowManagerConstRef
@@ -60,10 +62,11 @@
 #include "frontend_flow_step_factory.hpp"
 #include "function_frontend_flow_step.hpp"
 #include "functions.hpp"
-#include "hls.hpp"                   // for HLS_constraintsRef
-#include "hls_constraints.hpp"       // for ENCODE_FU_LIB
+#include "generic_device.hpp"
+#include "hls.hpp"             // for HLS_constraintsRef
+#include "hls_constraints.hpp" // for ENCODE_FU_LIB
+#include "hls_device.hpp"
 #include "hls_flow_step_factory.hpp" // for HLS_managerRef
-#include "hls_target.hpp"
 #include "language_writer.hpp"
 #include "library_manager.hpp" // for library_managerRef, library_...
 #include "memory.hpp"
@@ -73,27 +76,21 @@
 #include "string_manipulation.hpp" // for STR GET_CLASS
 #include "structural_manager.hpp"
 #include "structural_objects.hpp" // for PROXY_PREFIX, module, CLOCK_...
-#include "target_device.hpp"
 #include "technology_manager.hpp" // for PROXY_LIBRARY, WORK_LIBRARY
 #include "technology_node.hpp"    // for functional_unit, operation
-#include "time_model.hpp"         // for ParameterConstRef
+#include "time_info.hpp"          // for ParameterConstRef
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp" // for GET_NODE, GET_INDEX_NODE
 #include "tree_reindex.hpp"
 #include "typed_node_info.hpp" // for GET_NAME, ENTRY, EXIT, GET_TYPE
 #include "utility.hpp"         // for INFINITE_UINT, ASSERT_PARAMETER
-#include <cstddef>             // for size_t
-#include <limits>              // for numeric_limits
-
-/// STL includes
 #include <algorithm>
+#include <cstddef> // for size_t
+#include <limits>  // for numeric_limits
 #include <tuple>
 #include <utility>
 #include <vector>
-
-#include "custom_map.hpp"
-#include "custom_set.hpp"
 
 static bool is_other_port(const structural_objectRef& port)
 {
@@ -169,8 +166,8 @@ void allocation::Initialize()
    HLS->allocation_information->Initialize();
    allocation_information = HLS->allocation_information;
    fu_list.clear();
-   HLS_T = HLSMgr->get_HLS_target();
-   TechM = HLS_T->get_technology_manager();
+   HLS_D = HLSMgr->get_HLS_device();
+   TechM = HLS_D->get_technology_manager();
 }
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
@@ -387,8 +384,8 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
    if(!op_ports.empty())
    {
       structural_objectRef or_gate = wrapper_SM->add_module_from_technology_library(
-          "proxy_selector____or_gate", OR_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD),
-          wrapper_obj, HLS->HLS_T->get_technology_manager());
+          "proxy_selector____or_gate", OR_GATE_STD, HLS->HLS_D->get_technology_manager()->get_library(OR_GATE_STD),
+          wrapper_obj, HLS->HLS_D->get_technology_manager());
       structural_objectRef or_in = or_gate->find_member("in", port_vector_o_K, or_gate);
       auto* port = GetPointer<port_o>(or_in);
       port->add_n_ports(static_cast<unsigned int>(op_ports.size()), or_in);
@@ -429,8 +426,8 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
 
             structural_objectRef mux = wrapper_SM->add_module_from_technology_library(
                 "proxy_mux_____" + port_name + offset, MUX_GATE_STD,
-                HLS->HLS_T->get_technology_manager()->get_library(MUX_GATE_STD), wrapper_obj,
-                HLS->HLS_T->get_technology_manager());
+                HLS->HLS_D->get_technology_manager()->get_library(MUX_GATE_STD), wrapper_obj,
+                HLS->HLS_D->get_technology_manager());
             structural_objectRef mux_in1 = mux->find_member("in1", port_o_K, mux);
             GetPointer<port_o>(mux_in1)->type_resize(bitwidth_size);
             structural_objectRef mux_in2 = mux->find_member("in2", port_o_K, mux);
@@ -682,7 +679,7 @@ void allocation::add_proxy_function_wrapper(const std::string& library_name, tec
    /// add a fictitious operation to allow bus merging
    TechM->add_operation(PROXY_LIBRARY, wrapped_fu_name, wrapped_fu_name);
    auto* wrapper_fictious_op = GetPointer<operation>(wrapper_fu->get_operation(wrapped_fu_name));
-   wrapper_fictious_op->time_m = time_model::create_model(HLS_T->get_target_device()->get_type(), parameters);
+   wrapper_fictious_op->time_m = time_info::factory(parameters);
 
    /// automatically build proxy wrapper HDL description
    BuildProxyWrapper(wrapper_fu, orig_fu->get_name(), library_name);
@@ -697,7 +694,7 @@ void allocation::BuildProxyFunctionVerilog(functional_unit* current_fu)
    auto inPortSize = static_cast<unsigned int>(fu_module->get_in_port_size());
    auto outPortSize = static_cast<unsigned int>(fu_module->get_out_port_size());
    language_writerRef writer = language_writer::create_writer(
-       HDLWriter_Language::VERILOG, HLSMgr->get_HLS_target()->get_technology_manager(), parameters);
+       HDLWriter_Language::VERILOG, HLSMgr->get_HLS_device()->get_technology_manager(), parameters);
 
    structural_type_descriptorRef b_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    std::string sel_guard;
@@ -779,7 +776,7 @@ void allocation::BuildProxyFunctionVHDL(functional_unit* current_fu)
    auto inPortSize = static_cast<unsigned int>(fu_module->get_in_port_size());
    auto outPortSize = static_cast<unsigned int>(fu_module->get_out_port_size());
    language_writerRef writer = language_writer::create_writer(
-       HDLWriter_Language::VHDL, HLSMgr->get_HLS_target()->get_technology_manager(), parameters);
+       HDLWriter_Language::VHDL, HLSMgr->get_HLS_device()->get_technology_manager(), parameters);
 
    structural_type_descriptorRef b_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    std::string sel_guard;
@@ -1089,7 +1086,7 @@ void allocation::add_proxy_function_module(const HLS_constraintsRef HLS_C, techn
    /// add a fictitious operation to allow bus merging
    TechM->add_operation(PROXY_LIBRARY, proxied_fu_name, proxied_fu_name);
    auto* proxy_fictious_op = GetPointer<operation>(proxy_fu->get_operation(proxied_fu_name));
-   proxy_fictious_op->time_m = time_model::create_model(HLS_T->get_target_device()->get_type(), parameters);
+   proxy_fictious_op->time_m = time_info::factory(parameters);
 
    /// automatically build proxy description
    BuildProxyFunction(proxy_fu);
@@ -2568,7 +2565,7 @@ std::string allocation::get_compliant_pipelined_unit(double clock, const std::st
          return "";
       }
    }
-   const technology_nodeRef fu_template = HLS_T->get_technology_manager()->get_fu(fu->fu_template_name, library_name);
+   const technology_nodeRef fu_template = HLS_D->get_technology_manager()->get_fu(fu->fu_template_name, library_name);
    const functional_unit_template* fu_temp = GetPointer<functional_unit_template>(fu_template);
    THROW_ASSERT(fu_temp, "expected a template functional unit for a pipelined unit");
    bool is_flopoco_provided = false;
@@ -2628,15 +2625,14 @@ std::string allocation::get_compliant_pipelined_unit(double clock, const std::st
    for(auto st = st_next = pipe_parameters.begin(); st != st_end; ++st)
    {
       ++st_next;
-      const technology_nodeRef fu_cur_obj = HLS_T->get_technology_manager()->get_fu(
+      const technology_nodeRef fu_cur_obj = HLS_D->get_technology_manager()->get_fu(
           fu->fu_template_name + "_" + template_suffix + "_" + *st, library_name);
       if(fu_cur_obj)
       {
-         area_modelRef a_m = GetPointer<functional_unit>(fu_cur_obj)->area_m;
+         area_infoRef a_m = GetPointer<functional_unit>(fu_cur_obj)->area_m;
          THROW_ASSERT(a_m, "Area information not specified for unit " + fu->fu_template_name + "_" + template_suffix +
                                "_" + *st);
-         bool has_DSPs =
-             (GetPointer<clb_model>(a_m) && GetPointer<clb_model>(a_m)->get_resource_value(clb_model::DSP) > 0);
+         bool has_DSPs = (a_m && a_m->get_resource_value(area_info::DSP) > 0);
          double DSP_allocation_coefficient = allocation_information->DSP_allocation_coefficient;
          double dsp_multiplier = has_DSPs ? allocation_information->DSPs_margin * DSP_allocation_coefficient : 1.0;
          double dsp_multiplier_stage =
@@ -2708,12 +2704,12 @@ void allocation::set_number_channels(unsigned int fu_name, unsigned int n_ports)
 
 technology_nodeRef allocation::get_fu(const std::string& fu_name)
 {
-   std::string library_name = HLS_T->get_technology_manager()->get_library(fu_name);
+   std::string library_name = HLS_D->get_technology_manager()->get_library(fu_name);
    if(library_name.empty())
    {
       return technology_nodeRef();
    }
-   return HLS_T->get_technology_manager()->get_fu(fu_name, library_name);
+   return HLS_D->get_technology_manager()->get_fu(fu_name, library_name);
 }
 
 bool allocation::is_ram_not_timing_compliant(const HLS_constraintsRef HLS_C, unsigned int var,

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2023 Politecnico di Milano
+ *              Copyright (C) 2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -30,48 +30,46 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
 /**
- * @file CMOS_technology.hpp
- * @brief Class used to represent a target die for ASIC implementation
+ * @file hls_device.hpp
+ * @brief HLS specialization of generic_device
  *
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
- * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  */
+#ifndef HLS_DEVICE_HPP
+#define HLS_DEVICE_HPP
 
-#ifndef _CMOS_TECHNOLOGY_HPP_
-#define _CMOS_TECHNOLOGY_HPP_
-
-#include "target_technology.hpp"
-REF_FORWARD_DECL(structural_manager);
+#include "generic_device.hpp"
+/**
+ * @name forward declarations
+ */
+//@{
 REF_FORWARD_DECL(technology_manager);
+REF_FORWARD_DECL(generic_device);
+REF_FORWARD_DECL(Parameter);
+REF_FORWARD_DECL(HLS_device);
+//@}
 
-class CMOS_technology : public target_technology
+class HLS_device : public generic_device
 {
-   /**
-    * Initialize the target device based on the given parameters
-    */
-   void initialize() override;
-
  public:
    /**
-    * Constructor of the class
+    * Constructor
     */
-   explicit CMOS_technology(const ParameterConstRef& param);
+   HLS_device(const ParameterConstRef& Param, const technology_managerRef& TM);
 
    /**
-    * Destructor of the class
+    * Destructor
     */
-   ~CMOS_technology() override;
+   ~HLS_device() override;
 
    /**
-    * Returns the type of the technology currently implemented in a string format.
-    * @return a string representing the type of the technology
+    * Factory method from XML file
     */
-   std::string get_string_type() const override;
+   static HLS_deviceRef factory(const ParameterRef& Param);
 };
+/// refcount definition of class
+using HLS_deviceRef = refcount<HLS_device>;
 
 #endif

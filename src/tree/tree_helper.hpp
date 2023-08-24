@@ -46,8 +46,6 @@
 #ifndef TREE_HELPER_HPP
 #define TREE_HELPER_HPP
 
-#include "config_HAVE_BAMBU_BUILT.hpp"
-
 #include "custom_set.hpp" // for set
 #include "custom_set.hpp" // for unordered_set
 #include <cstddef>        // for size_t
@@ -434,7 +432,6 @@ class tree_helper
     */
    static bool IsSystemType(const tree_nodeConstRef& type);
 
-#if HAVE_BAMBU_BUILT
    /**
     * Return true if the decl node or type is in libbambu
     * @param TM is the tree manager
@@ -451,7 +448,6 @@ class tree_helper
     * @return true if the decl node or type is in libbambu
     */
    static bool IsInLibbambu(const tree_nodeConstRef& type);
-#endif
 
    /**
     * Return if treenode index is an enumeral type

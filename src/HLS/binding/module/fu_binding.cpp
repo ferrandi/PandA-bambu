@@ -50,8 +50,8 @@
 
 #include "call_graph_manager.hpp"
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "memory.hpp"
 #include "memory_allocation.hpp"
 #include "memory_cs.hpp"
@@ -282,10 +282,10 @@ structural_objectRef fu_binding::add_gate(const HLS_managerRef HLSMgr, const hls
    else
    {
       const auto template_name = GetPointer<functional_unit>(fu)->fu_template_name;
-      const auto library_name = HLS->HLS_T->get_technology_manager()->get_library(template_name);
+      const auto library_name = HLS->HLS_D->get_technology_manager()->get_library(template_name);
       curr_lib_instance =
           GetPointerS<functional_unit>(GetPointerS<functional_unit_template>(
-                                           HLS->HLS_T->get_technology_manager()->get_fu(template_name, library_name))
+                                           HLS->HLS_D->get_technology_manager()->get_fu(template_name, library_name))
                                            ->FU)
               ->CM->get_circ();
    }
@@ -544,7 +544,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding functional units to circuit");
    const auto SM = HLS->datapath;
-   const auto TechM = HLS->HLS_T->get_technology_manager();
+   const auto TechM = HLS->HLS_D->get_technology_manager();
 
    /// unique id identifier
    unsigned int unique_id = 0U;
@@ -1379,11 +1379,11 @@ void fu_binding::join_merge_split(
     const structural_objectRef circuit, unsigned int& _unique_id) const
 {
    const auto js_name = "join_signal";
-   const auto js_library = HLS->HLS_T->get_technology_manager()->get_library(js_name);
+   const auto js_library = HLS->HLS_D->get_technology_manager()->get_library(js_name);
    const auto ss_name = "split_signal";
-   const auto ss_library = HLS->HLS_T->get_technology_manager()->get_library(ss_name);
+   const auto ss_library = HLS->HLS_D->get_technology_manager()->get_library(ss_name);
    const auto bus_merger_res_name = "bus_merger";
-   const auto bm_library = HLS->HLS_T->get_technology_manager()->get_library(bus_merger_res_name);
+   const auto bm_library = HLS->HLS_D->get_technology_manager()->get_library(bus_merger_res_name);
 
    for(const auto& po : primary_outs)
    {
@@ -1403,7 +1403,7 @@ void fu_binding::join_merge_split(
       else
       {
          const auto bus_merger_mod = SM->add_module_from_technology_library(
-             bus_merger_inst_name, bus_merger_res_name, bm_library, circuit, HLS->HLS_T->get_technology_manager());
+             bus_merger_inst_name, bus_merger_res_name, bm_library, circuit, HLS->HLS_D->get_technology_manager());
          const auto bm_in_port = GetPointerS<module>(bus_merger_mod)->get_in_port(0U);
          GetPointerS<port_o>(bm_in_port)->add_n_ports(static_cast<unsigned int>(merged_ports.size()), bm_in_port);
          if(is_vector_bus)
@@ -1426,7 +1426,7 @@ void fu_binding::join_merge_split(
                                                           merged_port->get_typeRef());
                const auto js_mod =
                    SM->add_module_from_technology_library(js_name + bus_merger_inst_name + STR(in_id), js_name,
-                                                          js_library, circuit, HLS->HLS_T->get_technology_manager());
+                                                          js_library, circuit, HLS->HLS_D->get_technology_manager());
                const auto js_in_port = GetPointerS<module>(js_mod)->get_in_port(0U);
                GetPointerS<port_o>(js_in_port)
                    ->add_n_ports(static_cast<unsigned int>(GetPointerS<port_o>(merged_port)->get_ports_size()),
@@ -1478,7 +1478,7 @@ void fu_binding::join_merge_split(
          if(is_vector_bus)
          {
             const auto ss_mod = SM->add_module_from_technology_library(
-                ss_name + bus_merger_inst_name, ss_name, ss_library, circuit, HLS->HLS_T->get_technology_manager());
+                ss_name + bus_merger_inst_name, ss_name, ss_library, circuit, HLS->HLS_D->get_technology_manager());
             structural_type_descriptorRef sig_type(new structural_type_descriptor);
             bus_port->get_typeRef()->copy(sig_type);
             const auto sign_out = SM->add_sign("sig_out_" + bus_merger_inst_name, circuit, sig_type);
@@ -1947,9 +1947,9 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
             required_variables[2] = bus_size_bitsize;
             produced_variables = std::max(produced_variables, mem_var_size_out);
          }
-         else if(HLS->HLS_T->get_technology_manager()->get_library(allocation_information->get_fu_name(fu).first) !=
+         else if(HLS->HLS_D->get_technology_manager()->get_library(allocation_information->get_fu_name(fu).first) !=
                      WORK_LIBRARY &&
-                 HLS->HLS_T->get_technology_manager()->get_library(allocation_information->get_fu_name(fu).first) !=
+                 HLS->HLS_D->get_technology_manager()->get_library(allocation_information->get_fu_name(fu).first) !=
                      PROXY_LIBRARY) // functions just synthesized shouldn't be customized
          {
             const auto np = fu_module->get_NP_functionality();

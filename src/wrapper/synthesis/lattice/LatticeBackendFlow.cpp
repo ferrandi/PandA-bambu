@@ -46,17 +46,15 @@
 
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
-#include "LUT_model.hpp"
+#include "DesignParameters.hpp"
 #include "LatticeWrapper.hpp"
 #include "Parameter.hpp"
-#include "area_model.hpp"
-#include "clb_model.hpp"
+#include "area_info.hpp"
 #include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
+#include "generic_device.hpp"
 #include "structural_objects.hpp"
-#include "target_device.hpp"
-#include "target_manager.hpp"
-#include "time_model.hpp"
+#include "time_info.hpp"
 #include "utility.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_script_command.hpp"
@@ -69,8 +67,8 @@
 #define LATTICE_MEM "LATTICE_MEM"
 
 LatticeBackendFlow::LatticeBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name,
-                                       const target_managerRef _target)
-    : BackendFlow(_Param, _flow_name, _target)
+                                       const generic_deviceRef _device)
+    : BackendFlow(_Param, _flow_name, _device)
 {
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " .:: Creating Lattice Backend Flow ::.");
 
@@ -90,7 +88,6 @@ LatticeBackendFlow::LatticeBackendFlow(const ParameterConstRef _Param, const std
    else
    {
       std::string device_string;
-      target_deviceRef device = target->get_target_device();
       if(device->has_parameter("family"))
       {
          device_string = device->get_parameter<std::string>("family");
@@ -211,24 +208,21 @@ void LatticeBackendFlow::CheckSynthesisResults()
    xparse_utilization(report_filename);
 
    THROW_ASSERT(design_values.find(LATTICE_SLICE) != design_values.end(), "Missing logic elements");
-   area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
+   area_m = area_info::factory(Param);
    area_m->set_area_value(design_values[LATTICE_SLICE]);
-   auto* area_clb_model = GetPointer<clb_model>(area_m);
-   area_clb_model->set_resource_value(clb_model::LUT_FF_PAIRS, design_values[LATTICE_SLICE]);
+   area_m->set_resource_value(area_info::SLICE, design_values[LATTICE_SLICE]);
+   area_m->set_resource_value(area_info::REGISTERS, design_values[LATTICE_REGISTERS]);
+   area_m->set_resource_value(area_info::DSP, design_values[LATTICE_DSP]);
+   area_m->set_resource_value(area_info::BRAM, design_values[LATTICE_MEM]);
 
-   area_clb_model->set_resource_value(clb_model::REGISTERS, design_values[LATTICE_REGISTERS]);
-   area_clb_model->set_resource_value(clb_model::DSP, design_values[LATTICE_DSP]);
-   area_clb_model->set_resource_value(clb_model::BRAM, design_values[LATTICE_MEM]);
-
-   time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
-   auto* lut_m = GetPointer<LUT_model>(time_m);
+   time_m = time_info::factory(Param);
    if(design_values[LATTICE_DELAY] != 0.0)
    {
-      lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, design_values[LATTICE_DELAY]);
+      time_m->set_execution_time(design_values[LATTICE_DELAY]);
    }
    else
    {
-      lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, 0);
+      time_m->set_execution_time(0);
    }
 }
 
@@ -283,7 +277,6 @@ void LatticeBackendFlow::create_sdc(const DesignParametersRef dp)
 
 void LatticeBackendFlow::InitDesignParameters()
 {
-   const target_deviceRef device = target->get_target_device();
    actual_parameters->parameter_values[PARAM_target_device] = device->get_parameter<std::string>("model");
    auto device_family = device->get_parameter<std::string>("family");
    if(device_family.find('-') != std::string::npos)

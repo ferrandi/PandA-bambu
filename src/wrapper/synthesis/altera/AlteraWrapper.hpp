@@ -48,7 +48,7 @@
 #include "SynthesisTool.hpp"
 
 #include "refcount.hpp"
-REF_FORWARD_DECL(target_device);
+REF_FORWARD_DECL(generic_device);
 
 #define PARAM_quartus_report "quartus_report"
 #define PARAM_sources_macro_list "sources_macro_list"
@@ -63,7 +63,7 @@ class AlteraWrapper : public SynthesisTool
     * @param output_dir is the directory where to save all the results
     * @param default_output_dir is the default output directory
     */
-   AlteraWrapper(const ParameterConstRef& Param, const std::string& tool_exec, const target_deviceRef& device,
+   AlteraWrapper(const ParameterConstRef& Param, const std::string& tool_exec, const generic_deviceRef& device,
                  const std::string& output_dir, const std::string& default_output_dir);
 
    /**

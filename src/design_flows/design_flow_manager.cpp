@@ -172,11 +172,8 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet& steps, cons
 {
    static size_t temp_counter = 0;
    const DesignFlowGraphInfoRef design_flow_graph_info = design_flow_graph->GetDesignFlowGraphInfo();
-   DesignFlowStepSet steps_to_be_processed = steps;
-   while(steps_to_be_processed.size())
+   for(const auto& design_flow_step : steps)
    {
-      const DesignFlowStepRef design_flow_step = *(steps_to_be_processed.begin());
-      steps_to_be_processed.erase(design_flow_step);
       const std::string signature = design_flow_step->GetSignature();
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                      "-->Adding design flow step " + design_flow_step->GetName() + " - Signature " + signature);
@@ -216,14 +213,6 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet& steps, cons
                INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                               "---This step already exist but was unnecessary. Now it becomes necessary");
             }
-#if 0
-            else if(design_flow_step_info->status == DesignFlowStep_Status::SKIPPED)
-            {
-               /// The step already exists and it is already necessary; nothing to do
-               design_flow_step_info->status = DesignFlowStep_Status::UNEXECUTED;
-               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---This step already exist (skipped)");
-            }
-#endif
             else
             {
                THROW_ASSERT(design_flow_step_info->status != DesignFlowStep_Status::SKIPPED,
@@ -253,10 +242,9 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet& steps, cons
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Adding dependencies of " + design_flow_step->GetName());
       design_flow_step->ComputeRelationships(relationships, DesignFlowStep::DEPENDENCE_RELATIONSHIP);
       RecursivelyAddSteps(relationships, unnecessary);
-      DesignFlowStepSet::const_iterator relationship, relationship_end = relationships.end();
-      for(relationship = relationships.begin(); relationship != relationship_end; ++relationship)
+      for(const auto& relationship : relationships)
       {
-         const std::string relationship_signature = (*relationship)->GetSignature();
+         const std::string relationship_signature = relationship->GetSignature();
          vertex relationship_vertex = GetDesignFlowStep(relationship_signature);
          design_flow_graphs_collection->AddDesignFlowDependence(relationship_vertex, step_vertex,
                                                                 DesignFlowGraph::DEPENDENCE_SELECTOR);
@@ -279,20 +267,14 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet& steps, cons
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Added dependencies  of " + design_flow_step->GetName());
 
-      while(relationships.size())
-      {
-         relationships.erase(relationships.begin());
-      }
-
       /// Add steps from precedences
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Adding precedences of " + design_flow_step->GetName());
       relationships.clear();
       design_flow_step->ComputeRelationships(relationships, DesignFlowStep::PRECEDENCE_RELATIONSHIP);
       RecursivelyAddSteps(relationships, true);
-      relationship_end = relationships.end();
-      for(relationship = relationships.begin(); relationship != relationship_end; ++relationship)
+      for(const auto& relationship : relationships)
       {
-         const std::string relationship_signature = (*relationship)->GetSignature();
+         const std::string relationship_signature = relationship->GetSignature();
          vertex relationship_vertex = GetDesignFlowStep(relationship_signature);
          design_flow_graphs_collection->AddDesignFlowDependence(relationship_vertex, step_vertex,
                                                                 DesignFlowGraph::PRECEDENCE_SELECTOR);

@@ -50,16 +50,16 @@
 #include "cpu_time.hpp"
 #include "function_behavior.hpp"
 #include "functions.hpp"
+#include "generic_device.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "math_function.hpp"
 #include "memory.hpp"
 #include "op_graph.hpp"
 #include "polixml.hpp"
 #include "string_manipulation.hpp"
-#include "target_device.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 #include "tree_helper.hpp"
@@ -337,7 +337,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Memory allocation information:");
    const auto TM = HLSMgr->get_tree_manager();
-   const auto HLS_T = HLSMgr->get_HLS_target();
+   const auto HLS_D = HLSMgr->get_HLS_device();
 
    const auto initial_internal_address_p = parameters->isOption(OPT_initial_internal_address);
    const auto initial_internal_address = initial_internal_address_p ?
@@ -347,7 +347,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
        parameters->isOption(OPT_unaligned_access) && parameters->getOption<bool>(OPT_unaligned_access);
    const auto assume_aligned_access_p =
        parameters->isOption(OPT_aligned_access) && parameters->getOption<bool>(OPT_aligned_access);
-   const auto max_bram = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max");
+   const auto max_bram = HLS_D->get_parameter<unsigned int>("BRAM_bitsize_max");
    /// TODO: to be fixed with information coming out from the target platform description
    HLSMgr->base_address = user_defined_base_address != UINT64_MAX ?
                               user_defined_base_address :
@@ -1530,7 +1530,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    {
       HLSMgr->UpdateMemVersion();
       /// clean proxy library
-      const auto TechM = HLS_T->get_technology_manager();
+      const auto TechM = HLS_D->get_technology_manager();
       TechM->erase_library(PROXY_LIBRARY);
       TechM->erase_library(WORK_LIBRARY);
    }

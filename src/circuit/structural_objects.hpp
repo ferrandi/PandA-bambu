@@ -47,8 +47,6 @@
 #define STRUCTURAL_OBJECTS_HPP
 
 /// Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
-#include "config_HAVE_KOALA_BUILT.hpp"
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
 
 #include "NP_functionality.hpp"
@@ -56,10 +54,6 @@
 #include "exceptions.hpp"
 #include "refcount.hpp"
 #include "simple_indent.hpp"
-
-#if HAVE_KOALA_BUILT
-#include "custom_set.hpp"
-#endif
 
 #include <boost/preprocessor/seq/for_each.hpp>
 #include <ostream>
@@ -71,9 +65,7 @@
  * @name Forward declarations.
  */
 //@{
-#if HAVE_BAMBU_BUILT
 CONSTREF_FORWARD_DECL(BehavioralHelper);
-#endif
 REF_FORWARD_DECL(structural_manager);
 REF_FORWARD_DECL(NP_functionality);
 CONSTREF_FORWARD_DECL(structural_object);
@@ -197,14 +189,12 @@ struct structural_type_descriptor
    {
    }
 
-#if HAVE_BAMBU_BUILT
    /**
     * Object factory used in HLS
     * @param index is the index descriptor of the type
     * @param helper is the BehavioralHelper
     */
    structural_type_descriptor(unsigned int index, const BehavioralHelperConstRef helper);
-#endif
 
    /**
     * Destructor
@@ -419,16 +409,6 @@ class structural_object
     * @param s is a string identifying the structural_object.
     */
    void set_id(const std::string& s);
-
-#if HAVE_KOALA_BUILT
-   /**
-    * Return the equation associated with the output port of the component
-    */
-   std::string get_equation(const structural_objectRef out_obj, const technology_managerConstRef TM,
-                            CustomOrderedSet<structural_objectRef>& analyzed,
-                            const CustomOrderedSet<structural_objectRef>& input_ports,
-                            const CustomOrderedSet<structural_objectRef>& output_ports) const;
-#endif
 
    /**
     * Return the identifier associated with the structural_object.
@@ -2229,7 +2209,7 @@ class module : public structural_object
 
    /**
     * Return a non-empty string when the component has been specialized.
-    * The string identify with respect what the component has been specialized (e.g., target_device, behavior...)
+    * The string identify with respect what the component has been specialized (e.g., generic_device, behavior...)
     */
    const std::string get_specialized() const
    {

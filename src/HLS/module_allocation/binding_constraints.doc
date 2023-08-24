@@ -84,13 +84,11 @@
   that forces the two operations to be executed in different control steps (provided they are not in mutual exclusion),
   since they can not use the same functional unit in the same control step.
 
-  \if BEAGLE
   In the mixed high-level synthesis, this information is used for chromosome encoding and it allows to perform design 
   space exploration oriented to optimize the figures of merit and search the best trade-offs between execution 
   time (spreading operations in different functional units, to reduce latency, this leads to increase area occupation)
   and area occupation (trying to concentrate operations in the same functional units, this could lead to increase 
   latency, as explained above).
-  \endif
 
   \subsection sec_binding_constraints_in_hls Storing binding constraints
 

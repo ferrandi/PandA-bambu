@@ -50,10 +50,6 @@ bambu_CPPFLAGS = -DPKGLIBDIR="\"$(pkglibdir)\"" -DPKGDATADIR="\"$(pkgdatadir)\""
      -I$(top_srcdir)/src/HLS/stg \
      -I$(top_srcdir)/src/parser \
      -I$(top_srcdir)/src/technology \
-     -I$(top_srcdir)/src/technology/physical_library \
-     -I$(top_srcdir)/src/technology/physical_library/models \
-     -I$(top_srcdir)/src/technology/target_technology \
-     -I$(top_srcdir)/src/technology/target_device \
      -I$(top_srcdir)/src/wrapper/compiler \
       $(AM_CPPFLAGS)
 
@@ -77,16 +73,6 @@ if BUILD_LIB_HOST_PROFILING
 endif
 endif
 
-if BUILD_BEAGLE
-  bambu_CPPFLAGS += \
-        -I$(top_srcdir)/src/HLS/hls_flow/design_space_exploration \
-        -I$(top_srcdir)/src/HLS/hls_flow/design_space_exploration/common \
-        -I$(top_srcdir)/src/HLS/hls_flow/design_space_exploration/GA \
-        -isystem $(top_builddir)/ext/beagle/beagle/include/ \
-        -isystem $(BEAGLE_DIR)/beagle/include/ \
-        -isystem $(BEAGLE_DIR)/beagle/GA/include/ \
-        -isystem $(BEAGLE_DIR)/PACC
-endif
 if BUILD_LIB_CODE_ESTIMATION
    bambu_CPPFLAGS += \
       -I$(top_srcdir)/src/design_flows/codesign/estimation \

@@ -52,7 +52,6 @@
 #include "config_HAVE_FROM_AADL_ASN_BUILT.hpp"
 #include "config_HAVE_FROM_ARCH_BUILT.hpp"
 #include "config_HAVE_FROM_C_BUILT.hpp"
-#include "config_HAVE_FROM_LIBERTY.hpp"
 #include "config_HAVE_FROM_PSPLIB_BUILT.hpp"
 #include "config_HAVE_FROM_SDF3_BUILT.hpp"
 #include "config_HAVE_HLS_BUILT.hpp"
@@ -125,7 +124,7 @@ enum class DiopsisInstrumentWriter_Type;
        libm_std_rounding)(liveness_algorithm)(scheduling_mux_margins)(scheduling_priority)(scheduling_algorithm)(      \
        simulate)(simulator)(simulation_output)(pipelining)(storage_value_insertion_algorithm)(stg)(stg_algorithm)(     \
        register_allocation_algorithm)(register_grouping)(registered_inputs)(resp_model)(                               \
-       datapath_interconnection_algorithm)(insert_memory_profile)(timing_simulation)(top_file)(assert_debug)(          \
+       datapath_interconnection_algorithm)(insert_memory_profile)(top_file)(assert_debug)(                             \
        memory_allocation_algorithm)(memory_allocation_policy)(xml_memory_allocation)(rom_duplication)(base_address)(   \
        reset_type)(reset_level)(reg_init_value)(clock_period_resource_fraction)(channels_type)(channels_number)(       \
        memory_controller_type)(soft_float)(soft_fp)(fp_subnormal)(max_sim_cycles)(sparse_memory)(max_ulp)(             \
@@ -144,17 +143,19 @@ enum class DiopsisInstrumentWriter_Type;
        xilinx_root)(xilinx_settings)(xilinx_vivado_settings)(xilinx_glbl)(mentor_root)(mentor_modelsim_bin)(           \
        mentor_visualizer)(mentor_optimizer)(verilator)(verilator_l2_name)(verilator_timescale_override)(               \
        verilator_parallel)(icarus)(altera_root)(quartus_settings)(quartus_13_settings)(quartus_13_64bit)(              \
-       nanoxplore_root)(nanoxplore_settings)(nanoxplore_bypass)(shared_input_registers)(inline_functions)
+       nanoxplore_root)(nanoxplore_settings)(nanoxplore_bypass)(shared_input_registers)(inline_functions)(             \
+       constraints_functions)
 
 #define FRAMEWORK_OPTIONS                                                                                            \
-   (architecture)(benchmark_name)(cat_args)(find_max_transformations)(max_transformations)(compatible_compilers)(    \
-       compute_size_of)(configuration_name)(debug_level)(default_compiler)(dot_directory)(dump_profiling_data)(      \
-       file_costs)(file_input_data)(host_compiler)(ilp_max_time)(ilp_solver)(input_file)(input_format)(model_costs)( \
-       no_clean)(no_parse_files)(no_return_zero)(output_file)(output_level)(output_temporary_directory)(             \
-       output_directory)(panda_parameter)(parse_pragma)(pretty_print)(print_dot)(profiling_file)(profiling_method)(  \
-       program_name)(read_parameter_xml)(revision)(seed)(task_threshold)(test_multiple_non_deterministic_flows)(     \
+   (benchmark_name)(cat_args)(find_max_transformations)(max_transformations)(compatible_compilers)(compute_size_of)( \
+       configuration_name)(debug_level)(default_compiler)(dot_directory)(host_compiler)(ilp_max_time)(ilp_solver)(   \
+       input_file)(input_format)(no_clean)(no_parse_files)(no_return_zero)(output_file)(output_level)(               \
+       output_temporary_directory)(output_directory)(panda_parameter)(parse_pragma)(pretty_print)(print_dot)(        \
+       profiling_method)(program_name)(read_parameter_xml)(revision)(seed)(test_multiple_non_deterministic_flows)(   \
        test_single_non_deterministic_flow)(top_functions_names)(use_rtl)(xml_input_configuration)(                   \
-       xml_output_configuration)(write_parameter_xml)
+       xml_output_configuration)(write_parameter_xml)(ignore_parallelism)(ignore_mapping)(mapping)(sequence_length)( \
+       without_transformation)(blackbox)(compare_models)(normalize_models)(compare_measure_regions)(hand_mapping)(   \
+       input_libraries)(frontend_statistics)(exec_argv)(path)
 
 #define COMPILER_OPTIONS                                                                                              \
    (gcc_config)(gcc_costs)(gcc_defines)(gcc_extra_options)(gcc_include_sysdir)(gcc_includes)(gcc_libraries)(          \
@@ -162,29 +163,9 @@ enum class DiopsisInstrumentWriter_Type;
        gcc_optimization_set)(gcc_parameters)(gcc_plugindir)(gcc_read_xml)(gcc_standard)(gcc_undefines)(gcc_warnings)( \
        gcc_c)(gcc_E)(gcc_S)(gcc_write_xml)
 
-#define GECCO_OPTIONS (algorithms)(analyses)
-
-#define KOALA_OPTIONS                                                                                                \
-   (aig_analysis)(aig_analysis_algorithm)(apply_reduction_to_standard_library)(characterization_with_DC)(            \
-       complete_library_post_covering)(complete_library_pre_covering)(covering)(csv_file)(design_compiler_effort)(   \
-       drive_strength_values)(equation)(evolutionary_reduction)(explore_cell_variants)(extract_features)(            \
-       generated_library_name)(group_glue)(has_complete_characterization)(hdl_backend)(icarus_debug_level)(          \
-       input_libraries)(library)(library_optimization)(library_optimization_algorithm)(lib_output_format)(max_area)( \
-       max_delay)(output_libraries)(output_name)(regularity_abstraction_level)(regularity_algorithm)(                \
-       regularity_coloring_type)(regularity_covering)(regularity_extraction)(regularity_fast)(regularity_forward)(   \
-       regularity_hierarchical)(regularity_include_sequential)(regularity_max_inputs)(regularity_min_frequency)(     \
-       regularity_min_size)(regularity_window_size)(reordering)(perform_resynthesis)(print_templates)(               \
-       reimplement_standard_cells)(separate_templates)(set_constraint)(set_optimization_goal)(skew_values)(          \
-       split_roots)(store_library_creator_db)(synthesis_tool_xml)(template_file)(xml_library_cells)(                 \
-       xml_library_statistics)
-
-#define SYNTHESIS_OPTIONS                                                                                              \
-   (clock_period)(clock_name)(reset_name)(start_name)(done_name)(design_analysis_steps)(design_compiler_compile_log)(  \
-       design_compiler_split_log)(design_parameters)(design_hierarchy)(device_string)(dump_genlib)(estimate_library)(  \
-       export_ip_core)(import_ip_core)(input_liberty_library_file)(ip_xact_architecture_template)(ip_xact_parameters)( \
-       is_structural)(lib2xml)(min_metric)(parse_edif)(rtl)(synthesis_flow)(structural_HDL)(target_device)(            \
-       target_library)(target_library_source)(target_technology)(target_technology_file)(target_device_file)(          \
-       target_device_script)(target_device_type)(top_component)(uniquify)(writer_language)
+#define SYNTHESIS_OPTIONS                                                                                            \
+   (clock_period)(clock_name)(reset_name)(start_name)(done_name)(device_string)(synthesis_flow)(target_device_file)( \
+       target_device_script)(top_component)(writer_language)
 
 #define SPIDER_OPTIONS                                                                                            \
    (accuracy)(aggregated_features)(cross_validation)(experimental_setup_file)(interval_level)(latex_format_file)( \
@@ -194,17 +175,6 @@ enum class DiopsisInstrumentWriter_Type;
 #define EUCALIPTUS_OPTIONS (component_name)
 
 #define TREE_PANDA_COMPILER_OPTIONS (archive_files)(obj_files)(compress_archive)
-
-#define ZEBU_OPTIONS                                                                                                   \
-   (alternative_metrics)(analysis_level)(blackbox)(cache_analysis)(compare_model_max_iterations)(                      \
-       compare_measure_regions)(compare_models)(cpus_number)(cuda_optimization)(examined_model)(default_fork_cost)(    \
-       diopsis_instrumentation)(driving_component_type)(driving_metric)(dump_schedule)(evaluate_pointed_size)(         \
-       exec_argv)(frontend_statistics)(golden_model)(fork_join_backend)(hand_mapping)(ignore_mapping)(                 \
-       ignore_parallelism)(mapping)(measure_profile_overhead)(memory_profiling)(no_sequential)(normalize_models)(      \
-       partitioning)(partitioning_algorithm)(partitioning_functions)(path)(performance_estimation)(platform_base_dir)( \
-       prof_resolution)(profile_loop_max_iterations)(profile_minutes_timeout)(runs_number)(simit_fork_cost)(           \
-       source_code_statistics)(resolution)(run)(sequence_length)(shorter_sequence)(symbolic_simulation)(               \
-       trace_buffer_size)(tsim_instrumentation)(tollerance)(without_operating_system)(without_transformation)
 
 #define OPTIONS_ENUM(r, data, elem) BOOST_PP_CAT(OPT_, elem),
 
@@ -216,12 +186,9 @@ enum enum_option
        BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, EUCALIPTUS_OPTIONS)
            BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, FRAMEWORK_OPTIONS)
                BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, COMPILER_OPTIONS)
-                   BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, GECCO_OPTIONS)
-                       BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, KOALA_OPTIONS)
-                           BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, SPIDER_OPTIONS)
-                               BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, SYNTHESIS_OPTIONS)
-                                   BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, TREE_PANDA_COMPILER_OPTIONS)
-                                       BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, ZEBU_OPTIONS)
+                   BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, SPIDER_OPTIONS)
+                       BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, SYNTHESIS_OPTIONS)
+                           BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, TREE_PANDA_COMPILER_OPTIONS)
 };
 
 class OptionMap : public std::map<std::string, std::string>
@@ -332,9 +299,6 @@ enum class Parameters_FileFormat
    FF_LLVM_CPP,     /**< (Input/Output) LLVM source bitcode file generated from c++ source code*/
 #endif
    FF_CSV, /**< (Input) comma separated value */
-#if HAVE_FROM_LIBERTY
-   FF_LIB, /**< (Input) Liberty file */
-#endif
 #if HAVE_FROM_PSPLIB_BUILT
    FF_PSPLIB_MM, /**< (Input) Multi-mode Project Scheduling Problem */
    FF_PSPLIB_SM, /**< (Input) Single-mode Project Scheduling Problem */
@@ -356,9 +320,6 @@ enum class Parameters_FileFormat
 #if HAVE_BAMBU_RESULTS_XML
    FF_XML_BAMBU_RESULTS, /**< (Input) XML bambu results*/
 #endif
-#if HAVE_FROM_LIBERTY
-   FF_XML_CELLS, /**< (Input) XML describing list of cells */
-#endif
 #if HAVE_HLS_BUILT
    FF_XML_CON, /**< (Input) XML storing constraints */
 #endif
@@ -366,10 +327,6 @@ enum class Parameters_FileFormat
    FF_XML_DESIGN_HIERARCHY, /**< (Input) XML storing hierarchy of a design */
 #endif
    FF_XML_EXPERIMENTAL_SETUP, /**< (Input) XML storing experimental setup */
-   FF_XML_IP_XACT_COMPONENT,  /**< (Input) XML storing IP-XACT component */
-   FF_XML_IP_XACT_DESIGN,     /**< (Input) XML storing IP-XACT design */
-   FF_XML_IP_XACT_GENERATOR,  /**< (Input) XML storing IP-XACT generator chain */
-   FF_XML_IP_XACT_CONFIG,     /**< (Input) XML storing IP-XACT design configuration */
 #if HAVE_FROM_SDF3_BUILT
    FF_XML_SDF3, /**< (Input) XML storing synchronous data flow graph */
 #endif
@@ -431,7 +388,7 @@ class Parameter
 
 #if HAVE_FROM_C_BUILT
    /**
-    * Manage Gcc options(common to zebu and bambu)
+    * Manage Gcc options
     * @param next_option is the index of the option to be analyzed
     * @param optarg_param is the optional argument of the option
     * @return true if the option has been recognized

@@ -43,8 +43,8 @@
 #include "copyrights_strings.hpp"
 #include "dbgPrintHelper.hpp"
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "math_function.hpp"
 #include "memory.hpp"
 #include "memory_cs.hpp"
@@ -163,9 +163,9 @@ void cs_interface::instantiate_component_parallel(const structural_managerRef SM
       memory_ctrl_model = "memory_ctrl_single_input";
    }
    std::string memory_ctrl_name = "memory_ctrl_top";
-   std::string memory_ctrl_library = HLS->HLS_T->get_technology_manager()->get_library(memory_ctrl_model);
+   std::string memory_ctrl_library = HLS->HLS_D->get_technology_manager()->get_library(memory_ctrl_model);
    structural_objectRef mem_ctrl_mod = SM->add_module_from_technology_library(
-       memory_ctrl_name, memory_ctrl_model, memory_ctrl_library, circuit, HLS->HLS_T->get_technology_manager());
+       memory_ctrl_name, memory_ctrl_model, memory_ctrl_library, circuit, HLS->HLS_D->get_technology_manager());
 
    structural_objectRef clock_mem_ctrl = mem_ctrl_mod->find_member(CLOCK_PORT_NAME, port_o_K, mem_ctrl_mod);
    structural_objectRef clock_sign = SM->add_sign("clock_mem_ctrl_signal", circuit, bool_type);

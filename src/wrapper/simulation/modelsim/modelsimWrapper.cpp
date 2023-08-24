@@ -207,7 +207,11 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
       script << " -pedanticerrors -assertdebug";
       MODELSIM_OPTIMIZER_FLAGS_DEF = "+acc -hazards " + MODELSIM_OPTIMIZER_FLAGS_DEF;
    }
-   script << " -c -voptargs=\"" + MODELSIM_OPTIMIZER_FLAGS_DEF << "\"";
+   script << " -c";
+   if(!MODELSIM_OPTIMIZER_FLAGS_DEF.empty())
+   {
+      script << " -voptargs=\"" + MODELSIM_OPTIMIZER_FLAGS_DEF << "\"";
+   }
    script << " -do \"set StdArithNoWarnings 1; set StdNumNoWarnings 1; set NumericStdNoWarnings 1; onerror {quit "
              "-f -code 1;}; run -all; exit -f;\"  work.clocked_bambu_testbench 2>&1 | tee "
           << log_file << std::endl

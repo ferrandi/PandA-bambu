@@ -46,26 +46,15 @@
 
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp"
-#include "config_HAVE_FROM_LIBERTY.hpp"
-#include "config_HAVE_KOALA_BUILT.hpp"
-#include "config_HAVE_LIBRARY_COMPILER.hpp"
-
-#include "area_model.hpp"
-#include "technology_node.hpp"
-#if HAVE_LIBRARY_COMPILER
-#include "LibraryCompilerWrapper.hpp"
-#endif
-#include "parse_technology.hpp"
 
 #include "Parameter.hpp"
+#include "area_info.hpp"
 #include "constant_strings.hpp"
-#include "exceptions.hpp"
-#include "polixml.hpp"
-
-#include "target_device.hpp"
-
-#include "clb_model.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "exceptions.hpp"
+#include "parse_technology.hpp"
+#include "polixml.hpp"
+#include "technology_node.hpp"
 #include <iosfwd>
 #include <utility>
 
@@ -202,34 +191,6 @@ void attribute::xwrite(xml_element* xml_node, const std::string& name)
 
 void library_manager::set_default_attributes()
 {
-#if HAVE_KOALA_BUILT
-   std::vector<attributeRef> content;
-   /// creating default schema
-   ordered_attributes.push_back("time_unit");
-   ordered_attributes.push_back("voltage_unit");
-   ordered_attributes.push_back("current_unit");
-   ordered_attributes.push_back("pulling_resistance_unit");
-   ordered_attributes.push_back("leakage_power_unit");
-   ordered_attributes.push_back("capacitive_load_unit");
-   ordered_attributes.push_back("define");
-
-   attributes["time_unit"] = attributeRef(new attribute(attribute::STRING, "1ps"));
-   attributes["voltage_unit"] = attributeRef(new attribute(attribute::STRING, "1V"));
-   attributes["current_unit"] = attributeRef(new attribute(attribute::STRING, "1uA"));
-   attributes["pulling_resistance_unit"] = attributeRef(new attribute(attribute::STRING, "1kohm"));
-   attributes["leakage_power_unit"] = attributeRef(new attribute(attribute::STRING, "1pW"));
-
-   content.clear();
-   content.push_back(attributeRef(new attribute(attribute::INT32, "1")));
-   content.push_back(attributeRef(new attribute(attribute::STRING, "ff")));
-   attributes["capacitive_load_unit"] = attributeRef(new attribute(content));
-
-   content.clear();
-   content.push_back(attributeRef(new attribute(attribute::STRING, "drive_strength")));
-   content.push_back(attributeRef(new attribute(attribute::STRING, "cell")));
-   content.push_back(attributeRef(new attribute(attribute::STRING, "float")));
-   attributes["define"] = attributeRef(new attribute(content));
-#endif
 }
 
 library_manager::library_manager(ParameterConstRef _Param, bool std) : Param(std::move(_Param)), is_std(std)
@@ -245,8 +206,7 @@ library_manager::library_manager(std::string library_name, ParameterConstRef _Pa
 
 library_manager::~library_manager() = default;
 
-void library_manager::xload(const xml_element* node, const library_managerRef& LM, const ParameterConstRef& Param,
-                            const target_deviceRef& device)
+void library_manager::xload(const xml_element* node, const library_managerRef& LM, const ParameterConstRef& Param)
 {
 #ifndef NDEBUG
    int debug_level = Param->get_class_debug_level("library_manager");
@@ -262,16 +222,6 @@ void library_manager::xload(const xml_element* node, const library_managerRef& L
       }
       if(EnodeC->get_name() == "information")
       {
-#if HAVE_FROM_LIBERTY
-         const attribute_sequence::attribute_list& attr_list = EnodeC->get_attributes();
-         for(attribute_sequence::attribute_list::const_iterator a = attr_list.begin(); a != attr_list.end(); ++a)
-         {
-            std::string key = (*a)->get_name();
-            std::string value = (*a)->get_value();
-            if(key == "liberty_file")
-               LM->info[LIBERTY] = value;
-         }
-#endif
       }
       if(EnodeC->get_name() == "name")
       {
@@ -300,7 +250,7 @@ void library_manager::xload(const xml_element* node, const library_managerRef& L
       else if(EnodeC->get_name() == "cell")
       {
          technology_nodeRef fu_curr = technology_nodeRef(new functional_unit(iter_int));
-         fu_curr->xload(EnodeC, fu_curr, Param, device);
+         fu_curr->xload(EnodeC, fu_curr, Param);
 
          const auto cell_name = fu_curr->get_name();
 
@@ -311,7 +261,7 @@ void library_manager::xload(const xml_element* node, const library_managerRef& L
       else if(EnodeC->get_name() == "template")
       {
          technology_nodeRef fut_curr = technology_nodeRef(new functional_unit_template(iter_int));
-         fut_curr->xload(EnodeC, fut_curr, Param, device);
+         fut_curr->xload(EnodeC, fut_curr, Param);
          LM->add(fut_curr);
       }
 #ifndef NDEBUG
@@ -354,18 +304,9 @@ void library_manager::xload(const xml_element* node, const library_managerRef& L
    }
 }
 
-void library_manager::xwrite(xml_element* node, TargetDevice_Type dv_type)
+void library_manager::xwrite(xml_element* node)
 {
    xml_element* library = node->add_child_element("library");
-
-#if HAVE_FROM_LIBERTY
-   xml_element* info_xml = library->add_child_element("information");
-   for(std::map<unsigned int, std::string>::iterator i = info.begin(); i != info.end(); ++i)
-   {
-      if(i->first == LIBERTY)
-         info_xml->set_attribute("liberty_file", i->second);
-   }
-#endif
 
    xml_element* xml_name = library->add_child_element("name");
    xml_name->add_child_text(name);
@@ -387,7 +328,7 @@ void library_manager::xwrite(xml_element* node, TargetDevice_Type dv_type)
       {
          xml_cell = library->add_child_element("template");
       }
-      f.second->xwrite(xml_cell, f.second, Param, dv_type);
+      f.second->xwrite(xml_cell, f.second, Param);
    }
 }
 
@@ -427,10 +368,6 @@ void library_manager::update(const technology_nodeRef& fu_node)
    {
       current_fu->area_m = GetPointer<functional_unit>(node)->area_m;
    }
-#if HAVE_EXPERIMENTAL
-   if(GetPointer<functional_unit>(node)->layout_m)
-      current_fu->layout_m = GetPointer<functional_unit>(node)->layout_m;
-#endif
    const functional_unit::operation_vec& operations = GetPointer<functional_unit>(node)->get_operations();
    for(const auto& o : operations)
    {
@@ -538,7 +475,7 @@ void library_manager::erase_info()
    info.clear();
 }
 
-std::string library_manager::get_info(info_t type, const TargetDevice_Type dv_type)
+std::string library_manager::get_info(info_t type)
 {
    if(!is_info(type))
    {
@@ -546,16 +483,9 @@ std::string library_manager::get_info(info_t type, const TargetDevice_Type dv_ty
       {
          case XML:
          {
-            write_xml_technology_File(get_library_name() + ".xml", this, dv_type);
+            write_xml_technology_File(get_library_name() + ".xml", this);
             break;
          }
-#if HAVE_FROM_LIBERTY
-         case LIBERTY:
-         {
-            write_lib_technology_File(get_library_name() + ".lib", this, dv_type);
-            break;
-         }
-#endif
          default:
             THROW_ERROR("Not enough information to return the library information");
       }

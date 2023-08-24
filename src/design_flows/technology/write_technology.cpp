@@ -37,31 +37,17 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "write_technology.hpp"
-
-///. include
 #include "Parameter.hpp"
-
-/// constants include
-#include "technology_xml.hpp"
-
-/// polixml include
-#include "xml_document.hpp"
-
-/// technology include
-#include "technology_manager.hpp"
-
-/// technology/physical_library include
-#include "library_manager.hpp"
-
-/// technology/target_device include
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "fileIO.hpp"
-#include "target_device.hpp"
+#include "generic_device.hpp"
+#include "library_manager.hpp"
+#include "technology_manager.hpp"
+#include "technology_xml.hpp"
+#include "xml_document.hpp"
 
-WriteTechnology::WriteTechnology(const technology_managerRef _TM, const target_deviceRef _target,
+WriteTechnology::WriteTechnology(const technology_managerRef _TM, const generic_deviceRef _target,
                                  const DesignFlowManagerConstRef _design_flow_manager,
                                  const ParameterConstRef _parameters)
     : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::WRITE_TECHNOLOGY, _parameters)
@@ -84,7 +70,7 @@ DesignFlowStep_Status WriteTechnology::Exec()
       target->xwrite(nodeRoot);
       xml_element* tmRoot = nodeRoot->add_child_element("technology");
 
-      TM->xwrite(tmRoot, target->get_type());
+      TM->xwrite(tmRoot);
       document.write_to_file_formatted(output_file);
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "---Writing " + output_file);
       for(const auto& library : libraries)

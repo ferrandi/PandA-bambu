@@ -92,9 +92,7 @@ call_graph_computation::ComputeFrontendRelationships(const DesignFlowStep::Relat
 #if HAVE_TASTE
          relationships.insert(std::make_pair(CREATE_ADDRESS_TRANSLATION, WHOLE_APPLICATION));
 #endif
-#if HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(HDL_FUNCTION_DECL_FIX, WHOLE_APPLICATION));
-#endif
 #if HAVE_FROM_PRAGMA_BUILT
          relationships.insert(std::make_pair(PRAGMA_ANALYSIS, WHOLE_APPLICATION));
 #endif

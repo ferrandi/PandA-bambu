@@ -71,13 +71,13 @@ class PragmaParser
    /// counter of generic pragma
    static unsigned int number;
 
-   /// pointer to the pragma manager datastructure
+   /// pointer to the pragma manager data-structure
    const pragma_managerRef PM;
 
    /// current debugging level
    const int debug_level;
 
-   /// reference to the parameter datastructure
+   /// reference to the parameter data-structure
    const ParameterConstRef Param;
 
    /**

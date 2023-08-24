@@ -41,40 +41,23 @@
  * Last modified by $Author$
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
-
-/// Header include
 #include "operations_cfg_computation.hpp"
-
-/// Behavior include
+#include "Parameter.hpp"
 #include "application_manager.hpp"
 #include "basic_block.hpp"
 #include "basic_blocks_graph_constructor.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
-#include "op_graph.hpp"
-#include "operations_graph_constructor.hpp"
-
-/// Design Flow include
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-
-/// Graph include
-#include "graph.hpp"
-
-/// Parameter include
-#include "Parameter.hpp"
-
-/// parser/compiler include
-#include "token_interface.hpp"
-
-/// Tree include
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "ext_tree_node.hpp"
+#include "function_behavior.hpp"
+#include "graph.hpp"
+#include "op_graph.hpp"
+#include "operations_graph_constructor.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
+#include "token_interface.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
@@ -104,9 +87,7 @@ operations_cfg_computation::ComputeFrontendRelationships(const DesignFlowStep::R
             relationships.insert(std::make_pair(EXTRACT_OMP_ATOMIC, SAME_FUNCTION));
          }
          relationships.insert(std::make_pair(BB_FEEDBACK_EDGES_IDENTIFICATION, SAME_FUNCTION));
-#if HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(LUT_TRANSFORMATION, SAME_FUNCTION));
-#endif
          relationships.insert(std::make_pair(BASIC_BLOCKS_CFG_COMPUTATION, SAME_FUNCTION));
          break;
       }
@@ -116,20 +97,12 @@ operations_cfg_computation::ComputeFrontendRelationships(const DesignFlowStep::R
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-#if HAVE_BAMBU_BUILT
          if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
             relationships.insert(std::make_pair(BITVALUE_RANGE, SAME_FUNCTION));
          }
-#endif
          relationships.insert(std::make_pair(BUILD_VIRTUAL_PHI, SAME_FUNCTION));
-#if HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(COND_EXPR_RESTRUCTURING, SAME_FUNCTION));
-#endif
-#if HAVE_ZEBU_BUILT
-         relationships.insert(std::make_pair(LOOPS_ANALYSIS_ZEBU, SAME_FUNCTION));
-         relationships.insert(std::make_pair(LOOP_REGIONS_COMPUTATION, SAME_FUNCTION));
-#endif
          relationships.insert(std::make_pair(VECTORIZE, SAME_FUNCTION));
          break;
       }
@@ -721,7 +694,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
             {
                ogc->add_type(actual_name, TYPE_LAST_OP);
             }
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
             if(fd->omp_atomic)
             {
                ogc->add_type(actual_name, TYPE_ATOMIC);
@@ -781,7 +754,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
                {
                   ogc->add_type(actual_name, TYPE_LAST_OP);
                }
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
                if(fd->omp_atomic)
                {
                   ogc->add_type(actual_name, TYPE_ATOMIC);

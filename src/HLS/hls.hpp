@@ -62,7 +62,7 @@ REF_FORWARD_DECL(conn_binding);
 REF_FORWARD_DECL(fu_binding);
 REF_FORWARD_DECL(hls);
 REF_FORWARD_DECL(HLS_constraints);
-REF_FORWARD_DECL(HLS_target);
+REF_FORWARD_DECL(HLS_device);
 REF_FORWARD_DECL(liveness);
 CONSTREF_FORWARD_DECL(OpGraph);
 CONSTREF_FORWARD_DECL(Parameter);
@@ -104,7 +104,7 @@ class hls
    // -------------- High Level Synthesis Specific -------------- //
 
    /// reference to the information representing the target for the synthesis
-   const HLS_targetRef HLS_T;
+   const HLS_deviceRef HLS_D;
 
    /// store the HLS constraints
    const HLS_constraintsRef HLS_C;
@@ -123,10 +123,10 @@ class hls
    /// Store the refcounted state transition graph
    StateTransitionGraphManagerRef STG;
 
-   /// datastructure containing the variable liveness
+   /// data-structure containing the variable liveness
    livenessRef Rliv;
 
-   /// datastructure for storage values
+   /// data-structure for storage values
    StorageValueInformationRef storage_value_information;
 
    /// Store the refcounted register binding of the variables.
@@ -182,7 +182,7 @@ class hls
    /**
     *
     */
-   hls(const ParameterConstRef Param, unsigned int function_id, OpVertexSet operations, const HLS_targetRef HLS_T,
+   hls(const ParameterConstRef Param, unsigned int function_id, OpVertexSet operations, const HLS_deviceRef HLS_D,
        const HLS_constraintsRef HLS_C);
 
    /**
