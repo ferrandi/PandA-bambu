@@ -114,11 +114,11 @@ reg_bindingRef reg_binding::create_reg_binding(const hlsRef& HLS, const HLS_mana
 void reg_binding::print_el(const_iterator& it) const
 {
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, HLS->output_level,
-       "---Storage Value: " + STR(it->first) + " for variable " +
+                  "---Storage Value: " + STR(it->first) + " for variable " +
                       FB->CGetBehavioralHelper()->PrintVariable(
                           HLS->storage_value_information->get_variable_index(it->first).first) +
                       " step " + STR(HLS->storage_value_information->get_variable_index(it->first).second) +
-           " stored into register " + it->second->get_string());
+                      " stored into register " + it->second->get_string());
 }
 
 CustomOrderedSet<std::pair<unsigned int, unsigned int>> reg_binding::get_vars(const unsigned int& r) const
@@ -249,7 +249,7 @@ void reg_binding::bind(unsigned int sv, unsigned int index)
    if(!unique_table.count(index))
    {
       unique_table[index] = generic_objRef(new register_obj(index));
-               }
+   }
    auto i = this->find(sv);
    if(i == this->end())
    {
@@ -275,7 +275,7 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - Start");
 
-      compute_is_without_enable();
+   compute_is_without_enable();
    /// define boolean type for command signals
    all_regs_without_enable = get_used_regs() != 0;
    for(auto i = 0U; i < get_used_regs(); ++i)

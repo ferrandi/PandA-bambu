@@ -264,17 +264,17 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation& co
                         auto step = HLS->Rliv->GetStep(state, current_v, tree_var, true);
 
                         if(HLS->storage_value_information->is_a_storage_value(state, tree_var, step))
-                     {
+                        {
                            auto storage_value =
                                HLS->storage_value_information->get_storage_value_index(state, tree_var, step);
-                        con_rel_per_vertex_per_port_index.insert(
-                            std::make_pair(no_phi_no_chained, std::make_pair(storage_value, def_op)));
+                           con_rel_per_vertex_per_port_index.insert(
+                               std::make_pair(no_phi_no_chained, std::make_pair(storage_value, def_op)));
+                        }
+                        else
+                        {
+                           THROW_UNREACHABLE("unexpected");
+                        }
                      }
-                     else
-                     {
-                        THROW_UNREACHABLE("unexpected");
-                     }
-                  }
                   }
                   else
                   {
@@ -1417,7 +1417,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                      hc.add_edge(boost::get(boost::vertex_index, *fsdg, src),
                                  boost::get(boost::vertex_index, *fsdg, tgt),
                                  2 * index + (HLS->chaining_information->may_be_chained_ops(src, tgt) ? 1 : 0));
-               }
+                  }
                }
                ++index;
             }
@@ -1964,9 +1964,9 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             }();
 
             const auto res_name = allocation_information->get_fu_name(partition.first).first;
-            const auto lib_name = HLS->HLS_T->get_technology_manager()->get_library(res_name);
+            const auto lib_name = HLS->HLS_D->get_technology_manager()->get_library(res_name);
             const auto dfp_P = parameters->isOption(OPT_disable_function_proxy) &&
-                         parameters->getOption<bool>(OPT_disable_function_proxy);
+                               parameters->getOption<bool>(OPT_disable_function_proxy);
             const auto disabling_slack_based_binding =
                 disabling_slack_cond0 || (!dfp_P && (lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY)) ||
                 allocation_information->get_number_fu(partition.first) != INFINITE_UINT;
@@ -2078,7 +2078,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                else if(!dfp_P && (lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY))
                {
                   module_clique->max_resources(allocation_information->get_number_fu(partition.first));
-            }
+               }
             }
 
             /// Specify the minimum number of resources in case we have to use all the memory ports.
@@ -2755,7 +2755,7 @@ int cdfc_module_binding::weight_computation(bool cond1, bool cond2, vertex v1, v
          if(p_weight >= 1.0)
          {
             _w += delta;
-      }
+         }
       }
       if(_w != _w_saved)
       {

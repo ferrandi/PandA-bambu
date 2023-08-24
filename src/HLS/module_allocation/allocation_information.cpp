@@ -45,23 +45,23 @@
 #include "allocation_constants.hpp" // for NUM_CST_allocation_default_conne...
 #include "area_info.hpp"
 #include "basic_block.hpp"
-#include "behavioral_helper.hpp"    // for OpGraphConstRef, tree_nodeRef
+#include "behavioral_helper.hpp" // for OpGraphConstRef, tree_nodeRef
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-#include "dbgPrintHelper.hpp"       // for DEBUG_LEVEL_VERY_PEDANTIC, INDEN...
-#include "exceptions.hpp"           // for THROW_ASSERT, THROW_UNREACHABLE
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_VERY_PEDANTIC, INDEN...
+#include "exceptions.hpp"     // for THROW_ASSERT, THROW_UNREACHABLE
 #include "ext_tree_node.hpp"
-#include "fu_binding.hpp"           // for fu_binding, fu_binding::UNKNOWN
+#include "fu_binding.hpp" // for fu_binding, fu_binding::UNKNOWN
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_device.hpp"
-#include "hls_manager.hpp"          // for HLS_manager, HLS_manager::io_bin...
-#include "hls_step.hpp"             // for hlsRef
-#include "math_function.hpp"        // for ceil_pow2
+#include "hls_manager.hpp"   // for HLS_manager, HLS_manager::io_bin...
+#include "hls_step.hpp"      // for hlsRef
+#include "math_function.hpp" // for ceil_pow2
 #include "memory.hpp"
-#include "schedule.hpp"             // for ControlStep, AbsControlStep, HLS...
+#include "schedule.hpp" // for ControlStep, AbsControlStep, HLS...
 #include "state_transition_graph_manager.hpp"
-#include "string_manipulation.hpp"  // for STR GET_CLASS
+#include "string_manipulation.hpp" // for STR GET_CLASS
 #include "structural_manager.hpp"
 #include "technology_manager.hpp" // for LIBRARY_STD_FU
 #include "technology_node.hpp"    // for technology_nodeRef, MEMORY_CTRL_...
@@ -2919,9 +2919,9 @@ double AllocationInformation::estimate_call_delay() const
       call_delay = hls->registered_inputs ? 0 : clock_budget;
       INDENT_DBG_MEX(
           DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "---Minimum slack " +
-                      STR(minimumSlack > 0.0 && minimumSlack != std::numeric_limits<double>::max() ? minimumSlack : 0));
-   call_delay -= minimumSlack > 0.0 && minimumSlack != std::numeric_limits<double>::max() ? minimumSlack : 0;
+          "---Minimum slack " +
+              STR(minimumSlack > 0.0 && minimumSlack != std::numeric_limits<double>::max() ? minimumSlack : 0));
+      call_delay -= minimumSlack > 0.0 && minimumSlack != std::numeric_limits<double>::max() ? minimumSlack : 0;
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call delay without slack " + STR(call_delay));
    if(call_delay < 0.0)
@@ -3838,14 +3838,14 @@ bool AllocationInformation::CanBeChained(const unsigned int first_statement_inde
    if(GetTimeLatency(
           first_statement_index,
           CanImplementSetNotEmpty(first_statement_index) ? GetFuType(first_statement_index) : fu_binding::UNKNOWN, 0)
-                   .first > 0.001 &&
+              .first > 0.001 &&
       second_load && is_one_cycle_direct_access_memory_unit(GetFuType(second_statement_index)) &&
-           (!is_readonly_memory_unit(GetFuType(second_statement_index)) ||
-            (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication))) &&
-           ((Rmem->get_maximum_references(is_memory_unit(GetFuType(second_statement_index)) ?
-                                              get_memory_var(GetFuType(second_statement_index)) :
-                                              get_proxy_memory_var(GetFuType(second_statement_index)))) >
-            get_number_channels(GetFuType(second_statement_index))))
+      (!is_readonly_memory_unit(GetFuType(second_statement_index)) ||
+       (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication))) &&
+      ((Rmem->get_maximum_references(is_memory_unit(GetFuType(second_statement_index)) ?
+                                         get_memory_var(GetFuType(second_statement_index)) :
+                                         get_proxy_memory_var(GetFuType(second_statement_index)))) >
+       get_number_channels(GetFuType(second_statement_index))))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because second is a load from distributed memory");
       return false;
@@ -3862,7 +3862,7 @@ bool AllocationInformation::CanBeChained(const unsigned int first_statement_inde
    }
    /// UNBOUNDED operations cannot be executed in the same clock cycle of the condition which controls it
    if((first_type == gimple_cond_K || first_type == gimple_multi_way_if_K) &&
-           !is_operation_bounded(second_statement_index))
+      !is_operation_bounded(second_statement_index))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "<--No because unbounded operations cannot be executed in the same clock cycle of the condition "
@@ -3871,7 +3871,7 @@ bool AllocationInformation::CanBeChained(const unsigned int first_statement_inde
    }
    /// labels cannot be executed in the same clock cycle of the condition which controls it
    if((first_type == gimple_cond_K || first_type == gimple_multi_way_if_K) &&
-           (second_tree_node->get_kind() == gimple_label_K))
+      (second_tree_node->get_kind() == gimple_label_K))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "<--No because labels and nops cannot be executed in the same clock cycle of the condition which "
@@ -3880,7 +3880,7 @@ bool AllocationInformation::CanBeChained(const unsigned int first_statement_inde
    }
    /// Operations with side effect cannot be executed in the same clock cycle of the control_step which controls them
    if((first_type == gimple_cond_K || first_type == gimple_multi_way_if_K) &&
-           (GetPointer<const gimple_node>(second_tree_node)->vdef))
+      (GetPointer<const gimple_node>(second_tree_node)->vdef))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "<--No because operations with side effect cannot be executed in the same clock cycle of the "
@@ -3888,17 +3888,17 @@ bool AllocationInformation::CanBeChained(const unsigned int first_statement_inde
       return false;
    }
    if(first_store && !(!is_operation_bounded(second_statement_index)) &&
-           is_operation_PI_registered(second_statement_index, GetFuType(second_statement_index)))
+      is_operation_PI_registered(second_statement_index, GetFuType(second_statement_index)))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       return false;
    }
    /// Load and store from bus cannot be chained (if param is enabled)
    if(parameters->IsParameter("bus-no-chain") && parameters->GetParameter<int>("bus-no-chain") == 1 &&
-           ((CanImplementSetNotEmpty(first_statement_index) &&
-             is_indirect_access_memory_unit(GetFuType(first_statement_index))) ||
-            (CanImplementSetNotEmpty(second_statement_index) &&
-             is_indirect_access_memory_unit(GetFuType(second_statement_index)))))
+      ((CanImplementSetNotEmpty(first_statement_index) &&
+        is_indirect_access_memory_unit(GetFuType(first_statement_index))) ||
+       (CanImplementSetNotEmpty(second_statement_index) &&
+        is_indirect_access_memory_unit(GetFuType(second_statement_index)))))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "<--No because one of the operations is an access through bus");
@@ -3928,23 +3928,23 @@ void AllocationInformation::Initialize()
        HLS_D->has_parameter("connection_time_ratio") ? HLS_D->get_parameter<double>("connection_time_ratio") : 1;
    controller_delay_multiplier = HLS_D->has_parameter("controller_delay_multiplier") ?
                                      HLS_D->get_parameter<double>("controller_delay_multiplier") :
-                               1;
+                                     1;
    setup_multiplier = HLS_D->has_parameter("setup_multiplier") ? HLS_D->get_parameter<double>("setup_multiplier") : 1.0;
    time_multiplier = HLS_D->has_parameter("time_multiplier") ? HLS_D->get_parameter<double>("time_multiplier") : 1.0;
    mux_time_multiplier =
        HLS_D->has_parameter("mux_time_multiplier") ? HLS_D->get_parameter<double>("mux_time_multiplier") : 1.0;
    memory_correction_coefficient = HLS_D->has_parameter("memory_correction_coefficient") ?
                                        HLS_D->get_parameter<double>("memory_correction_coefficient") :
-           0.7;
+                                       0.7;
 
    connection_offset = parameters->IsParameter("ConnectionOffset") ?
-           parameters->GetParameter<double>("ConnectionOffset") :
-       parameters->IsParameter("RelativeConnectionOffset") ?
-           parameters->GetParameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
+                           parameters->GetParameter<double>("ConnectionOffset") :
+                       parameters->IsParameter("RelativeConnectionOffset") ?
+                           parameters->GetParameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
                        HLS_D->has_parameter("RelativeConnectionOffset") ?
                            HLS_D->get_parameter<double>("RelativeConnectionOffset") * get_setup_hold_time() :
                        HLS_D->has_parameter("ConnectionOffset") ? HLS_D->get_parameter<double>("ConnectionOffset") :
-           NUM_CST_allocation_default_connection_offset;
+                                                                  NUM_CST_allocation_default_connection_offset;
 
    output_DSP_connection_time =
        parameters->IsParameter("OutputDSPConnectionRatio") ?
@@ -3966,11 +3966,11 @@ void AllocationInformation::Initialize()
    DSPs_margin =
        HLS_D->has_parameter("DSPs_margin") && parameters->getOption<double>(OPT_DSP_margin_combinational) == 1.0 ?
            HLS_D->get_parameter<double>("DSPs_margin") :
-                     parameters->getOption<double>(OPT_DSP_margin_combinational);
+           parameters->getOption<double>(OPT_DSP_margin_combinational);
    DSPs_margin_stage =
        HLS_D->has_parameter("DSPs_margin_stage") && parameters->getOption<double>(OPT_DSP_margin_pipelined) == 1.0 ?
            HLS_D->get_parameter<double>("DSPs_margin_stage") :
-                           parameters->getOption<double>(OPT_DSP_margin_pipelined);
+           parameters->getOption<double>(OPT_DSP_margin_pipelined);
    DSP_allocation_coefficient = HLS_D->has_parameter("DSP_allocation_coefficient") &&
                                         parameters->getOption<double>(OPT_DSP_allocation_coefficient) == 1.0 ?
                                     HLS_D->get_parameter<double>("DSP_allocation_coefficient") :
