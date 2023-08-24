@@ -223,7 +223,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
    }
    if(storeCanBePredicated)
    {
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
       if(schedule)
       {
          auto movable = schedule->CanBeMoved(ga->index, bb_index);
@@ -919,21 +919,24 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             /// skip gimple statements defining or using virtual operands
             tree_nodeRef tn = GET_NODE(*statement);
             auto* gn = GetPointer<gimple_node>(tn);
-
             bool loadCanBePredicated = false;
-            if(GetPointer<gimple_assign>(tn) and GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K)
+            if(parameters->IsParameter("predicate-LD") && parameters->GetParameter<int>("predicate-LD") == 1)
             {
-               auto var = tree_helper::get_base_index(TM, GET_INDEX_NODE(GetPointer<gimple_assign>(tn)->op1));
-               if(var)
+               if(GetPointer<gimple_assign>(tn) and
+                  GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K)
                {
-                  const auto vd = GetPointer<const var_decl>(TM->get_tree_node_const(var));
-                  if(vd && !tree_helper::is_volatile(TM, var))
+                  auto var = tree_helper::get_base_index(TM, GET_INDEX_NODE(GetPointer<gimple_assign>(tn)->op1));
+                  if(var)
                   {
-                     if(vd->static_flag || (vd->scpe && GET_NODE(vd->scpe)->get_kind() != translation_unit_decl_K))
+                     const auto vd = GetPointer<const var_decl>(TM->get_tree_node_const(var));
+                     if(vd && !tree_helper::is_volatile(TM, var))
                      {
-                        loadCanBePredicated = true;
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---LOAD can be predicated " + (*statement)->ToString());
+                        if(vd->static_flag || (vd->scpe && GET_NODE(vd->scpe)->get_kind() != translation_unit_decl_K))
+                        {
+                           loadCanBePredicated = true;
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                          "---LOAD can be predicated " + (*statement)->ToString());
+                        }
                      }
                   }
                }
