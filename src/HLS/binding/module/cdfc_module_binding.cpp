@@ -41,108 +41,56 @@
  *
  */
 #include "cdfc_module_binding.hpp"
-
-#include <filesystem>
-
-///. include
 #include "Parameter.hpp"
-
-/// algorithms/clique_covering include
-#include "clique_covering.hpp"
-
-/// behavior includes
-#include "behavioral_writer_helper.hpp"
-#include "function_behavior.hpp"
-#include "op_graph.hpp"
-
-/// boost include
-#include <boost/range/adaptor/reversed.hpp>
-
-/// Graph include
-#include "graph.hpp"
-
-/// HLS includes
-#include "hls.hpp"
-#include "hls_constraints.hpp"
-#include "hls_manager.hpp"
-#include "hls_target.hpp"
-
-/// HLS/binding/interconnection
-#include "mux_connection_binding.hpp"
-
-/// HLS/binding/module include
-#include "fu_binding.hpp"
-#include "parallel_memory_fu_binding.hpp"
-
-/// HLS/binding/module include
-#include "module_binding_check.hpp"
-
-/// HLS/binding/register include
-#include "reg_binding.hpp"
-/// HLS/binding/register/algorithms include
-#include "weighted_clique_register.hpp"
-/// required by register binding
-#include "design_flow_manager.hpp"
-#include "design_flow_step.hpp"
-#include "hls_flow_step_factory.hpp"
-
-/// HLS/binding/storage_value_insertion includes
-#include "storage_value_information.hpp"
-#include "storage_value_insertion.hpp"
-
-/// HLS/chaining include
-#include "chaining_information.hpp"
-
-/// HLS/liveness include
-#include "liveness.hpp"
-
-/// HLS/memory include
-#include "memory.hpp"
-
-/// HLS/module_allocation include
 #include "allocation_information.hpp"
-
-/// HLS/scheduling include
-#include "schedule.hpp"
-
-/// HLS/stg include
-#include "state_transition_graph_manager.hpp"
-
-/// STD includes
-#include <cmath>
-#include <iosfwd>
-#include <limits>
-#include <string>
-
-/// STL includes
+#include "behavioral_helper.hpp"
+#include "behavioral_writer_helper.hpp"
+#include "chaining_information.hpp"
+#include "clique_covering.hpp"
+#include "cpu_time.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-#include <algorithm>
-#include <deque>
-#include <list>
-#include <utility>
-#include <vector>
-
-/// technology include
+#include "dbgPrintHelper.hpp"
+#include "design_flow_manager.hpp"
+#include "design_flow_step.hpp"
+#include "fu_binding.hpp"
+#include "function_behavior.hpp"
+#include "graph.hpp"
+#include "hash_helper.hpp"
+#include "hls.hpp"
+#include "hls_constraints.hpp"
+#include "hls_device.hpp"
+#include "hls_flow_step_factory.hpp"
+#include "hls_manager.hpp"
+#include "liveness.hpp"
+#include "memory.hpp"
+#include "module_binding_check.hpp"
+#include "mux_connection_binding.hpp"
+#include "op_graph.hpp"
+#include "parallel_memory_fu_binding.hpp"
+#include "reg_binding.hpp"
+#include "schedule.hpp"
+#include "state_transition_graph_manager.hpp"
+#include "storage_value_information.hpp"
+#include "storage_value_insertion.hpp"
 #include "technology_manager.hpp"
-
-/// technology/physical_library include
 #include "technology_node.hpp"
-
-/// technology/physical_library/models include
-#include "time_model.hpp"
-
-/// tree includes
-#include "behavioral_helper.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-
-/// utility include
-#include "cpu_time.hpp"
-#include "dbgPrintHelper.hpp"
-#include "hash_helper.hpp"
 #include "utility.hpp"
+#include "weighted_clique_register.hpp"
+#include <algorithm>
+#include <boost/range/adaptor/reversed.hpp>
+#include <cmath>
+#include <deque>
+#include <filesystem>
+#include <iosfwd>
+#include <limits>
+#include <list>
+#include <string>
+#include <utility>
+#include <vector>
 
 #ifdef HC_APPROACH
 #include "hierarchical_clustering.hpp"
@@ -1510,7 +1458,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                         "-->Considering fu " + allocation_information->get_fu_name(fu_s1).first);
 
          std::string res_name = allocation_information->get_fu_name(fu_s1).first;
-         std::string lib_name = HLS->HLS_T->get_technology_manager()->get_library(res_name);
+         std::string lib_name = HLS->HLS_D->get_technology_manager()->get_library(res_name);
          const double mux_time = MODULE_BINDING_MUX_MARGIN * allocation_information->estimate_mux_time(fu_s1);
          double controller_delay = allocation_information->EstimateControllerDelay();
          double resource_area = allocation_information->compute_normalized_area(fu_s1);
@@ -1992,7 +1940,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             }();
 
             const auto res_name = allocation_information->get_fu_name(partition.first).first;
-            const auto lib_name = HLS->HLS_T->get_technology_manager()->get_library(res_name);
+            const auto lib_name = HLS->HLS_D->get_technology_manager()->get_library(res_name);
             const auto disabling_slack_based_binding =
                 disabling_slack_cond0 || lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY ||
                 allocation_information->get_number_fu(partition.first) != INFINITE_UINT;
@@ -2612,7 +2560,7 @@ bool cdfc_module_binding::can_be_clustered(vertex v, OpGraphConstRef fsdg, fu_bi
    /*
    HLS->Rliv->set_HLS(HLS);
    std::string res_name = HLS->allocation_information->get_fu_name(fu_s1).first;
-   std::string lib_name = HLS->HLS_T->get_technology_manager()->get_library(res_name);
+   std::string lib_name = HLS->HLS_D->get_technology_manager()->get_library(res_name);
    bool disabling_slack_based_binding = (HLS->allocation_information->get_number_channels(fu_s1) >= 1) ||
                                         lib_name  == WORK_LIBRARY || lib_name == PROXY_LIBRARY ||
                                         (HLS->allocation_information->get_number_fu(fu_s1) != INFINITE_UINT &&

@@ -42,49 +42,30 @@
  *
  */
 
-/// Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
+#include "create_tree_manager.hpp"
+#include "application_manager.hpp"
 #include "config_HAVE_FROM_AADL_ASN_BUILT.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
-
-/// Header include
-#include "create_tree_manager.hpp"
-
-/// behavior include
-#include "application_manager.hpp"
-
-/// design_flow includes
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-
-/// Intermediate Representation at raw level
 #include "parse_tree.hpp"
 #include "tree_manager.hpp"
-
 #if HAVE_FROM_AADL_ASN_BUILT
-/// parser include
 #include "parser_flow_step.hpp"
 #endif
-
-/// Wrapper include
-#include "compiler_wrapper.hpp"
-
-/// Utility include
 #include "Parameter.hpp"
-#include "fileIO.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-
-#if HAVE_BAMBU_BUILT
+#include "compiler_wrapper.hpp"
 #include "cost_latency_table.hpp"
+#include "fileIO.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "string_manipulation.hpp"
 #include "technology_flow_step.hpp"
 #include "technology_flow_step_factory.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
-#include "time_model.hpp"
-#endif
+#include "time_info.hpp"
 
 create_tree_manager::create_tree_manager(const ParameterConstRef _parameters, const application_managerRef _AppM,
                                          const DesignFlowManagerConstRef _design_flow_manager)
@@ -179,9 +160,6 @@ create_tree_manager::ComputeFrontendRelationships(const DesignFlowStep::Relation
 #if HAVE_FROM_PRAGMA_BUILT
          relationships.insert(std::make_pair(PRAGMA_SUBSTITUTION, WHOLE_APPLICATION));
 #endif
-#if HAVE_ZEBU_BUILT
-         relationships.insert(std::make_pair(SIZEOF_SUBSTITUTION, WHOLE_APPLICATION));
-#endif
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -203,7 +181,6 @@ bool create_tree_manager::HasToBeExecuted() const
 
 void create_tree_manager::createCostTable()
 {
-#if HAVE_BAMBU_BUILT
    if(GetPointer<HLS_manager>(AppM) &&
       (!parameters->IsParameter("disable-THR") || parameters->GetParameter<unsigned int>("disable-THR") == 0))
    {
@@ -218,8 +195,8 @@ void create_tree_manager::createCostTable()
          default_InstructionLatencyTable[std::make_pair(op_bit.at(0), op_bit.at(1))] = key_value.at(1);
       }
 
-      const HLS_targetRef HLS_T = GetPointer<HLS_manager>(AppM)->get_HLS_target();
-      const technology_managerRef TechManager = HLS_T->get_technology_manager();
+      const HLS_deviceRef HLS_D = GetPointer<HLS_manager>(AppM)->get_HLS_device();
+      const technology_managerRef TechManager = HLS_D->get_technology_manager();
       double clock_period =
           parameters->isOption(OPT_clock_period) ? parameters->getOption<double>(OPT_clock_period) : 10;
       /// manage loads and stores
@@ -283,8 +260,6 @@ void create_tree_manager::createCostTable()
          }
       }
    }
-
-#endif
 }
 
 DesignFlowStep_Status create_tree_manager::Exec()

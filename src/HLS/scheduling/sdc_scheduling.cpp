@@ -539,7 +539,7 @@ SDCScheduling::ComputeHLSRelationships(const DesignFlowStep::RelationshipType re
       }
       case PRECEDENCE_RELATIONSHIP:
       {
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
          if(parameters->getOption<bool>(OPT_parse_pragma))
          {
             ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_ALLOCATION, HLSFlowStepSpecializationConstRef(),

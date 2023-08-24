@@ -91,12 +91,6 @@ if BUILD_LIB_FROM_ESTIMATION
   lib_parser_la_LIBADD += $(top_builddir)/src/parser/estimation/lib_estimationparser.la
 endif
 
-if BUILD_LIB_FROM_IPXACT
-  SUBDIRS += ip_xact
-  DIST_SUBDIRS += ip_xact
-  lib_parser_la_LIBADD += $(top_builddir)/src/parser/ip_xact/lib_ip_xact_parser.la
-endif
-
 if BUILD_LIB_FROM_ARCH
    SUBDIRS += machine
    DIST_SUBDIRS += machine

@@ -45,7 +45,7 @@
 #include "BackendFlow.hpp"
 #include "Parameter.hpp"
 #include "SimulationInformation.hpp"
-#include "area_model.hpp"
+#include "area_info.hpp"
 #include "bambu_results_xml.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
@@ -56,7 +56,6 @@
 #include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
 #include "string_manipulation.hpp"
-#include "time_model.hpp"
 #include "utility.hpp"
 #include "xml_document.hpp"
 #include "xml_helper.hpp"
@@ -266,11 +265,11 @@ DesignFlowStep_Status Evaluation::Exec()
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                            "---Luts                     : " + STR(evaluations.at("SLICE_LUTS").at(0)));
          }
-         if(evaluations.find("LUT_FF_PAIRS") != evaluations.end())
+         else if(evaluations.find("LUT_FF_PAIRS") != evaluations.end())
          {
             THROW_ASSERT(evaluations.at("LUT_FF_PAIRS").size() == 1, "");
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                           "---Lut FF Pairs             : " + STR(evaluations.at("LUT_FF_PAIRS").at(0)));
+                           "---Luts             : " + STR(evaluations.at("LUT_FF_PAIRS").at(0)));
          }
          if(evaluations.find("LOGIC_ELEMENTS") != evaluations.end())
          {
@@ -369,13 +368,13 @@ DesignFlowStep_Status Evaluation::Exec()
    xml_element* nodeRoot = document.create_root_node("bambu_results");
 
    std::string bench_name;
-   if(parameters->isOption(OPT_configuration_name))
-   {
-      bench_name += parameters->getOption<std::string>(OPT_configuration_name) + ":";
-   }
    if(parameters->isOption(OPT_benchmark_name))
    {
-      bench_name += parameters->getOption<std::string>(OPT_benchmark_name);
+      bench_name += parameters->getOption<std::string>(OPT_benchmark_name) + ":";
+   }
+   if(parameters->isOption(OPT_configuration_name))
+   {
+      bench_name += parameters->getOption<std::string>(OPT_configuration_name);
    }
    if(bench_name == "" || !parameters->IsParameter("simple-benchmark-name") ||
       parameters->GetParameter<int>("simple-benchmark-name") == 0)
@@ -408,6 +407,20 @@ DesignFlowStep_Status Evaluation::Exec()
          }
          else
 #endif
+             if(parameters->isOption(OPT_top_functions_names))
+         {
+            if(bench_name == "")
+            {
+               bench_name += parameters->getOption<std::string>(OPT_top_functions_names);
+            }
+            else
+            {
+               bench_name += ":" + parameters->getOption<std::string>(OPT_top_functions_names);
+            }
+
+            bench_name += "_" + STR(progressive - 1);
+         }
+         else
          {
             THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
             const auto top_fun_id = *(top_function_ids.begin());

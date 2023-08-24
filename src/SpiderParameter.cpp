@@ -357,7 +357,6 @@ void SpiderParameter::SetDefaults()
 #else
    setOption(OPT_debug_level, DEBUG_LEVEL_MINIMUM);
 #endif
-   setOption(OPT_dump_genlib, false);
 #if HAVE_REGRESSORS_BUILT
    setOption(OPT_interval_level, NUM_CST_default_prediction_interval_value);
 #endif
@@ -405,13 +404,6 @@ void SpiderParameter::CheckParameters()
             case(Parameters_FileFormat::FF_XML_SKIP_ROW):
                setOption(OPT_skip_rows, input_file);
                break;
-#if HAVE_FROM_LIBERTY
-            case(Parameters_FileFormat::FF_XML_CELLS):
-            case(Parameters_FileFormat::FF_LIB):
-               setOption(OPT_input_liberty_library_file, input_file);
-               input_format = temp;
-               break;
-#endif
 #if HAVE_TECHNOLOGY_BUILT
             case(Parameters_FileFormat::FF_XML_TARGET):
             {
@@ -459,10 +451,6 @@ void SpiderParameter::CheckParameters()
 #if HAVE_HLS_BUILT
             case(Parameters_FileFormat::FF_XML_CON):
 #endif
-            case(Parameters_FileFormat::FF_XML_IP_XACT_COMPONENT):
-            case(Parameters_FileFormat::FF_XML_IP_XACT_CONFIG):
-            case(Parameters_FileFormat::FF_XML_IP_XACT_DESIGN):
-            case(Parameters_FileFormat::FF_XML_IP_XACT_GENERATOR):
 #if HAVE_SOURCE_CODE_STATISTICS_XML
             case(Parameters_FileFormat::FF_XML_STAT):
 #endif
@@ -496,15 +484,6 @@ void SpiderParameter::CheckParameters()
       Parameters_FileFormat output_format = GetFileFormat(getOption<std::string>(OPT_output_format), false);
       setOption(OPT_output_format, static_cast<int>(output_format));
    }
-#if HAVE_FROM_LIBERTY
-   if(getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_XML_CELLS ||
-      getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LIB)
-   {
-      const auto input_files = getOption<const CustomSet<std::string>>(OPT_input_file);
-      if(!(input_files.size() == 1 || (input_files.size() == 2 && isOption(OPT_aggregated_features))))
-         THROW_ERROR("Only a liberty file required");
-   }
-#endif
 #if HAVE_TECHNOLOGY_BUILT
    for(const auto& input_file : getOption<const CustomSet<std::string>>(OPT_input_file))
    {

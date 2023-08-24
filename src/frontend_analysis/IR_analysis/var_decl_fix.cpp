@@ -41,43 +41,25 @@
  * Last modified by $Author$
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
-
-/// Header include
 #include "var_decl_fix.hpp"
 
-/// Behavior include
-#include "application_manager.hpp"
-#include "function_behavior.hpp"
-
-/// Parameter include
 #include "Parameter.hpp"
-
-/// parser/compiler include
-#include "token_interface.hpp"
-
-/// STD include
-#include <fstream>
-
-/// STL include
-#include "custom_map.hpp"
-#include <string>
-
-/// Tree include
+#include "application_manager.hpp"
 #include "behavioral_helper.hpp"
+#include "custom_map.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
 #include "ext_tree_node.hpp"
+#include "function_behavior.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
+#include "token_interface.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-
-/// Utility include
-#include "dbgPrintHelper.hpp"
-#include "exceptions.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include <fstream>
+#include <string>
 
 VarDeclFix::VarDeclFix(const application_managerRef _AppM, unsigned int _function_id,
                        const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters,
@@ -107,10 +89,8 @@ VarDeclFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType 
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-#if HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(PARM_DECL_TAKEN_ADDRESS, SAME_FUNCTION));
          relationships.insert(std::make_pair(INTERFACE_INFER, WHOLE_APPLICATION));
-#endif
          break;
       }
       default:

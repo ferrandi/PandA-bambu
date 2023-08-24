@@ -57,9 +57,6 @@
 /// The number of surviving benchmarks
 #define NUM_CST_surviving_benchmarks 300
 
-/// The default threshold
-#define NUM_CST_task_threshold 4000
-
 /**
  * Identifier of architecture elements
  */
@@ -227,9 +224,6 @@
 /// Information about number of absolute iterations of a loop
 #define STR_XML_profiling_analysis_ABS_iterations "absolute_iterations"
 
-/// Arguments with which zebu has been invoked
-#define STR_XML_profiling_analysis_args "args"
-
 /// Accesses to variable of array type
 #define STR_XML_profiling_analysis_array_accesses "array_accesses"
 
@@ -287,9 +281,6 @@
 /// Node containing information about nesting of a loop
 #define STR_XML_profiling_analysis_nesting "nesting"
 
-/// Path where zebu has been executed
-#define STR_XML_profiling_analysis_path "path"
-
 /// Accesses to variable of pointer type
 #define STR_XML_profiling_analysis_pointer_accesses "pointer_accesses"
 
@@ -308,9 +299,6 @@
 /// Attribute containing information about target considered during target profiling
 #define STR_XML_profiling_analysis_target "target"
 
-/// Time when zebu has been executed
-#define STR_XML_profiling_analysis_time "date"
-
 /// The root node of the tree operation counters
 #define STR_XML_profiling_analysis_tree_counter "tree_operation_counters"
 
@@ -322,8 +310,5 @@
 
 /// The value of a node
 #define STR_XML_profiling_analysis_value "value"
-
-/// Zebu revision
-#define STR_XML_profiling_analysis_zebu_revision "revision"
 
 #endif

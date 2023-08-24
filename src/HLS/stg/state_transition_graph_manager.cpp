@@ -51,8 +51,8 @@
 #include "behavioral_helper.hpp"
 #include "op_graph.hpp"
 
+#include "generic_device.hpp"
 #include "structural_manager.hpp"
-#include "target_device.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 
@@ -60,8 +60,8 @@
 #include "fu_binding.hpp"
 #include "function_behavior.hpp"
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 
 /// Parameter include
 #include "Parameter.hpp"
@@ -309,9 +309,9 @@ void StateTransitionGraphManager::add_to_SM(structural_objectRef clock_port, str
    {
       auto mu = state2mu.second;
       std::string name = mu->get_string();
-      std::string library = HLS->HLS_T->get_technology_manager()->get_library(SIMPLEJOIN_STD);
+      std::string library = HLS->HLS_D->get_technology_manager()->get_library(SIMPLEJOIN_STD);
       structural_objectRef mu_mod = SM->add_module_from_technology_library(name, SIMPLEJOIN_STD, library, circuit,
-                                                                           HLS->HLS_T->get_technology_manager());
+                                                                           HLS->HLS_D->get_technology_manager());
       specialise_mu(mu_mod, mu);
 
       structural_objectRef port_ck = mu_mod->find_member(CLOCK_PORT_NAME, port_o_K, mu_mod);

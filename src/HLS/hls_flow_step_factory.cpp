@@ -45,30 +45,20 @@
 #include "Parameter.hpp"
 
 /// Header include
-#include "hls_flow_step_factory.hpp"
-
-/// Behavior include
-#include "call_graph_manager.hpp"
-
-/// design_flow includes
-#include "design_flow_step.hpp"
-
-/// HLS/architecture_creator
 #include "TopEntityMemoryMapped.hpp"
+#include "call_graph_manager.hpp"
+#include "classic_datapath.hpp"
+#include "control_flow_checker.hpp"
+#include "controller_cs.hpp"
+#include "datapath_cs.hpp"
+#include "datapath_parallel_cs.hpp"
+#include "design_flow_step.hpp"
+#include "fsm_controller.hpp"
+#include "hls_flow_step_factory.hpp"
+#include "pipeline_controller.hpp"
 #include "top_entity.hpp"
 #include "top_entity_cs.hpp"
 #include "top_entity_parallel_cs.hpp"
-
-/// HLS/architecture_creator/datapath_creation
-#include "classic_datapath.hpp"
-#include "datapath_cs.hpp"
-#include "datapath_parallel_cs.hpp"
-
-/// ///HLS/architecture_creator/controller_creation
-#include "control_flow_checker.hpp"
-#include "controller_cs.hpp"
-#include "fsm_controller.hpp"
-#include "pipeline_controller.hpp"
 
 /// HLS backend include
 #include "generate_hdl.hpp"
@@ -78,19 +68,13 @@
 #include "generate_taste_hdl_architecture.hpp"
 #include "generate_taste_synthesis_script.hpp"
 #endif
-
-/// HLS/binding/interconnection includes
-#include "mux_connection_binding.hpp"
-
-/// HLS/binding/module include
 #include "cdfc_module_binding.hpp"
-#include "easy_module_binding.hpp"
-#include "port_swapping.hpp"
-#include "unique_binding.hpp"
-
-/// HLS/binding/register/algorithms includes
 #include "chordal_coloring_register.hpp"
 #include "compatibility_based_register.hpp"
+#include "easy_module_binding.hpp"
+#include "mux_connection_binding.hpp"
+#include "port_swapping.hpp"
+#include "unique_binding.hpp"
 #include "unique_binding_register.hpp"
 #include "vertex_coloring_register.hpp"
 #include "weighted_clique_register.hpp"
@@ -120,10 +104,10 @@
 #include "classical_synthesis_flow.hpp"
 #include "dominator_allocation.hpp"
 #include "initialize_hls.hpp"
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
 #include "omp_body_loop_synthesis_flow.hpp"
 #endif
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
 #include "omp_for_wrapper_cs_synthesis_flow.hpp"
 #endif
 #include "standard_hls.hpp"
@@ -335,13 +319,6 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
          design_flow_step = DesignFlowStepRef(new DryRunEvaluation(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
-#if HAVE_BEAGLE
-      case HLSFlowStep_Type::DSE_DESIGN_FLOW:
-      {
-         design_flow_step = DesignFlowStepRef(new dse_hls(parameters, HLS_mgr, funId));
-         break;
-      }
-#endif
       case HLSFlowStep_Type::EASY_MODULE_BINDING:
       {
          design_flow_step =
@@ -462,7 +439,7 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
              DesignFlowStepRef(new mux_connection_binding(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
       case HLSFlowStep_Type::OMP_ALLOCATION:
       {
          design_flow_step =
@@ -470,7 +447,7 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
          break;
       }
 #endif
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
       case HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW:
       {
          design_flow_step =
@@ -478,7 +455,7 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
          break;
       }
 #endif
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
       case HLSFlowStep_Type::OMP_FOR_WRAPPER_CS_SYNTHESIS_FLOW:
       {
          design_flow_step = DesignFlowStepRef(
@@ -486,7 +463,7 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
          break;
       }
 #endif
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
       case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION:
       {
          design_flow_step =
@@ -494,7 +471,7 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
          break;
       }
 #endif
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
       case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS:
       {
          design_flow_step =
@@ -713,9 +690,6 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
          case HLSFlowStep_Type::C_TESTBENCH_EXECUTION:
          case HLSFlowStep_Type::DATAPATH_CS_CREATOR:
          case HLSFlowStep_Type::DATAPATH_CS_PARALLEL_CREATOR:
-#if HAVE_BEAGLE
-         case HLSFlowStep_Type::DSE_DESIGN_FLOW:
-#endif
          case HLSFlowStep_Type::EASY_MODULE_BINDING:
          case HLSFlowStep_Type::FSM_CONTROLLER_CREATOR:
          case HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR:

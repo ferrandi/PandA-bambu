@@ -48,8 +48,8 @@
 #include "dbgPrintHelper.hpp" // for INDENT_DBG_MEX, DEBUG_LEVEL_VERY_...
 #include "exceptions.hpp"     // for THROW_ASSERT, THROW_UNREACHABLE
 #include "hls.hpp"            // for HLS_managerRef
+#include "hls_device.hpp"     // for generic_deviceRef
 #include "hls_manager.hpp"    // for HLS_managerRef
-#include "hls_target.hpp"     // for target_deviceRef
 #include "library_manager.hpp"
 #include "string_manipulation.hpp" // for STR GET_CLASS
 #include "technology_manager.hpp"  // for WORK_LIBRARY
@@ -62,9 +62,9 @@
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
 
-#include "area_model.hpp"
+#include "area_info.hpp"
 #include "omp_functions.hpp"
-#include "time_model.hpp"
+#include "time_info.hpp"
 
 /// circuit include
 #include "structural_manager.hpp"
@@ -197,7 +197,7 @@ DesignFlowStep_Status add_library::InternalExec()
    const auto BH = FB->CGetBehavioralHelper();
    THROW_ASSERT(HLS->top, "Top has not been set");
    const auto& module_name = HLS->top->get_circ()->get_typeRef()->id_type;
-   const auto TechM = HLS->HLS_T->get_technology_manager();
+   const auto TechM = HLS->HLS_D->get_technology_manager();
    const auto wrapped_fu_name = WRAPPED_PROXY_PREFIX + module_name;
    const auto wrapper_tn = TechM->get_fu(wrapped_fu_name, PROXY_LIBRARY);
    if(wrapper_tn)
@@ -217,7 +217,7 @@ DesignFlowStep_Status add_library::InternalExec()
    const auto clock_period_value = HLS->HLS_C->get_clock_period();
    const auto cprf = HLS->HLS_C->get_clock_period_resource_fraction();
    const auto clk = cprf * clock_period_value;
-   const auto device = HLS->HLS_T->get_target_device();
+   const auto device = HLS->HLS_D;
    const auto fu = GetPointerS<functional_unit>(TechM->get_fu(module_name, WORK_LIBRARY));
    fu->set_clock_period(clock_period_value);
    fu->set_clock_period_resource_fraction(cprf);
@@ -242,7 +242,7 @@ DesignFlowStep_Status add_library::InternalExec()
       const auto call_delay =
           HLS->allocation_information ? HLS->allocation_information->estimate_call_delay() : clock_period_value;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Estimated call delay " + STR(call_delay));
-      op->time_m = time_model::create_model(device->get_type(), parameters);
+      op->time_m = time_info::factory(parameters);
       if(op->bounded)
       {
          const auto min_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles;
@@ -290,7 +290,7 @@ DesignFlowStep_Status add_library::InternalExec()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Added " + module_name + " to WORK_LIBRARY");
    }
-   fu->area_m = area_model::create_model(device->get_type(), parameters);
+   fu->area_m = area_info::factory(parameters);
    fu->area_m->set_area_value(2000); /// fake number to avoid sharing of functions
 
    return DesignFlowStep_Status::SUCCESS;

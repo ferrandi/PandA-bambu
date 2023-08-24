@@ -78,10 +78,10 @@
 
 /// HLS includes
 #include "evaluation.hpp"
+#include "hls_device.hpp"
 #include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
 #include "hls_step.hpp"
-#include "hls_target.hpp"
 
 #if HAVE_FROM_AADL_ASN_BUILT
 /// parser include
@@ -222,14 +222,14 @@ int main(int argc, char* argv[])
       // up to now all parameters have been parsed and data structures created, so synthesis can start
 
       /// ==== Creating target for the synthesis ==== ///
-      HLS_targetRef HLS_T = HLS_target::create_target(parameters);
+      HLS_deviceRef HLS_D = HLS_device::factory(parameters);
 
       /// ==== Creating intermediate representation ==== ///
       START_TIME(cpu_time);
       /// ==== Creating behavioral specification ==== ///
-      HLS_managerRef HLSMgr = HLS_managerRef(new HLS_manager(parameters, HLS_T));
+      HLS_managerRef HLSMgr = HLS_managerRef(new HLS_manager(parameters, HLS_D));
       START_TIME(HLSMgr->HLS_execution_time);
-      // create the datastructures (inside application_manager) where the problem specification is contained
+      // create the data-structures (inside application_manager) where the problem specification is contained
       const DesignFlowManagerRef design_flow_manager(new DesignFlowManager(parameters));
       const DesignFlowStepFactoryConstRef frontend_flow_step_factory(
           new FrontendFlowStepFactory(HLSMgr, design_flow_manager, parameters));
@@ -240,8 +240,8 @@ int main(int argc, char* argv[])
       const DesignFlowStepFactoryConstRef c_backend_step_factory(
           new CBackendStepFactory(design_flow_manager, HLSMgr, parameters));
       design_flow_manager->RegisterFactory(c_backend_step_factory);
-      const DesignFlowStepFactoryConstRef technology_flow_step_factory(new TechnologyFlowStepFactory(
-          HLS_T->get_technology_manager(), HLS_T->get_target_device(), design_flow_manager, parameters));
+      const DesignFlowStepFactoryConstRef technology_flow_step_factory(
+          new TechnologyFlowStepFactory(HLS_D->get_technology_manager(), HLS_D, design_flow_manager, parameters));
       design_flow_manager->RegisterFactory(technology_flow_step_factory);
 #if HAVE_FROM_AADL_ASN_BUILT
       const DesignFlowStepFactoryConstRef parser_flow_step_factory(

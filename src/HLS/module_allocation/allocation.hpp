@@ -69,7 +69,7 @@
 //@{
 REF_FORWARD_DECL(AllocationInformation);
 REF_FORWARD_DECL(HLS_constraints);
-REF_FORWARD_DECL(HLS_target);
+REF_FORWARD_DECL(HLS_device);
 CONSTREF_FORWARD_DECL(OpGraph);
 REF_FORWARD_DECL(allocation);
 REF_FORWARD_DECL(graph);
@@ -113,7 +113,7 @@ class allocation : public HLSFunctionStep
        fu_list;
 
    /// The HLS target
-   HLS_targetRef HLS_T;
+   HLS_deviceRef HLS_D;
 
    /// The technology manager
    technology_managerRef TechM;

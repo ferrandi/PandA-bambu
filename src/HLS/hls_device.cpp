@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2023 Politecnico di Milano
+ *              Copyright (C) 2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,49 +31,35 @@
  *
  */
 /**
- * @file hls_target.cpp
- * @brief Implementation of some methods to manage the target for the HLS
+ * @file hls_device.cpp
+ * @brief HLS specialization of generic_device
  *
- *
- * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
 /// Header include
-#include "hls_target.hpp"
-
-/// ----------- Resource Library ----------- ///
-/// Resource Library Datastructure
-#include "technology_manager.hpp"
-/// ----------- Target Device ----------- ///
-#include "target_device.hpp"
-#include "target_technology.hpp"
+#include "hls_device.hpp"
 
 #include "Parameter.hpp"
-#include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
+#include "generic_device.hpp"
 #include "polixml.hpp"
+#include "technology_manager.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
 
-HLS_target::HLS_target(const ParameterConstRef& _Param, const technology_managerRef& _TM,
-                       const target_deviceRef& _target)
-    : target_manager(_Param, _TM, _target)
+HLS_device::HLS_device(const ParameterConstRef& _Param, const technology_managerRef& _TM) : generic_device(_Param, _TM)
 {
-   if(Param->isOption(OPT_clock_period))
+   if(_Param->isOption(OPT_clock_period))
    {
-      auto clock_period_value = Param->getOption<double>(OPT_clock_period);
-      device->set_parameter("clock_period", clock_period_value);
+      auto clock_period_value = _Param->getOption<double>(OPT_clock_period);
+      set_parameter("clock_period", clock_period_value);
    }
-   auto output_level = Param->getOption<unsigned int>(OPT_output_level);
-   PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Target technology = " + target->get_string_type());
 }
 
-HLS_target::~HLS_target() = default;
+HLS_device::~HLS_device() = default;
 
-HLS_targetRef HLS_target::create_target(const ParameterRef& Param)
+HLS_deviceRef HLS_device::factory(const ParameterRef& Param)
 {
    technology_managerRef TM = technology_managerRef(new technology_manager(Param));
    if(Param->isOption(OPT_xml_input_configuration))
@@ -98,21 +84,9 @@ HLS_targetRef HLS_target::create_target(const ParameterRef& Param)
                }
                if(Enode->get_name() == "device")
                {
-                  std::string type = "FPGA";
-                  if(CE_XVM(type, Enode))
-                  {
-                     LOAD_XVM(type, Enode);
-                  }
-                  TargetDevice_Type type_device = TargetDevice_Type::FPGA;
-                  if(type == "IC")
-                  {
-                     type_device = TargetDevice_Type::IC;
-                  }
-                  Param->setOption(OPT_target_device_type, static_cast<int>(type_device));
-
-                  target_deviceRef target = target_device::create_device(type_device, Param, TM);
-                  target->xload(target, node);
-                  return HLS_targetRef(new HLS_target(Param, TM, target));
+                  auto target = HLS_deviceRef(new HLS_device(Param, TM));
+                  target->xload(node);
+                  return target;
                }
             }
          }
@@ -134,7 +108,5 @@ HLS_targetRef HLS_target::create_target(const ParameterRef& Param)
          THROW_ERROR("Error during technology file parsing");
       }
    }
-   auto type_device = Param->getOption<unsigned int>(OPT_target_device_type);
-   target_deviceRef target = target_device::create_device(static_cast<TargetDevice_Type>(type_device), Param, TM);
-   return HLS_targetRef(new HLS_target(Param, TM, target));
+   return HLS_deviceRef(new HLS_device(Param, TM));
 }

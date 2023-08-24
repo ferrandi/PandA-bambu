@@ -37,38 +37,20 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "sdc_code_motion.hpp"
-
-///. include
 #include "Parameter.hpp"
-
-/// behavior includes
 #include "basic_block.hpp"
-#include "function_behavior.hpp"
-#include "op_graph.hpp"
-
-/// design_flow includes
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-
-/// frontend_flow include
 #include "frontend_flow_step_factory.hpp"
-
-/// frontend_flow/IR_analysis include
-#include "simple_code_motion.hpp"
-
-/// HLS includes
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
-
-/// HLS/scheduling include
+#include "op_graph.hpp"
 #include "sdc_scheduling.hpp"
-
-/// tree includes
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "simple_code_motion.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"

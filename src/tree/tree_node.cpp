@@ -284,9 +284,7 @@ decl_node::decl_node(unsigned int i)
       packed_flag(false),
       operating_system_flag(false),
       library_system_flag(false),
-#if HAVE_BAMBU_BUILT
       libbambu_flag(false),
-#endif
       C_flag(false),
       uid(0)
 {
@@ -417,11 +415,8 @@ type_node::type_node(unsigned int i)
       qual(TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN),
       algn(0),
       packed_flag(false),
-      system_flag(false)
-#if HAVE_BAMBU_BUILT
-      ,
+      system_flag(false),
       libbambu_flag(false)
-#endif
 {
 }
 
@@ -1653,23 +1648,22 @@ bool TreeNodeConstEqualTo::operator()(const tree_nodeConstRef x, const tree_node
 
 #endif
 
+TreeNodeConstSorter::TreeNodeConstSorter() = default;
+
+bool TreeNodeConstSorter::operator()(const tree_nodeConstRef& x, const tree_nodeConstRef& y) const
+{
+   return x->index < y->index;
+}
+
 #if !HAVE_UNORDERED
 TreeNodeSorter::TreeNodeSorter() = default;
-
 bool TreeNodeSorter::operator()(const tree_nodeRef& x, const tree_nodeRef& y) const
 {
    return x->index < y->index;
 }
 
-TreeNodeConstSorter::TreeNodeConstSorter() = default;
-
 TreeNodeSet::TreeNodeSet() : OrderedSetStd<tree_nodeRef, TreeNodeSorter>()
 {
-}
-
-bool TreeNodeConstSorter::operator()(const tree_nodeConstRef& x, const tree_nodeConstRef& y) const
-{
-   return x->index < y->index;
 }
 
 TreeNodeConstSet::TreeNodeConstSet() : OrderedSetStd<tree_nodeConstRef, TreeNodeConstSorter>()

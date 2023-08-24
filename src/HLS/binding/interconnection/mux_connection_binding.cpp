@@ -34,7 +34,7 @@
  * @file mux_connection_binding.cpp
  * @brief Implementation of mux_connection_binding class
  *
- * Implementation of mux_connection_binding class. In this class all datastructures have been filled and
+ * Implementation of mux_connection_binding class. In this class all data-structures have been filled and
  * then datapath circuit is created.
  *
  * @author Christian Pilato <pilato@elet.polimi.it>

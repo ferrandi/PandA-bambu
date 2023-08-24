@@ -7784,7 +7784,7 @@ vrp_finalize (void)
     check_all_array_refs ();
 
   /* We must identify jump threading opportunities before we release
-     the datastructures built by VRP.  */
+     the data-structures built by VRP.  */
   identify_jump_threads ();
   
   /// store the VRPs for dumping

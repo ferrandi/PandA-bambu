@@ -78,8 +78,8 @@
 // Tree include
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "ext_tree_node.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "math_function.hpp"       // for ceil_pow2
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
@@ -285,10 +285,10 @@ void Bit_Value_opt::propagateValue(const ssa_name* ssa, tree_managerRef TM, tree
 
 void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_manipulationRef IRman)
 {
-   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
-   const auto hls_target = GetPointerS<const HLS_manager>(AppM)->get_HLS_target();
-   THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "unexpected condition");
-   const auto max_lut_size = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
+   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_device(), "unexpected condition");
+   const auto hls_d = GetPointerS<const HLS_manager>(AppM)->get_HLS_device();
+   THROW_ASSERT(hls_d->has_parameter("max_lut_size"), "unexpected condition");
+   const auto max_lut_size = hls_d->get_parameter<size_t>("max_lut_size");
 
    /// in case propagate constants from parameters
    for(const auto& parm_decl_node : fd->list_of_args)

@@ -43,8 +43,8 @@
  */
 #include "EucalyptusParameter.hpp"
 
+#include "generic_device.hpp"
 #include "language_writer.hpp"
-#include "target_device.hpp"
 
 #define TOOL_OPT_BASE 256
 #define INPUT_OPT_CHARACTERIZE (1 + TOOL_OPT_BASE)
@@ -689,21 +689,15 @@ void EucalyptusParameter::SetDefaults()
    setOption("device_package", "clg484");
    setOption("device_synthesis_tool", "VVD");
    setOption(OPT_connect_iob, false);
-   setOption(OPT_target_device_type, static_cast<int>(TargetDevice_Type::FPGA));
    setOption(OPT_clock_period_resource_fraction, 1.0);
    setOption(OPT_parallel_backend, false);
 
-   /// library estimation
-   setOption(OPT_estimate_library, false);
-
    /// backend HDL
    setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
-   setOption(OPT_timing_simulation, false);
    setOption(OPT_reset_type, "no");
    setOption(OPT_reg_init_value, false);
 
    setOption(OPT_output_directory, GetCurrentPath() + "/HLS_output/");
-   setOption(OPT_rtl, true);
    setOption(OPT_reset_level, false);
    setOption(OPT_mixed_design, true);
 }

@@ -62,7 +62,7 @@
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
 /// HLS includes
 #include "hls.hpp"
 #include "hls_manager.hpp"
@@ -101,7 +101,7 @@ simple_code_motion::simple_code_motion(const ParameterConstRef _parameters, cons
       restart_ifmwi_opt(false),
       schedule(ScheduleRef()),
       conservative(
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
           (parameters->IsParameter("enable-conservative-sdc") &&
            parameters->GetParameter<bool>("enable-conservative-sdc") &&
            parameters->isOption(OPT_scheduling_algorithm) and
@@ -163,7 +163,7 @@ simple_code_motion::ComputeFrontendRelationships(const DesignFlowStep::Relations
 
 void simple_code_motion::Initialize()
 {
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
    if(GetPointer<const HLS_manager>(AppM) && GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) &&
       GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
    {
@@ -186,13 +186,8 @@ void simple_code_motion::Initialize()
 #endif
 }
 
-FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned int
-#if(HAVE_BAMBU_BUILT) || !defined(NDEBUG)
-                                                                      bb_index
-#endif
-                                                                  ,
-                                                                  tree_nodeRef tn, bool& zero_delay,
-                                                                  const tree_managerRef TM)
+FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned int bb_index, tree_nodeRef tn,
+                                                                  bool& zero_delay, const tree_managerRef TM)
 {
    if(AppM->CGetFunctionBehavior(function_id)->is_simple_pipeline())
    {
@@ -249,7 +244,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
    }
 
    /// If we have the ending time information use it
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
    if(schedule)
    {
       auto movable = schedule->CanBeMoved(ga->index, bb_index);

@@ -41,61 +41,37 @@
  *
  */
 
+#include "RTL_characterization.hpp"
+
 /// Autoheader includes
 #include "config_HAVE_FLOPOCO.hpp"
 
-/// circuit include
-#include "structural_objects.hpp"
-
-/// design_flows include
+#include "BackendFlow.hpp"
+#include "HDL_manager.hpp"
+#include "NP_functionality.hpp"
+#include "Parameter.hpp"
+#include "allocation_information.hpp"
+#include "area_info.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-
-/// design_flows/technology include
+#include "fileIO.hpp"
+#include "generic_device.hpp"
+#include "language_writer.hpp"
+#include "library_manager.hpp"
+#include "op_graph.hpp"
+#include "parse_technology.hpp"
+#include "polixml.hpp"
+#include "structural_manager.hpp"
+#include "structural_objects.hpp"
 #include "technology_flow_step.hpp"
 #include "technology_flow_step_factory.hpp"
-
-/// HLS/module_allocation include
-#include "allocation_information.hpp"
-
-/// STD include
-#include <string>
-
-/// STL includes
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
+#include "time_info.hpp"
+#include "xml_helper.hpp"
 #include <algorithm>
 #include <list>
-
-/// technology include
-#include "parse_technology.hpp"
-
-/// technology/physical_library
-#include "technology_node.hpp"
-
-#include "RTL_characterization.hpp"
-
-#include "library_manager.hpp"
-#include "technology_manager.hpp"
-
-#include "LUT_model.hpp"
-#include "NP_functionality.hpp"
-#include "area_model.hpp"
-#include "clb_model.hpp"
-#include "structural_manager.hpp"
-#include "target_device.hpp"
-#include "target_manager.hpp"
-#include "time_model.hpp"
-
-#include "BackendFlow.hpp"
-
-#include "HDL_manager.hpp"
-#include "language_writer.hpp"
-
-#include "Parameter.hpp"
-#include "fileIO.hpp"
-#include "op_graph.hpp"
-#include "polixml.hpp"
-#include "xml_helper.hpp"
-
+#include <string>
 #if HAVE_FLOPOCO
 #include "flopoco_wrapper.hpp"
 #endif
@@ -103,11 +79,11 @@
 
 #define PORT_VECTOR_N_PORTS 2
 
-RTLCharacterization::RTLCharacterization(const target_managerRef _target, const std::string& _cells,
+RTLCharacterization::RTLCharacterization(const generic_deviceRef _device, const std::string& _cells,
                                          const DesignFlowManagerConstRef _design_flow_manager,
                                          const ParameterConstRef _parameters)
     : DesignFlowStep(_design_flow_manager, _parameters),
-      FunctionalUnitStep(_target, _design_flow_manager, _parameters),
+      FunctionalUnitStep(_device, _design_flow_manager, _parameters),
       component(ComputeComponent(_cells)),
       cells(ComputeCells(_cells))
 #ifndef NDEBUG
@@ -125,20 +101,18 @@ void RTLCharacterization::Initialize()
 {
    FunctionalUnitStep::Initialize();
    LM = TM->get_library_manager(TM->get_library(component));
-   prev_area_characterization = area_modelRef();
-   prev_timing_characterization = time_modelRef();
+   prev_area_characterization = area_infoRef();
+   prev_timing_characterization = time_infoRef();
 }
 
 DesignFlowStep_Status RTLCharacterization::Exec()
 {
-   const target_deviceRef device = target->get_target_device();
-
    const auto functional_unit = LM->get_fu(component);
    AnalyzeFu(functional_unit);
    // fix_execution_time_std();
    fix_proxies_execution_time_std();
    // if(is_xilinx) fix_muxes();
-   xwrite_device_file(device);
+   xwrite_device_file();
    return DesignFlowStep_Status::SUCCESS;
 }
 
@@ -371,7 +345,7 @@ void RTLCharacterization::fix_proxies_execution_time_std()
    }
 }
 
-void RTLCharacterization::xwrite_device_file(const target_deviceRef device)
+void RTLCharacterization::xwrite_device_file()
 {
    const auto file_name = GetPath("characterization.xml");
    try
@@ -381,7 +355,7 @@ void RTLCharacterization::xwrite_device_file(const target_deviceRef device)
 
       device->xwrite(nodeRoot);
 
-      xwrite_characterization(device, nodeRoot);
+      xwrite_characterization(nodeRoot);
 
       document.write_to_file_formatted(file_name);
    }
@@ -403,7 +377,7 @@ void RTLCharacterization::xwrite_device_file(const target_deviceRef device)
    }
 }
 
-void RTLCharacterization::xwrite_characterization(const target_deviceRef device, xml_element* nodeRoot)
+void RTLCharacterization::xwrite_characterization(xml_element* nodeRoot)
 {
    xml_element* tmRoot = nodeRoot->add_child_element("technology");
 
@@ -426,7 +400,7 @@ void RTLCharacterization::xwrite_characterization(const target_deviceRef device,
          if(current_fu_temp->specialized != "")
          {
             xml_element* template_el = lmRoot->add_child_element("template");
-            current_fu_temp->xwrite(template_el, tn, parameters, device->get_type());
+            current_fu_temp->xwrite(template_el, tn, parameters);
          }
       }
       else
@@ -440,7 +414,7 @@ void RTLCharacterization::xwrite_characterization(const target_deviceRef device,
          if(!current_fu->area_m)
          {
             /// set to the default value
-            current_fu->area_m = area_model::create_model(device->get_type(), parameters);
+            current_fu->area_m = area_info::factory(parameters);
          }
 
          xml_element* cell_el = lmRoot->add_child_element("cell");
@@ -451,48 +425,47 @@ void RTLCharacterization::xwrite_characterization(const target_deviceRef device,
          WRITE_XNVM2("name", "area", attribute_el);
          WRITE_XNVM2("value_type", "float64", attribute_el);
          attribute_el->add_child_text(STR(current_fu->area_m->get_area_value()));
-         auto* clb = GetPointer<clb_model>(current_fu->area_m);
-         if(clb && clb->get_resource_value(clb_model::REGISTERS) != 0)
+         if(current_fu->area_m && current_fu->area_m->get_resource_value(area_info::REGISTERS) != 0)
          {
             attribute_el = cell_el->add_child_element("attribute");
             WRITE_XNVM2("name", "REGISTERS", attribute_el);
             WRITE_XNVM2("value_type", "float64", attribute_el);
-            attribute_el->add_child_text(STR(clb->get_resource_value(clb_model::REGISTERS)));
+            attribute_el->add_child_text(STR(current_fu->area_m->get_resource_value(area_info::REGISTERS)));
          }
-         if(clb && clb->get_resource_value(clb_model::SLICE_LUTS) != 0)
+         if(current_fu->area_m && current_fu->area_m->get_resource_value(area_info::SLICE_LUTS) != 0)
          {
             attribute_el = cell_el->add_child_element("attribute");
             WRITE_XNVM2("name", "SLICE_LUTS", attribute_el);
             WRITE_XNVM2("value_type", "float64", attribute_el);
-            attribute_el->add_child_text(STR(clb->get_resource_value(clb_model::SLICE_LUTS)));
+            attribute_el->add_child_text(STR(current_fu->area_m->get_resource_value(area_info::SLICE_LUTS)));
          }
-         if(clb && clb->get_resource_value(clb_model::SLICE) != 0)
+         if(current_fu->area_m && current_fu->area_m->get_resource_value(area_info::SLICE) != 0)
          {
             attribute_el = cell_el->add_child_element("attribute");
             WRITE_XNVM2("name", "SLICE", attribute_el);
             WRITE_XNVM2("value_type", "float64", attribute_el);
-            attribute_el->add_child_text(STR(clb->get_resource_value(clb_model::SLICE)));
+            attribute_el->add_child_text(STR(current_fu->area_m->get_resource_value(area_info::SLICE)));
          }
-         if(clb && clb->get_resource_value(clb_model::LUT_FF_PAIRS) != 0)
+         if(current_fu->area_m && current_fu->area_m->get_resource_value(area_info::LUT_FF_PAIRS) != 0)
          {
             attribute_el = cell_el->add_child_element("attribute");
             WRITE_XNVM2("name", "LUT_FF_PAIRS", attribute_el);
             WRITE_XNVM2("value_type", "float64", attribute_el);
-            attribute_el->add_child_text(STR(clb->get_resource_value(clb_model::LUT_FF_PAIRS)));
+            attribute_el->add_child_text(STR(current_fu->area_m->get_resource_value(area_info::LUT_FF_PAIRS)));
          }
-         if(clb && clb->get_resource_value(clb_model::DSP) != 0)
+         if(current_fu->area_m && current_fu->area_m->get_resource_value(area_info::DSP) != 0)
          {
             attribute_el = cell_el->add_child_element("attribute");
             WRITE_XNVM2("name", "DSP", attribute_el);
             WRITE_XNVM2("value_type", "float64", attribute_el);
-            attribute_el->add_child_text(STR(clb->get_resource_value(clb_model::DSP)));
+            attribute_el->add_child_text(STR(current_fu->area_m->get_resource_value(area_info::DSP)));
          }
-         if(clb && clb->get_resource_value(clb_model::BRAM) != 0)
+         if(current_fu->area_m && current_fu->area_m->get_resource_value(area_info::BRAM) != 0)
          {
             attribute_el = cell_el->add_child_element("attribute");
             WRITE_XNVM2("name", "BRAM", attribute_el);
             WRITE_XNVM2("value_type", "float64", attribute_el);
-            attribute_el->add_child_text(STR(clb->get_resource_value(clb_model::BRAM)));
+            attribute_el->add_child_text(STR(current_fu->area_m->get_resource_value(area_info::BRAM)));
          }
 
          if(current_fu->fu_template_name != "" && current_fu->fu_template_parameters != "")
@@ -513,7 +486,7 @@ void RTLCharacterization::xwrite_characterization(const target_deviceRef device,
          for(const auto& op : ops)
          {
             auto* current_op = GetPointer<operation>(op);
-            current_op->xwrite(cell_el, op, parameters, device->get_type());
+            current_op->xwrite(cell_el, op, parameters);
          }
          if(current_fu->CM && current_fu->CM->get_circ() && GetPointer<module>(current_fu->CM->get_circ()) &&
             GetPointer<module>(current_fu->CM->get_circ())->get_specialized() != "")
@@ -849,7 +822,6 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
       std::string memory_type = fu->memory_type;
       std::string channels_type = fu->channels_type;
       unsigned int BRAM_BITSIZE = 16;
-      const target_deviceRef device = target->get_target_device();
       if(BRAM_BITSIZE > device->get_parameter<unsigned int>("BRAM_bitsize_max"))
       {
          BRAM_BITSIZE = device->get_parameter<unsigned int>("BRAM_bitsize_max");
@@ -1208,7 +1180,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
       }
 #endif
       /// generate the synthesis scripts
-      BackendFlowRef flow = BackendFlow::CreateFlow(parameters, "Characterization", target);
+      BackendFlowRef flow = BackendFlow::CreateFlow(parameters, "Characterization", device);
       flow->GenerateSynthesisScripts(fu->get_name(), SM, hdl_files, aux_files);
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Performing characterization of functional unit " + fu_name);
 #ifndef NDEBUG
@@ -1232,7 +1204,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
 #ifndef NDEBUG
       else
       {
-         fu->area_m = area_model::create_model(device->get_type(), parameters);
+         fu->area_m = area_info::factory(parameters);
       }
 #endif
       /// setting the timing values for each operation
@@ -1240,7 +1212,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
       for(const auto& op : ops)
       {
          auto* new_op = GetPointer<operation>(op);
-         time_modelRef synthesis_results;
+         time_infoRef synthesis_results;
 #ifndef NDEBUG
          if(not dummy_synthesis)
 #endif
@@ -1258,8 +1230,8 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
 #ifndef NDEBUG
          else
          {
-            synthesis_results = time_model::create_model(device->get_type(), parameters);
-            synthesis_results->set_execution_time(7.75, time_model::cycles_time_DEFAULT);
+            synthesis_results = time_info::factory(parameters);
+            synthesis_results->set_execution_time(7.75);
          }
 #endif
          double exec_time = 0.0;
@@ -1270,14 +1242,14 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
 
          if(!new_op->time_m)
          {
-            new_op->time_m = time_model::create_model(device->get_type(), parameters);
+            new_op->time_m = time_info::factory(parameters);
          }
 
          if(n_pipe_parameters > 0)
          {
-            new_op->time_m->set_stage_period(time_model::stage_period_DEFAULT);
-            new_op->time_m->set_execution_time(time_model::execution_time_DEFAULT, time_model::cycles_time_DEFAULT);
-            const ControlStep ii_default(time_model::initiation_time_DEFAULT);
+            new_op->time_m->set_stage_period(time_info::stage_period_DEFAULT);
+            new_op->time_m->set_execution_time(time_info::execution_time_DEFAULT, time_info::cycles_time_DEFAULT);
+            const ControlStep ii_default(time_info::initiation_time_DEFAULT);
             new_op->time_m->set_initiation_time(ii_default);
 
             unsigned int n_cycles;
@@ -1300,7 +1272,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
             }
             else if(PipelineDepth == 0)
             {
-               new_op->time_m->set_execution_time(exec_time, time_model::cycles_time_DEFAULT);
+               new_op->time_m->set_execution_time(exec_time);
             }
             else
             {
@@ -1309,7 +1281,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
          }
          else if(new_op->time_m->get_cycles() == 0)
          {
-            new_op->time_m->set_execution_time(exec_time, time_model::cycles_time_DEFAULT);
+            new_op->time_m->set_execution_time(exec_time, time_info::cycles_time_DEFAULT);
          }
          else
          {
@@ -1334,8 +1306,8 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
    }
    else
    {
-      prev_area_characterization = area_modelRef();
-      prev_timing_characterization = time_modelRef();
+      prev_area_characterization = area_infoRef();
+      prev_timing_characterization = time_infoRef();
    }
 }
 

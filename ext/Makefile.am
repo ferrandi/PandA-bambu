@@ -787,10 +787,6 @@ if BUILD_ABC
    noinst_SCRIPTS =create_abc
 endif
 
-if BUILD_BEAGLE
-   SUBDIRS += beagle
-endif
-
 if BUILD_COIN_OR
    SUBDIRS += Coin-Cbc
    lib_LTLIBRARIES = libCoin_Cbc.la
@@ -822,10 +818,6 @@ endif
 
 if BUILD_NODELIB
    SUBDIRS += nodelib
-endif
-
-if BUILD_LIBERTY_PARSER
-   SUBDIRS += liberty_parser
 endif
 
 if BUILD_LP_SOLVE

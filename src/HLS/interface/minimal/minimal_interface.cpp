@@ -42,47 +42,33 @@
  *
  */
 #include "minimal_interface.hpp"
-
+#include "Parameter.hpp"
+#include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
+#include "copyrights_strings.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "fileIO.hpp"
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "memory.hpp"
 #include "memory_allocation.hpp"
 #include "memory_symbol.hpp"
-
-#include "Parameter.hpp"
+#include "string_manipulation.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
+#include "technology_node.hpp"
+#include "testbench_generation.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-
-// behavior/ include
-#include "behavioral_helper.hpp"
-#include "call_graph_manager.hpp"
-
-// HLS/simulation include
-#include "testbench_generation.hpp"
-
-/// STD include
-#include <string>
-
-/// STL includes
-#include "custom_map.hpp"
-#include "custom_set.hpp"
 #include <list>
+#include <string>
 #include <utility>
 #include <vector>
-
-// technology/physical_library include
-#include "technology_node.hpp"
-
-/// utility include
-#include "copyrights_strings.hpp"
-#include "fileIO.hpp"
-#include "string_manipulation.hpp"
 
 minimal_interface::minimal_interface(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
                                      const DesignFlowManagerConstRef _design_flow_manager,
@@ -440,14 +426,14 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                is_memory_splitted = false;
                shared_memory = SM_minimal_interface->add_module_from_technology_library(
                    "shared_memory", STD_BRAM + latency_postfix, LIBRARY_STD, interfaceObj,
-                   HLSMgr->get_HLS_target()->get_technology_manager());
+                   HLSMgr->get_HLS_device()->get_technology_manager());
             }
             else
             {
                is_memory_splitted = true;
                shared_memory = SM_minimal_interface->add_module_from_technology_library(
                    "shared_memory", STD_BRAMN + latency_postfix, LIBRARY_STD, interfaceObj,
-                   HLSMgr->get_HLS_target()->get_technology_manager());
+                   HLSMgr->get_HLS_device()->get_technology_manager());
             }
             auto bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
             auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
@@ -1418,7 +1404,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
          {
             if(port_out->get_typeRef()->type == structural_type_descriptor::INT)
             {
-               auto TM = HLSMgr->get_HLS_target()->get_technology_manager();
+               auto TM = HLSMgr->get_HLS_device()->get_technology_manager();
                std::string library_name = TM->get_library(VIEW_CONVERT_STD_INT);
                auto c_obj = SM_minimal_interface->add_module_from_technology_library(
                    port_name + "_" + VIEW_CONVERT_STD_INT, VIEW_CONVERT_STD_INT, library_name, interfaceObj, TM);
@@ -1439,7 +1425,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             }
             else if(port_out->get_typeRef()->type == structural_type_descriptor::UINT)
             {
-               auto TM = HLSMgr->get_HLS_target()->get_technology_manager();
+               auto TM = HLSMgr->get_HLS_device()->get_technology_manager();
                std::string library_name = TM->get_library(VIEW_CONVERT_STD_UINT);
                auto c_obj = SM_minimal_interface->add_module_from_technology_library(
                    port_name + "_" + VIEW_CONVERT_STD_UINT, VIEW_CONVERT_STD_UINT, library_name, interfaceObj, TM);

@@ -38,70 +38,48 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-
 #include "fsm_controller.hpp"
-
-#include "behavioral_helper.hpp"
-#include "function_behavior.hpp"
-#include "hls.hpp"
-#include "hls_manager.hpp"
-
 #include "BambuParameter.hpp"
-
+#include "allocation_information.hpp"
+#include "basic_block.hpp"
+#include "behavioral_helper.hpp"
 #include "commandport_obj.hpp"
 #include "conn_binding.hpp"
 #include "connection_obj.hpp"
+#include "copyrights_strings.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
 #include "fu_binding.hpp"
+#include "function_behavior.hpp"
 #include "funit_obj.hpp"
+#include "hls.hpp"
+#include "hls_manager.hpp"
+#include "liveness.hpp"
 #include "multi_unbounded_obj.hpp"
 #include "mux_obj.hpp"
+#include "op_graph.hpp"
 #include "reg_binding.hpp"
 #include "register_obj.hpp"
 #include "schedule.hpp"
-
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
-
-#include "exceptions.hpp"
-#include <iosfwd>
-
+#include "storage_value_information.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
+#include "structural_manager.hpp"
+#include "structural_objects.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-
-#include "structural_manager.hpp"
-#include "structural_objects.hpp"
-
-#include "dbgPrintHelper.hpp"
-#include "op_graph.hpp"
-#include "technology_manager.hpp"
-#include "time_model.hpp"
-
-/// HLS/binding/storage_value_insertion
-#include "storage_value_information.hpp"
-
-/// HLS/liveness include
-#include "liveness.hpp"
-
-/// HLS/module_allocation
-#include "allocation_information.hpp"
-
-/// STL includes
-#include "custom_map.hpp"
-#include "custom_set.hpp"
 #include <deque>
+#include <iosfwd>
 #include <list>
 #include <utility>
 #include <vector>
-
-/// technology/physical_library include
-#include "technology_node.hpp"
-
-#include "copyrights_strings.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-
-#include "basic_block.hpp"
 
 fsm_controller::fsm_controller(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
                                const DesignFlowManagerConstRef _design_flow_manager,

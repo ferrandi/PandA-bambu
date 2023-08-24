@@ -1399,31 +1399,18 @@ void CompilerWrapper::InitializeCompilerParameters()
          case(CompilerWrapper_OptimizationSet::Oz):
             frontend_compiler_parameters += (" -O" + WriteOptimizationLevel(optimization_set) + " ");
             break;
-#if HAVE_BAMBU_BUILT
          case CompilerWrapper_OptimizationSet::OSF:
             frontend_compiler_parameters += (" -O3 -finline-limit=10000 --param inline-unit-growth=100000 ");
             break;
          case(CompilerWrapper_OptimizationSet::OBAMBU):
-#endif
-#if HAVE_ZEBU_BUILT
-         case(CompilerWrapper_OptimizationSet::OZEBU):
-#endif
             /// Filling optimizations map
-#if HAVE_BAMBU_BUILT || HAVE_ZEBU_BUILT
             SetCompilerDefault();
 
             switch(OS)
             {
-#if HAVE_BAMBU_BUILT
                case(CompilerWrapper_OptimizationSet::OBAMBU):
                   SetBambuDefault();
                   break;
-#endif
-#if HAVE_ZEBU_BUILT
-               case(CompilerWrapper_OptimizationSet::OZEBU):
-                  SetZebuDefault();
-                  break;
-#endif
                case(CompilerWrapper_OptimizationSet::O0):
                case(CompilerWrapper_OptimizationSet::O1):
                case(CompilerWrapper_OptimizationSet::O2):
@@ -1434,9 +1421,7 @@ void CompilerWrapper::InitializeCompilerParameters()
                case(CompilerWrapper_OptimizationSet::Os):
                case(CompilerWrapper_OptimizationSet::Ofast):
                case(CompilerWrapper_OptimizationSet::Oz):
-#if HAVE_BAMBU_BUILT
                case(CompilerWrapper_OptimizationSet::OSF):
-#endif
                {
                   THROW_UNREACHABLE("Unsupported optimization level " + WriteOptimizationLevel(OS));
                   break;
@@ -1486,7 +1471,6 @@ void CompilerWrapper::InitializeCompilerParameters()
             frontend_compiler_parameters += (" " + WriteOptimizationsString() + " ");
 
             break;
-#endif
          default:
          {
             THROW_UNREACHABLE("Unexpected optimization level");
@@ -1541,12 +1525,10 @@ void CompilerWrapper::InitializeCompilerParameters()
          }
       }
    }
-#if HAVE_BAMBU_BUILT
    if(OS == CompilerWrapper_OptimizationSet::OBAMBU)
    {
       frontend_compiler_parameters += "-Wuninitialized ";
    }
-#endif
 
    /// Adding includes
    if(Param->isOption(OPT_gcc_includes))
@@ -1576,67 +1558,6 @@ void CompilerWrapper::InitializeCompilerParameters()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Initialized gcc parameters");
 }
 
-#if HAVE_ZEBU_BUILT
-void CompilerWrapper::SetZebuDefault()
-{
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Setting parameters for Zebu tool...");
-   const CompilerWrapper_OptimizationSet opt_level =
-       Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Optimization level: " + WriteOptimizationLevel(opt_level));
-
-   /// parameters with enable
-   optimization_flags["ivopts"] =
-       false; /// introduce target_memory_ref as gimple_assign operands. The default GCC value is true
-   optimization_flags["tree-loop-im"] =
-       false; /// Execution error in 20040307-1.c example. The default GCC value is true
-   optimization_flags["tree-loop-ivcanon"] = false; /// this is requested for rebuild while and for
-   optimization_flags["tree-sink"] = true;          /// this is requested for rebuild while and for
-   optimization_flags["trapping-math"] =
-       true; ///-fno-trapping-math compiles code assuming that floating-point operations cannot generate user-visible
-             /// traps.  These traps include division by zero, overflow, underflow, inexact result and invalid
-             /// operation.
-             /// This option implies -fno-signaling-nans.  Setting this option may allow faster code if one relies on
-             /// "non-stop" IEEE arithmetic, for example. This option should never be turned on by any -O option since
-             /// it can result in incorrect output for programs which depend on an exact implementation of IEEE or ISO
-             /// rules/specifications for math functions.
-   optimization_flags["signed-zeros"] =
-       true; ///-fno-signed-zeros allows optimizations for floating point arithmetic that ignore the signedness of zero.
-             /// IEEE arithmetic specifies the behavior of distinct +0.0 and -0.0 values, which then prohibits
-             /// simplification of expressions such as x+0.0 or 0.0*x (even with -ffinite-math-only).
-   optimization_flags["rename-registers"] = false; /// cross compilation problems
-
-   /// builtin function;
-   optimization_flags["builtin"] = false;
-
-   // optimization_flags["openmp"] = true;
-
-   /// parameters with values
-   // FIXME: to be replaced with plugin; deactivated since it does not work with sparc-elf-gcc
-   //   optimization_values["tree-parallelize-loops"]=1;///requires tree-loop-optimize
-
-   if(opt_level == CompilerWrapper_OptimizationSet::O1 || opt_level == CompilerWrapper_OptimizationSet::O2 ||
-      opt_level == CompilerWrapper_OptimizationSet::O3)
-   {
-      optimization_flags["guess-branch-probability"] =
-          false; /// error in declaration of structure used probably by profiling.
-      optimization_flags["tree-ch"] = false;
-      optimization_flags["tree-copy-prop"] = false;      /// va_list undeclared - problem with split of phi nodes
-      optimization_flags["tree-dominator-opts"] = false; /// va_list undeclared
-      optimization_flags["tree-sra"] = false;            /// Introduces conversion from struct to scalar
-      optimization_flags["rename-registers"] = false;    /// cross compilation problems
-   }
-   if(opt_level == CompilerWrapper_OptimizationSet::O2 || opt_level == CompilerWrapper_OptimizationSet::O3)
-   {
-      optimization_flags["optimize-sibling-calls"] = false; /// Execution error on 20020406-1.c
-      optimization_flags["tree-pre"] = false;               /// some loop are incorrecty identified
-      optimization_flags["tree-vrp"] = false;               /// create several irriducible loops
-   }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for Zebu tool");
-}
-#endif
-
-#if HAVE_BAMBU_BUILT
 void CompilerWrapper::SetBambuDefault()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Setting parameters for Bambu tool...");
@@ -1657,13 +1578,8 @@ void CompilerWrapper::SetBambuDefault()
       optimization_flags["builtin-memset"] = false;
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
-      const auto flag_cpp =
-          Param->isOption(OPT_input_format) &&
-          (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
-           Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP);
-      if(!flag_cpp && opt_level != CompilerWrapper_OptimizationSet::O3 &&
-         opt_level != CompilerWrapper_OptimizationSet::O4 && opt_level != CompilerWrapper_OptimizationSet::Ofast &&
-         opt_level != CompilerWrapper_OptimizationSet::OSF)
+      if(opt_level != CompilerWrapper_OptimizationSet::O3 && opt_level != CompilerWrapper_OptimizationSet::O4 &&
+         opt_level != CompilerWrapper_OptimizationSet::Ofast && opt_level != CompilerWrapper_OptimizationSet::OSF)
       {
          optimization_flags["unroll-loops"] =
              false; // it is preferable to have unrolling disabled by default as with GCC
@@ -1810,7 +1726,6 @@ void CompilerWrapper::SetBambuDefault()
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
 }
-#endif
 
 void CompilerWrapper::SetCompilerDefault()
 {
@@ -1834,11 +1749,9 @@ void CompilerWrapper::SetCompilerDefault()
          frontend_compiler_parameters += (" -O" + WriteOptimizationLevel(optimization_level) + " ");
          break;
       }
-#if HAVE_BAMBU_BUILT
       case CompilerWrapper_OptimizationSet::OSF:
          frontend_compiler_parameters += (" -O3 -finline-limit=10000");
          break;
-#endif
       case(CompilerWrapper_OptimizationSet::O0):
       {
          frontend_compiler_parameters += " -O1 ";
@@ -2030,12 +1943,7 @@ void CompilerWrapper::SetCompilerDefault()
          }
          break;
       }
-#if HAVE_BAMBU_BUILT
       case(CompilerWrapper_OptimizationSet::OBAMBU):
-#endif
-#if HAVE_ZEBU_BUILT
-      case(CompilerWrapper_OptimizationSet::OZEBU):
-#endif
       {
          THROW_UNREACHABLE("Unepected optimization level: " + WriteOptimizationLevel(optimization_level));
          break;
@@ -3174,16 +3082,10 @@ std::string CompilerWrapper::WriteOptimizationLevel(const CompilerWrapper_Optimi
          return "fast";
       case(CompilerWrapper_OptimizationSet::Oz):
          return "z";
-#if HAVE_BAMBU_BUILT
       case(CompilerWrapper_OptimizationSet::OBAMBU):
          return "bambu";
       case(CompilerWrapper_OptimizationSet::OSF):
          return "softfloat";
-#endif
-#if HAVE_ZEBU_BUILT
-      case(CompilerWrapper_OptimizationSet::OZEBU):
-         return "zebu";
-#endif
       default:
       {
          THROW_UNREACHABLE("");

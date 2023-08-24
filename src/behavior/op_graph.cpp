@@ -121,7 +121,6 @@ const CustomSet<unsigned int>& OpNodeInfo::GetVariables(const FunctionBehavior_V
    return variables.find(variable_type)->second.find(access_type)->second;
 }
 
-#if HAVE_BAMBU_BUILT
 const std::string OpNodeInfo::GetOperation() const
 {
    if(vertex_name == ENTRY)
@@ -141,7 +140,6 @@ const std::string OpNodeInfo::GetOperation() const
                 "Node is not a gimple_node but a " + GET_NODE(node)->get_kind_text());
    return GetPointer<const gimple_node>(GET_NODE(node))->operation;
 }
-#endif
 
 unsigned int OpNodeInfo::GetNodeId() const
 {

@@ -43,8 +43,8 @@
 #include "custom_set.hpp"
 #include "function_behavior.hpp"
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "language_writer.hpp"
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
@@ -97,7 +97,7 @@ ControlFlowChecker::ComputeHLSRelationships(const DesignFlowStep::RelationshipTy
 bool ControlFlowChecker::IsOneHotFSM(unsigned int function_id, const HLS_managerRef HLSMgr)
 {
    const auto vendor = [&]() -> std::string {
-      const auto tgt_device = HLSMgr->get_HLS_target()->get_target_device();
+      const auto tgt_device = HLSMgr->get_HLS_device();
       if(tgt_device->has_parameter("vendor"))
       {
          return tgt_device->get_parameter<std::string>("vendor");

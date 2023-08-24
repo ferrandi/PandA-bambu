@@ -1246,11 +1246,7 @@ std::string BehavioralHelper::PrintVarDeclaration(unsigned int var, var_pp_funct
       dn = GetPointerS<const decl_node>(curr_tn);
    }
    /// If it is not a decl node (then it is an ssa-name) or it's a not system decl_node
-   if(!dn || !(dn->operating_system_flag || dn->library_system_flag)
-#if HAVE_BAMBU_BUILT
-      || tree_helper::IsInLibbambu(curr_tn)
-#endif
-   )
+   if(!dn || !(dn->operating_system_flag || dn->library_system_flag) || tree_helper::IsInLibbambu(curr_tn))
    {
       return_value += tree_helper::PrintType(TM, tree_helper::CGetType(curr_tn), false, false, init_has_to_be_printed,
                                              curr_tn, vppf);
@@ -6295,7 +6291,7 @@ bool BehavioralHelper::IsDefaultSsaName(const unsigned int ssa_name_index) const
    return sn && sn->default_flag;
 }
 
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
 size_t BehavioralHelper::GetOmpForDegree() const
 {
    const auto fd = GetPointerS<const function_decl>(TM->get_tree_node_const(function_index));
@@ -6315,7 +6311,7 @@ bool BehavioralHelper::IsOmpBodyLoop() const
 }
 #endif
 
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
 bool BehavioralHelper::IsOmpAtomic() const
 {
    const auto fd = GetPointerS<const function_decl>(TM->get_tree_node_const(function_index));
@@ -6329,12 +6325,10 @@ bool BehavioralHelper::function_has_to_be_printed(unsigned int f_id) const
    {
       return false;
    }
-#if HAVE_BAMBU_BUILT
    if(tree_helper::IsInLibbambu(TM, f_id))
    {
       return true;
    }
-#endif
    return !tree_helper::is_system(TM, f_id);
 }
 
@@ -6343,7 +6337,6 @@ std::string BehavioralHelper::get_asm_string(const unsigned int node_index) cons
    return tree_helper::get_asm_string(TM, node_index);
 }
 
-#if HAVE_BAMBU_BUILT
 bool BehavioralHelper::CanBeSpeculated(const unsigned int node_index) const
 {
    if(node_index == ENTRY_ID || node_index == EXIT_ID)
@@ -6608,7 +6601,6 @@ bool BehavioralHelper::CanBeMoved(const unsigned int node_index) const
    }
    return true;
 }
-#endif
 
 bool BehavioralHelper::IsStore(const unsigned int statement_index) const
 {

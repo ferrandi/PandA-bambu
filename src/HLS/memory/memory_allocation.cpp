@@ -43,10 +43,10 @@
  */
 #include "memory_allocation.hpp"
 
+#include "generic_device.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "memory.hpp"
-#include "target_device.hpp"
 
 #include "application_manager.hpp"
 #include "behavioral_helper.hpp"
@@ -509,11 +509,11 @@ void memory_allocation::finalize_memory_allocation()
                     "Analyzed function for bus size: " + behavioral_helper->get_function_name());
    }
 
-   const auto HLS_T = HLSMgr->get_HLS_target();
+   const auto HLS_D = HLSMgr->get_HLS_device();
    unsigned long long bram_bitsize = 0;
    unsigned addr_bus_bitsize = 0;
-   const auto bram_bitsize_min = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_min");
-   const auto bram_bitsize_max = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max");
+   const auto bram_bitsize_min = HLS_D->get_parameter<unsigned int>("BRAM_bitsize_min");
+   const auto bram_bitsize_max = HLS_D->get_parameter<unsigned int>("BRAM_bitsize_max");
    HLSMgr->Rmem->set_maxbram_bitsize(bram_bitsize_max);
 
    maximum_bus_size = ceil_pow2(maximum_bus_size);
@@ -572,9 +572,8 @@ void memory_allocation::finalize_memory_allocation()
       unsigned long long int addr_range = HLSMgr->Rmem->get_max_address();
       if(addr_range)
       {
-         addr_range = std::max(
-             addr_range,
-             ((2 * HLS_T->get_target_device()->get_parameter<unsigned long long int>("BRAM_bitsize_max")) / 8));
+         addr_range =
+             std::max(addr_range, ((2 * HLS_D->get_parameter<unsigned long long int>("BRAM_bitsize_max")) / 8));
          --addr_range;
       }
       unsigned int index;

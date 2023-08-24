@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2023 Politecnico di Milano
+ *              Copyright (C) 2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,69 +31,36 @@
  *
  */
 /**
- * @file time_model.hpp
- * @brief Class specification for time_model
+ * @file time_info.hpp
+ * @brief Collect information about resource performance
  *
- * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-#ifndef _TIME_MODEL_HPP_
-#define _TIME_MODEL_HPP_
+#ifndef TIME_INFO_HPP
+#define TIME_INFO_HPP
 
 #include "refcount.hpp"
 #include "schedule.hpp"
-#include "target_device.hpp"
-
-#include <boost/version.hpp>
-
-#if BOOST_VERSION >= 104600
-#else
-#include <tuple>
-#define BOOST_TR1_TUPLE_HPP_INCLUDED
-#endif
-#include <boost/math/distributions.hpp>
-
-#include <string>
-#include <vector>
 
 /// refcount definition for the class
 CONSTREF_FORWARD_DECL(Parameter);
 UINT_STRONG_TYPEDEF_FORWARD_DECL(ControlStep);
-REF_FORWARD_DECL(time_model);
+REF_FORWARD_DECL(time_info);
 class xml_element;
 
-class time_model
+class time_info
 {
- public:
-   /// map representing the pin-to-pin delay
-   std::map<std::string, std::map<std::string, double>> pin_to_pin_delay;
-
-   /// type of the timing path
-   using path_t = enum { POST_SYNTHESIS = 1, POST_LAYOUT = 2 };
-
- protected:
    /// class containing all the parameters
    const ParameterConstRef Param;
-
-   /// map containing all the information about critical paths
-   std::map<unsigned int, std::vector<std::string>> critical_paths;
-
-   std::map<unsigned int, float> max_delay;
-
    /// initiation time, in terms of cycle_units, for this type of operation on a given functional unit.
    ControlStep initiation_time;
-
    /// number of cycles required to complete the computation
    unsigned int cycles;
    /// flag to check if the number of cycles are dependent on the synthesis or not
    bool synthesis_dependent;
-
    /// critical timing execution path, in term of ns, of a potentially pipelined operation.
    double stage_period;
-
    /// execution time, in terms of ns, for this type of operation on a given functional unit.
    double execution_time;
 
@@ -101,26 +68,14 @@ class time_model
    /**
     * Constructor.
     */
-   explicit time_model(const ParameterConstRef _Param_);
+   explicit time_info(const ParameterConstRef _Param);
 
    /**
     * Destructor.
     */
-   virtual ~time_model();
+   ~time_info();
 
-   static time_modelRef create_model(TargetDevice_Type dv_type, const ParameterConstRef Param);
-
-   virtual void xwrite(xml_element* pin_node, const std::string& output_pin) = 0;
-
-   virtual unsigned int xload_timing_path(xml_element* node);
-
-   std::vector<std::string> get_critical_path(unsigned int type) const;
-
-   bool has_max_delay(unsigned int type) const;
-
-   void set_max_delay(unsigned int type, float value);
-
-   float get_max_delay(unsigned int type) const;
+   static time_infoRef factory(const ParameterConstRef Param);
 
    void set_initiation_time(const ControlStep _initiation_time);
 
@@ -132,7 +87,7 @@ class time_model
 
    void set_stage_period(double st_per);
 
-   void set_execution_time(double execution_time, unsigned int cycles);
+   void set_execution_time(double execution_time, unsigned int cycles = time_info::cycles_time_DEFAULT);
 
    void set_synthesis_dependent(bool value);
 
@@ -152,6 +107,6 @@ class time_model
    //@}
 };
 /// refcount definition of the class
-using time_modelRef = refcount<time_model>;
+using time_infoRef = refcount<time_info>;
 
 #endif

@@ -496,15 +496,8 @@ void tree_panda_gcc_parameter::SetDefaults()
    setOption(OPT_gcc_costs, false);
    setOption(OPT_gcc_openmp_simd, 0);
    setOption(OPT_no_clean, false);
-#if HAVE_BAMBU_BUILT
    setOption(OPT_gcc_optimization_set, CompilerWrapper_OptimizationSet::OBAMBU);
-#elif HAVE_ZEBU_BUILT
-   setOption(OPT_gcc_optimization_set, CompilerWrapper_OptimizationSet::OZEBU);
-#else
-   setOption(OPT_gcc_optimization_set, OS_OZEBU);
-#endif
    setOption(OPT_gcc_include_sysdir, false);
-   setOption(OPT_model_costs, false);
    setOption(OPT_output_directory, ".");
 #if HAVE_HLS_BUILT
    setOption(OPT_interface_type, HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION);

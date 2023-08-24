@@ -38,9 +38,8 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-
-/// Autoheader
-#include "config_HAVE_BEAGLE.hpp"
+#include "allocation_constants.hpp"
+#include "clique_covering.hpp"
 #include "config_HAVE_COIN_OR.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FLOPOCO.hpp"
@@ -55,107 +54,48 @@
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 #include "config_PANDA_LIB_INSTALLDIR.hpp"
 #include "config_SKIP_WARNING_SECTIONS.hpp"
-
-/// algorithms/clique_covering
-#include "clique_covering.hpp"
-
-/// constants include
-#include "allocation_constants.hpp"
 #include "constants.hpp"
-
 #if HAVE_HOST_PROFILING_BUILT
-/// frontend_flow/behavior_analysis
 #include "host_profiling.hpp"
 #endif
-
-/// HLS/binding/module
 #include "cdfc_module_binding.hpp"
-
-/// HLS/evaluation include
 #include "evaluation.hpp"
-
-/// HLS/memory include
 #include "memory_allocation.hpp"
-
-/// HLS/scheduling include
 #include "parametric_list_based.hpp"
 #if HAVE_ILP_BUILT
 #include "sdc_scheduling.hpp"
 #endif
-
 #if HAVE_ILP_BUILT
-/// ilp includes
 #include "meilp_solver.hpp"
 #endif
-
-/// tree include
-#include "tree_helper.hpp"
-
-/// Header include
 #include "BambuParameter.hpp"
-
-/// creation of the target architecture
 #include "chaining.hpp"
-#include "datapath_creator.hpp"
-
-#if HAVE_BEAGLE
-#if SKIP_WARNING_SECTIONS
-#pragma GCC diagnostic ignored "-Wshadow"
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#pragma GCC diagnostic ignored "-Wconversion"
-#pragma GCC diagnostic ignored "-Woverloaded-virtual"
-#pragma GCC diagnostic ignored "-Wtype-limits"
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-#pragma GCC diagnostic ignored "-Wextra"
-#pragma GCC diagnostic ignored "-Wignored-qualifiers"
-#pragma GCC diagnostic ignored "-Wsign-compare"
-#pragma GCC diagnostic ignored "-Wsign-promo"
-#endif
-#include "FitnessFunction.hpp"
-#include "dse_hls.hpp"
-#endif
-
-/// Constant option include
-#include "constant_strings.hpp"
-
-/// STD include
-#include <cstdlib>
-#include <cstring>
-#include <iosfwd>
-#include <string>
-
-/// STL includes
-#include <algorithm>
-#include <list>
-#include <vector>
-
-/// Technology include
-#include "language_writer.hpp"
-#include "parse_technology.hpp"
-#include "target_device.hpp"
-#include "technology_manager.hpp"
-
-/// technology/physical_library
-#include "technology_node.hpp"
-
-/// Utility include
-#include <getopt.h>
-
-#include <boost/lexical_cast.hpp>
-#include <filesystem>
-
 #include "compiler_constants.hpp"
+#include "compiler_wrapper.hpp"
+#include "constant_strings.hpp"
 #include "cpu_time.hpp"
+#include "datapath_creator.hpp"
 #include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
+#include "generic_device.hpp"
+#include "language_writer.hpp"
+#include "parse_technology.hpp"
 #include "string_manipulation.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
+#include "tree_helper.hpp"
 #include "utility.hpp"
-
-/// Wrapper include
-#include "compiler_wrapper.hpp"
-
+#include <algorithm>
+#include <boost/lexical_cast.hpp>
+#include <cstdlib>
+#include <cstring>
+#include <filesystem>
+#include <getopt.h>
+#include <iosfwd>
+#include <list>
 #include <regex>
+#include <string>
+#include <vector>
 
 /// Design Space Exploration
 #define OPT_ACCEPT_NONZERO_RETURN 256
@@ -176,7 +116,8 @@
 #define OPT_CLOCK_PERIOD_RESOURCE_FRACTION (1 + OPT_CHANNELS_TYPE)
 #define OPT_DEVICE_NAME (1 + OPT_CLOCK_PERIOD_RESOURCE_FRACTION)
 #define OPT_DISABLE_BOUNDED_FUNCTION (1 + OPT_DEVICE_NAME)
-#define OPT_DISABLE_FUNCTION_PROXY (1 + OPT_DISABLE_BOUNDED_FUNCTION)
+#define OPT_ENABLE_FUNCTION_PROXY (1 + OPT_DISABLE_BOUNDED_FUNCTION)
+#define OPT_DISABLE_FUNCTION_PROXY (1 + OPT_ENABLE_FUNCTION_PROXY)
 #define OPT_CONNECT_IOB (1 + OPT_DISABLE_FUNCTION_PROXY)
 #define OPT_DISTRAM_THRESHOLD (1 + OPT_CONNECT_IOB)
 #define OPT_DO_NOT_CHAIN_MEMORIES (1 + OPT_DISTRAM_THRESHOLD)
@@ -538,15 +479,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Set the bitsize of the external address bus.\n\n"
       << std::endl;
 
-   // Interconnection options
-#if HAVE_EXPERIMENTAL
-   os << "  Interconnection:\n\n"
-      << "    --interconnection, -C[<type>]\n"
-      << "        Perform interconnection binding. Possible values for <type> are:\n"
-      << "            M - mux-based architecture (default)\n\n"
-      << std::endl;
-#endif
-
    // Options for Evaluation of HLS results
    os << "  Evaluation of HLS results:\n\n"
       << "    --simulate\n"
@@ -597,8 +529,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                    - CLOCK_SLACK\n"
       << "                    - TIME\n"
       << "\n"
-      << "    --timing-simulation\n"
-      << "        Perform a simulation considering the timing delays.\n\n"
       << "    --timing-violation\n"
       << "        Aborts if synthesized circuit does not meet the timing.\n\n"
 #endif
@@ -849,7 +779,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
    os << "    --pragma-parse\n"
       << "        Perform source code parsing to extract information about pragmas.\n"
       << "        (default=no).\n\n";
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
    os << "    --num-accelerators\n"
       << "        Set the number of physical accelerator instantiated in parallel sections. It must\n"
       << "        be a power of two (default=4).\n\n";
@@ -863,9 +793,19 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Perform host-profiling.\n\n";
 #endif
    os << "    --disable-bitvalue-ipa\n"
-      << "        Disable inter-procedural bitvalue analysis.\n";
+      << "        Disable inter-procedural bitvalue analysis.\n\n";
+   os << "    --enable-function-proxy\n"
+      << "        Enable function proxy. May reduce the resource usage.\n\n";
    os << "    --disable-function-proxy\n"
       << "        Disable function proxy. May increase FSMD parallelism.\n\n";
+   os << "    --constraints,-C=<func_name>[=<num_resources>][,<func_name>[=<num_resources>]]*\n"
+      << "        Perform resource sharing of functions inside the datapath,\n"
+      << "        limiting the number of function instances to 'num_resources'.\n"
+      << "        Functions are specified as a comma-separated list with an optional\n"
+      << "        number of resources. (num_resources is by default equal to 1 when not specified).\n"
+      << "        If the first character of func_name is '*', then 'num_resources'\n"
+      << "        applies to all functions that match with 'func_name' with the first\n"
+      << "        character removed.\n\n";
    os << std::endl;
 
    // Checks and debugging options
@@ -1024,15 +964,15 @@ int BambuParameter::Exec()
       {"memory-ctrl-type", required_argument, nullptr, 0},
       {"sparse-memory", optional_argument, nullptr, 0},
       {"expose-globals", no_argument, nullptr, OPT_EXPOSE_GLOBALS},
-      // interconnections
-      {"interconnection", required_argument, nullptr, 'C'},
+      // parameter based resource constraints
+      {"constraints", required_argument, nullptr, 'C'},
       /// evaluation options
       {"evaluation", optional_argument, nullptr, OPT_EVALUATION},
 #if HAVE_EXPERIMENTAL
       {"evaluation-mode", required_argument, nullptr, OPT_EVALUATION_MODE},
       {"timing-simulation", no_argument, nullptr, 0},
-      {"timing-violation", no_argument, nullptr, OPT_TIMING_VIOLATION},
 #endif
+      {"timing-violation", no_argument, nullptr, OPT_TIMING_VIOLATION},
       {"assert-debug", no_argument, nullptr, 0},
       {"device-name", required_argument, nullptr, OPT_DEVICE_NAME},
       {"clock-period", required_argument, nullptr, OPT_PERIOD_CLOCK},
@@ -1101,6 +1041,7 @@ int BambuParameter::Exec()
       {"simulate", no_argument, nullptr, OPT_SIMULATE},
       {"mentor-visualizer", no_argument, nullptr, OPT_VISUALIZER},
       {"simulator", required_argument, nullptr, 0},
+      {"enable-function-proxy", no_argument, nullptr, OPT_ENABLE_FUNCTION_PROXY},
       {"disable-function-proxy", no_argument, nullptr, OPT_DISABLE_FUNCTION_PROXY},
       {"disable-bounded-function", no_argument, nullptr, OPT_DISABLE_BOUNDED_FUNCTION},
       {"memory-mapped-top", no_argument, nullptr, OPT_MEMORY_MAPPED_TOP},
@@ -1118,7 +1059,7 @@ int BambuParameter::Exec()
       {"fp-format", optional_argument, nullptr, OPT_FP_FORMAT},
       {"fp-format-propagate", optional_argument, nullptr, OPT_FP_FORMAT_PROPAGATE},
       {"fp-format-interface", optional_argument, nullptr, OPT_FP_FORMAT_INTERFACE},
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
       {"num-accelerators", required_argument, nullptr, OPT_NUM_ACCELERATORS},
       {"context_switch", optional_argument, nullptr, OPT_INPUT_CONTEXT_SWITCH},
 #endif
@@ -1291,23 +1232,21 @@ int BambuParameter::Exec()
             }
             break;
          }
-#if HAVE_EXPERIMENTAL
          case OPT_TIMING_VIOLATION:
          {
             setOption(OPT_timing_violation_abort, true);
             break;
          }
-#endif
-         // interconnection
+         // parameter based function constraints
          case 'C':
          {
-            if(std::string(optarg) == "M")
+            if(optarg)
             {
-               setOption(OPT_datapath_interconnection_algorithm, HLSFlowStep_Type::MUX_INTERCONNECTION_BINDING);
+               setOption(OPT_constraints_functions, optarg);
             }
             else
             {
-               throw "BadParameters: interconnection binding not correctly specified";
+               THROW_ERROR("BadParameters: -C option not correctly specified");
             }
             break;
          }
@@ -1887,6 +1826,11 @@ int BambuParameter::Exec()
             setOption(OPT_additional_top, optarg);
             break;
          }
+         case OPT_ENABLE_FUNCTION_PROXY:
+         {
+            setOption(OPT_disable_function_proxy, false);
+            break;
+         }
          case OPT_DISABLE_FUNCTION_PROXY:
          {
             setOption(OPT_disable_function_proxy, true);
@@ -1990,7 +1934,7 @@ int BambuParameter::Exec()
             setOption(OPT_fp_format_interface, true);
             break;
          }
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
          case OPT_NUM_ACCELERATORS:
          {
             auto num_acc = boost::lexical_cast<unsigned>(std::string(optarg));
@@ -2314,13 +2258,6 @@ int BambuParameter::Exec()
                }
                break;
             }
-#if HAVE_EXPERIMENTAL
-            if(strcmp(long_options[option_index].name, "timing-simulation") == 0)
-            {
-               setOption(OPT_timing_simulation, true);
-               break;
-            }
-#endif
             if(strcmp(long_options[option_index].name, "assert-debug") == 0)
             {
                setOption(OPT_assert_debug, true);
@@ -3110,6 +3047,44 @@ void BambuParameter::CheckParameters()
       setOption(OPT_gcc_warnings, gcc_warnings);
    }
 #endif
+   if(getOption<bool>(OPT_parse_pragma))
+   {
+      if(isOption(OPT_disable_function_proxy) && !getOption<bool>(OPT_disable_function_proxy))
+      {
+         THROW_ERROR("function proxy has to be disabled when pragmas are parsed");
+      }
+      setOption(OPT_disable_function_proxy, true);
+   }
+   if(isOption(OPT_discrepancy_hw) && getOption<bool>(OPT_discrepancy_hw))
+   {
+      if(isOption(OPT_disable_function_proxy))
+      {
+         if(getOption<bool>(OPT_disable_function_proxy))
+         {
+            THROW_ERROR("--discrepancy-hw Hardware Discrepancy Analysis only works with function proxies");
+         }
+      }
+      else
+      {
+         setOption(OPT_disable_function_proxy, false);
+      }
+   }
+   /// Disable proxy when there are multiple top functions
+   if(isOption(OPT_top_functions_names) && getOption<const std::list<std::string>>(OPT_top_functions_names).size() > 1)
+   {
+      if(isOption(OPT_disable_function_proxy))
+      {
+         if(!getOption<bool>(OPT_disable_function_proxy))
+         {
+            THROW_ERROR("multiple top functions does not work with function proxies");
+         }
+      }
+      else
+      {
+         setOption(OPT_disable_function_proxy, true);
+      }
+   }
+
    /// add experimental setup options
    if(getOption<std::string>(OPT_experimental_setup) == "VVD")
    {
@@ -3137,6 +3112,10 @@ void BambuParameter::CheckParameters()
          setOption(OPT_distram_threshold, 256);
       }
       add_experimental_setup_compiler_options(!flag_cpp);
+      if(!isOption(OPT_disable_function_proxy))
+      {
+         setOption(OPT_disable_function_proxy, true);
+      }
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU092")
    {
@@ -3153,6 +3132,10 @@ void BambuParameter::CheckParameters()
          setOption(OPT_distram_threshold, 256);
       }
       add_experimental_setup_compiler_options(!flag_cpp);
+      if(!isOption(OPT_disable_function_proxy))
+      {
+         setOption(OPT_disable_function_proxy, true);
+      }
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-BALANCED" ||
            getOption<std::string>(OPT_experimental_setup) == "BAMBU-BALANCED-MP" ||
@@ -3248,6 +3231,10 @@ void BambuParameter::CheckParameters()
             setOption(OPT_input_file, concat_filename);
          }
       }
+      if(!isOption(OPT_disable_function_proxy))
+      {
+         setOption(OPT_disable_function_proxy, true);
+      }
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-PERFORMANCE-MP")
    {
@@ -3272,7 +3259,10 @@ void BambuParameter::CheckParameters()
          setOption(OPT_distram_threshold, 512);
       }
       add_experimental_setup_compiler_options(!flag_cpp);
-      setOption(OPT_disable_function_proxy, true);
+      if(!isOption(OPT_disable_function_proxy))
+      {
+         setOption(OPT_disable_function_proxy, true);
+      }
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-PERFORMANCE")
    {
@@ -3289,13 +3279,31 @@ void BambuParameter::CheckParameters()
          setOption(OPT_distram_threshold, 512);
       }
       add_experimental_setup_compiler_options(!flag_cpp);
-      setOption(OPT_disable_function_proxy, true);
+      if(!isOption(OPT_disable_function_proxy))
+      {
+         setOption(OPT_disable_function_proxy, true);
+      }
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-AREA-MP")
    {
       if(!isOption(OPT_compiler_opt_level))
       {
          setOption(OPT_compiler_opt_level, CompilerWrapper_OptimizationSet::Os);
+      }
+      std::string optimizations;
+      if(isOption(OPT_gcc_optimizations))
+      {
+         optimizations += getOption<std::string>(OPT_gcc_optimizations);
+      }
+      std::string tuning_optimizations = "no-unroll-loops";
+      if(optimizations != "" && tuning_optimizations != "")
+      {
+         optimizations += STR_CST_string_separator;
+      }
+      optimizations += tuning_optimizations;
+      if(optimizations != "")
+      {
+         setOption(OPT_gcc_optimizations, optimizations);
       }
       if(!isOption(OPT_channels_type))
       {
@@ -3315,12 +3323,31 @@ void BambuParameter::CheckParameters()
          setOption(OPT_distram_threshold, 256);
       }
       add_experimental_setup_compiler_options(!flag_cpp);
+      if(!isOption(OPT_disable_function_proxy))
+      {
+         setOption(OPT_disable_function_proxy, false);
+      }
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-AREA")
    {
       if(!isOption(OPT_compiler_opt_level))
       {
          setOption(OPT_compiler_opt_level, CompilerWrapper_OptimizationSet::Os);
+      }
+      std::string optimizations;
+      if(isOption(OPT_gcc_optimizations))
+      {
+         optimizations += getOption<std::string>(OPT_gcc_optimizations);
+      }
+      std::string tuning_optimizations = "no-unroll-loops";
+      if(optimizations != "" && tuning_optimizations != "")
+      {
+         optimizations += STR_CST_string_separator;
+      }
+      optimizations += tuning_optimizations;
+      if(optimizations != "")
+      {
+         setOption(OPT_gcc_optimizations, optimizations);
       }
       if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::NONE)
       {
@@ -3332,6 +3359,10 @@ void BambuParameter::CheckParameters()
          setOption(OPT_distram_threshold, 256);
       }
       add_experimental_setup_compiler_options(!flag_cpp);
+      if(!isOption(OPT_disable_function_proxy))
+      {
+         setOption(OPT_disable_function_proxy, false);
+      }
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU")
    {
@@ -3344,6 +3375,10 @@ void BambuParameter::CheckParameters()
          setOption(OPT_distram_threshold, 256);
       }
       add_experimental_setup_compiler_options(false);
+      if(!isOption(OPT_disable_function_proxy))
+      {
+         setOption(OPT_disable_function_proxy, false);
+      }
    }
    else
    {
@@ -3377,10 +3412,9 @@ void BambuParameter::CheckParameters()
       add_bambu_library("hls-div" + getOption<std::string>(OPT_hls_div));
    }
    add_bambu_library("hls-cdiv");
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
    if(getOption<bool>(OPT_parse_pragma))
    {
-      setOption(OPT_disable_function_proxy, true);
       if(isOption(OPT_context_switch))
       {
          if(getOption<unsigned int>(OPT_channels_number) >= getOption<unsigned int>(OPT_memory_banks_number))
@@ -3537,11 +3571,6 @@ void BambuParameter::CheckParameters()
    {
       THROW_ERROR("--discrepancy-hw Hardware Discrepancy Analysis only works with dominator function allocation");
    }
-   if(isOption(OPT_discrepancy_hw) && getOption<bool>(OPT_discrepancy_hw) && isOption(OPT_disable_function_proxy) &&
-      getOption<bool>(OPT_disable_function_proxy))
-   {
-      THROW_ERROR("--discrepancy-hw Hardware Discrepancy Analysis only works with function proxies");
-   }
    if(isOption(OPT_discrepancy) && getOption<bool>(OPT_discrepancy))
    {
       if(default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC45 ||
@@ -3561,11 +3590,6 @@ void BambuParameter::CheckParameters()
       {
          THROW_ERROR("Testbench generation required. (--generate-tb or --simulate undeclared).");
       }
-   }
-   /// Disable proxy when there are multiple top functions
-   if(isOption(OPT_top_functions_names) && getOption<const std::list<std::string>>(OPT_top_functions_names).size() > 1)
-   {
-      setOption(OPT_disable_function_proxy, true);
    }
 
    if(isOption(OPT_no_parse_c_python) && !isOption(OPT_testbench_extra_gcc_flags))
@@ -3636,7 +3660,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_max_sim_cycles, 200000000);
    setOption(OPT_chaining, true);
 
-   /// High-level synthesis contraints dump -- //
+   /// High-level synthesis constraints dump -- //
    setOption("dumpConstraints", false);
    setOption("dumpConstraints_file", "Constraints.xml");
 
@@ -3687,7 +3711,6 @@ void BambuParameter::SetDefaults()
    setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION);
 
    /// Enable function proxy by default
-   setOption(OPT_disable_function_proxy, false);
    setOption(OPT_disable_bounded_function, false);
 
    /// Disable memory mapped interface for top function by default
@@ -3740,14 +3763,11 @@ void BambuParameter::SetDefaults()
    setOption(OPT_xilinx_root, "/opt/Xilinx");
 
    /// -- Module Synthesis -- //
-   setOption(OPT_rtl, true); /// the resulting specification will be a RTL description
    setOption("device_name", "xc7z020");
    setOption("device_speed", "-1");
    setOption("device_package", "clg484");
    setOption("device_synthesis_tool", "VVD");
-   setOption(OPT_timing_simulation, false);
    setOption(OPT_timing_violation_abort, false);
-   setOption(OPT_target_device_type, static_cast<int>(TargetDevice_Type::FPGA));
    setOption(OPT_export_core, false);
    setOption(OPT_connect_iob, false);
 
@@ -3764,7 +3784,6 @@ void BambuParameter::SetDefaults()
    setOption(OPT_gcc_openmp_simd, 0);
    setOption(OPT_gcc_optimization_set, CompilerWrapper_OptimizationSet::OBAMBU);
    setOption(OPT_gcc_include_sysdir, false);
-   setOption(OPT_model_costs, false);
 
    std::string defines;
    if(isOption(OPT_gcc_defines))
@@ -3811,7 +3830,7 @@ void BambuParameter::SetDefaults()
 #if HAVE_TASTE
    setOption(OPT_generate_taste_architecture, false);
 #endif
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
    setOption(OPT_num_accelerators, 4);
 #endif
    setOption(OPT_memory_banks_number, 1);

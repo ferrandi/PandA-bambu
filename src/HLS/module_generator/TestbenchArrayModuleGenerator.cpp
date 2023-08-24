@@ -272,11 +272,11 @@ generate
   end
 endgenerate
 generate
-  if(READ_DELAY > 1)
+  if(READ_DELAY > 2)
   begin : shift_output_queue2
     always @(posedge clock)
     begin
-      q <= q_next;
+      q[(READ_DELAY-1)*CHANNELS_NUMBER*BITSIZE_dq-1:BITSIZE_dq*CHANNELS_NUMBER] <= q_next[(READ_DELAY-1)*CHANNELS_NUMBER*BITSIZE_dq-1:BITSIZE_dq*CHANNELS_NUMBER];
     end
   end
 endgenerate
@@ -285,18 +285,18 @@ generate
   begin : read_port
     if(READ_DELAY > 1)
     begin
-      always @(*)
+      always @(posedge clock)
       begin
         if(current[BITSIZE_item*i+OFFSET_ce+:BITSIZE_ce] === 1'b1
             && current[BITSIZE_item*i+OFFSET_we+:BITSIZE_we] === 1'b0)
         begin
           automatic ptr_t address = current[BITSIZE_item*i+OFFSET_address+:BITSIZE_address];
           automatic ptr_t mem_address = base_addr + (address * ALIGNMENT);
-          q_next[BITSIZE_dq*i+:BITSIZE_dq] = m_utils.read(mem_address);
+          q[BITSIZE_dq*i+:BITSIZE_dq] <= m_utils.read(mem_address);
         end
         else
         begin
-          q_next[BITSIZE_dq*i+:BITSIZE_dq] = 0;
+          q[BITSIZE_dq*i+:BITSIZE_dq] <= 0;
         end
       end
     end

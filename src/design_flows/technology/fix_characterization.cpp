@@ -43,21 +43,21 @@
 #include "fix_characterization.hpp"
 
 #include "Parameter.hpp"
-#include "clb_model.hpp"
+#include "area_info.hpp"
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
+#include "generic_device.hpp"
 #include "library_manager.hpp"
 #include "string_manipulation.hpp"
-#include "target_device.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
-#include "time_model.hpp"
+#include "time_info.hpp"
 #include "utility.hpp"
 
 #include <string>
 #include <vector>
 
-FixCharacterization::FixCharacterization(const technology_managerRef _TM, const target_deviceRef _target,
+FixCharacterization::FixCharacterization(const technology_managerRef _TM, const generic_deviceRef _target,
                                          const DesignFlowManagerConstRef _design_flow_manager,
                                          const ParameterConstRef _parameters)
     : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::FIX_CHARACTERIZATION,
