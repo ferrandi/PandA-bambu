@@ -4,7 +4,7 @@
 
 --configuration-name=pong pong/main.c --top-fname=main --compiler=I386_CLANG11 -Os --device-name=xc7a100t-1csg324-VVD --backend-sdc-extensions=BENCHMARKS_ROOT/pong/Nexys4_Master.sdc --clock-period=10 pong/constraints_STD.xml pong/IPs.xml --C-no-parse=BENCHMARKS_ROOT/pong/plot.c,BENCHMARKS_ROOT/pong/sevensegments_ctrl.c,BENCHMARKS_ROOT/pong/btn_ctrl.c,BENCHMARKS_ROOT/pong/get_ticks.c --file-input-data=BENCHMARKS_ROOT/pong/plot.v,BENCHMARKS_ROOT/pong/sevensegments_ctrl.v,BENCHMARKS_ROOT/pong/btn_ctrl.v,BENCHMARKS_ROOT/pong/get_ticks.v --speculative-sdc-scheduling --enable-function-proxy
 
---configuration-name=taste taste/InterfaceView.aadl --top-fname=first_function,second_function --enable-function-proxy
+--configuration-name=taste taste/InterfaceView.aadl --top-fname=first_function,second_function
 
 --configuration-name=VGA VGA/delay.c VGA/vgatest.c --top-fname=main --clock-period=20 -O3 --target-file=BENCHMARKS_ROOT/VGA/DE1-characterization-file.xml --backend-script-extensions=BENCHMARKS_ROOT/VGA/DE1_pin_assignments.qsf --backend-sdc-extensions=BENCHMARKS_ROOT/VGA/DE1_design.sdc VGA/constraints_STD.xml VGA/PLOT_IPs.xml --C-no-parse=BENCHMARKS_ROOT/VGA/plot.c,BENCHMARKS_ROOT/VGA/leds_ctrl.c -DC_SIMULATION --file-input-data=BENCHMARKS_ROOT/VGA/leds_ctrl.v,BENCHMARKS_ROOT/VGA/plot.v --enable-function-proxy
 
