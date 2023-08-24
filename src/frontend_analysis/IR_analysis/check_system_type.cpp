@@ -74,7 +74,7 @@
 #include "compiler_wrapper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-#define FILENAME_NORM(name) ((std::filesystem::path(name)).lexically_normal().string())
+#define FILENAME_NORM(name) (std::filesystem::path(name).lexically_normal().string())
 
 std::vector<std::string> CheckSystemType::systemIncPath;
 
@@ -957,6 +957,7 @@ void CheckSystemType::build_include_structures(ParameterConstRef parameters)
       if(tok_iter != "")
       {
          std::string temp;
+         std::error_code ec;
          if(getenv("MINGW_INST_DIR"))
          {
             std::string mingw_prefix = getenv("MINGW_INST_DIR");
@@ -972,21 +973,29 @@ void CheckSystemType::build_include_structures(ParameterConstRef parameters)
          {
             const std::string app_prefix = getenv("APPDIR");
             temp = FILENAME_NORM(tok_iter);
-            systemIncPath.push_back(std::filesystem::weakly_canonical(temp).string());
-            if(temp.find(app_prefix) != 0)
+            const auto canon_temp = std::filesystem::weakly_canonical(temp, ec);
+            if(!ec)
             {
-               temp = app_prefix + "/" + FILENAME_NORM(tok_iter);
-            }
-            else
-            {
-               temp = temp.substr(app_prefix.size());
+               systemIncPath.push_back(canon_temp.string());
+               if(temp.find(app_prefix) != 0)
+               {
+                  temp = app_prefix + "/" + FILENAME_NORM(tok_iter);
+               }
+               else
+               {
+                  temp = temp.substr(app_prefix.size());
+               }
             }
          }
          else
          {
             temp = FILENAME_NORM(tok_iter);
          }
-         systemIncPath.push_back(std::filesystem::weakly_canonical(temp).string());
+         const auto canon_temp = std::filesystem::weakly_canonical(temp, ec);
+         if(!ec)
+         {
+            systemIncPath.push_back(canon_temp.string());
+         }
       }
    }
    systemIncPath.push_back("/usr/local/share/hframework/include");
