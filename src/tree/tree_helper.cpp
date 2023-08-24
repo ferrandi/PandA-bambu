@@ -636,7 +636,12 @@ std::tuple<std::string, unsigned int, unsigned int> tree_helper::GetSourcePath(c
    }
    if(include_name != "<built-in>")
    {
-      include_name = std::filesystem::weakly_canonical(include_name).string();
+      std::error_code ec;
+      const auto canon_path = std::filesystem::weakly_canonical(include_name, ec);
+      if(!ec)
+      {
+         include_name = canon_path.string();
+      }
    }
    return std::tuple<std::string, unsigned int, unsigned int>(include_name, line_number, column_number);
 }
