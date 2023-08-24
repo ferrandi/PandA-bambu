@@ -80,7 +80,7 @@ class trce_wrapper : public XilinxWrapper
     * Constructor
     * @param Param is the set of parameters
     */
-   trce_wrapper(const ParameterConstRef& Param, const std::string& _output_dir, const target_deviceRef& _device);
+   trce_wrapper(const ParameterConstRef& Param, const std::string& _output_dir, const generic_deviceRef& _device);
 
    /**
     * Destructor

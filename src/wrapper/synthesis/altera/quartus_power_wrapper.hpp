@@ -59,7 +59,7 @@ class QuartusPowerWrapper : public AlteraWrapper
     * Constructor
     * @param Param is the set of parameters
     */
-   QuartusPowerWrapper(const ParameterConstRef Param, const std::string& _output_dir, const target_deviceRef _device);
+   QuartusPowerWrapper(const ParameterConstRef Param, const std::string& _output_dir, const generic_deviceRef _device);
 
    /**
     * Destructor

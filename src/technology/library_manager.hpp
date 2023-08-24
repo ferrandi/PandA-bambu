@@ -45,9 +45,6 @@
 #ifndef _LIBRARY_MANAGER_HPP
 #define _LIBRARY_MANAGER_HPP
 
-#include "config_HAVE_FROM_LIBERTY.hpp"
-#include "config_HAVE_LIBRARY_COMPILER.hpp"
-
 #include "refcount.hpp"
 #include <boost/lexical_cast.hpp>
 
@@ -55,20 +52,18 @@
  * @name Forward declarations.
  */
 //@{
-REF_FORWARD_DECL(target_device);
 /// RefCount type definition of the library_manager class structure
 REF_FORWARD_DECL(library_manager);
-/// RefCount type definition of the technology node datastructure
+/// RefCount type definition of the technology node data-structure
 REF_FORWARD_DECL(technology_node);
 /// RefCount type definition of the class containing all the parameters
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(attribute);
-enum class TargetDevice_Type;
 class xml_element;
 //@}
 
-#include "custom_map.hpp"
 #include "custom_set.hpp"
+#include <map>
 #include <string>
 #include <vector>
 
@@ -133,12 +128,6 @@ class library_manager
    /// available information for the library
    using info_t = enum {
       XML,
-#if HAVE_FROM_LIBERTY
-      LIBERTY,
-#endif
-#if HAVE_LIBRARY_COMPILER
-      DB,
-#endif
    };
    //@}
 
@@ -149,7 +138,7 @@ class library_manager
    /// string identifier of the library
    std::string name;
 
-   /// datastructure to identify the units that are contained into the library
+   /// data-structure to identify the units that are contained into the library
    fu_map_type fu_map;
 
    std::vector<std::string> ordered_attributes;
@@ -172,7 +161,7 @@ class library_manager
 
  public:
    /**
-    * @name Constructors and destructors.
+    * @name Constructors and Destructors.
     */
    //@{
    /// Constructor.
@@ -212,14 +201,13 @@ class library_manager
 
    bool is_info(unsigned int type) const;
 
-   std::string get_info(const info_t type, const TargetDevice_Type dv_type);
+   std::string get_info(const info_t type);
 
    void erase_info();
 
-   static void xload(const xml_element* node, const library_managerRef& LM, const ParameterConstRef& Param,
-                     const target_deviceRef& device);
+   static void xload(const xml_element* node, const library_managerRef& LM, const ParameterConstRef& Param);
 
-   void xwrite(xml_element* rootnode, TargetDevice_Type dv_type);
+   void xwrite(xml_element* rootnode);
 
    std::string get_library_name() const;
 

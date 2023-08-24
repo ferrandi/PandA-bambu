@@ -74,8 +74,8 @@
 #include "application_frontend_flow_step.hpp"
 
 /// HLS include
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 
 /// HLS/memory include
 #include "memory.hpp"

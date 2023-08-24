@@ -71,7 +71,7 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-// exit_code is stored in zebu.cpp
+// exit_code is stored in bambu.cpp
 extern int exit_code;
 
 tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string& f)

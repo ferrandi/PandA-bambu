@@ -45,7 +45,7 @@
 #include "BackendFlow.hpp"
 #include "Parameter.hpp"
 #include "SimulationInformation.hpp"
-#include "area_model.hpp"
+#include "area_info.hpp"
 #include "bambu_results_xml.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
@@ -56,7 +56,6 @@
 #include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
 #include "string_manipulation.hpp"
-#include "time_model.hpp"
 #include "utility.hpp"
 #include "xml_document.hpp"
 #include "xml_helper.hpp"
@@ -266,11 +265,11 @@ DesignFlowStep_Status Evaluation::Exec()
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                            "---Luts                     : " + STR(evaluations.at("SLICE_LUTS").at(0)));
          }
-         if(evaluations.find("LUT_FF_PAIRS") != evaluations.end())
+         else if(evaluations.find("LUT_FF_PAIRS") != evaluations.end())
          {
             THROW_ASSERT(evaluations.at("LUT_FF_PAIRS").size() == 1, "");
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                           "---Lut FF Pairs             : " + STR(evaluations.at("LUT_FF_PAIRS").at(0)));
+                           "---Luts             : " + STR(evaluations.at("LUT_FF_PAIRS").at(0)));
          }
          if(evaluations.find("LOGIC_ELEMENTS") != evaluations.end())
          {

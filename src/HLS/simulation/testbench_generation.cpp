@@ -57,8 +57,8 @@
 #include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "language_writer.hpp"
 #include "library_manager.hpp"
 #include "math_function.hpp"
@@ -92,7 +92,7 @@ TestbenchGeneration::TestbenchGeneration(const ParameterConstRef _parameters, co
                                          const DesignFlowManagerConstRef _design_flow_manager)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TESTBENCH_GENERATION),
       writer(language_writer::create_writer(HDLWriter_Language::VERILOG,
-                                            _HLSMgr->get_HLS_target()->get_technology_manager(), _parameters)),
+                                            _HLSMgr->get_HLS_device()->get_technology_manager(), _parameters)),
       cir(nullptr),
       mod(nullptr),
       output_directory(parameters->getOption<std::string>(OPT_output_directory) + "/simulation/"),
@@ -215,7 +215,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
    const auto clock_port = tb_top->add_port(CLOCK_PORT_NAME, port_o::IN, tb_cir, bool_type);
    GetPointerS<port_o>(clock_port)->set_is_clock(true);
 
-   const auto TechM = HLSMgr->get_HLS_target()->get_technology_manager();
+   const auto TechM = HLSMgr->get_HLS_device()->get_technology_manager();
    const auto std_lib_manager = TechM->get_library_manager(LIBRARY_STD);
    ModuleGeneratorManager mgm(HLSMgr, parameters);
 
@@ -609,7 +609,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating testbench HDL...");
    const auto tb_filename = output_directory + CST_STR_BAMBU_TESTBENCH;
    const auto is_sim_verilator = parameters->getOption<std::string>(OPT_simulator) == "VERILATOR";
-   HDL_manager HDLMgr(HLSMgr, HLSMgr->get_HLS_target()->get_target_device(), parameters);
+   HDL_manager HDLMgr(HLSMgr, HLSMgr->get_HLS_device(), parameters);
    std::list<std::string> hdl_files, aux_files;
    const std::list<structural_objectRef> tb_circuits = {tb_cir};
    HDLMgr.hdl_gen(tb_filename, tb_circuits, false, hdl_files, aux_files);
@@ -655,7 +655,7 @@ typedef longint unsigned ptr_t;
       bambu_tb_dpi << bambu_tb.rdbuf();
 
       auto tb_writer = language_writer::create_writer(HDLWriter_Language::VERILOG,
-                                                      HLSMgr->get_HLS_target()->get_technology_manager(), parameters);
+                                                      HLSMgr->get_HLS_device()->get_technology_manager(), parameters);
 
       tb_writer->write_comment("MODULE DECLARATION\n");
       tb_writer->write("module " CST_STR_BAMBU_TESTBENCH "(" CLOCK_PORT_NAME ");\n");

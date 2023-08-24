@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2023 Politecnico di Milano
+ *              Copyright (C) 2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,30 +31,24 @@
  *
  */
 /**
- * @file clb_model.hpp
- * @brief Specification of the class for representing FPGA area/resource models
+ * @file area_info.hpp
+ * @brief Collect information about resource area
  *
- * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
-#ifndef _CLB_MODEL_HPP_
-#define _CLB_MODEL_HPP_
+#ifndef AREA_INFO_HPP
+#define AREA_INFO_HPP
 
-#include "area_model.hpp"
-
-#include "custom_map.hpp"
-#include <vector>
-
-/// Utility include
 #include "refcount.hpp"
-
+REF_FORWARD_DECL(area_info);
 CONSTREF_FORWARD_DECL(Parameter);
+class xml_element;
 
-class clb_model : public area_model
+#include <map>
+#include <string>
+
+class area_info
 {
  public:
    /// type of resources
@@ -72,65 +66,56 @@ class clb_model : public area_model
       POWER
    };
 
- protected:
+ private:
    /// a double value representing the area of the component
    double area;
 
    /// resources required for the component
    std::map<value_t, double> used_resources;
 
+   /// class containing all the parameters
+   const ParameterConstRef Param;
+
  public:
    /**
-    * Constructor
+    * @name Constructors and Destructors.
     */
-   explicit clb_model(const ParameterConstRef& Param);
+   //@{
+   /// Constructor.
+   explicit area_info(const ParameterConstRef& _Param);
+
+   /// Destructor.
+   ~area_info();
+   //@}
 
    /**
-    * Constructor with specified area value
+    * Print method.
     */
-   clb_model(const ParameterConstRef& Param, const double& _area_);
+   void print(std::ostream& os) const;
 
    /**
-    * Destructor
+    * Factory method.
     */
-   ~clb_model() override;
+   static area_infoRef factory(const ParameterConstRef& Param);
 
    /**
-    * Prints the used resources into an output stream
+    * Set the nominal value for the area of the component
     */
-   void print(std::ostream& os) const override;
+   void set_area_value(const double& _area_);
 
    /**
-    * Sets the nominal value for the area of the component
+    * Return the nominal value for the area of the component
     */
-   void set_area_value(const double& _area_) override;
+   double get_area_value() const;
 
-   /**
-    * Returns the nominal value for the area of the component
-    */
-   double get_area_value() const override;
-
-   /**
-    * Checks if there is a characterization for the given type
-    */
-   bool is_characterization(unsigned int characterization_type) const override;
-
-   /**
-    * Sets the number of resources used for the specified type
-    */
    void set_resource_value(value_t val, double num);
-
-   /**
-    * Returns true if the specified resource is used, false otherwise
-    */
    bool is_used_resource(value_t val) const;
-
-   /**
-    * Returns the number of resources used for the given type
-    */
    double get_resource_value(value_t val) const;
-};
 
-using clb_modelRef = refcount<clb_model>;
+   /// default area value
+   static const double area_DEFAULT;
+};
+/// refcount definition of the class
+using area_infoRef = refcount<area_info>;
 
 #endif

@@ -33,9 +33,6 @@ lib_controller_creation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/parser/discrepancy \
    -I$(top_srcdir)/src/parser/vcd \
    -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/physical_library/models \
-   -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)
@@ -77,8 +74,6 @@ lib_datapath_creation_la_CPPFLAGS =  \
    -I$(top_srcdir)/src/HLS/stg \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/HLS/function_allocation \
@@ -131,8 +126,6 @@ lib_architecture_creation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS/stg \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)
@@ -153,8 +146,6 @@ lib_hls_backend_la_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS/simulation \
    -I$(top_srcdir)/src/HLS/stg \
    -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper/synthesis \
@@ -164,22 +155,22 @@ lib_hls_backend_la_CPPFLAGS = \
 noinst_HEADERS += backend/generate_hdl.hpp
 lib_hls_backend_la_SOURCES = backend/generate_hdl.cpp
 if BUILD_SIMULATION
-  noinst_HEADERS += backend/generate_simulation_scripts.hpp
-  lib_hls_backend_la_SOURCES += backend/generate_simulation_scripts.cpp
+   noinst_HEADERS += backend/generate_simulation_scripts.hpp
+   lib_hls_backend_la_SOURCES += backend/generate_simulation_scripts.cpp
 endif
 if BUILD_SYNTHESIS
-  noinst_HEADERS += backend/generate_synthesis_scripts.hpp
-  lib_hls_backend_la_SOURCES += backend/generate_synthesis_scripts.cpp
+   noinst_HEADERS += backend/generate_synthesis_scripts.hpp
+   lib_hls_backend_la_SOURCES += backend/generate_synthesis_scripts.cpp
 endif
 if BUILD_TASTE
-  lib_hls_backend_la_CPPFLAGS += \
-     -I$(top_srcdir)/src/intermediate_representations/aadl_asn
-  noinst_HEADERS += \
-     backend/generate_taste_hdl_architecture.hpp \
-     backend/generate_taste_synthesis_script.hpp
-  lib_hls_backend_la_SOURCES += \
-     backend/generate_taste_hdl_architecture.cpp \
-     backend/generate_taste_synthesis_script.cpp
+   lib_hls_backend_la_CPPFLAGS += \
+      -I$(top_srcdir)/src/intermediate_representations/aadl_asn
+   noinst_HEADERS += \
+      backend/generate_taste_hdl_architecture.hpp \
+      backend/generate_taste_synthesis_script.hpp
+   lib_hls_backend_la_SOURCES += \
+      backend/generate_taste_hdl_architecture.cpp \
+      backend/generate_taste_synthesis_script.cpp
 endif
 
 noinst_LTLIBRARIES += lib_binding.la
@@ -203,15 +194,13 @@ lib_register_algorithms_la_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS/scheduling \
    -I$(top_srcdir)/src/HLS/virtual_components \
    -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
     $(AM_CPPFLAGS)
 noinst_HEADERS += \
    binding/register/algorithms/conflict_based_register.hpp \
    binding/register/algorithms/vertex_coloring_register.hpp \
-                 binding/register/algorithms/compatibility_based_register.hpp \
+   binding/register/algorithms/compatibility_based_register.hpp \
    binding/register/algorithms/chordal_coloring_register.hpp \
    binding/register/algorithms/network_flow.hpp \
    binding/register/algorithms/unique_binding_register.hpp \
@@ -219,7 +208,7 @@ noinst_HEADERS += \
 lib_register_algorithms_la_SOURCES = \
    binding/register/algorithms/conflict_based_register.cpp \
    binding/register/algorithms/vertex_coloring_register.cpp \
-                                     binding/register/algorithms/compatibility_based_register.cpp \
+   binding/register/algorithms/compatibility_based_register.cpp \
    binding/register/algorithms/chordal_coloring_register.cpp \
    binding/register/algorithms/network_flow.cpp \
    binding/register/algorithms/unique_binding_register.cpp \
@@ -228,30 +217,27 @@ lib_register_algorithms_la_SOURCES = \
 
 noinst_LTLIBRARIES += lib_registerbinding.la
 lib_registerbinding_la_CPPFLAGS = \
-    -I$(top_srcdir)/src/ \
-    -I$(top_srcdir)/src/algorithms/clique_covering \
-    -I$(top_srcdir)/src/circuit \
-    -I$(top_srcdir)/src/behavior \
-    -I$(top_srcdir)/src/design_flows\
-    -I$(top_srcdir)/src/graph \
-    -I$(top_srcdir)/src/HLS \
-    -I$(top_srcdir)/src/HLS/virtual_components \
-    -I$(top_srcdir)/src/HLS/binding \
-    -I$(top_srcdir)/src/HLS/binding/interconnection \
-    -I$(top_srcdir)/src/HLS/binding/module \
-    -I$(top_srcdir)/src/HLS/binding/register/algorithms \
-    -I$(top_srcdir)/src/HLS/binding/storage_value_insertion \
-    -I$(top_srcdir)/src/HLS/liveness \
-    -I$(top_srcdir)/src/HLS/stg \
-    -I$(top_srcdir)/src/polixml \
-    -I$(top_srcdir)/src/technology/target_device \
-    -I$(top_srcdir)/src/technology/target_device/FPGA \
-    -I$(top_srcdir)/src/technology \
-    -I$(top_srcdir)/src/technology/physical_library \
-    -I$(top_srcdir)/src/tree \
-    -I$(top_srcdir)/src/utility \
-    -I$(top_srcdir)/src/HLS/function_allocation \
-    $(AM_CPPFLAGS)
+   -I$(top_srcdir)/src/ \
+   -I$(top_srcdir)/src/algorithms/clique_covering \
+   -I$(top_srcdir)/src/circuit \
+   -I$(top_srcdir)/src/behavior \
+   -I$(top_srcdir)/src/design_flows\
+   -I$(top_srcdir)/src/graph \
+   -I$(top_srcdir)/src/HLS \
+   -I$(top_srcdir)/src/HLS/virtual_components \
+   -I$(top_srcdir)/src/HLS/binding \
+   -I$(top_srcdir)/src/HLS/binding/interconnection \
+   -I$(top_srcdir)/src/HLS/binding/module \
+   -I$(top_srcdir)/src/HLS/binding/register/algorithms \
+   -I$(top_srcdir)/src/HLS/binding/storage_value_insertion \
+   -I$(top_srcdir)/src/HLS/liveness \
+   -I$(top_srcdir)/src/HLS/stg \
+   -I$(top_srcdir)/src/polixml \
+   -I$(top_srcdir)/src/technology \
+   -I$(top_srcdir)/src/tree \
+   -I$(top_srcdir)/src/utility \
+   -I$(top_srcdir)/src/HLS/function_allocation \
+   $(AM_CPPFLAGS)
 noinst_HEADERS += \
    binding/register/reg_binding.hpp \
    binding/register/reg_binding_creator.hpp \
@@ -293,9 +279,6 @@ lib_interconnectionbinding_la_CPPFLAGS = \
    -I$(top_srcdir)/src/parser/compiler \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/physical_library/models \
-   -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/wrapper/flopoco \
    -I$(top_srcdir)/src/utility \
@@ -309,7 +292,7 @@ noinst_HEADERS += \
    binding/interconnection/direct_conn.hpp \
    binding/interconnection/mux_conn.hpp \
    binding/interconnection/conn_binding_cs.hpp \
-                  binding/interconnection/parallel_memory_conn_binding.hpp
+   binding/interconnection/parallel_memory_conn_binding.hpp
 lib_interconnectionbinding_la_SOURCES = \
    binding/interconnection/conn_binding_creator.cpp \
    binding/interconnection/conn_binding.cpp \
@@ -348,9 +331,6 @@ lib_modulebinding_la_CPPFLAGS = \
    -I$(top_srcdir)/src/intermediate_representations/hls \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/physical_library/models \
-   -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper/flopoco \
@@ -429,10 +409,6 @@ lib_exact_evaluation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS/scheduling \
    -I$(top_srcdir)/src/HLS/simulation \
    -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/physical_library/models \
-   -I$(top_srcdir)/src/technology/physical_library/models/area \
-   -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree  \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper/simulation \
@@ -475,9 +451,6 @@ lib_evaluation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/physical_library/models \
-   -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree  \
    -I$(top_srcdir)/src/wrapper/synthesis/ \
    -I$(top_srcdir)/src/wrapper/synthesis/xilinx/ise \
@@ -511,8 +484,6 @@ lib_function_allocation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/utility  \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/technology  \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/target_device \
    $(AM_CPPFLAGS)
 noinst_HEADERS += \
    function_allocation/function_allocation.hpp \
@@ -570,8 +541,6 @@ lib_hls_synthesis_la_CPPFLAGS = \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/wrapper/synthesis \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)
@@ -637,10 +606,6 @@ lib_hls_flow_la_CPPFLAGS = \
    -I$(top_srcdir)/src/parser/vcd \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/target_device \
-   -I$(top_srcdir)/src/technology/target_technology \
-   -I$(top_srcdir)/src/technology/physical_library/models \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper/synthesis \
@@ -670,7 +635,7 @@ endif
 
 noinst_LTLIBRARIES += lib_interface.la
 lib_interface_la_CPPFLAGS = \
-    -I$(top_srcdir)/src \
+   -I$(top_srcdir)/src \
    -I$(top_srcdir)/src/behavior \
    -I$(top_srcdir)/src/circuit \
    -I$(top_srcdir)/src/constants \
@@ -679,30 +644,28 @@ lib_interface_la_CPPFLAGS = \
    -I$(top_srcdir)/src/frontend_analysis \
    -I$(top_srcdir)/src/frontend_analysis/IR_manipulation \
    -I$(top_srcdir)/src/graph \
-    -I$(top_srcdir)/src/HLS \
-    -I$(top_srcdir)/src/HLS/architecture_creation/controller_creation \
-    -I$(top_srcdir)/src/HLS/architecture_creation/datapath_creation \
-    -I$(top_srcdir)/src/HLS/binding \
-    -I$(top_srcdir)/src/HLS/binding/interconnection \
-    -I$(top_srcdir)/src/HLS/binding/module \
-    -I$(top_srcdir)/src/HLS/binding/register \
-    -I$(top_srcdir)/src/HLS/function_allocation \
-    -I$(top_srcdir)/src/HLS/interface \
-    -I$(top_srcdir)/src/HLS/interface/WB4 \
-    -I$(top_srcdir)/src/HLS/interface/minimal \
-    -I$(top_srcdir)/src/HLS/memory \
-    -I$(top_srcdir)/src/HLS/module_allocation \
-    -I$(top_srcdir)/src/HLS/scheduling \
-    -I$(top_srcdir)/src/HLS/simulation \
-    -I$(top_srcdir)/src/HLS/stg \
-    -I$(top_srcdir)/src/HLS/virtual_components \
-    -I$(top_srcdir)/src/polixml \
-    -I$(top_srcdir)/src/technology \
-    -I$(top_srcdir)/src/technology/physical_library \
-    -I$(top_srcdir)/src/technology/target_device \
-    -I$(top_srcdir)/src/tree \
-    -I$(top_srcdir)/src/utility \
-    $(AM_CPPFLAGS)
+   -I$(top_srcdir)/src/HLS \
+   -I$(top_srcdir)/src/HLS/architecture_creation/controller_creation \
+   -I$(top_srcdir)/src/HLS/architecture_creation/datapath_creation \
+   -I$(top_srcdir)/src/HLS/binding \
+   -I$(top_srcdir)/src/HLS/binding/interconnection \
+   -I$(top_srcdir)/src/HLS/binding/module \
+   -I$(top_srcdir)/src/HLS/binding/register \
+   -I$(top_srcdir)/src/HLS/function_allocation \
+   -I$(top_srcdir)/src/HLS/interface \
+   -I$(top_srcdir)/src/HLS/interface/WB4 \
+   -I$(top_srcdir)/src/HLS/interface/minimal \
+   -I$(top_srcdir)/src/HLS/memory \
+   -I$(top_srcdir)/src/HLS/module_allocation \
+   -I$(top_srcdir)/src/HLS/scheduling \
+   -I$(top_srcdir)/src/HLS/simulation \
+   -I$(top_srcdir)/src/HLS/stg \
+   -I$(top_srcdir)/src/HLS/virtual_components \
+   -I$(top_srcdir)/src/polixml \
+   -I$(top_srcdir)/src/technology \
+   -I$(top_srcdir)/src/tree \
+   -I$(top_srcdir)/src/utility \
+   $(AM_CPPFLAGS)
 noinst_HEADERS += interface/module_interface.hpp \
                  interface/minimal/minimal_interface.hpp \
                  interface/WB4/WB4_interface.hpp \
@@ -720,28 +683,26 @@ lib_interface_la_CPPFLAGS += \
    -I$(top_srcdir)/src/constants \
    -I$(top_srcdir)/src/HLS/stg \
    -I$(top_srcdir)/src/intermediate_representations/aadl_asn \
-   -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/target_device
+   -I$(top_srcdir)/src/technology
 endif
 
 noinst_LTLIBRARIES += lib_liveness.la
 lib_liveness_la_CPPFLAGS =  \
-                          -I$(top_srcdir)/src \
-                          -I$(top_srcdir)/src/algorithms/loops_detection \
-                          -I$(top_srcdir)/src/behavior \
-                          -I$(top_srcdir)/src/design_flows \
-                          -I$(top_srcdir)/src/graph \
-                          -I$(top_srcdir)/src/HLS \
-                          -I$(top_srcdir)/src/HLS/chaining \
-                          -I$(top_srcdir)/src/HLS/memory \
-                          -I$(top_srcdir)/src/HLS/scheduling \
-                          -I$(top_srcdir)/src/HLS/stg \
-                          -I$(top_srcdir)/src/polixml \
-                          -I$(top_srcdir)/src/tree \
-                          -I$(top_srcdir)/src/technology \
-                          -I$(top_srcdir)/src/utility \
-                          $(AM_CPPFLAGS)
+   -I$(top_srcdir)/src \
+   -I$(top_srcdir)/src/algorithms/loops_detection \
+   -I$(top_srcdir)/src/behavior \
+   -I$(top_srcdir)/src/design_flows \
+   -I$(top_srcdir)/src/graph \
+   -I$(top_srcdir)/src/HLS \
+   -I$(top_srcdir)/src/HLS/chaining \
+   -I$(top_srcdir)/src/HLS/memory \
+   -I$(top_srcdir)/src/HLS/scheduling \
+   -I$(top_srcdir)/src/HLS/stg \
+   -I$(top_srcdir)/src/polixml \
+   -I$(top_srcdir)/src/tree \
+   -I$(top_srcdir)/src/technology \
+   -I$(top_srcdir)/src/utility \
+   $(AM_CPPFLAGS)
 noinst_HEADERS += \
    liveness/liveness.hpp \
    liveness/liveness_computer.hpp \
@@ -777,8 +738,6 @@ lib_HLS_memory_la_CPPFLAGS = \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/tree  \
    -I$(top_srcdir)/src/technology  \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/target_device  \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)
 noinst_HEADERS += \
@@ -815,10 +774,6 @@ lib_allocation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/intermediate_representations \
    -I$(top_srcdir)/src/intermediate_representations/hls \
    -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/physical_library/models \
-   -I$(top_srcdir)/src/technology/physical_library/models/area \
-   -I$(top_srcdir)/src/technology/target_device/ \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility  \
    -I$(top_srcdir)/src/wrapper/flopoco \
@@ -870,8 +825,6 @@ lib_scheduling_la_CPPFLAGS = \
    -I$(top_srcdir)/src/parser/polixml \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)
@@ -947,9 +900,6 @@ lib_stg_la_CPPFLAGS = \
    -I$(top_srcdir)/src/parser/vcd \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/physical_library/models \
-   -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)
@@ -966,22 +916,22 @@ lib_stg_la_SOURCES = \
 
 noinst_LTLIBRARIES += lib_virtual_components.la
 lib_virtual_components_la_CPPFLAGS =  -I$(top_srcdir)/src \
-                             -I$(top_srcdir)/src/HLS \
-                             -I$(top_srcdir)/src/behavior \
-                             -I$(top_srcdir)/src/graph \
-                             -I$(top_srcdir)/src/circuit \
-                             -I$(top_srcdir)/src/utility \
-                             $(AM_CPPFLAGS)
+   -I$(top_srcdir)/src/HLS \
+   -I$(top_srcdir)/src/behavior \
+   -I$(top_srcdir)/src/graph \
+   -I$(top_srcdir)/src/circuit \
+   -I$(top_srcdir)/src/utility \
+   $(AM_CPPFLAGS)
 noinst_HEADERS += \
    virtual_components/generic_obj.hpp \
-                 virtual_components/funit_obj.hpp \
-                 virtual_components/register_obj.hpp \
-                 virtual_components/mux_obj.hpp \
-                 virtual_components/adder_conn_obj.hpp \
-                 virtual_components/commandport_obj.hpp \
-                 virtual_components/dataport_obj.hpp \
-                 virtual_components/conv_conn_obj.hpp \
-                 virtual_components/multi_unbounded_obj.hpp
+   virtual_components/funit_obj.hpp \
+   virtual_components/register_obj.hpp \
+   virtual_components/mux_obj.hpp \
+   virtual_components/adder_conn_obj.hpp \
+   virtual_components/commandport_obj.hpp \
+   virtual_components/dataport_obj.hpp \
+   virtual_components/conv_conn_obj.hpp \
+   virtual_components/multi_unbounded_obj.hpp
 lib_virtual_components_la_SOURCES = \
    virtual_components/generic_obj.cpp \
    virtual_components/mux_obj.cpp
@@ -1033,9 +983,6 @@ lib_HLS_la_CPPFLAGS = \
    -I$(top_srcdir)/src/parser/vcd \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/target_device \
-   -I$(top_srcdir)/src/technology/target_technology \
    -I$(top_srcdir)/src/wrapper/synthesis \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
@@ -1045,12 +992,11 @@ noinst_HEADERS += \
    hls.hpp \
    hls_constraints.hpp \
    hls_manager.hpp \
-   hls_target.hpp \
    hls_flow_step_factory.hpp \
    hls_function_step.hpp \
    hls_manager.hpp \
    hls_step.hpp \
-   hls_target.hpp
+   hls_device.hpp
 
 lib_HLS_la_SOURCES = \
    hls.cpp \
@@ -1059,37 +1005,31 @@ lib_HLS_la_SOURCES = \
    hls_function_step.cpp \
    hls_manager.cpp \
    hls_step.cpp \
-   hls_target.cpp
+   hls_device.cpp
 
 lib_HLS_la_LIBADD = \
-           $(top_builddir)/src/HLS/simulation/lib_simulation.la \
-           lib_allocation.la \
-           lib_architecture_creation.la \
-           lib_binding.la \
-           lib_evaluation.la \
-           lib_function_allocation.la \
-           lib_hls_backend.la \
-           lib_hls_chaining.la \
-           lib_hls_flow.la \
-           lib_HLS_memory.la \
-           lib_interface.la \
-           lib_liveness.la \
-           lib_module_generator.la \
-           lib_scheduling.la \
-           lib_stg.la \
-           lib_virtual_components.la
+   $(top_builddir)/src/HLS/simulation/lib_simulation.la \
+   lib_allocation.la \
+   lib_architecture_creation.la \
+   lib_binding.la \
+   lib_evaluation.la \
+   lib_function_allocation.la \
+   lib_hls_backend.la \
+   lib_hls_chaining.la \
+   lib_hls_flow.la \
+   lib_HLS_memory.la \
+   lib_interface.la \
+   lib_liveness.la \
+   lib_module_generator.la \
+   lib_scheduling.la \
+   lib_stg.la \
+   lib_virtual_components.la
 
 if BUILD_LIB_VCD
    lib_HLS_la_CPPFLAGS += \
       -I$(top_srcdir)/src/HLS/vcd
 endif
-if BUILD_BEAGLE
-   lib_HLS_la_CPPFLAGS += \
-      -isystem $(BEAGLE_DIR)/beagle/include/  \
-                         -isystem $(top_builddir)/ext/beagle/beagle/include/ \
-                         -isystem $(BEAGLE_DIR)/beagle/GA/include/ \
-                         -isystem $(BEAGLE_DIR)/PACC
-endif
+
 if BUILD_LIB_ILP
   lib_HLS_la_CPPFLAGS += -I$(top_srcdir)/src/ilp
 endif
@@ -1119,9 +1059,7 @@ if BUILD_LIB_VCD
       -I$(top_srcdir)/src/intermediate_representations/hls \
       -I$(top_srcdir)/src/parser/vcd \
       -I$(top_srcdir)/src/parser/discrepancy \
-      -I$(top_srcdir)/src/technology/physical_library \
       -I$(top_srcdir)/src/technology \
-      -I$(top_srcdir)/src/technology/target_device \
       -I$(top_srcdir)/src/tree \
       -I$(top_srcdir)/src/utility \
       -I$(top_srcdir)/src/design_flows/backend/ToC/progModels \
@@ -1189,9 +1127,6 @@ lib_module_generator_la_CPPFLAGS = \
    -I$(top_srcdir)/src/parser/polixml \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/physical_library/models \
-   -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper/flopoco \

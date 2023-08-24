@@ -45,7 +45,6 @@
 #define OP_GRAPH_HPP
 
 /// Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_HLS_BUILT.hpp"
 #include "config_HAVE_UNORDERED.hpp"
 
@@ -408,12 +407,10 @@ struct OpNodeInfo : public TypedNodeInfo
    const CustomSet<unsigned int>& GetVariables(const FunctionBehavior_VariableType variable_type,
                                                const FunctionBehavior_VariableAccessType access_type) const;
 
-#if HAVE_BAMBU_BUILT
    /**
     * Return the operation associated with the vertex
     */
    const std::string GetOperation() const;
-#endif
 
    /**
     * Return the node id of the operation associated with the vertex

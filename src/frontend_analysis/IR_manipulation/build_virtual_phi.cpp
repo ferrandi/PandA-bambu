@@ -133,7 +133,7 @@ BuildVirtualPhi::ComputeFrontendRelationships(const DesignFlowStep::Relationship
       case(PRECEDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(BASIC_BLOCKS_CFG_COMPUTATION, SAME_FUNCTION));
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
          relationships.insert(std::make_pair(EXTRACT_OMP_ATOMIC, SAME_FUNCTION));
 #endif
          relationships.insert(std::make_pair(VECTORIZE, SAME_FUNCTION));

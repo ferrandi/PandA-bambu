@@ -89,7 +89,7 @@ extract_patterns::ComputeFrontendRelationships(const DesignFlowStep::Relationshi
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
          relationships.insert(std::make_pair(SDC_CODE_MOTION, SAME_FUNCTION));
 #endif
          break;

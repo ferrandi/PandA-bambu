@@ -737,9 +737,7 @@ void tree_node_factory::operator()(const decl_node* obj, unsigned int& mask)
    SET_VALUE_OPT(TOK_PACKED, packed_flag, decl_node);
    SET_VALUE_OPT(TOK_OPERATING_SYSTEM, operating_system_flag, decl_node);
    SET_VALUE_OPT(TOK_LIBRARY_SYSTEM, library_system_flag, decl_node);
-#if HAVE_BAMBU_BUILT
    SET_VALUE_OPT(TOK_LIBBAMBU, libbambu_flag, decl_node);
-#endif
    SET_VALUE_OPT(TOK_C, C_flag, decl_node);
 }
 

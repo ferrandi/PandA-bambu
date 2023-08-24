@@ -169,9 +169,7 @@ CheckSystemType::ComputeFrontendRelationships(const DesignFlowStep::Relationship
    {
       case(PRECEDENCE_RELATIONSHIP):
       {
-#if HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
-#endif
          break;
       }
       case(DEPENDENCE_RELATIONSHIP):
@@ -393,7 +391,6 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
          {
             dn->library_system_flag = true;
          }
-#if HAVE_BAMBU_BUILT
          if(include.find("etc/libbambu") != std::string::npos)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---In libbambu");
@@ -403,8 +400,6 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---In libbambu");
          }
-#endif
-
          recursive_examinate(dn->type, already_visited);
          break;
       }
@@ -649,7 +644,6 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
             case record_type_K:
             {
                const auto rt = GetPointerS<record_type>(curr_tn);
-#if HAVE_BAMBU_BUILT
                for(const auto& it : rt->list_of_flds)
                {
                   recursive_examinate(it, already_visited);
@@ -658,7 +652,6 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
                      rt->libbambu_flag = true;
                   }
                }
-#endif
                for(const auto& it : rt->list_of_fncs)
                {
                   recursive_examinate(it, already_visited);
@@ -668,7 +661,6 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
             case union_type_K:
             {
                const auto ut = GetPointerS<union_type>(curr_tn);
-#if HAVE_BAMBU_BUILT
                for(const auto& it : ut->list_of_flds)
                {
                   recursive_examinate(it, already_visited);
@@ -677,7 +669,6 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
                      ut->libbambu_flag = true;
                   }
                }
-#endif
                for(const auto& it : ut->list_of_fncs)
                {
                   recursive_examinate(it, already_visited);
@@ -815,7 +806,6 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
          }
          bool is_system;
          const auto include = std::get<0>(behavioral_helper->get_definition(index, is_system));
-#if HAVE_BAMBU_BUILT
          if((include.find("etc/libbambu") != std::string::npos) ||
             (include.find(PANDA_DATA_INSTALLDIR "/panda/ac_types/include") != std::string::npos) ||
             (include.find(PANDA_DATA_INSTALLDIR "/panda/ac_math/include") != std::string::npos) ||
@@ -824,7 +814,6 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
          {
             ty->libbambu_flag = true;
          }
-#endif
          if(!ty->system_flag && (is_system || is_system_include(include)))
          {
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "System type");
@@ -1001,12 +990,10 @@ void CheckSystemType::build_include_structures(ParameterConstRef parameters)
       }
    }
    systemIncPath.push_back("/usr/local/share/hframework/include");
-#if HAVE_BAMBU_BUILT
    if(!parameters->isOption(OPT_pretty_print))
    {
       systemIncPath.push_back(LIBBAMBU_SRCDIR);
    }
-#endif
 }
 
 std::string CheckSystemType::getRealInclName(const std::string& include)
@@ -1022,12 +1009,10 @@ std::string CheckSystemType::getRealInclName(const std::string& include)
          if(inclNameToPath.find(trimmed) != inclNameToPath.end())
          {
             return inclNameToPath.find(trimmed)->second;
-#if HAVE_BAMBU_BUILT
          }
          else if(LIBBAMBU_SRCDIR == i && boost::algorithm::starts_with(trimmed, "libm/"))
          {
             return FILENAME_NORM("math.h");
-#endif
          }
          else
          {

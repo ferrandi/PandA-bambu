@@ -44,7 +44,7 @@
 #include "BackendFlow.hpp"
 
 #include "refcount.hpp"
-REF_FORWARD_DECL(target_device);
+REF_FORWARD_DECL(generic_device);
 
 #define PARAM_ucf_file "ucf_file"
 #define PARAM_nxpython_sources_macro_list "nxpython_sources_macro_list"
@@ -76,7 +76,7 @@ class NanoXploreBackendFlow : public BackendFlow
    /**
     * Constructor
     */
-   NanoXploreBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef _target);
+   NanoXploreBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const generic_deviceRef _device);
 
    /**
     * Destructor

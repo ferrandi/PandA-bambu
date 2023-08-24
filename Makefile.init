@@ -61,7 +61,6 @@ distclean :
 	@rm -rf ext/Coin-Cbc/missing
 	@rm -rf ext/cudd/config.h.in ext/cudd/config.h.in~ ext/cudd/configure
 	@rm -rf ext/flopoco/config.h.in ext/flopoco/config.h.in~ ext/flopoco/configure ext/flopoco/configure.ac ext/flopoco/m4 ext/flopoco/Makefile.am ext/flopoco/src/FPExpressions/ExpressionParser.h ext/flopoco/src/FPExpressions/FlopocoScanner.h ext/flopoco/src/Makefile.am
-	@rm -rf ext/liberty_parser/configure
 	@rm -rf ext/libfplll-4.0.3/config.h.in ext/libfplll-4.0.3/config.h.in~ ext/libfplll-4.0.3/configure
 	@rm -rf ext/metslib-0.5.3/config/depcomp ext/metslib-0.5.3/config/missing ext/metslib-0.5.3/config.h.in ext/metslib-0.5.3/configure
 	@rm -rf ext/SimIt-PoliMi/config.h.in ext/SimIt-PoliMi/configure

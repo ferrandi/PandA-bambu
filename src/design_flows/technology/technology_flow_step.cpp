@@ -111,7 +111,7 @@ DesignFlowStepFactoryConstRef TechnologyFlowStep::CGetDesignFlowStepFactory() co
    return design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology");
 }
 
-TechnologyFlowStep::TechnologyFlowStep(const technology_managerRef _TM, const target_deviceRef _target,
+TechnologyFlowStep::TechnologyFlowStep(const technology_managerRef _TM, const generic_deviceRef _target,
                                        const DesignFlowManagerConstRef _design_flow_manager,
                                        const TechnologyFlowStep_Type _technology_flow_step_type,
                                        const ParameterConstRef _parameters)

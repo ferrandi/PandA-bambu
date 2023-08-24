@@ -44,22 +44,17 @@
 #define BEHAVIORAL_HELPER_HPP
 
 /// Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 
 #include "custom_map.hpp"
 #include "custom_set.hpp" // for set
 #include "custom_set.hpp"
+#include "graph.hpp"
+#include "refcount.hpp"
 #include <list>   // for list
 #include <string> // for string
 #include <tuple>
 #include <utility> // for pair
-
-/// graph include
-#include "graph.hpp"
-
-/// Utility include
-#include "refcount.hpp"
 /**
  * @name Forward declarations.
  */
@@ -681,7 +676,7 @@ class BehavioralHelper
     */
    bool IsDefaultSsaName(const unsigned int ssa_name_index) const;
 
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
    /**
     * Return the degree of parallelism for openmp for wrapper function, 0 otherwise
     */
@@ -698,7 +693,7 @@ class BehavioralHelper
    bool IsOmpBodyLoop() const;
 #endif
 
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
    /**
     * Return true if the function is an omp atomic instruction
     */
@@ -717,7 +712,6 @@ class BehavioralHelper
     */
    std::string get_asm_string(const unsigned int node_index) const;
 
-#if HAVE_BAMBU_BUILT
    /**
     * Return true if an operation can be speculated
     * @param node_index is the tree node index of the operation
@@ -729,7 +723,6 @@ class BehavioralHelper
     * @param node_index is the tree node index of the operation
     */
    bool CanBeMoved(const unsigned int node_index) const;
-#endif
 
    /**
     * Return if an operation is a store

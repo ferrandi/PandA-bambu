@@ -42,38 +42,28 @@
  *
  */
 #include "reg_binding.hpp"
-#include "generic_obj.hpp"
-#include "register_obj.hpp"
-
-#include "behavioral_helper.hpp"
-#include "function_behavior.hpp"
-
 #include "Parameter.hpp"
+#include "behavioral_helper.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "function_behavior.hpp"
+#include "generic_obj.hpp"
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "liveness.hpp"
 #include "omp_functions.hpp"
 #include "reg_binding_cs.hpp"
-
-#include "structural_manager.hpp"
-#include "technology_manager.hpp"
-#include <boost/lexical_cast.hpp>
-
+#include "register_obj.hpp"
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
-
-/// HLS/binding/storage_value_information
 #include "storage_value_information.hpp"
-
-/// STL includes
-#include "custom_set.hpp"
+#include "structural_manager.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
+#include <boost/lexical_cast.hpp>
 #include <list>
 #include <utility>
-
-/// technology/physical_library include
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
-#include "technology_node.hpp"
 
 std::string reg_binding::reset_type;
 
@@ -296,9 +286,9 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
       const auto curr_is_is_without_enable = is_without_enable.count(i);
       all_regs_without_enable = all_regs_without_enable && curr_is_is_without_enable;
       const auto register_type_name = GetRegisterFUName(i);
-      const auto library = HLS->HLS_T->get_technology_manager()->get_library(register_type_name);
+      const auto library = HLS->HLS_D->get_technology_manager()->get_library(register_type_name);
       auto reg_mod = SM->add_module_from_technology_library(name, register_type_name, library, circuit,
-                                                            HLS->HLS_T->get_technology_manager());
+                                                            HLS->HLS_D->get_technology_manager());
       specialise_reg(reg_mod, i);
       auto port_ck = reg_mod->find_member(CLOCK_PORT_NAME, port_o_K, reg_mod);
       THROW_ASSERT(port_ck, "Clock port missing from register.");

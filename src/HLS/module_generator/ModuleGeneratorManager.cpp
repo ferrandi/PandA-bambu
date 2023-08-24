@@ -42,69 +42,40 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-/// header include
 #include "ModuleGeneratorManager.hpp"
-
-/// Autoheader include
-#include "config_BOOST_INCLUDE_DIR.hpp"
-
-///. include
+#include "ModuleGenerator.hpp"
 #include "Parameter.hpp"
-
-/// behavior include
+#include "area_info.hpp"
+#include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
+#include "compiler_wrapper.hpp"
+#include "config_BOOST_INCLUDE_DIR.hpp"
+#include "constant_strings.hpp"
+#include "fileIO.hpp"
 #include "function_behavior.hpp"
-#include "op_graph.hpp"
-
-/// circuit includes
-#include "structural_manager.hpp"
-#include "structural_objects.hpp"
-
-/// design_flows/backend/ToHDL
-#include "language_writer.hpp"
-
-/// HLS include
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-
-/// HLS/memory include
+#include "language_writer.hpp"
+#include "library_manager.hpp"
+#include "math_function.hpp"
 #include "memory.hpp"
 #include "memory_cs.hpp"
-
-/// STD includes
-#include <filesystem>
-#include <iosfwd>
-#include <string>
-
-/// STL include
-#include <tuple>
-#include <utility>
-#include <vector>
-
-/// technology include
+#include "op_graph.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
+#include "structural_manager.hpp"
+#include "structural_objects.hpp"
 #include "technology_manager.hpp"
-
-/// technology/physical_library includes
-#include "library_manager.hpp"
 #include "technology_node.hpp"
-
-/// technology/physical_library/models include
-#include "area_model.hpp"
-
-/// tree include
-#include "behavioral_helper.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-
-#include "ModuleGenerator.hpp"
-#include "call_graph_manager.hpp"
-#include "hls_target.hpp"
-
-#include "compiler_wrapper.hpp"
-#include "constant_strings.hpp"
-#include "fileIO.hpp"
-#include "math_function.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include <filesystem>
+#include <iosfwd>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 ModuleGeneratorManager::ModuleGeneratorManager(const HLS_managerRef _HLSMgr, const ParameterConstRef _parameters)
     : HLSMgr(_HLSMgr), parameters(_parameters), debug_level(_parameters->get_class_debug_level(GET_CLASS(*this)))
@@ -206,10 +177,9 @@ void ModuleGeneratorManager::specialize_fu(const std::string& fu_name, vertex ve
    }
    else
    {
-      const auto HLS_T = HLSMgr->get_HLS_target();
-      const auto dv_type = HLS_T->get_target_device()->get_type();
+      const auto HLS_D = HLSMgr->get_HLS_device();
 
-      const auto libraryManager = HLS_T->get_technology_manager()->get_library_manager(libraryId);
+      const auto libraryManager = HLS_D->get_technology_manager()->get_library_manager(libraryId);
       const auto techNode_obj = libraryManager->get_fu(fu_name);
       THROW_ASSERT(techNode_obj->get_kind() == functional_unit_K, "");
       const auto structManager_obj = GetPointerS<const functional_unit>(techNode_obj)->CM;
@@ -400,7 +370,7 @@ void ModuleGeneratorManager::specialize_fu(const std::string& fu_name, vertex ve
          const auto fu = GetPointerS<functional_unit>(new_techNode_obj);
          if(GetPointerS<const functional_unit>(techNode_obj)->area_m)
          {
-            fu->area_m = area_model::create_model(dv_type, parameters);
+            fu->area_m = area_info::factory(parameters);
          }
          fu->functional_unit_name = new_fu_name;
          fu->CM = CM;
@@ -420,8 +390,8 @@ void ModuleGeneratorManager::create_generic_module(const std::string& fu_name, v
                                                    const FunctionBehaviorConstRef FB, const std::string& libraryId,
                                                    const std::string& new_fu_name)
 {
-   const auto HLS_T = HLSMgr->get_HLS_target();
-   const auto TechM = HLS_T->get_technology_manager();
+   const auto HLS_D = HLSMgr->get_HLS_device();
+   const auto TechM = HLS_D->get_technology_manager();
 
    const auto libraryManager = TechM->get_library_manager(libraryId);
    const auto techNode_obj = libraryManager->get_fu(fu_name);
@@ -437,7 +407,7 @@ void ModuleGeneratorManager::create_generic_module(const std::string& fu_name, v
    {
       TechM->add_resource(libraryId, new_fu_name, CM);
       const auto fu = GetPointerS<functional_unit>(TechM->get_fu(new_fu_name, libraryId));
-      fu->area_m = area_model::create_model(HLS_T->get_target_device()->get_type(), parameters);
+      fu->area_m = area_info::factory(parameters);
       fu->area_m->set_area_value(0);
       const auto& op_vec = GetPointerS<functional_unit>(techNode_obj)->get_operations();
       for(const auto& techNode_fu : op_vec)

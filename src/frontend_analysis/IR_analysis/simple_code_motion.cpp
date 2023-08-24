@@ -62,7 +62,7 @@
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
 /// HLS includes
 #include "hls.hpp"
 #include "hls_manager.hpp"
@@ -101,7 +101,7 @@ simple_code_motion::simple_code_motion(const ParameterConstRef _parameters, cons
       restart_ifmwi_opt(false),
       schedule(ScheduleRef()),
       conservative(
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
           (parameters->IsParameter("enable-conservative-sdc") &&
            parameters->GetParameter<bool>("enable-conservative-sdc") &&
            parameters->isOption(OPT_scheduling_algorithm) and
@@ -163,7 +163,7 @@ simple_code_motion::ComputeFrontendRelationships(const DesignFlowStep::Relations
 
 void simple_code_motion::Initialize()
 {
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
    if(GetPointer<const HLS_manager>(AppM) && GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) &&
       GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
    {
@@ -186,13 +186,8 @@ void simple_code_motion::Initialize()
 #endif
 }
 
-FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned int
-#if(HAVE_BAMBU_BUILT) || !defined(NDEBUG)
-                                                                      bb_index
-#endif
-                                                                  ,
-                                                                  tree_nodeRef tn, bool& zero_delay,
-                                                                  const tree_managerRef TM)
+FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned int bb_index, tree_nodeRef tn,
+                                                                  bool& zero_delay, const tree_managerRef TM)
 {
    if(AppM->CGetFunctionBehavior(function_id)->is_function_pipelined())
    {
@@ -228,7 +223,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
    }
    if(storeCanBePredicated)
    {
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
       if(schedule)
       {
          auto movable = schedule->CanBeMoved(ga->index, bb_index);
@@ -291,7 +286,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
    }
 
    /// If we have the ending time information use it
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
    if(schedule)
    {
       auto movable = schedule->CanBeMoved(ga->index, bb_index);
@@ -924,21 +919,24 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             /// skip gimple statements defining or using virtual operands
             tree_nodeRef tn = GET_NODE(*statement);
             auto* gn = GetPointer<gimple_node>(tn);
-
             bool loadCanBePredicated = false;
-            if(GetPointer<gimple_assign>(tn) and GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K)
+            if(parameters->IsParameter("predicate-LD") && parameters->GetParameter<int>("predicate-LD") == 1)
             {
-               auto var = tree_helper::get_base_index(TM, GET_INDEX_NODE(GetPointer<gimple_assign>(tn)->op1));
-               if(var)
+               if(GetPointer<gimple_assign>(tn) and
+                  GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K)
                {
-                  const auto vd = GetPointer<const var_decl>(TM->get_tree_node_const(var));
-                  if(vd && !tree_helper::is_volatile(TM, var))
+                  auto var = tree_helper::get_base_index(TM, GET_INDEX_NODE(GetPointer<gimple_assign>(tn)->op1));
+                  if(var)
                   {
-                     if(vd->static_flag || (vd->scpe && GET_NODE(vd->scpe)->get_kind() != translation_unit_decl_K))
+                     const auto vd = GetPointer<const var_decl>(TM->get_tree_node_const(var));
+                     if(vd && !tree_helper::is_volatile(TM, var))
                      {
-                        loadCanBePredicated = true;
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---LOAD can be predicated " + (*statement)->ToString());
+                        if(vd->static_flag || (vd->scpe && GET_NODE(vd->scpe)->get_kind() != translation_unit_decl_K))
+                        {
+                           loadCanBePredicated = true;
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                          "---LOAD can be predicated " + (*statement)->ToString());
+                        }
                      }
                   }
                }

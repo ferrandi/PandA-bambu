@@ -55,8 +55,8 @@
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 
 /// Graph include
 #include "basic_block.hpp"
@@ -145,10 +145,9 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
       const auto fd = GetPointerS<function_decl>(curr_tn);
       const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
 
-      THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
-      const auto hls_target = GetPointer<const HLS_manager>(AppM)->get_HLS_target();
-      if(hls_target->get_target_device()->has_parameter("use_soft_64_mul") &&
-         hls_target->get_target_device()->get_parameter<size_t>("use_soft_64_mul"))
+      THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_device(), "unexpected condition");
+      const auto hls_d = GetPointer<const HLS_manager>(AppM)->get_HLS_device();
+      if(hls_d->has_parameter("use_soft_64_mul") && hls_d->get_parameter<size_t>("use_soft_64_mul"))
       {
          use64bitMul = true;
       }

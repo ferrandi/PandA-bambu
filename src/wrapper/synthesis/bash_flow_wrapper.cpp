@@ -43,22 +43,21 @@
  */
 /// Header include
 #include "bash_flow_wrapper.hpp"
+
 #include "BashBackendFlow.hpp"
-
-#include "ToolManager.hpp"
-#include "xml_script_command.hpp"
-
+#include "DesignParameters.hpp"
 #include "Parameter.hpp"
-#include "constant_strings.hpp"
+#include "ToolManager.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "fileIO.hpp"
-#include "utility.hpp"
+#include "string_manipulation.hpp"
+#include "xml_script_command.hpp"
 
 #define PARAM_bash_outdir "bash_outdir"
 
 // constructor
 bash_flow_wrapper::bash_flow_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir,
-                                     const target_deviceRef& _device)
+                                     const generic_deviceRef& _device)
     : SynthesisTool(_Param, BASH_FLOW_TOOL_EXEC, _device, _output_dir, BASH_FLOW_TOOL_ID)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the bash_flow wrapper...");

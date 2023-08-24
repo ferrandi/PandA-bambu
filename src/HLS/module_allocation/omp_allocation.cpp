@@ -37,39 +37,20 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-/// Header include
 #include "omp_allocation.hpp"
-
-///. include
 #include "Parameter.hpp"
-
-/// behavior includes
-#include "function_behavior.hpp"
-#include "op_graph.hpp"
-
-/// circuit include
-#include "structural_manager.hpp"
-
-/// HLS includes
-#include "hls_manager.hpp"
-#include "hls_target.hpp"
-
-/// technology include
-#include "technology_manager.hpp"
-
-/// technology/physical_library include
-#include "technology_node.hpp"
-
-/// technology/physical_library/models includes
-#include "area_model.hpp"
-#include "time_model.hpp"
-
-/// tree includes
+#include "area_info.hpp"
 #include "behavioral_helper.hpp"
+#include "function_behavior.hpp"
+#include "hls_device.hpp"
+#include "hls_manager.hpp"
+#include "op_graph.hpp"
+#include "structural_manager.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
+#include "time_info.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-
-/// utility include
 #include "utility.hpp"
 
 OmpAllocation::OmpAllocation(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
@@ -122,8 +103,8 @@ void OmpAllocation::AddPandaPthreadMutex()
    const auto tn = TechM->get_fu(fu_name, OPENMP_LIBRARY);
    auto* fu = GetPointer<functional_unit>(tn);
    auto op = GetPointer<operation>(fu->get_operation(op_name));
-   op->time_m = time_model::create_model(TargetDevice_Type::FPGA, parameters);
-   fu->area_m = area_model::create_model(TargetDevice_Type::FPGA, parameters);
+   op->time_m = time_info::factory(parameters);
+   fu->area_m = area_info::factory(parameters);
    structural_type_descriptorRef boolean_type =
        structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    CM->add_port(START_PORT_NAME, port_o::IN, top, boolean_type);

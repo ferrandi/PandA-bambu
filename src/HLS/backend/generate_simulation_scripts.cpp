@@ -52,8 +52,8 @@
 
 // include from HLS
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 
 // include from HLS/simulation
 #include "SimulationInformation.hpp"
@@ -130,8 +130,7 @@ DesignFlowStep_Status GenerateSimulationScripts::Exec()
    std::copy(HLSMgr->aux_files.begin(), HLSMgr->aux_files.end(), std::back_inserter(full_list));
    std::copy(HLSMgr->hdl_files.begin(), HLSMgr->hdl_files.end(), std::back_inserter(full_list));
    if(parameters->isOption(OPT_lattice_pmi_tdpbe) && parameters->isOption(OPT_lattice_pmi_mul) &&
-      BackendFlow::DetermineBackendFlowType(HLSMgr->get_HLS_target()->get_target_device(), parameters) ==
-          BackendFlow::LATTICE_FPGA)
+      BackendFlow::DetermineBackendFlowType(HLSMgr->get_HLS_device(), parameters) == BackendFlow::LATTICE_FPGA)
    {
       full_list.push_back(parameters->getOption<std::string>(OPT_lattice_pmi_tdpbe));
       full_list.push_back(parameters->getOption<std::string>(OPT_lattice_pmi_mul));

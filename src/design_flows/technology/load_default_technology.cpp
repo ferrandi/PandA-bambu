@@ -40,7 +40,6 @@
  */
 #include "load_default_technology.hpp"
 
-#include "config_HAVE_KOALA_BUILT.hpp"
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
 #include "custom_set.hpp"
@@ -52,7 +51,7 @@
 
 #include <string>
 
-LoadDefaultTechnology::LoadDefaultTechnology(const technology_managerRef _TM, const target_deviceRef _target,
+LoadDefaultTechnology::LoadDefaultTechnology(const technology_managerRef _TM, const generic_deviceRef _target,
                                              const DesignFlowManagerConstRef _design_flow_manager,
                                              const ParameterConstRef _parameters)
     : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_DEFAULT_TECHNOLOGY,
@@ -89,7 +88,7 @@ DesignFlowStep_Status LoadDefaultTechnology::Exec()
          {
             // Walk the tree:
             const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
-            TM->xload(node, target);
+            TM->xload(node);
          }
       }
    }

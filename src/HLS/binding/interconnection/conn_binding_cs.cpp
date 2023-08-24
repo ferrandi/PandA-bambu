@@ -43,8 +43,8 @@
 #include "Parameter.hpp"
 #include "dbgPrintHelper.hpp"
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "omp_functions.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
@@ -129,8 +129,8 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
       return;
    }
    structural_objectRef suspensionOr = SM->add_module_from_technology_library(
-       "suspensionOr", OR_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD), circuit,
-       HLS->HLS_T->get_technology_manager());
+       "suspensionOr", OR_GATE_STD, HLS->HLS_D->get_technology_manager()->get_library(OR_GATE_STD), circuit,
+       HLS->HLS_D->get_technology_manager());
    structural_objectRef port_in_or = suspensionOr->find_member("in", port_vector_o_K, suspensionOr);
    structural_objectRef port_out_or = suspensionOr->find_member("out1", port_o_K, suspensionOr);
    structural_objectRef out_or_sign = SM->add_sign("out_or_signal", circuit, bool_type);
@@ -164,8 +164,8 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
 
    structural_objectRef out_and_sign = SM->add_sign("out_and_signal", circuit, bool_type);
    structural_objectRef andStartMemOp = SM->add_module_from_technology_library(
-       "andStartMemOp", AND_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD), circuit,
-       HLS->HLS_T->get_technology_manager());
+       "andStartMemOp", AND_GATE_STD, HLS->HLS_D->get_technology_manager()->get_library(OR_GATE_STD), circuit,
+       HLS->HLS_D->get_technology_manager());
    structural_objectRef port_in_and = andStartMemOp->find_member("in", port_vector_o_K, andStartMemOp);
    structural_objectRef port_out_and = andStartMemOp->find_member("out1", port_o_K, andStartMemOp);
    SM->add_connection(port_out_and, out_and_sign);
@@ -196,8 +196,8 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Added and_suspension");
 
    structural_objectRef suspensionOrGlo = SM->add_module_from_technology_library(
-       "suspensionOrGlobal", OR_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD), circuit,
-       HLS->HLS_T->get_technology_manager());
+       "suspensionOrGlobal", OR_GATE_STD, HLS->HLS_D->get_technology_manager()->get_library(OR_GATE_STD), circuit,
+       HLS->HLS_D->get_technology_manager());
    structural_objectRef port_in_or_glo = suspensionOrGlo->find_member("in", port_vector_o_K, suspensionOrGlo);
    structural_objectRef port_out_or_glo = suspensionOrGlo->find_member("out1", port_o_K, suspensionOrGlo);
 

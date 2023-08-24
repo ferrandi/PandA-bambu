@@ -41,25 +41,18 @@
  * Last modified by $Author$
  *
  */
-
-/// Header include
 #include "tree_basic_block.hpp"
+
 #include "application_manager.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
 #include "op_graph.hpp"
-#include "tree_manager.hpp"
-
-#if HAVE_BAMBU_BUILT
-/// HLS/scheduling include
 #include "schedule.hpp"
-#endif
-
-/// tree includes
 #include "string_manipulation.hpp" // for STR
 #include "tree_helper.hpp"
+#include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
@@ -180,12 +173,10 @@ void bloc::ReorderLUTs()
                      auto gaPostponed = GetPointer<gimple_assign>(GET_NODE(*posPostponed));
                      current_uses.insert(gaPostponed->op0);
                      restart_postponed = true;
-#if HAVE_BAMBU_BUILT
                      if(schedule)
                      {
                         schedule->UpdateTime(gaPostponed->index);
                      }
-#endif
                      list_of_postponed_stmt.erase(posPostponed);
                      break;
                   }
@@ -282,12 +273,10 @@ void bloc::update_new_stmt(const application_managerRef& AppM, const tree_nodeRe
          }
       }
    }
-#if HAVE_BAMBU_BUILT
    if(schedule)
    {
       schedule->UpdateTime(new_stmt->index);
    }
-#endif
 }
 
 const std::list<tree_nodeRef>& bloc::CGetStmtList() const

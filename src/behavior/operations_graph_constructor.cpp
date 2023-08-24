@@ -121,17 +121,11 @@ void operations_graph_constructor::add_edge_info(const vertex src, const vertex 
 }
 
 void operations_graph_constructor::AddOperation(const tree_managerRef TM, const std::string& src,
-                                                const std::string&
-#if HAVE_BAMBU_BUILT
-                                                    operation_t
-#endif
-                                                ,
-                                                unsigned int bb_index, const unsigned int node_id)
+                                                const std::string& operation_t, unsigned int bb_index,
+                                                const unsigned int node_id)
 {
    THROW_ASSERT(src != "", "Vertex name empty");
-#if HAVE_BAMBU_BUILT
    THROW_ASSERT(operation_t != "", "Operation empty");
-#endif
    vertex current = getIndex(src);
    THROW_ASSERT(!op_graph->CGetOpNodeInfo(current)->node || node_id == 0 ||
                     node_id == op_graph->CGetOpNodeInfo(current)->GetNodeId(),
@@ -141,13 +135,11 @@ void operations_graph_constructor::AddOperation(const tree_managerRef TM, const 
    {
       op_graph->GetOpNodeInfo(current)->node = TM->CGetTreeReindex(node_id);
    }
-#if HAVE_BAMBU_BUILT
    const unsigned int updated_node_id = op_graph->GetOpNodeInfo(current)->GetNodeId();
    if(updated_node_id != 0 && updated_node_id != ENTRY_ID && updated_node_id != EXIT_ID)
    {
       GetPointer<gimple_node>(TM->get_tree_node_const(updated_node_id))->operation = operation_t;
    }
-#endif
    GET_NODE_INFO(og, OpNodeInfo, current)->bb_index = bb_index;
    if(src == ENTRY)
    {

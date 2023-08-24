@@ -41,60 +41,36 @@
  *
  */
 
-/// Header include
 #include "multi_way_if.hpp"
-
-///. include
 #include "Parameter.hpp"
-
-/// src/algorithms/graph_helpers include
-#include "cyclic_topological_sort.hpp"
-
-/// behavior includes
 #include "application_manager.hpp"
 #include "basic_block.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
-
-/// design_flows includes
+#include "cyclic_topological_sort.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-
-/// hls includes
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
 #include "hls_step.hpp"
 #endif
-
-#if HAVE_BAMBU_BUILT
-/// hls/scheduling includes
-#include "schedule.hpp"
-#endif
-
-/// parser/compiler include
-#include "token_interface.hpp"
-
-/// STD include
-#include <cstdlib>
-#include <fstream>
-
-/// STL include
+#include "behavioral_helper.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-#include <cstdlib>
-
-/// tree includes
-#include "behavioral_helper.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "ext_tree_node.hpp"
+#include "schedule.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
+#include "token_interface.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_reindex.hpp"
+#include <cstdlib>
+#include <fstream>
 
 multi_way_if::multi_way_if(const ParameterConstRef _parameters, const application_managerRef _AppM,
                            unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
@@ -118,7 +94,7 @@ multi_way_if::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTyp
          relationships.insert(std::make_pair(SWITCH_FIX, SAME_FUNCTION));
          relationships.insert(std::make_pair(BLOCK_FIX, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
          if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING)
          {
             relationships.insert(std::make_pair(UPDATE_SCHEDULE, SAME_FUNCTION));

@@ -50,7 +50,7 @@
 enum class TechnologyFlowStep_Type;
 
 REF_FORWARD_DECL(DesignFlowStep);
-REF_FORWARD_DECL(target_device);
+REF_FORWARD_DECL(generic_device);
 REF_FORWARD_DECL(technology_manager);
 
 class TechnologyFlowStepFactory : public DesignFlowStepFactory
@@ -60,7 +60,7 @@ class TechnologyFlowStepFactory : public DesignFlowStepFactory
    const technology_managerRef TM;
 
    /// The target device
-   const target_deviceRef target;
+   const generic_deviceRef target;
 
  public:
    /**
@@ -70,7 +70,7 @@ class TechnologyFlowStepFactory : public DesignFlowStepFactory
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   TechnologyFlowStepFactory(const technology_managerRef TM, const target_deviceRef target,
+   TechnologyFlowStepFactory(const technology_managerRef TM, const generic_deviceRef target,
                              const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**

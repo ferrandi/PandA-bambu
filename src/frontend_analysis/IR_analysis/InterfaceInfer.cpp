@@ -44,7 +44,7 @@
 
 #include "Parameter.hpp"
 #include "application_manager.hpp"
-#include "area_model.hpp"
+#include "area_info.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
@@ -55,9 +55,9 @@
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "function_behavior.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
 #include "hls_step.hpp"
-#include "hls_target.hpp"
 #include "language_writer.hpp"
 #include "library_manager.hpp"
 #include "math_function.hpp"
@@ -69,7 +69,7 @@
 #include "technology_flow_step_factory.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
-#include "time_model.hpp"
+#include "time_info.hpp"
 #include "token_interface.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
@@ -1700,8 +1700,8 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
    }
    const std::string ResourceName = ENCODE_FDNAME(arg_name, "_Read_", info.name);
    const auto HLSMgr = GetPointer<HLS_manager>(AppM);
-   const auto HLS_T = HLSMgr->get_HLS_target();
-   const auto TechMan = HLS_T->get_technology_manager();
+   const auto HLS_D = HLSMgr->get_HLS_device();
+   const auto TechMan = HLS_D->get_technology_manager();
    if(!TechMan->is_library_manager(INTERFACE_LIBRARY) ||
       !TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName))
    {
@@ -1797,8 +1797,7 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
          TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
       }
       auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
-      const auto device = HLS_T->get_target_device();
-      fu->area_m = area_model::create_model(device->get_type(), parameters);
+      fu->area_m = area_info::factory(parameters);
       fu->area_m->set_area_value(0);
       if(!is_unbounded)
       {
@@ -1808,12 +1807,12 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
       for(const auto& fdName : operations)
       {
          const auto op = GetPointer<operation>(fu->get_operation(fdName));
-         op->time_m = time_model::create_model(device->get_type(), parameters);
+         op->time_m = time_info::factory(parameters);
          if(if_name == "fifo")
          {
             op->bounded = fdName.find("Async") != std::string::npos;
             const auto exec_time =
-                (!op->bounded ? HLS_T->get_technology_manager()->CGetSetupHoldTime() : 0.0) + EPSILON;
+                (!op->bounded ? HLS_D->get_technology_manager()->CGetSetupHoldTime() : 0.0) + EPSILON;
             const auto cycles = op->bounded ? 1U : 0U;
             op->time_m->set_execution_time(exec_time, cycles);
          }
@@ -1821,13 +1820,13 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
          {
             op->bounded = !is_unbounded;
             const auto exec_time =
-                (is_unbounded ? HLS_T->get_technology_manager()->CGetSetupHoldTime() : 0.0) + EPSILON;
+                (is_unbounded ? HLS_D->get_technology_manager()->CGetSetupHoldTime() : 0.0) + EPSILON;
             const auto cycles = if_name == "acknowledge" ? 1U : 0U;
             op->time_m->set_execution_time(exec_time, cycles);
          }
          op->time_m->set_synthesis_dependent(true);
       }
-      HLSMgr->global_resource_constraints[std::make_pair(INTERFACE_LIBRARY, ResourceName)] = 1U;
+      HLSMgr->global_resource_constraints[std::make_pair(ResourceName, INTERFACE_LIBRARY)] = std::make_pair(1U, 1U);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created");
    }
 }
@@ -1841,8 +1840,8 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
    }
    const std::string ResourceName = ENCODE_FDNAME(arg_name, "_Write_", info.name);
    const auto HLSMgr = GetPointer<HLS_manager>(AppM);
-   const auto HLS_T = HLSMgr->get_HLS_target();
-   const auto TechMan = HLS_T->get_technology_manager();
+   const auto HLS_D = HLSMgr->get_HLS_device();
+   const auto TechMan = HLS_D->get_technology_manager();
    if(!operations.empty() && !(TechMan->is_library_manager(INTERFACE_LIBRARY) &&
                                TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName)))
    {
@@ -1956,8 +1955,7 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
          TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
       }
       auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
-      const auto device = HLS_T->get_target_device();
-      fu->area_m = area_model::create_model(device->get_type(), parameters);
+      fu->area_m = area_info::factory(parameters);
       fu->area_m->set_area_value(0);
       if(!is_unbounded)
       {
@@ -1967,7 +1965,7 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
       for(const auto& fdName : operations)
       {
          const auto op_bounded = fdName.find("Async") != std::string::npos || !is_unbounded;
-         const auto exec_time = (!op_bounded ? HLS_T->get_technology_manager()->CGetSetupHoldTime() : 0.0) + EPSILON;
+         const auto exec_time = (!op_bounded ? HLS_D->get_technology_manager()->CGetSetupHoldTime() : 0.0) + EPSILON;
          const auto cycles = [&]() {
             if(if_name == "none_registered")
             {
@@ -1981,17 +1979,17 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
          }();
 
          const auto op = GetPointerS<operation>(fu->get_operation(fdName));
-         op->time_m = time_model::create_model(device->get_type(), parameters);
+         op->time_m = time_info::factory(parameters);
          op->bounded = op_bounded;
          op->time_m->set_execution_time(exec_time, cycles);
          if(if_name == "none_registered")
          {
-            op->time_m->set_stage_period(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON);
+            op->time_m->set_stage_period(HLS_D->get_technology_manager()->CGetSetupHoldTime() + EPSILON);
             op->time_m->set_initiation_time(ControlStep(1U));
          }
          op->time_m->set_synthesis_dependent(true);
       }
-      HLSMgr->global_resource_constraints[std::make_pair(INTERFACE_LIBRARY, ResourceName)] = 1U;
+      HLSMgr->global_resource_constraints[std::make_pair(ResourceName, INTERFACE_LIBRARY)] = std::make_pair(1U, 1U);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created");
    }
 }
@@ -2006,9 +2004,8 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
    const auto read_write_string = (isDP ? std::string("ReadWriteDP_") : std::string("ReadWrite_"));
    const auto ResourceName = ENCODE_FDNAME(bundle_name, "", "");
    const auto HLSMgr = GetPointerS<HLS_manager>(AppM);
-   const auto HLS_T = HLSMgr->get_HLS_target();
-   const auto device_type = HLS_T->get_target_device()->get_type();
-   const auto TechMan = HLS_T->get_technology_manager();
+   const auto HLS_D = HLSMgr->get_HLS_device();
+   const auto TechMan = HLS_D->get_technology_manager();
    if(!TechMan->is_library_manager(INTERFACE_LIBRARY) ||
       !TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName))
    {
@@ -2107,9 +2104,10 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
                                read_write_string + info.name + "ModuleGenerator");
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
       const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
-      fu->area_m = area_model::create_model(device_type, parameters);
+      fu->area_m = area_info::factory(parameters);
       fu->area_m->set_area_value(0);
-      HLSMgr->global_resource_constraints[std::make_pair(INTERFACE_LIBRARY, ResourceName)] = n_resources;
+      HLSMgr->global_resource_constraints[std::make_pair(ResourceName, INTERFACE_LIBRARY)] =
+          std::make_pair(n_resources, n_resources);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created");
    }
    for(const auto& fdName : operationsR)
@@ -2132,7 +2130,7 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
    for(const auto& fdName : operationsR)
    {
       const auto op = GetPointerS<operation>(fu->get_operation(fdName));
-      op->time_m = time_model::create_model(device_type, parameters);
+      op->time_m = time_info::factory(parameters);
       op->bounded = true;
       op->time_m->set_execution_time(load_delay, load_cycles);
       op->time_m->set_initiation_time(load_ii);
@@ -2148,7 +2146,7 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
    for(const auto& fdName : operationsW)
    {
       const auto op = GetPointerS<operation>(fu->get_operation(fdName));
-      op->time_m = time_model::create_model(device_type, parameters);
+      op->time_m = time_info::factory(parameters);
       op->bounded = true;
       op->time_m->set_execution_time(store_delay, store_cycles);
       op->time_m->set_initiation_time(store_ii);
@@ -2165,8 +2163,8 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
    const auto ResourceName = ENCODE_FDNAME(bundle_name, "", "");
    THROW_ASSERT(GetPointer<HLS_manager>(AppM), "");
    const auto HLSMgr = GetPointerS<HLS_manager>(AppM);
-   const auto HLS_T = HLSMgr->get_HLS_target();
-   const auto TechMan = HLS_T->get_technology_manager();
+   const auto HLS_D = HLSMgr->get_HLS_device();
+   const auto TechMan = HLS_D->get_technology_manager();
    unsigned way_lines = 0;
 
    if(!TechMan->is_library_manager(INTERFACE_LIBRARY) ||
@@ -2466,10 +2464,9 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
 
       const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
-      const auto device = HLS_T->get_target_device();
-      fu->area_m = area_model::create_model(device->get_type(), parameters);
+      fu->area_m = area_info::factory(parameters);
       fu->area_m->set_area_value(0);
-      HLSMgr->global_resource_constraints[std::make_pair(INTERFACE_LIBRARY, ResourceName)] = 1U;
+      HLSMgr->global_resource_constraints[std::make_pair(ResourceName, INTERFACE_LIBRARY)] = std::make_pair(1U, 1U);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created");
    }
 
@@ -2489,31 +2486,30 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, flushName);
    }
    const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
-   const auto device = HLS_T->get_target_device();
 
    for(const auto& fdName : operationsR)
    {
       const auto op = GetPointerS<operation>(fu->get_operation(fdName));
-      op->time_m = time_model::create_model(device->get_type(), parameters);
+      op->time_m = time_info::factory(parameters);
       op->bounded = false;
-      op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
+      op->time_m->set_execution_time(HLS_D->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
       op->time_m->set_synthesis_dependent(true);
    }
    for(const auto& fdName : operationsW)
    {
       const auto op = GetPointer<operation>(fu->get_operation(fdName));
-      op->time_m = time_model::create_model(device->get_type(), parameters);
+      op->time_m = time_info::factory(parameters);
       op->bounded = false;
-      op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
+      op->time_m->set_execution_time(HLS_D->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
       op->time_m->set_synthesis_dependent(true);
    }
 
    if(way_lines > 0)
    {
       const auto op = GetPointer<operation>(fu->get_operation(flushName));
-      op->time_m = time_model::create_model(device->get_type(), parameters);
+      op->time_m = time_info::factory(parameters);
       op->bounded = false;
-      op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
+      op->time_m->set_execution_time(HLS_D->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
       op->time_m->set_synthesis_dependent(true);
    }
    const auto address_bitsize = HLSMgr->get_address_bitsize();

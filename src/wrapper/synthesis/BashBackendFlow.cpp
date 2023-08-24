@@ -39,20 +39,17 @@
  */
 #include "BashBackendFlow.hpp"
 
-#include "DesignCompilerWrapper.hpp"
-#include "LUT_model.hpp"
+#include "DesignParameters.hpp"
 #include "Parameter.hpp"
 #include "SynthesisTool.hpp"
-#include "area_model.hpp"
-#include "clb_model.hpp"
+#include "area_info.hpp"
 #include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
+#include "generic_device.hpp"
 #include "string_manipulation.hpp"
 #include "structural_objects.hpp"
 #include "synthesis_constants.hpp"
-#include "target_device.hpp"
-#include "target_manager.hpp"
-#include "time_model.hpp"
+#include "time_info.hpp"
 #include "utility.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_script_command.hpp"
@@ -64,8 +61,8 @@
 #define BASHBACKEND_DESIGN_DELAY "BASHBACKEND_DESIGN_DELAY"
 
 BashBackendFlow::BashBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name,
-                                 const target_managerRef _target)
-    : BackendFlow(_Param, _flow_name, _target)
+                                 const generic_deviceRef _device)
+    : BackendFlow(_Param, _flow_name, _device)
 {
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " .:: Creating Generic Bash Backend Flow ::.");
 
@@ -84,7 +81,6 @@ BashBackendFlow::BashBackendFlow(const ParameterConstRef _Param, const std::stri
    }
    else
    {
-      const target_deviceRef device = target->get_target_device();
       std::string device_string;
       if(device->has_parameter("family"))
       {
@@ -230,7 +226,6 @@ void BashBackendFlow::InitDesignParameters()
       pwr_enabled = true;
    }
    actual_parameters->parameter_values[PARAM_power_optimization] = STR(pwr_enabled);
-   const target_deviceRef device = target->get_target_device();
    auto device_name = device->get_parameter<std::string>("model");
    actual_parameters->parameter_values[PARAM_target_device] = device_name;
 
@@ -264,24 +259,21 @@ void BashBackendFlow::CheckSynthesisResults()
    xparse_utilization(report_filename);
 
    THROW_ASSERT(design_values.find(BASHBACKEND_AREA) != design_values.end(), "Missing logic elements");
-   area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
+   area_m = area_info::factory(Param);
    area_m->set_area_value(design_values[BASHBACKEND_AREA]);
-   auto* area_clb_model = GetPointer<clb_model>(area_m);
-   area_clb_model->set_resource_value(clb_model::LOGIC_AREA, design_values[BASHBACKEND_AREA]);
-   area_clb_model->set_resource_value(clb_model::POWER, design_values[BASHBACKEND_POWER]);
+   area_m->set_resource_value(area_info::LOGIC_AREA, design_values[BASHBACKEND_AREA]);
+   area_m->set_resource_value(area_info::POWER, design_values[BASHBACKEND_POWER]);
 
-   time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
-   auto* lut_m = GetPointer<LUT_model>(time_m);
+   time_m = time_info::factory(Param);
    if(design_values[BASHBACKEND_DESIGN_DELAY] != 0.0)
    {
-      auto is_time_unit_PS = target->get_target_device()->has_parameter("USE_TIME_UNIT_PS") &&
-                             target->get_target_device()->get_parameter<int>("USE_TIME_UNIT_PS") == 1;
-      lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY,
-                              design_values[BASHBACKEND_DESIGN_DELAY] / (is_time_unit_PS ? 1000 : 1));
+      auto is_time_unit_PS =
+          device->has_parameter("USE_TIME_UNIT_PS") && device->get_parameter<int>("USE_TIME_UNIT_PS") == 1;
+      time_m->set_execution_time(design_values[BASHBACKEND_DESIGN_DELAY] / (is_time_unit_PS ? 1000 : 1));
    }
    else
    {
-      lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, 0);
+      time_m->set_execution_time(0.0);
    }
    if((output_level >= OUTPUT_LEVEL_VERY_PEDANTIC or
        (Param->IsParameter("DumpingTimingReport") and Param->GetParameter<int>("DumpingTimingReport"))) and
@@ -299,7 +291,7 @@ void BashBackendFlow::WriteFlowConfiguration(std::ostream& script)
           << "\n";
    script << "export CURR_WORKDIR=" << GetCurrentPath() << "\n";
 
-   for(const auto& pair : target->get_target_device()->get_bash_vars())
+   for(const auto& pair : device->get_device_bash_vars())
    {
       script << ": ${" << pair.first << ":=" << pair.second << "}"
              << "\n";

@@ -2066,9 +2066,7 @@ bool pred;
                tok_operating_system_opt {OPT($19, NSV(decl_node, operating_system_flag, true))}
                tok_library_system_opt   {OPT($21, NSV(decl_node, library_system_flag, true))}
                tok_libbambu_opt         {
-#if HAVE_BAMBU_BUILT
                                          OPT($23, NSV(decl_node, libbambu_flag, true))
-#endif
                                         }
                tok_C                    {}
                uid_opt                  {NSV(decl_node, uid, boost::lexical_cast<unsigned>(data->curr_string_number))}
@@ -2125,9 +2123,7 @@ bool pred;
               tok_packed_opt   {OPT($13, NSV(type_node, packed_flag, true))}
               tok_system_opt   {OPT($15, NSV(type_node, system_flag, true))}
               tok_libbambu_opt {
-#if HAVE_BAMBU_BUILT
               OPT($15, NSV(type_node, libbambu_flag, true))
-#endif
                                }
             ;
 

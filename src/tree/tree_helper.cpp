@@ -1093,7 +1093,6 @@ bool tree_helper::IsSystemType(const tree_nodeConstRef& _type)
    return false;
 }
 
-#if HAVE_BAMBU_BUILT
 bool tree_helper::IsInLibbambu(const tree_managerConstRef& TM, const unsigned int index)
 {
    const auto curr_tn = TM->CGetTreeReindex(index);
@@ -1113,7 +1112,6 @@ bool tree_helper::IsInLibbambu(const tree_nodeConstRef& _type)
    }
    return false;
 }
-#endif
 
 std::set<tree_nodeConstRef, TreeNodeConstSorter>
 tree_helper::GetTypesToBeDeclaredBefore(const tree_nodeConstRef& tn, const bool without_transformation)

@@ -45,11 +45,11 @@
 #include "Parameter.hpp"
 #include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
-#include "target_device.hpp"
+#include "generic_device.hpp"
 #include "xml_document.hpp"
 #include "xml_dom_parser.hpp"
 
-LoadDeviceTechnology::LoadDeviceTechnology(const technology_managerRef _TM, const target_deviceRef _target,
+LoadDeviceTechnology::LoadDeviceTechnology(const technology_managerRef _TM, const generic_deviceRef _target,
                                            const DesignFlowManagerConstRef _design_flow_manager,
                                            const ParameterConstRef _parameters)
     : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_DEVICE_TECHNOLOGY,
@@ -104,7 +104,7 @@ DesignFlowStep_Status LoadDeviceTechnology::Exec()
          parser.Exec();
          if(parser)
          {
-            target->xload(target, parser.get_document()->get_root_node());
+            target->xload(parser.get_document()->get_root_node());
          }
       }
       catch(const char* msg)
@@ -126,8 +126,7 @@ DesignFlowStep_Status LoadDeviceTechnology::Exec()
       PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
                     " ==== XML configuration file parsed for technology information ====");
    }
-
    /// load specific device information
-   target->load_devices(target);
+   target->load_devices();
    return DesignFlowStep_Status::SUCCESS;
 }

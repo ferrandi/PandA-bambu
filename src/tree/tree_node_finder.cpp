@@ -123,10 +123,7 @@ void tree_node_finder::operator()(const decl_node* obj, unsigned int& mask)
               CHECK_VALUE_OPT(TOK_PACKED, obj->packed_flag) and
               CHECK_VALUE_OPT(TOK_OPERATING_SYSTEM, obj->operating_system_flag) and
               CHECK_VALUE_OPT(TOK_LIBRARY_SYSTEM, obj->library_system_flag) and
-#if HAVE_BAMBU_BUILT
-              CHECK_VALUE_OPT(TOK_LIBBAMBU, obj->libbambu_flag) and
-#endif
-              CHECK_VALUE_OPT(TOK_C, obj->C_flag);
+              CHECK_VALUE_OPT(TOK_LIBBAMBU, obj->libbambu_flag) and CHECK_VALUE_OPT(TOK_C, obj->C_flag);
 }
 
 void tree_node_finder::operator()(const expr_node* obj, unsigned int& mask)

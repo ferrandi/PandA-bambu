@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2023 Politecnico di Milano
+ *              Copyright (C) 2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,43 +31,105 @@
  *
  */
 /**
- * @file FPGA_device.cpp
- * @brief
+ * @file generic_device.cpp
+ * @brief Generic device description
  *
- *
- * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  */
-#include "FPGA_device.hpp"
-
-#include "config_PANDA_DATA_INSTALLDIR.hpp"
+#include "generic_device.hpp"
 
 #include "Parameter.hpp"
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
 #include "constant_strings.hpp"
 #include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
 #include "fileIO.hpp"
 #include "polixml.hpp"
-#include "string_manipulation.hpp"
-#include "target_technology.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
+#include "technology_manager.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
-
 #include <filesystem>
 
-FPGA_device::FPGA_device(const ParameterConstRef& _Param, const technology_managerRef& _TM)
-    : target_device(_Param, _TM, TargetDevice_Type::FPGA)
+generic_device::generic_device(const ParameterConstRef& _Param, const technology_managerRef& _TM)
+    : Param(_Param), TM(_TM), debug_level(_Param->get_class_debug_level(GET_CLASS(*this)))
 {
-   /// creating the datastructure representing the target technology
-   target = target_technology::create_technology(target_technology::FPGA, Param);
-   debug_level = Param->get_class_debug_level(GET_CLASS(*this));
 }
 
-FPGA_device::~FPGA_device() = default;
+generic_device::~generic_device() = default;
 
-void FPGA_device::load_devices(const target_deviceRef device)
+generic_deviceRef generic_device::factory(const ParameterConstRef& param, const technology_managerRef& TM)
+{
+   return generic_deviceRef(new generic_device(param, TM));
+}
+
+void generic_device::xload(const xml_element* node)
+{
+   const xml_node::node_list& c_list = node->get_children();
+   for(const auto& n : c_list)
+   {
+      if(n->get_name() == "device")
+      {
+         const auto* dev_xml = GetPointer<const xml_element>(n);
+         xload_device_parameters(dev_xml);
+      }
+   }
+
+   for(const auto& n : c_list)
+   {
+      // The second part of the condition is false when we are generating the list of functional units in spider
+      if(n->get_name() == "technology" and
+         (not Param->isOption(OPT_input_format) or
+          Param->getOption<Parameters_FileFormat>(OPT_input_format) != Parameters_FileFormat::FF_XML_TEC))
+      {
+         const auto* tech_xml = GetPointer<const xml_element>(n);
+         TM->xload(tech_xml);
+      }
+   }
+}
+
+void generic_device::xwrite(xml_element* nodeRoot)
+{
+   xml_element* tmRoot = nodeRoot->add_child_element("device");
+
+   THROW_ASSERT(has_parameter("vendor"), "vendor value is missing");
+   xml_element* vendor_el = tmRoot->add_child_element("vendor");
+   auto vendor = get_parameter<std::string>("vendor");
+   WRITE_XNVM2("value", vendor, vendor_el);
+
+   THROW_ASSERT(has_parameter("family"), "family value is missing");
+   xml_element* family_el = tmRoot->add_child_element("family");
+   auto family = get_parameter<std::string>("family");
+   WRITE_XNVM2("value", family, family_el);
+
+   THROW_ASSERT(has_parameter("model"), "model value is missing");
+   xml_element* model_el = tmRoot->add_child_element("model");
+   auto model = get_parameter<std::string>("model");
+   WRITE_XNVM2("value", model, model_el);
+
+   THROW_ASSERT(has_parameter("package"), "package value is missing");
+   xml_element* package_el = tmRoot->add_child_element("package");
+   auto package = get_parameter<std::string>("package");
+   WRITE_XNVM2("value", package, package_el);
+
+   THROW_ASSERT(has_parameter("speed_grade"), "speed_grade value is missing");
+   xml_element* speed_grade_el = tmRoot->add_child_element("speed_grade");
+   auto speed_grade = get_parameter<std::string>("speed_grade");
+   WRITE_XNVM2("value", speed_grade, speed_grade_el);
+
+   for(auto p = parameters.begin(); p != parameters.end(); ++p)
+   {
+      if(p->first == "vendor" || p->first == "family" || p->first == "model" || p->first == "package" ||
+         p->first == "speed_grade" || p->first == "clock_period")
+      {
+         continue;
+      }
+      xml_element* elRoot = tmRoot->add_child_element(p->first);
+      WRITE_XNVM2("value", p->second, elRoot);
+   }
+}
+
+void generic_device::load_devices()
 {
    /// map between the default device string and the corresponding configuration stream
    std::map<std::string, std::string> default_device_data;
@@ -133,9 +195,9 @@ void FPGA_device::load_devices(const target_deviceRef device)
             if(default_device_data.find(device_string) != default_device_data.end())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Loading " + device_string);
-               ret.insert(XMLDomParserRef(new XMLDomParser(
-                   relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/technology/target_device/FPGA/") +
-                   default_device_data[device_string])));
+               ret.insert(
+                   XMLDomParserRef(new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/technology/") +
+                                                    default_device_data[device_string])));
             }
             else
             {
@@ -151,7 +213,7 @@ void FPGA_device::load_devices(const target_deviceRef device)
          if(parser and *parser)
          {
             const xml_element* node = parser->get_document()->get_root_node(); // deleted by DomParser.
-            xload(device, node);
+            xload(node);
          }
       }
 
@@ -176,47 +238,53 @@ void FPGA_device::load_devices(const target_deviceRef device)
    THROW_ERROR("Error during XML parsing of device files");
 }
 
-void FPGA_device::xwrite(xml_element* nodeRoot)
+void generic_device::xload_device_parameters(const xml_element* dev_xml)
 {
-   xml_element* tmRoot = nodeRoot->add_child_element("device");
-
-   THROW_ASSERT(has_parameter("vendor"), "vendor value is missing");
-   xml_element* vendor_el = tmRoot->add_child_element("vendor");
-   auto vendor = get_parameter<std::string>("vendor");
-   WRITE_XNVM2("value", vendor, vendor_el);
-
-   THROW_ASSERT(has_parameter("family"), "family value is missing");
-   xml_element* family_el = tmRoot->add_child_element("family");
-   auto family = get_parameter<std::string>("family");
-   WRITE_XNVM2("value", family, family_el);
-
-   THROW_ASSERT(has_parameter("model"), "model value is missing");
-   xml_element* model_el = tmRoot->add_child_element("model");
-   auto model = get_parameter<std::string>("model");
-   WRITE_XNVM2("value", model, model_el);
-
-   THROW_ASSERT(has_parameter("package"), "package value is missing");
-   xml_element* package_el = tmRoot->add_child_element("package");
-   auto package = get_parameter<std::string>("package");
-   WRITE_XNVM2("value", package, package_el);
-
-   THROW_ASSERT(has_parameter("speed_grade"), "speed_grade value is missing");
-   xml_element* speed_grade_el = tmRoot->add_child_element("speed_grade");
-   auto speed_grade = get_parameter<std::string>("speed_grade");
-   WRITE_XNVM2("value", speed_grade, speed_grade_el);
-
-   for(auto p = parameters.begin(); p != parameters.end(); ++p)
+   const xml_node::node_list& t_list = dev_xml->get_children();
+   for(const auto& t : t_list)
    {
-      if(p->first == "vendor" || p->first == "family" || p->first == "model" || p->first == "package" ||
-         p->first == "speed_grade" || p->first == "clock_period")
+      const auto* t_elem = GetPointer<const xml_element>(t);
+      if(!t_elem)
       {
          continue;
       }
-      xml_element* elRoot = tmRoot->add_child_element(p->first);
-      WRITE_XNVM2("value", p->second, elRoot);
+
+      std::string value;
+      LOAD_XVM(value, t_elem);
+
+      bool is_bash_var = false;
+      if(CE_XVM(is_bash_var, t_elem))
+      {
+         LOAD_XVM(is_bash_var, t_elem);
+      }
+      if(is_bash_var)
+      {
+         vars[t_elem->get_name()] = value;
+      }
+      else
+      {
+         parameters[t_elem->get_name()] = value;
+      }
+      if(t_elem->get_name() == "model")
+      {
+         const_cast<Parameter*>(Param.get())->setOption("device_name", value);
+      }
+      if(t_elem->get_name() == "speed_grade")
+      {
+         const_cast<Parameter*>(Param.get())->setOption("device_speed", value);
+      }
+      if(t_elem->get_name() == "package")
+      {
+         const_cast<Parameter*>(Param.get())->setOption("device_package", value);
+      }
    }
+   std::string device_string = Param->getOption<std::string>("device_name") +
+                               Param->getOption<std::string>("device_speed") +
+                               Param->getOption<std::string>("device_package");
+   const_cast<Parameter*>(Param.get())->setOption(OPT_device_string, device_string);
 }
 
-void FPGA_device::initialize()
+technology_managerRef generic_device::get_technology_manager() const
 {
+   return TM;
 }

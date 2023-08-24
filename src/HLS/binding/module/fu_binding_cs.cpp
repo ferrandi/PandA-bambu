@@ -43,8 +43,8 @@
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "math_function.hpp"
 #include "memory.hpp"
 #include "memory_cs.hpp"
@@ -96,9 +96,9 @@ void fu_binding_cs::instantiate_component_kernel(const HLS_managerRef HLSMgr, co
    std::string scheduler_model = "scheduler";
    std::string scheduler_name = "scheduler_kernel";
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Start adding scheduler");
-   std::string sche_library = HLS->HLS_T->get_technology_manager()->get_library(scheduler_model);
+   std::string sche_library = HLS->HLS_D->get_technology_manager()->get_library(scheduler_model);
    structural_objectRef scheduler_mod = SM->add_module_from_technology_library(
-       scheduler_name, scheduler_model, sche_library, circuit, HLS->HLS_T->get_technology_manager());
+       scheduler_name, scheduler_model, sche_library, circuit, HLS->HLS_D->get_technology_manager());
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Added Scheduler");
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting setting parameter scheduler!");

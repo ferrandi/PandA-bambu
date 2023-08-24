@@ -48,8 +48,8 @@
 #include "fileIO.hpp"
 #include "function_behavior.hpp"
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "language_writer.hpp"
 #include "parse_discrepancy.hpp"
 #include "state_transition_graph.hpp"
@@ -423,7 +423,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       // state_of_the_art memory usage
       {
          std::string vendor;
-         const auto tgt_device = HLSMgr->get_HLS_target()->get_target_device();
+         const auto tgt_device = HLSMgr->get_HLS_device();
          if(tgt_device->has_parameter("vendor"))
          {
             vendor = tgt_device->get_parameter<std::string>("vendor");

@@ -45,16 +45,16 @@
 /// Header include
 #include "trce_wrapper.hpp"
 
-#include "ToolManager.hpp"
-#include "xml_script_command.hpp"
-
+#include "DesignParameters.hpp"
 #include "Parameter.hpp"
+#include "ToolManager.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "xml_script_command.hpp"
 #include <iostream>
 
 // constructor
 trce_wrapper::trce_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir,
-                           const target_deviceRef& _device)
+                           const generic_deviceRef& _device)
     : XilinxWrapper(_Param, TRCE_TOOL_ID, _device, _output_dir, "trce")
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the TRCE wrapper...");
