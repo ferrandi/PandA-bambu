@@ -1895,7 +1895,7 @@ namespace __AC_NAMESPACE
    template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O>
    __FORCE_INLINE std::ostream& operator<<(std::ostream& os, const ac_fixed<W, I, S, Q, O>& x)
    {
-#ifndef __BAMBU__
+#if !defined(__BAMBU__) || defined(__BAMBU_SIM__)
       os << x.to_string(AC_DEC);
 #endif
       return os;
@@ -1904,7 +1904,7 @@ namespace __AC_NAMESPACE
    template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O>
    __FORCE_INLINE std::istream& operator>>(std::istream& in, ac_fixed<W, I, S, Q, O>& x)
    {
-#ifndef __BAMBU__
+#if !defined(__BAMBU__) || defined(__BAMBU_SIM__)
       double d;
       in >> d;
       x = ac_fixed<W, I, S, Q, O>(d);
