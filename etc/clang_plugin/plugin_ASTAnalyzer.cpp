@@ -260,7 +260,9 @@ namespace clang
             return t;
          }
          else
+         {
             return t;
+         }
       }
 
       std::string GetTypeNameCanonical(const QualType& t, const PrintingPolicy& pp) const
@@ -522,7 +524,7 @@ namespace clang
                         const auto suffix = argType->isPointerType() ? "*" : "&";
                         const auto paramTypeOrigTD =argType->getPointeeType();
                         const auto paramTypeRemTD = RemoveTypedef(paramTypeOrigTD);
-                        getSizeInBytes(paramTypeOrigTD);
+                        getSizeInBytes(paramTypeRemTD);
                         ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + suffix;
                         ParamTypeNameOrig = paramTypeOrigTD.getAsString(pp) + suffix;
                         ParamTypeInclude = getIncludes(paramTypeOrigTD);
@@ -550,7 +552,7 @@ namespace clang
                   {
                      const auto paramTypeOrigTD =argType;
                      const auto paramTypeRemTD = RemoveTypedef(argType);
-                     getSizeInBytes(argType);
+                     getSizeInBytes(paramTypeRemTD);
                      ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
                      ParamTypeNameOrig = paramTypeOrigTD.getAsString(pp);
                      ParamTypeInclude = getIncludes(paramTypeOrigTD);
