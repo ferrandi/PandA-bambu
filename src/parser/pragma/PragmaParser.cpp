@@ -93,7 +93,7 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
 
    std::filesystem::path old_path(OldFile);
    std::string FileName = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_pragma_prefix +
-                          boost::lexical_cast<std::string>(file_counter) + "_" + old_path.filename().string();
+                          std::to_string(file_counter) + "_" + old_path.filename().string();
    std::ofstream fileOutput(FileName, std::ios::out);
 
    file_counter++;
@@ -168,7 +168,7 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
          {
             level++;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Found {: Current level " + boost::lexical_cast<std::string>(level));
+                           "---Found {: Current level " + std::to_string(level));
             if(!found)
             {
                for(auto& FloatingPragma : FloatingPragmas)
@@ -191,7 +191,7 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
             }
             level--;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Found }: Current level " + boost::lexical_cast<std::string>(level));
+                           "---Found }: Current level " + std::to_string(level));
          }
       }
 
@@ -365,7 +365,7 @@ bool PragmaParser::recognize_mapping_pragma(std::string& Line)
    else
    {
       PM->setGenericPragma(number, Line);
-      Line = "__pragma__" + boost::lexical_cast<std::string>(number) + "_();";
+      Line = "__pragma__" + std::to_string(number) + "_();";
       number++;
       return false;
    }
@@ -396,7 +396,7 @@ bool PragmaParser::recognize_generic_pragma(std::string& Line)
    else
    {
       PM->setGenericPragma(number, Line);
-      Line = "__pragma__" + boost::lexical_cast<std::string>(number) + "_();";
+      Line = "__pragma__" + std::to_string(number) + "_();";
       number++;
    }
    return false;

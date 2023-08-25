@@ -827,8 +827,7 @@ void GimpleWriter::operator()(const array_type* obj, unsigned int& mask)
    if(array_length->get_kind() == integer_cst_K)
    {
       const auto tn = GetPointer<type_node>(array_element);
-      os << boost::lexical_cast<std::string>(tree_helper::GetConstValue(obj->size) /
-                                             tree_helper::GetConstValue(tn->size));
+      os << STR(tree_helper::GetConstValue(obj->size) / tree_helper::GetConstValue(tn->size));
    }
 
    os << "]";

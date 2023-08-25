@@ -105,7 +105,7 @@ vertex StateTransitionGraph_constructor::create_state(
    vertex newVertex = state_transition_graphs_collection->AddVertex(NodeInfoRef(new StateInfo(funId)));
    const StateInfoRef state_info = state_transition_graph->GetStateInfo(newVertex);
    state_info->HLSMgr = HLSMgr;
-   state_info->name = std::string(STATE_NAME_PREFIX + boost::lexical_cast<std::string>(state_index));
+   state_info->name = std::string(STATE_NAME_PREFIX + std::to_string(state_index));
    state_transition_graph->GetStateTransitionGraphInfo()->state_id_to_vertex[state_index] = newVertex;
    state_transition_graph->GetStateTransitionGraphInfo()->vertex_to_state_id[newVertex] = state_index;
    state_info->executing_operations = exec_op;

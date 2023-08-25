@@ -134,8 +134,7 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
       {
          if(errno and not parameters->getOption<bool>(OPT_no_return_zero))
          {
-            THROW_ERROR_CODE(PROFILING_EC,
-                             "Error " + boost::lexical_cast<std::string>(errno) + " during dynamic profiling");
+            THROW_ERROR_CODE(PROFILING_EC, "Error " + std::to_string(errno) + " during dynamic profiling");
          }
       }
 

@@ -417,11 +417,10 @@ std::string verilog_writer::may_slice_string(const structural_objectRef& cir)
                auto size_fp = Type_fp->vector_size > 0 ? Type_fp->size * Type_fp->vector_size : Type_fp->size;
                auto lsb = GetPointer<port_o>(Owner)->get_lsb();
                return "[" +
-                      STR((1 + boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) *
-                              static_cast<int>(size_fp) +
+                      STR((1 + std::stoi(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) +
                           static_cast<int>(lsb) - 1) +
                       ":" +
-                      STR((boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) +
+                      STR((std::stoi(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) +
                           static_cast<int>(lsb)) +
                       "]";
             }
@@ -459,11 +458,10 @@ std::string verilog_writer::may_slice_string(const structural_objectRef& cir)
                auto size_fp = Type_fp->vector_size > 0 ? Type_fp->size * Type_fp->vector_size : Type_fp->size;
                auto lsb = GetPointer<port_o>(Owner)->get_lsb();
                return "[" +
-                      STR((1 + boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) *
-                              static_cast<int>(size_fp) +
+                      STR((1 + std::stoi(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) +
                           static_cast<int>(lsb) - 1) +
                       ":" +
-                      STR((boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) +
+                      STR((std::stoi(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) +
                           static_cast<int>(lsb)) +
                       "]";
             }

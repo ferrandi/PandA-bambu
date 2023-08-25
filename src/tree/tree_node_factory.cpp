@@ -610,8 +610,7 @@ void tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_no
       case tree_reindex_K:
       case while_stmt_K:
       {
-         THROW_UNREACHABLE("Creation of tree node of type " + boost::lexical_cast<std::string>(tree_node_type) +
-                           " not implemented");
+         THROW_UNREACHABLE("Creation of tree node of type " + STR(tree_node_type) + " not implemented");
          break;
       }
       default:

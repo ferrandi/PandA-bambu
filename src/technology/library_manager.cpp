@@ -115,7 +115,7 @@ std::string attribute::get_value_type_str() const
    }
    else
    {
-      THROW_ERROR("Not supported attribute type: " + boost::lexical_cast<std::string>(value_type));
+      THROW_ERROR("Not supported attribute type: " + STR(value_type));
    }
    return "<unknown>";
 }

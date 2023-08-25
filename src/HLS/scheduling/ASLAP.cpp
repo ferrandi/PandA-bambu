@@ -247,7 +247,7 @@ void ASLAP::add_constraints_to_ASAP()
       for(vertex2int::const_iterator i = ASAP_p.begin(); i != i_end; ++i)
       {
          PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                          GET_NAME(beh_graph, i->first) + " - " + boost::lexical_cast<std::string>(i->second));
+                          GET_NAME(beh_graph, i->first) + " - " + std::to_string(i->second));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
 
@@ -256,7 +256,7 @@ void ASLAP::add_constraints_to_ASAP()
       for(vertex2int::const_iterator ai = ASAP_nip.begin(); ai != ai_end; ++ai)
       {
          PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                          GET_NAME(beh_graph, ai->first) + " - " + boost::lexical_cast<std::string>(ai->second));
+                          GET_NAME(beh_graph, ai->first) + " - " + std::to_string(ai->second));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
    }
@@ -301,7 +301,7 @@ void ASLAP::compute_ASAP(const ScheduleConstRef partial_schedule)
          vi = boost::source(*ei, *beh_graph);
          cur_start = finish_time.at(vi) < cur_start ? cur_start : finish_time.at(vi);
          //       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, GET_NAME(beh_graph, vi) + " -> " +GET_NAME(beh_graph,
-         //       level) + " cur_start " + boost::lexical_cast<std::string>(cur_start));
+         //       level) + " cur_start " + std::to_string(cur_start));
       }
 
       finish_time.at(level) = cur_start + from_strongtype_cast<double>(op_cycles);
@@ -311,8 +311,8 @@ void ASLAP::compute_ASAP(const ScheduleConstRef partial_schedule)
                       curr_asap;
       ASAP->set_execution(level, curr_asap);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
-                    GET_NAME(beh_graph, level) + " cur_start " + boost::lexical_cast<std::string>(cur_start) +
-                        " finish_time[level] " + boost::lexical_cast<std::string>(finish_time[level]));
+                    GET_NAME(beh_graph, level) + " cur_start " + std::to_string(cur_start) + " finish_time[level] " +
+                        std::to_string(finish_time[level]));
       min_tot_csteps = min_tot_csteps < curr_asap ? curr_asap : min_tot_csteps;
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                     GET_NAME(beh_graph, level) + " - " + STR(ASAP->get_cstep(level).second));
@@ -384,7 +384,7 @@ void ASLAP::add_constraints_to_ALAP()
       for(vertex2int::const_iterator i = ALAP_p.begin(); i != i_end; ++i)
       {
          PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                          GET_NAME(beh_graph, i->first) + " - " + boost::lexical_cast<std::string>(i->second));
+                          GET_NAME(beh_graph, i->first) + " - " + std::to_string(i->second));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
 
@@ -393,7 +393,7 @@ void ASLAP::add_constraints_to_ALAP()
       for(vertex2int::const_iterator ai = ALAP_nip.begin(); ai != ai_end; ++ai)
       {
          PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                          GET_NAME(beh_graph, ai->first) + " - " + boost::lexical_cast<std::string>(ai->second));
+                          GET_NAME(beh_graph, ai->first) + " - " + std::to_string(ai->second));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
 

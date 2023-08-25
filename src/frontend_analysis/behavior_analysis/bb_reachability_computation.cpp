@@ -128,8 +128,7 @@ DesignFlowStep_Status BBReachabilityComputation::InternalExec()
    for(it = container.begin(); it != it_end; ++it)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "  Examining basic block " +
-                        boost::lexical_cast<std::string>(ecfg->CGetBBNodeInfo(*it)->block->number));
+                    "  Examining basic block " + std::to_string(ecfg->CGetBBNodeInfo(*it)->block->number));
       OutEdgeIterator eo, eo_end;
       for(boost::tie(eo, eo_end) = boost::out_edges(*it, *ecfg); eo != eo_end; eo++)
       {

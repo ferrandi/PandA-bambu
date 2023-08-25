@@ -522,7 +522,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       }
       static int empty_counter = 0;
       const std::string temp_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + "/empty_" +
-                                         boost::lexical_cast<std::string>(empty_counter++) + ".c";
+                                         std::to_string(empty_counter++) + ".c";
       CopyFile(original_file_name, temp_file_name);
       const std::string append_command = R"(`echo -e "\nvoid __empty_function__(){}" >> )" + temp_file_name + "`";
       int ret = PandaSystem(Param, append_command);
@@ -835,10 +835,9 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       if(std::filesystem::exists(std::filesystem::path(gcc_output_file_name)))
       {
          CopyStdout(gcc_output_file_name);
-         THROW_ERROR_CODE(COMPILING_EC, "Front-end compiler returns an error during compilation " +
-                                            boost::lexical_cast<std::string>(errno));
-         THROW_ERROR("Front-end compiler returns an error during compilation " +
-                     boost::lexical_cast<std::string>(errno));
+         THROW_ERROR_CODE(COMPILING_EC,
+                          "Front-end compiler returns an error during compilation " + std::to_string(errno));
+         THROW_ERROR("Front-end compiler returns an error during compilation " + std::to_string(errno));
       }
       else
       {
@@ -1044,9 +1043,8 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          if(std::filesystem::exists(std::filesystem::path(llvm_link_output_file_name)))
          {
             CopyStdout(llvm_link_output_file_name);
-            THROW_ERROR_CODE(COMPILING_EC, "llvm-link returns an error during compilation " +
-                                               boost::lexical_cast<std::string>(errno));
-            THROW_ERROR("llvm-link returns an error during compilation " + boost::lexical_cast<std::string>(errno));
+            THROW_ERROR_CODE(COMPILING_EC, "llvm-link returns an error during compilation " + std::to_string(errno));
+            THROW_ERROR("llvm-link returns an error during compilation " + std::to_string(errno));
          }
          else
          {
@@ -1191,9 +1189,8 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
                if(std::filesystem::exists(std::filesystem::path(tfn_output_file_name)))
                {
                   CopyStdout(tfn_output_file_name);
-                  THROW_ERROR_CODE(COMPILING_EC, "opt returns an error during compilation " +
-                                                     boost::lexical_cast<std::string>(errno));
-                  THROW_ERROR("opt returns an error during compilation " + boost::lexical_cast<std::string>(errno));
+                  THROW_ERROR_CODE(COMPILING_EC, "opt returns an error during compilation " + std::to_string(errno));
+                  THROW_ERROR("opt returns an error during compilation " + std::to_string(errno));
                }
                else
                {
@@ -1219,9 +1216,8 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
                if(std::filesystem::exists(std::filesystem::path(int_output_file_name)))
                {
                   CopyStdout(int_output_file_name);
-                  THROW_ERROR_CODE(COMPILING_EC, "opt returns an error during compilation " +
-                                                     boost::lexical_cast<std::string>(errno));
-                  THROW_ERROR("opt returns an error during compilation " + boost::lexical_cast<std::string>(errno));
+                  THROW_ERROR_CODE(COMPILING_EC, "opt returns an error during compilation " + std::to_string(errno));
+                  THROW_ERROR("opt returns an error during compilation " + std::to_string(errno));
                }
                else
                {
@@ -1254,9 +1250,8 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             if(std::filesystem::exists(std::filesystem::path(o2_output_file_name)))
             {
                CopyStdout(o2_output_file_name);
-               THROW_ERROR_CODE(COMPILING_EC,
-                                "opt returns an error during compilation " + boost::lexical_cast<std::string>(errno));
-               THROW_ERROR("opt returns an error during compilation " + boost::lexical_cast<std::string>(errno));
+               THROW_ERROR_CODE(COMPILING_EC, "opt returns an error during compilation " + std::to_string(errno));
+               THROW_ERROR("opt returns an error during compilation " + std::to_string(errno));
             }
             else
             {
@@ -1328,9 +1323,8 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             if(std::filesystem::exists(std::filesystem::path(gimpledump_output_file_name)))
             {
                CopyStdout(gimpledump_output_file_name);
-               THROW_ERROR_CODE(COMPILING_EC,
-                                "opt returns an error during compilation " + boost::lexical_cast<std::string>(errno));
-               THROW_ERROR("opt returns an error during compilation " + boost::lexical_cast<std::string>(errno));
+               THROW_ERROR_CODE(COMPILING_EC, "opt returns an error during compilation " + std::to_string(errno));
+               THROW_ERROR("opt returns an error during compilation " + std::to_string(errno));
             }
             else
             {
@@ -2839,7 +2833,7 @@ void CompilerWrapper::GetSystemIncludes(std::vector<std::string>& includes) cons
    if(IsError(ret))
    {
       util_print_cpu_stats(std::cerr);
-      THROW_ERROR("Error in retrieving gcc system include. Error is " + boost::lexical_cast<std::string>(ret));
+      THROW_ERROR("Error in retrieving gcc system include. Error is " + std::to_string(ret));
    }
 
    std::string list_of_dirs;
@@ -3005,8 +2999,8 @@ void CompilerWrapper::CreateExecutable(const std::list<std::string>& file_names,
    if(IsError(ret))
    {
       CopyStdout(gcc_output_file_name);
-      THROW_ERROR_CODE(COMPILING_EC, "Front-end compiler returns an error during compilation " +
-                                         boost::lexical_cast<std::string>(errno) + " - Command is " + command);
+      THROW_ERROR_CODE(COMPILING_EC, "Front-end compiler returns an error during compilation " + std::to_string(errno) +
+                                         " - Command is " + command);
    }
    else
    {
@@ -3053,7 +3047,7 @@ void CompilerWrapper::ReadParameters()
          }
          const std::string key = parameter.substr(0, equal_size);
          const std::string value = parameter.substr(equal_size + 1, parameter.size() - equal_size + 1);
-         parameter_values[key] = boost::lexical_cast<int>(value);
+         parameter_values[key] = std::stoi(value);
       }
    }
 }
@@ -3150,12 +3144,12 @@ std::string CompilerWrapper::WriteOptimizationsString()
    std::map<std::string, int>::const_iterator it2, it2_end = optimization_values.end();
    for(it2 = optimization_values.begin(); it2 != it2_end; ++it2)
    {
-      optimizations += std::string("-f") + it2->first + "=" + boost::lexical_cast<std::string>(it2->second) + " ";
+      optimizations += std::string("-f") + it2->first + "=" + std::to_string(it2->second) + " ";
    }
    std::map<std::string, int>::const_iterator it3, it3_end = parameter_values.end();
    for(it3 = parameter_values.begin(); it3 != it3_end; ++it3)
    {
-      optimizations += "--param " + it3->first + "=" + boost::lexical_cast<std::string>(it3->second) + " ";
+      optimizations += "--param " + it3->first + "=" + std::to_string(it3->second) + " ";
    }
    return optimizations;
 }
@@ -3210,8 +3204,8 @@ void CompilerWrapper::ReadXml(const std::string& file_name)
                         {
                            THROW_ERROR("Parameter value node without name or value");
                         }
-                        parameter_values[parameter_value_element->get_attribute(STR_XML_gcc_name)->get_value()] =
-                            boost::lexical_cast<int>(parameter_value_element->get_attribute(STR_XML_gcc_value));
+                        parameter_values[parameter_value_element->get_attribute(STR_XML_gcc_name)->get_name()] =
+                            std::stoi(parameter_value_element->get_attribute(STR_XML_gcc_value)->get_value());
                      }
                   }
                   else if(optimizations_child_element->get_name() == STR_XML_gcc_optimization_flags)
@@ -3256,8 +3250,8 @@ void CompilerWrapper::ReadXml(const std::string& file_name)
                         {
                            THROW_ERROR("Optimization value node without name or value");
                         }
-                        optimization_values[optimization_value_element->get_attribute(STR_XML_gcc_name)->get_value()] =
-                            boost::lexical_cast<int>(optimization_value_element->get_attribute(STR_XML_gcc_value));
+                        optimization_values[optimization_value_element->get_attribute(STR_XML_gcc_name)->get_name()] =
+                            std::stoi(optimization_value_element->get_attribute(STR_XML_gcc_value)->get_value());
                      }
                   }
                }
@@ -3419,7 +3413,7 @@ void CompilerWrapper::WriteXml(const std::string& file_name) const
    {
       xml_element* parameter_value_xml = parameter_values_xml->add_child_element(STR_XML_gcc_parameter_value);
       parameter_value_xml->set_attribute(STR_XML_gcc_name, parameter_value->first);
-      parameter_value_xml->set_attribute(STR_XML_gcc_value, boost::lexical_cast<std::string>(parameter_value->second));
+      parameter_value_xml->set_attribute(STR_XML_gcc_value, std::to_string(parameter_value->second));
    }
    xml_element* optimization_flags_xml = optimizations->add_child_element(STR_XML_gcc_parameter_values);
    std::map<std::string, bool>::const_iterator optimization_flag,
@@ -3429,8 +3423,7 @@ void CompilerWrapper::WriteXml(const std::string& file_name) const
    {
       xml_element* optimization_flag_xml = optimization_flags_xml->add_child_element(STR_XML_gcc_optimization_flag);
       optimization_flag_xml->set_attribute(STR_XML_gcc_name, optimization_flag->first);
-      optimization_flag_xml->set_attribute(STR_XML_gcc_value,
-                                           boost::lexical_cast<std::string>(optimization_flag->second));
+      optimization_flag_xml->set_attribute(STR_XML_gcc_value, STR(optimization_flag->second));
    }
    xml_element* optimization_values_xml = optimizations->add_child_element(STR_XML_gcc_parameter_values);
    std::map<std::string, int>::const_iterator optimization_value,
@@ -3440,8 +3433,7 @@ void CompilerWrapper::WriteXml(const std::string& file_name) const
    {
       xml_element* optimization_value_xml = optimization_values_xml->add_child_element(STR_XML_gcc_optimization_value);
       optimization_value_xml->set_attribute(STR_XML_gcc_name, optimization_value->first);
-      optimization_value_xml->set_attribute(STR_XML_gcc_value,
-                                            boost::lexical_cast<std::string>(optimization_value->second));
+      optimization_value_xml->set_attribute(STR_XML_gcc_value, STR(optimization_value->second));
    }
    document.write_to_file_formatted(file_name);
 }

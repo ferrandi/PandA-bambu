@@ -156,7 +156,7 @@ void ProfilingInformation::WriteToXml(xml_element* root, const BBGraphConstRef f
    for(loop = path_profiling.begin(); loop != loop_end; ++loop)
    {
       xml_element* loop_xml = path_profiling_xml->add_child_element(STR_XML_host_profiling_paths_loop);
-      WRITE_XNVM2(STR_XML_host_profiling_id, boost::lexical_cast<std::string>(loop->first), loop_xml);
+      WRITE_XNVM2(STR_XML_host_profiling_id, std::to_string(loop->first), loop_xml);
       const std::map<CustomOrderedSet<unsigned int>, long double>& loop_path_profiling = loop->second;
       std::map<CustomOrderedSet<unsigned int>, long double>::const_iterator loop_path,
           loop_path_end = loop_path_profiling.end();
@@ -168,10 +168,10 @@ void ProfilingInformation::WriteToXml(xml_element* root, const BBGraphConstRef f
          CustomOrderedSet<unsigned int>::const_iterator cer, cer_end = cer_path.end();
          for(cer = cer_path.begin(); cer != cer_end; ++cer)
          {
-            cer_path_string += boost::lexical_cast<std::string>(*cer) + "#";
+            cer_path_string += std::to_string(*cer) + "#";
          }
          WRITE_XNVM2(STR_XML_host_profiling_cers, cer_path_string, path);
-         WRITE_XNVM2(STR_XML_host_profiling_frequency, boost::lexical_cast<std::string>(loop_path->second), path);
+         WRITE_XNVM2(STR_XML_host_profiling_frequency, std::to_string(loop_path->second), path);
       }
    }
 
@@ -191,10 +191,8 @@ void ProfilingInformation::WriteToXml(xml_element* root, const BBGraphConstRef f
        ++ordered_bb_execution)
    {
       xml_element* bb_execution_xml = bb_executions_xml->add_child_element(STR_XML_host_profiling_bb_execution);
-      WRITE_XNVM2(STR_XML_host_profiling_id, boost::lexical_cast<std::string>(ordered_bb_execution->first),
-                  bb_execution_xml);
-      WRITE_XNVM2(STR_XML_host_profiling_executions, boost::lexical_cast<std::string>(ordered_bb_execution->second),
-                  bb_execution_xml);
+      WRITE_XNVM2(STR_XML_host_profiling_id, std::to_string(ordered_bb_execution->first), bb_execution_xml);
+      WRITE_XNVM2(STR_XML_host_profiling_executions, std::to_string(ordered_bb_execution->second), bb_execution_xml);
    }
 
    /// Map used to print profiling information in deterministic order
@@ -215,11 +213,11 @@ void ProfilingInformation::WriteToXml(xml_element* root, const BBGraphConstRef f
        ++ordered_edge_execution)
    {
       xml_element* edge_execution_xml = edge_executions_xml->add_child_element(STR_XML_host_profiling_edge_execution);
-      WRITE_XNVM2(STR_XML_host_profiling_source_id,
-                  boost::lexical_cast<std::string>(ordered_edge_execution->first.first), edge_execution_xml);
-      WRITE_XNVM2(STR_XML_host_profiling_target_id,
-                  boost::lexical_cast<std::string>(ordered_edge_execution->first.second), edge_execution_xml);
-      WRITE_XNVM2(STR_XML_host_profiling_executions, boost::lexical_cast<std::string>(ordered_edge_execution->second),
+      WRITE_XNVM2(STR_XML_host_profiling_source_id, std::to_string(ordered_edge_execution->first.first),
+                  edge_execution_xml);
+      WRITE_XNVM2(STR_XML_host_profiling_target_id, std::to_string(ordered_edge_execution->first.second),
+                  edge_execution_xml);
+      WRITE_XNVM2(STR_XML_host_profiling_executions, std::to_string(ordered_edge_execution->second),
                   edge_execution_xml);
    }
 
@@ -228,9 +226,8 @@ void ProfilingInformation::WriteToXml(xml_element* root, const BBGraphConstRef f
    for(avg_iteration = avg_iterations.begin(); avg_iteration != avg_iteration_end; ++avg_iteration)
    {
       xml_element* avg_iteration_xml = avg_iterations_xml->add_child_element(STR_XML_host_profiling_avg_iteration);
-      WRITE_XNVM2(STR_XML_host_profiling_id, boost::lexical_cast<std::string>(avg_iteration->first), avg_iteration_xml);
-      WRITE_XNVM2(STR_XML_host_profiling_iterations, boost::lexical_cast<std::string>(avg_iteration->second),
-                  avg_iteration_xml);
+      WRITE_XNVM2(STR_XML_host_profiling_id, std::to_string(avg_iteration->first), avg_iteration_xml);
+      WRITE_XNVM2(STR_XML_host_profiling_iterations, std::to_string(avg_iteration->second), avg_iteration_xml);
    }
 
    xml_element* abs_iterations_xml = root->add_child_element(STR_XML_host_profiling_abs_iterations);
@@ -238,9 +235,8 @@ void ProfilingInformation::WriteToXml(xml_element* root, const BBGraphConstRef f
    for(abs_iteration = abs_iterations.begin(); abs_iteration != abs_iteration_end; ++abs_iteration)
    {
       xml_element* abs_iteration_xml = abs_iterations_xml->add_child_element(STR_XML_host_profiling_abs_iteration);
-      WRITE_XNVM2(STR_XML_host_profiling_id, boost::lexical_cast<std::string>(abs_iteration->first), abs_iteration_xml);
-      WRITE_XNVM2(STR_XML_host_profiling_iterations, boost::lexical_cast<std::string>(abs_iteration->second),
-                  abs_iteration_xml);
+      WRITE_XNVM2(STR_XML_host_profiling_id, std::to_string(abs_iteration->first), abs_iteration_xml);
+      WRITE_XNVM2(STR_XML_host_profiling_iterations, std::to_string(abs_iteration->second), abs_iteration_xml);
    }
 
    xml_element* max_iterations_xml = root->add_child_element(STR_XML_host_profiling_max_iterations);
@@ -248,9 +244,8 @@ void ProfilingInformation::WriteToXml(xml_element* root, const BBGraphConstRef f
    for(max_iteration = max_iterations.begin(); max_iteration != max_iteration_end; ++max_iteration)
    {
       xml_element* max_iteration_xml = max_iterations_xml->add_child_element(STR_XML_host_profiling_max_iteration);
-      WRITE_XNVM2(STR_XML_host_profiling_id, boost::lexical_cast<std::string>(max_iteration->first), max_iteration_xml);
-      WRITE_XNVM2(STR_XML_host_profiling_iterations, boost::lexical_cast<std::string>(max_iteration->second),
-                  max_iteration_xml);
+      WRITE_XNVM2(STR_XML_host_profiling_id, std::to_string(max_iteration->first), max_iteration_xml);
+      WRITE_XNVM2(STR_XML_host_profiling_iterations, std::to_string(max_iteration->second), max_iteration_xml);
    }
 }
 

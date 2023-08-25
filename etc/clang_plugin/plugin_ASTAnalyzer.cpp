@@ -61,6 +61,8 @@
 #include <regex>
 #include <string>
 
+#define REWRITE_REGEX
+
 static std::map<std::string, std::map<clang::SourceLocation, std::map<std::string, std::string>>> file_loc_attr;
 
 /* Maps an interface name to its attributes, and the attribute names to their value */
@@ -258,7 +260,9 @@ namespace clang
             return t;
          }
          else
+         {
             return t;
+         }
       }
 
       std::string GetTypeNameCanonical(const QualType& t, const PrintingPolicy& pp) const
@@ -486,9 +490,10 @@ namespace clang
                      else
                      {
                         const auto paramTypeRemTD = RemoveTypedef(argType);
+                        const auto paramTypeOrigTD =argType;
                         ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
-                        ParamTypeNameOrig = paramTypeRemTD.getAsString(pp);
-                        ParamTypeInclude = getIncludes(paramTypeRemTD);
+                        ParamTypeNameOrig = paramTypeOrigTD.getAsString(pp);
+                        ParamTypeInclude = getIncludes(paramTypeOrigTD);
                      }
                      if(attr_val.find("interface_type") != attr_val.end())
                      {
@@ -517,11 +522,12 @@ namespace clang
                         else
                         {
                         const auto suffix = argType->isPointerType() ? "*" : "&";
-                        const auto paramTypeRemTD = RemoveTypedef(argType->getPointeeType());
+                        const auto paramTypeOrigTD =argType->getPointeeType();
+                        const auto paramTypeRemTD = RemoveTypedef(paramTypeOrigTD);
                         getSizeInBytes(paramTypeRemTD);
                         ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + suffix;
-                        ParamTypeNameOrig = paramTypeRemTD.getAsString(pp) + suffix;
-                        ParamTypeInclude = getIncludes(paramTypeRemTD);
+                        ParamTypeNameOrig = paramTypeOrigTD.getAsString(pp) + suffix;
+                        ParamTypeInclude = getIncludes(paramTypeOrigTD);
                      }
                      const auto is_channel_if = ParamTypeName.find("ac_channel<") == 0 ||
                                                 ParamTypeName.find("stream<") == 0 ||
@@ -544,11 +550,12 @@ namespace clang
                   }
                   else
                   {
+                     const auto paramTypeOrigTD =argType;
                      const auto paramTypeRemTD = RemoveTypedef(argType);
                      getSizeInBytes(paramTypeRemTD);
                      ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
-                     ParamTypeNameOrig = paramTypeRemTD.getAsString(pp);
-                     ParamTypeInclude = getIncludes(paramTypeRemTD);
+                     ParamTypeNameOrig = paramTypeOrigTD.getAsString(pp);
+                     ParamTypeInclude = getIncludes(paramTypeOrigTD);
                      if(!argType->isBuiltinType() && !argType->isEnumeralType())
                      {
                         interface = "none";
@@ -573,8 +580,52 @@ namespace clang
                   Fun2Params[fname].push_back(pname);
 
                   const auto remove_spaces = [](std::string& str) {
+                  // The default CentOS 7 system compiler is gcc 4.8.5, which ships an
+                  // incomplete version of <regex> in libstdc++. As such, the following
+                  // line of code will not compile with the system compiler or any other
+                  // compiler that relies on the default system libstdc++. When using
+                  // toolchains built with /opt/rh/devtoolset-9/ (gcc 9.3.1) or that can
+                  // provide their own c++ libs, this is no longer an issue.
+#ifndef REWRITE_REGEX
                      str = std::regex_replace(str, std::regex(" ([<>&*])|([<>&*]) | $|^ "), "$1$2");
+#else
+                     const char anchors[] = "[<>&*]";
+                     const char remove = ' ';
+
+                     size_t num_deleted = 0;
+                     for (int i = str.size() - 1; i > 0; i--) {
+                        char curr = str[i];
+                        char prev = str[i-1];
+
+                        char curr_in_anchors = 0;
+                        char prev_in_anchors = 0;
+                        for(size_t j = 0; j < sizeof(anchors)-1; j++) {
+                           curr_in_anchors |= (curr == anchors[j]);
+                           prev_in_anchors |= (prev == anchors[j]);
+                        }
+
+                               // "delete" the curr/prev char by shifting it to the end
+                        if (curr == remove && (i == str.size() - 1 || prev_in_anchors)) {
+                           for (size_t k = i; k < str.size() - 1; k++) {
+                              str[k] = str[k+1];
+                           }
+                           str[str.size() - 1] = curr;
+                           num_deleted++;
+                        }
+                        else if (prev == remove && (i == 1 || curr_in_anchors)) {
+                           for (size_t k = i-1; k < str.size() - 1; k++) {
+                              str[k] = str[k+1];
+                           }
+                           str[str.size() - 1] = prev;
+                           num_deleted++;
+                        }
+                     }
+
+                     str.erase(str.end() - num_deleted, str.end());
+#endif
                   };
+
+
 
                   remove_spaces(ParamTypeName);
                   remove_spaces(ParamTypeNameOrig);

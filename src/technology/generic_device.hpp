@@ -134,7 +134,7 @@ class generic_device
    template <typename G>
    void set_parameter(const std::string& key, G value)
    {
-      parameters[key] = boost::lexical_cast<std::string>(value);
+      parameters[key] = std::to_string(value);
    }
 
    /**

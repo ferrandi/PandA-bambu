@@ -94,7 +94,7 @@ const std::string structural_type_descriptor::get_name() const
    {
       if(type == i)
       {
-         return boost::lexical_cast<std::string>(s_typeNames[i]);
+         return std::string(s_typeNames[i]);
       }
    }
    return "UNKNOWN";
@@ -680,8 +680,8 @@ void structural_object::type_resize(unsigned long long new_bit_size)
       }
       case structural_type_descriptor::BOOL:
       {
-         THROW_ASSERT(new_bit_size == 1, "BOOL only supports single bit values: " +
-                                             boost::lexical_cast<std::string>(new_bit_size) + " - " + get_path());
+         THROW_ASSERT(new_bit_size == 1,
+                      "BOOL only supports single bit values: " + std::to_string(new_bit_size) + " - " + get_path());
          type->size = new_bit_size;
          break;
       }
@@ -694,7 +694,7 @@ void structural_object::type_resize(unsigned long long new_bit_size)
       case structural_type_descriptor::UNKNOWN:
       default:
          THROW_ERROR("Not correct resizing  " + get_path() + " (" + type->id_type + ") New size " +
-                     boost::lexical_cast<std::string>(new_bit_size));
+                     std::to_string(new_bit_size));
    }
 }
 
@@ -741,7 +741,7 @@ void structural_object::type_resize(unsigned long long new_bit_size, unsigned lo
       case structural_type_descriptor::UNKNOWN:
       default:
          THROW_ERROR("Not correct resizing " + get_path() + " (" + type->id_type + ") New size " +
-                     boost::lexical_cast<std::string>(new_bit_size) + "(" + STR(new_vec_size) + ")");
+                     std::to_string(new_bit_size) + "(" + STR(new_vec_size) + ")");
    }
 }
 
@@ -940,7 +940,7 @@ void structural_object::xload(const xml_element* Enode, structural_objectRef, st
       }
    }
    THROW_ASSERT(has_structural_type_descriptor,
-                "A structural object has to have a type." + boost::lexical_cast<std::string>(Enode->get_line()));
+                "A structural object has to have a type." + std::to_string(Enode->get_line()));
 }
 
 void structural_object::xwrite(xml_element* Enode)
@@ -1694,8 +1694,7 @@ void port_o::xload(const xml_element* Enode, structural_objectRef _owner, struct
       }
       if(EnodeC->get_name() == GET_CLASS_NAME(port_o))
       {
-         THROW_ASSERT(CE_XVM(dir, EnodeC),
-                      "Port has to have a direction." + boost::lexical_cast<std::string>(EnodeC->get_line()));
+         THROW_ASSERT(CE_XVM(dir, EnodeC), "Port has to have a direction." + std::to_string(EnodeC->get_line()));
          std::string dir_string;
          LOAD_XVFM(dir_string, EnodeC, dir);
          THROW_ASSERT(dir == port_o::to_port_direction(dir_string),
@@ -1786,7 +1785,7 @@ void port_o::xwrite(xml_element* rootnode)
    xml_element* Enode_CO = Enode->add_child_element("connected_objects");
    for(unsigned int i = 0; i < connected_objects.size(); i++)
    {
-      WRITE_XNVM2("CON" + boost::lexical_cast<std::string>(i), connected_objects[i].lock()->get_path(), Enode_CO);
+      WRITE_XNVM2("CON" + std::to_string(i), connected_objects[i].lock()->get_path(), Enode_CO);
    }
    if(is_clock != is_clock_DEFAULT)
    {
@@ -2380,7 +2379,7 @@ void constant_o::xwrite(xml_element* rootnode)
    xml_element* Enode_CO = Enode->add_child_element("connected_objects");
    for(unsigned int i = 0; i < connected_objects.size(); i++)
    {
-      WRITE_XNVM2("CON" + boost::lexical_cast<std::string>(i), connected_objects[i].lock()->get_path(), Enode_CO);
+      WRITE_XNVM2("CON" + std::to_string(i), connected_objects[i].lock()->get_path(), Enode_CO);
    }
 }
 
@@ -2782,7 +2781,7 @@ void signal_o::xwrite(xml_element* rootnode)
    xml_element* Enode_CO = Enode->add_child_element("connected_objects");
    for(unsigned int i = 0; i < connected_objects.size(); i++)
    {
-      WRITE_XNVM2("CON" + boost::lexical_cast<std::string>(i), connected_objects[i].lock()->get_path(), Enode_CO);
+      WRITE_XNVM2("CON" + std::to_string(i), connected_objects[i].lock()->get_path(), Enode_CO);
    }
    for(auto& signal : signals_)
    {
@@ -2833,7 +2832,7 @@ void signal_o::add_n_signals(unsigned int n_signals, structural_objectRef _owner
    {
       p = structural_objectRef(new signal_o(debug_level, _owner, signal_o_K));
       p->set_type(get_typeRef());
-      p->set_id(boost::lexical_cast<std::string>(i));
+      p->set_id(std::to_string(i));
       signals_[i] = p;
    }
    THROW_ASSERT(signal_type == signal_vector_o_K, "inconsistent data structure");
@@ -2916,8 +2915,7 @@ bool module::get_keep_hierarchy() const
 
 structural_objectRef module::get_positional_port(unsigned int index) const
 {
-   THROW_ASSERT(positional_map.find(index) != positional_map.end(),
-                "no port at index " + boost::lexical_cast<std::string>(index));
+   THROW_ASSERT(positional_map.find(index) != positional_map.end(), "no port at index " + std::to_string(index));
    return positional_map.find(index)->second;
 }
 
@@ -3505,8 +3503,7 @@ void module::copy(structural_objectRef dest) const
 #endif
    for(unsigned int i = 0; i < last_position_port; i++)
    {
-      THROW_ASSERT(positional_map.find(i) != positional_map.end(),
-                   "port " + boost::lexical_cast<std::string>(i) + " does not exist");
+      THROW_ASSERT(positional_map.find(i) != positional_map.end(), "port " + std::to_string(i) + " does not exist");
       const structural_objectRef port = positional_map.find(i)->second;
       port_o::port_direction dir = port_o::GEN;
       if(port->get_kind() == port_o_K)
@@ -4027,8 +4024,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
       if(EnodeC->get_name() == GET_CLASS_NAME(port_o) || EnodeC->get_name() == GET_CLASS_NAME(port_vector_o))
       {
          port_o::port_direction dir;
-         THROW_ASSERT(CE_XVM(dir, EnodeC),
-                      "Port has to have a direction." + boost::lexical_cast<std::string>(EnodeC->get_line()));
+         THROW_ASSERT(CE_XVM(dir, EnodeC), "Port has to have a direction." + std::to_string(EnodeC->get_line()));
          std::string dir_string;
          LOAD_XVFM(dir_string, EnodeC, dir);
          dir = port_o::to_port_direction(dir_string);
@@ -4397,7 +4393,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          }
          else
          {
-            THROW_ERROR("Not supported connected size: " + boost::lexical_cast<std::string>(elements.size()));
+            THROW_ERROR("Not supported connected size: " + std::to_string(elements.size()));
          }
          THROW_ASSERT(connnected_object, "Connected object not correctly identified: " + conn);
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -4965,12 +4961,12 @@ void channel_o::xwrite(xml_element* rootnode)
    auto it_end = impl_interfaces.end();
    for(auto it = impl_interfaces.begin(); it != it_end; ++it)
    {
-      WRITE_XNVM2("II" + boost::lexical_cast<std::string>(it->first), it->second, Enode_II);
+      WRITE_XNVM2("II" + std::to_string(it->first), it->second, Enode_II);
    }
    xml_element* Enode_CO = Enode->add_child_element("connected_objects");
    for(unsigned int i = 0; i < connected_objects.size(); i++)
    {
-      WRITE_XNVM2("CON" + boost::lexical_cast<std::string>(i), connected_objects[i].lock()->get_path(), Enode_CO);
+      WRITE_XNVM2("CON" + std::to_string(i), connected_objects[i].lock()->get_path(), Enode_CO);
    }
 }
 
@@ -5106,7 +5102,7 @@ void port_o::add_n_ports(unsigned int n_ports, structural_objectRef _owner)
    {
       structural_objectRef p = structural_objectRef(new port_o(debug_level, _owner, dir, port_o_K));
       p->set_type(get_typeRef());
-      p->set_id(boost::lexical_cast<std::string>(currentPortNumber + i));
+      p->set_id(std::to_string(currentPortNumber + i));
       ports.push_back(p);
    }
    THROW_ASSERT(port_type == port_vector_o_K, "inconsistent data structure");

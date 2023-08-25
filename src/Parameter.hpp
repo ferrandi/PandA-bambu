@@ -68,6 +68,7 @@
 #include "custom_set.hpp"
 #include "exceptions.hpp"
 #include "refcount.hpp"
+#include "string_manipulation.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
@@ -558,7 +559,7 @@ class Parameter
    template <typename G>
    void setOption(const std::string& name, const G value)
    {
-      Options[name] = boost::lexical_cast<std::string>(value);
+      Options[name] = STR(value);
    }
 
    /**
@@ -569,7 +570,7 @@ class Parameter
    template <typename G>
    void setOption(const char* name, const G value)
    {
-      Options[std::string(name)] = boost::lexical_cast<std::string>(value);
+      Options[std::string(name)] = STR(value);
    }
 
    /**
@@ -580,7 +581,7 @@ class Parameter
    template <typename G>
    void setOption(const enum enum_option name, const G value)
    {
-      enum_options[name] = boost::lexical_cast<std::string>(value);
+      enum_options[name] = STR(value);
    }
 
    /**

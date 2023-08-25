@@ -1453,40 +1453,37 @@ void tree_node_index_factory::operator()(const attr* obj, unsigned int& mask)
 #undef ATTR_SEQ
 }
 
-#define SET_NODE_ID(field, type)                                                      \
-   if(GetPointer<type>(source_tn)->field)                                             \
-   {                                                                                  \
-      unsigned int node_id = GET_INDEX_NODE(GetPointer<type>(source_tn)->field);      \
-      THROW_ASSERT(remap.find(node_id) != remap.end(),                                \
-                   "missing an index: " + boost::lexical_cast<std::string>(node_id)); \
-      node_id = remap.find(node_id)->second;                                          \
-      dynamic_cast<type*>(curr_tree_node_ptr)->field = TM->GetTreeReindex(node_id);   \
+#define SET_NODE_ID(field, type)                                                                        \
+   if(GetPointer<type>(source_tn)->field)                                                               \
+   {                                                                                                    \
+      unsigned int node_id = GET_INDEX_NODE(GetPointer<type>(source_tn)->field);                        \
+      THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index: " + std::to_string(node_id)); \
+      node_id = remap.find(node_id)->second;                                                            \
+      dynamic_cast<type*>(curr_tree_node_ptr)->field = TM->GetTreeReindex(node_id);                     \
    }
 
-#define SEQ_SET_NODE_ID(list_field, type)                                                            \
-   if(!GetPointer<type>(source_tn)->list_field.empty())                                              \
-   {                                                                                                 \
-      for(const auto& i : GetPointer<type>(source_tn)->list_field)                                   \
-      {                                                                                              \
-         unsigned int node_id = GET_INDEX_NODE(i);                                                   \
-         THROW_ASSERT(remap.find(node_id) != remap.end(),                                            \
-                      "missing an index: " + boost::lexical_cast<std::string>(node_id));             \
-         node_id = remap.find(node_id)->second;                                                      \
-         dynamic_cast<type*>(curr_tree_node_ptr)->list_field.push_back(TM->GetTreeReindex(node_id)); \
-      }                                                                                              \
+#define SEQ_SET_NODE_ID(list_field, type)                                                                  \
+   if(!GetPointer<type>(source_tn)->list_field.empty())                                                    \
+   {                                                                                                       \
+      for(const auto& i : GetPointer<type>(source_tn)->list_field)                                         \
+      {                                                                                                    \
+         unsigned int node_id = GET_INDEX_NODE(i);                                                         \
+         THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index: " + std::to_string(node_id)); \
+         node_id = remap.find(node_id)->second;                                                            \
+         dynamic_cast<type*>(curr_tree_node_ptr)->list_field.push_back(TM->GetTreeReindex(node_id));       \
+      }                                                                                                    \
    }
 
-#define SET_SET_NODE_ID(list_field, type)                                                         \
-   if(!GetPointer<type>(source_tn)->list_field.empty())                                           \
-   {                                                                                              \
-      for(const auto& i : GetPointer<type>(source_tn)->list_field)                                \
-      {                                                                                           \
-         unsigned int node_id = GET_INDEX_NODE(i);                                                \
-         THROW_ASSERT(remap.find(node_id) != remap.end(),                                         \
-                      "missing an index: " + boost::lexical_cast<std::string>(node_id));          \
-         node_id = remap.find(node_id)->second;                                                   \
-         dynamic_cast<type*>(curr_tree_node_ptr)->list_field.insert(TM->GetTreeReindex(node_id)); \
-      }                                                                                           \
+#define SET_SET_NODE_ID(list_field, type)                                                                  \
+   if(!GetPointer<type>(source_tn)->list_field.empty())                                                    \
+   {                                                                                                       \
+      for(const auto& i : GetPointer<type>(source_tn)->list_field)                                         \
+      {                                                                                                    \
+         unsigned int node_id = GET_INDEX_NODE(i);                                                         \
+         THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index: " + std::to_string(node_id)); \
+         node_id = remap.find(node_id)->second;                                                            \
+         dynamic_cast<type*>(curr_tree_node_ptr)->list_field.insert(TM->GetTreeReindex(node_id));          \
+      }                                                                                                    \
    }
 
 #define LSEQ_SET_NODE_ID(list_field, type)                                                                             \
@@ -1496,8 +1493,7 @@ void tree_node_index_factory::operator()(const attr* obj, unsigned int& mask)
       for(std::list<tree_nodeRef>::const_iterator i = GetPointer<type>(source_tn)->list_field.begin(); i != vend; ++i) \
       {                                                                                                                \
          unsigned int node_id = GET_INDEX_NODE(*i);                                                                    \
-         THROW_ASSERT(remap.find(node_id) != remap.end(),                                                              \
-                      "missing an index: " + boost::lexical_cast<std::string>(node_id));                               \
+         THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index: " + std::to_string(node_id));             \
          node_id = remap.find(node_id)->second;                                                                        \
          dynamic_cast<type*>(curr_tree_node_ptr)->list_field.push_back(TM->GetTreeReindex(node_id));                   \
       }                                                                                                                \
@@ -2112,8 +2108,7 @@ void tree_node_index_factory::operator()(const ssa_name* obj, unsigned int& mask
    for(const auto& def_stmt : GetPointer<const ssa_name>(source_tn)->CGetDefStmts())
    {
       unsigned int node_id = def_stmt->index;
-      THROW_ASSERT(remap.find(node_id) != remap.end(),
-                   "missing an index: " + boost::lexical_cast<std::string>(node_id));
+      THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index: " + std::to_string(node_id));
       node_id = remap.find(node_id)->second;
       dynamic_cast<ssa_name*>(curr_tree_node_ptr)->AddDefStmt(TM->GetTreeReindex(node_id));
    }

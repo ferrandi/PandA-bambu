@@ -30,7 +30,9 @@ fi
 includes="$(grep -oE '((-I|-isystem) ?[^ ]+)' <<< ${CFLAGS} | tr '\n' ' ')"
 defines="$(grep -oE '(-D(\\.|[^ ])+)' <<< ${CFLAGS} | tr '\n' ' ')"
 CFLAGS="${m_option} -fPIC -funroll-loops -O2 ${includes} ${defines}"
-LDFLAGS="-lpthread -lstdc++ -lm"
+# Forward LD_LIBRARY_PATH overrides
+IFS=':' read -r -a LD_LIBS <<< "${LD_LIBRARY_PATH}"
+LDFLAGS="-lpthread -lstdc++ -lm ${LD_LIBS[@]/#/-L}"
 mdpi_src="${script_dir}/mdpi.cpp"
 build_dir="$(dirname $(echo "$@" | sed -E 's/.*-o ([^ ]+).*/\1/'))"
 

@@ -58,7 +58,6 @@
 #include "testbench_generation_constants.hpp"
 #include "utility.hpp"
 
-#include <boost/lexical_cast/try_lexical_convert.hpp>
 #include <cmath>
 #include <regex>
 #include <string>
@@ -271,7 +270,7 @@ void SimulationTool::DetermineCycles(unsigned long long int& accum_cycles, unsig
    int cosim_retval;
    try
    {
-      cosim_retval = boost::lexical_cast<int>(values);
+      cosim_retval = std::stoi(values);
    }
    catch(...)
    {
