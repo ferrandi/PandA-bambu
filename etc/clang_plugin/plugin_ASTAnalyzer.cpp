@@ -629,6 +629,10 @@ namespace clang
 
                   remove_spaces(ParamTypeName);
                   remove_spaces(ParamTypeNameOrig);
+                  if(ParamTypeNameOrig=="size_t")
+                  {
+                     ParamTypeInclude = "stddef.h";
+                  }
                   remove_spaces(ParamTypeInclude);
 
                   attr_val["interface_type"] = interface;
