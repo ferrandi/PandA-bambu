@@ -37,27 +37,17 @@
  * Implementation of the functions that parse the technology information from files.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
  *
  */
 
 #include "parse_technology.hpp"
-
 #include "Parameter.hpp"
-#include "cpu_time.hpp"
 #include "exceptions.hpp"
-#include "fileIO.hpp"
-#include "library_manager.hpp"
 #include "polixml.hpp"
-#include "string_manipulation.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 #include "utility.hpp"
 #include "xml_dom_parser.hpp"
-#include <boost/algorithm/string/trim.hpp>
-#include <filesystem>
-#include <iosfwd>
 #include <string>
 #include <vector>
 
@@ -111,64 +101,5 @@ void read_technology_File(const std::string& fn, const technology_managerRef& TM
    catch(...)
    {
       THROW_ERROR("Error during technology file parsing");
-   }
-}
-
-void read_technology_library(const technology_managerRef& TM, const ParameterConstRef& Param)
-{
-#ifndef NDEBUG
-   int debug_level = Param->get_class_debug_level("parse_technology");
-#endif
-
-   if(Param->isOption("input_xml_library_file"))
-   {
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "(koala) Reading the XML technology library");
-
-      std::string LibraryName;
-      auto XmlLibraryList = Param->getOption<std::string>("input_xml_library_file");
-      std::vector<std::string> SplittedLibs = SplitString(XmlLibraryList, ";");
-      for(unsigned int i = 0; i < SplittedLibs.size(); i++)
-      {
-         if(SplittedLibs.empty())
-         {
-            continue;
-         }
-         LibraryName = SplittedLibs[i];
-         long xmlTime;
-         START_TIME(xmlTime);
-         read_technology_File(SplittedLibs[i], TM, Param);
-         STOP_TIME(xmlTime);
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
-                       "(koala) Read the XML technology library file \"" + LibraryName + "\" in " +
-                           std::to_string(print_cpu_time(xmlTime)) + " seconds;\n");
-      }
-   }
-}
-
-void write_xml_technology_File(const std::string& f, library_manager* LM)
-{
-   try
-   {
-      xml_document document;
-      xml_element* nodeRoot = document.create_root_node("technology");
-      LM->xwrite(nodeRoot);
-      document.write_to_file_formatted(f);
-      LM->set_info(library_manager::XML, f);
-   }
-   catch(const char* msg)
-   {
-      std::cerr << msg << std::endl;
-   }
-   catch(const std::string& msg)
-   {
-      std::cerr << msg << std::endl;
-   }
-   catch(const std::exception& ex)
-   {
-      std::cout << "Exception caught: " << ex.what() << std::endl;
-   }
-   catch(...)
-   {
-      std::cerr << "unknown exception" << std::endl;
    }
 }
