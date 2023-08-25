@@ -2296,12 +2296,12 @@ int BambuParameter::Exec()
             }
             if(strcmp(long_options[option_index].name, "data-bus-bitsize") == 0)
             {
-               setOption(OPT_data_bus_bitsize, boost::lexical_cast<int>(optarg));
+               setOption(OPT_data_bus_bitsize, std::stoi(optarg));
                break;
             }
             if(strcmp(long_options[option_index].name, "addr-bus-bitsize") == 0)
             {
-               setOption(OPT_addr_bus_bitsize, boost::lexical_cast<int>(optarg));
+               setOption(OPT_addr_bus_bitsize, std::stoi(optarg));
                break;
             }
             if(strcmp(long_options[option_index].name, "simulator") == 0)

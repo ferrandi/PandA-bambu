@@ -71,8 +71,8 @@ DesignFlowStepRef ParserFlowStepFactory::CreateFlowStep(const std::string& signa
 {
    THROW_ASSERT(signature.find(GetPrefix() + "::") == 0, signature);
    const auto step_to_be_created = signature.substr(GetPrefix().size() + 2);
-   const auto parser_flow_step_type = static_cast<ParserFlowStep_Type>(
-       boost::lexical_cast<int>(step_to_be_created.substr(0, step_to_be_created.find("::"))));
+   const auto parser_flow_step_type =
+       static_cast<ParserFlowStep_Type>(std::stoi(step_to_be_created.substr(0, step_to_be_created.find("::"))));
    const auto file_name = step_to_be_created.substr(step_to_be_created.find("::") + 2);
    switch(parser_flow_step_type)
    {

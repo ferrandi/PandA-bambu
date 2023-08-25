@@ -1077,8 +1077,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "                  Pipelined unit cannot be chained: starting time is " +
-                                    boost::lexical_cast<std::string>(current_starting_time) + " stage period is " +
-                                    boost::lexical_cast<std::string>(current_stage_period));
+                                    std::to_string(current_starting_time) + " stage period is " +
+                                    std::to_string(current_stage_period));
                   if(black_list.find(fu_type) == black_list.end())
                   {
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
@@ -1090,8 +1090,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "                  It cannot be chained: starting time is " +
-                                    boost::lexical_cast<std::string>(current_starting_time) + " ending time is " +
-                                    boost::lexical_cast<std::string>(current_ending_time));
+                                    std::to_string(current_starting_time) + " ending time is " +
+                                    std::to_string(current_ending_time));
                   if(black_list.find(fu_type) == black_list.end())
                   {
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
@@ -1117,8 +1117,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "                  Chaining with a store or a load or an unbounded in input is not "
                                 "possible -> starting time " +
-                                    boost::lexical_cast<std::string>(current_starting_time) +
-                                    " ending time: " + boost::lexical_cast<std::string>(current_ending_time));
+                                    std::to_string(current_starting_time) +
+                                    " ending time: " + std::to_string(current_ending_time));
                   if(black_list.find(fu_type) == black_list.end())
                   {
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
@@ -1131,8 +1131,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  READ_COND or MULTI_READ_COND
                cannot be chained with non-direct operations -> starting time " +
-               boost::lexical_cast<std::string>(current_starting_time) + " ending time: " +
-               boost::lexical_cast<std::string>(current_ending_time)); if(black_list.find(fu_type) == black_list.end())
+               std::to_string(current_starting_time) + " ending time: " +
+               std::to_string(current_ending_time)); if(black_list.find(fu_type) == black_list.end())
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   black_list.at(fu_type).insert(current_vertex);
                   continue;
@@ -1142,8 +1142,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   PRINT_DBG_MEX(
                       DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                       "                  Chaining with an asynchronous load is not possible -> starting time " +
-                          boost::lexical_cast<std::string>(current_starting_time) +
-                          " ending time: " + boost::lexical_cast<std::string>(current_ending_time));
+                          std::to_string(current_starting_time) +
+                          " ending time: " + std::to_string(current_ending_time));
                   if(black_list.find(fu_type) == black_list.end())
                   {
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
@@ -1155,8 +1155,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                TYPE_STORE) && HLS->allocation_information->is_indirect_access_memory_unit(fu_type))
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  Chaining with a store is not
-               possible -> starting time " + boost::lexical_cast<std::string>(current_starting_time) + " ending time: "
-               + boost::lexical_cast<std::string>(current_ending_time)); if(black_list.find(fu_type) ==
+               possible -> starting time " + std::to_string(current_starting_time) + " ending time: "
+               + std::to_string(current_ending_time)); if(black_list.find(fu_type) ==
                black_list.end()) black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   black_list.at(fu_type).insert(current_vertex);
                   continue;
@@ -1165,8 +1165,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                HLS->allocation_information->is_indirect_access_memory_unit(fu_type))
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  Chaining with a load is not
-               possible -> starting time " + boost::lexical_cast<std::string>(current_starting_time) + " ending time: "
-               + boost::lexical_cast<std::string>(current_ending_time)); if(black_list.find(fu_type) ==
+               possible -> starting time " + std::to_string(current_starting_time) + " ending time: "
+               + std::to_string(current_ending_time)); if(black_list.find(fu_type) ==
                black_list.end()) black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   black_list.at(fu_type).insert(current_vertex);
                   continue;
@@ -1175,8 +1175,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "                  Chaining is possible but not allowed -> starting time " +
-                                    boost::lexical_cast<std::string>(current_starting_time) +
-                                    " ending time: " + boost::lexical_cast<std::string>(current_ending_time));
+                                    std::to_string(current_starting_time) +
+                                    " ending time: " + std::to_string(current_ending_time));
                   if(black_list.find(fu_type) == black_list.end())
                   {
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
@@ -1897,9 +1897,9 @@ void parametric_list_based::compute_starting_ending_time_alap(
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                  "                  Operation " + GET_NAME(flow_graph, v) + " starts at " +
-                     boost::lexical_cast<std::string>(current_starting_time) + " and should end before of " +
-                     boost::lexical_cast<std::string>(max_ending_time) + " execution time " + STR(op_execution_time) +
-                     " stage period " + STR(stage_period));
+                     std::to_string(current_starting_time) + " and should end before of " +
+                     std::to_string(max_ending_time) + " execution time " + STR(op_execution_time) + " stage period " +
+                     STR(stage_period));
 }
 
 bool parametric_list_based::BB_update_resources_use(unsigned int& used_resources, const unsigned int fu_type) const

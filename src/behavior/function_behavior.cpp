@@ -226,7 +226,7 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
                else if(splitted.size() == 2)
                {
                   pipeline_enabled = true;
-                  initiation_time = boost::lexical_cast<int>(splitted.at(1));
+                  initiation_time = std::stoi(splitted.at(1));
                   if(initiation_time == 1)
                   {
                      simple_pipeline = true;

@@ -401,7 +401,7 @@ void functional_unit::print(std::ostream& os) const
    }
    if(area_m)
    {
-      PP(os, "A: " + boost::lexical_cast<std::string>(area_m->get_area_value()) + "\n");
+      PP(os, "A: " + std::to_string(area_m->get_area_value()) + "\n");
    }
 #if HAVE_CIRCUIT_BUILT
    if(CM)
@@ -699,37 +699,33 @@ void functional_unit::xwrite(xml_element* rootnode, const technology_nodeRef tn,
       {
          ordered_attributes.push_back("area");
       }
-      attributes["area"] =
-          attributeRef(new attribute(attribute::FLOAT64, boost::lexical_cast<std::string>(area_value)));
+      attributes["area"] = attributeRef(new attribute(attribute::FLOAT64, std::to_string(area_value)));
       if(area_m)
       {
          if(area_m->get_resource_value(area_info::REGISTERS) != 0.0)
          {
             attributes["REGISTERS"] = attributeRef(
-                new attribute(attribute::FLOAT64,
-                              boost::lexical_cast<std::string>(area_m->get_resource_value(area_info::REGISTERS))));
+                new attribute(attribute::FLOAT64, std::to_string(area_m->get_resource_value(area_info::REGISTERS))));
          }
          if(area_m->get_resource_value(area_info::SLICE_LUTS) != 0.0)
          {
             attributes["SLICE_LUTS"] = attributeRef(
-                new attribute(attribute::FLOAT64,
-                              boost::lexical_cast<std::string>(area_m->get_resource_value(area_info::SLICE_LUTS))));
+                new attribute(attribute::FLOAT64, std::to_string(area_m->get_resource_value(area_info::SLICE_LUTS))));
          }
          if(area_m->get_resource_value(area_info::LUT_FF_PAIRS) != 0.0)
          {
             attributes["LUT_FF_PAIRS"] = attributeRef(
-                new attribute(attribute::FLOAT64,
-                              boost::lexical_cast<std::string>(area_m->get_resource_value(area_info::LUT_FF_PAIRS))));
+                new attribute(attribute::FLOAT64, std::to_string(area_m->get_resource_value(area_info::LUT_FF_PAIRS))));
          }
          if(area_m->get_resource_value(area_info::DSP) != 0.0)
          {
-            attributes["DSP"] = attributeRef(new attribute(
-                attribute::FLOAT64, boost::lexical_cast<std::string>(area_m->get_resource_value(area_info::DSP))));
+            attributes["DSP"] = attributeRef(
+                new attribute(attribute::FLOAT64, std::to_string(area_m->get_resource_value(area_info::DSP))));
          }
          if(area_m->get_resource_value(area_info::BRAM) != 0.0)
          {
-            attributes["BRAM"] = attributeRef(new attribute(
-                attribute::FLOAT64, boost::lexical_cast<std::string>(area_m->get_resource_value(area_info::BRAM))));
+            attributes["BRAM"] = attributeRef(
+                new attribute(attribute::FLOAT64, std::to_string(area_m->get_resource_value(area_info::BRAM))));
          }
       }
    }

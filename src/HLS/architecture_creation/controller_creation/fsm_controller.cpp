@@ -598,8 +598,7 @@ void fsm_controller::create_state_machine(std::string& parse)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                            "-->Considering successor state " + stg->CGetStateInfo(boost::target(e, *stg))->name);
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                           "---Number of inputs is " + boost::lexical_cast<std::string>(in_num));
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Number of inputs is " + std::to_string(in_num));
             std::vector<std::string> in(in_num, "-");
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing condition");

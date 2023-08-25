@@ -443,7 +443,7 @@ void BBEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e) const
    if(selector & PP_SELECTOR)
    {
       out << ",label=\"";
-      out << boost::lexical_cast<std::string>(bb_edge_info->get_epp_value());
+      out << std::to_string(bb_edge_info->get_epp_value());
       out << "\"";
    }
    else if(selector & FCFG_SELECTOR)

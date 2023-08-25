@@ -52,7 +52,6 @@
 #include "exceptions.hpp"                              // for THROW_UNREACH...
 #include "string_manipulation.hpp"                     // for GET_CLASS
 #include "symbolic_application_frontend_flow_step.hpp" // for SymbolicAppli...
-#include <boost/lexical_cast.hpp>                      // for lexical_cast
 #include <iostream>                                    // for ios_base::fai...
 
 ApplicationFrontendFlowStep::ApplicationFrontendFlowStep(const application_managerRef _AppM,
@@ -185,7 +184,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case(STRING_CST_FIX):
       case(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP):
       {
-         return "Frontend::" + boost::lexical_cast<std::string>(frontend_flow_step_type);
+         return "Frontend::" + STR(frontend_flow_step_type);
       }
 
       default:

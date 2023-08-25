@@ -108,9 +108,9 @@ void tree_node_finder::operator()(const srcp* obj, unsigned int& mask)
 {
    tree_node_mask::operator()(obj, mask);
    find_res = find_res && (tree_node_schema.find(TOK(TOK_SRCP)) == tree_node_schema.end() ||
-                           tree_node_schema.find(TOK(TOK_SRCP))->second ==
-                               obj->include_name + ":" + boost::lexical_cast<std::string>(obj->line_number) + ":" +
-                                   boost::lexical_cast<std::string>(obj->column_number));
+                           tree_node_schema.find(TOK(TOK_SRCP))->second == obj->include_name + ":" +
+                                                                               std::to_string(obj->line_number) + ":" +
+                                                                               std::to_string(obj->column_number));
 }
 
 void tree_node_finder::operator()(const decl_node* obj, unsigned int& mask)

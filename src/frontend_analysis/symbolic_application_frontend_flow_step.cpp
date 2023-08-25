@@ -49,7 +49,6 @@
 #include "function_frontend_flow_step.hpp" // for DesignFlowManagerConstRef
 #include "hash_helper.hpp"                 // for hash
 #include "string_manipulation.hpp"         // for GET_CLASS
-#include <boost/lexical_cast.hpp>          // for lexical_cast
 #include <iostream>                        // for ios_base::failure
 
 SymbolicApplicationFrontendFlowStep::SymbolicApplicationFrontendFlowStep(
@@ -105,8 +104,8 @@ std::string SymbolicApplicationFrontendFlowStep::GetKindText() const
 const std::string
 SymbolicApplicationFrontendFlowStep::ComputeSignature(const FrontendFlowStepType represented_frontend_flow_step_type)
 {
-   return "Frontend::" + boost::lexical_cast<std::string>(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP) + "(" +
-          boost::lexical_cast<std::string>(represented_frontend_flow_step_type) + ")";
+   return "Frontend::" + STR(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP) + "(" + STR(represented_frontend_flow_step_type) +
+          ")";
 }
 
 std::string SymbolicApplicationFrontendFlowStep::GetSignature() const

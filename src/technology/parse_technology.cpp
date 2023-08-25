@@ -140,7 +140,7 @@ void read_technology_library(const technology_managerRef& TM, const ParameterCon
          STOP_TIME(xmlTime);
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                        "(koala) Read the XML technology library file \"" + LibraryName + "\" in " +
-                           boost::lexical_cast<std::string>(print_cpu_time(xmlTime)) + " seconds;\n");
+                           std::to_string(print_cpu_time(xmlTime)) + " seconds;\n");
       }
    }
 }

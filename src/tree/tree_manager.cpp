@@ -2031,7 +2031,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
                // THROW_ASSERT(global_decl_symbol_table.find(symbol_name+"-"+symbol_scope) ==
                // global_decl_symbol_table.end(), "duplicated symbol in global_decl_symbol_table:
                // "+global_decl_symbol_table.find(symbol_name+"-"+symbol_scope)->first + " == " +
-               // boost::lexical_cast<std::string>(ti.first));
+               // std::to_string(ti.first));
                continue;
             }
 
