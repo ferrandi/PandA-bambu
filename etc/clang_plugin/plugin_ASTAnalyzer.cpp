@@ -486,9 +486,10 @@ namespace clang
                      else
                      {
                         const auto paramTypeRemTD = RemoveTypedef(argType);
+                        const auto paramTypeOrigTD =argType;
                         ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
-                        ParamTypeNameOrig = paramTypeRemTD.getAsString(pp);
-                        ParamTypeInclude = getIncludes(paramTypeRemTD);
+                        ParamTypeNameOrig = paramTypeOrigTD.getAsString(pp);
+                        ParamTypeInclude = getIncludes(paramTypeOrigTD);
                      }
                      if(attr_val.find("interface_type") != attr_val.end())
                      {
@@ -517,11 +518,12 @@ namespace clang
                      else
                      {
                         const auto suffix = argType->isPointerType() ? "*" : "&";
-                        const auto paramTypeRemTD = RemoveTypedef(argType->getPointeeType());
-                        getSizeInBytes(paramTypeRemTD);
+                        const auto paramTypeOrigTD =argType->getPointeeType();
+                        const auto paramTypeRemTD = RemoveTypedef(paramTypeOrigTD);
+                        getSizeInBytes(paramTypeOrigTD);
                         ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + suffix;
-                        ParamTypeNameOrig = paramTypeRemTD.getAsString(pp) + suffix;
-                        ParamTypeInclude = getIncludes(paramTypeRemTD);
+                        ParamTypeNameOrig = paramTypeOrigTD.getAsString(pp) + suffix;
+                        ParamTypeInclude = getIncludes(paramTypeOrigTD);
                      }
                      const auto is_channel_if = ParamTypeName.find("ac_channel<") == 0 ||
                                                 ParamTypeName.find("stream<") == 0 ||
@@ -544,11 +546,12 @@ namespace clang
                   }
                   else
                   {
+                     const auto paramTypeOrigTD =argType;
                      const auto paramTypeRemTD = RemoveTypedef(argType);
-                     getSizeInBytes(paramTypeRemTD);
+                     getSizeInBytes(argType);
                      ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
-                     ParamTypeNameOrig = paramTypeRemTD.getAsString(pp);
-                     ParamTypeInclude = getIncludes(paramTypeRemTD);
+                     ParamTypeNameOrig = paramTypeOrigTD.getAsString(pp);
+                     ParamTypeInclude = getIncludes(paramTypeOrigTD);
                      if(!argType->isBuiltinType() && !argType->isEnumeralType())
                      {
                         interface = "none";
