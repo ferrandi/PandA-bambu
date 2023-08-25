@@ -223,22 +223,17 @@ void Parameter::CheckParameters()
    if(isOption(OPT_gcc_m32_mx32))
    {
       const auto mopt = getOption<std::string>(OPT_gcc_m32_mx32);
-      if(mopt == "-m32" &&
-         CompilerWrapper::hasCompilerGCCM32(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
+      const auto default_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
+      if(mopt == "-m32" && CompilerWrapper::hasCompilerGCCM32(default_compiler))
       {
          setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
       }
-      else if((mopt == "-m32" && !CompilerWrapper::hasCompilerCLANGM32(
-                                     getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))) ||
-              (mopt == "-mx32" &&
-               !CompilerWrapper::hasCompilerMX32(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))) ||
-              (mopt == "-m64" &&
-               !CompilerWrapper::hasCompilerM64(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))))
+      else if((mopt == "-m32" && !CompilerWrapper::hasCompilerCLANGM32(default_compiler)) ||
+              (mopt == "-mx32" && !CompilerWrapper::hasCompilerMX32(default_compiler)) ||
+              (mopt == "-m64" && !CompilerWrapper::hasCompilerM64(default_compiler)))
       {
-         THROW_ERROR(
-             "Option " + mopt + " not supported by " +
-             CompilerWrapper::getCompilerSuffix(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)) +
-             " compiler.");
+         THROW_ERROR("Option " + mopt + " not supported by " + CompilerWrapper::getCompilerSuffix(default_compiler) +
+                     " compiler.");
       }
    }
 #endif
@@ -513,8 +508,7 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
 #if HAVE_FROM_C_BUILT
          if(std::string(optarg_param) == "umpversion")
          {
-            CompilerWrapper_CompilerTarget preferred_compiler;
-            preferred_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
+            const auto preferred_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
             PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0,
                           CompilerWrapper::getCompilerVersion(static_cast<int>(preferred_compiler)));
             exit_success = true;

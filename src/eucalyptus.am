@@ -36,8 +36,7 @@ lib_eucalyptus_la_LIBADD += \
    lib_polixml.la \
    lib_technology.la \
    lib_utility.la \
-   lib_wrapper.la \
-   $(BOOST_SYSTEM_LIB)
+   lib_wrapper.la
 
 if BUILD_LIB_CODE_ESTIMATION
    eucalyptus_CPPFLAGS += \
