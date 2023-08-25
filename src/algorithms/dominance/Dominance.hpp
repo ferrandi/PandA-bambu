@@ -490,7 +490,8 @@ class dom_info
       while(v > 1)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Analyzing node in position " + std::to_string(v) + " v_" + std::to_string(index_map[dfs_to_bb[v]]));
+                        "-->Analyzing node in position " + std::to_string(v) + " v_" +
+                            std::to_string(index_map[dfs_to_bb[v]]));
          Vertex bb = dfs_to_bb[v];
          edge e;
          bool do_fake_exit_edge = false;
@@ -611,7 +612,8 @@ class dom_info
          TBB d = dom[dfs_order[index_map[*vi]]];
          if(dfs_to_bb[d] != boost::graph_traits<GraphObj>::null_vertex())
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dom is " + std::to_string(index_map[dfs_to_bb[d]]));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---dom is " + std::to_string(index_map[dfs_to_bb[d]]));
             dom_map[*vi] = dfs_to_bb[d];
          }
       }
