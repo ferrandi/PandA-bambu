@@ -123,8 +123,7 @@ DesignFlowStep_Status BBOrderComputation::InternalExec()
    {
       vertex actual = to_visit.front();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Checking vertex BB" +
-                         boost::lexical_cast<std::string>(ebb->CGetBBNodeInfo(actual)->block->number));
+                     "-->Checking vertex BB" + std::to_string(ebb->CGetBBNodeInfo(actual)->block->number));
       to_visit.pop_front();
       MARK[actual] = true;
       function_behavior->bb_lm->add(actual, index++);
@@ -137,26 +136,23 @@ DesignFlowStep_Status BBOrderComputation::InternalExec()
          bool toadd = true;
          vertex next = boost::target(*o, *ebb);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Checking successor vertex BB" +
-                            boost::lexical_cast<std::string>(ebb->CGetBBNodeInfo(next)->block->number));
+                        "-->Checking successor vertex BB" + std::to_string(ebb->CGetBBNodeInfo(next)->block->number));
          /// Checking if all successor's predecessors have been examinated
          for(boost::tie(i, i_end) = boost::in_edges(next, *ebb); i != i_end; i++)
          {
             if(!MARK[boost::source(*i, *ebb)])
             {
-               INDENT_DBG_MEX(
-                   DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                   "---Checking its predecessor BB" +
-                       boost::lexical_cast<std::string>(ebb->CGetBBNodeInfo(boost::source(*i, *ebb))->block->number) +
-                       " - Not marked");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Checking its predecessor BB" +
+                                  std::to_string(ebb->CGetBBNodeInfo(boost::source(*i, *ebb))->block->number) +
+                                  " - Not marked");
                toadd = false;
                break;
             }
-            INDENT_DBG_MEX(
-                DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                "---Checking its predecessor BB" +
-                    boost::lexical_cast<std::string>(ebb->CGetBBNodeInfo(boost::source(*i, *ebb))->block->number) +
-                    " - Marked");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Checking its predecessor BB" +
+                               std::to_string(ebb->CGetBBNodeInfo(boost::source(*i, *ebb))->block->number) +
+                               " - Marked");
          }
          if(toadd)
          {

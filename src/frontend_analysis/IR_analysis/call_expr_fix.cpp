@@ -111,8 +111,7 @@ DesignFlowStep_Status call_expr_fix::InternalExec()
    /// Checking if there are gimple_call or call_expr for which the fix apply
    for(const auto& block : sl->list_of_bloc)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->analyzing BB" + boost::lexical_cast<std::string>(block.first));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->analyzing BB" + std::to_string(block.first));
       for(const auto& statement : block.second->CGetStmtList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing node " + GET_NODE(statement)->ToString());

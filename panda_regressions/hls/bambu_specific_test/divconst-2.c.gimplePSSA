@@ -1,7 +1,7 @@
 GCC_VERSION: "4.9.3"
 PLUGIN_VERSION: "0.12"
 @1      var_decl         name: @2       type: @3       scpe: @4      
-                         srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":23:6      
+                         srcp: "<orig-file>":23:6      
                          uid : 1754     static         init: @5      
                          size: @6       algn: 128      used: 1       
                          readonly       addr_not_taken 
@@ -47,7 +47,7 @@ PLUGIN_VERSION: "0.12"
 
 ;; main ()
 @29     function_decl    name: @30      type: @31      scpe: @4      
-                         srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":28:1      
+                         srcp: "<orig-file>":28:1      
                          uid : 1755     body: @32     
 @30     identifier_node  strg: "main" lngt: 4       
 @31     function_type    unql: @33      size: @34      algn: 8       
@@ -79,119 +79,119 @@ PLUGIN_VERSION: "0.12"
 @34     integer_cst      type: @15      value: 8
 @35     integer_type     name: @70      size: @71      algn: 32      
                          prec: 32       min : @72      max : @73     
-@36     gimple_assign    scpe: @29      bb_index: 2        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":35:9      
+@36     gimple_assign    scpe: @29      bb_index: 2        srcp: "<orig-file>":35:9      
                          time_weight: 0        size_weight: 0        op  : @74     
                          op  : @10     
-@37     gimple_assign    scpe: @29      bb_index: 2        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":10:3      
+@37     gimple_assign    scpe: @29      bb_index: 2        srcp: "<orig-file>":10:3      
                          time_weight: 1        size_weight: 1        op  : @75     
                          op  : @76     
-@38     gimple_assign    scpe: @29      bb_index: 2        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":35:9      
+@38     gimple_assign    scpe: @29      bb_index: 2        srcp: "<orig-file>":35:9      
                          time_weight: 0        size_weight: 0        op  : @77     
                          op  : @10     
-@39     gimple_assign    scpe: @29      bb_index: 2        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":4:3      
+@39     gimple_assign    scpe: @29      bb_index: 2        srcp: "<orig-file>":4:3      
                          time_weight: 1        size_weight: 1        op  : @78     
                          op  : @79     
-@40     gimple_assign    scpe: @29      bb_index: 2        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":35:9      
+@40     gimple_assign    scpe: @29      bb_index: 2        srcp: "<orig-file>":35:9      
                          time_weight: 0        size_weight: 0        op  : @80     
                          op  : @10     
-@41     gimple_assign    scpe: @29      bb_index: 2        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":20:15     
+@41     gimple_assign    scpe: @29      bb_index: 2        srcp: "<orig-file>":20:15     
                          time_weight: 1        size_weight: 1        op  : @81     
                          op  : @82     
-@42     gimple_assign    scpe: @29      bb_index: 2        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":20:37     
+@42     gimple_assign    scpe: @29      bb_index: 2        srcp: "<orig-file>":20:37     
                          time_weight: 1        size_weight: 1        op  : @83     
                          op  : @84     
-@43     gimple_assign    scpe: @29      bb_index: 2        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":20:43     
+@43     gimple_assign    scpe: @29      bb_index: 2        srcp: "<orig-file>":20:43     
                          time_weight: 1        size_weight: 1        op  : @85     
                          op  : @86     
-@44     gimple_assign    scpe: @29      bb_index: 2        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":20:3      
+@44     gimple_assign    scpe: @29      bb_index: 2        srcp: "<orig-file>":20:3      
                          time_weight: 0        size_weight: 0        op  : @87     
                          op  : @88     
-@45     gimple_cond      scpe: @29      bb_index: 2        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":35:8      
+@45     gimple_cond      scpe: @29      bb_index: 2        srcp: "<orig-file>":35:8      
                          time_weight: 2        size_weight: 2        op  : @89     
-@46     gimple_assign    scpe: @29      bb_index: 3        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":34:9      
+@46     gimple_assign    scpe: @29      bb_index: 3        srcp: "<orig-file>":34:9      
                          time_weight: 0        size_weight: 0        op  : @90     
                          op  : @91     
 @47     gimple_assign    scpe: @29      bb_index: 3        memuse: @92     
                          vuse: @92      vuse: @93      vuse: @94     
-                         srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":35:9      
+                         srcp: "<orig-file>":35:9      
                          time_weight: 1        size_weight: 1        op  : @95     
                          op  : @96     
-@48     gimple_assign    scpe: @29      bb_index: 3        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":10:3      
+@48     gimple_assign    scpe: @29      bb_index: 3        srcp: "<orig-file>":10:3      
                          time_weight: 1        size_weight: 1        op  : @97     
                          op  : @98     
 @49     gimple_assign    scpe: @29      bb_index: 3        memuse: @92     
                          vuse: @92      vuse: @93      vuse: @94     
-                         srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":35:9      
+                         srcp: "<orig-file>":35:9      
                          time_weight: 1        size_weight: 1        op  : @99     
                          op  : @100    
-@50     gimple_assign    scpe: @29      bb_index: 3        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":4:3      
+@50     gimple_assign    scpe: @29      bb_index: 3        srcp: "<orig-file>":4:3      
                          time_weight: 1        size_weight: 1        op  : @101    
                          op  : @102    
 @51     gimple_assign    scpe: @29      bb_index: 3        memuse: @92     
                          vuse: @92      vuse: @93      vuse: @94     
-                         srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":35:9      
+                         srcp: "<orig-file>":35:9      
                          time_weight: 1        size_weight: 1        op  : @103    
                          op  : @104    
-@52     gimple_assign    scpe: @29      bb_index: 3        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":20:15     
+@52     gimple_assign    scpe: @29      bb_index: 3        srcp: "<orig-file>":20:15     
                          time_weight: 1        size_weight: 1        op  : @105    
                          op  : @106    
-@53     gimple_assign    scpe: @29      bb_index: 3        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":20:37     
+@53     gimple_assign    scpe: @29      bb_index: 3        srcp: "<orig-file>":20:37     
                          time_weight: 1        size_weight: 1        op  : @107    
                          op  : @108    
-@54     gimple_assign    scpe: @29      bb_index: 3        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":20:43     
+@54     gimple_assign    scpe: @29      bb_index: 3        srcp: "<orig-file>":20:43     
                          time_weight: 1        size_weight: 1        op  : @109    
                          op  : @110    
-@55     gimple_assign    scpe: @29      bb_index: 3        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":20:3      
+@55     gimple_assign    scpe: @29      bb_index: 3        srcp: "<orig-file>":20:3      
                          time_weight: 0        size_weight: 0        op  : @111    
                          op  : @112    
-@56     gimple_cond      scpe: @29      bb_index: 3        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":35:8      
+@56     gimple_cond      scpe: @29      bb_index: 3        srcp: "<orig-file>":35:8      
                          time_weight: 2        size_weight: 2        op  : @113    
-@57     gimple_assign    scpe: @29      bb_index: 4        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":34:9      
+@57     gimple_assign    scpe: @29      bb_index: 4        srcp: "<orig-file>":34:9      
                          time_weight: 1        size_weight: 1        op  : @114    
                          op  : @115    
 @58     gimple_assign    scpe: @29      bb_index: 4        memuse: @92     
                          vuse: @92      vuse: @93      vuse: @94     
-                         srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":35:9      
+                         srcp: "<orig-file>":35:9      
                          time_weight: 1        size_weight: 1        op  : @116    
                          op  : @117    
-@59     gimple_assign    scpe: @29      bb_index: 4        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":10:3      
+@59     gimple_assign    scpe: @29      bb_index: 4        srcp: "<orig-file>":10:3      
                          time_weight: 1        size_weight: 1        op  : @118    
                          op  : @119    
 @60     gimple_assign    scpe: @29      bb_index: 4        memuse: @92     
                          vuse: @92      vuse: @93      vuse: @94     
-                         srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":35:9      
+                         srcp: "<orig-file>":35:9      
                          time_weight: 1        size_weight: 1        op  : @120    
                          op  : @121    
-@61     gimple_assign    scpe: @29      bb_index: 4        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":4:3      
+@61     gimple_assign    scpe: @29      bb_index: 4        srcp: "<orig-file>":4:3      
                          time_weight: 1        size_weight: 1        op  : @122    
                          op  : @123    
 @62     gimple_assign    scpe: @29      bb_index: 4        memuse: @92     
                          vuse: @92      vuse: @93      vuse: @94     
-                         srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":35:9      
+                         srcp: "<orig-file>":35:9      
                          time_weight: 1        size_weight: 1        op  : @124    
                          op  : @125    
-@63     gimple_assign    scpe: @29      bb_index: 4        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":20:15     
+@63     gimple_assign    scpe: @29      bb_index: 4        srcp: "<orig-file>":20:15     
                          time_weight: 1        size_weight: 1        op  : @126    
                          op  : @127    
-@64     gimple_assign    scpe: @29      bb_index: 4        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":20:37     
+@64     gimple_assign    scpe: @29      bb_index: 4        srcp: "<orig-file>":20:37     
                          time_weight: 1        size_weight: 1        op  : @128    
                          op  : @129    
-@65     gimple_assign    scpe: @29      bb_index: 4        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":20:43     
+@65     gimple_assign    scpe: @29      bb_index: 4        srcp: "<orig-file>":20:43     
                          time_weight: 1        size_weight: 1        op  : @130    
                          op  : @131    
-@66     gimple_assign    scpe: @29      bb_index: 4        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":20:3      
+@66     gimple_assign    scpe: @29      bb_index: 4        srcp: "<orig-file>":20:3      
                          time_weight: 0        size_weight: 0        op  : @132    
                          op  : @133    
-@67     gimple_cond      scpe: @29      bb_index: 4        srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":35:8      
+@67     gimple_cond      scpe: @29      bb_index: 4        srcp: "<orig-file>":35:8      
                          time_weight: 2        size_weight: 2        op  : @134    
 @68     gimple_call      scpe: @29      bb_index: 5        memuse: @92     
                          memdef: @93      vuse: @92      vuse: @94     
-                         vdef: @93      vover: @93      srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":38:3      
+                         vdef: @93      vover: @93      srcp: "<orig-file>":38:3      
                          time_weight: 11       size_weight: 2        fn  : @135    
                          arg : @136    
 @69     gimple_call      scpe: @29      bb_index: 6        memuse: @92     
                          memdef: @94      vuse: @92      vuse: @93     
-                         vdef: @94      vover: @94      srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":36:7      
+                         vdef: @94      vover: @94      srcp: "<orig-file>":36:7      
                          time_weight: 10       size_weight: 1        fn  : @137    
 @70     type_decl        name: @138     type: @35      srcp: "<built-in>":0:0 
                          uid : 6       
@@ -224,17 +224,17 @@ PLUGIN_VERSION: "0.12"
 @94     ssa_name         type: @143     var : @144     vers: 11      
                          def_stmt: @69      virtual       
 @95     ssa_name         type: @7       vers: 36       def_stmt: @47     
-@96     array_ref        type: @7       srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":35:9      
+@96     array_ref        type: @7       srcp: "<orig-file>":35:9      
                          op  : @1       op  : @90     
 @97     ssa_name         type: @7       vers: 37       def_stmt: @48     
 @98     trunc_mod_expr   type: @7       op  : @95      op  : @139    
 @99     ssa_name         type: @7       vers: 38       def_stmt: @49     
-@100    array_ref        type: @7       srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":35:9      
+@100    array_ref        type: @7       srcp: "<orig-file>":35:9      
                          op  : @1       op  : @90     
 @101    ssa_name         type: @7       vers: 39       def_stmt: @50     
 @102    trunc_div_expr   type: @7       op  : @99      op  : @14     
 @103    ssa_name         type: @7       vers: 40       def_stmt: @51     
-@104    array_ref        type: @7       srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":35:9      
+@104    array_ref        type: @7       srcp: "<orig-file>":35:9      
                          op  : @1       op  : @90     
 @105    ssa_name         type: @7       vers: 41       def_stmt: @52     
 @106    mult_expr        type: @7       op  : @101     op  : @14     
@@ -249,17 +249,17 @@ PLUGIN_VERSION: "0.12"
                          def_stmt: @57     
 @115    plus_expr        type: @35      op  : @90      op  : @91     
 @116    ssa_name         type: @7       vers: 50       def_stmt: @58     
-@117    array_ref        type: @7       srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":35:9      
+@117    array_ref        type: @7       srcp: "<orig-file>":35:9      
                          op  : @1       op  : @114    
 @118    ssa_name         type: @7       vers: 51       def_stmt: @59     
 @119    trunc_mod_expr   type: @7       op  : @116     op  : @139    
 @120    ssa_name         type: @7       vers: 52       def_stmt: @60     
-@121    array_ref        type: @7       srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":35:9      
+@121    array_ref        type: @7       srcp: "<orig-file>":35:9      
                          op  : @1       op  : @114    
 @122    ssa_name         type: @7       vers: 53       def_stmt: @61     
 @123    trunc_div_expr   type: @7       op  : @120     op  : @14     
 @124    ssa_name         type: @7       vers: 54       def_stmt: @62     
-@125    array_ref        type: @7       srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":35:9      
+@125    array_ref        type: @7       srcp: "<orig-file>":35:9      
                          op  : @1       op  : @114    
 @126    ssa_name         type: @7       vers: 55       def_stmt: @63     
 @127    mult_expr        type: @7       op  : @122     op  : @14     
@@ -278,7 +278,7 @@ PLUGIN_VERSION: "0.12"
 @140    boolean_type     name: @150     size: @34      algn: 8       
 @141    integer_cst      type: @7       value: 0
 @142    var_decl         name: @151     type: @35      scpe: @29     
-                         srcp: "/home/ferrandi/software/panda/github3/private-PandA-bambu/panda_regressions/hls/gcc_regression_simple/divconst-2.c":30:7      
+                         srcp: "<orig-file>":30:7      
                          uid : 1757     size: @71      algn: 32      
                          used: 1        addr_not_taken 
 @143    void_type        name: @152     algn: 8       

@@ -205,7 +205,7 @@ int main(int argc, char* argv_orig[])
          const auto input_files = Param->getOption<const CustomSet<std::string>>(OPT_input_file);
 
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
-                       "Created list of files: " + boost::lexical_cast<std::string>(input_files.size()) +
+                       "Created list of files: " + std::to_string(input_files.size()) +
                            " input source code files to be concatenated");
 
          std::map<std::string, std::string> temp_input_files;

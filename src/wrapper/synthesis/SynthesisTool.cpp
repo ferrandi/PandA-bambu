@@ -179,7 +179,7 @@ void SynthesisTool::create_output_directory(const std::string& sub_dir)
       unsigned int progressive = 0;
       do
       {
-         candidate_dir = output_dir + "_" + boost::lexical_cast<std::string>(progressive++);
+         candidate_dir = output_dir + "_" + std::to_string(progressive++);
       } while(std::filesystem::exists(candidate_dir));
       output_dir = candidate_dir;
    }

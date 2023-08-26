@@ -74,7 +74,7 @@
 #include "compiler_wrapper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-#define TOSTRING(id) boost::lexical_cast<std::string>(id)
+#define TOSTRING(id) std::to_string(id)
 
 VarComputation::VarComputation(const ParameterConstRef _parameters, const application_managerRef _AppM,
                                unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)

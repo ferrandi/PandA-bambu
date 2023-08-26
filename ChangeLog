@@ -7,7 +7,7 @@ New features introduced:
 - C/C++ co-simulation support added for Mentor Questasim/Modelsim, Xilinx XSim, and Verilator
 - Memory mapped top interface support
 - C++17 is now required to build PandA Bambu
-- Dependencies from Boost Filesystem and Boost Regex have been dropped (CentOS based system now supported)
+- Dependencies from Boost libraries have been dropped, only headers are needed (CentOS based system now supported)
 - MachSuite benchmarks updated
 - Fixed issues with Bambu LibM implementation
 

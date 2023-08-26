@@ -206,7 +206,7 @@ std::string VHDL_writer::type_converter_size(const structural_objectRef& cir)
             }
             else
             {
-               return " (" + boost::lexical_cast<std::string>(Type->size - 1) + " downto 0)";
+               return " (" + std::to_string(Type->size - 1) + " downto 0)";
             }
          }
          else
@@ -221,7 +221,7 @@ std::string VHDL_writer::type_converter_size(const structural_objectRef& cir)
             }
             else
             {
-               return " (0 to " + boost::lexical_cast<std::string>(Type->size - 1) + ")";
+               return " (0 to " + std::to_string(Type->size - 1) + ")";
             }
          }
       }
@@ -238,8 +238,7 @@ std::string VHDL_writer::type_converter_size(const structural_objectRef& cir)
             {
                auto lsb = GetPointer<port_o>(cir)->get_lsb();
                return "((" + (PORTSIZE_PREFIX + port_name) + "*" + (BITSIZE_PREFIX + port_name) + ")+(" +
-                      boost::lexical_cast<std::string>(static_cast<int>(lsb) - 1) + ") downto " +
-                      boost::lexical_cast<std::string>(lsb) + ") ";
+                      std::to_string(static_cast<int>(lsb) - 1) + ") downto " + std::to_string(lsb) + ") ";
             }
             else
             {
@@ -257,8 +256,7 @@ std::string VHDL_writer::type_converter_size(const structural_objectRef& cir)
                auto lsb = GetPointer<signal_o>(cir)->get_lsb();
                auto msb = size_fs * n_sign + lsb;
 
-               return "(" + boost::lexical_cast<std::string>(static_cast<int>(msb) - 1) + " downto " +
-                      boost::lexical_cast<std::string>(lsb) + ") ";
+               return "(" + std::to_string(static_cast<int>(msb) - 1) + " downto " + std::to_string(lsb) + ") ";
             }
             else if(cir->get_kind() == port_vector_o_K)
             {
@@ -268,12 +266,11 @@ std::string VHDL_writer::type_converter_size(const structural_objectRef& cir)
                const auto Type_fp = first_port->get_typeRef();
                auto size_fp = Type_fp->vector_size > 0 ? Type_fp->size * Type_fp->vector_size : Type_fp->size;
                auto msb = size_fp * n_ports + lsb;
-               return "(" + boost::lexical_cast<std::string>(static_cast<int>(msb) - 1) + " downto " +
-                      boost::lexical_cast<std::string>(lsb) + ") ";
+               return "(" + std::to_string(static_cast<int>(msb) - 1) + " downto " + std::to_string(lsb) + ") ";
             }
             if(Type->vector_size > 1 && Type->size == 1)
             {
-               return "(" + boost::lexical_cast<std::string>(static_cast<int>(Type->vector_size) - 1) + " downto 0) ";
+               return "(" + std::to_string(static_cast<int>(Type->vector_size) - 1) + " downto 0) ";
             }
             else if(Type->vector_size == 1 && Type->size == 1)
             {
@@ -281,7 +278,7 @@ std::string VHDL_writer::type_converter_size(const structural_objectRef& cir)
             }
             else if(Type->vector_size == 0 && Type->size != 0)
             {
-               return "(" + boost::lexical_cast<std::string>(static_cast<int>(Type->size) - 1) + " downto 0) ";
+               return "(" + std::to_string(static_cast<int>(Type->size) - 1) + " downto 0) ";
             }
             else
             {
@@ -372,11 +369,9 @@ std::string VHDL_writer::may_slice_string(const structural_objectRef& cir)
             if(Owner->get_kind() == port_vector_o_K)
             {
                auto lsb = GetPointer<port_o>(Owner)->get_lsb();
-               return "(((" + boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_id()) + "+1)*" +
-                      (BITSIZE_PREFIX + port_name) + ")+(" +
-                      boost::lexical_cast<std::string>(static_cast<int>(lsb) - 1) + ") downto (" +
-                      boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_id()) + "*" +
-                      (BITSIZE_PREFIX + port_name) + ")+" + boost::lexical_cast<std::string>(lsb) + ")";
+               return "(((" + GetPointer<port_o>(cir)->get_id() + "+1)*" + (BITSIZE_PREFIX + port_name) + ")+(" +
+                      std::to_string(static_cast<int>(lsb) - 1) + ") downto (" + GetPointer<port_o>(cir)->get_id() +
+                      "*" + (BITSIZE_PREFIX + port_name) + ")+" + std::to_string(lsb) + ")";
             }
             else
             {
@@ -391,14 +386,11 @@ std::string VHDL_writer::may_slice_string(const structural_objectRef& cir)
                auto size_fp = Type_fp->vector_size > 0 ? Type_fp->size * Type_fp->vector_size : Type_fp->size;
                auto lsb = GetPointer<port_o>(Owner)->get_lsb();
                return "(" +
-                      boost::lexical_cast<std::string>(
-                          (1 + boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) *
-                              static_cast<int>(size_fp) +
-                          static_cast<int>(lsb) - 1) +
+                      std::to_string((1 + std::stoi(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) +
+                                     static_cast<int>(lsb) - 1) +
                       " downto " +
-                      boost::lexical_cast<std::string>((boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) *
-                                                           static_cast<int>(size_fp) +
-                                                       static_cast<int>(lsb)) +
+                      std::to_string((std::stoi(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) +
+                                     static_cast<int>(lsb)) +
                       ")";
             }
             else
@@ -417,12 +409,10 @@ std::string VHDL_writer::may_slice_string(const structural_objectRef& cir)
             if(Owner->get_kind() == port_vector_o_K)
             {
                auto lsb = GetPointer<port_o>(Owner)->get_lsb();
-               return "(((" + boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_id()) + "+1)*" +
-                      (BITSIZE_PREFIX + port_name) + "*" + (NUM_ELEM_PREFIX + port_name) + ")+(" +
-                      boost::lexical_cast<std::string>(static_cast<int>(lsb) - 1) + ") downto (" +
-                      boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_id()) + "*" +
-                      (BITSIZE_PREFIX + port_name) + "*" + (NUM_ELEM_PREFIX + port_name) + ")+" +
-                      boost::lexical_cast<std::string>(lsb) + ")";
+               return "(((" + GetPointer<port_o>(cir)->get_id() + "+1)*" + (BITSIZE_PREFIX + port_name) + "*" +
+                      (NUM_ELEM_PREFIX + port_name) + ")+(" + std::to_string(static_cast<int>(lsb) - 1) + ") downto (" +
+                      GetPointer<port_o>(cir)->get_id() + "*" + (BITSIZE_PREFIX + port_name) + "*" +
+                      (NUM_ELEM_PREFIX + port_name) + ")+" + std::to_string(lsb) + ")";
             }
             else
             {
@@ -437,14 +427,11 @@ std::string VHDL_writer::may_slice_string(const structural_objectRef& cir)
                auto size_fp = Type_fp->vector_size > 0 ? Type_fp->size * Type_fp->vector_size : Type_fp->size;
                auto lsb = GetPointer<port_o>(Owner)->get_lsb();
                return "(" +
-                      boost::lexical_cast<std::string>(
-                          (1 + boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) *
-                              static_cast<int>(size_fp) +
-                          static_cast<int>(lsb) - 1) +
+                      std::to_string((1 + std::stoi(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) +
+                                     static_cast<int>(lsb) - 1) +
                       " downto " +
-                      boost::lexical_cast<std::string>((boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) *
-                                                           static_cast<int>(size_fp) +
-                                                       static_cast<int>(lsb)) +
+                      std::to_string((std::stoi(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) +
+                                     static_cast<int>(lsb)) +
                       ")";
             }
             else

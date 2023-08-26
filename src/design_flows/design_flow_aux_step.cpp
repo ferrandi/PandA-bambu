@@ -42,9 +42,9 @@
  */
 #include "design_flow_aux_step.hpp"
 
-#include "exceptions.hpp"         // for THROW_UNREACHABLE
-#include <boost/lexical_cast.hpp> // for lexical_cast
-#include <ostream>                // for operator<<, basic_ostream
+#include "exceptions.hpp" // for THROW_UNREACHABLE
+#include "string_manipulation.hpp"
+#include <ostream> // for operator<<, basic_ostream
 #include <utility>
 
 AuxDesignFlowStep::AuxDesignFlowStep(std::string _name, const AuxDesignFlowStepType _type,
@@ -62,7 +62,7 @@ void AuxDesignFlowStep::ComputeRelationships(DesignFlowStepSet&, const DesignFlo
 
 const std::string AuxDesignFlowStep::ComputeSignature(const std::string& name, const AuxDesignFlowStepType type)
 {
-   return "AUX::" + boost::lexical_cast<std::string>(type) + "::" + name;
+   return "AUX::" + STR(type) + "::" + name;
 }
 
 DesignFlowStep_Status AuxDesignFlowStep::Exec()

@@ -223,22 +223,17 @@ void Parameter::CheckParameters()
    if(isOption(OPT_gcc_m32_mx32))
    {
       const auto mopt = getOption<std::string>(OPT_gcc_m32_mx32);
-      if(mopt == "-m32" &&
-         CompilerWrapper::hasCompilerGCCM32(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
+      const auto default_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
+      if(mopt == "-m32" && CompilerWrapper::hasCompilerGCCM32(default_compiler))
       {
          setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
       }
-      else if((mopt == "-m32" && !CompilerWrapper::hasCompilerCLANGM32(
-                                     getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))) ||
-              (mopt == "-mx32" &&
-               !CompilerWrapper::hasCompilerMX32(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))) ||
-              (mopt == "-m64" &&
-               !CompilerWrapper::hasCompilerM64(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))))
+      else if((mopt == "-m32" && !CompilerWrapper::hasCompilerCLANGM32(default_compiler)) ||
+              (mopt == "-mx32" && !CompilerWrapper::hasCompilerMX32(default_compiler)) ||
+              (mopt == "-m64" && !CompilerWrapper::hasCompilerM64(default_compiler)))
       {
-         THROW_ERROR(
-             "Option " + mopt + " not supported by " +
-             CompilerWrapper::getCompilerSuffix(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)) +
-             " compiler.");
+         THROW_ERROR("Option " + mopt + " not supported by " + CompilerWrapper::getCompilerSuffix(default_compiler) +
+                     " compiler.");
       }
    }
 #endif
@@ -513,8 +508,7 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
 #if HAVE_FROM_C_BUILT
          if(std::string(optarg_param) == "umpversion")
          {
-            CompilerWrapper_CompilerTarget preferred_compiler;
-            preferred_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
+            const auto preferred_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
             PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0,
                           CompilerWrapper::getCompilerVersion(static_cast<int>(preferred_compiler)));
             exit_success = true;
@@ -534,7 +528,7 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
 #ifndef NDEBUG
          else
          {
-            debug_level = boost::lexical_cast<int>(optarg_param);
+            debug_level = std::stoi(optarg_param);
             setOption(OPT_debug_level, optarg_param);
             break;
          }
@@ -1608,7 +1602,7 @@ CompilerWrapper_OptimizationSet Parameter::getOption(const enum enum_option name
 template <>
 void Parameter::setOption(const enum enum_option name, const CompilerWrapper_OptimizationSet value)
 {
-   enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(value));
+   enum_options[name] = std::to_string(static_cast<int>(value));
 }
 #endif
 
@@ -1629,7 +1623,7 @@ HLSFlowStep_Type Parameter::getOption(const enum enum_option name) const
 template <>
 void Parameter::setOption(const enum enum_option name, const HLSFlowStep_Type hls_flow_step_type)
 {
-   enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(hls_flow_step_type));
+   enum_options[name] = std::to_string(static_cast<int>(hls_flow_step_type));
 }
 
 template <>
@@ -1641,7 +1635,7 @@ MemoryAllocation_Policy Parameter::getOption(const enum enum_option name) const
 template <>
 void Parameter::setOption(const enum enum_option name, const MemoryAllocation_Policy memory_allocation_policy)
 {
-   enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(memory_allocation_policy));
+   enum_options[name] = std::to_string(static_cast<int>(memory_allocation_policy));
 }
 
 template <>
@@ -1654,7 +1648,7 @@ template <>
 void Parameter::setOption(const enum enum_option name,
                           const MemoryAllocation_ChannelsType memory_allocation_channels_type)
 {
-   enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(memory_allocation_channels_type));
+   enum_options[name] = std::to_string(static_cast<int>(memory_allocation_channels_type));
 }
 
 template <>
@@ -1666,7 +1660,7 @@ CliqueCovering_Algorithm Parameter::getOption(const enum enum_option name) const
 template <>
 void Parameter::setOption(const enum enum_option name, const CliqueCovering_Algorithm clique_covering_algorithm)
 {
-   enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(clique_covering_algorithm));
+   enum_options[name] = std::to_string(static_cast<int>(clique_covering_algorithm));
 }
 
 template <>
@@ -1678,7 +1672,7 @@ Evaluation_Mode Parameter::getOption(const enum enum_option name) const
 template <>
 void Parameter::setOption(const enum enum_option name, const Evaluation_Mode evaluation_mode)
 {
-   enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(evaluation_mode));
+   enum_options[name] = std::to_string(static_cast<int>(evaluation_mode));
 }
 
 template <>
@@ -1690,7 +1684,7 @@ ParametricListBased_Metric Parameter::getOption(const enum enum_option name) con
 template <>
 void Parameter::setOption(const enum enum_option name, const ParametricListBased_Metric parametric_list_based_metric)
 {
-   enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(parametric_list_based_metric));
+   enum_options[name] = std::to_string(static_cast<int>(parametric_list_based_metric));
 }
 
 template <>
@@ -1702,7 +1696,7 @@ SDCScheduling_Algorithm Parameter::getOption(const enum enum_option name) const
 template <>
 void Parameter::setOption(const enum enum_option name, const SDCScheduling_Algorithm sdc_scheduling_algorithm)
 {
-   enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(sdc_scheduling_algorithm));
+   enum_options[name] = std::to_string(static_cast<int>(sdc_scheduling_algorithm));
 }
 
 #endif

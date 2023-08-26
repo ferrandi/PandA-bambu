@@ -32,13 +32,9 @@
  */
 /**
  * @file parse_technology.hpp
- * @brief Input and output functions used to read and write the technology data structures.
+ * @brief Input function used to read the technology data structures.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * @warning This file is still in a work in progress state
- * @warning Last modified by $Author$
  *
  */
 #ifndef TECHNOLOGYIO_HPP
@@ -50,10 +46,8 @@
  */
 //@{
 /// RefCount type definition of the technology_manager class structure
-CONSTREF_FORWARD_DECL(technology_manager);
 REF_FORWARD_DECL(technology_manager);
 CONSTREF_FORWARD_DECL(Parameter);
-class library_manager;
 //@}
 
 #include <string>
@@ -62,22 +56,8 @@ class library_manager;
  * Read an xml file describing the technology data structures.
  * @param f the input file name
  * @param TM is the initial technology manager.
- * @return the technology manager.
+ * @param Param is the global parameter.
  */
 void read_technology_File(const std::string& f, const technology_managerRef& TM, const ParameterConstRef& Param);
-
-/**
- * Read and update a library or a set of libraries based on the parameter options
- * @param TM is the technology manager.
- * @param Param is the class containing all the parameters
- */
-void read_technology_library(const technology_managerRef& TM, const ParameterConstRef& param);
-
-/**
- * Write an xml file describing a single library.
- * @param f the output file name
- * @param LM is the pointer to the library to be written
- */
-void write_xml_technology_File(const std::string& f, library_manager* LM);
 
 #endif
