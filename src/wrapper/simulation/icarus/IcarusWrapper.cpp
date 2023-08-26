@@ -150,8 +150,7 @@ unsigned int IcarusWrapper::convert_to_xml(const std::string& SourceFileName, co
    {
       TmpFileName = FileList[0];
    }
-   command += " -x " + TargetFileName + " -d " + boost::lexical_cast<std::string>(icarus_debug_level) +
-              std::string(" ") + TmpFileName;
+   command += " -x " + TargetFileName + " -d " + std::to_string(icarus_debug_level) + std::string(" ") + TmpFileName;
    int err = PandaSystem(Param, command, output_file);
    if(temp_file)
       std::filesystem::remove_all(TmpFileName);

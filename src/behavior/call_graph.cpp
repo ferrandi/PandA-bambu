@@ -105,8 +105,7 @@ FunctionWriter::FunctionWriter(const CallGraph* call_graph)
 void FunctionWriter::operator()(std::ostream& out, const vertex& v) const
 {
    THROW_ASSERT(behaviors.find(Cget_node_info<FunctionInfo, graph>(v, *printing_graph)->nodeID) != behaviors.end(),
-                "Function " +
-                    boost::lexical_cast<std::string>(Cget_node_info<FunctionInfo, graph>(v, *printing_graph)->nodeID) +
+                "Function " + std::to_string(Cget_node_info<FunctionInfo, graph>(v, *printing_graph)->nodeID) +
                     " not found");
    const FunctionBehaviorRef FB =
        behaviors.find(Cget_node_info<FunctionInfo, graph>(v, *printing_graph)->nodeID)->second;

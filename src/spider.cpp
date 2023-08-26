@@ -455,9 +455,8 @@ int main(int argc, char* argv[])
                                benchmark_to_be_removed + " is not in the map");
                   preprocessed_data.erase(preprocessed_data.find(benchmark_to_be_removed));
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, debug_level,
-                                 "Removed " + benchmark_to_be_removed + " with error " +
-                                     boost::lexical_cast<std::string>(max_error) + ": current average error is " +
-                                     boost::lexical_cast<std::string>(error));
+                                 "Removed " + benchmark_to_be_removed + " with error " + std::to_string(max_error) +
+                                     ": current average error is " + std::to_string(error));
                }
                while(true)
                {

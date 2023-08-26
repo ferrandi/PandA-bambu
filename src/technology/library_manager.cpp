@@ -115,7 +115,7 @@ std::string attribute::get_value_type_str() const
    }
    else
    {
-      THROW_ERROR("Not supported attribute type: " + boost::lexical_cast<std::string>(value_type));
+      THROW_ERROR("Not supported attribute type: " + STR(value_type));
    }
    return "<unknown>";
 }
@@ -473,25 +473,6 @@ void library_manager::set_info(unsigned int type, const std::string& information
 void library_manager::erase_info()
 {
    info.clear();
-}
-
-std::string library_manager::get_info(info_t type)
-{
-   if(!is_info(type))
-   {
-      switch(static_cast<info_t>(type))
-      {
-         case XML:
-         {
-            write_xml_technology_File(get_library_name() + ".xml", this);
-            break;
-         }
-         default:
-            THROW_ERROR("Not enough information to return the library information");
-      }
-   }
-   THROW_ASSERT(is_info(type), "The information is not available");
-   return info.find(type)->second;
 }
 
 bool library_manager::is_info(unsigned int type) const

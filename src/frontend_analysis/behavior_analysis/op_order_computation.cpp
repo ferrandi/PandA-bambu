@@ -118,7 +118,7 @@ DesignFlowStep_Status OpOrderComputation::InternalExec()
    {
       vertex actual = to_visit.front();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Checking vertex " + GET_NAME(cfg, actual) + " : " + boost::lexical_cast<std::string>(index));
+                     "-->Checking vertex " + GET_NAME(cfg, actual) + " : " + std::to_string(index));
       to_visit.pop_front();
       MARK[actual] = true;
       function_behavior->lm->add(actual, index++);

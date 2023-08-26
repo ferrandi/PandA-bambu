@@ -110,7 +110,7 @@ endif
 $(I386_CLANG12_EMPTY_PLUGIN) : clang12_plugin_dumpGimpleEmpty.so clang12_plugin_dumpGimpleEmpty_opt.so
 clang12_plugin_dumpGimpleEmpty_opt.so : clang12_plugin_dumpGimpleEmpty.so
 if BUILD_PTAA
-clang12_plugin_dumpGimpleEmpty.so : clang12_plugin_dumpGimpleEmpty.o clang12_dumpGimple.o
+clang12_plugin_dumpGimpleEmpty.so : clang12_plugin_dumpGimpleEmpty.o clang12_dumpGimple.o clang12_HardekopfLin_AA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG12_LIBS) -lversion `$(I386_LLVM_CONFIG12_EXE) --ldflags --libs --system-libs` -lbdd'; \

@@ -201,8 +201,6 @@ class library_manager
 
    bool is_info(unsigned int type) const;
 
-   std::string get_info(const info_t type);
-
    void erase_info();
 
    static void xload(const xml_element* node, const library_managerRef& LM, const ParameterConstRef& Param);

@@ -884,8 +884,7 @@ int treeVocabularyTokenTypes::check_tokens(const char* tok) const
 TreeVocabularyTokenTypes_TokenEnum treeVocabularyTokenTypes::bison2token(int bison) const
 {
    auto el = from_bisontoken_map.find(bison);
-   THROW_ASSERT(el != from_bisontoken_map.end(),
-                "Token " + boost::lexical_cast<std::string>(bison) + " does not exist");
+   THROW_ASSERT(el != from_bisontoken_map.end(), "Token " + std::to_string(bison) + " does not exist");
    return el->second;
 }
 treeVocabularyTokenTypes::treeVocabularyTokenTypes()

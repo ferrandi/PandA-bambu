@@ -2121,7 +2121,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                      }
                      if(fu_module->ExistsParameter("LSB_PARAMETER"))
                      {
-                        int lsb_parameter = boost::lexical_cast<int>(fu_module->GetParameter("LSB_PARAMETER"));
+                        int lsb_parameter = std::stoi(fu_module->GetParameter("LSB_PARAMETER"));
                         if(lsb_parameter < 0)
                         {
                            lsb_parameter = static_cast<int>(curr_LSB);

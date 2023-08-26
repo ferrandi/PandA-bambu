@@ -974,8 +974,8 @@ bool pred;
                     fun_op                  {;}
                     wattr                   {;}
                     fun_tmpl                {;}
-                    fixd_opt                {OPT($11, {NSV(function_decl,fixd,boost::lexical_cast<int>(data->curr_string_number)); NSV(function_decl,fixd_flag,true)})}
-                    virt_opt                {OPT($13, {NSV(function_decl,virt,boost::lexical_cast<int>(data->curr_string_number)); NSV(function_decl,virt_flag,true)})}
+                    fixd_opt                {OPT($11, {NSV(function_decl,fixd,std::stoi(data->curr_string_number)); NSV(function_decl,fixd_flag,true)})}
+                    virt_opt                {OPT($13, {NSV(function_decl,virt,std::stoi(data->curr_string_number)); NSV(function_decl,virt_flag,true)})}
                     fn_opt                  {OPT($15, NS(function_decl,fn))}
                     fun_args                {;}
                     tok_undefined           {;}
@@ -987,7 +987,7 @@ bool pred;
                     tok_reading_memory      {;}
                     pipeline_enabled        {;}
                     simple_pipeline         {;}
-                    initiation_time         {OPT($37, {NSV(function_decl,initiation_time,boost::lexical_cast<int>(data->curr_string_number))})}
+                    initiation_time         {OPT($37, {NSV(function_decl,initiation_time,std::stoi(data->curr_string_number))})}
                     omp_atomic_flag         {;}
                     omp_body_loop_flag      {;}
                     omp_for_wrapper_opt     {;}
@@ -1028,7 +1028,7 @@ bool pred;
                size_opt            {OPT($7, NS(parm_decl, size))}
                algn                {NSV(parm_decl,algn, boost::lexical_cast<unsigned>(data->curr_string_number))}
                tok_artificial_opt  {OPT($11, NSV(decl_node, artificial_flag, true))}
-               used                {NSV(parm_decl, used, boost::lexical_cast<int>(data->curr_string_number))}
+               used                {NSV(parm_decl, used, std::stoi(data->curr_string_number))}
                parm_tok_register   {}
                parm_tok_readonly   {}
                smt_ann_opt         {OPT($19, NS(parm_decl, smt_ann))}
@@ -1074,14 +1074,14 @@ bool pred;
    //var_decl: TOK_BISON_VAR_DECL^ decl_node attr (TOK_BISON_STATIC TOK_BISON_STATIC | TOK_BISON_STATIC |TOK_BISON_EXTERN)? (init)? (size)? algn used (TOK_BISON_REGISTER)?;
    wvar_decl : TOK_BISON_VAR_DECL   {CTN(var_decl)}
                wdecl_node           {}
-               use_tmpl_opt         {OPT($5, NSV(var_decl,use_tmpl,boost::lexical_cast<int>(data->curr_string_number)))}
+               use_tmpl_opt         {OPT($5, NSV(var_decl,use_tmpl,std::stoi(data->curr_string_number)))}
                wattr                {}
                var_decl_ext_stat    {}
                init_opt             {OPT($11, NS(var_decl, init))}
                size_opt             {OPT($13, NS(var_decl, size))}
                algn                 {NSV(var_decl,algn, boost::lexical_cast<unsigned>(data->curr_string_number))}
                tok_packed_opt       {OPT($17, NSV(var_decl, packed_flag, true))}
-               used                 {NSV(var_decl, used, boost::lexical_cast<int>(data->curr_string_number))}
+               used                 {NSV(var_decl, used, std::stoi(data->curr_string_number))}
                var_decl_definitions {;}
                var_decl_uses        {;}
                var_decl_addressings {;}
@@ -1112,7 +1112,7 @@ bool pred;
    var_decl_addressing : TOK_BISON_ADDR_STMT node_id {GetPointer<var_decl>(data->curr_tree_nodeRef)->addressings.insert(data->current_TM->GetTreeReindex(data->curr_NODE_ID));};
 
    //string_cst:	TOK_BISON_STRING_CST^ (type)? strg lngt;
-   wstring_cst : TOK_BISON_STRING_CST{CTN(string_cst)}  type_opt{OPT($3, NS(string_cst,type))}  strg{NSV(string_cst, strg, data->curr_string)}  lngt{NSV(string_cst, lngt, boost::lexical_cast<int>(data->curr_string_number))};
+   wstring_cst : TOK_BISON_STRING_CST{CTN(string_cst)}  type_opt{OPT($3, NS(string_cst,type))}  strg{NSV(string_cst, strg, data->curr_string)}  lngt{NSV(string_cst, lngt, std::stoi(data->curr_string_number))};
 
    //void_type: TOK_BISON_VOID_TYPE^ type_node;
    wvoid_type : TOK_BISON_VOID_TYPE{CTN(void_type)}  wtype_node;
@@ -1664,7 +1664,7 @@ bool pred;
   wvec_new_expr :   TOK_BISON_VEC_NEW_EXPR{CTN(vec_new_expr)}  wexpr_node;
 
   //try_block:      TOK_BISON_TRY_BLOCK^ line body hdlr (next)?;
-  wtry_block : TOK_BISON_TRY_BLOCK{CTN(try_block)}  line{NSV(try_block,line,boost::lexical_cast<int>(data->curr_string_number))}  body{NS(try_block,body)}  hdlr{NS(try_block,hdlr)}  next_opt{OPT($9, NS(try_block,next))};
+  wtry_block : TOK_BISON_TRY_BLOCK{CTN(try_block)}  line{NSV(try_block,line,std::stoi(data->curr_string_number))}  body{NS(try_block,body)}  hdlr{NS(try_block,hdlr)}  next_opt{OPT($9, NS(try_block,next))};
 
   tree_vec_op : op{ADDV(tree_vec, add_op)}
               | tree_vec_op op{ADDV(tree_vec, add_op)}
@@ -1811,7 +1811,7 @@ bool pred;
    wvec_interleavelow_expr : TOC_BISON_VEC_INTERLEAVELOW_EXPR{CTN(vec_interleavelow_expr)}  wbinary_expr;
 
    //return_stmt:    TOK_BISON_RETURN_STMT^ line (expr)?;
-   wreturn_stmt : TOK_BISON_RETURN_STMT{CTN(return_stmt)}  line{NSV(return_stmt,line,boost::lexical_cast<int>(data->curr_string_number))}  expr_opt{OPT($5, NS(return_stmt,expr))};
+   wreturn_stmt : TOK_BISON_RETURN_STMT{CTN(return_stmt)}  line{NSV(return_stmt,line,std::stoi(data->curr_string_number))}  expr_opt{OPT($5, NS(return_stmt,expr))};
 
 
    //postincrement_expr: TOK_BISON_POSTINCREMENT_EXPR^ binary_expr;
@@ -1866,7 +1866,7 @@ bool pred;
    wfdesc_expr : TOK_BISON_FDESC_EXPR{CTN(fdesc_expr)}  wbinary_expr;
 
    //handler:        TOK_BISON_HANDLER^ line body;
-   whandler : TOK_BISON_HANDLER{CTN(handler)}  line{NSV(handler,line,boost::lexical_cast<int>(data->curr_string_number))}  body{NS(handler,body)};
+   whandler : TOK_BISON_HANDLER{CTN(handler)}  line{NSV(handler,line,std::stoi(data->curr_string_number))}  body{NS(handler,body)};
 
    //catch_expr:     TOK_BISON_CATCH_EXPR^ binary_expr;
    wcatch_expr : TOK_BISON_CATCH_EXPR{CTN(catch_expr)}  wbinary_expr;
@@ -1875,7 +1875,7 @@ bool pred;
    wcomponent_ref : TOK_BISON_COMPONENT_REF{CTN(component_ref)}  wternary_expr;
 
    //expr_stmt:      TOK_BISON_EXPR_STMT^ line expr (next)?;
-   wexpr_stmt : TOK_BISON_EXPR_STMT{CTN(expr_stmt)}  line{NSV(expr_stmt,line,boost::lexical_cast<int>(data->curr_string_number))}  expr{NS(expr_stmt,expr)}  next{NS(expr_stmt,next)};
+   wexpr_stmt : TOK_BISON_EXPR_STMT{CTN(expr_stmt)}  line{NSV(expr_stmt,line,std::stoi(data->curr_string_number))}  expr{NS(expr_stmt,expr)}  next{NS(expr_stmt,next)};
 
    //complex_cst:    TOK_BISON_COMPLEX_CST^ type real imag;
    wcomplex_cst : TOK_BISON_COMPLEX_CST{CTN(complex_cst)}  type{NS(complex_cst,type)}  real{NS(complex_cst,real)}  imag{NS(complex_cst,imag)};
@@ -1943,7 +1943,7 @@ bool pred;
 
    binfo_tok_virt : /*empty*/ | TOK_BISON_VIRT{NSV(binfo, virt_flag, true)};
 
-   binfo_bases : /*empty*/ | TOK_BISON_BASES number_id {NSV(binfo,bases,boost::lexical_cast<int>(data->curr_string_number));};
+   binfo_bases : /*empty*/ | TOK_BISON_BASES number_id {NSV(binfo,bases,std::stoi(data->curr_string_number));};
 
    //binfo:  TOK_BISON_BINFO^ (type)? (TOK_BISON_VIRT)? (baseinfo)*;
    wbinfo : TOK_BISON_BINFO{CTN(binfo)}  type_opt{OPT($3, NS(binfo,type))} binfo_tok_virt binfo_bases binfo_baseinfos;
@@ -1972,7 +1972,7 @@ bool pred;
                              wexpr_node
                              fn{NS(aggr_init_expr,fn)}
                              call_expr_args
-                             ctor_opt{OPT($7, NSV(aggr_init_expr,ctor,boost::lexical_cast<int>(data->curr_string_number)))}
+                             ctor_opt{OPT($7, NSV(aggr_init_expr,ctor,std::stoi(data->curr_string_number)))}
                              slot_opt{OPT($9, NS(aggr_init_expr,slot))}
                              ;
    wgimple_call : TOK_BISON_GIMPLE_CALL{CTN(gimple_call)}
@@ -2022,9 +2022,9 @@ bool pred;
                   decl_opt{OPT($5, NS(template_parm_index,decl))}
                   template_parm_index_constant   {}
                   template_parm_index_readonly {}
-                  index{NSV(template_parm_index,idx,boost::lexical_cast<int>(data->curr_string_number))}
-                  level{NSV(template_parm_index,level,boost::lexical_cast<int>(data->curr_string_number))}
-                  orig_level{NSV(template_parm_index,orig_level,boost::lexical_cast<int>(data->curr_string_number))}
+                  index{NSV(template_parm_index,idx,std::stoi(data->curr_string_number))}
+                  level{NSV(template_parm_index,level,std::stoi(data->curr_string_number))}
+                  orig_level{NSV(template_parm_index,orig_level,std::stoi(data->curr_string_number))}
                   ;
 
    //with_size_expr: TOK_BISON_WITH_SIZE_EXPR^ binary_expr;
@@ -2119,7 +2119,7 @@ bool pred;
                 ;
 
    //type_node: (qual)? (name)? (unql)? (size)? (algn)?;
-   wtype_node: qual_opt         {OPT($1, do_qual<type_node>(data->curr_tree_nodeRef, boost::lexical_cast<int>(data->curr_string_number));)}
+   wtype_node: qual_opt         {OPT($1, do_qual<type_node>(data->curr_tree_nodeRef, std::stoi(data->curr_string_number));)}
               name_opt         {OPT($3, NS(type_node,name))}
               unql_opt         {OPT($5, NS(type_node,unql))}
               size_opt         {OPT($7, NS(type_node,size))}
@@ -2134,13 +2134,13 @@ bool pred;
 
    //qual: TOK_BISON_QUAL (TOK_BISON_QUAL_R | TOK_BISON_QUAL_V | TOK_BISON_QUAL_VR | TOK_BISON_QUAL_C | TOK_BISON_QUAL_CR | TOK_BISON_QUAL_CV | TOK_BISON_QUAL_CVR );
    qual_opt :  /*empty*/{$$=false;}
-   | TOK_BISON_QUAL TOK_BISON_QUAL_R {data->curr_string_number= boost::lexical_cast<std::string>(static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_R)));$$=true;}
-         | TOK_BISON_QUAL TOK_BISON_QUAL_V {data->curr_string_number = boost::lexical_cast<std::string>(static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_V)));$$=true;}
-         | TOK_BISON_QUAL TOK_BISON_QUAL_VR {data->curr_string_number = boost::lexical_cast<std::string>(static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_VR)));$$=true;}
-         | TOK_BISON_QUAL TOK_BISON_QUAL_C {data->curr_string_number = boost::lexical_cast<std::string>(static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_C)));$$=true;}
-         | TOK_BISON_QUAL TOK_BISON_QUAL_CR {data->curr_string_number = boost::lexical_cast<std::string>(static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_CR)));$$=true;}
-         | TOK_BISON_QUAL TOK_BISON_QUAL_CV {data->curr_string_number = boost::lexical_cast<std::string>(static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_CV)));$$=true;}
-         | TOK_BISON_QUAL TOK_BISON_QUAL_CVR {data->curr_string_number = boost::lexical_cast<std::string>(static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_CVR)));$$=true;}
+   | TOK_BISON_QUAL TOK_BISON_QUAL_R {data->curr_string_number= std::to_string(static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_R)));$$=true;}
+         | TOK_BISON_QUAL TOK_BISON_QUAL_V {data->curr_string_number = std::to_string(static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_V)));$$=true;}
+         | TOK_BISON_QUAL TOK_BISON_QUAL_VR {data->curr_string_number = std::to_string(static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_VR)));$$=true;}
+         | TOK_BISON_QUAL TOK_BISON_QUAL_C {data->curr_string_number = std::to_string(static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_C)));$$=true;}
+         | TOK_BISON_QUAL TOK_BISON_QUAL_CR {data->curr_string_number = std::to_string(static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_CR)));$$=true;}
+         | TOK_BISON_QUAL TOK_BISON_QUAL_CV {data->curr_string_number = std::to_string(static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_CV)));$$=true;}
+         | TOK_BISON_QUAL TOK_BISON_QUAL_CVR {data->curr_string_number = std::to_string(static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_CVR)));$$=true;}
          ;
 
    /*
@@ -2522,11 +2522,11 @@ bool pred;
          ;
 
    //pred: TOK_BISON_PRED^ (TOK_BISON_ENTRY | TOK_BISON_NUMBER);
-    wpred : TOK_BISON_PRED TOK_BISON_ENTRY{data->curr_string_number=boost::lexical_cast<std::string>(bloc::ENTRY_BLOCK_ID);}
+    wpred : TOK_BISON_PRED TOK_BISON_ENTRY{data->curr_string_number=std::to_string(bloc::ENTRY_BLOCK_ID);}
          | TOK_BISON_PRED number_id
          ;
 
-    wsucc : TOK_BISON_SUCC TOK_BISON_EXIT{data->curr_string_number=boost::lexical_cast<std::string>(bloc::EXIT_BLOCK_ID);}
+    wsucc : TOK_BISON_SUCC TOK_BISON_EXIT{data->curr_string_number=std::to_string(bloc::EXIT_BLOCK_ID);}
          | TOK_BISON_SUCC number_id
          ;
 
