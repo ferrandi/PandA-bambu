@@ -195,7 +195,7 @@ class dom_info
    void calc_dfs_tree_rec(Vertex bb)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Computing dfs tree starting from v_" + std::to_string(bb));
+                     "-->Computing dfs tree starting from v_" + std::to_string(index_map[bb]));
       // bb is the parent Vertex
       /* We call this _only_ if bb is not already visited.  */
       edge e;
@@ -230,7 +230,7 @@ class dom_info
          calc_dfs_tree_rec(bn);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "<--Computed dfs tree starting from v_" + std::to_string(bb));
+                     "<--Computed dfs tree starting from v_" + std::to_string(index_map[bb]));
    }
    /**
     * Compress the path from V to the root of its set and update path_min at the
@@ -468,7 +468,7 @@ class dom_info
       for(size_t index = 0; index < dfs_to_bb.size(); index++)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---" + std::to_string(index) + " v_" + std::to_string(dfs_to_bb[index]));
+                        "---" + std::to_string(index) + " v_" + std::to_string(index_map[dfs_to_bb[index]]));
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 #endif
@@ -490,7 +490,8 @@ class dom_info
       while(v > 1)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Analyzing node in position " + std::to_string(v) + " v_" + std::to_string(dfs_to_bb[v]));
+                        "-->Analyzing node in position " + std::to_string(v) + " v_" +
+                            std::to_string(index_map[dfs_to_bb[v]]));
          Vertex bb = dfs_to_bb[v];
          edge e;
          bool do_fake_exit_edge = false;
@@ -541,7 +542,7 @@ class dom_info
                }
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Predecessor is " + std::to_string(k1) + " v_" + std::to_string(b));
+                           "---Predecessor is " + std::to_string(k1) + " v_" + std::to_string(index_map[b]));
             /* Call eval() only if really needed.  If k1 is above V in DFS tree,
             then we know, that eval(k1) == k1 and key[k1] == k1.  */
             // k1 is the dfs index of the predecessor, v is the dfs of this Vertex
@@ -611,7 +612,8 @@ class dom_info
          TBB d = dom[dfs_order[index_map[*vi]]];
          if(dfs_to_bb[d] != boost::graph_traits<GraphObj>::null_vertex())
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dom is " + std::to_string(dfs_to_bb[d]));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---dom is " + std::to_string(index_map[dfs_to_bb[d]]));
             dom_map[*vi] = dfs_to_bb[d];
          }
       }
