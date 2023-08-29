@@ -328,8 +328,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       {
          dummy_states.push_back(rosl);
          HLS->Rliv->add_dummy_state(rosl);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Is a dummy state");
-         continue;
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Is a dummy state");
       }
 
       // add pipelined state
