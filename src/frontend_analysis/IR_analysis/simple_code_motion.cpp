@@ -720,6 +720,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
    const auto sl = GetPointerS<const statement_list>(GET_CONST_NODE(fd->body));
 
    const auto isFunctionPipelined = AppM->CGetFunctionBehavior(function_id)->is_function_pipelined();
+   const auto ld_st_predication_forced = isFunctionPipelined || (parameters->IsParameter("predicate-LDST") &&
+                                                                 parameters->GetParameter<int>("predicate-LDST") == 1);
 
    /// store the GCC BB graph ala boost::graph
    const auto bb_graph_info = BBGraphInfoRef(new BBGraphInfo(AppM, function_id));
@@ -920,7 +922,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             tree_nodeRef tn = GET_NODE(*statement);
             auto* gn = GetPointer<gimple_node>(tn);
             bool loadCanBePredicated = false;
-            if(parameters->IsParameter("predicate-LD") && parameters->GetParameter<int>("predicate-LD") == 1)
+            if(ld_st_predication_forced ||
+               (parameters->IsParameter("predicate-LD") && parameters->GetParameter<int>("predicate-LD") == 1))
             {
                if(GetPointer<gimple_assign>(tn) and
                   GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K)
@@ -961,7 +964,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             }
 
             THROW_ASSERT(gn, "unexpected condition");
-            if(!storeCanBePredicated && !isFunctionPipelined && !parallel_bb &&
+            if(!storeCanBePredicated && !ld_st_predication_forced && !parallel_bb &&
                gn->vdef) /// load can be loop pipelined/predicated
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of memory store");
@@ -1056,7 +1059,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                                       (GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K ||
                                        GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == call_expr_K)))
                 // && (!schedule)
-                && !loadCanBePredicated && !isFunctionPipelined && !parallel_bb))
+                && !loadCanBePredicated && !ld_st_predication_forced && !parallel_bb))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of vuses");
                continue; /// load cannot be code moved
@@ -1187,7 +1190,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             {
                check_movable = FunctionFrontendFlowStep_Movable::MOVABLE;
             }
-            if(!isFunctionPipelined && !parallel_bb && check_movable == FunctionFrontendFlowStep_Movable::UNMOVABLE)
+            if(!ld_st_predication_forced && !parallel_bb &&
+               check_movable == FunctionFrontendFlowStep_Movable::UNMOVABLE)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because cannot be moved");
                continue;
