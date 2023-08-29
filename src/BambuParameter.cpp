@@ -340,8 +340,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        initiation interval (default II=1).\n"
       << "        To pipeline softfloat operators it is possible to specify the __float_<op_name> prefix \n"
       << "        or simply __float to pipeline all softfloat library.\n\n"
-      << "    --fixed-scheduling=<file>\n"
-      << "        Provide scheduling as an XML file.\n\n"
       << "    --no-chaining\n"
       << "        Disable chaining optimization.\n\n"
       << std::endl;
