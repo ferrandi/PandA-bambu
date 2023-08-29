@@ -575,15 +575,12 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                s_cur[ids] = STG_builder->create_state(
                    exec_ops, start_ops, end_ops, BB_ids, vertex_step_in, vertex_step_out, LPII,
                    isLP ? from_strongtype_cast<unsigned int>(max_cstep - min_cstep) : 0, isLP && has_last_step_op);
-            }
-
-            if(isLP)
-            {
-               for(const auto& bb_state_pair : s_cur)
+               if(isLP)
                {
-                  STG_builder->set_pipelined_state(bb_state_pair.second, is_prologue);
+                  STG_builder->set_pipelined_state(s_cur.at(ids), is_prologue);
                }
             }
+
 
             global_executing_ops[s_cur.begin()->second] = exec_ops;
             global_starting_ops[s_cur.begin()->second] = start_ops;
@@ -628,6 +625,10 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                   vertex s_call = STG_builder->create_state(
                       call_ops, empty_ops, call_ops, call_BB_ids, vertex_step_in, vertex_step_out, LPII,
                       isLP ? from_strongtype_cast<unsigned int>(max_cstep - min_cstep) : 0, isLP && has_last_step_op);
+                  if(isLP)
+                  {
+                     STG_builder->set_pipelined_state(s_call, is_prologue);
+                  }
                   HLS->STG->GetStg()->GetStateInfo(s_call)->is_dummy = true;
                   call_states[bb_state_pair.second].push_back(s_call);
                   CustomOrderedSet<vertex> ops;
@@ -799,7 +800,6 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                             "at least one operation should belong to this basic block");
                vertex last_operation = *(bb_node_info->statements_list.rbegin());
                set_edge_condition(backedge_cfg_edge_ids, STG_builder, last_operation, s_e_f);
-               // THROW_ASSERT(s_cur.size()==1, "unexpected condition");
                for(auto nLP_FS : next_LP_first_state)
                {
                   auto s_e = STG_builder->connect_state(s_curState, nLP_FS.second,
