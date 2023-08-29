@@ -139,13 +139,16 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
       }
 #endif
       const auto nexit = loop->num_exits();
-      if(nexit != 1)
+      if(nexit == 0)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Multiple exits loop");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No loop");
          continue;
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Single exit loop considered");
-      loop->loop_type |= SINGLE_EXIT_LOOP;
+      if(nexit == 1)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Single exit loop considered");
+         loop->loop_type |= SINGLE_EXIT_LOOP;
+      }
       const auto exit_vertex = *loop->exit_block_iter_begin();
       bool do_while = false;
       if(exit_vertex == header && loop->num_blocks() != 1)
