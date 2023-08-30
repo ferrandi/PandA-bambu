@@ -484,9 +484,8 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       }
       script << ")\n"
              << "TB_CFLAGS=\""
-             << (Param->isOption(OPT_testbench_extra_gcc_flags) ?
-                     Param->getOption<std::string>(OPT_testbench_extra_gcc_flags) :
-                     "")
+             << (Param->isOption(OPT_tb_extra_gcc_options) ? Param->getOption<std::string>(OPT_tb_extra_gcc_options) :
+                                                             "")
              << "\"\n"
              << "for src in \"${tb_srcs[@]}\"\n"
              << "do\n"
