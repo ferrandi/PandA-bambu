@@ -133,10 +133,8 @@ EdgeDescriptor StateTransitionGraph_constructor::connect_state(const vertex& src
    VertexIterator vIterBeg, vIterEnd;
    boost::tie(vIterBeg, vIterEnd) = boost::vertices(*state_transition_graph);
    // check that source and target have been already added
-   THROW_ASSERT(std::find(vIterBeg, vIterEnd, src) != vIterEnd,
-                "The source vertex does not belong to the graph");
-   THROW_ASSERT(std::find(vIterBeg, vIterEnd, tgt) != vIterEnd,
-                "The target vertex does not belong to the graph");
+   THROW_ASSERT(std::find(vIterBeg, vIterEnd, src) != vIterEnd, "The source vertex does not belong to the graph");
+   THROW_ASSERT(std::find(vIterBeg, vIterEnd, tgt) != vIterEnd, "The target vertex does not belong to the graph");
    EdgeDescriptor e;
    bool exists;
    boost::tie(e, exists) = boost::edge(src, tgt, *state_transition_graphs_collection);
