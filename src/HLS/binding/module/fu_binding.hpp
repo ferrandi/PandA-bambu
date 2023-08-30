@@ -344,11 +344,6 @@ class fu_binding
    virtual bool manage_module_ports(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM,
                                     const structural_objectRef curr_gate, unsigned int num);
 
-   virtual void
-   join_merge_split(const structural_managerRef SM, const hlsRef HLS,
-                    std::map<structural_objectRef, std::list<structural_objectRef>, jms_sorter>& primary_outs,
-                    const structural_objectRef circuit, unsigned int& unique_id) const;
-
    /**
     * specify if vertex v have or not its ports swapped
     * @param v is the vertex
@@ -371,6 +366,11 @@ class fu_binding
    {
       return has_resource_sharing_p;
    }
+
+   static void
+   join_merge_split(const structural_managerRef SM, const hlsRef HLS,
+                    std::map<structural_objectRef, std::list<structural_objectRef>, jms_sorter>& primary_outs,
+                    const structural_objectRef circuit, unsigned int& unique_id);
 
    /**
     * fill the memory of the array ref
