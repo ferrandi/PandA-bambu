@@ -2465,7 +2465,8 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    }
    if(FB->is_function_pipelined() && vertices.size() != 3)
    {
-      THROW_ERROR("Function pipelining is not possible when one or more loops are present or code predication is not possible");
+      THROW_ERROR(
+          "Function pipelining is not possible when one or more loops are present or code predication is not possible");
    }
    if(FB->is_function_pipelined())
    {
