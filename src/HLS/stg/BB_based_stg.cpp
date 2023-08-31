@@ -581,10 +581,14 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                }
             }
 
-            global_executing_ops[s_cur.begin()->second] = exec_ops;
-            global_starting_ops[s_cur.begin()->second] = start_ops;
-            global_ending_ops[s_cur.begin()->second] = end_ops;
-            global_onfly_ops.insert({s_cur.begin()->second, onf_ops});
+            for(const auto& bb_state_pair : s_cur)
+            {
+               const auto s_curState = bb_state_pair.second;
+               global_executing_ops[s_curState] = exec_ops;
+               global_starting_ops[s_curState] = start_ops;
+               global_ending_ops[s_curState] = end_ops;
+               global_onfly_ops.insert({s_curState, onf_ops});
+            }
 
             for(const auto& exec_op : exec_ops)
             {
@@ -603,38 +607,60 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                   }
                }
             }
-            // THROW_ASSERT(call_operations.find(s_cur) == call_operations.end() ||
-            // call_operations.find(s_cur)->second.size() <= 1, "currently only one unbounded operation per state is
-            // admitted");
             for(const auto& bb_state_pair : s_cur)
             {
-               if(call_operations.find(bb_state_pair.second) != call_operations.end() &&
-                  call_operations.find(bb_state_pair.second)->second.size())
+               const auto s_curState = bb_state_pair.second;
+               if(call_operations.find(s_curState) != call_operations.end() &&
+                  call_operations.find(s_curState)->second.size())
                {
-                  THROW_ASSERT(call_operations.find(bb_state_pair.second) != call_operations.end() &&
-                                   call_operations.find(bb_state_pair.second)->second.begin() !=
-                                       call_operations.find(bb_state_pair.second)->second.end(),
+                  THROW_ASSERT(call_operations.find(s_curState) != call_operations.end() &&
+                                   call_operations.find(s_curState)->second.begin() !=
+                                       call_operations.find(s_curState)->second.end(),
                                "unexpected condition");
-                  std::list<vertex> call_ops(call_operations.find(bb_state_pair.second)->second.begin(),
-                                             call_operations.find(bb_state_pair.second)->second.end()),
+                  std::list<vertex> call_ops(call_operations.find(s_curState)->second.begin(),
+                                             call_operations.find(s_curState)->second.end()),
                       empty_ops;
 
+                  CustomOrderedSet<vertex> ops;
+                  ops.insert(call_operations.find(s_curState)->second.begin(),
+                             call_operations.find(s_curState)->second.end());
                   CustomOrderedSet<unsigned int> call_BB_ids;
                   call_BB_ids.insert(operations->get_bb_index());
+                  std::list<vertex> dummy_exec_ops, dummy_start_ops, dummy_end_ops;
+                  for(const auto opv : global_executing_ops.at(s_curState))
+                  {
+                     if((GET_TYPE(dfgRef, opv) & (TYPE_PHI | TYPE_VPHI)) == 0)
+                     {
+                        dummy_exec_ops.push_back(opv);
+                     }
+                  }
+                  for(const auto opv : global_starting_ops.at(s_curState))
+                  {
+                     if((GET_TYPE(dfgRef, opv) & (TYPE_PHI | TYPE_VPHI)) == 0 && ops.find(opv) == ops.end())
+                     {
+                        dummy_start_ops.push_back(opv);
+                     }
+                  }
+                  for(const auto opv : global_ending_ops.at(s_curState))
+                  {
+                     if((GET_TYPE(dfgRef, opv) & (TYPE_PHI | TYPE_VPHI)) == 0)
+                     {
+                        dummy_end_ops.push_back(opv);
+                     }
+                  }
                   vertex s_call = STG_builder->create_state(
-                      call_ops, empty_ops, call_ops, call_BB_ids, vertex_step_in, vertex_step_out, LPII,
-                      isLP ? from_strongtype_cast<unsigned int>(max_cstep - min_cstep) : 0, isLP && has_last_step_op);
+                      dummy_exec_ops, dummy_start_ops, dummy_end_ops, call_BB_ids, vertex_step_in, vertex_step_out,
+                      LPII, isLP ? from_strongtype_cast<unsigned int>(max_cstep - min_cstep) : 0,
+                      isLP && has_last_step_op);
                   if(isLP)
                   {
                      STG_builder->set_pipelined_state(s_call, is_prologue);
                   }
                   HLS->STG->GetStg()->GetStateInfo(s_call)->is_dummy = true;
-                  call_states[bb_state_pair.second].push_back(s_call);
-                  CustomOrderedSet<vertex> ops;
-                  ops.insert(call_ops.begin(), call_ops.end());
+                  call_states[s_curState].push_back(s_call);
                   if(ops.size() > 1)
                   {
-                     HLS->STG->add_multi_unbounded_obj(bb_state_pair.second, ops);
+                     HLS->STG->add_multi_unbounded_obj(s_curState, ops);
                   }
                }
             }
