@@ -1004,11 +1004,11 @@ void mux_connection_binding::connect_pipelined_registers(vertex state)
                                       "       - write enable for " + next_reg->get_string() + " from " +
                                              HLS->Rliv->get_name(state) + " to state " +
                                              HLS->Rliv->get_name(out_state));
+                        }
                      }
                   }
                }
             }
-         }
          }
          if(is_parameter && var.second == 1)
          {
