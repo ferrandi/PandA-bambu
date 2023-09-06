@@ -343,7 +343,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
 
       const auto start_symbol = HLSMgr->Rmem->get_symbol(top_id, top_id);
       const auto master_start = tb_top->add_module_from_technology_library(
-          "_master_start", "TestbenchStartMap" + if_suffix, LIBRARY_STD, tb_cir, TechM);
+          "start_master", "TestbenchStartMap" + if_suffix, LIBRARY_STD, tb_cir, TechM);
       master_start->SetParameter("tgt_addr", STR(start_symbol->get_address()));
       master_ports.push_back(master_start);
 
@@ -353,21 +353,22 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
          const auto master_mod = GetPointerS<module>(master_ports.front());
          unsigned int k = 0;
 
-         // Daisy chain start_port signal through all memory master modules
+         // Daisy chain start signal through all memory master modules
          for(const auto& master_port : master_ports)
          {
             const auto m_i_start = master_port->find_member("i_" START_PORT_NAME, port_o_K, master_port);
             const auto m_start = master_port->find_member(START_PORT_NAME, port_o_K, master_port);
             THROW_ASSERT(m_i_start, "Port i_" START_PORT_NAME " not found in module " + master_port->get_path());
             THROW_ASSERT(m_start, "Port " START_PORT_NAME " not found in module " + master_port->get_path());
-            const auto sig = tb_top->add_sign("sig_" START_PORT_NAME + STR(k), tb_cir, fsm_start->get_typeRef());
+            const auto sig = tb_top->add_sign("sig_" START_PORT_NAME "_" + STR(k), tb_cir, fsm_start->get_typeRef());
             tb_top->add_connection(fsm_start, sig);
             tb_top->add_connection(sig, m_i_start);
             fsm_start = m_start;
             ++k;
          }
 
-         // Merge all matching out signals from memory master modules
+         // Merge all matching out signals from memory master modules and testbench memory
+         master_ports.push_front(tb_mem);
          for(unsigned int i = 0; i < master_mod->get_out_port_size(); ++i)
          {
             const auto out_port = master_mod->get_out_port(i);
