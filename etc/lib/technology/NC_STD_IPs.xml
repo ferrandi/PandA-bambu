@@ -446,7 +446,7 @@ end"/>
           <structural_type_descriptor id_type="TestbenchMEMMinimal"/>
           <parameter name="MEM_DELAY_READ">2</parameter>
           <parameter name="MEM_DELAY_WRITE">1</parameter>
-          <parameter name="MEM_PIPELINED">1</parameter>
+          <parameter name="PIPELINED">1</parameter>
           <parameter name="base_addr">1073741824</parameter>
           <parameter name="MEM_DUMP">0</parameter>
           <parameter name="MEM_DUMP_FILE">&quot;&quot;memdump.csv&quot;&quot;</parameter>
@@ -506,7 +506,7 @@ end"/>
           </port_o>
           <NP_functionality
             IP_COMPONENT="mem_utils"
-            LIBRARY="TestbenchMEMMinimal MEM_DELAY_READ MEM_DELAY_WRITE MEM_PIPELINED base_addr MEM_DUMP MEM_DUMP_FILE M_DataRdy M_Rdata_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_back_pressure Sout_DataRdy Sout_Rdata_ram S_oe_ram S_we_ram S_addr_ram S_data_ram_size S_Wdata_ram"
+            LIBRARY="TestbenchMEMMinimal MEM_DELAY_READ MEM_DELAY_WRITE PIPELINED base_addr MEM_DUMP MEM_DUMP_FILE M_DataRdy M_Rdata_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_back_pressure Sout_DataRdy Sout_Rdata_ram S_oe_ram S_we_ram S_addr_ram S_data_ram_size S_Wdata_ram"
             VERILOG_PROVIDED="
 localparam MEM_DELAY_MAX= MEM_DELAY_READ &gt; MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM_DELAY_WRITE,
   ACTIVE_READ= MEM_DELAY_READ &gt; 1 ? (MEM_DELAY_READ-2) : 0,
@@ -577,7 +577,7 @@ generate
     begin : requests_queue
       reg [MEM_DELAY_MAX*BITSIZE_item-1:0] queue;
 
-      if(MEM_PIPELINED)
+      if(PIPELINED)
       begin : pipelined_handler
         assign queue_next = {queue[(MEM_DELAY_MAX-1)*BITSIZE_item-1:0], {
             Mout_Wdata_ram[BITSIZE_Wdata*i+:BITSIZE_Wdata], 
@@ -809,7 +809,7 @@ assign dat_im = Rdata; // &amp; {BITSIZE_dat_im{cyc}};
 always @(posedge clock)
 begin
   automatic reg w_ack = queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_item] &amp; queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_item+1];
-  automatic reg r_ack = queue_next[(MEM_DELAY_READ-1)*BITSIZE_item] &amp; !queue_next[(MEM_DELAY_READ-1)*BITSIZE_item+1];
+  automatic reg r_ack = queue_next[(MEM_DELAY_READ-1)*BITSIZE_item] &amp; ~queue_next[(MEM_DELAY_READ-1)*BITSIZE_item+1];
   ack &lt;= w_ack | r_ack;
   Rdata &lt;= queue_next[(MEM_DELAY_READ-1)*BITSIZE_item+2 +:BITSIZE_dat_im];
   queue &lt;= queue_next;
@@ -1274,13 +1274,13 @@ assign we_is = we_next;
 assign addr_is = addr_next;
 assign dat_is = data_next;
 assign sel_is = sel_next;
-assign stall = !ack_os; // TODO: this should be stall_os
+assign stall = ~ack_os; // TODO: this should be stall_os
 assign ack = ack_os;
 assign start_port = start;
 
 always @(posedge clock) 
 begin
-  automatic reg active_tx = cyc_next &amp; !ack;
+  automatic reg active_tx = cyc_next &amp; ~ack;
   automatic reg wait_tx = active_tx &amp; stall;
   val &lt;= val_next;
   cyc &lt;= active_tx;
@@ -1398,14 +1398,14 @@ assign we_is = 0;
 assign addr_is = addr_next;
 assign dat_is = 0;
 assign sel_is = 0;
-assign stall = !ack_os; // TODO: this should be stall_os
+assign stall = ~ack_os; // TODO: this should be stall_os
 assign ack = ack_os;
 assign start_port = i_start_port;
 assign done_port = done;
 
 always @(posedge clock) 
 begin
-  automatic reg active_tx = cyc_next &amp; !ack;
+  automatic reg active_tx = cyc_next &amp; ~ack;
   automatic reg wait_tx = active_tx &amp; stall;
   cyc &lt;= active_tx;
   stb &lt;= stb_next &amp; wait_tx;
@@ -1507,13 +1507,13 @@ assign we_is = we_next;
 assign addr_is = addr_next;
 assign dat_is = data_next;
 assign sel_is = sel_next;
-assign stall = !ack_os; // TODO: this should be stall_os
+assign stall = ~ack_os; // TODO: this should be stall_os
 assign ack = ack_os;
 assign start_port = start;
 
 always @(posedge clock) 
 begin
-  automatic reg active_tx = cyc_next &amp; !ack;
+  automatic reg active_tx = cyc_next &amp; ~ack;
   automatic reg wait_tx = active_tx &amp; stall;
   cyc &lt;= active_tx;
   stb &lt;= stb_next &amp; wait_tx;
