@@ -22,6 +22,7 @@ Some environment variables are expected to be set by each runner host:
 - **NXLMD_LICENSE_FILE**: NanoXplore license file path (needed only if different from LM_LICENSE_FILE)
 - **NANOXPLORE_BYPASS**: NanoXplore bypass setting
 - **LIBRARY_PATH**: necessary to support older gcc compilers (set to: /usr/lib/x86_64-linux-gnu)
+- **LOCAL_COMPILERS_BACKUP**: directory where to store local copies of frontend compilers used during build process (optional)
 
 ## Python support
 Current CI implementation requires Python 3.6.15 to be available in the runner environment. Pyenv is recommended to provide the support.
