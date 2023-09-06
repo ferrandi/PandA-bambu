@@ -526,7 +526,8 @@ localparam MEM_DELAY_MAX= MEM_DELAY_READ &gt; MEM_DELAY_WRITE ? MEM_DELAY_READ :
   OFFSET_Wsize=OFFSET_addr+BITSIZE_addr,
   OFFSET_Wdata=OFFSET_Wsize+BITSIZE_Wsize,
   BITSIZE_S_Rdata=BITSIZE_Sout_Rdata_ram/BITSIZE_S_oe_ram,
-  BITSIZE_S_ready=1;
+  BITSIZE_S_ready=1,
+  SLAVE_VALID=BITSIZE_Mout_oe_ram == BITSIZE_S_oe_ram;
 
 genvar i;
 integer dump_file;
@@ -639,8 +640,8 @@ generate
 
     assign oe = queue_next[ACTIVE_READ*BITSIZE_item+OFFSET_oe+:BITSIZE_oe];
     assign Raddr = queue_next[ACTIVE_READ*BITSIZE_item+OFFSET_addr+:BITSIZE_addr];
-    assign _M_DataRdy[BITSIZE_ready*i+:BITSIZE_ready] = Wready | Rready | (Sout_DataRdy[BITSIZE_S_ready*i+:BITSIZE_S_ready] === 1&apos;b1);
-    assign _M_Rdata_ram[BITSIZE_Rdata*i+:BITSIZE_Rdata] = Rdata | (Sout_Rdata_ram[BITSIZE_S_Rdata*i+:BITSIZE_S_Rdata] &amp; {BITSIZE_S_Rdata{Sout_DataRdy[BITSIZE_S_ready*i+:BITSIZE_S_ready] === 1&apos;b1}});
+    assign _M_DataRdy[BITSIZE_ready*i+:BITSIZE_ready] = Wready | Rready | (Sout_DataRdy[BITSIZE_S_ready*i*SLAVE_VALID+:BITSIZE_S_ready] === 1&apos;b1);
+    assign _M_Rdata_ram[BITSIZE_Rdata*i+:BITSIZE_Rdata] = Rdata | (Sout_Rdata_ram[BITSIZE_S_Rdata*i*SLAVE_VALID+:BITSIZE_S_Rdata] &amp; {BITSIZE_S_Rdata{Sout_DataRdy[BITSIZE_S_ready*i*SLAVE_VALID+:BITSIZE_S_ready] === 1&apos;b1}});
 
     if(MEM_DELAY_READ &gt; 1)
     begin : read_channel
