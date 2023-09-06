@@ -273,8 +273,8 @@ begin
   state_next = SIM_READY;
   state_succ = SIM_READY;
   state_succ_next = SIM_READY;
-  rst = !RESET_ACTIVE;
-  rst_next = !RESET_ACTIVE;
+  rst = ~RESET_ACTIVE;
+  rst_next = ~RESET_ACTIVE;
   rst_count = RESET_CYCLES - 1;
   rst_count_next = RESET_CYCLES - 1;
   setup = 0;
@@ -315,13 +315,15 @@ begin
       automatic time start_time = $time + CLOCK_PERIOD;
       automatic time start_cycle = $rtoi(start_time/CLOCK_PERIOD);
       automatic integer res_file;
-      res_file = $fopen(RESFILE, &quot;a&quot;);
-      $fwrite(res_file, &quot;%0d|&quot;, start_time);
-      $fclose(res_file);
-      `ifndef NDEBUG
       if(setup_next)
+      begin
+        res_file = $fopen(RESFILE, &quot;a&quot;);
+        $fwrite(res_file, &quot;%0d|&quot;, start_time);
+        $fclose(res_file);
+        `ifndef NDEBUG
         $display(&quot;Sim: Argument setup\nSim: Simulation started at cycle %0d&quot;, start_cycle);
-      `endif
+        `endif
+      end
       over_time &lt;= start_cycle + MAX_SIM_CYCLES;
     end
   SIM_RUNNING:
@@ -388,21 +390,21 @@ begin
       if(state_succ == SIM_SETUP)
       begin
         rst_next = RESET_ACTIVE;
-        setup_next = RESET_CYCLES == 1;
         rst_count_next = RESET_CYCLES - 1;
       end
     end
   SIM_SETUP:
     begin
-      if(rst_count > 0)
+      if(rst_count >= 0)
       begin
-        setup_next = rst_count == 1;
+        setup_next = rst_count == 0;
+        rst_next = rst_count > 0 ? RESET_ACTIVE : ~RESET_ACTIVE;
         rst_count_next = rst_count - 1;
       end
       else
       begin
         state_next = SIM_RUNNING;
-        rst_next = !RESET_ACTIVE;
+        rst_next = ~RESET_ACTIVE;
         setup_next = 0;
         start_next = 1;
       end
