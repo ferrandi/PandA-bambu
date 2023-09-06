@@ -252,6 +252,38 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
 
    std::list<structural_objectRef> if_modules;
    const auto interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);
+   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating memory interface...");
+   structural_objectRef tb_mem;
+   if(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION ||
+      interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION ||
+      interface_type == HLSFlowStep_Type::INTERFACE_CS_GENERATION)
+   {
+      tb_mem =
+          tb_top->add_module_from_technology_library("SystemMEM", "TestbenchMEMMinimal", LIBRARY_STD, tb_cir, TechM);
+      if(interface_type == HLSFlowStep_Type::INTERFACE_CS_GENERATION)
+      {
+         tb_mem->SetParameter("PIPELINED", "0");
+      }
+   }
+   else if(interface_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION ||
+           interface_type == HLSFlowStep_Type::WB4_INTERCON_INTERFACE_GENERATION)
+   {
+      tb_mem =
+          tb_top->add_module_from_technology_library("SystemMEM", "TestbenchMEMWishboneB4", LIBRARY_STD, tb_cir, TechM);
+   }
+   else
+   {
+      THROW_ERROR("Testbench generation for selected interface type is not yet supported.");
+   }
+   tb_mem->SetParameter("MEM_DELAY_READ", parameters->getOption<std::string>(OPT_bram_high_latency) == "_3" ?
+                                              "3" :
+                                          parameters->getOption<std::string>(OPT_bram_high_latency) == "_4" ?
+                                              "4" :
+                                              parameters->getOption<std::string>(OPT_mem_delay_read));
+   tb_mem->SetParameter("MEM_DELAY_WRITE", parameters->getOption<std::string>(OPT_mem_delay_write));
+   tb_mem->SetParameter("base_addr", STR(HLSMgr->base_address));
+   if_modules.push_back(tb_mem);
+
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating handler modules for top level parameters...");
    const auto top_bh = top_fb->CGetBehavioralHelper();
    if(parameters->getOption<bool>(OPT_memory_mapped_top))
@@ -486,38 +518,6 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       THROW_ASSERT(dut_start, "");
       add_internal_connection(fsm_start, dut_start);
    }
-
-   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating memory interface...");
-   structural_objectRef tb_mem;
-   if(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION ||
-      interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION ||
-      interface_type == HLSFlowStep_Type::INTERFACE_CS_GENERATION)
-   {
-      tb_mem =
-          tb_top->add_module_from_technology_library("SystemMEM", "TestbenchMEMMinimal", LIBRARY_STD, tb_cir, TechM);
-      if(interface_type == HLSFlowStep_Type::INTERFACE_CS_GENERATION)
-      {
-         tb_mem->SetParameter("MEM_PIPELINED", "0");
-      }
-   }
-   else if(interface_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION ||
-           interface_type == HLSFlowStep_Type::WB4_INTERCON_INTERFACE_GENERATION)
-   {
-      tb_mem =
-          tb_top->add_module_from_technology_library("SystemMEM", "TestbenchMEMWishboneB4", LIBRARY_STD, tb_cir, TechM);
-   }
-   else
-   {
-      THROW_ERROR("Testbench generation for selected interface type is not yet supported.");
-   }
-   tb_mem->SetParameter("MEM_DELAY_READ", parameters->getOption<std::string>(OPT_bram_high_latency) == "_3" ?
-                                              "3" :
-                                          parameters->getOption<std::string>(OPT_bram_high_latency) == "_4" ?
-                                              "4" :
-                                              parameters->getOption<std::string>(OPT_mem_delay_read));
-   tb_mem->SetParameter("MEM_DELAY_WRITE", parameters->getOption<std::string>(OPT_mem_delay_write));
-   tb_mem->SetParameter("base_addr", STR(HLSMgr->base_address));
-   if_modules.push_back(tb_mem);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Connecting testbench modules...");
    {
