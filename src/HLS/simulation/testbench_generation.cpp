@@ -390,6 +390,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
             for(const auto& master_port : master_ports)
             {
                const auto m_port = master_port->find_member(out_port->get_id(), port_o_K, master_port);
+               THROW_ASSERT(m_port, "Port " + out_port->get_id() + " not found in module " + master_port->get_id());
                m_port->type_resize(STD_GET_SIZE(dut_port->get_typeRef()));
                const auto sig =
                    tb_top->add_sign("sig_" + out_port->get_id() + "_" + STR(k), tb_cir, dut_port->get_typeRef());
