@@ -774,9 +774,36 @@ endgenerate"/>
           <port_o id="ack_im" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="cyc_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="stb_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="we_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="addr_is" dir="OUT" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="dat_is" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="sel_is" dir="OUT" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="dat_os" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="stall_os" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="ack_os" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <NP_functionality
             IP_COMPONENT="mem_utils"
-            LIBRARY="TestbenchMEMWishboneB4 MEM_DELAY_READ MEM_DELAY_WRITE base_addr addr_om dat_om sel_om dat_im"
+            LIBRARY="TestbenchMEMWishboneB4 MEM_DELAY_READ MEM_DELAY_WRITE base_addr addr_om dat_om sel_om dat_im addr_is dat_is sel_is dat_os"
             VERILOG_PROVIDED="localparam MEM_DELAY_MAX= MEM_DELAY_READ > MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM_DELAY_WRITE,
   BITSIZE_item=BITSIZE_dat_im+1+1;
 reg cyc, stb, we, stall, ack;
@@ -797,6 +824,12 @@ begin
   queue = 0;
   queue_next = 0;
 end
+
+assign cyc_is = 0;
+assign stb_is = 0;
+assign addr_is = 0;
+assign dat_is = 0;
+assign sel_is = 0;
 
 assign cyc = cyc_om;
 assign stb = stb_om;
