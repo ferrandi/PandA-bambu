@@ -224,6 +224,12 @@ const CustomOrderedSet<vertex>& liveness::get_state_where_run(vertex op) const
    return running_operations.find(op)->second;
 }
 
+const CustomOrderedSet<vertex>& liveness::get_state_where_start(vertex op) const
+{
+   THROW_ASSERT(starting_operations.find(op) != running_operations.end(), "op never start in a state ");
+   return starting_operations.find(op)->second;
+}
+
 const std::string& liveness::get_name(vertex v) const
 {
    if(v == NULL_VERTEX)

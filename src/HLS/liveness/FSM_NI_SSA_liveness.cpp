@@ -311,7 +311,6 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       {
          const CustomSet<unsigned int>& scalar_defs = data->CGetOpNodeInfo(eoc)->GetVariables(
              FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
-
          for(const auto scalar_def : scalar_defs)
          {
             if(HLSMgr->is_register_compatible(scalar_def))
@@ -319,8 +318,11 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                HLS->Rliv->add_op_definition(scalar_def, eoc);
             }
          }
-
          HLS->Rliv->add_state_for_ending_op(eoc, rosl);
+      }
+      for(const auto& so : state_info->starting_operations)
+      {
+         HLS->Rliv->add_state_for_starting_op(so, rosl);
       }
 
       // add dummy state
@@ -799,12 +801,44 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Adjusting liveness of dummy states");
    for(const auto& ds : dummy_states)
    {
-      const StateInfoConstRef state_info = astg->CGetStateInfo(ds);
       BOOST_FOREACH(EdgeDescriptor e, boost::in_edges(ds, *astg))
       {
          vertex src_state = boost::source(e, *astg);
+         CustomSet<unsigned int> ending_not_starting;
+         const StateInfoConstRef state_info = astg->CGetStateInfo(src_state);
+         for(const auto& eo : state_info->ending_operations)
+         {
+            if(std::find(state_info->starting_operations.begin(), state_info->starting_operations.end(), eo) ==
+               state_info->starting_operations.end())
+            {
+               const CustomSet<unsigned int>& scalar_defs = data->CGetOpNodeInfo(eo)->GetVariables(
+                   FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
+               ending_not_starting.insert(scalar_defs.begin(), scalar_defs.end());
+            }
+         }
+
          HLS->Rliv->set_live_out(ds, HLS->Rliv->get_live_out(src_state));
          HLS->Rliv->set_live_in(ds, HLS->Rliv->get_live_in(src_state));
+         HLS->Rliv->set_live_in(ds, HLS->Rliv->get_live_out(src_state));
+         /// add all the uses of ds to src_state
+         const StateInfoConstRef ds_state_info = astg->CGetStateInfo(ds);
+         for(const auto& eo : ds_state_info->executing_operations)
+         {
+            const CustomSet<unsigned int>& scalar_uses = data->CGetOpNodeInfo(eo)->GetVariables(
+                FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::USE);
+            for(const auto scalar_use : scalar_uses)
+            {
+               if(HLSMgr->is_register_compatible(scalar_use) &&
+                  ending_not_starting.find(scalar_use) != ending_not_starting.end())
+               {
+                  unsigned int step = HLS->Rliv->GetStep(ds, eo, scalar_use, true);
+                  HLS->Rliv->set_live_out(src_state, scalar_use, step);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                 "---" + FB->CGetBehavioralHelper()->PrintVariable(scalar_use) + "-a-" + STR(step));
+                  HLS->Rliv->set_live_in(ds, scalar_use, step);
+               }
+            }
+         }
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Adjusted liveness of dummy states");

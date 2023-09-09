@@ -811,7 +811,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                else
                {
                   THROW_UNREACHABLE("not expected from " + HLS->Rliv->get_name(state_src) + " to " +
-                                    HLS->Rliv->get_name(state_tgt) + " " +
+                                    HLS->Rliv->get_name(state_tgt) + " for operation" + GET_NAME(data, op) + " " +
                                     HLSMgr->get_tree_manager()->get_tree_node_const(tree_var)->ToString());
                }
             }
@@ -1584,7 +1584,8 @@ void mux_connection_binding::create_connections()
             }
          }
       }
-      const CustomOrderedSet<vertex>& ending_states = HLS->Rliv->get_state_where_end(op);
+      const auto& ending_states = HLS->Rliv->get_state_where_end(op);
+      const auto& starting_states = HLS->Rliv->get_state_where_start(op);
       for(const auto estate : ending_states)
       {
          if(GET_TYPE(data, op) & TYPE_PHI)
@@ -2050,7 +2051,8 @@ void mux_connection_binding::create_connections()
                              tgt_reg_obj->get_string() + " from state " + HLS->Rliv->get_name(estate) + " to state " +
                              HLS->Rliv->get_name(s_out) + " for " +
                              HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(var_written));
-                     if(!HLS->Rliv->is_a_dummy_state(s_out))
+                     /// check if the write is started in this state or before and if the next state is a dummy state
+                     if(!HLS->Rliv->is_a_dummy_state(s_out) || (starting_states.count(estate) == 0))
                      {
                      generic_objRef enable_obj = GetPointer<register_obj>(tgt_reg_obj)->get_wr_enable();
                      GetPointer<commandport_obj>(enable_obj)

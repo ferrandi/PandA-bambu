@@ -627,13 +627,6 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                   CustomOrderedSet<unsigned int> call_BB_ids;
                   call_BB_ids.insert(operations->get_bb_index());
                   std::list<vertex> dummy_exec_ops, dummy_start_ops, dummy_end_ops;
-                  for(const auto opv : global_executing_ops.at(s_curState))
-                  {
-                     if((GET_TYPE(dfgRef, opv) & (TYPE_PHI | TYPE_VPHI)) == 0)
-                     {
-                        dummy_exec_ops.push_back(opv);
-                     }
-                  }
                   for(const auto opv : global_starting_ops.at(s_curState))
                   {
                      if((GET_TYPE(dfgRef, opv) & (TYPE_PHI | TYPE_VPHI)) == 0 && ops.find(opv) == ops.end())
@@ -641,9 +634,20 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                         dummy_start_ops.push_back(opv);
                      }
                   }
+                  for(const auto opv : global_executing_ops.at(s_curState))
+                  {
+                     if((GET_TYPE(dfgRef, opv) & (TYPE_PHI | TYPE_VPHI)) == 0 &&
+                        (ops.find(opv) != ops.end() ||
+                         std::find(dummy_start_ops.begin(), dummy_start_ops.end(), opv) != dummy_start_ops.end()))
+                     {
+                        dummy_exec_ops.push_back(opv);
+                     }
+                  }
                   for(const auto opv : global_ending_ops.at(s_curState))
                   {
-                     if((GET_TYPE(dfgRef, opv) & (TYPE_PHI | TYPE_VPHI)) == 0)
+                     if((GET_TYPE(dfgRef, opv) & (TYPE_PHI | TYPE_VPHI)) == 0 &&
+                        (ops.find(opv) != ops.end() ||
+                         std::find(dummy_start_ops.begin(), dummy_start_ops.end(), opv) != dummy_start_ops.end()))
                      {
                         dummy_end_ops.push_back(opv);
                      }
