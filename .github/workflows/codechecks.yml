@@ -15,6 +15,7 @@ env:
   storage-user: ${{secrets.CI_STORAGE_USER}}
   storage-token: ${{secrets.CI_STORAGE_TOKEN}}
   host_jobs: $J
+  local-compilers-backup: $LOCAL_COMPILERS_BACKUP
 
 jobs:
   cppcheck:
@@ -86,7 +87,7 @@ jobs:
         shell: bash
         run: |
           mkdir "${{env.dist-dir}}"
-          bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.dist-dir}}" "${{env.compilers}}"
+          bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.dist-dir}}" "${{env.compilers}}" "${{env.local-compilers-backup}}"
       - name: Scan build Bambu
         id: scanbuild
         uses: ./.github/actions/scanbuild
@@ -142,7 +143,7 @@ jobs:
         shell: bash
         run: |
           mkdir "${{env.dist-dir}}"
-          bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.dist-dir}}" "${{env.compilers}}"
+          bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.dist-dir}}" "${{env.compilers}}" "${{env.local-compilers-backup}}"
       - name: Make Dist
         uses: ./.github/actions/make-dist
         with:

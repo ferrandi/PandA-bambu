@@ -39,13 +39,9 @@
 #define MODULE_BINDING_CHECK_HPP
 #include "allocation_information.hpp"
 #include "check_clique.hpp"
-#include "clique_covering_graph.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-#include "filter_clique.hpp"
-#include "fu_binding.hpp"
 #include "hls.hpp"
-#include "liveness.hpp"
 
 #include <boost/property_map/property_map.hpp>
 

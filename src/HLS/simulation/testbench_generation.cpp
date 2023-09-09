@@ -252,6 +252,38 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
 
    std::list<structural_objectRef> if_modules;
    const auto interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);
+   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating memory interface...");
+   structural_objectRef tb_mem;
+   if(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION ||
+      interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION ||
+      interface_type == HLSFlowStep_Type::INTERFACE_CS_GENERATION)
+   {
+      tb_mem =
+          tb_top->add_module_from_technology_library("SystemMEM", "TestbenchMEMMinimal", LIBRARY_STD, tb_cir, TechM);
+      if(interface_type == HLSFlowStep_Type::INTERFACE_CS_GENERATION)
+      {
+         tb_mem->SetParameter("PIPELINED", "0");
+      }
+   }
+   else if(interface_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION ||
+           interface_type == HLSFlowStep_Type::WB4_INTERCON_INTERFACE_GENERATION)
+   {
+      tb_mem =
+          tb_top->add_module_from_technology_library("SystemMEM", "TestbenchMEMWishboneB4", LIBRARY_STD, tb_cir, TechM);
+   }
+   else
+   {
+      THROW_ERROR("Testbench generation for selected interface type is not yet supported.");
+   }
+   tb_mem->SetParameter("MEM_DELAY_READ", parameters->getOption<std::string>(OPT_bram_high_latency) == "_3" ?
+                                              "3" :
+                                          parameters->getOption<std::string>(OPT_bram_high_latency) == "_4" ?
+                                              "4" :
+                                              parameters->getOption<std::string>(OPT_mem_delay_read));
+   tb_mem->SetParameter("MEM_DELAY_WRITE", parameters->getOption<std::string>(OPT_mem_delay_write));
+   tb_mem->SetParameter("base_addr", STR(HLSMgr->base_address));
+   if_modules.push_back(tb_mem);
+
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating handler modules for top level parameters...");
    const auto top_bh = top_fb->CGetBehavioralHelper();
    if(parameters->getOption<bool>(OPT_memory_mapped_top))
@@ -311,7 +343,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
 
       const auto start_symbol = HLSMgr->Rmem->get_symbol(top_id, top_id);
       const auto master_start = tb_top->add_module_from_technology_library(
-          "_master_start", "TestbenchStartMap" + if_suffix, LIBRARY_STD, tb_cir, TechM);
+          "start_master", "TestbenchStartMap" + if_suffix, LIBRARY_STD, tb_cir, TechM);
       master_start->SetParameter("tgt_addr", STR(start_symbol->get_address()));
       master_ports.push_back(master_start);
 
@@ -321,21 +353,22 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
          const auto master_mod = GetPointerS<module>(master_ports.front());
          unsigned int k = 0;
 
-         // Daisy chain start_port signal through all memory master modules
+         // Daisy chain start signal through all memory master modules
          for(const auto& master_port : master_ports)
          {
             const auto m_i_start = master_port->find_member("i_" START_PORT_NAME, port_o_K, master_port);
             const auto m_start = master_port->find_member(START_PORT_NAME, port_o_K, master_port);
             THROW_ASSERT(m_i_start, "Port i_" START_PORT_NAME " not found in module " + master_port->get_path());
             THROW_ASSERT(m_start, "Port " START_PORT_NAME " not found in module " + master_port->get_path());
-            const auto sig = tb_top->add_sign("sig_" START_PORT_NAME + STR(k), tb_cir, fsm_start->get_typeRef());
+            const auto sig = tb_top->add_sign("sig_" START_PORT_NAME "_" + STR(k), tb_cir, fsm_start->get_typeRef());
             tb_top->add_connection(fsm_start, sig);
             tb_top->add_connection(sig, m_i_start);
             fsm_start = m_start;
             ++k;
          }
 
-         // Merge all matching out signals from memory master modules
+         // Merge all matching out signals from memory master modules and testbench memory
+         master_ports.push_front(tb_mem);
          for(unsigned int i = 0; i < master_mod->get_out_port_size(); ++i)
          {
             const auto out_port = master_mod->get_out_port(i);
@@ -357,6 +390,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
             for(const auto& master_port : master_ports)
             {
                const auto m_port = master_port->find_member(out_port->get_id(), port_o_K, master_port);
+               THROW_ASSERT(m_port, "Port " + out_port->get_id() + " not found in module " + master_port->get_id());
                m_port->type_resize(STD_GET_SIZE(dut_port->get_typeRef()));
                const auto sig =
                    tb_top->add_sign("sig_" + out_port->get_id() + "_" + STR(k), tb_cir, dut_port->get_typeRef());
@@ -486,38 +520,6 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       THROW_ASSERT(dut_start, "");
       add_internal_connection(fsm_start, dut_start);
    }
-
-   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating memory interface...");
-   structural_objectRef tb_mem;
-   if(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION ||
-      interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION ||
-      interface_type == HLSFlowStep_Type::INTERFACE_CS_GENERATION)
-   {
-      tb_mem =
-          tb_top->add_module_from_technology_library("SystemMEM", "TestbenchMEMMinimal", LIBRARY_STD, tb_cir, TechM);
-      if(interface_type == HLSFlowStep_Type::INTERFACE_CS_GENERATION)
-      {
-         tb_mem->SetParameter("MEM_PIPELINED", "0");
-      }
-   }
-   else if(interface_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION ||
-           interface_type == HLSFlowStep_Type::WB4_INTERCON_INTERFACE_GENERATION)
-   {
-      tb_mem =
-          tb_top->add_module_from_technology_library("SystemMEM", "TestbenchMEMWishboneB4", LIBRARY_STD, tb_cir, TechM);
-   }
-   else
-   {
-      THROW_ERROR("Testbench generation for selected interface type is not yet supported.");
-   }
-   tb_mem->SetParameter("MEM_DELAY_READ", parameters->getOption<std::string>(OPT_bram_high_latency) == "_3" ?
-                                              "3" :
-                                          parameters->getOption<std::string>(OPT_bram_high_latency) == "_4" ?
-                                              "4" :
-                                              parameters->getOption<std::string>(OPT_mem_delay_read));
-   tb_mem->SetParameter("MEM_DELAY_WRITE", parameters->getOption<std::string>(OPT_mem_delay_write));
-   tb_mem->SetParameter("base_addr", STR(HLSMgr->base_address));
-   if_modules.push_back(tb_mem);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Connecting testbench modules...");
    {

@@ -199,8 +199,8 @@
 #define OPT_TESTBENCH (1 + INPUT_OPT_TEST_SINGLE_NON_DETERMINISTIC_FLOW)
 #define OPT_TESTBENCH_ARGV (1 + OPT_TESTBENCH)
 #define OPT_TESTBENCH_PARAM_SIZE (1 + OPT_TESTBENCH_ARGV)
-#define OPT_TESTBENCH_EXTRA_GCC_FLAGS (1 + OPT_TESTBENCH_PARAM_SIZE)
-#define OPT_TIME_WEIGHT (1 + OPT_TESTBENCH_EXTRA_GCC_FLAGS)
+#define OPT_TB_EXTRA_GCC_OPTIONS (1 + OPT_TESTBENCH_PARAM_SIZE)
+#define OPT_TIME_WEIGHT (1 + OPT_TB_EXTRA_GCC_OPTIONS)
 #define OPT_TIMING_MODEL (1 + OPT_TIME_WEIGHT)
 #define OPT_TIMING_VIOLATION (1 + OPT_TIMING_MODEL)
 #define OPT_TOP_FNAME (1 + OPT_TIMING_VIOLATION)
@@ -274,9 +274,12 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --generate-tb=<file>\n"
       << "        Generate testbench using the given files. \n"
       << "        <file> must be a valid testbench XML file or a C/C++ file specifying\n"
-      << "        a main function calling the top-level interface.\n\n"
-      << "    --tb-arg=<arg string>\n"
-      << "        Command line options to pass to testbench main function. (May be repeated)\n\n"
+      << "        a main function calling the top-level interface. (May be repeated)\n\n"
+      << "    --tb-extra-gcc-options=<string>\n"
+      << "        Specify custom extra options to the compiler for testbench compilation only.\n\n"
+      << "    --tb-arg=<arg>\n"
+      << "        Passes <arg> to the testbench main function as an argument.\n"
+      << "        The option may be repeated to pass multiple arguments in order.\n\n"
       << "    --tb-param-size=<param_name>:<byte_size>\n"
       << "        A comma-separated list of pairs representing a pointer parameter name and\n"
       << "        the size for the related memory space. Specifying this option will disable\n"
@@ -1027,7 +1030,7 @@ int BambuParameter::Exec()
       {"generate-tb", required_argument, nullptr, OPT_TESTBENCH},
       {"tb-arg", required_argument, nullptr, OPT_TESTBENCH_ARGV},
       {"tb-param-size", required_argument, nullptr, OPT_TESTBENCH_PARAM_SIZE},
-      {"testbench-extra-gcc-flags", required_argument, nullptr, OPT_TESTBENCH_EXTRA_GCC_FLAGS},
+      {"tb-extra-gcc-options", required_argument, nullptr, OPT_TB_EXTRA_GCC_OPTIONS},
       {"max-sim-cycles", required_argument, nullptr, OPT_MAX_SIM_CYCLES},
       {"generate-vcd", no_argument, nullptr, OPT_GENERATE_VCD},
       {"simulate", no_argument, nullptr, OPT_SIMULATE},
@@ -1793,9 +1796,9 @@ int BambuParameter::Exec()
             setOption(OPT_testbench_param_size, param_size);
             break;
          }
-         case OPT_TESTBENCH_EXTRA_GCC_FLAGS:
+         case OPT_TB_EXTRA_GCC_OPTIONS:
          {
-            setOption(OPT_testbench_extra_gcc_flags, optarg);
+            setOption(OPT_tb_extra_gcc_options, optarg);
             break;
          }
          case OPT_MAX_SIM_CYCLES:
@@ -3579,10 +3582,10 @@ void BambuParameter::CheckParameters()
       }
    }
 
-   if(isOption(OPT_no_parse_c_python) && !isOption(OPT_testbench_extra_gcc_flags))
+   if(isOption(OPT_no_parse_c_python) && !isOption(OPT_tb_extra_gcc_options))
    {
       THROW_ERROR("Include directories and library directories for Python bindings are missing.\n"
-                  "use --testbench-extra-gcc-flags=\"string\" to provide them");
+                  "use --tb-extra-gcc-options=\"string\" to provide them");
    }
    setOption<unsigned int>(OPT_host_compiler, static_cast<unsigned int>(default_compiler));
    if(isOption(OPT_lattice_settings))

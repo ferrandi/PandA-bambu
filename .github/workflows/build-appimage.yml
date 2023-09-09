@@ -75,6 +75,7 @@ env:
   bcompiler-dir: compiler
   host_jobs: $J
   upload_config: ${{inputs.upload_config}}
+  local-compilers-backup: $LOCAL_COMPILERS_BACKUP
 
 jobs:
   build:
@@ -119,10 +120,10 @@ jobs:
         shell: bash
         run: |
           mkdir ${{env.dist-dir}}
-          bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.dist-dir}}" "${{env.compilers}}"
+          bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.dist-dir}}" "${{env.compilers}}" "${{env.local-compilers-backup}}"
           if [[ ! -z "${{env.build-compiler}}" ]]; then
             mkdir ${{env.bcompiler-dir}}
-            bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.bcompiler-dir}}" "${{env.build-compiler}}"
+            bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.bcompiler-dir}}" "${{env.build-compiler}}" "${{env.local-compilers-backup}}"
           fi
       - name: Build Bambu application
         id: build

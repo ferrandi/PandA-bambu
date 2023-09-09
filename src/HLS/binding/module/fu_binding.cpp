@@ -1376,13 +1376,13 @@ void fu_binding::manage_memory_ports_chained(const structural_managerRef SM,
 void fu_binding::join_merge_split(
     const structural_managerRef SM, const hlsRef HLS,
     std::map<structural_objectRef, std::list<structural_objectRef>, jms_sorter>& primary_outs,
-    const structural_objectRef circuit, unsigned int& _unique_id) const
+    const structural_objectRef circuit, unsigned int& _unique_id)
 {
-   const auto js_name = "join_signal";
+   static const auto js_name = "join_signal";
+   static const auto ss_name = "split_signal";
+   static const auto bus_merger_res_name = "bus_merger";
    const auto js_library = HLS->HLS_D->get_technology_manager()->get_library(js_name);
-   const auto ss_name = "split_signal";
    const auto ss_library = HLS->HLS_D->get_technology_manager()->get_library(ss_name);
-   const auto bus_merger_res_name = "bus_merger";
    const auto bm_library = HLS->HLS_D->get_technology_manager()->get_library(bus_merger_res_name);
 
    for(const auto& po : primary_outs)
