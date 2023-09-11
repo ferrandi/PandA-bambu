@@ -6,7 +6,7 @@ ggo_require_compiler=1
 BENCHMARKS_ROOT="${script_dir}/MachSuite"
 BATCH_ARGS=("-I${BENCHMARKS_ROOT}/common" "--generate-tb=${BENCHMARKS_ROOT}/common/harness.c" "--generate-tb=${BENCHMARKS_ROOT}/common/support.c")
 BATCH_ARGS+=("-mx32" "-fno-tree-vectorize")
-BATCH_ARGS+=("--generate-interface=INFER" "-s" "--hls-div")
+BATCH_ARGS+=("--generate-interface=INFER" "-s" "--hls-div=NR")
 BATCH_ARGS+=("-DCUSTOM_VERIFICATION" "--simulator=VERILATOR" "--simulate")
 OUT_SUFFIX="${compiler}_MachSuite"
 

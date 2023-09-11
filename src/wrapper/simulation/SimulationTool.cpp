@@ -450,6 +450,10 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       if(CompilerWrapper::isClangCheck(default_compiler))
       {
          script << " -fbracket-depth=1024";
+         if(CompilerWrapper::isCurrentOrNewer(default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG16))
+         {
+            script << " -Wno-error=int-conversion";
+         }
       }
       script
           << " -o " << pp_fileo << " " << pp_file.string() << "\n"

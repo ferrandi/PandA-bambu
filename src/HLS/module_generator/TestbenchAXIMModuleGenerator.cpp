@@ -71,7 +71,7 @@ void TestbenchAXIMModuleGenerator::InternalExec(std::ostream& out, structural_ob
    }
 
    const auto port_prefix = mod_cir->get_id().substr(sizeof("if_") - 1U, std::string::npos);
-   std::string np_library = mod_cir->get_id() + " WRITE_DELAY READ_DELAY QUEUE_SIZE";
+   std::string np_library = mod_cir->get_id();
    std::string internal_port_assign;
    const auto add_port_parametric = [&](const std::string& name, port_o::port_direction dir, unsigned port_size) {
       const auto port_name = port_prefix + "_" + name;
@@ -151,7 +151,10 @@ void TestbenchAXIMModuleGenerator::InternalExec(std::ostream& out, structural_ob
    structural_manager::add_NP_functionality(mod_cir, NP_functionality::LIBRARY, np_library);
 
    out << internal_port_assign << "\n"
-       << "parameter BITSIZE_data=BITSIZE_" << port_prefix << "_rdata,\n"
+       << "localparam WRITE_DELAY=" << HLSMgr->get_parameter()->getOption<unsigned int>(OPT_mem_delay_write) << ",\n"
+       << "  READ_DELAY=" << HLSMgr->get_parameter()->getOption<unsigned int>(OPT_mem_delay_read) << ",\n"
+       << "  QUEUE_SIZE=12,\n"
+       << "  BITSIZE_data=BITSIZE_" << port_prefix << "_rdata,\n"
        << "  BITSIZE_counter=32,\n"
        << "  BITSIZE_burst=BITSIZE_" << port_prefix << "_arburst,\n"
        << "  BITSIZE_len=BITSIZE_" << port_prefix << "_arlen,\n"

@@ -5,7 +5,7 @@ ggo_require_device=1
 ggo_require_period=1
 . $script_dir/../../panda_regressions/hls/generic_getopt.sh
 
-BATCH_ARGS=("--hls-div" "--registered-inputs=top" "--panda-parameter=profile-top=1" "--simulate")
+BATCH_ARGS=("--hls-div=NR" "--registered-inputs=top" "--panda-parameter=profile-top=1" "--simulate")
 configuration="${device}_$(printf "%04.1f" $period)_$(echo $compiler | tr '[:upper:]' '[:lower:]')"
 OUT_SUFFIX="${configuration}_libm"
 

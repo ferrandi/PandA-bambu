@@ -1,4 +1,4 @@
-=========== PANDA 2023.08 ===========
+=========== PANDA 2023.09 ===========
 Eleventh public release of PandA framework.
 
 New features introduced:
@@ -10,6 +10,7 @@ New features introduced:
 - Dependencies from Boost libraries have been dropped, only headers are needed (CentOS based system now supported)
 - MachSuite benchmarks updated
 - Fixed issues with Bambu LibM implementation
+- Enhanced interface generation support
 
 =========== PANDA 2023.01 ===========
 Tenth public release of PandA framework.
