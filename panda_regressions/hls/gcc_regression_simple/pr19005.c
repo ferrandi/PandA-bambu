@@ -1,7 +1,7 @@
 /* PR target/19005 */
 extern void abort (void);
 
-int v, s;
+int v, s = 0;
 
 void
 bar (int a, int b)

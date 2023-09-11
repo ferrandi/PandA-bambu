@@ -10,7 +10,7 @@ extern char *strcpy (char *, const char *);
 extern int memcmp (const void *, const void *, size_t);
 extern void abort (void);
 
-size_t g, h, i, j, k, l;
+size_t g = 0, h = 0, i = 0, j = 0, k = 0, l = 0;
 
 size_t
 foo (void)
