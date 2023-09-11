@@ -1,3 +1,7 @@
+#if __clang_major__ >= 15
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wint-conversion"
+#endif
 
 static int next_buffer = 0;
 void bar (void);
@@ -39,3 +43,7 @@ main ()
     abort ();
   exit (0);
 }
+
+#if __clang_major__ >= 15
+#pragma clang diagnostic pop
+#endif
