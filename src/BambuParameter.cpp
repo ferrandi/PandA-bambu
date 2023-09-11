@@ -3804,7 +3804,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_gcc_defines, defines);
 
    setOption(OPT_soft_float, true);
-   setOption(OPT_hls_div, "nr1");
+   setOption(OPT_hls_div, "NR");
    setOption(OPT_hls_fpdiv, "SRT4");
    setOption(OPT_max_ulp, 1.0);
    setOption(OPT_skip_pipe_parameter, 0);

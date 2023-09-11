@@ -11,6 +11,7 @@ New features introduced:
 - MachSuite benchmarks updated
 - Fixed issues with Bambu LibM implementation
 - Enhanced interface generation support
+- Changed default HLS division implementation to Newton-Raphson
 
 =========== PANDA 2023.01 ===========
 Tenth public release of PandA framework.
