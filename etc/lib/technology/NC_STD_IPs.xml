@@ -1869,9 +1869,6 @@ end"/>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="TestbenchAXIM"/>
-          <parameter name="WRITE_DELAY">1</parameter>
-          <parameter name="READ_DELAY">2</parameter>
-          <parameter name="QUEUE_SIZE">12</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -1881,7 +1878,7 @@ end"/>
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality IP_COMPONENT="mem_utils" LIBRARY="TestbenchAXIM WRITE_DELAY READ_DELAY QUEUE_SIZE" VERILOG_GENERATOR="TestbenchAXIMModuleGenerator"/>
+          <NP_functionality IP_COMPONENT="mem_utils" LIBRARY="TestbenchAXIM" VERILOG_GENERATOR="TestbenchAXIMModuleGenerator"/>
         </component_o>
       </circuit>
     </cell>
