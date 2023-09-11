@@ -1553,7 +1553,6 @@ int BambuParameter::Exec()
          }
          case OPT_HLS_DIV:
          {
-            setOption(OPT_hls_div, "NR");
             if(optarg && std::string(optarg) == "nr1")
             {
                setOption(OPT_hls_div, optarg);
@@ -1569,6 +1568,14 @@ int BambuParameter::Exec()
             else if(optarg && std::string(optarg) == "none")
             {
                setOption(OPT_hls_div, optarg);
+            }
+            else if(optarg && std::string(optarg) == "NR")
+            {
+               setOption(OPT_hls_div, optarg);
+            }
+            else
+            {
+               THROW_ERROR("BadParameters: unknown HLS division algorithm");
             }
             break;
          }

@@ -12,11 +12,11 @@ blowfish-BF_cfb64_encrypt/optimized/bf.c --benchmark-name=blowfish-BF_cfb64_encr
 dfadd/not-optimized/dfadd.c --benchmark-name=float64_add_unopt --generate-tb=BENCHMARKS_ROOT/dfadd/not-optimized/float64_add.xml --clock-period=4 --top-fname=float64_add
 dfadd/optimized/dfadd.c --benchmark-name=float64_add_opt --generate-tb=BENCHMARKS_ROOT/dfadd/optimized/float64_add.xml  --clock-period=4 --top-fname=float64_add  --initial-internal-address=0 -finline-limit=10000 --param=early-inlining-insns=100 
 dfdiv/not-optimized/dfdiv.c --benchmark-name=float64_div_unopt --generate-tb=BENCHMARKS_ROOT/dfdiv/not-optimized/float64_div.xml --clock-period=4 --top-fname=float64_div
-dfdiv/optimized/dfdiv.c --benchmark-name=float64_div_opt --generate-tb=BENCHMARKS_ROOT/dfdiv/optimized/float64_div.xml  --clock-period=4 --top-fname=float64_div  --initial-internal-address=0 --hls-div 
+dfdiv/optimized/dfdiv.c --benchmark-name=float64_div_opt --generate-tb=BENCHMARKS_ROOT/dfdiv/optimized/float64_div.xml  --clock-period=4 --top-fname=float64_div  --initial-internal-address=0 --hls-div=NR
 dfmul/not-optimized/dfmul.c --benchmark-name=float64_mul_unopt --generate-tb=BENCHMARKS_ROOT/dfmul/not-optimized/float64_mul.xml --clock-period=4 --top-fname=float64_mul
 dfmul/optimized/dfmul.c --benchmark-name=float64_mul_opt --generate-tb=BENCHMARKS_ROOT/dfmul/optimized/float64_mul.xml  --clock-period=4 --top-fname=float64_mul  --initial-internal-address=0 
 dfsin/not-optimized/dfsin.c --benchmark-name=local_sin_unopt --generate-tb=BENCHMARKS_ROOT/dfsin/not-optimized/local_sin.xml --clock-period=4 --top-fname=local_sin
-dfsin/optimized/dfsin.c --benchmark-name=local_sin_opt --generate-tb=BENCHMARKS_ROOT/dfsin/optimized/local_sin.xml  --clock-period=4 --top-fname=local_sin  --initial-internal-address=0 --hls-div --param=early-inlining-insns=1000
+dfsin/optimized/dfsin.c --benchmark-name=local_sin_opt --generate-tb=BENCHMARKS_ROOT/dfsin/optimized/local_sin.xml  --clock-period=4 --top-fname=local_sin  --initial-internal-address=0 --hls-div=NR --param=early-inlining-insns=1000
 gsm/not-optimized/gsm.c --benchmark-name=Gsm_LPC_Analysis_unopt --generate-tb=BENCHMARKS_ROOT/gsm/not-optimized/Gsm_LPC_Analysis.xml --clock-period=4 --top-fname=Gsm_LPC_Analysis
 gsm/optimized/gsm.c --benchmark-name=Gsm_LPC_Analysis_opt --generate-tb=BENCHMARKS_ROOT/gsm/optimized/Gsm_LPC_Analysis.xml --clock-period=5 --top-fname=Gsm_LPC_Analysis -ftree-vectorize -finline-limit=10000 gsm_constraints.xml --skip-pipe-parameter=1
 jpeg/not-optimized/main.c --benchmark-name=jpeg2bmp_main_unopt --generate-tb=BENCHMARKS_ROOT/jpeg/not-optimized/jpeg2bmp_main.xml --clock-period=4 --top-fname=jpeg2bmp_main
