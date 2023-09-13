@@ -1818,7 +1818,12 @@ int BambuParameter::Exec()
          }
          case OPT_TB_EXTRA_GCC_OPTIONS:
          {
-            setOption(OPT_tb_extra_gcc_options, optarg);
+            std::string tb_extra_gcc_options;
+            if(isOption(OPT_tb_extra_gcc_options))
+            {
+               tb_extra_gcc_options = getOption<std::string>(OPT_tb_extra_gcc_options) + " ";
+            }
+            setOption(OPT_tb_extra_gcc_options, tb_extra_gcc_options + std::string(optarg));
             break;
          }
          case OPT_MAX_SIM_CYCLES:
