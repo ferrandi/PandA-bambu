@@ -81,7 +81,7 @@ DesignFlowStep_Status LoadDefaultTechnology::Exec()
 
       for(i = 0; i < sizeof(builtin_resources_data) / sizeof(char*); ++i)
       {
-         XMLDomParser parser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/design_flows/technology/") +
+         XMLDomParser parser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/design_flows/technology/", true) +
                              builtin_resources_data[i]);
          parser.Exec();
          if(parser)
