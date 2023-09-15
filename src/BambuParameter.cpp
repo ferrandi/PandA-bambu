@@ -3885,6 +3885,6 @@ void BambuParameter::add_bambu_library(std::string lib)
       archive_files = getOption<std::string>(OPT_archive_files) + STR_CST_string_separator;
    }
 
-   setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_" +
-                                    CompilerWrapper::getCompilerSuffix(preferred_compiler) + VSuffix + ".a");
+   setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib", true) + lib +
+                                    "_" + CompilerWrapper::getCompilerSuffix(preferred_compiler) + VSuffix + ".a");
 }
