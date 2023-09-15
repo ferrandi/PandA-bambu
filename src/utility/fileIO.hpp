@@ -155,8 +155,7 @@ inline std::string relocate_compiler_path(const std::string& path)
    }
    else if(getenv("APPDIR"))
    {
-      std::string app_prefix = getenv("APPDIR");
-      return app_prefix + path;
+      return "$APPDIR/" + path;
    }
 #ifdef _WIN32
    else

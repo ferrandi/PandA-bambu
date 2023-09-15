@@ -146,8 +146,8 @@ unset PYTHONHOME  # Python is not bundled with this AppImage
 unset PYTHONPATH
 BINARY_NAME=\$(basename "\$ARGV0")
 BINARY_PATH="\$APPDIR/usr/bin/\$BINARY_NAME"
-if [ "\$BINARY_NAME" == "debug_terminal" ]; then
-   BINARY_PATH="/bin/bash"
+if [ "\$BINARY_NAME" == "panda_shell" ]; then
+   BINARY_PATH="\$SHELL"
 fi
 if [ ! -e "\$BINARY_PATH" ]; then
    BINARY_PATH="\$APPDIR/usr/bin/bambu"
