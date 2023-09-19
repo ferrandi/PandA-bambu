@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -46,8 +46,8 @@
 #include "constant_strings.hpp"
 #include "exceptions.hpp"
 #include "function_behavior.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "library_manager.hpp"
 #include "string_manipulation.hpp" //STR
 #include "technology_manager.hpp"
@@ -117,8 +117,8 @@ unsigned int functions::get_proxy_mapping(const std::string& fun) const
 
 std::string functions::GetFUName(const std::string& fname, const HLS_managerRef HLSMgr)
 {
-   const auto HLS_T = HLSMgr->get_HLS_target();
-   const auto TechM = HLS_T->get_technology_manager();
+   const auto HLS_D = HLSMgr->get_HLS_device();
+   const auto TechM = HLS_D->get_technology_manager();
    const auto fu_node = TechM->GetFunctionFU(fname);
    return fu_node ? fu_node->get_name() : fname;
 }

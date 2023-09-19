@@ -12,7 +12,7 @@
  *                              Politecnico di Milano - DEIB
  *                                System Architectures Group
  *                 ***********************************************
- *                  Copyright (C) 2004-2022 Politecnico di Milano
+ *                  Copyright (C) 2004-2023 Politecnico di Milano
  *
  *    This file is part of the PandA framework.
  *
@@ -38,8 +38,6 @@
  */
 #ifndef LUT_TRANSFORMATION_HPP
 #define LUT_TRANSFORMATION_HPP
-
-#include "config_HAVE_STDCXX_17.hpp"
 
 /// Super class include
 #include "function_frontend_flow_step.hpp"
@@ -81,8 +79,6 @@ class lut_transformation : public FunctionFrontendFlowStep
    /// The maximum number of inputs of a lut
    size_t max_lut_size;
 
-#if HAVE_STDCXX_17
-
    /// The list of all operation that can be converted to a lut.
    const std::vector<enum kind> lutBooleanExpressibleOperations = {
        bit_and_expr_K, truth_and_expr_K, bit_ior_expr_K, truth_or_expr_K, truth_orif_expr_K,
@@ -123,10 +119,8 @@ class lut_transformation : public FunctionFrontendFlowStep
 
    bool CheckIfProcessable(std::pair<unsigned int, blocRef> block);
 
-   tree_nodeRef CreateBitSelectionNodeOrCast(const tree_nodeRef source, int index, unsigned int BB_index,
+   tree_nodeRef CreateBitSelectionNodeOrCast(const tree_nodeRef source, int index,
                                              std::vector<tree_nodeRef>& prev_stmts_to_add);
-
-#endif
 
    /**
     * Return the set of analyses in relationship with this design step

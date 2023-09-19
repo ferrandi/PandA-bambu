@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -55,8 +55,8 @@
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 
 /// Graph include
 #include "basic_block.hpp"
@@ -139,35 +139,38 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
    const tree_manipulationRef tree_man(new tree_manipulation(TreeM, parameters, AppM));
 
    const auto curr_tn = TreeM->GetTreeNode(function_id);
-   const auto fd = GetPointerS<function_decl>(curr_tn);
-   const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
-
-   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
-   const auto hls_target = GetPointer<const HLS_manager>(AppM)->get_HLS_target();
-   if(hls_target->get_target_device()->has_parameter("use_soft_64_mul") &&
-      hls_target->get_target_device()->get_parameter<size_t>("use_soft_64_mul"))
+   const auto fname = tree_helper::GetFunctionName(TreeM, curr_tn);
+   if(fname != "__umul64" && fname != "__mul64")
    {
-      use64bitMul = true;
-   }
+      const auto fd = GetPointerS<function_decl>(curr_tn);
+      const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
 
-   bool modified = false;
-   for(const auto& idx_bb : sl->list_of_bloc)
-   {
-      const auto& BB = idx_bb.second;
-      for(const auto& stmt : BB->CGetStmtList())
+      THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_device(), "unexpected condition");
+      const auto hls_d = GetPointer<const HLS_manager>(AppM)->get_HLS_device();
+      if(hls_d->has_parameter("use_soft_64_mul") && hls_d->get_parameter<size_t>("use_soft_64_mul"))
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Examine " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
-         modified |= recursive_examinate(stmt, stmt, tree_man);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "<--Examined " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
+         use64bitMul = true;
       }
-   }
 
-   if(modified)
-   {
-      function_behavior->UpdateBBVersion();
-      return DesignFlowStep_Status::SUCCESS;
+      bool modified = false;
+      for(const auto& idx_bb : sl->list_of_bloc)
+      {
+         const auto& BB = idx_bb.second;
+         for(const auto& stmt : BB->CGetStmtList())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "-->Examine " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
+            modified |= recursive_examinate(stmt, stmt, tree_man);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "<--Examined " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
+         }
+      }
+
+      if(modified)
+      {
+         function_behavior->UpdateBBVersion();
+         return DesignFlowStep_Status::SUCCESS;
+      }
    }
    return DesignFlowStep_Status::UNCHANGED;
 }
@@ -207,19 +210,19 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
             if(fname == "__umul64" || fname == "__mul64")
             {
                THROW_ASSERT(ce->args.size() == 2, "unexpected condition");
-               const auto bitsize0 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(ce->args.at(0)));
-               const auto bitsize1 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(ce->args.at(1)));
+               const auto bitsize0 = ceil_pow2(tree_helper::Size(ce->args.at(0)));
+               const auto bitsize1 = ceil_pow2(tree_helper::Size(ce->args.at(1)));
                const auto bitsize = std::max(bitsize0, bitsize1);
                if(bitsize <= 32)
                {
                   const auto expr_type = tree_helper::CGetType(ce->args.at(0));
                   const auto me = tree_man->create_binary_operation(expr_type, ce->args.at(0), ce->args.at(1),
                                                                     BUILTIN_SRCP, mult_expr_K);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced " + STR(current_statement));
                   TreeM->ReplaceTreeNode(current_statement, current_tree_node, me);
                   AppM->GetCallGraphManager()->RemoveCallPoint(function_id, GET_INDEX_CONST_NODE(fnode),
                                                                GET_INDEX_CONST_NODE(current_statement));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Replaced " + STR(current_tree_node) + " -> " + STR(ce));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---      -> " + STR(current_statement));
                   modified = true;
                }
             }
@@ -264,15 +267,15 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
          if(be_type == exact_div_expr_K || be_type == trunc_div_expr_K || be_type == trunc_mod_expr_K)
          {
             const auto expr_type = tree_helper::CGetType(be->op0);
-            const auto bitsize0 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(be->op0));
-            const auto bitsize1 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(be->op1));
+            const auto bitsize0 = ceil_pow2(tree_helper::Size(be->op0));
+            const auto bitsize1 = ceil_pow2(tree_helper::Size(be->op1));
             const auto bitsize = std::max(bitsize0, bitsize1);
 
             const auto div_by_constant = [&]() {
                if(GetPointer<const integer_cst>(GET_CONST_NODE(be->op1)))
                {
-                  const auto ic = GetPointerS<const integer_cst>(GET_CONST_NODE(be->op1));
-                  if((ic->value & (ic->value - 1)) == 0)
+                  const auto cst_val = tree_helper::GetConstValue(be->op1);
+                  if((cst_val & (cst_val - 1)) == 0)
                   {
                      return true;
                   }
@@ -295,20 +298,20 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding call to " + fu_name);
                const std::vector<tree_nodeRef> args = {be->op0, be->op1};
                const auto ce = tree_man->CreateCallExpr(called_function, args, get_current_srcp());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced " + STR(current_statement));
                TreeM->ReplaceTreeNode(current_statement, current_tree_node, ce);
                CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index,
                                                        GET_INDEX_CONST_NODE(current_statement),
                                                        FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Replaced " + STR(current_tree_node) + " -> " + STR(ce));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---      -> " + STR(current_statement));
                modified = true;
             }
          }
          else if(be_type == mult_expr_K && use64bitMul)
          {
             const auto expr_type = tree_helper::CGetType(be->op0);
-            const auto bitsize0 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(be->op0));
-            const auto bitsize1 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(be->op1));
+            const auto bitsize0 = ceil_pow2(tree_helper::Size(be->op0));
+            const auto bitsize1 = ceil_pow2(tree_helper::Size(be->op1));
             const auto bitsize = std::max(bitsize0, bitsize1);
             if(GET_CONST_NODE(expr_type)->get_kind() == integer_type_K && bitsize == 64)
             {
@@ -321,12 +324,12 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding call to " + fname);
                const std::vector<tree_nodeRef> args = {be->op0, be->op1};
                const auto ce = tree_man->CreateCallExpr(called_function, args, get_current_srcp());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced " + STR(current_statement));
                TreeM->ReplaceTreeNode(current_statement, current_tree_node, ce);
                CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index,
                                                        GET_INDEX_CONST_NODE(current_statement),
                                                        FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Replaced " + STR(current_tree_node) + " -> " + STR(ce));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---      -> " + STR(current_statement));
                modified = true;
             }
          }

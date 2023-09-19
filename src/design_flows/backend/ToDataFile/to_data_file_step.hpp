@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2022 Politecnico di Milano
+ *              Copyright (C) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -80,7 +80,7 @@ class ToDataFileStep : public virtual DesignFlowStep
     * Return a unified identifier of this design step
     * @return the signature of the design step
     */
-   const std::string GetSignature() const override;
+   std::string GetSignature() const override;
 
    /**
     * Given a to data file step type, return the name of the type
@@ -107,7 +107,7 @@ class ToDataFileStep : public virtual DesignFlowStep
     * Return the name of this design step
     * @return the name of the pass (for debug purpose)
     */
-   const std::string GetName() const override;
+   std::string GetName() const override;
 
    /**
     * Compute the relationships of a step with other steps
@@ -120,7 +120,7 @@ class ToDataFileStep : public virtual DesignFlowStep
    /**
     * Return the factory to create this type of steps
     */
-   const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
+   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
 
    /**
     * Check if this step has actually to be executed

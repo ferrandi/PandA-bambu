@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -39,13 +39,14 @@
 #define DISCREPANCY_ANALYSIS_C_WRITER
 
 #include "hls_c_writer.hpp"
-
 #include "refcount.hpp"
 
 REF_FORWARD_DECL(Discrepancy);
 
 class DiscrepancyAnalysisCWriter : public HLSCWriter
 {
+   void WriteTestbenchHelperFunctions();
+
  protected:
    const DiscrepancyRef Discrepancy;
 
@@ -61,7 +62,7 @@ class DiscrepancyAnalysisCWriter : public HLSCWriter
 
    void WriteExtraCodeBeforeEveryMainCall() override;
 
-   virtual void WriteBBHeader(const unsigned int bb_number, const unsigned int function_index) override;
+   void WriteBBHeader(const unsigned int bb_number, const unsigned int function_index) override;
 
    /**
     * Write extra information on the given statement vertex, before the
@@ -85,15 +86,10 @@ class DiscrepancyAnalysisCWriter : public HLSCWriter
    /**
     * Constructor
     */
-   DiscrepancyAnalysisCWriter(const HLSCBackendInformationConstRef _hls_c_backend_information,
-                              const application_managerConstRef _AppM, const InstructionWriterRef _instruction_writer,
+   DiscrepancyAnalysisCWriter(const CBackendInformationConstRef _c_backend_information,
+                              const HLS_managerConstRef _HLSMgr, const InstructionWriterRef _instruction_writer,
                               const IndentedOutputStreamRef _indented_output_stream,
                               const ParameterConstRef _parameters, bool _verbose);
-
-   /**
-    * Destructor
-    */
-   ~DiscrepancyAnalysisCWriter() override;
 
    /**
     * Declares the local variable; in case the variable used in the initialization of
@@ -115,5 +111,7 @@ class DiscrepancyAnalysisCWriter : public HLSCWriter
     * Writes implementation of __builtin_wait_call
     */
    void WriteBuiltinWaitCall() override;
+
+   void WriteMainTestbench() override;
 };
 #endif

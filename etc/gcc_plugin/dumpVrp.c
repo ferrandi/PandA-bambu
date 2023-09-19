@@ -12,7 +12,7 @@
 *                       Politecnico di Milano - DEIB
 *                        System Architectures Group
 *             ***********************************************
-*              Copyright (C) 2004-2022 Politecnico di Milano
+*              Copyright (C) 2004-2023 Politecnico di Milano
 *
 *   This file is part of the PandA framework.
 *
@@ -28579,7 +28579,7 @@ vrp_finalize_nofold (void)
     check_all_array_refs ();
 
   /* We must identify jump threading opportunities before we release
-     the datastructures built by VRP.  */
+     the data-structures built by VRP.  */
   //identify_jump_threads ();
 
   /* Free allocated memory.  */

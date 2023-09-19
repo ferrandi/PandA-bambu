@@ -11,7 +11,7 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (C) 2004-2022 Politecnico di Milano
+ *            Copyright (C) 2004-2023 Politecnico di Milano
  *
  * This file is part of the PandA framework.
  *
@@ -43,10 +43,10 @@
 #include "copyrights_strings.hpp"
 #include "fileIO.hpp"
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "memory.hpp"
-#include "memory_symbol.hpp"
+#include "string_manipulation.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
@@ -105,14 +105,14 @@ void WB4Intercon_interface::exec()
    HLS->top = SM_wb4_interconnected;
 }
 
-static unsigned int get_data_bus_bitsize(const hlsRef HLS, const HLS_managerRef HLSMgr)
+static unsigned long long get_data_bus_bitsize(const hlsRef HLS, const HLS_managerRef HLSMgr)
 {
    const auto function_behavior = HLSMgr->CGetFunctionBehavior(HLS->functionId);
    const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
-   std::map<unsigned int, memory_symbolRef> parameters = HLSMgr->Rmem->get_function_parameters(HLS->functionId);
+   const auto parameters = HLSMgr->Rmem->get_function_parameters(HLS->functionId);
 
-   unsigned int data_bus_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
-   for(auto function_parameter : parameters)
+   auto data_bus_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
+   for(const auto& function_parameter : parameters)
    {
       if(function_parameter.first != HLS->functionId)
       {
@@ -126,8 +126,8 @@ static unsigned int get_data_bus_bitsize(const hlsRef HLS, const HLS_managerRef 
 
 static unsigned int get_addr_bus_bitsize(const HLS_managerRef HLSMgr)
 {
-   unsigned int addr_bus_bitsize = HLSMgr->get_address_bitsize();
-   unsigned long long int allocated_space = HLSMgr->Rmem->get_max_address();
+   auto addr_bus_bitsize = HLSMgr->get_address_bitsize();
+   auto allocated_space = HLSMgr->Rmem->get_max_address();
    unsigned int parameter_addr_bit = 1;
    while(allocated_space >>= 1)
    {
@@ -143,8 +143,8 @@ static void build_bus_interface(structural_managerRef SM, const hlsRef HLS, cons
 
    structural_type_descriptorRef b_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 1));
 
-   unsigned int data_bus_bitsize = get_data_bus_bitsize(HLS, HLSMgr);
-   unsigned int addr_bus_bitsize = get_addr_bus_bitsize(HLSMgr);
+   auto data_bus_bitsize = get_data_bus_bitsize(HLS, HLSMgr);
+   auto addr_bus_bitsize = get_addr_bus_bitsize(HLSMgr);
 
    structural_type_descriptorRef sel_type =
        structural_type_descriptorRef(new structural_type_descriptor("bool", data_bus_bitsize / 8));
@@ -199,7 +199,7 @@ static void buildCircuit(structural_managerRef SM, structural_objectRef wrappedO
    const tree_managerRef TM = HLSMgr->get_tree_manager();
 
    structural_objectRef interconnect = SM->add_module_from_technology_library(
-       "intercon", WB4_INTERCON, WBLIBRARY, interfaceObj, HLS->HLS_T->get_technology_manager());
+       "intercon", WB4_INTERCON, WBLIBRARY, interfaceObj, HLS->HLS_D->get_technology_manager());
 
    auto* interconModule = GetPointer<module>(interconnect);
    unsigned int interconPortsNumber = interconModule->get_num_ports();
@@ -263,7 +263,7 @@ static void buildCircuit(structural_managerRef SM, structural_objectRef wrappedO
       masters.push_back(wrappedObj);
    }
 
-   const CustomOrderedSet<unsigned int> additionalTops = HLSMgr->CGetCallGraphManager()->GetAddressedFunctions();
+   const auto additionalTops = HLSMgr->CGetCallGraphManager()->GetAddressedFunctions();
    for(unsigned int itr : additionalTops)
    {
       std::string functionName = tree_helper::name_function(TM, itr);
@@ -272,7 +272,7 @@ static void buildCircuit(structural_managerRef SM, structural_objectRef wrappedO
       baseAddressFile << std::bitset<8 * sizeof(unsigned int)>(HLSMgr->Rmem->get_first_address(itr)) << '\n'
                       << std::bitset<8 * sizeof(unsigned int)>(HLSMgr->Rmem->get_last_address(itr, HLSMgr)) << '\n';
       structural_objectRef additionalTop = SM->add_module_from_technology_library(
-          functionName, moduleName, WORK_LIBRARY, interfaceObj, HLS->HLS_T->get_technology_manager());
+          functionName, moduleName, WORK_LIBRARY, interfaceObj, HLS->HLS_D->get_technology_manager());
 
       std::string acceleratorBaseAddress = STR(WB_BASE_ADDRESS) + "_" + functionName;
       additionalTop->SetParameter(acceleratorBaseAddress, topModuleBaseAddress + " + " + acceleratorBaseAddress);

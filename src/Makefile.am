@@ -79,11 +79,6 @@ if BUILD_LIB_INTERMEDIATE_REPRESENTATIONS
 include $(top_srcdir)/src/intermediate_representations/intermediate_representations.am
 endif
 
-if BUILD_LIB_FROM_IPXACT
-  SUBDIRS += ip_xact
-  DIST_SUBDIRS += ip_xact
-endif
-
 if BUILD_LIB_ILP
 include $(top_srcdir)/src/ilp/ilp.am
 endif

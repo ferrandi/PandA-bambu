@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -41,63 +41,21 @@
  * Last modified by $Author$
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_GRAPH_PARTITIONING_BUILT.hpp"
-#include "config_HAVE_MPPB.hpp"
-
-/// Header include
 #include "instruction_writer.hpp"
 
-/// behavior include
+#include "Parameter.hpp"
+#include "actor_graph_backend.hpp"
 #include "application_manager.hpp"
-
-/// design_flows/backend/ToC/source_code_writers
-#if HAVE_GRAPH_PARTITIONING_BUILT
-#include "pthread_instruction_writer.hpp"
-#endif
-
-/// design_flows/codesign/partitioning/graph_partitioningh
-#if HAVE_GRAPH_PARTITIONING_BUILT
-#include "partitioning_manager.hpp"
-#endif
-
-/// Backend include
-#include "c_writer.hpp"
-#if HAVE_MPPB
-#include "mppb_instruction_writer.hpp"
-#endif
-#include "prettyPrintVertex.hpp"
-
-/// Behavior include
-#include "basic_block.hpp"
 #include "behavioral_helper.hpp"
 #include "function_behavior.hpp"
-#include "loop.hpp"
-#include "loops.hpp"
-
-/// design_flows/backend/ToC/progmodels include
-#include "actor_graph_backend.hpp"
-
-/// Graph include
-#include "graph.hpp"
-
-/// Parameter include
-#include "Parameter.hpp"
-
-/// STD include
-#include <cmath>
-#include <fstream>
-#include <iosfwd>
-#include <ostream>
-
-/// tree includes
-#include "var_pp_functor.hpp"
-
-/// utility include
 #include "indented_output_stream.hpp"
 #include "refcount.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "string_manipulation.hpp"
+#include "tree_helper.hpp"
+#include "tree_manager.hpp"
+#include "var_pp_functor.hpp"
+
+#include "config_HAVE_MPPB.hpp"
 
 InstructionWriter::InstructionWriter(const application_managerConstRef _AppM,
                                      const IndentedOutputStreamRef _indented_output_stream,
@@ -120,20 +78,10 @@ InstructionWriterRef InstructionWriter::CreateInstructionWriter(const ActorGraph
          return InstructionWriterRef(new MppbInstructionWriter(AppM, indented_output_stream, true, parameters));
       }
 #endif
-#if HAVE_GRAPH_PARTITIONING_BUILT
-      case(ActorGraphBackend_Type::BA_OPENMP):
-#endif
       case(ActorGraphBackend_Type::BA_NONE):
       {
          return InstructionWriterRef(new InstructionWriter(AppM, indented_output_stream, parameters));
       }
-#if HAVE_GRAPH_PARTITIONING_BUILT
-      case(ActorGraphBackend_Type::BA_PTHREAD):
-      {
-         return InstructionWriterRef(new PThreadInstructionWriter(RefcountCast<const PartitioningManager>(AppM),
-                                                                  indented_output_stream, parameters));
-      }
-#endif
       default:
       {
          THROW_UNREACHABLE("");
@@ -151,7 +99,7 @@ void InstructionWriter::Initialize()
 void InstructionWriter::write(const FunctionBehaviorConstRef function_behavior, const vertex statement,
                               const var_pp_functorConstRef varFunctor)
 {
-   const std::string statement_string = function_behavior->CGetBehavioralHelper()->print_vertex(
+   const auto statement_string = function_behavior->CGetBehavioralHelper()->print_vertex(
        function_behavior->CGetOpGraph(FunctionBehavior::CFG), statement, varFunctor);
 
    if(statement_string.size())
@@ -162,9 +110,11 @@ void InstructionWriter::write(const FunctionBehaviorConstRef function_behavior, 
 
 void InstructionWriter::declareFunction(const unsigned int function_id)
 {
-   const auto behavioral_helper = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
-   indented_output_stream->Append(behavioral_helper->print_type(
-       function_id, false, true, false, 0, var_pp_functorConstRef(new std_var_pp_functor(behavioral_helper))));
+   const auto TM = AppM->get_tree_manager();
+   const auto BH = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
+   const auto fdecl = tree_helper::PrintType(TM, TM->CGetTreeReindex(function_id), false, true, false, nullptr,
+                                             var_pp_functorConstRef(new std_var_pp_functor(BH)));
+   indented_output_stream->Append(fdecl);
 }
 
 void InstructionWriter::write_declarations()

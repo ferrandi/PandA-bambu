@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -265,6 +265,8 @@ struct StateTransitionGraphInfo : public GraphInfo
 
    /// true when the FSM has cycles
    bool is_a_dag;
+
+   bool bounded;
 
    /// in case of a dag it is possible to compute the minimum number of cycles
    unsigned int min_cycles;

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -46,25 +46,23 @@
 
 #include "language_writer.hpp"
 
-/// STD include
-#include <string>
-
-/// STL include
-#include "custom_set.hpp"
 #include <list>
 #include <map>
+#include <set>
+#include <string>
 #include <vector>
 
 class verilog_writer : public language_writer
 {
  protected:
-   static const char* tokenNames[];
    /// map putting into relation standard gates with the corresponding built-in Verilog statements.
    static const std::map<std::string, std::string> builtin_to_verilog_keyword;
 
-   CustomOrderedSet<std::string> keywords;
+   static const std::set<std::string> keywords;
 
  public:
+   static bool check_keyword_verilog(const std::string& word);
+
    /**
     * Return the name of the language writer.
     */
@@ -267,9 +265,7 @@ class verilog_writer : public language_writer
       return true;
    }
 
-   bool check_keyword(std::string id) const override;
-
-   void write_timing_specification(const technology_managerConstRef TM, const structural_objectRef& cir) override;
+   bool check_keyword(const std::string& id) const override;
 
    void write_header() override;
 

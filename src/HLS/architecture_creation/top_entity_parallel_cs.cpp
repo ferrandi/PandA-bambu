@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2022 Politecnico di Milano
+ *              Copyright (c) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,8 +42,8 @@
 #include "behavioral_helper.hpp"
 #include "copyrights_strings.hpp"
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "loop.hpp"
 #include "loops.hpp"
 #include "memory.hpp"
@@ -79,9 +79,7 @@ top_entity_parallel_cs::top_entity_parallel_cs(const ParameterConstRef _paramete
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-top_entity_parallel_cs::~top_entity_parallel_cs()
-{
-}
+top_entity_parallel_cs::~top_entity_parallel_cs() = default;
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
 top_entity_parallel_cs::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -158,10 +156,10 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating datapath object");
    std::string parallel_controller_model = "__controller_parallel";
    std::string parallel_controller_name = "__controller_parallel";
-   std::string par_ctrl_library = HLS->HLS_T->get_technology_manager()->get_library(parallel_controller_model);
+   std::string par_ctrl_library = HLS->HLS_D->get_technology_manager()->get_library(parallel_controller_model);
    structural_objectRef controller_circuit =
        SM->add_module_from_technology_library(parallel_controller_name, parallel_controller_model, par_ctrl_library,
-                                              circuit, HLS->HLS_T->get_technology_manager());
+                                              circuit, HLS->HLS_D->get_technology_manager());
    controller_circuit->set_owner(circuit);
    auto loopBW = BW_loop_iter(circuit);
    resize_controller_parallel(controller_circuit, loopBW);
@@ -222,7 +220,7 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
                                     parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) ==
                                         HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR))
    {
-      const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
+      const technology_managerRef TM = HLS->HLS_D->get_technology_manager();
       std::string delay_unit;
       auto reset_type = parameters->getOption<std::string>(OPT_reset_type);
       if(reset_type == "sync")
@@ -276,14 +274,14 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-unsigned top_entity_parallel_cs::BW_loop_iter(const structural_objectRef circuit)
+unsigned long long top_entity_parallel_cs::BW_loop_iter(const structural_objectRef circuit)
 {
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    circuit->find_member("__controller_parallel", component_o_K, circuit);
 
-   long long int n = 0;
+   integer_cst_t n = 0;
    const auto listLoops = FB->CGetLoops()->GetList();
-   for(auto loop : listLoops)
+   for(const auto& loop : listLoops)
    {
       if(loop->GetId() != 0)
       {
@@ -292,12 +290,12 @@ unsigned top_entity_parallel_cs::BW_loop_iter(const structural_objectRef circuit
    }
    if(n != 0)
    {
-      auto loopBW = 1 + static_cast<unsigned>(ceil_log2(static_cast<unsigned long long int>(n)));
+      auto loopBW = 1ull + ceil_log2(static_cast<unsigned long long>(n));
       return loopBW;
    }
    else
    {
-      for(auto loop : listLoops)
+      for(const auto& loop : listLoops)
       {
          if(loop->GetId() != 0)
          {
@@ -310,15 +308,15 @@ unsigned top_entity_parallel_cs::BW_loop_iter(const structural_objectRef circuit
    return 0;
 }
 
-void top_entity_parallel_cs::connect_loop_iter(const structural_objectRef circuit, unsigned loopBW)
+void top_entity_parallel_cs::connect_loop_iter(const structural_objectRef circuit, unsigned long long loopBW)
 {
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
    structural_objectRef controller_circuit = circuit->find_member("__controller_parallel", component_o_K, circuit);
 
-   long long int n = 0;
+   integer_cst_t n = 0;
    const auto listLoops = FB->CGetLoops()->GetList();
-   for(auto loop : listLoops)
+   for(const auto& loop : listLoops)
    {
       if(loop->GetId() != 0)
       {
@@ -340,7 +338,7 @@ void top_entity_parallel_cs::connect_loop_iter(const structural_objectRef circui
    }
    else
    {
-      for(auto loop : listLoops)
+      for(const auto& loop : listLoops)
       {
          if(loop->GetId() != 0)
          {
@@ -357,7 +355,8 @@ void top_entity_parallel_cs::connect_loop_iter(const structural_objectRef circui
    THROW_ERROR("unexpected condition");
 }
 
-void top_entity_parallel_cs::resize_controller_parallel(structural_objectRef controller_circuit, unsigned loopBW)
+void top_entity_parallel_cs::resize_controller_parallel(structural_objectRef controller_circuit,
+                                                        unsigned long long loopBW)
 {
    auto num_kernel = parameters->getOption<unsigned int>(OPT_num_accelerators);
    structural_objectRef controller_done_request =
@@ -377,7 +376,7 @@ void top_entity_parallel_cs::resize_controller_parallel(structural_objectRef con
    GetPointer<port_o>(controller_LoopIteration)->type_resize(loopBW);
 }
 
-void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef circuit, unsigned loopBW)
+void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef circuit, unsigned long long loopBW)
 {
    structural_managerRef Datapath = HLS->datapath;
    structural_objectRef datapath_circuit = Datapath->get_circ();

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -46,119 +46,49 @@
  * Last modified by $Author$
  *
  */
+#include "c_writer.hpp"
 
-/// Autoheader include
 #include "config_HAVE_ARM_COMPILER.hpp"
-#include "config_HAVE_GRAPH_PARTITIONING_BUILT.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 #include "config_HAVE_SPARC_COMPILER.hpp"
-#include "config_HAVE_TARGET_PROFILING.hpp"
 #include "config_HAVE_TASK_GRAPHS_BUILT.hpp"
-#include "config_HAVE_ZEBU_BUILT.hpp"
 #include "config_PACKAGE_NAME.hpp"
 #include "config_PACKAGE_VERSION.hpp"
 #include "config_RELEASE.hpp"
 
-/// Header include
-#include "c_writer.hpp"
-
-///. includes
-#include "Parameter.hpp"
-
-/// algorithms/dominance
 #include "Dominance.hpp"
-
-/// algorithms/loops_detection
-#include "loop.hpp"
-#include "loops.hpp"
-
-/// behavior includes
+#include "Parameter.hpp"
+#include "actor_graph_backend.hpp"
 #include "application_manager.hpp"
 #include "basic_block.hpp"
-#include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
-#include "op_graph.hpp"
-
-/// design_flows/backend/ToC includes
-#include "c_backend_step_factory.hpp"
-#if HAVE_TARGET_PROFILING
-#include "escape_c_backend_information.hpp"
-#include "instrument_c_backend_information.hpp"
-#endif
-
-/// design_flows/backend/ToC includes
-#include "actor_graph_backend.hpp"
-
-/// design_flows/backend/ToC/source_code_writers includes
-#if HAVE_HOST_PROFILING_BUILT
-#include "basic_blocks_profiling_c_writer.hpp"
-#if HAVE_EXPERIMENTAL
-#include "data_memory_profiling_c_writer.hpp"
-#include "data_memory_profiling_instruction_writer.hpp"
-#include "efficient_path_profiling_c_writer.hpp"
-#endif
-#endif
-#if HAVE_TARGET_PROFILING
-#include "escape_instruction_writer.hpp"
-#endif
-#if HAVE_EXPERIMENTAL && HAVE_HOST_PROFILING_BUILT
-#include "hierarchical_path_profiling_c_writer.hpp"
-#endif
-#if HAVE_BAMBU_BUILT
-#include "discrepancy_analysis_c_writer.hpp"
-#include "discrepancy_instruction_writer.hpp"
-#include "hls_c_backend_information.hpp"
-#include "hls_c_writer.hpp"
-#include "hls_instruction_writer.hpp"
-#endif
-#include "instruction_writer.hpp"
-#if HAVE_TARGET_PROFILING
-#include "instrument_c_writer.hpp"
-#endif
-#if HAVE_GRAPH_PARTITIONING_BUILT && HAVE_TARGET_PROFILING
-#include "instrument_parallel_c_writer.hpp"
-#endif
-#if HAVE_TARGET_PROFILING
-#include "instrument_writer.hpp"
-#endif
-#if HAVE_EXPERIMENTAL && HAVE_HOST_PROFILING_BUILT
-#include "loops_profiling_c_writer.hpp"
-#endif
-#if HAVE_TARGET_PROFILING
-#include "loops_instrument_c_writer.hpp"
-#endif
-#if HAVE_ZEBU_BUILT
-#include "memory_profiling_c_writer.hpp"
-#include "memory_profiling_instruction_writer.hpp"
-#endif
-#if HAVE_GRAPH_PARTITIONING_BUILT
-#include "parallel_c_writer.hpp"
-#endif
-#if HAVE_EXPERIMENTAL && HAVE_HOST_PROFILING_BUILT
-#include "tree_path_profiling_c_writer.hpp"
-#endif
-
-/// design_flows/codesign/partitioning/graph_partitioning include
-#if HAVE_GRAPH_PARTITIONING_BUILT
-#include "partitioning_manager.hpp"
-#endif
-
-/// tree includes
 #include "behavioral_helper.hpp"
+#include "c_backend.hpp"
+#include "c_backend_information.hpp"
+#include "c_backend_step_factory.hpp"
+#include "call_graph_manager.hpp"
+#include "compiler_wrapper.hpp"
 #include "ext_tree_node.hpp"
+#include "function_behavior.hpp"
+#include "hls_manager.hpp"
+#include "indented_output_stream.hpp"
+#include "instruction_writer.hpp"
+#include "loop.hpp"
+#include "loops.hpp"
+#include "op_graph.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
 #include "var_pp_functor.hpp"
 
-/// utility include
-#include "indented_output_stream.hpp"
+#if HAVE_HOST_PROFILING_BUILT
+#include "basic_blocks_profiling_c_writer.hpp"
+#endif
+#include "discrepancy_analysis_c_writer.hpp"
+#include "discrepancy_instruction_writer.hpp"
+#include "hls_c_writer.hpp"
+#include "hls_instruction_writer.hpp"
 
-/// wrapper/compiler include
-#include "compiler_wrapper.hpp"
-
-/// Boost include
 #include <boost/range/adaptor/reversed.hpp>
 
 #if HAVE_UNORDERED
@@ -210,10 +140,11 @@ class TreeNodesPairSet : public OrderedSetStd<std::pair<tree_nodeRef, tree_nodeR
 {
 };
 #endif
-CWriter::CWriter(const application_managerConstRef _AppM, const InstructionWriterRef _instruction_writer,
+
+CWriter::CWriter(const HLS_managerConstRef _HLSMgr, const InstructionWriterRef _instruction_writer,
                  const IndentedOutputStreamRef _indented_output_stream, const ParameterConstRef _Param, bool _verbose)
-    : AppM(_AppM),
-      TM(_AppM->get_tree_manager()),
+    : HLSMgr(_HLSMgr),
+      TM(_HLSMgr->get_tree_manager()),
       indented_output_stream(_indented_output_stream),
       instrWriter(_instruction_writer),
       bb_label_counter(0),
@@ -229,120 +160,44 @@ CWriter::CWriter(const application_managerConstRef _AppM, const InstructionWrite
 
 CWriter::~CWriter() = default;
 
-CWriterRef CWriter::CreateCWriter(const CBackend::Type type,
-                                  const CBackendInformationConstRef
-#if HAVE_TARGET_PROFILING || HAVE_BAMBU_BUILT
-                                      c_backend_information
-#endif
-                                  ,
-                                  const application_managerConstRef app_man,
+CWriterRef CWriter::CreateCWriter(const CBackendInformationConstRef c_backend_info, const HLS_managerConstRef hls_man,
                                   const IndentedOutputStreamRef indented_output_stream,
                                   const ParameterConstRef parameters, const bool verbose)
 {
-   switch(type)
+   const auto app_man = RefcountCast<const application_manager>(hls_man);
+   switch(c_backend_info->type)
    {
 #if HAVE_HOST_PROFILING_BUILT
-      case(CBackend::CB_BBP):
+      case(CBackendInformation::CB_BBP):
       {
-         const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(
+         const auto instruction_writer = InstructionWriter::CreateInstructionWriter(
              ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, parameters);
          return CWriterRef(
-             new BasicBlocksProfilingCWriter(app_man, instruction_writer, indented_output_stream, parameters, verbose));
+             new BasicBlocksProfilingCWriter(hls_man, instruction_writer, indented_output_stream, parameters, verbose));
       }
 #endif
 #if HAVE_HLS_BUILT
-      case(CBackend::CB_DISCREPANCY_ANALYSIS):
+      case(CBackendInformation::CB_DISCREPANCY_ANALYSIS):
       {
          const InstructionWriterRef instruction_writer(
              new discrepancy_instruction_writer(app_man, indented_output_stream, parameters));
 
-         return CWriterRef(
-             new DiscrepancyAnalysisCWriter(RefcountCast<const HLSCBackendInformation>(c_backend_information), app_man,
-                                            instruction_writer, indented_output_stream, parameters, verbose));
+         return CWriterRef(new DiscrepancyAnalysisCWriter(c_backend_info, hls_man, instruction_writer,
+                                                          indented_output_stream, parameters, verbose));
       }
 #endif
-#if HAVE_TARGET_PROFILING
-      case(CBackend::CB_ESCAPED_SEQUENTIAL):
-      {
-         const EscapeCBackendInformation* escape_c_backend_information =
-             GetPointer<const EscapeCBackendInformation>(c_backend_information);
-         const InstrumentWriterRef instrument_writer = InstrumentWriter::CreateInstrumentWriter(
-             indented_output_stream, escape_c_backend_information->profiling_architecture, parameters);
-         const InstructionWriterRef instruction_writer(new EscapeInstructionWriter(
-             escape_c_backend_information->profiling_architecture, app_man, instrument_writer, indented_output_stream,
-             escape_c_backend_information->exitings_after, escape_c_backend_information->exitings_before, parameters));
-         return CWriterRef(new CWriter(app_man, instruction_writer, indented_output_stream, parameters, verbose));
-      }
-#endif
-#if HAVE_BAMBU_BUILT
-      case(CBackend::CB_HLS):
+      case(CBackendInformation::CB_HLS):
       {
          const InstructionWriterRef instruction_writer(
              new HLSInstructionWriter(app_man, indented_output_stream, parameters));
-         return CWriterRef(new HLSCWriter(RefcountCast<const HLSCBackendInformation>(c_backend_information), app_man,
-                                          instruction_writer, indented_output_stream, parameters, verbose));
+         return CWriterRef(
+             new HLSCWriter(c_backend_info, hls_man, instruction_writer, indented_output_stream, parameters, verbose));
       }
-#endif
-#if HAVE_GRAPH_PARTITIONING_BUILT && HAVE_TARGET_PROFILING
-      case(CBackend::CB_INSTRUMENTED_PARALLEL):
+      case(CBackendInformation::CB_SEQUENTIAL):
       {
-         const InstrumentCBackendInformation* instrument_c_backend_information =
-             GetPointer<const InstrumentCBackendInformation>(c_backend_information);
-         const InstrumentWriterRef instrument_writer = InstrumentWriter::CreateInstrumentWriter(
-             indented_output_stream, instrument_c_backend_information->profiling_architecture, parameters);
-         const InstructionWriterRef instruction_writer(
-             new InstrumentInstructionWriter(instrument_c_backend_information->profiling_architecture, app_man,
-                                             instrument_writer, indented_output_stream, parameters));
-         return CWriterRef(new InstrumentParallelCWriter(RefcountCast<const PartitioningManager>(app_man),
-                                                         instrument_writer, instruction_writer, indented_output_stream,
-                                                         parameters, verbose));
-      }
-#endif
-#if HAVE_TARGET_PROFILING
-      case(CBackend::CB_INSTRUMENTED_SEQUENTIAL):
-      {
-         const InstrumentCBackendInformation* instrument_c_backend_information =
-             GetPointer<const InstrumentCBackendInformation>(c_backend_information);
-         const InstrumentWriterRef instrument_writer = InstrumentWriter::CreateInstrumentWriter(
-             indented_output_stream, instrument_c_backend_information->profiling_architecture, parameters);
-         const InstructionWriterRef instruction_writer(
-             new InstrumentInstructionWriter(instrument_c_backend_information->profiling_architecture, app_man,
-                                             instrument_writer, indented_output_stream, parameters));
-         if(parameters->getOption<int>(OPT_analysis_level) >= static_cast<int>(InstrumentWriter_Level::AL_LOOP))
-         {
-            return CWriterRef(new LoopsInstrumentCWriter(app_man, instrument_writer, instruction_writer,
-                                                         indented_output_stream, parameters, verbose));
-         }
-         else
-         {
-            return CWriterRef(new InstrumentCWriter(app_man, instrument_writer, instruction_writer,
-                                                    indented_output_stream, parameters, verbose));
-         }
-      }
-#endif
-#if HAVE_ZEBU_BUILT
-      case(CBackend::CB_POINTED_DATA_EVALUATION):
-      {
-         const InstructionWriterRef instruction_writer(
-             new MemoryProfilingInstructionWriter(app_man, indented_output_stream, parameters));
-         return CWriterRef(new MemoryProfilingCWriter(app_man, instruction_writer, indented_output_stream, parameters));
-      }
-#endif
-#if HAVE_GRAPH_PARTITIONING_BUILT
-      case(CBackend::CB_PARALLEL):
-      {
-         const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(
-             parameters->getOption<ActorGraphBackend_Type>(OPT_fork_join_backend), app_man, indented_output_stream,
-             parameters);
-         return CWriterRef(new ParallelCWriter(RefcountCast<const PartitioningManager>(app_man), instruction_writer,
-                                               indented_output_stream, parameters, verbose));
-      }
-#endif
-      case(CBackend::CB_SEQUENTIAL):
-      {
-         const InstructionWriterRef instruction_writer = InstructionWriter::CreateInstructionWriter(
+         const auto instruction_writer = InstructionWriter::CreateInstructionWriter(
              ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, parameters);
-         return CWriterRef(new CWriter(app_man, instruction_writer, indented_output_stream, parameters, verbose));
+         return CWriterRef(new CWriter(hls_man, instruction_writer, indented_output_stream, parameters, verbose));
       }
       default:
       {
@@ -354,7 +209,7 @@ CWriterRef CWriter::CreateCWriter(const CBackend::Type type,
 
 void CWriter::declare_cast_types(unsigned int funId, CustomSet<std::string>& locally_declared_types)
 {
-   const auto function_behavior = AppM->CGetFunctionBehavior(funId);
+   const auto function_behavior = HLSMgr->CGetFunctionBehavior(funId);
    const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
    const auto inGraph = function_behavior->CGetOpGraph(FunctionBehavior::DFG);
    // I simply have to go over all the vertices and look for types used for type casting;
@@ -391,7 +246,7 @@ void CWriter::WriteBodyLoop(const unsigned int function_index, const unsigned in
 
 void CWriter::WriteFunctionBody(unsigned int function_id)
 {
-   const FunctionBehaviorConstRef function_behavior = AppM->CGetFunctionBehavior(function_id);
+   const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(function_id);
    const OpGraphConstRef op_graph = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
    const BehavioralHelperConstRef behavioral_helper = function_behavior->CGetBehavioralHelper();
    var_pp_functorRef variableFunctor(new std_var_pp_functor(behavioral_helper));
@@ -413,11 +268,19 @@ void CWriter::WriteFunctionImplementation(unsigned int function_id)
 
 void CWriter::WriteHeader()
 {
+   indented_output_stream->Append(R"(
+#ifdef __cplusplus
+typedef bool _Bool;
+#endif
+
+#include <sys/types.h>
+)");
+
    bool is_readc_needed = false;
    bool is_builtin_cond_expr32 = false;
-   for(auto extfun : AppM->get_functions_without_body())
+   for(auto extfun : HLSMgr->get_functions_without_body())
    {
-      const BehavioralHelperConstRef BH = this->AppM->CGetFunctionBehavior(extfun)->CGetBehavioralHelper();
+      const BehavioralHelperConstRef BH = HLSMgr->CGetFunctionBehavior(extfun)->CGetBehavioralHelper();
       if(BH->get_function_name() == "__bambu_readc" || BH->get_function_name() == "__bambu_read4c")
       {
          is_readc_needed = true;
@@ -442,6 +305,7 @@ void CWriter::WriteHeader()
    {
       indented_output_stream->Append("#define __builtin_cond_expr32(cond, value1, value2) cond ? value1 : value2\n\n");
    }
+   // TODO: add bambu param manager implementation
 }
 
 void CWriter::WriteGlobalDeclarations()
@@ -450,12 +314,12 @@ void CWriter::WriteGlobalDeclarations()
    instrWriter->write_declarations();
 
    /// Writing declarations of global variables
-   CustomOrderedSet<unsigned int> functions = AppM->get_functions_with_body();
+   CustomOrderedSet<unsigned int> functions = HLSMgr->get_functions_with_body();
    THROW_ASSERT(functions.size() > 0, "at least one function is expected");
    unsigned int first_fun = *functions.begin();
-   const auto behavioral_helper = AppM->CGetFunctionBehavior(first_fun)->CGetBehavioralHelper();
+   const auto behavioral_helper = HLSMgr->CGetFunctionBehavior(first_fun)->CGetBehavioralHelper();
 
-   const auto& gblVariables = AppM->GetGlobalVariables();
+   const auto& gblVariables = HLSMgr->GetGlobalVariables();
    // Write the declarations for the global variables
    var_pp_functorRef variableFunctor(new std_var_pp_functor(behavioral_helper));
    for(const auto& glbVar : gblVariables)
@@ -463,7 +327,7 @@ void CWriter::WriteGlobalDeclarations()
       DeclareVariable(glbVar, globallyDeclVars, globally_declared_types, behavioral_helper, variableFunctor);
    }
    indented_output_stream->Append("\n");
-   if(AppM->CGetCallGraphManager()->ExistsAddressedFunction())
+   if(HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction())
    {
       indented_output_stream->Append("#include <stdarg.h>\n\n");
       indented_output_stream->Append("void " + STR(BUILTIN_WAIT_CALL) + "(void * ptr, ...);\n");
@@ -472,7 +336,7 @@ void CWriter::WriteGlobalDeclarations()
 
 void CWriter::DeclareFunctionTypes(const tree_nodeConstRef& tn)
 {
-   const auto FB = AppM->CGetFunctionBehavior(tn->index);
+   const auto FB = HLSMgr->CGetFunctionBehavior(tn->index);
    const auto behavioral_helper = FB->CGetBehavioralHelper();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Declaring function types for " + behavioral_helper->get_function_name());
@@ -497,7 +361,7 @@ void CWriter::DeclareFunctionTypes(const tree_nodeConstRef& tn)
 
 const CustomSet<unsigned int> CWriter::GetLocalVariables(const unsigned int function_id) const
 {
-   const auto inGraph = AppM->CGetFunctionBehavior(function_id)->CGetOpGraph(FunctionBehavior::DFG);
+   const auto inGraph = HLSMgr->CGetFunctionBehavior(function_id)->CGetOpGraph(FunctionBehavior::DFG);
    CustomSet<unsigned int> vars;
    // I simply have to go over all the vertices and get the used variables;
    // the variables which have to be declared are all those variables but
@@ -513,7 +377,7 @@ const CustomSet<unsigned int> CWriter::GetLocalVariables(const unsigned int func
 
 void CWriter::WriteFunctionDeclaration(const unsigned int funId)
 {
-   const auto FB = AppM->CGetFunctionBehavior(funId);
+   const auto FB = HLSMgr->CGetFunctionBehavior(funId);
    const auto behavioral_helper = FB->CGetBehavioralHelper();
    const auto funName = behavioral_helper->get_function_name();
 #if HAVE_ARM_COMPILER
@@ -536,7 +400,7 @@ void CWriter::WriteFunctionDeclaration(const unsigned int funId)
 #endif
    if(funName != "main")
    {
-      this->instrWriter->declareFunction(funId);
+      instrWriter->declareFunction(funId);
       indented_output_stream->Append(";\n\n");
    }
 }
@@ -546,7 +410,7 @@ void CWriter::StartFunctionBody(const unsigned int function_id)
    instrWriter->declareFunction(function_id);
    indented_output_stream->Append("\n{\n");
 
-   const auto behavioral_helper = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
+   const auto behavioral_helper = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
    auto vars = GetLocalVariables(function_id);
 
    for(const auto& funParam : behavioral_helper->GetParameters())
@@ -554,7 +418,7 @@ void CWriter::StartFunctionBody(const unsigned int function_id)
       vars.erase(funParam->index);
    }
 
-   for(const auto& gblVariable : AppM->GetGlobalVariables())
+   for(const auto& gblVariable : HLSMgr->GetGlobalVariables())
    {
       vars.erase(gblVariable->index);
    }
@@ -569,7 +433,7 @@ void CWriter::StartFunctionBody(const unsigned int function_id)
 void CWriter::EndFunctionBody(unsigned int funId)
 {
    indented_output_stream->Append("}\n");
-   if(this->verbose)
+   if(verbose)
    {
       indented_output_stream->Append("//end of function; id: " + STR(funId) + "\n");
    }
@@ -607,7 +471,7 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
    // mark this basic block as analyzed
    bb_analyzed.insert(current_vertex);
    // print a comment with info on the basicblock
-   if(this->verbose)
+   if(verbose)
    {
       indented_output_stream->Append("//Basic block " + STR(bb_number) + " - loop " + STR(bb_node_info->loop_id) +
                                      "\n");
@@ -625,7 +489,9 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
 
       std::string frontier_string;
       for(const auto bb : bb_frontier)
+      {
          frontier_string += "BB" + STR(local_rec_bb_fcfgGraph->CGetBBNodeInfo(bb)->block->number) + " ";
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Frontier at the moment is: " + frontier_string);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Its post-dominator is BB" + STR(bb_number_PD));
    }
@@ -790,7 +656,7 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "Preparing printing of operation " + GET_NAME(local_rec_cfgGraph, *vIter));
          // Write in the C file extra information before the instruction itself
-         if(this->verbose)
+         if(verbose)
          {
             indented_output_stream->Append("//Instruction: " + GET_NAME(local_rec_cfgGraph, *vIter) + "\n");
          }
@@ -819,7 +685,7 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
          }
          if((GET_TYPE(local_rec_cfgGraph, *vIter) & (TYPE_VPHI)) == 0)
          {
-            if(GET_TYPE(local_rec_cfgGraph, *vIter) & (TYPE_WHILE | TYPE_FOR) and this->verbose and
+            if(GET_TYPE(local_rec_cfgGraph, *vIter) & (TYPE_WHILE | TYPE_FOR) and verbose and
                local_rec_function_behavior->CGetLoops()->CGetLoop(bb_node_info->loop_id)->loop_type & DOALL_LOOP)
             {
                indented_output_stream->Append("//#pragma omp parallel for\n");
@@ -830,7 +696,7 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
                add_semicolon = false;
             }
          }
-         else if(this->verbose)
+         else if(verbose)
          {
             indented_output_stream->Append("//(removed virtual phi instruction)\n");
          }
@@ -1251,7 +1117,7 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
       // recurse on the post dominator
       bb_frontier.erase(bb_PD);
       THROW_ASSERT(bb_analyzed.find(bb_PD) == bb_analyzed.end(),
-                   "something of wrong happen " + STR(local_rec_bb_fcfgGraph->CGetBBNodeInfo(bb_PD)->block->number) +
+                   "something wrong happened " + STR(local_rec_bb_fcfgGraph->CGetBBNodeInfo(bb_PD)->block->number) +
                        " Fun(" + STR(local_rec_behavioral_helper->get_function_index()) + ")");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Printing the post dominator");
       writeRoutineInstructions_rec(bb_PD, false, function_index);
@@ -1310,7 +1176,7 @@ void CWriter::writeRoutineInstructions(const unsigned int function_index, const 
                                        CustomOrderedSet<vertex> bb_end)
 {
    bb_label_counter++;
-   const auto function_behavior = AppM->CGetFunctionBehavior(function_index);
+   const auto function_behavior = HLSMgr->CGetFunctionBehavior(function_index);
    const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
    const auto cfgGraph = function_behavior->CGetOpGraph(FunctionBehavior::FCFG);
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->CWriter::writeRoutineInstructions - Start");
@@ -1455,11 +1321,7 @@ void CWriter::DeclareType(const tree_nodeConstRef& varType, const BehavioralHelp
       locally_declared_types.insert(type_name);
       bool is_system;
       const auto decl = std::get<0>(tree_helper::GetSourcePath(varType, is_system));
-      if(!decl.empty() && decl != "<built-in>" && is_system
-#if HAVE_BAMBU_BUILT
-         && !tree_helper::IsInLibbambu(varType)
-#endif
-      )
+      if(!decl.empty() && decl != "<built-in>" && is_system && !tree_helper::IsInLibbambu(varType))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "<--Type has not to be declared since it is declared in included " + decl);
@@ -1473,7 +1335,7 @@ void CWriter::DeclareType(const tree_nodeConstRef& varType, const BehavioralHelp
       }
       if(tree_helper::HasToBeDeclared(TM, real_var_type))
       {
-         if(this->verbose)
+         if(verbose)
          {
             indented_output_stream->Append("//declaration of type " + STR(varType) + "(" + STR(real_var_type) + ")\n");
          }
@@ -1517,11 +1379,7 @@ void CWriter::DeclareVariable(const tree_nodeConstRef& curVar, CustomSet<unsigne
    const auto variable_type = tree_helper::CGetType(curVar);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Type is " + STR(variable_type));
    DeclareType(variable_type, behavioral_helper, locally_declared_types);
-   if(!tree_helper::IsSystemType(curVar)
-#if HAVE_BAMBU_BUILT
-      || tree_helper::IsInLibbambu(curVar)
-#endif
-   )
+   if(!tree_helper::IsSystemType(curVar) || tree_helper::IsInLibbambu(curVar))
    {
       if(verbose)
       {
@@ -1594,7 +1452,7 @@ void CWriter::DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declare
       }
    }
    var_pp_functorRef variableFunctor(new std_var_pp_functor(behavioral_helper));
-   const FunctionBehaviorConstRef function_behavior = AppM->CGetFunctionBehavior(funId);
+   const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(funId);
    const OpGraphConstRef data = function_behavior->CGetOpGraph(FunctionBehavior::DFG);
    OpVertexSet vertices = OpVertexSet(data);
    VertexIterator v, vEnd;
@@ -2094,9 +1952,9 @@ void CWriter::WriteBuiltinWaitCall()
    indented_output_stream->Append("va_list ap;\n");
    indented_output_stream->Append("va_start(ap, ptr);\n");
    indented_output_stream->Append("int boolReturn = va_arg(ap, int);\n");
-   for(const unsigned int id : AppM->CGetCallGraphManager()->GetAddressedFunctions())
+   for(const unsigned int id : HLSMgr->CGetCallGraphManager()->GetAddressedFunctions())
    {
-      const auto BH = AppM->CGetFunctionBehavior(id)->CGetBehavioralHelper();
+      const auto BH = HLSMgr->CGetFunctionBehavior(id)->CGetBehavioralHelper();
       indented_output_stream->Append("if (ptr == " + BH->get_function_name() + ")\n");
       indented_output_stream->Append("{\n");
       std::vector<std::pair<std::string, std::string>> typeAndName;

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -40,24 +40,25 @@
  * Last modified by $Author$
  *
  */
-
-/// Autoheader include
 #include "config_HAVE_RTL_BUILT.hpp"
 
-/// Header include
-#include "translator.hpp"
-
-/// Constant include
+#include "Parameter.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
+#include "evaluation.hpp"
+#include "exceptions.hpp"
 #include "experimental_setup_xml.hpp"
+#include "fileIO.hpp"
 #include "latex_table_constants.hpp"
 #include "latex_table_xml.hpp"
+#include "polixml.hpp"
+#include "string_manipulation.hpp"
+#include "translator.hpp"
+#include "utility.hpp"
 #include "weights_xml.hpp"
-
-/// HLS/evaluation include
-#include "evaluation.hpp"
-
-/// Parameter include
-#include "Parameter.hpp"
+#include "xml_dom_parser.hpp"
+#include "xml_helper.hpp"
 
 #if HAVE_RTL_BUILT
 /// RTL include
@@ -65,29 +66,12 @@
 #include "rtl_node.hpp"
 #endif
 
-/// STD include
+#include <boost/algorithm/string/replace.hpp>
 #include <cmath>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <string>
-
-/// STL include
-#include <string>
-
-/// Utility include
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-#include "exceptions.hpp"
-#include "fileIO.hpp"
-#include "utility.hpp"
-#include <boost/algorithm/string/replace.hpp>
-#include <boost/filesystem/operations.hpp>
-
-/// XML include
-#include "polixml.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-#include "xml_dom_parser.hpp"
-#include "xml_helper.hpp"
 
 #define CSV_COL_SEPARATOR ","
 
@@ -118,14 +102,6 @@
 const char* default_latex_format_stat = {
 #include "latex_format_stat.data"
 };
-#if HAVE_EXPERIMENTAL
-const char* latex_format_af_edges = {
-#include "latex_format_af_edges.data"
-};
-const char* latex_format_edges_reduction = {
-#include "latex_format_edges_reduction.data"
-};
-#endif
 Translator::LatexColumnFormat::LatexColumnFormat()
     : column_alignment("c|"),
       text_format(LatexColumnFormat::TF_number),
@@ -497,7 +473,7 @@ void Translator::Translate(const CustomUnorderedMap<std::string, long double> in
 }
 
 void Translator::write_to_xml(const std::map<enum rtl_kind, std::map<enum mode_kind, long double>>& data,
-                              std::string file_name) const
+                              const std::string& file_name) const
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Staring writing to xml");
    xml_document document;
@@ -723,9 +699,13 @@ void Translator::write_to_pa(
             {
                out << "#" << *it4 << "# ";
                if(cat_counters.find(*it4) != cat_counters.end())
+               {
                   out << cat_counters.find(*it4)->second;
+               }
                else
+               {
                   out << "0.0";
+               }
                out << CSV_COL_SEPARATOR;
             }
          }
@@ -790,7 +770,9 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
          {
             const auto* child = GetPointer<const xml_element>(root_child);
             if(not child)
+            {
                continue;
+            }
             if(child->get_name() == STR_XML_experimental_setup_bambu_version)
             {
                bambu_version = child->get_attribute(STR_XML_experimental_setup_value)->get_value();
@@ -809,7 +791,9 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
                {
                   const auto* benchmark_xml = GetPointer<const xml_element>(benchmark);
                   if(not benchmark_xml)
+                  {
                      continue;
+                  }
                   benchmarks.push_back(benchmark_xml->get_attribute(STR_XML_experimental_setup_value)->get_value());
                }
             }
@@ -840,37 +824,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
    /// The stream
    XMLDomParserRef parser;
 
-#if HAVE_EXPERIMENTAL
-   if(Param->isOption(OPT_evaluation) and
-      (Param->getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::EXACT and
-       Param->isOption(OPT_evaluation_objectives)))
-   {
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Case: Estimation=EXACT");
-      std::string objective_string = Param->getOption<std::string>(OPT_evaluation_objectives);
-      std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
-      unsigned int objectives_hits = 0;
-      for(unsigned int v = 0; v < objective_vector.size(); v++)
-      {
-         if(objective_vector[v] == "NUM_AF_EDGES")
-         {
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Case: Objective=NUM_AF_EDGES");
-            parser = XMLDomParserRef(new XMLDomParser("latex_format_af_edges.data", latex_format_af_edges));
-            objectives_hits++;
-         }
-         else if(objective_vector[v] == "EDGES_REDUCTION")
-         {
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Case: Objective=EDGES_REDUCTION");
-            parser =
-                XMLDomParserRef(new XMLDomParser("latex_format_edges_reduction.data", latex_format_edges_reduction));
-            objectives_hits++;
-         }
-         else if(objectives_hits == 0 and v == objective_vector.size() - 1)
-            THROW_ERROR("None of the specified Estimation Objectives is compatible with the EXACT estimation method!");
-      }
-   }
-   else
-#endif
-       if(Param->isOption(OPT_latex_format_file))
+   if(Param->isOption(OPT_latex_format_file))
    {
       parser = XMLDomParserRef(new XMLDomParser(Param->getOption<std::string>(OPT_latex_format_file)));
    }
@@ -895,7 +849,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing totals");
    /// Computing total when necessary
    CustomMap<std::string, std::string> totals;
-   for(auto latex_column_format : latex_column_formats)
+   for(const auto& latex_column_format : latex_column_formats)
    {
       switch(latex_column_format.total_format)
       {
@@ -1115,7 +1069,9 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
          {
             if(line.second.find(column.source_name) != line.second.end() and
                line.second.find(column.source_name)->second.size() > data_width[column.source_name])
+            {
                data_width[column.source_name] = line.second.find(column.source_name)->second.size();
+            }
          }
          data_width[column.source_name] += 4;
       }
@@ -1130,7 +1086,9 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
    for(auto const& column : latex_column_formats)
    {
       if(column.column_name.size() > data_width[column.source_name])
+      {
          data_width[column.source_name] = column.column_name.size();
+      }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Recomputed column width");
 
@@ -1164,14 +1122,18 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
 
    // Writing the header
    bool first_column = true;
-   for(auto column : latex_column_formats)
+   for(const auto& column : latex_column_formats)
    {
       if(not first_column)
+      {
          out << " & ";
+      }
       first_column = false;
-      std::string& column_name = column.column_name;
+      std::string column_name = column.column_name;
       if(column_name.size() < data_width[column.source_name])
+      {
          column_name.resize(data_width[column.source_name], ' ');
+      }
       out << column_name;
    }
    out << " \\\\" << std::endl;
@@ -1185,7 +1147,9 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "-->Printing column " + column.column_name + " (" + column.source_name + ")");
          if(not first_column)
+         {
             out << " & ";
+         }
          if(column.text_format == LatexColumnFormat::TF_number or
             column.text_format == LatexColumnFormat::TF_exponential)
          {
@@ -1254,7 +1218,9 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
       for(const auto& column : latex_column_formats)
       {
          if(not first_column)
+         {
             out << " & ";
+         }
          if(column.text_format == LatexColumnFormat::TF_number or
             column.text_format == LatexColumnFormat::TF_exponential)
          {
@@ -1403,7 +1369,9 @@ void Translator::get_normalization(CustomUnorderedMap<std::string, long double>&
          {
             const auto* feature = GetPointer<const xml_element>(iter);
             if(!feature)
+            {
                continue;
+            }
             if(feature->get_name() == "feature")
             {
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Read a new feature");
@@ -1486,14 +1454,18 @@ void Translator::read_column_formats(const XMLDomParserRef parser, std::list<Lat
    xml_element* root = parser->get_document()->get_root_node();
    THROW_ASSERT(root->get_name() == STR_XML_latex_table_root, "XML root node not correct: " + root->get_name());
    if(CE_XVM(max_column_size, root))
+   {
       max_column_size = boost::lexical_cast<size_t>(LOAD_XVM(max_column_size, root));
+   }
    const xml_node::node_list list = root->get_children();
    xml_node::node_list::const_iterator child, child_end = list.end();
    for(child = list.begin(); child != child_end; ++child)
    {
       const auto* child_element = GetPointer<const xml_element>(*child);
       if(!child_element)
+      {
          continue;
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Reading information about new column");
       THROW_ASSERT(child_element->get_name() == STR_XML_latex_table_column,
                    "Child not known: " + child_element->get_name());
@@ -1506,7 +1478,9 @@ void Translator::read_column_formats(const XMLDomParserRef parser, std::list<Lat
       {
          const auto* field_element = GetPointer<const xml_element>(*field);
          if(!field_element)
+         {
             continue;
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Read field " + field_element->get_name());
          if(field_element->get_name() == STR_XML_latex_table_alignment)
          {

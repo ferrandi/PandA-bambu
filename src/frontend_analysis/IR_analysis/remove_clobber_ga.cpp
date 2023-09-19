@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -59,8 +59,8 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 
 /// utility include
 #include "dbgPrintHelper.hpp"
@@ -114,7 +114,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
    const bool is_single_write_memory =
        GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->IsSingleWriteMemory();
 
-   for(auto block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {
       const auto curr_bb = block.first;
       if(curr_bb == bloc::ENTRY_BLOCK_ID)
@@ -145,7 +145,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
    if(is_single_write_memory)
    {
       /// perform the substitution
-      for(auto block : sl->list_of_bloc)
+      for(const auto& block : sl->list_of_bloc)
       {
          const auto curr_bb = block.first;
          if(curr_bb == bloc::ENTRY_BLOCK_ID)

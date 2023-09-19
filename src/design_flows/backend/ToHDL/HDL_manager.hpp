@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,7 +66,7 @@ REF_FORWARD_DECL(HDL_manager);
 REF_FORWARD_DECL(HLS_manager);
 REF_FORWARD_DECL(structural_object);
 REF_FORWARD_DECL(language_writer);
-REF_FORWARD_DECL(target_device);
+REF_FORWARD_DECL(generic_device);
 REF_FORWARD_DECL(flopoco_wrapper);
 REF_FORWARD_DECL(structural_manager);
 CONSTREF_FORWARD_DECL(technology_manager);
@@ -81,7 +81,7 @@ class HDL_manager
    const HLS_managerRef HLSMgr;
 
    /// reference to the target device
-   const target_deviceRef device;
+   const generic_deviceRef device;
 
    /// reference to the class containing all the technology information
    const technology_managerConstRef TM;
@@ -178,7 +178,7 @@ class HDL_manager
     * @param device is the data structure containing information about the target device
     * @param parameters is the data structure containing all the parameters
     */
-   HDL_manager(const HLS_managerRef _HLSMgr, const target_deviceRef device, const ParameterConstRef parameters);
+   HDL_manager(const HLS_managerRef _HLSMgr, const generic_deviceRef device, const ParameterConstRef parameters);
 
    /**
     * Constructor
@@ -187,7 +187,7 @@ class HDL_manager
     * @param SM is the structural manager containing the top component
     * @param parameters is the data structure containing all the parameters
     */
-   HDL_manager(const HLS_managerRef HLSMgr, const target_deviceRef device, const structural_managerRef SM,
+   HDL_manager(const HLS_managerRef HLSMgr, const generic_deviceRef device, const structural_managerRef SM,
                const ParameterConstRef parameters);
 
    /**

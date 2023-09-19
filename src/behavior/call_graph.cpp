@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -52,21 +52,11 @@
 #include "graph.hpp"                          // for graph, Cget_edge_info
 #include "loops.hpp"                          // for FunctionBehaviorRef
 #include "string_manipulation.hpp"            // for add_escape
-#include <boost/filesystem/operations.hpp>    // for create_directories
 #include <boost/iterator/iterator_facade.hpp> // for operator!=, operator++
 #include <boost/lexical_cast.hpp>             // for lexical_cast
+#include <filesystem>                         // for create_directories
 #include <ostream>                            // for operator<<, ostream
 #include <utility>                            // for pair
-
-/**
- * @name function graph selector
- */
-//@{
-/// Data line selector
-#define STD_SELECTOR 1 << 0
-/// Clock line selector
-#define FEEDBACK_SELECTOR 1 << 1
-//@}
 
 FunctionInfo::FunctionInfo() : nodeID(0)
 {
@@ -97,9 +87,9 @@ CallGraph::~CallGraph() = default;
 void CallGraph::WriteDot(const std::string& file_name) const
 {
    const auto output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory);
-   if(!boost::filesystem::exists(output_directory))
+   if(!std::filesystem::exists(output_directory))
    {
-      boost::filesystem::create_directories(output_directory);
+      std::filesystem::create_directories(output_directory);
    }
    const std::string full_name = output_directory + file_name;
    const VertexWriterConstRef function_writer(new FunctionWriter(this));
@@ -115,8 +105,7 @@ FunctionWriter::FunctionWriter(const CallGraph* call_graph)
 void FunctionWriter::operator()(std::ostream& out, const vertex& v) const
 {
    THROW_ASSERT(behaviors.find(Cget_node_info<FunctionInfo, graph>(v, *printing_graph)->nodeID) != behaviors.end(),
-                "Function " +
-                    boost::lexical_cast<std::string>(Cget_node_info<FunctionInfo, graph>(v, *printing_graph)->nodeID) +
+                "Function " + std::to_string(Cget_node_info<FunctionInfo, graph>(v, *printing_graph)->nodeID) +
                     " not found");
    const FunctionBehaviorRef FB =
        behaviors.find(Cget_node_info<FunctionInfo, graph>(v, *printing_graph)->nodeID)->second;

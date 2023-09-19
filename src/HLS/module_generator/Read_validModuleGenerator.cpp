@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2022-2022 Politecnico di Milano
+ *              Copyright (C) 2022-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,69 +48,104 @@
 
 #include "language_writer.hpp"
 
+enum in_port
+{
+   i_clock = 0,
+   i_reset,
+   i_start,
+   i_in1,
+   i_in3,
+   i_vld,
+   i_last
+};
+
+enum out_port
+{
+   o_done = 0,
+   o_out1,
+   o_last
+};
+
 Read_validModuleGenerator::Read_validModuleGenerator(const HLS_managerRef& _HLSMgr) : Registrar(_HLSMgr)
 {
 }
 
-void Read_validModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */, unsigned int /* function_id */,
-                                             vertex /* op_v */, const HDLWriter_Language /* language */,
+void Read_validModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */,
+                                             unsigned int /* function_id */, vertex /* op_v */,
+                                             const HDLWriter_Language /* language */,
                                              const std::vector<ModuleGenerator::parameter>& /* _p */,
                                              const std::vector<ModuleGenerator::parameter>& _ports_in,
                                              const std::vector<ModuleGenerator::parameter>& _ports_out,
                                              const std::vector<ModuleGenerator::parameter>& /* _ports_inout */)
 {
-   out << "integer ii=0;\n";
-   out << "reg [PORTSIZE_" << _ports_out[1].name << "-1:0] started 1INIT_ZERO_VALUE;\n";
-   out << "reg [PORTSIZE_" << _ports_out[1].name << "-1:0] started0 1INIT_ZERO_VALUE;\n";
-   out << "reg [PORTSIZE_" << _ports_out[1].name << "-1:0] validated 1INIT_ZERO_VALUE;\n";
-   out << "reg [PORTSIZE_" << _ports_out[1].name << "-1:0] validated0 1INIT_ZERO_VALUE;\n";
-   out << "reg [(PORTSIZE_" << _ports_out[1].name << "*BITSIZE_" << _ports_out[1].name << ")-1:0] "
-       << _ports_out[1].name << " ;\n";
-   out << "reg [PORTSIZE_" << _ports_out[1].name << "-1:0] " << _ports_out[0].name << " 1INIT_ZERO_VALUE;\n";
-   out << "reg [" << _ports_in[4].type_size << "-1:0] reg_" << _ports_in[4].name << " 1INIT_ZERO_VALUE;\n";
+   THROW_ASSERT(_ports_in.size() >= i_last, "");
+   THROW_ASSERT(_ports_out.size() >= o_last, "");
+   out << "parameter ASYNC=0;\n\n"; // TODO: this should be controlled by InterfaceInfer step
+   out << "reg started, started0;\n\n";
 
-   out << "always @(*)\n";
-   out << "  for(ii=0; ii<PORTSIZE_" << _ports_out[1].name << "; ii=ii+1)\n";
-   out << "    started0[ii] = (started[ii] | " << _ports_in[2].name << "[ii]) & !(validated[ii] | " << _ports_in[5].name
-       << ");\n";
-   out << "always @(posedge clock 1RESET_EDGE)\n";
-   out << "  if (1RESET_VALUE)\n";
-   out << "    started <= 0;\n";
-   out << "  else\n";
-   out << "    for(ii=0; ii<PORTSIZE_" << _ports_out[1].name << "; ii=ii+1)\n";
-   out << "      started[ii] <= started0[ii];\n";
+   out << R"(generate
+if(ASYNC)
+begin
+  reg validated, validated0;
+  reg [)"
+       << (_ports_in[i_in3].type_size - 1) << R"(:0] stored;
 
-   out << "always @(*)\n";
-   out << "  for(ii=0; ii<PORTSIZE_" << _ports_out[1].name << "; ii=ii+1)\n";
-   out << "    validated0[ii] <= (validated[ii] | " << _ports_in[5].name << ") & !(started[ii] | " << _ports_in[2].name
-       << "[ii]);\n";
+  always @(posedge clock 1RESET_EDGE)
+  begin
+    if (1RESET_VALUE)
+    begin
+      started <= 0;
+      validated <= 0;
+      stored <= 0;
+    end
+    else
+    begin
+      started <= started0;
+      validated <= validated0;
+      stored <= )"
+       << _ports_in[i_in3].name << R"(;
+    end
+  end
 
-   out << "always @(posedge clock 1RESET_EDGE)\n";
-   out << "  if (1RESET_VALUE)\n";
-   out << "    validated <= 0;\n";
-   out << "  else\n";
-   out << "    for(ii=0; ii<PORTSIZE_" << _ports_out[1].name << "; ii=ii+1)\n";
-   out << "      validated[ii] <= validated0[ii];\n";
+  always @(*)
+  begin
+    started0 = (started | )"
+       << _ports_in[i_start].name << R"() & ~(validated | )" << _ports_in[i_vld].name << R"();
+    validated0 = (validated | )"
+       << _ports_in[i_vld].name << R"() & ~(started | )" << _ports_in[i_start].name << R"();
+  end
 
-   out << "always @(posedge clock 1RESET_EDGE)\n";
-   out << "  if (1RESET_VALUE)\n";
-   out << "    reg_" << _ports_in[4].name << " <= 0;\n";
-   out << "  else if(" << _ports_in[5].name << ")\n";
-   out << "    reg_" << _ports_in[4].name << " <= " << _ports_in[4].name << ";\n";
+  assign )"
+       << _ports_out[o_out1].name << " = " << _ports_in[i_vld].name << " ? " << _ports_in[i_in3].name << R"( : stored;
+  assign )"
+       << _ports_out[o_done].name << " = ((started | " << _ports_in[i_start].name << ") & " << _ports_in[i_vld].name
+       << ") | (validated & " << _ports_in[i_start].name << R"();
+end
+else
+begin
+  always @(posedge clock 1RESET_EDGE)
+  begin
+    if (1RESET_VALUE)
+    begin
+      started <= 0;
+    end
+    else
+    begin
+      started <= started0;
+    end
+  end
 
-   out << "always @(*)\n";
-   out << "begin\n";
-   out << "  for(ii=0; ii<PORTSIZE_" << _ports_out[1].name << "; ii=ii+1)\n";
-   out << "    " << _ports_out[1].name << "[(BITSIZE_" << _ports_out[1].name << ")*ii+:BITSIZE_" << _ports_out[1].name
-       << "] = " << _ports_in[5].name << " ? (" << _ports_in[4].name << " >> (8*" << _ports_in[3].name << "[(BITSIZE_"
-       << _ports_in[3].name << ")*ii+:BITSIZE_" << _ports_in[3].name << "])) : (reg_" << _ports_in[4].name << " >> (8*"
-       << _ports_in[3].name << "[(BITSIZE_" << _ports_in[3].name << ")*ii+:BITSIZE_" << _ports_in[3].name << "]));\n";
-   out << "end\n";
+  always @(*)
+  begin
+    started0 = (started | )"
+       << _ports_in[i_start].name << R"() & ~)" << _ports_in[i_vld].name << R"(;
+  end
 
-   out << "always @(*)\n";
-   out << "begin\n";
-   out << "  for(ii=0; ii<PORTSIZE_" << _ports_out[1].name << "; ii=ii+1)\n";
-   out << "    " << _ports_out[0].name << "[ii] = (" << _ports_in[2].name << "[ii] & " << _ports_in[5].name
-       << ") | (started[ii] & " << _ports_in[5].name << ")  | (validated[ii] & " << _ports_in[2].name << "[ii]);\n";
-   out << "end\n";
+  assign )"
+       << _ports_out[o_out1].name << " = " << _ports_in[i_in3].name << R"(;
+  assign )"
+       << _ports_out[o_done].name << " = (started | " << _ports_in[i_start].name << ") & " << _ports_in[i_vld].name
+       << R"(;
+end
+endgenerate)";
 }

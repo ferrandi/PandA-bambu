@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -41,41 +41,26 @@
  *
  */
 #include "easy_module_binding.hpp"
-
-#include "function_behavior.hpp"
-#include "hls_manager.hpp"
-
+#include "Parameter.hpp"
+#include "allocation_information.hpp"
+#include "behavioral_helper.hpp"
+#include "cpu_time.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
 #include "fu_binding.hpp"
+#include "function_behavior.hpp"
 #include "graph.hpp"
+#include "hls.hpp"
+#include "hls_manager.hpp"
 #include "op_graph.hpp"
 #include "parallel_memory_fu_binding.hpp"
-
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_node.hpp"
-
-#include "Parameter.hpp"
-#include "dbgPrintHelper.hpp"
-
-/// HLS include
-#include "hls.hpp"
-
-/// HLS/allocation_information include
-#include "allocation_information.hpp"
-
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-
-/// tree include
-#include "behavioral_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-
-/// utility include
-#include "cpu_time.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-
-#include "custom_set.hpp"
 #include <iosfwd>
 #include <string>
 #include <tuple>
@@ -113,8 +98,8 @@ easy_module_binding::ComputeHLSRelationships(const DesignFlowStep::RelationshipT
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(),
-                                    HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::DOMINATOR_ALLOCATION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::WHOLE_APPLICATION));
          if(HLSMgr->get_HLS(funId))
          {
             ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->chaining_algorithm, HLSFlowStepSpecializationConstRef(),
@@ -146,10 +131,10 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
    const auto TM = HLSMgr->get_tree_manager();
    // resource binding and allocation  info
    fu_binding& fu = *(HLS->Rfu);
-   const AllocationInformationConstRef allocation_information = HLS->allocation_information;
+   const auto allocation_information = HLS->allocation_information;
    // pointer to a Control, Data dependence and antidependence graph graph
-   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
-   const OpGraphConstRef sdg = FB->CGetOpGraph(FunctionBehavior::SDG);
+   const auto FB = HLSMgr->CGetFunctionBehavior(funId);
+   const auto sdg = FB->CGetOpGraph(FunctionBehavior::SDG);
 
    unsigned int fu_unit;
    /// compute unshared resources
@@ -157,7 +142,7 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
    for(const auto operation : sdg->CGetOperations())
    {
       const auto id = sdg->CGetOpNodeInfo(operation)->GetNodeId();
-      if(id == ENTRY_ID or id == EXIT_ID)
+      if(id == ENTRY_ID || id == EXIT_ID)
       {
          continue;
       }
@@ -175,7 +160,7 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
          n_shared_fu[fu_unit] = 1 + n_shared_fu[fu_unit];
       }
    }
-   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   if(output_level >= OUTPUT_LEVEL_MINIMUM && output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    }
@@ -247,7 +232,7 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                      "---Bound operations:" + STR(easy_bound_vertices.size()) + "/" + STR(boost::num_vertices(*sdg)));
    }
-   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   if(output_level >= OUTPUT_LEVEL_MINIMUM && output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
       STOP_TIME(step_time);
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,

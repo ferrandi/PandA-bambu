@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -46,14 +46,11 @@
 #ifndef HLS_HPP
 #define HLS_HPP
 
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-#include <iosfwd>
-#include <string>
-
-#include "graph.hpp"
 #include "op_graph.hpp"
 #include "refcount.hpp"
+
+#include <iosfwd>
+#include <iostream>
 
 /**
  * @name forward declarations
@@ -62,26 +59,21 @@
 REF_FORWARD_DECL(AllocationInformation);
 REF_FORWARD_DECL(ChainingInformation);
 REF_FORWARD_DECL(conn_binding);
-REF_FORWARD_DECL(DesignFlowStep);
 REF_FORWARD_DECL(fu_binding);
 REF_FORWARD_DECL(hls);
-REF_FORWARD_DECL(HLS_manager);
 REF_FORWARD_DECL(HLS_constraints);
-REF_FORWARD_DECL(HLS_target);
+REF_FORWARD_DECL(HLS_device);
 REF_FORWARD_DECL(liveness);
 CONSTREF_FORWARD_DECL(OpGraph);
-REF_FORWARD_DECL(Parameter);
+CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(reg_binding);
 REF_FORWARD_DECL(Schedule);
 REF_FORWARD_DECL(StateTransitionGraphManager);
 REF_FORWARD_DECL(StorageValueInformation);
 REF_FORWARD_DECL(structural_manager);
-/// forward decl of xml Element
 class xml_element;
 enum class HLSFlowStep_Type;
 //@}
-
-#include "utility.hpp"
 
 /**
  * @class hls
@@ -112,7 +104,7 @@ class hls
    // -------------- High Level Synthesis Specific -------------- //
 
    /// reference to the information representing the target for the synthesis
-   const HLS_targetRef HLS_T;
+   const HLS_deviceRef HLS_D;
 
    /// store the HLS constraints
    const HLS_constraintsRef HLS_C;
@@ -131,10 +123,10 @@ class hls
    /// Store the refcounted state transition graph
    StateTransitionGraphManagerRef STG;
 
-   /// datastructure containing the variable liveness
+   /// data-structure containing the variable liveness
    livenessRef Rliv;
 
-   /// datastructure for storage values
+   /// data-structure for storage values
    StorageValueInformationRef storage_value_information;
 
    /// Store the refcounted register binding of the variables.
@@ -190,7 +182,7 @@ class hls
    /**
     *
     */
-   hls(const ParameterConstRef Param, unsigned int function_id, OpVertexSet operations, const HLS_targetRef HLS_T,
+   hls(const ParameterConstRef Param, unsigned int function_id, OpVertexSet operations, const HLS_deviceRef HLS_D,
        const HLS_constraintsRef HLS_C);
 
    /**

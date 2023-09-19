@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -47,10 +47,7 @@
 /// Header include
 #include "hls.hpp"
 
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
-#include "hls_target.hpp"
+#include "hls_device.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 
@@ -98,11 +95,11 @@ static void computeResources(const structural_objectRef circ, const technology_m
  *                                                                                               *
  *************************************************************************************************/
 
-hls::hls(const ParameterConstRef _Param, unsigned int _function_id, OpVertexSet _operations, const HLS_targetRef _HLS_T,
+hls::hls(const ParameterConstRef _Param, unsigned int _function_id, OpVertexSet _operations, const HLS_deviceRef _HLS_T,
          const HLS_constraintsRef _HLS_C)
     : functionId(_function_id),
       operations(std::move(_operations)),
-      HLS_T(_HLS_T),
+      HLS_D(_HLS_T),
       HLS_C(_HLS_C),
       allocation_information(),
       registered_inputs(false),
@@ -113,7 +110,7 @@ hls::hls(const ParameterConstRef _Param, unsigned int _function_id, OpVertexSet 
       output_level(_Param->getOption<int>(OPT_output_level)),
       HLS_execution_time(0)
 {
-   THROW_ASSERT(HLS_T, "HLS initialization: HLS_target not available");
+   THROW_ASSERT(HLS_D, "HLS initialization: HLS_device not available");
    THROW_ASSERT(HLS_C, "HLS initialization: HLS_constraints not available");
    THROW_ASSERT(Param, "HLS initialization: Parameter not available");
 }
@@ -236,7 +233,7 @@ void hls::xwrite(xml_element* rootnode, const OpGraphConstRef data)
    {
       Enode = rootnode->add_child_element("resource_allocation");
       std::map<std::string, unsigned int> resources;
-      const technology_managerRef TM = HLS_T->get_technology_manager();
+      const technology_managerRef TM = HLS_D->get_technology_manager();
       computeResources(datapath->get_circ(), TM, resources);
       for(auto& resource : resources)
       {
@@ -324,7 +321,7 @@ void hls::PrintResources() const
 {
    THROW_ASSERT(datapath, "datapath not yet created!");
    std::map<std::string, unsigned int> resources;
-   const technology_managerRef TM = HLS_T->get_technology_manager();
+   const technology_managerRef TM = HLS_D->get_technology_manager();
    computeResources(datapath->get_circ(), TM, resources);
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
    {

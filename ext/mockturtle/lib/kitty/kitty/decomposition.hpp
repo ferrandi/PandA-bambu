@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2021  EPFL
+ * Copyright (C) 2017-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -88,7 +88,7 @@ enum class bi_decomposition
   * ``top_decomposition::le_``: :math:`g = \bar a \lor h(X_1)`
   * ``top_decomposition::xor_``: :math:`g = a \oplus h(X_1)`
   * ``top_decomposition::none``: decomposition does not exist
-  
+
   The function can return the remainder function :math:`h`, whic will not depend
   on :math:`a`.
   \endverbatim
@@ -171,7 +171,7 @@ top_decomposition is_top_decomposable( const TT& tt, uint32_t var_index, TT* fun
   * ``bottom_decomposition::le_``: :math:`g = \bar a \lor b`
   * ``bottom_decomposition::xor_``: :math:`g = a \oplus b`
   * ``bottom_decomposition::none``: decomposition does not exist
-  
+
   The function can return the remainder function :math:`h` in where :math:`g`
   is substituted by :math:`a`.  The remainder function will not depend on
   :math:`b`.
@@ -317,7 +317,7 @@ std::pair<bool, std::vector<TT>> check_xor_decomp( const TT& tt, const TT& dc, c
   auto qb = tt.construct();
   auto rb = tt.construct();
 
-  std::vector<TT> q_and_rs{qa, ra, qb, rb};
+  std::vector<TT> q_and_rs{ qa, ra, qb, rb };
   while ( !is_const0( q ) )
   {
     auto cube = select_one_cube( q );
@@ -328,7 +328,7 @@ std::pair<bool, std::vector<TT>> check_xor_decomp( const TT& tt, const TT& dc, c
       rb = exist_set( binary_or( binary_and( q, qa ), binary_and( r, ra ) ), i );
       if ( !is_const0( binary_and( qb, rb ) ) )
       {
-        return {false, q_and_rs};
+        return { false, q_and_rs };
       }
       q = binary_and( q, ~binary_or( qa, ra ) );
       r = binary_and( r, ~binary_or( qa, ra ) );
@@ -340,7 +340,7 @@ std::pair<bool, std::vector<TT>> check_xor_decomp( const TT& tt, const TT& dc, c
       ra = exist_set( binary_or( binary_and( q, qb ), binary_and( r, rb ) ), j );
       if ( !is_const0( binary_and( qa, ra ) ) )
       {
-        return {false, q_and_rs};
+        return { false, q_and_rs };
       }
       q = binary_and( q, ~binary_or( qb, rb ) );
       r = binary_and( r, ~binary_or( qb, rb ) );
@@ -354,7 +354,7 @@ std::pair<bool, std::vector<TT>> check_xor_decomp( const TT& tt, const TT& dc, c
     q_and_rs[1] = binary_or( q_and_rs[1], exist_set( r, j ) );
     q_and_rs[3] = binary_or( q_and_rs[3], exist_set( r, i ) );
   }
-  return {true, q_and_rs};
+  return { true, q_and_rs };
 }
 
 template<class TT>
@@ -382,11 +382,11 @@ std::pair<std::vector<int>, std::vector<int>> find_initial_or( const TT& tt, con
       {
         var_a_vect.push_back( i );
         var_b_vect.push_back( j );
-        return {var_a_vect, var_b_vect};
+        return { var_a_vect, var_b_vect };
       }
     }
   }
-  return {var_a_vect, var_b_vect};
+  return { var_a_vect, var_b_vect };
 }
 
 template<class TT>
@@ -430,10 +430,10 @@ std::pair<std::vector<int>, std::vector<int>> find_initial_weak_or( const TT& tt
     {
       var_a_vect.push_back( i );
       var_b_vect.push_back( i );
-      return {var_a_vect, var_b_vect};
+      return { var_a_vect, var_b_vect };
     }
   }
-  return {var_a_vect, var_b_vect};
+  return { var_a_vect, var_b_vect };
 }
 
 template<class TT>
@@ -491,7 +491,7 @@ std::pair<std::vector<int>, std::vector<int>> group_variables_or( const TT& tt, 
       }
     }
   }
-  return {xa, xb};
+  return { xa, xb };
 }
 
 template<class TT>
@@ -519,7 +519,7 @@ std::pair<std::vector<int>, std::vector<int>> group_variables_weak_or( const TT&
       xa.push_back( h );
     }
   }
-  return {xa, xb};
+  return { xa, xb };
 }
 
 template<class TT>
@@ -641,7 +641,7 @@ inline std::tuple<std::vector<int>, std::vector<int>, bi_decomposition> best_var
   {
     return std::make_tuple( x_and.first, x_and.second, bi_decomposition::and_ );
   }
-  else //if ( ( diff_xor <= diff_or ) && ( diff_xor <= diff_and ) )
+  else // if ( ( diff_xor <= diff_or ) && ( diff_xor <= diff_and ) )
   {
     return std::make_tuple( x_or.first, x_or.second, bi_decomposition::or_ );
   }
@@ -694,7 +694,7 @@ std::vector<TT> derive_a( const TT& tt, const TT& dc, const std::tuple<std::vect
     qa.push_back( binary_or( qa[0], ra ) );
     return qa;
   }
-  else //if ( std::get<2>( x_best ) == bi_decomposition::weak_and_ )
+  else // if ( std::get<2>( x_best ) == bi_decomposition::weak_and_ )
   {
     qa.push_back( binary_and( tt, dc ) );
     auto ra = binary_and( binary_and( ~tt, dc ), exist_set( binary_and( tt, dc ), std::get<0>( x_best ) ) );
@@ -786,18 +786,18 @@ std::tuple<TT, bi_decomposition, std::vector<TT>> is_bi_decomposable( const TT& 
 } /* namespace detail */
 /* \endcond */
 
-/*! \brief Checks whether a function is bi-decomposable. 
+/*! \brief Checks whether a function is bi-decomposable.
 
   \verbatim embed:rst
   Checks whether an incompletely specified function (ISF) ``tt`` can be represented by the function
-  :math:`f = h(l(X_1, X_3), g(X_2, X_3))`.  
-  It returns a tuple of: 
-  1. :math:'f', which is a completely specified Boolean function compatible with the input ISF 
+  :math:`f = h(l(X_1, X_3), g(X_2, X_3))`.
+  It returns a tuple of:
+  1. :math:'f', which is a completely specified Boolean function compatible with the input ISF
   2. :math:'h', which is the type of decomposition (and, or, xor, weak and, weak or)
   3. :math:'l' and :math:'g', given as ISF (ON-set and DC-set)
 
-  The algorithm is inspired by "An Algorithm for Bi-Decomposition of Logic Functions" by A. Mishchenko et al. 
-  presented in DAC 2001. 
+  The algorithm is inspired by "An Algorithm for Bi-Decomposition of Logic Functions" by A. Mishchenko et al.
+  presented in DAC 2001.
 
   \endverbatim
 
@@ -811,22 +811,22 @@ std::tuple<TT, bi_decomposition, std::vector<TT>> is_bi_decomposable( const TT& 
   return detail::is_bi_decomposable( tt, dc, false );
 }
 
-/*! \brief Checks whether a function is bi-decomposable using XOR as preferred operation. 
+/*! \brief Checks whether a function is bi-decomposable using XOR as preferred operation.
 
   \verbatim embed:rst
   Checks whether an incompletely specified function (ISF) ``tt`` can be represented by the function
-  :math:`f = h(l(X_1, X_3), g(X_2, X_3))`.  
-  It returns a tuple of: 
-  1. :math:'f', which is a completely specified Boolean function compatible with the input ISF 
+  :math:`f = h(l(X_1, X_3), g(X_2, X_3))`.
+  It returns a tuple of:
+  1. :math:'f', which is a completely specified Boolean function compatible with the input ISF
   2. :math:'h', which is the type of decomposition (and, or, xor, weak and, weak or)
   3. :math:'l' and :math:'g', given as ISF (ON-set and DC-set)
 
-  The algorithm is inspired by "An Algorithm for Bi-Decomposition of Logic Functions" by A. Mishchenko et al. 
-  presented in DAC 2001. 
+  The algorithm is inspired by "An Algorithm for Bi-Decomposition of Logic Functions" by A. Mishchenko et al.
+  presented in DAC 2001.
 
-  The cost is changed to add more XOR gates compared to AND/OR gates. This cost function is motivated by 
+  The cost is changed to add more XOR gates compared to AND/OR gates. This cost function is motivated by
   minimizing the number of AND gates in XAGs for cryptography and security applications. For these applications
-  XOR gates are "free". 
+  XOR gates are "free".
 
   \endverbatim
 
@@ -868,8 +868,8 @@ inline std::vector<uint32_t> enumerate_zs_index( const std::vector<uint32_t>& ys
 /*! \brief Checks, whether a function is Ashenhurst decomposable.
 
   Given functions f(.), g(.), and h(.) and a partition
-  on arguments into z and y. This function determines whether 
-  f(x) is decomposable into g(z, h(y)) where x = union(z,y) and 
+  on arguments into z and y. This function determines whether
+  f(x) is decomposable into g(z, h(y)) where x = union(z,y) and
   intersect(z, y) = null.
   This function does not check for permutation of variables given by
   zs_index and ys_index. The elements in these vectors are treated as ordered
@@ -919,7 +919,7 @@ bool is_ashenhurst_decomposable( const TTf& tt,
 /*! \brief Finds all of the possible Ashenhurst decompositions of a function
   given an input partitioning.
 
-  \param tt The function to find all of its decompositions 
+  \param tt The function to find all of its decompositions
   \param ys_index Indices indicating the partitioning of inputs
   \param decomposition A vector of decomposition pairs. This serves as a return
                        return container.

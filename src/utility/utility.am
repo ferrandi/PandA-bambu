@@ -1,5 +1,6 @@
 noinst_LTLIBRARIES += lib_utility.la
 lib_utility_la_CPPFLAGS =  \
+   -I$(top_srcdir)/src/constants \
    $(AM_CPPFLAGS)
 noinst_HEADERS += \
    utility/APInt.hpp \
@@ -17,6 +18,7 @@ noinst_HEADERS += \
    utility/indented_output_stream.hpp \
    utility/Lexer_utilities.hpp \
    utility/math_function.hpp \
+   utility/panda_types.hpp \
    utility/refcount.hpp \
    utility/simple_indent.hpp \
    utility/Statistics.hpp \
@@ -29,14 +31,14 @@ lib_utility_la_SOURCES = \
    utility/APInt.cpp \
    utility/cpu_stats.cpp \
    utility/exceptions.cpp \
+   utility/fileIO.cpp \
    utility/indented_output_stream.cpp \
-   utility/math_function.cpp \
    utility/simple_indent.cpp \
    utility/Statistics.cpp \
    utility/string_manipulation.cpp \
    utility/utility.cpp
 
-lib_utility_la_LIBADD = 
+lib_utility_la_LIBADD = -lgmp
 if MINGW64
    lib_utility_la_LIBADD += -lws2_32 -lpsapi
 endif

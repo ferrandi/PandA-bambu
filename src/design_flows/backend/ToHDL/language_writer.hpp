@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -46,7 +46,6 @@
 #define LANGUAGE_WRITER_HPP
 
 /// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_C_BUILT.hpp"
 
 /// utility include
@@ -80,11 +79,6 @@ enum class HDLWriter_Language
 {
    VERILOG = 0,
    SYSTEM_VERILOG,
-#if HAVE_EXPERIMENTAL
-   SYSTEMC,
-   BLIF,
-   EDIF,
-#endif
    VHDL
 };
 
@@ -331,15 +325,13 @@ class language_writer
     */
    static unsigned int bitnumber(unsigned long long n);
 
-   virtual bool check_keyword(std::string id) const = 0;
+   virtual bool check_keyword(const std::string& id) const = 0;
 
    /**
     * Write a builtin component
     * @param component is the component to be printed
     */
    virtual void WriteBuiltin(const structural_objectConstRef component) = 0;
-
-   virtual void write_timing_specification(const technology_managerConstRef TM, const structural_objectRef& cir);
 
    /**
     * Dump the content of the write as a string

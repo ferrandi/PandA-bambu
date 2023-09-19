@@ -1,9 +1,9 @@
 #include <catch.hpp>
 
-#include <mockturtle/algorithms/refactoring.hpp>
 #include <mockturtle/algorithms/node_resynthesis/akers.hpp>
 #include <mockturtle/algorithms/node_resynthesis/bidecomposition.hpp>
 #include <mockturtle/algorithms/node_resynthesis/mig_npn.hpp>
+#include <mockturtle/algorithms/refactoring.hpp>
 #include <mockturtle/networks/mig.hpp>
 #include <mockturtle/networks/xag.hpp>
 #include <mockturtle/traits.hpp>
@@ -70,7 +70,7 @@ TEST_CASE( "Refactoring with bi-decomposition", "[refactoring]" )
   const auto a = xag.create_pi();
   const auto b = xag.create_pi();
 
-  const auto f = xag.create_or( xag.create_and(a, xag.create_not(b)), xag.create_and( xag.create_not(a), b));
+  const auto f = xag.create_or( xag.create_and( a, xag.create_not( b ) ), xag.create_and( xag.create_not( a ), b ) );
   xag.create_po( f );
 
   bidecomposition_resynthesis<xag_network> resyn;
@@ -90,11 +90,11 @@ TEST_CASE( "Refactoring with bi-decomposition and different cost (free xor)", "[
   const auto a = xag.create_pi();
   const auto b = xag.create_pi();
 
-  const auto f = xag.create_or( xag.create_and(a, xag.create_not(b)), xag.create_and( xag.create_not(a), b));
+  const auto f = xag.create_or( xag.create_and( a, xag.create_not( b ) ), xag.create_and( xag.create_not( a ), b ) );
   xag.create_po( f );
 
   bidecomposition_resynthesis<xag_network> resyn;
-  refactoring( xag, resyn, {}, nullptr, ::detail::free_xor_cost<xag_network>());
+  refactoring( xag, resyn, {}, nullptr, ::detail::free_xor_cost<xag_network>() );
 
   xag = cleanup_dangling( xag );
 

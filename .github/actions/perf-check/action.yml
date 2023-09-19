@@ -1,5 +1,5 @@
 name: Performance check
-description: Check performance against main branch results
+description: Check performance against base branch results
 inputs:
   test-id:
     description: "Test id"
@@ -49,12 +49,12 @@ runs:
           echo "Path '${{inputs.new-results}}' does not name a file or directory"
           exit -1;
         fi
-    - name: Compare against main
+    - name: Compare against ${{github.base_ref}}
       id: cmp
       shell: bash
       run: |
         set -e
-        PKG_URL="${{inputs.storage-url}}/results/main/${{inputs.test-id}}.csv"
+        PKG_URL="${{inputs.storage-url}}/results/${{github.base_ref}}/${{inputs.test-id}}.csv"
         COMMIT_SHA="${{github.sha}}"
         COMPARE_CSV="${{inputs.test-id}}.$(echo '${{github.head_ref}}' | sed 's/\//_/g')_${COMMIT_SHA:0:7}.csv"
         score=""
@@ -63,21 +63,21 @@ runs:
         if [[ ! -z '${{inputs.username}}' ]]; then
           CURL_CMD+='-u ${{inputs.username}}:${{inputs.password}} '
         fi
-        mkdir -p main-reports
-        if curl -s -L --fail $CURL_CMD $PKG_URL -o main-reports/${{inputs.test-id}}.csv; then
+        mkdir -p perf-reports
+        if curl -s -L --fail $CURL_CMD $PKG_URL -o perf-reports/${{inputs.test-id}}.csv; then
           if [[ ! -z "${{ inputs.score }}" ]]; then
             score="-s ${{ inputs.score }}"
           fi
           
-          worse_count=$(python ./etc/scripts/perf_diff.py -d ${{inputs.datapoints}} $score -o $COMPARE_CSV "main-reports/${{inputs.test-id}}.csv" "${{inputs.new-results}}" 3>&2 2>&1 1>&3)
+          worse_count=$(python ./etc/scripts/perf_diff.py -d ${{inputs.datapoints}} $score -o $COMPARE_CSV "perf-reports/${{inputs.test-id}}.csv" "${{inputs.new-results}}" 3>&2 2>&1 1>&3)
           if [[ "$worse_count" == "-1" ]]; then
-            echo "::warning:: Benchmark suite is different from main"
+            echo "::warning:: Benchmark suite is different from ${{github.base_ref}}"
           elif [[ "$worse_count" != "0" ]]; then
             outcsv="$COMPARE_CSV"
-            echo "::warning:: Performance are worse than main for ${{inputs.test-id}}: $worse_count benchmarks have degraded performance"
+            echo "::warning:: Performance are worse with respect to ${{github.base_ref}} for ${{inputs.test-id}}: $worse_count benchmarks have degraded performance"
           fi
         else
           echo "::warning:: No previous benchmark result found to compare"
         fi
-        echo "::set-output name=outcsv::$outcsv"
+        echo "outcsv=$outcsv" >> $GITHUB_OUTPUT
         exit 0

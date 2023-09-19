@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -67,9 +67,7 @@ struct variable2obj : public std::map<unsigned int, data_obj>
    /**
     * Destructor.
     */
-   virtual ~variable2obj()
-   {
-   }
+   virtual ~variable2obj() = default;
 
    /**
     * Function that print the information associated with a variable

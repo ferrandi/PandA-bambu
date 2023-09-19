@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -45,10 +45,10 @@
 #include "custom_map.hpp"                     // for _Rb_tree_const_iter...
 #include "design_flow_step.hpp"               // for DesignFlowStep_Status
 #include "exceptions.hpp"                     // for THROW_UNREACHABLE
-#include <boost/filesystem/operations.hpp>    // for create_directories
 #include <boost/graph/adjacency_list.hpp>     // for adjacency_list, source
 #include <boost/graph/filtered_graph.hpp>     // for source, target
 #include <boost/iterator/iterator_facade.hpp> // for operator!=, operator++
+#include <filesystem>                         // for create_directories
 #include <ostream>                            // for operator<<, ostream
 #include <utility>                            // for pair
 
@@ -102,6 +102,12 @@ DesignFlowGraph::DesignFlowGraph(const DesignFlowGraphsCollectionRef design_flow
 {
 }
 
+DesignFlowGraph::DesignFlowGraph(const DesignFlowGraphsCollectionRef design_flow_graphs_collection, const int _selector,
+                                 const CustomUnorderedSet<vertex>& _vertices)
+    : graph(design_flow_graphs_collection.get(), _selector, _vertices)
+{
+}
+
 DesignFlowGraph::~DesignFlowGraph() = default;
 
 vertex DesignFlowGraph::GetDesignFlowStep(const std::string& signature) const
@@ -113,9 +119,9 @@ void DesignFlowGraph::WriteDot(const std::string& file_name, const int) const
 {
    const std::string output_directory =
        collection->parameters->getOption<std::string>(OPT_dot_directory) + "/design_flow/";
-   if(!boost::filesystem::exists(output_directory))
+   if(!std::filesystem::exists(output_directory))
    {
-      boost::filesystem::create_directories(output_directory);
+      std::filesystem::create_directories(output_directory);
    }
    const std::string full_name = output_directory + file_name + ".dot";
    VertexWriterConstRef design_flow_step_writer(new DesignFlowStepWriter(this));
@@ -133,8 +139,10 @@ void DesignFlowGraph::WriteDot(const std::string& file_name,
 {
    const std::string output_directory =
        collection->parameters->getOption<std::string>(OPT_dot_directory) + "/design_flow/";
-   if(!boost::filesystem::exists(output_directory))
-      boost::filesystem::create_directories(output_directory);
+   if(!std::filesystem::exists(output_directory))
+   {
+      std::filesystem::create_directories(output_directory);
+   }
    const std::string full_name = output_directory + file_name + ".dot";
    VertexWriterConstRef design_flow_step_writer(
        new DesignFlowStepWriter(this, vertex_history.find(writing_step_counter)->second, vertex_names));

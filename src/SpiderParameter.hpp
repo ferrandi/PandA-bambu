@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -74,7 +74,7 @@ class SpiderParameter : public Parameter
    void PrintProgramName(std::ostream& os) const override;
 
    /**
-    * Sets the default values for the Zebu tool
+    * Sets the default values for the spider tool
     */
    void SetDefaults() override;
 
@@ -98,6 +98,6 @@ class SpiderParameter : public Parameter
    int Exec() override;
 };
 
-typedef refcount<SpiderParameter> SpiederParameterRef;
+using SpiederParameterRef = std::shared_ptr<SpiderParameter>;
 
 #endif

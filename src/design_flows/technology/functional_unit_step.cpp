@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2022 Politecnico di Milano
+ *              Copyright (C) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -38,58 +38,33 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_FLOPOCO.hpp"
-
-/// Header class
 #include "functional_unit_step.hpp"
-
-/// circuit include
-#include "structural_manager.hpp"
-#include "structural_objects.hpp"
-
-/// HLS/module_allocation
 #include "allocation_information.hpp"
-
-/// HLS/scheduling include
-#include "schedule.hpp"
-
-/// STD include
-#include <string>
-
-/// STL includes
+#include "area_info.hpp"
+#include "config_HAVE_FLOPOCO.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "generic_device.hpp"
+#include "library_manager.hpp"
+#include "math_function.hpp"
+#include "schedule.hpp"
+#include "string_manipulation.hpp"
+#include "structural_manager.hpp"
+#include "structural_objects.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
+#include "time_info.hpp"
+#include <boost/algorithm/string/case_conv.hpp>
+#include <string>
 #include <vector>
 
-/// technology include
-#include "target_manager.hpp"
-#include "technology_manager.hpp"
-
-/// technology/physical_library include
-#include "library_manager.hpp"
-#include "technology_node.hpp"
-
-/// technology/physical_library/models includes
-#include "area_model.hpp"
-#include "time_model.hpp"
-
-/// technology/target_device include
-#include "target_device.hpp"
-
-/// utility include
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
-#include "math_function.hpp"
-#include "string_manipulation.hpp"
-#include <boost/algorithm/string/case_conv.hpp>
-
-FunctionalUnitStep::FunctionalUnitStep(const target_managerRef _target,
+FunctionalUnitStep::FunctionalUnitStep(const generic_deviceRef _device,
                                        const DesignFlowManagerConstRef _design_flow_manager,
                                        const ParameterConstRef _parameters)
     : DesignFlowStep(_design_flow_manager, _parameters),
-      TM(_target->get_technology_manager()),
-      target(_target),
+      TM(_device->get_technology_manager()),
+      device(_device),
       has_first_synthesis_id(0)
 {
 }
@@ -99,7 +74,6 @@ FunctionalUnitStep::~FunctionalUnitStep() = default;
 void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
 {
    const auto LM = TM->get_library(f_unit->get_name());
-   const target_deviceRef device = target->get_target_device();
 
    bool is_commutative = true;
 
@@ -457,8 +431,8 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                            else if((fu_base_name == "mult_expr_FU" or fu_base_name == "ui_mult_expr_FU") and
                                    DSP_y_to_DSP_x.find(prec) != DSP_y_to_DSP_x.end())
                            {
-                              fu_name += "_" + STR(resize_to_1_8_16_32_64_128_256_512(prec));
-                              template_parameters += " " + STR(resize_to_1_8_16_32_64_128_256_512(prec));
+                              fu_name += "_" + STR(resize_1_8_pow2(prec));
+                              template_parameters += " " + STR(resize_1_8_pow2(prec));
                            }
                            else if(GetPointer<port_o>(port)->get_is_doubled())
                            {
@@ -522,7 +496,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                         {
                            fun_unit = f_unit;
                         }
-                        tn = create_template_instance(fun_unit, fu_name, device, prec);
+                        tn = create_template_instance(fun_unit, fu_name, prec);
                         fu = GetPointer<functional_unit>(tn);
                         fu->fu_template_parameters = template_parameters;
                         TM->get_library_manager(LM)->add(tn);
@@ -550,7 +524,6 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
 
 void FunctionalUnitStep::Initialize()
 {
-   const target_deviceRef device = target->get_target_device();
    if(device->has_parameter("DSPs_y_sizes"))
    {
       THROW_ASSERT(device->has_parameter("DSPs_x_sizes"), "device description is not complete");
@@ -568,8 +541,7 @@ void FunctionalUnitStep::Initialize()
 }
 
 technology_nodeRef FunctionalUnitStep::create_template_instance(const technology_nodeRef& fu_template,
-                                                                const std::string& name, const target_deviceRef& device,
-                                                                unsigned int prec)
+                                                                const std::string& name, unsigned int prec)
 {
    auto* curr_fu = GetPointer<functional_unit>(fu_template);
    THROW_ASSERT(curr_fu, "Null functional unit template");
@@ -591,7 +563,7 @@ technology_nodeRef FunctionalUnitStep::create_template_instance(const technology
       new_op->operation_name = op->operation_name;
       new_op->bounded = op->bounded;
 
-      new_op->time_m = time_model::create_model(device->get_type(), parameters);
+      new_op->time_m = time_info::factory(parameters);
       if(op->time_m)
       {
          new_op->time_m->set_execution_time(op->time_m->get_execution_time(), op->time_m->get_cycles());
@@ -612,7 +584,7 @@ technology_nodeRef FunctionalUnitStep::create_template_instance(const technology
       specialized_fu->add(technology_nodeRef(new_op));
    }
 
-   specialized_fu->area_m = area_model::create_model(device->get_type(), parameters);
+   specialized_fu->area_m = area_info::factory(parameters);
 
    return technology_nodeRef(specialized_fu);
 }

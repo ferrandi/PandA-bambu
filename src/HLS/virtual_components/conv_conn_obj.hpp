@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -317,45 +317,6 @@ class u_assign_conn_obj : public generic_obj
     * Destructor.
     */
    ~u_assign_conn_obj() override = default;
-
-   /**
-    * add a size to the component
-    */
-   void add_bitsize(unsigned int _bitsize)
-   {
-      bitsize = _bitsize > bitsize ? _bitsize : bitsize;
-   }
-
-   /**
-    * return the maximum bitsize associated with the component
-    */
-   unsigned int get_bitsize() const
-   {
-      return bitsize;
-   }
-};
-
-/**
- * @class vb_assign_conn_obj
- * This class is used to specify the type of a connection object: VECTOR_BOOL
- */
-class vb_assign_conn_obj : public generic_obj
-{
-   /// number of bit of in/out ports
-   unsigned int bitsize;
-
- public:
-   /**
-    * Constructor
-    */
-   vb_assign_conn_obj(const std::string& _name) : generic_obj(VB_ASSIGN_CONN_OBJ, _name), bitsize(0)
-   {
-   }
-
-   /**
-    * Destructor.
-    */
-   ~vb_assign_conn_obj() override = default;
 
    /**
     * add a size to the component

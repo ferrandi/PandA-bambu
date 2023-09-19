@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2022-2022 Politecnico di Milano
+ *              Copyright (C) 2022-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,24 +48,40 @@
 
 #include "language_writer.hpp"
 
+enum in_port
+{
+   i_clock = 0,
+   i_in1,
+   i_last
+};
+
+enum out_port
+{
+   o_out1 = 0,
+   o_last
+};
+
 Write_noneModuleGenerator::Write_noneModuleGenerator(const HLS_managerRef& _HLSMgr) : Registrar(_HLSMgr)
 {
 }
 
-void Write_noneModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */, unsigned int /* function_id */,
-                                             vertex /* op_v */, const HDLWriter_Language language,
+void Write_noneModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */,
+                                             unsigned int /* function_id */, vertex /* op_v */,
+                                             const HDLWriter_Language language,
                                              const std::vector<ModuleGenerator::parameter>& /* _p */,
                                              const std::vector<ModuleGenerator::parameter>& _ports_in,
                                              const std::vector<ModuleGenerator::parameter>& _ports_out,
                                              const std::vector<ModuleGenerator::parameter>& /* _ports_inout */)
 {
+   THROW_ASSERT(_ports_in.size() >= i_last, "");
+   THROW_ASSERT(_ports_out.size() >= o_last, "");
    if(language == HDLWriter_Language::VHDL)
    {
-      out << "begin\n  \\" << _ports_out[0].name << "\\ <= std_logic_vector(resize(unsigned(" << _ports_in[1].name
-          << "), " << _ports_out[0].type_size << "));\n";
+      out << "begin\n  \\" << _ports_out[o_out1].name << "\\ <= std_logic_vector(resize(unsigned("
+          << _ports_in[i_in1].name << "), " << _ports_out[o_out1].type_size << "));\n";
    }
    else
    {
-      out << "assign " << _ports_out[0].name << " = " << _ports_in[1].name << ";\n";
+      out << "assign " << _ports_out[o_out1].name << " = " << _ports_in[i_in1].name << ";\n";
    }
 }

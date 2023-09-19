@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,7 +48,7 @@
 #include "SynthesisTool.hpp"
 
 #include "refcount.hpp"
-REF_FORWARD_DECL(target_device);
+REF_FORWARD_DECL(generic_device);
 
 #define UCF_SUBDIR (out_dir + std::string("/ucf/"))
 #define XST_SUBDIR (out_dir + std::string("/xst/"))
@@ -84,7 +84,7 @@ class XilinxWrapper : public SynthesisTool
     * @param out_dir is the directory where to save all the results
     * @param default_out_dir is the default output directory
     */
-   XilinxWrapper(const ParameterConstRef& Param, const std::string& tool_exec, const target_deviceRef& device,
+   XilinxWrapper(const ParameterConstRef& Param, const std::string& tool_exec, const generic_deviceRef& device,
                  const std::string& _output_dir, const std::string& _default_output_dir);
 
    /**

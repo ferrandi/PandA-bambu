@@ -1,61 +1,55 @@
 # http://www.gnu.org/software/automake
 
 Makefile.in
-/ar-lib
-/mdate-sh
-/py-compile
-/test-driver
-/ylwrap
+ar-lib
+mdate-sh
+py-compile
+test-driver
+ylwrap
 
 # http://www.gnu.org/software/autoconf
 
-/autom4te.cache
-/autoscan.log
-/autoscan-*.log
-/aclocal.m4
-/compile
-/config.guess
-/config.h.in
-/config.sub
-/configure
-/configure.scan
-/depcomp
-/install-sh
-/missing
-/stamp-h1
+aclocal.m4
+autom4te.cache
+autoreconf_log
+autoscan-*.log
+autoscan.log
+compile
+config.guess
+config.h.in
+config.h.in~
+config.sub
+configure
+configure.scan
+configure~
+depcomp
+install-sh
+lconfig.h.in
+lconfig.h.in~
+missing
+stamp-h1
 
 # https://www.gnu.org/software/libtool/
 
-/ltmain.sh
+libtool.m4
+lt*.m4
+ltmain.sh
 
 # http://www.gnu.org/software/texinfo
 
 /texinfo.tex
 
-**/autoreconf_log
-**/configure
-**/configure.ac
-**/configure~
-**/*.m4
-**/*m4
-**/autom4te.cache
-**/config.h.in
-**/config.h.in~
-**/lconfig.h.in
-**/lconfig.h.in~
-
-ext/flopoco/Makefile.am
-ext/flopoco/src/FPExpressions/ExpressionParser.h
-ext/flopoco/src/FPExpressions/FlopocoScanner.h
-ext/flopoco/src/Makefile.am
+/ext/**/*m4
+/ext/flopoco/configure.ac
+/ext/flopoco/Makefile.am
+/ext/flopoco/src/FPExpressions/ExpressionParser.h
+/ext/flopoco/src/FPExpressions/FlopocoScanner.h
+/ext/flopoco/src/Makefile.am
 QTCreator-PandA-GitHub.creator.user
 
+.vscode/
+.env
 build/
 build_release/
-.vscode/
 obj/
-*swp
-*orig
-
 panda_dist/
-panda_release/

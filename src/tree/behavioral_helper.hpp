@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -44,23 +44,17 @@
 #define BEHAVIORAL_HELPER_HPP
 
 /// Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 
 #include "custom_map.hpp"
 #include "custom_set.hpp" // for set
 #include "custom_set.hpp"
+#include "graph.hpp"
+#include "refcount.hpp"
 #include <list>   // for list
 #include <string> // for string
 #include <tuple>
 #include <utility> // for pair
-
-/// graph include
-#include "graph.hpp"
-
-/// Utility include
-#include "refcount.hpp"
 /**
  * @name Forward declarations.
  */
@@ -225,12 +219,14 @@ class BehavioralHelper
     * @param index is the index of a C object
     * @return the size in bit
     */
-   virtual unsigned int get_size(unsigned int var) const;
+   virtual unsigned long long get_size(unsigned int var) const;
 
    /**
     * Return the name of the function
     */
    std::string get_function_name() const;
+
+   std::string GetMangledFunctionName() const;
 
    /**
     * Return the index of the function
@@ -595,17 +591,6 @@ class BehavioralHelper
    virtual const std::string get_label_name(unsigned int label_expr_nid) const;
 
    /**
-    * create a gimple_assign
-    * @param function_decl_nid is the node id of the function where the gimple_assign has to be inserted
-    * @param block is the basic block where the gimple_assign has to be inserted
-    * @param position is the statement after which gimple_assign has to be inserted
-    * @param left_part is the tree_node of the left part
-    * @param right_part is tree_node of the right part
-    */
-   virtual void create_gimple_modify_stmt(unsigned int function_decl_nid, blocRef& block, tree_nodeRef left_part,
-                                          tree_nodeRef right_part);
-
-   /**
     * Print the declaration of a non built-in type.
     * @param type is an object type.
     */
@@ -691,7 +676,7 @@ class BehavioralHelper
     */
    bool IsDefaultSsaName(const unsigned int ssa_name_index) const;
 
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
    /**
     * Return the degree of parallelism for openmp for wrapper function, 0 otherwise
     */
@@ -708,7 +693,7 @@ class BehavioralHelper
    bool IsOmpBodyLoop() const;
 #endif
 
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
    /**
     * Return true if the function is an omp atomic instruction
     */
@@ -727,7 +712,6 @@ class BehavioralHelper
     */
    std::string get_asm_string(const unsigned int node_index) const;
 
-#if HAVE_BAMBU_BUILT
    /**
     * Return true if an operation can be speculated
     * @param node_index is the tree node index of the operation
@@ -739,7 +723,6 @@ class BehavioralHelper
     * @param node_index is the tree node index of the operation
     */
    bool CanBeMoved(const unsigned int node_index) const;
-#endif
 
    /**
     * Return if an operation is a store

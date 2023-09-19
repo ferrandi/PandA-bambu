@@ -29,15 +29,15 @@ jobs:
         id: setup
         shell: bash
         run: |
-          if [[ -z "${{ github.event.inputs.days }}" ]]; then
+          if [[ -z "${{ inputs.days }}" ]]; then
             retain_days="${{env.retain_days}}"
             minimum_runs="${{env.minimum_runs}}"
           else
-            retain_days="${{github.event.inputs.retain_days}}"
-            minimum_runs="${{github.event.inputs.minimum_runs}}"
+            retain_days="${{inputs.retain_days}}"
+            minimum_runs="${{inputs.minimum_runs}}"
           fi
-          echo "::set-output name=retain_days::${retain_days}"
-          echo "::set-output name=minimum_runs::${minimum_runs}"
+          echo "retain_days=${retain_days}" >> $GITHUB_OUTPUT
+          echo "minimum_runs=${minimum_runs}" >> $GITHUB_OUTPUT
       - name: Delete workflow runs
         uses: Mattraks/delete-workflow-runs@v2
         with:

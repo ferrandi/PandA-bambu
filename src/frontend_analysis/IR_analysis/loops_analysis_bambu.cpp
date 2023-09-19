@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -335,7 +335,7 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
       loop->inc_id = ga->index;
       if(GET_NODE(be->op1)->get_kind() == integer_cst_K)
       {
-         loop->increment = tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_NODE(be->op1)));
+         loop->increment = tree_helper::GetConstValue(be->op1);
          if(be->get_kind() == minus_expr_K)
          {
             loop->increment = -loop->increment;
@@ -347,8 +347,8 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
                      "---Comparison is " + STR(cond) + " (" + cond->get_kind_text() + ")");
       if(GET_NODE(init)->get_kind() == integer_cst_K && GET_NODE(cond_be->op1)->get_kind() == integer_cst_K)
       {
-         loop->lower_bound = tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_NODE(init)));
-         loop->upper_bound = tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_NODE(cond_be->op1)));
+         loop->lower_bound = tree_helper::GetConstValue(init);
+         loop->upper_bound = tree_helper::GetConstValue(cond_be->op1);
          if(cond_be->get_kind() == ge_expr_K || cond_be->get_kind() == le_expr_K ||
             cond_be->get_kind() == unge_expr_K || cond_be->get_kind() == unle_expr_K)
          {

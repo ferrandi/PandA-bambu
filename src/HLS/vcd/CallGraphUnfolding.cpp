@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2022 Politecnico di Milano
+ *              Copyright (C) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -114,7 +114,7 @@ static void Unfold(const HLS_managerRef& HLSMgr)
     * to unfold the call graph
     */
    const auto FB = HLSMgr->CGetFunctionBehavior(root_function);
-   for(const auto fun_id : CGM->GetReachedBodyFunctionsFrom(root_function))
+   for(const auto fun_id : CGM->GetReachedFunctionsFrom(root_function))
    {
       const auto op_graph = HLSMgr->CGetFunctionBehavior(fun_id)->CGetOpGraph(FunctionBehavior::FCFG);
       THROW_ASSERT(boost::num_vertices(*op_graph) >= 2,
@@ -134,9 +134,7 @@ CallGraphUnfolding::CallGraphUnfolding(const ParameterConstRef _Param, const HLS
 {
 }
 
-CallGraphUnfolding::~CallGraphUnfolding()
-{
-}
+CallGraphUnfolding::~CallGraphUnfolding() = default;
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
 CallGraphUnfolding::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const

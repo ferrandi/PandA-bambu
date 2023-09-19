@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,294 +32,47 @@
  */
 /**
  * @file test_vector_parser.cpp
- * @brief .
+ * @brief
  *
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  */
 #include "test_vector_parser.hpp"
 
-/// behavior include
+#include "Parameter.hpp"
+#include "SimulationInformation.hpp"
+#include "application_frontend_flow_step.hpp"
+#include "behavioral_helper.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
-
-/// boost include
-#include <boost/algorithm/string.hpp>
-
-/// design_flows include
+#include "compiler_wrapper.hpp"
+#include "constants.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-
-/// frontend_analysis
-#include "application_frontend_flow_step.hpp"
-#include "frontend_flow_step_factory.hpp"
-
-/// HLS/ include
-#include "hls_flow_step_factory.hpp"
-#include "hls_manager.hpp"
-
-/// include from HLS/simulation
-#include "SimulationInformation.hpp"
-
-/// parser/polixml include
-#include "xml_dom_parser.hpp"
-
-/// polixml include
-#include "xml_document.hpp"
-
-/// STL include
-#include "custom_set.hpp"
-#include <tuple>
-#include <utility>
-
-/// tree/ include
-#include "behavioral_helper.hpp"
-#include "tree_helper.hpp"
-
-/// utility includes
-#include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "fileIO.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "frontend_flow_step_factory.hpp"
+#include "function_behavior.hpp"
+#include "hls_flow_step_factory.hpp"
+#include "hls_manager.hpp"
+#include "string_manipulation.hpp"
+#include "tree_helper.hpp"
+#include "utility.hpp"
+#include "xml_document.hpp"
+#include "xml_dom_parser.hpp"
 
-/// wrapper/compiler include
-#include "compiler_wrapper.hpp"
+#include <boost/algorithm/string.hpp>
+#include <regex>
+#include <tuple>
+#include <utility>
 
 TestVectorParser::TestVectorParser(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                                    const DesignFlowManagerConstRef _design_flow_manager)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TEST_VECTOR_PARSER)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
-}
-
-TestVectorParser::~TestVectorParser() = default;
-
-void TestVectorParser::ParseUserString(std::vector<std::map<std::string, std::string>>& test_vectors) const
-{
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining " + user_input_string);
-   std::string local_string = user_input_string;
-
-   /// pre-processing to support arrays
-   std::string::iterator last_comma = local_string.end();
-   for(auto it = local_string.begin(), it_end = local_string.end(); it != it_end; ++it)
-   {
-      if(*it == ',')
-      {
-         last_comma = it;
-      }
-      else if(*it == '=' && last_comma != it_end)
-      {
-         *last_comma = '$';
-      }
-   }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Preprocessed string " + local_string);
-   test_vectors.push_back(std::map<std::string, std::string>());
-   std::vector<std::string> testbench_parameters = SplitString(local_string, "$");
-   unsigned int index = 0;
-   for(auto parameter : testbench_parameters)
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Examining " + parameter);
-      std::vector<std::string> temp = SplitString(parameter, "=");
-      if(temp.size() != 2)
-      {
-         THROW_ERROR("Error in processing --simulate arg");
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + temp[0] + "=" + temp[1]);
-      test_vectors.back()[temp[0]] = temp[1];
-      ++index;
-   }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined " + user_input_string);
-}
-
-void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::string>>& test_vectors) const
-{
-   const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
-
-   THROW_ASSERT(boost::num_vertices(*(call_graph_manager->CGetCallGraph())) != 0,
-                "The call graph has not been computed yet");
-
-   const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
-   const auto function_id = *(top_function_ids.begin());
-   const BehavioralHelperConstRef behavioral_helper = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
-
-   if(!boost::filesystem::exists(input_xml_filename))
-   {
-      THROW_WARNING("XML file \"" + input_xml_filename + "\" cannot be opened, creating a stub with random values");
-      xml_document document;
-      xml_element* nodeRoot = document.create_root_node("function");
-      xml_element* node = nodeRoot->add_child_element("testbench");
-
-      for(const auto& function_parameter : behavioral_helper->GetParameters())
-      {
-         if(tree_helper::IsPointerType(function_parameter))
-         {
-            continue;
-         }
-         std::string param = behavioral_helper->PrintVariable(function_parameter->index);
-
-         long long int value = (rand() % 20);
-         if(tree_helper::IsBooleanType(function_parameter))
-         {
-            value = value % 2;
-         }
-         node->set_attribute(param, STR(value));
-      }
-
-      document.write_to_file_formatted(input_xml_filename);
-   }
-   try
-   {
-      XMLDomParser parser(input_xml_filename);
-      parser.Exec();
-      if(parser)
-      {
-         // Walk the tree:
-         const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
-         const xml_node::node_list list = node->get_children();
-         for(const auto& iter : list)
-         {
-            const auto* Enode = GetPointer<const xml_element>(iter);
-
-            if(!Enode || Enode->get_name() != "testbench")
-            {
-               continue;
-            }
-
-            std::map<std::string, std::string> test_vector;
-
-            for(const auto function_parameter : behavioral_helper->get_parameters())
-            {
-               std::string param = behavioral_helper->PrintVariable(function_parameter);
-               INDENT_DBG_MEX(
-                   DEBUG_LEVEL_PEDANTIC, debug_level,
-                   "Parameter: " + param +
-                       (behavioral_helper->is_a_pointer(function_parameter) ? " (memory access)" : " (input value)"));
-               if((Enode)->get_attribute(param))
-               {
-                  test_vector[param] = STR((Enode)->get_attribute(param)->get_value());
-               }
-               else if((Enode)->get_attribute(param + ":init_file"))
-               {
-                  const auto test_directory = GetDirectory(input_xml_filename);
-                  const auto input_file_name =
-                      BuildPath(test_directory, Enode->get_attribute(param + ":init_file")->get_value());
-                  if(input_file_name.size() > 4 && input_file_name.substr(input_file_name.size() - 4) == ".dat")
-                  {
-                     test_vector[param] = input_file_name;
-                  }
-                  else
-                  {
-                     const auto input_file = fileIO_istream_open(input_file_name);
-                     test_vector[param] =
-                         std::string(std::istreambuf_iterator<char>(*input_file), std::istreambuf_iterator<char>());
-                  }
-               }
-               else if(!behavioral_helper->is_a_pointer(function_parameter))
-               {
-                  THROW_ERROR("Missing input value for parameter: " + param);
-               }
-               if((Enode)->get_attribute(param + ":output"))
-               {
-                  HLSMgr->RSim->results_available = true;
-                  test_vector[param + ":output"] = STR((Enode)->get_attribute(param + ":output")->get_value());
-               }
-               else if((Enode)->get_attribute(param + ":init_output_file"))
-               {
-                  HLSMgr->RSim->results_available = true;
-                  const auto test_directory = GetDirectory(input_xml_filename);
-                  const auto input_file_name =
-                      BuildPath(test_directory, Enode->get_attribute(param + ":init_output_file")->get_value());
-                  const auto input_file = fileIO_istream_open(input_file_name);
-                  test_vector[param + ":output"] =
-                      std::string(std::istreambuf_iterator<char>(*input_file), std::istreambuf_iterator<char>());
-               }
-            }
-            if(behavioral_helper->GetFunctionReturnType(function_id) and ((Enode)->get_attribute("return")))
-            {
-               HLSMgr->RSim->results_available = true;
-               test_vector["return"] = ((Enode)->get_attribute("return")->get_value());
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "Expected return value is " + test_vector["return"]);
-            }
-            test_vectors.emplace_back(std::move(test_vector));
-         }
-         /// If discrepancy is enabled, then xml output is ignored
-         if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy) and
-            HLSMgr->RSim->results_available)
-         {
-            HLSMgr->RSim->results_available = false;
-            THROW_WARNING("Output stored in xml file will be ignored since discrepancy analysis is enabled");
-         }
-         return;
-      }
-   }
-   catch(const char* msg)
-   {
-      std::cerr << msg << std::endl;
-   }
-   catch(const std::string& msg)
-   {
-      std::cerr << msg << std::endl;
-   }
-   catch(const std::exception& ex)
-   {
-      std::cout << "Exception caught: " << ex.what() << std::endl;
-   }
-   catch(...)
-   {
-      std::cerr << "unknown exception" << std::endl;
-   }
-   THROW_ERROR("Error parsing the test vectors file " + input_xml_filename);
-   return;
-}
-
-size_t TestVectorParser::ParseTestVectors(std::vector<std::map<std::string, std::string>>& test_vectors) const
-{
-   if(!input_xml_filename.empty())
-   {
-      ParseXMLFile(test_vectors);
-   }
-   else if(!user_input_string.empty())
-   {
-      ParseUserString(test_vectors);
-   }
-   else
-   {
-      THROW_UNREACHABLE("");
-   }
-   return test_vectors.size();
-}
-
-void TestVectorParser::Initialize()
-{
-   HLS_step::Initialize();
-
-   if(parameters->isOption(OPT_testbench_input_xml))
-   {
-      input_xml_filename = parameters->getOption<std::string>(OPT_testbench_input_xml);
-      user_input_string.clear();
-   }
-   else if(parameters->isOption(OPT_testbench_input_string))
-   {
-      user_input_string = parameters->getOption<std::string>(OPT_testbench_input_string);
-      input_xml_filename.clear();
-   }
-   else
-   {
-      THROW_UNREACHABLE("");
-   }
-
-   HLSMgr->RSim = SimulationInformationRef(new SimulationInformation());
-}
-
-DesignFlowStep_Status TestVectorParser::Exec()
-{
-#ifndef NDEBUG
-   size_t n_vectors =
-#endif
-       ParseTestVectors(HLSMgr->RSim->test_vectors);
-   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Number of input test vectors: " + STR(n_vectors));
-   return DesignFlowStep_Status::SUCCESS;
 }
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
@@ -351,4 +104,194 @@ TestVectorParser::ComputeHLSRelationships(const DesignFlowStep::RelationshipType
 bool TestVectorParser::HasToBeExecuted() const
 {
    return true;
+}
+
+DesignFlowStep_Status TestVectorParser::Exec()
+{
+   HLSMgr->RSim = SimulationInformationRef(new SimulationInformation());
+
+   if(parameters->isOption(OPT_testbench_input_file))
+   {
+      const auto tb_files = parameters->getOption<const CustomSet<std::string>>(OPT_testbench_input_file);
+      if(boost::ends_with(*tb_files.begin(), ".xml"))
+      {
+         THROW_ASSERT(tb_files.size() == 1, "XML testbench initialization must be in a single file.");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining " + *tb_files.begin());
+         HLSMgr->RSim->test_vectors = ParseXMLFile(*tb_files.begin());
+      }
+      else
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--User provided co-simulation files will be used for test vectors generation");
+         return DesignFlowStep_Status::SUCCESS;
+      }
+   }
+   else if(parameters->isOption(OPT_testbench_input_string))
+   {
+      const auto input_string = parameters->getOption<std::string>(OPT_testbench_input_string);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining " + input_string);
+      HLSMgr->RSim->test_vectors = ParseUserString(input_string);
+   }
+   else
+   {
+      THROW_UNREACHABLE("");
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
+                  "<--Number of input test vectors: " + STR(HLSMgr->RSim->test_vectors.size()));
+   return DesignFlowStep_Status::SUCCESS;
+}
+
+std::vector<std::map<std::string, std::string>> TestVectorParser::ParseUserString(const std::string& input_string) const
+{
+   std::vector<std::map<std::string, std::string>> test_vectors;
+   auto tb_strings = convert_string_to_vector<std::string>(input_string, STR_CST_string_separator);
+   for(auto& tb_string : tb_strings)
+   {
+      /// pre-processing to support arrays
+      std::string::iterator last_comma = tb_string.end();
+      for(auto it = tb_string.begin(), it_end = tb_string.end(); it != it_end; ++it)
+      {
+         if(*it == ',')
+         {
+            last_comma = it;
+         }
+         else if(*it == '=' && last_comma != it_end)
+         {
+            *last_comma = '$';
+         }
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Preprocessed string " + tb_string);
+      test_vectors.push_back(std::map<std::string, std::string>());
+      std::vector<std::string> testbench_parameters = SplitString(tb_string, "$");
+      unsigned int index = 0;
+      for(const auto& parameter : testbench_parameters)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Examining " + parameter);
+         std::vector<std::string> temp = SplitString(parameter, "=");
+         if(temp.size() != 2)
+         {
+            THROW_ERROR("Error in processing --generate-tb arg");
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + temp[0] + "=" + temp[1]);
+         test_vectors.back()[temp[0]] = temp[1];
+         ++index;
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+   }
+   return test_vectors;
+}
+
+std::vector<std::map<std::string, std::string>>
+TestVectorParser::ParseXMLFile(const std::filesystem::path& input_xml_filename) const
+{
+   const auto CGM = HLSMgr->CGetCallGraphManager();
+   THROW_ASSERT(boost::num_vertices(*(CGM->CGetCallGraph())) != 0, "The call graph has not been computed yet");
+   const auto top_function_ids = CGM->GetRootFunctions();
+   THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
+   const auto top_id = *(top_function_ids.begin());
+   const auto BH = HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper();
+
+   if(!std::filesystem::exists(input_xml_filename))
+   {
+      THROW_WARNING("XML file \"" + input_xml_filename.string() +
+                    "\" cannot be opened, creating a stub with random values");
+      xml_document document;
+      const auto nodeRoot = document.create_root_node("function");
+      const auto node = nodeRoot->add_child_element("testbench");
+
+      for(const auto& function_parameter : BH->GetParameters())
+      {
+         if(tree_helper::IsPointerType(function_parameter))
+         {
+            THROW_UNREACHABLE("Random testbench parameters generation is not available for pointer parameters. Please "
+                              "provide a valid testbench XML file.");
+            continue;
+         }
+         const auto param = BH->PrintVariable(function_parameter->index);
+
+         auto value = (rand() % 20);
+         if(tree_helper::IsBooleanType(function_parameter))
+         {
+            value = value % 2;
+         }
+         node->set_attribute(param, STR(value));
+      }
+
+      document.write_to_file_formatted(input_xml_filename);
+   }
+   try
+   {
+      XMLDomParser parser(input_xml_filename.string());
+      parser.Exec();
+      if(parser)
+      {
+         std::vector<std::map<std::string, std::string>> test_vectors;
+
+         // Walk the tree:
+         const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
+         const xml_node::node_list list = node->get_children();
+         for(const auto& iter : list)
+         {
+            const auto* Enode = GetPointer<const xml_element>(iter);
+
+            if(!Enode || Enode->get_name() != "testbench")
+            {
+               continue;
+            }
+
+            std::map<std::string, std::string> test_vector;
+
+            for(const auto function_parameter : BH->get_parameters())
+            {
+               std::string param = BH->PrintVariable(function_parameter);
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                              "Parameter: " + param +
+                                  (BH->is_a_pointer(function_parameter) ? " (memory access)" : " (input value)"));
+               if((Enode)->get_attribute(param))
+               {
+                  test_vector[param] = STR((Enode)->get_attribute(param)->get_value());
+               }
+               else if((Enode)->get_attribute(param + ":init_file"))
+               {
+                  const auto input_file_name = GetPath(input_xml_filename.parent_path()) + "/" +
+                                               Enode->get_attribute(param + ":init_file")->get_value();
+                  if(boost::ends_with(input_file_name, ".dat"))
+                  {
+                     test_vector[param] = input_file_name;
+                  }
+                  else
+                  {
+                     const auto input_file = fileIO_istream_open(input_file_name);
+                     test_vector[param] =
+                         std::string(std::istreambuf_iterator<char>(*input_file), std::istreambuf_iterator<char>());
+                  }
+               }
+               else if(!BH->is_a_pointer(function_parameter))
+               {
+                  THROW_ERROR("Missing input value for parameter: " + param);
+               }
+            }
+            test_vectors.emplace_back(std::move(test_vector));
+         }
+         return test_vectors;
+      }
+   }
+   catch(const char* msg)
+   {
+      std::cerr << msg << std::endl;
+   }
+   catch(const std::string& msg)
+   {
+      std::cerr << msg << std::endl;
+   }
+   catch(const std::exception& ex)
+   {
+      std::cout << "Exception caught: " << ex.what() << std::endl;
+   }
+   catch(...)
+   {
+      std::cerr << "unknown exception" << std::endl;
+   }
+   THROW_ERROR("Error parsing the test vectors file " + input_xml_filename.string());
+   return std::vector<std::map<std::string, std::string>>();
 }

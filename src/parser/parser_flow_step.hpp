@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2022 Politecnico di Milano
+ *              Copyright (C) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -43,7 +43,6 @@
 
 /// Autoheader include
 #include "config_HAVE_FROM_AADL_ASN_BUILT.hpp"
-#include "config_HAVE_STDCXX_11.hpp"
 
 /// Superclass include
 #include "design_flow_step.hpp"
@@ -67,11 +66,7 @@ class ParserFlowStep : public DesignFlowStep
    /**
     * Return the name of the type of this frontend flow step
     */
-   virtual const std::string GetKindText() const
-#if HAVE_STDCXX_11
-       final
-#endif
-       ;
+   virtual std::string GetKindText() const final;
 
    /**
     * Given a parser step type, return the name of the type
@@ -99,13 +94,13 @@ class ParserFlowStep : public DesignFlowStep
    /**
     * Return the signature of this step
     */
-   const std::string GetSignature() const override;
+   std::string GetSignature() const override;
 
    /**
     * Return the name of this design step
     * @return the name of the pass (for debug purpose)
     */
-   const std::string GetName() const override;
+   std::string GetName() const override;
 
    /**
     * Compute the signature of a parser flow step
@@ -132,6 +127,6 @@ class ParserFlowStep : public DesignFlowStep
    /**
     * Return the factory to create this type of steps
     */
-   const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
+   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
 };
 #endif

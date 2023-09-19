@@ -23,13 +23,31 @@ BOOST_AUTO_TEST_CASE(apint_limits)
    BOOST_REQUIRE_EQUAL(std::numeric_limits<int64_t>::min(), APInt::getSignedMinValue(64));
 }
 
+BOOST_AUTO_TEST_CASE(apint_number)
+{
+   BOOST_REQUIRE_EQUAL(64, APInt::number::backend_type::limb_bits);
+   BOOST_REQUIRE_EQUAL(64, APInt::number::backend_type::internal_limb_count);
+
+   APInt::number zero(0);
+   APInt::number negOne(-1);
+
+   BOOST_REQUIRE_EQUAL(0, zero.backend().limbs()[0]);
+   BOOST_REQUIRE_EQUAL(1, negOne.backend().limbs()[0]);
+   for(auto i = 1U; i < APInt::number::backend_type::internal_limb_count; ++i)
+   {
+      BOOST_REQUIRE_EQUAL(0, negOne.backend().limbs()[i]);
+   }
+}
+
 BOOST_AUTO_TEST_CASE(apint_cast)
 {
    BOOST_REQUIRE_EQUAL(static_cast<int16_t>(std::numeric_limits<uint16_t>::max()),
-                       APInt(std::numeric_limits<uint16_t>::max()).cast_to<int16_t>());
-   BOOST_REQUIRE_EQUAL(0b01100110, APInt(0b1111111001100110).cast_to<uint8_t>());
-   BOOST_REQUIRE_EQUAL(53, APInt(53).cast_to<uint8_t>());
-   BOOST_REQUIRE_EQUAL(-34, APInt(-34).cast_to<int8_t>());
+                       static_cast<int16_t>(APInt(std::numeric_limits<uint16_t>::max())));
+   BOOST_REQUIRE_EQUAL(0b01100110, static_cast<uint8_t>(APInt(0b1111111001100110)));
+   BOOST_REQUIRE_EQUAL(53, static_cast<uint8_t>(APInt(53)));
+   BOOST_REQUIRE_EQUAL(-34, static_cast<int8_t>(APInt(-34)));
+   BOOST_REQUIRE_EQUAL(1u, static_cast<unsigned int>(APInt(std::numeric_limits<unsigned int>::max()) + 2));
+   BOOST_REQUIRE_EQUAL(1u, static_cast<int>(APInt(std::numeric_limits<unsigned int>::max()) + 2));
 }
 
 BOOST_AUTO_TEST_CASE(apint_not)
@@ -57,6 +75,8 @@ BOOST_AUTO_TEST_CASE(apint_and)
    BOOST_REQUIRE_EQUAL(d, a & b);
    BOOST_REQUIRE_EQUAL(a, a & c);
    BOOST_REQUIRE_EQUAL(d, b & d);
+   BOOST_REQUIRE_EQUAL(0b0011000000000, APInt(-1) & APInt(0b0011000000000));
+   BOOST_REQUIRE_EQUAL(1, (APInt(-27) >> 5) & 1);
 }
 
 BOOST_AUTO_TEST_CASE(apint_ior)
@@ -96,6 +116,10 @@ BOOST_AUTO_TEST_CASE(apint_shl)
    const unsigned long long cc = static_cast<unsigned long long>(-1);
    const unsigned long long cd = 0;
 
+   BOOST_REQUIRE_EQUAL(APInt(43) << 0, 43);
+   BOOST_REQUIRE_EQUAL(APInt(43) << 1, 86);
+   BOOST_REQUIRE_EQUAL(APInt(-27) << 0, -27);
+   BOOST_REQUIRE_EQUAL(APInt(-27) << 1, -54);
    BOOST_REQUIRE_EQUAL(b, a << 2);
    BOOST_REQUIRE_EQUAL(ca << 23, a << 23);
    BOOST_REQUIRE_LT(cb << 52, b << 52);
@@ -137,10 +161,44 @@ BOOST_AUTO_TEST_CASE(apint_shr)
    BOOST_REQUIRE_EQUAL(cd >> 63, d >> 63);
 }
 
-BOOST_AUTO_TEST_CASE(apint_str)
+BOOST_AUTO_TEST_CASE(apint_leadingOnes)
 {
-   const APInt a = 5;
+   BOOST_REQUIRE_EQUAL(3, APInt(-27).leadingOnes(8));
+   BOOST_REQUIRE_EQUAL(0, APInt(8).leadingOnes(8));
+}
 
-   const auto a_str = a.str(2);
-   BOOST_REQUIRE_EQUAL("101", a_str);
+BOOST_AUTO_TEST_CASE(apint_leadingZeros)
+{
+   BOOST_REQUIRE_EQUAL(0, APInt(-1).leadingZeros(8));
+   BOOST_REQUIRE_EQUAL(8, APInt(0).leadingZeros(8));
+   BOOST_REQUIRE_EQUAL(6, APInt(3).leadingZeros(8));
+}
+
+BOOST_AUTO_TEST_CASE(apint_trailingZeros)
+{
+   BOOST_REQUIRE_EQUAL(0, APInt(1).trailingZeros(8));
+   BOOST_REQUIRE_EQUAL(2, APInt(4).trailingZeros(8));
+   BOOST_REQUIRE_EQUAL(8, APInt(0).trailingZeros(8));
+}
+
+BOOST_AUTO_TEST_CASE(apint_trailingOnes)
+{
+   BOOST_REQUIRE_EQUAL(1, APInt(1).trailingOnes(8));
+   BOOST_REQUIRE_EQUAL(2, APInt(3).trailingOnes(8));
+   BOOST_REQUIRE_EQUAL(0, APInt(2).trailingOnes(8));
+   BOOST_REQUIRE_EQUAL(8, APInt(-1).trailingOnes(8));
+}
+
+BOOST_AUTO_TEST_CASE(apint_minBitwidth)
+{
+   BOOST_REQUIRE_EQUAL(1, APInt(-1).minBitwidth(true));
+   BOOST_REQUIRE_EQUAL(1, APInt(1).minBitwidth(false));
+   BOOST_REQUIRE_EQUAL(1, APInt(0).minBitwidth(true));
+   BOOST_REQUIRE_EQUAL(1, APInt(0).minBitwidth(false));
+   BOOST_REQUIRE_EQUAL(2, APInt(1).minBitwidth(true));
+   BOOST_REQUIRE_EQUAL(2, APInt(-2).minBitwidth(true));
+   BOOST_REQUIRE_EQUAL(64, APInt(INT64_MAX).minBitwidth(true));
+   BOOST_REQUIRE_EQUAL(63, APInt(INT64_MAX).minBitwidth(false));
+   BOOST_REQUIRE_EQUAL(65, APInt(UINT64_MAX).minBitwidth(true));
+   BOOST_REQUIRE_EQUAL(512, ((APInt(1) << 512) - 1).minBitwidth(false));
 }

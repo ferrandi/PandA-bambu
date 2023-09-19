@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2022 Politecnico di Milano
+ *              Copyright (C) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -40,11 +40,7 @@
 #ifndef CREATE_ADDRESS_TRANSLATION_HPP
 #define CREATE_ADDRESS_TRANSLATION_HPP
 
-/// Superclass include
 #include "application_frontend_flow_step.hpp"
-
-/// utility include
-#include "utility.hpp"
 
 REF_FORWARD_DECL(AadlInformation);
 REF_FORWARD_DECL(AsnType);

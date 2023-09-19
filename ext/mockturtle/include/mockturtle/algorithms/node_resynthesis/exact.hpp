@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -29,6 +29,8 @@
 
   \author Heinz Riener
   \author Mathias Soeken
+  \author Shubham Rai
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
@@ -45,8 +47,8 @@
 #include <kitty/traits.hpp>
 
 #include "../../networks/aig.hpp"
-#include "../../networks/xmg.hpp"
 #include "../../networks/klut.hpp"
+#include "../../networks/xmg.hpp"
 #include "../../utils/include/percy.hpp"
 
 namespace mockturtle
@@ -59,18 +61,18 @@ struct exact_resynthesis_params
 
   using blacklist_cache_map_t = std::unordered_map<kitty::dynamic_truth_table, int32_t, kitty::hash<kitty::dynamic_truth_table>>;
   using blacklist_cache_t = std::shared_ptr<blacklist_cache_map_t>;
-  
+
   cache_t cache;
   blacklist_cache_t blacklist_cache;
 
-  bool add_alonce_clauses{true};
-  bool add_colex_clauses{true};
-  bool add_lex_clauses{false};
-  bool add_lex_func_clauses{true};
-  bool add_nontriv_clauses{true};
-  bool add_noreapply_clauses{true};
-  bool add_symvar_clauses{true};
-  int conflict_limit{0};
+  bool add_alonce_clauses{ true };
+  bool add_colex_clauses{ true };
+  bool add_lex_clauses{ false };
+  bool add_lex_func_clauses{ true };
+  bool add_nontriv_clauses{ true };
+  bool add_noreapply_clauses{ true };
+  bool add_symvar_clauses{ true };
+  int conflict_limit{ 0 };
 
   percy::SolverType solver_type = percy::SLV_BSAT2;
 
@@ -160,7 +162,7 @@ public:
     spec.add_symvar_clauses = _ps.add_symvar_clauses;
     spec.conflict_limit = _ps.conflict_limit;
     spec[0] = function;
-    bool with_dont_cares{false};
+    bool with_dont_cares{ false };
     if ( !kitty::is_const0( dont_cares ) )
     {
       spec.set_dont_care( 0, dont_cares );
@@ -176,10 +178,10 @@ public:
           return it->second;
         }
       }
-      else if ( !with_dont_cares && _ps.blacklist_cache )
+      if ( !with_dont_cares && _ps.blacklist_cache )
       {
         const auto it = _ps.blacklist_cache->find( function );
-        if ( it != _ps.blacklist_cache->end() && _ps.conflict_limit >= it->second )
+        if ( it != _ps.blacklist_cache->end() && ( it->second == 0 || _ps.conflict_limit <= it->second ) )
         {
           return std::nullopt;
         }
@@ -187,11 +189,11 @@ public:
 
       percy::chain c;
       if ( const auto result = percy::synthesize( spec, c, _ps.solver_type,
-                                             _ps.encoder_type,
-                                             _ps.synthesis_method );
+                                                  _ps.encoder_type,
+                                                  _ps.synthesis_method );
            result != percy::success )
       {
-        if ( _ps.blacklist_cache )
+        if ( !with_dont_cares && _ps.blacklist_cache )
         {
           ( *_ps.blacklist_cache )[function] = result == percy::timeout ? _ps.conflict_limit : 0;
         }
@@ -226,7 +228,7 @@ public:
   }
 
 private:
-  uint32_t _fanin_size{3u};
+  uint32_t _fanin_size{ 3u };
   exact_resynthesis_params _ps;
 };
 
@@ -276,10 +278,23 @@ template<class Ntk = aig_network>
 class exact_aig_resynthesis
 {
 public:
+  using signal = typename Ntk::signal;
+
+public:
   explicit exact_aig_resynthesis( bool _allow_xor = false, exact_resynthesis_params const& ps = {} )
       : _allow_xor( _allow_xor ),
         _ps( ps )
   {
+  }
+
+  void clear_functions()
+  {
+    existing_functions.clear();
+  }
+
+  void add_function( signal const& s, kitty::dynamic_truth_table const& tt )
+  {
+    existing_functions.emplace_back( s, tt );
   }
 
   template<typename LeavesIterator, typename Fn>
@@ -311,12 +326,22 @@ public:
     {
       spec.initial_steps = *_lower_bound;
     }
+    if ( _upper_bound )
+    {
+      spec.max_nr_steps = *_upper_bound;
+    }
     spec[0] = function;
-    bool with_dont_cares{false};
+    bool with_dont_cares{ false };
     if ( !kitty::is_const0( dont_cares ) )
     {
       spec.set_dont_care( 0, dont_cares );
       with_dont_cares = true;
+    }
+
+    /* add existing functions */
+    for ( const auto& f : existing_functions )
+    {
+      spec.add_function( f.second );
     }
 
     auto c = [&]() -> std::optional<percy::chain> {
@@ -328,6 +353,14 @@ public:
           return it->second;
         }
       }
+      if ( !with_dont_cares && _ps.blacklist_cache )
+      {
+        const auto it = _ps.blacklist_cache->find( function );
+        if ( it != _ps.blacklist_cache->end() && ( it->second == 0 || _ps.conflict_limit <= it->second ) )
+        {
+          return std::nullopt;
+        }
+      }
 
       percy::chain c;
       if ( const auto result = percy::synthesize( spec, c, _ps.solver_type,
@@ -335,8 +368,15 @@ public:
                                                   _ps.synthesis_method );
            result != percy::success )
       {
+        if ( !with_dont_cares && _ps.blacklist_cache )
+        {
+          ( *_ps.blacklist_cache )[function] = ( result == percy::timeout ) ? _ps.conflict_limit : 0;
+        }
         return std::nullopt;
       }
+
+      assert( kitty::to_hex( c.simulate()[0u] ) == kitty::to_hex( function ) );
+
       if ( !with_dont_cares && _ps.cache )
       {
         ( *_ps.cache )[function] = c;
@@ -349,11 +389,17 @@ public:
       return;
     }
 
-    std::vector<signal<Ntk>> signals( begin, end );
+    std::vector<signal> signals( begin, end );
+    for ( const auto& f : existing_functions )
+    {
+      signals.emplace_back( f.first );
+    }
+
     for ( auto i = 0; i < c->get_nr_steps(); ++i )
     {
-      auto c1 = signals[c->get_step( i )[0]];
-      auto c2 = signals[c->get_step( i )[1]];
+      auto const c1 = signals[c->get_step( i )[0]];
+      auto const c2 = signals[c->get_step( i )[1]];
+
       switch ( c->get_operator( i )._bits[0] )
       {
       default:
@@ -391,16 +437,18 @@ private:
   bool _allow_xor = false;
   exact_resynthesis_params _ps;
 
+  std::vector<std::pair<signal, kitty::dynamic_truth_table>> existing_functions;
+
   std::optional<uint32_t> _lower_bound;
   std::optional<uint32_t> _upper_bound;
 };
 
 struct exact_xmg_resynthesis_params
 {
-  uint32_t num_candidates{10u};
-  bool use_only_self_dual_gates{false};
-  bool use_xor3{true};
-  int conflict_limit{0};
+  uint32_t num_candidates{ 10u };
+  bool use_only_self_dual_gates{ false };
+  bool use_xor3{ true };
+  int conflict_limit{ 0 };
 };
 
 /*! \brief Resynthesis function based on exact synthesis for XMGs.
@@ -423,6 +471,7 @@ struct exact_xmg_resynthesis_params
  *
  *
    The underlying engine for this resynthesis function is percy_.
+   \verbatim embed:rst
 
    .. _percy: https://github.com/lsils/percy
    \endverbatim
@@ -433,7 +482,7 @@ class exact_xmg_resynthesis
 {
 public:
   explicit exact_xmg_resynthesis( exact_xmg_resynthesis_params const& ps = {} )
-    : ps( ps )
+      : ps( ps )
   {
   }
 
@@ -453,51 +502,51 @@ public:
     spec.conflict_limit = ps.conflict_limit;
 
     /* specify local normalized gate primitives */
-    kitty::dynamic_truth_table const0{3};
-    kitty::dynamic_truth_table a{3};
-    kitty::dynamic_truth_table b{3};
-    kitty::dynamic_truth_table c{3};
+    kitty::dynamic_truth_table const0{ 3 };
+    kitty::dynamic_truth_table a{ 3 };
+    kitty::dynamic_truth_table b{ 3 };
+    kitty::dynamic_truth_table c{ 3 };
     kitty::create_nth_var( a, 0 );
     kitty::create_nth_var( b, 1 );
     kitty::create_nth_var( c, 2 );
 
     spec.add_primitive( const0 ); // 00
-    spec.add_primitive( a ); // aa
-    spec.add_primitive( b ); // cc
-    spec.add_primitive( c ); // f0
+    spec.add_primitive( a );      // aa
+    spec.add_primitive( b );      // cc
+    spec.add_primitive( c );      // f0
 
     /* add self dual gate functions */
-    spec.add_primitive( kitty::ternary_majority(  a,  b,  c ) ); // e8
-    spec.add_primitive( kitty::ternary_majority( ~a,  b,  c ) ); // d4
-    spec.add_primitive( kitty::ternary_majority(  a, ~b,  c ) ); // b2
-    spec.add_primitive( kitty::ternary_majority(  a,  b, ~c ) ); // 8e
-    spec.add_primitive( a ^ b ); // 66
-    spec.add_primitive( a ^ c ); // 3c
-    spec.add_primitive( b ^ c ); // 5a
+    spec.add_primitive( kitty::ternary_majority( a, b, c ) );  // e8
+    spec.add_primitive( kitty::ternary_majority( ~a, b, c ) ); // d4
+    spec.add_primitive( kitty::ternary_majority( a, ~b, c ) ); // b2
+    spec.add_primitive( kitty::ternary_majority( a, b, ~c ) ); // 8e
+    spec.add_primitive( a ^ b );                               // 66
+    spec.add_primitive( a ^ c );                               // 3c
+    spec.add_primitive( b ^ c );                               // 5a
     if ( ps.use_xor3 )
     {
-        spec.add_primitive( a ^ b ^ c ); // 96
+      spec.add_primitive( a ^ b ^ c ); // 96
     }
 
     /* add non-self dual gate functions */
     if ( !ps.use_only_self_dual_gates )
     {
-      spec.add_primitive( kitty::ternary_majority(  const0,   b,  c ) ); // c0
-      spec.add_primitive( kitty::ternary_majority( ~const0,   b,  c ) ); // fc
-      spec.add_primitive( kitty::ternary_majority(  const0,  ~b,  c ) ); // 30
-      spec.add_primitive( kitty::ternary_majority(  const0,   b, ~c ) ); // 0c
-      spec.add_primitive( kitty::ternary_majority(   a,  const0,  c ) ); // a0
-      spec.add_primitive( kitty::ternary_majority(  ~a,  const0,  c ) ); // 50
-      spec.add_primitive( kitty::ternary_majority(   a, ~const0,  c ) ); // fa
-      spec.add_primitive( kitty::ternary_majority(   a,  const0, ~c ) ); // 0a
-      spec.add_primitive( kitty::ternary_majority(   a,  b,  const0 ) ); // 88
-      spec.add_primitive( kitty::ternary_majority(   a,  b, ~const0 ) ); // ee
-      spec.add_primitive( kitty::ternary_majority(  ~a,  b,  const0 ) ); // 44
-      spec.add_primitive( kitty::ternary_majority(   a, ~b,  const0 ) ); // 22
+      spec.add_primitive( kitty::ternary_majority( const0, b, c ) );  // c0
+      spec.add_primitive( kitty::ternary_majority( ~const0, b, c ) ); // fc
+      spec.add_primitive( kitty::ternary_majority( const0, ~b, c ) ); // 30
+      spec.add_primitive( kitty::ternary_majority( const0, b, ~c ) ); // 0c
+      spec.add_primitive( kitty::ternary_majority( a, const0, c ) );  // a0
+      spec.add_primitive( kitty::ternary_majority( ~a, const0, c ) ); // 50
+      spec.add_primitive( kitty::ternary_majority( a, ~const0, c ) ); // fa
+      spec.add_primitive( kitty::ternary_majority( a, const0, ~c ) ); // 0a
+      spec.add_primitive( kitty::ternary_majority( a, b, const0 ) );  // 88
+      spec.add_primitive( kitty::ternary_majority( a, b, ~const0 ) ); // ee
+      spec.add_primitive( kitty::ternary_majority( ~a, b, const0 ) ); // 44
+      spec.add_primitive( kitty::ternary_majority( a, ~b, const0 ) ); // 22
     }
 
     percy::bsat_wrapper solver;
-    percy::ssv_encoder encoder(solver);
+    percy::ssv_encoder encoder( solver );
 
     spec[0] = normal ? tt : ~tt;
 
@@ -521,61 +570,61 @@ public:
         auto const c2 = signals[chain.get_step( i )[1]];
         auto const c3 = signals[chain.get_step( i )[2]];
 
-        switch( chain.get_operator( i )._bits[0] )
+        switch ( chain.get_operator( i )._bits[0] )
         {
         case 0x00:
           signals.emplace_back( ntk.get_constant( false ) );
           break;
         case 0xe8:
-          signals.emplace_back( ntk.create_maj( c1,  c2,  c3 ) );
+          signals.emplace_back( ntk.create_maj( c1, c2, c3 ) );
           break;
         case 0xd4:
-          signals.emplace_back( ntk.create_maj( !c1,  c2,  c3 ) );
+          signals.emplace_back( ntk.create_maj( !c1, c2, c3 ) );
           break;
         case 0xb2:
-          signals.emplace_back( ntk.create_maj( c1,  !c2,  c3 ) );
+          signals.emplace_back( ntk.create_maj( c1, !c2, c3 ) );
           break;
         case 0x8e:
-          signals.emplace_back( ntk.create_maj( c1,  c2,  !c3 ) );
+          signals.emplace_back( ntk.create_maj( c1, c2, !c3 ) );
           break;
         case 0x96:
-          signals.emplace_back( ntk.create_xor3( c1,  c2,  c3 ) );
+          signals.emplace_back( ntk.create_xor3( c1, c2, c3 ) );
           break;
         case 0xc0:
-          signals.emplace_back( ntk.create_maj(  ntk.get_constant( false ),  c2,  c3 ) ); // c0
+          signals.emplace_back( ntk.create_maj( ntk.get_constant( false ), c2, c3 ) ); // c0
           break;
         case 0xfc:
-          signals.emplace_back( ntk.create_maj( !ntk.get_constant( false ),  c2,  c3 ) ); // fc
+          signals.emplace_back( ntk.create_maj( !ntk.get_constant( false ), c2, c3 ) ); // fc
           break;
         case 0x30:
-          signals.emplace_back( ntk.create_maj(  ntk.get_constant( false ), !c2,  c3 ) ); // 30
+          signals.emplace_back( ntk.create_maj( ntk.get_constant( false ), !c2, c3 ) ); // 30
           break;
         case 0x0c:
-          signals.emplace_back( ntk.create_maj(  ntk.get_constant( false ),  c2, !c3 ) ); // 0c
+          signals.emplace_back( ntk.create_maj( ntk.get_constant( false ), c2, !c3 ) ); // 0c
           break;
         case 0xa0:
-          signals.emplace_back( ntk.create_maj(   c1,  ntk.get_constant( false ),  c3 ) ); // 0a
+          signals.emplace_back( ntk.create_maj( c1, ntk.get_constant( false ), c3 ) ); // 0a
           break;
         case 0x50:
-          signals.emplace_back( ntk.create_maj(  !c1,  ntk.get_constant( false ),  c3 ) ); // 50
+          signals.emplace_back( ntk.create_maj( !c1, ntk.get_constant( false ), c3 ) ); // 50
           break;
         case 0xfa:
-          signals.emplace_back( ntk.create_maj(   c1, !ntk.get_constant( false ),  c3 ) ); // fa
+          signals.emplace_back( ntk.create_maj( c1, !ntk.get_constant( false ), c3 ) ); // fa
           break;
         case 0x0a:
-          signals.emplace_back( ntk.create_maj(   c1,  ntk.get_constant( false ), !c3 ) ); // 0a
+          signals.emplace_back( ntk.create_maj( c1, ntk.get_constant( false ), !c3 ) ); // 0a
           break;
         case 0x88:
-          signals.emplace_back( ntk.create_maj(   c1,  c2,  ntk.get_constant( false ) ) ); // 88
+          signals.emplace_back( ntk.create_maj( c1, c2, ntk.get_constant( false ) ) ); // 88
           break;
         case 0xee:
-          signals.emplace_back( ntk.create_maj(   c1,  c2, !ntk.get_constant( false ) ) ); // ee
+          signals.emplace_back( ntk.create_maj( c1, c2, !ntk.get_constant( false ) ) ); // ee
           break;
         case 0x44:
-          signals.emplace_back( ntk.create_maj(  !c1,  c2,  ntk.get_constant( false ) ) ); // 44
+          signals.emplace_back( ntk.create_maj( !c1, c2, ntk.get_constant( false ) ) ); // 44
           break;
         case 0x22:
-          signals.emplace_back( ntk.create_maj(   c1, !c2,  ntk.get_constant( false ) ) ); // 22
+          signals.emplace_back( ntk.create_maj( c1, !c2, ntk.get_constant( false ) ) ); // 22
           break;
         case 0x66:
           signals.emplace_back( ntk.create_xor( c1, c2 ) );
@@ -604,7 +653,7 @@ public:
   }
 
 protected:
-  exact_xmg_resynthesis_params const& ps;
+  exact_xmg_resynthesis_params const ps;
 }; /* exact_xmg_resynthesis */
 
 } /* namespace mockturtle */

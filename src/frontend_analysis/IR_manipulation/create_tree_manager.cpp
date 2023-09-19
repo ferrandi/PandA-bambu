@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,49 +42,30 @@
  *
  */
 
-/// Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
+#include "create_tree_manager.hpp"
+#include "application_manager.hpp"
 #include "config_HAVE_FROM_AADL_ASN_BUILT.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
-
-/// Header include
-#include "create_tree_manager.hpp"
-
-/// behavior include
-#include "application_manager.hpp"
-
-/// design_flow includes
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-
-/// Intermediate Representation at raw level
 #include "parse_tree.hpp"
 #include "tree_manager.hpp"
-
 #if HAVE_FROM_AADL_ASN_BUILT
-/// parser include
 #include "parser_flow_step.hpp"
 #endif
-
-/// Wrapper include
-#include "compiler_wrapper.hpp"
-
-/// Utility include
 #include "Parameter.hpp"
-#include "fileIO.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-
-#if HAVE_BAMBU_BUILT
+#include "compiler_wrapper.hpp"
 #include "cost_latency_table.hpp"
+#include "fileIO.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "string_manipulation.hpp"
 #include "technology_flow_step.hpp"
 #include "technology_flow_step_factory.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
-#include "time_model.hpp"
-#endif
+#include "time_info.hpp"
 
 create_tree_manager::create_tree_manager(const ParameterConstRef _parameters, const application_managerRef _AppM,
                                          const DesignFlowManagerConstRef _design_flow_manager)
@@ -179,9 +160,6 @@ create_tree_manager::ComputeFrontendRelationships(const DesignFlowStep::Relation
 #if HAVE_FROM_PRAGMA_BUILT
          relationships.insert(std::make_pair(PRAGMA_SUBSTITUTION, WHOLE_APPLICATION));
 #endif
-#if HAVE_ZEBU_BUILT
-         relationships.insert(std::make_pair(SIZEOF_SUBSTITUTION, WHOLE_APPLICATION));
-#endif
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -203,7 +181,6 @@ bool create_tree_manager::HasToBeExecuted() const
 
 void create_tree_manager::createCostTable()
 {
-#if HAVE_BAMBU_BUILT
    if(GetPointer<HLS_manager>(AppM) &&
       (!parameters->IsParameter("disable-THR") || parameters->GetParameter<unsigned int>("disable-THR") == 0))
    {
@@ -218,16 +195,16 @@ void create_tree_manager::createCostTable()
          default_InstructionLatencyTable[std::make_pair(op_bit.at(0), op_bit.at(1))] = key_value.at(1);
       }
 
-      const HLS_targetRef HLS_T = GetPointer<HLS_manager>(AppM)->get_HLS_target();
-      const technology_managerRef TechManager = HLS_T->get_technology_manager();
+      const HLS_deviceRef HLS_D = GetPointer<HLS_manager>(AppM)->get_HLS_device();
+      const technology_managerRef TechManager = HLS_D->get_technology_manager();
       double clock_period =
           parameters->isOption(OPT_clock_period) ? parameters->getOption<double>(OPT_clock_period) : 10;
       /// manage loads and stores
       CostTable = "store_expr|32=" + STR(clock_period);
       CostTable += ",load_expr|32=" + STR(clock_period);
       CostTable += ",nop_expr|32=" + STR(clock_period);
-      for(const std::string& op_name : {"mult_expr", "plus_expr", "trunc_div_expr", "trunc_mod_expr", "lshift_expr",
-                                        "rshift_expr", "bit_and_expr", "bit_ior_expr", "bit_xor_expr", "cond_expr"})
+      for(const std::string op_name : {"mult_expr", "plus_expr", "trunc_div_expr", "trunc_mod_expr", "lshift_expr",
+                                       "rshift_expr", "bit_and_expr", "bit_ior_expr", "bit_xor_expr", "cond_expr"})
       {
          for(auto fu_prec : {1, 8, 16, 32, 64})
          {
@@ -255,7 +232,7 @@ void create_tree_manager::createCostTable()
             }
          }
       }
-      for(const std::string& op_name : {"mult_expr", "plus_expr", "rdiv_expr"})
+      for(const std::string op_name : {"mult_expr", "plus_expr", "rdiv_expr"})
       {
          for(auto fu_prec : {32, 64})
          {
@@ -283,8 +260,6 @@ void create_tree_manager::createCostTable()
          }
       }
    }
-
-#endif
 }
 
 DesignFlowStep_Status create_tree_manager::Exec()
@@ -303,38 +278,33 @@ DesignFlowStep_Status create_tree_manager::Exec()
       for(const auto& archive_file : archive_files)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Reading " + archive_file);
-         if(!boost::filesystem::exists(boost::filesystem::path(archive_file)))
+         if(!std::filesystem::exists(std::filesystem::path(archive_file)))
          {
             THROW_ERROR("File " + archive_file + " does not exist");
          }
-         std::string temporary_directory_pattern;
-         temporary_directory_pattern =
-             parameters->getOption<std::string>(OPT_output_temporary_directory) + "/temp-archive-dir";
-         // The %s are required by the mkdtemp function
-         boost::filesystem::path temp_path = temporary_directory_pattern + "-%%%%-%%%%-%%%%-%%%%";
-         boost::filesystem::path temp_path_obtained = boost::filesystem::unique_path(temp_path);
-         boost::filesystem::create_directories(temp_path_obtained);
-         boost::filesystem::path local_archive_file = GetPath(archive_file);
+         const std::filesystem::path temp_path(parameters->getOption<std::string>(OPT_output_temporary_directory) +
+                                               unique_path("/temp-archive-dir-%%%%-%%%%-%%%%-%%%%").string());
+         const std::filesystem::path local_archive_file(GetPath(archive_file));
+         std::filesystem::create_directories(temp_path);
 
-         std::string command = "cd " + temp_path_obtained.string() + "; ar x " + local_archive_file.string();
-         int ret = PandaSystem(parameters, command);
-         if(IsError(ret))
+         const auto command = "cd " + temp_path.string() + "; ar x " + local_archive_file.string();
+         if(IsError(PandaSystem(parameters, command)))
          {
             THROW_ERROR("ar returns an error during archive extraction ");
          }
-         for(auto& entry : boost::make_iterator_range(boost::filesystem::directory_iterator(temp_path_obtained), {}))
+         for(const auto& entry : std::filesystem::directory_iterator{temp_path})
          {
-            auto fileExtension = GetExtension(entry.path());
-            if(fileExtension != "o" && fileExtension != "O")
+            const auto fileExtension = entry.path().extension().string();
+            if(fileExtension != ".o" && fileExtension != ".O")
             {
                continue;
             }
-            const tree_managerRef TM_new = ParseTreeFile(parameters, entry.path().string());
+            const auto TM_new = ParseTreeFile(parameters, entry.path().string());
             TreeM->merge_tree_managers(TM_new);
          }
-         if(not(parameters->getOption<bool>(OPT_no_clean)))
+         if(!parameters->getOption<bool>(OPT_no_clean))
          {
-            boost::filesystem::remove_all(temp_path_obtained);
+            std::filesystem::remove_all(temp_path);
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Read " + archive_file);
       }
@@ -366,7 +336,8 @@ DesignFlowStep_Status create_tree_manager::Exec()
       const auto raw_files = parameters->getOption<const CustomSet<std::string>>(OPT_input_file);
       for(const auto& raw_file : raw_files)
       {
-         if(!boost::filesystem::exists(boost::filesystem::path(raw_file)))
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Parsing " + raw_file);
+         if(!std::filesystem::exists(std::filesystem::path(raw_file)))
          {
             THROW_ERROR("File " + raw_file + " does not exist");
          }
@@ -381,14 +352,18 @@ DesignFlowStep_Status create_tree_manager::Exec()
 #if !RELEASE
       // if a XML configuration file has been specified for the GCC/CLANG parameters
       if(parameters->isOption(OPT_gcc_read_xml))
+      {
          compiler_wrapper->ReadXml(parameters->getOption<std::string>(OPT_gcc_read_xml));
+      }
 #endif
       createCostTable();
       compiler_wrapper->FillTreeManager(TreeM, AppM->input_files, getCostTable());
 
 #if !RELEASE
       if(parameters->isOption(OPT_gcc_write_xml))
+      {
          compiler_wrapper->WriteXml(parameters->getOption<std::string>(OPT_gcc_write_xml));
+      }
 #endif
 
       if(debug_level >= DEBUG_LEVEL_PEDANTIC)

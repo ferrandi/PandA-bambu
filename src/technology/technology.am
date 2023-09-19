@@ -2,448 +2,185 @@ noinst_LTLIBRARIES += lib_technology.la
 
 lib_technology_la_CPPFLAGS = \
    -I$(top_srcdir)/src \
-   -I$(top_srcdir)/src/circuit \
-   -I$(top_srcdir)/src/constants \
-   -I$(top_srcdir)/src/graph \
-   -I$(top_srcdir)/src/HLS/module_allocation \
-   -I$(top_srcdir)/src/HLS/scheduling \
-   -I$(top_srcdir)/src/parser/polixml \
-   -I$(top_srcdir)/src/polixml \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/physical_library/models \
-   -I$(top_srcdir)/src/technology/physical_library/models/area \
-   -I$(top_srcdir)/src/technology/target_device \
-   -I$(top_srcdir)/src/utility \
-   $(AM_CPPFLAGS)
-
-noinst_HEADERS += technology/technology_manager.hpp technology/target_manager.hpp technology/parse_technology.hpp
-
-lib_technology_la_SOURCES = technology/technology_manager.cpp technology/target_manager.cpp technology/parse_technology.cpp
-lib_technology_la_LIBADD =
-
-
-if BUILD_LIBERTY_PARSER
-   lib_technology_la_CPPFLAGS += \
-      -isystem $(top_srcdir)/ext/liberty_parser
-endif
-
-if BUILD_LIB_TARGET
-
-  noinst_LTLIBRARIES += lib_target_technology_FPGA.la
-  lib_target_technology_FPGA_la_CPPFLAGS = \
-   -I$(top_srcdir)/src \
-   -I$(top_srcdir)/src/constants \
-   -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/target_technology \
-   -I$(top_srcdir)/src/polixml \
-   -I$(top_srcdir)/src/parser/polixml \
-   -I$(top_srcdir)/src/utility \
-   $(AM_CPPFLAGS)
-  noinst_HEADERS += technology/target_technology/FPGA/FPGA_technology.hpp
-  lib_target_technology_FPGA_la_SOURCES = technology/target_technology/FPGA/FPGA_technology.cpp
-
-  noinst_LTLIBRARIES += lib_target_technology.la
-  lib_target_technology_la_CPPFLAGS = \
-   -I$(top_srcdir)/src \
    -I$(top_srcdir)/src/behavior \
    -I$(top_srcdir)/src/circuit \
    -I$(top_srcdir)/src/constants \
    -I$(top_srcdir)/src/graph \
-   -I$(top_srcdir)/src/parser/polixml \
-   -I$(top_srcdir)/src/polixml \
-   -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/target_technology \
-   -I$(top_srcdir)/src/technology/target_technology/FPGA \
-   -I$(top_srcdir)/src/utility \
-   $(AM_CPPFLAGS)
-  noinst_HEADERS += technology/target_technology/target_technology.hpp
-  lib_target_technology_la_SOURCES = technology/target_technology/target_technology.cpp
-  lib_target_technology_la_LIBADD = lib_target_technology_FPGA.la
-
-if BUILD_LIB_CMOS
-
-  noinst_LTLIBRARIES += lib_target_technology_CMOS.la
-  lib_target_technology_CMOS_la_CPPFLAGS = \
-   -I$(top_srcdir)/src \
-   -I$(top_srcdir)/src/constants \
-   -I$(top_srcdir)/src/parser/polixml \
-   -I$(top_srcdir)/src/polixml \
-   -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/target_technology \
-   -I$(top_srcdir)/src/utility \
-   $(AM_CPPFLAGS)
-  noinst_HEADERS += technology/target_technology/CMOS/CMOS_technology.hpp
-  lib_target_technology_CMOS_la_SOURCES = technology/target_technology/CMOS/CMOS_technology.cpp
-  lib_target_technology_la_CPPFLAGS += \
-                 -I$(top_srcdir)/src/technology/target_technology/CMOS
-  lib_target_technology_la_LIBADD += lib_target_technology_CMOS.la
-endif
-
-  noinst_LTLIBRARIES += lib_FPGA_device.la
-  lib_FPGA_device_la_CPPFLAGS = \
-   -I$(top_srcdir)/src \
-   -I$(top_srcdir)/src/circuit \
-   -I$(top_srcdir)/src/constants \
-   -I$(top_srcdir)/src/graph \
-   -I$(top_srcdir)/src/parser/polixml \
-   -I$(top_srcdir)/src/polixml \
-   -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/target_technology \
-   -I$(top_srcdir)/src/technology/target_device \
-   -I$(top_srcdir)/src/utility \
-   -I$(top_builddir)/src/technology/target_device/FPGA \
-   $(AM_CPPFLAGS)
-  noinst_HEADERS += technology/target_device/FPGA/FPGA_device.hpp
-  lib_FPGA_device_la_SOURCES = technology/target_device/FPGA/FPGA_device.cpp
-  BUILT_SOURCES=technology/target_device/FPGA/xc4vlx100-10ff1513.data technology/target_device/FPGA/xc5vlx110t-1ff1136.data technology/target_device/FPGA/xc5vlx330t-2ff1738.data technology/target_device/FPGA/xc5vlx50-3ff1153.data technology/target_device/FPGA/xc6vlx240t-1ff1156.data technology/target_device/FPGA/xc7vx330t-1ffg1157.data technology/target_device/FPGA/xc7z020-1clg484.data \
-technology/target_device/FPGA/EP2C70F896C6.data technology/target_device/FPGA/EP2C70F896C6-R.data \
-technology/target_device/FPGA/EP4SGX530KH40C2.data \
-technology/target_device/FPGA/5CSEMA5F31C6.data technology/target_device/FPGA/5SGXEA7N2F45C1.data\
-technology/target_device/FPGA/xc7z020-1clg484-VVD.data technology/target_device/FPGA/xc7z045-2ffg900-VVD.data technology/target_device/FPGA/xc7vx485t-2ffg1761-VVD.data technology/target_device/FPGA/xc7vx690t-3ffg1930-VVD.data\
-technology/target_device/FPGA/xc7a100t-1csg324-VVD.data \
-technology/target_device/FPGA/xcku060-3ffva1156-VVD.data \
-technology/target_device/FPGA/xcu280-2Lfsvh2892-VVD.data \
-technology/target_device/FPGA/xc7z020-1clg484-YOSYS-VVD.data \
-technology/target_device/FPGA/LFE335EA8FN484C.data \
-technology/target_device/FPGA/LFE5UM85F8BG756C.data \
-technology/target_device/FPGA/LFE5U85F8BG756C.data \
-technology/target_device/FPGA/nx1h35S.data technology/target_device/FPGA/nx1h140tsp.data technology/target_device/FPGA/nx2h540tsc.data \
-technology/target_device/FPGA/nangate45.data\
-technology/target_device/FPGA/asap7-BC.data \
-technology/target_device/FPGA/asap7-TC.data \
-technology/target_device/FPGA/asap7-WC.data 
-
-
-FPGA_device.cpp : technology/target_device/FPGA/xc4vlx100-10ff1513.data technology/target_device/FPGA/xc5vlx110t-1ff1136.data technology/target_device/FPGA/xc5vlx330t-2ff1738.data technology/target_device/FPGA/xc5vlx50-3ff1153.data technology/target_device/FPGA/xc6vlx240t-1ff1156.data technology/target_device/FPGA/xc7vx330t-1ffg1157.data technology/target_device/FPGA/xc7z020-1clg484.data \
-technology/target_device/FPGA/EP2C70F896C6.data technology/target_device/FPGA/EP2C70F896C6-R.data \
-technology/target_device/FPGA/EP4SGX530KH40C2.data \
-technology/target_device/FPGA/5CSEMA5F31C6.data technology/target_device/FPGA/5SGXEA7N2F45C1.data\
-technology/target_device/FPGA/xc7z020-1clg484-VVD.data technology/target_device/FPGA/xc7z045-2ffg900-VVD.data technology/target_device/FPGA/xc7vx485t-2ffg1761-VVD.data technology/target_device/FPGA/xc7vx690t-3ffg1930-VVD.data\
-technology/target_device/FPGA/xc7a100t-1csg324-VVD.data \
-technology/target_device/FPGA/xcku060-3ffva1156-VVD.data \
-technology/target_device/FPGA/xcu280-2Lfsvh2892-VVD.data \
-technology/target_device/FPGA/xc7z020-1clg484-YOSYS-VVD.data \
-technology/target_device/FPGA/LFE335EA8FN484C.data \
-technology/target_device/FPGA/LFE5UM85F8BG756C.data \
-technology/target_device/FPGA/LFE5U85F8BG756C.data \
-technology/target_device/FPGA/nx1h35S.data technology/target_device/FPGA/nx1h140tsp.data technology/target_device/FPGA/nx2h540tsc.data \
-technology/target_device/FPGA/nangate45.data\
-technology/target_device/FPGA/asap7-BC.data\
-technology/target_device/FPGA/asap7-TC.data\
-technology/target_device/FPGA/asap7-WC.data
-
-#The tab in this rule can't be replaced by blanks
-technology/target_device/FPGA/xc4vlx100-10ff1513.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc4vlx100-10ff1513.xml
-	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc4vlx100-10ff1513.xml > technology/target_device/FPGA/xc4vlx100-10ff1513.data
-
-technology/target_device/FPGA/xc5vlx50-3ff1153.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc5vlx50-3ff1153.xml
-	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc5vlx50-3ff1153.xml > technology/target_device/FPGA/xc5vlx50-3ff1153.data
-
-technology/target_device/FPGA/xc5vlx330t-2ff1738.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc5vlx330t-2ff1738.xml
-	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc5vlx330t-2ff1738.xml > technology/target_device/FPGA/xc5vlx330t-2ff1738.data
-
-technology/target_device/FPGA/xc5vlx110t-1ff1136.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc5vlx110t-1ff1136.xml
-	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc5vlx110t-1ff1136.xml > technology/target_device/FPGA/xc5vlx110t-1ff1136.data
-
-technology/target_device/FPGA/xc6vlx240t-1ff1156.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc6vlx240t-1ff1156.xml
-	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc6vlx240t-1ff1156.xml > technology/target_device/FPGA/xc6vlx240t-1ff1156.data
-
-technology/target_device/FPGA/xc7vx330t-1ffg1157.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7vx330t-1ffg1157.xml
-	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7vx330t-1ffg1157.xml > technology/target_device/FPGA/xc7vx330t-1ffg1157.data
-
-technology/target_device/FPGA/xc7z020-1clg484.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484.xml
-	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484.xml > technology/target_device/FPGA/xc7z020-1clg484.data
-
-technology/target_device/FPGA/xc7z020-1clg484-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484-VVD.xml
-	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484-VVD.xml > technology/target_device/FPGA/xc7z020-1clg484-VVD.data
-
-technology/target_device/FPGA/xc7z045-2ffg900-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7z045-2ffg900-VVD.xml
-	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7z045-2ffg900-VVD.xml > technology/target_device/FPGA/xc7z045-2ffg900-VVD.data
-
-technology/target_device/FPGA/xc7z020-1clg484-YOSYS-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484-YOSYS-VVD.xml
-	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484-YOSYS-VVD.xml > technology/target_device/FPGA/xc7z020-1clg484-YOSYS-VVD.data
-
-technology/target_device/FPGA/xc7vx485t-2ffg1761-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7vx485t-2ffg1761-VVD.xml
-	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7vx485t-2ffg1761-VVD.xml > technology/target_device/FPGA/xc7vx485t-2ffg1761-VVD.data
-
-technology/target_device/FPGA/xc7vx690t-3ffg1930-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7vx690t-3ffg1930-VVD.xml
-	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7vx690t-3ffg1930-VVD.xml > technology/target_device/FPGA/xc7vx690t-3ffg1930-VVD.data
-
-technology/target_device/FPGA/xcku060-3ffva1156-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xcku060-3ffva1156-VVD.xml
-	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xcku060-3ffva1156-VVD.xml > technology/target_device/FPGA/xcku060-3ffva1156-VVD.data
-
-technology/target_device/FPGA/xcu280-2Lfsvh2892-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xcu280-2Lfsvh2892-VVD.xml
-	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xcu280-2Lfsvh2892-VVD.xml > technology/target_device/FPGA/xcu280-2Lfsvh2892-VVD.data
-
-technology/target_device/FPGA/xc7a100t-1csg324-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7a100t-1csg324-VVD.xml
-	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7a100t-1csg324-VVD.xml > technology/target_device/FPGA/xc7a100t-1csg324-VVD.data
-
-#technology/target_device/FPGA/Spartan-3-xc3s1500l-4fg676.data: $(top_srcdir)/etc/devices/Xilinx_devices/Spartan-3-xc3s1500l-4fg676.xml
-#	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/Spartan-3-xc3s1500l-4fg676.xml > technology/target_device/FPGA/Spartan-3-xc3s1500l-4fg676.data
-
-technology/target_device/FPGA/EP2C70F896C6.data: $(top_srcdir)/etc/devices/Altera_devices/EP2C70F896C6.xml
-	gzip -c  $(top_srcdir)/etc/devices/Altera_devices/EP2C70F896C6.xml > technology/target_device/FPGA/EP2C70F896C6.data
-
-technology/target_device/FPGA/EP2C70F896C6-R.data: $(top_srcdir)/etc/devices/Altera_devices/EP2C70F896C6-R.xml
-	gzip -c  $(top_srcdir)/etc/devices/Altera_devices/EP2C70F896C6-R.xml > technology/target_device/FPGA/EP2C70F896C6-R.data
-
-technology/target_device/FPGA/5CSEMA5F31C6.data: $(top_srcdir)/etc/devices/Altera_devices/5CSEMA5F31C6.xml
-	gzip -c  $(top_srcdir)/etc/devices/Altera_devices/5CSEMA5F31C6.xml > technology/target_device/FPGA/5CSEMA5F31C6.data
-
-technology/target_device/FPGA/5SGXEA7N2F45C1.data: $(top_srcdir)/etc/devices/Altera_devices/5SGXEA7N2F45C1.xml
-	gzip -c  $(top_srcdir)/etc/devices/Altera_devices/5SGXEA7N2F45C1.xml > technology/target_device/FPGA/5SGXEA7N2F45C1.data
-
-technology/target_device/FPGA/EP4SGX530KH40C2.data: $(top_srcdir)/etc/devices/Altera_devices/EP4SGX530KH40C2.xml
-	gzip -c  $(top_srcdir)/etc/devices/Altera_devices/EP4SGX530KH40C2.xml > technology/target_device/FPGA/EP4SGX530KH40C2.data
-
-technology/target_device/FPGA/LFE335EA8FN484C.data: $(top_srcdir)/etc/devices/Lattice_devices/LFE335EA8FN484C.xml
-	gzip -c  $(top_srcdir)/etc/devices/Lattice_devices/LFE335EA8FN484C.xml > technology/target_device/FPGA/LFE335EA8FN484C.data
-
-technology/target_device/FPGA/LFE5UM85F8BG756C.data: $(top_srcdir)/etc/devices/Lattice_devices/LFE5UM85F8BG756C.xml
-	gzip -c  $(top_srcdir)/etc/devices/Lattice_devices/LFE5UM85F8BG756C.xml > technology/target_device/FPGA/LFE5UM85F8BG756C.data
-
-technology/target_device/FPGA/LFE5U85F8BG756C.data: $(top_srcdir)/etc/devices/Lattice_devices/LFE5U85F8BG756C.xml
-	gzip -c  $(top_srcdir)/etc/devices/Lattice_devices/LFE5U85F8BG756C.xml > technology/target_device/FPGA/LFE5U85F8BG756C.data
-
-technology/target_device/FPGA/nx1h35S.data: $(top_srcdir)/etc/devices/NanoXplore_devices/nx1h35S.xml
-	gzip -c  $(top_srcdir)/etc/devices/NanoXplore_devices/nx1h35S.xml > technology/target_device/FPGA/nx1h35S.data
-
-technology/target_device/FPGA/nx1h140tsp.data: $(top_srcdir)/etc/devices/NanoXplore_devices/nx1h140tsp.xml
-	gzip -c  $(top_srcdir)/etc/devices/NanoXplore_devices/nx1h140tsp.xml > technology/target_device/FPGA/nx1h140tsp.data
-
-technology/target_device/FPGA/nx2h540tsc.data: $(top_srcdir)/etc/devices/NanoXplore_devices/nx2h540tsc.xml
-	gzip -c  $(top_srcdir)/etc/devices/NanoXplore_devices/nx2h540tsc.xml > technology/target_device/FPGA/nx2h540tsc.data
-
-technology/target_device/FPGA/nangate45.data: $(top_srcdir)/etc/devices/Generic_devices/nangate45.xml
-	gzip -c  $(top_srcdir)/etc/devices/Generic_devices/nangate45.xml > technology/target_device/FPGA/nangate45.data
-
-technology/target_device/FPGA/asap7-BC.data: $(top_srcdir)/etc/devices/Generic_devices/asap7-BC.xml
-	gzip -c  $(top_srcdir)/etc/devices/Generic_devices/asap7-BC.xml > technology/target_device/FPGA/asap7-BC.data
-
-technology/target_device/FPGA/asap7-TC.data: $(top_srcdir)/etc/devices/Generic_devices/asap7-TC.xml
-	gzip -c  $(top_srcdir)/etc/devices/Generic_devices/asap7-TC.xml > technology/target_device/FPGA/asap7-TC.data
-
-technology/target_device/FPGA/asap7-WC.data: $(top_srcdir)/etc/devices/Generic_devices/asap7-WC.xml
-	gzip -c  $(top_srcdir)/etc/devices/Generic_devices/asap7-WC.xml > technology/target_device/FPGA/asap7-WC.data
-
-technology_dir = $(pkgdatadir)/technology
-technology_target_device_dir = $(technology_dir)/target_device
-technology_target_device_FPGA_dir = $(technology_target_device_dir)/FPGA
-technology_target_device_FPGA__DATA = technology/target_device/FPGA/xc4vlx100-10ff1513.data technology/target_device/FPGA/xc5vlx110t-1ff1136.data technology/target_device/FPGA/xc5vlx330t-2ff1738.data technology/target_device/FPGA/xc5vlx50-3ff1153.data \
-                                      technology/target_device/FPGA/xc6vlx240t-1ff1156.data technology/target_device/FPGA/xc7vx330t-1ffg1157.data technology/target_device/FPGA/xc7z020-1clg484.data \
-                                      technology/target_device/FPGA/EP2C70F896C6.data technology/target_device/FPGA/EP2C70F896C6-R.data \
-                                      technology/target_device/FPGA/EP4SGX530KH40C2.data \
-                                      technology/target_device/FPGA/5CSEMA5F31C6.data technology/target_device/FPGA/5SGXEA7N2F45C1.data\
-                                      technology/target_device/FPGA/xc7z020-1clg484-VVD.data technology/target_device/FPGA/xc7z045-2ffg900-VVD.data technology/target_device/FPGA/xc7vx485t-2ffg1761-VVD.data technology/target_device/FPGA/xc7vx690t-3ffg1930-VVD.data\
-                                      technology/target_device/FPGA/xc7a100t-1csg324-VVD.data \
-                                      technology/target_device/FPGA/xcku060-3ffva1156-VVD.data \
-                                      technology/target_device/FPGA/xcu280-2Lfsvh2892-VVD.data \
-                                      technology/target_device/FPGA/xc7z020-1clg484-YOSYS-VVD.data \
-                                      technology/target_device/FPGA/LFE335EA8FN484C.data \
-                                      technology/target_device/FPGA/LFE5UM85F8BG756C.data \
-                                      technology/target_device/FPGA/LFE5U85F8BG756C.data \
-                                      technology/target_device/FPGA/nx1h35S.data technology/target_device/FPGA/nx1h140tsp.data technology/target_device/FPGA/nx2h540tsc.data \
-                                      technology/target_device/FPGA/nangate45.data \
-                                      technology/target_device/FPGA/asap7-BC.data\
-                                      technology/target_device/FPGA/asap7-TC.data\
-                                      technology/target_device/FPGA/asap7-WC.data
-
-  noinst_LTLIBRARIES += lib_target_device.la
-  lib_target_device_la_CPPFLAGS = \
-   -I$(top_srcdir)/src \
-   -I$(top_srcdir)/src/constants \
-   -I$(top_srcdir)/src/polixml \
-   -I$(top_srcdir)/src/parser/polixml \
-   -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/target_device \
-   -I$(top_srcdir)/src/technology/target_device/FPGA \
-   -I$(top_srcdir)/src/technology/target_technology \
-   -I$(top_srcdir)/src/utility \
-   $(AM_CPPFLAGS)
-  noinst_HEADERS += technology/target_device/target_device.hpp
-  lib_target_device_la_SOURCES = technology/target_device/target_device.cpp
-  lib_target_device_la_LIBADD = lib_FPGA_device.la
-
-if BUILD_LIB_CMOS
-  noinst_LTLIBRARIES += lib_IC_device.la
-  lib_IC_device_la_CPPFLAGS = \
-   -I$(top_srcdir)/src \
-   -I$(top_srcdir)/src/circuit \
-   -I$(top_srcdir)/src/constants \
-   -I$(top_srcdir)/src/graph \
-   -I$(top_srcdir)/src/polixml \
-   -I$(top_srcdir)/src/parser/polixml \
-   -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/target_device \
-   -I$(top_srcdir)/src/technology/target_technology \
-   -I$(top_srcdir)/src/technology/target_technology/CMOS \
-   -I$(top_srcdir)/src/utility \
-   -I$(top_srcdir)/src/wrapper/synthesis \
-   -I$(top_builddir)/src/technology/target_device/IC \
-   $(AM_CPPFLAGS)
-  noinst_HEADERS += technology/target_device/IC/IC_device.hpp
-  lib_IC_device_la_SOURCES = technology/target_device/IC/IC_device.cpp
-  lib_target_device_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/technology/target_device/IC
-
-technology/target_device/IC/IC_device.cpp : technology/target_device/IC/Nangate.data
-#The tab in this rule can't be replaced by blanks
-technology/target_device/IC/Nangate.data: $(top_srcdir)/etc/devices/ASIC_devices/Nangate_device.xml
-	gzip -c $(top_srcdir)/etc/devices/ASIC_devices/Nangate_device.xml > technology/target_device/IC/Nangate.data
-
-technology_target_device_IC_dir = $(technology_target_device_dir)/IC
-technology_target_device_IC__DATA = technology/target_device/IC/Nangate.data
-
-  lib_target_device_la_LIBADD += lib_IC_device.la
-endif
-
-   lib_technology_la_LIBADD += lib_target_technology.la lib_target_device.la
-endif
-
-if BUILD_LIB_PHYSICAL_LIBRARY
-  noinst_LTLIBRARIES += lib_physical_library.la
-  lib_physical_library_la_CPPFLAGS = \
-   -I$(top_srcdir)/src \
-   -I$(top_srcdir)/src/behavior \
-   -I$(top_srcdir)/src/circuit \
-   -I$(top_srcdir)/src/constants \
-   -I$(top_srcdir)/src/graph \
-   -I$(top_srcdir)/src/HLS/scheduling\
-   -I$(top_srcdir)/src/parser/polixml \
-   -I$(top_srcdir)/src/polixml \
-   -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/physical_library/models \
-   -I$(top_srcdir)/src/technology/physical_library/models/area \
-   -I$(top_srcdir)/src/technology/physical_library/models/time \
-   -I$(top_srcdir)/src/technology/target_device \
-   -I$(top_srcdir)/src/technology/target_technology \
-   -I$(top_srcdir)/src/technology/target_technology/FPGA \
-   -I$(top_srcdir)/src/tree \
-   -I$(top_srcdir)/src/utility \
-   $(AM_CPPFLAGS)
-  noinst_HEADERS += technology/physical_library/technology_node.hpp technology/physical_library/library_manager.hpp technology/physical_library/technology_wishbone.hpp
-  lib_physical_library_la_SOURCES = technology/physical_library/technology_node.cpp technology/physical_library/library_manager.cpp
-  lib_physical_library_la_LIBADD =
-
-if BUILD_LIB_PHYSICAL_LIBRARY_MODELS
-  noinst_LTLIBRARIES += lib_area_models.la
-  lib_area_models_la_CPPFLAGS = \
-    -I$(top_srcdir)/src \
-    -I$(top_srcdir)/src/polixml \
-    -I$(top_srcdir)/src/technology/target_device \
-    -I$(top_srcdir)/src/technology/physical_library \
-    -I$(top_srcdir)/src/technology/physical_library/models \
-    -I$(top_srcdir)/src/utility \
-    $(AM_CPPFLAGS)
-  noinst_HEADERS += technology/physical_library/models/area/clb_model.hpp
-  lib_area_models_la_SOURCES = technology/physical_library/models/area/clb_model.cpp
-
-if BUILD_LIB_CMOS
-   noinst_HEADERS += technology/physical_library/models/area/cell_model.hpp
-   lib_area_models_la_SOURCES += technology/physical_library/models/area/cell_model.cpp
-   lib_area_models_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/technology/target_technology/CMOS
-endif
-
-  noinst_LTLIBRARIES += lib_time_models.la
-  lib_time_models_la_CPPFLAGS = \
-   -I$(top_srcdir)/src/graph \
-   -I$(top_srcdir)/src/HLS/scheduling \
-   -I$(top_srcdir)/src/polixml \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/physical_library/models \
-   -I$(top_srcdir)/src/technology/target_device \
-   -I$(top_srcdir)/src/utility \
-   $(AM_CPPFLAGS)
-  noinst_HEADERS += technology/physical_library/models/time/LUT_model.hpp
-  lib_time_models_la_SOURCES = technology/physical_library/models/time/LUT_model.cpp
-
-if BUILD_LIB_CMOS
-   noinst_HEADERS += technology/physical_library/models/time/liberty_model.hpp technology/physical_library/models/time/timing_group.hpp
-   lib_time_models_la_SOURCES += technology/physical_library/models/time/liberty_model.cpp technology/physical_library/models/time/timing_group.cpp
-endif
-
-  noinst_LTLIBRARIES += lib_models.la
-  lib_models_la_CPPFLAGS = \
-   -I$(top_srcdir)/src/ \
-   -I$(top_srcdir)/src/constants \
-   -I$(top_srcdir)/src/graph\
-   -I$(top_srcdir)/src/HLS/scheduling\
-   -I$(top_srcdir)/src/polixml \
-   -I$(top_srcdir)/src/technology/ \
-   -I$(top_srcdir)/src/technology/physical_library/ \
-   -I$(top_srcdir)/src/technology/physical_library/models \
-   -I$(top_srcdir)/src/technology/physical_library/models/area \
-   -I$(top_srcdir)/src/technology/physical_library/models/time \
-   -I$(top_srcdir)/src/technology/target_device \
-   -I$(top_srcdir)/src/utility \
-   $(AM_CPPFLAGS)
-  noinst_HEADERS += technology/physical_library/models/area_model.hpp technology/physical_library/models/time_model.hpp
-  lib_models_la_SOURCES = technology/physical_library/models/area_model.cpp technology/physical_library/models/time_model.cpp
-  lib_models_la_LIBADD = lib_area_models.la lib_time_models.la
-
-  lib_physical_library_la_LIBADD += lib_models.la
-endif
-
-if BUILD_LIB_CMOS
-  lib_physical_library_la_CPPFLAGS += \
-              -I$(top_srcdir)/src/technology/target_technology/CMOS
-endif
-
-if BUILD_LIBRARY_COMPILER
-  lib_physical_library_la_CPPFLAGS += \
-              -I$(top_srcdir)/src/wrapper/synthesis \
-              -I$(top_srcdir)/src/wrapper/synthesis/synopsys \
-              -I$(top_srcdir)/src/wrapper/synthesis/synopsys/library_compiler
-endif
-
-   lib_technology_la_LIBADD += lib_physical_library.la
-endif
-
-if BUILD_LIB_LIBRARY_CHARACTERIZATION
-  noinst_LTLIBRARIES += lib_characterization.la
-  lib_characterization_la_CPPFLAGS = \
-   -I$(top_srcdir)/src \
-   -I$(top_srcdir)/src/constants \
-   -I$(top_srcdir)/src/behavior \
    -I$(top_srcdir)/src/design_flows \
    -I$(top_srcdir)/src/design_flows/backend/ToHDL \
    -I$(top_srcdir)/src/design_flows/technology \
-   -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/HLS \
    -I$(top_srcdir)/src/HLS/module_allocation \
    -I$(top_srcdir)/src/HLS/scheduling \
    -I$(top_srcdir)/src/intermediate_representations \
    -I$(top_srcdir)/src/intermediate_representations/hls \
-   -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/physical_library/models \
-   -I$(top_srcdir)/src/technology/physical_library/models/area \
-   -I$(top_srcdir)/src/technology/physical_library/models/time \
-   -I$(top_srcdir)/src/technology/target_device \
-   -I$(top_srcdir)/src/technology/target_technology \
-   -I$(top_srcdir)/src/circuit \
-   -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/parser/polixml \
-   -I$(top_srcdir)/src/graph \
-   -I$(top_srcdir)/src/wrapper \
+   -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/wrapper/synthesis\
-   -I$(top_srcdir)/src/wrapper/synthesis/xilinx \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)
 
 if BUILD_FLOPOCO
-  lib_characterization_la_CPPFLAGS += -I$(top_srcdir)/src/wrapper/flopoco
+  lib_technology_la_CPPFLAGS += -I$(top_srcdir)/src/wrapper/flopoco
 endif
 
-  noinst_HEADERS += technology/characterization/RTL_characterization.hpp
-  lib_characterization_la_SOURCES = technology/characterization/RTL_characterization.cpp
-  lib_technology_la_LIBADD += lib_characterization.la
-endif
+noinst_HEADERS += technology/area_info.hpp technology/time_info.hpp technology/technology_manager.hpp technology/parse_technology.hpp technology/generic_device.hpp technology/technology_node.hpp technology/library_manager.hpp technology/technology_wishbone.hpp technology/RTL_characterization.hpp
+
+lib_technology_la_SOURCES = technology/area_info.cpp technology/time_info.cpp technology/technology_manager.cpp technology/parse_technology.cpp technology/generic_device.cpp technology/technology_node.cpp technology/library_manager.cpp technology/RTL_characterization.cpp
+
+  BUILT_SOURCES=technology/xc4vlx100-10ff1513.data technology/xc5vlx110t-1ff1136.data technology/xc5vlx330t-2ff1738.data technology/xc5vlx50-3ff1153.data technology/xc6vlx240t-1ff1156.data technology/xc7vx330t-1ffg1157.data technology/xc7z020-1clg484.data \
+technology/EP2C70F896C6.data technology/EP2C70F896C6-R.data \
+technology/EP4SGX530KH40C2.data \
+technology/5CSEMA5F31C6.data technology/5SGXEA7N2F45C1.data\
+technology/xc7z020-1clg484-VVD.data technology/xc7z045-2ffg900-VVD.data technology/xc7vx485t-2ffg1761-VVD.data technology/xc7vx690t-3ffg1930-VVD.data\
+technology/xc7a100t-1csg324-VVD.data \
+technology/xcku060-3ffva1156-VVD.data \
+technology/xcu280-2Lfsvh2892-VVD.data \
+technology/xc7z020-1clg484-YOSYS-VVD.data \
+technology/LFE335EA8FN484C.data \
+technology/LFE5UM85F8BG756C.data \
+technology/LFE5U85F8BG756C.data \
+technology/nx1h35S.data technology/nx1h140tsp.data technology/nx2h540tsc.data \
+technology/nangate45.data\
+technology/asap7-BC.data \
+technology/asap7-TC.data \
+technology/asap7-WC.data 
+
+
+generic_device.cpp : technology/xc4vlx100-10ff1513.data technology/xc5vlx110t-1ff1136.data technology/xc5vlx330t-2ff1738.data technology/xc5vlx50-3ff1153.data technology/xc6vlx240t-1ff1156.data technology/xc7vx330t-1ffg1157.data technology/xc7z020-1clg484.data \
+technology/EP2C70F896C6.data technology/EP2C70F896C6-R.data \
+technology/EP4SGX530KH40C2.data \
+technology/5CSEMA5F31C6.data technology/5SGXEA7N2F45C1.data\
+technology/xc7z020-1clg484-VVD.data technology/xc7z045-2ffg900-VVD.data technology/xc7vx485t-2ffg1761-VVD.data technology/xc7vx690t-3ffg1930-VVD.data\
+technology/xc7a100t-1csg324-VVD.data \
+technology/xcku060-3ffva1156-VVD.data \
+technology/xcu280-2Lfsvh2892-VVD.data \
+technology/xc7z020-1clg484-YOSYS-VVD.data \
+technology/LFE335EA8FN484C.data \
+technology/LFE5UM85F8BG756C.data \
+technology/LFE5U85F8BG756C.data \
+technology/nx1h35S.data technology/nx1h140tsp.data technology/nx2h540tsc.data \
+technology/nangate45.data\
+technology/asap7-BC.data\
+technology/asap7-TC.data\
+technology/asap7-WC.data
+
+#The tab in this rule can't be replaced by blanks
+technology/xc4vlx100-10ff1513.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc4vlx100-10ff1513.xml
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc4vlx100-10ff1513.xml > technology/xc4vlx100-10ff1513.data
+
+technology/xc5vlx50-3ff1153.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc5vlx50-3ff1153.xml
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc5vlx50-3ff1153.xml > technology/xc5vlx50-3ff1153.data
+
+technology/xc5vlx330t-2ff1738.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc5vlx330t-2ff1738.xml
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc5vlx330t-2ff1738.xml > technology/xc5vlx330t-2ff1738.data
+
+technology/xc5vlx110t-1ff1136.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc5vlx110t-1ff1136.xml
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc5vlx110t-1ff1136.xml > technology/xc5vlx110t-1ff1136.data
+
+technology/xc6vlx240t-1ff1156.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc6vlx240t-1ff1156.xml
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc6vlx240t-1ff1156.xml > technology/xc6vlx240t-1ff1156.data
+
+technology/xc7vx330t-1ffg1157.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7vx330t-1ffg1157.xml
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7vx330t-1ffg1157.xml > technology/xc7vx330t-1ffg1157.data
+
+technology/xc7z020-1clg484.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484.xml
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484.xml > technology/xc7z020-1clg484.data
+
+technology/xc7z020-1clg484-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484-VVD.xml
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484-VVD.xml > technology/xc7z020-1clg484-VVD.data
+
+technology/xc7z045-2ffg900-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7z045-2ffg900-VVD.xml
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7z045-2ffg900-VVD.xml > technology/xc7z045-2ffg900-VVD.data
+
+technology/xc7z020-1clg484-YOSYS-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484-YOSYS-VVD.xml
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484-YOSYS-VVD.xml > technology/xc7z020-1clg484-YOSYS-VVD.data
+
+technology/xc7vx485t-2ffg1761-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7vx485t-2ffg1761-VVD.xml
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7vx485t-2ffg1761-VVD.xml > technology/xc7vx485t-2ffg1761-VVD.data
+
+technology/xc7vx690t-3ffg1930-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7vx690t-3ffg1930-VVD.xml
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7vx690t-3ffg1930-VVD.xml > technology/xc7vx690t-3ffg1930-VVD.data
+
+technology/xcku060-3ffva1156-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xcku060-3ffva1156-VVD.xml
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xcku060-3ffva1156-VVD.xml > technology/xcku060-3ffva1156-VVD.data
+
+technology/xcu280-2Lfsvh2892-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xcu280-2Lfsvh2892-VVD.xml
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xcu280-2Lfsvh2892-VVD.xml > technology/xcu280-2Lfsvh2892-VVD.data
+
+technology/xc7a100t-1csg324-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7a100t-1csg324-VVD.xml
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7a100t-1csg324-VVD.xml > technology/xc7a100t-1csg324-VVD.data
+
+#technology/Spartan-3-xc3s1500l-4fg676.data: $(top_srcdir)/etc/devices/Xilinx_devices/Spartan-3-xc3s1500l-4fg676.xml
+#	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/Spartan-3-xc3s1500l-4fg676.xml > technology/Spartan-3-xc3s1500l-4fg676.data
+
+technology/EP2C70F896C6.data: $(top_srcdir)/etc/devices/Altera_devices/EP2C70F896C6.xml
+	gzip -c  $(top_srcdir)/etc/devices/Altera_devices/EP2C70F896C6.xml > technology/EP2C70F896C6.data
+
+technology/EP2C70F896C6-R.data: $(top_srcdir)/etc/devices/Altera_devices/EP2C70F896C6-R.xml
+	gzip -c  $(top_srcdir)/etc/devices/Altera_devices/EP2C70F896C6-R.xml > technology/EP2C70F896C6-R.data
+
+technology/5CSEMA5F31C6.data: $(top_srcdir)/etc/devices/Altera_devices/5CSEMA5F31C6.xml
+	gzip -c  $(top_srcdir)/etc/devices/Altera_devices/5CSEMA5F31C6.xml > technology/5CSEMA5F31C6.data
+
+technology/5SGXEA7N2F45C1.data: $(top_srcdir)/etc/devices/Altera_devices/5SGXEA7N2F45C1.xml
+	gzip -c  $(top_srcdir)/etc/devices/Altera_devices/5SGXEA7N2F45C1.xml > technology/5SGXEA7N2F45C1.data
+
+technology/EP4SGX530KH40C2.data: $(top_srcdir)/etc/devices/Altera_devices/EP4SGX530KH40C2.xml
+	gzip -c  $(top_srcdir)/etc/devices/Altera_devices/EP4SGX530KH40C2.xml > technology/EP4SGX530KH40C2.data
+
+technology/LFE335EA8FN484C.data: $(top_srcdir)/etc/devices/Lattice_devices/LFE335EA8FN484C.xml
+	gzip -c  $(top_srcdir)/etc/devices/Lattice_devices/LFE335EA8FN484C.xml > technology/LFE335EA8FN484C.data
+
+technology/LFE5UM85F8BG756C.data: $(top_srcdir)/etc/devices/Lattice_devices/LFE5UM85F8BG756C.xml
+	gzip -c  $(top_srcdir)/etc/devices/Lattice_devices/LFE5UM85F8BG756C.xml > technology/LFE5UM85F8BG756C.data
+
+technology/LFE5U85F8BG756C.data: $(top_srcdir)/etc/devices/Lattice_devices/LFE5U85F8BG756C.xml
+	gzip -c  $(top_srcdir)/etc/devices/Lattice_devices/LFE5U85F8BG756C.xml > technology/LFE5U85F8BG756C.data
+
+technology/nx1h35S.data: $(top_srcdir)/etc/devices/NanoXplore_devices/nx1h35S.xml
+	gzip -c  $(top_srcdir)/etc/devices/NanoXplore_devices/nx1h35S.xml > technology/nx1h35S.data
+
+technology/nx1h140tsp.data: $(top_srcdir)/etc/devices/NanoXplore_devices/nx1h140tsp.xml
+	gzip -c  $(top_srcdir)/etc/devices/NanoXplore_devices/nx1h140tsp.xml > technology/nx1h140tsp.data
+
+technology/nx2h540tsc.data: $(top_srcdir)/etc/devices/NanoXplore_devices/nx2h540tsc.xml
+	gzip -c  $(top_srcdir)/etc/devices/NanoXplore_devices/nx2h540tsc.xml > technology/nx2h540tsc.data
+
+technology/nangate45.data: $(top_srcdir)/etc/devices/Generic_devices/nangate45.xml
+	gzip -c  $(top_srcdir)/etc/devices/Generic_devices/nangate45.xml > technology/nangate45.data
+
+technology/asap7-BC.data: $(top_srcdir)/etc/devices/Generic_devices/asap7-BC.xml
+	gzip -c  $(top_srcdir)/etc/devices/Generic_devices/asap7-BC.xml > technology/asap7-BC.data
+
+technology/asap7-TC.data: $(top_srcdir)/etc/devices/Generic_devices/asap7-TC.xml
+	gzip -c  $(top_srcdir)/etc/devices/Generic_devices/asap7-TC.xml > technology/asap7-TC.data
+
+technology/asap7-WC.data: $(top_srcdir)/etc/devices/Generic_devices/asap7-WC.xml
+	gzip -c  $(top_srcdir)/etc/devices/Generic_devices/asap7-WC.xml > technology/asap7-WC.data
+
+technology_dir = $(pkgdatadir)/technology
+technology__DATA = technology/xc4vlx100-10ff1513.data technology/xc5vlx110t-1ff1136.data technology/xc5vlx330t-2ff1738.data technology/xc5vlx50-3ff1153.data \
+                                      technology/xc6vlx240t-1ff1156.data technology/xc7vx330t-1ffg1157.data technology/xc7z020-1clg484.data \
+                                      technology/EP2C70F896C6.data technology/EP2C70F896C6-R.data \
+                                      technology/EP4SGX530KH40C2.data \
+                                      technology/5CSEMA5F31C6.data technology/5SGXEA7N2F45C1.data\
+                                      technology/xc7z020-1clg484-VVD.data technology/xc7z045-2ffg900-VVD.data technology/xc7vx485t-2ffg1761-VVD.data technology/xc7vx690t-3ffg1930-VVD.data\
+                                      technology/xc7a100t-1csg324-VVD.data \
+                                      technology/xcku060-3ffva1156-VVD.data \
+                                      technology/xcu280-2Lfsvh2892-VVD.data \
+                                      technology/xc7z020-1clg484-YOSYS-VVD.data \
+                                      technology/LFE335EA8FN484C.data \
+                                      technology/LFE5UM85F8BG756C.data \
+                                      technology/LFE5U85F8BG756C.data \
+                                      technology/nx1h35S.data technology/nx1h140tsp.data technology/nx2h540tsc.data \
+                                      technology/nangate45.data \
+                                      technology/asap7-BC.data\
+                                      technology/asap7-TC.data\
+                                      technology/asap7-WC.data
+
+
+
 
 

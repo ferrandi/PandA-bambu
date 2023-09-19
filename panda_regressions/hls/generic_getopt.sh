@@ -1,4 +1,5 @@
 #!/bin/bash
+export LC_ALL=$(locale -a|grep -ix 'c.utf-\?8' || echo C)
 
 showHelp() {
     use_string="Usage:"

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2022 Politecnico di Milano
+ *              Copyright (c) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -37,34 +37,19 @@
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
  *
  */
-/// Header include
 #include "top_entity_cs.hpp"
-
-///.include
 #include "BambuParameter.hpp"
-
-/// circuit include
+#include "dbgPrintHelper.hpp"
+#include "hls.hpp"
+#include "hls_device.hpp"
+#include "hls_manager.hpp"
+#include "math_function.hpp"
+#include "omp_functions.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
-
-/// HLS includes
-#include "hls.hpp"
-#include "hls_manager.hpp"
-#include "hls_target.hpp"
-
-/// HLS/functions_allocation
-#include "omp_functions.hpp"
-
-/// STD include
-#include <string>
-
-/// technology include
 #include "technology_manager.hpp"
-
-/// utility includes
-#include "dbgPrintHelper.hpp"
-#include "math_function.hpp"
 #include "utility.hpp"
+#include <string>
 
 top_entity_cs::top_entity_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId,
                              const DesignFlowManagerConstRef _design_flow_manager,
@@ -74,9 +59,7 @@ top_entity_cs::top_entity_cs(const ParameterConstRef _parameters, const HLS_mana
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-top_entity_cs::~top_entity_cs()
-{
-}
+top_entity_cs::~top_entity_cs() = default;
 
 DesignFlowStep_Status top_entity_cs::InternalExec()
 {
@@ -213,7 +196,7 @@ void top_entity_cs::add_input_register(structural_objectRef port_in, const std::
                                        structural_objectRef, structural_objectRef e_port)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding input registers");
-   auto TM = HLS->HLS_T->get_technology_manager();
+   auto TM = HLS->HLS_D->get_technology_manager();
    auto register_library = TM->get_library("register_file");
    auto register_file_module =
        SM->add_module_from_technology_library(port_prefix + "_REG", "register_file", register_library, circuit, TM);

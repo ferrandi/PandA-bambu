@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -88,7 +88,7 @@ class tree_panda_gcc_parameter : public Parameter
    int Exec() override;
 
    /**
-    * Sets the default values for the Zebu tool
+    * Sets the default values for the tree-panda-gcc tool
     */
    void SetDefaults() override;
 };

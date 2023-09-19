@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -49,15 +49,15 @@ namespace mockturtle
 */
 struct cut_enumeration_mf_cut
 {
-  uint32_t delay{0};
-  float flow{0};
-  float cost{0};
+  uint32_t delay{ 0 };
+  float flow{ 0 };
+  float cost{ 0 };
 };
 
 template<bool ComputeTruth>
 bool operator<( cut_type<ComputeTruth, cut_enumeration_mf_cut> const& c1, cut_type<ComputeTruth, cut_enumeration_mf_cut> const& c2 )
 {
-  constexpr auto eps{0.005f};
+  constexpr auto eps{ 0.005f };
   if ( c1->data.flow < c2->data.flow - eps )
     return true;
   if ( c1->data.flow > c2->data.flow + eps )
@@ -75,7 +75,7 @@ struct cut_enumeration_update_cut<cut_enumeration_mf_cut>
   template<typename Cut, typename NetworkCuts, typename Ntk>
   static void apply( Cut& cut, NetworkCuts const& cuts, Ntk const& ntk, node<Ntk> const& n )
   {
-    uint32_t delay{0};
+    uint32_t delay{ 0 };
     float flow = cut->data.cost = cut.size() < 2 ? 0.0f : 1.0f;
 
     for ( auto leaf : cut )

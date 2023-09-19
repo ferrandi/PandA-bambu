@@ -24,42 +24,82 @@ jobs:
     uses: ./.github/workflows/build-appimage.yml
     with:
       package-name: bambu-minimal
-      compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,clang-4,clang-5,clang-6,clang-7,clang-11,clang-12
-    secrets:
-      CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
-      CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
-      CI_STORAGE_TOKEN: ${{secrets.CI_STORAGE_TOKEN}}
+      compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,clang-4,clang-6,clang-7,clang-11,clang-13,clang-16
+    secrets: inherit
+
+  changes:
+    runs-on: [self-hosted]
+    permissions:
+      pull-requests: read
+    outputs:
+      softfloat: ${{ steps.filter.outputs.softfloat }}
+      libm: ${{ steps.filter.outputs.libm }}
+      ac_types: ${{ steps.filter.outputs.ac_types }}
+    steps:
+      - name: Detect changes
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            softfloat:
+              - 'etc/libbambu/bambu_macros.h'
+              - 'etc/libbambu/mul64.c'
+              - 'etc/libbambu/softfloat/**'
+            libm:
+              - 'etc/libbambu/bambu_macros.h'
+              - 'etc/libbambu/mul64.c'
+              - 'etc/libbambu/libm/**'
+              - 'etc/libbambu/softfloat/**'
+            ac_types:
+              - 'etc/libbambu/ac_math/**'
+              - 'etc/libbambu/ac_types/**'
 
   ACMath-tests:
+    needs: [changes]
+    if: ${{needs.changes.outputs.ac_types == 'true'}}
     runs-on: [self-hosted]
     container:
-      image: bambuhls/appimage:focal
+      image: bambuhls/dev:focal-23.04
       env:
         J: ${{env.host_jobs}}
     strategy:
       matrix:
-        compiler: [gcc, gcc_c++17, clang, clang_c++17]
+        include:
+          - compiler: g++
+          - compiler: g++
+            flags: -std=c++17
+          - compiler: clang++
+          - compiler: clang++
+            flags: -std=c++17
+          - compiler: clang++-16
+            flags: -std=c++17
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: Install clang
-        if: ${{ startsWith(matrix.compiler, 'clang') }}
+      - name: Install Clang
+        if: ${{ matrix.compiler == 'clang++' }}
         shell: bash
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends clang
-      - name: Launch ACMath tests for ${{matrix.compiler}}
+      - name: Install Clang 16
+        if: ${{ matrix.compiler == 'clang++-16' }}
+        shell: bash
+        run: |
+          bash .devcontainer/library-scripts/compiler-download.sh / clang-16
+          bash .devcontainer/library-scripts/compiler-setup.sh
+      - name: Launch ACMath tests for ${{matrix.compiler}} ${{matrix.flags}}
         working-directory: ./etc/libbambu/ac_math
         shell: bash
-        run: ./ac_math_test_${{matrix.compiler}}.sh
+        run: ./ac_math_test.sh $(mktemp -d /tmp/ac_math_XXX) CXX=${{matrix.compiler}} CXXUSERFLAGS="${{matrix.flags}}"
 
   specific-test:
-    needs: [build, ACMath-tests]
+    needs: [build]
     runs-on: [self-hosted]
     strategy:
       fail-fast: false
       matrix:
-        id: ["", "2", "3", "4", "5", "6"]
+        id: ["", "2", "3", "5", "6"]
     env:
       args: -c=--simulator=VERILATOR
     steps:
@@ -79,8 +119,8 @@ jobs:
           mkdir bin
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
-      - name: Launch Bambu specific tests ${{matrix.id}}
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+      - name: Launch Bambu specific test ${{matrix.id}}
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
@@ -101,42 +141,23 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: bambu_specific_test${{matrix.id}}
           path: ${{env.report-dir}}
-
-  gcc_regression_simple:
-    needs: [build, specific-test]
-    runs-on: [self-hosted, mentor]
-    env:
-      outname: ${{matrix.setup}}_regression_simple
+  
+  interface-test:
+    needs: [build, ACMath-tests]
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
+    runs-on: [self-hosted,mentor]
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - setup: gcc-4.9
-            script: generic_gcc_regression_simple_eg_ext_pipelined.sh
-            args: -c=--compiler=I386_GCC49 -c=--reset-type=sync -c=--simulator=VERILATOR
-          - setup: clang-4.0
-            script: generic_gcc_regression_simple_eg.sh
-            args: -c=--compiler=I386_CLANG4 -c=--simulator=MODELSIM
-          - setup: clang-5.0
-            script: generic_gcc_regression_simple_eg_ext_pipelined.sh
-            args: -c=--compiler=I386_CLANG5 -c=--simulator=VERILATOR
-          - setup: clang-6.0
-            script: generic_gcc_regression_simple_bambu.sh
-            args: -c=--compiler=I386_CLANG6 -c=--simulator=MODELSIM
-          - setup: clang-7
-            script: generic_gcc_regression_simple_bambu.sh
-            args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR
-          - setup: clang-11
-            script: generic_gcc_regression_simple_bambu.sh
-            args: -c=--compiler=I386_CLANG11 -c=--simulator=VERILATOR
-          - setup: clang-12
-            script: generic_gcc_regression_simple_eg_ext_pipelined.sh
-            args: -c=--compiler=I386_CLANG12 -c=--simulator=VERILATOR
+        id: [""]
+    env:
+      script: ./panda_regressions/hls/bambu_interface_test${{matrix.id}}.sh
+      args: -c=--simulator=MODELSIM -c=--assert-debug
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -154,14 +175,116 @@ jobs:
           mkdir bin
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+      - name: Launch Bambu interface test ${{matrix.id}}
+        shell: bash
+        run: |
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          mkdir ${{env.report-dir}}
+          ${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: bambu_interface_test${{matrix.id}}
+          new-results: ${{env.report-dir}}/perf.csv
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        shell: bash
+        run: |
+          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+      - name: Upload test reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: bambu_interface_test${{matrix.id}}
+          path: ${{env.report-dir}}
+
+  AXI4-verification:
+    needs: [build]
+    runs-on: [self-hosted,mentor]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{needs.build.outputs.package-name}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+      - name: Launch AXI test
+        shell: bash
+        run: |
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          ./panda_regressions/hls/bambu_axi_verification.sh
+
+  gcc_regression_simple:
+    needs: [build, specific-test]
+    runs-on: [self-hosted, mentor]
+    env:
+      outname: ${{matrix.setup}}_regression_simple
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - setup: gcc-4.9
+            script: generic_gcc_regression_simple_eg_ext_pipelined.sh
+            args: -c=--compiler=I386_GCC49 -c=--reset-type=sync -c=--simulator=VERILATOR
+          - setup: clang-4.0
+            script: generic_gcc_regression_simple_eg.sh
+            args: -c=--compiler=I386_CLANG4 -c=--simulator=MODELSIM -c=--assert-debug
+          - setup: clang-6.0
+            script: generic_gcc_regression_simple_bambu.sh
+            args: -c=--compiler=I386_CLANG6 -c=--simulator=MODELSIM -c=--assert-debug
+          - setup: clang-7
+            script: generic_gcc_regression_simple_bambu.sh
+            args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR
+          - setup: clang-11
+            script: generic_gcc_regression_simple_bambu.sh
+            args: -c=--compiler=I386_CLANG11 -c=--simulator=VERILATOR
+          - setup: clang-13
+            script: generic_gcc_regression_simple_eg_ext_pipelined.sh
+            args: -c=--compiler=I386_CLANG13 -c=--simulator=VERILATOR
+          - setup: clang-16
+            script: generic_gcc_regression_simple_eg_ext_pipelined.sh
+            args: -c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR -c=-Wno-int-conversion
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{needs.build.outputs.package-name}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Launch GCC regression test suite
         id: suite
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
-          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
           ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{matrix.args}}
       - name: Compare results
         id: perf-check
@@ -178,7 +301,7 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -209,14 +332,14 @@ jobs:
           mkdir bin
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Launch GCC regression test suite with pretty-print
         id: suite
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
-          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
           ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
       - name: Compare results
         id: perf-check
@@ -233,7 +356,7 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -245,7 +368,7 @@ jobs:
     env:
       setup: gcc-7
       script: generic_gcc_regression_simple_bambu_vhdl.sh
-      args: -c=--compiler=I386_GCC7 -c=--simulator=MODELSIM
+      args: -c=--compiler=I386_GCC7 -c=--simulator=MODELSIM -c=--assert-debug
       outname: gcc-7_regression_simple-vhdl
     steps:
       - name: Checkout repository
@@ -264,14 +387,14 @@ jobs:
           mkdir bin
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Launch GCC regression test suite with VHDL target
         id: suite
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
-          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
           ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
       - name: Compare results
         id: perf-check
@@ -288,7 +411,7 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -296,7 +419,7 @@ jobs:
 
   discrepancy-test:
     needs: [build, specific-test]
-    runs-on: [self-hosted, classA]
+    runs-on: [self-hosted]
     env:
       setup: gcc-7
       script: generic_discrepancy_eg_bambu.sh
@@ -319,23 +442,25 @@ jobs:
           mkdir bin
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Launch Bambu discrepancy tests
         id: suite
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
-          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
           ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
 
   softfloat-preliminary:
+    needs: [changes]
+    if: ${{needs.changes.outputs.softfloat == 'true'}}
     runs-on: [self-hosted]
     steps:
       - name: Checkout repository
@@ -345,7 +470,7 @@ jobs:
         shell: bash
         run: |
           echo "Current host supports ${{env.host_jobs}} parallel jobs"
-          echo "::set-output name=jobs::${{env.host_jobs}}"
+          echo "jobs=${{env.host_jobs}}" >> $GITHUB_OUTPUT
       - name: Verify SoftFloat implementation
         uses: ./.github/actions/docker-runner
         with:
@@ -354,6 +479,7 @@ jobs:
 
   softfloat-tests:
     needs: [build, softfloat-preliminary]
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: [self-hosted, mentor]
     env:
       script: multi_softfloat-tests.sh
@@ -376,14 +502,14 @@ jobs:
           mkdir bin
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Launch SoftFloat test suite
         id: suite
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
-          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
           ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
       - name: Compare results
         id: perf-check
@@ -400,13 +526,15 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
 
   libm-preliminary:
+    needs: [changes]
+    if: ${{needs.changes.outputs.libm == 'true'}}
     runs-on: [self-hosted]
     strategy:
       matrix:
@@ -419,7 +547,7 @@ jobs:
         shell: bash
         run: |
           echo "Current host supports ${{env.host_jobs}} parallel jobs"
-          echo "::set-output name=jobs::${{env.host_jobs}}"
+          echo "jobs=${{env.host_jobs}}" >> $GITHUB_OUTPUT
       - name: Verify ${{matrix.func}} implementation
         uses: ./.github/actions/docker-runner
         with:
@@ -428,25 +556,26 @@ jobs:
 
   libm-tests:
     needs: [build, libm-preliminary, softfloat-tests]
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: [self-hosted, mentor]
     strategy:
       fail-fast: false
       matrix:
         include:
           - setup: gcc-4.9
-            args: -c=--compiler=I386_GCC49 -c=--simulator=MODELSIM
+            args: -c=--compiler=I386_GCC49 -c=--simulator=MODELSIM -c=--assert-debug
           - setup: clang-4.0
             args: -c=--compiler=I386_CLANG4 -c=--simulator=VERILATOR
-          - setup: clang-5.0
-            args: -c=--compiler=I386_CLANG5 -c=--simulator=VERILATOR
           - setup: clang-6.0
             args: -c=--compiler=I386_CLANG6 -c=--simulator=VERILATOR
           - setup: clang-7
             args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR
           - setup: clang-11
-            args: -c=--compiler=I386_CLANG11 -c=--simulator=MODELSIM
-          - setup: clang-12
-            args: -c=--compiler=I386_CLANG12 -c=--simulator=VERILATOR
+            args: -c=--compiler=I386_CLANG11 -c=--simulator=MODELSIM -c=--assert-debug
+          - setup: clang-13
+            args: -c=--compiler=I386_CLANG13 -c=--simulator=VERILATOR
+          - setup: clang-16
+            args: -c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR
     env:
       script: generic_libm-tests.sh
       args: -c=--speculative-sdc-scheduling
@@ -468,14 +597,14 @@ jobs:
           mkdir bin
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Launch LibM test suite
         id: suite
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
-          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
           ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{matrix.args}} ${{env.args}}
       - name: Compare results
         id: perf-check
@@ -492,7 +621,7 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -503,11 +632,13 @@ jobs:
     runs-on: [self-hosted, mentor]
     env:
       script: multi_CHStone-frontend.sh
-      args: -c=--simulator=MODELSIM
+      args: -c=--simulator=MODELSIM -c=--assert-debug
       outname: multi_CHStone-frontend
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: 'true'
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -522,14 +653,14 @@ jobs:
           mkdir bin
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Launch CHStone test suite
         id: suite
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
-          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
           ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
       - name: Compare results
         id: perf-check
@@ -546,7 +677,7 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -580,15 +711,15 @@ jobs:
           rm ./*.AppImage
           ln -s \$PWD/squashfs-root/usr/bin/bambu bin/bambu
           ln -s \$PWD/squashfs-root/usr/bin/spider bin/spider
-          echo "::set-output name=local-bin::\$PWD/bin"
-          echo "::set-output name=appdir::\$PWD/squashfs-root"
+          echo "local-bin=\$PWD/bin" >> \$GITHUB_OUTPUT
+          echo "appdir=\$PWD/squashfs-root" >> \$GITHUB_OUTPUT
           export PATH=\$PWD/bin:\$PATH
           export APPDIR=\$PWD/squashfs-root
           export LD_LIBRARY_PATH=\$APPDIR/usr/lib/:\$APPDIR/lib/x86_64-linux-gnu/
           export NPROC=${{env.nproc}}
           export J=${{env.parallel}}
           mkdir ${{env.report-dir}}
-          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          echo "test-reports-dir=$PWD/${{env.report-dir}}" >> \$GITHUB_OUTPUT
           ${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
           EOF
           chmod +x docker_exec.sh
@@ -598,7 +729,7 @@ jobs:
         with:
           script: ./docker_exec.sh
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -606,7 +737,7 @@ jobs:
 
   CHStone-memarch:
     needs: [build, CHStone-multi]
-    runs-on: [self-hosted, altera, intelFPGA, lattice, mentor, xilinx]
+    runs-on: [self-hosted, mentor]
     strategy:
       fail-fast: false
       matrix:
@@ -619,10 +750,12 @@ jobs:
             args: "-c=--speculative-sdc-scheduling"
     env:
       script: generic_CHStone-memarch.sh
-      args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}}
+      args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}} -c=--assert-debug
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: 'true'
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -637,17 +770,17 @@ jobs:
           mkdir bin
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Launch CHStone test suite
         id: suite
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
-          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
           ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}} ${{matrix.args}}
       - name: Generate out name
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         id: get
         shell: bash
         run: |
@@ -662,9 +795,9 @@ jobs:
           else
             OUTNAME+="-verilog"
           fi
-          echo "::set-output name=outname::$OUTNAME"
+          echo "outname=$OUTNAME" >> $GITHUB_OUTPUT
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{steps.get.outputs.outname}}
@@ -680,7 +813,7 @@ jobs:
     env:
       outname: omp_simd_${{matrix.device}}
       script: ./examples/omp_simd/generic_omp_simd.sh
-      args: -c=--simulator=MODELSIM -c=--compiler=I386_GCC49 -c=--clock-period=10 -c=--device-name=${{matrix.device}}
+      args: -c=--simulator=MODELSIM -c=--compiler=I386_GCC49 -c=--clock-period=10 -c=--device-name=${{matrix.device}} -c=--assert-debug
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -698,7 +831,7 @@ jobs:
           mkdir bin
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Launch omp simd evaluation on ${{matrix.device}}
         shell: bash
         run: |
@@ -720,7 +853,7 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -739,7 +872,7 @@ jobs:
             args: -c=--evaluation=PERIOD,AREA,FREQUENCY,CLOCK_SLACK,REGISTERS,DSPS,BRAMS
             datapoints: PERIOD,AREA,REGISTERS,DSPS,BRAMS
           - test: lattice
-            datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
+            datapoints: CYCLES
           - test: nanoxplore
             datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
           - test: sim
@@ -753,6 +886,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: 'true'
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -767,14 +902,14 @@ jobs:
           mkdir bin
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Launch Panda bench ${{matrix.test}}
         id: suite
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
-          echo "::set-output name=test-reports-dir::$PWD/${{env.report-dir}}"
+          echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
           ./examples/panda_bench_${{matrix.test}}.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{matrix.args}}
       - name: Compare results
         id: perf-check
@@ -792,7 +927,7 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -819,7 +954,7 @@ jobs:
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
           ln -s $PWD/*.AppImage bin/tree-panda-gcc
-          echo "::set-output name=local-bin::$PWD/bin"
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Launch script
         shell: bash
         run: |
@@ -827,3 +962,55 @@ jobs:
           ./examples/cpp_examples/fir_filter/bambu.sh
           ./examples/cpp_examples/gcd_example/bambu.sh
           ./examples/crypto_designs/multi.sh
+
+  success:
+    if: ${{ !cancelled() }}
+    needs:
+      [
+        gcc_regression_simple,
+        gcc_regression_simple-vhdl,
+        gcc_regression_simple-pretty_print,
+        interface-test,
+        libm-tests,
+        discrepancy-test,
+        omp-simd,
+        Make-checks,
+        CHStone-memarch,
+        Panda-bench,
+        Panda-bench-yosys,
+      ]
+    runs-on: [self-hosted]
+    steps:
+      - name: Check GCC Regression Simple Multi status
+        if: ${{ needs.gcc_regression_simple.result != 'success' }}
+        run: exit 1
+      - name: Check GCC Regression Simple VHDL status
+        if: ${{ needs.gcc_regression_simple-vhdl.result != 'success' }}
+        run: exit 1
+      - name: Check GCC Regression Simple pretty print status
+        if: ${{ needs.gcc_regression_simple-pretty_print.result != 'success' }}
+        run: exit 1
+      - name: Check Interface Test status
+        if: ${{ needs.interface-test.result != 'success' }}
+        run: exit 1
+      - name: Check LibM Multi status
+        if: ${{ needs.libm-tests.result != 'success' }}
+        run: exit 1
+      - name: Check GCC Regression Discrepancy status
+        if: ${{ needs.discrepancy-test.result != 'success' }}
+        run: exit 1
+      - name: Check OMP simd status
+        if: ${{ needs.omp-simd.result != 'success' }}
+        run: exit 1
+      - name: Check Make Checks status
+        if: ${{ needs.Make-checks.result != 'success' }}
+        run: exit 1
+      - name: Check CHStone memory architecture status
+        if: ${{ needs.CHStone-memarch.result != 'success' }}
+        run: exit 1
+      - name: Check PandA benchmarks status
+        if: ${{ needs.Panda-bench.result != 'success' }}
+        run: exit 1
+      - name: Check PandA benchmarks for Yosys status
+        if: ${{ needs.Panda-bench-yosys.result != 'success' }}
+        run: exit 1

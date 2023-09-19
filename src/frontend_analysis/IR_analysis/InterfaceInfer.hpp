@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2022-2022 Politecnico di Milano
+ *              Copyright (C) 2022-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -45,7 +45,11 @@
 /// utility includes
 #include "refcount.hpp"
 
+/// Included for interface_attributes enum
+#include "hls_manager.hpp"
+
 REF_FORWARD_DECL(tree_node);
+CONSTREF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(tree_manipulation);
 REF_FORWARD_DECL(tree_manager);
 struct statement_list;
@@ -60,12 +64,9 @@ struct gimple_node;
 class InterfaceInfer : public ApplicationFrontendFlowStep
 {
  private:
-   enum class m_axi_type
-   {
-      none,
-      direct,
-      axi_slave
-   };
+   enum class m_axi_type;
+   enum class datatype;
+   struct interface_info;
 
    bool already_executed;
 
@@ -79,50 +80,36 @@ class InterfaceInfer : public ApplicationFrontendFlowStep
    void ComputeRelationships(DesignFlowStepSet& relationship,
                              const DesignFlowStep::RelationshipType relationship_type) override;
 
-   void classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, tree_nodeRef ssa_var, const statement_list* sl,
-                           std::list<tree_nodeRef>& writeStmt, std::list<tree_nodeRef>& readStmt);
+   void ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Visited, tree_nodeRef ptr_var,
+                                     std::list<tree_nodeRef>& writeStmt, std::list<tree_nodeRef>& readStmt,
+                                     interface_info& info);
 
-   void classifyArg(statement_list* sl, tree_nodeRef ssa_var, std::list<tree_nodeRef>& writeStmt,
-                    std::list<tree_nodeRef>& readStmt);
+   void ChasePointerInterface(tree_nodeRef ptr_var, std::list<tree_nodeRef>& writeStmt,
+                              std::list<tree_nodeRef>& readStmt, interface_info& info);
 
-   void create_Read_function(tree_nodeRef origStmt, const std::string& arg_name, const std::string& fdName,
-                             tree_nodeRef aType, tree_nodeRef readType, const tree_manipulationRef tree_man,
-                             const tree_managerRef TM, bool commonRWSignature);
+   void setReadInterface(tree_nodeRef stmt, const std::string& arg_name, std::set<std::string>& operationsR,
+                         bool commonRWSignature, tree_nodeConstRef interface_datatype,
+                         const tree_manipulationRef tree_man, const tree_managerRef TM);
 
-   void create_Write_function(const std::string& arg_name, tree_nodeRef origStmt, const std::string& fdName,
-                              tree_nodeRef writeValue, tree_nodeRef aType, tree_nodeRef writeType,
-                              const tree_manipulationRef tree_man, const tree_managerRef TM, bool commonRWSignature);
+   void setWriteInterface(tree_nodeRef stmt, const std::string& arg_name, std::set<std::string>& operationsW,
+                          bool commonRWSignature, tree_nodeConstRef interface_datatype,
+                          const tree_manipulationRef tree_man, const tree_managerRef TM);
 
    void create_resource_Read_simple(const std::set<std::string>& operations, const std::string& arg_name,
-                                    const std::string& interfaceType, unsigned int input_bw, bool IO_port,
-                                    unsigned n_resources, unsigned rwBWsize, unsigned int top_id) const;
+                                    const interface_info& info, bool IO_port) const;
 
    void create_resource_Write_simple(const std::set<std::string>& operations, const std::string& arg_name,
-                                     const std::string& interfaceType, unsigned int input_bw, bool IO_port,
-                                     bool isDiffSize, unsigned n_resources, bool is_real, unsigned rwBWsize,
-                                     unsigned int top_id) const;
+                                     const interface_info& info, bool IO_port) const;
 
    void create_resource_array(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
-                              const std::string& bundle_name, const std::string& interfaceType, unsigned int input_bw,
-                              unsigned int arraySize, unsigned n_resources, unsigned alignment, bool is_real,
-                              unsigned rwBWsize, unsigned int top_id) const;
+                              const std::string& bundle_name, const interface_info& info, unsigned int arraySize) const;
 
    void create_resource_m_axi(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
-                              const std::string& arg_name, const std::string& bundle_name,
-                              const std::string& interfaceType, unsigned int input_bw, unsigned n_resources,
-                              m_axi_type mat, unsigned rwBWsize, unsigned int top_id) const;
+                              const std::string& arg_name, const std::string& bundle_name, const interface_info& info,
+                              m_axi_type mat, const std::map<interface_attributes, std::string>& bundle_attr_map) const;
 
    void create_resource(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
-                        const std::string& arg_name, const std::string& interfaceType, unsigned int input_bw,
-                        bool isDiffSize, const std::string& fname, unsigned n_resources, unsigned alignment,
-                        bool isReal, unsigned rwBWsize, unsigned int top_id) const;
-
-   void ComputeResourcesAlignment(unsigned& n_resources, unsigned& alignment, unsigned int input_bw, bool is_acType,
-                                  bool is_signed, bool is_fixed);
-
-   void FixReadWriteCall(const gimple_assign* ga, gimple_node* newGN, const tree_manipulationRef tree_man,
-                         tree_nodeRef new_call, statement_list* sl, const tree_managerRef TM, tree_nodeRef origStmt,
-                         unsigned int destBB, const std::string& fname, const std::string& arg_name);
+                        const std::string& arg_name, const interface_info& info, const std::string& fname) const;
 
  public:
    /**

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -69,7 +69,7 @@
 //@{
 REF_FORWARD_DECL(AllocationInformation);
 REF_FORWARD_DECL(HLS_constraints);
-REF_FORWARD_DECL(HLS_target);
+REF_FORWARD_DECL(HLS_device);
 CONSTREF_FORWARD_DECL(OpGraph);
 REF_FORWARD_DECL(allocation);
 REF_FORWARD_DECL(graph);
@@ -109,10 +109,11 @@ class allocation : public HLSFunctionStep
    /// store the precomputed pipeline unit: given a functional unit it return the pipeline id compliant
    std::map<std::string, std::string> precomputed_pipeline_unit;
 
-   std::map<technology_nodeRef, std::map<unsigned int, std::map<HLS_manager::io_binding_type, unsigned int>>> fu_list;
+   std::map<technology_nodeRef, std::map<unsigned long long, std::map<HLS_manager::io_binding_type, unsigned int>>>
+       fu_list;
 
    /// The HLS target
-   HLS_targetRef HLS_T;
+   HLS_deviceRef HLS_D;
 
    /// The technology manager
    technology_managerRef TechM;
@@ -130,7 +131,7 @@ class allocation : public HLSFunctionStep
    std::string get_compliant_pipelined_unit(double clock, const std::string& pipe_parameter,
                                             const technology_nodeRef current_fu, const std::string& curr_op,
                                             const std::string& library_name, const std::string& template_suffix,
-                                            unsigned int module_prec);
+                                            unsigned long long module_prec);
 
    technology_nodeRef extract_bambu_provided(const std::string& library_name, operation* curr_op,
                                              const std::string& bambu_provided_resource_);

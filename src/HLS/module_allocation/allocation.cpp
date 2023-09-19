@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -38,21 +38,23 @@
  *
  */
 
-/// Header include
 #include "allocation.hpp"
+
 #include "HDL_manager.hpp"            // for structural_managerRef, langu...
 #include "ModuleGeneratorManager.hpp" // for structural_objectRef, struct...
 #include "NP_functionality.hpp"       // for NP_functionalityRef
 #include "Parameter.hpp"              // for ParameterConstRef
 #include "allocation_information.hpp" // for technology_nodeRef, node_kin...
 #include "application_frontend_flow_step.hpp"
+#include "area_info.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
-#include "clb_model.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp" // for HAVE_EXPERIMENTAL
 #include "config_HAVE_FLOPOCO.hpp"      // for HAVE_FLOPOCO
 #include "cpu_time.hpp"                 // for START_TIME, STOP_TIME
-#include "dbgPrintHelper.hpp"           // for DEBUG_LEVEL_VERY_PEDANTIC
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_VERY_PEDANTIC
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "design_flow_step_factory.hpp" // for DesignFlowManagerConstRef
@@ -60,10 +62,11 @@
 #include "frontend_flow_step_factory.hpp"
 #include "function_frontend_flow_step.hpp"
 #include "functions.hpp"
-#include "hls.hpp"                   // for HLS_constraintsRef
-#include "hls_constraints.hpp"       // for ENCODE_FU_LIB
+#include "generic_device.hpp"
+#include "hls.hpp"             // for HLS_constraintsRef
+#include "hls_constraints.hpp" // for ENCODE_FU_LIB
+#include "hls_device.hpp"
 #include "hls_flow_step_factory.hpp" // for HLS_managerRef
-#include "hls_target.hpp"
 #include "language_writer.hpp"
 #include "library_manager.hpp" // for library_managerRef, library_...
 #include "memory.hpp"
@@ -73,27 +76,21 @@
 #include "string_manipulation.hpp" // for STR GET_CLASS
 #include "structural_manager.hpp"
 #include "structural_objects.hpp" // for PROXY_PREFIX, module, CLOCK_...
-#include "target_device.hpp"
 #include "technology_manager.hpp" // for PROXY_LIBRARY, WORK_LIBRARY
 #include "technology_node.hpp"    // for functional_unit, operation
-#include "time_model.hpp"         // for ParameterConstRef
+#include "time_info.hpp"          // for ParameterConstRef
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp" // for GET_NODE, GET_INDEX_NODE
 #include "tree_reindex.hpp"
 #include "typed_node_info.hpp" // for GET_NAME, ENTRY, EXIT, GET_TYPE
 #include "utility.hpp"         // for INFINITE_UINT, ASSERT_PARAMETER
-#include <cstddef>             // for size_t
-#include <limits>              // for numeric_limits
-
-/// STL includes
 #include <algorithm>
+#include <cstddef> // for size_t
+#include <limits>  // for numeric_limits
 #include <tuple>
 #include <utility>
 #include <vector>
-
-#include "custom_map.hpp"
-#include "custom_set.hpp"
 
 static bool is_other_port(const structural_objectRef& port)
 {
@@ -169,8 +166,8 @@ void allocation::Initialize()
    HLS->allocation_information->Initialize();
    allocation_information = HLS->allocation_information;
    fu_list.clear();
-   HLS_T = HLSMgr->get_HLS_target();
-   TechM = HLS_T->get_technology_manager();
+   HLS_D = HLSMgr->get_HLS_device();
+   TechM = HLS_D->get_technology_manager();
 }
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
@@ -188,8 +185,8 @@ allocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relat
          }
          ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::CALLED_FUNCTIONS));
-         ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(),
-                                    HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::DOMINATOR_ALLOCATION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::WHOLE_APPLICATION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -212,11 +209,11 @@ void allocation::ComputeRelationships(DesignFlowStepSet& relationship,
    {
       if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
       {
-         const auto* frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(
+         const auto frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(
              design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
          const auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(
              FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, funId));
-         const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
          const auto design_flow_step =
              frontend_step != NULL_VERTEX ?
                  design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step :
@@ -387,8 +384,8 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
    if(!op_ports.empty())
    {
       structural_objectRef or_gate = wrapper_SM->add_module_from_technology_library(
-          "proxy_selector____or_gate", OR_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD),
-          wrapper_obj, HLS->HLS_T->get_technology_manager());
+          "proxy_selector____or_gate", OR_GATE_STD, HLS->HLS_D->get_technology_manager()->get_library(OR_GATE_STD),
+          wrapper_obj, HLS->HLS_D->get_technology_manager());
       structural_objectRef or_in = or_gate->find_member("in", port_vector_o_K, or_gate);
       auto* port = GetPointer<port_o>(or_in);
       port->add_n_ports(static_cast<unsigned int>(op_ports.size()), or_in);
@@ -429,8 +426,8 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
 
             structural_objectRef mux = wrapper_SM->add_module_from_technology_library(
                 "proxy_mux_____" + port_name + offset, MUX_GATE_STD,
-                HLS->HLS_T->get_technology_manager()->get_library(MUX_GATE_STD), wrapper_obj,
-                HLS->HLS_T->get_technology_manager());
+                HLS->HLS_D->get_technology_manager()->get_library(MUX_GATE_STD), wrapper_obj,
+                HLS->HLS_D->get_technology_manager());
             structural_objectRef mux_in1 = mux->find_member("in1", port_o_K, mux);
             GetPointer<port_o>(mux_in1)->type_resize(bitwidth_size);
             structural_objectRef mux_in2 = mux->find_member("in2", port_o_K, mux);
@@ -682,7 +679,7 @@ void allocation::add_proxy_function_wrapper(const std::string& library_name, tec
    /// add a fictitious operation to allow bus merging
    TechM->add_operation(PROXY_LIBRARY, wrapped_fu_name, wrapped_fu_name);
    auto* wrapper_fictious_op = GetPointer<operation>(wrapper_fu->get_operation(wrapped_fu_name));
-   wrapper_fictious_op->time_m = time_model::create_model(HLS_T->get_target_device()->get_type(), parameters);
+   wrapper_fictious_op->time_m = time_info::factory(parameters);
 
    /// automatically build proxy wrapper HDL description
    BuildProxyWrapper(wrapper_fu, orig_fu->get_name(), library_name);
@@ -697,7 +694,7 @@ void allocation::BuildProxyFunctionVerilog(functional_unit* current_fu)
    auto inPortSize = static_cast<unsigned int>(fu_module->get_in_port_size());
    auto outPortSize = static_cast<unsigned int>(fu_module->get_out_port_size());
    language_writerRef writer = language_writer::create_writer(
-       HDLWriter_Language::VERILOG, HLSMgr->get_HLS_target()->get_technology_manager(), parameters);
+       HDLWriter_Language::VERILOG, HLSMgr->get_HLS_device()->get_technology_manager(), parameters);
 
    structural_type_descriptorRef b_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    std::string sel_guard;
@@ -767,7 +764,6 @@ void allocation::BuildProxyFunctionVerilog(functional_unit* current_fu)
       verilog_description =
           verilog_description + "assign " + fix_identifier(port_name, writer) + " = " + PROXY_PREFIX + port_name + ";";
    }
-   add_escape(verilog_description, "\\");
    CM->add_NP_functionality(top, NP_functionality::VERILOG_PROVIDED, verilog_description);
 }
 
@@ -780,7 +776,7 @@ void allocation::BuildProxyFunctionVHDL(functional_unit* current_fu)
    auto inPortSize = static_cast<unsigned int>(fu_module->get_in_port_size());
    auto outPortSize = static_cast<unsigned int>(fu_module->get_out_port_size());
    language_writerRef writer = language_writer::create_writer(
-       HDLWriter_Language::VHDL, HLSMgr->get_HLS_target()->get_technology_manager(), parameters);
+       HDLWriter_Language::VHDL, HLSMgr->get_HLS_device()->get_technology_manager(), parameters);
 
    structural_type_descriptorRef b_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    std::string sel_guard;
@@ -855,7 +851,6 @@ void allocation::BuildProxyFunctionVHDL(functional_unit* current_fu)
       VHDL_description = VHDL_description + fix_identifier(port_name, writer) +
                          " <= " + fix_identifier(PROXY_PREFIX + port_name, writer) + ";";
    }
-   add_escape(VHDL_description, "\\");
    CM->add_NP_functionality(top, NP_functionality::VHDL_PROVIDED, VHDL_description);
 }
 
@@ -875,11 +870,6 @@ void allocation::BuildProxyFunction(functional_unit* current_fu)
          break;
       }
       case HDLWriter_Language::SYSTEM_VERILOG:
-#if HAVE_EXPERIMENTAL
-      case HDLWriter_Language::SYSTEMC:
-      case HDLWriter_Language::BLIF:
-      case HDLWriter_Language::EDIF:
-#endif
       default:
          THROW_UNREACHABLE("");
    }
@@ -1096,7 +1086,7 @@ void allocation::add_proxy_function_module(const HLS_constraintsRef HLS_C, techn
    /// add a fictitious operation to allow bus merging
    TechM->add_operation(PROXY_LIBRARY, proxied_fu_name, proxied_fu_name);
    auto* proxy_fictious_op = GetPointer<operation>(proxy_fu->get_operation(proxied_fu_name));
-   proxy_fictious_op->time_m = time_model::create_model(HLS_T->get_target_device()->get_type(), parameters);
+   proxy_fictious_op->time_m = time_info::factory(parameters);
 
    /// automatically build proxy description
    BuildProxyFunction(proxy_fu);
@@ -1227,7 +1217,7 @@ bool allocation::check_for_memory_compliancy(bool Has_extern_allocated_data, tec
    }
 #endif
 
-   const auto channel_type_to_be_used = parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type);
+   const auto channel_type_to_be_used = HLSMgr->CGetFunctionBehavior(funId)->GetChannelsType();
    if(channels_type.size())
    {
       switch(channel_type_to_be_used)
@@ -1432,12 +1422,14 @@ DesignFlowStep_Status allocation::InternalExec()
    const auto TM = HLSMgr->get_tree_manager();
    const auto function_vars = HLSMgr->Rmem->get_function_vars(funId);
    const auto clock_period = HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period();
+   const auto channels_number = FB->GetChannelsNumber();
+   const auto memory_allocation_policy = FB->GetMemoryAllocationPolicy();
    long step_time = 0;
-   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   if(output_level >= OUTPUT_LEVEL_MINIMUM && output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
       START_TIME(step_time);
    }
-   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   if(output_level >= OUTPUT_LEVEL_MINIMUM && output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    }
@@ -1445,14 +1437,11 @@ DesignFlowStep_Status allocation::InternalExec()
                   "-->Module allocation information for function " +
                       HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
    unsigned long long int base_address = HLSMgr->base_address;
-   bool Has_extern_allocated_data = ((HLSMgr->Rmem->get_memory_address() - base_address) > 0 &&
-                                     parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) !=
-                                         MemoryAllocation_Policy::EXT_PIPELINED_BRAM) ||
-                                    (HLSMgr->Rmem->has_unknown_addresses() &&
-                                     parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) !=
-                                         MemoryAllocation_Policy::ALL_BRAM &&
-                                     parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) !=
-                                         MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
+   const auto Has_extern_allocated_data =
+       ((HLSMgr->Rmem->get_memory_address() - base_address) > 0 &&
+        memory_allocation_policy != MemoryAllocation_Policy::EXT_PIPELINED_BRAM) ||
+       (HLSMgr->Rmem->has_unknown_addresses() && memory_allocation_policy != MemoryAllocation_Policy::ALL_BRAM &&
+        memory_allocation_policy != MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
    IntegrateTechnologyLibraries();
 
 #if HAVE_FLOPOCO
@@ -1486,7 +1475,7 @@ DesignFlowStep_Status allocation::InternalExec()
    unsigned int gimple_return_current_id = 0;
    for(boost::tie(v, v_end) = boost::vertices(*g); v != v_end; ++v)
    {
-      std::string current_op = tree_helper::normalized_ID(g->CGetOpNodeInfo(*v)->GetOperation());
+      std::string current_op = tree_helper::NormalizeTypename(g->CGetOpNodeInfo(*v)->GetOperation());
       const auto node_id = g->CGetOpNodeInfo(*v)->GetNodeId();
       const auto node_operation = [&]() -> std::string {
          if(node_id == ENTRY_ID)
@@ -1876,28 +1865,14 @@ DesignFlowStep_Status allocation::InternalExec()
          // FU must exist
          THROW_ASSERT(current_fu,
                       std::string("Not found ") + current_op + " in library " + TechM->get_library(current_op));
-         unsigned int current_id;
-#if 0
-         if(artificial_allocation.find(current_fu) == artificial_allocation.end())
-         {
-            allocation_information->list_of_FU.push_back(current_fu);
-            allocation_information->tech_constraints.push_back(INFINITE_UINT);
-            current_id = current_size;
-            artificial_allocation[current_fu] = current_id;
-         }
-         else
-            current_id = artificial_allocation.find(current_fu)->second;
-#else
+
          allocation_information->list_of_FU.push_back(current_fu);
          allocation_information->tech_constraints.push_back(1);
-         current_id = current_size;
-#endif
+         const auto current_id = current_size;
          THROW_ASSERT(allocation_information->tech_constraints.size() == allocation_information->list_of_FU.size(),
                       "Something of wrong happen");
-#if 1
          allocation_information->is_vertex_bounded_rel.insert(current_id);
          allocation_information->binding[node_id] = std::pair<std::string, unsigned int>(current_op, current_id);
-#endif
          allocation_information->node_id_to_fus[std::pair<unsigned int, std::string>(node_id, node_operation)].insert(
              current_id);
          allocation_information->id_to_fu_names[current_id] =
@@ -2138,12 +2113,12 @@ DesignFlowStep_Status allocation::InternalExec()
                   }
                   return GetPointer<const gimple_node>(TM->CGetTreeNode(vert_node_id))->operation;
                }();
-               if(tree_helper::normalized_ID(g->CGetOpNodeInfo(vert)->GetOperation()) != curr_op_name)
+               if(tree_helper::NormalizeTypename(g->CGetOpNodeInfo(vert)->GetOperation()) != curr_op_name)
                {
                   continue;
                }
                else if((!lib_is_proxy_or_work) &&
-                       TechM->get_fu(tree_helper::normalized_ID(g->CGetOpNodeInfo(vert)->GetOperation()),
+                       TechM->get_fu(tree_helper::NormalizeTypename(g->CGetOpNodeInfo(vert)->GetOperation()),
                                      WORK_LIBRARY) &&
                        GET_TYPE(g, vert) != TYPE_MEMCPY)
                {
@@ -2207,7 +2182,7 @@ DesignFlowStep_Status allocation::InternalExec()
                std::string current_op;
                std::string specialized_fuName = "";
 
-               bool has_to_be_generated =
+               const auto has_to_be_generated =
                    structManager_obj && (GetPointer<module>(structManager_obj->get_circ())
                                              ->get_NP_functionality()
                                              ->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) ||
@@ -2264,7 +2239,7 @@ DesignFlowStep_Status allocation::InternalExec()
                   {
                      if(varargs_fu)
                      {
-                        modGen->specialize_fu(fu_name, vert, lib_name, FB, specialized_fuName, new_fu);
+                        modGen->specialize_fu(fu_name, vert, FB, lib_name, specialized_fuName, new_fu);
                      }
                      else
                      {
@@ -2305,7 +2280,7 @@ DesignFlowStep_Status allocation::InternalExec()
                }
 
                auto max_prec = node_info->input_prec.empty() ?
-                                   0U :
+                                   0ULL :
                                    *std::max_element(node_info->input_prec.begin(), node_info->input_prec.end());
                if(isMemory || lib_is_proxy_or_work || tech_constrain_value != INFINITE_UINT ||
                   bambu_provided_resource.size())
@@ -2315,10 +2290,11 @@ DesignFlowStep_Status allocation::InternalExec()
                }
 
                std::map<technology_nodeRef,
-                        std::map<unsigned int, std::map<HLS_manager::io_binding_type, unsigned int>>>::iterator techMap;
+                        std::map<unsigned long long, std::map<HLS_manager::io_binding_type, unsigned int>>>::iterator
+                   techMap;
                std::string functionalUnitName = "";
-               unsigned int specializedId = current_id;
-               const library_managerRef libraryManager = TechM->get_library_manager(library_name);
+               auto specializedId = current_id;
+               const auto libraryManager = TechM->get_library_manager(library_name);
                if(has_to_be_generated)
                {
                   functionalUnitName = specialized_fuName;
@@ -2340,8 +2316,7 @@ DesignFlowStep_Status allocation::InternalExec()
                      allocation_information->precision_map[current_id] = max_prec;
                      if(fu_channels_type == CHANNELS_TYPE_MEM_ACC_NN && fu_memory_ctrl_type.size())
                      {
-                        auto n_ports = parameters->getOption<unsigned int>(OPT_channels_number);
-                        set_number_channels(specializedId, n_ports);
+                        set_number_channels(specializedId, channels_number);
                      }
                      else if(fu_memory_ctrl_type.size())
                      {
@@ -2390,8 +2365,7 @@ DesignFlowStep_Status allocation::InternalExec()
                      }
                      else if(fu_channels_type == CHANNELS_TYPE_MEM_ACC_NN && fu_memory_ctrl_type.size())
                      {
-                        auto n_ports = parameters->getOption<unsigned int>(OPT_channels_number);
-                        set_number_channels(specializedId, n_ports);
+                        set_number_channels(specializedId, channels_number);
                      }
                      else if(fu_memory_ctrl_type.size())
                      {
@@ -2493,7 +2467,7 @@ DesignFlowStep_Status allocation::InternalExec()
          }
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                         "---Operation for which does not exist a functional unit in the resource library: " +
-                            tree_helper::normalized_ID(g->CGetOpNodeInfo(ve)->GetOperation()) +
+                            tree_helper::NormalizeTypename(g->CGetOpNodeInfo(ve)->GetOperation()) +
                             " in vertex: " + GET_NAME(g, ve) + " with vertex type: " + node_info->node_kind +
                             " and vertex prec:" + precisions);
          completely_analyzed = false;
@@ -2548,18 +2522,6 @@ DesignFlowStep_Status allocation::InternalExec()
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                      "---Number of complex operations: " + STR(allocation_information->n_complex_operations));
    }
-#if 0
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Number of functional unit types: " + STR(allocation_information->tech_constraints.size()));
-   if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
-   {
-      INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "-->");
-      for(decltype(allocation_information->get_number_fu_types()) index_fu = 0u; index_fu < allocation_information->get_number_fu_types(); index_fu++)
-      {
-         INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "---" + allocation_information->get_fu_name(index_fu).first);
-      }
-      INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "<--");
-   }
-#endif
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
    {
       STOP_TIME(step_time);
@@ -2581,7 +2543,7 @@ DesignFlowStep_Status allocation::InternalExec()
 std::string allocation::get_compliant_pipelined_unit(double clock, const std::string& pipe_parameter,
                                                      const technology_nodeRef current_fu, const std::string& curr_op,
                                                      const std::string& library_name,
-                                                     const std::string& template_suffix, unsigned int module_prec)
+                                                     const std::string& template_suffix, unsigned long long module_prec)
 {
    if(pipe_parameter.empty())
    {
@@ -2603,7 +2565,7 @@ std::string allocation::get_compliant_pipelined_unit(double clock, const std::st
          return "";
       }
    }
-   const technology_nodeRef fu_template = HLS_T->get_technology_manager()->get_fu(fu->fu_template_name, library_name);
+   const technology_nodeRef fu_template = HLS_D->get_technology_manager()->get_fu(fu->fu_template_name, library_name);
    const functional_unit_template* fu_temp = GetPointer<functional_unit_template>(fu_template);
    THROW_ASSERT(fu_temp, "expected a template functional unit for a pipelined unit");
    bool is_flopoco_provided = false;
@@ -2639,7 +2601,7 @@ std::string allocation::get_compliant_pipelined_unit(double clock, const std::st
          temp_pipe_parameters = parameters_pairs[1];
          break;
       }
-      else if(boost::lexical_cast<unsigned int>(parameters_pairs[0]) == module_prec)
+      else if(boost::lexical_cast<unsigned long long>(parameters_pairs[0]) == module_prec)
       {
          temp_pipe_parameters = parameters_pairs[1];
          break;
@@ -2663,15 +2625,14 @@ std::string allocation::get_compliant_pipelined_unit(double clock, const std::st
    for(auto st = st_next = pipe_parameters.begin(); st != st_end; ++st)
    {
       ++st_next;
-      const technology_nodeRef fu_cur_obj = HLS_T->get_technology_manager()->get_fu(
+      const technology_nodeRef fu_cur_obj = HLS_D->get_technology_manager()->get_fu(
           fu->fu_template_name + "_" + template_suffix + "_" + *st, library_name);
       if(fu_cur_obj)
       {
-         area_modelRef a_m = GetPointer<functional_unit>(fu_cur_obj)->area_m;
+         area_infoRef a_m = GetPointer<functional_unit>(fu_cur_obj)->area_m;
          THROW_ASSERT(a_m, "Area information not specified for unit " + fu->fu_template_name + "_" + template_suffix +
                                "_" + *st);
-         bool has_DSPs =
-             (GetPointer<clb_model>(a_m) && GetPointer<clb_model>(a_m)->get_resource_value(clb_model::DSP) > 0);
+         bool has_DSPs = (a_m && a_m->get_resource_value(area_info::DSP) > 0);
          double DSP_allocation_coefficient = allocation_information->DSP_allocation_coefficient;
          double dsp_multiplier = has_DSPs ? allocation_information->DSPs_margin * DSP_allocation_coefficient : 1.0;
          double dsp_multiplier_stage =
@@ -2743,12 +2704,12 @@ void allocation::set_number_channels(unsigned int fu_name, unsigned int n_ports)
 
 technology_nodeRef allocation::get_fu(const std::string& fu_name)
 {
-   std::string library_name = HLS_T->get_technology_manager()->get_library(fu_name);
+   std::string library_name = HLS_D->get_technology_manager()->get_library(fu_name);
    if(library_name.empty())
    {
       return technology_nodeRef();
    }
-   return HLS_T->get_technology_manager()->get_fu(fu_name, library_name);
+   return HLS_D->get_technology_manager()->get_fu(fu_name, library_name);
 }
 
 bool allocation::is_ram_not_timing_compliant(const HLS_constraintsRef HLS_C, unsigned int var,
@@ -2768,8 +2729,8 @@ bool allocation::is_ram_not_timing_compliant(const HLS_constraintsRef HLS_C, uns
    const auto fu_cur = GetPointerS<functional_unit>(current_fu);
    const auto load_operation = GetPointerS<operation>(fu_cur->get_operation("STORE"));
    const auto ex_time = allocation_information->time_m_execution_time(load_operation);
-   unsigned int n_channels =
-       n_ref > parameters->isOption(OPT_channels_number) ? parameters->getOption<unsigned int>(OPT_channels_number) : 1;
+   const auto FB = HLSMgr->CGetFunctionBehavior(funId);
+   const auto n_channels = FB->GetChannelsNumber() ? FB->GetChannelsNumber() : 1U;
    const auto mux_delay = allocation_information->estimate_muxNto1_delay(32, n_ref / n_channels);
    const auto setup = allocation_information->get_setup_hold_time(); // for the PHIs
    return n_ref / n_channels > 1 && (controller_delay + ex_time + mux_delay + setup) > clock_period;
@@ -2799,6 +2760,8 @@ void allocation::IntegrateTechnologyLibraries()
 {
    const auto TM = HLSMgr->get_tree_manager();
    const auto FB = HLSMgr->CGetFunctionBehavior(funId);
+   const auto channels_number = FB->GetChannelsNumber();
+   const auto channels_type = FB->GetChannelsType();
    const auto& HLS_C = HLS->HLS_C;
    const auto clock_period = HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period();
 
@@ -2821,11 +2784,8 @@ void allocation::IntegrateTechnologyLibraries()
 
       bool is_async_var = false;
 
-      THROW_ASSERT(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) !=
-                       MemoryAllocation_ChannelsType::MEM_ACC_P1N,
-                   "unexpected condition");
-      if(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) ==
-         MemoryAllocation_ChannelsType::MEM_ACC_11)
+      THROW_ASSERT(channels_type != MemoryAllocation_ChannelsType::MEM_ACC_P1N, "unexpected condition");
+      if(channels_type == MemoryAllocation_ChannelsType::MEM_ACC_11)
       {
          if(HLSMgr->Rmem->is_sds_var(var))
          {
@@ -2867,8 +2827,7 @@ void allocation::IntegrateTechnologyLibraries()
             current_fu = get_fu(ARRAY_1D_STD_BRAM + latency_postfix);
          }
       }
-      else if(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) ==
-              MemoryAllocation_ChannelsType::MEM_ACC_N1)
+      else if(channels_type == MemoryAllocation_ChannelsType::MEM_ACC_N1)
       {
          if(HLSMgr->Rmem->is_sds_var(var))
          {
@@ -2909,10 +2868,9 @@ void allocation::IntegrateTechnologyLibraries()
          {
             current_fu = get_fu(ARRAY_1D_STD_BRAM_N1 + latency_postfix);
          }
-         n_ports = parameters->getOption<unsigned int>(OPT_channels_number);
+         n_ports = channels_number;
       }
-      else if(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) ==
-              MemoryAllocation_ChannelsType::MEM_ACC_NN)
+      else if(channels_type == MemoryAllocation_ChannelsType::MEM_ACC_NN)
       {
          if(HLSMgr->Rmem->is_sds_var(var))
          {
@@ -2953,7 +2911,7 @@ void allocation::IntegrateTechnologyLibraries()
          {
             current_fu = get_fu(ARRAY_1D_STD_BRAM_NN + latency_postfix);
          }
-         n_ports = parameters->getOption<unsigned int>(OPT_channels_number);
+         n_ports = channels_number;
       }
       else
       {
@@ -3007,8 +2965,7 @@ void allocation::IntegrateTechnologyLibraries()
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - analyzing proxied variable " + STR(proxied_var_id));
          technology_nodeRef current_fu;
          unsigned int n_ports = 1;
-         if(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) ==
-            MemoryAllocation_ChannelsType::MEM_ACC_11)
+         if(channels_type == MemoryAllocation_ChannelsType::MEM_ACC_11)
          {
             if(HLSMgr->Rmem->is_sds_var(proxied_var_id))
             {
@@ -3051,10 +3008,8 @@ void allocation::IntegrateTechnologyLibraries()
                current_fu = get_fu(PROXY_CTRL + latency_postfix);
             }
          }
-         else if(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) ==
-                     MemoryAllocation_ChannelsType::MEM_ACC_N1 ||
-                 parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) ==
-                     MemoryAllocation_ChannelsType::MEM_ACC_NN)
+         else if(channels_type == MemoryAllocation_ChannelsType::MEM_ACC_N1 ||
+                 channels_type == MemoryAllocation_ChannelsType::MEM_ACC_NN)
          {
             if(HLSMgr->Rmem->is_sds_var(proxied_var_id))
             {
@@ -3065,8 +3020,7 @@ void allocation::IntegrateTechnologyLibraries()
                }
                else
                {
-                  bool is_nn = parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) ==
-                               MemoryAllocation_ChannelsType::MEM_ACC_NN;
+                  bool is_nn = channels_type == MemoryAllocation_ChannelsType::MEM_ACC_NN;
                   if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
                      AllocationInformation::can_be_asynchronous_ram(
                          TM, proxied_var_id, parameters->getOption<unsigned int>(OPT_distram_threshold),
@@ -3100,7 +3054,7 @@ void allocation::IntegrateTechnologyLibraries()
             {
                current_fu = get_fu(PROXY_CTRLN + latency_postfix);
             }
-            n_ports = parameters->getOption<unsigned int>(OPT_channels_number);
+            n_ports = channels_number;
          }
          else
          {

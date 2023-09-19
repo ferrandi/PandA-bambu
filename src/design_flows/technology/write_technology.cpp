@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -37,30 +37,17 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "write_technology.hpp"
-
-///. include
 #include "Parameter.hpp"
-
-/// constants include
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "fileIO.hpp"
+#include "generic_device.hpp"
+#include "library_manager.hpp"
+#include "technology_manager.hpp"
 #include "technology_xml.hpp"
-
-/// polixml include
 #include "xml_document.hpp"
 
-/// technology include
-#include "technology_manager.hpp"
-
-/// technology/physical_library include
-#include "library_manager.hpp"
-
-/// technology/target_device include
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
-#include "target_device.hpp"
-
-WriteTechnology::WriteTechnology(const technology_managerRef _TM, const target_deviceRef _target,
+WriteTechnology::WriteTechnology(const technology_managerRef _TM, const generic_deviceRef _target,
                                  const DesignFlowManagerConstRef _design_flow_manager,
                                  const ParameterConstRef _parameters)
     : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::WRITE_TECHNOLOGY, _parameters)
@@ -75,7 +62,7 @@ DesignFlowStep_Status WriteTechnology::Exec()
    {
       const auto output_file = parameters->isOption(OPT_output_file) ?
                                    parameters->getOption<std::string>(OPT_output_file) :
-                                   "technology_out.xml";
+                                   GetPath("technology_out.xml");
       const auto libraries = TM->get_library_list();
       xml_document document;
       xml_element* nodeRoot = document.create_root_node("target");
@@ -83,7 +70,7 @@ DesignFlowStep_Status WriteTechnology::Exec()
       target->xwrite(nodeRoot);
       xml_element* tmRoot = nodeRoot->add_child_element("technology");
 
-      TM->xwrite(tmRoot, target->get_type());
+      TM->xwrite(tmRoot);
       document.write_to_file_formatted(output_file);
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "---Writing " + output_file);
       for(const auto& library : libraries)

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -130,7 +130,7 @@ bool BasicBlocksGraphConstructor::check_vertex(unsigned int block_index) const
 vertex BasicBlocksGraphConstructor::Cget_vertex(unsigned int block_index) const
 {
    THROW_ASSERT(bb_index_map.find(block_index) != bb_index_map.end(),
-                "this vertex does not exist " + boost::lexical_cast<std::string>(block_index));
+                "this vertex does not exist " + std::to_string(block_index));
    return bb_index_map.find(block_index)->second;
 }
 

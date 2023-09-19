@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -133,7 +133,7 @@ BuildVirtualPhi::ComputeFrontendRelationships(const DesignFlowStep::Relationship
       case(PRECEDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(BASIC_BLOCKS_CFG_COMPUTATION, SAME_FUNCTION));
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
          relationships.insert(std::make_pair(EXTRACT_OMP_ATOMIC, SAME_FUNCTION));
 #endif
          relationships.insert(std::make_pair(VECTORIZE, SAME_FUNCTION));
@@ -556,8 +556,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                   }
                }
                tree_nodeRef phi_res;
-               const auto phi_stmt = tree_man->create_phi_node(
-                   phi_res, def_edges, function_id, basic_block_graph->GetBBNodeInfo(current)->block->number, true);
+               const auto phi_stmt = tree_man->create_phi_node(phi_res, def_edges, function_id, true);
                THROW_ASSERT(tree_helper::CGetType(phi_res)->index ==
                                 tree_helper::CGetType(virtual_ssa_definition.first)->index,
                             "");

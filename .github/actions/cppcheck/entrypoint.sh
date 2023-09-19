@@ -11,7 +11,6 @@ cppcheck -j$J $@ src \
    --xml --xml-version=2 --output-file="$report_dir/cppcheck.xml" \
    -isrc/frontend_analysis/IR_analysis/lut_transformation.cpp \
    -Isrc \
-   -Isrc/algorithms/bipartite_matching \
    -Isrc/algorithms/clique_covering \
    -Isrc/algorithms/dominance \
    -Isrc/algorithms/graph_helpers \
@@ -29,5 +28,5 @@ cppcheck -j$J $@ src \
 
 cppcheck-htmlreport --source-dir=. --title=Bambu --file="$report_dir/cppcheck.xml" --report-dir="$report_dir"
 
-echo "::set-output name=error-count::$(grep -o -i severity=\"error\" $report_dir/cppcheck.xml | wc -l)"
-echo "::set-output name=report-dir::$report_dir"
+echo "error-count=$(grep -o -i severity=\"error\" $report_dir/cppcheck.xml | wc -l)" >> $GITHUB_OUTPUT
+echo "report-dir=$report_dir" >> $GITHUB_OUTPUT

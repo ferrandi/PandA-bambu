@@ -1,14 +1,15 @@
-bambu_specific_test/bambu1.c -O0 --configuration-name=O0
-bambu_specific_test/memset-chk.c -O0 --configuration-name=O0
-bambu_specific_test/bambu1.c -O1 --configuration-name=O1
-bambu_specific_test/memset-chk.c -O1 --configuration-name=O1
-bambu_specific_test/bambu1.c -O2 --configuration-name=O2
-bambu_specific_test/memset-chk.c -O2 --configuration-name=O2
-bambu_specific_test/bambu1.c -O3 --configuration-name=O3
+bambu_specific_test/930608-1.c.gimplePSSA --use-raw -s --expose-globals
 bambu_specific_test/990829-1.c.gimplePSSA --use-raw
 bambu_specific_test/20020108-1.c.gimplePSSA --use-raw
-bambu_specific_test/930608-1.c.gimplePSSA --use-raw -s --expose-globals
-bambu_specific_test/pta-field-1.c.gimplePSSA --use-raw -O1
+bambu_specific_test/bambu1.c -O0 --configuration-name=O0
+bambu_specific_test/bambu1.c -O1 --configuration-name=O1
+bambu_specific_test/bambu1.c -O2 --configuration-name=O2
+bambu_specific_test/bambu1.c -O3 --configuration-name=O3
+bambu_specific_test/divconst-2.c.gimplePSSA --use-raw 
+bambu_specific_test/memset-chk.c -O0 --configuration-name=O0
+bambu_specific_test/memset-chk.c -O1 --configuration-name=O1
+bambu_specific_test/memset-chk.c -O2 --configuration-name=O2
 bambu_specific_test/pr35472.c.gimplePSSA --use-raw -O3
+bambu_specific_test/pta-field-1.c.gimplePSSA --use-raw -O1
+bambu_specific_test/soft_mul.c --top-fname=soft_mul --device-name=nx1h140tsp --generate-tb=a=4,b=5
 bambu_specific_test/unsafe-fp-assoc-1.c.gimplePSSA --use-raw --pretty-print=output.c
-

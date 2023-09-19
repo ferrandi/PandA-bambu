@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -718,7 +718,7 @@ void glpk_solver::get_vars_solution(std::map<int, double>& vars) const
 
 void glpk_solver::set_col_name(int var, const std::string& name)
 {
-   std::string ost = name + "_" + boost::lexical_cast<std::string>(var);
+   std::string ost = name + "_" + std::to_string(var);
    glp_set_col_name(lp, var + 1, const_cast<char*>(ost.c_str()));
 }
 
@@ -817,10 +817,9 @@ void glpk_solver::set_all_bounds()
          {
             if((lower_bounds.find(i) != lower_bounds.end()) && (upper_bounds.find(i) != upper_bounds.end()))
             {
-               THROW_ASSERT(lower_bounds[i] <= upper_bounds[i],
-                            "Error in bound of variable " + boost::lexical_cast<std::string>(i) + " : " +
-                                boost::lexical_cast<std::string>(lower_bounds[i]) + " " +
-                                boost::lexical_cast<std::string>(glp_get_col_ub(lp, var)));
+               THROW_ASSERT(lower_bounds[i] <= upper_bounds[i], "Error in bound of variable " + std::to_string(i) +
+                                                                    " : " + std::to_string(lower_bounds[i]) + " " +
+                                                                    std::to_string(glp_get_col_ub(lp, var)));
                glp_set_col_bnds(lp, var, GLP_DB, lower_bounds[i], upper_bounds[i]);
             }
             else

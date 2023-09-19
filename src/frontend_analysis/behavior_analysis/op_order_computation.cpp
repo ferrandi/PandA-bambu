@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -118,7 +118,7 @@ DesignFlowStep_Status OpOrderComputation::InternalExec()
    {
       vertex actual = to_visit.front();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Checking vertex " + GET_NAME(cfg, actual) + " : " + boost::lexical_cast<std::string>(index));
+                     "-->Checking vertex " + GET_NAME(cfg, actual) + " : " + std::to_string(index));
       to_visit.pop_front();
       MARK[actual] = true;
       function_behavior->lm->add(actual, index++);
@@ -175,7 +175,9 @@ DesignFlowStep_Status OpOrderComputation::InternalExec()
    for(boost::tie(v, v_end) = boost::vertices(*cfg); v != v_end; v++)
    {
       if(*v == exit)
+      {
          continue;
+      }
       THROW_ASSERT(MARK[*v], "Operation " + GET_NAME(cfg, *v) + " not analyzed");
    }
 #endif

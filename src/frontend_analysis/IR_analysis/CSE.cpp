@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -67,7 +67,7 @@
 
 /// HLS include
 #include "hls_manager.hpp"
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
 /// HLS includes
 #include "hls.hpp"
 
@@ -128,9 +128,7 @@ CSE::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relatio
       {
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
-#if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(SDC_CODE_MOTION, SAME_FUNCTION));
-#endif
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
          break;
       }
@@ -170,7 +168,7 @@ CSE::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relatio
 
 void CSE::Initialize()
 {
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
    if(GetPointer<const HLS_manager>(AppM) && GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id) &&
       GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
    {
@@ -285,11 +283,36 @@ DesignFlowStep_Status CSE::InternalExec()
             const auto ref_ssa = GetPointerS<ssa_name>(GET_NODE(ref_ga->op0));
             const auto dead_ssa = GetPointerS<const ssa_name>(GET_CONST_NODE(dead_ga->op0));
 
+            if(ref_ssa->min)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---ref_min=" + STR(ref_ssa->min));
+            }
+            if(ref_ssa->max)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---ref_max=" + STR(ref_ssa->max));
+            }
+            if(dead_ssa->min)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dead_min=" + STR(dead_ssa->min));
+            }
+            if(dead_ssa->max)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dead_max=" + STR(dead_ssa->max));
+            }
+
+            if(!ref_ssa->bit_values.empty())
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---ref_bit_values=" + ref_ssa->bit_values);
+            }
+            if(!dead_ssa->bit_values.empty())
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dead_bit_values=" + dead_ssa->bit_values);
+            }
+
             bool same_range = false;
             if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
             {
-               same_range = !ref_ssa->bit_values.empty() && dead_ssa->bit_values.empty() &&
-                            ref_ssa->bit_values == dead_ssa->bit_values;
+               same_range = dead_ssa->bit_values.empty() || ref_ssa->bit_values == dead_ssa->bit_values;
             }
             else
             {
@@ -297,13 +320,19 @@ DesignFlowStep_Status CSE::InternalExec()
                if(GET_CONST_NODE(ga_op_type)->get_kind() == integer_type_K && ref_ssa->min && ref_ssa->max &&
                   dead_ssa->min && dead_ssa->max)
                {
-                  const auto dead_min_ic = GetPointerS<const integer_cst>(GET_CONST_NODE(ref_ssa->min));
-                  const auto ref_min_ic = GetPointerS<const integer_cst>(GET_CONST_NODE(dead_ssa->min));
-                  const auto dead_max_ic = GetPointerS<const integer_cst>(GET_CONST_NODE(ref_ssa->max));
-                  const auto ref_max_ic = GetPointerS<const integer_cst>(GET_CONST_NODE(dead_ssa->max));
-                  if(dead_min_ic->value == ref_min_ic->value && dead_max_ic->value == ref_max_ic->value)
+                  const auto ref_min = tree_helper::GetConstValue(ref_ssa->min);
+                  const auto dead_min = tree_helper::GetConstValue(dead_ssa->min);
+                  const auto ref_max = tree_helper::GetConstValue(ref_ssa->max);
+                  const auto dead_max = tree_helper::GetConstValue(dead_ssa->max);
+                  if(dead_min == ref_min && dead_max == ref_max)
                   {
                      same_range = true;
+                  }
+                  else
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---replace equivalent statement before: ref_min=" + STR(ref_min) + " dead_min=" +
+                                        STR(dead_min) + " ref_max=" + STR(ref_max) + " dead_max=" + STR(dead_max));
                   }
                }
             }
@@ -335,6 +364,10 @@ DesignFlowStep_Status CSE::InternalExec()
                ++n_equiv_stmt;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "<--Updated/Removed duplicated statement " + STR(dead_ga->op0));
+            }
+            else
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---not the same range");
             }
          }
       }
@@ -420,7 +453,8 @@ bool CSE::has_memory_access(const gimple_assign* ga) const
          skip_check = true;
       }
    }
-   if(!tree_helper::IsVectorType(ga->op0) && tree_helper::IsArrayType(ga->op0) && !tree_helper::IsPointerType(ga->op0))
+   if(!tree_helper::IsVectorType(ga->op0) && tree_helper::IsArrayEquivType(ga->op0) &&
+      !tree_helper::IsPointerType(ga->op0))
    {
       skip_check = true;
    }

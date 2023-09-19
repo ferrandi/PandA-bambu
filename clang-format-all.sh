@@ -26,24 +26,17 @@ if [ $# -eq 0 ]; then
 fi
 
 # Variable that will hold the name of the clang-format command
-FMT=""
+FMT="$(find $(echo $PATH | sed 's/:/ /g') -regextype posix-extended -regex '.*/clang-format-11' | sort --version-sort --field-separator=- --key=2,2 | tail -n1)"
 
-# Some distros just call it clang-format. Others (e.g. Ubuntu) are insistent
-# that the version number be part of the command. We prefer clang-format if
-# that's present, otherwise we work backwards from highest version to lowest
-# version.
-for clangfmt in clang-format{,-{4,3}.{9,8,7,6,5,4,3,2,1,0}}; do
-    if which "$clangfmt" &>/dev/null; then
-        FMT="$clangfmt"
-        break
-    fi
-done
+echo "Using $($FMT --version)"
 
 # Check if we found a working clang-format
 if [ -z "$FMT" ]; then
     echo "failed to find clang-format"
     exit 1
 fi
+
+echo "Clang Format: $($FMT --version)"
 
 # Check all of the arguments first to make sure they're all directories
 for dir in "$@"; do

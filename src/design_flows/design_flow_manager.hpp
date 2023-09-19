@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -40,8 +40,6 @@
 
 #ifndef DESIGN_FLOW_MANAGER_HPP
 #define DESIGN_FLOW_MANAGER_HPP
-
-#include "config_HAVE_STDCXX_11.hpp" // for HAVE_STDCXX_11
 
 #include "custom_map.hpp"
 #include "graph.hpp"    // for vertex, Paramete...
@@ -87,10 +85,7 @@ class DesignFlowStepNecessitySorter : std::binary_function<vertex, vertex, bool>
    bool operator()(const vertex x, const vertex y) const;
 };
 
-class DesignFlowManager
-#if HAVE_STDCXX_11
-    final
-#endif
+class DesignFlowManager final
 {
  private:
    /// NOTE: static should be removed when all the design flow managers will be merged
@@ -173,6 +168,10 @@ class DesignFlowManager
     */
    void Consolidate();
 
+#ifndef NDEBUG
+   void WriteLoopDot() const;
+#endif
+
  public:
    /**
     * Constructor
@@ -187,11 +186,7 @@ class DesignFlowManager
    /**
     * Execute the design flow
     */
-   void virtual Exec()
-#if HAVE_STDCXX_11
-       final
-#endif
-       ;
+   void virtual Exec() final;
 
    /**
     * Add step and corresponding dependencies to the design flow
@@ -228,7 +223,7 @@ class DesignFlowManager
     * @param prefix is the beginning of the steps that the factory should be created
     * @return the corresponding factory
     */
-   const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory(const std::string& prefix) const;
+   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory(const std::string& prefix) const;
 
    /**
     * Register a design flow step factory

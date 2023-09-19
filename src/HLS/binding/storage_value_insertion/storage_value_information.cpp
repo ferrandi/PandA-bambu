@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -60,6 +60,7 @@
 #include "math_function.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
+#include "utility.hpp"
 
 StorageValueInformation::StorageValueInformation(const HLS_managerConstRef _HLS_mgr, const unsigned int _function_id)
     : number_of_storage_values(0), HLS_mgr(_HLS_mgr), function_id(_function_id)
@@ -382,7 +383,5 @@ bool StorageValueInformation::are_value_bitsize_compatible(unsigned int storage_
    const auto size1 = tree_helper::Size(var1);
    const auto size2 = tree_helper::Size(var2);
    return isInt1 == isInt2 && isReal1 == isReal2 &&
-          (((isInt1 && isInt2) || (isReal1 && isReal2)) ?
-               size1 == size2 :
-               resize_to_1_8_16_32_64_128_256_512(size1) == resize_to_1_8_16_32_64_128_256_512(size2));
+          (((isInt1 && isInt2) || (isReal1 && isReal2)) ? size1 == size2 : ceil_pow2(size1) == ceil_pow2(size2));
 }

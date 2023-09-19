@@ -13,7 +13,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2022 Politecnico di Milano
+ *              Copyright (c) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -39,22 +39,20 @@
  */
 
 #include "conn_binding_cs.hpp"
+
 #include "Parameter.hpp"
+#include "dbgPrintHelper.hpp"
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "omp_functions.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
-
-/// STD include
-#include <string>
-
-/// utility include
-#include "dbgPrintHelper.hpp"
 #include "utility.hpp"
+
+#include <string>
 
 conn_binding_cs::conn_binding_cs(const BehavioralHelperConstRef _BH, const ParameterConstRef _parameters)
     : conn_binding(_BH, _parameters)
@@ -62,9 +60,7 @@ conn_binding_cs::conn_binding_cs(const BehavioralHelperConstRef _BH, const Param
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-conn_binding_cs::~conn_binding_cs()
-{
-}
+conn_binding_cs::~conn_binding_cs() = default;
 
 void conn_binding_cs::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM)
 {
@@ -104,7 +100,7 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
       {
          structural_objectRef portStart = curr_gate->find_member(STR(START_PORT_NAME), port_o_K, curr_gate);
          structural_objectRef startMemOp = GetPointer<port_o>(portStart)->find_bounded_object();
-         THROW_ASSERT(startMemOp != NULL, "No start port for mem_ctrl_found");
+         THROW_ASSERT(startMemOp != nullptr, "No start port for mem_ctrl_found");
          andStartMemOp_required = true;
          break;
       }
@@ -133,8 +129,8 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
       return;
    }
    structural_objectRef suspensionOr = SM->add_module_from_technology_library(
-       "suspensionOr", OR_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD), circuit,
-       HLS->HLS_T->get_technology_manager());
+       "suspensionOr", OR_GATE_STD, HLS->HLS_D->get_technology_manager()->get_library(OR_GATE_STD), circuit,
+       HLS->HLS_D->get_technology_manager());
    structural_objectRef port_in_or = suspensionOr->find_member("in", port_vector_o_K, suspensionOr);
    structural_objectRef port_out_or = suspensionOr->find_member("out1", port_o_K, suspensionOr);
    structural_objectRef out_or_sign = SM->add_sign("out_or_signal", circuit, bool_type);
@@ -168,8 +164,8 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
 
    structural_objectRef out_and_sign = SM->add_sign("out_and_signal", circuit, bool_type);
    structural_objectRef andStartMemOp = SM->add_module_from_technology_library(
-       "andStartMemOp", AND_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD), circuit,
-       HLS->HLS_T->get_technology_manager());
+       "andStartMemOp", AND_GATE_STD, HLS->HLS_D->get_technology_manager()->get_library(OR_GATE_STD), circuit,
+       HLS->HLS_D->get_technology_manager());
    structural_objectRef port_in_and = andStartMemOp->find_member("in", port_vector_o_K, andStartMemOp);
    structural_objectRef port_out_and = andStartMemOp->find_member("out1", port_o_K, andStartMemOp);
    SM->add_connection(port_out_and, out_and_sign);
@@ -192,7 +188,7 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
       {
          structural_objectRef portStart = curr_gate->find_member(STR(START_PORT_NAME), port_o_K, curr_gate);
          structural_objectRef startMemOp = GetPointer<port_o>(portStart)->find_bounded_object();
-         THROW_ASSERT(startMemOp != NULL, "No start port for mem_ctrl_found");
+         THROW_ASSERT(startMemOp != nullptr, "No start port for mem_ctrl_found");
          SM->add_connection(startMemOp, GetPointer<port_o>(port_in_and)->get_port(1));
          break;
       }
@@ -200,8 +196,8 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Added and_suspension");
 
    structural_objectRef suspensionOrGlo = SM->add_module_from_technology_library(
-       "suspensionOrGlobal", OR_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(OR_GATE_STD), circuit,
-       HLS->HLS_T->get_technology_manager());
+       "suspensionOrGlobal", OR_GATE_STD, HLS->HLS_D->get_technology_manager()->get_library(OR_GATE_STD), circuit,
+       HLS->HLS_D->get_technology_manager());
    structural_objectRef port_in_or_glo = suspensionOrGlo->find_member("in", port_vector_o_K, suspensionOrGlo);
    structural_objectRef port_out_or_glo = suspensionOrGlo->find_member("out1", port_o_K, suspensionOrGlo);
 

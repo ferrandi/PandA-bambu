@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -70,12 +70,12 @@ class AddLibrarySpecialization : public HLSFlowStepSpecialization
    /**
     * Return the string representation of this
     */
-   const std::string GetKindText() const override;
+   std::string GetKindText() const override;
 
    /**
     * Return the contribution to the signature of a step given by the specialization
     */
-   const std::string GetSignature() const override;
+   std::string GetSignature() const override;
 };
 
 class add_library : public HLSFunctionStep

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -181,7 +181,7 @@ class application_manager
    FunctionBehaviorRef GetFunctionBehavior(unsigned int index);
 
    /**
-    * Returns the datastructure associated with the given identifier. This method returns an error if the function does
+    * Returns the data-structure associated with the given identifier. This method returns an error if the function does
     * not exist.
     * @param index is the identified of the function to be returned
     * @return the FunctionBehavior associated with the given function
@@ -231,7 +231,7 @@ class application_manager
    tree_nodeConstRef GetProducedValue(unsigned int fun_id, const vertex& v) const;
 
    /**
-    * Returns the parameter datastructure
+    * Returns the parameter data-structure
     */
    const ParameterConstRef get_parameter() const;
 

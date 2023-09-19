@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -47,42 +47,27 @@
 #define STRUCTURAL_OBJECTS_HPP
 
 /// Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
-#include "config_HAVE_KOALA_BUILT.hpp"
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
-#include "config_HAVE_TUCANO_BUILT.hpp"
 
-/// STL include
-#include <algorithm>
-#include <utility>
-#include <vector>
-
+#include "NP_functionality.hpp"
 #include "custom_map.hpp"
-#include "custom_set.hpp"
+#include "exceptions.hpp"
+#include "refcount.hpp"
+#include "simple_indent.hpp"
 
 #include <boost/preprocessor/seq/for_each.hpp>
 #include <ostream>
 #include <string>
-
-#include "simple_indent.hpp"
-#include "utility.hpp"
-
-#include "NP_functionality.hpp"
-#include "exceptions.hpp"
-#include "refcount.hpp"
+#include <utility>
+#include <vector>
 
 /**
  * @name Forward declarations.
  */
 //@{
-#if HAVE_TUCANO_BUILT
-REF_FORWARD_DECL(tree_manager);
-#endif
-#if HAVE_BAMBU_BUILT
 CONSTREF_FORWARD_DECL(BehavioralHelper);
-#endif
 REF_FORWARD_DECL(structural_manager);
-
+REF_FORWARD_DECL(NP_functionality);
 CONSTREF_FORWARD_DECL(structural_object);
 REF_FORWARD_DECL(structural_object);
 REF_FORWARD_DECL(structural_type_descriptor);
@@ -163,10 +148,10 @@ struct structural_type_descriptor
    s_type type;
 
    /// The size of the object (in bit). The objects having a size are: ports, signals, channels, data, and actions.
-   unsigned int size;
+   unsigned long long size;
 
    /// The number of the elements of a vector.
-   unsigned int vector_size;
+   unsigned long long vector_size;
 
    /// Original type id of the structural object.
    std::string id_type;
@@ -189,7 +174,7 @@ struct structural_type_descriptor
     *        In case vector_size is zero the descriptor type represents a scalar object,
     *        otherwise an array.
     */
-   structural_type_descriptor(const std::string& type_name, unsigned int vector_size);
+   structural_type_descriptor(const std::string& type_name, unsigned long long vector_size);
 
    /**
     * Object factory for module objects.
@@ -204,22 +189,12 @@ struct structural_type_descriptor
    {
    }
 
-#if HAVE_TUCANO_BUILT
-   /**
-    * Object factory for SystemC objects.
-    * @param treenode is the treenode descriptor of the type.
-    */
-   structural_type_descriptor(unsigned int treenode, tree_managerRef tm);
-#endif
-
-#if HAVE_BAMBU_BUILT
    /**
     * Object factory used in HLS
     * @param index is the index descriptor of the type
     * @param helper is the BehavioralHelper
     */
    structural_type_descriptor(unsigned int index, const BehavioralHelperConstRef helper);
-#endif
 
    /**
     * Destructor
@@ -379,43 +354,15 @@ class structural_object
    CustomMap<std::string, std::string> default_parameters;
 
  protected:
+   friend structural_manager;
+
    /// debug level for the object
    int debug_level;
 
    /**
     * Convert a so_kind in a short string. Used in debugging.
     */
-   std::string convert_so_short(so_kind in) const
-   {
-      switch(in)
-      {
-         case component_o_K:
-            return "M";
-         case channel_o_K:
-            return "C";
-         case constant_o_K:
-            return "c";
-         case bus_connection_o_K:
-            return "B";
-         case signal_o_K:
-            return "S";
-         case signal_vector_o_K:
-            return "S";
-         case port_o_K:
-            return "P";
-         case port_vector_o_K:
-            return "P";
-         case event_o_K:
-            return "E";
-         case data_o_K:
-            return "D";
-         case action_o_K:
-            return "A";
-         default:
-            THROW_UNREACHABLE("");
-      }
-      return "";
-   }
+   std::string convert_so_short(so_kind in) const;
    /// pretty print functor object used by all print members to indent the output of the print function.
    static simple_indent PP;
 
@@ -433,9 +380,7 @@ class structural_object
    structural_object(int debug_level, const structural_objectRef o);
 
    /// virtual destructor
-   virtual ~structural_object()
-   {
-   }
+   virtual ~structural_object() = default;
 
    /**
     * Return the owner.
@@ -465,16 +410,6 @@ class structural_object
     */
    void set_id(const std::string& s);
 
-#if HAVE_KOALA_BUILT
-   /**
-    * Return the equation associated with the output port of the component
-    */
-   std::string get_equation(const structural_objectRef out_obj, const technology_managerConstRef TM,
-                            CustomOrderedSet<structural_objectRef>& analyzed,
-                            const CustomOrderedSet<structural_objectRef>& input_ports,
-                            const CustomOrderedSet<structural_objectRef>& output_ports) const;
-#endif
-
    /**
     * Return the identifier associated with the structural_object.
     */
@@ -494,12 +429,12 @@ class structural_object
    /**
     * Just resize the size of the bits of the object
     */
-   void type_resize(unsigned int new_bit_size);
+   void type_resize(unsigned long long new_bit_size);
 
    /**
     * resizing of vector objects
     */
-   void type_resize(unsigned int new_bit_size, unsigned int new_vec_size);
+   void type_resize(unsigned long long new_bit_size, unsigned long long new_vec_size);
    /**
     * Set the black box property associated with the structural_object.
     * @param bb is true when the object is a black box, false otherwise.
@@ -670,7 +605,8 @@ using structural_objectRef = refcount<structural_object>;
        M_AXI_RUSER)(M_AXI_RRESP)(M_AXI_BVALID)(M_AXI_BREADY)(M_AXI_BRESP)(M_AXI_BID)(M_AXI_BUSER)(S_AXIL_AWVALID)(     \
        S_AXIL_AWREADY)(S_AXIL_AWADDR)(S_AXIL_WVALID)(S_AXIL_WREADY)(S_AXIL_WDATA)(S_AXIL_WSTRB)(S_AXIL_ARVALID)(       \
        S_AXIL_ARREADY)(S_AXIL_ARADDR)(S_AXIL_RVALID)(S_AXIL_RREADY)(S_AXIL_RDATA)(S_AXIL_RRESP)(S_AXIL_BVALID)(        \
-       S_AXIL_BREADY)(S_AXIL_BRESP)(PI_S_AXIS_TVALID)(PI_S_AXIS_TREADY)(PI_M_AXIS_TREADY)(PI_M_AXIS_TVALID)
+       S_AXIL_BREADY)(S_AXIL_BRESP)(PI_S_AXIS_TVALID)(PI_S_AXIS_TREADY)(PI_S_AXIS_TDATA)(PI_M_AXIS_TVALID)(            \
+       PI_M_AXIS_TREADY)(PI_M_AXIS_TDATA)
 
 #define PORT_DIRECTION_ENUM (IN)(OUT)(IO)(GEN)(UNKNOWN)(TLM_IN)(TLM_OUT)(TLM_INOUT)
 
@@ -795,12 +731,12 @@ struct port_o : public structural_object
    /**
     * Return the port interface alignment.
     */
-   unsigned get_port_alignment() const;
+   unsigned int get_port_alignment() const;
 
    /**
     * Set the port interface alignment.
     */
-   void set_port_alignment(unsigned algn);
+   void set_port_alignment(unsigned int algn);
 
    /**
     * Return the connected signal, if any. Null pointer otherwise.
@@ -817,7 +753,7 @@ struct port_o : public structural_object
     * Get port size
     * @return the dimension of the port
     */
-   unsigned int get_port_size() const;
+   unsigned long long get_port_size() const;
 
    /**
     * set the is var_args attribute.
@@ -1070,9 +1006,11 @@ struct port_o : public structural_object
     * @param bus_data_bitsize bitsize of data
     * @param bus_tag_bitsize bitsize of tag
     * @param port is the port to be resized
+    * @return bool True if resize happened, false else
     */
-   static void resize_busport(unsigned int bus_size_bitsize, unsigned int bus_addr_bitsize,
-                              unsigned int bus_data_bitsize, unsigned int bus_tag_bitsize, structural_objectRef port);
+   static bool resize_if_busport(unsigned long long bus_size_bitsize, unsigned long long bus_addr_bitsize,
+                                 unsigned long long bus_data_bitsize, unsigned long long bus_tag_bitsize,
+                                 structural_objectRef port);
 
    /**
     * auxiliary function used to resize the standard ports
@@ -1081,7 +1019,7 @@ struct port_o : public structural_object
     * @param debug_level is the debug level
     * @param port is the port to be resized
     */
-   static void resize_std_port(unsigned int bitsize_variable, unsigned int n_elements, int debug_level,
+   static void resize_std_port(unsigned long long bitsize_variable, unsigned long long n_elements, int debug_level,
                                structural_objectRef port);
 
    /**
@@ -1132,7 +1070,7 @@ struct port_o : public structural_object
    /// port interface type of a port
    port_interface pi;
 
-   unsigned aligment;
+   unsigned int aligment;
 
    /// when true the port must be specialized at runtime depending on the number of input
    bool is_var_args;
@@ -1570,7 +1508,7 @@ class constant_o : public structural_object
    /**
     * Return the size associated with this element (in bits)
     */
-   unsigned int get_size() const;
+   unsigned long long get_size() const;
 
    /**
     * Return the (integer) value associated with this element
@@ -1896,6 +1834,9 @@ class module : public structural_object
    /// multi-unit multiplicity is the number of units implemented by this module all doing the same thing
    unsigned int multi_unit_multiplicity;
 
+   /// when true the module has the keep_hierarchy attribute active
+   bool keep_hierarchy;
+
  public:
    /**
     * Constructor.
@@ -2184,6 +2125,18 @@ class module : public structural_object
    unsigned int get_multi_unit_multiplicity() const;
 
    /**
+    * @brief set_keep_hierarchy
+    * @param ky is true when the module has the keep_hierarchy attribute true
+    */
+   void set_keep_hierarchy(bool ky);
+
+   /**
+    * @brief get_keep_hierarchy
+    * @return if the module has the keep_hierarchy active or not
+    */
+   bool get_keep_hierarchy() const;
+
+   /**
     * change the direction of a port
     * @param port is the port to be moved
     * @param pdir is the new direction
@@ -2256,7 +2209,7 @@ class module : public structural_object
 
    /**
     * Return a non-empty string when the component has been specialized.
-    * The string identify with respect what the component has been specialized (e.g., target_device, behavior...)
+    * The string identify with respect what the component has been specialized (e.g., generic_device, behavior...)
     */
    const std::string get_specialized() const
    {

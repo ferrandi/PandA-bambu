@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -106,7 +106,7 @@ class ControllerCreatorBaseStep : public HLSFunctionStep
 
    /**
     * This member function adds the standard ports (clock, reset, done and command ones) to a circuit.
-    * \param circuit it is the datastructure of the component where to add these ports
+    * \param circuit it is the data-structure of the component where to add these ports
     */
    virtual void add_common_ports(structural_objectRef circuit, structural_managerRef SM);
 

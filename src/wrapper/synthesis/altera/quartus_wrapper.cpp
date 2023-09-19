@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2016-2022 Politecnico di Milano
+ *              Copyright (C) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -47,7 +47,7 @@
 #include "xml_script_command.hpp"
 
 QuartusWrapper::QuartusWrapper(const ParameterConstRef& _Param, const std::string& _output_dir,
-                               const target_deviceRef& _device)
+                               const generic_deviceRef& _device)
     : AlteraWrapper(_Param, QUARTUS_FLOW_TOOL_EXEC, _device, _output_dir, QUARTUS_FLOW_TOOL_ID)
 {
 }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -70,7 +70,7 @@ class LoadBuiltinTechnology : public TechnologyFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   LoadBuiltinTechnology(const technology_managerRef TM, const target_deviceRef target,
+   LoadBuiltinTechnology(const technology_managerRef TM, const generic_deviceRef target,
                          const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**

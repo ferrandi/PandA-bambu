@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -43,27 +43,17 @@
 #define TECHNOLOGY_MANAGER_HPP
 
 /// Autoheader include
-#include "config_HAVE_BEAGLE.hpp"
-#include "config_HAVE_BOOLEAN_PARSER_BUILT.hpp"
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
-#include "config_HAVE_FROM_LIBERTY.hpp"
 #include "config_HAVE_PHYSICAL_LIBRARY_MODELS_BUILT.hpp"
 
-/// STD include
-#include <ostream>
-#include <string>
-
-/// STL include
 #include "custom_map.hpp"
-#include "custom_set.hpp"
-#include <vector>
-
-/// utility include
 #include "custom_set.hpp"
 #include "refcount.hpp"
 #include "strong_typedef.hpp"
-#include "utility.hpp"
+
+#include <ostream>
+#include <string>
+#include <vector>
 
 /// working library.
 #define DESIGN std::string("design")
@@ -81,12 +71,8 @@
 #define LIBRARY_STD_FU std::string("STD_FU")
 /// compound gates
 #define CG_LIBRARY std::string("CG")
-/// library template
-#define LIBRARY_TEMPLATE std::string("LIBRARY_TEMPLATE")
 /// standard library for parallel controller
 #define LIBRARY_PC std::string("STD_PC")
-/// FPGA modules
-#define FPGA_LIBRARY std::string("FPGA_LIBRARY")
 
 /**
  * @name Forward declarations.
@@ -103,13 +89,12 @@ using fileIO_istreamRef = refcount<std::istream>;
 REF_FORWARD_DECL(structural_manager);
 REF_FORWARD_DECL(technology_manager);
 REF_FORWARD_DECL(technology_node);
-REF_FORWARD_DECL(target_device);
 REF_FORWARD_DECL(simple_indent);
 /// forward decl of xml Element
 class xml_element;
 class allocation;
 class mixed_hls;
-enum class TargetDevice_Type;
+struct TimeStamp;
 UINT_STRONG_TYPEDEF_FORWARD_DECL(ControlStep);
 class functional_unit;
 
@@ -126,8 +111,6 @@ class technology_manager
     */
    //@{
    const static unsigned int XML;
-   const static unsigned int LIB;
-   const static unsigned int LEF;
    //@}
 
    /// definition of the type for identifying the libraries
@@ -160,7 +143,7 @@ class technology_manager
 
  public:
    /**
-    * @name Constructors and destructors.
+    * @name Constructors and Destructors.
     */
    //@{
    /// Constructor.
@@ -173,9 +156,6 @@ class technology_manager
  private:
    /// friend definition for class allocation
    friend class allocation;
-#if HAVE_BEAGLE
-   friend class mixed_hls;
-#endif
 
  public:
    /**
@@ -203,14 +183,6 @@ class technology_manager
    technology_nodeRef add_operation(const std::string& Library, const std::string& fu_name,
                                     const std::string& operation_name);
 
-#if HAVE_CIRCUIT_BUILT
-   /**
-    * Add a storage unit to the library
-    */
-   void add_storage(const std::string& s_name, const structural_managerRef CM, const std::string& Library,
-                    const unsigned int bits = 32, const unsigned int words = 1024, const unsigned int readinputs = 2,
-                    const unsigned int writeinputs = 2, const unsigned int readwriteinputs = 2);
-#endif
    //@}
 
    /**
@@ -240,9 +212,17 @@ class technology_manager
     * Return the reference to a component given its name.
     * @param fu_name is the name of the component.
     * @param Library is library name where the unit is stored
-    * @return the reference to a component
+    * @return the reference to a component if found, else nullptr
     */
    technology_nodeRef get_fu(const std::string& fu_name, const std::string& Library) const;
+
+   /**
+    * Return the reference to a component given its name.
+    * @param fu_name is the name of the component.
+    * @param Library is library name where the unit is stored if found
+    * @return the reference to a component if found, else nullptr
+    */
+   technology_nodeRef get_fu(const std::string& fu_name, std::string* Library = nullptr) const;
 
    /**
     * Return the higher priority library where the given component is stored
@@ -270,14 +250,6 @@ class technology_manager
     * @return the reference to the data structure of the library
     */
    library_managerRef get_library_manager(const std::string& Name) const;
-
-#if HAVE_PHYSICAL_LIBRARY_MODELS_BUILT
-   /**
-    * Return the number of cells contained into the specified library
-    * @param Name is the name of the library
-    */
-   size_t get_library_count(const std::string& Name) const;
-#endif
 
    /**
     * Return the initiation time for a given operation type and a given component.
@@ -325,41 +297,13 @@ class technology_manager
     * Load a technology manager from an xml file.
     * @param node is a node of the xml tree.
     */
-   void xload(const xml_element* node, const target_deviceRef device);
-
-#if HAVE_BOOLEAN_PARSER_BUILT
-   /**
-    * Load a technology manager from a genlib file.
-    * @param file is the stream associated of the file
-    * @param TM is the refcount version of this.
-    */
-   static void gload(const std::string& file_name, const fileIO_istreamRef file, const technology_managerRef TM,
-                     const ParameterConstRef Param);
-#endif
+   void xload(const xml_element* node);
 
    /**
     * add library elements operation node to an xml tree.
     * @param rootnode is the root node at which the xml representation of the operation is attached.
     */
-   void xwrite(xml_element* rootnode, TargetDevice_Type dv_type,
-               const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
-
-#if HAVE_FROM_LIBERTY
-   /**
-    * Write the technology libraries in the liberty format
-    */
-   void lib_write(const std::string& filename, TargetDevice_Type dv_type,
-                  const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
-#endif
-
-#if HAVE_EXPERIMENTAL
-   /**
-    *
-    */
-   void lef_write(const std::string& filename, TargetDevice_Type dv_type,
-                  const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
-   //@}
-#endif
+   void xwrite(xml_element* rootnode, const CustomOrderedSet<std::string>& libraries = CustomOrderedSet<std::string>());
 
    /**
     * @name Print functions.

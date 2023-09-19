@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2022 Politecnico di Milano
+ *              Copyright (C) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -49,16 +49,10 @@
 #include "generate_fu_list.hpp"
 #endif
 
-ToDataFileStepFactory::ToDataFileStepFactory(
-#if HAVE_CIRCUIT_BUILT
-    const target_managerRef _target,
-#endif
-    const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : DesignFlowStepFactory(_design_flow_manager, _parameters)
-#if HAVE_CIRCUIT_BUILT
-      ,
-      target(_target)
-#endif
+ToDataFileStepFactory::ToDataFileStepFactory(const generic_deviceRef _device,
+                                             const DesignFlowManagerConstRef _design_flow_manager,
+                                             const ParameterConstRef _parameters)
+    : DesignFlowStepFactory(_design_flow_manager, _parameters), device(_device)
 {
 }
 
@@ -84,7 +78,7 @@ const DesignFlowStepRef ToDataFileStepFactory::CreateStep(const std::string& sig
 #if HAVE_CIRCUIT_BUILT
       case ToDataFileStep_Type::GENERATE_FU_LIST:
       {
-         return DesignFlowStepRef(new GenerateFuList(target, design_flow_manager.lock(), parameters));
+         return DesignFlowStepRef(new GenerateFuList(device, design_flow_manager.lock(), parameters));
       }
 #endif
       default:

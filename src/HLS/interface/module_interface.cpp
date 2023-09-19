@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -93,8 +93,8 @@ module_interface::ComputeHLSRelationships(const DesignFlowStep::RelationshipType
       case DEPENDENCE_RELATIONSHIP:
       {
          const auto cg_man = HLSMgr->CGetCallGraphManager();
-         if(HLSMgr->hasToBeInterfaced(funId) and
-            (cg_man->ExistsAddressedFunction() or hls_flow_step_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION))
+         if(HLSMgr->hasToBeInterfaced(funId) &&
+            (cg_man->ExistsAddressedFunction() || parameters->getOption<bool>(OPT_memory_mapped_top)))
          {
             ret.insert(std::make_tuple(HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION,
                                        HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
@@ -180,7 +180,7 @@ void module_interface::AddSignal(const structural_managerRef SM, const structura
                                  const std::string& port2_name, const std::string& signal_name)
 {
    structural_objectRef port1;
-   unsigned int size1;
+   unsigned long long size1;
    if(port1_name.find('[') != std::string::npos)
    {
       const auto port1_base_name = port1_name.substr(0, port1_name.find('['));
@@ -198,7 +198,7 @@ void module_interface::AddSignal(const structural_managerRef SM, const structura
       size1 = GET_TYPE_SIZE(port1);
    }
    structural_objectRef port2;
-   unsigned int size2;
+   unsigned long long size2;
    if(port2_name.find('[') != std::string::npos)
    {
       const auto port2_base_name = port2_name.substr(0, port2_name.find('['));
@@ -244,7 +244,7 @@ void module_interface::AddConnection(const structural_managerRef SM, const struc
                                      const std::string& port2_name)
 {
    structural_objectRef port1;
-   unsigned int size1;
+   unsigned long long size1;
    if(port1_name.find('[') != std::string::npos)
    {
       const auto port1_base_name = port1_name.substr(0, port1_name.find('['));
@@ -262,7 +262,7 @@ void module_interface::AddConnection(const structural_managerRef SM, const struc
       size1 = GET_TYPE_SIZE(port1);
    }
    structural_objectRef port2;
-   unsigned int size2;
+   unsigned long long size2;
    if(port2_name.find('[') != std::string::npos)
    {
       const auto port2_base_name = port2_name.substr(0, port2_name.find('['));
@@ -295,10 +295,10 @@ void module_interface::AddConnection(const structural_managerRef SM, const struc
 
 void module_interface::AddConstant(const structural_managerRef SM, const structural_objectRef component,
                                    const std::string& port_name, const std::string& constant_value,
-                                   const unsigned int constant_size)
+                                   const unsigned long long constant_size)
 {
    structural_objectRef port;
-   unsigned int size;
+   unsigned long long size;
    if(port_name.find('[') != std::string::npos)
    {
       const auto port_base_name = port_name.substr(0, port_name.find('['));

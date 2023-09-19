@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2022 Politecnico di Milano
+ *              Copyright (C) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -50,8 +50,7 @@
 
 class functional_unit;
 REF_FORWARD_DECL(library_manager);
-REF_FORWARD_DECL(target_device);
-REF_FORWARD_DECL(target_manager);
+REF_FORWARD_DECL(generic_device);
 REF_FORWARD_DECL(technology_manager);
 REF_FORWARD_DECL(technology_node);
 
@@ -64,8 +63,8 @@ class FunctionalUnitStep : public virtual DesignFlowStep
    /// Technology manager
    const technology_managerRef TM;
 
-   /// target information
-   const target_managerRef target;
+   /// device information
+   const generic_deviceRef device;
 
    /// The id of the first analyzed cell of a sequence of cells which differ for the position of the constant
    unsigned int has_first_synthesis_id;
@@ -98,16 +97,16 @@ class FunctionalUnitStep : public virtual DesignFlowStep
     * Create a template instance to be specialized
     */
    technology_nodeRef create_template_instance(const technology_nodeRef& fu_template, const std::string& name,
-                                               const target_deviceRef& device, unsigned int prec);
+                                               unsigned int prec);
 
  public:
    /**
     * Constructor.
-    * @param target is the target
+    * @param _device is the device
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   FunctionalUnitStep(const target_managerRef target, const DesignFlowManagerConstRef design_flow_manager,
+   FunctionalUnitStep(const generic_deviceRef _device, const DesignFlowManagerConstRef design_flow_manager,
                       const ParameterConstRef parameters);
 
    /**

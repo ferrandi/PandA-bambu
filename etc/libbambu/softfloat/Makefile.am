@@ -155,7 +155,7 @@ libsoftfloat_clangvvd_a_SOURCES = softfloat.c
 libsoftfloat_clangvvd_a_CFLAGS = -O3 --compiler=I386_CLANGVVD $(common_cflags_clang) -I$(BOOST_DIR) -finline-functions --extra-gcc-options="-mllvm -inline-threshold=10000"
 libsoftfloat_subnormals_clangvvd_a_SOURCES = softfloat.c
 libsoftfloat_subnormals_clangvvd_a_CFLAGS = -O3 --compiler=I386_CLANGVVD $(common_cflags_subnormals_clang) -I$(BOOST_DIR) -finline-functions --extra-gcc-options="-mllvm -inline-threshold=10000"
-endif 
+endif
 
 if BUILD_I386_CLANG12
 pkglib_LIBRARIES += libsoftfloat_clang12.a libsoftfloat_subnormals_clang12.a
@@ -165,4 +165,19 @@ libsoftfloat_subnormals_clang12_a_SOURCES = softfloat.c
 libsoftfloat_subnormals_clang12_a_CFLAGS = -O3 --compiler=I386_CLANG12 $(common_cflags_subnormals_clang) -I$(BOOST_DIR) -finline-functions --extra-gcc-options="-mllvm -inline-threshold=10000"
 endif
 
+if BUILD_I386_CLANG13
+pkglib_LIBRARIES += libsoftfloat_clang13.a libsoftfloat_subnormals_clang13.a
+libsoftfloat_clang13_a_SOURCES = softfloat.c
+libsoftfloat_clang13_a_CFLAGS = -O3 --compiler=I386_CLANG13 $(common_cflags_clang) -I$(BOOST_DIR) -finline-functions --extra-gcc-options="-mllvm -inline-threshold=10000"
+libsoftfloat_subnormals_clang13_a_SOURCES = softfloat.c
+libsoftfloat_subnormals_clang13_a_CFLAGS = -O3 --compiler=I386_CLANG13 $(common_cflags_subnormals_clang) -I$(BOOST_DIR) -finline-functions --extra-gcc-options="-mllvm -inline-threshold=10000"
+endif
+
+if BUILD_I386_CLANG16
+pkglib_LIBRARIES += libsoftfloat_clang16.a libsoftfloat_subnormals_clang16.a
+libsoftfloat_clang16_a_SOURCES = softfloat.c
+libsoftfloat_clang16_a_CFLAGS = -O3 --compiler=I386_CLANG16 $(common_cflags_clang) -I$(BOOST_DIR) -finline-functions --extra-gcc-options="-mllvm -inline-threshold=10000"
+libsoftfloat_subnormals_clang16_a_SOURCES = softfloat.c
+libsoftfloat_subnormals_clang16_a_CFLAGS = -O3 --compiler=I386_CLANG16 $(common_cflags_subnormals_clang) -I$(BOOST_DIR) -finline-functions --extra-gcc-options="-mllvm -inline-threshold=10000"
+endif
 

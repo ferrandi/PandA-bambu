@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,13 +42,6 @@
 #ifndef _DESIGN_PARAMETERS_HPP_
 #define _DESIGN_PARAMETERS_HPP_
 
-/// Autoheader include
-#include "config_HAVE_DESIGN_COMPILER.hpp"
-#include "config_HAVE_FORMALITY.hpp"
-#include "config_HAVE_IPXACT_BUILT.hpp"
-#include "config_HAVE_LIBRARY_COMPILER.hpp"
-#include "config_HAVE_LIBRARY_CREATOR.hpp"
-
 #include "custom_map.hpp"
 #include <string>
 
@@ -72,13 +65,6 @@ struct DesignParameters
 
    /// Map between the name of the parameter and the corresponding string-based value
    map_t parameter_values;
-
-#if HAVE_IPXACT_BUILT
-   /**
-    * Parses an XML-based design configuration in IP-XACT format
-    */
-   void xload_design_configuration(const ParameterConstRef Param, const std::string& xml_file);
-#endif
 
    /**
     * Returns a clone of the current parameter configuration

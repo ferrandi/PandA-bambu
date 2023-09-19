@@ -1,5 +1,5 @@
 /* Soft-FP definitions for bambu.
-   Copyright (C) 2014-2022 Politecnico di Milano
+   Copyright (C) 2014-2023 Politecnico di Milano
 
 This file is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -30,17 +30,21 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #define _FP_WS_TYPE signed long long
 #define _FP_I_TYPE long long
 
+#define _FP_MUL_MEAT_H(R, X, Y) _FP_MUL_MEAT_1_imm(_FP_WFRACBITS_H, R, X, Y)
 #define _FP_MUL_MEAT_S(R, X, Y) _FP_MUL_MEAT_1_imm(_FP_WFRACBITS_S, R, X, Y)
 #define _FP_MUL_MEAT_D(R, X, Y) _FP_MUL_MEAT_1_wide(_FP_WFRACBITS_D, R, X, Y, umul_ppmm)
 #define _FP_MUL_MEAT_Q(R, X, Y) _FP_MUL_MEAT_2_wide_3mul(_FP_WFRACBITS_Q, R, X, Y, umul_ppmm)
 
+#define _FP_DIV_MEAT_H(R, X, Y) _FP_DIV_MEAT_1_imm(H, R, X, Y, _FP_DIV_HELP_imm)
 #define _FP_DIV_MEAT_S(R, X, Y) _FP_DIV_MEAT_1_imm(S, R, X, Y, _FP_DIV_HELP_imm)
 #define _FP_DIV_MEAT_D(R, X, Y) _FP_DIV_MEAT_1_udiv_norm(D, R, X, Y)
 #define _FP_DIV_MEAT_Q(R, X, Y) _FP_DIV_MEAT_2_udiv(Q, R, X, Y)
 
+#define _FP_NANFRAC_H ((_FP_QNANBIT_H << 1) - 1)
 #define _FP_NANFRAC_S ((_FP_QNANBIT_S << 1) - 1)
 #define _FP_NANFRAC_D ((_FP_QNANBIT_D << 1) - 1), -1
 #define _FP_NANFRAC_Q ((_FP_QNANBIT_Q << 1) - 1), -1, -1, -1
+#define _FP_NANSIGN_H 0
 #define _FP_NANSIGN_S 0
 #define _FP_NANSIGN_D 0
 #define _FP_NANSIGN_Q 0

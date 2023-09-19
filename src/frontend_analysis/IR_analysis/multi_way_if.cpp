@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -41,60 +41,36 @@
  *
  */
 
-/// Header include
 #include "multi_way_if.hpp"
-
-///. include
 #include "Parameter.hpp"
-
-/// src/algorithms/graph_helpers include
-#include "cyclic_topological_sort.hpp"
-
-/// behavior includes
 #include "application_manager.hpp"
 #include "basic_block.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
-
-/// design_flows includes
+#include "cyclic_topological_sort.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-
-/// hls includes
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
 #include "hls_step.hpp"
 #endif
-
-#if HAVE_BAMBU_BUILT
-/// hls/scheduling includes
-#include "schedule.hpp"
-#endif
-
-/// parser/compiler include
-#include "token_interface.hpp"
-
-/// STD include
-#include <cstdlib>
-#include <fstream>
-
-/// STL include
+#include "behavioral_helper.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-#include <cstdlib>
-
-/// tree includes
-#include "behavioral_helper.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "ext_tree_node.hpp"
+#include "schedule.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
+#include "token_interface.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_reindex.hpp"
+#include <cstdlib>
+#include <fstream>
 
 multi_way_if::multi_way_if(const ParameterConstRef _parameters, const application_managerRef _AppM,
                            unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
@@ -118,7 +94,7 @@ multi_way_if::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTyp
          relationships.insert(std::make_pair(SWITCH_FIX, SAME_FUNCTION));
          relationships.insert(std::make_pair(BLOCK_FIX, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
          if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING)
          {
             relationships.insert(std::make_pair(UPDATE_SCHEDULE, SAME_FUNCTION));
@@ -290,7 +266,8 @@ DesignFlowStep_Status multi_way_if::InternalExec()
       const auto& curr_bbi = bb_node_info->block->number;
       const auto& curr_bb = bb_node_info->block;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(curr_bbi));
-      if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
+      if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC &&
+         (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
       {
          WriteBBGraphDot("BB_Before_" + GetName() + "_" + STR(curr_bbi) + ".dot");
       }
@@ -372,7 +349,8 @@ DesignFlowStep_Status multi_way_if::InternalExec()
                THROW_ASSERT(sl->list_of_bloc.count(succ_bbi), "");
                FixCfg(curr_bb, sl->list_of_bloc.at(succ_bbi));
                restart = true;
-               if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
+               if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC &&
+                  (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
                {
                   WriteBBGraphDot("BB_After_" + GetName() + "_" + STR(curr_bbi) + "_Fix.dot");
                }
@@ -415,7 +393,8 @@ DesignFlowStep_Status multi_way_if::InternalExec()
       UpdateCfg(pred_bb, curr_bb);
       bb_modified = true;
       bb_to_be_removed.insert(curr_bbi);
-      if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC && !parameters->IsParameter("disable-print-dot-FF"))
+      if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC &&
+         (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
       {
          WriteBBGraphDot("BB_After_" + GetName() + "_" + STR(curr_bbi) + ".dot");
       }

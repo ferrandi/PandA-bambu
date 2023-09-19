@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2022 Politecnico di Milano
+ *              Copyright (C) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -85,27 +85,20 @@ static bool is_valid_state_string(const std::string& s, bool one_hot_fsm_encodin
    return true;
 }
 
-static size_t compute_state_id(const std::string& s, bool one_hot_fsm_encoding)
+static unsigned int compute_state_id(const std::string& s, bool one_hot_fsm_encoding)
 {
-   if(not is_valid_state_string(s, one_hot_fsm_encoding))
-   {
-      THROW_ERROR("invalid state_string: " + s);
-   }
-
+   THROW_ASSERT(is_valid_state_string(s, one_hot_fsm_encoding), "String does not represent a valid binary state: " + s);
    if(one_hot_fsm_encoding)
    {
       const auto first_1_pos = s.find_first_of('1');
-      return s.length() - first_1_pos - 1;
+      return static_cast<unsigned int>(s.length() - first_1_pos - 1U);
    }
-   else
-   {
-      return std::stoul(s, nullptr, 2);
-   }
+   return static_cast<unsigned int>(std::stoul(s, nullptr, 2));
 }
 
 static bool is_binary_string_repr(const std::string& s, unsigned int id, bool one_hot_fsm_encoding)
 {
-   if(not is_valid_state_string(s, one_hot_fsm_encoding))
+   if(!is_valid_state_string(s, one_hot_fsm_encoding))
    {
       THROW_ERROR("invalid state_string: " + s);
    }
@@ -116,32 +109,30 @@ static bool is_binary_string_repr(const std::string& s, unsigned int id, bool on
 static bool string_represents_one_of_the_states(const std::string& val, const CustomOrderedSet<unsigned int>& state_ids,
                                                 bool one_hot_fsm_encoding)
 {
-   const auto s_it = state_ids.begin();
-   const auto s_end = state_ids.cend();
-   const auto isbinstr = [&val, one_hot_fsm_encoding](const unsigned s) {
-      return is_binary_string_repr(val, s, one_hot_fsm_encoding);
-   };
-   return std::find_if(s_it, s_end, isbinstr) != s_end;
+   if(!is_valid_state_string(val, one_hot_fsm_encoding))
+   {
+      return false;
+   }
+   const auto id = compute_state_id(val, one_hot_fsm_encoding);
+   return state_ids.count(id);
 }
 
 static bool is_exec(const sig_variation& state_var, const DiscrepancyOpInfo& i, bool one_hot_fsm_encoding)
 {
-   THROW_ASSERT(not i.exec_states.empty(),
-                "no executing states for operation " + STR(i.stg_fun_id) + "_" + STR(i.op_id));
+   THROW_ASSERT(!i.exec_states.empty(), "no executing states for operation " + STR(i.stg_fun_id) + "_" + STR(i.op_id));
    return string_represents_one_of_the_states(state_var.value, i.exec_states, one_hot_fsm_encoding);
 }
 
 static bool is_start(const sig_variation& state_var, const DiscrepancyOpInfo& i, bool one_hot_fsm_encoding)
 {
-   THROW_ASSERT(not i.start_states.empty(),
-                "no starting states for operation " + STR(i.stg_fun_id) + "_" + STR(i.op_id));
+   THROW_ASSERT(!i.start_states.empty(), "no starting states for operation " + STR(i.stg_fun_id) + "_" + STR(i.op_id));
    return string_represents_one_of_the_states(state_var.value, i.start_states, one_hot_fsm_encoding);
 }
 
 #if HAVE_ASSERTS
 static bool is_end(const sig_variation& state_var, const DiscrepancyOpInfo& i, bool one_hot_fsm_encoding)
 {
-   THROW_ASSERT(not i.end_states.empty(), "no ending states for operation " + STR(i.stg_fun_id) + "_" + STR(i.op_id));
+   THROW_ASSERT(!i.end_states.empty(), "no ending states for operation " + STR(i.stg_fun_id) + "_" + STR(i.op_id));
    return string_represents_one_of_the_states(state_var.value, i.end_states, one_hot_fsm_encoding);
 }
 #endif
@@ -283,13 +274,11 @@ void vcd_trace_head::unbounded_find_end_time()
 void vcd_trace_head::update()
 {
    /* find the next starting state for an execution of this operation */
-   if(has_been_initialized and not fsm_has_a_single_state)
+   if(has_been_initialized && !fsm_has_a_single_state)
    {
       ++fsm_ss_it;
    }
-   const DiscrepancyOpInfo& i = op_info;
-   const bool onehot = one_hot_fsm_encoding;
-   const auto is_starting_state = [&i, onehot](const sig_variation& s) { return is_start(s, i, onehot); };
+   const auto is_starting_state = [&](const sig_variation& s) { return is_start(s, op_info, one_hot_fsm_encoding); };
    const auto fsm_prev_ss_it = fsm_ss_it;
    fsm_ss_it = std::find_if(fsm_ss_it, fsm_end, is_starting_state);
    if(fsm_ss_it == fsm_end)
@@ -361,13 +350,12 @@ void vcd_trace_head::update()
          op_end_time = op_start_time + ((op_info.n_cycles) * clock_period);
       }
       /* handle duplicated operations in more than one state */
-      if(is_in_reg and is_phi)
+      if(is_in_reg && is_phi)
       {
-         const auto gp = GetPointer<const gimple_phi>(TM->get_tree_node_const(op_info.op_id));
-         auto state_id = static_cast<unsigned int>(compute_state_id(fsm_ss_it->value, one_hot_fsm_encoding));
-         const StateInfoConstRef state_info =
-             HLSMgr->get_HLS(op_info.stg_fun_id)->STG->CGetStg()->CGetStateInfo(state_id);
-         if(state_info->is_duplicated and not state_info->isOriginalState and not state_info->all_paths)
+         const auto gp = GetPointer<const gimple_phi>(TM->CGetTreeNode(op_info.op_id));
+         const auto state_id = compute_state_id(fsm_ss_it->value, one_hot_fsm_encoding);
+         const auto state_info = HLSMgr->get_HLS(op_info.stg_fun_id)->STG->CGetStg()->CGetStateInfo(state_id);
+         if(state_info->is_duplicated && !state_info->isOriginalState && !state_info->all_paths)
          {
             for(const auto& def_edge : gp->CGetDefEdgesList())
             {
@@ -385,7 +373,6 @@ void vcd_trace_head::update()
    {
       unbounded_find_end_time();
    }
-   return;
 }
 
 void vcd_trace_head::detect_new_start_end_times()

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2022 Politecnico di Milano
+ *              Copyright (c) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -40,19 +40,18 @@
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
  *
  */
-
 #include "controller_cs.hpp"
+
 #include "BambuParameter.hpp"
+#include "dbgPrintHelper.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "math.h"
+#include "math_function.hpp"
 #include "omp_functions.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
-
-/// utility include
-#include "dbgPrintHelper.hpp"
-#include "math_function.hpp"
+#include "utility.hpp"
 
 controller_cs::controller_cs(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
                              const DesignFlowManagerConstRef _design_flow_manager,
@@ -61,9 +60,7 @@ controller_cs::controller_cs(const ParameterConstRef _Param, const HLS_managerRe
 {
 }
 
-controller_cs::~controller_cs()
-{
-}
+controller_cs::~controller_cs() = default;
 
 void controller_cs::add_common_ports(structural_objectRef circuit, structural_managerRef SM)
 {

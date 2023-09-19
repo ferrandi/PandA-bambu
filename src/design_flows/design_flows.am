@@ -73,9 +73,7 @@ endif
    -I$(top_srcdir)/src/HLS \
    -I$(top_srcdir)/src/parser/discrepancy \
    -I$(top_srcdir)/src/parser/vcd \
-   -I$(top_srcdir)/src/technology/physical_library/ \
-   -I$(top_srcdir)/src/technology/physical_library/models/ \
-   -I$(top_srcdir)/src/technology/target_device \
+   -I$(top_srcdir)/src/technology \
    $(AM_CPPFLAGS)
   noinst_HEADERS += design_flows/backend/ToC/source_code_writers/c_writer.hpp design_flows/backend/ToC/source_code_writers/instruction_writer.hpp
   lib_source_code_writers_la_SOURCES = design_flows/backend/ToC/source_code_writers/c_writer.cpp design_flows/backend/ToC/source_code_writers/instruction_writer.cpp
@@ -98,7 +96,7 @@ if BUILD_BAMBU
       -I$(top_srcdir)/src/HLS/simulation \
       -I$(top_srcdir)/src/intermediate_representations \
       -I$(top_srcdir)/src/intermediate_representations/hls \
-      -I$(top_srcdir)/src/technology/physical_library
+      -I$(top_srcdir)/src/technology
 endif
 if BUILD_LIB_HOST_PROFILING
    noinst_HEADERS += \
@@ -123,6 +121,7 @@ endif
    -I$(top_srcdir)/src/design_flows/backend/ToC/progModels \
    -I$(top_srcdir)/src/design_flows/backend/ToC/source_code_writers \
    -I$(top_srcdir)/src/graph \
+   -I$(top_srcdir)/src/HLS \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)
   lib_ToC_la_SOURCES = \
@@ -131,13 +130,6 @@ endif
 noinst_HEADERS += \
    design_flows/backend/ToC/c_backend_information.hpp \
    design_flows/backend/ToC/c_backend_step_factory.hpp
-
-if BUILD_BAMBU
-   lib_ToC_la_SOURCES += \
-      design_flows/backend/ToC/hls_c_backend_information.cpp
-   noinst_HEADERS += \
-      design_flows/backend/ToC/hls_c_backend_information.hpp
-endif
 
 if BUILD_LIB_ACTOR_GRAPHS
    lib_ToC_la_CPPFLAGS += \
@@ -160,14 +152,12 @@ if BUILD_LIB_TO_HDL
    -I$(top_srcdir)/src \
    -I$(top_srcdir)/src/behavior \
    -I$(top_srcdir)/src/circuit \
+   -I$(top_srcdir)/src/constants/ \
    -I$(top_srcdir)/src/design_flows \
    -I$(top_srcdir)/src/design_flows/backend/ToHDL \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/HLS/scheduling\
    -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/physical_library/models \
-   -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/HLS/stg \
@@ -186,9 +176,6 @@ if BUILD_LIB_TO_HDL
                         -I$(top_srcdir)/src/graph \
                         -I$(top_srcdir)/src/HLS \
                         -I$(top_srcdir)/src/technology \
-                        -I$(top_srcdir)/src/technology/physical_library \
-                        -I$(top_srcdir)/src/technology/target_device \
-                        -I$(top_srcdir)/src/technology/target_device/FPGA \
                         -I$(top_srcdir)/src/tree \
                         -I$(top_srcdir)/src/utility \
                         $(AM_CPPFLAGS)
@@ -248,8 +235,7 @@ if BUILD_LIB_CIRCUIT
   lib_ToDataFile_la_CPPFLAGS += \
    -I$(top_srcdir)/src/circuit \
    -I$(top_srcdir)/src/design_flows/technology \
-   -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library
+   -I$(top_srcdir)/src/technology
 endif
 
 design_flows/backend/ToDataFile/translator.cpp : design_flows/backend/ToDataFile/latex_format_stat.data
@@ -314,10 +300,6 @@ endif
    -I$(top_srcdir)/src/parser/polixml \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/physical_library/models \
-   -I$(top_srcdir)/src/technology/physical_library/models/area \
-   -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    -I$(top_builddir)/src/design_flows/technology \

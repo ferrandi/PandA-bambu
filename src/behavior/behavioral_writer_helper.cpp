@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -443,7 +443,7 @@ void BBEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e) const
    if(selector & PP_SELECTOR)
    {
       out << ",label=\"";
-      out << boost::lexical_cast<std::string>(bb_edge_info->get_epp_value());
+      out << std::to_string(bb_edge_info->get_epp_value());
       out << "\"";
    }
    else if(selector & FCFG_SELECTOR)

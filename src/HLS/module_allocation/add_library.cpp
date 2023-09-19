@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,8 +48,8 @@
 #include "dbgPrintHelper.hpp" // for INDENT_DBG_MEX, DEBUG_LEVEL_VERY_...
 #include "exceptions.hpp"     // for THROW_ASSERT, THROW_UNREACHABLE
 #include "hls.hpp"            // for HLS_managerRef
+#include "hls_device.hpp"     // for generic_deviceRef
 #include "hls_manager.hpp"    // for HLS_managerRef
-#include "hls_target.hpp"     // for target_deviceRef
 #include "library_manager.hpp"
 #include "string_manipulation.hpp" // for STR GET_CLASS
 #include "technology_manager.hpp"  // for WORK_LIBRARY
@@ -62,9 +62,9 @@
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
 
-#include "area_model.hpp"
+#include "area_info.hpp"
 #include "omp_functions.hpp"
-#include "time_model.hpp"
+#include "time_info.hpp"
 
 /// circuit include
 #include "structural_manager.hpp"
@@ -80,12 +80,12 @@ AddLibrarySpecialization::AddLibrarySpecialization(const bool _interfaced) : int
 {
 }
 
-const std::string AddLibrarySpecialization::GetKindText() const
+std::string AddLibrarySpecialization::GetKindText() const
 {
    return interfaced ? "Interfaced" : "";
 }
 
-const std::string AddLibrarySpecialization::GetSignature() const
+std::string AddLibrarySpecialization::GetSignature() const
 {
    return interfaced ? "Interfaced" : "";
 }
@@ -165,10 +165,8 @@ add_library::ComputeHLSRelationships(const DesignFlowStep::RelationshipType rela
                {
                   const auto cg_man = HLSMgr->CGetCallGraphManager();
                   const HLSFlowStep_Type top_entity_type =
-                      HLSMgr->hasToBeInterfaced(funId) and
-                              (cg_man->ExistsAddressedFunction() or
-                               parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-                                   HLSFlowStep_Type::WB4_INTERFACE_GENERATION) ?
+                      HLSMgr->hasToBeInterfaced(funId) && (cg_man->ExistsAddressedFunction() ||
+                                                           parameters->getOption<bool>(OPT_memory_mapped_top)) ?
                           HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION :
                           HLSFlowStep_Type::TOP_ENTITY_CREATION;
                   ret.insert(std::make_tuple(top_entity_type, HLSFlowStepSpecializationConstRef(),
@@ -199,7 +197,7 @@ DesignFlowStep_Status add_library::InternalExec()
    const auto BH = FB->CGetBehavioralHelper();
    THROW_ASSERT(HLS->top, "Top has not been set");
    const auto& module_name = HLS->top->get_circ()->get_typeRef()->id_type;
-   const auto TechM = HLS->HLS_T->get_technology_manager();
+   const auto TechM = HLS->HLS_D->get_technology_manager();
    const auto wrapped_fu_name = WRAPPED_PROXY_PREFIX + module_name;
    const auto wrapper_tn = TechM->get_fu(wrapped_fu_name, PROXY_LIBRARY);
    if(wrapper_tn)
@@ -219,7 +217,7 @@ DesignFlowStep_Status add_library::InternalExec()
    const auto clock_period_value = HLS->HLS_C->get_clock_period();
    const auto cprf = HLS->HLS_C->get_clock_period_resource_fraction();
    const auto clk = cprf * clock_period_value;
-   const auto device = HLS->HLS_T->get_target_device();
+   const auto device = HLS->HLS_D;
    const auto fu = GetPointerS<functional_unit>(TechM->get_fu(module_name, WORK_LIBRARY));
    fu->set_clock_period(clock_period_value);
    fu->set_clock_period_resource_fraction(cprf);
@@ -239,68 +237,27 @@ DesignFlowStep_Status add_library::InternalExec()
       const auto function_name = BH->get_function_name();
       TechM->add_operation(WORK_LIBRARY, module_name, function_name);
       const auto op = GetPointerS<operation>(fu->get_operation(function_name));
-      op->time_m = time_model::create_model(device->get_type(), parameters);
       op->primary_inputs_registered = HLS->registered_inputs;
-      const auto simple_pipeline = FB->is_simple_pipeline();
-      /// First computing if operation is bounded, then computing call_delay; call_delay depends on the value of bounded
-      if(HLS->STG && HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->is_a_dag)
-      {
-         auto is_bounded = !HLSMgr->Rmem->has_proxied_internal_variables(funId) &&
-                           !parameters->getOption<bool>(OPT_disable_bounded_function);
-         const auto cir = HLS->top->get_circ();
-         const auto mod = GetPointerS<module>(cir);
-         for(auto i = 0U; i < mod->get_in_port_size() && is_bounded; i++)
-         {
-            const auto port_obj = mod->get_in_port(i);
-            if(GetPointerS<port_o>(port_obj)->get_is_memory())
-            {
-               is_bounded = false; /// functions accessing memory are classified as unbounded
-            }
-         }
-         if(is_bounded)
-         {
-            const auto min_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles;
-            const auto max_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->max_cycles;
-            /// pipelined functions are always bounded
-            if(max_cycles == min_cycles && min_cycles > 0 && (min_cycles < 8 || simple_pipeline))
-            {
-               op->bounded = true;
-            }
-            else
-            {
-               op->bounded = false;
-            }
-         }
-         else
-         {
-            op->bounded = false;
-         }
-      }
-      else
-      {
-         THROW_ASSERT(!simple_pipeline, "A pipelined function should always generate a DAG");
-         op->bounded = false;
-      }
+      op->bounded = HLS->STG && HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->bounded;
       const auto call_delay =
           HLS->allocation_information ? HLS->allocation_information->estimate_call_delay() : clock_period_value;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Estimated call delay " + STR(call_delay));
+      op->time_m = time_info::factory(parameters);
       if(op->bounded)
       {
-         double exec_time;
          const auto min_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles;
          const auto max_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->max_cycles;
-         if(min_cycles > 1)
-         {
-            exec_time = clk * (min_cycles - 1) + call_delay;
-         }
-         else
-         {
-            exec_time = call_delay;
-         }
+         const auto exec_time = [&]() {
+            if(min_cycles > 1)
+            {
+               return clk * (min_cycles - 1) + call_delay;
+            }
+            return call_delay;
+         }();
          op->time_m->set_execution_time(exec_time, min_cycles);
          if(max_cycles > 1)
          {
-            if(simple_pipeline)
+            if(FB->is_simple_pipeline())
             {
                op->time_m->set_stage_period(call_delay);
                const ControlStep jj(1);
@@ -333,7 +290,7 @@ DesignFlowStep_Status add_library::InternalExec()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Added " + module_name + " to WORK_LIBRARY");
    }
-   fu->area_m = area_model::create_model(device->get_type(), parameters);
+   fu->area_m = area_info::factory(parameters);
    fu->area_m->set_area_value(2000); /// fake number to avoid sharing of functions
 
    return DesignFlowStep_Status::SUCCESS;

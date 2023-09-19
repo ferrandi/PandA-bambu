@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -34,15 +34,15 @@
 
 #pragma once
 
+#include <list>
 #include <utility>
 #include <vector>
-#include <list>
 
 #include <kitty/constructors.hpp>
 #include <kitty/dynamic_truth_table.hpp>
 
-#include "../traits.hpp"
 #include "../networks/aig.hpp"
+#include "../traits.hpp"
 #include "control.hpp"
 
 namespace mockturtle
@@ -76,17 +76,17 @@ inline std::pair<signal<Ntk>, signal<Ntk>> full_adder( Ntk& ntk, const signal<Nt
     kitty::create_from_hex_string( tt_maj, "e8" );
     kitty::create_from_hex_string( tt_xor, "96" );
 
-    const auto sum = ntk.create_node( {a, b, c}, tt_xor );
-    const auto carry = ntk.create_node( {a, b, c}, tt_maj );
+    const auto sum = ntk.create_node( { a, b, c }, tt_xor );
+    const auto carry = ntk.create_node( { a, b, c }, tt_maj );
 
-    return {sum, carry};
+    return { sum, carry };
   }
   /* use MAJ and XOR3 if available by network, unless network is AIG */
   else if constexpr ( !std::is_same_v<typename Ntk::base_type, aig_network> && has_create_maj_v<Ntk> && has_create_xor3_v<Ntk> )
   {
-    const auto carry = ntk.create_maj( a, b, c);
+    const auto carry = ntk.create_maj( a, b, c );
     const auto sum = ntk.create_xor3( a, b, c );
-    return {sum, carry};
+    return { sum, carry };
   }
   else
   {
@@ -102,7 +102,7 @@ inline std::pair<signal<Ntk>, signal<Ntk>> full_adder( Ntk& ntk, const signal<Nt
     const auto sum = ntk.create_nor( w4, w5 );
     const auto carry = ntk.create_or( w1, w4 );
 
-    return {sum, carry};
+    return { sum, carry };
   }
 }
 
@@ -130,10 +130,10 @@ inline std::pair<signal<Ntk>, signal<Ntk>> half_adder( Ntk& ntk, const signal<Nt
     kitty::create_from_hex_string( tt_and, "8" );
     kitty::create_from_hex_string( tt_xor, "6" );
 
-    const auto sum = ntk.create_node( {a, b}, tt_xor );
-    const auto carry = ntk.create_node( {a, b}, tt_and );
+    const auto sum = ntk.create_node( { a, b }, tt_xor );
+    const auto carry = ntk.create_node( { a, b }, tt_and );
 
-    return {sum, carry};
+    return { sum, carry };
   }
   else
   {
@@ -144,7 +144,7 @@ inline std::pair<signal<Ntk>, signal<Ntk>> half_adder( Ntk& ntk, const signal<Nt
     const auto w2 = ntk.create_nor( a, b );
     const auto sum = ntk.create_nor( carry, w2 );
 
-    return {sum, carry};
+    return { sum, carry };
   }
 }
 
@@ -152,7 +152,7 @@ inline std::pair<signal<Ntk>, signal<Ntk>> half_adder( Ntk& ntk, const signal<Nt
  *
  * Creates a carry ripple structure composed of full adders.  The vectors `a`
  * and `b` must have the same size.  The resulting sum bits are eventually
- * stored in `a` and the carry bit will be overriden to store the output carry
+ * stored in `a` and the carry bit will be overridden to store the output carry
  * bit.
  *
  * \param a First input operand, will also have the output after the call
@@ -177,8 +177,8 @@ inline void carry_ripple_adder_inplace( Ntk& ntk, std::vector<signal<Ntk>>& a, s
  *
  * Creates a carry ripple structure composed of full adders.  The vectors `a`
  * and `b` must have the same size.  The resulting sum bits are eventually
- * stored in `a` and the carry bit will be overriden to store the output carry
- * bit.  The inputs in `b` are inverted to realize substraction with full
+ * stored in `a` and the carry bit will be overridden to store the output carry
+ * bit.  The inputs in `b` are inverted to realize subtraction with full
  * adders.  The carry bit must be passed in inverted state to the subtractor.
  *
  * \param a First input operand, will also have the output after the call
@@ -255,7 +255,7 @@ inline std::pair<signal<Ntk>, signal<Ntk>> carry_lookahead_adder_inplace_rec( Nt
     auto rGen = ntk.create_or( ntk.create_or( gen1, tmp ), ntk.create_and( rPro, car ) );
     auto rCar = ntk.create_or( gen0, ntk.create_and( pro0, car ) );
 
-    return {rGen, rPro, rCar};
+    return { rGen, rPro, rCar };
   };
 
   auto m = std::distance( genBegin, genEnd );
@@ -264,7 +264,7 @@ inline std::pair<signal<Ntk>, signal<Ntk>> carry_lookahead_adder_inplace_rec( Nt
   {
     const auto [gen, pro, car] = term_case( *genBegin, *( genBegin + 1 ), *proBegin, *( proBegin + 1 ), *carBegin );
     *( carBegin + 1 ) = car;
-    return {gen, pro};
+    return { gen, pro };
   }
   else
   {
@@ -275,7 +275,7 @@ inline std::pair<signal<Ntk>, signal<Ntk>> carry_lookahead_adder_inplace_rec( Nt
 
     const auto [gen, pro, car] = term_case( gen0, gen1, pro0, pro1, *carBegin );
     *( carBegin + m ) = car;
-    return {gen, pro};
+    return { gen, pro };
   }
 }
 
@@ -297,13 +297,13 @@ inline void carry_lookahead_adder_inplace_pow2( Ntk& ntk, std::vector<signal<Ntk
   std::transform( pro.begin(), pro.end(), car.begin(), a.begin(), [&]( auto const& f, auto const& g ) { return ntk.create_xor( f, g ); } );
 }
 
-}
+} // namespace detail
 
 /*! \brief Creates carry lookahead adder structure.
  *
  * Creates a carry lookahead structure composed of full adders.  The vectors `a`
  * and `b` must have the same size.  The resulting sum bits are eventually
- * stored in `a` and the carry bit will be overriden to store the output carry
+ * stored in `a` and the carry bit will be overridden to store the output carry
  * bit.
  *
  * \param a First input operand, will also have the output after the call

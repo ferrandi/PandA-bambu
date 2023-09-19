@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -44,7 +44,7 @@
  */
 #include "schedule.hpp"
 
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
 #include <ostream>
 
 #include "behavioral_helper.hpp"
@@ -61,8 +61,8 @@
 /// hls includes
 #include "hls.hpp"
 #include "hls_constraints.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 
 /// hls/module_allocation
 #include "allocation_information.hpp"
@@ -181,7 +181,7 @@ class ScheduleWriter : public GraphWriter
       {
          inverse_relation[sch->get_cstep(*v).second].insert(*v);
       }
-      for(ControlStep level = ControlStep(0u); level < sch->get_csteps(); ++level)
+      for(auto level = ControlStep(0u); level < sch->get_csteps(); ++level)
       {
          os << "//Control Step: " << level << std::endl;
          os << "CS" << level << " [style=plaintext]\n{rank=same; CS" << level << " ";
@@ -191,7 +191,7 @@ class ScheduleWriter : public GraphWriter
          }
          os << ";}\n";
       }
-      for(ControlStep level = ControlStep(1u); level < sch->get_csteps(); ++level)
+      for(auto level = ControlStep(1u); level < sch->get_csteps(); ++level)
       {
          os << "CS" << level - 1u << "-> CS" << level << ";\n";
       }
@@ -203,9 +203,9 @@ void Schedule::WriteDot(const std::string& file_name) const
    const BehavioralHelperConstRef helper = op_graph->CGetOpGraphInfo()->BH;
    std::string output_directory =
        parameters->getOption<std::string>(OPT_dot_directory) + "/" + helper->get_function_name() + "/";
-   if(!boost::filesystem::exists(output_directory))
+   if(!std::filesystem::exists(output_directory))
    {
-      boost::filesystem::create_directories(output_directory);
+      std::filesystem::create_directories(output_directory);
    }
    const VertexWriterConstRef op_label_writer(new OpWriter(op_graph.get(), 0));
    const EdgeWriterConstRef op_edge_property_writer(new OpEdgeWriter(op_graph.get()));

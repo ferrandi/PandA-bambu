@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -84,9 +84,7 @@ class xml_node
    {
    }
    /// destructor
-   virtual ~xml_node()
-   {
-   }
+   virtual ~xml_node() = default;
 
    /// type for list of xml nodes
    using node_list = std::list<xml_nodeRef>;
@@ -255,7 +253,7 @@ class xml_child : public xml_node
    xml_element* add_child_element(const std::string& name);
 
    /** Add a child element to this node starting from a given node
-    * @param node is the given datastructure to be added
+    * @param node is the given data-structure to be added
     * @returns The newly-created element
     */
    xml_element* add_child_element(const xml_nodeRef& node);

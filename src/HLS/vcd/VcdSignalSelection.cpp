@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2022 Politecnico di Milano
+ *              Copyright (C) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -33,63 +33,31 @@
 /**
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
-
-// class header
 #include "VcdSignalSelection.hpp"
-
-// includes from ./
+#include "Discrepancy.hpp"
 #include "Parameter.hpp"
-
-// includes from behavior/
+#include "UnfoldedFunctionInfo.hpp"
+#include "allocation_information.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
-
-// includes from circuit/
-#include "structural_objects.hpp"
-
-// includes from design_flows/
+#include "cpu_time.hpp"
 #include "design_flow_manager.hpp"
-
-// includes from design_flows/backend/ToHDL
-#include "language_writer.hpp"
-
-// includes from HLS/
+#include "fu_binding.hpp"
+#include "function_behavior.hpp"
+#include "generic_obj.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
-
-// includes from HLS/binding/module/
-#include "fu_binding.hpp"
-
-// include from HLS/binding/register/
-#include "generic_obj.hpp"
-#include "reg_binding.hpp"
-
-// include from HLS/binding/storage_value_information/
-#include "storage_value_information.hpp"
-
-// include from HLS/memory/
+#include "language_writer.hpp"
 #include "memory.hpp"
-
-// includes from HLS/module_allocation/
-#include "allocation_information.hpp"
-
-// includes from HLS/vcd
-#include "Discrepancy.hpp"
-#include "UnfoldedFunctionInfo.hpp"
-
-// includes from technology/physical_library/
+#include "reg_binding.hpp"
+#include "storage_value_information.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
+#include "structural_objects.hpp"
 #include "technology_node.hpp"
-
-// tree/ include
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
-
-// include from utility
-#include "cpu_time.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
 
 VcdSignalSelection::VcdSignalSelection(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                                        const DesignFlowManagerConstRef _design_flow_manager)
@@ -1020,8 +988,12 @@ DesignFlowStep_Status VcdSignalSelection::Exec()
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Selected vcd signals");
       for(const auto& sig_scope : Discr->selected_vcd_signals)
+      {
          for(const auto& sig_name : sig_scope.second)
+         {
             PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "SIGNAL: " + sig_scope.first + sig_name);
+         }
+      }
    }
 #endif
 

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -39,38 +39,20 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
-#include <boost/filesystem/operations.hpp>
-
-/// design_flows include
+#include "EucalyptusParameter.hpp"
+#include "RTL_characterization.hpp"
+#include "cpu_time.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "design_flow_step.hpp"
-
-/// design_flows/technology include
-#include "technology_flow_step_factory.hpp"
-
-#include "EucalyptusParameter.hpp"
-
-#include "parse_technology.hpp"
-#include "target_device.hpp"
-#include "target_manager.hpp"
-#include "technology_manager.hpp"
-
-#include "RTL_characterization.hpp"
-#if HAVE_EXPERIMENTAL
-#include "core_generation.hpp"
-#endif
-
-#include "cpu_time.hpp"
-#include "utility.hpp"
-
-/// technology include
+#include "generic_device.hpp"
 #include "load_builtin_technology.hpp"
 #include "load_default_technology.hpp"
+#include "parse_technology.hpp"
+#include "technology_flow_step_factory.hpp"
+#include "technology_manager.hpp"
+#include "utility.hpp"
+#include <filesystem>
 
 int main(int argc, char* argv[])
 {
@@ -104,7 +86,7 @@ int main(int argc, char* argv[])
          {
             if(not(parameters->getOption<bool>(OPT_no_clean)))
             {
-               boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
+               std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
             }
             return EXIT_SUCCESS;
          }
@@ -135,13 +117,9 @@ int main(int argc, char* argv[])
       // Technology library manager
       technology_managerRef TM = technology_managerRef(new technology_manager(parameters));
 
-      /// creating the datastructure representing the target device
-      const auto target_device =
-          static_cast<TargetDevice_Type>(parameters->getOption<unsigned int>(OPT_target_device_type));
-      target_deviceRef device = target_device::create_device(target_device, parameters, TM);
+      /// creating the data-structure representing the target device
+      generic_deviceRef device = generic_device::factory(parameters, TM);
       device->set_parameter("clock_period", parameters->getOption<double>(OPT_clock_period));
-      target_managerRef target = target_managerRef(new target_manager(parameters, TM, device));
-
       const DesignFlowManagerRef design_flow_manager(new DesignFlowManager(parameters));
       const DesignFlowGraphConstRef design_flow_graph = design_flow_manager->CGetDesignFlowGraph();
 
@@ -161,40 +139,17 @@ int main(int argc, char* argv[])
       if(parameters->isOption(OPT_component_name))
       {
          const DesignFlowStepRef design_flow_step(new RTLCharacterization(
-             target, parameters->getOption<std::string>(OPT_component_name), design_flow_manager, parameters));
+             device, parameters->getOption<std::string>(OPT_component_name), design_flow_manager, parameters));
          design_flow_manager->AddStep(design_flow_step);
       }
       design_flow_manager->Exec();
 
-#if HAVE_EXPERIMENTAL
-      if(parameters->isOption(OPT_import_ip_core))
-      {
-         START_TIME(cpu_time);
-         std::string core_hdl = parameters->getOption<std::string>(OPT_import_ip_core);
-         core_generationRef core_gen = core_generationRef(new core_generation(parameters));
-         core_gen->convert_to_XML(core_hdl, device->get_type());
-         STOP_TIME(cpu_time);
-         PRINT_OUT_MEX(DEBUG_LEVEL_MINIMUM, output_level,
-                       " ==== Core generation performed in " + print_cpu_time(cpu_time) + " seconds; ====\n");
-      }
-
-      if(parameters->isOption(OPT_export_ip_core))
-      {
-         START_TIME(cpu_time);
-         std::string core_name = parameters->getOption<std::string>(OPT_export_ip_core);
-         core_generationRef core_gen = core_generationRef(new core_generation(parameters));
-         core_gen->export_core(TM, core_name);
-         STOP_TIME(cpu_time);
-         PRINT_OUT_MEX(DEBUG_LEVEL_MINIMUM, output_level,
-                       " ==== Core exported in " + print_cpu_time(cpu_time) + " seconds; ====\n");
-      }
-#endif
       STOP_TIME(total_time);
       PRINT_MSG(" ==== Total Execution Time: " + print_cpu_time(total_time) + " seconds; ====\n");
 
       if(not(parameters->getOption<bool>(OPT_no_clean)))
       {
-         boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
+         std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
       }
       return EXIT_SUCCESS; // Eucalyptus tool has completed execution without errors
    }
@@ -235,7 +190,7 @@ int main(int argc, char* argv[])
    }
    if(parameters and not(parameters->getOption<bool>(OPT_no_clean)))
    {
-      boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
+      std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
    }
    return exit_code;
 }

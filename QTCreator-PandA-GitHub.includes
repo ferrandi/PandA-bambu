@@ -6,9 +6,8 @@ build/ext
 build/ext/flopoco
 build/ext/libfplll-4.0.3
 build/ext/sollya
+build/src/
 build/src/HLS
-build/src/technology/target_device/FPGA
-build/src/technology/target_device/IC
 build/src/wrapper/synthesis
 build/src/wrapper/synthesis/altera
 build/src/wrapper/synthesis/lattice
@@ -31,19 +30,9 @@ ext/Coin-Cbc/Clp/src
 ext/Coin-Cbc/CoinUtils/src
 ext/Coin-Cbc/Osi/src/Osi
 ext/Coin-Cbc/ThirdParty/Glpk
-ext/cudd/cudd
-ext/cudd/dddmp
-ext/cudd/epd
-ext/cudd/mnemosyne
-ext/cudd/mtr
-ext/cudd/nanotrav
-ext/cudd/sis
-ext/cudd/st
-ext/cudd/util
 ext/flopoco/src
 ext/flopoco/src/FPExpAttic
 ext/flopoco/src/FPExpressions
-ext/liberty_parser
 ext/libfplll-4.0.3/src
 ext/nodelib/etc
 ext/nodelib/include
@@ -53,7 +42,6 @@ ext/vflib/include
 ext/vflib/src
 src
 src/algorithms
-src/algorithms/bipartite_matching
 src/algorithms/boolean_functions
 src/algorithms/clique_covering
 src/algorithms/clustering
@@ -198,10 +186,7 @@ src/HLS/hls_flow/design_space_exploration/SA
 src/HLS/hls_flow/design_space_exploration/TS
 src/HLS/hls_flow/synthesis
 src/HLS/interface
-src/HLS/interface/AXI
-src/HLS/interface/FSL
 src/HLS/interface/minimal
-src/HLS/interface/NPI
 src/HLS/interface/WB4
 src/HLS/liveness
 src/HLS/liveness/algorithms
@@ -225,7 +210,6 @@ src/intermediate_representations/actor_graphs/sdf_graphs
 src/intermediate_representations/actor_graphs/task_graphs
 src/intermediate_representations/hls
 src/intermediate_representations/mapping_annotations
-src/ip_xact
 src/logic_node
 src/logic_synthesis
 src/logic_synthesis/2lev
@@ -283,7 +267,6 @@ src/parser/data_xml
 src/parser/discrepancy
 src/parser/edif
 src/parser/estimation
-src/parser/ip_xact
 src/parser/machine
 src/parser/polixml
 src/parser/pragma
@@ -311,12 +294,6 @@ src/technology/physical_library/models/area
 src/technology/physical_library/models/layout
 src/technology/physical_library/models/time
 src/technology/physical_library/models/wire
-src/technology/target_device
-src/technology/target_device/FPGA
-src/technology/target_device/IC
-src/technology/target_technology
-src/technology/target_technology/CMOS
-src/technology/target_technology/FPGA
 src/technology/utility
 src/technology/virtual_library
 src/technology/virtual_library/compound_gates
@@ -346,12 +323,6 @@ src/wrapper/synthesis/nangate
 src/wrapper/synthesis/nangate/design_optimizer
 src/wrapper/synthesis/nangate/library_creator
 src/wrapper/synthesis/nanoxplore
-src/wrapper/synthesis/synopsys
-src/wrapper/synthesis/synopsys/core_tools
-src/wrapper/synthesis/synopsys/design_compiler
-src/wrapper/synthesis/synopsys/formality
-src/wrapper/synthesis/synopsys/library_compiler
-src/wrapper/synthesis/synopsys/primetime
 src/wrapper/synthesis/xilinx
 src/wrapper/synthesis/xilinx/edk
 src/wrapper/synthesis/xilinx/edk/sample
@@ -404,7 +375,7 @@ ext/mockturtle/lib/json/nlohmann
 ext/mockturtle/lib/abcsat
 ext/mockturtle/lib/abcsat/abc
 ext/abseil-cpp
-/opt/clang+llvm-13.0.0-x86_64-linux-gnu-ubuntu-20.04/include/
+/opt/clang+llvm-16.0.0-x86_64-linux-gnu-ubuntu-18.04/include/
 
 ext/mockturtle/lib/abcresub/abcresub
 ext/mockturtle/lib/parallel_hashmap/parallel_hashmap
@@ -414,3 +385,7 @@ ext/mockturtle/lib/bill/bill/sat/solver
 ext/mockturtle/lib/bill/bill/sat/solver/abc
 ext/mockturtle/lib/bill/bill/utils
 ext/mockturtle/lib/bill/bill/dd
+ext/or-tools/
+ext/or-tools/ortools/graph
+ext/or-tools/ortools/base
+ext/or-tools/ortools/util

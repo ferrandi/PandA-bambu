@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -191,7 +191,7 @@ void ASLAP::add_constraints_to_ASAP()
 {
    InEdgeIterator ei, ei_end;
    unsigned int m_k;
-   ControlStep cur_et = ControlStep(0u);
+   auto cur_et = ControlStep(0u);
 
    /** ASAP_nip[i] contains the number of non immediate predecessor of node i with the same type of operation.*/
    vertex2int ASAP_nip;
@@ -255,7 +255,7 @@ void ASLAP::add_constraints_to_ASAP()
       for(vertex2int::const_iterator i = ASAP_p.begin(); i != i_end; ++i)
       {
          PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                          GET_NAME(beh_graph, i->first) + " - " + boost::lexical_cast<std::string>(i->second));
+                          GET_NAME(beh_graph, i->first) + " - " + std::to_string(i->second));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
 
@@ -264,7 +264,7 @@ void ASLAP::add_constraints_to_ASAP()
       for(vertex2int::const_iterator ai = ASAP_nip.begin(); ai != ai_end; ++ai)
       {
          PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                          GET_NAME(beh_graph, ai->first) + " - " + boost::lexical_cast<std::string>(ai->second));
+                          GET_NAME(beh_graph, ai->first) + " - " + std::to_string(ai->second));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
    }
@@ -309,7 +309,7 @@ void ASLAP::compute_ASAP(const ScheduleConstRef partial_schedule)
          vi = boost::source(*ei, *beh_graph);
          cur_start = finish_time.at(vi) < cur_start ? cur_start : finish_time.at(vi);
          //       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, GET_NAME(beh_graph, vi) + " -> " +GET_NAME(beh_graph,
-         //       level) + " cur_start " + boost::lexical_cast<std::string>(cur_start));
+         //       level) + " cur_start " + std::to_string(cur_start));
       }
 
       finish_time.at(level) = cur_start + from_strongtype_cast<double>(op_cycles);
@@ -319,8 +319,8 @@ void ASLAP::compute_ASAP(const ScheduleConstRef partial_schedule)
                       curr_asap;
       ASAP->set_execution(level, curr_asap);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
-                    GET_NAME(beh_graph, level) + " cur_start " + boost::lexical_cast<std::string>(cur_start) +
-                        " finish_time[level] " + boost::lexical_cast<std::string>(finish_time[level]));
+                    GET_NAME(beh_graph, level) + " cur_start " + std::to_string(cur_start) + " finish_time[level] " +
+                        std::to_string(finish_time[level]));
       min_tot_csteps = min_tot_csteps < curr_asap ? curr_asap : min_tot_csteps;
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                     GET_NAME(beh_graph, level) + " - " + STR(ASAP->get_cstep(level).second));
@@ -366,7 +366,7 @@ void ASLAP::add_constraints_to_ALAP()
          }
       }
    }
-   ControlStep cur_et = ControlStep(0u);
+   auto cur_et = ControlStep(0u);
    VertexIterator vi, vi_end;
    for(auto v : levels)
    {
@@ -392,7 +392,7 @@ void ASLAP::add_constraints_to_ALAP()
       for(vertex2int::const_iterator i = ALAP_p.begin(); i != i_end; ++i)
       {
          PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                          GET_NAME(beh_graph, i->first) + " - " + boost::lexical_cast<std::string>(i->second));
+                          GET_NAME(beh_graph, i->first) + " - " + std::to_string(i->second));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
 
@@ -401,7 +401,7 @@ void ASLAP::add_constraints_to_ALAP()
       for(vertex2int::const_iterator ai = ALAP_nip.begin(); ai != ai_end; ++ai)
       {
          PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                          GET_NAME(beh_graph, ai->first) + " - " + boost::lexical_cast<std::string>(ai->second));
+                          GET_NAME(beh_graph, ai->first) + " - " + std::to_string(ai->second));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
 
@@ -547,7 +547,7 @@ void ASLAP::compute_ALAP_worst_case()
    vertex vi;
    OutEdgeIterator ei, ei_end;
    // Store the max reverse level
-   ControlStep max_rev_level = ControlStep(0u);
+   auto max_rev_level = ControlStep(0u);
    // Store the current reverse level
    std::map<ControlStep, ControlStep> rev_levels_to_cycles;
    std::map<ControlStep, ControlStep> max_et;

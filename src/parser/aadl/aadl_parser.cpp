@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2022 Politecnico di Milano
+ *              Copyright (C) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -37,34 +37,21 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "aadl_parser.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// behavior include
-#include "application_manager.hpp"
-
-/// constants include
 #include "aadl_constants.hpp"
-#include "constants.hpp"
-
-/// HLS include
-#include "hls_manager.hpp"
-
-/// intermediate_representation/aadl
 #include "aadl_information.hpp"
-
-/// parser/aadl include
 #include "aadl_parser_node.hpp"
+#include "application_manager.hpp"
+#include "constants.hpp"
+#include "dbgPrintHelper.hpp"
+#include "fileIO.hpp"
+#include "hls_manager.hpp"
+#include "string_manipulation.hpp"
+
 #define YYSTYPE AadlParserNode
 #include "aadl_lexer.hpp"
-
-/// utility include
-#include "fileIO.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
 
 static std::string GetFile(const std::string& directory, const std::string& file)
 {
@@ -72,17 +59,17 @@ static std::string GetFile(const std::string& directory, const std::string& file
    ret = ret.at(0) == '"' ? ret.substr(1, ret.size() - 2) : ret;
    if(ret.at(0) == '/')
    {
-      if(not ExistFile(ret))
+      if(!std::filesystem::exists(ret))
       {
          THROW_ERROR(ret + " does not exist");
       }
       return ret;
    }
-   if(ExistFile(ret))
+   if(std::filesystem::exists(ret))
    {
       return ret;
    }
-   if(ExistFile(directory + "/" + ret))
+   if(std::filesystem::exists(directory + "/" + ret))
    {
       return directory + "/" + ret;
    }
@@ -107,7 +94,7 @@ AadlParser::~AadlParser() = default;
 DesignFlowStep_Status AadlParser::Exec()
 {
    fileIO_istreamRef sname = fileIO_istream_open(file_name);
-   const auto directory = GetDirectory(file_name);
+   const auto directory = std::filesystem::path(file_name).parent_path().string();
    if(sname->fail())
    {
       THROW_ERROR(std::string("FILE does not exist: ") + file_name);

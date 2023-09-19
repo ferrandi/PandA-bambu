@@ -33,29 +33,23 @@ jobs:
   build:
     uses: ./.github/workflows/build-appimage.yml
     with:
-      version: ${{github.event.inputs.package-name}}
-      compilers: ${{ github.event.inputs.compilers }}
+      version: ${{inputs.package-name}}
+      compilers: ${{ inputs.compilers }}
       build-compiler: gcc-8
-      configure: ${{ github.event.inputs.configure }} CC=gcc-8 CXX=g++-8
-    secrets:
-      CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
-      CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
-      CI_STORAGE_TOKEN: ${{secrets.CI_STORAGE_TOKEN}}
+      configure: ${{ inputs.configure }} CC=gcc-8 CXX=g++-8
+    secrets: inherit
 
   test-suite:
     needs: [build]
     uses: ./.github/workflows/reusable-grs-vhdl.yml
     with:
       package-name: ${{needs.build.outputs.package-name}}
-      test-compilers: ${{github.event.inputs.test-compilers}}
-      additional-args: ${{github.event.inputs.additional-args}}
-    secrets:
-      CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
-      CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
-      CI_STORAGE_TOKEN: ${{secrets.CI_STORAGE_TOKEN}}
+      test-compilers: ${{inputs.test-compilers}}
+      additional-args: ${{inputs.additional-args}}
+    secrets: inherit
 
   success:
-    if: ${{always()}}
+    if: ${{ !cancelled() }}
     needs: [test-suite]
     runs-on: [self-hosted]
     steps:

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -71,13 +71,13 @@ class PragmaParser
    /// counter of generic pragma
    static unsigned int number;
 
-   /// pointer to the pragma manager datastructure
+   /// pointer to the pragma manager data-structure
    const pragma_managerRef PM;
 
    /// current debugging level
    const int debug_level;
 
-   /// reference to the parameter datastructure
+   /// reference to the parameter data-structure
    const ParameterConstRef Param;
 
    /**

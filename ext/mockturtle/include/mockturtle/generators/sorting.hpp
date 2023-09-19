@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -33,8 +33,8 @@
 
 #pragma once
 
-#include <numeric>
 #include <cstdint>
+#include <numeric>
 
 namespace mockturtle
 {
@@ -140,7 +140,8 @@ void batcher_sort( uint32_t begin, uint32_t end, Fn&& compare_fn )
 template<class Fn>
 void batcher_sorting_network( uint32_t n, Fn&& compare_fn )
 {
-  if ( n < 2 ) return;
+  if ( n < 2 )
+    return;
   detail::batcher_sort( 0u, n, compare_fn );
 }
 

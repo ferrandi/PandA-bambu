@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -41,23 +41,15 @@
  * Last modified by $Author$
  *
  */
-
-/// Includes the class definition
 #include "ToolManager.hpp"
 
-/// includes all needed Boost.Filesystem declarations
-#include <boost/filesystem/convenience.hpp>
-#include <boost/filesystem/fstream.hpp>
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
-
-/// Parameter includes
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
-
-/// Utility include
+#include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "string_manipulation.hpp"
+
+#include <filesystem>
 
 #define OUTPUT_FILE GetPath("__stdouterr")
 
@@ -70,9 +62,9 @@ ToolManager::ToolManager(const ParameterConstRef& _Param)
 // destructor
 ToolManager::~ToolManager()
 {
-   if(boost::filesystem::exists(OUTPUT_FILE))
+   if(std::filesystem::exists(OUTPUT_FILE))
    {
-      boost::filesystem::remove(OUTPUT_FILE);
+      std::filesystem::remove(OUTPUT_FILE);
    }
 }
 
@@ -82,7 +74,7 @@ int ToolManager::execute_command(const std::string& _command_, const std::string
    /// on Ubuntu sh is different from bash so we enforce it
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Executing command: " + _command_);
    THROW_ASSERT(!log_file.empty(), "Log file not set");
-   int ret = PandaSystem(Param, _command_, log_file);
+   int ret = PandaSystem(Param, _command_, true, log_file);
    if(IsError(ret))
    {
       if(permissive)
@@ -263,8 +255,8 @@ std::string ToolManager::determine_paths(std::string& file_name, bool overwrite)
    std::string effective_file, file_to_be_copied;
    bool copy = false;
 
-   boost::filesystem::path file(file_name);
-   std::string FileName = GetLeafFileName(file);
+   std::filesystem::path file(file_name);
+   std::string FileName = file.filename().string();
    if(local)
    {
       effective_file = file_name;
@@ -295,7 +287,7 @@ std::string ToolManager::determine_paths(std::string& file_name, bool overwrite)
    }
    if(copy)
    {
-      if(!boost::filesystem::exists(file))
+      if(!std::filesystem::exists(file))
       {
          THROW_ERROR("File \"" + file.string() + "\" does not exists");
       }
@@ -312,8 +304,8 @@ void ToolManager::prepare_input_files(const std::vector<std::string>& files)
    std::vector<std::string> move_to_host(1, "scp");
    for(const auto& i : files)
    {
-      boost::filesystem::path file(i);
-      if(!boost::filesystem::exists(file))
+      std::filesystem::path file(i);
+      if(!std::filesystem::exists(file))
       {
          THROW_ERROR("File \"" + file.string() + "\" does not exists");
       }
@@ -367,11 +359,10 @@ void ToolManager::remove_files(const std::vector<std::string>& input_files, cons
    std::vector<std::string> removing(1, "rm -rf");
    for(const auto& file : files)
    {
-      if(boost::filesystem::exists(file) and
-         std::find(input_files.begin(), input_files.end(), file) == input_files.end())
+      if(std::filesystem::exists(file) and std::find(input_files.begin(), input_files.end(), file) == input_files.end())
       {
          removing.push_back(file);
-         boost::filesystem::remove(file);
+         std::filesystem::remove(file);
       }
    }
    if(removing.size() == 1)
@@ -390,8 +381,8 @@ void ToolManager::check_output_files(const std::vector<std::string>& files)
    {
       if(local)
       {
-         boost::filesystem::path file(i);
-         if(!boost::filesystem::exists(file))
+         std::filesystem::path file(i);
+         if(!std::filesystem::exists(file))
          {
             THROW_ERROR("File \"" + file.string() + "\" has not been correctly created");
          }

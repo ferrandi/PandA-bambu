@@ -1,3 +1,28 @@
+=========== PANDA 2023.09 ===========
+Eleventh public release of PandA framework.
+
+New features introduced:
+- Added support to Clang/LLVM 16
+- The synthesis of ac_types of any size is now supported by Clang/LLVM 16
+- C/C++ co-simulation support added for Mentor Questasim/Modelsim, Xilinx XSim, and Verilator
+- Memory mapped top interface support
+- C++17 is now required to build PandA Bambu
+- Dependencies from Boost libraries have been dropped, only headers are needed (CentOS based system now supported)
+- MachSuite benchmarks updated
+- Fixed issues with Bambu LibM implementation
+- Enhanced interface generation support
+- Changed default HLS division implementation to Newton-Raphson
+
+=========== PANDA 2023.01 ===========
+Tenth public release of PandA framework.
+
+New features introduced:
+- Support for LLVM 13
+- Support for Xilinx Alveo and Xilinx Kintex FPGA boards
+- Support for ac_channels and hls::stream interfaces
+- Various bugfixes and stability enhancement
+- Support for customizable caches added to AXI interfaces 
+
 =========== PANDA 0.9.8 ===========
 Ninth public release of PandA framework.
 

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -54,13 +54,11 @@
 
 /// utility includes
 #include "custom_map.hpp"
-#include "custom_set.hpp"
 #include "refcount.hpp"
-#include "utility.hpp"
 
 REF_FORWARD_DECL(HLS_constraints);
 CONSTREF_FORWARD_DECL(Parameter);
-REF_FORWARD_DECL(target_device);
+REF_FORWARD_DECL(generic_device);
 class xml_element;
 
 /// macro used to convert the functional unit name and the library in an unique string.
@@ -88,8 +86,6 @@ class HLS_constraints
 
    /// current value of the resource fraction
    double clock_period_resource_fraction;
-   /// default resource fraction for the clock period
-   static const double clock_period_resource_fraction_DEFAULT;
 
    /// Variable storing the number of registers.
    unsigned int registers;

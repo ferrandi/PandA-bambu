@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2018-2022 Politecnico di Milano
+ *              Copyright (C) 2018-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -30,31 +30,32 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-/*
+/**
  * Clang plugin for custom scalar replacement of aggregates.
  *
  * @author Fabrizio Ferrandi <Fabrizio.ferrandi@polimi.it>
  *
  */
-#include "plugin_includes.hpp"
-
-#include "llvm/IR/LegacyPassManager.h"
-#include "llvm/IR/PassManager.h"
-#include "llvm/Transforms/IPO.h"
-#include "llvm/Transforms/IPO/PassManagerBuilder.h"
-#include <llvm/IR/Verifier.h>
-#include <llvm/Transforms/Scalar.h>
-#if __clang_major__ >= 7 && !defined(VVD)
-#include "llvm/Transforms/Utils.h"
-#endif
-#if __clang_major__ >= 10
-#include "llvm/InitializePasses.h"
-#include "llvm/Support/CommandLine.h"
-#endif
 #include "CustomScalarReplacementOfAggregatesPass.hpp"
 #include "ExpandMemOpsPass.hpp"
 #include "GepiCanonicalizationPass.hpp"
 #include "PtrIteratorSimplifyPass.hpp"
+#include "plugin_includes.hpp"
+
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/PassManager.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/Transforms/IPO.h>
+#include <llvm/Transforms/IPO/PassManagerBuilder.h>
+#include <llvm/Transforms/Scalar.h>
+
+#if __clang_major__ >= 7 && !defined(VVD)
+#include <llvm/Transforms/Utils.h>
+#endif
+#if __clang_major__ >= 10
+#include <llvm/InitializePasses.h>
+#include <llvm/Support/CommandLine.h>
+#endif
 
 namespace llvm
 {
@@ -141,6 +142,8 @@ namespace llvm
 
 } // namespace llvm
 
+#if __clang_major__ >= 13
+#else
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
@@ -234,7 +237,7 @@ static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
    PM.add(createRemoveIntrinsicPass());
    PM.add(createGepiExplicitation());
    PM.add(createGepiCanonicalIdxsPass());
-   PM.add(llvm::createExpandMemOpsPass());
+   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)());
    PM.add(createPtrIteratorSimplifyPass());
    PM.add(createChunkOperationsLoweringPass());
    PM.add(createBitcastVectorRemovalPass());
@@ -301,7 +304,7 @@ static llvm::RegisterStandardPasses
 // loadPassLate);
 
 #endif
-
+#endif
 #ifdef _WIN32
 using namespace llvm;
 

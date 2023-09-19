@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -61,16 +61,19 @@ class WeightedCliqueRegisterBindingSpecialization : public HLSFlowStepSpecializa
    /**
     * Return the string representation of this
     */
-   const std::string GetKindText() const override;
+   std::string GetKindText() const override;
 
    /**
     * Return the contribution to the signature of a step given by the specialization
     */
-   const std::string GetSignature() const override;
+   std::string GetSignature() const override;
 };
 
 class weighted_clique_register : public compatibility_based_register
 {
+ private:
+   DesignFlowStep_Status RegisterBinding() final;
+
  public:
    /**
     * Constructor of the class.
@@ -80,20 +83,8 @@ class weighted_clique_register : public compatibility_based_register
                             const DesignFlowManagerConstRef design_flow_manager,
                             const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
 
-   /**
-    * Destructor of the class.
-    */
    ~weighted_clique_register() override;
 
-   /**
-    * Execute the step
-    * @return the exit status of this step
-    */
-   DesignFlowStep_Status InternalExec() override;
-
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
    void Initialize() override;
 };
 

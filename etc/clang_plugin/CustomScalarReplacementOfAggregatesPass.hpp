@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2018-2022 Politecnico di Milano
+ *              Copyright (C) 2018-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -52,6 +52,7 @@
 #include <llvm/IR/Module.h>
 #include <llvm/Pass.h>
 
+#include <map>
 #include <set>
 
 typedef std::set<llvm::Instruction*> inst_set_ty;

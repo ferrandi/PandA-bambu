@@ -21,17 +21,14 @@ jobs:
       compilers: gcc-4.5,gcc-4.6,gcc-4.7,gcc-4.8,gcc-4.9,gcc-5,gcc-6,gcc-7,gcc-8,clang-6
       build-compiler: gcc-8
       configure: --enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release CC=gcc-8 CXX=g++-8
-    secrets:
-      CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
-      CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
-      CI_STORAGE_TOKEN: ${{secrets.CI_STORAGE_TOKEN}}
+    secrets: inherit
 
   simulate-all:
     needs: [build]
     runs-on: [self-hosted, long, mentor]
     env:
       report-dir: test-reports
-      args: -c=--simulator=MODELSIM
+      args: -c=--simulator=MODELSIM -c=--assert-debug
     strategy:
       max-parallel: 2
       fail-fast: false
@@ -48,6 +45,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: 'true'
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -62,7 +61,7 @@ jobs:
           mkdir bin
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Launch test suite
         id: suite
         shell: bash
@@ -70,10 +69,10 @@ jobs:
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
-          echo "::set-output name=test-reports-dir::$out_dir"
+          echo "test-reports-dir=$out_dir" >> $GITHUB_OUTPUT
           ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{matrix.outname}}
@@ -86,10 +85,7 @@ jobs:
       package-name: ${{needs.build.outputs.package-name}}
       test-compilers: \"I386_GCC45 --skip_list 20071202-1\",I386_GCC46,I386_GCC47,I386_GCC48,I386_GCC49,I386_GCC5,I386_GCC6,I386_GCC7,I386_GCC8
       additional-args: \"\",\"-c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1,memset-3\"
-    secrets:
-      CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
-      CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
-      CI_STORAGE_TOKEN: ${{secrets.CI_STORAGE_TOKEN}}
+    secrets: inherit
 
   grs-vhdl:
     needs: [build, simulate-all]
@@ -97,10 +93,7 @@ jobs:
     with:
       package-name: ${{needs.build.outputs.package-name}}
       test-compilers: \"I386_GCC45 --skip_list 20071202-1\",I386_GCC46,I386_GCC47,I386_GCC48,I386_GCC49,I386_GCC5,I386_GCC6,I386_GCC7,I386_GCC8
-    secrets:
-      CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
-      CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
-      CI_STORAGE_TOKEN: ${{secrets.CI_STORAGE_TOKEN}}
+    secrets: inherit
 
   examples:
     needs: [build, simulate-all]
@@ -108,13 +101,10 @@ jobs:
     with:
       package-name: ${{needs.build.outputs.package-name}}
       test-compiler: I386_GCC49
-    secrets:
-      CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
-      CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
-      CI_STORAGE_TOKEN: ${{secrets.CI_STORAGE_TOKEN}}
+    secrets: inherit
 
   success:
-    if: ${{always()}}
+    if: ${{ !cancelled() }}
     needs: [grs, grs-vhdl, examples]
     runs-on: [self-hosted]
     steps:

@@ -1,5 +1,5 @@
 /* Specific functions for bambu architecture.
-   Copyright (C) 2016-2022 Politecnico di Milano (Italy).
+   Copyright (C) 2016-2023 Politecnico di Milano (Italy).
    This specific code has been derived from libgcc from GCC.
    The GCC licence and its exception applies.
 */
@@ -68,6 +68,7 @@ __complex__ double ___divdc3(double a, double b, double c, double d)
 {
    double denom, ratio, x, y;
    __complex__ double res;
+   extern double fabs(double x);
 
    if(fabs(c) < fabs(d))
    {

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -37,31 +37,17 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "load_technology.hpp"
-
-///. include
 #include "Parameter.hpp"
-
-/// STD include
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "generic_device.hpp"
+#include "parse_technology.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
+#include "technology_manager.hpp"
 #include <string>
 
-/// STL include
-#include "custom_set.hpp"
-
-/// technology includes
-#include "parse_technology.hpp"
-#include "technology_manager.hpp"
-
-/// technology/target_device include
-#include "target_device.hpp"
-
-/// utility includes
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
-#include "string_manipulation.hpp" // for GET_CLASS
-
-LoadTechnology::LoadTechnology(const technology_managerRef _TM, const target_deviceRef _target,
+LoadTechnology::LoadTechnology(const technology_managerRef _TM, const generic_deviceRef _target,
                                const DesignFlowManagerConstRef _design_flow_manager,
                                const ParameterConstRef _parameters)
     : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_TECHNOLOGY, _parameters)

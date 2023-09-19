@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -58,9 +58,9 @@
 class funit_obj : public generic_obj
 {
    /// instance number of the unit
-   unsigned int index;
+   const unsigned int index;
    /// type of the functional unit
-   unsigned int fu_type;
+   const unsigned int fu_type;
 
    // operation selector list (first: operation name, second: datapath selector)
    std::map<std::string, generic_objRef> fuOpSelectors;
@@ -76,11 +76,6 @@ class funit_obj : public generic_obj
        : generic_obj(FUNCTIONAL_UNIT, _name), index(_index), fu_type(_type)
    {
    }
-
-   /**
-    * Destructor.
-    */
-   ~funit_obj() override = default;
 
    /**
     * Get funit name
@@ -105,7 +100,7 @@ class funit_obj : public generic_obj
     * @param new_sel is the selector
     * @param op_name is the operation name
     */
-   void add_selector_op(const generic_objRef& new_sel, std::string op_name)
+   void add_selector_op(const generic_objRef& new_sel, const std::string& op_name)
    {
       fuOpSelectors.insert(std::make_pair(op_name, new_sel));
    }
@@ -114,7 +109,7 @@ class funit_obj : public generic_obj
     * @param op_name operation name (e.g. LOAD, STORE,..)
     * @return the index of selected funit
     */
-   generic_objRef GetSelector_op(std::string op_name)
+   generic_objRef GetSelector_op(const std::string& op_name)
    {
       return fuOpSelectors[op_name];
    }

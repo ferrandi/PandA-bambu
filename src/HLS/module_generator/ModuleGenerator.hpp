@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2022-2022 Politecnico di Milano
+ *              Copyright (C) 2022-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,8 +66,8 @@ class ModuleGenerator : public Factory<ModuleGenerator, const HLS_managerRef&>
    {
       std::string name;
       std::string type;
-      unsigned int type_size;
-      unsigned int alignment;
+      unsigned long long type_size;
+      unsigned long long alignment;
 
       parameter() = default;
       parameter(const structural_objectRef& port);
@@ -80,7 +80,7 @@ class ModuleGenerator : public Factory<ModuleGenerator, const HLS_managerRef&>
    {
    }
 
-   virtual void InternalExec(std::ostream& out, const module* mod, unsigned int function_id, vertex op_v,
+   virtual void InternalExec(std::ostream& out, structural_objectRef mod, unsigned int function_id, vertex op_v,
                              const HDLWriter_Language language, const std::vector<parameter>& _p,
                              const std::vector<parameter>& _ports_in, const std::vector<parameter>& _ports_out,
                              const std::vector<parameter>& _ports_inout) = 0;
@@ -88,7 +88,7 @@ class ModuleGenerator : public Factory<ModuleGenerator, const HLS_managerRef&>
  public:
    virtual ~ModuleGenerator() = default;
 
-   void Exec(std::ostream& out, const module* mod, unsigned int function_id, vertex op_v,
+   void Exec(std::ostream& out, structural_objectRef mod, unsigned int function_id, vertex op_v,
              const std::vector<parameter>& _p, const HDLWriter_Language language);
 };
 

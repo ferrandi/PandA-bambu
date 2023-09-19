@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -65,41 +65,33 @@ StateTransitionGraph_constructor::StateTransitionGraph_constructor(
 
 void StateTransitionGraph_constructor::create_entry_state()
 {
-   vertex newVertex = state_transition_graphs_collection->AddVertex(NodeInfoRef(new StateInfo()));
-   const StateInfoRef state_info = state_transition_graph->GetStateInfo(newVertex);
-   const OpGraphInfoConstRef cfg =
-       HLSMgr.lock()->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG)->CGetOpGraphInfo();
+   const auto newVertex = state_transition_graphs_collection->AddVertex(NodeInfoRef(new StateInfo()));
+   const auto state_info = state_transition_graph->GetStateInfo(newVertex);
+   const auto cfg = HLSMgr.lock()->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG);
+   const auto cfg_info = cfg->CGetOpGraphInfo();
    state_info->HLSMgr = HLSMgr;
    state_info->funId = funId;
    state_info->name = "ENTRY";
-   state_info->executing_operations.push_back(cfg->entry_vertex);
-   state_info->starting_operations.push_back(cfg->entry_vertex);
-   state_info->ending_operations.push_back(cfg->entry_vertex);
-   state_info->BB_ids.insert(HLSMgr.lock()
-                                 ->CGetFunctionBehavior(funId)
-                                 ->CGetOpGraph(FunctionBehavior::CFG)
-                                 ->CGetOpNodeInfo(cfg->entry_vertex)
-                                 ->bb_index);
-   //   state_info->BB_ids.insert(GET_BB_INDEX(HLSMgr.lock()->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG).get(),
-   //   cfg->entry_vertex));
+   state_info->executing_operations.push_back(cfg_info->entry_vertex);
+   state_info->starting_operations.push_back(cfg_info->entry_vertex);
+   state_info->ending_operations.push_back(cfg_info->entry_vertex);
+   state_info->BB_ids.insert(cfg->CGetOpNodeInfo(cfg_info->entry_vertex)->bb_index);
    state_transition_graph->GetStateTransitionGraphInfo()->entry_node = newVertex;
 }
 
 void StateTransitionGraph_constructor::create_exit_state()
 {
-   vertex newVertex = state_transition_graphs_collection->AddVertex(NodeInfoRef(new StateInfo()));
-   const StateInfoRef state_info = state_transition_graph->GetStateInfo(newVertex);
-   const OpGraphInfoConstRef cfg =
-       HLSMgr.lock()->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG)->CGetOpGraphInfo();
+   const auto newVertex = state_transition_graphs_collection->AddVertex(NodeInfoRef(new StateInfo()));
+   const auto state_info = state_transition_graph->GetStateInfo(newVertex);
+   const auto cfg = HLSMgr.lock()->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG);
+   const auto cfg_info = cfg->CGetOpGraphInfo();
    state_info->HLSMgr = HLSMgr;
    state_info->funId = funId;
    state_info->name = "EXIT";
-   state_info->executing_operations.push_back(cfg->exit_vertex);
-   state_info->starting_operations.push_back(cfg->exit_vertex);
-   state_info->ending_operations.push_back(cfg->exit_vertex);
-   state_info->BB_ids.insert(GET_BB_INDEX(
-       HLSMgr.lock()->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::CFG).get(), cfg->exit_vertex));
-
+   state_info->executing_operations.push_back(cfg_info->exit_vertex);
+   state_info->starting_operations.push_back(cfg_info->exit_vertex);
+   state_info->ending_operations.push_back(cfg_info->exit_vertex);
+   state_info->BB_ids.insert(cfg->CGetOpNodeInfo(cfg_info->exit_vertex)->bb_index);
    state_transition_graph->GetStateTransitionGraphInfo()->exit_node = newVertex;
 }
 
@@ -112,7 +104,7 @@ vertex StateTransitionGraph_constructor::create_state(const std::list<vertex>& e
    const StateInfoRef state_info = state_transition_graph->GetStateInfo(newVertex);
    state_info->HLSMgr = HLSMgr;
    state_info->funId = funId;
-   state_info->name = std::string(STATE_NAME_PREFIX + boost::lexical_cast<std::string>(state_index));
+   state_info->name = std::string(STATE_NAME_PREFIX + std::to_string(state_index));
    state_transition_graph->GetStateTransitionGraphInfo()->state_id_to_vertex[state_index] = newVertex;
    state_transition_graph->GetStateTransitionGraphInfo()->vertex_to_state_id[newVertex] = state_index;
    state_info->executing_operations = exec_op;

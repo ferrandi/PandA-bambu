@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -41,38 +41,27 @@
  *
  */
 
-/// Autoheader include
 #include "config_RELEASE.hpp"
 
-/// Frontend includes
 #include "Parameter.hpp"
+#include "compiler_wrapper.hpp"
+#include "cost_latency_table.hpp"
+#include "cpu_time.hpp"
+#include "exceptions.hpp"
+#include "fileIO.hpp"
+#include "parse_tree.hpp"
 #include "tree-panda-gcc-Parameter.hpp"
+#include "tree_manager.hpp"
+#include "utility.hpp"
 
-/// STD Include
+#include <boost/lexical_cast.hpp>
 #include <csignal>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <getopt.h>
 #include <iosfwd>
 #include <string>
-
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/convenience.hpp>
-
-/// Tree includes
-#include "parse_tree.hpp"
-#include "tree_manager.hpp"
-
-/// Utility includes
-#include "cpu_time.hpp"
-#include "exceptions.hpp"
-#include "fileIO.hpp"
-#include "utility.hpp"
-#include <boost/lexical_cast.hpp>
-
-/// Wrapper include
-#include "compiler_wrapper.hpp"
-#include "cost_latency_table.hpp"
 
 static char* alloc_long_option(char* argv[], int& i, int& dec)
 {
@@ -134,7 +123,7 @@ static void close_everything(int argc, char* argv[], const ParameterRef& Param)
    dealloc_argv(argc, argv);
    if(Param && not(Param->getOption<bool>(OPT_no_clean)))
    {
-      boost::filesystem::remove_all(Param->getOption<std::string>(OPT_output_temporary_directory));
+      std::filesystem::remove_all(Param->getOption<std::string>(OPT_output_temporary_directory));
    }
 }
 /**
@@ -216,7 +205,7 @@ int main(int argc, char* argv_orig[])
          const auto input_files = Param->getOption<const CustomSet<std::string>>(OPT_input_file);
 
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
-                       "Created list of files: " + boost::lexical_cast<std::string>(input_files.size()) +
+                       "Created list of files: " + std::to_string(input_files.size()) +
                            " input source code files to be concatenated");
 
          std::map<std::string, std::string> temp_input_files;
@@ -249,7 +238,7 @@ int main(int argc, char* argv_orig[])
             const auto object_files = Param->getOption<const CustomSet<std::string>>(OPT_obj_files);
             for(const auto& object_file : object_files)
             {
-               if(!boost::filesystem::exists(boost::filesystem::path(object_file)))
+               if(!std::filesystem::exists(object_file))
                {
                   THROW_ERROR("File " + object_file + " does not exist");
                }
@@ -262,35 +251,28 @@ int main(int argc, char* argv_orig[])
             const auto archive_files = Param->getOption<const CustomSet<std::string>>(OPT_archive_files);
             for(const auto& archive_file : archive_files)
             {
-               if(!boost::filesystem::exists(boost::filesystem::path(archive_file)))
+               if(!std::filesystem::exists(archive_file))
                {
                   THROW_ERROR("File " + archive_file + " does not exist");
                }
-               std::string temporary_directory_pattern;
-               temporary_directory_pattern =
-                   Param->getOption<std::string>(OPT_output_temporary_directory) + "/temp-archive-dir";
-               // The %s are required by the mkdtemp function
-               boost::filesystem::path temp_path = temporary_directory_pattern + "-%%%%-%%%%-%%%%-%%%%";
-               boost::filesystem::path temp_path_obtained = boost::filesystem::unique_path(temp_path);
-               boost::filesystem::create_directories(temp_path_obtained);
+               const auto temp_path = unique_path(Param->getOption<std::string>(OPT_output_temporary_directory) +
+                                                  "/temp-archive-dir-%%%%-%%%%-%%%%-%%%%");
+               std::filesystem::create_directories(temp_path);
+               const auto local_archive_file = GetPath(archive_file);
 
-               boost::filesystem::path local_archive_file = GetPath(archive_file);
-
-               std::string command = "cd " + temp_path_obtained.string() + "; ar x " + local_archive_file.string();
-               int ret = PandaSystem(Param, command);
-               if(IsError(ret))
+               const auto command = "cd " + temp_path.string() + "; ar x " + local_archive_file;
+               if(IsError(PandaSystem(Param, command)))
                {
                   THROW_ERROR("ar returns an error during archive extraction ");
                }
-               for(auto& entry :
-                   boost::make_iterator_range(boost::filesystem::directory_iterator(temp_path_obtained), {}))
+               for(const auto& entry : std::filesystem::directory_iterator{temp_path})
                {
                   const tree_managerRef TM_new = ParseTreeFile(Param, entry.path().string());
                   TM->merge_tree_managers(TM_new);
                }
-               if(not(Param->getOption<bool>(OPT_no_clean)))
+               if(!Param->getOption<bool>(OPT_no_clean))
                {
-                  boost::filesystem::remove_all(temp_path_obtained);
+                  std::filesystem::remove_all(temp_path);
                }
             }
          }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -284,9 +284,7 @@ decl_node::decl_node(unsigned int i)
       packed_flag(false),
       operating_system_flag(false),
       library_system_flag(false),
-#if HAVE_BAMBU_BUILT
       libbambu_flag(false),
-#endif
       C_flag(false),
       uid(0)
 {
@@ -417,11 +415,8 @@ type_node::type_node(unsigned int i)
       qual(TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN),
       algn(0),
       packed_flag(false),
-      system_flag(false)
-#if HAVE_BAMBU_BUILT
-      ,
+      system_flag(false),
       libbambu_flag(false)
-#endif
 {
 }
 
@@ -736,12 +731,11 @@ void expr_stmt::visit(tree_node_visitor* const v) const
    VISIT_MEMBER(mask, next, visit(v));
 }
 
-long long int field_decl::offset()
+integer_cst_t field_decl::offset()
 {
    if(bpos)
    {
-      auto* ic = GetPointer<integer_cst>(GET_NODE(bpos));
-      return tree_helper::get_integer_cst_value(ic);
+      return tree_helper::GetConstValue(bpos);
    }
    return 0;
 }
@@ -1186,10 +1180,10 @@ std::string record_type::get_maybe_name() const
    return "#UNKNOWN#";
 }
 
-tree_nodeRef record_type::get_field(long long int offset)
+tree_nodeRef record_type::get_field(integer_cst_t offset)
 {
    unsigned int i;
-   long long int fld_offset;
+   integer_cst_t fld_offset;
    field_decl* fd;
    for(i = 0; i < list_of_flds.size(); i++)
    {
@@ -1654,23 +1648,22 @@ bool TreeNodeConstEqualTo::operator()(const tree_nodeConstRef x, const tree_node
 
 #endif
 
+TreeNodeConstSorter::TreeNodeConstSorter() = default;
+
+bool TreeNodeConstSorter::operator()(const tree_nodeConstRef& x, const tree_nodeConstRef& y) const
+{
+   return x->index < y->index;
+}
+
 #if !HAVE_UNORDERED
 TreeNodeSorter::TreeNodeSorter() = default;
-
 bool TreeNodeSorter::operator()(const tree_nodeRef& x, const tree_nodeRef& y) const
 {
    return x->index < y->index;
 }
 
-TreeNodeConstSorter::TreeNodeConstSorter() = default;
-
 TreeNodeSet::TreeNodeSet() : OrderedSetStd<tree_nodeRef, TreeNodeSorter>()
 {
-}
-
-bool TreeNodeConstSorter::operator()(const tree_nodeConstRef& x, const tree_nodeConstRef& y) const
-{
-   return x->index < y->index;
 }
 
 TreeNodeConstSet::TreeNodeConstSet() : OrderedSetStd<tree_nodeConstRef, TreeNodeConstSorter>()

@@ -1,5 +1,5 @@
 /* 64-bit division and modulus
-   Copyright (C) 2004-2022 Politecnico di Milano
+   Copyright (C) 2004-2023 Politecnico di Milano
    This file is part of the HLS-FP Library.
 
    author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
@@ -29,10 +29,6 @@
 #endif
 #endif
 #include <stdlib.h>
-
-#if __WORDSIZE != 32
-#error This is for 32-bit targets only
-#endif
 
 typedef unsigned int UQItype __attribute__((mode(QI)));
 typedef int SItype __attribute__((mode(SI)));

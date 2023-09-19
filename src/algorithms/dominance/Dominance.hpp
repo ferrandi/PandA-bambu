@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -195,7 +195,7 @@ class dom_info
    void calc_dfs_tree_rec(Vertex bb)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Computing dfs tree starting from v_" + boost::lexical_cast<std::string>(bb));
+                     "-->Computing dfs tree starting from v_" + std::to_string(index_map[bb]));
       // bb is the parent Vertex
       /* We call this _only_ if bb is not already visited.  */
       edge e;
@@ -230,7 +230,7 @@ class dom_info
          calc_dfs_tree_rec(bn);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "<--Computed dfs tree starting from v_" + boost::lexical_cast<std::string>(bb));
+                     "<--Computed dfs tree starting from v_" + std::to_string(index_map[bb]));
    }
    /**
     * Compress the path from V to the root of its set and update path_min at the
@@ -455,19 +455,21 @@ class dom_info
 #if HAVE_ASSERTS
       unsigned int counter = 0;
       for(boost::tie(i, i_end) = boost::vertices(g); i != i_end; i++)
+      {
          ++counter;
+      }
 #endif
       /* This aborts e.g. when there is _no_ path from ENTRY to EXIT at all.  */
       THROW_ASSERT(nodes == counter, "there is _no_ path from ENTRY to EXIT at all. Number of vertices in the graph: " +
-                                         boost::lexical_cast<std::string>(num_vertices(g)) +
-                                         " Number of reachable from entry vertices " +
-                                         boost::lexical_cast<std::string>(nodes));
+                                         std::to_string(num_vertices(g)) + " Number of reachable from entry vertices " +
+                                         std::to_string(nodes));
 #ifndef NDEBUG
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Vertices in dfs order");
       for(size_t index = 0; index < dfs_to_bb.size(); index++)
+      {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---" + boost::lexical_cast<std::string>(index) + " v_" +
-                            boost::lexical_cast<std::string>(dfs_to_bb[index]));
+                        "---" + std::to_string(index) + " v_" + std::to_string(index_map[dfs_to_bb[index]]));
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 #endif
    }
@@ -488,14 +490,13 @@ class dom_info
       while(v > 1)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Analyzing node in position " + boost::lexical_cast<std::string>(v) + " v_" +
-                            boost::lexical_cast<std::string>(dfs_to_bb[v]));
+                        "-->Analyzing node in position " + std::to_string(v) + " v_" +
+                            std::to_string(index_map[dfs_to_bb[v]]));
          Vertex bb = dfs_to_bb[v];
          edge e;
          bool do_fake_exit_edge = false;
 
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Parent is " + boost::lexical_cast<std::string>(dfs_parent[v]));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parent is " + std::to_string(dfs_parent[v]));
          TBB par = dfs_parent[v];
          TBB k = v;
 
@@ -541,8 +542,7 @@ class dom_info
                }
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Predecessor is " + boost::lexical_cast<std::string>(k1) + " v_" +
-                               boost::lexical_cast<std::string>(b));
+                           "---Predecessor is " + std::to_string(k1) + " v_" + std::to_string(index_map[b]));
             /* Call eval() only if really needed.  If k1 is above V in DFS tree,
             then we know, that eval(k1) == k1 and key[k1] == k1.  */
             // k1 is the dfs index of the predecessor, v is the dfs of this Vertex
@@ -558,7 +558,7 @@ class dom_info
             ei = einext;
          }
 
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Key is " + boost::lexical_cast<std::string>(k));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Key is " + std::to_string(k));
 
          // k becomes the key for v, so we have to add v to the bucket of k. It becomes the first element because we are
          // reverse counting v
@@ -570,7 +570,7 @@ class dom_info
          /* Transform semidominators into dominators.  */
          for(w = bucket[par]; w; w = next_bucket[w])
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---w is " + boost::lexical_cast<std::string>(w));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---w is " + std::to_string(w));
             k = eval(w);
             if(key[k] < key[w])
             {
@@ -580,13 +580,11 @@ class dom_info
             {
                dom[w] = par;
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---dom[w] is " + boost::lexical_cast<std::string>(dom[w]));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dom[w] is " + std::to_string(dom[w]));
          }
          /* We don't need to cleanup next_bucket[].  */
          bucket[par] = 0;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "<--Analyzed node in position " + boost::lexical_cast<std::string>(v));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed node in position " + std::to_string(v));
          v--;
       }
 
@@ -615,7 +613,7 @@ class dom_info
          if(dfs_to_bb[d] != boost::graph_traits<GraphObj>::null_vertex())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---dom is " + boost::lexical_cast<std::string>(dfs_to_bb[d]));
+                           "---dom is " + std::to_string(index_map[dfs_to_bb[d]]));
             dom_map[*vi] = dfs_to_bb[d];
          }
       }

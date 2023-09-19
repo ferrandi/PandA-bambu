@@ -2,9 +2,9 @@
 
 #include <kitty/static_truth_table.hpp>
 
-#include <mockturtle/algorithms/simulation.hpp>
-#include <mockturtle/algorithms/functional_reduction.hpp>
 #include <mockturtle/algorithms/cleanup.hpp>
+#include <mockturtle/algorithms/functional_reduction.hpp>
+#include <mockturtle/algorithms/simulation.hpp>
 #include <mockturtle/networks/aig.hpp>
 #include <mockturtle/networks/mig.hpp>
 #include <mockturtle/networks/xag.hpp>
@@ -23,8 +23,8 @@ TEST_CASE( "functional reduction on AIG", "[functional_reduction]" )
   const auto f2 = ntk.create_and( !a, b );
   const auto f3 = ntk.create_and( !a, !b );
   const auto f4 = ntk.create_and( a, b );
-  const auto f5 = ntk.create_or( f1, f2 ); // a ^ b
-  const auto f6 = ntk.create_or( f3, f4 ); // a == b
+  const auto f5 = ntk.create_or( f1, f2 );  // a ^ b
+  const auto f6 = ntk.create_or( f3, f4 );  // a == b
   const auto f7 = ntk.create_and( f5, f6 ); // 0
 
   ntk.create_po( f5 );

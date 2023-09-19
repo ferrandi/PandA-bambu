@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -39,44 +39,33 @@
  *
  */
 #include "top_entity.hpp"
-
-#include "behavioral_helper.hpp"
-#include "function_behavior.hpp"
-
-#include "call_graph_manager.hpp"
-#include "conn_binding.hpp"
-#include "fu_binding.hpp"
-#include "functions.hpp"
-#include "hls.hpp"
-#include "hls_manager.hpp"
-#include "hls_target.hpp"
-#include "memory.hpp"
-#include "schedule.hpp"
-
-#include "commandport_obj.hpp"
-#include "generic_obj.hpp"
-#include "structural_manager.hpp"
-#include "structural_objects.hpp"
-
-#include "technology_manager.hpp"
-
 #include "BambuParameter.hpp"
-#include "dbgPrintHelper.hpp"
-#include "exceptions.hpp"
-
-/// STD include
-#include <string>
-
-/// STL includes
+#include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
+#include "commandport_obj.hpp"
+#include "conn_binding.hpp"
+#include "copyrights_strings.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-#include <list>
-#include <tuple>
-
-/// technology/physical_library include
-#include "copyrights_strings.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
+#include "fu_binding.hpp"
+#include "function_behavior.hpp"
+#include "functions.hpp"
+#include "generic_obj.hpp"
+#include "hls.hpp"
+#include "hls_device.hpp"
+#include "hls_manager.hpp"
+#include "memory.hpp"
+#include "schedule.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
+#include "structural_manager.hpp"
+#include "structural_objects.hpp"
+#include "technology_manager.hpp"
 #include "technology_node.hpp"
+#include <list>
+#include <string>
+#include <tuple>
 
 top_entity::top_entity(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId,
                        const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
@@ -239,7 +228,7 @@ DesignFlowStep_Status top_entity::InternalExec()
                                     parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) ==
                                         HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR))
    {
-      const auto TM = HLS->HLS_T->get_technology_manager();
+      const auto TM = HLS->HLS_D->get_technology_manager();
       const auto reset_type = parameters->getOption<std::string>(OPT_reset_type);
       const auto delay_unit = reset_type == "sync" ? flipflop_SR : flipflop_AR;
       const auto delay_gate =
@@ -339,7 +328,7 @@ void top_entity::add_input_register(structural_objectRef port_in, const std::str
                                     structural_objectRef circuit, structural_objectRef clock_port,
                                     structural_objectRef reset_port, structural_objectRef e_port)
 {
-   const auto TM = HLS->HLS_T->get_technology_manager();
+   const auto TM = HLS->HLS_D->get_technology_manager();
    const auto register_library = TM->get_library(register_STD);
    structural_objectRef r_signal;
    const auto reg_mod =
@@ -477,7 +466,7 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
    ////////////////////////////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////////////////////////////
-   std::map<unsigned int, structural_objectRef> null_values;
+   std::map<unsigned long long, structural_objectRef> null_values;
    /// creating extern IN port on top starting from extern ports on datapath and add connection
    for(unsigned int j = 0; j < GetPointerS<module>(Datapath)->get_in_port_size(); j++)
    {
@@ -658,8 +647,8 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
 
 void top_entity::add_command_signals(structural_objectRef circuit)
 {
-   structural_objectRef Datapath = HLS->datapath->get_circ();
-   structural_objectRef Controller = HLS->controller->get_circ();
+   const auto Datapath = HLS->datapath->get_circ();
+   const auto Controller = HLS->controller->get_circ();
 
    for(const auto& selector : HLS->Rconn->GetSelectors())
    {

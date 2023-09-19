@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,14 +32,23 @@
  */
 /**
  * @file testbench_generation.hpp
- * @brief .
+ * @brief Generate HDL testbench for the top-level kernel testing
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
-
-/// Superclass include
 #include "hls_step.hpp"
+#include "refcount.hpp"
+
+#include <string>
+#include <vector>
+
+class module;
+CONSTREF_FORWARD_DECL(tree_manager);
+REF_FORWARD_DECL(language_writer);
+REF_FORWARD_DECL(memory);
+REF_FORWARD_DECL(structural_object);
 
 /**
  * Enum class used to specify which type of content has to be printed for memory initialization
@@ -58,14 +67,40 @@ class TestbenchGeneration
 #endif
     : public HLS_step
 {
- protected:
-   /**
-    * Compute the relationship of this step
-    * @param relationship_type is the type of relationship to be considered
-    * @return the steps in relationship with this
+   const language_writerRef writer;
+
+   structural_objectRef cir;
+
+   const module* mod;
+
+   /// output directory
+   const std::string output_directory;
+
+   const std::string c_testbench_basename;
+
+   /// testbench basename
+   std::string hdl_testbench_basename;
+
+   /** This function takes care of printing cache hit/miss counters. Starting from the root module, it visits all
+    * submodules and checks if they have axi ports, then recursively visits axi children. If no axi children are found,
+    * the current node is the axi controller and can print the axi cache stats.
+    * @param rootMod Root module the search must be started from.
+    * @return true if the node has at least an axi child.
     */
+   bool printCacheStats(const module* rootMod) const;
+
+   /**
+    * Write the verilator testbench.
+    *
+    * @param input_file Filename of the stimuli file.
+    */
+   std::string write_verilator_testbench() const;
+
    const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
    ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+
+   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
  public:
    /**
@@ -77,19 +112,15 @@ class TestbenchGeneration
    TestbenchGeneration(const ParameterConstRef parameters, const HLS_managerRef _HLSMgr,
                        const DesignFlowManagerConstRef design_flow_manager);
 
-   /**
-    * Destructor
-    */
-   ~TestbenchGeneration() override;
+   void Initialize() override;
 
-   /**
-    * Execute this step
-    */
+   bool HasToBeExecuted() const override;
+
    DesignFlowStep_Status Exec() override;
 
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
+   static std::vector<std::string> print_var_init(const tree_managerConstRef TreeM, unsigned int var,
+                                                  const memoryRef mem);
+
+   static unsigned long long generate_init_file(const std::string& dat_filename, const tree_managerConstRef TreeM,
+                                                unsigned int var, const memoryRef mem);
 };

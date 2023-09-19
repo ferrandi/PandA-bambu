@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -108,9 +108,9 @@ void tree_node_finder::operator()(const srcp* obj, unsigned int& mask)
 {
    tree_node_mask::operator()(obj, mask);
    find_res = find_res && (tree_node_schema.find(TOK(TOK_SRCP)) == tree_node_schema.end() ||
-                           tree_node_schema.find(TOK(TOK_SRCP))->second ==
-                               obj->include_name + ":" + boost::lexical_cast<std::string>(obj->line_number) + ":" +
-                                   boost::lexical_cast<std::string>(obj->column_number));
+                           tree_node_schema.find(TOK(TOK_SRCP))->second == obj->include_name + ":" +
+                                                                               std::to_string(obj->line_number) + ":" +
+                                                                               std::to_string(obj->column_number));
 }
 
 void tree_node_finder::operator()(const decl_node* obj, unsigned int& mask)
@@ -123,10 +123,7 @@ void tree_node_finder::operator()(const decl_node* obj, unsigned int& mask)
               CHECK_VALUE_OPT(TOK_PACKED, obj->packed_flag) and
               CHECK_VALUE_OPT(TOK_OPERATING_SYSTEM, obj->operating_system_flag) and
               CHECK_VALUE_OPT(TOK_LIBRARY_SYSTEM, obj->library_system_flag) and
-#if HAVE_BAMBU_BUILT
-              CHECK_VALUE_OPT(TOK_LIBBAMBU, obj->libbambu_flag) and
-#endif
-              CHECK_VALUE_OPT(TOK_C, obj->C_flag);
+              CHECK_VALUE_OPT(TOK_LIBBAMBU, obj->libbambu_flag) and CHECK_VALUE_OPT(TOK_C, obj->C_flag);
 }
 
 void tree_node_finder::operator()(const expr_node* obj, unsigned int& mask)

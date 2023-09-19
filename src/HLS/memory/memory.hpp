@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -36,26 +36,25 @@
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
 
 #ifndef _MEMORY_HPP_
 #define _MEMORY_HPP_
 
-/// STD include
-#include <string>
-
-/// STL includes
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-
 #include "refcount.hpp"
+#include <map>
+#include <string>
+
 /**
  * @name forward declarations
  */
 //@{
 REF_FORWARD_DECL(application_manager);
-REF_FORWARD_DECL(tree_manager);
+CONSTREF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(memory);
 REF_FORWARD_DECL(memory_symbol);
 CONSTREF_FORWARD_DECL(Parameter);
@@ -66,8 +65,9 @@ class xml_element;
 
 class memory
 {
-   /// datastructure containing tree information
-   const tree_managerRef TreeM;
+ private:
+   /// data-structure containing tree information
+   const tree_managerConstRef TreeM;
 
    /// set of variables allocated outside the top module
    std::map<unsigned int, memory_symbolRef> external;
@@ -136,13 +136,13 @@ class memory
    unsigned long long int next_off_base_address;
 
    /// bus data bitsize
-   unsigned int bus_data_bitsize;
+   unsigned long long bus_data_bitsize;
 
    /// bus size bitsize
-   unsigned int bus_size_bitsize;
+   unsigned long long bus_size_bitsize;
 
    /// bram bitsize
-   unsigned int bram_bitsize;
+   unsigned long long bram_bitsize;
 
    /// maximum bram bitsize
    unsigned int maxbram_bitsize;
@@ -163,13 +163,13 @@ class memory
    bool implicit_memcpy;
 
    /// internal address alignment
-   unsigned int internal_base_address_alignment;
+   unsigned long long internal_base_address_alignment;
 
    /// external address alignment
-   unsigned int external_base_address_alignment;
+   unsigned long long external_base_address_alignment;
 
    /// parameter alignment
-   const unsigned int parameter_alignment;
+   const unsigned long long parameter_alignment;
 
    /// number of LOAD/STORE per var
    std::map<unsigned int, unsigned int> n_mem_operations_per_var;
@@ -189,35 +189,24 @@ class memory
    /// true when packed vars are used
    bool packed_vars;
 
-   const unsigned& bus_addr_bitsize;
+   const unsigned int& bus_addr_bitsize;
 
    bool enable_hls_bit_value;
-
-   /**
-    * Alignment utility function
-    */
-   void align(unsigned long long int& address, unsigned int alignment)
-   {
-      if(address % alignment != 0)
-      {
-         address = ((address / alignment) + 1) * alignment;
-      }
-   }
 
  public:
    /**
     * Constructor
     */
-   memory(const tree_managerRef TreeM, unsigned long long int off_base_address, unsigned int max_bram,
+   memory(const tree_managerConstRef TreeM, unsigned long long int off_base_address, unsigned int max_bram,
           bool null_pointer_check, bool initial_internal_address_p, unsigned long long initial_internal_address,
-          const unsigned& _bus_addr_bitsize);
+          const unsigned int& _bus_addr_bitsize);
 
    /**
     * Destructor
     */
    virtual ~memory();
 
-   static memoryRef create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM,
+   static memoryRef create_memory(const ParameterConstRef _parameters, const tree_managerConstRef _TreeM,
                                   unsigned long long int _off_base_address, unsigned int max_bram,
                                   bool _null_pointer_check, bool initial_internal_address_p,
                                   unsigned int initial_internal_address, const unsigned int& _address_bitsize);
@@ -255,8 +244,10 @@ class memory
     * @param address is the address to be evaluated
     * @param var is the variable that has to be reserved
     * @param alignment is the address alignment
+    * @return unsigned long long int next base address
     */
-   void compute_next_base_address(unsigned long long& address, unsigned int var, unsigned int alignment);
+   unsigned long long compute_next_base_address(unsigned long long address, unsigned int var,
+                                                unsigned long long int alignment) const;
 
    /**
     * return the proxied internal variables associated with the function
@@ -521,7 +512,12 @@ class memory
    /**
     * Explicitly allocate a certain space in the external memory
     */
-   void reserve_space(unsigned int space);
+   void reserve_space(unsigned long long space);
+
+   /**
+    * Explicitly allocate a certain space in the internal memory
+    */
+   void reserve_internal_space(unsigned long long int space);
 
    /**
     * Returns the amount of memory allocated internally to the module
@@ -536,10 +532,12 @@ class memory
    /**
     * Returns the amount of memory allocated internally but not private
     */
-   unsigned long long int get_allocated_intern_memory() const
-   {
-      return next_base_address - internal_base_address_start;
-   }
+   unsigned long long int get_allocated_internal_memory() const;
+
+   /**
+    * Returns next free address of memory allocated internally but not private
+    */
+   unsigned long long int get_next_internal_base_address() const;
 
    /**
     * return the maximum address allocated
@@ -549,7 +547,7 @@ class memory
    /**
     * set the bus data bitsize
     */
-   void set_bus_data_bitsize(unsigned int bitsize)
+   void set_bus_data_bitsize(unsigned long long bitsize)
    {
       bus_data_bitsize = bitsize;
    }
@@ -557,7 +555,7 @@ class memory
    /**
     * return the bitsize of the data bus
     */
-   unsigned int get_bus_data_bitsize() const
+   unsigned long long get_bus_data_bitsize() const
    {
       return bus_data_bitsize;
    }
@@ -565,7 +563,7 @@ class memory
    /**
     * set the bus size bitsize
     */
-   void set_bus_size_bitsize(unsigned int bitsize)
+   void set_bus_size_bitsize(unsigned long long bitsize)
    {
       bus_size_bitsize = bitsize;
    }
@@ -573,7 +571,7 @@ class memory
    /**
     * return the bitsize of the size bus
     */
-   unsigned int get_bus_size_bitsize() const
+   unsigned long long get_bus_size_bitsize() const
    {
       return bus_size_bitsize;
    }
@@ -581,7 +579,7 @@ class memory
    /**
     * set the BRAM bitsize
     */
-   void set_bram_bitsize(unsigned int bitsize)
+   void set_bram_bitsize(unsigned long long bitsize)
    {
       bram_bitsize = bitsize;
    }
@@ -589,7 +587,7 @@ class memory
    /**
     * return the BRAM bitsize
     */
-   unsigned int get_bram_bitsize() const
+   unsigned long long get_bram_bitsize() const
    {
       return bram_bitsize;
    }
@@ -733,7 +731,7 @@ class memory
 
    /**
     * @brief update the the packed variables status
-    * @param packed is true when there is at least one packed variables
+    * @param packed is true when there is at least one packed variable
     */
    void set_packed_vars(bool packed)
    {
@@ -767,7 +765,7 @@ class memory
    /**
     * return the internal base address alignment.
     */
-   unsigned int get_internal_base_address_alignment() const
+   unsigned long long get_internal_base_address_alignment() const
    {
       return internal_base_address_alignment;
    }
@@ -775,7 +773,7 @@ class memory
    /**
     * return the parameter alignment
     */
-   unsigned int get_parameter_alignment() const
+   unsigned long long get_parameter_alignment() const
    {
       return parameter_alignment;
    }
@@ -784,7 +782,7 @@ class memory
     * set the internal base address alignment
     * @param _internal_base_address_alignment is the new alignment
     */
-   void set_internal_base_address_alignment(unsigned int _internal_base_address_alignment);
+   void set_internal_base_address_alignment(unsigned long long _internal_base_address_alignment);
 
    /**
     * Propagates the memory parameters from the source (innermost) module to the target (outermost) one
@@ -823,6 +821,7 @@ class memory
    {
       enable_hls_bit_value = value;
    }
+
    bool get_enable_hls_bit_value()
    {
       return enable_hls_bit_value;

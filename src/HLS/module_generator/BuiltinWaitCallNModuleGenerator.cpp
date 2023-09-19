@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2022-2022 Politecnico di Milano
+ *              Copyright (C) 2022-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -37,6 +37,8 @@
  *
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
@@ -60,8 +62,9 @@ BuiltinWaitCallNModuleGenerator::BuiltinWaitCallNModuleGenerator(const HLS_manag
 {
 }
 
-void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */, unsigned int function_id,
-                                                   vertex op_v, const HDLWriter_Language /* language */,
+void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */,
+                                                   unsigned int function_id, vertex op_v,
+                                                   const HDLWriter_Language /* language */,
                                                    const std::vector<ModuleGenerator::parameter>& _p,
                                                    const std::vector<ModuleGenerator::parameter>& /* _ports_in */,
                                                    const std::vector<ModuleGenerator::parameter>& /* _ports_out */,
@@ -79,9 +82,7 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
       const auto called_addr = gc->args.at(0);
       const auto called_hasreturn = gc->args.at(1);
       THROW_ASSERT(GET_CONST_NODE(called_hasreturn)->get_kind() == integer_cst_K, "");
-      const auto hasreturn =
-          tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(GET_CONST_NODE(called_hasreturn)));
-      if(hasreturn)
+      if(tree_helper::GetConstValue(called_hasreturn))
       {
          const auto fpointer_type = tree_helper::CGetType(called_addr);
          const auto called_ftype = tree_helper::CGetPointedType(fpointer_type);
@@ -91,7 +92,7 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
             return tree_helper::Size(return_type);
          }
       }
-      return 0U;
+      return 0ULL;
    }();
 
    // Signals declarations
@@ -109,7 +110,7 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
       out << "wire [BITSIZE_Mout_addr_ram-1:0] paramAddressRead;\n\n";
    }
 
-   out << "reg [31:0] step 1INIT_ZERO_VALUE;\n"
+   out << "reg [31:0] step;\n"
        << "reg [31:0] next_step;\n"
        << "reg done_port;\n"
        << "reg [PORTSIZE_Sout_DataRdy-1:0] Sout_DataRdy;\n"
@@ -117,7 +118,9 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
        << "reg [PORTSIZE_Mout_we_ram-1:0] Mout_we_ram;\n"
        << "reg [PORTSIZE_Mout_addr_ram*BITSIZE_Mout_addr_ram-1:0] Mout_addr_ram;\n"
        << "reg [PORTSIZE_Mout_Wdata_ram*BITSIZE_Mout_Wdata_ram-1:0] Mout_Wdata_ram;\n"
-       << "reg [PORTSIZE_Mout_data_ram_size*BITSIZE_Mout_data_ram_size-1:0] Mout_data_ram_size;\n\n";
+       << "reg [PORTSIZE_Mout_data_ram_size*BITSIZE_Mout_data_ram_size-1:0] Mout_data_ram_size;\n"
+       << "reg active_request;\n"
+       << "reg active_request_next;\n\n";
 
    if(retval_size)
    {
@@ -244,6 +247,16 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
       out << "end\n";
    }
 
+   out << "always @ (posedge clock 1RESET_EDGE)\n"
+       << "  if (1RESET_VALUE)\n"
+       << "  begin\n"
+       << "    active_request <= 0;\n"
+       << "  end\n"
+       << "  else\n"
+       << "  begin\n"
+       << "    active_request <= active_request_next;\n"
+       << "  end\n\n";
+
    out << "always @(*)\n"
        << "  begin\n"
        << "  Sout_DataRdy = Sin_DataRdy;\n"
@@ -253,10 +266,12 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
        << "  Mout_Wdata_ram = Min_Wdata_ram;\n"
        << "  Mout_oe_ram = Min_oe_ram;\n"
        << "  Mout_addr_ram = Min_addr_ram;\n"
-       << "  Mout_data_ram_size = Min_data_ram_size;\n";
+       << "  Mout_data_ram_size = Min_data_ram_size;\n"
+       << "  active_request_next = 0;\n";
 
    out << "  if (step == S_0) begin\n"
-       << "    if (start_port == 1'b1) begin\n";
+       << "    if (start_port == 1'b1) begin\n"
+       << "      active_request_next = 1;\n";
    if(_p.size() == 3U)
    {
       out << "      next_step = in2[0] ? S_2 : S_1;\n";
@@ -277,12 +292,16 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
          if(idx != (_p.size() - 3U))
          {
             out << "  else if (step == S_" << idx << ") begin\n"
-                << "    Mout_we_ram[0] = 1'b1;\n"
-                << "    Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0] = in1 + paramAddressRead;\n"
-                << "    Mout_Wdata_ram[BITSIZE_Mout_Wdata_ram-1:0] = " << _p[idx + 1U].name << ";\n"
-                << "    Mout_data_ram_size[BITSIZE_Mout_data_ram_size-1:0] = " << _p[idx + 1U].type_size << ";\n"
+                << "    Mout_we_ram[0] = active_request;\n"
+                << "    Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0] = (in1 + paramAddressRead) & "
+                   "{BITSIZE_Mout_addr_ram{active_request}};\n"
+                << "    Mout_Wdata_ram[BITSIZE_Mout_Wdata_ram-1:0] = " << _p[idx + 1].name
+                << " & {BITSIZE_Mout_Wdata_ram{active_request}};\n"
+                << "    Mout_data_ram_size[BITSIZE_Mout_data_ram_size-1:0] = " << _p[idx + 1].type_size
+                << " & {BITSIZE_Mout_data_ram_size{active_request}};\n"
                 << "    if (M_DataRdy[0] == 1'b1) begin\n"
                 << "      next_step = S_" << (idx + 1U) << ";\n"
+                << "      active_request_next = 1;\n"
                 << "    end else begin\n"
                 << "      next_step = S_" << idx << ";\n"
                 << "    end\n"
@@ -291,12 +310,16 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
          else
          {
             out << "  else if (step == S_" << idx << ") begin\n"
-                << "    Mout_we_ram[0] = 1'b1;\n"
-                << "    Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0] = in1 + paramAddressRead;\n"
-                << "    Mout_Wdata_ram[BITSIZE_Mout_Wdata_ram-1:0] = " << _p[idx + 1U].name << ";\n"
-                << "    Mout_data_ram_size[BITSIZE_Mout_data_ram_size-1:0] = " << _p[idx + 1U].type_size << ";\n"
+                << "    Mout_we_ram[0] = active_request;\n"
+                << "    Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0] = (in1 + paramAddressRead) & "
+                   "{BITSIZE_Mout_addr_ram{active_request}};\n"
+                << "    Mout_Wdata_ram[BITSIZE_Mout_Wdata_ram-1:0] = " << _p[idx + 1].name
+                << " & {BITSIZE_Mout_Wdata_ram{active_request}};\n"
+                << "    Mout_data_ram_size[BITSIZE_Mout_data_ram_size-1:0] = " << _p[idx + 1].type_size
+                << " & {BITSIZE_Mout_data_ram_size{active_request}};\n"
                 << "    if (M_DataRdy[0] == 1'b1) begin\n"
                 << "      next_step = in2[0] ? S_" << (idx + 2U) << " : S_" << (idx + 1U) << ";\n"
+                << "      active_request_next = 1;\n"
                 << "    end else begin\n"
                 << "      next_step = S_" << idx << ";\n"
                 << "    end\n"
@@ -307,12 +330,16 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
    if(_p.size() > 2U)
    {
       out << "  else if (step == S_" << idx << ") begin\n"
-          << "     Mout_we_ram[0] = 1'b1;\n"
-          << "     Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0] = in1 + paramAddressRead;\n"
-          << "     Mout_Wdata_ram[BITSIZE_Mout_Wdata_ram-1:0] = " << _p[idx + 1U].name << ";\n"
-          << "     Mout_data_ram_size[BITSIZE_Mout_data_ram_size-1:0] = " << _p[idx + 1U].type_size << ";\n"
+          << "     Mout_we_ram[0] = active_request;\n"
+          << "     Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0] = (in1 + paramAddressRead) & "
+             "{BITSIZE_Mout_addr_ram{active_request}};\n"
+          << "     Mout_Wdata_ram[BITSIZE_Mout_Wdata_ram-1:0] = " << _p[idx + 1].name
+          << " & {BITSIZE_Mout_Wdata_ram{active_request}};\n"
+          << "     Mout_data_ram_size[BITSIZE_Mout_data_ram_size-1:0] = " << _p[idx + 1].type_size
+          << " & {BITSIZE_Mout_data_ram_size{active_request}};\n"
           << "   if (M_DataRdy[0] == 1'b1) begin\n"
           << "     next_step = S_" << (idx + 1U) << ";\n"
+          << "     active_request_next = 1;\n"
           << "   end else begin\n"
           << "     next_step = S_" << idx << ";\n"
           << "   end\n"
@@ -321,12 +348,15 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
    }
 
    out << "  else if (step == S_" << idx << ") begin\n"
-       << "    Mout_we_ram[0] = 1'b1;\n"
-       << "    Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0] = in1;\n"
-       << "    Mout_Wdata_ram[BITSIZE_Mout_Wdata_ram-1:0] = unlock_address;\n"
-       << "    Mout_data_ram_size[BITSIZE_Mout_data_ram_size-1:0] = 32;\n"
+       << "    Mout_we_ram[0] = active_request;\n"
+       << "    Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0] = in1 & {BITSIZE_Mout_addr_ram{active_request}};\n"
+       << "    Mout_Wdata_ram[BITSIZE_Mout_Wdata_ram-1:0] = unlock_address & "
+          "{BITSIZE_Mout_Wdata_ram{active_request}};\n"
+       << "    Mout_data_ram_size[BITSIZE_Mout_data_ram_size-1:0] = BITSIZE_Mout_Wdata_ram & "
+          "{BITSIZE_Mout_data_ram_size{active_request}};\n"
        << "    if (M_DataRdy[0] == 1'b1) begin\n"
        << "      next_step = S_" << (idx + 1U) << ";\n"
+       << "      active_request_next = 1;\n"
        << "    end else begin\n"
        << "      next_step = S_" << idx << ";\n"
        << "    end"
@@ -337,6 +367,7 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
        << "    if (|(S_we_ram & internal)) begin\n"
        << "      Sout_DataRdy = (S_we_ram & internal) | Sin_DataRdy;\n"
        << "      next_step = in2[0] ? S_" << (retval_size ? (idx + 1U) : 0U) << " : S_0;\n"
+       << "      active_request_next = 1;\n"
        << "      done_port = in2[0] ? 1'b0 : 1'b1;\n"
        << "    end else begin\n"
        << "      next_step = S_" << idx << ";\n"
@@ -347,11 +378,14 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
    if(_p.size() > 2U && retval_size)
    {
       out << "  else if (step == S_" << idx << ") begin\n"
-          << "      Mout_oe_ram[0] = 1'b1;\n"
-          << "      Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0] = in1 + paramAddressRead ;\n"
-          << "      Mout_data_ram_size[BITSIZE_Mout_data_ram_size-1:0] = " << retval_size << ";\n"
+          << "      Mout_oe_ram[0] = active_request;\n"
+          << "      Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0] = (in1 + paramAddressRead) & "
+             "{BITSIZE_Mout_addr_ram{active_request}};\n"
+          << "      Mout_data_ram_size[BITSIZE_Mout_data_ram_size-1:0] = " << retval_size
+          << " & {BITSIZE_Mout_data_ram_size{active_request}};\n"
           << "    if (M_DataRdy[0] == 1'b1) begin\n"
           << "      next_step = S_" << (idx + 1U) << ";\n"
+          << "      active_request_next = 1;\n"
           << "      next_readValue = M_Rdata_ram;\n"
           << "    end else begin\n"
           << "      next_step = S_" << idx << ";\n"
@@ -360,12 +394,15 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, const modu
       idx++;
 
       out << "  else if (step == S_" << idx << ") begin\n"
-          << "    Mout_we_ram[0] = 1'b1;\n"
-          << "    Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0] = " << _p[_p.size() - 1U].name << ";\n"
-          << "    Mout_Wdata_ram[BITSIZE_Mout_Wdata_ram-1:0] = readValue;\n"
-          << "    Mout_data_ram_size[BITSIZE_Mout_data_ram_size-1:0] = " << retval_size << ";\n"
+          << "    Mout_we_ram[0] = active_request;\n"
+          << "    Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0] = " << _p[_p.size() - 1U].name
+          << " & {BITSIZE_Mout_addr_ram{active_request}};\n"
+          << "    Mout_Wdata_ram[BITSIZE_Mout_Wdata_ram-1:0] = readValue & {BITSIZE_Mout_Wdata_ram{active_request}};\n"
+          << "    Mout_data_ram_size[BITSIZE_Mout_data_ram_size-1:0] = " << retval_size
+          << " & {BITSIZE_Mout_data_ram_size{active_request}};\n"
           << "    if (M_DataRdy[0] == 1'b1) begin\n"
           << "      next_step = S_0;\n"
+          << "      active_request_next = 1;\n"
           << "      done_port = 1'b1;\n"
           << "    end else begin\n"
           << "      next_step = S_" << idx << ";\n"

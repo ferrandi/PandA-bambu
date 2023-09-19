@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2019-2022 Politecnico di Milano
+ *              Copyright (C) 2019-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,7 +32,7 @@
  */
 /**
  * @file discrepancy_instruction_writer.hpp
- * @brief specialization of the instrunction writer for the discrepancy analysis
+ * @brief specialization of the instruction writer for the discrepancy analysis
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
@@ -40,17 +40,10 @@
  * Last modified by $Author$
  *
  */
-
 #ifndef DISCREPANCY_INSTRUCTION_WRITER_HPP
 #define DISCREPANCY_INSTRUCTION_WRITER_HPP
 
-/// Superclass include
 #include "hls_instruction_writer.hpp"
-
-/// Utility include
-#include "refcount.hpp"
-
-CONSTREF_FORWARD_DECL(Parameter);
 
 class discrepancy_instruction_writer : public HLSInstructionWriter
 {
@@ -65,11 +58,6 @@ class discrepancy_instruction_writer : public HLSInstructionWriter
                                   const IndentedOutputStreamRef indented_output_stream,
                                   const ParameterConstRef parameters);
 
-   /**
-    * Destructor
-    */
-   ~discrepancy_instruction_writer() override;
-
-   void declareFunction(const unsigned int function_id) override;
+   void declareFunction(const unsigned int function_id) final;
 };
 #endif

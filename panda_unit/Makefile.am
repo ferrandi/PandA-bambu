@@ -23,7 +23,7 @@ program_tests_CPPFLAGS = $(all_includes) -I$(BOOST_DIR) -I$(ABSEIL_DIR) \
      ${BOOST_CPPFLAGS} -DBOOST_TEST_DYN_LINK \
      -DPKGLIBDIR="\"$(pkglibdir)\"" -DPKGDATADIR="\"$(pkgdatadir)\""\
      -I$(top_srcdir)/src \
-     -I$(top_srcdir)/src/algorithms/bipartite_matching \
+     -isystem $(top_srcdir)/ext/or-tools \
      -I$(top_srcdir)/src/algorithms/clique_covering \
      -I$(top_srcdir)/src/design_flows/backend/ToHDL \
      -I$(top_srcdir)/src/design_flows/backend/ToC \
@@ -58,10 +58,6 @@ program_tests_CPPFLAGS = $(all_includes) -I$(BOOST_DIR) -I$(ABSEIL_DIR) \
      -I$(top_srcdir)/src/HLS/stg \
      -I$(top_srcdir)/src/parser \
      -I$(top_srcdir)/src/technology \
-     -I$(top_srcdir)/src/technology/physical_library \
-     -I$(top_srcdir)/src/technology/physical_library/models \
-     -I$(top_srcdir)/src/technology/target_technology \
-     -I$(top_srcdir)/src/technology/target_device \
      -I$(top_srcdir)/src/wrapper/compiler \
       $(AM_CPPFLAGS)
 
@@ -85,16 +81,6 @@ if BUILD_LIB_HOST_PROFILING
 endif
 endif
 
-if BUILD_BEAGLE
-  program_tests_CPPFLAGS += \
-        -I$(top_srcdir)/src/HLS/hls_flow/design_space_exploration \
-        -I$(top_srcdir)/src/HLS/hls_flow/design_space_exploration/common \
-        -I$(top_srcdir)/src/HLS/hls_flow/design_space_exploration/GA \
-        -I$(top_builddir)/ext/beagle/beagle/include/ \
-        -I$(BEAGLE_DIR)/beagle/include/ \
-        -I$(BEAGLE_DIR)/beagle/GA/include/ \
-        -I$(BEAGLE_DIR)/PACC
-endif
 if BUILD_LIB_CODE_ESTIMATION
    program_tests_CPPFLAGS += \
       -I$(top_srcdir)/src/design_flows/codesign/estimation \

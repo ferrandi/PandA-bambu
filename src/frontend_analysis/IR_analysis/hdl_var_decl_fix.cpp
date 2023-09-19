@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2022 Politecnico di Milano
+ *              Copyright (C) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -55,8 +55,8 @@
 #include "language_writer.hpp"
 
 /// HLS includes
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 
 /// tree includes
 #include "behavioral_helper.hpp"
@@ -95,7 +95,7 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
 
    /// Preload backend names
    const auto hdl_writer = language_writer::create_writer(
-       hdl_writer_type, GetPointer<HLS_manager>(AppM)->get_HLS_target()->get_technology_manager(), parameters);
+       hdl_writer_type, GetPointer<HLS_manager>(AppM)->get_HLS_device()->get_technology_manager(), parameters);
    const auto hdl_reserved_names = hdl_writer->GetHDLReservedNames();
    already_examinated_names.insert(hdl_reserved_names.begin(), hdl_reserved_names.end());
 
@@ -108,12 +108,26 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
    /// Fixing names of parameters
    const tree_nodeRef curr_tn = TM->GetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(curr_tn);
-   std::string fname;
-   tree_helper::get_mangled_fname(fd, fname);
+   const auto fname = tree_helper::GetMangledFunctionName(fd);
    auto HLSMgr = GetPointer<HLS_manager>(AppM);
 
-   if(HLSMgr && !HLSMgr->design_interface.empty() &&
-      HLSMgr->design_interface.find(fname) != HLSMgr->design_interface.end())
+   /* Check if there is at least one interface type */
+   bool type_found = false;
+   if(HLSMgr)
+   {
+      for(auto& fun : HLSMgr->design_attributes)
+      {
+         for(auto& par : fun.second)
+         {
+            if(par.second.find(attr_interface_type) != par.second.end())
+            {
+               type_found = true;
+            }
+         }
+      }
+   }
+
+   if(HLSMgr && type_found)
    {
       for(const auto& arg : fd->list_of_args)
       {
@@ -128,63 +142,57 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
          const std::string argName_string_new = GetPointer<identifier_node>(argName)->strg;
          if(argName_string != argName_string_new)
          {
-            auto di_it = HLSMgr->design_interface.find(fname)->second.find(argName_string);
+            auto di_it =
+                HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.find(attr_interface_type);
             auto di_value = di_it->second;
-            HLSMgr->design_interface.find(fname)->second.erase(di_it);
-            HLSMgr->design_interface.find(fname)->second[argName_string_new] = di_value;
-            if(HLSMgr->design_interface_arraysize.find(fname) != HLSMgr->design_interface_arraysize.end() &&
-               HLSMgr->design_interface_arraysize.find(fname)->second.find(argName_string) !=
-                   HLSMgr->design_interface_arraysize.find(fname)->second.end())
+            HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.erase(di_it);
+            HLSMgr->design_attributes.find(fname)->second[argName_string_new][attr_interface_type] = di_value;
+            if(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end() &&
+               HLSMgr->design_attributes.at(fname).find(argName_string) != HLSMgr->design_attributes.at(fname).end() &&
+               HLSMgr->design_attributes.at(fname).at(argName_string).find(attr_interface_type) !=
+                   HLSMgr->design_attributes.at(fname).at(argName_string).end())
             {
-               auto dia_it = HLSMgr->design_interface_arraysize.find(fname)->second.find(argName_string);
+               auto dia_it = HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.find(attr_size);
                auto dia_value = dia_it->second;
-               HLSMgr->design_interface_arraysize.find(fname)->second.erase(dia_it);
-               HLSMgr->design_interface_arraysize.find(fname)->second[argName_string_new] = dia_value;
+               HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.erase(dia_it);
+               HLSMgr->design_attributes.find(fname)->second[argName_string_new][attr_size] = dia_value;
             }
-            if(HLSMgr->design_interface_attribute2.find(fname) != HLSMgr->design_interface_attribute2.end() &&
-               HLSMgr->design_interface_attribute2.find(fname)->second.find(argName_string) !=
-                   HLSMgr->design_interface_attribute2.find(fname)->second.end())
+            if(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end() &&
+               HLSMgr->design_attributes.at(fname).find(argName_string) != HLSMgr->design_attributes.at(fname).end() &&
+               HLSMgr->design_attributes.at(fname).at(argName_string).find(attr_offset) !=
+                   HLSMgr->design_attributes.at(fname).at(argName_string).end())
             {
-               auto dia_it = HLSMgr->design_interface_attribute2.find(fname)->second.find(argName_string);
+               auto dia_it =
+                   HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.find(attr_offset);
                auto dia_value = dia_it->second;
-               HLSMgr->design_interface_attribute2.find(fname)->second.erase(dia_it);
-               HLSMgr->design_interface_attribute2.find(fname)->second[argName_string_new] = dia_value;
+               HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.erase(dia_it);
+               HLSMgr->design_attributes.find(fname)->second[argName_string_new][attr_offset] = dia_value;
             }
-            if(HLSMgr->design_interface_attribute3.find(fname) != HLSMgr->design_interface_attribute3.end() &&
-               HLSMgr->design_interface_attribute3.find(fname)->second.find(argName_string) !=
-                   HLSMgr->design_interface_attribute3.find(fname)->second.end())
+            if(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end() &&
+               HLSMgr->design_attributes.at(fname).find(argName_string) != HLSMgr->design_attributes.at(fname).end() &&
+               HLSMgr->design_attributes.at(fname).at(argName_string).find(attr_bundle_name) !=
+                   HLSMgr->design_attributes.at(fname).at(argName_string).end())
             {
-               auto dia_it = HLSMgr->design_interface_attribute3.find(fname)->second.find(argName_string);
+               auto dia_it =
+                   HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.find(attr_bundle_name);
                auto dia_value = dia_it->second;
-               HLSMgr->design_interface_attribute3.find(fname)->second.erase(dia_it);
-               HLSMgr->design_interface_attribute3.find(fname)->second[argName_string_new] = dia_value;
+               HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.erase(dia_it);
+               HLSMgr->design_attributes.find(fname)->second[argName_string_new][attr_bundle_name] = dia_value;
             }
-            auto dit_it = HLSMgr->design_interface_typename.find(fname)->second.find(argName_string);
+            auto dit_it =
+                HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.find(attr_typename);
             auto dit_value = dit_it->second;
-            HLSMgr->design_interface_typename.find(fname)->second.erase(dit_it);
-            HLSMgr->design_interface_typename.find(fname)->second[argName_string_new] = dit_value;
+            HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.erase(dit_it);
+            HLSMgr->design_attributes.find(fname)->second[argName_string_new][attr_typename] = dit_value;
 
             auto diti_it = HLSMgr->design_interface_typenameinclude.find(fname)->second.find(argName_string);
             auto diti_value = diti_it->second;
             HLSMgr->design_interface_typenameinclude.find(fname)->second.erase(diti_it);
             HLSMgr->design_interface_typenameinclude.find(fname)->second[argName_string_new] = diti_value;
 
-            if(HLSMgr->design_interface_loads.find(fname) != HLSMgr->design_interface_loads.end())
+            if(HLSMgr->design_interface_io.find(fname) != HLSMgr->design_interface_io.end())
             {
-               for(auto& bb2parLoads : HLSMgr->design_interface_loads.find(fname)->second)
-               {
-                  if(bb2parLoads.second.find(argName_string) != bb2parLoads.second.end())
-                  {
-                     auto l_it = bb2parLoads.second.find(argName_string);
-                     auto l_value = l_it->second;
-                     bb2parLoads.second.erase(l_it);
-                     bb2parLoads.second[argName_string_new] = l_value;
-                  }
-               }
-            }
-            if(HLSMgr->design_interface_stores.find(fname) != HLSMgr->design_interface_stores.end())
-            {
-               for(auto& bb2parLoads : HLSMgr->design_interface_stores.find(fname)->second)
+               for(auto& bb2parLoads : HLSMgr->design_interface_io.find(fname)->second)
                {
                   if(bb2parLoads.second.find(argName_string) != bb2parLoads.second.end())
                   {

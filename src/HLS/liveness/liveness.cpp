@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -385,74 +385,7 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
       }
       return false;
    }
-#if 0 && HAVE_EXPERIMENTAL
-   else
-   {
-      const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
-      if(std::find(in_conflict_ops[op1].begin(), in_conflict_ops[op1].end(), op2)!= in_conflict_ops[op1].end())
-         return true;
-      else if(std::find(compatible_ops[op1].begin(), compatible_ops[op1].end(), op2)!= compatible_ops[op1].end())
-         return false;
-      else
-      {
-         const OpGraphConstRef dfg = FB->CGetOpGraph(FunctionBehavior::DFG);
-         unsigned int bb_index1 = GET_BB_INDEX(dfg, op1);
-         unsigned int bb_index2 = GET_BB_INDEX(dfg, op2);
-         const CustomUnorderedMap<unsigned int, vertex> & bb_index_map = FB->CGetBBGraph(FunctionBehavior::FBB)->CGetBBGraphInfo()->bb_index_map;
-         vertex bb_1 = bb_index_map.find(bb_index1)->second;
-         vertex bb_2 = bb_index_map.find(bb_index2)->second;
-         if(bb_1 != bb_2 && non_in_parallel(bb_1, bb_2, FB->CGetBBGraph(FunctionBehavior::CDG_BB)))
-         {
-            compatible_ops[op1].insert(op2);
-            compatible_ops[op2].insert(op1);
-            return false;
-         }
-         unsigned int li_1 = FB->CGetBBGraph(FunctionBehavior::FBB)->CGetBBNodeInfo(bb_1)->loop_id;
-         unsigned int li_2 = FB->CGetBBGraph(FunctionBehavior::FBB)->CGetBBNodeInfo(bb_2)->loop_id;
-         unsigned int l_depth1 = FB->CGetLoops()->CGetLoop(li_1)->depth;
-         unsigned int l_depth2 = FB->CGetLoops()->CGetLoop(li_2)->depth;
-         if(li_1 == li_2)
-         {
-            const OpGraphConstRef saodg = FB->CGetOpGraph(FunctionBehavior::FLSAODG);
-            if(!((saodg->IsReachable(op1, op2) && FB->CheckReachability(op1, op2)) || (saodg->IsReachable(op2, op1)  && FB->CheckReachability(op2, op1))))
-            {
-               in_conflict_ops[op1].insert(op2);
-               in_conflict_ops[op2].insert(op1);
-               return true;
-            }
-            else
-            {
-               compatible_ops[op1].insert(op2);
-               compatible_ops[op2].insert(op1);
-               return false;
-            }
-         }
-         else if(l_depth1 == l_depth2 && l_depth1 == 1)
-         {
-            const OpGraphConstRef fsaodg = FB->CGetOpGraph(FunctionBehavior::FFLSAODG);
-
-            if(!((fsaodg->IsReachable(op1, op2) && FB->CheckReachability(op1, op2)) || (fsaodg->IsReachable(op2, op1)  && FB->CheckReachability(op2, op1))))
-            {
-               in_conflict_ops[op1].insert(op2);
-               in_conflict_ops[op2].insert(op1);
-               return true;
-            }
-            else
-            {
-               compatible_ops[op1].insert(op2);
-               compatible_ops[op2].insert(op1);
-               return false;
-            }
-         }
-         else
-            THROW_ERROR("unexpected pattern");
-         return false;
-      }
-   }
-#else
    return false;
-
-#endif
 }
 
 vertex liveness::get_start_op(vertex state) const

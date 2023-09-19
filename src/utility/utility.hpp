@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -55,6 +55,7 @@
 #include <utility>
 #include <vector>
 
+#include "panda_types.hpp"
 #include "string_manipulation.hpp"
 
 /// INT representing infinite
@@ -98,16 +99,16 @@
 /**
  * Macro returning the debug_level of a function
  */
-#define GET_FUNCTION_DEBUG_LEVEL() parameters->GetFunctionDebugLevel(GET_CLASS(*this), __func__)
+#define GET_FUNCTION_DEBUG_LEVEL(parameters) parameters->GetFunctionDebugLevel(GET_CLASS(*this), __func__)
 
 template <class G>
-std::string convert_to_binary(G _value, unsigned int precision)
+std::string convert_to_binary(G _value, unsigned long long precision)
 {
-   auto value = static_cast<unsigned long long int>(_value);
+   auto value = integer_cst_t(_value);
    std::string bin_value;
    for(unsigned int ind = 0; ind < precision; ind++)
    {
-      bin_value = bin_value + (((1LLU << (precision - ind - 1)) & value) ? '1' : '0');
+      bin_value = bin_value + (((integer_cst_t(1) << (precision - ind - 1)) & value) ? '1' : '0');
    }
    return bin_value;
 }
@@ -119,7 +120,7 @@ std::string convert_vector_to_string(const std::vector<G>& vector_form, const st
    std::string string_form;
    for(unsigned int i = 0; i < vector_form.size(); i++)
    {
-      auto element_string = boost::lexical_cast<std::string>(vector_form[i]);
+      auto element_string = STR(vector_form[i]);
       if(trim_empty_elements and element_string.size() == 0)
       {
          continue;
@@ -141,7 +142,7 @@ std::vector<G> convert_string_to_vector(const std::string& string_form, const st
    std::vector<std::string> tmp_vector_form = SplitString(string_form, separator);
    for(auto& i : tmp_vector_form)
    {
-      if(trim_empty_elements and i.size() == 0)
+      if(trim_empty_elements && i.size() == 0)
       {
          continue;
       }
@@ -214,11 +215,6 @@ class string_separator
    {
    }
 };
-
-/**
- * Macro which "pretty prints" a multi-line string
- */
-#define PP_ONE_LINE(multi_line_string) boost::regex_replace(multi_line_string, boost::regex("\\n"), "\\\\n")
 
 /**
  * Concept checking class

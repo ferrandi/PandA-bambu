@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -43,19 +43,19 @@
  */
 /// Header include
 #include "nxpython_flow_wrapper.hpp"
+
+#include "DesignParameters.hpp"
 #include "NanoXploreBackendFlow.hpp"
-
-#include "ToolManager.hpp"
-#include "xml_script_command.hpp"
-
 #include "Parameter.hpp"
+#include "ToolManager.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "xml_script_command.hpp"
 
 #define PARAM_nxpython_outdir "nxpython_outdir"
 
 // constructor
 nxpython_flow_wrapper::nxpython_flow_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir,
-                                             const target_deviceRef& _device)
+                                             const generic_deviceRef& _device)
     : NanoXploreWrapper(_Param, NXPYTHON_FLOW_TOOL_EXEC, _device, _output_dir, NXPYTHON_FLOW_TOOL_ID)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the nxpython_flow wrapper...");

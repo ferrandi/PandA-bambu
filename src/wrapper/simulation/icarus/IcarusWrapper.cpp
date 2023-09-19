@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -55,7 +55,7 @@
 
 /// includes all needed Boost.Filesystem declarations
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #include <cerrno>
 #include <fstream>
@@ -81,11 +81,11 @@
 #define SIM_SUBDIR (Param->getOption<std::string>(OPT_output_directory) + std::string("/icarus"))
 
 // constructor
-IcarusWrapper::IcarusWrapper(const ParameterConstRef& _Param, std::string _suffix)
-    : SimulationTool(_Param), suffix(std::move(_suffix))
+IcarusWrapper::IcarusWrapper(const ParameterConstRef& _Param, const std::string& _suffix, const std::string& _top_fname)
+    : SimulationTool(_Param, _top_fname), suffix(_suffix)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating the Icarus wrapper...");
-   boost::filesystem::create_directory(SIM_SUBDIR + suffix + "/");
+   std::filesystem::create_directory(SIM_SUBDIR + suffix + "/");
 }
 
 // destructor
@@ -150,11 +150,10 @@ unsigned int IcarusWrapper::convert_to_xml(const std::string& SourceFileName, co
    {
       TmpFileName = FileList[0];
    }
-   command += " -x " + TargetFileName + " -d " + boost::lexical_cast<std::string>(icarus_debug_level) +
-              std::string(" ") + TmpFileName;
+   command += " -x " + TargetFileName + " -d " + std::to_string(icarus_debug_level) + std::string(" ") + TmpFileName;
    int err = PandaSystem(Param, command, output_file);
    if(temp_file)
-      boost::filesystem::remove_all(TmpFileName);
+      std::filesystem::remove_all(TmpFileName);
    if(!err)
    {
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,

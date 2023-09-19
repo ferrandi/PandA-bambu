@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2017-2022 Politecnico di Milano
+ *              Copyright (C) 2017-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -55,12 +55,12 @@ void DesignFlow::ComputeRelationships(DesignFlowStepSet&, const DesignFlowStep::
 {
 }
 
-const std::string DesignFlow::GetSignature() const
+std::string DesignFlow::GetSignature() const
 {
    return ComputeSignature(design_flow_type);
 }
 
-const std::string DesignFlow::GetName() const
+std::string DesignFlow::GetName() const
 {
    return "DF::" + EnumToKindText(design_flow_type);
 }
@@ -78,7 +78,7 @@ const std::string DesignFlow::EnumToKindText(const DesignFlow_Type design_flow_t
    return "";
 }
 
-const DesignFlowStepFactoryConstRef DesignFlow::CGetDesignFlowStepFactory() const
+DesignFlowStepFactoryConstRef DesignFlow::CGetDesignFlowStepFactory() const
 {
    return design_flow_manager.lock()->CGetDesignFlowStepFactory("DF");
 }

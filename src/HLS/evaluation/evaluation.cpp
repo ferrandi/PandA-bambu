@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,49 +42,25 @@
  */
 #include "evaluation.hpp"
 
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
-#include <boost/filesystem/operations.hpp>
-
-///. include
+#include "BackendFlow.hpp"
 #include "Parameter.hpp"
-
-/// behavior include
-#include "call_graph_manager.hpp"
-
-/// constants include
+#include "SimulationInformation.hpp"
+#include "area_info.hpp"
 #include "bambu_results_xml.hpp"
-
-/// hls includes
+#include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
+#include "dbgPrintHelper.hpp"
+#include "fileIO.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
+#include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
-
-/// polixml include
+#include "string_manipulation.hpp"
+#include "utility.hpp"
 #include "xml_document.hpp"
-
-/// tree include
-#include "behavioral_helper.hpp"
-
-/// utility include
-#include "fileIO.hpp"
 #include "xml_helper.hpp"
 
-/// HLS include
-#include "SimulationInformation.hpp"
-#include "hls_flow_step_factory.hpp"
-
-/// behavior include
-#include "call_graph_manager.hpp"
-
-/// technology/physical_library/models includes
-#include "area_model.hpp"
-#include "time_model.hpp"
-
-/// wrapper/synthesis include
-#include "BackendFlow.hpp"
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
-#include "string_manipulation.hpp" // for GET_CLASS
+#include <filesystem>
 
 Evaluation::Evaluation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                        const DesignFlowManagerConstRef _design_flow_manager)
@@ -113,27 +89,6 @@ Evaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relat
                                           HLSFlowStep_Relationship::WHOLE_APPLICATION));
                break;
             }
-#if HAVE_EXPERIMENTAL
-            case Evaluation_Mode::ESTIMATION:
-            {
-               for(const auto objective : objective_vector)
-               {
-                  if(objective == "AREA")
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::AREA_ESTIMATION, HLSFlowStepSpecializationConstRef(),
-                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
-                  else if(objective == "CLOCK_SLACK")
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::CLOCK_SLACK_ESTIMATION,
-                                                HLSFlowStepSpecializationConstRef(),
-                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
-                  else if(objective == "TIME")
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::TIME_ESTIMATION, HLSFlowStepSpecializationConstRef(),
-                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
-                  else
-                     THROW_ERROR("Estimation objective not yet supported " + objective);
-               }
-               break;
-            }
-#endif
             case Evaluation_Mode::EXACT:
             {
                for(const auto& objective : objective_vector)
@@ -190,12 +145,6 @@ Evaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relat
                                                 HLSFlowStep_Relationship::WHOLE_APPLICATION));
                   }
 #endif
-#if HAVE_EXPERIMENTAL
-                  else if(objective == "EDGES_REDUCTION_EVALUATION")
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::EDGES_REDUCTION_EVALUATION,
-                                                HLSFlowStepSpecializationConstRef(),
-                                                HLSFlowStep_Relationship::ALL_FUNCTIONS));
-#endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT
                   else if(objective == "FREQUENCY")
                   {
@@ -215,12 +164,6 @@ Evaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relat
                                                 HLSFlowStepSpecializationConstRef(),
                                                 HLSFlowStep_Relationship::WHOLE_APPLICATION));
                   }
-#endif
-#if HAVE_EXPERIMENTAL
-                  else if(objective == "NUM_AF_EDGES")
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::NUM_AF_EDGES_EVALUATION,
-                                                HLSFlowStepSpecializationConstRef(),
-                                                HLSFlowStep_Relationship::ALL_FUNCTIONS));
 #endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT && HAVE_SIMULATION_WRAPPER_BUILT
                   else if(objective == "TIME" || objective == "TOTAL_TIME")
@@ -317,10 +260,10 @@ DesignFlowStep_Status Evaluation::Exec()
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                            "---Luts                     : " + STR(evaluations.at("SLICE_LUTS")));
          }
-         if(evaluations.find("LUT_FF_PAIRS") != evaluations.end())
+         else if(evaluations.find("LUT_FF_PAIRS") != evaluations.end())
          {
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                           "---Lut FF Pairs             : " + STR(evaluations.at("LUT_FF_PAIRS")));
+                           "---Luts             : " + STR(evaluations.at("LUT_FF_PAIRS").at(0)));
          }
          if(evaluations.find("LOGIC_ELEMENTS") != evaluations.end())
          {
@@ -404,27 +347,27 @@ DesignFlowStep_Status Evaluation::Exec()
       }
    }
 
-   std::string out_file_name = "bambu_results";
+   unsigned int progressive = 0U;
+   const auto out_file_name = [&]() {
+      std::string candidate_out_file_name;
+      do
+      {
+         candidate_out_file_name = GetPath("bambu_results_" + STR(progressive++) + ".xml");
+      } while(std::filesystem::exists(candidate_out_file_name));
+      return candidate_out_file_name;
+   }();
 
-   unsigned int progressive = 0;
-   std::string candidate_out_file_name;
-   do
-   {
-      candidate_out_file_name = GetPath(out_file_name + "_" + STR(progressive++) + ".xml");
-   } while(boost::filesystem::exists(candidate_out_file_name));
-
-   out_file_name = candidate_out_file_name;
    xml_document document;
    xml_element* nodeRoot = document.create_root_node("bambu_results");
 
    std::string bench_name;
-   if(parameters->isOption(OPT_configuration_name))
-   {
-      bench_name += parameters->getOption<std::string>(OPT_configuration_name) + ":";
-   }
    if(parameters->isOption(OPT_benchmark_name))
    {
-      bench_name += parameters->getOption<std::string>(OPT_benchmark_name);
+      bench_name += parameters->getOption<std::string>(OPT_benchmark_name) + ":";
+   }
+   if(parameters->isOption(OPT_configuration_name))
+   {
+      bench_name += parameters->getOption<std::string>(OPT_configuration_name);
    }
    if(bench_name == "" || !parameters->IsParameter("simple-benchmark-name") ||
       parameters->GetParameter<int>("simple-benchmark-name") == 0)
@@ -448,7 +391,7 @@ DesignFlowStep_Status Evaluation::Exec()
 #endif
       {
 #ifndef NDEBUG
-         if(parameters->isOption(OPT_dry_run_evaluation) and parameters->getOption<bool>(OPT_dry_run_evaluation))
+         if(parameters->getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::DRY_RUN)
          {
             if(bench_name == "")
             {
@@ -457,6 +400,20 @@ DesignFlowStep_Status Evaluation::Exec()
          }
          else
 #endif
+             if(parameters->isOption(OPT_top_functions_names))
+         {
+            if(bench_name == "")
+            {
+               bench_name += parameters->getOption<std::string>(OPT_top_functions_names);
+            }
+            else
+            {
+               bench_name += ":" + parameters->getOption<std::string>(OPT_top_functions_names);
+            }
+
+            bench_name += "_" + STR(progressive - 1);
+         }
+         else
          {
             THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
             const auto top_fun_id = *(top_function_ids.begin());

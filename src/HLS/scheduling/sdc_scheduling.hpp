@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2014-2022 Politecnico di Milano
+ *              Copyright (C) 2014-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,8 +48,10 @@
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "hash_helper.hpp"
-#include "utility.hpp"
+
+#include <list>
 #include <set>
+#include <vector>
 
 CONSTREF_FORWARD_DECL(AllocationInformation);
 class bb_vertex_order_by_map;
@@ -153,6 +155,9 @@ class SDCScheduling : public Scheduling
    const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
    ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
+
  public:
    /// Result of SPECULATIVE_LOOP: the list of movement to be performed (first element is the operation, second element
    /// is the old basic block, third element is the new basic block) Movements have to be performed in order
@@ -174,14 +179,6 @@ class SDCScheduling : public Scheduling
     * Destructor
     */
    ~SDCScheduling() override;
-
-   /**
-    * Compute the relationships of a step with other steps
-    * @param dependencies is where relationships will be stored
-    * @param relationship_type is the type of relationship to be computed
-    */
-   void ComputeRelationships(DesignFlowStepSet& relationship,
-                             const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
     * Check if this step has actually to be executed

@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -25,56 +25,81 @@
 
 #include "experiments.hpp"
 
+#include <lorina/aiger.hpp>
 #include <mockturtle/algorithms/cleanup.hpp>
 #include <mockturtle/algorithms/window_rewriting.hpp>
 #include <mockturtle/io/aiger_reader.hpp>
 #include <mockturtle/networks/aig.hpp>
-#include <mockturtle/views/color_view.hpp>
-#include <mockturtle/views/depth_view.hpp>
-#include <mockturtle/views/fanout_view.hpp>
-#include <lorina/aiger.hpp>
 
 #include <fmt/format.h>
+
+using namespace mockturtle;
+
+struct stats
+{
+  uint32_t estimated_gain{ 0 };
+  uint32_t real_gain{ 0 };
+  uint32_t num_substitutions{ 0 };
+  uint32_t num_iterations{ 0 };
+  stopwatch<>::duration time_total{ 0 };
+};
+
+aig_network optimize( aig_network const& aig, window_rewriting_params const& ps, window_rewriting_stats& st )
+{
+  window_rewriting( aig, ps, &st );
+  return cleanup_dangling( aig );
+}
 
 int main()
 {
   using namespace experiments;
-  using namespace mockturtle;
+  experiment<std::string, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, double, bool>
+      exp( "window_rewriting", "benchmark", "size_before", "size_after", "est. gain", "real gain", "resubs", "iterations", "runtime", "equivalent" );
 
-  experiment<std::string, uint64_t, uint64_t, double, uint64_t, bool>
-    exp( "window_rewriting", "benchmark", "size_before", "size_after", "runtime", "resubs", "equivalent" );
-
-  for ( auto const& benchmark : epfl_benchmarks() )
+  for ( auto const& benchmark : all_benchmarks( iscas | epfl ) )
   {
     fmt::print( "[i] processing {}\n", benchmark );
 
     /* read the benchmark */
-    aig_network ntk;
-    if ( lorina::read_aiger( benchmark_path( benchmark ), aiger_reader( ntk ) ) != lorina::return_code::success )
+    aig_network aig;
+    if ( lorina::read_aiger( benchmark_path( benchmark ), aiger_reader( aig ) ) != lorina::return_code::success )
     {
       fmt::print( "[e] could not read {}\n", benchmark );
       continue;
     }
 
-    /* optimize benchmark */
-    uint64_t const size_before{ntk.num_gates()};
-
-    fanout_view fntk{ntk};
-    depth_view dntk{fntk};
-    color_view aig{dntk};
-
     window_rewriting_params ps;
     ps.cut_size = 6u;
     ps.num_levels = 5u;
+    ps.filter_cyclic_substitutions = benchmark == "c432" ? true : false;
 
-    window_rewriting_stats st;
-    window_rewriting( aig, ps, &st );
-    ntk = cleanup_dangling( ntk );
+    stats st{};
 
-    auto const cec = benchmark != "hyp" ? abc_cec( ntk, benchmark ) : true;
+    /* optimize benchmark until convergence */
+    uint64_t const size_before{ aig.num_gates() };
+    uint64_t size_current{};
+    do
+    {
+      size_current = aig.num_gates();
 
-    exp( benchmark, size_before, ntk.num_gates(), to_seconds( st.time_total ),
-         st.num_substitutions, cec );
+      window_rewriting_stats win_st;
+      aig = optimize( aig, ps, win_st );
+
+      /* add up statistics from each iteration */
+      st.real_gain += size_before - aig.num_gates();
+      st.estimated_gain += win_st.gain;
+      st.num_substitutions += win_st.num_substitutions;
+      ++st.num_iterations;
+      st.time_total += win_st.time_total;
+
+      // st.report();
+    } while ( aig.num_gates() < size_current );
+
+    auto const cec = benchmark != "hyp" ? abc_cec( aig, benchmark ) : true;
+
+    exp( benchmark, size_before, aig.num_gates(),
+         st.estimated_gain, st.real_gain, st.num_substitutions, st.num_iterations,
+         to_seconds( st.time_total ), cec );
   }
 
   exp.save();

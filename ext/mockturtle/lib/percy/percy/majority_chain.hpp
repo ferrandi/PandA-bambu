@@ -109,9 +109,9 @@ public:
 
     /* temporary truth tables of current step's children */
     std::array<kitty::dynamic_truth_table, 3u> child_tts =
-      { kitty::dynamic_truth_table{nr_in}, kitty::dynamic_truth_table{nr_in}, kitty::dynamic_truth_table{nr_in} };
+      { kitty::dynamic_truth_table{uint32_t(nr_in)}, kitty::dynamic_truth_table{uint32_t(nr_in)}, kitty::dynamic_truth_table{uint32_t(nr_in)} };
 
-    kitty::dynamic_truth_table step_tt{nr_in};
+    kitty::dynamic_truth_table step_tt{uint32_t(nr_in)};
 
     /* some outputs may be simple constants or projections */
     for ( auto h = 0u; h < outputs.size(); ++h )
@@ -450,7 +450,7 @@ public:
   }
 
 public:
-  uint32_t nr_in;
+  int nr_in;
   std::vector<int> outputs;
   std::vector<step> steps;
   std::vector<int> operators;

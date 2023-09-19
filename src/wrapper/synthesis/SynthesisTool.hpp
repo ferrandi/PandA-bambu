@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,25 +42,22 @@
 #ifndef _SYNTHESIS_TOOL_HPP_
 #define _SYNTHESIS_TOOL_HPP_
 
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
+#include "refcount.hpp"
+#include <map>
 #include <string>
 #include <vector>
 
-#include "refcount.hpp"
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(SynthesisTool);
 REF_FORWARD_DECL(ToolManager);
-REF_FORWARD_DECL(DesignParameters);
 REF_FORWARD_DECL(xml_node);
 REF_FORWARD_DECL(xml_script_node_t);
 REF_FORWARD_DECL(xml_set_variable_t);
 REF_FORWARD_DECL(xml_parameter_t);
-REF_FORWARD_DECL(target_device);
+REF_FORWARD_DECL(generic_device);
+REF_FORWARD_DECL(DesignParameters);
 class xml_element;
 
-#include "DesignParameters.hpp"
 #define ADD_RES_VAR(name) \
    xml_reserved_vars.push_back(xml_set_variable_tRef(new xml_set_variable_t((name), nullptr, nullptr)))
 
@@ -93,16 +90,6 @@ class SynthesisTool
    /// supported synthesis tools
    using type_t = enum {
       UNKNOWN = 0,
-      DESIGN_COMPILER,
-#if HAVE_EXPERIMENTAL
-      PRIME_TIME,
-      FORMALITY,
-      LIBRARY_COMPILER,
-      LIBRARY_CREATOR,
-      DESIGN_OPTIMIZER,
-      SOC_ENCOUNTER,
-      XPWR,
-#endif
       XST,
       NGDBUILD,
       MAP,
@@ -123,7 +110,7 @@ class SynthesisTool
 
  protected:
    /// class containing information about the target device
-   const target_deviceRef device;
+   const generic_deviceRef device;
 
    /// class containing all the parameters
    const ParameterConstRef Param;
@@ -168,7 +155,7 @@ class SynthesisTool
    /**
     * Constructor
     */
-   SynthesisTool(const ParameterConstRef& Param, std::string tool_exec, const target_deviceRef& device,
+   SynthesisTool(const ParameterConstRef& Param, std::string tool_exec, const generic_deviceRef& device,
                  const std::string& _flow_name, std::string default_output_dir);
 
    /**
@@ -235,7 +222,7 @@ class SynthesisTool
     * Factory method
     */
    static SynthesisToolRef create_synthesis_tool(type_t type, const ParameterConstRef& Param,
-                                                 const std::string& output_dir, const target_deviceRef& device);
+                                                 const std::string& output_dir, const generic_deviceRef& device);
 
    /**
     * Actual parsing of parameters and script nodes

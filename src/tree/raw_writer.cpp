@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -237,12 +237,10 @@ void raw_writer::operator()(const decl_node* obj, unsigned int& mask)
    {
       WRITE_TOKEN(os, TOK_LIBRARY_SYSTEM);
    }
-#if HAVE_BAMBU_BUILT
    if(obj->libbambu_flag)
    {
       WRITE_TOKEN(os, TOK_LIBBAMBU);
    }
-#endif
    write_when_not_null(STOK(TOK_CHAN), obj->chan);
    if(obj->C_flag)
    {
@@ -371,12 +369,10 @@ void raw_writer::operator()(const type_node* obj, unsigned int& mask)
    {
       WRITE_TOKEN(os, TOK_SYSTEM);
    }
-#if HAVE_BAMBU_BUILT
    if(obj->libbambu_flag)
    {
       WRITE_TOKEN(os, TOK_LIBBAMBU);
    }
-#endif
 }
 
 void raw_writer::operator()(const memory_tag* obj, unsigned int& mask)

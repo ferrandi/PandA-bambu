@@ -1,5 +1,5 @@
 /* Specific functions for bambu architecture.
-   Copyright (C) 2014-2022 Politecnico di Milano (Italy).
+   Copyright (C) 2014-2023 Politecnico di Milano (Italy).
    This file is part of the HLS-FP Library.
 
    The HLS-FP Library is free software; you can redistribute it and/or
@@ -21,7 +21,6 @@
 
 #define __FORCE_INLINE __attribute__((always_inline)) inline
 
-#define __WORDSIZE 32
 #define __BYTE_ORDER __LITTLE_ENDIAN
 #define __bambu__
 

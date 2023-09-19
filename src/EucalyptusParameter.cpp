@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -41,15 +41,9 @@
  * Last modified by $Author$
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
-/// Header include
 #include "EucalyptusParameter.hpp"
 
-#include "target_device.hpp"
-
+#include "generic_device.hpp"
 #include "language_writer.hpp"
 
 #define TOOL_OPT_BASE 256
@@ -63,10 +57,11 @@
 #define OPT_ALTERA_ROOT (1 + OPT_MENTOR_OPTIMIZER)
 #define OPT_NANOXPLORE_ROOT (1 + OPT_ALTERA_ROOT)
 #define OPT_NANOXPLORE_BYPASS (1 + OPT_NANOXPLORE_ROOT)
+#define OPT_PARALLEL_BACKEND (1 + OPT_NANOXPLORE_BYPASS)
 
 #include "utility.hpp"
 #include "utility/fileIO.hpp"
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <getopt.h>
 
 void EucalyptusParameter::PrintProgramName(std::ostream& os) const
@@ -98,15 +93,7 @@ void EucalyptusParameter::PrintHelp(std::ostream& os) const
       << "    --target-scriptfile=file        Specify a script XML file including the scripts for the synthesis w.r.t. "
          "the target device.\n"
       << "    --clock-period=value            Specify the period of the clock signal (default 10 nanoseconds)\n"
-      << "    --characterize=<component_name> Characterize the given component"
-#if HAVE_EXPERIMENTAL
-      << "\n"
-      << "  Component Integration:\n"
-      << "    --import-ip-core=<file>         Converts the specified file into an XML-based representation.\n"
-      << "    --export-ip-core=<name>         Generates the HDL description of the specified component.\n"
-      << "    --output=<file>                 Specifies the name of the output file.\n"
-#endif
-      << "\n"
+      << "    --characterize=<component_name> Characterize the given component\n"
       << std::endl;
    // options defining where backend tools could be found
    os << "  Backend configuration:\n\n"
@@ -129,7 +116,7 @@ void EucalyptusParameter::PrintHelp(std::ostream& os) const
       << "        (default=/opt/mentor)\n\n"
       << "    --nanoxplore-root=<path>\n"
       << "        Define NanoXplore tools path. Given directory is searched for NXMap.\n"
-      << "        (default=/opt/NanoXplore/NXMap3)\n\n"
+      << "        (default=/opt/NanoXplore)\n\n"
       << "    --xilinx-root=<path>\n"
       << "        Define Xilinx tools path. Given directory is searched for both ISE and Vivado\n"
       << "        (default=/opt/Xilinx)\n\n"
@@ -154,28 +141,22 @@ int EucalyptusParameter::Exec()
    // this is a GNU extension.
    const char* const short_options = COMMON_SHORT_OPTIONS_STRING "w:";
 
-   const struct option long_options[] = {
-      COMMON_LONG_OPTIONS,
-      {"characterize", required_argument, nullptr, INPUT_OPT_CHARACTERIZE},
-      {"clock-period", required_argument, nullptr, 0},
-#if HAVE_EXPERIMENTAL
-      {"export-ip-core", required_argument, nullptr, 0},
-      {"import-ip-core", required_argument, nullptr, 0},
-      {"output", required_argument, nullptr, 0},
-#endif
-      {"target-datafile", required_argument, nullptr, INPUT_OPT_TARGET_DATAFILE},
-      {"target-device", required_argument, nullptr, 0},
-      {"target-scriptfile", required_argument, nullptr, INPUT_OPT_TARGET_SCRIPTFILE},
-      {"writer", required_argument, nullptr, 'w'},
-      {"altera-root", optional_argument, nullptr, OPT_ALTERA_ROOT},
-      {"lattice-root", optional_argument, nullptr, OPT_LATTICE_ROOT},
-      {"mentor-root", optional_argument, nullptr, OPT_MENTOR_ROOT},
-      {"mentor-optimizer", optional_argument, nullptr, OPT_MENTOR_OPTIMIZER},
-      {"nanoxplore-root", optional_argument, nullptr, OPT_NANOXPLORE_ROOT},
-      {"nanoxplore-bypass", optional_argument, nullptr, OPT_NANOXPLORE_BYPASS},
-      {"xilinx-root", optional_argument, nullptr, OPT_XILINX_ROOT},
-      {nullptr, 0, nullptr, 0}
-   };
+   const struct option long_options[] = {COMMON_LONG_OPTIONS,
+                                         {"characterize", required_argument, nullptr, INPUT_OPT_CHARACTERIZE},
+                                         {"clock-period", required_argument, nullptr, 0},
+                                         {"target-datafile", required_argument, nullptr, INPUT_OPT_TARGET_DATAFILE},
+                                         {"target-device", required_argument, nullptr, 0},
+                                         {"target-scriptfile", required_argument, nullptr, INPUT_OPT_TARGET_SCRIPTFILE},
+                                         {"writer", required_argument, nullptr, 'w'},
+                                         {"altera-root", optional_argument, nullptr, OPT_ALTERA_ROOT},
+                                         {"lattice-root", optional_argument, nullptr, OPT_LATTICE_ROOT},
+                                         {"mentor-root", optional_argument, nullptr, OPT_MENTOR_ROOT},
+                                         {"mentor-optimizer", optional_argument, nullptr, OPT_MENTOR_OPTIMIZER},
+                                         {"nanoxplore-root", optional_argument, nullptr, OPT_NANOXPLORE_ROOT},
+                                         {"nanoxplore-bypass", optional_argument, nullptr, OPT_NANOXPLORE_BYPASS},
+                                         {"xilinx-root", optional_argument, nullptr, OPT_XILINX_ROOT},
+                                         {"parallel-backend", no_argument, nullptr, OPT_PARALLEL_BACKEND},
+                                         {nullptr, 0, nullptr, 0}};
 
    if(argc == 1) // Bambu called without arguments, it simple prints help message
    {
@@ -245,16 +226,17 @@ int EucalyptusParameter::Exec()
             setOption(OPT_xilinx_root, GetPath(optarg));
             break;
          }
+         case OPT_PARALLEL_BACKEND:
+         {
+            setOption(OPT_parallel_backend, true);
+            break;
+         }
          /// output options
          case 'w':
          {
             if(std::string(optarg) == "V")
             {
                setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
-#if HAVE_EXPERIMENTAL
-               else if(std::string(optarg) == "S")
-                   setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::SYSTEMC));
-#endif
             }
             else if(std::string(optarg) == "H")
             {
@@ -302,20 +284,6 @@ int EucalyptusParameter::Exec()
             {
                setOption(OPT_clock_period, optarg);
             }
-#if HAVE_EXPERIMENTAL
-            else if(long_options[option_index].name == std::string("import-ip-core"))
-            {
-               setOption(OPT_import_ip_core, optarg);
-            }
-            else if(long_options[option_index].name == std::string("export-ip-core"))
-            {
-               setOption(OPT_export_ip_core, optarg);
-            }
-            else if(long_options[option_index].name == std::string("output"))
-            {
-               setOption(OPT_output_file, GetPath(optarg));
-            }
-#endif
             else
             {
                THROW_ERROR("Not supported option: " + std::string(long_options[option_index].name));
@@ -361,8 +329,8 @@ void EucalyptusParameter::CheckParameters()
 {
    Parameter::CheckParameters();
    const auto sorted_dirs = [](const std::string& parent_dir) {
-      std::vector<boost::filesystem::path> sorted_paths;
-      std::copy(boost::filesystem::directory_iterator(parent_dir), boost::filesystem::directory_iterator(),
+      std::vector<std::filesystem::path> sorted_paths;
+      std::copy(std::filesystem::directory_iterator(parent_dir), std::filesystem::directory_iterator(),
                 std::back_inserter(sorted_paths));
       std::sort(sorted_paths.begin(), sorted_paths.end(), NaturalVersionOrder);
       return sorted_paths;
@@ -371,16 +339,15 @@ void EucalyptusParameter::CheckParameters()
    const auto altera_dirs = SplitString(getOption<std::string>(OPT_altera_root), ":");
    removeOption(OPT_altera_root);
    const auto search_quartus = [&](const std::string& dir) {
-      if(boost::filesystem::exists(dir + "/quartus/bin/quartus_sh"))
+      if(std::filesystem::exists(dir + "/quartus/bin/quartus_sh"))
       {
-         if(system(STR("bash -c \"if [[ \\\"$(" + dir +
-                       "/quartus/bin/quartus_sh --version | grep Version | awk '{print $2}' | awk -F'.' '{print "
-                       "$1}')\\\" -lt \\\"14\\\" ]]; then exit 1; else exit 0; fi\" > /dev/null 2>&1")
+         if(system(STR("bash -c \"if [ $(" + dir +
+                       "/quartus/bin/quartus_sh --version | grep Version | sed -E 's/Version ([0-9]+).*/\\1/') -lt 14 "
+                       "]; then exit 1; else exit 0; fi\" > /dev/null 2>&1")
                        .c_str()))
          {
             setOption(OPT_quartus_13_settings, "export PATH=$PATH:" + dir + "/quartus/bin/");
-            if(system(STR("bash -c \"" + dir +
-                          "/quartus/bin/quartus_sh --help | grep \\\"\\-\\-64bit\\\"\" > /dev/null 2>&1")
+            if(system(STR("bash -c \"" + dir + "/quartus/bin/quartus_sh --help | grep '--64bit'\" > /dev/null 2>&1")
                           .c_str()) == 0)
             {
                setOption(OPT_quartus_13_64bit, true);
@@ -398,11 +365,11 @@ void EucalyptusParameter::CheckParameters()
    };
    for(const auto& altera_dir : altera_dirs)
    {
-      if(boost::filesystem::is_directory(altera_dir))
+      if(std::filesystem::is_directory(altera_dir))
       {
          for(const auto& ver_dir : sorted_dirs(altera_dir))
          {
-            if(boost::filesystem::is_directory(ver_dir))
+            if(std::filesystem::is_directory(ver_dir))
             {
                search_quartus(ver_dir.string());
             }
@@ -416,36 +383,36 @@ void EucalyptusParameter::CheckParameters()
    removeOption(OPT_lattice_root);
    auto has_lattice = 0; // 0 = not found, 1 = 32-bit version, 2 = 64-bit version
    const auto search_lattice = [&](const std::string& dir) {
-      if(boost::filesystem::exists(dir + "/bin/lin/diamondc"))
+      if(std::filesystem::exists(dir + "/bin/lin/diamondc"))
       {
          has_lattice = 1;
          setOption(OPT_lattice_root, dir);
       }
-      else if(boost::filesystem::exists(dir + "/bin/lin64/diamondc"))
+      else if(std::filesystem::exists(dir + "/bin/lin64/diamondc"))
       {
          has_lattice = 2;
          setOption(OPT_lattice_root, dir);
       }
-      if(boost::filesystem::exists(dir + "/cae_library/synthesis/verilog/pmi_def.v"))
+      if(std::filesystem::exists(dir + "/cae_library/synthesis/verilog/pmi_def.v"))
       {
          setOption(OPT_lattice_pmi_def, dir + "/cae_library/synthesis/verilog/pmi_def.v");
       }
-      if(boost::filesystem::exists(dir + "/cae_library/simulation/verilog/pmi/pmi_ram_dp_true_be.v"))
+      if(std::filesystem::exists(dir + "/cae_library/simulation/verilog/pmi/pmi_ram_dp_true_be.v"))
       {
          setOption(OPT_lattice_pmi_tdpbe, dir + "/cae_library/simulation/verilog/pmi/pmi_ram_dp_true_be.v");
       }
-      if(boost::filesystem::exists(dir + "/cae_library/simulation/verilog/pmi/pmi_dsp_mult.v"))
+      if(std::filesystem::exists(dir + "/cae_library/simulation/verilog/pmi/pmi_dsp_mult.v"))
       {
          setOption(OPT_lattice_pmi_mul, dir + "/cae_library/simulation/verilog/pmi/pmi_dsp_mult.v");
       }
    };
    for(const auto& lattice_dir : lattice_dirs)
    {
-      if(boost::filesystem::is_directory(lattice_dir))
+      if(std::filesystem::is_directory(lattice_dir))
       {
          for(const auto& ver_dir : sorted_dirs(lattice_dir))
          {
-            if(boost::filesystem::is_directory(ver_dir))
+            if(std::filesystem::is_directory(ver_dir))
             {
                search_lattice(ver_dir.string());
             }
@@ -486,22 +453,22 @@ void EucalyptusParameter::CheckParameters()
    const auto mentor_dirs = SplitString(getOption<std::string>(OPT_mentor_root), ":");
    removeOption(OPT_mentor_root);
    const auto search_mentor = [&](const std::string& dir) {
-      if(boost::filesystem::exists(dir + "/bin/vsim"))
+      if(std::filesystem::exists(dir + "/bin/vsim"))
       {
          setOption(OPT_mentor_modelsim_bin, dir + "/bin");
       }
-      if(boost::filesystem::exists(dir + "/bin/visualizer"))
+      if(std::filesystem::exists(dir + "/bin/visualizer"))
       {
          setOption(OPT_mentor_visualizer, dir + "/bin/visualizer");
       }
    };
    for(const auto& mentor_dir : mentor_dirs)
    {
-      if(boost::filesystem::is_directory(mentor_dir))
+      if(std::filesystem::is_directory(mentor_dir))
       {
          for(const auto& ver_dir : sorted_dirs(mentor_dir))
          {
-            if(boost::filesystem::is_directory(ver_dir))
+            if(std::filesystem::is_directory(ver_dir))
             {
                search_mentor(ver_dir.string());
             }
@@ -518,18 +485,18 @@ void EucalyptusParameter::CheckParameters()
    const auto nanox_dirs = SplitString(getOption<std::string>(OPT_nanoxplore_root), ":");
    removeOption(OPT_nanoxplore_root);
    const auto search_xmap = [&](const std::string& dir) {
-      if(boost::filesystem::exists(dir + "/bin/nxpython"))
+      if(std::filesystem::exists(dir + "/bin/nxpython"))
       {
          setOption(OPT_nanoxplore_root, dir);
       }
    };
    for(const auto& nanox_dir : nanox_dirs)
    {
-      if(boost::filesystem::is_directory(nanox_dir))
+      if(std::filesystem::is_directory(nanox_dir))
       {
          for(const auto& ver_dir : sorted_dirs(nanox_dir))
          {
-            if(boost::filesystem::is_directory(ver_dir))
+            if(std::filesystem::is_directory(ver_dir))
             {
                search_xmap(ver_dir.string());
             }
@@ -543,34 +510,34 @@ void EucalyptusParameter::CheckParameters()
    const auto xilinx_dirs = SplitString(getOption<std::string>(OPT_xilinx_root), ":");
    removeOption(OPT_xilinx_root);
    const auto search_xilinx = [&](const std::string& dir) {
-      if(boost::filesystem::exists(dir + "/ISE"))
+      if(std::filesystem::exists(dir + "/ISE"))
       {
-         if(target_64 && boost::filesystem::exists(dir + "/settings64.sh"))
+         if(target_64 && std::filesystem::exists(dir + "/settings64.sh"))
          {
             setOption(OPT_xilinx_settings, dir + "/settings64.sh");
          }
-         else if(boost::filesystem::exists(dir + "/settings32.sh"))
+         else if(std::filesystem::exists(dir + "/settings32.sh"))
          {
             setOption(OPT_xilinx_settings, dir + "/settings32.sh");
          }
-         if(boost::filesystem::exists(dir + "/ISE/verilog/src/glbl.v"))
+         if(std::filesystem::exists(dir + "/ISE/verilog/src/glbl.v"))
          {
             setOption(OPT_xilinx_glbl, dir + "/ISE/verilog/src/glbl.v");
          }
       }
    };
    const auto search_xilinx_vivado = [&](const std::string& dir) {
-      if(boost::filesystem::exists(dir + "/ids_lite"))
+      if(std::filesystem::exists(dir + "/ids_lite"))
       {
-         if(target_64 && boost::filesystem::exists(dir + "/settings64.sh"))
+         if(target_64 && std::filesystem::exists(dir + "/settings64.sh"))
          {
             setOption(OPT_xilinx_vivado_settings, dir + "/settings64.sh");
          }
-         else if(boost::filesystem::exists(dir + "/settings32.sh"))
+         else if(std::filesystem::exists(dir + "/settings32.sh"))
          {
             setOption(OPT_xilinx_vivado_settings, dir + "/settings32.sh");
          }
-         if(boost::filesystem::exists(dir + "/data/verilog/src/glbl.v"))
+         if(std::filesystem::exists(dir + "/data/verilog/src/glbl.v"))
          {
             setOption(OPT_xilinx_glbl, dir + "/data/verilog/src/glbl.v");
          }
@@ -578,16 +545,16 @@ void EucalyptusParameter::CheckParameters()
    };
    for(const auto& xilinx_dir : xilinx_dirs)
    {
-      if(boost::filesystem::is_directory(xilinx_dir))
+      if(std::filesystem::is_directory(xilinx_dir))
       {
          for(const auto& ver_dir : sorted_dirs(xilinx_dir))
          {
-            if(boost::filesystem::is_directory(ver_dir))
+            if(std::filesystem::is_directory(ver_dir))
             {
-               for(const auto& ise_dir : boost::filesystem::directory_iterator(ver_dir))
+               for(const auto& ise_dir : std::filesystem::directory_iterator(ver_dir))
                {
                   const auto ise_path = ise_dir.path().string();
-                  if(boost::filesystem::is_directory(ise_dir) && ise_path.find("ISE") > ise_path.find_last_of('/'))
+                  if(std::filesystem::is_directory(ise_dir) && ise_path.find("ISE") > ise_path.find_last_of('/'))
                   {
                      search_xilinx(ise_path);
                   }
@@ -599,17 +566,16 @@ void EucalyptusParameter::CheckParameters()
    }
    for(const auto& xilinx_dir : xilinx_dirs)
    {
-      if(boost::filesystem::is_directory(xilinx_dir))
+      if(std::filesystem::is_directory(xilinx_dir))
       {
-         for(const auto& vivado_dir : boost::filesystem::directory_iterator(xilinx_dir))
+         for(const auto& vivado_dir : std::filesystem::directory_iterator(xilinx_dir))
          {
             const auto vivado_path = vivado_dir.path().string();
-            if(boost::filesystem::is_directory(vivado_dir) &&
-               vivado_path.find("Vivado") > vivado_path.find_last_of('/'))
+            if(std::filesystem::is_directory(vivado_dir) && vivado_path.find("Vivado") > vivado_path.find_last_of('/'))
             {
                for(const auto& ver_dir : sorted_dirs(vivado_path))
                {
-                  if(boost::filesystem::is_directory(ver_dir))
+                  if(std::filesystem::is_directory(ver_dir))
                   {
                      search_xilinx_vivado(ver_dir.string());
                   }
@@ -627,16 +593,9 @@ void EucalyptusParameter::CheckParameters()
       setOption(OPT_verilator_l2_name,
                 system("bash -c \"if [[ \\\"x$(verilator --l2-name v 2>&1 | head -n1 | grep -i 'Invalid Option')\\\" = "
                        "\\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0);
-      const auto has_timescale_override =
-          system("bash -c \"if [[ \\\"x$(verilator --timescale-override v 2>&1 | head -n1 | grep -i 'Invalid "
-                 "Option')\\\" = \\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
-      if(has_timescale_override)
-      {
-         setOption(OPT_verilator_timescale_override, "1ps/1ps");
-      }
       const auto thread_support =
-          system("bash -c \"if [[ \\\"$(verilator --version | head -n1 | awk -F' ' '{print $2}'| awk -F'.' '{print "
-                 "$1}')\\\" = \\\"4\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
+          system("bash -c \"if [ $(verilator --version | grep Verilator | sed -E 's/Verilator ([0-9]+).*/\1/') -ge 4 "
+                 "]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
       if(getOption<bool>(OPT_verilator_parallel) && !thread_support)
       {
          THROW_WARNING("Installed version of Verilator does not support multi-threading.");
@@ -644,8 +603,8 @@ void EucalyptusParameter::CheckParameters()
       }
    }
 
-   /// Search for icarus
-   setOption(OPT_icarus, system("which iverilog > /dev/null 2>&1") == 0);
+   // /// Search for icarus
+   // setOption(OPT_icarus, system("which iverilog > /dev/null 2>&1") == 0);
 
    if(isOption(OPT_simulator))
    {
@@ -680,14 +639,6 @@ void EucalyptusParameter::CheckParameters()
       {
          setOption(OPT_simulator, "XSIM"); /// Mixed language simulator
       }
-      else if(isOption(OPT_xilinx_settings))
-      {
-         setOption(OPT_simulator, "ISIM"); /// Mixed language simulator
-      }
-      else if(isOption(OPT_icarus))
-      {
-         setOption(OPT_simulator, "ICARUS");
-      }
       else if(isOption(OPT_verilator))
       {
          setOption(OPT_simulator, "VERILATOR");
@@ -696,6 +647,14 @@ void EucalyptusParameter::CheckParameters()
       {
          THROW_ERROR("No valid simulator was found in the system.");
       }
+      // else if(isOption(OPT_xilinx_settings))
+      // {
+      //    setOption(OPT_simulator, "ISIM"); /// Mixed language simulator
+      // }
+      // else if(isOption(OPT_icarus))
+      // {
+      //    setOption(OPT_simulator, "ICARUS");
+      // }
    }
    if(not isOption(OPT_device_string))
    {
@@ -707,17 +666,6 @@ void EucalyptusParameter::CheckParameters()
       }
       setOption(OPT_device_string, device_string);
    }
-#if HAVE_EXPERIMENTAL
-   /// checking of import/export of IP cores
-   if(isOption(OPT_import_ip_core) and isOption(OPT_export_ip_core))
-   {
-      THROW_ERROR("Importing and exporting of IP cores are mutually exclusive");
-   }
-   if((isOption(OPT_import_ip_core) or isOption(OPT_export_ip_core)) and !isOption(OPT_output_file))
-   {
-      THROW_ERROR("Importing/Exporting of IP cores requires to specify the name of the output file (--output)");
-   }
-#endif
 }
 
 void EucalyptusParameter::SetDefaults()
@@ -731,7 +679,7 @@ void EucalyptusParameter::SetDefaults()
    setOption(OPT_lattice_root, "/opt/diamond:/usr/local/diamond");
    setOption(OPT_mentor_root, "/opt/mentor");
    setOption(OPT_mentor_optimizer, true);
-   setOption(OPT_nanoxplore_root, "/opt/NanoXplore/NXmap3");
+   setOption(OPT_nanoxplore_root, "/opt/NanoXplore");
    setOption(OPT_verilator_parallel, false);
    setOption(OPT_xilinx_root, "/opt/Xilinx");
 
@@ -741,23 +689,15 @@ void EucalyptusParameter::SetDefaults()
    setOption("device_package", "clg484");
    setOption("device_synthesis_tool", "VVD");
    setOption(OPT_connect_iob, false);
-   setOption(OPT_target_device_type, static_cast<int>(TargetDevice_Type::FPGA));
    setOption(OPT_clock_period_resource_fraction, 1.0);
    setOption(OPT_parallel_backend, false);
 
-   /// library estimation
-   setOption(OPT_estimate_library, false);
-
    /// backend HDL
    setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
-   setOption(OPT_timing_simulation, false);
    setOption(OPT_reset_type, "no");
    setOption(OPT_reg_init_value, false);
 
    setOption(OPT_output_directory, GetCurrentPath() + "/HLS_output/");
-   setOption(OPT_rtl, true);
    setOption(OPT_reset_level, false);
-#if HAVE_EXPERIMENTAL
    setOption(OPT_mixed_design, true);
-#endif
 }

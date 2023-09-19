@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -286,7 +286,7 @@ void GimpleWriter::operator()(const binary_expr* obj, unsigned int& mask)
       {
          if(GET_NODE(obj->op1)->get_kind() == integer_cst_K)
          {
-            const long long offset = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(obj->op1)));
+            const auto offset = tree_helper::GetConstValue(obj->op1);
             if(offset == 0)
             {
                os << "*";
@@ -736,6 +736,10 @@ void GimpleWriter::operator()(const type_node* obj, unsigned int& mask)
                os << "char";
             }
          }
+         else if(obj->algn == 1)
+         {
+            os << "_Bool";
+         }
          else if(obj->algn == 8)
          {
             os << "char";
@@ -758,8 +762,7 @@ void GimpleWriter::operator()(const type_node* obj, unsigned int& mask)
          }
          else
          {
-            THROW_ERROR(std::string("Node not yet supported: ") + obj->get_kind_text() + " with alignment " +
-                        STR(obj->algn));
+            os << "_BitInt(" << obj->algn << ")";
          }
       }
       else if(obj_type == boolean_type_K)
@@ -823,11 +826,8 @@ void GimpleWriter::operator()(const array_type* obj, unsigned int& mask)
    tree_nodeRef array_element = GET_NODE(obj->elts);
    if(array_length->get_kind() == integer_cst_K)
    {
-      auto* arr_ic = GetPointer<integer_cst>(array_length);
-      auto* tn = GetPointer<type_node>(array_element);
-      auto* eln_ic = GetPointer<integer_cst>(GET_NODE(tn->size));
-      os << boost::lexical_cast<std::string>(tree_helper::get_integer_cst_value(arr_ic) /
-                                             tree_helper::get_integer_cst_value(eln_ic));
+      const auto tn = GetPointer<type_node>(array_element);
+      os << STR(tree_helper::GetConstValue(obj->size) / tree_helper::GetConstValue(tn->size));
    }
 
    os << "]";

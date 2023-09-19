@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -158,7 +158,7 @@ class Range
    virtual RangeRef intersectWith(const RangeConstRef& other) const;
    virtual RangeRef unionWith(const RangeConstRef& other) const;
 
-   static const bw_t MAX_BIT_INT;
+   static const bw_t max_digits;
    static const APInt Min;
    static const APInt Max;
    static const APInt MinDelta;
@@ -180,7 +180,7 @@ class RealRange : public Range
    RealRange(const Range& s, const Range& e, const Range& f);
    RealRange(const RangeConstRef& s, const RangeConstRef& e, const RangeConstRef& f);
    explicit RealRange(const RangeConstRef& vc);
-   ~RealRange() = default;
+   ~RealRange() override = default;
    RealRange(const RealRange& other) = default;
    RealRange(RealRange&&) = default;
    RealRange& operator=(const RealRange& other) = default;

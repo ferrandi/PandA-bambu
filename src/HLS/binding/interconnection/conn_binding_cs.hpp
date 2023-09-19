@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2022 Politecnico di Milano
+ *              Copyright (c) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -53,7 +53,7 @@ class conn_binding_cs : public conn_binding
    /**
     * Destructor
     */
-   virtual ~conn_binding_cs();
+   ~conn_binding_cs() override;
 
    /**
     * @brief add_to_SM

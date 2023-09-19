@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2021  EPFL
+ * Copyright (C) 2017-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -142,14 +142,14 @@ public:
   /*! \brief Returns the negated cube */
   inline cube operator~() const
   {
-    return {~_bits, _mask};
+    return { ~_bits, _mask };
   }
 
   /*! \brief Merges two cubes of distance-1 */
   inline cube merge( const cube& that ) const
   {
     const auto d = difference( that );
-    return {_bits ^ ( ~that._bits & d ), _mask ^ ( that._mask & d )};
+    return { _bits ^ ( ~that._bits & d ), _mask ^ ( that._mask & d ) };
   }
 
   /*! \brief Adds literal to cube */
@@ -178,21 +178,21 @@ public:
   static cube nth_var_cube( uint8_t var_index )
   {
     const auto _bits = uint32_t( 1 ) << var_index;
-    return {_bits, _bits};
+    return { _bits, _bits };
   }
 
   /*! \brief Constructs the elementary cube containing the first k positive literals */
   static cube pos_cube( uint8_t k )
   {
     const uint32_t _bits = ( uint64_t( 1 ) << k ) - 1;
-    return {_bits, _bits};
+    return { _bits, _bits };
   }
 
   /*! \brief Constructs the elementary cube containing the first k negative literals */
   static cube neg_cube( uint8_t k )
   {
     const uint32_t _bits = ( uint64_t( 1 ) << k ) - 1;
-    return {0u, _bits};
+    return { 0u, _bits };
   }
 
   /*! \brief Prints a cube */
@@ -252,8 +252,50 @@ public:
     _mask ^= ( 1 << index );
   }
 
+  /*! \brief Iterates over all minterms in the cube
+   *
+   * The callback function takes a cube as input, which is actually
+   * a minterm (i.e., all variables are set), and returns a boolean.
+   * The loop terminates when the callback returns false.
+   *
+   * \param length Number of variables in the cube
+   * \param fn Callback function on each minterm
+   */
+  template<class Fn>
+  void foreach_minterm( uint8_t length, Fn&& fn ) const
+  {
+    foreach_minterm_rec( *this, length, fn );
+  }
+
+  template<class Fn>
+  bool foreach_minterm_rec( cube const& c, uint8_t prev_index, Fn&& fn ) const
+  {
+    if ( prev_index == 0 )
+    {
+      return fn( c );
+    }
+
+    uint8_t index = prev_index - 1;
+    if ( !get_mask( index ) )
+    {
+      cube c0 = c;
+      c0.set_mask( index );
+      if ( !foreach_minterm_rec( c0, index, fn ) )
+      {
+        return false;
+      }
+      c0.set_bit( index );
+      return foreach_minterm_rec( c0, index, fn );
+    }
+    else
+    {
+      return foreach_minterm_rec( c, index, fn );
+    }
+  }
+
   /* cube data */
-  union {
+  union
+  {
     struct
     {
       uint32_t _bits;

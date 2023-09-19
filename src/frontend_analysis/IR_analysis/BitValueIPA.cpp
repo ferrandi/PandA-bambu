@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2016-2022 Politecnico di Milano
+ *              Copyright (C) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -336,8 +336,9 @@ DesignFlowStep_Status BitValueIPA::Exec()
                for(const auto& i : call_edge_info->direct_call_points)
                {
                   THROW_ASSERT(i, "unexpected condition");
-                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->examining direct call point " + STR(i));
                   const auto call_node = TM->CGetTreeNode(i);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                 "-->examining direct call point " + call_node->ToString());
                   if(call_node->get_kind() == gimple_assign_K)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "gimple_assign");
@@ -519,12 +520,13 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            }
                            else if(ap_kind == integer_cst_K)
                            {
-                              const auto ic = GetPointerS<const integer_cst>(GET_CONST_NODE(ap_node));
-                              res_tmp = create_bitstring_from_constant(ic->value, BitLatticeManipulator::Size(ap_node),
+                              const auto cst_val = tree_helper::GetConstValue(ap_node);
+                              res_tmp = create_bitstring_from_constant(cst_val, BitLatticeManipulator::Size(ap_node),
                                                                        parm_signed);
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                             "actual parameter " + STR(ic) + " is a constant value id: " +
-                                                 STR(ic->index) + " bitstring: " + bitstring_to_string(res_tmp));
+                                             "actual parameter " + STR(ap_node) +
+                                                 " is a constant value id: " + STR(GET_INDEX_CONST_NODE(ap_node)) +
+                                                 " bitstring: " + bitstring_to_string(res_tmp));
                            }
                            else
                            {
@@ -561,12 +563,13 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            }
                            else if(ap_kind == integer_cst_K)
                            {
-                              const auto ic = GetPointerS<const integer_cst>(GET_CONST_NODE(ap_node));
-                              res_tmp = create_bitstring_from_constant(ic->value, BitLatticeManipulator::Size(ap_node),
+                              const auto cst_val = tree_helper::GetConstValue(ap_node);
+                              res_tmp = create_bitstring_from_constant(cst_val, BitLatticeManipulator::Size(ap_node),
                                                                        parm_signed);
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                             "actual parameter " + STR(ic) + " is a constant value id: " +
-                                                 STR(ic->index) + " bitstring: " + bitstring_to_string(res_tmp));
+                                             "actual parameter " + STR(ap_node) +
+                                                 " is a constant value id: " + STR(GET_INDEX_CONST_NODE(ap_node)) +
+                                                 " bitstring: " + bitstring_to_string(res_tmp));
                            }
                            else
                            {
@@ -634,7 +637,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
 
       std::string null_string = "";
       std::string* old_bitvalue = &null_string;
-      auto size = 0u;
+      unsigned long long size = 0u;
       auto restart_fun_id = 0u;
       if(kind == function_decl_K)
       {

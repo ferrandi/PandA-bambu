@@ -1,10 +1,10 @@
 #include <catch.hpp>
 
-#include <mockturtle/traits.hpp>
 #include <mockturtle/generators/arithmetic.hpp>
 #include <mockturtle/networks/aig.hpp>
-#include <mockturtle/networks/mig.hpp>
 #include <mockturtle/networks/klut.hpp>
+#include <mockturtle/networks/mig.hpp>
+#include <mockturtle/traits.hpp>
 #include <mockturtle/views/mapping_view.hpp>
 
 using namespace mockturtle;
@@ -62,7 +62,7 @@ TEST_CASE( "create a mapping in an AIG", "[mapping_view]" )
   const auto c = aig.create_pi();
   auto [sum, carry] = full_adder( aig, a, b, c );
 
-  mapping_view mapped_aig{aig};
+  mapping_view mapped_aig{ aig };
 
   CHECK( !mapped_aig.has_mapping() );
   CHECK( mapped_aig.num_cells() == 0u );
@@ -73,7 +73,7 @@ TEST_CASE( "create a mapping in an AIG", "[mapping_view]" )
   CHECK( !mapped_aig.is_cell_root( aig.get_node( sum ) ) );
   CHECK( !mapped_aig.is_cell_root( aig.get_node( carry ) ) );
 
-  std::vector<aig_network::node> leafs{{aig.get_node( a ), aig.get_node( b ), aig.get_node( c )}};
+  std::vector<aig_network::node> leafs{ { aig.get_node( a ), aig.get_node( b ), aig.get_node( c ) } };
   mapped_aig.add_to_mapping( aig.get_node( sum ), leafs.begin(), leafs.end() );
   mapped_aig.add_to_mapping( aig.get_node( carry ), leafs.begin(), leafs.end() );
 

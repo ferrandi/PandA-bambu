@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -109,11 +109,10 @@ DesignFlowStep_Status call_expr_fix::InternalExec()
    bool bb_modified = false;
 
    /// Checking if there are gimple_call or call_expr for which the fix apply
-   for(auto block : sl->list_of_bloc)
+   for(const auto& block : sl->list_of_bloc)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->analyzing BB" + boost::lexical_cast<std::string>(block.first));
-      for(auto statement : block.second->CGetStmtList())
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->analyzing BB" + std::to_string(block.first));
+      for(const auto& statement : block.second->CGetStmtList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing node " + GET_NODE(statement)->ToString());
          if(GET_NODE(statement)->get_kind() == gimple_call_K)

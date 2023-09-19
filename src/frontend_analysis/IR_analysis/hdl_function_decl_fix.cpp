@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2022 Politecnico di Milano
+ *              Copyright (C) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -51,8 +51,8 @@
 #include "language_writer.hpp"
 
 /// HLS includes
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 
 /// parser/compiler include
 #include "token_interface.hpp"
@@ -82,7 +82,7 @@ DesignFlowStep_Status HDLFunctionDeclFix::Exec()
    const auto hdl_writer_type =
        static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
    const auto hdl_writer = language_writer::create_writer(
-       hdl_writer_type, GetPointer<HLS_manager>(AppM)->get_HLS_target()->get_technology_manager(), parameters);
+       hdl_writer_type, GetPointer<HLS_manager>(AppM)->get_HLS_device()->get_technology_manager(), parameters);
    const auto hdl_reserved_names = hdl_writer->GetHDLReservedNames();
    std::remove_const<decltype(hdl_reserved_names)>::type found_names;
    if(hdl_writer_type == HDLWriter_Language::VHDL)

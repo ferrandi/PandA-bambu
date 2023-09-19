@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -39,9 +39,6 @@
  *
  */
 
-/// Autoheader include
-#include "config_HAVE_KOALA_BUILT.hpp"
-
 /// Header include
 #include "load_builtin_technology.hpp"
 
@@ -62,7 +59,7 @@
 /// utility include
 #include "fileIO.hpp"
 
-LoadBuiltinTechnology::LoadBuiltinTechnology(const technology_managerRef _TM, const target_deviceRef _target,
+LoadBuiltinTechnology::LoadBuiltinTechnology(const technology_managerRef _TM, const generic_deviceRef _target,
                                              const DesignFlowManagerConstRef _design_flow_manager,
                                              const ParameterConstRef _parameters)
     : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_BUILTIN_TECHNOLOGY,
@@ -87,44 +84,6 @@ DesignFlowStep_Status LoadBuiltinTechnology::Exec()
    structural_type_descriptorRef module_type;
    std::string NP_parameters;
    std::string Library;
-
-#if HAVE_KOALA_BUILT
-   // LUT
-   CM = structural_managerRef(new structural_manager(parameters));
-   fu_name = LUT_GATE_STD;
-   module_type = structural_type_descriptorRef(new structural_type_descriptor(fu_name));
-   CM->set_top_info(fu_name, module_type);
-   top = CM->get_circ();
-   CM->add_port_vector("I", port_o::IN, port_vector_o::PARAMETRIC_PORT, top, b_type);
-   CM->add_port("O", port_o::OUT, top, b_type);
-   NP_parameters = fu_name + " in init";
-   CM->add_NP_functionality(top, NP_functionality::LIBRARY, NP_parameters);
-   TM->add_resource(FPGA_LIBRARY, fu_name, CM, true);
-
-   // IBUF
-   CM = structural_managerRef(new structural_manager(parameters));
-   fu_name = IBUF_GATE_STD;
-   module_type = structural_type_descriptorRef(new structural_type_descriptor(fu_name));
-   CM->set_top_info(fu_name, module_type);
-   top = CM->get_circ();
-   CM->add_port("I", port_o::IN, top, b_type);
-   CM->add_port("O", port_o::OUT, top, b_type);
-   NP_parameters = fu_name;
-   CM->add_NP_functionality(top, NP_functionality::LIBRARY, NP_parameters);
-   TM->add_resource(FPGA_LIBRARY, fu_name, CM, true);
-
-   // OBUF
-   CM = structural_managerRef(new structural_manager(parameters));
-   fu_name = OBUF_GATE_STD;
-   module_type = structural_type_descriptorRef(new structural_type_descriptor(fu_name));
-   CM->set_top_info(fu_name, module_type);
-   top = CM->get_circ();
-   CM->add_port("I", port_o::IN, top, b_type);
-   CM->add_port("O", port_o::OUT, top, b_type);
-   NP_parameters = fu_name;
-   CM->add_NP_functionality(top, NP_functionality::LIBRARY, NP_parameters);
-   TM->add_resource(FPGA_LIBRARY, fu_name, CM, true);
-#endif
 
    Library = LIBRARY_STD;
 

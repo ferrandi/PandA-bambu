@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -74,34 +74,33 @@ void compatibility_based_register::create_compatibility_graph()
 {
    verts.clear();
    THROW_ASSERT(HLS->Rliv, "Liveness analysis not yet computed");
-   unsigned int CG_num_vertices = HLS->storage_value_information->get_number_of_storage_values();
+   const auto CG_num_vertices = HLS->storage_value_information->get_number_of_storage_values();
    CG = new compatibility_graph(CG_num_vertices);
    boost::numeric::ublas::matrix<bool> conflict_map(CG_num_vertices, CG_num_vertices);
 
    boost::numeric::ublas::noalias(conflict_map) =
        boost::numeric::ublas::zero_matrix<bool>(CG_num_vertices, CG_num_vertices);
-   for(unsigned int vi = 0; vi < CG_num_vertices; ++vi)
+   for(auto vi = 0U; vi < CG_num_vertices; ++vi)
    {
       verts.push_back(boost::vertex(vi, *CG));
    }
 
    /// compatibility graph creation
-   const std::list<vertex>& support = HLS->Rliv->get_support();
-   const auto vEnd = support.end();
-   for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
+   const auto& support = HLS->Rliv->get_support();
+   for(const auto v : support)
    {
-      const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
+      const auto& live = HLS->Rliv->get_live_in(v);
       register_lower_bound = std::max(static_cast<unsigned int>(live.size()), register_lower_bound);
-      const CustomOrderedSet<unsigned int>::const_iterator k_end = live.end();
-      for(auto k = live.begin(); k != k_end; ++k)
+      const auto k_end = live.cend();
+      for(auto k = live.cbegin(); k != k_end; ++k)
       {
          auto k_inner = k;
          ++k_inner;
          while(k_inner != k_end)
          {
-            unsigned int tail = HLS->storage_value_information->get_storage_value_index(*vIt, *k);
+            const auto tail = HLS->storage_value_information->get_storage_value_index(v, *k);
             THROW_ASSERT(tail < CG_num_vertices, "wrong compatibility graph index");
-            unsigned int head = HLS->storage_value_information->get_storage_value_index(*vIt, *k_inner);
+            const auto head = HLS->storage_value_information->get_storage_value_index(v, *k_inner);
             THROW_ASSERT(head < CG_num_vertices, "wrong compatibility graph index");
             if(tail < head)
             {
@@ -115,14 +114,14 @@ void compatibility_based_register::create_compatibility_graph()
          }
       }
    }
-   for(unsigned int vj = 1; vj < CG_num_vertices; ++vj)
+   for(auto vj = 1U; vj < CG_num_vertices; ++vj)
    {
-      for(unsigned int vi = 0; vi < vj; ++vi)
+      for(auto vi = 0U; vi < vj; ++vi)
       {
          if(!conflict_map(vi, vj) && HLS->storage_value_information->are_value_bitsize_compatible(vi, vj))
          {
             boost::graph_traits<compatibility_graph>::edge_descriptor e1;
-            int edge_weight = HLS->storage_value_information->get_compatibility_weight(vi, vj);
+            const auto edge_weight = HLS->storage_value_information->get_compatibility_weight(vi, vj);
             /// we consider only valuable sharing between registers
             if(edge_weight > 1)
             {

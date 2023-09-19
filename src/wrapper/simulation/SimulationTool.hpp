@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -43,20 +43,20 @@
 #define _SIMULATION_TOOL_HPP_
 
 #include "refcount.hpp"
+
+#include <list>
+#include <string>
+#include <vector>
+
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(SimulationTool);
-
-/// STD include
-#include <string>
-
-/// STL include
-#include <list>
-
 class SimulationTool
 {
  public:
    /// supported synthesis tools
    using type_t = enum { UNKNOWN = 0, MODELSIM, ISIM, XSIM, ICARUS, VERILATOR };
+
+   static type_t to_sim_type(const std::string& str);
 
  protected:
    /// class containing all the parameters
@@ -67,6 +67,8 @@ class SimulationTool
 
    /// verbosity level of the class
    unsigned int output_level;
+
+   const std::string top_fname;
 
    /// generated script
    std::string generated_script;
@@ -80,11 +82,14 @@ class SimulationTool
    virtual void GenerateScript(std::ostringstream& script, const std::string& top_filename,
                                const std::list<std::string>& file_list) = 0;
 
+   std::string GenerateLibraryBuildScript(std::ostringstream& script, const std::string& libtb_filename,
+                                          std::string& cflags) const;
+
  public:
    /**
     * Constructor
     */
-   explicit SimulationTool(const ParameterConstRef& Param);
+   explicit SimulationTool(const ParameterConstRef& Param, const std::string& top_fname);
 
    /**
     * Destructor
@@ -94,8 +99,8 @@ class SimulationTool
    /**
     * Factory method
     */
-   static SimulationToolRef CreateSimulationTool(type_t type, const ParameterConstRef& Param,
-                                                 const std::string& suffix);
+   static SimulationToolRef CreateSimulationTool(type_t type, const ParameterConstRef& Param, const std::string& suffix,
+                                                 const std::string& top_fname);
 
    /**
     * Checks if the current specification can be executed or not
@@ -111,14 +116,14 @@ class SimulationTool
    /**
     * Performs the simulation and returns the number of cycles
     */
-   virtual unsigned long long int Simulate(unsigned long long& accum_cycles, unsigned int& n_testcases);
+   virtual void Simulate(unsigned long long& accum_cycles, unsigned long long& n_testcases);
 
    /**
     * Determines the average number of cycles for the simulation(s)
     * @param accum_cycles is the total number of accumulated cycles
     * @param n_testcases is the number of testcases simulated
     */
-   unsigned long long int DetermineCycles(unsigned long long int& accum_cycles, unsigned int& n_testcases);
+   void DetermineCycles(unsigned long long int& accum_cycles, unsigned long long& n_testcases);
 
    /**
     * Remove files created during simulation

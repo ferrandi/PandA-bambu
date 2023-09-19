@@ -5,6 +5,11 @@
 
    Written by Roger Sayle, July 22, 2002.  */
 
+#if __clang_major__ >= 15
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wint-conversion"
+#endif
+
 #ifndef MAX_OFFSET
 #define MAX_OFFSET (sizeof (long long))
 #endif
@@ -206,3 +211,6 @@ int __attribute__((optimize("-fno-inline"))) main ()
   exit (0);
 }
 
+#if __clang_major__ >= 15
+#pragma clang diagnostic pop
+#endif

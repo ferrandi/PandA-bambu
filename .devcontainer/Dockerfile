@@ -1,9 +1,9 @@
-ARG VARIANT=xenial
+ARG VARIANT=bionic-23.04
 
 FROM bambuhls/iverilog:${VARIANT} as iverilog
 FROM bambuhls/verilator:${VARIANT} as verilator
 
-FROM bambuhls/appimage:${VARIANT} as base
+FROM bambuhls/dev:${VARIANT} as base
 
 ### From https://github.com/microsoft/vscode-dev-containers/blob/main/containers/ubuntu/.devcontainer/base.Dockerfile
 # Options for setup script
@@ -19,7 +19,7 @@ WORKDIR /
 RUN bash /tmp/library-scripts/common-debian.sh "${INSTALL_ZSH}" "${USERNAME}" "${USER_UID}" "${USER_GID}" "${UPGRADE_PACKAGES}" "true" "true" \
     && bash /tmp/library-scripts/compiler-download.sh "/" "${COMPILERS}" \
     && bash /tmp/library-scripts/compiler-setup.sh \
-    && apt-get install --no-install-recommends -y clang-format python3-defusedxml python3-distutils \
+    && apt-get install --no-install-recommends -y clang-format-11 python3-defusedxml python3-distutils \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts
 
 COPY --from=iverilog /opt/iverilog /opt/iverilog

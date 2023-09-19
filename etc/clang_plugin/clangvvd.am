@@ -39,7 +39,7 @@ endif
 $(I386_CLANGVVD_SSA_PLUGIN) : clangvvd_plugin_dumpGimpleSSA.so clangvvd_plugin_dumpGimpleSSA_opt.so
 clangvvd_plugin_dumpGimpleSSA_opt.so : clangvvd_plugin_dumpGimpleSSA.so
 if BUILD_PTAA
-clangvvd_plugin_dumpGimpleSSA.so : clangvvd_plugin_dumpGimpleSSA.o clangvvd_dumpGimple.o clangvvd_HardekopfLin_AA.o clangvvd_RangeAnalysis.o clangvvd_eSSA.o
+clangvvd_plugin_dumpGimpleSSA.so : clangvvd_plugin_dumpGimpleSSA.o clangvvd_dumpGimple.o clangvvd_HardekopfLin_AA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANGVVD_LIBS) -lversion `$(I386_LLVM_CONFIGVVD_EXE) --ldflags --libs --system-libs` -lbdd';\
@@ -49,13 +49,13 @@ clangvvd_plugin_dumpGimpleSSA.so : clangvvd_plugin_dumpGimpleSSA.o clangvvd_dump
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
-	obj_list='clangvvd_dumpGimple.o clangvvd_HardekopfLin_AA.o clangvvd_RangeAnalysis.o clangvvd_eSSA.o';\
+	obj_list='clangvvd_dumpGimple.o clangvvd_HardekopfLin_AA.o';\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD opt_clangvvd_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleSSA_opt.so;\
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD clangvvd_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleSSA.so ; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG opt_clangvvd_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleSSA_opt.so;\
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG clangvvd_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleSSA.so ; \
 	fi;
 else
-clangvvd_plugin_dumpGimpleSSA.so : clangvvd_plugin_dumpGimpleSSA.o clangvvd_dumpGimple.o clangvvd_RangeAnalysis.o clangvvd_eSSA.o
+clangvvd_plugin_dumpGimpleSSA.so : clangvvd_plugin_dumpGimpleSSA.o clangvvd_dumpGimple.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANGVVD_LIBS) -lversion `$(I386_LLVM_CONFIGVVD_EXE) --ldflags --libs --system-libs`'; \
@@ -65,17 +65,17 @@ clangvvd_plugin_dumpGimpleSSA.so : clangvvd_plugin_dumpGimpleSSA.o clangvvd_dump
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
-	obj_list='clangvvd_dumpGimple.o clangvvd_RangeAnalysis.o clangvvd_eSSA.o';\
+	obj_list='clangvvd_dumpGimple.o';\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD opt_clangvvd_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleSSA_opt.so;\
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD clangvvd_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleSSA.so ; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG opt_clangvvd_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleSSA_opt.so;\
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG clangvvd_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleSSA.so ; \
 	fi;
 endif
 
 $(I386_CLANGVVD_SSA_PLUGINCPP) : clangvvd_plugin_dumpGimpleSSACpp.so clangvvd_plugin_dumpGimpleSSACpp_opt.so
 clangvvd_plugin_dumpGimpleSSACpp_opt.so : clangvvd_plugin_dumpGimpleSSACpp.so
 if BUILD_PTAA
-clangvvd_plugin_dumpGimpleSSACpp.so : clangvvd_plugin_dumpGimpleSSACpp.o clangvvd_dumpGimple.o clangvvd_HardekopfLin_AA.o clangvvd_RangeAnalysis.o clangvvd_eSSA.o
+clangvvd_plugin_dumpGimpleSSACpp.so : clangvvd_plugin_dumpGimpleSSACpp.o clangvvd_dumpGimple.o clangvvd_HardekopfLin_AA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANGVVD_LIBS) -lversion `$(I386_LLVM_CONFIGVVD_EXE) --ldflags --libs --system-libs` -lbdd'; \
@@ -85,13 +85,13 @@ clangvvd_plugin_dumpGimpleSSACpp.so : clangvvd_plugin_dumpGimpleSSACpp.o clangvv
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
-	obj_list='clangvvd_dumpGimple.o clangvvd_HardekopfLin_AA.o clangvvd_RangeAnalysis.o clangvvd_eSSA.o';\
+	obj_list='clangvvd_dumpGimple.o clangvvd_HardekopfLin_AA.o';\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD opt_clangvvd_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleSSACpp_opt.so;\
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD clangvvd_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleSSACpp.so;\
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG opt_clangvvd_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleSSACpp_opt.so;\
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG clangvvd_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleSSACpp.so;\
 	fi;
 else
-clangvvd_plugin_dumpGimpleSSACpp.so : clangvvd_plugin_dumpGimpleSSACpp.o clangvvd_dumpGimple.o clangvvd_RangeAnalysis.o clangvvd_eSSA.o
+clangvvd_plugin_dumpGimpleSSACpp.so : clangvvd_plugin_dumpGimpleSSACpp.o clangvvd_dumpGimple.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANGVVD_LIBS) -lversion `$(I386_LLVM_CONFIGVVD_EXE) --ldflags --libs --system-libs`'; \
@@ -101,17 +101,17 @@ clangvvd_plugin_dumpGimpleSSACpp.so : clangvvd_plugin_dumpGimpleSSACpp.o clangvv
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
-	obj_list='clangvvd_dumpGimple.o clangvvd_RangeAnalysis.o clangvvd_eSSA.o';\
+	obj_list='clangvvd_dumpGimple.o';\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD opt_clangvvd_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleSSACpp_opt.so;\
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD clangvvd_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleSSACpp.so;\
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG opt_clangvvd_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleSSACpp_opt.so;\
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG clangvvd_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleSSACpp.so;\
 	fi;
 endif
 
 $(I386_CLANGVVD_EMPTY_PLUGIN) : clangvvd_plugin_dumpGimpleEmpty.so clangvvd_plugin_dumpGimpleEmpty_opt.so
 clangvvd_plugin_dumpGimpleEmpty_opt.so : clangvvd_plugin_dumpGimpleEmpty.so
 if BUILD_PTAA
-clangvvd_plugin_dumpGimpleEmpty.so : clangvvd_plugin_dumpGimpleEmpty.o clangvvd_dumpGimple.o clangvvd_HardekopfLin_AA.o clangvvd_RangeAnalysis.o clangvvd_eSSA.o
+clangvvd_plugin_dumpGimpleEmpty.so : clangvvd_plugin_dumpGimpleEmpty.o clangvvd_dumpGimple.o clangvvd_HardekopfLin_AA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANGVVD_LIBS) -lversion `$(I386_LLVM_CONFIGVVD_EXE) --ldflags --libs --system-libs` -lbdd'; \
@@ -121,13 +121,13 @@ clangvvd_plugin_dumpGimpleEmpty.so : clangvvd_plugin_dumpGimpleEmpty.o clangvvd_
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
-	obj_list='clangvvd_dumpGimple.o clangvvd_HardekopfLin_AA.o clangvvd_RangeAnalysis.o clangvvd_eSSA.o';\
+	obj_list='clangvvd_dumpGimple.o clangvvd_HardekopfLin_AA.o';\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD opt_clangvvd_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleEmpty_opt.so; \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD clangvvd_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleEmpty.so; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG opt_clangvvd_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleEmpty_opt.so; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG clangvvd_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleEmpty.so; \
 	fi;
 else
-clangvvd_plugin_dumpGimpleEmpty.so : clangvvd_plugin_dumpGimpleEmpty.o clangvvd_dumpGimple.o clangvvd_RangeAnalysis.o clangvvd_eSSA.o
+clangvvd_plugin_dumpGimpleEmpty.so : clangvvd_plugin_dumpGimpleEmpty.o clangvvd_dumpGimple.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANGVVD_LIBS) -lversion `$(I386_LLVM_CONFIGVVD_EXE) --ldflags --libs --system-libs`'; \
@@ -137,10 +137,10 @@ clangvvd_plugin_dumpGimpleEmpty.so : clangvvd_plugin_dumpGimpleEmpty.o clangvvd_
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
-	obj_list='clangvvd_dumpGimple.o clangvvd_RangeAnalysis.o clangvvd_eSSA.o';\
+	obj_list='clangvvd_dumpGimple.o';\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD opt_clangvvd_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleEmpty_opt.so; \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD clangvvd_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleEmpty.so; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG opt_clangvvd_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleEmpty_opt.so; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG clangvvd_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clangvvd_plugin_dumpGimpleEmpty.so; \
 	fi;
 endif
 
@@ -157,8 +157,8 @@ clangvvd_plugin_expandMemOps.so : clangvvd_plugin_expandMemOps.o
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD opt_clangvvd_plugin_expandMemOps.o $$compile_options -o clangvvd_plugin_expandMemOps_opt.so; \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD clangvvd_plugin_expandMemOps.o $$compile_options -o clangvvd_plugin_expandMemOps.so; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG opt_clangvvd_plugin_expandMemOps.o $$compile_options -o clangvvd_plugin_expandMemOps_opt.so; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG clangvvd_plugin_expandMemOps.o $$compile_options -o clangvvd_plugin_expandMemOps.so; \
 	fi;
 
 $(I386_CLANGVVD_GEPICANON_PLUGIN) : clangvvd_plugin_GepiCanon.so clangvvd_plugin_GepiCanon_opt.so
@@ -174,8 +174,8 @@ clangvvd_plugin_GepiCanon.so : clangvvd_plugin_GepiCanon.o clangvvd_GepiCanon.o
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD opt_clangvvd_plugin_GepiCanon.o clangvvd_GepiCanon.o $$compile_options -o clangvvd_plugin_GepiCanon_opt.so; \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD clangvvd_plugin_GepiCanon.o clangvvd_GepiCanon.o $$compile_options -o clangvvd_plugin_GepiCanon.so; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG opt_clangvvd_plugin_GepiCanon.o clangvvd_GepiCanon.o $$compile_options -o clangvvd_plugin_GepiCanon_opt.so; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG clangvvd_plugin_GepiCanon.o clangvvd_GepiCanon.o $$compile_options -o clangvvd_plugin_GepiCanon.so; \
 	fi;
 
 $(I386_CLANGVVD_CSROA_PLUGIN) : clangvvd_plugin_CSROA.so clangvvd_plugin_CSROA_opt.so
@@ -191,8 +191,8 @@ clangvvd_plugin_CSROA.so : clangvvd_plugin_CSROA.o clangvvd_CSROA.o clangvvd_Gep
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD opt_clangvvd_plugin_CSROA.o clangvvd_GepiCanon.o clangvvd_CSROA.o $$compile_options -o clangvvd_plugin_CSROA_opt.so; \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD clangvvd_plugin_CSROA.o clangvvd_GepiCanon.o clangvvd_CSROA.o $$compile_options -o clangvvd_plugin_CSROA.so; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG opt_clangvvd_plugin_CSROA.o clangvvd_GepiCanon.o clangvvd_CSROA.o $$compile_options -o clangvvd_plugin_CSROA_opt.so; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG clangvvd_plugin_CSROA.o clangvvd_GepiCanon.o clangvvd_CSROA.o $$compile_options -o clangvvd_plugin_CSROA.so; \
 	fi;
 
 $(I386_CLANGVVD_TOPFNAME_PLUGIN) : clangvvd_plugin_topfname.so clangvvd_plugin_topfname_opt.so
@@ -208,8 +208,8 @@ clangvvd_plugin_topfname.so : clangvvd_plugin_topfname.o
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD opt_clangvvd_plugin_topfname.o $$compile_options -o clangvvd_plugin_topfname_opt.so; \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD clangvvd_plugin_topfname.o $$compile_options -o clangvvd_plugin_topfname.so; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG opt_clangvvd_plugin_topfname.o $$compile_options -o clangvvd_plugin_topfname_opt.so; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG clangvvd_plugin_topfname.o $$compile_options -o clangvvd_plugin_topfname.so; \
 	fi;
 
 $(I386_CLANGVVD_ASTANALYZER_PLUGIN) : clangvvd_plugin_ASTAnalyzer.so
@@ -224,7 +224,7 @@ clangvvd_plugin_ASTAnalyzer.so : clangvvd_plugin_ASTAnalyzer.o
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD clangvvd_plugin_ASTAnalyzer.o $$compile_options -o clangvvd_plugin_ASTAnalyzer.so; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG clangvvd_plugin_ASTAnalyzer.o $$compile_options -o clangvvd_plugin_ASTAnalyzer.so; \
 	fi;
 
 clangvvd_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
@@ -236,8 +236,8 @@ clangvvd_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGi
 	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	    $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clangvvd_plugin_dumpGimpleEmpty.o; \
-	    $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_plugin_dumpGimpleEmpty.o; \
+	    $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clangvvd_plugin_dumpGimpleEmpty.o; \
+	    $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_plugin_dumpGimpleEmpty.o; \
 	fi;
 
 clangvvd_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
@@ -249,8 +249,8 @@ clangvvd_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimp
 	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clangvvd_plugin_dumpGimpleSSA.o;\
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD $(BOOST_CPPFLAGS) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_plugin_dumpGimpleSSA.o;\
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clangvvd_plugin_dumpGimpleSSA.o;\
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG $(BOOST_CPPFLAGS) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_plugin_dumpGimpleSSA.o;\
 	fi;
 
 clangvvd_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
@@ -262,8 +262,8 @@ clangvvd_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpG
 	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) $(WFLAGS) -I. -DCPP_LANGUAGE';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clangvvd_plugin_dumpGimpleSSACpp.o;\
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD $(BOOST_CPPFLAGS) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_plugin_dumpGimpleSSACpp.o;\
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clangvvd_plugin_dumpGimpleSSACpp.o;\
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG $(BOOST_CPPFLAGS) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_plugin_dumpGimpleSSACpp.o;\
 	fi;
 
 clangvvd_plugin_expandMemOps.o : $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
@@ -275,8 +275,8 @@ clangvvd_plugin_expandMemOps.o : $(top_srcdir)/etc/clang_plugin/plugin_expandMem
 	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clangvvd_plugin_expandMemOps.o; \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_plugin_expandMemOps.o; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clangvvd_plugin_expandMemOps.o; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_plugin_expandMemOps.o; \
 	fi;
 
 clangvvd_plugin_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
@@ -288,8 +288,8 @@ clangvvd_plugin_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cp
 	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clangvvd_plugin_GepiCanon.o; \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_plugin_GepiCanon.o; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clangvvd_plugin_GepiCanon.o; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_plugin_GepiCanon.o; \
 	fi;
 
 clangvvd_plugin_CSROA.o : $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/PtrIteratorSimplifyPass.hpp  $(top_srcdir)/etc/clang_plugin/ExpandMemOpsPass.hpp $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.hpp $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.hpp
@@ -301,8 +301,8 @@ clangvvd_plugin_CSROA.o : $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp $(top_
 	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clangvvd_plugin_CSROA.o; \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_plugin_CSROA.o; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clangvvd_plugin_CSROA.o; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_plugin_CSROA.o; \
 	fi;
 
 clangvvd_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
@@ -314,8 +314,8 @@ clangvvd_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp 
 	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clangvvd_plugin_topfname.o; \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_plugin_topfname.o; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clangvvd_plugin_topfname.o; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_plugin_topfname.o; \
 	fi;
 
 clangvvd_plugin_ASTAnalyzer.o : $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
@@ -327,10 +327,10 @@ clangvvd_plugin_ASTAnalyzer.o : $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyze
 	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_plugin_ASTAnalyzer.o;\
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_plugin_ASTAnalyzer.o;\
 	fi;
 
-clangvvd_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/TreeHeightReduction.hpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp  $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp
+clangvvd_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/TreeHeightReduction.hpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
@@ -339,7 +339,7 @@ clangvvd_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcd
 	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD $$compile_options -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_dumpGimple.o;\
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG $$compile_options -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_dumpGimple.o;\
 	fi;
 
 if BUILD_PTAA
@@ -352,33 +352,9 @@ clangvvd_HardekopfLin_AA.o : $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp 
 	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD $$compile_options -c $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_HardekopfLin_AA.o ; \
+	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG $$compile_options -c $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_HardekopfLin_AA.o ; \
 	fi;
 endif
-
-clangvvd_RangeAnalysis.o : $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp
-	case $(host_os) in \
-	  mingw*) \
-	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) $(WFLAGS) -I.'; \
-	    compile_options='';; \
-	  *) \
-	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) $(WFLAGS) -I.';; \
-	esac;\
-	if test -n "$$compile_options"; then \
-	    $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD $$compile_options -c $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_RangeAnalysis.o; \
-	fi;
-
-clangvvd_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp
-	case $(host_os) in \
-	  mingw*) \
-	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
-	    compile_options='';; \
-	  *) \
-	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
-	esac;\
-	if test -n "$$compile_options"; then \
-	    $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD $$compile_options -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_eSSA.o; \
-	fi;
 
 clangvvd_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.hpp
 	case $(host_os) in \
@@ -389,7 +365,7 @@ clangvvd_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.c
 	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	    $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD $$compile_options -c $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_GepiCanon.o; \
+	    $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG $$compile_options -c $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_GepiCanon.o; \
 	fi;
 
 
@@ -402,7 +378,7 @@ clangvvd_CSROA.o : $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggre
 	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
-	    $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD $$compile_options -c $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_CSROA.o; \
+	    $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG $$compile_options -c $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_CSROA.o; \
 	fi;
 
 ######

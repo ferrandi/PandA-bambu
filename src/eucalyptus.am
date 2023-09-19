@@ -5,12 +5,14 @@ noinst_HEADERS += EucalyptusParameter.hpp
 
 eucalyptus_SOURCES = eucalyptus.cpp EucalyptusParameter.cpp Parameter.cpp global_variables.cpp
 
+PRJ_DOC += eucalyptus.doc
+
 noinst_LTLIBRARIES += lib_eucalyptus.la
 
 lib_eucalyptus_la_LIBADD =
 lib_eucalyptus_la_SOURCES =
 
-eucalyptus_CPPFLAGS = \
+eucalyptus_CPPFLAGS = -DPKGLIBDIR="\"$(pkglibdir)\"" -DPKGDATADIR="\"$(pkgdatadir)\""\
  -I$(top_srcdir)/src \
  -I$(top_srcdir)/src/design_flows \
  -I$(top_srcdir)/src/design_flows/backend/ToHDL \
@@ -20,10 +22,6 @@ eucalyptus_CPPFLAGS = \
  -I$(top_srcdir)/src/HLS \
  -I$(top_srcdir)/src/parser/polixml \
  -I$(top_srcdir)/src/technology \
- -I$(top_srcdir)/src/technology/characterization \
- -I$(top_srcdir)/src/technology/physical_library \
- -I$(top_srcdir)/src/technology/target_device \
- -I$(top_srcdir)/src/technology/target_technology \
  -I$(top_srcdir)/src/utility \
  -I$(top_srcdir)/src/wrapper/compiler \
  $(AM_CPPFLAGS)
@@ -38,8 +36,7 @@ lib_eucalyptus_la_LIBADD += \
    lib_polixml.la \
    lib_technology.la \
    lib_utility.la \
-   lib_wrapper.la \
-   $(BOOST_FILESYSTEM_LIB) $(BOOST_SYSTEM_LIB)
+   lib_wrapper.la
 
 if BUILD_LIB_CODE_ESTIMATION
    eucalyptus_CPPFLAGS += \
@@ -107,5 +104,3 @@ if BUILD_LIB_HLS
    # The following is necessary to allow static self-registration of Factory derived classes
    eucalyptus_LDFLAGS += -Wl,--whole-archive,$(top_builddir)/src/HLS/.libs/lib_module_generator.a,--no-whole-archive
 endif
-
-PRJ_DOC += eucalyptus.doc

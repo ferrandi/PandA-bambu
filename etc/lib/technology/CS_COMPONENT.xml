@@ -10,8 +10,8 @@
           <parameter name="DEPTH">8</parameter>
           <structural_type_descriptor id_type="fifio"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2022 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -90,8 +90,8 @@ end"/>
           <parameter name="DEPTH">8</parameter>
           <structural_type_descriptor id_type="fifio_free"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2022 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -169,7 +169,7 @@ end"/>
           <parameter name="n_elements">1</parameter>
           <structural_type_descriptor id_type="register_file"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2017-2022 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2017-2023 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -186,8 +186,7 @@ end"/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o> in1
-          <NP_functionality LIBRARY="register_file in1 selector_register_file out1 n_elements " VERILOG_PROVIDED="
+          </port_o> in1 <NP_functionality LIBRARY="register_file in1 selector_register_file out1 n_elements " VERILOG_PROVIDED="
 `ifndef _SIM_HAVE_CLOG2
   function integer log2;
      input integer value;
@@ -200,9 +199,9 @@ end"/>
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
+  localparam nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
 `else
-  parameter nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
+  localparam nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
 `endif
 reg [BITSIZE_in1-1:0] ram [0:n_elements-1] /* synthesis syn_ramstyle = &quot;no_rw_check&quot; */;
 wire [nbit_read_addr-1:0] memory_addr_a;
@@ -230,8 +229,8 @@ endgenerate
         <component_o id="register_SE_r">
           <structural_type_descriptor id_type="register_SE_r"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2022 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -269,11 +268,11 @@ end"/>
       <name>simple_dual_port_ram_single_clock</name>
       <circuit>
         <component_o id="simple_dual_port_ram_single_clock">
-        <parameter name="BITSIZE_addr">1</parameter>
+          <parameter name="BITSIZE_addr">1</parameter>
           <structural_type_descriptor id_type="simple_dual_port_ram_single_clock"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2022 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -312,8 +311,8 @@ assign out=q;"/>
           <structural_type_descriptor id_type="fifo"/>
           <parameter name="ADDR_WIDTH">1</parameter>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2022 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -404,10 +403,9 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in), .BITSIZE_rea
     <cell>
       <name>Counter</name>
       <circuit>
-        <component_o id="Counter">  BITSIZE_value
-          <structural_type_descriptor id_type="Counter"/>
+        <component_o id="Counter"> BITSIZE_value <structural_type_descriptor id_type="Counter"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2022 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -456,8 +454,8 @@ end"/>
         <component_o id="CallDispatcher">
           <structural_type_descriptor id_type="CallDispatcher"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2022 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -550,8 +548,8 @@ assign available_data = ~fifo_empty;
           <parameter name="KERN_NUM">0</parameter>
           <parameter name="ADDR_ACC">2</parameter>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2022 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -563,16 +561,16 @@ assign available_data = ~fifo_empty;
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="IN_M_DataRdy" dir="IN" is_memory="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="IN_Min_tag" dir="IN" is_memory="1" is_global="1" is_extern="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="IN_request_accepted" dir="IN" is_memory="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Mout_oe_ram" dir="IN" is_memory="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Mout_we_ram" dir="IN" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -602,10 +600,10 @@ assign available_data = ~fifo_empty;
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="OUT_Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -623,13 +621,13 @@ assign available_data = ~fifo_empty;
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="M_DataRdy" dir="OUT" is_memory="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Min_tag" dir="OUT" is_memory="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="request_accepted" dir="OUT" is_memory="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_request" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -638,7 +636,7 @@ assign available_data = ~fifo_empty;
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="scheduler IN_M_Rdata_ram IN_M_DataRdy IN_Min_tag IN_request_accepted Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ram M_Rdata_ram M_DataRdy Min_tag request_accepted selector_register_file NUM_TASKS KERN_NUM ADDR_ACC"
-          IP_COMPONENT="fifio,fifio_free,mem_scheduler" VERILOG_PROVIDED="
+            IP_COMPONENT="fifio,fifio_free,mem_scheduler" VERILOG_PROVIDED="
 parameter SIZE_IN=BITSIZE_Mout_oe_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_addr_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_tag_ram;
 parameter ADDR_WIDTH=($clog2(NUM_TASKS)!=0)?$clog2(NUM_TASKS):1;
 parameter DEPTH=($clog2(NUM_TASKS)!=0)?NUM_TASKS:1;
@@ -872,7 +870,7 @@ end
 
 assign M_DataRdy_next=fifo_rd_en_ready || (mux_fifo_sel &amp;&amp; selectorByMemory);
 assign done_request_next= fifo_rd_en_free || (done_scheduler &amp; fifo_empty_free &amp; fifo_empty_ready &amp; !selectorByMemory);"/>
-         </component_o>
+        </component_o>
       </circuit>
     </cell>
     <cell>
@@ -882,8 +880,8 @@ assign done_request_next= fifo_rd_en_free || (done_scheduler &amp; fifo_empty_fr
           <structural_type_descriptor id_type="mem_scheduler"/>
           <parameter name="NUM_TASKS">2</parameter>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2022 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -956,8 +954,8 @@ assign data_out_mem_par = local_mem[addr_mem_par];"/>
           <structural_type_descriptor id_type="mem_ctrl_kernel"/>
           <parameter name="TAG_MEM_REQ">0</parameter>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2022 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -985,7 +983,7 @@ assign data_out_mem_par = local_mem[addr_mem_par];"/>
           </port_o>
           <port_o id="done_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
-            </port_o>
+          </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
@@ -999,22 +997,22 @@ assign data_out_mem_par = local_mem[addr_mem_par];"/>
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="request_accepted" dir="IN" is_memory="1" is_global="1" is_extern="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
-            <structural_type_descriptor type="BOOL" size="1" />
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Mout_data_ram_size" dir="OUT" is_memory="1" is_master="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Mout_Wdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1" />
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Mout_tag_ram" dir="OUT" is_memory="1" is_master="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -1041,7 +1039,7 @@ assign Mout_tag_ram = ((sel_LOAD || sel_STORE) &amp;&amp; start_port) ? TAG_MEM_
           <parameter name="ADDR_ACC">2</parameter>
           <parameter name="NUM_BANK">4</parameter>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2022 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -1077,7 +1075,7 @@ assign Mout_tag_ram = ((sel_LOAD || sel_STORE) &amp;&amp; start_port) ? TAG_MEM_
           <port_vector_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1"  is_master="1">
+          <port_vector_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <port_vector_o id="OUT_Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
@@ -1102,7 +1100,7 @@ assign Mout_tag_ram = ((sel_LOAD || sel_STORE) &amp;&amp; start_port) ? TAG_MEM_
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="memory_ctrl IN_M_Rdata_ram IN_M_DataRdy Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram M_Rdata_ram M_DataRdy Min_tag request_accepted NUM_CHANNEL ADDR_TASKS ADDR_ACC NUM_BANK"
-          IP_COMPONENT="fifio,register_SE_r,PT_RR_FU,mux_pw_2,bus_merger" VERILOG_PROVIDED="
+            IP_COMPONENT="fifio,register_SE_r,PT_RR_FU,mux_pw_2,bus_merger" VERILOG_PROVIDED="
 //In order to be generated correctly num NUM_BANK>=NUM_CHANNEL and both of them must be a power of 2
 
 parameter FIFO_OUT =ADDR_TASKS+ADDR_ACC, FIFO_IN=ADDR_TASKS+ADDR_ACC;
@@ -1505,7 +1503,7 @@ bus_merger #(.BITSIZE_in1(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK), .PORTSIZE_in1(NUM
           <parameter name="ADDR_ACC">2</parameter>
           <parameter name="NUM_BANK">4</parameter>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2022 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -1541,7 +1539,7 @@ bus_merger #(.BITSIZE_in1(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK), .PORTSIZE_in1(NUM
           <port_vector_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1"  is_master="1">
+          <port_vector_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <port_vector_o id="OUT_Mout_addr_ram" dir="OUT" is_memory="1" is_master="1" is_addr_bus="1">
@@ -1566,7 +1564,7 @@ bus_merger #(.BITSIZE_in1(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK), .PORTSIZE_in1(NUM
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="memory_ctrl IN_M_Rdata_ram IN_M_DataRdy Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram M_Rdata_ram M_DataRdy Min_tag request_accepted NUM_CHANNEL ADDR_TASKS ADDR_ACC NUM_BANK"
-          IP_COMPONENT="fifio,register_SE_r,PT_RR_FU,mux_pw_2,bus_merger" VERILOG_PROVIDED="
+            IP_COMPONENT="fifio,register_SE_r,PT_RR_FU,mux_pw_2,bus_merger" VERILOG_PROVIDED="
 //In order to be generated correctly num NUM_BANK>=NUM_CHANNEL and both of them must be a power of 2
 
 parameter FIFO_OUT =ADDR_TASKS+ADDR_ACC, FIFO_IN=ADDR_TASKS+ADDR_ACC;
@@ -1959,7 +1957,7 @@ bus_merger #(.BITSIZE_in1(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK), .PORTSIZE_in1(NUM
           <parameter name="ADDR_TASKS">3</parameter>
           <parameter name="ADDR_ACC">2</parameter>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2022 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -1998,7 +1996,7 @@ bus_merger #(.BITSIZE_in1(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK), .PORTSIZE_in1(NUM
           <port_vector_o id="Mout_tag_ram" dir="IN" is_memory="1" is_tag_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1"  is_master="1">
+          <port_vector_o id="OUT_Mout_oe_ram" dir="OUT" is_memory="1" is_master="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <port_vector_o id="OUT_Mout_we_ram" dir="OUT" is_memory="1" is_master="1">
@@ -2029,7 +2027,7 @@ bus_merger #(.BITSIZE_in1(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK), .PORTSIZE_in1(NUM
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="memory_ctrl_parallel IN_M_Rdata_ram IN_M_DataRdy IN_Min_tag IN_request_accepted Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_tag_ram OUT_Mout_oe_ram OUT_Mout_we_ram OUT_Mout_addr_ram OUT_Mout_data_ram_size OUT_Mout_Wdata_ram OUT_Mout_tag_ram M_Rdata_ram Min_tag M_DataRdy request_accepted NUM_CHANNEL NUM_ACC ADDR_TASKS ADDR_ACC"
-          IP_COMPONENT="PT_RR_FU,mux_pw_2" VERILOG_PROVIDED="
+            IP_COMPONENT="PT_RR_FU,mux_pw_2" VERILOG_PROVIDED="
 //In order to be generated correctly NUM_CHANNEL&lt;=NUM_ACC and both of them must be a power of 2
 parameter SIZE_TOT_IN = BITSIZE_Mout_tag_ram+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_addr_ram+BITSIZE_Mout_we_ram+BITSIZE_Mout_oe_ram;
 parameter MEMORY_ANSWER_TOTAL_SIZE = BITSIZE_Mout_tag_ram+BITSIZE_M_Rdata_ram;
@@ -2100,24 +2098,24 @@ endgenerate"/>
       </circuit>
     </cell>
     <cell>
-    <name>mux_pw_2</name>
-    <circuit>
-      <component_o id="mux_pw_2">
-        <structural_type_descriptor id_type="mux_pw_2"/>
-        <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-        <copyright>Copyright (C) 2016-2022 Politecnico di Milano</copyright>
-        <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-        <license>PANDA_LGPLv3</license>
-        <port_o id="data" dir="IN" is_clock="1">
-          <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-        </port_o>
-        <port_o id="selector" dir="IN">
-          <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-        </port_o>
-        <port_o id="out" dir="OUT">
-          <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-        </port_o>
-        <NP_functionality LIBRARY="mux_pw_2 data selector out" VERILOG_PROVIDED="
+      <name>mux_pw_2</name>
+      <circuit>
+        <component_o id="mux_pw_2">
+          <structural_type_descriptor id_type="mux_pw_2"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <port_o id="data" dir="IN" is_clock="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="selector" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="mux_pw_2 data selector out" VERILOG_PROVIDED="
 //BITSIZE_selector must be a power of 2
 parameter DATA_SIZE=BITSIZE_out;
 
@@ -2311,50 +2309,50 @@ generate
     assign out=(sel41)?mux41:mux42;
   end
 endgenerate"/>
-      </component_o>
-    </circuit>
-  </cell>
-  <cell>
-  <name>__controller_parallel</name>
-  <circuit>
-    <component_o id="__controller_parallel">
-      <structural_type_descriptor id_type="__controller_parallel"/>
-      <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-      <copyright>Copyright (C) 2018-2022 Politecnico di Milano</copyright>
-      <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-      <license>PANDA_LGPLv3</license>
-      <port_o id="clock" dir="IN" is_clock="1">
-        <structural_type_descriptor type="BOOL" size="1"/>
-      </port_o>
-      <port_o id="reset" dir="IN">
-        <structural_type_descriptor type="BOOL" size="1"/>
-      </port_o>
-      <port_o id="start_port" dir="IN">
-        <structural_type_descriptor type="BOOL" size="1"/>
-      </port_o>
-      <port_vector_o id="done_port_accelerator" dir="IN" is_clock="1">
-        <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-      </port_vector_o>
-      <port_vector_o id="done_request_accelerator" dir="IN">
-        <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-      </port_vector_o>
-      <port_o id="LoopIteration" dir="IN">
-        <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-      </port_o>
-      <port_o id="done_port" dir="OUT">
-        <structural_type_descriptor type="BOOL" size="1"/>
-      </port_o>
-      <port_o id="task_pool_end" dir="OUT">
-        <structural_type_descriptor type="BOOL" size="1"/>
-      </port_o>
-      <port_vector_o id="start_port_accelerator" dir="OUT">
-        <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-      </port_vector_o>
-      <port_o id="request" dir="OUT">
-        <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-      </port_o>
-      <NP_functionality LIBRARY="__controller_parallel done_port_accelerator done_request_accelerator start_port_accelerator request LoopIteration"
-      IP_COMPONENT="ui_ne_expr_FU,read_cond_FU,register_SE,fifo,CallDispatcher,Counter,MUX_GATE,UUdata_converter_FU,constant_value,ASSIGN_UNSIGNED_FU,ui_plus_expr_FU" VERILOG_PROVIDED="
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>__controller_parallel</name>
+      <circuit>
+        <component_o id="__controller_parallel">
+          <structural_type_descriptor id_type="__controller_parallel"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2018-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_vector_o id="done_port_accelerator" dir="IN" is_clock="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="done_request_accelerator" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_o id="LoopIteration" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="task_pool_end" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_vector_o id="start_port_accelerator" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_o id="request" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="__controller_parallel done_port_accelerator done_request_accelerator start_port_accelerator request LoopIteration"
+            IP_COMPONENT="ui_ne_expr_FU,read_cond_FU,register_SE,fifo,CallDispatcher,Counter,MUX_GATE,UUdata_converter_FU,constant_value,ASSIGN_UNSIGNED_FU,ui_plus_expr_FU" VERILOG_PROVIDED="
 parameter [2:0] S_0 = 3'd0,
   S_1 = 3'd1,
   S_4 = 3'd4,
@@ -2629,4 +2627,3 @@ assign start_port_accelerator = selected_worker;  //bind start_port"/>
     </cell>
   </library>
 </technology>
-

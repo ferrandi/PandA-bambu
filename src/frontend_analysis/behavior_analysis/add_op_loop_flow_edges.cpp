@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -139,8 +139,7 @@ DesignFlowStep_Status AddOpLoopFlowEdges::InternalExec()
    std::list<LoopConstRef>::const_iterator loop, loop_end = loops.end();
    for(loop = loops.begin(); loop != loop_end; ++loop)
    {
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Considering loop " + boost::lexical_cast<std::string>((*loop)->GetId()));
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Considering loop " + std::to_string((*loop)->GetId()));
       if(!(*loop)->IsReducible())
       {
          THROW_ERROR_CODE(IRREDUCIBLE_LOOPS_EC, "Irreducible loops not yet supported");
@@ -169,8 +168,7 @@ DesignFlowStep_Status AddOpLoopFlowEdges::InternalExec()
       const vertex header = (*loop)->GetHeader();
       const BBNodeInfoConstRef bb_node_info = fbb->CGetBBNodeInfo(header);
       const std::list<vertex>& statements_list = bb_node_info->statements_list;
-      THROW_ASSERT(statements_list.size(),
-                   "Header of a loop " + boost::lexical_cast<std::string>((*loop)->GetId()) + " is empty");
+      THROW_ASSERT(statements_list.size(), "Header of a loop " + std::to_string((*loop)->GetId()) + " is empty");
       const vertex last_statement = *(statements_list.rbegin());
 
       /// add a flow edge from the last operation of the header and the operations of the loop

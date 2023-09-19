@@ -45,6 +45,11 @@ on:
         required: false
         type: string
         default: "--enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release CC=gcc-8 CXX=g++-8 --with-gcc8=/bin/false"
+      upload_config:
+        description: "Upload configuration <CI|release|both>"
+        required: false
+        type: string
+        default: "CI"
     secrets:
       CI_STORAGE_URL:
         required: true
@@ -58,17 +63,19 @@ on:
         value: ${{jobs.build.outputs.package-name}}
 
 env:
-  compilers: ${{inputs.compilers}}${{github.event.inputs.compilers}}
-  build-compiler: ${{inputs.build-compiler}}${{github.event.inputs.build-compiler}}
-  configure: ${{inputs.configure}}${{github.event.inputs.configure}}
+  compilers: ${{inputs.compilers}}
+  build-compiler: ${{inputs.build-compiler}}
+  configure: ${{inputs.configure}}
   storage-url: ${{secrets.CI_STORAGE_URL}}
   storage-user: ${{secrets.CI_STORAGE_USER}}
   storage-token: ${{secrets.CI_STORAGE_TOKEN}}
   storage-path: release
-  package-name: ${{inputs.package-name}}${{github.event.inputs.package-name}}
+  package-name: ${{inputs.package-name}}
   dist-dir: dist
   bcompiler-dir: compiler
   host_jobs: $J
+  upload_config: ${{inputs.upload_config}}
+  local-compilers-backup: $LOCAL_COMPILERS_BACKUP
 
 jobs:
   build:
@@ -79,22 +86,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          ref: ${{github.event.inputs.branch}}
+          ref: ${{inputs.branch}}
       - name: Env setup
         id: setup
         shell: bash
         run: |
           echo "Current host supports ${{env.host_jobs}} parallel jobs"
-          echo "::set-output name=jobs::${{env.host_jobs}}"
+          echo "jobs=${{env.host_jobs}}" >> $GITHUB_OUTPUT
           env_id="$(echo $(sed 's/,/\n/g' <<< "${{env.compilers}}" | sort -V) | sed 's/ //g')"
           if [[ ! -z "${{env.build-compiler}}" ]]; then
             if [[ "$env_id" != *"${{env.build-compiler}}"* ]]; then
               env_id+="${{env.build-compiler}}"
             fi
           fi
-          echo "::set-output name=version::$(cat configure.ac | grep AC_INIT | sed -E 's/.*,(.*),.*/\1/g;s/ //g')"
-          echo "::set-output name=env_id::$env_id"
-          echo "::set-output name=timestamp::$(date -u +'%Y-%m-%d-%H;%M;%S')"
+          echo "version=$(cat configure.ac | grep AC_INIT | sed -E 's/.*,(.*),.*/\1/g;s/ //g')" >> $GITHUB_OUTPUT
+          echo "env_id=$env_id" >> $GITHUB_OUTPUT
+          echo "timestamp=$(date -u +'%Y-%m-%d-%H;%M;%S')" >> $GITHUB_OUTPUT
       - name: CCache cache files
         uses: actions/cache@v3
         with:
@@ -113,10 +120,10 @@ jobs:
         shell: bash
         run: |
           mkdir ${{env.dist-dir}}
-          bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.dist-dir}}" "${{env.compilers}}"
+          bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.dist-dir}}" "${{env.compilers}}" "${{env.local-compilers-backup}}"
           if [[ ! -z "${{env.build-compiler}}" ]]; then
             mkdir ${{env.bcompiler-dir}}
-            bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.bcompiler-dir}}" "${{env.build-compiler}}"
+            bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.bcompiler-dir}}" "${{env.build-compiler}}" "${{env.local-compilers-backup}}"
           fi
       - name: Build Bambu application
         id: build
@@ -125,7 +132,7 @@ jobs:
           config-args: ${{env.configure}} --enable-Werror
           jobs: ${{steps.setup.outputs.jobs}}
       - name: Upload PandA Bambu HLS AppImage for CI
-        if: ${{ inputs.package-name != '' }}
+        if: ${{ env.upload_config != '' && env.upload_config != 'release' }}
         uses: ./.github/actions/storage-upload
         with:
           name: ${{env.package-name}}
@@ -135,10 +142,10 @@ jobs:
           password: "${{env.storage-token}}"
           storage-compression: false
       - name: Upload Panda Bambu HLS Release
-        if: ${{ github.event.inputs.package-name != '' }}
+        if: ${{ env.upload_config != 'CI' }}
         shell: bash
         run: |
           APP_FILE="${{env.package-name}}.AppImage"
           STORAGE_URL="${{env.storage-url}}/${{env.storage-path}}/$APP_FILE"
           curl -L --fail -u '${{env.storage-user}}':'${{env.storage-token}}' -T "${{steps.build.outputs.appimage}}" "$STORAGE_URL"
-          echo "::notice New release available at https://release.bambuhls.eu/appimage/$APP_FILE"
+          echo "### New release available at https://release.bambuhls.eu/appimage/$APP_FILE" >> $GITHUB_STEP_SUMMARY

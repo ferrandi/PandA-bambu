@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -55,13 +55,13 @@ class top_entity : public HLSFunctionStep
 
    /**
     * Adds the input/output ports to the circuit
-    * @param circuit is the reference to the datastructure representing the circuit
+    * @param circuit is the reference to the data-structure representing the circuit
     */
    void add_ports(structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef reset_port);
 
    /**
     * Adds the command signals to the circuit
-    * @param circuit is the reference to the datastructure representing the circuit
+    * @param circuit is the reference to the data-structure representing the circuit
     */
    void add_command_signals(structural_objectRef circuit);
 
@@ -69,8 +69,7 @@ class top_entity : public HLSFunctionStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const CustomUnorderedSet<
-       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
    ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
@@ -99,12 +98,12 @@ class top_entity : public HLSFunctionStep
    /**
     * Destructor
     */
-   virtual ~top_entity();
+   ~top_entity() override;
 
    /**
     * Execute the step
     * @return the exit status of this step
     */
-   virtual DesignFlowStep_Status InternalExec() override;
+   DesignFlowStep_Status InternalExec() override;
 };
 #endif

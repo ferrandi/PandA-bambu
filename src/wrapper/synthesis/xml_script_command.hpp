@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -52,8 +52,6 @@
 #include "polixml.hpp"
 #include "xml_helper.hpp"
 
-#include "DesignParameters.hpp"
-
 REF_FORWARD_DECL(xml_script_node_t);
 REF_FORWARD_DECL(xml_set_variable_t);
 REF_FORWARD_DECL(xml_set_entry_t);
@@ -61,6 +59,7 @@ REF_FORWARD_DECL(xml_parameter_t);
 REF_FORWARD_DECL(xml_command_t);
 REF_FORWARD_DECL(xml_shell_t);
 REF_FORWARD_DECL(xml_ite_block_t);
+REF_FORWARD_DECL(DesignParameters);
 
 // Tags of XML nodes
 #define TAG_VARIABLE "set"

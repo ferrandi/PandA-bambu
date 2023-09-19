@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2020-2022 Politecnico di Milano
+ *              Copyright (C) 2020-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -43,22 +43,21 @@
  */
 /// Header include
 #include "bash_flow_wrapper.hpp"
+
 #include "BashBackendFlow.hpp"
-
-#include "ToolManager.hpp"
-#include "xml_script_command.hpp"
-
+#include "DesignParameters.hpp"
 #include "Parameter.hpp"
-#include "constant_strings.hpp"
+#include "ToolManager.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "fileIO.hpp"
-#include "utility.hpp"
+#include "string_manipulation.hpp"
+#include "xml_script_command.hpp"
 
 #define PARAM_bash_outdir "bash_outdir"
 
 // constructor
 bash_flow_wrapper::bash_flow_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir,
-                                     const target_deviceRef& _device)
+                                     const generic_deviceRef& _device)
     : SynthesisTool(_Param, BASH_FLOW_TOOL_EXEC, _device, _output_dir, BASH_FLOW_TOOL_ID)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the bash_flow wrapper...");
@@ -97,9 +96,9 @@ void bash_flow_wrapper::generate_synthesis_script(const DesignParametersRef& dp,
    remove_escaped(script_string);
 
    // Save the generated script
-   if(boost::filesystem::exists(file_name))
+   if(std::filesystem::exists(file_name))
    {
-      boost::filesystem::remove_all(file_name);
+      std::filesystem::remove_all(file_name);
    }
    script_name = file_name;
    std::ofstream file_stream(file_name.c_str());

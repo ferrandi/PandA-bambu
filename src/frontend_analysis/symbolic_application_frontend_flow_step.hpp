@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -91,12 +91,12 @@ class SymbolicApplicationFrontendFlowStep : public ApplicationFrontendFlowStep
    /**
     * Return the type of this step
     */
-   const std::string GetKindText() const override;
+   std::string GetKindText() const override;
 
    /**
     * Return the signature of this step
     */
-   const std::string GetSignature() const override;
+   std::string GetSignature() const override;
 
    /**
     * Compute the signature of a symbolic application frontend flow step

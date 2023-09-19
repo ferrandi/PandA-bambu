@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -161,7 +161,6 @@ class ProfilingInformation
    /// Friend defintion of profiling classes
    friend class BasicBlocksProfiling;
    friend class hpp_profiling;
-   friend class LoopsAnalysisZebu;
    friend class LoopsProfiling;
    friend class probability_path;
    friend class HostProfiling;

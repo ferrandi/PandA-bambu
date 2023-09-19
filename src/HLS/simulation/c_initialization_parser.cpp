@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2022 Politecnico di Milano
+ *              Copyright (c) 2018-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -53,6 +53,7 @@
 #include "testbench_generation_constants.hpp"
 
 /// utility include
+#include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
 #include "utility.hpp"
 
@@ -77,7 +78,7 @@ void CInitializationParser::Parse(CInitializationParserFunctorRef c_initializati
       {
          candidate_out_file_name =
              output_parameter_initialization_filename + seed_name + "_" + std::to_string(progressive++) + ".data";
-      } while(boost::filesystem::exists(candidate_out_file_name));
+      } while(std::filesystem::exists(candidate_out_file_name));
       c_initialization_parser_functor->ActivateFileInit(candidate_out_file_name);
    }
    const auto parsed_stream = fileIO_istream_open_from_string(initialization_string);

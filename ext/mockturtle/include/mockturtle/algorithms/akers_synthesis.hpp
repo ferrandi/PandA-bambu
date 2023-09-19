@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -112,16 +112,16 @@ public:
   row_t create_row() const
   {
     row_t r( 0, ( 1 << columns.size() ) - 1 );
-    //for ( auto i = 0u; i < columns.size(); i++ )
-    //r.add_literal( i, 1 );
+    // for ( auto i = 0u; i < columns.size(); i++ )
+    // r.add_literal( i, 1 );
     return r;
   }
 
   row_t create_mask() const
   {
     row_t r( ( 1 << columns.size() ) - 1, ( 1 << columns.size() ) - 1 );
-    //for ( auto i = 0u; i < columns.size(); i++ )
-    //r.add_literal( i, 0 );
+    // for ( auto i = 0u; i < columns.size(); i++ )
+    // r.add_literal( i, 0 );
     return r;
   }
 
@@ -132,7 +132,7 @@ public:
 
   void reduce()
   {
-    auto progress{true};
+    auto progress{ true };
 
     while ( progress )
     {
@@ -785,8 +785,8 @@ private:
   LeavesIterator begin;
   LeavesIterator end;
 
-  unsigned reduce{0};
-  std::size_t previous_size{0};
+  unsigned reduce{ 0 };
+  std::size_t previous_size{ 0 };
 };
 
 } // namespace detail

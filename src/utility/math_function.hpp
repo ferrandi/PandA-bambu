@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -45,21 +45,15 @@
 #ifndef MATH_FUNCTION_HPP
 #define MATH_FUNCTION_HPP
 
-/// Utility include
-#include "augmented_vector.hpp"
 #include <boost/version.hpp>
 #if BOOST_VERSION >= 105800
 #include <boost/integer/common_factor_rt.hpp>
 #else
 #include <boost/math/common_factor_rt.hpp>
 #endif
+
+#include <limits>
 #include <type_traits>
-/**
- * Return the distance between a point and a line (represented as a couple of points) in a n-dimensional space
- */
-long double get_point_line_distance(const AugmentedVector<long double>& point,
-                                    const AugmentedVector<long double>& line_point1,
-                                    const AugmentedVector<long double>& line_point2);
 
 /**
  * Return the greatest common divisor
@@ -91,48 +85,6 @@ Integer LeastCommonMultiple(const Integer first, const Integer second)
 #else
    return boost::math::lcm<Integer>(first, second);
 #endif
-}
-
-template <typename T, std::enable_if_t<std::is_unsigned<T>::value, bool> = true>
-inline T resize_to_1_8_16_32_64_128_256_512(T value)
-{
-   if(value == 1)
-   {
-      return 1;
-   }
-   else if(value <= 8)
-   {
-      return 8;
-   }
-   else if(value <= 16)
-   {
-      return 16;
-   }
-   else if(value <= 32)
-   {
-      return 32;
-   }
-   else if(value <= 64)
-   {
-      return 64;
-   }
-   else if(value <= 128)
-   {
-      return 128;
-   }
-   else if(value <= 256)
-   {
-      return 256;
-   }
-   else if(value <= 512)
-   {
-      return 512;
-   }
-   else
-   {
-      THROW_ERROR("not expected size " + boost::lexical_cast<std::string>(value));
-   }
-   return 0;
 }
 
 template <typename T>
@@ -199,12 +151,18 @@ inline T exact_log2(T x)
 template <typename T, std::enable_if_t<std::is_unsigned<T>::value, bool> = true>
 inline T ceil_log2(T x)
 {
+   if(x == 0)
+   {
+      return static_cast<T>(-1LL);
+   }
    return static_cast<T>(floor_log2(static_cast<T>(x - 1)) + 1);
 }
 
-/// Return the smallest n such tat
-template <typename T, std::enable_if_t<std::is_unsigned<T>::value, bool> = true>
-constexpr inline T round_to_power2(T _x)
+/// Return the smallest n such that 2^n >= _x
+template <
+    typename T, std::enable_if_t<std::is_unsigned<T>::value, bool> = true,
+    std::enable_if_t<std::numeric_limits<T>::digits <= std::numeric_limits<unsigned long long>::digits, bool> = true>
+constexpr inline T ceil_pow2(T _x)
 {
    unsigned long long x = _x;
    x--;
@@ -216,6 +174,39 @@ constexpr inline T round_to_power2(T _x)
    x |= x >> 32;
    x++;
    return static_cast<T>(x);
+}
+
+template <typename T, std::enable_if_t<std::is_unsigned<T>::value, bool> = true>
+constexpr inline T get_aligned_bitsize(T bitsize)
+{
+   const auto rbw = std::max(T(8), ceil_pow2(bitsize));
+   if(rbw <= 128ULL)
+   {
+      return rbw;
+   }
+   return bitsize + ((32ULL - (bitsize % 32ULL)) & 31ULL);
+}
+
+template <typename T, std::enable_if_t<std::is_unsigned<T>::value, bool> = true>
+constexpr inline T get_aligned_bitsize(T bitsize, T align)
+{
+   return std::max(align, ((bitsize / align) + (bitsize % align != 0)) * align);
+}
+
+template <typename T, std::enable_if_t<std::is_unsigned<T>::value, bool> = true>
+constexpr inline T get_aligned_ac_bitsize(T bitsize)
+{
+   return bitsize + ((64ULL - (bitsize % 64ULL)) & 63ULL);
+}
+
+template <typename T, std::enable_if_t<std::is_unsigned<T>::value, bool> = true>
+inline T resize_1_8_pow2(T value)
+{
+   if(value == T(1))
+   {
+      return T(1);
+   }
+   return std::max(T(8), ceil_pow2(value));
 }
 
 #endif

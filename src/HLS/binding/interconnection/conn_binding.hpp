@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -81,7 +81,7 @@ class conn_binding
    /// direction port identifier
    using direction_type = enum { IN = 0, OUT };
 
-   /// type of the datastructure
+   /// type of the data-structure
    using type_t = enum { STG = 0 };
 
    /// connection between two objects (<src, tgt, tgt_port, tgt_port_index>)
@@ -104,7 +104,7 @@ class conn_binding
       bool operator()(const connection& x, const connection& y) const;
    };
 
-   typedef std::map<connection, connection_objRef, ConnectionSorter> conn_implementation_map;
+   using conn_implementation_map = std::map<connection, connection_objRef, ConnectionSorter>;
 #endif
 
    /// definition of the key to deal with constant parameters
@@ -134,7 +134,7 @@ class conn_binding
 #if HAVE_UNORDERED
    using ConnectionSources = CustomUnorderedMap<generic_objRef, CustomOrderedSet<data_transfer>>;
 #else
-   typedef std::map<generic_objRef, CustomOrderedSet<data_transfer>, GenericObjSorter> ConnectionSources;
+   using ConnectionSources = std::map<generic_objRef, CustomOrderedSet<data_transfer>, GenericObjSorter>;
 #endif
 
  protected:
@@ -177,7 +177,7 @@ class conn_binding
 #if HAVE_UNORDERED
    using Selectors = std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>;
 #else
-   typedef std::map<std::pair<generic_objRef, unsigned int>, generic_objRef, GenericObjUnsignedIntSorter> Selectors;
+   using Selectors = std::map<std::pair<generic_objRef, unsigned int>, generic_objRef, GenericObjUnsignedIntSorter>;
 #endif
    std::map<unsigned int, Selectors> selectors;
 
@@ -317,7 +317,7 @@ class conn_binding
    /**
     * Returns the number of bit-level multiplexers
     */
-   unsigned int determine_bit_level_mux() const;
+   unsigned long long determine_bit_level_mux() const;
 
    const std::map<unsigned int, Selectors>& GetSelectors() const
    {

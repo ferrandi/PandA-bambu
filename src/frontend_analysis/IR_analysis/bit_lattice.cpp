@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -231,10 +231,10 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>
    const auto kind =
        out_node->get_kind() == tree_reindex_K ? GET_CONST_NODE(out_node)->get_kind() : out_node->get_kind();
    const auto node_type = tree_helper::CGetType(out_node);
-   unsigned int out_type_size = 0;
+   size_t out_type_size = 0;
    if(kind == ssa_name_K || kind == parm_decl_K || kind == integer_cst_K)
    {
-      out_type_size = Size(node_type);
+      out_type_size = static_cast<size_t>(Size(node_type));
    }
    else if(kind == function_decl_K)
    {
@@ -242,7 +242,7 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>
                        GET_CONST_NODE(node_type)->get_kind() == method_type_K,
                    "node " + STR(out_node) + " is " + node_type->get_kind_text());
       const auto ft = GetPointerS<const function_type>(GET_CONST_NODE(node_type));
-      out_type_size = Size(ft->retn);
+      out_type_size = static_cast<size_t>(Size(ft->retn));
    }
    else
    {
@@ -344,10 +344,10 @@ std::deque<bit_lattice> BitLatticeManipulator::inf(const std::deque<bit_lattice>
    const auto kind =
        out_node->get_kind() == tree_reindex_K ? GET_CONST_NODE(out_node)->get_kind() : out_node->get_kind();
    const auto node_type = tree_helper::CGetType(out_node);
-   unsigned int out_type_size = 0;
+   size_t out_type_size = 0;
    if(kind == ssa_name_K || kind == parm_decl_K || kind == integer_cst_K)
    {
-      out_type_size = Size(node_type);
+      out_type_size = static_cast<size_t>(Size(node_type));
    }
    else if(kind == function_decl_K)
    {
@@ -355,7 +355,7 @@ std::deque<bit_lattice> BitLatticeManipulator::inf(const std::deque<bit_lattice>
                        GET_CONST_NODE(node_type)->get_kind() == method_type_K,
                    "node " + STR(out_node) + " is " + node_type->get_kind_text());
       const auto ft = GetPointerS<const function_type>(GET_CONST_NODE(node_type));
-      out_type_size = Size(ft->retn);
+      out_type_size = static_cast<size_t>(Size(ft->retn));
    }
    else
    {
@@ -430,8 +430,8 @@ std::deque<bit_lattice> BitLatticeManipulator::constructor_bitstring(const tree_
    const bool ssa_is_signed = tree_helper::is_int(TM, ssa_node_id);
    THROW_ASSERT(ctor_tn->get_kind() == constructor_K, "ctor_tn is not constructor node");
    auto* c = GetPointerS<const constructor>(ctor_tn);
-   std::vector<unsigned int> array_dims;
-   unsigned int elements_bitsize;
+   std::vector<unsigned long long> array_dims;
+   unsigned long long elements_bitsize;
    tree_helper::get_array_dim_and_bitsize(TM, GET_INDEX_CONST_NODE(c->type), array_dims, elements_bitsize);
    unsigned int initialized_elements = 0;
    std::deque<bit_lattice> current_inf;
@@ -445,7 +445,7 @@ std::deque<bit_lattice> BitLatticeManipulator::constructor_bitstring(const tree_
       if(el->get_kind() == integer_cst_K)
       {
          cur_bitstring =
-             create_bitstring_from_constant(GetPointerS<const integer_cst>(el)->value, elements_bitsize, ssa_is_signed);
+             create_bitstring_from_constant(tree_helper::GetConstValue(i.second), elements_bitsize, ssa_is_signed);
       }
       else if(el->get_kind() == real_cst_K)
       {
@@ -574,14 +574,13 @@ std::deque<bit_lattice> create_u_bitstring(size_t lenght)
    return std::deque<bit_lattice>(lenght, bit_lattice::U);
 }
 
-std::deque<bit_lattice> create_x_bitstring(unsigned int lenght)
+std::deque<bit_lattice> create_x_bitstring(size_t lenght)
 {
    return std::deque<bit_lattice>(lenght, bit_lattice::X);
 }
 
-std::deque<bit_lattice> create_bitstring_from_constant(long long int value_int, unsigned int len, bool signed_value)
+std::deque<bit_lattice> create_bitstring_from_constant(integer_cst_t value, unsigned long long len, bool signed_value)
 {
-   auto value = static_cast<long long unsigned int>(value_int);
    std::deque<bit_lattice> res;
    if(value == 0)
    {
@@ -589,16 +588,9 @@ std::deque<bit_lattice> create_bitstring_from_constant(long long int value_int, 
       return res;
    }
    unsigned bit;
-   for(bit = 0; bit < len && value > 0; bit++, value /= 2)
+   for(bit = 0; bit < len && value != 0; bit++, value >>= 1)
    {
-      if(value % 2)
-      {
-         res.push_front(bit_lattice::ONE);
-      }
-      else
-      {
-         res.push_front(bit_lattice::ZERO);
-      }
+      res.push_front((value & 1) ? bit_lattice::ONE : bit_lattice::ZERO);
    }
    if(bit < len && signed_value)
    {
@@ -675,12 +667,12 @@ bool bitstring_constant(const std::deque<bit_lattice>& a)
    return res;
 }
 
-unsigned int BitLatticeManipulator::size(const tree_managerConstRef tm, unsigned int index)
+unsigned long long BitLatticeManipulator::size(const tree_managerConstRef tm, unsigned int index)
 {
    return BitLatticeManipulator::Size(tm->CGetTreeNode(index));
 }
 
-unsigned int BitLatticeManipulator::Size(const tree_nodeConstRef& t)
+unsigned long long BitLatticeManipulator::Size(const tree_nodeConstRef& t)
 {
    switch(t->get_kind())
    {
@@ -699,24 +691,22 @@ unsigned int BitLatticeManipulator::Size(const tree_nodeConstRef& t)
       }
       case ssa_name_K:
       {
-         const auto* sa = GetPointerS<const ssa_name>(t);
+         const auto sa = GetPointerS<const ssa_name>(t);
          THROW_ASSERT(sa->type, "Expected an ssa_name type");
          return Size(GET_CONST_NODE(sa->type));
       }
       case array_type_K:
       {
-         const auto* at = GetPointerS<const array_type>(t);
+         const auto at = GetPointerS<const array_type>(t);
          if(at->size)
          {
-            const auto* ic = GetPointer<const integer_cst>(GET_NODE(at->size));
-            if(ic)
+            if(tree_helper::IsConstant(at->size))
             {
-               return static_cast<unsigned int>(tree_helper::get_integer_cst_value(ic));
+               const auto val = tree_helper::GetConstValue(at->size);
+               THROW_ASSERT(val >= 0, "");
+               return static_cast<unsigned long long>(val);
             }
-            else
-            {
-               return 32;
-            }
+            return 32u;
          }
          break;
       }
@@ -741,8 +731,9 @@ unsigned int BitLatticeManipulator::Size(const tree_nodeConstRef& t)
       {
          const auto tn = GetPointer<const type_node>(t);
          THROW_ASSERT(tn->size, "");
-         const auto* ic = GetPointerS<const integer_cst>(GET_CONST_NODE(tn->size));
-         return static_cast<unsigned int>(tree_helper::get_integer_cst_value(ic));
+         const auto val = tree_helper::GetConstValue(tn->size);
+         THROW_ASSERT(val >= 0, "");
+         return static_cast<unsigned long long>(val);
       }
       case integer_type_K:
       {
@@ -752,8 +743,9 @@ unsigned int BitLatticeManipulator::Size(const tree_nodeConstRef& t)
             return it->prec;
          }
          THROW_ASSERT(it->size, "");
-         const auto* ic = GetPointerS<const integer_cst>(GET_CONST_NODE(it->size));
-         return static_cast<unsigned int>(tree_helper::get_integer_cst_value(ic));
+         const auto val = tree_helper::GetConstValue(it->size);
+         THROW_ASSERT(val >= 0, "");
+         return static_cast<unsigned long long>(val);
       }
       case void_type_K:
       {
@@ -762,14 +754,14 @@ unsigned int BitLatticeManipulator::Size(const tree_nodeConstRef& t)
       case call_expr_K:
       case aggr_init_expr_K:
       {
-         const auto* ce = GetPointerS<const call_expr>(t);
+         const auto ce = GetPointerS<const call_expr>(t);
          return Size(GET_NODE(ce->type));
       }
       case CASE_UNARY_EXPRESSION:
       case CASE_BINARY_EXPRESSION:
       case CASE_TERNARY_EXPRESSION:
       {
-         const auto* te = GetPointerS<const expr_node>(t);
+         const auto te = GetPointerS<const expr_node>(t);
          return Size(GET_NODE(te->type));
       }
       case lut_expr_K:
@@ -778,7 +770,7 @@ unsigned int BitLatticeManipulator::Size(const tree_nodeConstRef& t)
       }
       case array_ref_K:
       {
-         const auto* ar = GetPointerS<const array_ref>(t);
+         const auto ar = GetPointerS<const array_ref>(t);
          return Size(GET_NODE(ar->type));
       }
       case CASE_CST_NODES:
@@ -788,7 +780,7 @@ unsigned int BitLatticeManipulator::Size(const tree_nodeConstRef& t)
       }
       case constructor_K:
       {
-         const auto* c = GetPointerS<const constructor>(t);
+         const auto c = GetPointerS<const constructor>(t);
          return Size(GET_NODE(c->type));
       }
       case target_mem_ref461_K:

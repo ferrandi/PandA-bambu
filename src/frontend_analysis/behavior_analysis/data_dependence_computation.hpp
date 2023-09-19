@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -39,9 +39,6 @@
  */
 #ifndef DATA_DEPENDENCE_COMPUTATION_HPP
 #define DATA_DEPENDENCE_COMPUTATION_HPP
-
-/// Autoheader
-#include "config_HAVE_STDCXX_11.hpp"
 
 /// Superclass include
 #include "function_frontend_flow_step.hpp"
@@ -101,11 +98,7 @@ class DataDependenceComputation : public FunctionFrontendFlowStep
     * Cleans the fake data dependencies
     * @return the exit status of this step
     */
-   DesignFlowStep_Status InternalExec()
-#if HAVE_STDCXX_11
-       final
-#endif
-       ;
+   DesignFlowStep_Status InternalExec() final;
 
    /**
     * Initialize the step (i.e., like a constructor, but executed just before exec

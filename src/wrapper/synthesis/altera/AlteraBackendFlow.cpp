@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -46,29 +46,22 @@
 /// Header include
 #include "AlteraBackendFlow.hpp"
 
-/// Autoheader includes
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
-/// constants include
-#include "synthesis_constants.hpp"
-
 #include "AlteraWrapper.hpp"
-
-#include "LUT_model.hpp"
-#include "area_model.hpp"
-#include "clb_model.hpp"
-#include "target_device.hpp"
-#include "target_manager.hpp"
-#include "time_model.hpp"
-
+#include "DesignParameters.hpp"
 #include "Parameter.hpp"
+#include "area_info.hpp"
+#include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
+#include "generic_device.hpp"
+#include "string_manipulation.hpp"
+#include "structural_objects.hpp"
+#include "synthesis_constants.hpp"
+#include "time_info.hpp"
+#include "utility.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_script_command.hpp"
-
-/// circuit include
-#include "string_manipulation.hpp" // for GET_CLASS
-#include "structural_objects.hpp"
 
 #define ALTERA_LE "ALTERA_LE"
 #define ALTERA_LAB "ALTERA_LAB"
@@ -82,8 +75,8 @@
 #define ALTERA_MEM "ALTERA_MEM"
 
 AlteraBackendFlow::AlteraBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name,
-                                     const target_managerRef _target)
-    : BackendFlow(_Param, _flow_name, _target)
+                                     const generic_deviceRef _device)
+    : BackendFlow(_Param, _flow_name, _device)
 {
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " .:: Creating Altera Backend Flow ::.");
@@ -99,7 +92,7 @@ AlteraBackendFlow::AlteraBackendFlow(const ParameterConstRef _Param, const std::
    if(Param->isOption(OPT_target_device_script))
    {
       auto xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
-      if(!boost::filesystem::exists(xml_file_path))
+      if(!std::filesystem::exists(xml_file_path))
       {
          THROW_ERROR("File \"" + xml_file_path + "\" does not exist!");
       }
@@ -109,7 +102,6 @@ AlteraBackendFlow::AlteraBackendFlow(const ParameterConstRef _Param, const std::
    else
    {
       std::string device_string;
-      target_deviceRef device = target->get_target_device();
       if(device->has_parameter("family"))
       {
          device_string = device->get_parameter<std::string>("family");
@@ -125,7 +117,7 @@ AlteraBackendFlow::AlteraBackendFlow(const ParameterConstRef _Param, const std::
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                      "Importing default scripts for target device family: " + device_string);
       parser = XMLDomParserRef(
-          new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/altera/") +
+          new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/altera/", true) +
                            default_data[device_string]));
    }
    parse_flow(parser);
@@ -230,7 +222,7 @@ void AlteraBackendFlow::CheckSynthesisResults()
    xparse_utilization(report_filename);
 
    THROW_ASSERT(design_values.find(ALTERA_LE) != design_values.end(), "Missing logic elements");
-   area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
+   area_m = area_info::factory(Param);
    if(design_values[ALTERA_LE] != 0.0)
    {
       area_m->set_area_value(design_values[ALTERA_LE]);
@@ -239,22 +231,20 @@ void AlteraBackendFlow::CheckSynthesisResults()
    {
       area_m->set_area_value(design_values[ALTERA_ALM]);
    }
-   auto* area_clb_model = GetPointer<clb_model>(area_m);
    if(design_values[ALTERA_LE] != 0.0)
    {
-      area_clb_model->set_resource_value(clb_model::LOGIC_ELEMENTS, design_values[ALTERA_LE]);
+      area_m->set_resource_value(area_info::LOGIC_ELEMENTS, design_values[ALTERA_LE]);
    }
    else
    {
-      area_clb_model->set_resource_value(clb_model::ALMS, design_values[ALTERA_ALM]);
+      area_m->set_resource_value(area_info::ALMS, design_values[ALTERA_ALM]);
    }
 
-   area_clb_model->set_resource_value(clb_model::REGISTERS, design_values[ALTERA_REGISTERS]);
-   area_clb_model->set_resource_value(clb_model::DSP, design_values[ALTERA_DSP]);
-   area_clb_model->set_resource_value(clb_model::BRAM, design_values[ALTERA_MEM]);
+   area_m->set_resource_value(area_info::REGISTERS, design_values[ALTERA_REGISTERS]);
+   area_m->set_resource_value(area_info::DSP, design_values[ALTERA_DSP]);
+   area_m->set_resource_value(area_info::BRAM, design_values[ALTERA_MEM]);
 
-   time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
-   auto* lut_m = GetPointer<LUT_model>(time_m);
+   time_m = time_info::factory(Param);
    const auto combinational_delay = [&]() -> double {
       if(design_values[ALTERA_FMAX] != 0.0)
       {
@@ -269,7 +259,7 @@ void AlteraBackendFlow::CheckSynthesisResults()
          return 0.0;
       }
    }();
-   lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, combinational_delay);
+   time_m->set_execution_time(combinational_delay);
    if(combinational_delay > Param->getOption<double>(OPT_clock_period))
    {
       CopyFile(GetPath(actual_parameters->parameter_values[PARAM_top_id] + ".sta.rpt"),
@@ -349,7 +339,6 @@ void AlteraBackendFlow::create_sdc(const DesignParametersRef dp)
 
 void AlteraBackendFlow::InitDesignParameters()
 {
-   const target_deviceRef device = target->get_target_device();
    actual_parameters->parameter_values[PARAM_target_device] = device->get_parameter<std::string>("model");
    auto device_family = device->get_parameter<std::string>("family");
    if(device_family.find('-') != std::string::npos)

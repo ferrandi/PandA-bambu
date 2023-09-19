@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -44,9 +44,6 @@
  *
  */
 
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
 /// Header include
 #include "PragmaParser.hpp"
 
@@ -60,14 +57,14 @@
 #include "pragma_manager.hpp"
 
 /// Utility include
-#include "boost/lexical_cast.hpp"
-#include "boost/tokenizer.hpp"
 #include "exceptions.hpp"
 #include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/tokenizer.hpp>
 #include <boost/version.hpp>
+#include <filesystem>
 #include <fstream>
 
 unsigned int PragmaParser::number = 0;
@@ -91,12 +88,12 @@ PragmaParser::~PragmaParser() = default;
 std::string PragmaParser::substitutePragmas(const std::string& OldFile)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Substituting pragma in " + OldFile);
-   THROW_ASSERT(boost::filesystem::exists(boost::filesystem::path(OldFile)),
+   THROW_ASSERT(std::filesystem::exists(std::filesystem::path(OldFile)),
                 "Input file \"" + OldFile + "\" does not exist");
 
-   boost::filesystem::path old_path(OldFile);
+   std::filesystem::path old_path(OldFile);
    std::string FileName = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_pragma_prefix +
-                          boost::lexical_cast<std::string>(file_counter) + "_" + GetLeafFileName(old_path);
+                          std::to_string(file_counter) + "_" + old_path.filename().string();
    std::ofstream fileOutput(FileName, std::ios::out);
 
    file_counter++;
@@ -171,7 +168,7 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
          {
             level++;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Found {: Current level " + boost::lexical_cast<std::string>(level));
+                           "---Found {: Current level " + std::to_string(level));
             if(!found)
             {
                for(auto& FloatingPragma : FloatingPragmas)
@@ -194,7 +191,7 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
             }
             level--;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Found }: Current level " + boost::lexical_cast<std::string>(level));
+                           "---Found }: Current level " + std::to_string(level));
          }
       }
 
@@ -368,7 +365,7 @@ bool PragmaParser::recognize_mapping_pragma(std::string& Line)
    else
    {
       PM->setGenericPragma(number, Line);
-      Line = "__pragma__" + boost::lexical_cast<std::string>(number) + "_();";
+      Line = "__pragma__" + std::to_string(number) + "_();";
       number++;
       return false;
    }
@@ -399,7 +396,7 @@ bool PragmaParser::recognize_generic_pragma(std::string& Line)
    else
    {
       PM->setGenericPragma(number, Line);
-      Line = "__pragma__" + boost::lexical_cast<std::string>(number) + "_();";
+      Line = "__pragma__" + std::to_string(number) + "_();";
       number++;
    }
    return false;

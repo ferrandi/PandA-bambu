@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -72,7 +72,7 @@ class IcarusWrapper : public SimulationTool
     * Constructor
     * @param Param is the set of parameters
     */
-   IcarusWrapper(const ParameterConstRef& Param, std::string suffix);
+   IcarusWrapper(const ParameterConstRef& Param, const std::string& suffix, const std::string& top_fname);
 
    /**
     * Destructor

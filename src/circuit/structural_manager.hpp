@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -46,10 +46,7 @@
 #ifndef STRUCTURAL_MANAGER_HPP
 #define STRUCTURAL_MANAGER_HPP
 
-#include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_EUCALYPTUS_BUILT.hpp"
-#include "config_HAVE_KOALA_BUILT.hpp"
-#include "config_HAVE_TUCANO_BUILT.hpp"
 
 #include "NP_functionality.hpp"
 #include "graph.hpp"
@@ -149,9 +146,7 @@ class structural_manager
     */
    explicit structural_manager(const ParameterConstRef Param);
 
-#if HAVE_BAMBU_BUILT || HAVE_KOALA_BUILT
    void set_top_info(const std::string& id, const technology_managerRef& LM, const std::string& Library = "");
-#endif
 
    /**
     * Destructor.
@@ -164,7 +159,7 @@ class structural_manager
     * @param so_kind is the type of the object.
     * @return true if the object is already associated with owner, false otherwise.
     */
-   bool check_object(std::string id, structural_objectRef owner, so_kind type);
+   static bool check_object(std::string id, structural_objectRef owner, so_kind type);
 
    /**
     * Return the objectRef given the id of the object and the c_object of the owner.
@@ -192,7 +187,6 @@ class structural_manager
    structural_objectRef create(std::string id, so_kind ctype, structural_objectRef owner,
                                structural_type_descriptorRef obj_type, unsigned int treenode = 0);
 
-#if HAVE_BAMBU_BUILT || HAVE_KOALA_BUILT || HAVE_EUCALYPTUS_BUILT
    /**
     * Create a new object starting from a library component.
     * @param id is the name of the object.
@@ -206,7 +200,6 @@ class structural_manager
                                                            const std::string& library_name,
                                                            const structural_objectRef owner,
                                                            const technology_managerConstRef TM);
-#endif
 
    void remove_module(structural_objectRef obj);
 
@@ -222,8 +215,8 @@ class structural_manager
     * @param port_type is the type of the port.
     * @param treenode is the treenode of the port.
     */
-   structural_objectRef add_port(std::string id, port_o::port_direction pdir, structural_objectRef owner,
-                                 structural_type_descriptorRef type_descr, unsigned int treenode = 0);
+   static structural_objectRef add_port(const std::string& id, port_o::port_direction pdir, structural_objectRef owner,
+                                        structural_type_descriptorRef type_descr, unsigned int treenode = 0);
 
    /**
     * Change the direction of the port
@@ -231,8 +224,8 @@ class structural_manager
     * @param pdir represent the new direction of the port (in, out, in-out, gen).
     * @param owner is the reference to the owner of the port.
     */
-   void change_port_direction(structural_objectRef port_object, port_o::port_direction pdir,
-                              structural_objectRef owner);
+   static void change_port_direction(structural_objectRef port_object, port_o::port_direction pdir,
+                                     structural_objectRef owner);
 
    /**
     * Create a new port_vector.
@@ -244,9 +237,9 @@ class structural_manager
     * @param port_type is the type of the port_vector.
     * @param treenode is the treenode of the port_vector.
     */
-   structural_objectRef add_port_vector(std::string id, port_o::port_direction pdir, unsigned int n_ports,
-                                        structural_objectRef owner, structural_type_descriptorRef type_descr,
-                                        unsigned int treenode = 0);
+   static structural_objectRef add_port_vector(std::string id, port_o::port_direction pdir, unsigned int n_ports,
+                                               structural_objectRef owner, structural_type_descriptorRef type_descr,
+                                               unsigned int treenode = 0);
    /**
     * Create a new signal.
     * @param id is the name of the signal.
@@ -254,11 +247,11 @@ class structural_manager
     * @param sign_type is the type of the signal.
     * @param treenode is the treenode of the signal.
     */
-   structural_objectRef add_sign(std::string id, structural_objectRef owner, structural_type_descriptorRef sign_type,
-                                 unsigned int treenode = 0);
-
-   structural_objectRef add_sign_vector(std::string id, unsigned int n_signs, structural_objectRef owner,
+   static structural_objectRef add_sign(std::string id, structural_objectRef owner,
                                         structural_type_descriptorRef sign_type, unsigned int treenode = 0);
+
+   static structural_objectRef add_sign_vector(std::string id, unsigned int n_signs, structural_objectRef owner,
+                                               structural_type_descriptorRef sign_type, unsigned int treenode = 0);
 
    /**
     * Remove an existing signal from the SM.
@@ -284,73 +277,14 @@ class structural_manager
    structural_objectRef add_constant(std::string id, structural_objectRef owner, structural_type_descriptorRef type,
                                      std::string value, unsigned int treenode = 0);
 
-#if HAVE_TUCANO_BUILT
-   /**
-    * Create a new local data.
-    * @param id is the name of the local data.
-    * @param owner is the reference to the owner of the local data.
-    * @param data_type is the type of the local data.
-    * @param treenode is the treenode of the local data.
-    */
-   structural_objectRef add_local_data(std::string id, structural_objectRef owner, unsigned int treenode,
-                                       const tree_managerRef& treeM);
-
-   /**
-    * Add a new event to the owner.
-    * @param id is the event name.
-    * @param owner is the reference to the owner of the event.
-    * @param treenode is the treenode of the event.
-    */
-   structural_objectRef add_event(std::string id, structural_objectRef owner, unsigned int treenode,
-                                  const tree_managerRef& treeM);
-
-   /**
-    * Add a new process to the owner.
-    * @param id is the process name.
-    * @param owner is the reference to the owner of the process.
-    * @param treenode is the treenode of the process.
-    * @param scope is the scope of the process.
-    * @param ft is the function type.
-    */
-   structural_objectRef add_process(std::string id, structural_objectRef owner, unsigned int treenode,
-                                    const tree_managerRef& treeM, std::string scope, int ft);
-   /**
-    * Add a new service to the owner.
-    * @param id is the service name.
-    * @param interface is the interface id.
-    * @param owner is the reference to the owner of the service.
-    * @param treenode is the treenode of the service.
-    * @param scope is the scope of the service.
-    * @param ft is the function type.
-    */
-   structural_objectRef add_service(std::string id, std::string interface, structural_objectRef owner,
-                                    unsigned int treenode, const tree_managerRef& treeM, std::string scope);
-   /**
-    * Add a parameter to the process.
-    * @param id is the name of the parameter.
-    * @param owner is the reference to the owner of the parameter.
-    * @param treenode is the treenode of the parameter.
-    */
-   structural_objectRef add_process_param(std::string id, structural_objectRef owner, unsigned int treenode,
-                                          const tree_managerRef& treeM);
-   /**
-    * Add a parameter to the service.
-    * @param id is the name of the parameter.
-    * @param owner is the reference to the owner of the parameter.
-    * @param treenode is the treenode of the parameter.
-    */
-   structural_objectRef add_service_param(std::string id, structural_objectRef owner, unsigned int treenode,
-                                          const tree_managerRef& treeM);
-#endif
-
    /**
     * Add a not-parsed functionality.
     * @param owner is the reference to the owner of the functionality.
     * @param dt is the type of the not-parsed functionality.
     * @param descr is the description of the functionality.
     */
-   void add_NP_functionality(structural_objectRef cir, NP_functionality::NP_functionaly_type dt,
-                             std::string functionality_description);
+   static void add_NP_functionality(structural_objectRef cir, NP_functionality::NP_functionaly_type dt,
+                                    std::string functionality_description);
 
    /**
     * Specify a parameter for the top module

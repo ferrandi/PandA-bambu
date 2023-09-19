@@ -4,12 +4,12 @@
     <name>STD_FU</name>
     <cell>
       <name>vec_bit_field_ref_FU</name>
-      <operation operation_name="bit_field_ref" supported_types="VECTOR_INT:*" />
+      <operation operation_name="bit_field_ref" supported_types="VECTOR_INT:*"/>
       <circuit>
         <component_o id="vec_bit_field_ref_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2022 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="vec_bit_field_ref_FU"/>
           <port_o id="in1" dir="IN">
@@ -24,8 +24,7 @@
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_bit_field_ref_FU in1 in2 in3 out1" VERILOG_PROVIDED=
-"`ifndef _SIM_HAVE_CLOG2
+          <NP_functionality LIBRARY="vec_bit_field_ref_FU in1 in2 in3 out1" VERILOG_PROVIDED="`ifndef _SIM_HAVE_CLOG2
   function integer log2;
      input integer value;
      integer temp_value;
@@ -37,9 +36,9 @@
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter arg2_bitsize = $clog2(BITSIZE_in1*NUM_ELEM_in1);
+  localparam arg2_bitsize = $clog2(BITSIZE_in1*NUM_ELEM_in1);
 `else
-  parameter arg2_bitsize = log2(BITSIZE_in1*NUM_ELEM_in1);
+  localparam arg2_bitsize = log2(BITSIZE_in1*NUM_ELEM_in1);
 `endif
 generate
   if(BITSIZE_in3 &gt; arg2_bitsize)
@@ -47,8 +46,7 @@ generate
   else
     assign out1 = in1 &gt;&gt;&gt; in3;
 endgenerate"
-VHDL_PROVIDED=
-"begin
+            VHDL_PROVIDED="begin
    process(in1, in3)
    begin
       if(BITSIZE_in3 &gt; integer(log2(real(BITSIZE_in1*NUM_ELEM_in1)))) then
@@ -63,13 +61,13 @@ VHDL_PROVIDED=
     </cell>
     <cell>
       <name>ui_vec_bit_field_ref_FU</name>
-      <operation operation_name="bit_field_ref" supported_types="VECTOR_UINT:*" />
+      <operation operation_name="bit_field_ref" supported_types="VECTOR_UINT:*"/>
       <component_timing_alias>ASSIGN_VECTOR_BOOL_FU</component_timing_alias>
       <circuit>
         <component_o id="ui_vec_bit_field_ref_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2022 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_vec_bit_field_ref_FU"/>
           <port_o id="in1" dir="IN">
@@ -96,9 +94,9 @@ VHDL_PROVIDED=
   endfunction
 `endif
 `ifdef _SIM_HAVE_CLOG2
-  parameter arg2_bitsize = $clog2(BITSIZE_in1*NUM_ELEM_in1);
+  localparam arg2_bitsize = $clog2(BITSIZE_in1*NUM_ELEM_in1);
 `else
-  parameter arg2_bitsize = log2(BITSIZE_in1*NUM_ELEM_in1);
+  localparam arg2_bitsize = log2(BITSIZE_in1*NUM_ELEM_in1);
 `endif
 generate
   if(BITSIZE_in3 &gt; arg2_bitsize)
@@ -112,12 +110,12 @@ endgenerate
     </cell>
     <cell>
       <name>BIvector_converter_FU</name>
-      <operation operation_name="nop_expr" />
+      <operation operation_name="nop_expr"/>
       <circuit>
         <component_o id="BIvector_converter_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2017-2022 Politecnico di Milano</copyright>
-          <authors>Marco Lattuada &lt;marco_lattuada@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2017-2023 Politecnico di Milano</copyright>
+          <authors>Marco Lattuada &lt;marco_lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="BIvector_converter_FU"/>
           <port_o id="in1" dir="IN">
@@ -126,16 +124,14 @@ endgenerate
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="BIvector_converter_FU in1 out1" VERILOG_PROVIDED=
-"generate
+          <NP_functionality LIBRARY="BIvector_converter_FU in1 out1" VERILOG_PROVIDED="generate
 genvar o1;
   for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
   begin  : vec_expr
   assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = {{{BITSIZE_out1-1}{1&apos;b0}},in1[o1]};
   end
 endgenerate"
-VHDL_PROVIDED=
-"process(in1)
+            VHDL_PROVIDED="process(in1)
 begin
    for index in 0 to NUM_ELEM_out1-1 loop
        out1((index+1)*BITSIZE_out1-1 downto index*BITSIZE_out1) &lt;= std_logic_vector(resize(unsigned(in1(index), BITSIZE_out1)));
@@ -147,12 +143,12 @@ end process;
     </cell>
     <cell>
       <name>BUvector_converter_FU</name>
-      <operation operation_name="nop_expr" />
+      <operation operation_name="nop_expr"/>
       <circuit>
         <component_o id="BUvector_converter_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2017-2022 Politecnico di Milano</copyright>
-          <authors>Marco Lattuada &lt;marco_lattuada@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2017-2023 Politecnico di Milano</copyright>
+          <authors>Marco Lattuada &lt;marco_lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="BUvector_converter_FU"/>
           <port_o id="in1" dir="IN">
@@ -161,16 +157,14 @@ end process;
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="BUvector_converter_FU in1 out1" VERILOG_PROVIDED=
-"generate
+          <NP_functionality LIBRARY="BUvector_converter_FU in1 out1" VERILOG_PROVIDED="generate
 genvar o1;
   for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
   begin  : vec_expr
     assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1];
   end
 endgenerate"
-VHDL_PROVIDED=
-"process(in1)
+            VHDL_PROVIDED="process(in1)
 begin
    for index in 0 to NUM_ELEM_out1-1 loop
        out1((index+1)*BITSIZE_out1-1 downto index*BITSIZE_out1) &lt;= std_logic_vector(resize(unsigned(in1((index+1)*BITSIZE_in1-1 downto index*BITSIZE_in1)), BITSIZE_out1));
@@ -182,12 +176,12 @@ end process;
     </cell>
     <cell>
       <name>UBvector_converter_FU</name>
-      <operation operation_name="nop_expr" />
+      <operation operation_name="nop_expr"/>
       <circuit>
         <component_o id="UBvector_converter_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2021-2022 Politecnico di Milano</copyright>
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2021-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="UBvector_converter_FU"/>
           <port_o id="in1" dir="IN">
@@ -196,16 +190,14 @@ end process;
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="UBvector_converter_FU in1 out1" VERILOG_PROVIDED=
-"generate
+          <NP_functionality LIBRARY="UBvector_converter_FU in1 out1" VERILOG_PROVIDED="generate
 genvar o1;
   for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
   begin  : vec_expr
     assign out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1] = in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1] != 0;
   end
 endgenerate"
-VHDL_PROVIDED=
-"process(in1)
+            VHDL_PROVIDED="process(in1)
 begin
    for index in 0 to NUM_ELEM_out1-1 loop
        out1((index+1)*BITSIZE_out1-1 downto index*BITSIZE_out1) &lt;= std_logic_vector(resize(unsigned(in1((index+1)*BITSIZE_in1-1 downto index*BITSIZE_in1)), BITSIZE_out1));
@@ -217,12 +209,12 @@ end process;
     </cell>
     <cell>
       <name>IIvector_converter_FU</name>
-      <operation operation_name="nop_expr" />
+      <operation operation_name="nop_expr"/>
       <circuit>
         <component_o id="IIvector_converter_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2021-2022 Politecnico di Milano</copyright>
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2021-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IIvector_converter_FU"/>
           <port_o id="in1" dir="IN">
@@ -231,8 +223,7 @@ end process;
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="IIvector_converter_FU in1 out1" VERILOG_PROVIDED=
-"generate
+          <NP_functionality LIBRARY="IIvector_converter_FU in1 out1" VERILOG_PROVIDED="generate
 genvar o1;
   for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
   begin  : vec_expr
@@ -262,12 +253,12 @@ endgenerate" VHDL_PROVIDED="begin
     </cell>
     <cell>
       <name>UUvector_converter_FU</name>
-      <operation operation_name="nop_expr" />
+      <operation operation_name="nop_expr"/>
       <circuit>
         <component_o id="UUvector_converter_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2021-2022 Politecnico di Milano</copyright>
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2021-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="UUvector_converter_FU"/>
           <port_o id="in1" dir="IN">
@@ -276,8 +267,7 @@ endgenerate" VHDL_PROVIDED="begin
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="UUvector_converter_FU in1 out1" VERILOG_PROVIDED=
-"generate
+          <NP_functionality LIBRARY="UUvector_converter_FU in1 out1" VERILOG_PROVIDED="generate
 genvar o1;
   for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
   begin  : vec_expr
@@ -307,12 +297,12 @@ endgenerate" VHDL_PROVIDED="begin
     </cell>
     <cell>
       <name>UIvector_converter_FU</name>
-      <operation operation_name="nop_expr" />
+      <operation operation_name="nop_expr"/>
       <circuit>
         <component_o id="UIvector_converter_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2021-2022 Politecnico di Milano</copyright>
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2021-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="UIvector_converter_FU"/>
           <port_o id="in1" dir="IN">
@@ -321,8 +311,7 @@ endgenerate" VHDL_PROVIDED="begin
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="UIvector_converter_FU in1 out1" VERILOG_PROVIDED=
-"generate
+          <NP_functionality LIBRARY="UIvector_converter_FU in1 out1" VERILOG_PROVIDED="generate
 genvar o1;
   for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
   begin  : vec_expr
@@ -352,12 +341,12 @@ endgenerate" VHDL_PROVIDED="begin
     </cell>
     <cell>
       <name>IUvector_converter_FU</name>
-      <operation operation_name="nop_expr" />
+      <operation operation_name="nop_expr"/>
       <circuit>
         <component_o id="IUvector_converter_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2021-2022 Politecnico di Milano</copyright>
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2021-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IUvector_converter_FU"/>
           <port_o id="in1" dir="IN">
@@ -366,8 +355,7 @@ endgenerate" VHDL_PROVIDED="begin
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="IUvector_converter_FU in1 out1" VERILOG_PROVIDED=
-"generate
+          <NP_functionality LIBRARY="IUvector_converter_FU in1 out1" VERILOG_PROVIDED="generate
 genvar o1;
   for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
   begin  : vec_expr
@@ -397,4 +385,3 @@ endgenerate" VHDL_PROVIDED="begin
     </cell>
   </library>
 </technology>
-

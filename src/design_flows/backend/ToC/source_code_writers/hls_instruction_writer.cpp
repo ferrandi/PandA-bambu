@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -36,37 +36,27 @@
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
  *
  */
-
-/// Header include
 #include "hls_instruction_writer.hpp"
 
-/// behavior include
+#include "Parameter.hpp"
 #include "application_manager.hpp"
+#include "behavioral_helper.hpp"
+#include "c_writer.hpp"
 #include "function_behavior.hpp"
 #include "hls_manager.hpp"
-
-/// tree include
-#include "behavioral_helper.hpp"
-#include "var_pp_functor.hpp"
-
-/// utility include
 #include "indented_output_stream.hpp"
-#include "utility.hpp"
-
-/// Backend include
-#include "c_writer.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-
-/// Parameter include
-#include "Parameter.hpp"
+#include "utility.hpp"
+#include "var_pp_functor.hpp"
 
 HLSInstructionWriter::HLSInstructionWriter(const application_managerConstRef _app_man,
                                            const IndentedOutputStreamRef _indented_output_stream,
@@ -79,51 +69,51 @@ HLSInstructionWriter::~HLSInstructionWriter() = default;
 
 void HLSInstructionWriter::declareFunction(const unsigned int function_id)
 {
-   bool flag_pp = parameters->isOption(OPT_pretty_print) ||
-                  (parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy));
+   const auto flag_pp = parameters->isOption(OPT_pretty_print) ||
+                        (parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy));
    // All I have to do is to change main in _main
-   const BehavioralHelperConstRef behavioral_helper = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
-   std::string stringTemp = AppM->CGetFunctionBehavior(function_id)
-                                ->CGetBehavioralHelper()
-                                ->print_type(function_id, false, true, false, 0,
-                                             var_pp_functorConstRef(new std_var_pp_functor(behavioral_helper)));
-   std::string name = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name();
+   const auto TM = AppM->get_tree_manager();
+   const auto FB = AppM->CGetFunctionBehavior(function_id);
+   const auto BH = FB->CGetBehavioralHelper();
+   auto fdecl = tree_helper::PrintType(TM, TM->CGetTreeReindex(function_id), false, true, false, nullptr,
+                                       var_pp_functorConstRef(new std_var_pp_functor(BH)));
+   const auto name = BH->get_function_name();
 
    if(!flag_pp)
    {
-      tree_nodeRef fd_node = AppM->get_tree_manager()->get_tree_node_const(function_id);
-      auto* fd = GetPointer<function_decl>(fd_node);
-      std::string fname;
-      tree_helper::get_mangled_fname(fd, fname);
-      auto HLSMgr = GetPointer<const HLS_manager>(AppM);
+      const auto fd_node = AppM->get_tree_manager()->CGetTreeNode(function_id);
+      const auto fd = GetPointer<const function_decl>(fd_node);
+      const auto fname = tree_helper::GetMangledFunctionName(fd);
+      const auto HLSMgr = GetPointerS<const HLS_manager>(AppM);
       if(HLSMgr && HLSMgr->design_interface_typename_orig_signature.find(fname) !=
                        HLSMgr->design_interface_typename_orig_signature.end())
       {
-         auto searchString = " " + name + "(";
-         stringTemp = stringTemp.substr(0, stringTemp.find(searchString) + searchString.size());
-         const auto& typenameArgs = HLSMgr->design_interface_typename_orig_signature.find(fname)->second;
+         const auto searchString = " " + name + "(";
+         fdecl = fdecl.substr(0, fdecl.find(searchString) + searchString.size());
+         THROW_ASSERT(HLSMgr->design_interface_typename_orig_signature.count(fname), "");
+         const auto& typenameArgs = HLSMgr->design_interface_typename_orig_signature.at(fname);
          bool firstPar = true;
-         for(const auto& argType : typenameArgs)
+         for(auto i = 0U; i < typenameArgs.size(); ++i)
          {
+            const auto& arg_typename = typenameArgs.at(i);
             if(firstPar)
             {
-               stringTemp += argType;
+               fdecl += arg_typename;
                firstPar = false;
             }
             else
             {
-               stringTemp += ", " + argType;
+               fdecl += ", " + arg_typename;
             }
          }
-         stringTemp += ")";
+         fdecl += ")";
       }
    }
-   // boost::replace_all(stringTemp, "/*&*/*", "&");
    if(name == "main")
    {
-      boost::replace_all(stringTemp, " main(", " _main("); /// the assumption is strong but the code that prints the
-                                                           /// name of the function is under our control ;-)
+      boost::replace_all(fdecl, " main(", " _main("); /// the assumption is strong but the code that prints the
+                                                      /// name of the function is under our control ;-)
    }
 
-   indented_output_stream->Append(stringTemp);
+   indented_output_stream->Append(fdecl);
 }

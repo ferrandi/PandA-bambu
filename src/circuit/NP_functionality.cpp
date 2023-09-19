@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -186,7 +186,7 @@ void NP_functionality::get_port_list(std::map<unsigned int, std::map<std::string
       return;
    }
    std::vector<std::string> splitted = SplitString(port_list, ",");
-   for(auto port_description : splitted)
+   for(const auto& port_description : splitted)
    {
       if(port_description.empty())
       {

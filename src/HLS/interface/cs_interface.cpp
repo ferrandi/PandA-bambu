@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2022 Politecnico di Milano
+ *              Copyright (c) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -37,25 +37,23 @@
  * @author Nicola Saporetti <nicola.saporetti@gmail.com>
  *
  */
-
 #include "cs_interface.hpp"
+
 #include "BambuParameter.hpp"
 #include "copyrights_strings.hpp"
+#include "dbgPrintHelper.hpp"
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
+#include "math_function.hpp"
 #include "memory.hpp"
 #include "memory_cs.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
+#include "utility.hpp"
 
-/// STD include
 #include <string>
-
-/// utility include
-#include "dbgPrintHelper.hpp"
-#include "math_function.hpp"
 
 cs_interface::cs_interface(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
                            const DesignFlowManagerConstRef _design_flow_manager,
@@ -66,9 +64,7 @@ cs_interface::cs_interface(const ParameterConstRef _Param, const HLS_managerRef 
    THROW_ASSERT(funId, "Function not set in minimal interface");
 }
 
-cs_interface::~cs_interface()
-{
-}
+cs_interface::~cs_interface() = default;
 
 DesignFlowStep_Status cs_interface::InternalExec()
 {
@@ -79,12 +75,14 @@ DesignFlowStep_Status cs_interface::InternalExec()
    }
 
    structural_objectRef wrappedObj = SM->get_circ();
-   std::string module_name = wrappedObj->get_id() + "_cs_interface";
+   std::string module_name = wrappedObj->get_id();
 
    structural_managerRef SM_cs_interface = structural_managerRef(new structural_manager(parameters));
+   const structural_type_descriptorRef internal_type(new structural_type_descriptor(module_name + "_int"));
    structural_type_descriptorRef module_type =
        structural_type_descriptorRef(new structural_type_descriptor(module_name));
    SM_cs_interface->set_top_info(module_name, module_type);
+   wrappedObj->set_type(internal_type);
    structural_objectRef interfaceObj = SM_cs_interface->get_circ();
 
    // add the core to the wrapper
@@ -162,12 +160,12 @@ void cs_interface::instantiate_component_parallel(const structural_managerRef SM
    }
    else
    {
-      memory_ctrl_model = "memory_ctrl_sigle_input";
+      memory_ctrl_model = "memory_ctrl_single_input";
    }
    std::string memory_ctrl_name = "memory_ctrl_top";
-   std::string memory_ctrl_library = HLS->HLS_T->get_technology_manager()->get_library(memory_ctrl_model);
+   std::string memory_ctrl_library = HLS->HLS_D->get_technology_manager()->get_library(memory_ctrl_model);
    structural_objectRef mem_ctrl_mod = SM->add_module_from_technology_library(
-       memory_ctrl_name, memory_ctrl_model, memory_ctrl_library, circuit, HLS->HLS_T->get_technology_manager());
+       memory_ctrl_name, memory_ctrl_model, memory_ctrl_library, circuit, HLS->HLS_D->get_technology_manager());
 
    structural_objectRef clock_mem_ctrl = mem_ctrl_mod->find_member(CLOCK_PORT_NAME, port_o_K, mem_ctrl_mod);
    structural_objectRef clock_sign = SM->add_sign("clock_mem_ctrl_signal", circuit, bool_type);
@@ -242,10 +240,10 @@ void cs_interface::resize_memory_ctrl_ports(structural_objectRef mem_ctrl_mod)
 
 void cs_interface::resize_dimension_bus_port(unsigned int vector_size, structural_objectRef port)
 {
-   unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
-   unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
-   unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
-   unsigned int bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
+   auto bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
+   auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
+   auto bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
+   auto bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
 
    if(GetPointer<port_o>(port)->get_is_data_bus())
    {

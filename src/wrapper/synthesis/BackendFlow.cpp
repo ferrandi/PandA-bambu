@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,211 +42,80 @@
  */
 #include "BackendFlow.hpp"
 
-/// Autoheader include
-#include "config_HAVE_CMOS_BUILT.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
-/// wrapper/synthesis/altera includes
 #include "AlteraBackendFlow.hpp"
+#include "DesignParameters.hpp"
+#include "XilinxBackendFlow.hpp"
 #include "quartus_13_wrapper.hpp"
 #include "quartus_wrapper.hpp"
-
-/// wrapper/synthesis/xilinx includes
-#include "XilinxBackendFlow.hpp"
 #if HAVE_TASTE
 #include "xilinx_taste_backend_flow.hpp"
 #endif
-
-#include "HDL_manager.hpp"
-#include "structural_manager.hpp"
-#include "structural_objects.hpp"
-#include "target_manager.hpp"
-#include "technology_manager.hpp"
-
-/// implemented flows
-#include "ASICBackendFlow.hpp"
 #include "BashBackendFlow.hpp"
+#include "HDL_manager.hpp"
 #include "LatticeBackendFlow.hpp"
 #include "NanoXploreBackendFlow.hpp"
-
-/// target devices
-#include "FPGA_device.hpp"
-#include "IC_device.hpp"
-
-#include "ToolManager.hpp"
-/// supported synthesis steps
+#include "Parameter.hpp"
 #include "SynthesisTool.hpp"
-// ASIC
-#include "DesignCompilerWrapper.hpp"
-// Xilinx
+#include "ToolManager.hpp"
+#include "area_info.hpp"
+#include "bash_flow_wrapper.hpp"
+#include "cpu_time.hpp"
+#include "exceptions.hpp"
+#include "fileIO.hpp"
+#include "generic_device.hpp"
+#include "lattice_flow_wrapper.hpp"
 #include "map_wrapper.hpp"
 #include "ngdbuild_wrapper.hpp"
+#include "nxpython_flow_wrapper.hpp"
 #include "par_wrapper.hpp"
-#include "trce_wrapper.hpp"
-#include "vivado_flow_wrapper.hpp"
-#include "xst_wrapper.hpp"
-// Altera
+#include "polixml.hpp"
 #include "quartus_13_report_wrapper.hpp"
 #include "quartus_report_wrapper.hpp"
-// Lattice
-#include "lattice_flow_wrapper.hpp"
-// NanoXplore
-#include "nxpython_flow_wrapper.hpp"
-// Generic
-#include "bash_flow_wrapper.hpp"
-
-// Under development
-#if HAVE_EXPERIMENTAL
-#include "FormalityWrapper.hpp"
-#include "LibraryCompilerWrapper.hpp"
-#include "PrimeTimeWrapper.hpp"
-#endif
-
-#include "area_model.hpp"
-#include "target_device.hpp"
+#include "structural_manager.hpp"
+#include "structural_objects.hpp"
+#include "technology_manager.hpp"
 #include "technology_node.hpp"
-#include "time_model.hpp"
-
-#include "polixml.hpp"
+#include "time_info.hpp"
+#include "trce_wrapper.hpp"
+#include "vivado_flow_wrapper.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
-
-#include "exceptions.hpp"
-
-#include "boost/filesystem.hpp"
-
+#include "xst_wrapper.hpp"
+#include <boost/algorithm/string/case_conv.hpp>
+#include <filesystem>
 #include <iosfwd>
 #include <utility>
 
-#if HAVE_IPXACT_BUILT
-#include "ip_xact_xml.hpp"
-#endif
-
-#include "Parameter.hpp"
-#include "cpu_time.hpp"
-#include "fileIO.hpp"
-
-#include <boost/algorithm/string/case_conv.hpp>
-
-#if HAVE_IPXACT_BUILT
-void DesignParameters::xload_design_configuration(const ParameterConstRef DEBUG_PARAMETER(Param),
-                                                  const std::string& xml_file)
-{
-   if(!boost::filesystem::exists(xml_file))
-      THROW_ERROR("File \"" + xml_file + "\" does not exist!");
-#ifndef NDEBUG
-   unsigned int debug_level = Param->getOption<unsigned int>(OPT_debug_level);
-#endif
-
-   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Parsing of design_configuration " + xml_file);
-   XMLDomParser parser(xml_file);
-   parser.Exec();
-
-   if(parser)
-   {
-      const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
-      const xml_node::node_list list = node->get_children();
-      for(xml_node::node_list::const_iterator l = list.begin(); l != list.end(); ++l)
-      {
-         const xml_element* child = GetPointer<xml_element>(*l);
-         if(!child)
-            continue;
-
-         if(child->get_name() == STR_XML_ip_xact_design_ref)
-         {
-            xml_attribute* name = child->get_attribute(STR_XML_ip_xact_name);
-            if(name)
-            {
-               component_name = name->get_value();
-               std::string token("design_");
-               if(component_name.find(token) != std::string::npos)
-                  component_name = component_name.substr(token.size(), component_name.size());
-            }
-         }
-         if(child->get_name() == STR_XML_ip_xact_generator_chain_configuration)
-         {
-            const xml_node::node_list list_gen = child->get_children();
-            for(xml_node::node_list::const_iterator g = list_gen.begin(); g != list_gen.end(); ++g)
-            {
-               const xml_element* child_gen = GetPointer<xml_element>(*g);
-               if(!child_gen)
-                  continue;
-               if(child_gen->get_name() == STR_XML_ip_xact_generator_chain_ref)
-               {
-                  xml_attribute* name = child_gen->get_attribute(STR_XML_ip_xact_name);
-                  if(name)
-                  {
-                     chain_name = name->get_value();
-                  }
-               }
-               if(child_gen->get_name() == STR_XML_ip_xact_configurable_element_values)
-               {
-                  const xml_node::node_list list_values = child_gen->get_children();
-                  for(xml_node::node_list::const_iterator v = list_values.begin(); v != list_values.end(); ++v)
-                  {
-                     const xml_element* child_value = GetPointer<xml_element>(*v);
-                     if(!child_value)
-                        continue;
-                     if(child_value->get_name() == STR_XML_ip_xact_configurable_element_value)
-                     {
-                        std::string referenceId = child_value->get_attribute(STR_XML_ip_xact_reference_id)->get_value();
-                        std::string value;
-                        if(child_value->get_child_text())
-                        {
-                           value = child_value->get_child_text()->get_content();
-                        }
-                        INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
-                                       "---adding parameter \"" + referenceId + "\" with value \"" + value + "\"");
-                        parameter_values[referenceId] = value;
-                     }
-                  }
-               }
-            }
-         }
-      }
-   }
-   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
-                  "<--Parsed configuration file of design \"" + component_name + "\"");
-}
-#endif
-
-BackendFlow::BackendFlow(const ParameterConstRef _Param, std::string _flow_name, const target_managerRef _manager)
+BackendFlow::BackendFlow(const ParameterConstRef _Param, std::string _flow_name, const generic_deviceRef _device)
     : Param(_Param),
       output_level(_Param->getOption<unsigned int>(OPT_output_level)),
       flow_name(std::move(_flow_name)),
       out_dir(Param->getOption<std::string>(OPT_output_directory) + "/" + flow_name),
-      target(_manager),
+      device(_device),
       root(nullptr),
       default_flow_parameters(DesignParametersRef(new DesignParameters))
 {
    debug_level = Param->get_class_debug_level(GET_CLASS(*this));
 
-   if(!boost::filesystem::exists(out_dir))
+   if(!std::filesystem::exists(out_dir))
    {
-      boost::filesystem::create_directories(out_dir);
+      std::filesystem::create_directories(out_dir);
    }
 }
 
 BackendFlow::~BackendFlow() = default;
 
-BackendFlow::type_t BackendFlow::DetermineBackendFlowType(const target_deviceRef device, const ParameterConstRef
+BackendFlow::type_t BackendFlow::DetermineBackendFlowType(const generic_deviceRef device, const ParameterConstRef
 #if HAVE_TASTE
-                                                                                             parameters
+                                                                                              parameters
 #endif
 )
 {
-#if HAVE_CMOS_BUILT
-   if(GetPointer<IC_device>(device))
-   {
-      return ASIC;
-   }
-   else
-#endif
-       if(GetPointer<FPGA_device>(device))
+   if(device)
    {
       if(!device->has_parameter("vendor"))
       {
-         THROW_ERROR("FPGA device vendor not specified");
+         THROW_ERROR("Device vendor not specified");
       }
       auto vendor = device->get_parameter<std::string>("vendor");
       boost::algorithm::to_lower(vendor);
@@ -279,34 +148,32 @@ BackendFlow::type_t BackendFlow::DetermineBackendFlowType(const target_deviceRef
       }
       else
       {
-         THROW_ERROR("FPGA device vendor \"" + vendor + "\" not supported");
+         THROW_ERROR("Device vendor \"" + vendor + "\" not supported");
       }
    }
    return UNKNOWN;
 }
 
 BackendFlowRef BackendFlow::CreateFlow(const ParameterConstRef Param, const std::string& flow_name,
-                                       const target_managerRef target)
+                                       const generic_deviceRef _device)
 {
-   type_t type = DetermineBackendFlowType(target->get_target_device(), Param);
+   type_t type = DetermineBackendFlowType(_device, Param);
    switch(type)
    {
-      case ASIC:
-         return BackendFlowRef(new ASICBackendFlow(Param, flow_name, target));
       case XILINX_FPGA:
-         return BackendFlowRef(new XilinxBackendFlow(Param, flow_name, target));
+         return BackendFlowRef(new XilinxBackendFlow(Param, flow_name, _device));
 #if HAVE_TASTE
       case XILINX_TASTE_FPGA:
-         return BackendFlowRef(new XilinxTasteBackendFlow(Param, flow_name, target));
+         return BackendFlowRef(new XilinxTasteBackendFlow(Param, flow_name, _device));
 #endif
       case ALTERA_FPGA:
-         return BackendFlowRef(new AlteraBackendFlow(Param, flow_name, target));
+         return BackendFlowRef(new AlteraBackendFlow(Param, flow_name, _device));
       case LATTICE_FPGA:
-         return BackendFlowRef(new LatticeBackendFlow(Param, flow_name, target));
+         return BackendFlowRef(new LatticeBackendFlow(Param, flow_name, _device));
       case NANOXPLORE_FPGA:
-         return BackendFlowRef(new NanoXploreBackendFlow(Param, flow_name, target));
+         return BackendFlowRef(new NanoXploreBackendFlow(Param, flow_name, _device));
       case GENERIC:
-         return BackendFlowRef(new BashBackendFlow(Param, flow_name, target));
+         return BackendFlowRef(new BashBackendFlow(Param, flow_name, _device));
       case UNKNOWN:
       default:
          THROW_UNREACHABLE("Backend flow not supported");
@@ -338,11 +205,11 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
       synthesis_file_list += aux_file + ";";
    }
    actual_parameters->parameter_values[PARAM_HDL_files] = synthesis_file_list;
-   const technology_managerRef TM = target->get_technology_manager();
+   const technology_managerRef TM = device->get_technology_manager();
    std::string library = TM->get_library(resource_name);
    bool is_combinational = false;
-   auto is_time_unit_PS = target->get_target_device()->has_parameter("USE_TIME_UNIT_PS") &&
-                          target->get_target_device()->get_parameter<int>("USE_TIME_UNIT_PS") == 1;
+   auto is_time_unit_PS =
+       device->has_parameter("USE_TIME_UNIT_PS") && device->get_parameter<int>("USE_TIME_UNIT_PS") == 1;
    if(library.size())
    {
       const technology_nodeRef tn = TM->get_fu(resource_name, library);
@@ -476,12 +343,12 @@ void BackendFlow::ExecuteSynthesis()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Executed synthesis");
 }
 
-area_modelRef BackendFlow::get_used_resources() const
+area_infoRef BackendFlow::get_used_resources() const
 {
    return area_m;
 }
 
-time_modelRef BackendFlow::get_timing_results() const
+time_infoRef BackendFlow::get_timing_results() const
 {
    return time_m;
 }
@@ -553,27 +420,7 @@ void BackendFlow::xload(const xml_element* node)
          }
 
          SynthesisTool::type_t type = SynthesisTool::UNKNOWN;
-         if(id == DESIGN_COMPILER_TOOL_ID)
-         {
-            type = SynthesisTool::DESIGN_COMPILER;
-            if(step->script_name.size() == 0)
-            {
-               step->script_name = "script.dc";
-            }
-         }
-#if HAVE_EXPERIMENTAL
-         else if(id == LIBRARY_COMPILER_TOOL_ID)
-         {
-            type = SynthesisTool::LIBRARY_COMPILER;
-         }
-         else if(id == PRIME_TIME_TOOL_ID)
-         {
-            type = SynthesisTool::PRIME_TIME;
-            if(step->script_name.size() == 0)
-               step->script_name = "script.pt";
-         }
-#endif
-         else if(id == XST_TOOL_ID)
+         if(id == XST_TOOL_ID)
          {
             type = SynthesisTool::XST;
             if(step->script_name.size() == 0)
@@ -690,7 +537,7 @@ void BackendFlow::xload(const xml_element* node)
             THROW_ERROR("Step <" + id + "> is currently not supported");
          }
 
-         step->tool = SynthesisTool::create_synthesis_tool(type, Param, flow_name, target->get_target_device());
+         step->tool = SynthesisTool::create_synthesis_tool(type, Param, flow_name, device);
          /// update with the actual name of the output directory
          step->out_dir = step->tool->get_output_directory();
 
@@ -766,11 +613,11 @@ std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
       script << "# STEP: " << step->name << std::endl;
 
       /// output directory
-      if(!boost::filesystem::exists(step->out_dir))
+      if(!std::filesystem::exists(step->out_dir))
       {
          THROW_ERROR("Output directory \"" + step->out_dir + "\" has not been created!");
       }
-      boost::filesystem::create_directory(step->out_dir);
+      std::filesystem::create_directory(step->out_dir);
 
       script << "cd " << GetCurrentPath() << std::endl;
 
@@ -814,7 +661,7 @@ std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
 
    if(debug_level >= DEBUG_LEVEL_PEDANTIC)
    {
-      create_xml_scripts("exported_flow.xml");
+      create_xml_scripts(GetPath("exported_flow.xml"));
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                   "<--Completed the generation of scripts for module \"" + exec_params->component_name +
@@ -845,168 +692,6 @@ void BackendFlow::create_xml_scripts(const std::string& xml_file)
 
    doc.write_to_file_formatted(xml_file);
 }
-
-#if HAVE_IPXACT_BUILT
-BackendFlowRef BackendFlow::xload_generator_chain(const ParameterConstRef, const std::string&)
-{
-   NOT_YET_IMPLEMENTED();
-#if 0
-#ifndef NDEBUG
-   unsigned int debug_level = Param->getOption<unsigned int>(OPT_debug_level);
-#endif
-
-   std::list<std::pair<double, BackendStepRef> > phases;
-   std::string chain_name;
-
-   DesignParametersRef params(new DesignParameters);
-   CustomOrderedSet<std::string> undefined_parameters;
-
-   if (!boost::filesystem::exists(xml_file)) THROW_ERROR("File \"" + xml_file + "\" does not exist!");
-   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->parsing of generator_chain " + xml_file);
-   fileIO_istreamRef sname = fileIO_istream_open(xml_file);
-   xml_dom_parser parser;
-   parser.parse_stream(*sname);
-   if (parser)
-   {
-      const xml_element* node = parser.get_document()->get_root_node(); //deleted by DomParser.
-      const xml_node::node_list list = node->get_children();
-      for (xml_node::node_list::const_iterator l = list.begin(); l != list.end(); l++)
-      {
-         const xml_element* child = GetPointer<xml_element>(*l);
-         if (!child) continue;
-
-         if (child->get_name() == STR_XML_ip_xact_name)
-         {
-            chain_name = child->get_child_text()->get_content();
-            INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "---generator chain: " + chain_name);
-         }
-         else if (child->get_name() == STR_XML_ip_xact_generator)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->created a step");
-            BackendStepRef step = BackendStepRef(new BackendStep);
-            SynthesisTool::type_t type = SynthesisTool::UNKNOWN;
-
-            double phase = 0;
-
-            const xml_node::node_list step_list = child->get_children();
-            for (xml_node::node_list::const_iterator s = step_list.begin(); s != step_list.end(); s++)
-            {
-               const xml_element* child_step = GetPointer<xml_element>(*s);
-               if (!child_step) continue;
-               if (child_step->get_name() == STR_XML_ip_xact_name)
-               {
-                  step->name = child_step->get_child_text()->get_content();
-                  INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "---step name: " + step->name);
-               }
-               if (child_step->get_name() == STR_XML_ip_xact_phase)
-               {
-                  phase = boost::lexical_cast<double>(child_step->get_child_text()->get_content());
-                  INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "---step phase: " + STR(phase));
-               }
-               if (child_step->get_name() == STR_XML_ip_xact_parameters)
-               {
-                  const xml_node::node_list param_list = child_step->get_children();
-                  for (xml_node::node_list::const_iterator p = param_list.begin(); p != param_list.end(); p++)
-                  {
-                     const xml_element* child_param = GetPointer<xml_element>(*p);
-                     if (!child_param) continue;
-                     if (child_param->get_name() == STR_XML_ip_xact_parameter)
-                     {
-                        std::string name;
-                        bool has_value = false;
-                        std::string value;
-
-                        const xml_node::node_list value_list = child_param->get_children();
-                        for (xml_node::node_list::const_iterator v = value_list.begin(); v != value_list.end(); v++)
-                        {
-                           const xml_element* child_value = GetPointer<xml_element>(*v);
-                           if (!child_value) continue;
-                           if (child_value->get_name() == STR_XML_ip_xact_spirit_value)
-                           {
-                              name = child_value->get_attribute(STR_XML_ip_xact_id)->get_value();
-                              const xml_text_node* text_node = child_value->get_child_text();
-                              if (text_node and text_node->get_content().size())
-                              {
-                                 value = text_node->get_content();
-                                 has_value = true;
-                              }
-                           }
-                        }
-
-                        INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "---adding parameter: " + name);
-                        if (has_value)
-                        {
-                           params->parameter_values[name] = value;
-                        }
-                        else if (params->parameter_values.find(name) != params->parameter_values.end())
-                        {
-                           undefined_parameters.insert(name);
-                        }
-                     }
-                  }
-               }
-               if (child_step->get_name() == STR_XML_ip_xact_generator_exe)
-               {
-                  std::string exec_name = child_step->get_child_text()->get_content();
-                  INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "---step exec: " + exec_name);
-#if HAVE_LIBRARY_COMPILER
-                  if (exec_name == LIBRARY_COMPILER_TOOL_ID)
-                  {
-                     type = SynthesisTool::LIBRARY_COMPILER;
-                  }
-                  else
-#endif
-#if HAVE_FORMALITY
-                  if (exec_name == FORMALITY_TOOL_ID)
-                  {
-                     type = SynthesisTool::FORMALITY;
-                  }
-                  else
-#endif
-#if HAVE_DESIGN_COMPILER
-                  if (exec_name == DESIGN_COMPILER_TOOL_ID)
-                  {
-                     type = SynthesisTool::DESIGN_COMPILER;
-                  }
-                  else
-#endif
-                     THROW_ERROR("Step <" + exec_name + "> is currently not supported");
-               }
-            }
-
-            step->out_dir = "./export_" + chain_name;
-            step->default_param_config = step->name + "_configuration_file";
-            step->tool = SynthesisTool::create_synthesis_tool(type, Param, step->out_dir);
-            ///update with the actual name of the output directory
-            step->out_dir = step->tool->get_output_directory();
-
-            ///add the resulting generator to the list
-            phases.push_back(std::make_pair(phase, step));
-            INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--");
-         }
-      }
-   }
-
-   params->chain_name = chain_name;
-   ///creation of the flow associated with the generator chain
-   BackendFlowRef flow = BackendFlowRef(new BackendFlow(Param, chain_name));
-   flow->set_initial_parameters(params, undefined_parameters);
-
-   ///final sorting of the steps
-   phases.sort();
-   for(std::list<std::pair<double, BackendStepRef> >::iterator p = phases.begin(); p != phases.end(); p++)
-   {
-      flow->add_backend_step(p->second);
-      INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "---Added step: " + p->second->name);
-   }
-   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "---Number of synthesis steps: " + STR(phases.size()));
-   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--");
-   return flow;
-#else
-   return BackendFlowRef();
-#endif
-}
-#endif
 
 void BackendFlow::InitDesignParameters()
 {

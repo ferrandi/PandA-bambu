@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2016-2022 Politecnico di Milano
+ *              Copyright (C) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,33 +42,22 @@
 /// Header include
 #include "fix_characterization.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// STD include
-#include <string>
-
-/// STL includes
+#include "area_info.hpp"
 #include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
+#include "generic_device.hpp"
+#include "library_manager.hpp"
+#include "string_manipulation.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
+#include "time_info.hpp"
+#include "utility.hpp"
+
+#include <string>
 #include <vector>
 
-/// technology include
-#include "technology_manager.hpp"
-
-/// technology/physical_library includes
-#include "library_manager.hpp"
-#include "technology_node.hpp"
-
-/// technology/physical_library/models include
-#include "clb_model.hpp"
-#include "time_model.hpp"
-
-/// technology/target_device include
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
-#include "string_manipulation.hpp" // for GET_CLASS
-#include "target_device.hpp"
-
-FixCharacterization::FixCharacterization(const technology_managerRef _TM, const target_deviceRef _target,
+FixCharacterization::FixCharacterization(const technology_managerRef _TM, const generic_deviceRef _target,
                                          const DesignFlowManagerConstRef _design_flow_manager,
                                          const ParameterConstRef _parameters)
     : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::FIX_CHARACTERIZATION,
@@ -118,7 +107,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
                fu_name == "view_convert_expr_FU" || fu_name == "assert_expr_FU")
             {
                single_fu->area_m->set_area_value(1);
-               for(auto op : single_fu->get_operations())
+               for(const auto& op : single_fu->get_operations())
                {
                   if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                   {
@@ -140,7 +129,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
                if(template_parameters[1] == "0")
                {
                   single_fu->area_m->set_area_value(1);
-                  for(auto op : single_fu->get_operations())
+                  for(const auto& op : single_fu->get_operations())
                   {
                      if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                      {
@@ -164,7 +153,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
                if(template_parameters[2] == "0")
                {
                   single_fu->area_m->set_area_value(1);
-                  for(auto op : single_fu->get_operations())
+                  for(const auto& op : single_fu->get_operations())
                   {
                      if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                      {
@@ -183,7 +172,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
                fu_name == "IUconvert_expr_FU" || fu_name == "UIconvert_expr_FU" || fu_name == "UUconvert_expr_FU")
             {
                single_fu->area_m->set_area_value(1);
-               for(auto op : single_fu->get_operations())
+               for(const auto& op : single_fu->get_operations())
                {
                   if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                   {
@@ -204,7 +193,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
                if(template_parameters[0] == "0" || template_parameters[1] == "0")
                {
                   single_fu->area_m->set_area_value(1);
-                  for(auto op : single_fu->get_operations())
+                  for(const auto& op : single_fu->get_operations())
                   {
                      if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                      {
@@ -226,7 +215,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
                if(template_parameters[0] == "0" || template_parameters[2] == "0")
                {
                   single_fu->area_m->set_area_value(1);
-                  for(auto op : single_fu->get_operations())
+                  for(const auto& op : single_fu->get_operations())
                   {
                      if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                      {
@@ -248,7 +237,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
                if(template_parameters[0] == "0")
                {
                   single_fu->area_m->set_area_value(1);
-                  for(auto op : single_fu->get_operations())
+                  for(const auto& op : single_fu->get_operations())
                   {
                      if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                      {
@@ -269,7 +258,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
                if(template_parameters[0] == "0")
                {
                   single_fu->area_m->set_area_value(1);
-                  for(auto op : single_fu->get_operations())
+                  for(const auto& op : single_fu->get_operations())
                   {
                      if(assignment_execution_time != (GetPointer<operation>(op))->time_m->get_execution_time())
                      {

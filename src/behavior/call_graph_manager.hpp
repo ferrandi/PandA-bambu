@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -156,9 +156,8 @@ class CallGraphManager
     * @param tree_manager is the tree manager
     * @param Param is the set of input parameters
     */
-   CallGraphManager(const FunctionExpanderConstRef function_expander,
-                    const bool allow_recursive_functions, const tree_managerConstRef tree_manager,
-                    const ParameterConstRef Param);
+   CallGraphManager(const FunctionExpanderConstRef function_expander, const bool allow_recursive_functions,
+                    const tree_managerConstRef tree_manager, const ParameterConstRef Param);
 
    /**
     * Destructor
@@ -228,9 +227,10 @@ class CallGraphManager
    /**
     * compute the list of reached function starting from a given function
     * @param from_f is the starting function
+    * @param with_body consider only functions with body IR
     * @return the set of top function
     */
-   CustomOrderedSet<unsigned int> GetReachedBodyFunctionsFrom(unsigned int from_f) const;
+   CustomOrderedSet<unsigned int> GetReachedFunctionsFrom(unsigned int from_f, bool with_body = true) const;
 
    /**
     * Returns the library functions called by the root functions

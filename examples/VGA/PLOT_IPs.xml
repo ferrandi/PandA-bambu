@@ -9,7 +9,7 @@
       <circuit>
         <component_o id="plot">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2013-2022 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2013-2023 Politecnico di Milano</copyright>  
           <authors>Edoardo Giacomello &lt;edoardo.giacomello@mail.polimi.it&gt;, Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="plot"/>
@@ -21,63 +21,48 @@
           </port_o>
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="color" dir="IN">
             <structural_type_descriptor type="UINT" size="3"/>
-            <connected_objects/>
           </port_o>
           <port_o id="x" dir="IN">
             <structural_type_descriptor type="UINT" size="9"/>
-            <connected_objects/>
           </port_o>
           <port_o id="y" dir="IN">
             <structural_type_descriptor type="UINT" size="8"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel_plot" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel___plot" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="done_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="VGA_R" dir="OUT" is_global="1" is_extern="1">
             <structural_type_descriptor type="UINT" size="10" />
-            <connected_objects/>
           </port_o>
           <port_o id="VGA_G" dir="OUT" is_global="1" is_extern="1">
             <structural_type_descriptor type="UINT" size="10" />
-            <connected_objects/>
           </port_o>
           <port_o id="VGA_B" dir="OUT" is_global="1" is_extern="1">
             <structural_type_descriptor type="UINT" size="10" />
-            <connected_objects/>
           </port_o>
         <port_o id="VGA_HS" dir="OUT" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1" />
-            <connected_objects/>
           </port_o>
         <port_o id="VGA_VS" dir="OUT" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1" />
-            <connected_objects/>
           </port_o>
   	<port_o id="VGA_BLANK" dir="OUT" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1" />
-            <connected_objects/>
           </port_o>
   	<port_o id="VGA_SYNC" dir="OUT" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1" />
-            <connected_objects/>
           </port_o>
       <port_o id="VGA_CLK" dir="OUT" is_clock="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1" />
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="plot " VERILOG_FILE_PROVIDED="plot.v"/>
         </component_o>
@@ -89,7 +74,7 @@
       <circuit>
         <component_o id="leds_ctrl">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2015-2022 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2015-2023 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="leds_ctrl"/>
@@ -101,43 +86,33 @@
           </port_o>
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="id" dir="IN">
             <structural_type_descriptor type="UINT" size="3"/>
-            <connected_objects/>
           </port_o>
           <port_o id="val" dir="IN">
             <structural_type_descriptor type="UINT" size="10"/>
-            <connected_objects/>
           </port_o>
           <port_o id="done_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="HEX0" dir="OUT" is_global="1" is_extern="1">
             <structural_type_descriptor type="UINT" size="7" />
-            <connected_objects/>
           </port_o>
           <port_o id="HEX1" dir="OUT" is_global="1" is_extern="1">
             <structural_type_descriptor type="UINT" size="7" />
-            <connected_objects/>
           </port_o>
           <port_o id="HEX2" dir="OUT" is_global="1" is_extern="1">
             <structural_type_descriptor type="UINT" size="7" />
-            <connected_objects/>
           </port_o>
           <port_o id="HEX3" dir="OUT" is_global="1" is_extern="1">
             <structural_type_descriptor type="UINT" size="7" />
-            <connected_objects/>
           </port_o>
           <port_o id="LEDR" dir="OUT" is_global="1" is_extern="1">
             <structural_type_descriptor type="UINT" size="10" />
-            <connected_objects/>
           </port_o>
           <port_o id="LEDG" dir="OUT" is_global="1" is_extern="1">
             <structural_type_descriptor type="UINT" size="8" />
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="leds_ctrl " VERILOG_FILE_PROVIDED="leds_ctrl.v"/>
         </component_o>

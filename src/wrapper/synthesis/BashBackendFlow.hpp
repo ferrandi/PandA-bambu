@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2020-2022 Politecnico di Milano
+ *              Copyright (C) 2020-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -82,7 +82,7 @@ class BashBackendFlow : public BackendFlow
    /**
     * Constructor
     */
-   BashBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef target);
+   BashBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const generic_deviceRef _device);
 
    /**
     * Destructor

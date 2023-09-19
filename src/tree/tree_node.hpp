@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,10 +48,8 @@
 #define TREE_NODE_HPP
 
 /// Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
-#include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_HAVE_UNORDERED.hpp"
 
 #include <cstddef>    // for size_t
@@ -65,7 +63,8 @@
 
 #include "custom_map.hpp" // for CustomMap
 #include "custom_set.hpp"
-#include "exceptions.hpp"  // for throw_error
+#include "exceptions.hpp" // for throw_error
+#include "panda_types.hpp"
 #include "refcount.hpp"    // for GetPointer, refc...
 #include "tree_common.hpp" // for GET_KIND, BINARY...
 
@@ -158,9 +157,7 @@ class tree_node
    }
 
    /// Destructor
-   virtual ~tree_node()
-   {
-   }
+   virtual ~tree_node() = default;
 
    /**
     * Virtual function returning the type of the actual class
@@ -219,6 +216,23 @@ class tree_node
 using tree_nodeRef = refcount<tree_node>;
 using tree_nodeConstRef = refcount<const tree_node>;
 
+class TreeNodeConstSorter : std::binary_function<tree_nodeConstRef, tree_nodeConstRef, bool>
+{
+ public:
+   /**
+    * Constructor
+    */
+   TreeNodeConstSorter();
+
+   /**
+    * Compare position of two const tree nodes
+    * @param x is the first tree node
+    * @param y is the second tree node
+    * @return true if index of x is less than y
+    */
+   bool operator()(const tree_nodeConstRef& x, const tree_nodeConstRef& y) const;
+};
+
 /**
  * A set of const tree node
  */
@@ -253,22 +267,6 @@ class TreeNodeConstSet : public CustomUnorderedSet<tree_nodeConstRef, TreeNodeCo
 {
 };
 #else
-class TreeNodeConstSorter : std::binary_function<tree_nodeConstRef, tree_nodeConstRef, bool>
-{
- public:
-   /**
-    * Constructor
-    */
-   TreeNodeConstSorter();
-
-   /**
-    * Compare position of two const tree nodes
-    * @param x is the first tree node
-    * @param y is the second tree node
-    * @return true if index of x is less than y
-    */
-   bool operator()(const tree_nodeConstRef& x, const tree_nodeConstRef& y) const;
-};
 
 class TreeNodeConstSet : public OrderedSetStd<tree_nodeConstRef, TreeNodeConstSorter>
 {
@@ -934,10 +932,8 @@ struct decl_node : public srcp, public tree_node
    /// library system flag: it's true when this is a variable of a standard library (e.g libmath)
    bool library_system_flag;
 
-#if HAVE_BAMBU_BUILT
    /// it is true when this is a declared inside libbambu
    bool libbambu_flag;
-#endif
 
    /**
     * chan field: the decls in one binding context are chained through this field.
@@ -1173,10 +1169,8 @@ struct gimple_node : public srcp, public WeightedNode
    /// The basic block to which this gimple_node belongs
    unsigned int bb_index;
 
-#if HAVE_BAMBU_BUILT || HAVE_TUCANO_BUILT
    /// The operation
    std::string operation;
-#endif
 
    /**
     * virtual function used to traverse the tree_node data structure.
@@ -1409,10 +1403,8 @@ struct type_node : public tree_node
    /// system flag: it's true when this is a system variable
    bool system_flag;
 
-#if HAVE_BAMBU_BUILT
    /// it is true when this is a declared inside libbambu
    bool libbambu_flag;
-#endif
 
    /**
     * virtual function used to traverse the tree_node data structure.
@@ -2726,7 +2718,7 @@ struct field_decl : public decl_node, public attr
     + Compute the offset of this field in the struct or structure
     * @return the offset for this field
    */
-   long long int offset();
+   integer_cst_t offset();
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(field_decl)
@@ -3286,12 +3278,15 @@ CREATE_TREE_NODE_CLASS(init_expr, binary_expr);
 struct integer_cst : public cst_node
 {
    /// constructor
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
    explicit integer_cst(unsigned int i) : cst_node(i), value(0)
    {
    }
+#pragma GCC diagnostic pop
 
    /// The value of the integer cast
-   long long int value;
+   integer_cst_t value;
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(integer_cst)
@@ -4202,7 +4197,7 @@ struct record_type : public type_node
     * @param offset is the offset of the field from the base address of the record_type
     * @return the tree_nodeRef if the offset is valid else null pointer
     */
-   tree_nodeRef get_field(long long int offset);
+   tree_nodeRef get_field(integer_cst_t offset);
 
    /**
     * returns the name of the struct represented by this node if there is one else

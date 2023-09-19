@@ -1,13 +1,76 @@
-Change Log
+Change log
 ==========
 
-v0.3 (not yet released)
+v0.4 (not yet released)
 -----------------------
+
+* Network interfaces:
+    - Remove the "name" argument in `create_pi`, `create_po`, `create_ri`, and `create_ro`. Names should be set using the `names_view` APIs. `#559 <https://github.com/lsils/mockturtle/pull/559>`_
+    - Deprecated APIs: `substitute_node_of_parents`, `num_latches` (use `num_registers` instead), `latch_reset`. `#564 <https://github.com/lsils/mockturtle/pull/564>`_
+    - Separate the sequential interfaces from core network APIs (they are only available when wrapped with `sequential`). Add sequential interfaces `register_at` and `set_register` to retrieve and set register information. Remove the "reset" argument of `create_ri`. `#564 <https://github.com/lsils/mockturtle/pull/564>`_
+* Network implementations:
+    - Remove sequential interfaces from all networks (`aig_network`, `xag_network`, `mig_network`, `xmg_network`, `klut_network`, `cover_network`, `aqfp_network`). Add the `sequential` extension to combinational networks. `#564 <https://github.com/lsils/mockturtle/pull/564>`_
+    - Move `trav_id` from the custom storage data (e.g. `aig_storage_data`) to the common `storage`. Remove `num_pis` and `num_pos` as they are only needed for sequential network. Remove custom storage data when not needed (`aig_storage_data`, `xag_storage_data`, `mig_storage_data`, `xmg_storage_data`). Remove latch information from the common `storage`. `#564 <https://github.com/lsils/mockturtle/pull/564>`_
+    - Add access methods to check if a node is present in the network given its immediate fanin (e.g., `has_and` in `aig_network`) `#580 <https://github.com/lsils/mockturtle/pull/580>`_
+    - Crossed networks (`crossed_klut_network` and `buffered_crossed_klut_network`) `#589 <https://github.com/lsils/mockturtle/pull/589>`_
+    - Generic network implementation with additional node types (`generic_network`) `#594 <https://github.com/lsils/mockturtle/pull/594>`_
+* Algorithms:
+    - AIG balancing (`aig_balance`) `#580 <https://github.com/lsils/mockturtle/pull/580>`_
+    - Cost-generic resubstitution (`cost_generic_resub`) `#554 <https://github.com/lsils/mockturtle/pull/554>`_
+    - Cost aware resynthesis solver (`cost_resyn`) `#554 <https://github.com/lsils/mockturtle/pull/554>`_
+    - Resynthesis based on SOP factoring (`sop_factoring`) `#579 <https://github.com/lsils/mockturtle/pull/579>`_
+    - XAG algebraic depth rewriting (`xag_algebraic_depth_rewriting`) `#580 <https://github.com/lsils/mockturtle/pull/580>`_
+    - Collapse mapped extended to compute mapping functions if the mapped network doesn't have them stored (`collapse_mapped`) `#581 <https://github.com/lsils/mockturtle/pull/581>`_
+    - Extended LUT mapping for delay and area (`lut_map`) `#581 <https://github.com/lsils/mockturtle/pull/581>`_
+    - Support for external don't cares (mainly in `circuit_validator`, `sim_resub`, `miter` and `equivalence_checking_bill`) `#585 <https://github.com/lsils/mockturtle/pull/585>`_
+    - Register retiming (`retime`) `#594 <https://github.com/lsils/mockturtle/pull/594>`_
+    - AQFP buffer insertion & optimization updates (`buffer_insertion`, `aqfp_retiming`) `#594 <https://github.com/lsils/mockturtle/pull/594>`_
+    - Mapping of sequential networks (`map`, `seq_map`) `#599 <https://github.com/lsils/mockturtle/pull/599>`_
+    - DAG-aware in-place rewriting (`rewrite`) `#605 <https://github.com/lsils/mockturtle/pull/605>`_
+    - Dynamic cut enumeration (`dynamic_cut_enumeration_impl`) `#605 <https://github.com/lsils/mockturtle/pull/605>`_
+    - Extensions and fixes in refactoring (`refactoring`) `#607 <https://github.com/lsils/mockturtle/pull/607>`_
+* I/O:
+    - Write gates to GENLIB file (`write_genlib`) `#606 <https://github.com/lsils/mockturtle/pull/606>`_
+* Views:
+    - Add cost view to evaluate costs in the network and to maintain contexts (`cost_view`) `#554 <https://github.com/lsils/mockturtle/pull/554>`_
+    - Support for external don't cares (`dont_care_view`) `#585 <https://github.com/lsils/mockturtle/pull/585>`_
+    - Rank view for management of the ordering of nodes within each level (`rank_view`, contributed by Marcel Walter) `#589 <https://github.com/lsils/mockturtle/pull/589>`_
+    - Choice view for management of equivalent classes (`choice_view`) `#594 <https://github.com/lsils/mockturtle/pull/594>`_
+    - Deterministic randomization option in topological sorting (`topo_view`) `#594 <https://github.com/lsils/mockturtle/pull/594>`_
+    - Fixing MFFC view (`mffc_view`) `#607 <https://github.com/lsils/mockturtle/pull/607>`_
+* Properties:
+    - Cost functions based on the factored form literals count (`factored_literal_cost`) `#579 <https://github.com/lsils/mockturtle/pull/579>`_
+* Utils:
+    - Add recursive cost function class to customize cost in resubstitution algorithm (`recursive_cost_function`) `#554 <https://github.com/lsils/mockturtle/pull/554>`_
+    - Sum-of-products factoring utilities `#579 <https://github.com/lsils/mockturtle/pull/579>`_
+
+v0.3 (July 12, 2022)
+--------------------
 
 * I/O:
     - Read GENLIB files using *lorina* (`genlib_reader`) `#421 <https://github.com/lsils/mockturtle/pull/421>`_
+    - Read SUPER files using *lorina* (`super_reader`) `#489 <https://github.com/lsils/mockturtle/pull/489>`_
+    - Read and write Verilog with submodules (for buffered networks) `#478 <https://github.com/lsils/mockturtle/pull/478>`_
+    - Write Verilog for mapped netlists `#489 <https://github.com/lsils/mockturtle/pull/489>`_
+* Network interface:
+    - `clone` `#522 <https://github.com/lsils/mockturtle/pull/522>`_
+* Network implementations:
+    - Buffered networks (`buffered_aig_network`, `buffered_mig_network`) `#478 <https://github.com/lsils/mockturtle/pull/478>`_
+    - Cover network (`cover_network`) `#512 <https://github.com/lsils/mockturtle/pull/512>`_
 * Algorithms:
-    - Logic resynthesis engines for MIGs (`mig_resyn_engines` `#414 <https://github.com/lsils/mockturtle/pull/414>`_) and AIGs/XAGs (`xag_resyn_engines` `#425 <https://github.com/lsils/mockturtle/pull/425>`_)
+    - Logic resynthesis engines for MIGs (`mig_resyn` `#414 <https://github.com/lsils/mockturtle/pull/414>`_) and AIGs/XAGs (`xag_resyn` `#425 <https://github.com/lsils/mockturtle/pull/425>`_)
+    - AQFP buffer insertion & optimization (`buffer_insertion`, which replaces `aqfp_view`) and verification (`buffer_verification`) `#478 <https://github.com/lsils/mockturtle/pull/478>`_ `#483 <https://github.com/lsils/mockturtle/pull/483>`_
+    - Technology mapping and optimized network conversion (`map`) `#484 <https://github.com/lsils/mockturtle/pull/484>`_
+    - Fast cut enumeration based on static truth tables (`fast_cut_enumeration`) `#474 <https://github.com/lsils/mockturtle/pull/474>`_
+    - Resynthesis of a k-LUT network into a graph (`klut_to_graph`) `#502 <https://github.com/lsils/mockturtle/pull/502>`_
+    - Conversion of a cover network into a graph (`cover_to_graph`) `#512 <https://github.com/lsils/mockturtle/pull/512>`_
+    - Minimize debugging testcase (`testcase_minimizer`) `#542 <https://github.com/lsils/mockturtle/pull/542>`_
+* Views:
+    - Add bindings to a standard library (`binding_view`) `#489 <https://github.com/lsils/mockturtle/pull/489>`_
+* Utils:
+    - Manipulate windows with network data types (`clone_subnetwork` and `insert_ntk`) `#451 <https://github.com/lsils/mockturtle/pull/451>`_
+    - Load and manipulate a technology library (`tech_library` and `exact_library`) `#474 <https://github.com/lsils/mockturtle/pull/474>`_
+    - Load and manipulate a supergate library (`super_utils`) `#489 <https://github.com/lsils/mockturtle/pull/489>`_
 
 v0.2 (February 16, 2021)
 ------------------------

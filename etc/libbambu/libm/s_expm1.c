@@ -134,7 +134,7 @@ double expm1(double x)
          if(hx >= 0x7ff00000)
          {
             if(((hx & 0xfffff) | GET_LO(x)) != 0)
-               return x; /* NaN */
+               return X_PLUS_X(x); /* NaN */
             else
                return (xsb == 0) ? x : -1.0; /* exp(+-inf)={inf,-1} */
          }
@@ -142,9 +142,9 @@ double expm1(double x)
             return huge * huge; /* overflow */
       }
       if(xsb != 0)
-      {                        /* x < -56*ln2, return -1.0 with inexact */
-         if(x + tiny < 0.0)    /* raise inexact */
-            return tiny - one; /* return -1 */
+      {                             /* x < -56*ln2, return -1.0 with inexact */
+         math_force_eval(x + tiny); /* raise inexact */
+         return tiny - one;         /* return -1 */
       }
    }
 

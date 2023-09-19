@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2022 Politecnico di Milano
+ *              Copyright (C) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -59,7 +59,7 @@ class XilinxTasteBackendFlow : public XilinxBackendFlow
     * @param manager is the target manager
     */
    XilinxTasteBackendFlow(const ParameterConstRef& parameters, const std::string& flow_name,
-                          const target_managerRef& manager);
+                          const generic_deviceRef _device);
 
    /**
     * Generates the synthesis scripts for the specified design

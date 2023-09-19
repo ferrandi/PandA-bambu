@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -43,17 +43,16 @@
 #ifndef XML_DOCUMENT_HPP
 #define XML_DOCUMENT_HPP
 
+#include <filesystem>
 #include <fstream>
 #include <ostream>
 #include <string>
 #include <utility>
 
+#include "exceptions.hpp"
 #include "refcount.hpp"
-
 #include "xml_element.hpp"
 #include "xml_node.hpp"
-
-#include "exceptions.hpp"
 
 class xml_document : public xml_child
 {
@@ -110,9 +109,9 @@ class xml_document : public xml_child
    /** Write the document to a file.
     * @param filename
     */
-   void write_to_file(const std::string& filename)
+   void write_to_file(const std::filesystem::path& filename)
    {
-      std::ofstream xml_file(filename.c_str());
+      std::ofstream xml_file(filename);
       THROW_UNREACHABLE("Bug: 0-pointer will be used in the next");
       print(xml_file, false, nullptr);
    }
@@ -122,9 +121,9 @@ class xml_document : public xml_child
     * but may insert unwanted significant whitespaces. Use with care !
     * @param filename
     */
-   void write_to_file_formatted(const std::string& filename)
+   void write_to_file_formatted(const std::filesystem::path& filename)
    {
-      std::ofstream xml_file(filename.c_str());
+      std::ofstream xml_file(filename);
       simple_indent PP(STD_OPENING_CHAR, STD_CLOSING_CHAR, XML_TAB_SIZE);
       print(xml_file, true, &PP);
    }

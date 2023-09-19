@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,7 +48,7 @@
 #include "BackendFlow.hpp"
 
 #include "refcount.hpp"
-REF_FORWARD_DECL(target_device);
+REF_FORWARD_DECL(generic_device);
 
 #define PARAM_ucf_file "ucf_file"
 #define PARAM_xcf_file "xcf_file"
@@ -74,7 +74,7 @@ class XilinxBackendFlow : public BackendFlow
    void WriteFlowConfiguration(std::ostream& script) override;
 
    /**
-    * Checks the synthesis results and fills the corresponding datastructures
+    * Checks the synthesis results and fills the corresponding data-structures
     */
    void CheckSynthesisResults() override;
 
@@ -102,7 +102,7 @@ class XilinxBackendFlow : public BackendFlow
    /**
     * Fixed the parsing of timing results from trce
     */
-   void xparse_timing(const std::string& fn, bool post);
+   void xparse_timing(const std::string& fn);
 
    /**
     * Fixed the parsing of timing results from xst
@@ -113,7 +113,7 @@ class XilinxBackendFlow : public BackendFlow
    /**
     * Constructor
     */
-   XilinxBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef _target);
+   XilinxBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const generic_deviceRef _device);
 
    /**
     * Destructor

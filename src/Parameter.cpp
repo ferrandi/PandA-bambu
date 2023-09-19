@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -38,18 +38,20 @@
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
  */
+#include "Parameter.hpp"
 
 /// Autoheader include
 #include "config_HAVE_ARM_COMPILER.hpp"
 #include "config_HAVE_FROM_ARCH_BUILT.hpp"
 #include "config_HAVE_FROM_CSV_BUILT.hpp"
 #include "config_HAVE_FROM_C_BUILT.hpp"
-#include "config_HAVE_FROM_IPXACT_BUILT.hpp"
 #include "config_HAVE_FROM_PSPLIB_BUILT.hpp"
 #include "config_HAVE_FROM_SDF3_BUILT.hpp"
 #include "config_HAVE_I386_CLANG10_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG11_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG12_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG13_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG16_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG5_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG6_COMPILER.hpp"
@@ -66,7 +68,6 @@
 #include "config_HAVE_I386_GCC6_COMPILER.hpp"
 #include "config_HAVE_I386_GCC7_COMPILER.hpp"
 #include "config_HAVE_I386_GCC8_COMPILER.hpp"
-#include "config_HAVE_IPXACT_BUILT.hpp"
 #include "config_HAVE_PERFORMANCE_METRICS_XML.hpp"
 #include "config_HAVE_REGRESSORS_BUILT.hpp"
 #include "config_HAVE_SOURCE_CODE_STATISTICS_XML.hpp"
@@ -75,9 +76,6 @@
 #include "config_HAVE_WEIGHT_MODELS_XML.hpp"
 #include "config_PACKAGE_BUGREPORT.hpp"
 #include "config_PACKAGE_STRING.hpp"
-
-/// Header include
-#include "Parameter.hpp"
 
 #if HAVE_FROM_C_BUILT
 /// wrapper/compiler
@@ -110,14 +108,11 @@
 #if HAVE_SOURCE_CODE_STATISTICS_XML
 #include "source_code_statistics_xml.hpp"
 #endif
-#if(HAVE_WEIGHT_MODELS_XML && HAVE_EXPERIMENTAL) || HAVE_PERFORMANCE_METRICS_XML
+#if HAVE_PERFORMANCE_METRICS_XML
 #include "probability_distribution_xml.hpp"
 #endif
 #if HAVE_TECHNOLOGY_BUILT
 #include "technology_xml.hpp"
-#endif
-#if HAVE_WEIGHT_MODELS_XML && HAVE_EXPERIMENTAL
-#include "weights_xml.hpp"
 #endif
 #if HAVE_FROM_SDF3_BUILT
 #include "sdf3_xml.hpp"
@@ -142,17 +137,11 @@
 #include "refcount.hpp"
 #include "string_manipulation.hpp"
 #include "xml_helper.hpp"
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
+#include <filesystem>
 
 /// XML include
 #include "polixml.hpp"
 #include "xml_dom_parser.hpp"
-#if HAVE_FROM_IPXACT_BUILT
-#include "ip_xact_xml.hpp"
-/// Constants include
-#include "design_analysis_xml.hpp"
-#endif
 
 #include "fileIO.hpp"
 
@@ -174,12 +163,9 @@ Parameter::Parameter(const std::string& _program_name, int _argc, char** const _
    BOOST_PP_SEQ_FOR_EACH(OPTION_NAME, BOOST_PP_EMPTY, EUCALIPTUS_OPTIONS)
    BOOST_PP_SEQ_FOR_EACH(OPTION_NAME, BOOST_PP_EMPTY, FRAMEWORK_OPTIONS)
    BOOST_PP_SEQ_FOR_EACH(OPTION_NAME, BOOST_PP_EMPTY, COMPILER_OPTIONS)
-   BOOST_PP_SEQ_FOR_EACH(OPTION_NAME, BOOST_PP_EMPTY, GECCO_OPTIONS)
-   BOOST_PP_SEQ_FOR_EACH(OPTION_NAME, BOOST_PP_EMPTY, KOALA_OPTIONS)
    BOOST_PP_SEQ_FOR_EACH(OPTION_NAME, BOOST_PP_EMPTY, SPIDER_OPTIONS)
    BOOST_PP_SEQ_FOR_EACH(OPTION_NAME, BOOST_PP_EMPTY, SYNTHESIS_OPTIONS)
    BOOST_PP_SEQ_FOR_EACH(OPTION_NAME, BOOST_PP_EMPTY, TREE_PANDA_COMPILER_OPTIONS)
-   BOOST_PP_SEQ_FOR_EACH(OPTION_NAME, BOOST_PP_EMPTY, ZEBU_OPTIONS)
    // This part has been added since boost macro does not expand correctly
    std::map<enum enum_option, std::string>::iterator it, it_end = option_name.end();
    for(it = option_name.begin(); it != it_end; it++)
@@ -204,54 +190,53 @@ Parameter::Parameter(const Parameter& other)
 void Parameter::CheckParameters()
 {
    const auto temporary_directory = getOption<std::string>(OPT_output_temporary_directory);
-   if(boost::filesystem::exists(temporary_directory))
+   if(std::filesystem::exists(temporary_directory))
    {
-      boost::filesystem::remove_all(temporary_directory);
+      std::filesystem::remove_all(temporary_directory);
    }
-   boost::filesystem::create_directory(temporary_directory);
+   std::filesystem::create_directory(temporary_directory);
    /// Output directory is not removed since it can be the current one
    const auto output_directory = getOption<std::string>(OPT_output_directory);
-   if(!boost::filesystem::exists(output_directory))
+   if(!std::filesystem::exists(output_directory))
    {
-      boost::filesystem::create_directory(output_directory);
+      std::filesystem::create_directory(output_directory);
    }
-   if(!boost::filesystem::exists(output_directory))
+   if(!std::filesystem::exists(output_directory))
    {
       THROW_ERROR("not able to create directory " + output_directory);
    }
    if(getOption<bool>(OPT_print_dot))
    {
       const auto dot_directory = getOption<std::string>(OPT_dot_directory);
-      if(boost::filesystem::exists(dot_directory))
+      if(std::filesystem::exists(dot_directory))
       {
-         boost::filesystem::remove_all(dot_directory);
+         std::filesystem::remove_all(dot_directory);
       }
-      boost::filesystem::create_directory(dot_directory);
-      if(!boost::filesystem::exists(dot_directory))
+      std::filesystem::create_directory(dot_directory);
+      if(!std::filesystem::exists(dot_directory))
       {
          THROW_ERROR("not able to create directory " + dot_directory);
       }
    }
 
+#if HAVE_FROM_C_BUILT
    if(isOption(OPT_gcc_m32_mx32))
    {
       const auto mopt = getOption<std::string>(OPT_gcc_m32_mx32);
-      if(mopt == "-m32" &&
-         CompilerWrapper::hasCompilerGCCM32(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)))
+      const auto default_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
+      if(mopt == "-m32" && CompilerWrapper::hasCompilerGCCM32(default_compiler))
       {
          setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
       }
-      else if((mopt == "-m32" && !CompilerWrapper::hasCompilerCLANGM32(
-                                     getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))) ||
-              (mopt == "-mx32" &&
-               !CompilerWrapper::hasCompilerMX32(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))) ||
-              (mopt == "-m64" &&
-               !CompilerWrapper::hasCompilerM64(getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler))))
+      else if((mopt == "-m32" && !CompilerWrapper::hasCompilerCLANGM32(default_compiler)) ||
+              (mopt == "-mx32" && !CompilerWrapper::hasCompilerMX32(default_compiler)) ||
+              (mopt == "-m64" && !CompilerWrapper::hasCompilerM64(default_compiler)))
       {
-         THROW_ERROR("Option " + mopt + " not supported by " +
-                     CompilerWrapper::getCompilerSuffix(OPT_default_compiler) + " compiler.");
+         THROW_ERROR("Option " + mopt + " not supported by " + CompilerWrapper::getCompilerSuffix(default_compiler) +
+                     " compiler.");
       }
    }
+#endif
 }
 
 Parameter::~Parameter() = default;
@@ -348,7 +333,7 @@ void Parameter::SetCommonDefaults()
 {
    setOption(STR_OPT_benchmark_fake_parameters, "<none>");
    std::string current_dir = GetCurrentPath();
-   std::string temporary_directory = current_dir + "/" + std::string(STR_CST_temporary_directory);
+   std::string temporary_directory = current_dir + "/" STR_CST_temporary_directory;
 
    setOption(OPT_dot_directory, current_dir + "/dot/");
    setOption(OPT_output_temporary_directory, temporary_directory + "/");
@@ -435,7 +420,7 @@ void Parameter::PrintFullHeader(std::ostream& os) const
    os << "                         Politecnico di Milano - DEIB" << std::endl;
    os << "                          System Architectures Group" << std::endl;
    os << "********************************************************************************" << std::endl;
-   os << "                Copyright (C) 2004-2022 Politecnico di Milano" << std::endl;
+   os << "                Copyright (C) 2004-2023 Politecnico di Milano" << std::endl;
    std::string version = PrintVersion();
    if(version.size() < 80)
    {
@@ -523,8 +508,7 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
 #if HAVE_FROM_C_BUILT
          if(std::string(optarg_param) == "umpversion")
          {
-            CompilerWrapper_CompilerTarget preferred_compiler;
-            preferred_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
+            const auto preferred_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
             PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0,
                           CompilerWrapper::getCompilerVersion(static_cast<int>(preferred_compiler)));
             exit_success = true;
@@ -544,7 +528,7 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
 #ifndef NDEBUG
          else
          {
-            debug_level = boost::lexical_cast<int>(optarg_param);
+            debug_level = std::stoi(optarg_param);
             setOption(OPT_debug_level, optarg_param);
             break;
          }
@@ -581,18 +565,10 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
       case OPT_OUTPUT_TEMPORARY_DIRECTORY:
       {
          /// If the path is not absolute, make it into absolute
-         std::string path(optarg_param);
-         std::string temporary_directory_pattern;
-         temporary_directory_pattern = GetPath(path) + "/" + std::string(STR_CST_temporary_directory);
-         // The %s are required by the mkdtemp function
-         boost::filesystem::path temp_path = temporary_directory_pattern + "-%%%%-%%%%-%%%%-%%%%";
-
-         boost::filesystem::path temp_path_obtained = boost::filesystem::unique_path(temp_path);
-         boost::filesystem::create_directories(temp_path_obtained.string());
-
-         path = temp_path_obtained.string();
-         path = path + "/";
-         setOption(OPT_output_temporary_directory, path);
+         const auto path =
+             unique_path(GetPath(std::string(optarg_param)) + "/" STR_CST_temporary_directory "-%%%%-%%%%-%%%%-%%%%");
+         std::filesystem::create_directories(path);
+         setOption(OPT_output_temporary_directory, path.string() + "/");
          break;
       }
       case INPUT_OPT_PANDA_PARAMETER:
@@ -632,25 +608,7 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
          {
             defines = getOption<std::string>(OPT_gcc_defines) + STR_CST_string_separator;
          }
-         if(std::string(optarg_param).find('=') != std::string::npos)
-         {
-            bool has_parenthesis = std::string(optarg_param).find('(') != std::string::npos &&
-                                   std::string(optarg_param).find(')') != std::string::npos;
-            std::string temp_var = std::string(optarg_param);
-            boost::replace_first(temp_var, "=", "=\'");
-            if(has_parenthesis)
-            {
-               defines += "\'" + temp_var + "\'" + "\'";
-            }
-            else
-            {
-               defines += temp_var + "\'";
-            }
-         }
-         else
-         {
-            defines += std::string(optarg_param);
-         }
+         defines += std::string(optarg_param);
          setOption(OPT_gcc_defines, defines);
          break;
       }
@@ -994,6 +952,20 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
             break;
          }
 #endif
+#if HAVE_I386_CLANG13_COMPILER
+         if(std::string(optarg_param) == "I386_CLANG13")
+         {
+            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG13));
+            break;
+         }
+#endif
+#if HAVE_I386_CLANG16_COMPILER
+         if(std::string(optarg_param) == "I386_CLANG16")
+         {
+            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG16));
+            break;
+         }
+#endif
 #if HAVE_I386_CLANGVVD_COMPILER
          if(std::string(optarg_param) == "I386_CLANGVVD")
          {
@@ -1026,7 +998,7 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       }
       case INPUT_OPT_READ_GCC_XML:
       {
-         setOption(OPT_gcc_read_xml, optarg);
+         setOption(OPT_gcc_read_xml, GetPath(optarg));
          break;
       }
       case INPUT_OPT_STD:
@@ -1041,7 +1013,7 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       }
       case INPUT_OPT_WRITE_GCC_XML:
       {
-         setOption(OPT_gcc_write_xml, optarg);
+         setOption(OPT_gcc_write_xml, GetPath(optarg));
          break;
       }
       default:
@@ -1054,59 +1026,59 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
 }
 #endif
 
-Parameters_FileFormat Parameter::GetFileFormat(const std::string& file_name, const bool check_xml_root_node) const
+Parameters_FileFormat Parameter::GetFileFormat(const std::filesystem::path& file_name,
+                                               const bool check_xml_root_node) const
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Getting file format of file " + file_name);
-   std::string extension = GetExtension(file_name);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Getting file format of file " + file_name.string());
+   const auto extension = file_name.extension().string();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Extension is " + extension);
 #if HAVE_FROM_AADL_ASN_BUILT
-   if(extension == "aadl" or extension == "AADL")
+   if(extension == ".aadl" or extension == ".AADL")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--aadl file");
       return Parameters_FileFormat::FF_AADL;
    }
-   if(extension == "asn" or extension == "ASN")
+   if(extension == ".asn" or extension == ".ASN")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--asn file");
       return Parameters_FileFormat::FF_ASN;
    }
 #endif
 #if HAVE_FROM_C_BUILT
-   if(extension == "c" or extension == "i")
+   if(extension == ".c" or extension == ".i")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--C source file");
       return Parameters_FileFormat::FF_C;
    }
-   if(extension == "m" or extension == "mi")
+   if(extension == ".m" or extension == ".mi")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Objective C source file");
       return Parameters_FileFormat::FF_OBJECTIVEC;
    }
-   if(extension == "mm" or extension == "M" or extension == "mii")
+   if(extension == ".mm" or extension == ".M" or extension == ".mii")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Objective C++ source file");
       return Parameters_FileFormat::FF_OBJECTIVECPP;
    }
-   if(extension == "ii" or extension == "cc" or extension == "cp" or extension == "cxx" or extension == "cpp" or
-      extension == "CPP" or extension == "c++" or extension == "C")
+   if(extension == ".ii" or extension == ".cc" or extension == ".cp" or extension == ".cxx" or extension == ".cpp" or
+      extension == ".CPP" or extension == ".c++" or extension == ".C")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--C++ source file");
       return Parameters_FileFormat::FF_CPP;
    }
-   if(extension == "f" or extension == "for" or extension == "ftn" or extension == "F" or extension == "FOR" or
-      extension == "fpp" or extension == "FPP" or extension == "FTN" or extension == "f90" or extension == "f95" or
-      extension == "f03" or extension == "f08" or extension == "F90" or extension == "F95" or extension == "F03" or
-      extension == "F08")
+   if(extension == ".f" or extension == ".for" or extension == ".ftn" or extension == ".F" or extension == ".FOR" or
+      extension == ".fpp" or extension == ".FPP" or extension == ".FTN" or extension == ".f90" or extension == ".f95" or
+      extension == ".f03" or extension == ".f08" or extension == ".F90" or extension == ".F95" or extension == ".F03" or
+      extension == ".F08")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Fortran source file");
       return Parameters_FileFormat::FF_FORTRAN;
    }
-   if(extension == "ll")
+   if(extension == ".ll")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--LLVM bitcode source file");
-      auto removed_ll = file_name.substr(0, file_name.size() - 3);
-      extension = GetExtension(removed_ll);
-      if(extension == "cpp")
+      const auto sub_extension = std::filesystem::path(file_name).replace_extension().extension().string();
+      if(sub_extension == ".cpp")
       {
          return Parameters_FileFormat::FF_LLVM_CPP;
       }
@@ -1115,85 +1087,68 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::string& file_name, con
          return Parameters_FileFormat::FF_LLVM;
       }
    }
-   if(extension == "LL")
+   if(extension == ".LL")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--LLVM bitcode source file");
 
       return Parameters_FileFormat::FF_LLVM_CPP;
    }
 #endif
-   if(extension == "csv")
+   if(extension == ".csv")
    {
-      std::string base_name = GetLeafFileName(file_name);
+      const auto sub_extension = std::filesystem::path(file_name).replace_extension().extension().string();
 #if HAVE_FROM_CSV_BUILT
-      if(base_name.find('.') != std::string::npos)
+      if(sub_extension == ".rtl")
       {
-         std::string local_extension = GetExtension(base_name);
-         if(local_extension == "rtl")
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--CSV of RTL operations");
-            return Parameters_FileFormat::FF_CSV_RTL;
-         }
-         else if(local_extension == "tree")
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--CSV of TREE operations");
-            return Parameters_FileFormat::FF_CSV_TRE;
-         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--CSV of RTL operations");
+         return Parameters_FileFormat::FF_CSV_RTL;
+      }
+      else if(sub_extension == ".tree")
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--CSV of TREE operations");
+         return Parameters_FileFormat::FF_CSV_TRE;
       }
 #endif
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--generic CSV");
       return Parameters_FileFormat::FF_CSV;
    }
-#if HAVE_FROM_LIBERTY
-   if(extension == "lib")
-   {
-      return Parameters_FileFormat::FF_LIB;
-   }
-#endif
-#if HAVE_EXPERIMENTAL
-   if(extension == "log")
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--log file");
-      return Parameters_FileFormat::FF_LOG;
-   }
-#endif
 #if HAVE_FROM_PSPLIB_BUILT
-   if(extension == "mm")
+   if(extension == ".mm")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Multi mode project scheduling problem");
       return Parameters_FileFormat::FF_PSPLIB_MM;
    }
-   if(extension == "sm")
+   if(extension == ".sm")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Single-mode project scheduling problem");
       return Parameters_FileFormat::FF_PSPLIB_SM;
    }
 #endif
-   if(extension == "tex")
+   if(extension == ".tex")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latex table");
       return Parameters_FileFormat::FF_TEX;
    }
-   if(extension == "v")
+   if(extension == ".v")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--verilog");
       return Parameters_FileFormat::FF_VERILOG;
    }
-   if(extension == "vhd" or extension == "vhdl")
+   if(extension == ".vhd" or extension == ".vhdl")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--vhdl");
       return Parameters_FileFormat::FF_VHDL;
    }
-   if(extension == "xml")
+   if(extension == ".xml")
    {
       if(check_xml_root_node)
       {
-         XMLDomParser parser(file_name);
+         XMLDomParser parser(file_name.string());
          parser.Exec();
-         THROW_ASSERT(parser, "Impossible to parse xml file " + file_name);
+         THROW_ASSERT(parser, "Impossible to parse xml file " + file_name.string());
 
-#if HAVE_DESIGN_ANALYSIS_BUILT || HAVE_SOURCE_CODE_STATISTICS_XML || HAVE_FROM_IPXACT_BUILT || HAVE_FROM_SDF3_BUILT || \
-    HAVE_TO_DATAFILE_BUILT || HAVE_PERFORMANCE_METRICS_XML || HAVE_WEIGHT_MODELS_XML
+#if HAVE_DESIGN_ANALYSIS_BUILT || HAVE_SOURCE_CODE_STATISTICS_XML || HAVE_FROM_SDF3_BUILT || HAVE_TO_DATAFILE_BUILT || \
+    HAVE_PERFORMANCE_METRICS_XML || HAVE_WEIGHT_MODELS_XML
          const xml_element* root = parser.get_document()->get_root_node();
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Root node is " + root->get_name());
 #if HAVE_REGRESSORS_BUILT
@@ -1243,28 +1198,6 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::string& file_name, con
             return Parameters_FileFormat::FF_XML_STAT;
          }
 #endif
-#if HAVE_FROM_IPXACT_BUILT
-         if(root->get_name() == STR_XML_ip_xact_component)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--IP-XACT component");
-            return Parameters_FileFormat::FF_XML_IP_XACT_COMPONENT;
-         }
-         if(root->get_name() == STR_XML_ip_xact_design)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--IP-XACT design");
-            return Parameters_FileFormat::FF_XML_IP_XACT_DESIGN;
-         }
-         if(root->get_name() == STR_XML_ip_xact_generator_chain)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--IP-XACT generator chain");
-            return Parameters_FileFormat::FF_XML_IP_XACT_GENERATOR;
-         }
-         if(root->get_name() == STR_XML_ip_xact_design_configuration)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--IP-XACT design configuration");
-            return Parameters_FileFormat::FF_XML_IP_XACT_CONFIG;
-         }
-#endif
 #if HAVE_TECHNOLOGY_BUILT
          if(root->get_name() == STR_XML_technology_target_root)
          {
@@ -1284,49 +1217,6 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::string& file_name, con
             return Parameters_FileFormat::FF_XML_TEX_TABLE;
          }
 #endif
-#if HAVE_WEIGHT_MODELS_XML && HAVE_EXPERIMENTAL
-         if(root->get_name() == STR_XML_Metrics)
-         {
-            const xml_node::node_list list = root->get_children();
-            for(xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
-            {
-               const xml_element* static_or_dynamic = GetPointer<const xml_element>(*iter);
-               if(!static_or_dynamic)
-                  continue;
-               if(static_or_dynamic->get_name() == STR_XML_Metrics_Static)
-               {
-                  const xml_node::node_list static_children = static_or_dynamic->get_children();
-                  for(xml_node::node_list::const_iterator static_child = static_children.begin();
-                      static_child != static_children.end(); static_child++)
-                  {
-                     const xml_element* static_child_xml = GetPointer<const xml_element>(*static_child);
-                     if(!static_child_xml)
-                        continue;
-                     if(static_child_xml->get_name() == STR_XML_Metrics_Sequential_Estimation)
-                     {
-                        const xml_node::node_list sequential_children = static_child_xml->get_children();
-                        for(xml_node::node_list::const_iterator sequential_child = sequential_children.begin();
-                            sequential_child != sequential_children.end(); sequential_child++)
-                        {
-                           const xml_element* sequential_child_xml = GetPointer<const xml_element>(*sequential_child);
-                           if(sequential_child_xml and
-                              sequential_child_xml->get_attribute(STR_XML_Metrics_Distribution))
-                           {
-                              const std::string distribution =
-                                  sequential_child_xml->get_attribute(STR_XML_Metrics_Distribution)->get_value();
-                              if(distribution == STR_XML_probability_distribution_stochastic)
-                              {
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Symbolic distribution");
-                                 return Parameters_FileFormat::FF_XML_SYM_SIM;
-                              }
-                           }
-                        }
-                     }
-                  }
-               }
-            }
-         }
-#endif
 #if HAVE_FROM_SDF3_BUILT
          if(root->get_name() == STR_XML_sdf3_root)
          {
@@ -1341,34 +1231,15 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::string& file_name, con
             return Parameters_FileFormat::FF_XML_SKIP_ROW;
          }
 #endif
-#if HAVE_WEIGHT_MODELS_XML && HAVE_EXPERIMENTAL
-         if(root->get_name() == STR_XML_weights_root)
-         {
-            const xml_node::node_list list = root->get_children();
-            for(xml_node::node_list::const_iterator iter = list.begin(); iter != list.end(); ++iter)
-            {
-               const xml_element* model = GetPointer<const xml_element>(*iter);
-               if(not model)
-                  continue;
-               if(model->get_attribute(STR_XML_weights_distribution) and
-                  model->get_attribute(STR_XML_weights_distribution)->get_value() ==
-                      STR_XML_probability_distribution_symbolic)
-               {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Symbolic distribution model");
-                  return Parameters_FileFormat::FF_XML_WGT_SYM;
-               }
-            }
-         }
-#endif
 #endif
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Generic XML");
       return Parameters_FileFormat::FF_XML;
    }
 #if HAVE_FROM_C_BUILT
-   if(boost::filesystem::exists(file_name))
+   if(std::filesystem::exists(file_name))
    {
-      const auto opened_file = fileIO_istream_open(file_name);
+      const auto opened_file = fileIO_istream_open(file_name.string());
       std::string line;
       if(!opened_file->eof())
       {
@@ -1396,10 +1267,8 @@ void Parameter::PrintGeneralOptionsUsage(std::ostream& os) const
       << "        Display this usage information.\n\n"
       << "    --version, -V\n"
       << "        Display the version of the program.\n\n"
-#if HAVE_EXPERIMENTAL
       << "    --seed=<number>\n"
       << "        Set the seed of the random number generator (default=0).\n\n"
-#endif
 #if !RELEASE
       << "    --read-parameters-XML=<xml_file_name>\n"
       << "        Read command line options from a XML file.\n\n"
@@ -1437,8 +1306,8 @@ void Parameter::PrintOutputOptionsUsage(std::ostream& os) const
       << "    --max-transformations=<number>\n"
       << "        Set a maximum number of transformations.\n\n"
       << "        To reduce the disk usage two PandA parameter could be used:\n"
-      << "          --panda-parameter=disable-print-tree-manager=1\n"
-      << "          --panda-parameter=disable-print-dot-FF=1\n\n"
+      << "          --panda-parameter=print-tree-manager=0\n"
+      << "          --panda-parameter=print-dot-FF=0\n\n"
       << "    --find-max-transformations\n"
       << "        Find the maximum number of transformations raising an exception.\n\n"
 #endif
@@ -1534,6 +1403,12 @@ void Parameter::PrintGccOptionsUsage(std::ostream& os) const
 #if HAVE_I386_CLANG12_COMPILER
       << "            I386_CLANG12\n"
 #endif
+#if HAVE_I386_CLANG13_COMPILER
+      << "            I386_CLANG13\n"
+#endif
+#if HAVE_I386_CLANG16_COMPILER
+      << "            I386_CLANG16\n"
+#endif
 #if HAVE_I386_CLANGVVD_COMPILER
       << "            I386_CLANGVVD\n"
 #endif
@@ -1555,7 +1430,9 @@ void Parameter::PrintGccOptionsUsage(std::ostream& os) const
       << "        Enable preprocessing mode of GCC/CLANG.\n\n"
       << "    --std=<standard>\n"
       << "        Assume that the input sources are for <standard>. All\n"
-      << "        the --std options available in GCC/CLANG are supported.\n\n"
+      << "        the --std options available in GCC/CLANG are supported.\n"
+      << "        The default value is gnu90/gnu11 for C and gnu++98/gnu++14 for C++ \n"
+      << "        depending on the selected frontend compiler support.\n\n"
       << "    -D<name>\n"
       << "        Predefine name as a macro, with definition 1.\n\n"
       << "    -D<name=definition>\n"
@@ -1725,7 +1602,7 @@ CompilerWrapper_OptimizationSet Parameter::getOption(const enum enum_option name
 template <>
 void Parameter::setOption(const enum enum_option name, const CompilerWrapper_OptimizationSet value)
 {
-   enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(value));
+   enum_options[name] = std::to_string(static_cast<int>(value));
 }
 #endif
 
@@ -1746,7 +1623,7 @@ HLSFlowStep_Type Parameter::getOption(const enum enum_option name) const
 template <>
 void Parameter::setOption(const enum enum_option name, const HLSFlowStep_Type hls_flow_step_type)
 {
-   enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(hls_flow_step_type));
+   enum_options[name] = std::to_string(static_cast<int>(hls_flow_step_type));
 }
 
 template <>
@@ -1758,7 +1635,7 @@ MemoryAllocation_Policy Parameter::getOption(const enum enum_option name) const
 template <>
 void Parameter::setOption(const enum enum_option name, const MemoryAllocation_Policy memory_allocation_policy)
 {
-   enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(memory_allocation_policy));
+   enum_options[name] = std::to_string(static_cast<int>(memory_allocation_policy));
 }
 
 template <>
@@ -1771,7 +1648,7 @@ template <>
 void Parameter::setOption(const enum enum_option name,
                           const MemoryAllocation_ChannelsType memory_allocation_channels_type)
 {
-   enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(memory_allocation_channels_type));
+   enum_options[name] = std::to_string(static_cast<int>(memory_allocation_channels_type));
 }
 
 template <>
@@ -1783,7 +1660,7 @@ CliqueCovering_Algorithm Parameter::getOption(const enum enum_option name) const
 template <>
 void Parameter::setOption(const enum enum_option name, const CliqueCovering_Algorithm clique_covering_algorithm)
 {
-   enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(clique_covering_algorithm));
+   enum_options[name] = std::to_string(static_cast<int>(clique_covering_algorithm));
 }
 
 template <>
@@ -1795,7 +1672,7 @@ Evaluation_Mode Parameter::getOption(const enum enum_option name) const
 template <>
 void Parameter::setOption(const enum enum_option name, const Evaluation_Mode evaluation_mode)
 {
-   enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(evaluation_mode));
+   enum_options[name] = std::to_string(static_cast<int>(evaluation_mode));
 }
 
 template <>
@@ -1807,7 +1684,7 @@ ParametricListBased_Metric Parameter::getOption(const enum enum_option name) con
 template <>
 void Parameter::setOption(const enum enum_option name, const ParametricListBased_Metric parametric_list_based_metric)
 {
-   enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(parametric_list_based_metric));
+   enum_options[name] = std::to_string(static_cast<int>(parametric_list_based_metric));
 }
 
 template <>
@@ -1819,7 +1696,7 @@ SDCScheduling_Algorithm Parameter::getOption(const enum enum_option name) const
 template <>
 void Parameter::setOption(const enum enum_option name, const SDCScheduling_Algorithm sdc_scheduling_algorithm)
 {
-   enum_options[name] = boost::lexical_cast<std::string>(static_cast<int>(sdc_scheduling_algorithm));
+   enum_options[name] = std::to_string(static_cast<int>(sdc_scheduling_algorithm));
 }
 
 #endif

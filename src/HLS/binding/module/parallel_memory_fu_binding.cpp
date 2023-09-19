@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2022 Politecnico di Milano
+ *              Copyright (c) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,7 +48,7 @@
 
 /// HLS includes
 #include "hls.hpp"
-#include "hls_target.hpp"
+#include "hls_device.hpp"
 
 /// HLS/functions include
 #include "omp_functions.hpp"
@@ -91,7 +91,7 @@ void ParallelMemoryFuBinding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRe
    fu_binding::add_to_SM(HLSMgr, HLS, clock_port, reset_port);
    const auto& parallelized_functions = GetPointer<const OmpFunctions>(HLSMgr->Rfuns)->parallelized_functions;
    const auto& omp_for_wrappers = GetPointer<const OmpFunctions>(HLSMgr->Rfuns)->omp_for_wrappers;
-   const auto TM = HLS->HLS_T->get_technology_manager();
+   const auto TM = HLS->HLS_D->get_technology_manager();
    const auto memory_banks_number = parameters->getOption<unsigned int>(OPT_memory_banks_number);
    const structural_managerRef SM = HLS->datapath;
    const structural_objectRef circuit = SM->get_circ();

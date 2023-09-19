@@ -1,11 +1,34 @@
 EXTRA_DIST += \
-%D%/src \
-%D%/src/f64div.c \
-%D%/src/f64exp.c \
-%D%/src/f64mul.c \
-%D%/src/f64pow.c \
-%D%/src/f64sqrt.c \
-%D%/src/f64sub.c \
-%D%/src/f64sum.c \
-%D%/generic_truefloat.sh \
-%D%/truefloat_list
+   %D%/add/add.c \
+   %D%/add/add.h \
+   %D%/add/input.data \
+   %D%/add/local_support.c \
+   %D%/common/harness.c \
+   %D%/common/support.c \
+   %D%/common/support.h \
+   %D%/div/div.c \
+   %D%/div/div.h \
+   %D%/div/input.data \
+   %D%/div/local_support.c \
+   %D%/exp/exp.c \
+   %D%/exp/exp.h \
+   %D%/exp/input.data \
+   %D%/exp/local_support.c \
+   %D%/generic_truefloat.sh \
+   %D%/mul/input.data \
+   %D%/mul/local_support.c \
+   %D%/mul/mul.c \
+   %D%/mul/mul.h \
+   %D%/pow/input.data \
+   %D%/pow/local_support.c \
+   %D%/pow/pow.c \
+   %D%/pow/pow.h \
+   %D%/sqrt/sqrt.h \
+   %D%/sqrt/input.data \
+   %D%/sqrt/local_support.c \
+   %D%/sqrt/sqrt.c \
+   %D%/sub/input.data \
+   %D%/sub/local_support.c \
+   %D%/sub/sub.c \
+   %D%/sub/sub.h \
+   %D%/truefloat_list

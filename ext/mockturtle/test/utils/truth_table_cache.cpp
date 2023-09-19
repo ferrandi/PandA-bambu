@@ -1,8 +1,8 @@
 #include <catch.hpp>
 
-#include <mockturtle/utils/truth_table_cache.hpp>
 #include <kitty/constructors.hpp>
 #include <kitty/dynamic_truth_table.hpp>
+#include <mockturtle/utils/truth_table_cache.hpp>
 
 using namespace mockturtle;
 

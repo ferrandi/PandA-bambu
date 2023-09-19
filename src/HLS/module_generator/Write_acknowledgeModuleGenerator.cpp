@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2022-2022 Politecnico di Milano
+ *              Copyright (C) 2022-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,11 +48,30 @@
 
 #include "language_writer.hpp"
 
+enum in_port
+{
+   i_clock = 0,
+   i_reset,
+   i_start,
+   i_in1,
+   i_in2,
+   i_in3,
+   i_ack,
+   i_last
+};
+
+enum out_port
+{
+   o_done = 0,
+   o_out1,
+   o_last
+};
+
 Write_acknowledgeModuleGenerator::Write_acknowledgeModuleGenerator(const HLS_managerRef& _HLSMgr) : Registrar(_HLSMgr)
 {
 }
 
-void Write_acknowledgeModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */,
+void Write_acknowledgeModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */,
                                                     unsigned int /* function_id */, vertex /* op_v */,
                                                     const HDLWriter_Language /* language */,
                                                     const std::vector<ModuleGenerator::parameter>& /* _p */,
@@ -60,57 +79,28 @@ void Write_acknowledgeModuleGenerator::InternalExec(std::ostream& out, const mod
                                                     const std::vector<ModuleGenerator::parameter>& _ports_out,
                                                     const std::vector<ModuleGenerator::parameter>& /* _ports_inout */)
 {
-   out << "integer ii=0;\n";
-   out << "reg [PORTSIZE_" << _ports_in[3].name << "-1:0] started 1INIT_ZERO_VALUE;\n";
-   out << "reg [PORTSIZE_" << _ports_in[3].name << "-1:0] started0 1INIT_ZERO_VALUE;\n";
-   out << "reg [" << _ports_out[1].type_size << "-1:0] " << _ports_out[1].name << "_0;\n";
-   out << "reg [PORTSIZE_" << _ports_in[3].name << "-1:0] " << _ports_out[0].name << " 1INIT_ZERO_VALUE;\n";
+   THROW_ASSERT(_ports_in.size() >= i_last, "");
+   THROW_ASSERT(_ports_out.size() >= o_last, "");
+   out << "reg started, started0;\n\n";
 
-   out << "always @(*)\n";
-   out << "  for(ii=0; ii<PORTSIZE_" << _ports_in[3].name << "; ii=ii+1)\n";
-   out << "    started0[ii] <= (started[ii] | " << _ports_in[2].name << "[ii]) & !(" << _ports_in[6].name << ");\n";
    out << "always @(posedge clock 1RESET_EDGE)\n";
+   out << "begin\n";
    out << "  if (1RESET_VALUE)\n";
-   out << "    started <= 0;\n";
-   out << "  else\n";
-   out << "    for(ii=0; ii<PORTSIZE_" << _ports_in[3].name << "; ii=ii+1)\n";
-   out << "      started[ii] <= started0[ii];\n";
-
-   out << "assign " << _ports_out[1].name << " = " << _ports_out[1].name << "_0;\n";
-   out << "always @(*)\n";
-   out << "begin\n";
-   out << "  " << _ports_out[1].name << "_0 = 0;\n";
-   out << "  for(ii=0; ii<PORTSIZE_" << _ports_in[3].name << "; ii=ii+1)\n";
    out << "  begin\n";
-   out << "    " << _ports_out[1].name << "_0 = (" << _ports_in[3].name << "[(BITSIZE_" << _ports_in[3].name
-       << ")*ii+:BITSIZE_" << _ports_in[3].name << "]>=" << _ports_out[1].type_size << ")?" << _ports_in[4].name
-       << "[(BITSIZE_" << _ports_in[4].name << ")*ii+:BITSIZE_" << _ports_in[4].name << "]:(" << _ports_out[1].name
-       << "_0^((((BITSIZE_" << _ports_in[4].name << ">=" << _ports_out[1].type_size << "?" << _ports_in[4].name
-       << "[(BITSIZE_" << _ports_in[4].name << ")*ii+:BITSIZE_" << _ports_in[4].name << "]:{{("
-       << _ports_out[1].type_size << "<BITSIZE_" << _ports_in[4].name << " ? 1 : " << _ports_out[1].type_size
-       << "-BITSIZE_" << _ports_in[4].name << "){1'b0}}," << _ports_in[4].name << "[(BITSIZE_" << _ports_in[4].name
-       << ")*ii+:BITSIZE_" << _ports_in[4].name << "]})<<" << _ports_in[5].name << "[(BITSIZE_" << _ports_in[5].name
-       << ")*ii+:BITSIZE_" << _ports_in[5].name << "]*8)^" << _ports_out[1].name << "_0) & (((" << _ports_in[3].name
-       << "[(BITSIZE_" << _ports_in[3].name << ")*ii+:BITSIZE_" << _ports_in[3].name << "]+" << _ports_in[5].name
-       << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name << "]*8)>"
-       << _ports_out[1].type_size << ") ? ((({(" << _ports_out[1].type_size << "){1'b1}})>>(" << _ports_in[5].name
-       << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name << "]*8))<<(" << _ports_in[5].name
-       << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name << "]*8)) : ((((({("
-       << _ports_out[1].type_size << "){1'b1}})>>(" << _ports_in[5].name << "[(BITSIZE_" << _ports_in[5].name
-       << ")*ii+:BITSIZE_" << _ports_in[5].name << "]*8))<<(" << _ports_in[5].name << "[(BITSIZE_" << _ports_in[5].name
-       << ")*ii+:BITSIZE_" << _ports_in[5].name << "]*8))<<(" << _ports_out[1].type_size << "-" << _ports_in[3].name
-       << "[(BITSIZE_" << _ports_in[3].name << ")*ii+:BITSIZE_" << _ports_in[3].name << "]-" << _ports_in[5].name
-       << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_" << _ports_in[5].name << "]*8))>>("
-       << _ports_out[1].type_size << "-" << _ports_in[3].name << "[(BITSIZE_" << _ports_in[3].name << ")*ii+:BITSIZE_"
-       << _ports_in[3].name << "]-" << _ports_in[5].name << "[(BITSIZE_" << _ports_in[5].name << ")*ii+:BITSIZE_"
-       << _ports_in[5].name << "]*8)))));\n";
+   out << "    started <= 0;\n";
    out << "  end\n";
-   out << "end\n";
+   out << "  else\n";
+   out << "  begin\n";
+   out << "    started <= started0;\n";
+   out << "  end\n";
+   out << "end\n\n";
 
    out << "always @(*)\n";
    out << "begin\n";
-   out << "  for(ii=0; ii<PORTSIZE_" << _ports_in[3].name << "; ii=ii+1)\n";
-   out << "    " << _ports_out[0].name << "[ii] = (" << _ports_in[2].name << "[ii] & " << _ports_in[6].name
-       << ") | (started[ii] & " << _ports_in[6].name << ");\n";
-   out << "end\n";
+   out << "  started0 = (" << _ports_in[i_start].name << " | started) & ~" << _ports_in[i_ack].name << ";\n";
+   out << "end\n\n";
+
+   out << "assign " << _ports_out[o_out1].name << " = " << _ports_in[i_in2].name << ";\n";
+   out << "assign " << _ports_out[o_done].name << " = (" << _ports_in[i_start].name << " | started) & "
+       << _ports_in[i_ack].name << ";\n";
 }

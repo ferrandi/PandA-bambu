@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2022 Politecnico di Milano
+ *              Copyright (C) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -76,9 +76,7 @@ HLSSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::RelationshipType
       case DEPENDENCE_RELATIONSHIP:
       {
 #if HAVE_FROM_PRAGMA_BUILT
-         const auto function_behavior = HLSMgr->GetFunctionBehavior(funId);
-         const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
-         if(parameters->isOption(OPT_context_switch))
+         if(parameters->getOption<bool>(OPT_parse_pragma) && parameters->isOption(OPT_context_switch))
          {
             ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS,
                                        HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
@@ -86,6 +84,8 @@ HLSSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::RelationshipType
                    HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS, HLSFlowStepSpecializationConstRef())) ==
                DesignFlowStep_Status::SUCCESS)
             {
+               const auto function_behavior = HLSMgr->GetFunctionBehavior(funId);
+               const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
                if(behavioral_helper->IsOmpBodyLoop())
                {
                   ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW,
@@ -100,14 +100,6 @@ HLSSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::RelationshipType
                                                 HLSFlowStepSpecializationConstRef(),
                                                 HLSFlowStep_Relationship::SAME_FUNCTION));
                   }
-#if HAVE_EXPERIMENTAL
-                  else
-                  {
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_FOR_WRAPPER_SYNTHESIS_FLOW,
-                                                HLSFlowStepSpecializationConstRef(),
-                                                HLSFlowStep_Relationship::SAME_FUNCTION));
-                  }
-#endif
                }
                else
                {

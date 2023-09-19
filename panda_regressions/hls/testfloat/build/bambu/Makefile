@@ -54,13 +54,13 @@ DELETE = rm -f
 C_INCLUDES = \
   -I. -I$(SUBJ_SOURCE_DIR) -I../../../../../etc/libbambu -I$(SOURCE_DIR) -I$(SOFTFLOAT_INCLUDE_DIR)
 COMPILE_C = \
-  gcc -c -Werror-implicit-function-declaration $(TESTFLOAT_OPTS) \
+  $(CC) -c -Werror-implicit-function-declaration $(TESTFLOAT_OPTS) \
     $(C_INCLUDES) -O2 -o $@
 COMPILE_SLOWFLOAT_C = \
-  gcc -c -Werror-implicit-function-declaration $(TESTFLOAT_OPTS) \
+  $(CC) -c -Werror-implicit-function-declaration $(TESTFLOAT_OPTS) \
     $(C_INCLUDES) -O3 -o $@
 MAKELIB = ar crs $@
-LINK = gcc -o $@
+LINK = $(CC) -o $@
 OTHER_LIBS =
 
 OBJ = .o
@@ -74,6 +74,7 @@ all: \
   testfloat_gen$(EXE) \
   testfloat_ver$(EXE) \
   testfloat$(EXE) \
+  testfloat-sf$(EXE) \
 
 OBJS_GENCASES = \
   genCases_ui32$(OBJ) \
@@ -323,12 +324,16 @@ testfloat_ver$(OBJ): \
 testfloat_ver$(EXE): $(OBJS_TESTFLOAT_VER) testfloat$(LIB) $(SOFTFLOAT_LIB)
 	$(LINK) $^ $(OTHER_LIBS)
 
-OBJS_TESTFLOAT = subjfloat$(OBJ) subjfloat_functions$(OBJ) testfloat$(OBJ)
+OBJS_TESTFLOAT = subjfloat_functions$(OBJ) testfloat$(OBJ)
 
 subjfloat$(OBJ): \
   platform.h $(SOFTFLOAT_H) $(SUBJ_SOURCE_DIR)/subjfloat_config.h \
   $(SOURCE_DIR)/subjfloat.h $(SUBJ_SOURCE_DIR)/subjfloat.c
 	$(COMPILE_C) $(SUBJ_SOURCE_DIR)/subjfloat.c
+subjfloat-sf$(OBJ): \
+  platform.h $(SOFTFLOAT_H) $(SUBJ_SOURCE_DIR)/subjfloat_config.h \
+  $(SOURCE_DIR)/subjfloat.h $(SUBJ_SOURCE_DIR)/subjfloat.c
+	$(COMPILE_C) $(SUBJ_SOURCE_DIR)/subjfloat.c -DSOFT_FP_LIB
 subjfloat_functions$(OBJ): \
   platform.h $(SUBJ_SOURCE_DIR)/subjfloat_config.h $(SOURCE_DIR)/subjfloat.h \
   $(SOURCE_DIR)/functions.h $(SOURCE_DIR)/subjfloat_functions.c
@@ -340,7 +345,10 @@ testfloat$(OBJ): \
   $(SOURCE_DIR)/testLoops.h $(SOURCE_DIR)/testfloat.c
 	$(COMPILE_C) $(SOURCE_DIR)/testfloat.c
 
-testfloat$(EXE): $(OBJS_TESTFLOAT) testfloat$(LIB) $(SOFTFLOAT_LIB)
+testfloat$(EXE): subjfloat$(OBJ) $(OBJS_TESTFLOAT) testfloat$(LIB) $(SOFTFLOAT_LIB)
+	$(LINK) $^ $(OTHER_LIBS)
+
+testfloat-sf$(EXE): subjfloat-sf$(OBJ) $(OBJS_TESTFLOAT) testfloat$(LIB) $(SOFTFLOAT_LIB)
 	$(LINK) $^ $(OTHER_LIBS)
 
 .PHONY: clean
@@ -350,5 +358,5 @@ clean:
 	$(DELETE) $(OBJS_TIMESOFTFLOAT) timesoftfloat$(EXE)
 	$(DELETE) $(OBJS_TESTFLOAT_GEN) testfloat_gen$(EXE)
 	$(DELETE) $(OBJS_TESTFLOAT_VER) testfloat_ver$(EXE)
-	$(DELETE) $(OBJS_TESTFLOAT) testfloat$(EXE)
+	$(DELETE) subjfloat$(OBJ)  subjfloat-sf$(OBJ) $(OBJS_TESTFLOAT) testfloat$(EXE)
 

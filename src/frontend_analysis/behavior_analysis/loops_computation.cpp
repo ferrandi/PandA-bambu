@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -128,11 +128,10 @@ DesignFlowStep_Status loops_computation::InternalExec()
          const BBNodeInfoRef bb_node_info = fbb->GetBBNodeInfo(*bb_it);
          bb_node_info->loop_id = (*loop)->GetId();
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                       "  Basic block " + boost::lexical_cast<std::string>(bb_node_info->block->number));
+                       "  Basic block " + std::to_string(bb_node_info->block->number));
       }
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Number of reducible loops: " +
-                     boost::lexical_cast<std::string>(function_behavior->CGetLoops()->NumLoops()));
+                 "Number of reducible loops: " + std::to_string(function_behavior->CGetLoops()->NumLoops()));
    return DesignFlowStep_Status::SUCCESS;
 }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -38,68 +38,47 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-
 #include "pipeline_controller.hpp"
-
-#include "behavioral_helper.hpp"
-#include "function_behavior.hpp"
-#include "hls.hpp"
-#include "hls_manager.hpp"
-#include "hls_target.hpp"
-
 #include "BambuParameter.hpp"
-
+#include "allocation_information.hpp"
+#include "behavioral_helper.hpp"
 #include "commandport_obj.hpp"
 #include "conn_binding.hpp"
 #include "connection_obj.hpp"
+#include "copyrights_strings.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
 #include "fu_binding.hpp"
+#include "function_behavior.hpp"
 #include "funit_obj.hpp"
+#include "hls.hpp"
+#include "hls_device.hpp"
+#include "hls_manager.hpp"
+#include "liveness.hpp"
 #include "mux_obj.hpp"
+#include "op_graph.hpp"
 #include "reg_binding.hpp"
 #include "register_obj.hpp"
 #include "schedule.hpp"
-
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
-
-#include "exceptions.hpp"
-#include <iosfwd>
-
+#include "storage_value_information.hpp"
+#include "string_manipulation.hpp"
+#include "structural_manager.hpp"
+#include "structural_objects.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-
-#include "structural_manager.hpp"
-#include "structural_objects.hpp"
-
-#include "dbgPrintHelper.hpp"
-#include "op_graph.hpp"
-#include "technology_manager.hpp"
-#include "time_model.hpp"
-
-/// HLS/binding/storage_value_insertion
-#include "storage_value_information.hpp"
-
-/// HLS/liveness include
-#include "liveness.hpp"
-
-/// HLS/module_allocation
-#include "allocation_information.hpp"
-
-/// STL includes
-#include "custom_map.hpp"
-#include "custom_set.hpp"
 #include <deque>
+#include <iosfwd>
 #include <list>
 #include <utility>
 #include <vector>
-
-/// technology/physical_library include
-#include "technology_node.hpp"
-
-#include "copyrights_strings.hpp"
-#include "string_manipulation.hpp"
 
 pipeline_controller::pipeline_controller(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
                                          unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager,
@@ -137,9 +116,9 @@ DesignFlowStep_Status pipeline_controller::InternalExec()
    unsigned int num_states = HLS->STG->get_number_of_states() - 1;
 
    std::string name = "controller_" + function_name;
-   std::string library = HLS->HLS_T->get_technology_manager()->get_library(register_SHIFT);
+   std::string library = HLS->HLS_D->get_technology_manager()->get_library(register_SHIFT);
    structural_objectRef controller = SM->add_module_from_technology_library(name, register_SHIFT, library, circuit,
-                                                                            HLS->HLS_T->get_technology_manager());
+                                                                            HLS->HLS_D->get_technology_manager());
    controller->SetParameter("CONTROLLER_LENGTH", std::to_string(num_states));
    const StateTransitionGraphConstRef astg = HLS->STG->CGetAstg();
    const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::CFG);
@@ -155,7 +134,7 @@ DesignFlowStep_Status pipeline_controller::InternalExec()
                 "unexpected case");
    working_list.erase(std::find(working_list.begin(), working_list.end(), first_state));
    working_list.push_front(first_state); /// ensure that first_state is the really first one...
-   std::map<unsigned int, structural_objectRef> null_values;
+   std::map<unsigned long long, structural_objectRef> null_values;
    for(const auto& v : working_list)
    {
       const auto& operations = astg->CGetStateInfo(v)->executing_operations;
@@ -163,7 +142,7 @@ DesignFlowStep_Status pipeline_controller::InternalExec()
       {
          technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(op));
          technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(
-             tree_helper::normalized_ID(data->CGetOpNodeInfo(op)->GetOperation()));
+             tree_helper::NormalizeTypename(data->CGetOpNodeInfo(op)->GetOperation()));
          THROW_ASSERT(GetPointer<operation>(op_tn)->time_m,
                       "Time model not available for operation: " + GET_NAME(data, op));
          structural_managerRef CM = GetPointer<functional_unit>(tn)->CM;

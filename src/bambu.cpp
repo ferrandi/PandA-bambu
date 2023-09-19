@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -46,11 +46,10 @@
 
 /// Autoheader includes
 #include "config_HAVE_ACTOR_GRAPHS_BUILT.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 #include "config_NPROFILE.hpp"
 
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
 
 ///. includes
 #include "BambuParameter.hpp"
@@ -65,8 +64,8 @@
 #include "design_flow_manager.hpp"
 
 /// design_flows/c_backend/ToC includes
+#include "c_backend_information.hpp"
 #include "c_backend_step_factory.hpp"
-#include "hls_c_backend_information.hpp"
 
 #if HAVE_ACTOR_GRAPHS_BUILT
 /// design_flows/codesign include
@@ -78,10 +77,11 @@
 #include "frontend_flow_step_factory.hpp"
 
 /// HLS includes
+#include "evaluation.hpp"
+#include "hls_device.hpp"
 #include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
 #include "hls_step.hpp"
-#include "hls_target.hpp"
 
 #if HAVE_FROM_AADL_ASN_BUILT
 /// parser include
@@ -155,7 +155,7 @@ int main(int argc, char* argv[])
          {
             if(not(parameters->getOption<bool>(OPT_no_clean)))
             {
-               boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
+               std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
             }
             return EXIT_SUCCESS;
          }
@@ -190,7 +190,7 @@ int main(int argc, char* argv[])
          }
          if(not(parameters->getOption<bool>(OPT_no_clean)))
          {
-            boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
+            std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
          }
          return EXIT_SUCCESS;
       }
@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
          compiler_wrapper->GetCompilerConfig();
          if(not(parameters->getOption<bool>(OPT_no_clean)))
          {
-            boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
+            std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
          }
          return EXIT_SUCCESS;
       }
@@ -211,7 +211,7 @@ int main(int argc, char* argv[])
          PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "no input files\n");
          if(not(parameters->getOption<bool>(OPT_no_clean)))
          {
-            boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
+            std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
          }
          return EXIT_SUCCESS;
       }
@@ -222,14 +222,14 @@ int main(int argc, char* argv[])
       // up to now all parameters have been parsed and data structures created, so synthesis can start
 
       /// ==== Creating target for the synthesis ==== ///
-      HLS_targetRef HLS_T = HLS_target::create_target(parameters);
+      HLS_deviceRef HLS_D = HLS_device::factory(parameters);
 
       /// ==== Creating intermediate representation ==== ///
       START_TIME(cpu_time);
       /// ==== Creating behavioral specification ==== ///
-      HLS_managerRef HLSMgr = HLS_managerRef(new HLS_manager(parameters, HLS_T));
+      HLS_managerRef HLSMgr = HLS_managerRef(new HLS_manager(parameters, HLS_D));
       START_TIME(HLSMgr->HLS_execution_time);
-      // create the datastructures (inside application_manager) where the problem specification is contained
+      // create the data-structures (inside application_manager) where the problem specification is contained
       const DesignFlowManagerRef design_flow_manager(new DesignFlowManager(parameters));
       const DesignFlowStepFactoryConstRef frontend_flow_step_factory(
           new FrontendFlowStepFactory(HLSMgr, design_flow_manager, parameters));
@@ -240,8 +240,8 @@ int main(int argc, char* argv[])
       const DesignFlowStepFactoryConstRef c_backend_step_factory(
           new CBackendStepFactory(design_flow_manager, HLSMgr, parameters));
       design_flow_manager->RegisterFactory(c_backend_step_factory);
-      const DesignFlowStepFactoryConstRef technology_flow_step_factory(new TechnologyFlowStepFactory(
-          HLS_T->get_technology_manager(), HLS_T->get_target_device(), design_flow_manager, parameters));
+      const DesignFlowStepFactoryConstRef technology_flow_step_factory(
+          new TechnologyFlowStepFactory(HLS_D->get_technology_manager(), HLS_D, design_flow_manager, parameters));
       design_flow_manager->RegisterFactory(technology_flow_step_factory);
 #if HAVE_FROM_AADL_ASN_BUILT
       const DesignFlowStepFactoryConstRef parser_flow_step_factory(
@@ -249,7 +249,7 @@ int main(int argc, char* argv[])
       design_flow_manager->RegisterFactory(parser_flow_step_factory);
 #endif
 
-      if(parameters->isOption(OPT_dry_run_evaluation) and parameters->getOption<bool>(OPT_dry_run_evaluation))
+      if(parameters->getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::DRY_RUN)
       {
          design_flow_manager->AddStep(GetPointer<const HLSFlowStepFactory>(hls_flow_step_factory)
                                           ->CreateHLSFlowStep(HLSFlowStep_Type::EVALUATION, 0));
@@ -280,31 +280,13 @@ int main(int argc, char* argv[])
       /// pretty printing
       if(parameters->isOption(OPT_pretty_print))
       {
-         auto outFileName = parameters->getOption<std::string>(OPT_pretty_print);
-         const DesignFlowStepRef c_backend =
+         const auto c_backend =
              GetPointer<const CBackendStepFactory>(c_backend_step_factory)
-                 ->CreateCBackendStep(CBackend::CB_SEQUENTIAL, outFileName, CBackendInformationConstRef());
+                 ->CreateCBackendStep(CBackendInformationConstRef(new CBackendInformation(
+                     CBackendInformation::CB_SEQUENTIAL, parameters->getOption<std::string>(OPT_pretty_print))));
          design_flow_manager->AddStep(c_backend);
       }
 
-#if HAVE_PRAGMA_BUILT && HAVE_EXPERIMENTAL
-      if(parameters->isOption(OPT_parse_pragma) && parameters->getOption<bool>(OPT_parse_pragma))
-      {
-         const DesignFlowStepFactoryConstRef ag_frontend_flow_step_factory(
-             new ActorGraphFlowStepFactory(HLSMgr, design_flow_manager, parameters));
-         design_flow_manager->RegisterFactory(ag_frontend_flow_step_factory);
-         DesignFlowStepSet design_flow_steps;
-         CustomOrderedSet<unsigned int> input_functions = HLSMgr->get_functions_with_body();
-         for(const auto input_fun_id : input_functions)
-         {
-            const DesignFlowStepRef design_flow_step =
-                GetPointer<const ActorGraphFlowStepFactory>(ag_frontend_flow_step_factory)
-                    ->CreateActorGraphStep(ACTOR_GRAPHS_CREATOR, input_fun_id);
-            design_flow_steps.insert(design_flow_step);
-         }
-         design_flow_manager->AddSteps(design_flow_steps);
-      }
-#endif
       std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef> hls_flow_step(
           parameters->getOption<HLSFlowStep_Type>(OPT_synthesis_flow), HLSFlowStepSpecializationConstRef());
       design_flow_manager->AddSteps(
@@ -312,7 +294,7 @@ int main(int argc, char* argv[])
       design_flow_manager->Exec();
       if(not(parameters->getOption<bool>(OPT_no_clean)))
       {
-         boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
+         std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
       }
       if(parameters->isOption(OPT_serialize_output) && parameters->isOption(OPT_output_file))
       {
@@ -385,7 +367,7 @@ int main(int argc, char* argv[])
    }
    if(parameters && not(parameters->getOption<bool>(OPT_no_clean)))
    {
-      boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
+      std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
    }
    return exit_code;
 }

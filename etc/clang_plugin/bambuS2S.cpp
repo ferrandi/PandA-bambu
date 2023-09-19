@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2019-2022 Politecnico di Milano
+ *              Copyright (C) 2019-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -37,23 +37,24 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-#include "clang/AST/RecursiveASTVisitor.h"
-#include "clang/ASTMatchers/ASTMatchFinder.h"
-#include "clang/ASTMatchers/ASTMatchers.h"
-#include "clang/Basic/SourceManager.h"
-#include "clang/Frontend/CompilerInstance.h"
-#include "clang/Frontend/FrontendActions.h"
-#include "clang/Lex/Lexer.h"
-#include "clang/Lex/PPCallbacks.h"
-#include "clang/Lex/Preprocessor.h"
-#include "clang/Rewrite/Core/Rewriter.h"
-#include "clang/Rewrite/Frontend/Rewriters.h"
-#include "clang/Tooling/ArgumentsAdjusters.h"
-#include "clang/Tooling/CommonOptionsParser.h"
-#include "clang/Tooling/Refactoring.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Support/Signals.h"
-#include "llvm/Support/TargetSelect.h"
+#include <clang/AST/RecursiveASTVisitor.h>
+#include <clang/ASTMatchers/ASTMatchFinder.h>
+#include <clang/ASTMatchers/ASTMatchers.h>
+#include <clang/Basic/SourceManager.h>
+#include <clang/Frontend/CompilerInstance.h>
+#include <clang/Frontend/FrontendActions.h>
+#include <clang/Lex/Lexer.h>
+#include <clang/Lex/PPCallbacks.h>
+#include <clang/Lex/Preprocessor.h>
+#include <clang/Rewrite/Core/Rewriter.h>
+#include <clang/Rewrite/Frontend/Rewriters.h>
+#include <clang/Tooling/ArgumentsAdjusters.h>
+#include <clang/Tooling/CommonOptionsParser.h>
+#include <clang/Tooling/Refactoring.h>
+#include <llvm/Support/CommandLine.h>
+#include <llvm/Support/Signals.h>
+#include <llvm/Support/TargetSelect.h>
+
 #include <boost/tokenizer.hpp>
 #include <set>
 
@@ -228,7 +229,7 @@ struct re_user : public clang::ast_matchers::MatchFinder::MatchCallback
       auto errRes = FileToReplaces[result.SourceManager->getFilename(rsLoc)].add(Rep);
       if(errRes)
       {
-         llvm_unreachable("something of wrong happen in replacement");
+         llvm_unreachable("something wrong happened during replacement");
       }
 
       return;
@@ -252,14 +253,14 @@ struct fd_user : public clang::ast_matchers::MatchFinder::MatchCallback
       ASTContext& ctx(*(result.Context));
       FunctionDecl const* func = result.Nodes.getNodeAs<FunctionDecl>("function");
       assert(func);
-      llvm::errs() << "-- Replacement in function: " << func->getName() << " np=" << func->getNumParams() << "\n";
+      llvm::errs() << "-- Replacement of function: " << func->getName() << " np=" << func->getNumParams() << "\n";
       auto RT_sourceRange = func->getReturnTypeSourceRange();
       const CharSourceRange CRT_sourceRange(RT_sourceRange, true);
       clang::tooling::Replacement RepRT(*result.SourceManager, CRT_sourceRange, "void", ctx.getLangOpts());
       auto errRes0 = FileToReplaces[result.SourceManager->getFilename(RT_sourceRange.getBegin())].add(RepRT);
       if(errRes0)
       {
-         llvm_unreachable("something of wrong happen in replacement");
+         llvm_unreachable("something wrong happened during replacement");
       }
 
       std::string result_varNameDecl = func->getName();
@@ -271,7 +272,7 @@ struct fd_user : public clang::ast_matchers::MatchFinder::MatchCallback
          Optional<Token> Tok = findNextToken_local(locFD, *result.SourceManager, ctx.getLangOpts());
 
          if(!(Tok.hasValue() && Tok.getValue().is(tok::l_paren)))
-            llvm_unreachable("something of wrong happen in AST analysis");
+            llvm_unreachable("something wrong happened during AST analysis");
          Tok = findNextToken_local(Tok.getValue().getLocation(), *result.SourceManager, ctx.getLangOpts());
          if(Tok.hasValue() && (Tok.getValue().is(tok::kw_void) || (Tok.getValue().is(tok::raw_identifier))))
          {
@@ -281,7 +282,7 @@ struct fd_user : public clang::ast_matchers::MatchFinder::MatchCallback
             auto errRes = FileToReplaces[result.SourceManager->getFilename(LocAfterEnd)].add(RepVoid);
             if(errRes)
             {
-               llvm_unreachable("something of wrong happen in replacement");
+               llvm_unreachable("something wrong happened during replacement");
             }
          }
          else if(Tok.hasValue() && Tok.getValue().is(tok::r_paren))
@@ -291,7 +292,7 @@ struct fd_user : public clang::ast_matchers::MatchFinder::MatchCallback
             auto errRes = FileToReplaces[result.SourceManager->getFilename(LocAfterEnd)].add(RepVoid);
             if(errRes)
             {
-               llvm_unreachable("something of wrong happen in replacement");
+               llvm_unreachable("something wrong happened during replacement");
             }
          }
          else
@@ -320,7 +321,7 @@ struct fd_user : public clang::ast_matchers::MatchFinder::MatchCallback
          auto errRes = FileToReplaces[result.SourceManager->getFilename(LocAfterEnd)].add(RepLast);
          if(errRes)
          {
-            llvm_unreachable("something of wrong happen in replacement");
+            llvm_unreachable("something wrong happened during replacement");
          }
       }
       return;

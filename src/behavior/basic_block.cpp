@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -52,12 +52,12 @@
 #include "function_behavior.hpp"                 // for BBGraphsCollectionRef
 #include "graph.hpp"                             // for vertex, EdgeDescriptor
 #include "tree_basic_block.hpp"                  // for bloc, blocRef
-#include <boost/filesystem/operations.hpp>       // for create_directories
 #include <boost/graph/adjacency_list.hpp>        // for adjacency_list, source
 #include <boost/graph/detail/adjacency_list.hpp> // for num_vertices, adj_l...
 #include <boost/graph/detail/edge.hpp>           // for operator!=, operator==
 #include <boost/graph/filtered_graph.hpp>        // for source, target
 #include <boost/iterator/iterator_facade.hpp>    // for operator!=, operator++
+#include <filesystem>                            // for create_directories
 #include <utility>
 
 BBNodeInfo::BBNodeInfo() : loop_id(0), cer(0)
@@ -164,9 +164,9 @@ void BBGraph::WriteDot(const std::string& file_name, const CustomUnorderedSet<ve
                                   ->get_function_name();
    std::string output_directory =
        collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + function_name + "/";
-   if(not boost::filesystem::exists(output_directory))
+   if(not std::filesystem::exists(output_directory))
    {
-      boost::filesystem::create_directories(output_directory);
+      std::filesystem::create_directories(output_directory);
    }
    const std::string full_name = output_directory + file_name;
    const VertexWriterConstRef bb_writer(new BBWriter(this, annotated));
@@ -240,8 +240,12 @@ bool BBEdgeSorter::operator()(const EdgeDescriptor x, const EdgeDescriptor y) co
    const vertex source_x = boost::source(x, *bb_graph);
    const vertex source_y = boost::source(y, *bb_graph);
    if(source_x == source_y)
+   {
       return bb_sorter(boost::target(x, *bb_graph), boost::target(y, *bb_graph));
+   }
    else
+   {
       return bb_sorter(source_x, source_y);
+   }
 }
 #endif

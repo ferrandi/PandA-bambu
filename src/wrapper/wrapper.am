@@ -29,7 +29,6 @@ if BUILD_LIB_RTL
     lib_compilerwrapper_la_CPPFLAGS += -I$(top_srcdir)/src/rtl\
       -I$(top_srcdir)/src/parser/rtlgcc
 endif
-  lib_compilerwrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB) $(BOOST_REGEX_LIB)
   noinst_HEADERS += wrapper/compiler/compiler_wrapper.hpp
   lib_compilerwrapper_la_SOURCES = wrapper/compiler/compiler_wrapper.cpp
   lib_wrapper_la_LIBADD += lib_compilerwrapper.la
@@ -53,7 +52,6 @@ if BUILD_SIMULATION
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper/simulation \
    $(AM_CPPFLAGS)
-  lib_verilatorwrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
   noinst_HEADERS += wrapper/simulation/verilator/VerilatorWrapper.hpp
   lib_verilatorwrapper_la_SOURCES = wrapper/simulation/verilator/VerilatorWrapper.cpp
 
@@ -68,7 +66,6 @@ if BUILD_SIMULATION
     -I$(top_srcdir)/src/wrapper \
     -I$(top_srcdir)/src/wrapper/simulation \
     $(AM_CPPFLAGS)
-  lib_isimwrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
   noinst_HEADERS += wrapper/simulation/isim/ISE_isim_wrapper.hpp
   lib_isimwrapper_la_SOURCES = wrapper/simulation/isim/ISE_isim_wrapper.cpp
 
@@ -83,7 +80,6 @@ if BUILD_SIMULATION
     -I$(top_srcdir)/src/wrapper \
     -I$(top_srcdir)/src/wrapper/simulation \
     $(AM_CPPFLAGS)
-  lib_xsimwrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
   noinst_HEADERS += wrapper/simulation/xsim/VIVADO_xsim_wrapper.hpp
   lib_xsimwrapper_la_SOURCES = wrapper/simulation/xsim/VIVADO_xsim_wrapper.cpp
 
@@ -96,7 +92,6 @@ if BUILD_SIMULATION
     -I$(top_srcdir)/src/design_flows/backend/ToHDL \
     -I$(top_srcdir)/src/utility \
     $(AM_CPPFLAGS)
-  lib_modelsimwrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
   noinst_HEADERS += wrapper/simulation/modelsim/modelsimWrapper.hpp
   lib_modelsimwrapper_la_SOURCES = wrapper/simulation/modelsim/modelsimWrapper.cpp
 
@@ -111,7 +106,6 @@ if BUILD_SIMULATION
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper/simulation \
    $(AM_CPPFLAGS)
-  lib_icaruswrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
   noinst_HEADERS += wrapper/simulation/icarus/IcarusWrapper.hpp
   lib_icaruswrapper_la_SOURCES = wrapper/simulation/icarus/IcarusWrapper.cpp 
 
@@ -121,6 +115,7 @@ if BUILD_SIMULATION
    -I$(top_srcdir)/src/constants \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper \
+   -I$(top_srcdir)/src/wrapper/compiler/\
    -I$(top_srcdir)/src/wrapper/simulation/\
    -I$(top_srcdir)/src/wrapper/simulation/icarus \
    -I$(top_srcdir)/src/wrapper/simulation/modelsim \
@@ -159,11 +154,6 @@ if BUILD_SYNTHESIS
     -I$(top_srcdir)/src/parser/polixml \
     -I$(top_srcdir)/src/polixml \
     -I$(top_srcdir)/src/technology \
-    -I$(top_srcdir)/src/technology/target_device \
-    -I$(top_srcdir)/src/technology/physical_library \
-    -I$(top_srcdir)/src/technology/physical_library/models \
-    -I$(top_srcdir)/src/technology/physical_library/models/time \
-    -I$(top_srcdir)/src/technology/physical_library/models/area \
     -I$(top_srcdir)/src/tree \
     -I$(top_srcdir)/src/utility \
     -I$(top_srcdir)/src/wrapper \
@@ -172,7 +162,6 @@ if BUILD_SYNTHESIS
     -I$(top_srcdir)/src/wrapper/synthesis \
     -I$(top_builddir)/src/wrapper/synthesis/nanoxplore \
     $(AM_CPPFLAGS)
-  lib_NanoXplorewrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
 wrapper/synthesis/nanoxplore/NanoXploreBackendFlow.cpp : wrapper/synthesis/nanoxplore/NG.data 
 #The tab in this rule can't be replaced by blanks
 wrapper/synthesis/nanoxplore/NG.data: $(top_srcdir)/etc/devices/NanoXplore_devices/NG.xml
@@ -204,11 +193,6 @@ lib_Alterawrapper_la_CPPFLAGS = \
     -I$(top_srcdir)/src/parser/polixml \
     -I$(top_srcdir)/src/polixml \
     -I$(top_srcdir)/src/technology \
-    -I$(top_srcdir)/src/technology/target_device \
-    -I$(top_srcdir)/src/technology/physical_library \
-    -I$(top_srcdir)/src/technology/physical_library/models \
-    -I$(top_srcdir)/src/technology/physical_library/models/time \
-    -I$(top_srcdir)/src/technology/physical_library/models/area \
     -I$(top_srcdir)/src/tree \
     -I$(top_srcdir)/src/utility \
     -I$(top_srcdir)/src/wrapper \
@@ -217,8 +201,6 @@ lib_Alterawrapper_la_CPPFLAGS = \
     -I$(top_srcdir)/src/wrapper/synthesis \
     -I$(top_builddir)/src/wrapper/synthesis/altera \
     $(AM_CPPFLAGS)
-
-lib_Alterawrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
 
 wrapper/synthesis/altera/AlteraBackendFlow.cpp : wrapper/synthesis/altera/CycloneII.data wrapper/synthesis/altera/CycloneII-R.data wrapper/synthesis/altera/CycloneV.data wrapper/synthesis/altera/StratixIV.data wrapper/synthesis/altera/StratixV.data
 #The tab in this rule can't be replaced by blanks
@@ -267,10 +249,7 @@ lib_xilinx_ise_la_CPPFLAGS = \
     -I$(top_srcdir)/src/tree \
     -I$(top_srcdir)/src/utility \
     -I$(top_srcdir)/src/design_flows/backend/ToHDL \
-    -I$(top_srcdir)/src/technology/target_device \
-    -I$(top_srcdir)/src/technology/physical_library/models \
-    -I$(top_srcdir)/src/technology/physical_library/models/area \
-    -I$(top_srcdir)/src/technology/physical_library/models/time \
+    -I$(top_srcdir)/src/technology \
     -I$(top_srcdir)/src/wrapper \
     -I$(top_srcdir)/src/wrapper/simulation \
     -I$(top_srcdir)/src/wrapper/synthesis \
@@ -278,7 +257,6 @@ lib_xilinx_ise_la_CPPFLAGS = \
     -I$(top_srcdir)/src/wrapper/simulation/modelsim \
     -I$(top_builddir)/src/wrapper/synthesis/xilinx \
     $(AM_CPPFLAGS)
-lib_xilinx_ise_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
 noinst_HEADERS += wrapper/synthesis/xilinx/ise/xst_wrapper.hpp \
                  wrapper/synthesis/xilinx/ise/ngdbuild_wrapper.hpp \
                  wrapper/synthesis/xilinx/ise/map_wrapper.hpp \
@@ -303,11 +281,6 @@ lib_Xilinxwrapper_la_CPPFLAGS = \
    -I$(top_srcdir)/src/polixml  \
    -I$(top_srcdir)/src/utility  \
    -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/target_device \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/physical_library/models \
-   -I$(top_srcdir)/src/technology/physical_library/models/area \
-   -I$(top_srcdir)/src/technology/physical_library/models/time \
    -I$(top_srcdir)/src/wrapper \
    -I$(top_srcdir)/src/wrapper/synthesis \
    -I$(top_srcdir)/src/wrapper/synthesis/xilinx \
@@ -318,19 +291,14 @@ lib_Xilinxwrapper_la_CPPFLAGS = \
 lib_Xilinxwrapper_la_LIBADD = lib_xilinx_ise.la 
 
 if BUILD_TASTE
-wrapper/synthesis/xilinx/XilinxBackendFlow.cpp : wrapper/synthesis/xilinx/Virtex-4.data wrapper/synthesis/xilinx/Virtex-4-Taste.data wrapper/synthesis/xilinx/Virtex-5.data wrapper/synthesis/xilinx/Virtex-6.data wrapper/synthesis/xilinx/Virtex-7.data wrapper/synthesis/xilinx/Virtex-7-VVD.data wrapper/synthesis/xilinx/Artix-7-VVD.data wrapper/synthesis/xilinx/Zynq.data wrapper/synthesis/xilinx/Zynq-VVD.data wrapper/synthesis/xilinx/Zynq-YOSYS-VVD.data wrapper/synthesis/xilinx/Kintex-Ultrascale-VVD.data wrapper/synthesis/xilinx/Alveo-Ultrascale-VVD.data
+  wrapper/synthesis/xilinx/XilinxBackendFlow.cpp : wrapper/synthesis/xilinx/Virtex-4.data wrapper/synthesis/xilinx/Virtex-4-Taste.data wrapper/synthesis/xilinx/Virtex-5.data wrapper/synthesis/xilinx/Virtex-6.data wrapper/synthesis/xilinx/Virtex-7.data wrapper/synthesis/xilinx/Virtex-7-VVD.data wrapper/synthesis/xilinx/Artix-7-VVD.data wrapper/synthesis/xilinx/Zynq.data wrapper/synthesis/xilinx/Zynq-VVD.data wrapper/synthesis/xilinx/Zynq-YOSYS-VVD.data wrapper/synthesis/xilinx/Kintex-Ultrascale-VVD.data wrapper/synthesis/xilinx/Alveo-Ultrascale-VVD.data
 else
-wrapper/synthesis/xilinx/XilinxBackendFlow.cpp : wrapper/synthesis/xilinx/Virtex-4.data wrapper/synthesis/xilinx/Virtex-5.data wrapper/synthesis/xilinx/Virtex-6.data wrapper/synthesis/xilinx/Virtex-7.data wrapper/synthesis/xilinx/Virtex-7-VVD.data wrapper/synthesis/xilinx/Artix-7-VVD.data wrapper/synthesis/xilinx/Zynq.data wrapper/synthesis/xilinx/Zynq-VVD.data wrapper/synthesis/xilinx/Zynq-YOSYS-VVD.data wrapper/synthesis/xilinx/Kintex-Ultrascale-VVD.data wrapper/synthesis/xilinx/Alveo-Ultrascale-VVD.data
+  wrapper/synthesis/xilinx/XilinxBackendFlow.cpp : wrapper/synthesis/xilinx/Virtex-4.data wrapper/synthesis/xilinx/Virtex-5.data wrapper/synthesis/xilinx/Virtex-6.data wrapper/synthesis/xilinx/Virtex-7.data wrapper/synthesis/xilinx/Virtex-7-VVD.data wrapper/synthesis/xilinx/Artix-7-VVD.data wrapper/synthesis/xilinx/Zynq.data wrapper/synthesis/xilinx/Zynq-VVD.data wrapper/synthesis/xilinx/Zynq-YOSYS-VVD.data wrapper/synthesis/xilinx/Kintex-Ultrascale-VVD.data wrapper/synthesis/xilinx/Alveo-Ultrascale-VVD.data
 endif
 
 #The tab in this rule can't be replaced by blanks
 wrapper/synthesis/xilinx/Virtex-4.data: $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-4.xml
 	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-4.xml > wrapper/synthesis/xilinx/Virtex-4.data
-
-if BUILD_TASTE
-wrapper/synthesis/xilinx/Virtex-4-Taste.data: $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-4-Taste.xml
-	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-4-Taste.xml > wrapper/synthesis/xilinx/Virtex-4-Taste.data
-endif
 
 wrapper/synthesis/xilinx/Virtex-5.data: $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-5.xml
 	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-5.xml > wrapper/synthesis/xilinx/Virtex-5.data
@@ -361,18 +329,49 @@ wrapper/synthesis/xilinx/Kintex-Ultrascale-VVD.data: $(top_srcdir)/etc/devices/X
 
 wrapper/synthesis/xilinx/Alveo-Ultrascale-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/Alveo-Ultrascale-VVD.xml
 	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/Alveo-Ultrascale-VVD.xml > wrapper/synthesis/xilinx/Alveo-Ultrascale-VVD.data
+<<<<<<< HEAD
 
 wrapper_synthesis_xilinx_dir = $(wrapper_synthesis_dir)/xilinx
 wrapper_synthesis_xilinx__DATA = wrapper/synthesis/xilinx/Virtex-4.data wrapper/synthesis/xilinx/Virtex-4-Taste.data wrapper/synthesis/xilinx/Virtex-5.data wrapper/synthesis/xilinx/Virtex-6.data wrapper/synthesis/xilinx/Virtex-7.data wrapper/synthesis/xilinx/Virtex-7-VVD.data wrapper/synthesis/xilinx/Artix-7-VVD.data wrapper/synthesis/xilinx/Zynq.data wrapper/synthesis/xilinx/Zynq-VVD.data wrapper/synthesis/xilinx/Zynq-YOSYS-VVD.data wrapper/synthesis/xilinx/Kintex-Ultrascale-VVD.data wrapper/synthesis/xilinx/Alveo-Ultrascale-VVD.data
+=======
 
-
-  noinst_HEADERS += wrapper/synthesis/xilinx/XilinxBackendFlow.hpp wrapper/synthesis/xilinx/XilinxWrapper.hpp wrapper/synthesis/xilinx/vivado_flow_wrapper.hpp
-  lib_Xilinxwrapper_la_SOURCES = wrapper/synthesis/xilinx/XilinxBackendFlow.cpp wrapper/synthesis/xilinx/XilinxWrapper.cpp wrapper/synthesis/xilinx/vivado_flow_wrapper.cpp
 if BUILD_TASTE
-   noinst_HEADERS += \
-      wrapper/synthesis/xilinx/xilinx_taste_backend_flow.hpp
-   lib_Xilinxwrapper_la_SOURCES += \
-      wrapper/synthesis/xilinx/xilinx_taste_backend_flow.cpp
+wrapper/synthesis/xilinx/Virtex-4-Taste.data: $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-4-Taste.xml
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-4-Taste.xml > wrapper/synthesis/xilinx/Virtex-4-Taste.data
+endif
+
+wrapper_synthesis_xilinx_dir = $(wrapper_synthesis_dir)/xilinx
+wrapper_synthesis_xilinx__DATA = \
+  wrapper/synthesis/xilinx/Virtex-4.data \
+  wrapper/synthesis/xilinx/Virtex-5.data \
+  wrapper/synthesis/xilinx/Virtex-6.data \
+  wrapper/synthesis/xilinx/Virtex-7.data \
+  wrapper/synthesis/xilinx/Virtex-7-VVD.data \
+  wrapper/synthesis/xilinx/Artix-7-VVD.data \
+  wrapper/synthesis/xilinx/Zynq.data \
+  wrapper/synthesis/xilinx/Zynq-VVD.data \
+  wrapper/synthesis/xilinx/Zynq-YOSYS-VVD.data \
+  wrapper/synthesis/xilinx/Kintex-Ultrascale-VVD.data \
+  wrapper/synthesis/xilinx/Alveo-Ultrascale-VVD.data
+>>>>>>> dev/panda
+
+
+noinst_HEADERS += \
+  wrapper/synthesis/xilinx/XilinxBackendFlow.hpp \
+  wrapper/synthesis/xilinx/XilinxWrapper.hpp \
+  wrapper/synthesis/xilinx/vivado_flow_wrapper.hpp
+lib_Xilinxwrapper_la_SOURCES = \
+  wrapper/synthesis/xilinx/XilinxBackendFlow.cpp \
+  wrapper/synthesis/xilinx/XilinxWrapper.cpp \
+  wrapper/synthesis/xilinx/vivado_flow_wrapper.cpp
+
+if BUILD_TASTE
+  wrapper_synthesis_xilinx__DATA += \
+    wrapper/synthesis/xilinx/Virtex-4-Taste.data
+  noinst_HEADERS += \
+    wrapper/synthesis/xilinx/xilinx_taste_backend_flow.hpp
+  lib_Xilinxwrapper_la_SOURCES += \
+    wrapper/synthesis/xilinx/xilinx_taste_backend_flow.cpp
 endif
 
   noinst_LTLIBRARIES += lib_Latticewrapper.la
@@ -386,11 +385,6 @@ endif
     -I$(top_srcdir)/src/parser/polixml \
     -I$(top_srcdir)/src/polixml \
     -I$(top_srcdir)/src/technology \
-    -I$(top_srcdir)/src/technology/target_device \
-    -I$(top_srcdir)/src/technology/physical_library \
-    -I$(top_srcdir)/src/technology/physical_library/models \
-    -I$(top_srcdir)/src/technology/physical_library/models/time \
-    -I$(top_srcdir)/src/technology/physical_library/models/area \
     -I$(top_srcdir)/src/tree \
     -I$(top_srcdir)/src/utility \
     -I$(top_srcdir)/src/wrapper \
@@ -399,7 +393,6 @@ endif
     -I$(top_srcdir)/src/wrapper/synthesis \
     -I$(top_builddir)/src/wrapper/synthesis/lattice \
     $(AM_CPPFLAGS)
-  lib_Latticewrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
 
 wrapper/synthesis/lattice/LatticeBackendFlow.cpp : wrapper/synthesis/lattice/LatticeECP3.data wrapper/synthesis/lattice/LatticeECP5.data
 #The tab in this rule can't be replaced by blanks
@@ -416,50 +409,6 @@ wrapper_synthesis_lattice__DATA = wrapper/synthesis/lattice/LatticeECP3.data wra
   lib_Latticewrapper_la_SOURCES = wrapper/synthesis/lattice/LatticeBackendFlow.cpp wrapper/synthesis/lattice/LatticeWrapper.cpp wrapper/synthesis/lattice/lattice_flow_wrapper.cpp 
 
 
-  noinst_LTLIBRARIES += lib_designcompiler.la
-  lib_designcompiler_la_CPPFLAGS = \
-                 -I$(top_srcdir)/src \
-                 -I$(top_srcdir)/src/circuit \
-                 -I$(top_srcdir)/src/constants \
-                 -I$(top_srcdir)/src/design_flows/ \
-                 -I$(top_srcdir)/src/design_flows/backend/ToHDL \
-                 -I$(top_srcdir)/src/graph \
-                 -I$(top_srcdir)/src/HLS/scheduling \
-                 -I$(top_srcdir)/src/polixml \
-                 -I$(top_srcdir)/src/parser/polixml \
-                 -I$(top_srcdir)/src/technology \
-                 -I$(top_srcdir)/src/technology/physical_library \
-                 -I$(top_srcdir)/src/technology/physical_library/models \
-                 -I$(top_srcdir)/src/technology/physical_library/models/area \
-                 -I$(top_srcdir)/src/technology/target_device \
-                 -I$(top_srcdir)/src/wrapper \
-                 -I$(top_srcdir)/src/wrapper/synthesis \
-                 -I$(top_srcdir)/src/wrapper/synthesis/synopsys \
-                 -I$(top_srcdir)/src/utility \
-                 $(AM_CPPFLAGS)
-  noinst_HEADERS += wrapper/synthesis/synopsys/design_compiler/DesignCompilerWrapper.hpp
-  lib_designcompiler_la_SOURCES = wrapper/synthesis/synopsys/design_compiler/DesignCompilerWrapper.cpp
-
-if BUILD_LIB_EXPERIMENTAL
-lib_designcompiler_la_CPPFLAGS += -I$(top_srcdir)/src/circuit/aig\
-                 -I$(top_srcdir)/src/logic_synthesis
-endif
-
-  noinst_LTLIBRARIES += lib_Synopsyswrapper.la
-  lib_Synopsyswrapper_la_CPPFLAGS = \
-                                 -I$(top_srcdir)/src \
-                                 -I$(top_srcdir)/src/polixml \
-                                 -I$(top_srcdir)/src/utility \
-                                 -I$(top_srcdir)/src/wrapper/synthesis \
-                                 -I$(top_srcdir)/src/wrapper/synthesis/synopsys \
-                                 -I$(top_srcdir)/src/wrapper/synthesis/synopsys/design_compiler \
-                                 $(AM_CPPFLAGS)
-
-  lib_Synopsyswrapper_la_LIBADD = lib_designcompiler.la
-  noinst_HEADERS += wrapper/synthesis/synopsys/SynopsysWrapper.hpp
-  lib_Synopsyswrapper_la_SOURCES = wrapper/synthesis/synopsys/SynopsysWrapper.cpp
-
-
   noinst_LTLIBRARIES += lib_synthesis.la
   lib_synthesis_la_CPPFLAGS = \
                  -I$(top_srcdir)/src \
@@ -472,49 +421,29 @@ endif
                  -I$(top_srcdir)/src/polixml \
                  -I$(top_srcdir)/src/parser/polixml \
                  -I$(top_srcdir)/src/technology \
-                 -I$(top_srcdir)/src/technology/physical_library \
-                 -I$(top_srcdir)/src/technology/physical_library/models \
-                 -I$(top_srcdir)/src/technology/physical_library/models/time \
-                 -I$(top_srcdir)/src/technology/physical_library/models/area \
-                 -I$(top_srcdir)/src/technology/target_device \
-                 -I$(top_srcdir)/src/technology/target_device/IC \
-                 -I$(top_srcdir)/src/technology/target_device/FPGA \
                  -I$(top_srcdir)/src/wrapper \
                  -I$(top_srcdir)/src/wrapper/simulation \
                  -I$(top_builddir)/src/wrapper/synthesis \
                  -I$(top_srcdir)/src/wrapper/synthesis \
-                 -I$(top_srcdir)/src/wrapper/synthesis/synopsys \
-                 -I$(top_srcdir)/src/wrapper/synthesis/synopsys/design_compiler \
                  -I$(top_srcdir)/src/wrapper/synthesis/xilinx \
                  -I$(top_srcdir)/src/wrapper/synthesis/xilinx/ise \
                  -I$(top_srcdir)/src/wrapper/synthesis/altera \
                  -I$(top_srcdir)/src/wrapper/synthesis/lattice \
                  -I$(top_srcdir)/src/wrapper/synthesis/nanoxplore \
-                 -I$(top_srcdir)/src/technology \
-                 -I$(top_srcdir)/src/technology/physical_library \
                  -I$(top_srcdir)/src/utility \
                  $(AM_CPPFLAGS)
   noinst_HEADERS += wrapper/synthesis/xml_script_command.hpp \
                  wrapper/synthesis/DesignParameters.hpp \
                  wrapper/synthesis/BackendFlow.hpp \
                  wrapper/synthesis/SynthesisTool.hpp \
-                 wrapper/synthesis/ASICBackendFlow.hpp \
                  wrapper/synthesis/BashBackendFlow.hpp \
                  wrapper/synthesis/bash_flow_wrapper.hpp
 
   lib_synthesis_la_SOURCES = wrapper/synthesis/xml_script_command.cpp \
-                           wrapper/synthesis/DesignParameters.cpp \
                            wrapper/synthesis/BackendFlow.cpp \
                            wrapper/synthesis/SynthesisTool.cpp \
-                           wrapper/synthesis/ASICBackendFlow.cpp \
                            wrapper/synthesis/BashBackendFlow.cpp \
                            wrapper/synthesis/bash_flow_wrapper.cpp
-
-wrapper/synthesis/ASICBackendFlow.cpp : wrapper/synthesis/Nangate.data
-#The tab in this rule can't be replaced by blanks
-wrapper/synthesis/Nangate.data: $(top_srcdir)/etc/devices/ASIC_devices/Nangate.xml
-	gzip -c  $(top_srcdir)/etc/devices/ASIC_devices/Nangate.xml > wrapper/synthesis/Nangate.data
-
 
 
 wrapper/synthesis/BashBackendFlow.cpp : wrapper/synthesis/Generic-yosysOpenROAD.data
@@ -522,14 +451,13 @@ wrapper/synthesis/BashBackendFlow.cpp : wrapper/synthesis/Generic-yosysOpenROAD.
 wrapper/synthesis/Generic-yosysOpenROAD.data: $(top_srcdir)/etc/devices/Generic_devices/Generic-yosysOpenROAD.xml
 	gzip -c  $(top_srcdir)/etc/devices/Generic_devices/Generic-yosysOpenROAD.xml > wrapper/synthesis/Generic-yosysOpenROAD.data
 
-wrapper_synthesis__DATA = wrapper/synthesis/Nangate.data wrapper/synthesis/Generic-yosysOpenROAD.data
+wrapper_synthesis__DATA = wrapper/synthesis/Generic-yosysOpenROAD.data
 
   lib_synthesis_la_LIBADD = \
                         lib_Xilinxwrapper.la \
                         lib_Alterawrapper.la \
                         lib_Latticewrapper.la \
-                        lib_NanoXplorewrapper.la \
-                        lib_Synopsyswrapper.la
+                        lib_NanoXplorewrapper.la 
   lib_wrapper_la_LIBADD += lib_synthesis.la
 endif
 
@@ -543,8 +471,7 @@ lib_flopocowrapper_la_CPPFLAGS = \
     -I$(top_srcdir)/src/circuit \
     -I$(top_srcdir)/src/constants \
     -I$(top_srcdir)/src/utility \
-    -I$(top_srcdir)/src/technology/physical_library \
-    -I$(top_srcdir)/src/technology/target_device \
+    -I$(top_srcdir)/src/technology \
     -isystem $(FLOPOCO_OBJDIR) \
     -isystem $(FLOPOCO_DIR)/src \
     $(AM_CPPFLAGS)

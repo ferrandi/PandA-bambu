@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -142,8 +142,8 @@ class pragma_manager
    virtual ~pragma_manager();
 
    /**
-    * Check if the datastructure information are compliant with the pragma reference manual
-    * @return true if the datastructure is compliant, false otherwise
+    * Check if the data-structure information are compliant with the pragma reference manual
+    * @return true if the data-structure is compliant, false otherwise
     */
    bool checkCompliant() const;
 

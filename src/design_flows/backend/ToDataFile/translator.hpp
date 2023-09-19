@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -231,7 +231,7 @@ class Translator
     * @param file_name is the name of the file where data will be written
     */
    void write_to_xml(const std::map<enum rtl_kind, std::map<enum mode_kind, long double>>& data,
-                     std::string file_name) const;
+                     const std::string& file_name) const;
 #endif
 
    /**

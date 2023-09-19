@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -44,19 +44,11 @@
 #ifndef TREE_BASIC_BLOCK_HPP
 #define TREE_BASIC_BLOCK_HPP
 
-/// Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
-
-#include <cstddef> // for size_t
-
-/// STL include
-#include <list>
-//#include "custom_map.hpp"
 #include "custom_set.hpp"
-#include <vector>
-
-/// Utility include
 #include "refcount.hpp"
+#include <cstddef> // for size_t
+#include <list>
+#include <vector>
 
 /**
  * @name forward declarations
@@ -146,10 +138,8 @@ struct bloc
    /// reference to the else statements.
    unsigned int false_edge;
 
-#if HAVE_BAMBU_BUILT
    /// The reference to the schedule
    ScheduleRef schedule;
-#endif
 
    /**
     * constructor

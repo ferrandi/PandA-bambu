@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2022-2022 Politecnico di Milano
+ *              Copyright (C) 2022-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -54,8 +54,9 @@ PrintfNModuleGenerator::PrintfNModuleGenerator(const HLS_managerRef& _HLSMgr) : 
 {
 }
 
-void PrintfNModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */, unsigned int /* function_id */,
-                                          vertex /* op_v */, const HDLWriter_Language /* language */,
+void PrintfNModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */,
+                                          unsigned int /* function_id */, vertex /* op_v */,
+                                          const HDLWriter_Language /* language */,
                                           const std::vector<ModuleGenerator::parameter>& _p,
                                           const std::vector<ModuleGenerator::parameter>& /* _ports_in */,
                                           const std::vector<ModuleGenerator::parameter>& /* _ports_out */,
@@ -122,9 +123,9 @@ void PrintfNModuleGenerator::InternalExec(std::ostream& out, const module* /* mo
        "end\n"
        "endfunction\n"
        "// synthesis translate_on\n"
-       "reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer 1INIT_ZERO_VALUE;\n"
+       "reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer;\n"
        "reg [BITSIZE_Mout_addr_ram-1:0] _next_pointer;\n"
-       "reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer1 1INIT_ZERO_VALUE;\n"
+       "reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer1;\n"
        "reg [BITSIZE_Mout_addr_ram-1:0] _next_pointer1;\n"
        "reg done_port;\n"
        "reg [PORTSIZE_Mout_oe_ram-1:0] Mout_oe_ram;\n"
@@ -132,6 +133,8 @@ void PrintfNModuleGenerator::InternalExec(std::ostream& out, const module* /* mo
        "reg [(PORTSIZE_Mout_addr_ram*BITSIZE_Mout_addr_ram)+(-1):0] Mout_addr_ram;\n"
        "reg [(PORTSIZE_Mout_Wdata_ram*BITSIZE_Mout_Wdata_ram)+(-1):0] Mout_Wdata_ram;\n"
        "reg [(PORTSIZE_Mout_data_ram_size*BITSIZE_Mout_data_ram_size)+(-1):0] Mout_data_ram_size;\n"
+       "reg active_request;\n"
+       "reg active_request_next;\n"
        "\n"
        "parameter [2:0] S_0 = 3'd0,\n"
        "  S_1 = 3'd1,\n"
@@ -141,16 +144,16 @@ void PrintfNModuleGenerator::InternalExec(std::ostream& out, const module* /* mo
        "  S_5 = 3'd5,\n"
        "  S_6 = 3'd6,\n"
        "  S_7 = 3'd7;\n"
-       "reg [2:0] _present_state 1INIT_ZERO_VALUE;\n"
+       "reg [2:0] _present_state;\n"
        "reg [2:0] _next_state;\n"
        "reg [" +
        selector_left +
-       ":0] _present_selector 1INIT_ZERO_VALUE;\n"
+       ":0] _present_selector;\n"
        "reg [" +
        selector_left +
        ":0] _next_selector;\n"
        "reg [63:0] data1;\n"
-       "reg [7:0] _present_data2 1INIT_ZERO_VALUE;\n"
+       "reg [7:0] _present_data2;\n"
        "reg [7:0] _next_data2;\n"
        "reg [7:0] data1_size;\n"
        "reg write_done;\n"
@@ -175,6 +178,17 @@ void PrintfNModuleGenerator::InternalExec(std::ostream& out, const module* /* mo
        "        _present_data2 <= _next_data2;\n"
        "      end\n"
        "\n"
+       "  always @(posedge clock 1RESET_EDGE)\n"
+       "  begin\n"
+       "    if (1RESET_VALUE)\n"
+       "    begin\n"
+       "      active_request <= 0;\n"
+       "    end\n"
+       "    else\n"
+       "    begin\n"
+       "      active_request <= active_request_next;\n"
+       "    end\n"
+       "  end\n"
        "  always @(_present_state or _present_pointer or _present_pointer1 or _present_selector or start_port or "
        "M_DataRdy[0] or Min_we_ram or Min_oe_ram or Min_Wdata_ram or Min_addr_ram or Min_data_ram_size" +
        sensitivity +
@@ -186,6 +200,7 @@ void PrintfNModuleGenerator::InternalExec(std::ostream& out, const module* /* mo
        "        Mout_addr_ram=Min_addr_ram;\n"
        "        Mout_data_ram_size=Min_data_ram_size;\n"
        "        done_port = 1'b0;\n"
+       "        active_request_next =1'b0;\n"
        "        _next_state = _present_state;\n"
        "        _next_pointer = _present_pointer;\n"
        "        _next_pointer1 = _present_pointer1;\n"
@@ -201,16 +216,19 @@ void PrintfNModuleGenerator::InternalExec(std::ostream& out, const module* /* mo
        "                _next_pointer=0;\n"
        "                _next_pointer1=0;\n"
        "                _next_state=S_1;  \n"
+       "                active_request_next =1'b1;\n"
        "                _next_selector=" +
        selector_dimension +
-       "'d2;\n "
+       "'d2;\n"
        "              end\n"
        "            \n"
        "         S_1:\n"
        "           begin\n"
-       "             Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0]=in1[BITSIZE_Mout_addr_ram-1:0]+_present_pointer;\n"
-       "             Mout_data_ram_size[BITSIZE_Mout_data_ram_size-1:0]={{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8};\n"
-       "             Mout_oe_ram[0]=1'b1;\n"
+       "             Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0]=(in1[BITSIZE_Mout_addr_ram-1:0]+_present_pointer) & "
+       "{BITSIZE_Mout_addr_ram{active_request}};\n"
+       "             Mout_data_ram_size[BITSIZE_Mout_data_ram_size-1:0]={{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8} & "
+       "{BITSIZE_Mout_data_ram_size{active_request}};\n"
+       "             Mout_oe_ram[0]=active_request;\n"
        "             if(M_DataRdy[0])\n"
        "             begin\n"
        "                _next_data2 = M_Rdata_ram[7:0];\n"
@@ -229,13 +247,17 @@ void PrintfNModuleGenerator::InternalExec(std::ostream& out, const module* /* mo
        "               if(!write_done)\n"
        "               begin\n"
        "                 $write(\"%c\",_present_data2);\n"
-       "               write_done=1'b1;\n"
+       "                 write_done=1'b1;\n"
        "               end\n"
        "// synthesis translate_on\n"
        "               _next_state=S_1;\n"
+       "               active_request_next =1'b1;\n"
        "             end\n"
        "             else if(_present_data2==8'd37)\n"
+       "             begin\n"
        "               _next_state=S_3;\n"
+       "               active_request_next =1'b1;\n"
+       "             end\n"
        "             else if(_present_data2==8'd0)\n"
        "             begin\n"
        "               done_port = 1'b1;\n"
@@ -244,9 +266,11 @@ void PrintfNModuleGenerator::InternalExec(std::ostream& out, const module* /* mo
        "           end\n"
        "         S_3:\n"
        "           begin\n"
-       "             Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0]=in1[BITSIZE_Mout_addr_ram-1:0]+_present_pointer;\n"
-       "             Mout_data_ram_size[BITSIZE_Mout_data_ram_size-1:0]={{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8};\n"
-       "             Mout_oe_ram[0]=1'b1;\n"
+       "             Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0]=(in1[BITSIZE_Mout_addr_ram-1:0]+_present_pointer) & "
+       "{BITSIZE_Mout_addr_ram{active_request}};\n"
+       "             Mout_data_ram_size[BITSIZE_Mout_data_ram_size-1:0]={{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8} & "
+       "{BITSIZE_Mout_data_ram_size{active_request}};\n"
+       "             Mout_oe_ram[0]=active_request;\n"
        "             if(M_DataRdy[0])\n"
        "             begin\n"
        "                _next_data2 = M_Rdata_ram[7:0];\n"
@@ -264,6 +288,7 @@ void PrintfNModuleGenerator::InternalExec(std::ostream& out, const module* /* mo
        "               8'd37: //%%\n"
        "               begin\n"
        "                 _next_state=S_1;\n"
+       "                 active_request_next =1'b1;\n"
        "// synthesis translate_off\n"
        "                 if(!write_done)\n"
        "                 begin\n"
@@ -619,6 +644,7 @@ void PrintfNModuleGenerator::InternalExec(std::ostream& out, const module* /* mo
        "               8'd115: //String\n"
        "               begin\n"
        "                 _next_state=S_7;\n"
+       "                 active_request_next =1'b1;\n"
        "                 _next_pointer1=0;\n"
        "               end\n"
        "               8'd117: //unsigned int %u TO BE FIXED\n"
@@ -766,19 +792,25 @@ void PrintfNModuleGenerator::InternalExec(std::ostream& out, const module* /* mo
        "// synthesis translate_on\n"
        "                 end\n"
        "               default:\n"
+       "               begin\n"
        "                 _next_state=S_3;\n"
+       "                 active_request_next =1'b1;\n"
+       "               end\n"
        "             endcase\n"
        "           end\n"
        "         S_6:\n"
        "           begin\n"
        "             _next_selector=_present_selector<<1;\n"
        "             _next_state=S_1;\n"
+       "             active_request_next =1'b1;\n"
        "           end\n"
        "         S_7:\n"
        "           begin\n"
-       "             Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0]=data1[BITSIZE_Mout_addr_ram-1:0]+_present_pointer1;\n"
-       "             Mout_data_ram_size[BITSIZE_Mout_data_ram_size-1:0]={{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8};\n"
-       "             Mout_oe_ram[0]=1'b1;\n"
+       "             Mout_addr_ram[BITSIZE_Mout_addr_ram-1:0]=(data1[BITSIZE_Mout_addr_ram-1:0]+_present_pointer1) & "
+       "{BITSIZE_Mout_addr_ram{active_request}};\n"
+       "             Mout_data_ram_size[BITSIZE_Mout_data_ram_size-1:0]={{BITSIZE_Mout_data_ram_size-4{1'b0}}, 4'd8} & "
+       "{BITSIZE_Mout_data_ram_size{active_request}};\n"
+       "             Mout_oe_ram[0]=active_request;\n"
        "             if(M_DataRdy[0])\n"
        "             begin\n"
        "               _next_data2 = M_Rdata_ram[7:0];\n"
@@ -801,11 +833,12 @@ void PrintfNModuleGenerator::InternalExec(std::ostream& out, const module* /* mo
        "               end\n"
        "// synthesis translate_on\n"
        "               _next_state=S_7;\n"
+       "               active_request_next =1'b1;\n"
        "             end\n"
        "             else\n"
        "               _next_state=S_6;\n"
        "           end\n"
-       "      endcase\n "
+       "      endcase\n"
        "  end\n";
 
    out << fsm;

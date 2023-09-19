@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -28,7 +28,9 @@
   \brief Implements methods to declare names for network signals
 
   \author Heinz Riener
+  \author Marcel Walter
   \author Mathias Soeken
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
@@ -49,15 +51,14 @@ public:
   using signal = typename Ntk::signal;
 
 public:
-  names_view( Ntk const& ntk = Ntk() )
-    : Ntk( ntk )
+  template<typename StrType = const char*>
+  names_view( Ntk const& ntk = Ntk(), StrType name = "" )
+      : Ntk( ntk ), _network_name{ name }
   {
   }
 
   names_view( names_view<Ntk> const& named_ntk )
-    : Ntk( named_ntk )
-    , _signal_names( named_ntk._signal_names )
-    , _output_names( named_ntk._output_names )
+      : Ntk( named_ntk ), _network_name( named_ntk._network_name ), _signal_names( named_ntk._signal_names ), _output_names( named_ntk._output_names )
   {
   }
 
@@ -65,22 +66,27 @@ public:
   {
     std::map<signal, std::string> new_signal_names;
     std::vector<signal> current_pis;
-    Ntk::foreach_pi( [&]( auto const& n ) {
-        current_pis.emplace_back( Ntk::make_signal( n ) );
-      });
+    Ntk::foreach_pi( [this, &current_pis]( auto const& n ) {
+      current_pis.emplace_back( Ntk::make_signal( n ) );
+    } );
     named_ntk.foreach_pi( [&]( auto const& n, auto i ) {
-        if ( const auto it = _signal_names.find( current_pis[i] ); it != _signal_names.end() )
-          new_signal_names[named_ntk.make_signal( n )] = it->second;
-      } );
+      if ( const auto it = _signal_names.find( current_pis[i] ); it != _signal_names.end() )
+        new_signal_names[named_ntk.make_signal( n )] = it->second;
+    } );
 
     Ntk::operator=( named_ntk );
     _signal_names = new_signal_names;
+    _network_name = named_ntk._network_name;
     return *this;
   }
 
+  /*! \brief Creates a primary input and set its name.
+   *
+   * \param name Name of the created primary input
+   */
   signal create_pi( std::string const& name = {} )
   {
-    const auto s = Ntk::create_pi( name );
+    const auto s = Ntk::create_pi();
     if ( !name.empty() )
     {
       set_name( s, name );
@@ -88,55 +94,122 @@ public:
     return s;
   }
 
+  /*! \brief Creates a primary output and set its name.
+   *
+   * \param s Signal that drives the created primary output
+   * \param name Name of the created primary output
+   */
   void create_po( signal const& s, std::string const& name = {} )
   {
     const auto index = Ntk::num_pos();
-    Ntk::create_po( s, name );
+    Ntk::create_po( s );
     if ( !name.empty() )
     {
       set_output_name( index, name );
     }
   }
 
+  /*! \brief Sets network name.
+   *
+   * \param name Name of the network
+   */
+  template<typename StrType = const char*>
+  void set_network_name( StrType name ) noexcept
+  {
+    _network_name = name;
+  }
+
+  /*! \brief Gets network name.
+   *
+   * \return Network name
+   */
+  std::string get_network_name() const noexcept
+  {
+    return _network_name;
+  }
+
+  /*! \brief Checks if a signal has a name.
+   *
+   * Note that complemented signals may have different names.
+   *
+   * \param s Signal to be checked
+   * \return Whether the signal has a name in record
+   */
   bool has_name( signal const& s ) const
   {
     return ( _signal_names.find( s ) != _signal_names.end() );
   }
 
+  /*! \brief Sets the name for a signal.
+   *
+   * Note that names are set separately for complemented signals.
+   *
+   * \param s Signal to be set a name
+   * \param name Name of the signal
+   */
   void set_name( signal const& s, std::string const& name )
   {
     _signal_names[s] = name;
   }
 
+  /*! \brief Gets signal name.
+   *
+   * Note that complemented signals may have different names.
+   *
+   * \param s Signal to be queried
+   * \return Name of the signal
+   */
   std::string get_name( signal const& s ) const
   {
     return _signal_names.at( s );
   }
 
+  /*! \brief Checks if a primary output has a name.
+   *
+   * \param index Index of the primary output to be checked
+   * \return Whether the primary output has a name in record
+   */
   bool has_output_name( uint32_t index ) const
   {
     return ( _output_names.find( index ) != _output_names.end() );
   }
 
+  /*! \brief Sets the name for a primary output.
+   *
+   * Note that even if two primary outputs are driven by
+   * the same signal, they may have different names.
+   *
+   * \param index Index of the primary output to set a name
+   * \param name Name of the primary output
+   */
   void set_output_name( uint32_t index, std::string const& name )
   {
     _output_names[index] = name;
   }
 
+  /*! \brief Gets the name of a primary output.
+   *
+   * Note that even if two primary outputs are driven by
+   * the same signal, they may have different names.
+   *
+   * \param index Index of the primary output to be queried
+   * \return Name of the primary output
+   */
   std::string get_output_name( uint32_t index ) const
   {
     return _output_names.at( index );
   }
 
 private:
+  std::string _network_name;
   std::map<signal, std::string> _signal_names;
   std::map<uint32_t, std::string> _output_names;
 }; /* names_view */
 
 template<class T>
-names_view(T const&) -> names_view<T>;
+names_view( T const& ) -> names_view<T>;
 
 template<class T>
-names_view(T const&, typename T::signal const&) -> names_view<T>;
+names_view( T const&, typename T::signal const& ) -> names_view<T>;
 
 } // namespace mockturtle

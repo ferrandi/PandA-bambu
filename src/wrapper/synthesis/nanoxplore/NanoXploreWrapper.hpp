@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -44,7 +44,7 @@
 #include "SynthesisTool.hpp"
 
 #include "refcount.hpp"
-REF_FORWARD_DECL(target_device);
+REF_FORWARD_DECL(generic_device);
 
 #define PARAM_sources_macro_list "sources_macro_list"
 
@@ -58,7 +58,7 @@ class NanoXploreWrapper : public SynthesisTool
     * @param output_dir is the directory where to save all the results
     * @param default_output_dir is the default output directory
     */
-   NanoXploreWrapper(const ParameterConstRef& Param, const std::string& tool_exec, const target_deviceRef& device,
+   NanoXploreWrapper(const ParameterConstRef& Param, const std::string& tool_exec, const generic_deviceRef& device,
                      const std::string& output_dir, const std::string& default_output_dir);
 
    /**

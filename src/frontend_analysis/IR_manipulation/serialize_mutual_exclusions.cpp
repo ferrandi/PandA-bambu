@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2016-2022 Politecnico di Milano
+ *              Copyright (C) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -201,7 +201,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
             const auto srcp = gc->include_name + ":" + STR(gc->line_number) + ":" + STR(gc->column_number);
             const auto not_cond = tree_man->CreateNotExpr(gc->op0, bb_node_info, function_id);
             const auto ga_cond = tree_man->CreateGimpleAssign(tree_helper::CGetType(gc->op0), nullptr, nullptr,
-                                                              not_cond, function_id, bb_node_info->number, srcp);
+                                                              not_cond, function_id, srcp);
             const auto new_cond = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_cond))->op0;
             bb_node_info->PushBefore(ga_cond, last_stmt, AppM);
             TM->ReplaceTreeNode(last_stmt, gc->op0, new_cond);
@@ -300,10 +300,10 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
             const auto srcp = gc->include_name + ":" + STR(gc->line_number) + ":" + STR(gc->column_number);
             const auto not_cond = tree_man->CreateNotExpr(gc->op0, new_block, function_id);
             const auto ga_cond = tree_man->CreateGimpleAssign(tree_helper::CGetType(gc->op0), nullptr, nullptr,
-                                                              not_cond, function_id, bb_node_info->number, srcp);
+                                                              not_cond, function_id, srcp);
             new_block->PushBack(ga_cond, AppM);
             const auto new_cond = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_cond))->op0;
-            const auto new_tree_node = tree_man->create_gimple_cond(new_cond, function_id, srcp, new_block->number);
+            const auto new_tree_node = tree_man->create_gimple_cond(new_cond, function_id, srcp);
             new_block->PushBack(new_tree_node, AppM);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Fixed basic blocks connections");
 

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -64,6 +64,8 @@
 REF_FORWARD_DECL(BisonParserData);
 struct info_map;
 REF_FORWARD_DECL(TreeFlexLexer);
+
+#include "APInt.hpp"
 
 ///Header include
 #if HAVE_BISON_2_7_OR_GREATER
@@ -237,7 +239,7 @@ REF_FORWARD_DECL(TreeFlexLexer);
 * @param add_function is the name of function that add a NODE_ID
 */
 #define ADDV3(obj_node, add_function) \
-  addv3<obj_node, tree_nodeRef>(data->curr_tree_nodeRef, &obj_node::add_function, data->curr_NODE_ID, data->curr_unumber, data->current_TM);
+  addv3<obj_node, tree_nodeRef>(data->curr_tree_nodeRef, &obj_node::add_function, data->curr_NODE_ID, boost::lexical_cast<unsigned>(data->curr_string_number), data->current_TM);
 
 /**
 * Macro used to add an unsigned int to the object obj_node through the function add_function.
@@ -245,7 +247,7 @@ REF_FORWARD_DECL(TreeFlexLexer);
 * @param add_function is the name of function that add a NODE_ID
 */
 #define ADD_UNSIGNED(obj_node, add_function) \
-  add_unsigned<obj_node, tree_nodeRef>(data->curr_tree_nodeRef, &obj_node::add_function, data->curr_NODE_ID, data->curr_unumber, data->current_TM);
+  add_unsigned<obj_node, tree_nodeRef>(data->curr_tree_nodeRef, &obj_node::add_function, data->curr_NODE_ID, boost::lexical_cast<unsigned>(data->curr_string_number), data->current_TM);
 
 /**
 * Macro used to add a bloc to the object obj_node through the function add_function.
@@ -285,8 +287,6 @@ struct BisonParserData
       curr_NODE_ID(0),
       curr_NODE_ID_BIS(0),
       implement_node(false),
-      curr_number(0),
-      curr_size_t_number(0),
       id(0)
    {
 #if HAVE_MAPPING_BUILT
@@ -321,20 +321,8 @@ struct BisonParserData
    /// Is true if the current node is an implementation node
    bool implement_node;
 
-   /// Store the current signed NUMBER.
-   int curr_number;
-
-   /// Store the current size_t NUMBER.
-   size_t curr_size_t_number;
-
-   /// Store the current unsigned NUMBER
-   unsigned int curr_unumber;
-
-   /// Store the current NUMBER (long long)
-   int long long curr_long_long_number;
-
-   /// Store the current NUMBER (long double)
-   long double curr_double_number;
+   /// Store the current NUMBER as a string
+   std::string curr_string_number;
 
    /// Store the current token_enum (long double)
    TreeVocabularyTokenTypes_TokenEnum curr_token_enum;
@@ -510,12 +498,11 @@ void do_qual(const tree_nodeRef &curr, const int & value)
 %union {
 const char *text;
 int value;
-long long int long_value;
 bool pred;
 }
 %token <value> NODE_ID
 %token <text> TOK_BISON_STRING
-%token <long_value> TOK_BISON_NUMBER
+%token <text> TOK_BISON_NUMBER
 %token TOK_BISON_GCC_VERSION TOK_BISON_PLUGIN_VERSION
 %token TOK_BISON_ERROR_MARK TOK_BISON_IDENTIFIER_NODE TOK_BISON_TREE_LIST TOK_BISON_TREE_VEC
 %token TOK_BISON_BLOCK TOK_BISON_VOID_TYPE TOK_BISON_INTEGER_TYPE TOK_BISON_REAL_TYPE
@@ -927,25 +914,16 @@ bool pred;
 
    omp_atomic_flag : /* empty */
                          | TOK_BISON_OMP_ATOMIC {
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-                         NSV(function_decl, omp_atomic, true)
-#endif
                          }
                          ;
 
    omp_body_loop_flag : /* empty */
                          | TOK_BISON_OMP_BODY_LOOP {
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-                         NSV(function_decl, omp_body_loop, true)
-#endif
                          }
                          ;
 
    omp_for_wrapper_opt : /* empty */
                          | TOK_BISON_OMP_FOR_WRAPPER number_id {
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-                         NSV(function_decl, omp_for_wrapper, data->curr_size_t_number)
-#endif
                          }
                          ;
 
@@ -996,8 +974,8 @@ bool pred;
                     fun_op                  {;}
                     wattr                   {;}
                     fun_tmpl                {;}
-                    fixd_opt                {OPT($11, {NSV(function_decl,fixd,data->curr_number); NSV(function_decl,fixd_flag,true)})}
-                    virt_opt                {OPT($13, {NSV(function_decl,virt,data->curr_number); NSV(function_decl,virt_flag,true)})}
+                    fixd_opt                {OPT($11, {NSV(function_decl,fixd,std::stoi(data->curr_string_number)); NSV(function_decl,fixd_flag,true)})}
+                    virt_opt                {OPT($13, {NSV(function_decl,virt,std::stoi(data->curr_string_number)); NSV(function_decl,virt_flag,true)})}
                     fn_opt                  {OPT($15, NS(function_decl,fn))}
                     fun_args                {;}
                     tok_undefined           {;}
@@ -1009,7 +987,7 @@ bool pred;
                     tok_reading_memory      {;}
                     pipeline_enabled        {;}
                     simple_pipeline         {;}
-                    initiation_time         {OPT($37, {NSV(function_decl,initiation_time,data->curr_number)})}
+                    initiation_time         {OPT($37, {NSV(function_decl,initiation_time,std::stoi(data->curr_string_number))})}
                     omp_atomic_flag         {;}
                     omp_body_loop_flag      {;}
                     omp_for_wrapper_opt     {;}
@@ -1048,9 +1026,9 @@ bool pred;
                wdecl_node          {}
                argt_opt            {OPT($5, NS(parm_decl, argt))}
                size_opt            {OPT($7, NS(parm_decl, size))}
-               algn                {NSV(parm_decl,algn, data->curr_unumber)}
+               algn                {NSV(parm_decl,algn, boost::lexical_cast<unsigned>(data->curr_string_number))}
                tok_artificial_opt  {OPT($11, NSV(decl_node, artificial_flag, true))}
-               used                {NSV(parm_decl, used, data->curr_number)}
+               used                {NSV(parm_decl, used, std::stoi(data->curr_string_number))}
                parm_tok_register   {}
                parm_tok_readonly   {}
                smt_ann_opt         {OPT($19, NS(parm_decl, smt_ann))}
@@ -1073,7 +1051,7 @@ bool pred;
                   }
                   value
                   {
-                    NSV(integer_cst, value, data->curr_long_long_number);
+                    NSV(integer_cst, value, integer_cst_t(APInt(data->curr_string_number)));
                   };
 
    //tree_list:	TOK_BISON_TREE_LIST^ (purp)? valu (chan)?;
@@ -1096,14 +1074,14 @@ bool pred;
    //var_decl: TOK_BISON_VAR_DECL^ decl_node attr (TOK_BISON_STATIC TOK_BISON_STATIC | TOK_BISON_STATIC |TOK_BISON_EXTERN)? (init)? (size)? algn used (TOK_BISON_REGISTER)?;
    wvar_decl : TOK_BISON_VAR_DECL   {CTN(var_decl)}
                wdecl_node           {}
-               use_tmpl_opt         {OPT($5, NSV(var_decl,use_tmpl,data->curr_number))}
+               use_tmpl_opt         {OPT($5, NSV(var_decl,use_tmpl,std::stoi(data->curr_string_number)))}
                wattr                {}
                var_decl_ext_stat    {}
                init_opt             {OPT($11, NS(var_decl, init))}
                size_opt             {OPT($13, NS(var_decl, size))}
-               algn                 {NSV(var_decl,algn, data->curr_unumber)}
+               algn                 {NSV(var_decl,algn, boost::lexical_cast<unsigned>(data->curr_string_number))}
                tok_packed_opt       {OPT($17, NSV(var_decl, packed_flag, true))}
-               used                 {NSV(var_decl, used, data->curr_number)}
+               used                 {NSV(var_decl, used, std::stoi(data->curr_string_number))}
                var_decl_definitions {;}
                var_decl_uses        {;}
                var_decl_addressings {;}
@@ -1134,7 +1112,7 @@ bool pred;
    var_decl_addressing : TOK_BISON_ADDR_STMT node_id {GetPointer<var_decl>(data->curr_tree_nodeRef)->addressings.insert(data->current_TM->GetTreeReindex(data->curr_NODE_ID));};
 
    //string_cst:	TOK_BISON_STRING_CST^ (type)? strg lngt;
-   wstring_cst : TOK_BISON_STRING_CST{CTN(string_cst)}  type_opt{OPT($3, NS(string_cst,type))}  strg{NSV(string_cst, strg, data->curr_string)}  lngt{NSV(string_cst, lngt, data->curr_number)};
+   wstring_cst : TOK_BISON_STRING_CST{CTN(string_cst)}  type_opt{OPT($3, NS(string_cst,type))}  strg{NSV(string_cst, strg, data->curr_string)}  lngt{NSV(string_cst, lngt, std::stoi(data->curr_string_number))};
 
    //void_type: TOK_BISON_VOID_TYPE^ type_node;
    wvoid_type : TOK_BISON_VOID_TYPE{CTN(void_type)}  wtype_node;
@@ -1192,7 +1170,7 @@ bool pred;
    //real_type: TOK_BISON_REAL_TYPE^ type_node prec;
    wreal_type : TOK_BISON_REAL_TYPE{CTN(real_type)}
                 wtype_node
-                prec{NSV(real_type, prec, data->curr_unumber)}
+                prec{NSV(real_type, prec, boost::lexical_cast<unsigned>(data->curr_string_number))}
                 ;
 
    int_tok_unsigned : /*empty*/ | TOK_BISON_UNSIGNED{NSV(integer_type, unsigned_flag, true)};
@@ -1200,7 +1178,7 @@ bool pred;
    //integer_type: TOK_BISON_INTEGER_TYPE^ type_node prec (TOK_BISON_STRING)? (TOK_BISON_UNSIGNED)? (min)? (max)?;
    winteger_type : TOK_BISON_INTEGER_TYPE{CTN(integer_type)}
                    wtype_node
-                   prec{NSV(integer_type, prec, data->curr_unumber)}
+                   prec{NSV(integer_type, prec, boost::lexical_cast<unsigned>(data->curr_string_number))}
                    string_id_opt{OPT($6, NSV(integer_type, str, data->curr_string))}
                    int_tok_unsigned
                    min_opt{OPT($9, NS(integer_type,min))}
@@ -1212,7 +1190,7 @@ bool pred;
    //enumeral_type: TOK_BISON_ENUMERAL_TYPE^ type_node prec (TOK_BISON_UNSIGNED)? min max csts;
    wenumeral_type : TOK_BISON_ENUMERAL_TYPE{CTN(enumeral_type)}
                     wtype_node
-                    prec{NSV(enumeral_type, prec, data->curr_unumber)}
+                    prec{NSV(enumeral_type, prec, boost::lexical_cast<unsigned>(data->curr_string_number))}
                     enum_tok_unsigned
                     min_opt{OPT($7,NS(enumeral_type,min))}
                     max_opt{OPT($9, NS(enumeral_type,max))}
@@ -1297,7 +1275,7 @@ bool pred;
                   wdecl_node            {}
                   init_opt              {OPT($5, NS(result_decl, init))}
                   size                  {NS(result_decl, size)}
-                  algn                  {NSV(result_decl,algn, data->curr_unumber)}
+                  algn                  {NSV(result_decl,algn, boost::lexical_cast<unsigned>(data->curr_string_number))}
                   tok_packed_opt        {OPT($11, NSV(result_decl, packed_flag, true))}
                   smt_ann_opt           {OPT($13, NS(result_decl, smt_ann))}
                   ;
@@ -1308,7 +1286,7 @@ bool pred;
                  wattr                {}
                  init_opt             {OPT($7, NS(field_decl, init))}
                  size_opt             {OPT($9, NS(field_decl, size))}
-                 algn                 {NSV(field_decl,algn, data->curr_unumber)}
+                 algn                 {NSV(field_decl,algn, boost::lexical_cast<unsigned>(data->curr_string_number))}
                  tok_packed_opt       {OPT($13, NSV(field_decl, packed_flag, true))}
                  bpos_opt             {OPT($15, NS(field_decl, bpos))}
                  smt_ann_opt          {OPT($17, NS(field_decl, smt_ann))}
@@ -1674,7 +1652,7 @@ bool pred;
   wwiden_sum_expr : TOK_BISON_WIDEN_SUM_EXPR{CTN(widen_sum_expr)} wbinary_expr;
 
   //widen_mult_expr: TOK_BISON_WIDEN_MULT_EXPR^ binary_expr;
-  wwiden_mult_expr : TOK_BISON_WIDEN_MULT_EXPR{CTN(widen_mult_expr)} wbinary_expr;  
+  wwiden_mult_expr : TOK_BISON_WIDEN_MULT_EXPR{CTN(widen_mult_expr)} wbinary_expr;
 
   //mult_highpart_expr : TOK_BISON_MULT_HIGHPART_EXPR^ binary_expr;
   wmult_highpart_expr : TOK_BISON_MULT_HIGHPART_EXPR{CTN(mult_highpart_expr)} wbinary_expr;
@@ -1686,7 +1664,7 @@ bool pred;
   wvec_new_expr :   TOK_BISON_VEC_NEW_EXPR{CTN(vec_new_expr)}  wexpr_node;
 
   //try_block:      TOK_BISON_TRY_BLOCK^ line body hdlr (next)?;
-  wtry_block : TOK_BISON_TRY_BLOCK{CTN(try_block)}  line{NSV(try_block,line,data->curr_number)}  body{NS(try_block,body)}  hdlr{NS(try_block,hdlr)}  next_opt{OPT($9, NS(try_block,next))};
+  wtry_block : TOK_BISON_TRY_BLOCK{CTN(try_block)}  line{NSV(try_block,line,std::stoi(data->curr_string_number))}  body{NS(try_block,body)}  hdlr{NS(try_block,hdlr)}  next_opt{OPT($9, NS(try_block,next))};
 
   tree_vec_op : op{ADDV(tree_vec, add_op)}
               | tree_vec_op op{ADDV(tree_vec, add_op)}
@@ -1694,7 +1672,7 @@ bool pred;
   tree_vec_op_opt : /*empty*/ | tree_vec_op;
 
   //tree_vec:       TOK_BISON_TREE_VEC^ lngt (op)*;
-  wtree_vec : TOK_BISON_TREE_VEC{CTN(tree_vec)}  lngt{NSV(tree_vec, lngt, data->curr_size_t_number)}  tree_vec_op_opt;
+  wtree_vec : TOK_BISON_TREE_VEC{CTN(tree_vec)}  lngt{NSV(tree_vec, lngt, boost::lexical_cast<size_t>(data->curr_string_number))}  tree_vec_op_opt;
 
   //template_id_expr: TOK_BISON_TEMPLATE_ID_EXPR^ expr_node;
   wtemplate_id_expr : TOK_BISON_TEMPLATE_ID_EXPR{CTN(template_id_expr)}  wexpr_node;
@@ -1705,8 +1683,8 @@ bool pred;
    wssa_name : TOK_BISON_SSA_NAME {CTN(ssa_name)}
                type_opt{OPT($3, NS(ssa_name,type))}
                var_opt{OPT($5, NS(ssa_name, var))}
-               vers{NSV(ssa_name, vers, (BisonParserData::global_uniq_vers_id++))NSV(ssa_name, orig_vers, data->curr_unumber)}
-               orig_vers_opt{OPT($9, NSV(ssa_name, orig_vers, data->curr_unumber))}
+               vers{NSV(ssa_name, vers, (BisonParserData::global_uniq_vers_id++))NSV(ssa_name, orig_vers, boost::lexical_cast<unsigned>(data->curr_string_number))}
+               orig_vers_opt{OPT($9, NSV(ssa_name, orig_vers, boost::lexical_cast<unsigned>(data->curr_string_number)))}
                ptr_info_opt{;}
                tok_ssa_name_def
                tok_virtual_opt{OPT($14, NSV(ssa_name, virtual_flag, true));}
@@ -1833,7 +1811,7 @@ bool pred;
    wvec_interleavelow_expr : TOC_BISON_VEC_INTERLEAVELOW_EXPR{CTN(vec_interleavelow_expr)}  wbinary_expr;
 
    //return_stmt:    TOK_BISON_RETURN_STMT^ line (expr)?;
-   wreturn_stmt : TOK_BISON_RETURN_STMT{CTN(return_stmt)}  line{NSV(return_stmt,line,data->curr_number)}  expr_opt{OPT($5, NS(return_stmt,expr))};
+   wreturn_stmt : TOK_BISON_RETURN_STMT{CTN(return_stmt)}  line{NSV(return_stmt,line,std::stoi(data->curr_string_number))}  expr_opt{OPT($5, NS(return_stmt,expr))};
 
 
    //postincrement_expr: TOK_BISON_POSTINCREMENT_EXPR^ binary_expr;
@@ -1846,7 +1824,7 @@ bool pred;
                    | gimple_phi_tuples gimple_phi_tuples_pair
                    ;
 
-   gimple_phi_tuples_pair : def edge{GetPointer<gimple_phi>(data->curr_tree_nodeRef)->AddDefEdge(data->current_TM, gimple_phi::DefEdge(data->current_TM->GetTreeReindex(data->curr_NODE_ID), data->curr_unumber));}
+   gimple_phi_tuples_pair : def edge{GetPointer<gimple_phi>(data->curr_tree_nodeRef)->AddDefEdge(data->current_TM, gimple_phi::DefEdge(data->current_TM->GetTreeReindex(data->curr_NODE_ID), boost::lexical_cast<unsigned>(data->curr_string_number)));}
    ;
 
    //gimple_phi:       TOK_BISON_GIMPLE_PHI^ res (def edge)* (TOK_BISON_VIRTUAL)?;
@@ -1888,7 +1866,7 @@ bool pred;
    wfdesc_expr : TOK_BISON_FDESC_EXPR{CTN(fdesc_expr)}  wbinary_expr;
 
    //handler:        TOK_BISON_HANDLER^ line body;
-   whandler : TOK_BISON_HANDLER{CTN(handler)}  line{NSV(handler,line,data->curr_number)}  body{NS(handler,body)};
+   whandler : TOK_BISON_HANDLER{CTN(handler)}  line{NSV(handler,line,std::stoi(data->curr_string_number))}  body{NS(handler,body)};
 
    //catch_expr:     TOK_BISON_CATCH_EXPR^ binary_expr;
    wcatch_expr : TOK_BISON_CATCH_EXPR{CTN(catch_expr)}  wbinary_expr;
@@ -1897,7 +1875,7 @@ bool pred;
    wcomponent_ref : TOK_BISON_COMPONENT_REF{CTN(component_ref)}  wternary_expr;
 
    //expr_stmt:      TOK_BISON_EXPR_STMT^ line expr (next)?;
-   wexpr_stmt : TOK_BISON_EXPR_STMT{CTN(expr_stmt)}  line{NSV(expr_stmt,line,data->curr_number)}  expr{NS(expr_stmt,expr)}  next{NS(expr_stmt,next)};
+   wexpr_stmt : TOK_BISON_EXPR_STMT{CTN(expr_stmt)}  line{NSV(expr_stmt,line,std::stoi(data->curr_string_number))}  expr{NS(expr_stmt,expr)}  next{NS(expr_stmt,next)};
 
    //complex_cst:    TOK_BISON_COMPLEX_CST^ type real imag;
    wcomplex_cst : TOK_BISON_COMPLEX_CST{CTN(complex_cst)}  type{NS(complex_cst,type)}  real{NS(complex_cst,real)}  imag{NS(complex_cst,imag)};
@@ -1965,7 +1943,7 @@ bool pred;
 
    binfo_tok_virt : /*empty*/ | TOK_BISON_VIRT{NSV(binfo, virt_flag, true)};
 
-   binfo_bases : /*empty*/ | TOK_BISON_BASES number_id {NSV(binfo,bases,data->curr_number);};
+   binfo_bases : /*empty*/ | TOK_BISON_BASES number_id {NSV(binfo,bases,std::stoi(data->curr_string_number));};
 
    //binfo:  TOK_BISON_BINFO^ (type)? (TOK_BISON_VIRT)? (baseinfo)*;
    wbinfo : TOK_BISON_BINFO{CTN(binfo)}  type_opt{OPT($3, NS(binfo,type))} binfo_tok_virt binfo_bases binfo_baseinfos;
@@ -1994,7 +1972,7 @@ bool pred;
                              wexpr_node
                              fn{NS(aggr_init_expr,fn)}
                              call_expr_args
-                             ctor_opt{OPT($7, NSV(aggr_init_expr,ctor,data->curr_number))}
+                             ctor_opt{OPT($7, NSV(aggr_init_expr,ctor,std::stoi(data->curr_string_number)))}
                              slot_opt{OPT($9, NS(aggr_init_expr,slot))}
                              ;
    wgimple_call : TOK_BISON_GIMPLE_CALL{CTN(gimple_call)}
@@ -2044,9 +2022,9 @@ bool pred;
                   decl_opt{OPT($5, NS(template_parm_index,decl))}
                   template_parm_index_constant   {}
                   template_parm_index_readonly {}
-                  index{NSV(template_parm_index,idx,data->curr_number)}
-                  level{NSV(template_parm_index,level,data->curr_number)}
-                  orig_level{NSV(template_parm_index,orig_level,data->curr_number)}
+                  index{NSV(template_parm_index,idx,std::stoi(data->curr_string_number))}
+                  level{NSV(template_parm_index,level,std::stoi(data->curr_string_number))}
+                  orig_level{NSV(template_parm_index,orig_level,std::stoi(data->curr_string_number))}
                   ;
 
    //with_size_expr: TOK_BISON_WITH_SIZE_EXPR^ binary_expr;
@@ -2093,12 +2071,10 @@ bool pred;
                tok_operating_system_opt {OPT($19, NSV(decl_node, operating_system_flag, true))}
                tok_library_system_opt   {OPT($21, NSV(decl_node, library_system_flag, true))}
                tok_libbambu_opt         {
-#if HAVE_BAMBU_BUILT
                                          OPT($23, NSV(decl_node, libbambu_flag, true))
-#endif
                                         }
                tok_C                    {}
-               uid_opt                  {NSV(decl_node, uid, data->curr_unumber)}
+               uid_opt                  {NSV(decl_node, uid, boost::lexical_cast<unsigned>(data->curr_string_number))}
                ;
 
    wexpr_node : type_opt  {OPT($1, NS(expr_node,type))}
@@ -2107,7 +2083,7 @@ bool pred;
 
    //gimple_node: wvops  (type)? (srcp)? (time_weight)? (size_weight)? (rtl_size_weight)?;
    wgimple_node : scpe_opt          {OPT($1, NS(gimple_node, scpe))}
-                  bb_index          {NSV(gimple_node, bb_index, data->curr_unumber)}
+                  bb_index          {NSV(gimple_node, bb_index, boost::lexical_cast<unsigned>(data->curr_string_number))}
                   mem_virtual_ops   {;}
                   wsrcp_opt         {;}
                   time_weight_opt
@@ -2116,7 +2092,7 @@ bool pred;
                      std::map<ComponentTypeConstRef, ProbabilityDistribution> weights;
                      if((data->Param->getOption<bool>(OPT_gcc_costs)))
                      {
-                        weights[data->driving_component] = data->curr_double_number;
+                        weights[data->driving_component] = boost::lexical_cast<long double>(data->curr_string_number);
                      }
                      OPT($9, GetPointer<gimple_node>(data->curr_tree_nodeRef)->weight_information->recursive_weight = weights);
 #endif
@@ -2124,13 +2100,13 @@ bool pred;
                   size_weight_opt
                   {
 #if HAVE_CODE_ESTIMATION_BUILT
-                     OPT($11, GetPointer<gimple_node>(data->curr_tree_nodeRef)->weight_information->instruction_size = data->curr_unumber);
+                     OPT($11, GetPointer<gimple_node>(data->curr_tree_nodeRef)->weight_information->instruction_size = boost::lexical_cast<unsigned>(data->curr_string_number));
 #endif
                   }
                   rtl_size_weight_opt
                   {
 #if HAVE_CODE_ESTIMATION_BUILT && HAVE_RTL_BUILT
-                     OPT($13, GetPointer<gimple_node>(data->curr_tree_nodeRef)->weight_information->rtl_instruction_size = data->curr_unumber);
+                     OPT($13, GetPointer<gimple_node>(data->curr_tree_nodeRef)->weight_information->rtl_instruction_size = boost::lexical_cast<unsigned>(data->curr_string_number));
 #endif
                   }
                   rtl_star
@@ -2143,30 +2119,28 @@ bool pred;
                 ;
 
    //type_node: (qual)? (name)? (unql)? (size)? (algn)?;
-   wtype_node: qual_opt         {OPT($1, do_qual<type_node>(data->curr_tree_nodeRef, data->curr_number);)}
+   wtype_node: qual_opt         {OPT($1, do_qual<type_node>(data->curr_tree_nodeRef, std::stoi(data->curr_string_number));)}
               name_opt         {OPT($3, NS(type_node,name))}
               unql_opt         {OPT($5, NS(type_node,unql))}
               size_opt         {OPT($7, NS(type_node,size))}
               scpe_opt         {OPT($9, NS(type_node,scpe))}
-              algn_opt         {OPT($11, NSV(type_node,algn, data->curr_unumber))}
+              algn_opt         {OPT($11, NSV(type_node,algn, boost::lexical_cast<unsigned>(data->curr_string_number)))}
               tok_packed_opt   {OPT($13, NSV(type_node, packed_flag, true))}
               tok_system_opt   {OPT($15, NSV(type_node, system_flag, true))}
               tok_libbambu_opt {
-#if HAVE_BAMBU_BUILT
               OPT($15, NSV(type_node, libbambu_flag, true))
-#endif
                                }
             ;
 
    //qual: TOK_BISON_QUAL (TOK_BISON_QUAL_R | TOK_BISON_QUAL_V | TOK_BISON_QUAL_VR | TOK_BISON_QUAL_C | TOK_BISON_QUAL_CR | TOK_BISON_QUAL_CV | TOK_BISON_QUAL_CVR );
    qual_opt :  /*empty*/{$$=false;}
-         | TOK_BISON_QUAL TOK_BISON_QUAL_R {data->curr_number = static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_R));$$=true;}
-         | TOK_BISON_QUAL TOK_BISON_QUAL_V {data->curr_number = static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_V));$$=true;}
-         | TOK_BISON_QUAL TOK_BISON_QUAL_VR {data->curr_number = static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_VR));$$=true;}
-         | TOK_BISON_QUAL TOK_BISON_QUAL_C {data->curr_number = static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_C));$$=true;}
-         | TOK_BISON_QUAL TOK_BISON_QUAL_CR {data->curr_number = static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_CR));$$=true;}
-         | TOK_BISON_QUAL TOK_BISON_QUAL_CV {data->curr_number = static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_CV));$$=true;}
-         | TOK_BISON_QUAL TOK_BISON_QUAL_CVR {data->curr_number = static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_CVR));$$=true;}
+   | TOK_BISON_QUAL TOK_BISON_QUAL_R {data->curr_string_number= std::to_string(static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_R)));$$=true;}
+         | TOK_BISON_QUAL TOK_BISON_QUAL_V {data->curr_string_number = std::to_string(static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_V)));$$=true;}
+         | TOK_BISON_QUAL TOK_BISON_QUAL_VR {data->curr_string_number = std::to_string(static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_VR)));$$=true;}
+         | TOK_BISON_QUAL TOK_BISON_QUAL_C {data->curr_string_number = std::to_string(static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_C)));$$=true;}
+         | TOK_BISON_QUAL TOK_BISON_QUAL_CR {data->curr_string_number = std::to_string(static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_CR)));$$=true;}
+         | TOK_BISON_QUAL TOK_BISON_QUAL_CV {data->curr_string_number = std::to_string(static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_CV)));$$=true;}
+         | TOK_BISON_QUAL TOK_BISON_QUAL_CVR {data->curr_string_number = std::to_string(static_cast<unsigned int>(lexer->bison2token(TOK_BISON_QUAL_CVR)));$$=true;}
          ;
 
    /*
@@ -2383,7 +2357,7 @@ bool pred;
       winsertelement_expr : TOK_BISON_INSERTELEMENT_EXPR{CTN(insertelement_expr)}  wternary_expr;
 
       //srcp: TOK_BISON_SRCP^ TOK_BISON_STRING TOK_BISON_NUMBER;
-       wsrcp_opt     : /*empty*/| TOK_BISON_SRCP string_id{NSV(srcp, include_name, data->curr_string)} number_id{NSV(srcp, line_number, data->curr_unumber)} number_id{NSV(srcp, column_number, data->curr_unumber)};
+       wsrcp_opt     : /*empty*/| TOK_BISON_SRCP string_id{NSV(srcp, include_name, data->curr_string)} number_id{NSV(srcp, line_number, boost::lexical_cast<unsigned>(data->curr_string_number))} number_id{NSV(srcp, column_number, boost::lexical_cast<unsigned>(data->curr_string_number))};
 
 
 
@@ -2392,16 +2366,16 @@ bool pred;
            | TOK_BISON_HPL {data->current_TM->add_parallel_loop();NBV(bloc, hpl, 1)}
            ;
    wloop_id:  /* empty */
-           | TOK_BISON_LOOP_ID number_id{NBV(bloc, loop_id, data->curr_unumber)}
+           | TOK_BISON_LOOP_ID number_id{NBV(bloc, loop_id, boost::lexical_cast<unsigned>(data->curr_string_number))}
            ;
 
 
    wpred_star : /* emptyr */
-              | wpred_star wpred{ADDVALUE(bloc, add_pred, data->curr_unumber)}
+              | wpred_star wpred{ADDVALUE(bloc, add_pred, boost::lexical_cast<unsigned>(data->curr_string_number))}
               ;
 
    wsucc_star : /*empty*/
-              | wsucc_star wsucc{ADDVALUE(bloc, add_succ, data->curr_unumber)}
+              | wsucc_star wsucc{ADDVALUE(bloc, add_succ, boost::lexical_cast<unsigned>(data->curr_string_number))}
               ;
 
    phi_star : /*empty*/
@@ -2535,24 +2509,24 @@ bool pred;
 
    //bloc: TOK_BISON_BLOC^ TOK_BISON_NUMBER (TOK_BISON_HPL)? (pred)*  (succ)*  (phi)*  (stmt)*;
    wbloc : TOK_BISON_BLOC {;}
-           number_id      {CB(data->curr_unumber)}
+           number_id      {CB(boost::lexical_cast<unsigned>(data->curr_string_number))}
            tok_hpl        {;}
            wloop_id       {;}
            wpred_star     {;}
            wsucc_star     {;}
-           true_edge_opt  {OPT($13,NBV(bloc, true_edge, data->curr_unumber))}
-           false_edge_opt {OPT($15,NBV(bloc, false_edge, data->curr_unumber))}
+           true_edge_opt  {OPT($13,NBV(bloc, true_edge, boost::lexical_cast<unsigned>(data->curr_string_number)))}
+           false_edge_opt {OPT($15,NBV(bloc, false_edge, boost::lexical_cast<unsigned>(data->curr_string_number)))}
            phi_star       {;}
            stmt_star      {;}
            rtl_star       {;}
          ;
 
    //pred: TOK_BISON_PRED^ (TOK_BISON_ENTRY | TOK_BISON_NUMBER);
-   wpred : TOK_BISON_PRED TOK_BISON_ENTRY{data->curr_unumber=bloc::ENTRY_BLOCK_ID;}
+    wpred : TOK_BISON_PRED TOK_BISON_ENTRY{data->curr_string_number=std::to_string(bloc::ENTRY_BLOCK_ID);}
          | TOK_BISON_PRED number_id
          ;
 
-   wsucc : TOK_BISON_SUCC TOK_BISON_EXIT{data->curr_unumber=bloc::EXIT_BLOCK_ID;}
+    wsucc : TOK_BISON_SUCC TOK_BISON_EXIT{data->curr_string_number=std::to_string(bloc::EXIT_BLOCK_ID);}
          | TOK_BISON_SUCC number_id
          ;
 
@@ -2788,7 +2762,7 @@ bool pred;
    virt_opt      : /*empty*/{$$=false;} | TOK_BISON_VIRT  number_id      {$$=true;} ;
 
    fixd_opt      : /*empty*/{$$=false;} | TOK_BISON_FIXD  number_id      {$$=true;} ;
-   
+
    initiation_time : /*empty*/{$$=false;} | TOK_BISON_INITIATION_TIME number_id {$$=true;} ;
 
    use_tmpl_opt  : /*empty*/{$$=false;} | TOK_BISON_USE_TMPL  number_id    {$$=true;} ;
@@ -2837,7 +2811,7 @@ bool pred;
 
    node_id   : NODE_ID    {data->curr_NODE_ID=$1;};
    string_id : TOK_BISON_STRING {data->curr_string=std::string($1+1, $1+strlen($1)-1);};
-   number_id : TOK_BISON_NUMBER {data->curr_number=$1; data->curr_unumber = $1; data->curr_size_t_number=$1; data->curr_long_long_number=$1;  data->curr_double_number=$1;};
+   number_id : TOK_BISON_NUMBER {data->curr_string_number=std::string($1);};
    string_id_opt : /*empty*/ {$$ = false;} | string_id {$$ = true;}
 
 %%

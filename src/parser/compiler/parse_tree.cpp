@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -71,7 +71,7 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-// exit_code is stored in zebu.cpp
+// exit_code is stored in bambu.cpp
 extern int exit_code;
 
 tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string& f)
@@ -87,7 +87,7 @@ tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string&
          source_name.erase(source_name.length() - trailer.length(), trailer.length());
          source_name.append(".pipeline.xml");
          auto XMLfilename = source_name;
-         if((boost::filesystem::exists(boost::filesystem::path(XMLfilename))))
+         if((std::filesystem::exists(std::filesystem::path(XMLfilename))))
          {
             XMLDomParser parser(XMLfilename);
             parser.Exec();

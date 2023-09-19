@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -115,7 +115,7 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
    const auto sl = GetPointerS<const statement_list>(GET_CONST_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement_list");
    const auto CGMan = AppM->CGetCallGraphManager();
-   const auto called_body_fun_ids = CGMan->GetReachedBodyFunctionsFrom(function_id);
+   const auto called_body_fun_ids = CGMan->GetReachedFunctionsFrom(function_id);
 
    for(const auto& block : sl->list_of_bloc)
    {
@@ -271,8 +271,8 @@ bool FunctionCallTypeCleanup::ParametersTypeCleanup(const tree_managerRef& TM, c
          const auto ue_expr = tree_man->create_unary_operation(
              formal_type, parm_ue->op, srcp,
              GET_CONST_NODE(*arg_it)->get_kind()); /// It is required to de-share some IR nodes
-         ga_cleanup = tree_man->CreateGimpleAssign(formal_type, tree_nodeRef(), tree_nodeRef(), ue_expr, function_id,
-                                                   block->number, srcp);
+         ga_cleanup =
+             tree_man->CreateGimpleAssign(formal_type, tree_nodeRef(), tree_nodeRef(), ue_expr, function_id, srcp);
       }
       if(ga_cleanup)
       {

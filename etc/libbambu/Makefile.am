@@ -1,6 +1,6 @@
 #this file is libbambu/Makefile.am
-SUBDIRS = libm softfloat soft-fp pthread ac_types ac_math
-DIST_SUBDIRS = libm softfloat soft-fp pthread ac_types ac_math
+SUBDIRS = libm libmdpi softfloat soft-fp pthread ac_types ac_math
+DIST_SUBDIRS = libm libmdpi softfloat soft-fp pthread ac_types ac_math
 EXTRA_DIST= COPYING.LIB README_PANDA.txt bambu_macros.h
 common_libbambu_src = memcmp.c memcpy.c memmove.c memset.c memmgr.c puts.c byteswap.c read.c write.c assert.c\
                       mul64.c \
@@ -151,5 +151,19 @@ pkglib_LIBRARIES += libbambu_clang12.a
 libbambu_clang12_a_SOURCES = $(common_libbambu_src)
 libbambu_clang12_a_CFLAGS =$(common_cflags_clang) --compiler=I386_CLANG12
 libbambu_clang12_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags_clang) --compiler=I386_CLANG12 -C
+endif
+
+if BUILD_I386_CLANG13
+pkglib_LIBRARIES += libbambu_clang13.a
+libbambu_clang13_a_SOURCES = $(common_libbambu_src)
+libbambu_clang13_a_CFLAGS =$(common_cflags_clang) --compiler=I386_CLANG13
+libbambu_clang13_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags_clang) --compiler=I386_CLANG13 -C
+endif
+
+if BUILD_I386_CLANG16
+pkglib_LIBRARIES += libbambu_clang16.a
+libbambu_clang16_a_SOURCES = $(common_libbambu_src)
+libbambu_clang16_a_CFLAGS =$(common_cflags_clang) --compiler=I386_CLANG16
+libbambu_clang16_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags_clang) --compiler=I386_CLANG16 -C
 endif
 

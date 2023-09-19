@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2022 Politecnico di Milano
+ *              Copyright (c) 2018-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -126,7 +126,9 @@ void MemoryInitializationWriterBase::GoUp()
       case union_type_K:
          expected_size = tree_helper::CGetFieldTypes(status.back().first).size();
          if(expected_size > 1)
+         {
             expected_size = 1;
+         }
          break;
       case boolean_type_K:
       case CharType_K:
@@ -206,8 +208,8 @@ void MemoryInitializationWriterBase::GoDown()
       {
          return tree_helper::CGetPointedType(type_node);
       }
-      THROW_ERROR("Unexpected nested initialization " + type_node->get_kind_text() + " - Current status is " +
-                  PrintStatus());
+      THROW_ERROR("Unexpected nested initialization " + GET_CONST_NODE(type_node)->get_kind_text() +
+                  " - Current status is " + PrintStatus());
       return tree_nodeConstRef();
    }();
    status.push_back(std::make_pair(new_type, 0));
@@ -237,7 +239,7 @@ void MemoryInitializationWriterBase::GoNext()
    }
    else
    {
-      THROW_ASSERT(tree_helper::IsArrayType(upper_type) || tree_helper::IsPointerType(upper_type),
+      THROW_ASSERT(tree_helper::IsArrayEquivType(upper_type) || tree_helper::IsPointerType(upper_type),
                    GET_CONST_NODE(upper_type)->get_kind_text());
       status[status.size() - 2].second++;
       status[status.size() - 1].second = 0;
@@ -254,7 +256,7 @@ const std::string MemoryInitializationWriterBase::PrintStatus() const
       {
          ret += ":";
       }
-      ret += level.first->get_kind_text() + "[" + STR(level.second) + "]";
+      ret += GET_CONST_NODE(level.first)->get_kind_text() + "[" + STR(level.second) + "]";
    }
    return ret;
 }

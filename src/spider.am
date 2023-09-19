@@ -10,8 +10,7 @@ noinst_LTLIBRARIES += lib_spider.la
 lib_spider_la_LIBADD =
 lib_spider_la_SOURCES =
 
-
-spider_CPPFLAGS = \
+spider_CPPFLAGS = -DPKGLIBDIR="\"$(pkglibdir)\"" -DPKGDATADIR="\"$(pkgdatadir)\""\
    -I$(top_srcdir)/src/constants \
    -I$(top_srcdir)/src/design_flows \
    -I$(top_srcdir)/src/design_flows/backend/ToDataFile \
@@ -41,10 +40,6 @@ if BUILD_LIB_REGRESSORS
       -I$(top_srcdir)/src/algorithms/regressors/preprocessing
 endif
 
-if BUILD_LIBERTY_PARSER
-   spider_CPPFLAGS += \
-      -I$(top_srcdir)/src/technology/physical_library/models
-endif
 
 if BUILD_LIB_CODE_ESTIMATION
    spider_CPPFLAGS += \
@@ -55,10 +50,7 @@ endif
 if BUILD_LIB_TECHNOLOGY
    spider_CPPFLAGS += \
       -I$(top_srcdir)/src/design_flows/technology \
-      -I$(top_srcdir)/src/technology \
-      -I$(top_srcdir)/src/technology/physical_library \
-      -I$(top_srcdir)/src/technology/target_device \
-      -I$(top_srcdir)/src/technology/target_technology
+      -I$(top_srcdir)/src/technology
 endif
 
 lib_spider_la_LIBADD += \
@@ -66,11 +58,10 @@ lib_spider_la_LIBADD += \
       lib_backend.la \
       lib_graph.la \
       $(top_builddir)/src/parser/lib_parser.la \
-      lib_polixml.la \
       $(top_builddir)/src/parser/polixml/lib_xml_dom_parser.la \
+      lib_polixml.la \
       lib_utility.la \
-      $(BOOST_REGEX_LIB) \
-      $(GSL_LIBS) $(BOOST_FILESYSTEM_LIB) $(BOOST_SYSTEM_LIB)
+      $(GSL_LIBS)
 
 if BUILD_LIB_ALGORITHMS
    lib_spider_la_LIBADD += lib_algorithms.la
@@ -135,9 +126,3 @@ endif
 lib_spider_la_LIBADD += $(top_builddir)/ext/abseil-cpp/libabseil.la
 
 spider_LDADD = lib_spider.la @PTHREAD_HACK@
-if BUILD_R
-   spider_LDADD += \
-     $(RLOCALPACKAGEDIR)/RInside/lib/libRInside.a  -lR
-endif
-
-

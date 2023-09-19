@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -40,30 +40,17 @@
  * Last modified by $Author$
  *
  */
-
-/// Header include
 #include "synthesis_evaluation.hpp"
 
-///. include
+#include "BackendFlow.hpp"
 #include "Parameter.hpp"
-
-/// behavior include
+#include "area_info.hpp"
 #include "call_graph_manager.hpp"
-
-/// HLS include
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_manager.hpp"
-
-/// technology/physical_library/models
-#include "area_model.hpp"
-#include "time_model.hpp"
-
-/// technology/physical_library/models/area
-#include "clb_model.hpp"
-
-/// wrapper/synthesis include
-#include "BackendFlow.hpp"
+#include "time_info.hpp"
+#include "utility.hpp"
 
 SynthesisEvaluation::SynthesisEvaluation(const ParameterConstRef _Param, const HLS_managerRef _hls_mgr,
                                          const DesignFlowManagerConstRef _design_flow_manager)
@@ -79,25 +66,6 @@ SynthesisEvaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipT
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
-      case PRECEDENCE_RELATIONSHIP:
-      {
-#if HAVE_SIMULATION_WRAPPER_BUILT
-         ret.insert(std::make_tuple(HLSFlowStep_Type::SIMULATION_EVALUATION, HLSFlowStepSpecializationConstRef(),
-                                    HLSFlowStep_Relationship::WHOLE_APPLICATION));
-#endif
-#if HAVE_VCD_BUILT
-         if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
-         {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_UTILITY, HLSFlowStepSpecializationConstRef(),
-                                       HLSFlowStep_Relationship::TOP_FUNCTION));
-         }
-#endif
-         break;
-      }
-      case INVALIDATION_RELATIONSHIP:
-      {
-         break;
-      }
       case DEPENDENCE_RELATIONSHIP:
       {
          ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_HDL, HLSFlowStepSpecializationConstRef(),
@@ -115,6 +83,25 @@ SynthesisEvaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipT
             ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_SYNTHESIS_SCRIPT, HLSFlowStepSpecializationConstRef(),
                                        HLSFlowStep_Relationship::WHOLE_APPLICATION));
          }
+         break;
+      }
+      case PRECEDENCE_RELATIONSHIP:
+      {
+#if HAVE_SIMULATION_WRAPPER_BUILT
+         ret.insert(std::make_tuple(HLSFlowStep_Type::SIMULATION_EVALUATION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::WHOLE_APPLICATION));
+#endif
+#if HAVE_VCD_BUILT
+         if(parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy))
+         {
+            ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_UTILITY, HLSFlowStepSpecializationConstRef(),
+                                       HLSFlowStep_Relationship::TOP_FUNCTION));
+         }
+#endif
+         break;
+      }
+      case INVALIDATION_RELATIONSHIP:
+      {
          break;
       }
       default:
@@ -135,66 +122,51 @@ DesignFlowStep_Status SynthesisEvaluation::Exec()
       {
          printed_area = true;
          /// get the used resources from the wrapper
-         area_modelRef area_m = HLSMgr->get_backend_flow()->get_used_resources();
+         area_infoRef area_m = HLSMgr->get_backend_flow()->get_used_resources();
 
          if(area_m)
          {
-            double slices =
-                GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::SLICE) : 0;
+            double slices = area_m ? area_m->get_resource_value(area_info::SLICE) : 0;
             if(slices != 0.0)
             {
                HLSMgr->evaluations["SLICE"] = slices;
             }
-            double sliceLuts = GetPointer<clb_model>(area_m) ?
-                                   GetPointer<clb_model>(area_m)->get_resource_value(clb_model::SLICE_LUTS) :
-                                   0;
+            double sliceLuts = area_m ? area_m->get_resource_value(area_info::SLICE_LUTS) : 0;
             if(sliceLuts != 0.0)
             {
                HLSMgr->evaluations["SLICE_LUTS"] = sliceLuts;
             }
-            double lut_ff_pairs = GetPointer<clb_model>(area_m) ?
-                                      GetPointer<clb_model>(area_m)->get_resource_value(clb_model::LUT_FF_PAIRS) :
-                                      0;
+            double lut_ff_pairs = area_m ? area_m->get_resource_value(area_info::LUT_FF_PAIRS) : 0;
             if(lut_ff_pairs != 0.0)
             {
                HLSMgr->evaluations["LUT_FF_PAIRS"] = lut_ff_pairs;
             }
-            double logic_elements = GetPointer<clb_model>(area_m) ?
-                                        GetPointer<clb_model>(area_m)->get_resource_value(clb_model::LOGIC_ELEMENTS) :
-                                        0;
+            double logic_elements = area_m ? area_m->get_resource_value(area_info::LOGIC_ELEMENTS) : 0;
             if(logic_elements != 0.0)
             {
                HLSMgr->evaluations["LOGIC_ELEMENTS"] = logic_elements;
             }
-            double functional_elements =
-                GetPointer<clb_model>(area_m) ?
-                    GetPointer<clb_model>(area_m)->get_resource_value(clb_model::FUNCTIONAL_ELEMENTS) :
-                    0;
+            double functional_elements = area_m ? area_m->get_resource_value(area_info::FUNCTIONAL_ELEMENTS) : 0;
             if(functional_elements != 0.0)
             {
                HLSMgr->evaluations["FUNCTIONAL_ELEMENTS"] = functional_elements;
             }
-            double logic_area = GetPointer<clb_model>(area_m) ?
-                                    GetPointer<clb_model>(area_m)->get_resource_value(clb_model::LOGIC_AREA) :
-                                    0;
+            double logic_area = area_m ? area_m->get_resource_value(area_info::LOGIC_AREA) : 0;
             if(logic_area != 0.0)
             {
                HLSMgr->evaluations["LOGIC_AREA"] = logic_area;
             }
-            double power =
-                GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::POWER) : 0;
+            double power = area_m ? area_m->get_resource_value(area_info::POWER) : 0;
             if(power != 0.0)
             {
                HLSMgr->evaluations["POWER"] = power;
             }
-            double alms =
-                GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::ALMS) : 0;
+            double alms = area_m ? area_m->get_resource_value(area_info::ALMS) : 0;
             if(alms != 0.0)
             {
                HLSMgr->evaluations["ALMS"] = alms;
             }
-            double urams = 
-                GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::URAM) : 0;
+            double urams = area_m ? area_m->get_resource_value(area_info::URAM) : 0;
             if(urams != 0.0)
             {
                HLSMgr->evaluations["URAMS"] = urams;
@@ -204,15 +176,18 @@ DesignFlowStep_Status SynthesisEvaluation::Exec()
       }
       else if(objective == "BRAMS")
       {
-         area_modelRef area_m = HLSMgr->get_backend_flow()->get_used_resources();
-         double brams = 
-                GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::BRAM) : 0;
-         HLSMgr->evaluations["BRAMS"] = brams;
+         area_infoRef area_m = HLSMgr->get_backend_flow()->get_used_resources();
+         double brams = 0;
+         if(area_m)
+         {
+            brams = area_m->get_resource_value(area_info::BRAM);
+         }
+         HLSMgr->evaluations["BRAMS"] = std::vector<double>(1, brams);
       }
       else if(objective == "CLOCK_SLACK")
       {
          /// get the timing information after the synthesis
-         time_modelRef time_m = HLSMgr->get_backend_flow()->get_timing_results();
+         time_infoRef time_m = HLSMgr->get_backend_flow()->get_timing_results();
          double minimum_period = time_m->get_execution_time();
 
          double clock_period =
@@ -227,25 +202,25 @@ DesignFlowStep_Status SynthesisEvaluation::Exec()
       else if(objective == "PERIOD")
       {
          /// get the timing information after the synthesis
-         time_modelRef time_m = HLSMgr->get_backend_flow()->get_timing_results();
+         time_infoRef time_m = HLSMgr->get_backend_flow()->get_timing_results();
          double minimum_period = time_m->get_execution_time();
          HLSMgr->evaluations["PERIOD"] = minimum_period;
       }
       else if(objective == "DSPS")
       {
          /// get the used resources from the wrapper
-         area_modelRef area_m = HLSMgr->get_backend_flow()->get_used_resources();
+         area_infoRef area_m = HLSMgr->get_backend_flow()->get_used_resources();
          double dsps = 0;
-         if(GetPointer<clb_model>(area_m))
+         if(area_m)
          {
-            dsps = GetPointer<clb_model>(area_m)->get_resource_value(clb_model::DSP);
+            dsps = area_m->get_resource_value(area_info::DSP);
          }
          HLSMgr->evaluations["DSPS"] = dsps;
       }
       else if(objective == "FREQUENCY" or objective == "TIME" or objective == "TOTAL_TIME" or objective == "AREAxTIME")
       {
          /// get the timing information after the synthesis
-         time_modelRef time_m = HLSMgr->get_backend_flow()->get_timing_results();
+         time_infoRef time_m = HLSMgr->get_backend_flow()->get_timing_results();
          double minimum_period = time_m->get_execution_time();
 
          double maximum_frequency = 1000.0 / minimum_period;
@@ -254,13 +229,10 @@ DesignFlowStep_Status SynthesisEvaluation::Exec()
       else if(objective == "REGISTERS")
       {
          /// get the used resources from the wrapper
-         area_modelRef area_m = HLSMgr->get_backend_flow()->get_used_resources();
+         area_infoRef area_m = HLSMgr->get_backend_flow()->get_used_resources();
          double reg = 0;
-         if(GetPointer<clb_model>(area_m))
-         {
-            reg = GetPointer<clb_model>(area_m)->get_resource_value(clb_model::REGISTERS);
-         }
-         HLSMgr->evaluations["REGISTERS"] = reg;
+         reg = area_m->get_resource_value(area_info::REGISTERS);
+         HLSMgr->evaluations["REGISTERS"] = std::vector<double>(1, reg);
       }
    }
    return DesignFlowStep_Status::SUCCESS;

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -68,7 +68,7 @@ class QuartusReportWrapper : public AlteraWrapper
     * @param Param is the set of parameters
     */
    QuartusReportWrapper(const ParameterConstRef& Param, const std::string& _output_dir,
-                        const target_deviceRef& _device);
+                        const generic_deviceRef& _device);
 
    /**
     * Destructor

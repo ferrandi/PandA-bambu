@@ -28,27 +28,21 @@ jobs:
   build:
     uses: ./.github/workflows/build-appimage.yml
     with:
-      version: ${{github.event.inputs.package-name}}
-      compilers: ${{ github.event.inputs.compilers }}
+      version: ${{inputs.package-name}}
+      compilers: ${{ inputs.compilers }}
       build-compiler: gcc-8
-      configure: ${{ github.event.inputs.configure }} CC=gcc-8 CXX=g++-8
-    secrets:
-      CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
-      CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
-      CI_STORAGE_TOKEN: ${{secrets.CI_STORAGE_TOKEN}}
+      configure: ${{ inputs.configure }} CC=gcc-8 CXX=g++-8
+    secrets: inherit
 
   test-suite:
     uses: ./.github/workflows/reusable-examples.yml
     with:
       package-name: ${{needs.build.outputs.package-name}}
-      test-compiler: ${{github.event.inputs.test-compiler}}
-    secrets:
-      CI_STORAGE_URL: ${{secrets.CI_STORAGE_URL}}
-      CI_STORAGE_USER: ${{secrets.CI_STORAGE_USER}}
-      CI_STORAGE_TOKEN: ${{secrets.CI_STORAGE_TOKEN}}
+      test-compiler: ${{inputs.test-compiler}}
+    secrets: inherit
 
   success:
-    if: ${{always()}}
+    if: ${{ !cancelled() }}
     needs: [test-suite]
     runs-on: [self-hosted]
     steps:

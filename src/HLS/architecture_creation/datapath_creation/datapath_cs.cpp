@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2022 Politecnico di Milano
+ *              Copyright (c) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -62,9 +62,7 @@ datapath_cs::datapath_cs(const ParameterConstRef _parameters, const HLS_managerR
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-datapath_cs::~datapath_cs()
-{
-}
+datapath_cs::~datapath_cs() = default;
 
 void datapath_cs::add_ports()
 {

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -94,6 +94,8 @@ class StateTransitionGraphManager
    /// debugging level
    int debug_level;
 
+   const unsigned int _max_cycles_bounded;
+
    // Tells to the get_states method which states you are looking for
    enum StateTypes
    {
@@ -131,8 +133,11 @@ class StateTransitionGraphManager
    CustomOrderedSet<vertex> get_ending_states(const vertex& op) const;
    CustomOrderedSet<vertex> get_starting_states(const vertex& op) const;
 
-   /// compute the minimum and maximum number of cycles when possible
-   void compute_min_max();
+   /**
+    * Compute minimum and maximum number of cycles for bounded scheduling
+    * @param is_pipelined True if scheduling is pipelined
+    */
+   void ComputeCyclesCount(bool is_pipelined);
 
    /**
     * Returns pointer to state transition graph created.

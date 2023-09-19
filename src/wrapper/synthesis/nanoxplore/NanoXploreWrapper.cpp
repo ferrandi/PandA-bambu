@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,21 +42,19 @@
 /// Header include
 #include "NanoXploreWrapper.hpp"
 
-#include "xml_dom_parser.hpp"
-#include "xml_script_command.hpp"
-
-#include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
-
+#include "DesignParameters.hpp"
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
 #include "fileIO.hpp"
 #include "utility.hpp"
-
+#include "xml_dom_parser.hpp"
+#include "xml_script_command.hpp"
+#include <boost/algorithm/string.hpp>
+#include <filesystem>
 #include <fstream>
 
 NanoXploreWrapper::NanoXploreWrapper(const ParameterConstRef& _Param, const std::string& _tool_exec,
-                                     const target_deviceRef& _device, const std::string& _output_dir,
+                                     const generic_deviceRef& _device, const std::string& _output_dir,
                                      const std::string& _default_output_dir)
     : SynthesisTool(_Param, _tool_exec, _device, _output_dir, _default_output_dir)
 {
@@ -86,9 +84,9 @@ void NanoXploreWrapper::generate_synthesis_script(const DesignParametersRef& dp,
    remove_escaped(script_string);
 
    // Save the generated script
-   if(boost::filesystem::exists(file_name))
+   if(std::filesystem::exists(file_name))
    {
-      boost::filesystem::remove_all(file_name);
+      std::filesystem::remove_all(file_name);
    }
    script_name = file_name;
    std::ofstream file_stream(file_name.c_str());

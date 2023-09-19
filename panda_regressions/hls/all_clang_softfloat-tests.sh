@@ -15,6 +15,8 @@ python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=CLANG10-O0-wp-NN --compiler=I386_CLANG10 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=CLANG11-O0-wp-NN --compiler=I386_CLANG11 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=CLANG12-O0-wp-NN --compiler=I386_CLANG12 ${BATCH_ARGS[*]}" \
+   --args="--configuration-name=CLANG13-O0-wp-NN --compiler=I386_CLANG13 ${BATCH_ARGS[*]}" \
+   --args="--configuration-name=CLANG16-O0-wp-NN --compiler=I386_CLANG16 ${BATCH_ARGS[*]}" \
    -lsoftfloat-tests_list \
    -o "out_${OUT_SUFFIX}" -b$script_dir \
    --name="${OUT_SUFFIX}" "$@"

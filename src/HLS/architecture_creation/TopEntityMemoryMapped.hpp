@@ -11,7 +11,7 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (C) 2004-2022 Politecnico di Milano
+ *            Copyright (C) 2004-2023 Politecnico di Milano
  *
  * This file is part of the PandA framework.
  *
@@ -29,20 +29,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 /**
- * @file
- * @author Marco Minutoli <mminutoli@gmail.com>
+ * @file TopEntityMemoryMapped.hpp
  * @brief Construction of top entity memory mapped interface.
+ *
+ * @author Marco Minutoli <mminutoli@gmail.com>
+ *
  */
 
 #ifndef _TOPENTITYMEMORYMAPPED_H_
 #define _TOPENTITYMEMORYMAPPED_H_
 
+#include "custom_set.hpp"
 #include "top_entity.hpp"
 
-#include "custom_set.hpp"
 #include <list>
 #include <string>
+
 class module;
+enum class MemoryAllocation_ChannelsType;
 
 /**
  * @brief Build a wrapper layer on the top entity implementing the
@@ -92,6 +96,12 @@ class TopEntityMemoryMapped : public top_entity
    /// true when the module is a root function
    bool is_root_function{false};
 
+   /// Function scope channels number
+   unsigned int _channels_number;
+
+   /// Function scope channels type
+   MemoryAllocation_ChannelsType _channels_type;
+
    /**
     * Allocates the in/out parameters of the module as internal registers
     */
@@ -102,8 +112,6 @@ class TopEntityMemoryMapped : public top_entity
    void insertStartDoneLogic(structural_managerRef SM, structural_objectRef wrappedObj);
 
    void insertStatusRegister(structural_managerRef SM, structural_objectRef wrappedObj);
-
-   void forwardPorts(structural_managerRef SM, structural_objectRef wrappedObj);
 
    void resizing_IO(module* fu_module, unsigned int max_n_ports) const;
 

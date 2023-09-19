@@ -77,9 +77,9 @@ jobs:
           }
           args="$([ -z "${{env.additional-args}}"] && echo "\"\"" || echo "${{env.additional-args}}")"
           grs_array="$(to_json_obj_rec "" "script" "${{env.grs-scripts}}" "args" "${args}" "compiler" "${{env.test-compilers}}")"
-          echo "::set-output name=grs::{\"include\":[${grs_array}]}"
+          echo "grs={\"include\":[${grs_array}]}" >> $GITHUB_OUTPUT
           libm_array="$(to_json_obj_rec "" "args" "${args}" "compiler" "${{env.test-compilers}}")"
-          echo "::set-output name=libm::{\"include\":[${libm_array}]}"
+          echo "libm={\"include\":[${libm_array}]}" >> $GITHUB_OUTPUT
 
   regressions:
     needs: [setup]
@@ -107,7 +107,7 @@ jobs:
           mkdir bin
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Generate out name
         id: get
         shell: bash
@@ -118,7 +118,7 @@ jobs:
           if [[ "${{matrix.args}}" = *-c=--speculative-sdc-scheduling* ]]; then
             OUTNAME+="_sdc"
           fi
-          echo "::set-output name=outname::$OUTNAME"
+          echo "outname=$OUTNAME" >> $GITHUB_OUTPUT
       - name: Launch test suite
         id: suite
         shell: bash
@@ -126,10 +126,10 @@ jobs:
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
-          echo "::set-output name=test-reports-dir::$out_dir"
+          echo "test-reports-dir=$out_dir" >> $GITHUB_OUTPUT
           ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{steps.get.outputs.outname}}
@@ -163,7 +163,7 @@ jobs:
           mkdir bin
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
-          echo "::set-output name=local-bin::$PWD/bin"
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Generate out name
         id: get
         shell: bash
@@ -174,7 +174,7 @@ jobs:
             OUTNAME+="_sdc"
           fi
           OUTNAME+="_${{env.basename}}"
-          echo "::set-output name=outname::$OUTNAME"
+          echo "outname=$OUTNAME" >> $GITHUB_OUTPUT
       - name: Launch test suite
         id: suite
         shell: bash
@@ -182,10 +182,10 @@ jobs:
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
-          echo "::set-output name=test-reports-dir::$out_dir"
+          echo "test-reports-dir=$out_dir" >> $GITHUB_OUTPUT
           ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{steps.get.outputs.outname}}

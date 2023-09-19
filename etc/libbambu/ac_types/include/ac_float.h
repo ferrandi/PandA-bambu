@@ -54,17 +54,6 @@
 #error Microsoft Visual Studio 8 or newer is required to include this header file
 #endif
 
-#if(defined(_MSC_VER) && !defined(__EDG__))
-#pragma warning(push)
-#pragma warning(disable : 4003 4127 4308 4365 4514 4800)
-#endif
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wparentheses"
-#pragma clang diagnostic ignored "-Wlogical-op-parentheses"
-#pragma clang diagnostic ignored "-Wbitwise-op-parentheses"
-#endif
-
 // for safety
 #if(defined(E) || defined(WF) || defined(IF) || defined(SF))
 #error One or more of the following is defined: E, WF, IF, SF. Definition conflicts with their usage as template parameters.
@@ -88,8 +77,8 @@ namespace __AC_NAMESPACE
 
    namespace ac_private
    {
-      typedef ac_float<54, 2, 11> ac_float_cdouble_t;
-      typedef ac_float<25, 2, 8> ac_float_cfloat_t;
+      using ac_float_cdouble_t = ac_float<54, 2, 11>;
+      using ac_float_cfloat_t = ac_float<25, 2, 8>;
 
       template <typename T>
       struct rt_ac_float_T
@@ -97,20 +86,20 @@ namespace __AC_NAMESPACE
          template <AC_FL_T0()>
          struct op1
          {
-            typedef AC_FL0() fl_t;
-            typedef typename T::template rt_T<fl_t>::mult mult;
-            typedef typename T::template rt_T<fl_t>::plus plus;
-            typedef typename T::template rt_T<fl_t>::minus2 minus;
-            typedef typename T::template rt_T<fl_t>::minus minus2;
-            typedef typename T::template rt_T<fl_t>::logic logic;
-            typedef typename T::template rt_T<fl_t>::div2 div;
-            typedef typename T::template rt_T<fl_t>::div div2;
+            using fl_t = ac_float<W, I, E>;
+            using mult = typename T::template rt_T<fl_t>::mult;
+            using plus = typename T::template rt_T<fl_t>::plus;
+            using minus = typename T::template rt_T<fl_t>::minus2;
+            using minus2 = typename T::template rt_T<fl_t>::minus;
+            using logic = typename T::template rt_T<fl_t>::logic;
+            using div = typename T::template rt_T<fl_t>::div2;
+            using div2 = typename T::template rt_T<fl_t>::div;
          };
       };
       // specializations after definition of ac_float
 
-      inline ac_float_cdouble_t double_to_ac_float(double d);
-      inline ac_float_cfloat_t float_to_ac_float(float f);
+      __FORCE_INLINE ac_float_cdouble_t double_to_ac_float(double d);
+      __FORCE_INLINE ac_float_cfloat_t float_to_ac_float(float f);
    } // namespace ac_private
 
    //////////////////////////////////////////////////////////////////////////////
@@ -129,8 +118,8 @@ namespace __AC_NAMESPACE
       };
 
     public:
-      typedef ac_fixed<W, I, S> mant_t;
-      typedef ac_int<E, true> exp_t;
+      using mant_t = ac_fixed<W, I, S>;
+      using exp_t = ac_int<E, true>;
       mant_t m;
       exp_t e;
 
@@ -141,11 +130,13 @@ namespace __AC_NAMESPACE
       void set_exp(const ac_int<E, true>& exp)
       {
          if(E)
+         {
             e = exp;
+         }
       }
 
     private:
-      inline bool is_neg() const
+      __FORCE_INLINE bool is_neg() const
       {
          return m < 0; // is_neg would be more efficient
       }
@@ -194,12 +185,12 @@ namespace __AC_NAMESPACE
             logic_s = S || S2,
             logic_e = AC_MAX(E, E2)
          };
-         typedef ac_float<mult_w, mult_i, mult_e> mult;
-         typedef ac_float<plus_w, plus_i, plus_e> plus;
-         typedef ac_float<minus_w, minus_i, minus_e> minus;
-         typedef ac_float<logic_w, logic_i, logic_e> logic;
-         typedef ac_float<div_w, div_i, div_e> div;
-         typedef ac_float arg1;
+         using mult = ac_float<mult_w, mult_i, mult_e>;
+         using plus = ac_float<plus_w, plus_i, plus_e>;
+         using minus = ac_float<minus_w, minus_i, minus_e>;
+         using logic = ac_float<logic_w, logic_i, logic_e>;
+         using div = ac_float<div_w, div_i, div_e>;
+         using arg1 = ac_float;
       };
 
       template <int WI, bool SI>
@@ -218,36 +209,36 @@ namespace __AC_NAMESPACE
             rshift_e_0 = exp_t::template rt<WI, SI>::minus::width,
             rshift_e = AC_MIN(rshift_e_0, 24)
          };
-         typedef ac_float<lshift_w, lshift_i, lshift_e> lshift;
-         typedef ac_float<rshift_w, rshift_i, rshift_e> rshift;
+         using lshift = ac_float<lshift_w, lshift_i, lshift_e>;
+         using rshift = ac_float<rshift_w, rshift_i, rshift_e>;
       };
 
       template <typename T>
       struct rt_T
       {
-         typedef typename ac_private::map<T>::t map_T;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::mult mult;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::plus plus;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::minus minus;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::minus2 minus2;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::logic logic;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::div div;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::div2 div2;
-         typedef ac_float arg1;
+         using map_T = typename ac_private::map<T>::t;
+         using mult = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::mult;
+         using plus = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::plus;
+         using minus = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::minus;
+         using minus2 = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::minus2;
+         using logic = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::logic;
+         using div = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::div;
+         using div2 = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::div2;
+         using arg1 = ac_float;
       };
 
       template <typename T>
       struct rt_T2
       {
-         typedef typename ac_private::map<T>::t map_T;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::mult mult;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::plus plus;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::minus2 minus;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::minus minus2;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::logic logic;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::div2 div;
-         typedef typename ac_private::rt_ac_float_T<map_T>::template op1<AC_FL_TV0()>::div div2;
-         typedef ac_float arg1;
+         using map_T = typename ac_private::map<T>::t;
+         using mult = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::mult;
+         using plus = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::plus;
+         using minus = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::minus2;
+         using minus2 = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::minus;
+         using logic = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::logic;
+         using div = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::div2;
+         using div2 = typename ac_private::rt_ac_float_T<map_T>::template op1<W, I, E>::div;
+         using arg1 = ac_float;
       };
 
       struct rt_unary
@@ -272,9 +263,9 @@ namespace __AC_NAMESPACE
             to_i_w = AC_MAX(to_fx_i, 1),
             to_i_s = S
          };
-         typedef ac_float<neg_w, neg_i, neg_e> neg;
-         typedef ac_float<mag_sqr_w, mag_sqr_i, mag_sqr_e> mag_sqr;
-         typedef ac_float<mag_w, mag_i, mag_e> mag;
+         using neg = ac_float<neg_w, neg_i, neg_e>;
+         using mag_sqr = ac_float<mag_sqr_w, mag_sqr_i, mag_sqr_e>;
+         using mag = ac_float<mag_w, mag_i, mag_e>;
          template <unsigned N>
          struct set
          {
@@ -285,25 +276,18 @@ namespace __AC_NAMESPACE
                sum_e = E,
                sum_s = S
             };
-            typedef ac_float<sum_w, sum_i, sum_e> sum;
+            using sum = ac_float<sum_w, sum_i, sum_e>;
          };
-         typedef ac_fixed<to_fx_w, to_fx_i, to_fx_s> to_ac_fixed_t;
-         typedef ac_int<to_i_w, to_i_s> to_ac_int_t;
+         using to_ac_fixed_t = ac_fixed<to_fx_w, to_fx_i, to_fx_s>;
+         using to_ac_int_t = ac_int<to_i_w, to_i_s>;
       };
 
       template <AC_FL_T(2)>
       friend class ac_float;
 
-      ac_float()
-      {
-#if defined(AC_DEFAULT_IN_RANGE)
-#endif
-      }
-      ac_float(const ac_float& op)
-      {
-         m = op.m;
-         e = op.e;
-      }
+      ac_float() = default;
+      ac_float(const ac_float& op) = default;
+      ac_float& operator=(const ac_float&) = default;
 
       template <AC_FL_T(2)>
       ac_float(const AC_FL(2) & op, bool assert_on_overflow = false, bool assert_on_rounding = false)
@@ -342,7 +326,9 @@ namespace __AC_NAMESPACE
          }
          m.set_slc(0, m_1.template slc<W>(0));
          if(fx_t::width > W && assert_on_rounding)
+         {
             AC_ASSERT(m == t, "Loss of precision due to Rounding in ac_float constructor");
+         }
          ac_int<ET, true> exp = !m ? ac_int<ET, true>(0) : ac_int<ET, true>(op.e + I_DIFF + (RND & rnd_ovfl));
          adjust(exp, false, assert_on_overflow);
       }
@@ -353,12 +339,16 @@ namespace __AC_NAMESPACE
          if(E)
          {
             if(!m)
+            {
                e = 0;
+            }
             else
             {
                e = e2;
                if(normalize)
+               {
                   m.normalize(e);
+               }
             }
          }
       }
@@ -402,97 +392,97 @@ namespace __AC_NAMESPACE
          *this = ac_fixed<WI, WI, SI>(op);
       }
 
-      inline ac_float(bool b)
+      __FORCE_INLINE ac_float(bool b)
       {
          *this = (ac_int<1, false>)b;
       }
-      inline ac_float(char b)
+      __FORCE_INLINE ac_float(char b)
       {
          *this = (ac_int<8, true>)b;
       }
-      inline ac_float(signed char b)
+      __FORCE_INLINE ac_float(signed char b)
       {
          *this = (ac_int<8, true>)b;
       }
-      inline ac_float(unsigned char b)
+      __FORCE_INLINE ac_float(unsigned char b)
       {
          *this = (ac_int<8, false>)b;
       }
-      inline ac_float(signed short b)
+      __FORCE_INLINE ac_float(signed short b)
       {
          *this = (ac_int<16, true>)b;
       }
-      inline ac_float(unsigned short b)
+      __FORCE_INLINE ac_float(unsigned short b)
       {
          *this = (ac_int<16, false>)b;
       }
-      inline ac_float(signed int b)
+      __FORCE_INLINE ac_float(signed int b)
       {
          *this = (ac_int<32, true>)b;
       }
-      inline ac_float(unsigned int b)
+      __FORCE_INLINE ac_float(unsigned int b)
       {
          *this = (ac_int<32, false>)b;
       }
-      inline ac_float(signed long b)
+      __FORCE_INLINE ac_float(signed long b)
       {
          *this = (ac_int<ac_private::long_w, true>)b;
       }
-      inline ac_float(unsigned long b)
+      __FORCE_INLINE ac_float(unsigned long b)
       {
          *this = (ac_int<ac_private::long_w, false>)b;
       }
-      inline ac_float(Slong b)
+      __FORCE_INLINE ac_float(Slong b)
       {
          *this = (ac_int<64, true>)b;
       }
-      inline ac_float(Ulong b)
+      __FORCE_INLINE ac_float(Ulong b)
       {
          *this = (ac_int<64, false>)b;
       }
 
       // Explicit conversion functions to ac_int and ac_fixed
-      inline typename rt_unary::to_ac_fixed_t to_ac_fixed() const
+      __FORCE_INLINE typename rt_unary::to_ac_fixed_t to_ac_fixed() const
       {
          typename rt_unary::to_ac_fixed_t r = m;
          r <<= e;
          return r;
       }
-      inline typename rt_unary::to_ac_int_t to_ac_int() const
+      __FORCE_INLINE typename rt_unary::to_ac_int_t to_ac_int() const
       {
          return to_ac_fixed().to_ac_int();
       }
 
       // Explicit conversion functions to C built-in types -------------
-      inline int to_int() const
+      __FORCE_INLINE int to_int() const
       {
          return to_ac_int().to_int();
       }
-      inline unsigned to_uint() const
+      __FORCE_INLINE unsigned to_uint() const
       {
          return to_ac_int().to_uint();
       }
-      inline long to_long() const
+      __FORCE_INLINE long to_long() const
       {
          return (signed long)to_ac_int().to_int64();
       }
-      inline unsigned long to_ulong() const
+      __FORCE_INLINE unsigned long to_ulong() const
       {
          return (unsigned long)to_ac_int().to_uint64();
       }
-      inline Slong to_int64() const
+      __FORCE_INLINE Slong to_int64() const
       {
          return to_ac_int().to_int64();
       }
-      inline Ulong to_uint64() const
+      __FORCE_INLINE Ulong to_uint64() const
       {
          return to_ac_int().to_uint64();
       }
-      inline float to_float() const
+      __FORCE_INLINE float to_float() const
       {
          return ldexpf(m.to_double(), exp());
       }
-      inline double to_double() const
+      __FORCE_INLINE double to_double() const
       {
          return ldexp(m.to_double(), exp());
       }
@@ -507,9 +497,11 @@ namespace __AC_NAMESPACE
       }
       bool normalize()
       {
-         bool normalized = operator!() || !S && m[W - 1] || S && (m[W - 1] ^ m[W - 2]);
+         bool normalized = operator!() || (!S && m[W - 1]) || (S && (m[W - 1] ^ m[W - 2]));
          if(E && !normalized)
+         {
             normalized = m.normalize(e);
+         }
          return normalized;
       }
 
@@ -520,7 +512,9 @@ namespace __AC_NAMESPACE
          {
             e = new_e;
             if(E && normalize)
+            {
                m.normalize(e);
+            }
          }
          else
          {
@@ -538,16 +532,22 @@ namespace __AC_NAMESPACE
                // other bits can be tested separetely
                ac_int<ET, false> e_u = e_s;
                if(ET && normalize)
+               {
                   m.normalize(e_u);
+               }
                e_u -= offset;
-               if(e_u[ET - 1] | !(e_u >> (E - 1))) // what about E == 0 or ET == 0 ???
+               if(e_u[ET - 1] || !(e_u >> (E - 1)))
+               { // what about E == 0 or ET == 0 ???
                   e = e_u;
+               }
                else
                {
                   e = MAX_EXP;
                   m = m < 0 ? value<AC_VAL_MIN>(m) : value<AC_VAL_MAX>(m);
                   if(assert_on_overflow)
+                  {
                      AC_ASSERT(0, "OVERFLOW ON ASSIGNMENT TO AC_FLOAT");
+                  }
                }
             }
          }
@@ -598,12 +598,12 @@ namespace __AC_NAMESPACE
          fx_t op2_m = op2_m_0;
          int e_dif = exp() - op2.exp() + I - I2;
          bool op2_m_neg = op2_m[fx_t::width - 1];
-         fx_t out_bits = op2_m ^ ((op2_m_neg & e_dif < 0) ? ~fx_t(0) : fx_t(0));
+         fx_t out_bits = op2_m ^ ((op2_m_neg & (e_dif < 0)) ? ~fx_t(0) : fx_t(0));
          out_bits &= ~(fxu_t(~fxu_t(0)) << e_dif);
          op2_m >>= e_dif;
-         bool overflow = e_dif < 0 & !!out_bits | op2_m_neg ^ op2_m[fx_t::width - 1];
+         bool overflow = (e_dif < 0) & !!out_bits | op2_m_neg ^ op2_m[fx_t::width - 1];
 
-         *gt = overflow & op2_m_neg | !overflow & op1_m > op2_m;
+         *gt = (overflow & op2_m_neg) | (!overflow & (op1_m > op2_m));
          bool eq = op1_m == op2_m & !overflow & !out_bits;
          return eq;
       }
@@ -647,7 +647,9 @@ namespace __AC_NAMESPACE
          mt_t op2_m = 0;
          op2_m.set_slc(0, op2_m_0.template slc<mt_t::width>(0));
          if(sub)
+         {
             op2_m = -op2_m;
+         }
          int op2_e = op2.exp() + I2 - IT + (SR & !S2);
 
          bool op1_zero = operator!();
@@ -840,7 +842,7 @@ namespace __AC_NAMESPACE
          return !operator>(f);
       }
 
-      inline std::string to_string(ac_base_mode base_rep, bool sign_mag = false, bool hw = true) const
+      __FORCE_INLINE std::string to_string(ac_base_mode base_rep, bool sign_mag = false, bool hw = true) const
       {
          // TODO: printing decimal with exponent
          if(!hw)
@@ -849,26 +851,34 @@ namespace __AC_NAMESPACE
             mantissa.set_slc(0, m.template slc<W>(0));
             std::string r = mantissa.to_string(base_rep, sign_mag);
             r += "e2";
-            r += (e + I).to_string(base_rep, sign_mag | base_rep == AC_DEC);
+            r += (e + I).to_string(base_rep, sign_mag | (base_rep == AC_DEC));
             return r;
          }
          else
          {
             std::string r = m.to_string(base_rep, sign_mag);
             if(base_rep != AC_DEC)
+            {
                r += "_";
+            }
             r += "e2";
             if(base_rep != AC_DEC)
+            {
                r += "_";
+            }
             if(E)
-               r += e.to_string(base_rep, sign_mag | base_rep == AC_DEC);
+            {
+               r += e.to_string(base_rep, sign_mag | (base_rep == AC_DEC));
+            }
             else
+            {
                r += "0";
+            }
             return r;
          }
       }
 
-      inline static std::string type_name()
+      __FORCE_INLINE static std::string type_name()
       {
          const char* tf[] = {"false", "true"};
          const char* q[] = {"AC_TRN",     "AC_RND",         "AC_TRN_ZERO", "AC_RND_ZERO",
@@ -885,15 +895,21 @@ namespace __AC_NAMESPACE
       }
 
       template <ac_special_val V>
-      inline ac_float& set_val()
+      __FORCE_INLINE ac_float& set_val()
       {
          m.template set_val<V>();
          if(V == AC_VAL_MIN)
+         {
             e.template set_val<AC_VAL_MAX>();
+         }
          else if(V == AC_VAL_QUANTUM)
+         {
             e.template set_val<AC_VAL_MIN>();
+         }
          else
+         {
             e.template set_val<V>();
+         }
          return *this;
       }
    };
@@ -912,32 +928,40 @@ namespace __AC_NAMESPACE
          return nan;
       }
 
-      inline ac_float_cdouble_t double_to_ac_float(double d)
+      __FORCE_INLINE ac_float_cdouble_t double_to_ac_float(double d)
       {
          typedef ac_float_cdouble_t r_t;
 #ifndef __BAMBU__
          bool inf;
          bool nan = ac_fpclassify(d, inf);
          if(nan)
+         {
             AC_ASSERT(0, "In conversion from double to ac_float: double is NaN");
+         }
          else if(inf)
+         {
             AC_ASSERT(0, "In conversion from double to ac_float: double is Infinite");
+         }
 #endif
          r_t::exp_t exp;
          r_t::mant_t mant = ac::frexp_d(d, exp);
          return r_t(mant, exp, false);
       }
 
-      inline ac_float_cfloat_t float_to_ac_float(float f)
+      __FORCE_INLINE ac_float_cfloat_t float_to_ac_float(float f)
       {
          typedef ac_float_cfloat_t r_t;
 #ifndef __BAMBU__
          bool inf;
          bool nan = ac_fpclassify(f, inf);
          if(nan)
+         {
             AC_ASSERT(0, "In conversion from float to ac_float: float is NaN");
+         }
          else if(inf)
+         {
             AC_ASSERT(0, "In conversion from float to ac_float: float is Infinite");
+         }
 #endif
          r_t::exp_t exp;
          r_t::mant_t mant = ac::frexp_f(f, exp);
@@ -950,18 +974,18 @@ namespace __AC_NAMESPACE
       template <typename T>
       struct ac_float_represent
       {
-         typedef typename ac_fixed_represent<T>::type fx_t;
-         typedef ac_float<fx_t::width + !fx_t::sign, fx_t::i_width + !fx_t::sign, 1, fx_t::q_mode> type;
+         using fx_t = typename ac_fixed_represent<T>::type;
+         using type = ac_float<fx_t::width + !fx_t::sign, fx_t::i_width + !fx_t::sign, 1, fx_t::q_mode>;
       };
       template <>
       struct ac_float_represent<float>
       {
-         typedef ac_private::ac_float_cfloat_t type;
+         using type = ac_private::ac_float_cfloat_t;
       };
       template <>
       struct ac_float_represent<double>
       {
-         typedef ac_private::ac_float_cdouble_t type;
+         using type = ac_private::ac_float_cdouble_t;
       };
    } // namespace ac
 
@@ -971,18 +995,18 @@ namespace __AC_NAMESPACE
       template <AC_FL_T0(2)>
       struct rt_ac_float_T<AC_FL0(2)>
       {
-         typedef AC_FL0(2) fl2_t;
+         using fl2_t = ac_float<W2, I2, E2>;
          template <AC_FL_T0()>
          struct op1
          {
-            typedef AC_FL0() fl_t;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::mult mult;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::plus plus;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::minus minus;
-            typedef typename fl2_t::template rt<AC_FL_TV0()>::minus minus2;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::logic logic;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::div div;
-            typedef typename fl2_t::template rt<AC_FL_TV0()>::div div2;
+            using fl_t = ac_float<W, I, E>;
+            using mult = typename fl_t::template rt<W2, I2, E2>::mult;
+            using plus = typename fl_t::template rt<W2, I2, E2>::plus;
+            using minus = typename fl_t::template rt<W2, I2, E2>::minus;
+            using minus2 = typename fl2_t::template rt<W, I, E>::minus;
+            using logic = typename fl_t::template rt<W2, I2, E2>::logic;
+            using div = typename fl_t::template rt<W2, I2, E2>::div;
+            using div2 = typename fl2_t::template rt<W, I, E>::div;
          };
       };
       // with T == ac_fixed
@@ -997,18 +1021,18 @@ namespace __AC_NAMESPACE
             W2 = WFX + !SFX,
             I2 = IFX + !SFX
          };
-         typedef AC_FL0(2) fl2_t;
+         using fl2_t = ac_float<W2, I2, E2>;
          template <AC_FL_T0()>
          struct op1
          {
-            typedef AC_FL0() fl_t;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::mult mult;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::plus plus;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::minus minus;
-            typedef typename fl2_t::template rt<AC_FL_TV0()>::minus minus2;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::logic logic;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::div div;
-            typedef typename fl2_t::template rt<AC_FL_TV0()>::div div2;
+            using fl_t = ac_float<W, I, E>;
+            using mult = typename fl_t::template rt<W2, I2, E2>::mult;
+            using plus = typename fl_t::template rt<W2, I2, E2>::plus;
+            using minus = typename fl_t::template rt<W2, I2, E2>::minus;
+            using minus2 = typename fl2_t::template rt<W, I, E>::minus;
+            using logic = typename fl_t::template rt<W2, I2, E2>::logic;
+            using div = typename fl_t::template rt<W2, I2, E2>::div;
+            using div2 = typename fl2_t::template rt<W, I, E>::div;
          };
       };
       // with T == ac_int
@@ -1023,18 +1047,18 @@ namespace __AC_NAMESPACE
             I2 = WI + !SI,
             W2 = I2
          };
-         typedef AC_FL0(2) fl2_t;
+         using fl2_t = ac_float<W2, I2, E2>;
          template <AC_FL_T0()>
          struct op1
          {
-            typedef AC_FL0() fl_t;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::mult mult;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::plus plus;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::minus minus;
-            typedef typename fl2_t::template rt<AC_FL_TV0()>::minus minus2;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::logic logic;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::div div;
-            typedef typename fl2_t::template rt<AC_FL_TV0()>::div div2;
+            using fl_t = ac_float<W, I, E>;
+            using mult = typename fl_t::template rt<W2, I2, E2>::mult;
+            using plus = typename fl_t::template rt<W2, I2, E2>::plus;
+            using minus = typename fl_t::template rt<W2, I2, E2>::minus;
+            using minus2 = typename fl2_t::template rt<W, I, E>::minus;
+            using logic = typename fl_t::template rt<W2, I2, E2>::logic;
+            using div = typename fl_t::template rt<W2, I2, E2>::div;
+            using div2 = typename fl2_t::template rt<W, I, E>::div;
          };
       };
 
@@ -1051,18 +1075,18 @@ namespace __AC_NAMESPACE
             I2 = c_type_params<T>::I + !SCT,
             E2 = AC_MAX(1, c_type_params<T>::E)
          };
-         typedef AC_FL0(2) fl2_t;
+         using fl2_t = ac_float<W2, I2, E2>;
          template <AC_FL_T0()>
          struct op1
          {
-            typedef AC_FL0() fl_t;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::mult mult;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::plus plus;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::minus minus;
-            typedef typename fl2_t::template rt<AC_FL_TV0()>::minus minus2;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::logic logic;
-            typedef typename fl_t::template rt<AC_FL_TV0(2)>::div div;
-            typedef typename fl2_t::template rt<AC_FL_TV0()>::div div2;
+            using fl_t = ac_float<W, I, E>;
+            using mult = typename fl_t::template rt<W2, I2, E2>::mult;
+            using plus = typename fl_t::template rt<W2, I2, E2>::plus;
+            using minus = typename fl_t::template rt<W2, I2, E2>::minus;
+            using minus2 = typename fl2_t::template rt<W, I, E>::minus;
+            using logic = typename fl_t::template rt<W2, I2, E2>::logic;
+            using div = typename fl_t::template rt<W2, I2, E2>::div;
+            using div2 = typename fl2_t::template rt<W, I, E>::div;
          };
       };
    } // namespace ac_private
@@ -1071,36 +1095,36 @@ namespace __AC_NAMESPACE
 
 #ifndef __BAMBU__
    template <AC_FL_T()>
-   inline std::ostream& operator<<(std::ostream& os, const AC_FL() & x)
+   __FORCE_INLINE std::ostream& operator<<(std::ostream& os, const AC_FL() & x)
    {
       os << x.to_string(AC_DEC);
       return os;
    }
 #endif
 
-#define FL_BIN_OP_WITH_CTYPE(BIN_OP, C_TYPE, RTYPE)                                                        \
-   template <AC_FL_T()>                                                                                    \
-   inline typename AC_FL()::template rt_T2<C_TYPE>::RTYPE operator BIN_OP(C_TYPE c_op, const AC_FL() & op) \
-   {                                                                                                       \
-      typedef typename ac::template ac_float_represent<C_TYPE>::type fl2_t;                                \
-      return fl2_t(c_op).operator BIN_OP(op);                                                              \
-   }                                                                                                       \
-   template <AC_FL_T()>                                                                                    \
-   inline typename AC_FL()::template rt_T<C_TYPE>::RTYPE operator BIN_OP(const AC_FL() & op, C_TYPE c_op)  \
-   {                                                                                                       \
-      typedef typename ac::template ac_float_represent<C_TYPE>::type fl2_t;                                \
-      return op.operator BIN_OP(fl2_t(c_op));                                                              \
+#define FL_BIN_OP_WITH_CTYPE(BIN_OP, C_TYPE, RTYPE)                                                                \
+   template <AC_FL_T()>                                                                                            \
+   __FORCE_INLINE typename AC_FL()::template rt_T2<C_TYPE>::RTYPE operator BIN_OP(C_TYPE c_op, const AC_FL() & op) \
+   {                                                                                                               \
+      typedef typename ac::template ac_float_represent<C_TYPE>::type fl2_t;                                        \
+      return fl2_t(c_op).operator BIN_OP(op);                                                                      \
+   }                                                                                                               \
+   template <AC_FL_T()>                                                                                            \
+   __FORCE_INLINE typename AC_FL()::template rt_T<C_TYPE>::RTYPE operator BIN_OP(const AC_FL() & op, C_TYPE c_op)  \
+   {                                                                                                               \
+      typedef typename ac::template ac_float_represent<C_TYPE>::type fl2_t;                                        \
+      return op.operator BIN_OP(fl2_t(c_op));                                                                      \
    }
 
 #define FL_REL_OP_WITH_CTYPE(REL_OP, C_TYPE)                                \
    template <AC_FL_T()>                                                     \
-   inline bool operator REL_OP(const AC_FL() & op, C_TYPE op2)              \
+   __FORCE_INLINE bool operator REL_OP(const AC_FL() & op, C_TYPE op2)      \
    {                                                                        \
       typedef typename ac::template ac_float_represent<C_TYPE>::type fl2_t; \
       return op.operator REL_OP(fl2_t(op2));                                \
    }                                                                        \
    template <AC_FL_T()>                                                     \
-   inline bool operator REL_OP(C_TYPE op2, const AC_FL() & op)              \
+   __FORCE_INLINE bool operator REL_OP(C_TYPE op2, const AC_FL() & op)      \
    {                                                                        \
       typedef typename ac::template ac_float_represent<C_TYPE>::type fl2_t; \
       return fl2_t(op2).operator REL_OP(op);                                \
@@ -1108,7 +1132,7 @@ namespace __AC_NAMESPACE
 
 #define FL_ASSIGN_OP_WITH_CTYPE_2(ASSIGN_OP, C_TYPE)                        \
    template <AC_FL_T()>                                                     \
-   inline AC_FL()& operator ASSIGN_OP(AC_FL() & op, C_TYPE op2)             \
+   __FORCE_INLINE AC_FL()& operator ASSIGN_OP(AC_FL() & op, C_TYPE op2)     \
    {                                                                        \
       typedef typename ac::template ac_float_represent<C_TYPE>::type fl2_t; \
       return op.operator ASSIGN_OP(fl2_t(op2));                             \
@@ -1132,22 +1156,22 @@ namespace __AC_NAMESPACE
    FL_ASSIGN_OP_WITH_CTYPE_2(*=, C_TYPE)  \
    FL_ASSIGN_OP_WITH_CTYPE_2(/=, C_TYPE)
 
-#define FL_SHIFT_OP_WITH_INT_CTYPE(BIN_OP, C_TYPE, RTYPE)                              \
-   template <AC_FL_T()>                                                                \
-   inline typename AC_FL()::template rt_i<ac_private::c_type_params<C_TYPE>::W,        \
-                                          ac_private::c_type_params<C_TYPE>::S>::RTYPE \
-   operator BIN_OP(const AC_FL() & op, C_TYPE i_op)                                    \
-   {                                                                                   \
-      typedef typename ac::template ac_int_represent<C_TYPE>::type i_t;                \
-      return op.operator BIN_OP(i_t(i_op));                                            \
+#define FL_SHIFT_OP_WITH_INT_CTYPE(BIN_OP, C_TYPE, RTYPE)                                      \
+   template <AC_FL_T()>                                                                        \
+   __FORCE_INLINE typename AC_FL()::template rt_i<ac_private::c_type_params<C_TYPE>::W,        \
+                                                  ac_private::c_type_params<C_TYPE>::S>::RTYPE \
+   operator BIN_OP(const AC_FL() & op, C_TYPE i_op)                                            \
+   {                                                                                           \
+      typedef typename ac::template ac_int_represent<C_TYPE>::type i_t;                        \
+      return op.operator BIN_OP(i_t(i_op));                                                    \
    }
 
-#define FL_SHIFT_ASSIGN_OP_WITH_INT_CTYPE(ASSIGN_OP, C_TYPE)            \
-   template <AC_FL_T()>                                                 \
-   inline AC_FL()& operator ASSIGN_OP(AC_FL() & op, C_TYPE i_op)        \
-   {                                                                    \
-      typedef typename ac::template ac_int_represent<C_TYPE>::type i_t; \
-      return op.operator ASSIGN_OP(i_t(i_op));                          \
+#define FL_SHIFT_ASSIGN_OP_WITH_INT_CTYPE(ASSIGN_OP, C_TYPE)             \
+   template <AC_FL_T()>                                                  \
+   __FORCE_INLINE AC_FL()& operator ASSIGN_OP(AC_FL() & op, C_TYPE i_op) \
+   {                                                                     \
+      typedef typename ac::template ac_int_represent<C_TYPE>::type i_t;  \
+      return op.operator ASSIGN_OP(i_t(i_op));                           \
    }
 
 #define FL_SHIFT_OPS_WITH_INT_CTYPE(C_TYPE)       \
@@ -1183,48 +1207,48 @@ namespace __AC_NAMESPACE
    // Macros for Binary Operators with ac_int
    // --------------------------------------------
 
-#define FL_BIN_OP_WITH_AC_INT_1(BIN_OP, RTYPE)                                                                \
-   template <AC_FL_T(), int WI, bool SI>                                                                      \
-   inline typename AC_FL()::template rt_T2<ac_int<WI, SI>>::RTYPE operator BIN_OP(const ac_int<WI, SI>& i_op, \
-                                                                                  const AC_FL() & op)         \
-   {                                                                                                          \
-      typedef typename ac::template ac_float_represent<ac_int<WI, SI>>::type fl2_t;                           \
-      return fl2_t(i_op).operator BIN_OP(op);                                                                 \
+#define FL_BIN_OP_WITH_AC_INT_1(BIN_OP, RTYPE)                                                                        \
+   template <AC_FL_T(), int WI, bool SI>                                                                              \
+   __FORCE_INLINE typename AC_FL()::template rt_T2<ac_int<WI, SI>>::RTYPE operator BIN_OP(const ac_int<WI, SI>& i_op, \
+                                                                                          const AC_FL() & op)         \
+   {                                                                                                                  \
+      typedef typename ac::template ac_float_represent<ac_int<WI, SI>>::type fl2_t;                                   \
+      return fl2_t(i_op).operator BIN_OP(op);                                                                         \
    }
 
-#define FL_BIN_OP_WITH_AC_INT_2(BIN_OP, RTYPE)                                                                \
-   template <AC_FL_T(), int WI, bool SI>                                                                      \
-   inline typename AC_FL()::template rt_T2<ac_int<WI, SI>>::RTYPE operator BIN_OP(const AC_FL() & op,         \
-                                                                                  const ac_int<WI, SI>& i_op) \
-   {                                                                                                          \
-      typedef typename ac::template ac_float_represent<ac_int<WI, SI>>::type fl2_t;                           \
-      return op.operator BIN_OP(fl2_t(i_op));                                                                 \
+#define FL_BIN_OP_WITH_AC_INT_2(BIN_OP, RTYPE)                                                                        \
+   template <AC_FL_T(), int WI, bool SI>                                                                              \
+   __FORCE_INLINE typename AC_FL()::template rt_T2<ac_int<WI, SI>>::RTYPE operator BIN_OP(const AC_FL() & op,         \
+                                                                                          const ac_int<WI, SI>& i_op) \
+   {                                                                                                                  \
+      typedef typename ac::template ac_float_represent<ac_int<WI, SI>>::type fl2_t;                                   \
+      return op.operator BIN_OP(fl2_t(i_op));                                                                         \
    }
 
 #define FL_BIN_OP_WITH_AC_INT(BIN_OP, RTYPE) \
    FL_BIN_OP_WITH_AC_INT_1(BIN_OP, RTYPE)    \
    FL_BIN_OP_WITH_AC_INT_2(BIN_OP, RTYPE)
 
-#define FL_REL_OP_WITH_AC_INT(REL_OP)                                               \
-   template <AC_FL_T(), int WI, bool SI>                                            \
-   inline bool operator REL_OP(const AC_FL() & op, const ac_int<WI, SI>& op2)       \
-   {                                                                                \
-      typedef typename ac::template ac_float_represent<ac_int<WI, SI>>::type fl2_t; \
-      return op.operator REL_OP(fl2_t(op2));                                        \
-   }                                                                                \
-   template <AC_FL_T(), int WI, bool SI>                                            \
-   inline bool operator REL_OP(ac_int<WI, SI>& op2, const AC_FL() & op)             \
-   {                                                                                \
-      typedef typename ac::template ac_float_represent<ac_int<WI, SI>>::type fl2_t; \
-      return fl2_t(op2).operator REL_OP(op);                                        \
+#define FL_REL_OP_WITH_AC_INT(REL_OP)                                                 \
+   template <AC_FL_T(), int WI, bool SI>                                              \
+   __FORCE_INLINE bool operator REL_OP(const AC_FL() & op, const ac_int<WI, SI>& op2) \
+   {                                                                                  \
+      typedef typename ac::template ac_float_represent<ac_int<WI, SI>>::type fl2_t;   \
+      return op.operator REL_OP(fl2_t(op2));                                          \
+   }                                                                                  \
+   template <AC_FL_T(), int WI, bool SI>                                              \
+   __FORCE_INLINE bool operator REL_OP(ac_int<WI, SI>& op2, const AC_FL() & op)       \
+   {                                                                                  \
+      typedef typename ac::template ac_float_represent<ac_int<WI, SI>>::type fl2_t;   \
+      return fl2_t(op2).operator REL_OP(op);                                          \
    }
 
-#define FL_ASSIGN_OP_WITH_AC_INT(ASSIGN_OP)                                         \
-   template <AC_FL_T(), int WI, bool SI>                                            \
-   inline AC_FL()& operator ASSIGN_OP(AC_FL() & op, const ac_int<WI, SI>& op2)      \
-   {                                                                                \
-      typedef typename ac::template ac_float_represent<ac_int<WI, SI>>::type fl2_t; \
-      return op.operator ASSIGN_OP(fl2_t(op2));                                     \
+#define FL_ASSIGN_OP_WITH_AC_INT(ASSIGN_OP)                                            \
+   template <AC_FL_T(), int WI, bool SI>                                               \
+   __FORCE_INLINE AC_FL()& operator ASSIGN_OP(AC_FL() & op, const ac_int<WI, SI>& op2) \
+   {                                                                                   \
+      typedef typename ac::template ac_float_represent<ac_int<WI, SI>>::type fl2_t;    \
+      return op.operator ASSIGN_OP(fl2_t(op2));                                        \
    }
 
    // -------------------------------------------- End of Macros for Binary
@@ -1253,48 +1277,48 @@ namespace __AC_NAMESPACE
    // Macros for Binary Operators with ac_fixed
    // --------------------------------------------
 
-#define FL_BIN_OP_WITH_AC_FIXED_1(BIN_OP, RTYPE)                                          \
-   template <AC_FL_T(), int WF, int IF, bool SF, ac_q_mode QF, ac_o_mode OF>              \
-   inline typename AC_FL()::template rt_T2<ac_fixed<WF, IF, SF>>::RTYPE operator BIN_OP(  \
-       const ac_fixed<WF, IF, SF, QF, OF>& f_op, const AC_FL() & op)                      \
-   {                                                                                      \
-      typedef typename ac::template ac_float_represent<ac_fixed<WF, IF, SF>>::type fl2_t; \
-      return fl2_t(f_op).operator BIN_OP(op);                                             \
+#define FL_BIN_OP_WITH_AC_FIXED_1(BIN_OP, RTYPE)                                                 \
+   template <AC_FL_T(), int WF, int IF, bool SF, ac_q_mode QF, ac_o_mode OF>                     \
+   __FORCE_INLINE typename AC_FL()::template rt_T2<ac_fixed<WF, IF, SF>>::RTYPE operator BIN_OP( \
+       const ac_fixed<WF, IF, SF, QF, OF>& f_op, const AC_FL() & op)                             \
+   {                                                                                             \
+      typedef typename ac::template ac_float_represent<ac_fixed<WF, IF, SF>>::type fl2_t;        \
+      return fl2_t(f_op).operator BIN_OP(op);                                                    \
    }
 
-#define FL_BIN_OP_WITH_AC_FIXED_2(BIN_OP, RTYPE)                                          \
-   template <AC_FL_T(), int WF, int IF, bool SF, ac_q_mode QF, ac_o_mode OF>              \
-   inline typename AC_FL()::template rt_T2<ac_fixed<WF, IF, SF>>::RTYPE operator BIN_OP(  \
-       const AC_FL() & op, const ac_fixed<WF, IF, SF, QF, OF>& f_op)                      \
-   {                                                                                      \
-      typedef typename ac::template ac_float_represent<ac_fixed<WF, IF, SF>>::type fl2_t; \
-      return op.operator BIN_OP(fl2_t(f_op));                                             \
+#define FL_BIN_OP_WITH_AC_FIXED_2(BIN_OP, RTYPE)                                                 \
+   template <AC_FL_T(), int WF, int IF, bool SF, ac_q_mode QF, ac_o_mode OF>                     \
+   __FORCE_INLINE typename AC_FL()::template rt_T2<ac_fixed<WF, IF, SF>>::RTYPE operator BIN_OP( \
+       const AC_FL() & op, const ac_fixed<WF, IF, SF, QF, OF>& f_op)                             \
+   {                                                                                             \
+      typedef typename ac::template ac_float_represent<ac_fixed<WF, IF, SF>>::type fl2_t;        \
+      return op.operator BIN_OP(fl2_t(f_op));                                                    \
    }
 
 #define FL_BIN_OP_WITH_AC_FIXED(BIN_OP, RTYPE) \
    FL_BIN_OP_WITH_AC_FIXED_1(BIN_OP, RTYPE)    \
    FL_BIN_OP_WITH_AC_FIXED_2(BIN_OP, RTYPE)
 
-#define FL_REL_OP_WITH_AC_FIXED(REL_OP)                                                     \
-   template <AC_FL_T(), int WF, int IF, bool SF, ac_q_mode QF, ac_o_mode OF>                \
-   inline bool operator REL_OP(const AC_FL() & op, const ac_fixed<WF, IF, SF, QF, OF>& op2) \
-   {                                                                                        \
-      typedef typename ac::template ac_float_represent<ac_fixed<WF, IF, SF>>::type fl2_t;   \
-      return op.operator REL_OP(fl2_t(op2));                                                \
-   }                                                                                        \
-   template <AC_FL_T(), int WF, int IF, bool SF, ac_q_mode QF, ac_o_mode OF>                \
-   inline bool operator REL_OP(ac_fixed<WF, IF, SF, QF, OF>& op2, const AC_FL() & op)       \
-   {                                                                                        \
-      typedef typename ac::template ac_float_represent<ac_fixed<WF, IF, SF>>::type fl2_t;   \
-      return fl2_t(op2).operator REL_OP(op);                                                \
+#define FL_REL_OP_WITH_AC_FIXED(REL_OP)                                                             \
+   template <AC_FL_T(), int WF, int IF, bool SF, ac_q_mode QF, ac_o_mode OF>                        \
+   __FORCE_INLINE bool operator REL_OP(const AC_FL() & op, const ac_fixed<WF, IF, SF, QF, OF>& op2) \
+   {                                                                                                \
+      typedef typename ac::template ac_float_represent<ac_fixed<WF, IF, SF>>::type fl2_t;           \
+      return op.operator REL_OP(fl2_t(op2));                                                        \
+   }                                                                                                \
+   template <AC_FL_T(), int WF, int IF, bool SF, ac_q_mode QF, ac_o_mode OF>                        \
+   __FORCE_INLINE bool operator REL_OP(ac_fixed<WF, IF, SF, QF, OF>& op2, const AC_FL() & op)       \
+   {                                                                                                \
+      typedef typename ac::template ac_float_represent<ac_fixed<WF, IF, SF>>::type fl2_t;           \
+      return fl2_t(op2).operator REL_OP(op);                                                        \
    }
 
-#define FL_ASSIGN_OP_WITH_AC_FIXED(ASSIGN_OP)                                                \
-   template <AC_FL_T(), int WF, int IF, bool SF, ac_q_mode QF, ac_o_mode OF>                 \
-   inline AC_FL()& operator ASSIGN_OP(AC_FL() & op, const ac_fixed<WF, IF, SF, QF, OF>& op2) \
-   {                                                                                         \
-      typedef typename ac::template ac_float_represent<ac_fixed<WF, IF, SF>>::type fl2_t;    \
-      return op.operator ASSIGN_OP(fl2_t(op2));                                              \
+#define FL_ASSIGN_OP_WITH_AC_FIXED(ASSIGN_OP)                                                        \
+   template <AC_FL_T(), int WF, int IF, bool SF, ac_q_mode QF, ac_o_mode OF>                         \
+   __FORCE_INLINE AC_FL()& operator ASSIGN_OP(AC_FL() & op, const ac_fixed<WF, IF, SF, QF, OF>& op2) \
+   {                                                                                                 \
+      typedef typename ac::template ac_float_represent<ac_fixed<WF, IF, SF>>::type fl2_t;            \
+      return op.operator ASSIGN_OP(fl2_t(op2));                                                      \
    }
 
    // -------------------------------------------- End of Macros for Binary
@@ -1321,7 +1345,7 @@ namespace __AC_NAMESPACE
 
    // Global templatized functions for easy initialization to special values
    template <ac_special_val V, AC_FL_T()>
-   inline AC_FL() value(AC_FL())
+   __FORCE_INLINE AC_FL() value(AC_FL())
    {
       AC_FL() r;
       return r.template set_val<V>();
@@ -1331,23 +1355,18 @@ namespace __AC_NAMESPACE
    {
       // function to initialize (or uninitialize) arrays
       template <ac_special_val V, AC_FL_T()>
-      inline bool init_array(AC_FL() * a, int n)
+      __FORCE_INLINE bool init_array(AC_FL() * a, int n)
       {
          AC_FL0() t = value<V>(*a);
          for(int i = 0; i < n; i++)
+         {
             a[i] = t;
+         }
          return true;
       }
    } // namespace ac
 
    ///////////////////////////////////////////////////////////////////////////////
-
-#if(defined(_MSC_VER) && !defined(__EDG__))
-#pragma warning(pop)
-#endif
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
 
 #ifdef __AC_NAMESPACE
 }

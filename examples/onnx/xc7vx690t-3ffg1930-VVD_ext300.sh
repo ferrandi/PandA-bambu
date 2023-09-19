@@ -1,7 +1,7 @@
 #!/bin/bash
 script=$(readlink -e $0)
 root_dir=$(dirname $script)
-ARGS="--simulator=MODELSIM -DBAMBU_PROFILING -fno-inline -fno-inline-functions --compiler=I386_CLANG6 --memory-allocation-policy=NO_BRAM --mem-delay-read=20 --mem-delay-write=20 --evaluation --no-iob --device-name=xc7vx690t,-3,ffg1930,VVD --print-dot --panda-parameter=simple-benchmark-name=1 --clock-period=3.3 --max-ulp=2"
+ARGS="--simulator=MODELSIM -DBAMBU_PROFILING -fno-inline -fno-inline-functions --compiler=I386_CLANG6 --memory-allocation-policy=NO_BRAM --mem-delay-read=20 --mem-delay-write=20 --evaluation --device-name=xc7vx690t,-3,ffg1930,VVD --print-dot --panda-parameter=simple-benchmark-name=1 --clock-period=3.3 --max-ulp=2"
 
 NAME=$(basename $0 .sh)
 DIRNAME=${root_dir##*/}

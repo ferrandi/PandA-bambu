@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -40,42 +40,32 @@
 #ifndef CTESTBENCHEXECUTION_HPP
 #define CTESTBENCHEXECUTION_HPP
 
-// include superclass header
-#include "hls_step.hpp"
-
-/// STD include
-#include <string>
-
-/// STL includes
 #include "custom_set.hpp"
+#include "hls_step.hpp"
+#include "refcount.hpp"
+
+#include <string>
 #include <tuple>
 
-CONSTREF_FORWARD_DECL(DesignFlowManager);
-CONSTREF_FORWARD_DECL(Parameter);
+CONSTREF_FORWARD_DECL(CBackendInformation);
 
 class CTestbenchExecution : public HLS_step
 {
  protected:
    const std::string output_directory;
 
-   const std::string testbench_basename;
+   const CBackendInformationConstRef c_backend_info;
 
-   virtual const CustomUnorderedSet<
-       std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
  public:
-   /**
-    * constructor
-    */
    CTestbenchExecution(const ParameterConstRef Param, const HLS_managerRef AppM,
                        const DesignFlowManagerConstRef design_flow_manager,
-                       const std::string& testbench_basename = "values");
+                       const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
 
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type);
+   DesignFlowStep_Status Exec() override;
 
-   virtual DesignFlowStep_Status Exec();
-
-   virtual bool HasToBeExecuted() const;
+   bool HasToBeExecuted() const override;
 };
 #endif

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -45,10 +45,7 @@
 #define OP_GRAPH_HPP
 
 /// Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_HLS_BUILT.hpp"
-#include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_HAVE_UNORDERED.hpp"
 
 /// Superclasses include
@@ -372,11 +369,6 @@ struct OpNodeInfo : public TypedNodeInfo
    CustomMap<FunctionBehavior_VariableType, CustomMap<FunctionBehavior_VariableAccessType, CustomSet<unsigned int>>>
        variables;
 
-#if HAVE_EXPERIMENTAL
-   /// set of memory locations dynamically accessed in this node
-   CustomMap<FunctionBehavior_VariableAccessType, CustomSet<MemoryAddress>> dynamic_memory_locations;
-#endif
-
    /// Set of actual parameters of called function (used in pthread backend
    std::list<unsigned int> actual_parameters;
 
@@ -415,21 +407,10 @@ struct OpNodeInfo : public TypedNodeInfo
    const CustomSet<unsigned int>& GetVariables(const FunctionBehavior_VariableType variable_type,
                                                const FunctionBehavior_VariableAccessType access_type) const;
 
-#if HAVE_EXPERIMENTAL
-   /**
-    * Return a set of accessed dynamid data memory location
-    * @param access_type is the type of accesses to be considered
-    */
-   const CustomSet<MemoryAddress>&
-   GetDynamicMemoryLocations(const FunctionBehavior_VariableAccessType access_type) const;
-#endif
-
-#if HAVE_BAMBU_BUILT || HAVE_TUCANO_BUILT
    /**
     * Return the operation associated with the vertex
     */
    const std::string GetOperation() const;
-#endif
 
    /**
     * Return the node id of the operation associated with the vertex

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -40,15 +40,13 @@
  * Last modified by $Author: ferrandi $
  *
  */
+#include "indented_output_stream.hpp"
+
+#include "exceptions.hpp"
 
 #include <cstddef>
 #include <fstream>
 #include <iostream>
-
-/// Utility include
-#include "exceptions.hpp"
-/// Header include
-#include "indented_output_stream.hpp"
 
 /// In global_variables.hpp
 extern size_t indentation;
@@ -144,6 +142,11 @@ void IndentedOutputStream::Append(const std::string& str)
          AppendChar(*it);
       }
    }
+}
+
+void IndentedOutputStream::AppendIndented(const std::string& str)
+{
+   output_stream << str;
 }
 
 void IndentedOutputStream::AppendIndent()

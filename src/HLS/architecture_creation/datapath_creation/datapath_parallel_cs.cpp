@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2022 Politecnico di Milano
+ *              Copyright (c) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,31 +42,26 @@
 #include "BambuParameter.hpp"
 #include "behavioral_helper.hpp"
 #include "copyrights_strings.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
+#include "function_behavior.hpp"
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "loop.hpp"
 #include "loops.hpp"
+#include "math_function.hpp"
 #include "memory.hpp"
 #include "memory_cs.hpp"
+#include "omp_functions.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
-
-/// HLS/function_allocation include
-#include "omp_functions.hpp"
-
-/// STD include
+#include "utility.hpp"
 #include <cmath>
 #include <list>
 #include <string>
 #include <tuple>
-
-/// utility includes
-#include "custom_set.hpp"
-#include "dbgPrintHelper.hpp"
-#include "math_function.hpp"
-#include "utility.hpp"
 
 datapath_parallel_cs::datapath_parallel_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                                            unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager,
@@ -78,9 +73,7 @@ datapath_parallel_cs::datapath_parallel_cs(const ParameterConstRef _parameters, 
 
 // HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 
-datapath_parallel_cs::~datapath_parallel_cs()
-{
-}
+datapath_parallel_cs::~datapath_parallel_cs() = default;
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
 datapath_parallel_cs::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -90,8 +83,8 @@ datapath_parallel_cs::ComputeHLSRelationships(const DesignFlowStep::Relationship
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(),
-                                    HLSFlowStep_Relationship::SAME_FUNCTION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::DOMINATOR_ALLOCATION, HLSFlowStepSpecializationConstRef(),
+                                    HLSFlowStep_Relationship::WHOLE_APPLICATION));
          ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_BODY_LOOP_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::CALLED_FUNCTIONS));
          break;
@@ -164,7 +157,7 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
    const auto kernel_function_id = *(kernel_functions.begin());
    const auto kernel_function_name =
        HLSMgr->CGetFunctionBehavior(kernel_function_id)->CGetBehavioralHelper()->get_function_name();
-   const auto kernel_library = HLS->HLS_T->get_technology_manager()->get_library(kernel_function_name);
+   const auto kernel_library = HLS->HLS_D->get_technology_manager()->get_library(kernel_function_name);
    structural_objectRef kernel_mod;
    auto addr_kernel = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
    if(!addr_kernel)
@@ -175,7 +168,7 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
    {
       const auto kernel_module_name = kernel_function_name + "_" + STR(i);
       kernel_mod = SM->add_module_from_technology_library(kernel_module_name, kernel_function_name, kernel_library,
-                                                          circuit, HLS->HLS_T->get_technology_manager());
+                                                          circuit, HLS->HLS_D->get_technology_manager());
       memory_modules.push_back(kernel_mod);
       connect_module_kernel(kernel_mod, i);
       // setting num of kernel in each scheduler
@@ -306,9 +299,9 @@ void datapath_parallel_cs::instantiate_component_parallel(structural_objectRef c
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    std::string mem_par_model = "memory_ctrl_parallel";
    std::string mem_par_name = "memory_parallel";
-   std::string mem_par_library = HLS->HLS_T->get_technology_manager()->get_library(mem_par_model);
+   std::string mem_par_library = HLS->HLS_D->get_technology_manager()->get_library(mem_par_model);
    structural_objectRef mem_par_mod = SM->add_module_from_technology_library(
-       mem_par_name, mem_par_model, mem_par_library, circuit, HLS->HLS_T->get_technology_manager());
+       mem_par_name, mem_par_model, mem_par_library, circuit, HLS->HLS_D->get_technology_manager());
 
    structural_objectRef clock_mem_par = mem_par_mod->find_member(CLOCK_PORT_NAME, port_o_K, mem_par_mod);
    structural_objectRef clock_sign = SM->add_sign("clock_mem_par_signal", circuit, bool_type);
@@ -383,10 +376,10 @@ void datapath_parallel_cs::resize_ctrl_parallel_ports(structural_objectRef mem_p
 
 void datapath_parallel_cs::resize_dimension_bus_port(unsigned int vector_size, structural_objectRef port)
 {
-   unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
-   unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
-   unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
-   unsigned int bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
+   auto bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
+   auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
+   auto bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
+   auto bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
 
    if(GetPointer<port_o>(port)->get_is_data_bus())
    {

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2022 Politecnico di Milano
+ *              Copyright (C) 2015-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -37,39 +37,25 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "xilinx_taste_backend_flow.hpp"
 
-/// Autoheader include
 #include "config_GRLIB_DIR.hpp"
 
-///. include
+#include "DesignParameters.hpp"
 #include "Parameter.hpp"
-
-/// technology includes
-#include "target_manager.hpp"
-#include "technology_manager.hpp"
-
-/// utility include
-#include "fileIO.hpp"
-
-/// wrapper/synthesis include
 #include "SynthesisTool.hpp"
-
-/// wrapper/synthesis/xilinx include
 #include "XilinxWrapper.hpp"
-
-/// wrapper/synthesis/xilinx/ise include
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "dbgPrintHelper.hpp"
+#include "fileIO.hpp"
+#include "generic_device.hpp"
+#include "string_manipulation.hpp"
+#include "structural_objects.hpp"
+#include "technology_manager.hpp"
 #include "xst_wrapper.hpp"
 
-#include "fileIO.hpp"
-#include "structural_objects.hpp"
-
 XilinxTasteBackendFlow::XilinxTasteBackendFlow(const ParameterConstRef& _parameters, const std::string& _flow_name,
-                                               const target_managerRef& _manager)
-    : XilinxBackendFlow(_parameters, _flow_name, _manager)
+                                               const generic_deviceRef _device)
+    : XilinxBackendFlow(_parameters, _flow_name, _device)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -97,7 +83,7 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&,
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---List of synthesis files: " + synthesis_file_list);
    actual_parameters->parameter_values[PARAM_HDL_files] = synthesis_file_list;
-   const technology_managerRef TM = target->get_technology_manager();
+   const technology_managerRef TM = device->get_technology_manager();
    actual_parameters->parameter_values[PARAM_is_combinational] = STR(false);
    actual_parameters->parameter_values[PARAM_time_constrained] = STR(true);
    if(Param->isOption(OPT_clock_name))
@@ -187,7 +173,7 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&,
       temp_file.close();
       const auto xst_prj_file = GetPath(actual_parameters->parameter_values.at(PARAM_xst_prj_file));
       const auto cat_ret =
-          PandaSystem(Param, "cat " + output_temporary_directory + "/temp_xst_prj_file0 " + xst_prj_file,
+          PandaSystem(Param, "cat " + output_temporary_directory + "/temp_xst_prj_file0 " + xst_prj_file, true,
                       output_temporary_directory + "/temp_xst_prj_file1");
       if(IsError(cat_ret))
       {

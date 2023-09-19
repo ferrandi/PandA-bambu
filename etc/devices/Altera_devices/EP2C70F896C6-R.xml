@@ -6,7 +6,7 @@
     <model value="EP2C70F896C6"/>
     <package value="896PinFineLineBGA"/>
     <speed_grade value="-6"/>
-    <BRAM_bitsize_max value="128"/>
+    <BRAM_bitsize_max value="4096"/>
     <BRAM_bitsize_min value="8"/>
     <DSPs_rx_sizes value="8,16"/>
     <DSPs_ry_sizes value="8,16"/>
@@ -40,53 +40,42 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2022 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>ALTERA-CYCLONEII</specialized>
             <port_o id="clock" path="STD_BRAM/clock" dir="IN" is_clock="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="reset" path="STD_BRAM/reset" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_oe_ram" path="STD_BRAM/S_oe_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_we_ram" path="STD_BRAM/S_we_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_addr_ram" path="STD_BRAM/S_addr_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_Wdata_ram" path="STD_BRAM/S_Wdata_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sin_Rdata_ram" path="STD_BRAM/Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_data_ram_size" path="STD_BRAM/S_data_ram_size" dir="IN" is_extern="1" is_global="1" is_memory="1" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sin_DataRdy" path="STD_BRAM/Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sout_Rdata_ram" path="STD_BRAM/Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sout_DataRdy" path="STD_BRAM/Sout_DataRdy" dir="OUT" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <NP_functionality LIBRARY="STD_BRAM S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE USE_SPARSE_MEMORY" VERILOG_PROVIDED="STD_BRAM_SV #(.BITSIZE_S_addr_ram(BITSIZE_S_addr_ram), .BITSIZE_S_Wdata_ram(BITSIZE_S_Wdata_ram), .BITSIZE_Sin_Rdata_ram(BITSIZE_Sin_Rdata_ram), .BITSIZE_Sout_Rdata_ram(BITSIZE_Sout_Rdata_ram), .BITSIZE_S_data_ram_size(BITSIZE_S_data_ram_size), .MEMORY_INIT_file(MEMORY_INIT_file), .n_elements(n_elements), .data_size(data_size), .address_space_begin(address_space_begin), .address_space_rangesize(address_space_rangesize), .BUS_PIPELINED(BUS_PIPELINED), .BRAM_BITSIZE(BRAM_BITSIZE), .USE_SPARSE_MEMORY(USE_SPARSE_MEMORY), .HIGH_LATENCY(0)) STD_BRAM_instance (.Sout_Rdata_ram(Sout_Rdata_ram), .Sout_DataRdy(Sout_DataRdy), .clock(clock), .reset(reset), .S_oe_ram(S_oe_ram), .S_we_ram(S_we_ram), .S_addr_ram(S_addr_ram), .S_Wdata_ram(S_Wdata_ram), .Sin_Rdata_ram(Sin_Rdata_ram), .S_data_ram_size(S_data_ram_size), .Sin_DataRdy(Sin_DataRdy));" IP_COMPONENT="STD_BRAM_SV"/>
           </component_o>
@@ -116,53 +105,42 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2022 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>ALTERA-CYCLONEII</specialized>
             <port_o id="clock" path="STD_BRAMN/clock" dir="IN" is_clock="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="reset" path="STD_BRAMN/reset" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_vector_o id="S_oe_ram" path="STD_BRAMN/S_oe_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_we_ram" path="STD_BRAMN/S_we_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_addr_ram" path="STD_BRAMN/S_addr_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_Wdata_ram" path="STD_BRAMN/S_Wdata_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sin_Rdata_ram" path="STD_BRAMN/Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_data_ram_size" path="STD_BRAMN/S_data_ram_size" dir="IN" is_extern="1" is_global="1" is_memory="1" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sin_DataRdy" path="STD_BRAMN/Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sout_Rdata_ram" path="STD_BRAMN/Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sout_DataRdy" path="STD_BRAMN/Sout_DataRdy" dir="OUT" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <NP_functionality LIBRARY="STD_BRAMN S_oe_ram S_we_ram S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file_a MEMORY_INIT_file_b n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE USE_SPARSE_MEMORY" VERILOG_PROVIDED="STD_BRAMN_SV #(.BITSIZE_S_oe_ram(BITSIZE_S_oe_ram), .PORTSIZE_S_oe_ram(PORTSIZE_S_oe_ram), .BITSIZE_S_we_ram(BITSIZE_S_we_ram), .PORTSIZE_S_we_ram(PORTSIZE_S_we_ram), .BITSIZE_S_addr_ram(BITSIZE_S_addr_ram), .PORTSIZE_S_addr_ram(PORTSIZE_S_addr_ram), .BITSIZE_S_Wdata_ram(BITSIZE_S_Wdata_ram), .PORTSIZE_S_Wdata_ram(PORTSIZE_S_Wdata_ram), .BITSIZE_Sin_Rdata_ram(BITSIZE_Sin_Rdata_ram), .PORTSIZE_Sin_Rdata_ram(PORTSIZE_Sin_Rdata_ram), .BITSIZE_Sout_Rdata_ram(BITSIZE_Sout_Rdata_ram), .PORTSIZE_Sout_Rdata_ram(PORTSIZE_Sout_Rdata_ram), .BITSIZE_S_data_ram_size(BITSIZE_S_data_ram_size), .PORTSIZE_S_data_ram_size(PORTSIZE_S_data_ram_size), .BITSIZE_Sin_DataRdy(BITSIZE_Sin_DataRdy), .PORTSIZE_Sin_DataRdy(PORTSIZE_Sin_DataRdy), .BITSIZE_Sout_DataRdy(BITSIZE_Sout_DataRdy), .PORTSIZE_Sout_DataRdy(PORTSIZE_Sout_DataRdy), .MEMORY_INIT_file_a(MEMORY_INIT_file_a), .MEMORY_INIT_file_b(MEMORY_INIT_file_b), .n_elements(n_elements), .data_size(data_size), .address_space_begin(address_space_begin), .address_space_rangesize(address_space_rangesize), .BUS_PIPELINED(BUS_PIPELINED), .BRAM_BITSIZE(BRAM_BITSIZE), .USE_SPARSE_MEMORY(USE_SPARSE_MEMORY), .HIGH_LATENCY(0)) STD_BRAMN_SV_instance (.Sout_Rdata_ram(Sout_Rdata_ram), .Sout_DataRdy(Sout_DataRdy), .clock(clock), .reset(reset), .S_oe_ram(S_oe_ram), .S_we_ram(S_we_ram), .S_addr_ram(S_addr_ram), .S_Wdata_ram(S_Wdata_ram), .Sin_Rdata_ram(Sin_Rdata_ram), .S_data_ram_size(S_data_ram_size), .Sin_DataRdy(Sin_DataRdy));" IP_COMPONENT="STD_BRAMN_SV"/>
           </component_o>
@@ -192,53 +170,42 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2022 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>ALTERA-CYCLONEII</specialized>
             <port_o id="clock" path="STD_BRAMN_3/clock" dir="IN" is_clock="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="reset" path="STD_BRAMN_3/reset" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_vector_o id="S_oe_ram" path="STD_BRAMN_3/S_oe_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_we_ram" path="STD_BRAMN_3/S_we_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_addr_ram" path="STD_BRAMN_3/S_addr_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_Wdata_ram" path="STD_BRAMN_3/S_Wdata_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sin_Rdata_ram" path="STD_BRAMN_3/Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_data_ram_size" path="STD_BRAMN_3/S_data_ram_size" dir="IN" is_extern="1" is_global="1" is_memory="1" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sin_DataRdy" path="STD_BRAMN_3/Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sout_Rdata_ram" path="STD_BRAMN_3/Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sout_DataRdy" path="STD_BRAMN_3/Sout_DataRdy" dir="OUT" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <NP_functionality LIBRARY="STD_BRAMN_3 S_oe_ram S_we_ram S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file_a MEMORY_INIT_file_b n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE USE_SPARSE_MEMORY" VERILOG_PROVIDED="STD_BRAMN_SV #(.BITSIZE_S_oe_ram(BITSIZE_S_oe_ram), .PORTSIZE_S_oe_ram(PORTSIZE_S_oe_ram), .BITSIZE_S_we_ram(BITSIZE_S_we_ram), .PORTSIZE_S_we_ram(PORTSIZE_S_we_ram), .BITSIZE_S_addr_ram(BITSIZE_S_addr_ram), .PORTSIZE_S_addr_ram(PORTSIZE_S_addr_ram), .BITSIZE_S_Wdata_ram(BITSIZE_S_Wdata_ram), .PORTSIZE_S_Wdata_ram(PORTSIZE_S_Wdata_ram), .BITSIZE_Sin_Rdata_ram(BITSIZE_Sin_Rdata_ram), .PORTSIZE_Sin_Rdata_ram(PORTSIZE_Sin_Rdata_ram), .BITSIZE_Sout_Rdata_ram(BITSIZE_Sout_Rdata_ram), .PORTSIZE_Sout_Rdata_ram(PORTSIZE_Sout_Rdata_ram), .BITSIZE_S_data_ram_size(BITSIZE_S_data_ram_size), .PORTSIZE_S_data_ram_size(PORTSIZE_S_data_ram_size), .BITSIZE_Sin_DataRdy(BITSIZE_Sin_DataRdy), .PORTSIZE_Sin_DataRdy(PORTSIZE_Sin_DataRdy), .BITSIZE_Sout_DataRdy(BITSIZE_Sout_DataRdy), .PORTSIZE_Sout_DataRdy(PORTSIZE_Sout_DataRdy), .MEMORY_INIT_file_a(MEMORY_INIT_file_a), .MEMORY_INIT_file_b(MEMORY_INIT_file_b), .n_elements(n_elements), .data_size(data_size), .address_space_begin(address_space_begin), .address_space_rangesize(address_space_rangesize), .BUS_PIPELINED(BUS_PIPELINED), .BRAM_BITSIZE(BRAM_BITSIZE), .USE_SPARSE_MEMORY(USE_SPARSE_MEMORY), .HIGH_LATENCY(1)) STD_BRAMN_SV_instance (.Sout_Rdata_ram(Sout_Rdata_ram), .Sout_DataRdy(Sout_DataRdy), .clock(clock), .reset(reset), .S_oe_ram(S_oe_ram), .S_we_ram(S_we_ram), .S_addr_ram(S_addr_ram), .S_Wdata_ram(S_Wdata_ram), .Sin_Rdata_ram(Sin_Rdata_ram), .S_data_ram_size(S_data_ram_size), .Sin_DataRdy(Sin_DataRdy));" IP_COMPONENT="STD_BRAMN_SV"/>
           </component_o>
@@ -265,53 +232,42 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2022 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>ALTERA-CYCLONEII</specialized>
             <port_o id="clock" path="STD_BRAMN_4/clock" dir="IN" is_clock="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="reset" path="STD_BRAMN_4/reset" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_vector_o id="S_oe_ram" path="STD_BRAMN_4/S_oe_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_we_ram" path="STD_BRAMN_4/S_we_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_addr_ram" path="STD_BRAMN_4/S_addr_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_Wdata_ram" path="STD_BRAMN_4/S_Wdata_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sin_Rdata_ram" path="STD_BRAMN_4/Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_data_ram_size" path="STD_BRAMN_4/S_data_ram_size" dir="IN" is_extern="1" is_global="1" is_memory="1" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sin_DataRdy" path="STD_BRAMN_4/Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sout_Rdata_ram" path="STD_BRAMN_4/Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sout_DataRdy" path="STD_BRAMN_4/Sout_DataRdy" dir="OUT" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <NP_functionality LIBRARY="STD_BRAMN_4 S_oe_ram S_we_ram S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file_a MEMORY_INIT_file_b n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE USE_SPARSE_MEMORY" VERILOG_PROVIDED="STD_BRAMN_SV #(.BITSIZE_S_oe_ram(BITSIZE_S_oe_ram), .PORTSIZE_S_oe_ram(PORTSIZE_S_oe_ram), .BITSIZE_S_we_ram(BITSIZE_S_we_ram), .PORTSIZE_S_we_ram(PORTSIZE_S_we_ram), .BITSIZE_S_addr_ram(BITSIZE_S_addr_ram), .PORTSIZE_S_addr_ram(PORTSIZE_S_addr_ram), .BITSIZE_S_Wdata_ram(BITSIZE_S_Wdata_ram), .PORTSIZE_S_Wdata_ram(PORTSIZE_S_Wdata_ram), .BITSIZE_Sin_Rdata_ram(BITSIZE_Sin_Rdata_ram), .PORTSIZE_Sin_Rdata_ram(PORTSIZE_Sin_Rdata_ram), .BITSIZE_Sout_Rdata_ram(BITSIZE_Sout_Rdata_ram), .PORTSIZE_Sout_Rdata_ram(PORTSIZE_Sout_Rdata_ram), .BITSIZE_S_data_ram_size(BITSIZE_S_data_ram_size), .PORTSIZE_S_data_ram_size(PORTSIZE_S_data_ram_size), .BITSIZE_Sin_DataRdy(BITSIZE_Sin_DataRdy), .PORTSIZE_Sin_DataRdy(PORTSIZE_Sin_DataRdy), .BITSIZE_Sout_DataRdy(BITSIZE_Sout_DataRdy), .PORTSIZE_Sout_DataRdy(PORTSIZE_Sout_DataRdy), .MEMORY_INIT_file_a(MEMORY_INIT_file_a), .MEMORY_INIT_file_b(MEMORY_INIT_file_b), .n_elements(n_elements), .data_size(data_size), .address_space_begin(address_space_begin), .address_space_rangesize(address_space_rangesize), .BUS_PIPELINED(BUS_PIPELINED), .BRAM_BITSIZE(BRAM_BITSIZE), .USE_SPARSE_MEMORY(USE_SPARSE_MEMORY), .HIGH_LATENCY(2)) STD_BRAMN_SV_instance (.Sout_Rdata_ram(Sout_Rdata_ram), .Sout_DataRdy(Sout_DataRdy), .clock(clock), .reset(reset), .S_oe_ram(S_oe_ram), .S_we_ram(S_we_ram), .S_addr_ram(S_addr_ram), .S_Wdata_ram(S_Wdata_ram), .Sin_Rdata_ram(Sin_Rdata_ram), .S_data_ram_size(S_data_ram_size), .Sin_DataRdy(Sin_DataRdy));" IP_COMPONENT="STD_BRAMN_SV"/>
           </component_o>
@@ -340,53 +296,42 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2022 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>ALTERA-CYCLONEII</specialized>
             <port_o id="clock" path="STD_BRAM_3/clock" dir="IN" is_clock="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="reset" path="STD_BRAM_3/reset" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_oe_ram" path="STD_BRAM_3/S_oe_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_we_ram" path="STD_BRAM_3/S_we_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_addr_ram" path="STD_BRAM_3/S_addr_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_Wdata_ram" path="STD_BRAM_3/S_Wdata_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sin_Rdata_ram" path="STD_BRAM_3/Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_data_ram_size" path="STD_BRAM_3/S_data_ram_size" dir="IN" is_extern="1" is_global="1" is_memory="1" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sin_DataRdy" path="STD_BRAM_3/Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sout_Rdata_ram" path="STD_BRAM_3/Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sout_DataRdy" path="STD_BRAM_3/Sout_DataRdy" dir="OUT" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <NP_functionality LIBRARY="STD_BRAM_3 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE USE_SPARSE_MEMORY" VERILOG_PROVIDED="STD_BRAM_SV #(.BITSIZE_S_addr_ram(BITSIZE_S_addr_ram), .BITSIZE_S_Wdata_ram(BITSIZE_S_Wdata_ram), .BITSIZE_Sin_Rdata_ram(BITSIZE_Sin_Rdata_ram), .BITSIZE_Sout_Rdata_ram(BITSIZE_Sout_Rdata_ram), .BITSIZE_S_data_ram_size(BITSIZE_S_data_ram_size), .MEMORY_INIT_file(MEMORY_INIT_file), .n_elements(n_elements), .data_size(data_size), .address_space_begin(address_space_begin), .address_space_rangesize(address_space_rangesize), .BUS_PIPELINED(BUS_PIPELINED), .BRAM_BITSIZE(BRAM_BITSIZE), .USE_SPARSE_MEMORY(USE_SPARSE_MEMORY), .HIGH_LATENCY(1)) STD_BRAM_instance (.Sout_Rdata_ram(Sout_Rdata_ram), .Sout_DataRdy(Sout_DataRdy), .clock(clock), .reset(reset), .S_oe_ram(S_oe_ram), .S_we_ram(S_we_ram), .S_addr_ram(S_addr_ram), .S_Wdata_ram(S_Wdata_ram), .Sin_Rdata_ram(Sin_Rdata_ram), .S_data_ram_size(S_data_ram_size), .Sin_DataRdy(Sin_DataRdy));" IP_COMPONENT="STD_BRAM_SV"/>
           </component_o>
@@ -412,53 +357,42 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2022 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>ALTERA-CYCLONEII</specialized>
             <port_o id="clock" path="STD_BRAM_4/clock" dir="IN" is_clock="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="reset" path="STD_BRAM_4/reset" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_oe_ram" path="STD_BRAM_4/S_oe_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_we_ram" path="STD_BRAM_4/S_we_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_addr_ram" path="STD_BRAM_4/S_addr_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_Wdata_ram" path="STD_BRAM_4/S_Wdata_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sin_Rdata_ram" path="STD_BRAM_4/Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_data_ram_size" path="STD_BRAM_4/S_data_ram_size" dir="IN" is_extern="1" is_global="1" is_memory="1" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sin_DataRdy" path="STD_BRAM_4/Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sout_Rdata_ram" path="STD_BRAM_4/Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sout_DataRdy" path="STD_BRAM_4/Sout_DataRdy" dir="OUT" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <NP_functionality LIBRARY="STD_BRAM_4 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE USE_SPARSE_MEMORY" VERILOG_PROVIDED="STD_BRAM_SV #(.BITSIZE_S_addr_ram(BITSIZE_S_addr_ram), .BITSIZE_S_Wdata_ram(BITSIZE_S_Wdata_ram), .BITSIZE_Sin_Rdata_ram(BITSIZE_Sin_Rdata_ram), .BITSIZE_Sout_Rdata_ram(BITSIZE_Sout_Rdata_ram), .BITSIZE_S_data_ram_size(BITSIZE_S_data_ram_size), .MEMORY_INIT_file(MEMORY_INIT_file), .n_elements(n_elements), .data_size(data_size), .address_space_begin(address_space_begin), .address_space_rangesize(address_space_rangesize), .BUS_PIPELINED(BUS_PIPELINED), .BRAM_BITSIZE(BRAM_BITSIZE), .USE_SPARSE_MEMORY(USE_SPARSE_MEMORY), .HIGH_LATENCY(2)) STD_BRAM_instance (.Sout_Rdata_ram(Sout_Rdata_ram), .Sout_DataRdy(Sout_DataRdy), .clock(clock), .reset(reset), .S_oe_ram(S_oe_ram), .S_we_ram(S_we_ram), .S_addr_ram(S_addr_ram), .S_Wdata_ram(S_Wdata_ram), .Sin_Rdata_ram(Sin_Rdata_ram), .S_data_ram_size(S_data_ram_size), .Sin_DataRdy(Sin_DataRdy));" IP_COMPONENT="STD_BRAM_SV"/>
           </component_o>
@@ -493,105 +427,81 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2022 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>ALTERA-CYCLONEII</specialized>
             <port_o id="clock" path="ARRAY_1D_STD_BRAM/clock" dir="IN" is_clock="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="reset" path="ARRAY_1D_STD_BRAM/reset" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="in1" path="ARRAY_1D_STD_BRAM/in1" dir="IN">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="in2" path="ARRAY_1D_STD_BRAM/in2" dir="IN">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="in3" path="ARRAY_1D_STD_BRAM/in3" dir="IN">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="in4" path="ARRAY_1D_STD_BRAM/in4" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="sel_LOAD" path="ARRAY_1D_STD_BRAM/sel_LOAD" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="sel_STORE" path="ARRAY_1D_STD_BRAM/sel_STORE" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_oe_ram" path="ARRAY_1D_STD_BRAM/S_oe_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_we_ram" path="ARRAY_1D_STD_BRAM/S_we_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_addr_ram" path="ARRAY_1D_STD_BRAM/S_addr_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_Wdata_ram" path="ARRAY_1D_STD_BRAM/S_Wdata_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sin_Rdata_ram" path="ARRAY_1D_STD_BRAM/Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_data_ram_size" path="ARRAY_1D_STD_BRAM/S_data_ram_size" dir="IN" is_extern="1" is_global="1" is_memory="1" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sin_DataRdy" path="ARRAY_1D_STD_BRAM/Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="proxy_in1" path="ARRAY_1D_STD_BRAM/proxy_in1" dir="IN" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="proxy_in2" path="ARRAY_1D_STD_BRAM/proxy_in2" dir="IN" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="proxy_in3" path="ARRAY_1D_STD_BRAM/proxy_in3" dir="IN" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="proxy_sel_LOAD" path="ARRAY_1D_STD_BRAM/proxy_sel_LOAD" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="proxy_sel_STORE" path="ARRAY_1D_STD_BRAM/proxy_sel_STORE" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="out1" path="ARRAY_1D_STD_BRAM/out1" dir="OUT">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sout_Rdata_ram" path="ARRAY_1D_STD_BRAM/Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sout_DataRdy" path="ARRAY_1D_STD_BRAM/Sout_DataRdy" dir="OUT" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="proxy_out1" path="ARRAY_1D_STD_BRAM/proxy_out1" dir="OUT" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM in1 in2 in3 out1 S_addr_ram S_Wdata_ram Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_out1" VERILOG_PROVIDED="ARRAY_1D_STD_BRAM_SV #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_in3(BITSIZE_in3), .BITSIZE_out1(BITSIZE_out1), .BITSIZE_S_addr_ram(BITSIZE_S_addr_ram), .BITSIZE_S_Wdata_ram(BITSIZE_S_Wdata_ram), .BITSIZE_Sin_Rdata_ram(BITSIZE_Sin_Rdata_ram), .BITSIZE_Sout_Rdata_ram(BITSIZE_Sout_Rdata_ram), .BITSIZE_S_data_ram_size(BITSIZE_S_data_ram_size), .MEMORY_INIT_file(MEMORY_INIT_file), .n_elements(n_elements), .data_size(data_size), .address_space_begin(address_space_begin), .address_space_rangesize(address_space_rangesize), .BUS_PIPELINED(BUS_PIPELINED), .BRAM_BITSIZE(BRAM_BITSIZE), .PRIVATE_MEMORY(PRIVATE_MEMORY), .USE_SPARSE_MEMORY(USE_SPARSE_MEMORY), .HIGH_LATENCY(0), .BITSIZE_proxy_in1(BITSIZE_proxy_in1), .BITSIZE_proxy_in2(BITSIZE_proxy_in2), .BITSIZE_proxy_in3(BITSIZE_proxy_in3), .BITSIZE_proxy_out1(BITSIZE_proxy_out1)) ARRAY_1D_STD_BRAM_instance (.out1(out1), .Sout_Rdata_ram(Sout_Rdata_ram), .Sout_DataRdy(Sout_DataRdy), .proxy_out1(proxy_out1), .clock(clock), .reset(reset), .in1(in1), .in2(in2), .in3(in3), .sel_LOAD(sel_LOAD &amp; in4), .sel_STORE(sel_STORE &amp; in4), .S_oe_ram(S_oe_ram), .S_we_ram(S_we_ram), .S_addr_ram(S_addr_ram), .S_Wdata_ram(S_Wdata_ram), .Sin_Rdata_ram(Sin_Rdata_ram), .S_data_ram_size(S_data_ram_size), .Sin_DataRdy(Sin_DataRdy), .proxy_in1(proxy_in1), .proxy_in2(proxy_in2), .proxy_in3(proxy_in3), .proxy_sel_LOAD(proxy_sel_LOAD), .proxy_sel_STORE(proxy_sel_STORE));" IP_COMPONENT="ARRAY_1D_STD_BRAM_SV"/>
           </component_o>
@@ -623,105 +533,81 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2022 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>ALTERA-CYCLONEII</specialized>
             <port_o id="clock" path="ARRAY_1D_STD_BRAM_3/clock" dir="IN" is_clock="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="reset" path="ARRAY_1D_STD_BRAM_3/reset" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="in1" path="ARRAY_1D_STD_BRAM_3/in1" dir="IN">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="in2" path="ARRAY_1D_STD_BRAM_3/in2" dir="IN">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="in3" path="ARRAY_1D_STD_BRAM_3/in3" dir="IN">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="in4" path="ARRAY_1D_STD_BRAM_3/in4" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="sel_LOAD" path="ARRAY_1D_STD_BRAM_3/sel_LOAD" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="sel_STORE" path="ARRAY_1D_STD_BRAM_3/sel_STORE" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_oe_ram" path="ARRAY_1D_STD_BRAM_3/S_oe_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_we_ram" path="ARRAY_1D_STD_BRAM_3/S_we_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_addr_ram" path="ARRAY_1D_STD_BRAM_3/S_addr_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_Wdata_ram" path="ARRAY_1D_STD_BRAM_3/S_Wdata_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sin_Rdata_ram" path="ARRAY_1D_STD_BRAM_3/Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_data_ram_size" path="ARRAY_1D_STD_BRAM_3/S_data_ram_size" dir="IN" is_extern="1" is_global="1" is_memory="1" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sin_DataRdy" path="ARRAY_1D_STD_BRAM_3/Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="proxy_in1" path="ARRAY_1D_STD_BRAM_3/proxy_in1" dir="IN" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="proxy_in2" path="ARRAY_1D_STD_BRAM_3/proxy_in2" dir="IN" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="proxy_in3" path="ARRAY_1D_STD_BRAM_3/proxy_in3" dir="IN" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="proxy_sel_LOAD" path="ARRAY_1D_STD_BRAM_3/proxy_sel_LOAD" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="proxy_sel_STORE" path="ARRAY_1D_STD_BRAM_3/proxy_sel_STORE" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="out1" path="ARRAY_1D_STD_BRAM_3/out1" dir="OUT">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sout_Rdata_ram" path="ARRAY_1D_STD_BRAM_3/Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sout_DataRdy" path="ARRAY_1D_STD_BRAM_3/Sout_DataRdy" dir="OUT" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="proxy_out1" path="ARRAY_1D_STD_BRAM_3/proxy_out1" dir="OUT" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_3 in1 in2 in3 out1 S_addr_ram S_Wdata_ram Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_out1" VERILOG_PROVIDED="ARRAY_1D_STD_BRAM_SV #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_in3(BITSIZE_in3), .BITSIZE_out1(BITSIZE_out1), .BITSIZE_S_addr_ram(BITSIZE_S_addr_ram), .BITSIZE_S_Wdata_ram(BITSIZE_S_Wdata_ram), .BITSIZE_Sin_Rdata_ram(BITSIZE_Sin_Rdata_ram), .BITSIZE_Sout_Rdata_ram(BITSIZE_Sout_Rdata_ram), .BITSIZE_S_data_ram_size(BITSIZE_S_data_ram_size), .MEMORY_INIT_file(MEMORY_INIT_file), .n_elements(n_elements), .data_size(data_size), .address_space_begin(address_space_begin), .address_space_rangesize(address_space_rangesize), .BUS_PIPELINED(BUS_PIPELINED), .BRAM_BITSIZE(BRAM_BITSIZE), .PRIVATE_MEMORY(PRIVATE_MEMORY), .USE_SPARSE_MEMORY(USE_SPARSE_MEMORY), .HIGH_LATENCY(1), .BITSIZE_proxy_in1(BITSIZE_proxy_in1), .BITSIZE_proxy_in2(BITSIZE_proxy_in2), .BITSIZE_proxy_in3(BITSIZE_proxy_in3), .BITSIZE_proxy_out1(BITSIZE_proxy_out1)) ARRAY_1D_STD_BRAM_instance (.out1(out1), .Sout_Rdata_ram(Sout_Rdata_ram), .Sout_DataRdy(Sout_DataRdy), .proxy_out1(proxy_out1), .clock(clock), .reset(reset), .in1(in1), .in2(in2), .in3(in3), .sel_LOAD(sel_LOAD &amp; in4), .sel_STORE(sel_STORE &amp; in4), .S_oe_ram(S_oe_ram), .S_we_ram(S_we_ram), .S_addr_ram(S_addr_ram), .S_Wdata_ram(S_Wdata_ram), .Sin_Rdata_ram(Sin_Rdata_ram), .S_data_ram_size(S_data_ram_size), .Sin_DataRdy(Sin_DataRdy), .proxy_in1(proxy_in1), .proxy_in2(proxy_in2), .proxy_in3(proxy_in3), .proxy_sel_LOAD(proxy_sel_LOAD), .proxy_sel_STORE(proxy_sel_STORE));" IP_COMPONENT="ARRAY_1D_STD_BRAM_SV"/>
           </component_o>
@@ -753,105 +639,81 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2022 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>ALTERA-CYCLONEII</specialized>
             <port_o id="clock" path="ARRAY_1D_STD_BRAM_4/clock" dir="IN" is_clock="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="reset" path="ARRAY_1D_STD_BRAM_4/reset" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="in1" path="ARRAY_1D_STD_BRAM_4/in1" dir="IN">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="in2" path="ARRAY_1D_STD_BRAM_4/in2" dir="IN">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="in3" path="ARRAY_1D_STD_BRAM_4/in3" dir="IN">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="in4" path="ARRAY_1D_STD_BRAM_4/in4" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="sel_LOAD" path="ARRAY_1D_STD_BRAM_4/sel_LOAD" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="sel_STORE" path="ARRAY_1D_STD_BRAM_4/sel_STORE" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_oe_ram" path="ARRAY_1D_STD_BRAM_4/S_oe_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_we_ram" path="ARRAY_1D_STD_BRAM_4/S_we_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_addr_ram" path="ARRAY_1D_STD_BRAM_4/S_addr_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_Wdata_ram" path="ARRAY_1D_STD_BRAM_4/S_Wdata_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sin_Rdata_ram" path="ARRAY_1D_STD_BRAM_4/Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_data_ram_size" path="ARRAY_1D_STD_BRAM_4/S_data_ram_size" dir="IN" is_extern="1" is_global="1" is_memory="1" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sin_DataRdy" path="ARRAY_1D_STD_BRAM_4/Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="proxy_in1" path="ARRAY_1D_STD_BRAM_4/proxy_in1" dir="IN" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="proxy_in2" path="ARRAY_1D_STD_BRAM_4/proxy_in2" dir="IN" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="proxy_in3" path="ARRAY_1D_STD_BRAM_4/proxy_in3" dir="IN" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="proxy_sel_LOAD" path="ARRAY_1D_STD_BRAM_4/proxy_sel_LOAD" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="proxy_sel_STORE" path="ARRAY_1D_STD_BRAM_4/proxy_sel_STORE" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="out1" path="ARRAY_1D_STD_BRAM_4/out1" dir="OUT">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sout_Rdata_ram" path="ARRAY_1D_STD_BRAM_4/Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sout_DataRdy" path="ARRAY_1D_STD_BRAM_4/Sout_DataRdy" dir="OUT" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="proxy_out1" path="ARRAY_1D_STD_BRAM_4/proxy_out1" dir="OUT" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_4 in1 in2 in3 out1 S_addr_ram S_Wdata_ram Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_out1" VERILOG_PROVIDED="ARRAY_1D_STD_BRAM_SV #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_in3(BITSIZE_in3), .BITSIZE_out1(BITSIZE_out1), .BITSIZE_S_addr_ram(BITSIZE_S_addr_ram), .BITSIZE_S_Wdata_ram(BITSIZE_S_Wdata_ram), .BITSIZE_Sin_Rdata_ram(BITSIZE_Sin_Rdata_ram), .BITSIZE_Sout_Rdata_ram(BITSIZE_Sout_Rdata_ram), .BITSIZE_S_data_ram_size(BITSIZE_S_data_ram_size), .MEMORY_INIT_file(MEMORY_INIT_file), .n_elements(n_elements), .data_size(data_size), .address_space_begin(address_space_begin), .address_space_rangesize(address_space_rangesize), .BUS_PIPELINED(BUS_PIPELINED), .BRAM_BITSIZE(BRAM_BITSIZE), .PRIVATE_MEMORY(PRIVATE_MEMORY), .USE_SPARSE_MEMORY(USE_SPARSE_MEMORY), .HIGH_LATENCY(2), .BITSIZE_proxy_in1(BITSIZE_proxy_in1), .BITSIZE_proxy_in2(BITSIZE_proxy_in2), .BITSIZE_proxy_in3(BITSIZE_proxy_in3), .BITSIZE_proxy_out1(BITSIZE_proxy_out1)) ARRAY_1D_STD_BRAM_instance (.out1(out1), .Sout_Rdata_ram(Sout_Rdata_ram), .Sout_DataRdy(Sout_DataRdy), .proxy_out1(proxy_out1), .clock(clock), .reset(reset), .in1(in1), .in2(in2), .in3(in3), .sel_LOAD(sel_LOAD &amp; in4), .sel_STORE(sel_STORE &amp; in4), .S_oe_ram(S_oe_ram), .S_we_ram(S_we_ram), .S_addr_ram(S_addr_ram), .S_Wdata_ram(S_Wdata_ram), .Sin_Rdata_ram(Sin_Rdata_ram), .S_data_ram_size(S_data_ram_size), .Sin_DataRdy(Sin_DataRdy), .proxy_in1(proxy_in1), .proxy_in2(proxy_in2), .proxy_in3(proxy_in3), .proxy_sel_LOAD(proxy_sel_LOAD), .proxy_sel_STORE(proxy_sel_STORE));" IP_COMPONENT="ARRAY_1D_STD_BRAM_SV"/>
           </component_o>
@@ -884,105 +746,81 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2022 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>ALTERA-CYCLONEII</specialized>
             <port_o id="clock" path="ARRAY_1D_STD_BRAM_N1/clock" dir="IN" is_clock="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="reset" path="ARRAY_1D_STD_BRAM_N1/reset" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_vector_o id="in1" path="ARRAY_1D_STD_BRAM_N1/in1" dir="IN">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="in2" path="ARRAY_1D_STD_BRAM_N1/in2" dir="IN" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="in3" path="ARRAY_1D_STD_BRAM_N1/in3" dir="IN" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="in4" path="ARRAY_1D_STD_BRAM_N1/in4" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="sel_LOAD" path="ARRAY_1D_STD_BRAM_N1/sel_LOAD" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="sel_STORE" path="ARRAY_1D_STD_BRAM_N1/sel_STORE" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_o id="S_oe_ram" path="ARRAY_1D_STD_BRAM_N1/S_oe_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_we_ram" path="ARRAY_1D_STD_BRAM_N1/S_we_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_addr_ram" path="ARRAY_1D_STD_BRAM_N1/S_addr_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_Wdata_ram" path="ARRAY_1D_STD_BRAM_N1/S_Wdata_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sin_Rdata_ram" path="ARRAY_1D_STD_BRAM_N1/Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_data_ram_size" path="ARRAY_1D_STD_BRAM_N1/S_data_ram_size" dir="IN" is_extern="1" is_global="1" is_memory="1" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sin_DataRdy" path="ARRAY_1D_STD_BRAM_N1/Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_vector_o id="proxy_in1" path="ARRAY_1D_STD_BRAM_N1/proxy_in1" dir="IN" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_in2" path="ARRAY_1D_STD_BRAM_N1/proxy_in2" dir="IN" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_in3" path="ARRAY_1D_STD_BRAM_N1/proxy_in3" dir="IN" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_sel_LOAD" path="ARRAY_1D_STD_BRAM_N1/proxy_sel_LOAD" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_sel_STORE" path="ARRAY_1D_STD_BRAM_N1/proxy_sel_STORE" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="out1" path="ARRAY_1D_STD_BRAM_N1/out1" dir="OUT">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_o id="Sout_Rdata_ram" path="ARRAY_1D_STD_BRAM_N1/Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sout_DataRdy" path="ARRAY_1D_STD_BRAM_N1/Sout_DataRdy" dir="OUT" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_vector_o id="proxy_out1" path="ARRAY_1D_STD_BRAM_N1/proxy_out1" dir="OUT" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_N1 in1 in2 in3 in4 sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file_a MEMORY_INIT_file_b n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_sel_LOAD proxy_sel_STORE proxy_out1" VERILOG_PROVIDED="ARRAY_1D_STD_BRAM_N1_SV #(.BITSIZE_in1(BITSIZE_in1), .PORTSIZE_in1(PORTSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .PORTSIZE_in2(PORTSIZE_in2), .BITSIZE_in3(BITSIZE_in3), .PORTSIZE_in3(PORTSIZE_in3), .BITSIZE_sel_LOAD(BITSIZE_sel_LOAD), .PORTSIZE_sel_LOAD(PORTSIZE_sel_LOAD), .BITSIZE_sel_STORE(BITSIZE_sel_STORE), .PORTSIZE_sel_STORE(PORTSIZE_sel_STORE), .BITSIZE_S_oe_ram(BITSIZE_S_oe_ram), .BITSIZE_S_we_ram(BITSIZE_S_we_ram), .BITSIZE_out1(BITSIZE_out1), .PORTSIZE_out1(PORTSIZE_out1), .BITSIZE_S_addr_ram(BITSIZE_S_addr_ram), .BITSIZE_S_Wdata_ram(BITSIZE_S_Wdata_ram), .BITSIZE_Sin_Rdata_ram(BITSIZE_Sin_Rdata_ram), .BITSIZE_Sout_Rdata_ram(BITSIZE_Sout_Rdata_ram), .BITSIZE_S_data_ram_size(BITSIZE_S_data_ram_size), .BITSIZE_Sin_DataRdy(BITSIZE_Sin_DataRdy), .BITSIZE_Sout_DataRdy(BITSIZE_Sout_DataRdy), .MEMORY_INIT_file_a(MEMORY_INIT_file_a), .MEMORY_INIT_file_b(MEMORY_INIT_file_b), .n_elements(n_elements), .data_size(data_size), .address_space_begin(address_space_begin), .address_space_rangesize(address_space_rangesize), .BUS_PIPELINED(BUS_PIPELINED), .BRAM_BITSIZE(BRAM_BITSIZE), .PRIVATE_MEMORY(PRIVATE_MEMORY), .USE_SPARSE_MEMORY(USE_SPARSE_MEMORY), .BITSIZE_proxy_in1(BITSIZE_proxy_in1), .PORTSIZE_proxy_in1(PORTSIZE_proxy_in1), .BITSIZE_proxy_in2(BITSIZE_proxy_in2), .PORTSIZE_proxy_in2(PORTSIZE_proxy_in2), .BITSIZE_proxy_in3(BITSIZE_proxy_in3), .PORTSIZE_proxy_in3(PORTSIZE_proxy_in3), .BITSIZE_proxy_sel_LOAD(BITSIZE_proxy_sel_LOAD), .PORTSIZE_proxy_sel_LOAD(PORTSIZE_proxy_sel_LOAD), .BITSIZE_proxy_sel_STORE(BITSIZE_proxy_sel_STORE), .PORTSIZE_proxy_sel_STORE(PORTSIZE_proxy_sel_STORE), .BITSIZE_proxy_out1(BITSIZE_proxy_out1), .PORTSIZE_proxy_out1(PORTSIZE_proxy_out1), .HIGH_LATENCY(0)) ARRAY_1D_STD_BRAM_N1_instance (.out1(out1), .Sout_Rdata_ram(Sout_Rdata_ram), .Sout_DataRdy(Sout_DataRdy), .proxy_out1(proxy_out1), .clock(clock), .reset(reset), .in1(in1), .in2(in2), .in3(in3), .sel_LOAD(sel_LOAD &amp; in4), .sel_STORE(sel_STORE &amp; in4), .S_oe_ram(S_oe_ram), .S_we_ram(S_we_ram), .S_addr_ram(S_addr_ram), .S_Wdata_ram(S_Wdata_ram), .Sin_Rdata_ram(Sin_Rdata_ram), .S_data_ram_size(S_data_ram_size), .Sin_DataRdy(Sin_DataRdy), .proxy_in1(proxy_in1), .proxy_in2(proxy_in2), .proxy_in3(proxy_in3), .proxy_sel_LOAD(proxy_sel_LOAD), .proxy_sel_STORE(proxy_sel_STORE));" IP_COMPONENT="ARRAY_1D_STD_BRAM_N1_SV"/>
           </component_o>
@@ -1015,105 +853,81 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2022 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>ALTERA-CYCLONEII</specialized>
             <port_o id="clock" path="ARRAY_1D_STD_BRAM_N1_3/clock" dir="IN" is_clock="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="reset" path="ARRAY_1D_STD_BRAM_N1_3/reset" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_vector_o id="in1" path="ARRAY_1D_STD_BRAM_N1_3/in1" dir="IN">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="in2" path="ARRAY_1D_STD_BRAM_N1_3/in2" dir="IN" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="in3" path="ARRAY_1D_STD_BRAM_N1_3/in3" dir="IN" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="in4" path="ARRAY_1D_STD_BRAM_N1_3/in4" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="sel_LOAD" path="ARRAY_1D_STD_BRAM_N1_3/sel_LOAD" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="sel_STORE" path="ARRAY_1D_STD_BRAM_N1_3/sel_STORE" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_o id="S_oe_ram" path="ARRAY_1D_STD_BRAM_N1_3/S_oe_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_we_ram" path="ARRAY_1D_STD_BRAM_N1_3/S_we_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_addr_ram" path="ARRAY_1D_STD_BRAM_N1_3/S_addr_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_Wdata_ram" path="ARRAY_1D_STD_BRAM_N1_3/S_Wdata_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sin_Rdata_ram" path="ARRAY_1D_STD_BRAM_N1_3/Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_data_ram_size" path="ARRAY_1D_STD_BRAM_N1_3/S_data_ram_size" dir="IN" is_extern="1" is_global="1" is_memory="1" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sin_DataRdy" path="ARRAY_1D_STD_BRAM_N1_3/Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_vector_o id="proxy_in1" path="ARRAY_1D_STD_BRAM_N1_3/proxy_in1" dir="IN" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_in2" path="ARRAY_1D_STD_BRAM_N1_3/proxy_in2" dir="IN" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_in3" path="ARRAY_1D_STD_BRAM_N1_3/proxy_in3" dir="IN" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_sel_LOAD" path="ARRAY_1D_STD_BRAM_N1_3/proxy_sel_LOAD" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_sel_STORE" path="ARRAY_1D_STD_BRAM_N1_3/proxy_sel_STORE" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="out1" path="ARRAY_1D_STD_BRAM_N1_3/out1" dir="OUT">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_o id="Sout_Rdata_ram" path="ARRAY_1D_STD_BRAM_N1_3/Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sout_DataRdy" path="ARRAY_1D_STD_BRAM_N1_3/Sout_DataRdy" dir="OUT" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_vector_o id="proxy_out1" path="ARRAY_1D_STD_BRAM_N1_3/proxy_out1" dir="OUT" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_N1_3 in1 in2 in3 in4 sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file_a MEMORY_INIT_file_b n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_sel_LOAD proxy_sel_STORE proxy_out1" VERILOG_PROVIDED="ARRAY_1D_STD_BRAM_N1_SV #(.BITSIZE_in1(BITSIZE_in1), .PORTSIZE_in1(PORTSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .PORTSIZE_in2(PORTSIZE_in2), .BITSIZE_in3(BITSIZE_in3), .PORTSIZE_in3(PORTSIZE_in3), .BITSIZE_sel_LOAD(BITSIZE_sel_LOAD), .PORTSIZE_sel_LOAD(PORTSIZE_sel_LOAD), .BITSIZE_sel_STORE(BITSIZE_sel_STORE), .PORTSIZE_sel_STORE(PORTSIZE_sel_STORE), .BITSIZE_S_oe_ram(BITSIZE_S_oe_ram), .BITSIZE_S_we_ram(BITSIZE_S_we_ram), .BITSIZE_out1(BITSIZE_out1), .PORTSIZE_out1(PORTSIZE_out1), .BITSIZE_S_addr_ram(BITSIZE_S_addr_ram), .BITSIZE_S_Wdata_ram(BITSIZE_S_Wdata_ram), .BITSIZE_Sin_Rdata_ram(BITSIZE_Sin_Rdata_ram), .BITSIZE_Sout_Rdata_ram(BITSIZE_Sout_Rdata_ram), .BITSIZE_S_data_ram_size(BITSIZE_S_data_ram_size), .BITSIZE_Sin_DataRdy(BITSIZE_Sin_DataRdy), .BITSIZE_Sout_DataRdy(BITSIZE_Sout_DataRdy), .MEMORY_INIT_file_a(MEMORY_INIT_file_a), .MEMORY_INIT_file_b(MEMORY_INIT_file_b), .n_elements(n_elements), .data_size(data_size), .address_space_begin(address_space_begin), .address_space_rangesize(address_space_rangesize), .BUS_PIPELINED(BUS_PIPELINED), .BRAM_BITSIZE(BRAM_BITSIZE), .PRIVATE_MEMORY(PRIVATE_MEMORY), .USE_SPARSE_MEMORY(USE_SPARSE_MEMORY), .BITSIZE_proxy_in1(BITSIZE_proxy_in1), .PORTSIZE_proxy_in1(PORTSIZE_proxy_in1), .BITSIZE_proxy_in2(BITSIZE_proxy_in2), .PORTSIZE_proxy_in2(PORTSIZE_proxy_in2), .BITSIZE_proxy_in3(BITSIZE_proxy_in3), .PORTSIZE_proxy_in3(PORTSIZE_proxy_in3), .BITSIZE_proxy_sel_LOAD(BITSIZE_proxy_sel_LOAD), .PORTSIZE_proxy_sel_LOAD(PORTSIZE_proxy_sel_LOAD), .BITSIZE_proxy_sel_STORE(BITSIZE_proxy_sel_STORE), .PORTSIZE_proxy_sel_STORE(PORTSIZE_proxy_sel_STORE), .BITSIZE_proxy_out1(BITSIZE_proxy_out1), .PORTSIZE_proxy_out1(PORTSIZE_proxy_out1), .HIGH_LATENCY(1)) ARRAY_1D_STD_BRAM_N1_instance (.out1(out1), .Sout_Rdata_ram(Sout_Rdata_ram), .Sout_DataRdy(Sout_DataRdy), .proxy_out1(proxy_out1), .clock(clock), .reset(reset), .in1(in1), .in2(in2), .in3(in3), .sel_LOAD(sel_LOAD &amp; in4), .sel_STORE(sel_STORE &amp; in4), .S_oe_ram(S_oe_ram), .S_we_ram(S_we_ram), .S_addr_ram(S_addr_ram), .S_Wdata_ram(S_Wdata_ram), .Sin_Rdata_ram(Sin_Rdata_ram), .S_data_ram_size(S_data_ram_size), .Sin_DataRdy(Sin_DataRdy), .proxy_in1(proxy_in1), .proxy_in2(proxy_in2), .proxy_in3(proxy_in3), .proxy_sel_LOAD(proxy_sel_LOAD), .proxy_sel_STORE(proxy_sel_STORE));" IP_COMPONENT="ARRAY_1D_STD_BRAM_N1_SV"/>
           </component_o>
@@ -1146,105 +960,81 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2022 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>ALTERA-CYCLONEII</specialized>
             <port_o id="clock" path="ARRAY_1D_STD_BRAM_N1_4/clock" dir="IN" is_clock="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="reset" path="ARRAY_1D_STD_BRAM_N1_4/reset" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_vector_o id="in1" path="ARRAY_1D_STD_BRAM_N1_4/in1" dir="IN">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="in2" path="ARRAY_1D_STD_BRAM_N1_4/in2" dir="IN" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="in3" path="ARRAY_1D_STD_BRAM_N1_4/in3" dir="IN" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="in4" path="ARRAY_1D_STD_BRAM_N1_4/in4" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="sel_LOAD" path="ARRAY_1D_STD_BRAM_N1_4/sel_LOAD" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="sel_STORE" path="ARRAY_1D_STD_BRAM_N1_4/sel_STORE" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_o id="S_oe_ram" path="ARRAY_1D_STD_BRAM_N1_4/S_oe_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_we_ram" path="ARRAY_1D_STD_BRAM_N1_4/S_we_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_addr_ram" path="ARRAY_1D_STD_BRAM_N1_4/S_addr_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_Wdata_ram" path="ARRAY_1D_STD_BRAM_N1_4/S_Wdata_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sin_Rdata_ram" path="ARRAY_1D_STD_BRAM_N1_4/Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="S_data_ram_size" path="ARRAY_1D_STD_BRAM_N1_4/S_data_ram_size" dir="IN" is_extern="1" is_global="1" is_memory="1" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sin_DataRdy" path="ARRAY_1D_STD_BRAM_N1_4/Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_vector_o id="proxy_in1" path="ARRAY_1D_STD_BRAM_N1_4/proxy_in1" dir="IN" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_in2" path="ARRAY_1D_STD_BRAM_N1_4/proxy_in2" dir="IN" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_in3" path="ARRAY_1D_STD_BRAM_N1_4/proxy_in3" dir="IN" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_sel_LOAD" path="ARRAY_1D_STD_BRAM_N1_4/proxy_sel_LOAD" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_sel_STORE" path="ARRAY_1D_STD_BRAM_N1_4/proxy_sel_STORE" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="out1" path="ARRAY_1D_STD_BRAM_N1_4/out1" dir="OUT">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_o id="Sout_Rdata_ram" path="ARRAY_1D_STD_BRAM_N1_4/Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_o>
             <port_o id="Sout_DataRdy" path="ARRAY_1D_STD_BRAM_N1_4/Sout_DataRdy" dir="OUT" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_vector_o id="proxy_out1" path="ARRAY_1D_STD_BRAM_N1_4/proxy_out1" dir="OUT" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_N1_4 in1 in2 in3 in4 sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file_a MEMORY_INIT_file_b n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_sel_LOAD proxy_sel_STORE proxy_out1" VERILOG_PROVIDED="ARRAY_1D_STD_BRAM_N1_SV #(.BITSIZE_in1(BITSIZE_in1), .PORTSIZE_in1(PORTSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .PORTSIZE_in2(PORTSIZE_in2), .BITSIZE_in3(BITSIZE_in3), .PORTSIZE_in3(PORTSIZE_in3), .BITSIZE_sel_LOAD(BITSIZE_sel_LOAD), .PORTSIZE_sel_LOAD(PORTSIZE_sel_LOAD), .BITSIZE_sel_STORE(BITSIZE_sel_STORE), .PORTSIZE_sel_STORE(PORTSIZE_sel_STORE), .BITSIZE_S_oe_ram(BITSIZE_S_oe_ram), .BITSIZE_S_we_ram(BITSIZE_S_we_ram), .BITSIZE_out1(BITSIZE_out1), .PORTSIZE_out1(PORTSIZE_out1), .BITSIZE_S_addr_ram(BITSIZE_S_addr_ram), .BITSIZE_S_Wdata_ram(BITSIZE_S_Wdata_ram), .BITSIZE_Sin_Rdata_ram(BITSIZE_Sin_Rdata_ram), .BITSIZE_Sout_Rdata_ram(BITSIZE_Sout_Rdata_ram), .BITSIZE_S_data_ram_size(BITSIZE_S_data_ram_size), .BITSIZE_Sin_DataRdy(BITSIZE_Sin_DataRdy), .BITSIZE_Sout_DataRdy(BITSIZE_Sout_DataRdy), .MEMORY_INIT_file_a(MEMORY_INIT_file_a), .MEMORY_INIT_file_b(MEMORY_INIT_file_b), .n_elements(n_elements), .data_size(data_size), .address_space_begin(address_space_begin), .address_space_rangesize(address_space_rangesize), .BUS_PIPELINED(BUS_PIPELINED), .BRAM_BITSIZE(BRAM_BITSIZE), .PRIVATE_MEMORY(PRIVATE_MEMORY), .USE_SPARSE_MEMORY(USE_SPARSE_MEMORY), .BITSIZE_proxy_in1(BITSIZE_proxy_in1), .PORTSIZE_proxy_in1(PORTSIZE_proxy_in1), .BITSIZE_proxy_in2(BITSIZE_proxy_in2), .PORTSIZE_proxy_in2(PORTSIZE_proxy_in2), .BITSIZE_proxy_in3(BITSIZE_proxy_in3), .PORTSIZE_proxy_in3(PORTSIZE_proxy_in3), .BITSIZE_proxy_sel_LOAD(BITSIZE_proxy_sel_LOAD), .PORTSIZE_proxy_sel_LOAD(PORTSIZE_proxy_sel_LOAD), .BITSIZE_proxy_sel_STORE(BITSIZE_proxy_sel_STORE), .PORTSIZE_proxy_sel_STORE(PORTSIZE_proxy_sel_STORE), .BITSIZE_proxy_out1(BITSIZE_proxy_out1), .PORTSIZE_proxy_out1(PORTSIZE_proxy_out1), .HIGH_LATENCY(2)) ARRAY_1D_STD_BRAM_N1_instance (.out1(out1), .Sout_Rdata_ram(Sout_Rdata_ram), .Sout_DataRdy(Sout_DataRdy), .proxy_out1(proxy_out1), .clock(clock), .reset(reset), .in1(in1), .in2(in2), .in3(in3), .sel_LOAD(sel_LOAD &amp; in4), .sel_STORE(sel_STORE &amp; in4), .S_oe_ram(S_oe_ram), .S_we_ram(S_we_ram), .S_addr_ram(S_addr_ram), .S_Wdata_ram(S_Wdata_ram), .Sin_Rdata_ram(Sin_Rdata_ram), .S_data_ram_size(S_data_ram_size), .Sin_DataRdy(Sin_DataRdy), .proxy_in1(proxy_in1), .proxy_in2(proxy_in2), .proxy_in3(proxy_in3), .proxy_sel_LOAD(proxy_sel_LOAD), .proxy_sel_STORE(proxy_sel_STORE));" IP_COMPONENT="ARRAY_1D_STD_BRAM_N1_SV"/>
           </component_o>
@@ -1337,105 +1127,81 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2022 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>ALTERA-CYCLONEII</specialized>
             <port_o id="clock" path="ARRAY_1D_STD_BRAM_NN/clock" dir="IN" is_clock="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="reset" path="ARRAY_1D_STD_BRAM_NN/reset" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_vector_o id="in1" path="ARRAY_1D_STD_BRAM_NN/in1" dir="IN">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="in2" path="ARRAY_1D_STD_BRAM_NN/in2" dir="IN" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="in3" path="ARRAY_1D_STD_BRAM_NN/in3" dir="IN" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="in4" path="ARRAY_1D_STD_BRAM_NN/in4" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="sel_LOAD" path="ARRAY_1D_STD_BRAM_NN/sel_LOAD" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="sel_STORE" path="ARRAY_1D_STD_BRAM_NN/sel_STORE" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_oe_ram" path="ARRAY_1D_STD_BRAM_NN/S_oe_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_we_ram" path="ARRAY_1D_STD_BRAM_NN/S_we_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_addr_ram" path="ARRAY_1D_STD_BRAM_NN/S_addr_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_Wdata_ram" path="ARRAY_1D_STD_BRAM_NN/S_Wdata_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sin_Rdata_ram" path="ARRAY_1D_STD_BRAM_NN/Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_data_ram_size" path="ARRAY_1D_STD_BRAM_NN/S_data_ram_size" dir="IN" is_extern="1" is_global="1" is_memory="1" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sin_DataRdy" path="ARRAY_1D_STD_BRAM_NN/Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_in1" path="ARRAY_1D_STD_BRAM_NN/proxy_in1" dir="IN" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_in2" path="ARRAY_1D_STD_BRAM_NN/proxy_in2" dir="IN" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_in3" path="ARRAY_1D_STD_BRAM_NN/proxy_in3" dir="IN" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_sel_LOAD" path="ARRAY_1D_STD_BRAM_NN/proxy_sel_LOAD" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_sel_STORE" path="ARRAY_1D_STD_BRAM_NN/proxy_sel_STORE" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="out1" path="ARRAY_1D_STD_BRAM_NN/out1" dir="OUT">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sout_Rdata_ram" path="ARRAY_1D_STD_BRAM_NN/Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sout_DataRdy" path="ARRAY_1D_STD_BRAM_NN/Sout_DataRdy" dir="OUT" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_out1" path="ARRAY_1D_STD_BRAM_NN/proxy_out1" dir="OUT" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_NN in1 in2 in3 in4 sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file_a MEMORY_INIT_file_b n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_sel_LOAD proxy_sel_STORE proxy_out1" VERILOG_PROVIDED="ARRAY_1D_STD_BRAM_NN_SV #(.BITSIZE_in1(BITSIZE_in1), .PORTSIZE_in1(PORTSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .PORTSIZE_in2(PORTSIZE_in2), .BITSIZE_in3(BITSIZE_in3), .PORTSIZE_in3(PORTSIZE_in3), .BITSIZE_sel_LOAD(BITSIZE_sel_LOAD), .PORTSIZE_sel_LOAD(PORTSIZE_sel_LOAD), .BITSIZE_sel_STORE(BITSIZE_sel_STORE), .PORTSIZE_sel_STORE(PORTSIZE_sel_STORE), .BITSIZE_S_oe_ram(BITSIZE_S_oe_ram), .PORTSIZE_S_oe_ram(PORTSIZE_S_oe_ram), .BITSIZE_S_we_ram(BITSIZE_S_we_ram), .PORTSIZE_S_we_ram(PORTSIZE_S_we_ram), .BITSIZE_out1(BITSIZE_out1), .PORTSIZE_out1(PORTSIZE_out1), .BITSIZE_S_addr_ram(BITSIZE_S_addr_ram), .PORTSIZE_S_addr_ram(PORTSIZE_S_addr_ram), .BITSIZE_S_Wdata_ram(BITSIZE_S_Wdata_ram), .PORTSIZE_S_Wdata_ram(PORTSIZE_S_Wdata_ram), .BITSIZE_Sin_Rdata_ram(BITSIZE_Sin_Rdata_ram), .PORTSIZE_Sin_Rdata_ram(PORTSIZE_Sin_Rdata_ram), .BITSIZE_Sout_Rdata_ram(BITSIZE_Sout_Rdata_ram), .PORTSIZE_Sout_Rdata_ram(PORTSIZE_Sout_Rdata_ram), .BITSIZE_S_data_ram_size(BITSIZE_S_data_ram_size), .PORTSIZE_S_data_ram_size(PORTSIZE_S_data_ram_size), .BITSIZE_Sin_DataRdy(BITSIZE_Sin_DataRdy), .PORTSIZE_Sin_DataRdy(PORTSIZE_Sin_DataRdy), .BITSIZE_Sout_DataRdy(BITSIZE_Sout_DataRdy), .PORTSIZE_Sout_DataRdy(PORTSIZE_Sout_DataRdy), .MEMORY_INIT_file_a(MEMORY_INIT_file_a), .MEMORY_INIT_file_b(MEMORY_INIT_file_b), .n_elements(n_elements), .data_size(data_size), .address_space_begin(address_space_begin), .address_space_rangesize(address_space_rangesize), .BUS_PIPELINED(BUS_PIPELINED), .BRAM_BITSIZE(BRAM_BITSIZE), .PRIVATE_MEMORY(PRIVATE_MEMORY), .USE_SPARSE_MEMORY(USE_SPARSE_MEMORY), .BITSIZE_proxy_in1(BITSIZE_proxy_in1), .PORTSIZE_proxy_in1(PORTSIZE_proxy_in1), .BITSIZE_proxy_in2(BITSIZE_proxy_in2), .PORTSIZE_proxy_in2(PORTSIZE_proxy_in2), .BITSIZE_proxy_in3(BITSIZE_proxy_in3), .PORTSIZE_proxy_in3(PORTSIZE_proxy_in3), .BITSIZE_proxy_sel_LOAD(BITSIZE_proxy_sel_LOAD), .PORTSIZE_proxy_sel_LOAD(PORTSIZE_proxy_sel_LOAD), .BITSIZE_proxy_sel_STORE(BITSIZE_proxy_sel_STORE), .PORTSIZE_proxy_sel_STORE(PORTSIZE_proxy_sel_STORE), .BITSIZE_proxy_out1(BITSIZE_proxy_out1), .PORTSIZE_proxy_out1(PORTSIZE_proxy_out1), .HIGH_LATENCY(0)) ARRAY_1D_STD_BRAM_NN_instance (.out1(out1), .Sout_Rdata_ram(Sout_Rdata_ram), .Sout_DataRdy(Sout_DataRdy), .proxy_out1(proxy_out1), .clock(clock), .reset(reset), .in1(in1), .in2(in2), .in3(in3), .sel_LOAD(sel_LOAD &amp; in4), .sel_STORE(sel_STORE &amp; in4), .S_oe_ram(S_oe_ram), .S_we_ram(S_we_ram), .S_addr_ram(S_addr_ram), .S_Wdata_ram(S_Wdata_ram), .Sin_Rdata_ram(Sin_Rdata_ram), .S_data_ram_size(S_data_ram_size), .Sin_DataRdy(Sin_DataRdy), .proxy_in1(proxy_in1), .proxy_in2(proxy_in2), .proxy_in3(proxy_in3), .proxy_sel_LOAD(proxy_sel_LOAD), .proxy_sel_STORE(proxy_sel_STORE));" IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SV"/>
           </component_o>
@@ -1468,105 +1234,81 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2022 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>ALTERA-CYCLONEII</specialized>
             <port_o id="clock" path="ARRAY_1D_STD_BRAM_NN_3/clock" dir="IN" is_clock="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="reset" path="ARRAY_1D_STD_BRAM_NN_3/reset" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_vector_o id="in1" path="ARRAY_1D_STD_BRAM_NN_3/in1" dir="IN">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="in2" path="ARRAY_1D_STD_BRAM_NN_3/in2" dir="IN" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="in3" path="ARRAY_1D_STD_BRAM_NN_3/in3" dir="IN" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="in4" path="ARRAY_1D_STD_BRAM_NN_3/in4" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="sel_LOAD" path="ARRAY_1D_STD_BRAM_NN_3/sel_LOAD" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="sel_STORE" path="ARRAY_1D_STD_BRAM_NN_3/sel_STORE" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_oe_ram" path="ARRAY_1D_STD_BRAM_NN_3/S_oe_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_we_ram" path="ARRAY_1D_STD_BRAM_NN_3/S_we_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_addr_ram" path="ARRAY_1D_STD_BRAM_NN_3/S_addr_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_Wdata_ram" path="ARRAY_1D_STD_BRAM_NN_3/S_Wdata_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sin_Rdata_ram" path="ARRAY_1D_STD_BRAM_NN_3/Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_data_ram_size" path="ARRAY_1D_STD_BRAM_NN_3/S_data_ram_size" dir="IN" is_extern="1" is_global="1" is_memory="1" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sin_DataRdy" path="ARRAY_1D_STD_BRAM_NN_3/Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_in1" path="ARRAY_1D_STD_BRAM_NN_3/proxy_in1" dir="IN" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_in2" path="ARRAY_1D_STD_BRAM_NN_3/proxy_in2" dir="IN" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_in3" path="ARRAY_1D_STD_BRAM_NN_3/proxy_in3" dir="IN" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_sel_LOAD" path="ARRAY_1D_STD_BRAM_NN_3/proxy_sel_LOAD" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_sel_STORE" path="ARRAY_1D_STD_BRAM_NN_3/proxy_sel_STORE" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="out1" path="ARRAY_1D_STD_BRAM_NN_3/out1" dir="OUT">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sout_Rdata_ram" path="ARRAY_1D_STD_BRAM_NN_3/Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sout_DataRdy" path="ARRAY_1D_STD_BRAM_NN_3/Sout_DataRdy" dir="OUT" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_out1" path="ARRAY_1D_STD_BRAM_NN_3/proxy_out1" dir="OUT" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_NN_3 in1 in2 in3 in4 sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file_a MEMORY_INIT_file_b n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_sel_LOAD proxy_sel_STORE proxy_out1" VERILOG_PROVIDED="ARRAY_1D_STD_BRAM_NN_SV #(.BITSIZE_in1(BITSIZE_in1), .PORTSIZE_in1(PORTSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .PORTSIZE_in2(PORTSIZE_in2), .BITSIZE_in3(BITSIZE_in3), .PORTSIZE_in3(PORTSIZE_in3), .BITSIZE_sel_LOAD(BITSIZE_sel_LOAD), .PORTSIZE_sel_LOAD(PORTSIZE_sel_LOAD), .BITSIZE_sel_STORE(BITSIZE_sel_STORE), .PORTSIZE_sel_STORE(PORTSIZE_sel_STORE), .BITSIZE_S_oe_ram(BITSIZE_S_oe_ram), .PORTSIZE_S_oe_ram(PORTSIZE_S_oe_ram), .BITSIZE_S_we_ram(BITSIZE_S_we_ram), .PORTSIZE_S_we_ram(PORTSIZE_S_we_ram), .BITSIZE_out1(BITSIZE_out1), .PORTSIZE_out1(PORTSIZE_out1), .BITSIZE_S_addr_ram(BITSIZE_S_addr_ram), .PORTSIZE_S_addr_ram(PORTSIZE_S_addr_ram), .BITSIZE_S_Wdata_ram(BITSIZE_S_Wdata_ram), .PORTSIZE_S_Wdata_ram(PORTSIZE_S_Wdata_ram), .BITSIZE_Sin_Rdata_ram(BITSIZE_Sin_Rdata_ram), .PORTSIZE_Sin_Rdata_ram(PORTSIZE_Sin_Rdata_ram), .BITSIZE_Sout_Rdata_ram(BITSIZE_Sout_Rdata_ram), .PORTSIZE_Sout_Rdata_ram(PORTSIZE_Sout_Rdata_ram), .BITSIZE_S_data_ram_size(BITSIZE_S_data_ram_size), .PORTSIZE_S_data_ram_size(PORTSIZE_S_data_ram_size), .BITSIZE_Sin_DataRdy(BITSIZE_Sin_DataRdy), .PORTSIZE_Sin_DataRdy(PORTSIZE_Sin_DataRdy), .BITSIZE_Sout_DataRdy(BITSIZE_Sout_DataRdy), .PORTSIZE_Sout_DataRdy(PORTSIZE_Sout_DataRdy), .MEMORY_INIT_file_a(MEMORY_INIT_file_a), .MEMORY_INIT_file_b(MEMORY_INIT_file_b), .n_elements(n_elements), .data_size(data_size), .address_space_begin(address_space_begin), .address_space_rangesize(address_space_rangesize), .BUS_PIPELINED(BUS_PIPELINED), .BRAM_BITSIZE(BRAM_BITSIZE), .PRIVATE_MEMORY(PRIVATE_MEMORY), .USE_SPARSE_MEMORY(USE_SPARSE_MEMORY), .BITSIZE_proxy_in1(BITSIZE_proxy_in1), .PORTSIZE_proxy_in1(PORTSIZE_proxy_in1), .BITSIZE_proxy_in2(BITSIZE_proxy_in2), .PORTSIZE_proxy_in2(PORTSIZE_proxy_in2), .BITSIZE_proxy_in3(BITSIZE_proxy_in3), .PORTSIZE_proxy_in3(PORTSIZE_proxy_in3), .BITSIZE_proxy_sel_LOAD(BITSIZE_proxy_sel_LOAD), .PORTSIZE_proxy_sel_LOAD(PORTSIZE_proxy_sel_LOAD), .BITSIZE_proxy_sel_STORE(BITSIZE_proxy_sel_STORE), .PORTSIZE_proxy_sel_STORE(PORTSIZE_proxy_sel_STORE), .BITSIZE_proxy_out1(BITSIZE_proxy_out1), .PORTSIZE_proxy_out1(PORTSIZE_proxy_out1), .HIGH_LATENCY(1)) ARRAY_1D_STD_BRAM_NN_instance (.out1(out1), .Sout_Rdata_ram(Sout_Rdata_ram), .Sout_DataRdy(Sout_DataRdy), .proxy_out1(proxy_out1), .clock(clock), .reset(reset), .in1(in1), .in2(in2), .in3(in3), .sel_LOAD(sel_LOAD &amp; in4), .sel_STORE(sel_STORE &amp; in4), .S_oe_ram(S_oe_ram), .S_we_ram(S_we_ram), .S_addr_ram(S_addr_ram), .S_Wdata_ram(S_Wdata_ram), .Sin_Rdata_ram(Sin_Rdata_ram), .S_data_ram_size(S_data_ram_size), .Sin_DataRdy(Sin_DataRdy), .proxy_in1(proxy_in1), .proxy_in2(proxy_in2), .proxy_in3(proxy_in3), .proxy_sel_LOAD(proxy_sel_LOAD), .proxy_sel_STORE(proxy_sel_STORE));" IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SV"/>
           </component_o>
@@ -1599,105 +1341,81 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2022 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>ALTERA-CYCLONEII</specialized>
             <port_o id="clock" path="ARRAY_1D_STD_BRAM_NN_4/clock" dir="IN" is_clock="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_o id="reset" path="ARRAY_1D_STD_BRAM_NN_4/reset" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_o>
             <port_vector_o id="in1" path="ARRAY_1D_STD_BRAM_NN_4/in1" dir="IN">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="in2" path="ARRAY_1D_STD_BRAM_NN_4/in2" dir="IN" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="in3" path="ARRAY_1D_STD_BRAM_NN_4/in3" dir="IN" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="in4" path="ARRAY_1D_STD_BRAM_NN_4/in4" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="sel_LOAD" path="ARRAY_1D_STD_BRAM_NN_4/sel_LOAD" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="sel_STORE" path="ARRAY_1D_STD_BRAM_NN_4/sel_STORE" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_oe_ram" path="ARRAY_1D_STD_BRAM_NN_4/S_oe_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_we_ram" path="ARRAY_1D_STD_BRAM_NN_4/S_we_ram" dir="IN" is_extern="1" is_global="1" is_memory="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_addr_ram" path="ARRAY_1D_STD_BRAM_NN_4/S_addr_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_Wdata_ram" path="ARRAY_1D_STD_BRAM_NN_4/S_Wdata_ram" dir="IN" is_extern="1" is_global="1" is_memory="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sin_Rdata_ram" path="ARRAY_1D_STD_BRAM_NN_4/Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="S_data_ram_size" path="ARRAY_1D_STD_BRAM_NN_4/S_data_ram_size" dir="IN" is_extern="1" is_global="1" is_memory="1" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sin_DataRdy" path="ARRAY_1D_STD_BRAM_NN_4/Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_in1" path="ARRAY_1D_STD_BRAM_NN_4/proxy_in1" dir="IN" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_in2" path="ARRAY_1D_STD_BRAM_NN_4/proxy_in2" dir="IN" is_addr_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_in3" path="ARRAY_1D_STD_BRAM_NN_4/proxy_in3" dir="IN" is_size_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_sel_LOAD" path="ARRAY_1D_STD_BRAM_NN_4/proxy_sel_LOAD" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_sel_STORE" path="ARRAY_1D_STD_BRAM_NN_4/proxy_sel_STORE" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="out1" path="ARRAY_1D_STD_BRAM_NN_4/out1" dir="OUT">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sout_Rdata_ram" path="ARRAY_1D_STD_BRAM_NN_4/Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="Sout_DataRdy" path="ARRAY_1D_STD_BRAM_NN_4/Sout_DataRdy" dir="OUT" is_memory="1" is_slave="1">
               <structural_type_descriptor type="BOOL" size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <port_vector_o id="proxy_out1" path="ARRAY_1D_STD_BRAM_NN_4/proxy_out1" dir="OUT" is_data_bus="1">
               <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-              <connected_objects/>
             </port_vector_o>
             <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_NN_4 in1 in2 in3 in4 sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file_a MEMORY_INIT_file_b n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_sel_LOAD proxy_sel_STORE proxy_out1" VERILOG_PROVIDED="ARRAY_1D_STD_BRAM_NN_SV #(.BITSIZE_in1(BITSIZE_in1), .PORTSIZE_in1(PORTSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .PORTSIZE_in2(PORTSIZE_in2), .BITSIZE_in3(BITSIZE_in3), .PORTSIZE_in3(PORTSIZE_in3), .BITSIZE_sel_LOAD(BITSIZE_sel_LOAD), .PORTSIZE_sel_LOAD(PORTSIZE_sel_LOAD), .BITSIZE_sel_STORE(BITSIZE_sel_STORE), .PORTSIZE_sel_STORE(PORTSIZE_sel_STORE), .BITSIZE_S_oe_ram(BITSIZE_S_oe_ram), .PORTSIZE_S_oe_ram(PORTSIZE_S_oe_ram), .BITSIZE_S_we_ram(BITSIZE_S_we_ram), .PORTSIZE_S_we_ram(PORTSIZE_S_we_ram), .BITSIZE_out1(BITSIZE_out1), .PORTSIZE_out1(PORTSIZE_out1), .BITSIZE_S_addr_ram(BITSIZE_S_addr_ram), .PORTSIZE_S_addr_ram(PORTSIZE_S_addr_ram), .BITSIZE_S_Wdata_ram(BITSIZE_S_Wdata_ram), .PORTSIZE_S_Wdata_ram(PORTSIZE_S_Wdata_ram), .BITSIZE_Sin_Rdata_ram(BITSIZE_Sin_Rdata_ram), .PORTSIZE_Sin_Rdata_ram(PORTSIZE_Sin_Rdata_ram), .BITSIZE_Sout_Rdata_ram(BITSIZE_Sout_Rdata_ram), .PORTSIZE_Sout_Rdata_ram(PORTSIZE_Sout_Rdata_ram), .BITSIZE_S_data_ram_size(BITSIZE_S_data_ram_size), .PORTSIZE_S_data_ram_size(PORTSIZE_S_data_ram_size), .BITSIZE_Sin_DataRdy(BITSIZE_Sin_DataRdy), .PORTSIZE_Sin_DataRdy(PORTSIZE_Sin_DataRdy), .BITSIZE_Sout_DataRdy(BITSIZE_Sout_DataRdy), .PORTSIZE_Sout_DataRdy(PORTSIZE_Sout_DataRdy), .MEMORY_INIT_file_a(MEMORY_INIT_file_a), .MEMORY_INIT_file_b(MEMORY_INIT_file_b), .n_elements(n_elements), .data_size(data_size), .address_space_begin(address_space_begin), .address_space_rangesize(address_space_rangesize), .BUS_PIPELINED(BUS_PIPELINED), .BRAM_BITSIZE(BRAM_BITSIZE), .PRIVATE_MEMORY(PRIVATE_MEMORY), .USE_SPARSE_MEMORY(USE_SPARSE_MEMORY), .BITSIZE_proxy_in1(BITSIZE_proxy_in1), .PORTSIZE_proxy_in1(PORTSIZE_proxy_in1), .BITSIZE_proxy_in2(BITSIZE_proxy_in2), .PORTSIZE_proxy_in2(PORTSIZE_proxy_in2), .BITSIZE_proxy_in3(BITSIZE_proxy_in3), .PORTSIZE_proxy_in3(PORTSIZE_proxy_in3), .BITSIZE_proxy_sel_LOAD(BITSIZE_proxy_sel_LOAD), .PORTSIZE_proxy_sel_LOAD(PORTSIZE_proxy_sel_LOAD), .BITSIZE_proxy_sel_STORE(BITSIZE_proxy_sel_STORE), .PORTSIZE_proxy_sel_STORE(PORTSIZE_proxy_sel_STORE), .BITSIZE_proxy_out1(BITSIZE_proxy_out1), .PORTSIZE_proxy_out1(PORTSIZE_proxy_out1), .HIGH_LATENCY(2)) ARRAY_1D_STD_BRAM_NN_instance (.out1(out1), .Sout_Rdata_ram(Sout_Rdata_ram), .Sout_DataRdy(Sout_DataRdy), .proxy_out1(proxy_out1), .clock(clock), .reset(reset), .in1(in1), .in2(in2), .in3(in3), .sel_LOAD(sel_LOAD &amp; in4), .sel_STORE(sel_STORE &amp; in4), .S_oe_ram(S_oe_ram), .S_we_ram(S_we_ram), .S_addr_ram(S_addr_ram), .S_Wdata_ram(S_Wdata_ram), .Sin_Rdata_ram(Sin_Rdata_ram), .S_data_ram_size(S_data_ram_size), .Sin_DataRdy(Sin_DataRdy), .proxy_in1(proxy_in1), .proxy_in2(proxy_in2), .proxy_in3(proxy_in3), .proxy_sel_LOAD(proxy_sel_LOAD), .proxy_sel_STORE(proxy_sel_STORE));" IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SV"/>
           </component_o>
@@ -2164,12 +1882,6 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">72</attribute>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
         <operation operation_name="nop_expr" execution_time="3.8430498443564818"/>
-      </cell>
-      <cell>
-        <name>FSL_handler</name>
-        <attribute name="area" value_type="float64">0</attribute>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="FSL_handler"/>
       </cell>
       <cell>
         <name>IIconvert_expr_FU</name>

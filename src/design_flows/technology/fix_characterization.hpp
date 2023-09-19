@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2016-2022 Politecnico di Milano
+ *              Copyright (C) 2016-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,7 +48,7 @@
 #include "refcount.hpp"
 #include "utility.hpp"
 
-REF_FORWARD_DECL(target_device);
+REF_FORWARD_DECL(generic_device);
 REF_FORWARD_DECL(technology_manager);
 
 /**
@@ -80,7 +80,7 @@ class FixCharacterization : public TechnologyFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   FixCharacterization(const technology_managerRef TM, const target_deviceRef target,
+   FixCharacterization(const technology_managerRef TM, const generic_deviceRef target,
                        const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**

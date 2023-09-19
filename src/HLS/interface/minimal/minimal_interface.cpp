@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,47 +42,33 @@
  *
  */
 #include "minimal_interface.hpp"
-
+#include "Parameter.hpp"
+#include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
+#include "copyrights_strings.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "fileIO.hpp"
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "memory.hpp"
 #include "memory_allocation.hpp"
 #include "memory_symbol.hpp"
-
-#include "Parameter.hpp"
+#include "string_manipulation.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
+#include "technology_node.hpp"
+#include "testbench_generation.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-
-// behavior/ include
-#include "behavioral_helper.hpp"
-#include "call_graph_manager.hpp"
-
-// HLS/simulation include
-#include "testbench_generation_base_step.hpp"
-
-/// STD include
-#include <string>
-
-/// STL includes
-#include "custom_map.hpp"
-#include "custom_set.hpp"
 #include <list>
+#include <string>
 #include <utility>
 #include <vector>
-
-// technology/physical_library include
-#include "technology_node.hpp"
-
-/// utility include
-#include "copyrights_strings.hpp"
-#include "fileIO.hpp"
-#include "string_manipulation.hpp"
 
 minimal_interface::minimal_interface(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
                                      const DesignFlowManagerConstRef _design_flow_manager,
@@ -152,28 +138,27 @@ static bool compareMemVarsPair(std::pair<unsigned int, memory_symbolRef>& first,
 void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structural_objectRef interfaceObj,
                                       structural_managerRef SM_minimal_interface)
 {
-   std::map<unsigned int, structural_objectRef> null_values;
+   std::map<unsigned long long, structural_objectRef> null_values;
 
    const auto& base_address = HLSMgr->base_address;
-   const auto Has_extern_allocated_data = HLSMgr->Rmem->get_memory_address() - base_address > 0;
-   const auto Has_unknown_addresses = HLSMgr->Rmem->has_unknown_addresses();
-   const auto cg_man = HLSMgr->CGetCallGraphManager();
-   const auto top_function_ids = cg_man->GetRootFunctions();
+   const auto has_extern_mem = HLSMgr->Rmem->get_memory_address() - base_address > 0;
+   const auto has_unknown_addresses = HLSMgr->Rmem->has_unknown_addresses();
+   const auto FB = HLSMgr->CGetFunctionBehavior(funId);
+   const auto channels_number = FB->GetChannelsNumber();
+   const auto channels_type = FB->GetChannelsType();
+   const auto memory_allocation_policy = FB->GetMemoryAllocationPolicy();
+   const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    const auto Has_intern_shared_data =
        HLSMgr->Rmem->has_intern_shared_data() ||
-       (parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) ==
-        MemoryAllocation_Policy::EXT_PIPELINED_BRAM) ||
-       (parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) ==
-        MemoryAllocation_Policy::NO_BRAM) ||
-       (top_function_ids.find(funId) != top_function_ids.end() &&
-        parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION) ||
-       (HLSMgr->hasToBeInterfaced(funId) && top_function_ids.find(funId) == top_function_ids.end()) ||
-       parameters->getOption<bool>(OPT_memory_mapped_top);
+       (memory_allocation_policy == MemoryAllocation_Policy::EXT_PIPELINED_BRAM) ||
+       (memory_allocation_policy == MemoryAllocation_Policy::NO_BRAM) ||
+       (top_function_ids.count(funId) ? parameters->getOption<bool>(OPT_memory_mapped_top) :
+                                        HLSMgr->hasToBeInterfaced(funId));
    bool with_master = false;
    bool with_slave = false;
-   for(unsigned int i = 0; i < GetPointerS<module>(wrappedObj)->get_in_port_size(); i++)
+   for(auto i = 0U; i < GetPointerS<module>(wrappedObj)->get_in_port_size(); ++i)
    {
-      const structural_objectRef& port_obj = GetPointerS<module>(wrappedObj)->get_in_port(i);
+      const auto port_obj = GetPointerS<module>(wrappedObj)->get_in_port(i);
       if(GetPointerS<port_o>(port_obj)->get_is_memory())
       {
          if(GetPointerS<port_o>(port_obj)->get_is_master())
@@ -189,8 +174,18 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
 
    CustomOrderedSet<structural_objectRef> portsToSkip;
    CustomOrderedSet<structural_objectRef> portsToConstant;
-   const auto& DesignInterface = HLSMgr->design_interface;
-
+   /* Check if there is at least one interface type */
+   bool type_found = false;
+   for(auto& fun : HLSMgr->design_attributes)
+   {
+      for(auto par : fun.second)
+      {
+         if(par.second.count(attr_interface_type))
+         {
+            type_found = true;
+         }
+      }
+   }
    /// list of ports that have to be connected to constant 0
    if(with_slave)
    {
@@ -210,46 +205,63 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
    std::map<structural_objectRef, structural_objectRef> portsToSigConnect;
 
    CustomOrderedSet<std::string> param_renamed;
-   if(!DesignInterface.empty())
+   if(type_found)
    {
       const auto TM = HLSMgr->get_tree_manager();
       const auto fnode = TM->CGetTreeNode(funId);
       const auto fd = GetPointerS<const function_decl>(fnode);
-      std::string fname;
-      tree_helper::get_mangled_fname(fd, fname);
-      if(DesignInterface.find(fname) != DesignInterface.end())
+      const auto fname = tree_helper::GetMangledFunctionName(fd);
+      /* Check if there is at least one interface type for the specific function fname */
+      bool fun_type_found = false;
+      if(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end())
       {
-         const auto& DesignInterfaceArgs = DesignInterface.at(fname);
-         for(const auto& arg : fd->list_of_args)
+         for(auto& par : HLSMgr->design_attributes.at(fname))
          {
-            const auto a = GetPointerS<const parm_decl>(GET_CONST_NODE(arg));
-            const auto argName = GET_CONST_NODE(a->name);
-            THROW_ASSERT(GetPointer<const identifier_node>(argName), "unexpected condition");
-            const auto& argName_string = GetPointerS<const identifier_node>(argName)->strg;
-            THROW_ASSERT(DesignInterfaceArgs.find(argName_string) != DesignInterfaceArgs.end(),
-                         "unexpected condition:" + argName_string);
-            const auto interfaceType = DesignInterfaceArgs.find(argName_string)->second;
-            if(interfaceType != "default")
+            if(par.second.find(attr_interface_type) != par.second.end())
             {
-               if(tree_helper::IsPointerType(a->type))
+               fun_type_found = true;
+            }
+         }
+
+         if(fun_type_found)
+         {
+            for(const auto& arg : fd->list_of_args)
+            {
+               const auto a = GetPointerS<const parm_decl>(GET_CONST_NODE(arg));
+               const auto argName = GET_CONST_NODE(a->name);
+               THROW_ASSERT(GetPointer<const identifier_node>(argName), "unexpected condition");
+               const auto& argName_string = GetPointerS<const identifier_node>(argName)->strg;
+               THROW_ASSERT(HLSMgr->design_attributes.at(fname).find(argName_string) !=
+                                    HLSMgr->design_attributes.at(fname).end() &&
+                                HLSMgr->design_attributes.at(fname).at(argName_string).find(attr_interface_type) !=
+                                    HLSMgr->design_attributes.at(fname).at(argName_string).end(),
+                            "unexpected condition:" + argName_string);
+               const auto interfaceType =
+                   HLSMgr->design_attributes.at(fname).at(argName_string).at(attr_interface_type);
+               if(interfaceType != "default")
                {
-                  const auto p = wrappedObj->find_member(argName_string, port_o_K, wrappedObj);
-                  THROW_ASSERT(p, "unexpected condition");
-                  const auto is_direct =
-                      interfaceType == "m_axi" &&
-                      HLSMgr->design_interface_attribute2.find(fname) != HLSMgr->design_interface_attribute2.end() &&
-                      HLSMgr->design_interface_attribute2.find(fname)->second.find(argName_string) !=
-                          HLSMgr->design_interface_attribute2.find(fname)->second.end() &&
-                      HLSMgr->design_interface_attribute2.find(fname)->second.find(argName_string)->second == "direct";
-                  if(!is_direct)
+                  if(tree_helper::IsPointerType(a->type))
                   {
-                     portsToConstant.insert(p);
+                     const auto p = wrappedObj->find_member(argName_string, port_o_K, wrappedObj);
+                     THROW_ASSERT(p, "unexpected condition");
+                     const auto is_direct =
+                         interfaceType == "m_axi" &&
+                         HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end() &&
+                         HLSMgr->design_attributes.at(fname).find(argName_string) !=
+                             HLSMgr->design_attributes.at(fname).end() &&
+                         HLSMgr->design_attributes.at(fname).at(argName_string).find(attr_offset) !=
+                             HLSMgr->design_attributes.at(fname).at(argName_string).end() &&
+                         HLSMgr->design_attributes.at(fname).at(argName_string).at(attr_offset) == "direct";
+                     if(!is_direct)
+                     {
+                        portsToConstant.insert(p);
+                     }
+                     param_renamed.insert(argName_string);
                   }
-                  param_renamed.insert(argName_string);
-               }
-               else
-               {
-                  THROW_ERROR("unexpected parameter type for " + argName_string + "(" + interfaceType + ")");
+                  else
+                  {
+                     THROW_ERROR("unexpected parameter type for " + argName_string + "(" + interfaceType + ")");
+                  }
                }
             }
          }
@@ -324,7 +336,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
    };
    if(!Has_intern_shared_data)
    {
-      if(!Has_extern_allocated_data)
+      if(!has_extern_mem)
       {
          if(!with_master && with_slave)
          {
@@ -343,7 +355,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             /// do nothing
             /// it may happen with ALL_BRAM memory allocation policy
          }
-         else if(with_master && with_slave && Has_unknown_addresses && HLSMgr->Rmem->get_allocated_intern_memory() == 0)
+         else if(with_master && with_slave && has_unknown_addresses &&
+                 HLSMgr->Rmem->get_allocated_internal_memory() == 0)
          {
             /// intern data is not externally visible
             /// slave INs
@@ -356,7 +369,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             portsToSkip.insert(wrappedObj->find_member("Sout_Rdata_ram", port_o_K, wrappedObj));
             portsToSkip.insert(wrappedObj->find_member("Sout_DataRdy", port_o_K, wrappedObj));
          }
-         else if(with_master && with_slave && !Has_unknown_addresses)
+         else if(with_master && with_slave && !has_unknown_addresses)
          {
             /// slave INs connections
             portsToConnect[wrappedObj->find_member("S_oe_ram", port_o_K, wrappedObj)] =
@@ -396,11 +409,9 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       }
       else
       {
-         if(with_master && !Has_unknown_addresses && HLSMgr->Rmem->get_ext_memory_variables().empty())
+         if(with_master && !has_unknown_addresses && HLSMgr->Rmem->get_ext_memory_variables().empty())
          {
-            THROW_ASSERT(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) !=
-                             (MemoryAllocation_ChannelsType::MEM_ACC_P1N),
-                         "unexpected condition");
+            THROW_ASSERT(channels_type != (MemoryAllocation_ChannelsType::MEM_ACC_P1N), "unexpected condition");
             /// allocate the unique shared memory
             structural_objectRef shared_memory;
             bool is_memory_splitted;
@@ -409,27 +420,25 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             {
                latency_postfix = parameters->getOption<std::string>(OPT_bram_high_latency);
             }
-            if(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) ==
-                   MemoryAllocation_ChannelsType::MEM_ACC_11 or
-               parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) ==
-                   MemoryAllocation_ChannelsType::MEM_ACC_N1)
+            if(channels_type == MemoryAllocation_ChannelsType::MEM_ACC_11 or
+               channels_type == MemoryAllocation_ChannelsType::MEM_ACC_N1)
             {
                is_memory_splitted = false;
                shared_memory = SM_minimal_interface->add_module_from_technology_library(
                    "shared_memory", STD_BRAM + latency_postfix, LIBRARY_STD, interfaceObj,
-                   HLSMgr->get_HLS_target()->get_technology_manager());
+                   HLSMgr->get_HLS_device()->get_technology_manager());
             }
             else
             {
                is_memory_splitted = true;
                shared_memory = SM_minimal_interface->add_module_from_technology_library(
                    "shared_memory", STD_BRAMN + latency_postfix, LIBRARY_STD, interfaceObj,
-                   HLSMgr->get_HLS_target()->get_technology_manager());
+                   HLSMgr->get_HLS_device()->get_technology_manager());
             }
-            unsigned int bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
-            unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
-            unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
-            unsigned int bram_bitsize = HLSMgr->Rmem->get_bram_bitsize();
+            auto bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
+            auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
+            auto bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
+            auto bram_bitsize = HLSMgr->Rmem->get_bram_bitsize();
             unsigned long long int n_bytes = HLSMgr->Rmem->get_memory_address() - base_address;
             unsigned long long int vec_size = n_bytes / (bus_data_bitsize / 8);
             std::string init_filename = "shared_memory.mem";
@@ -460,7 +469,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             shared_memory_module->SetParameter("n_elements", STR(vec_size));
             shared_memory_module->SetParameter("data_size", STR(bus_data_bitsize));
             shared_memory_module->SetParameter("BRAM_BITSIZE", STR(bram_bitsize));
-            if((Has_extern_allocated_data) || Has_unknown_addresses)
+            if(has_extern_mem || has_unknown_addresses)
             {
                shared_memory_module->SetParameter("BUS_PIPELINED", "0");
             }
@@ -468,16 +477,13 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             {
                shared_memory_module->SetParameter("BUS_PIPELINED", "1");
             }
-            unsigned int n_ports = parameters->isOption(OPT_channels_number) ?
-                                       parameters->getOption<unsigned int>(OPT_channels_number) :
-                                       0;
             for(unsigned int i = 0; i < shared_memory_module->get_in_port_size(); i++)
             {
                structural_objectRef port = shared_memory_module->get_in_port(i);
                if(GetPointer<port_o>(port)->get_kind() == port_vector_o_K &&
                   GetPointer<port_o>(port)->get_ports_size() == 0)
                {
-                  GetPointer<port_o>(port)->add_n_ports(n_ports, port);
+                  GetPointer<port_o>(port)->add_n_ports(channels_number, port);
                }
                if(GetPointer<port_o>(port) && GetPointer<port_o>(port)->get_is_data_bus())
                {
@@ -498,7 +504,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                if(GetPointer<port_o>(port)->get_kind() == port_vector_o_K &&
                   GetPointer<port_o>(port)->get_ports_size() == 0)
                {
-                  GetPointer<port_o>(port)->add_n_ports(n_ports, port);
+                  GetPointer<port_o>(port)->add_n_ports(channels_number, port);
                }
                if(GetPointer<port_o>(port) && GetPointer<port_o>(port)->get_is_data_bus())
                {
@@ -513,8 +519,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                   port->type_resize(bus_size_bitsize);
                }
             }
-            const std::map<unsigned int, memory_symbolRef>& mem_vars = HLSMgr->Rmem->get_ext_memory_variables();
-            unsigned int nbyte_on_memory = (bram_bitsize / 8);
+            const auto& mem_vars = HLSMgr->Rmem->get_ext_memory_variables();
+            auto nbyte_on_memory = (bram_bitsize / 8);
 
             std::string init_v;
             std::string current_bits;
@@ -530,8 +536,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             std::list<std::pair<unsigned int, memory_symbolRef>>::const_iterator m_next;
             for(auto m = mem_variables.begin(); m != mem_variables.end(); ++m)
             {
-               init_v = TestbenchGenerationBaseStep::print_var_init(HLSMgr->get_tree_manager(), m->first, HLSMgr->Rmem);
-               std::vector<std::string> splitted = SplitString(init_v, ",");
+               const auto splitted =
+                   TestbenchGeneration::print_var_init(HLSMgr->get_tree_manager(), m->first, HLSMgr->Rmem);
                unsigned int byte_allocated = 0;
                unsigned long long int actual_byte =
                    tree_helper::Size(HLSMgr->get_tree_manager()->CGetTreeReindex(m->first)) / 8;
@@ -932,7 +938,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
          {
             do_not_expose_globals_case();
          }
-         else if(with_slave && (HLSMgr->Rmem->get_allocated_intern_memory() == 0))
+         else if(with_slave && (HLSMgr->Rmem->get_allocated_internal_memory() == 0))
          {
             /// slave INs
             portsToConstant.insert(wrappedObj->find_member("S_oe_ram", port_o_K, wrappedObj));
@@ -1031,7 +1037,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                if(int_port)
                {
                   if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_RNONE ||
-                     GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_FDOUT)
+                     GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_FDOUT ||
+                     GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_S_AXIS_TDATA)
                   {
                      portsToSkip.insert(int_port);
                      if(port_in->get_kind() == port_vector_o_K)
@@ -1060,7 +1067,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                   if(int_port)
                   {
                      if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_WNONE ||
-                        GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_FDIN)
+                        GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_FDIN ||
+                        GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_M_AXIS_TDATA)
                      {
                         int_port = wrappedObj->find_member(port_name, port_o_K, wrappedObj);
                         THROW_ASSERT(int_port, "unexpected condition");
@@ -1099,7 +1107,10 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                            int_port = wrappedObj->find_member("_m_axis_" + port_name + "_TDATA", port_o_K, wrappedObj);
                            if(int_port)
                            {
-                              if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_FDIN)
+                              if(GetPointer<port_o>(int_port)->get_port_interface() ==
+                                     port_o::port_interface::PI_FDIN ||
+                                 GetPointer<port_o>(int_port)->get_port_interface() ==
+                                     port_o::port_interface::PI_M_AXIS_TDATA)
                               {
                                  int_port = wrappedObj->find_member(port_name, port_o_K, wrappedObj);
                                  THROW_ASSERT(int_port, "unexpected condition");
@@ -1114,7 +1125,9 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                               if(int_port)
                               {
                                  if(GetPointer<port_o>(int_port)->get_port_interface() ==
-                                    port_o::port_interface::PI_FDOUT)
+                                        port_o::port_interface::PI_FDOUT ||
+                                    GetPointer<port_o>(int_port)->get_port_interface() ==
+                                        port_o::port_interface::PI_S_AXIS_TDATA)
                                  {
                                     portsToSkip.insert(int_port);
                                     if(port_in->get_kind() == port_vector_o_K)
@@ -1345,7 +1358,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                               port_o::port_interface::S_AXIL_RDATA,    port_o::port_interface::S_AXIL_RRESP,
                               port_o::port_interface::S_AXIL_BVALID,   port_o::port_interface::S_AXIL_BREADY,
                               port_o::port_interface::S_AXIL_BRESP,    port_o::port_interface::PI_S_AXIS_TREADY,
-                              port_o::port_interface::PI_M_AXIS_TVALID}))
+                              port_o::port_interface::PI_S_AXIS_TDATA, port_o::port_interface::PI_M_AXIS_TVALID,
+                              port_o::port_interface::PI_M_AXIS_TDATA}))
          {
             portsToSkip.insert(port_out);
             std::string ext_name = port_name[0] == '_' ? port_name.substr(1) : port_name;
@@ -1390,7 +1404,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
          {
             if(port_out->get_typeRef()->type == structural_type_descriptor::INT)
             {
-               auto TM = HLSMgr->get_HLS_target()->get_technology_manager();
+               auto TM = HLSMgr->get_HLS_device()->get_technology_manager();
                std::string library_name = TM->get_library(VIEW_CONVERT_STD_INT);
                auto c_obj = SM_minimal_interface->add_module_from_technology_library(
                    port_name + "_" + VIEW_CONVERT_STD_INT, VIEW_CONVERT_STD_INT, library_name, interfaceObj, TM);
@@ -1411,7 +1425,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             }
             else if(port_out->get_typeRef()->type == structural_type_descriptor::UINT)
             {
-               auto TM = HLSMgr->get_HLS_target()->get_technology_manager();
+               auto TM = HLSMgr->get_HLS_device()->get_technology_manager();
                std::string library_name = TM->get_library(VIEW_CONVERT_STD_UINT);
                auto c_obj = SM_minimal_interface->add_module_from_technology_library(
                    port_name + "_" + VIEW_CONVERT_STD_UINT, VIEW_CONVERT_STD_UINT, library_name, interfaceObj, TM);

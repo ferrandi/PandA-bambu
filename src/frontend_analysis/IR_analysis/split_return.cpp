@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -43,46 +43,29 @@
  *
  */
 
-/// Header include
 #include "split_return.hpp"
-
-#include "phi_opt.hpp"
-
-/// Behavior include
+#include "Parameter.hpp"
 #include "application_manager.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
-
-/// Parameter include
-#include "Parameter.hpp"
-
-/// HLS include
 #include "hls.hpp"
 #include "hls_manager.hpp"
-
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#include "phi_opt.hpp"
+#if HAVE_ILP_BUILT
 #include "hls_step.hpp"
 #endif
-
-/// parser/compiler include
-#include "token_interface.hpp"
-
-/// STD include
-#include <fstream>
-
-/// STL include
 #include "custom_set.hpp"
-
-/// tree includes
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "ext_tree_node.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
+#include "token_interface.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include <fstream>
 
 SplitReturn::SplitReturn(const ParameterConstRef _parameters, const application_managerRef _AppM,
                          unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
@@ -130,7 +113,7 @@ bool SplitReturn::HasToBeExecuted() const
    {
       return false;
    }
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
    if(parameters->isOption(OPT_scheduling_algorithm) &&
       parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING)
    {
@@ -235,7 +218,7 @@ DesignFlowStep_Status SplitReturn::InternalExec()
                for(const auto& def_edge : gp->CGetDefEdgesList())
                {
                   const auto new_gr =
-                      tree_man->create_gimple_return(ret_type, def_edge.first, function_id, BUILTIN_SRCP, 0);
+                      tree_man->create_gimple_return(ret_type, def_edge.first, function_id, BUILTIN_SRCP);
                   auto& pred_block = sl->list_of_bloc.at(def_edge.second);
                   create_return_and_fix_cfg(new_gr, pred_block, bb);
                }
@@ -252,7 +235,7 @@ DesignFlowStep_Status SplitReturn::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- Create return statement based of def edges");
                for(const auto& def_edge : gp->CGetDefEdgesList())
                {
-                  const auto new_gr = tree_man->create_gimple_return(ret_type, gr->op, function_id, BUILTIN_SRCP, 0);
+                  const auto new_gr = tree_man->create_gimple_return(ret_type, gr->op, function_id, BUILTIN_SRCP);
                   GetPointerS<gimple_return>(GET_NODE(new_gr))->AddVuse(def_edge.first);
                   const auto& pred_block = sl->list_of_bloc.at(def_edge.second);
                   create_return_and_fix_cfg(new_gr, pred_block, bb);
@@ -275,7 +258,7 @@ DesignFlowStep_Status SplitReturn::InternalExec()
             for(const auto& pred_block_index : bb->list_of_pred)
             {
                const auto& pred_block = sl->list_of_bloc.at(pred_block_index);
-               const auto new_gr = tree_man->create_gimple_return(ret_type, gr->op, function_id, BUILTIN_SRCP, 0);
+               const auto new_gr = tree_man->create_gimple_return(ret_type, gr->op, function_id, BUILTIN_SRCP);
                create_return_and_fix_cfg(new_gr, pred_block, bb);
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing BB" + STR(bb_index));

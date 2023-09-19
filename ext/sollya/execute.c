@@ -111,6 +111,9 @@ extern void endMiniparser(void *buf, void *scanner);
 extern void initSignalHandler();
 extern void blockSignals();
 
+extern void sollya_mpfi_round_to_quad(sollya_mpfi_t rop, sollya_mpfi_t op);
+extern void sollya_mpfi_round_to_halfprecision(sollya_mpfi_t rop, sollya_mpfi_t op);
+
 node *makeExternalProcedureUsage(libraryProcedure *);
 node *copyThing(node *);
 node *evaluateThingInner(node *);

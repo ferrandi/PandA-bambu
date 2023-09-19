@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -128,6 +128,7 @@ bool application_manager::hasToBeInterfaced(unsigned int funId) const
 {
    const auto root_functions = CGetCallGraphManager()->GetRootFunctions();
    const auto addressed_functions = CGetCallGraphManager()->GetAddressedFunctions();
+
    // all the root functions and the reached addressed functions must be interfaced
    return root_functions.count(funId) || addressed_functions.count(funId);
 }
@@ -332,8 +333,7 @@ void application_manager::AddActorGraphManager(const unsigned int function_index
                                                const ActorGraphManagerRef actor_graph_manager)
 {
    THROW_ASSERT(const_output_actor_graphs.find(function_index) == const_output_actor_graphs.end(),
-                "Function " + boost::lexical_cast<std::string>(function_index) +
-                    " has alread an actor graph manager associated");
+                "Function " + std::to_string(function_index) + " has alread an actor graph manager associated");
    const_output_actor_graphs[function_index] = actor_graph_manager;
    output_actor_graphs[function_index] = actor_graph_manager;
 }
@@ -346,14 +346,14 @@ const CustomUnorderedMap<unsigned int, ActorGraphManagerConstRef>& application_m
 const ActorGraphManagerConstRef application_manager::CGetActorGraph(const unsigned int function_index) const
 {
    THROW_ASSERT(const_output_actor_graphs.find(function_index) != const_output_actor_graphs.end(),
-                "Actor graph for function " + boost::lexical_cast<std::string>(function_index) + " not found");
+                "Actor graph for function " + std::to_string(function_index) + " not found");
    return const_output_actor_graphs.find(function_index)->second;
 }
 
 ActorGraphManagerRef application_manager::GetActorGraph(const unsigned int function_index)
 {
    THROW_ASSERT(output_actor_graphs.find(function_index) != output_actor_graphs.end(),
-                "Actor graph for function " + boost::lexical_cast<std::string>(function_index) + " not found ");
+                "Actor graph for function " + std::to_string(function_index) + " not found ");
    return output_actor_graphs.find(function_index)->second;
 }
 

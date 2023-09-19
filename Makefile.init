@@ -40,7 +40,7 @@ cleanAll: clean cleanIN cleanOrig
 checkCompile :
 	make -f etc/scripts/Makeall all CHECKS_FILE=./check_compilation
 
-J=1
+J ?= $(shell grep -c ^processor /proc/cpuinfo)
 CONFIGURE_OPTIONS:=--enable-flopoco --enable-opt --enable-release
 export LM_LICENSE_FILE=
 
@@ -61,7 +61,6 @@ distclean :
 	@rm -rf ext/Coin-Cbc/missing
 	@rm -rf ext/cudd/config.h.in ext/cudd/config.h.in~ ext/cudd/configure
 	@rm -rf ext/flopoco/config.h.in ext/flopoco/config.h.in~ ext/flopoco/configure ext/flopoco/configure.ac ext/flopoco/m4 ext/flopoco/Makefile.am ext/flopoco/src/FPExpressions/ExpressionParser.h ext/flopoco/src/FPExpressions/FlopocoScanner.h ext/flopoco/src/Makefile.am
-	@rm -rf ext/liberty_parser/configure
 	@rm -rf ext/libfplll-4.0.3/config.h.in ext/libfplll-4.0.3/config.h.in~ ext/libfplll-4.0.3/configure
 	@rm -rf ext/metslib-0.5.3/config/depcomp ext/metslib-0.5.3/config/missing ext/metslib-0.5.3/config.h.in ext/metslib-0.5.3/configure
 	@rm -rf ext/SimIt-PoliMi/config.h.in ext/SimIt-PoliMi/configure
@@ -99,3 +98,34 @@ install : all
 	  false; \
 	  exit; \
 	fi;
+
+compose-up :
+	@docker-compose -f .devcontainer/docker-compose.yml up -d
+
+compose-down :
+	@docker-compose -f .devcontainer/docker-compose.yml down
+
+buildenv-sync : 
+	@echo "Syncing local environment..."
+	@docker-compose -f .devcontainer/docker-compose.yml exec buildenv rsync -avuq --filter=':- .gitignore' --exclude='/.git*' /mirror/ /workspace/
+	@echo "Sync completed"
+
+buildenv-bash :
+	@echo "Max threads count: $J"
+	@docker-compose -f .devcontainer/docker-compose.yml exec -i -e J=$J buildenv bash
+
+appimage-build : buildenv-sync
+	@echo "Configure options: $(APP_CONFIGURE)"
+	@docker-compose -f .devcontainer/docker-compose.yml exec -e J=$J buildenv bash /workspace/.devcontainer/library-scripts/appimage-build.sh /appimage /panda_dist/bambu.AppImage $(APP_CONFIGURE)
+	@docker-compose -f .devcontainer/docker-compose.yml exec buildenv chown -R $(shell id -u):$(shell id -g) /panda_dist
+
+appimage-init : buildenv-sync
+	@echo "Initializing PandA build environment"
+	@docker-compose -f .devcontainer/docker-compose.yml exec buildenv make --directory=/workspace -f Makefile.init
+
+appimage-setup : buildenv-sync
+	@docker-compose -f .devcontainer/docker-compose.yml exec buildenv bash /workspace/.devcontainer/library-scripts/compiler-download.sh / $(APP_COMPILERS) /compilers
+	@docker-compose -f .devcontainer/docker-compose.yml exec buildenv bash /workspace/.devcontainer/library-scripts/compiler-setup.sh
+	@docker-compose -f .devcontainer/docker-compose.yml exec buildenv bash /workspace/.devcontainer/library-scripts/appimage-setup.sh /appimage $(APP_COMPILERS) /compilers
+	@echo "Initializing PandA build environment"
+	@docker-compose -f .devcontainer/docker-compose.yml exec buildenv make --directory=/workspace -f Makefile.init

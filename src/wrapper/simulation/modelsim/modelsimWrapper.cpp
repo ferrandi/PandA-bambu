@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2022 Politecnico di Milano
+ *              Copyright (C) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -41,29 +41,25 @@
  * Last modified by $Author$
  *
  */
-
-/// Includes the class definition
 #include "modelsimWrapper.hpp"
 
-/// Standard PandA include
+#include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
+
+#include "Parameter.hpp"
+#include "constant_strings.hpp"
+#include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
+#include "fileIO.hpp"
+#include "language_writer.hpp"
 #include "utility.hpp"
 
-/// includes all needed Boost.Filesystem declarations
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
-
-/// include to understand which backend is used
-#include "language_writer.hpp"
-
 #include <cerrno>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <unistd.h>
-
-/// STL include
-#include "custom_set.hpp"
 #include <utility>
 
 #define MODELSIM_BIN                                                                                          \
@@ -77,15 +73,12 @@
 #define MODELSIM_VLOG (MODELSIM_BIN + "vlog")
 #define MODELSIM_VSIM (MODELSIM_BIN + "vsim")
 
-#include "Parameter.hpp"
-#include "constant_strings.hpp"
-#include "fileIO.hpp"
-
 #define SIM_SUBDIR (Param->getOption<std::string>(OPT_output_directory) + std::string("/modelsim"))
 
 // constructor
-modelsimWrapper::modelsimWrapper(const ParameterConstRef& _Param, std::string _suffix)
-    : SimulationTool(_Param), suffix(std::move(_suffix))
+modelsimWrapper::modelsimWrapper(const ParameterConstRef& _Param, const std::string& _suffix,
+                                 const std::string& _top_fname)
+    : SimulationTool(_Param, _top_fname), suffix(_suffix)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating the modelsim wrapper...");
    const auto lic_path = std::getenv("LM_LICENSE_FILE");
@@ -94,7 +87,7 @@ modelsimWrapper::modelsimWrapper(const ParameterConstRef& _Param, std::string _s
       THROW_WARNING("Mentor license file has not been specified. User must set LM_LICENSE_FILE variable to point to "
                     "the license file location.");
    }
-   boost::filesystem::create_directory(SIM_SUBDIR + suffix + "/");
+   std::filesystem::create_directory(SIM_SUBDIR + suffix + "/");
 }
 
 // destructor
@@ -108,83 +101,93 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
                                      const std::list<std::string>& file_list)
 {
    THROW_ASSERT(!file_list.empty(), "File list is empty");
-   std::string MODELSIM_OPTIMIZER_FLAGS_DEF;
+   const auto modelsim_bin = MODELSIM_BIN;
+   std::string cflags = "-DMODEL_TECH " + (modelsim_bin.size() ? (" -I" + modelsim_bin + "../include") : "");
 
+   std::string MODELSIM_OPTIMIZER_FLAGS_DEF = "";
    if(Param->getOption<bool>(OPT_mentor_optimizer))
    {
       MODELSIM_OPTIMIZER_FLAGS_DEF = "-O5";
    }
-   else
-   {
-      MODELSIM_OPTIMIZER_FLAGS_DEF = "";
-   }
-   script << "if [ ! -d " << SIM_SUBDIR + suffix << " ]; then" << std::endl;
-   script << "   mkdir " << SIM_SUBDIR + suffix << std::endl;
-   script << "fi" << std::endl;
-
-   std::string modelsim_work = SIM_SUBDIR + suffix + "/modelsim_work";
-   log_file = SIM_SUBDIR + suffix + "/" + top_filename + "_modelsim.log";
-
-   script << "if [ -d " << modelsim_work << " ]; then" << std::endl;
-   script << "  " << MODELSIM_VDEL;
-   script << " -all -lib " << modelsim_work;
-   script << std::endl;
+   script << "beh_dir=\"" << SIM_SUBDIR << suffix << "\"" << std::endl;
+   script << "work_dir=\"${beh_dir}/modelsim_work\"" << std::endl;
+   script << "if [ ! -d ${beh_dir} ]; then" << std::endl;
+   script << "   mkdir -p ${beh_dir}" << std::endl;
    script << "fi" << std::endl << std::endl;
 
-   script << MODELSIM_VLIB;
-   script << " " + modelsim_work;
+   log_file = "${beh_dir}/" + top_filename + "_modelsim.log";
+
+   script << "if [ -d ${work_dir} ]; then" << std::endl;
+   script << "  " << MODELSIM_VDEL << " -all -lib ${work_dir}" << std::endl;
+   script << "fi" << std::endl << std::endl;
+
+   script << MODELSIM_VLIB << " ${work_dir}";
    if(output_level < OUTPUT_LEVEL_VERY_PEDANTIC)
    {
       script << " > /dev/null 2>&1 ";
    }
    script << std::endl << std::endl;
 
-   script << MODELSIM_VMAP;
-   script << " work " + modelsim_work;
-   script << std::endl << std::endl;
+   script << MODELSIM_VMAP << " work ${work_dir}" << std::endl << std::endl;
 
    script << "sed -i 's/; AssertionFailAction = 1/AssertionFailAction = 2/g' modelsim.ini" << std::endl << std::endl;
+
+   std::string libtb_filename = GenerateLibraryBuildScript(script, "${work_dir}", cflags);
+   libtb_filename.erase(libtb_filename.size() - 3);
+   const auto vflags = [&]() {
+      std::string flags;
+      if(cflags.find("-m32") != std::string::npos)
+      {
+         flags += " -32 +define+M32";
+      }
+      else if(cflags.find("-mx32") != std::string::npos)
+      {
+         flags += " +define+MX32";
+      }
+      else if(cflags.find("-m64") != std::string::npos)
+      {
+         flags += " -64 +define+M64";
+      }
+      if(Param->isOption(OPT_generate_vcd) && Param->getOption<bool>(OPT_generate_vcd))
+      {
+         flags += " +define+GENERATE_VCD";
+      }
+      if(Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy))
+      {
+         flags += " +define+GENERATE_VCD_DISCREPANCY";
+      }
+      return flags;
+   }();
 
    /// prepare input files
    for(const auto& file : file_list)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Examining " + file);
-      boost::filesystem::path file_path(file);
-      std::string extension = GetExtension(file_path);
-      if(extension == "vhd" || extension == "vhdl" || extension == "HD" || extension == "VHDL")
+      std::filesystem::path file_path(file);
+      const auto extension = file_path.extension().string();
+      if(extension == ".vhd" || extension == ".vhdl" || extension == ".VHD" || extension == ".VHDL")
       {
-         script << MODELSIM_VCOM;
+         script << MODELSIM_VCOM << " " << vflags << " " << MODELSIM_OPTIMIZER_FLAGS_DEF;
          if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
          {
-            script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF +
-                          " -lint -check_synthesis -fsmsingle -fsmverbose w -work work -2008 "
-                   << file;
+            script << " -lint -check_synthesis -fsmsingle -fsmverbose w";
          }
-         else
-         {
-            script << std::string(" ") + " " + MODELSIM_OPTIMIZER_FLAGS_DEF + " -work work -2008 " << file;
-         }
-         script << std::endl << std::endl;
+         script << " -work work -2008 " << file << std::endl;
          script << "if [ $? -ne 0 ]; then" << std::endl;
          script << "   exit 1;" << std::endl;
-         script << "fi" << std::endl;
+         script << "fi" << std::endl << std::endl;
       }
-      else if(extension == "v" || extension == "V" || extension == "sv")
+      else if(extension == ".v" || extension == ".V" || extension == ".sv" || extension == ".SV")
       {
-         script << MODELSIM_VLOG;
+         script << MODELSIM_VLOG << " " << vflags << " " << MODELSIM_OPTIMIZER_FLAGS_DEF << " -sv";
          if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
          {
-            script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF +
-                          " -sv -lint -fsmsingle -hazards -pedanticerrors -fsmverbose w -work work " + file;
+            script << " -lint -fsmsingle -hazards -pedanticerrors -fsmverbose w";
          }
-         else
-         {
-            script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF + " -sv -work work " + file;
-         }
-         script << std::endl << std::endl;
+         script << " -work work " << file << std::endl;
          script << "if [ $? -ne 0 ]; then" << std::endl;
          script << "   exit 1;" << std::endl;
-         script << "fi" << std::endl;
+         script << "fi" << std::endl << std::endl;
       }
       else
       {
@@ -192,48 +195,27 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
       }
    }
 
-   script << MODELSIM_VSIM;
-   if(MODELSIM_OPTIMIZER_FLAGS_DEF.empty())
+   script << MODELSIM_VSIM << " " << vflags << " -noautoldlibpath -sv_lib " << libtb_filename;
+   if(Param->isOption(OPT_mentor_visualizer) && Param->isOption(OPT_visualizer) &&
+      Param->getOption<bool>(OPT_visualizer))
    {
-      if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
-      {
-         script << " -c -pedanticerrors -assertdebug -do \"onerror {quit -f -code 1;}; run -all; exit -f;\" work." +
-                       top_filename + "_tb_top";
-      }
-      else
-      {
-         script << " -c -do \"onerror {quit -f -code 1;}; run -all; exit -f;\" work." + top_filename + "_tb_top";
-      }
+      script << " -qwavedb=+memory+signal+class+glitch+vhdlvariable";
+      MODELSIM_OPTIMIZER_FLAGS_DEF += " -debug -designfile design.bin";
    }
-   else
+   if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
    {
-      if(Param->isOption(OPT_mentor_visualizer))
-      {
-         if(Param->isOption(OPT_visualizer) && Param->getOption<bool>(OPT_visualizer))
-         {
-            script << " -qwavedb=+memory+signal+class+glitch+vhdlvariable";
-         }
-         if(Param->isOption(OPT_visualizer) && Param->getOption<bool>(OPT_visualizer))
-         {
-            MODELSIM_OPTIMIZER_FLAGS_DEF += " -debug -designfile design.bin";
-         }
-      }
-      if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
-      {
-         script
-             << " -c -voptargs=\"+acc -hazards " + MODELSIM_OPTIMIZER_FLAGS_DEF +
-                    R"( " -pedanticerrors -assertdebug -do "set StdArithNoWarnings 1; set StdNumNoWarnings 1; set NumericStdNoWarnings 1; onerror {quit -f -code 1;}; run -all; exit -f;" work.)" +
-                    top_filename + "_tb_top";
-      }
-      else
-      {
-         script
-             << " -c -voptargs=\"" + MODELSIM_OPTIMIZER_FLAGS_DEF +
-                    R"(" -do "set StdArithNoWarnings 1; set StdNumNoWarnings 1; set NumericStdNoWarnings 1; onerror {quit -f -code 1;}; run -all; exit -f;" work.)" +
-                    top_filename + "_tb_top";
-      }
+      script << " -pedanticerrors -assertdebug";
+      MODELSIM_OPTIMIZER_FLAGS_DEF = "+acc -hazards " + MODELSIM_OPTIMIZER_FLAGS_DEF;
    }
-   script << " 2>&1 | tee " << log_file << std::endl << std::endl;
+   script << " -c";
+   if(!MODELSIM_OPTIMIZER_FLAGS_DEF.empty())
+   {
+      script << " -voptargs=\"" + MODELSIM_OPTIMIZER_FLAGS_DEF << "\"";
+   }
+   script << " -do \"set StdArithNoWarnings 1; set StdNumNoWarnings 1; set NumericStdNoWarnings 1; onerror {quit "
+             "-f -code 1;}; run -all; exit -f;\"  work.clocked_bambu_testbench 2>&1 | tee "
+          << log_file << std::endl
+          << std::endl;
    if(Param->isOption(OPT_mentor_visualizer) && Param->isOption(OPT_visualizer) &&
       Param->getOption<bool>(OPT_visualizer))
    {
@@ -245,8 +227,8 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
 
 void modelsimWrapper::Clean() const
 {
-   if(boost::filesystem::exists(SIM_SUBDIR + suffix))
+   if(std::filesystem::exists(SIM_SUBDIR + suffix))
    {
-      boost::filesystem::remove_all(SIM_SUBDIR + suffix);
+      std::filesystem::remove_all(SIM_SUBDIR + suffix);
    }
 }
