@@ -263,7 +263,7 @@ DesignFlowStep_Status Evaluation::Exec()
          else if(evaluations.find("LUT_FF_PAIRS") != evaluations.end())
          {
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                           "---Luts             : " + STR(evaluations.at("LUT_FF_PAIRS").at(0)));
+                           "---Luts             : " + STR(evaluations.at("LUT_FF_PAIRS")));
          }
          if(evaluations.find("LOGIC_ELEMENTS") != evaluations.end())
          {

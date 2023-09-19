@@ -182,7 +182,7 @@ DesignFlowStep_Status SynthesisEvaluation::Exec()
          {
             brams = area_m->get_resource_value(area_info::BRAM);
          }
-         HLSMgr->evaluations["BRAMS"] = std::vector<double>(1, brams);
+         HLSMgr->evaluations["BRAMS"] = brams;
       }
       else if(objective == "CLOCK_SLACK")
       {
@@ -232,7 +232,7 @@ DesignFlowStep_Status SynthesisEvaluation::Exec()
          area_infoRef area_m = HLSMgr->get_backend_flow()->get_used_resources();
          double reg = 0;
          reg = area_m->get_resource_value(area_info::REGISTERS);
-         HLSMgr->evaluations["REGISTERS"] = std::vector<double>(1, reg);
+         HLSMgr->evaluations["REGISTERS"] = reg;
       }
    }
    return DesignFlowStep_Status::SUCCESS;
