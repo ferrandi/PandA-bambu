@@ -3766,7 +3766,7 @@ generate
     assign Mout_data_ram_size[(i+1)*BITSIZE_Mout_data_ram_size-1:i*BITSIZE_Mout_data_ram_size] = ((i &lt; PORTSIZE_sel_LOAD &amp;&amp; int_sel_LOAD[i]) || (i &lt; PORTSIZE_sel_STORE &amp;&amp; int_sel_STORE[i])) ? (delayed_in3[(i+1)*BITSIZE_in3-1:i*BITSIZE_in3]) : Min_data_ram_size[(i+1)*BITSIZE_Min_data_ram_size-1:i*BITSIZE_Min_data_ram_size];
   end
 endgenerate
-assign done_port = (M_DataRdy &amp; in4)) | (~in4 &amp; (delayed_sel_LOAD | delayed_sel_STORE));;"/>
+assign done_port = (M_DataRdy &amp; in4) | (~in4 &amp; (delayed_sel_LOAD | delayed_sel_STORE));;"/>
         </component_o>
       </circuit>
     </cell>
