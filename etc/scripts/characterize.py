@@ -278,7 +278,7 @@ parser.add_argument("--eucalyptus", help="The eucalyptus executable (default=euc
 parser.add_argument("--spider", help="The spider executable (default=spider)",
                     default="spider")
 parser.add_argument("--ulimit", help="The ulimit options",
-                    default="-f 8388608 -s 32768-v 16777216 ")
+                    default="-f 8388608 -s 32768 -v 16777216 ")
 
 args = parser.parse_args()
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
