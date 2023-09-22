@@ -103,7 +103,7 @@ LatticeBackendFlow::LatticeBackendFlow(const ParameterConstRef _Param, const std
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                      "Importing default scripts for target device family: " + device_string);
       parser = XMLDomParserRef(
-          new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/lattice/") +
+          new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/lattice/", true) +
                            default_data[device_string]));
    }
    parse_flow(parser);

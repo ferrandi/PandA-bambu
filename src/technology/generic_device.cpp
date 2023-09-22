@@ -195,9 +195,9 @@ void generic_device::load_devices()
             if(default_device_data.find(device_string) != default_device_data.end())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Loading " + device_string);
-               ret.insert(
-                   XMLDomParserRef(new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/technology/") +
-                                                    default_device_data[device_string])));
+               ret.insert(XMLDomParserRef(
+                   new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/technology/", true) +
+                                    default_device_data[device_string])));
             }
             else
             {

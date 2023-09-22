@@ -877,7 +877,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        (default=/opt/mentor)\n\n"
       << "    --nanoxplore-root=<path>\n"
       << "        Define NanoXplore tools path. Given directory is searched for NXMap.\n"
-      << "        (default=/opt/NanoXplore/NXMap3)\n\n"
+      << "        (default=/opt/NanoXplore)\n\n"
       << "    --xilinx-root=<path>\n"
       << "        Define Xilinx tools path. Given directory is searched for both ISE and Vivado\n"
       << "        (default=/opt/Xilinx)\n\n"
@@ -1805,7 +1805,12 @@ int BambuParameter::Exec()
          }
          case OPT_TB_EXTRA_GCC_OPTIONS:
          {
-            setOption(OPT_tb_extra_gcc_options, optarg);
+            std::string tb_extra_gcc_options;
+            if(isOption(OPT_tb_extra_gcc_options))
+            {
+               tb_extra_gcc_options = getOption<std::string>(OPT_tb_extra_gcc_options) + " ";
+            }
+            setOption(OPT_tb_extra_gcc_options, tb_extra_gcc_options + std::string(optarg));
             break;
          }
          case OPT_MAX_SIM_CYCLES:
@@ -3753,7 +3758,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_lattice_root, "/opt/diamond:/usr/local/diamond");
    setOption(OPT_mentor_root, "/opt/mentor");
    setOption(OPT_mentor_optimizer, true);
-   setOption(OPT_nanoxplore_root, "/opt/NanoXplore/NXmap3");
+   setOption(OPT_nanoxplore_root, "/opt/NanoXplore");
    setOption(OPT_verilator_parallel, false);
    setOption(OPT_xilinx_root, "/opt/Xilinx");
 
@@ -3865,6 +3870,6 @@ void BambuParameter::add_bambu_library(std::string lib)
       archive_files = getOption<std::string>(OPT_archive_files) + STR_CST_string_separator;
    }
 
-   setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_" +
-                                    CompilerWrapper::getCompilerSuffix(preferred_compiler) + VSuffix + ".a");
+   setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib", true) + lib +
+                                    "_" + CompilerWrapper::getCompilerSuffix(preferred_compiler) + VSuffix + ".a");
 }

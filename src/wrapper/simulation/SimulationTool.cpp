@@ -487,7 +487,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
          }
       }
       script << ")\n"
-             << "TB_CFLAGS=\""
+             << "CFLAGS+=\" "
              << (Param->isOption(OPT_tb_extra_gcc_options) ? Param->getOption<std::string>(OPT_tb_extra_gcc_options) :
                                                              "")
              << "\"\n"
@@ -497,14 +497,19 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
              << "  case \"${obj}\" in\n"
              << "  *.c)  ;&\n"
              << "  *.cc) ;&\n"
-             << "  *.cpp)\n"
+             << "  *.cpp);&\n"
+             << "  *.ll)\n"
              << "    obj=\"" << output_dir << "/${obj%.*}.tb.o\"\n"
-             << "    ${CC} -c ${CFLAGS} ${TB_CFLAGS} -fPIC -o ${obj} ${src}\n"
+             << "    ${CC} -c ${CFLAGS} -fPIC -o ${obj} ${src}\n"
+             << "    src=${obj}\n"
+             << "    ;&\n"
+             << "  *.o)\n"
              << "    objcopy -W " << top_fname << " --redefine-sym main=m_cosim_main ${objcopy_common} ${obj}\n"
-             << "    objs+=(\"${obj}\")\n"
-             << "    ;;\n"
-             << "  *)\n"
              << "    objs+=(\"${src}\")\n"
+             << "    ;;\n"
+             << "   *)\n"
+             << "    echo \"Testbench file format not supported '${src}'\"\n"
+             << "    exit -1\n"
              << "    ;;\n"
              << "  esac\n"
              << "done\n\n";

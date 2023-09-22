@@ -146,21 +146,31 @@ inline std::string GetPath(std::filesystem::path path)
    return path.string();
 }
 
-inline std::string relocate_compiler_path(const std::string& path)
+inline std::string relocate_compiler_path(const std::string& path, bool resolve_path = false)
 {
    if(getenv("MINGW_INST_DIR"))
    {
-      std::string app_prefix = getenv("MINGW_INST_DIR");
-      return app_prefix + path;
+      if(resolve_path)
+      {
+         const auto app_prefix = getenv("MINGW_INST_DIR");
+         return app_prefix + path;
+      }
+      return "$MINGW_INST_DIR" + path;
    }
    else if(getenv("APPDIR"))
    {
-      std::string app_prefix = getenv("APPDIR");
-      return app_prefix + path;
+      if(resolve_path)
+      {
+         const auto app_prefix = getenv("APPDIR");
+         return app_prefix + path;
+      }
+      return "$APPDIR" + path;
    }
 #ifdef _WIN32
    else
+   {
       return "c:/msys64/" + path;
+   }
 #else
    else
    {
