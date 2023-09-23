@@ -77,6 +77,7 @@
 #define VIVADO_XILINX_OUTPUT "XILINX_OUTPUT"
 #define VIVADO_XILINX_POWER "XILINX_POWER"
 #define VIVADO_XILINX_DESIGN_DELAY "XILINX_DESIGN_DELAY"
+#define VIVADO_XILINX_URAM "XILINX_URAM"
 
 XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name,
                                      const generic_deviceRef _device)

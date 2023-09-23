@@ -37,6 +37,7 @@ technology/xc7z020-1clg484-VVD.data technology/xc7z045-2ffg900-VVD.data technolo
 technology/xc7a100t-1csg324-VVD.data \
 technology/xcku060-3ffva1156-VVD.data \
 technology/xcu280-2Lfsvh2892-VVD.data \
+technology/xcu55c-2Lfsvh2892-VVD.data \
 technology/xc7z020-1clg484-YOSYS-VVD.data \
 technology/LFE335EA8FN484C.data \
 technology/LFE5UM85F8BG756C.data \
@@ -56,6 +57,7 @@ technology/xc7z020-1clg484-VVD.data technology/xc7z045-2ffg900-VVD.data technolo
 technology/xc7a100t-1csg324-VVD.data \
 technology/xcku060-3ffva1156-VVD.data \
 technology/xcu280-2Lfsvh2892-VVD.data \
+technology/xcu55c-2Lfsvh2892-VVD.data \
 technology/xc7z020-1clg484-YOSYS-VVD.data \
 technology/LFE335EA8FN484C.data \
 technology/LFE5UM85F8BG756C.data \
@@ -108,6 +110,9 @@ technology/xcku060-3ffva1156-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/
 
 technology/xcu280-2Lfsvh2892-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xcu280-2Lfsvh2892-VVD.xml
 	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xcu280-2Lfsvh2892-VVD.xml > technology/xcu280-2Lfsvh2892-VVD.data
+
+technology/xcu55c-2Lfsvh2892-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xcu55c-2Lfsvh2892-VVD.xml
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xcu55c-2Lfsvh2892-VVD.xml > technology/xcu55c-2Lfsvh2892-VVD.data
 
 technology/xc7a100t-1csg324-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7a100t-1csg324-VVD.xml
 	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7a100t-1csg324-VVD.xml > technology/xc7a100t-1csg324-VVD.data
@@ -170,6 +175,7 @@ technology__DATA = technology/xc4vlx100-10ff1513.data technology/xc5vlx110t-1ff1
                                       technology/xc7a100t-1csg324-VVD.data \
                                       technology/xcku060-3ffva1156-VVD.data \
                                       technology/xcu280-2Lfsvh2892-VVD.data \
+                                      technology/xcu55c-2Lfsvh2892-VVD.data \
                                       technology/xc7z020-1clg484-YOSYS-VVD.data \
                                       technology/LFE335EA8FN484C.data \
                                       technology/LFE5UM85F8BG756C.data \

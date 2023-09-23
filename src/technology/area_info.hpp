@@ -63,7 +63,8 @@ class area_info
       LOGIC_AREA,
       DSP,
       BRAM,
-      POWER
+      POWER,
+      URAM
    };
 
  private:
