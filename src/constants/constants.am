@@ -12,6 +12,10 @@ if BUILD_LIB_FROM_C
    noinst_HEADERS += constants/compiler_constants.hpp
 endif
 
+if BUILD_LIB_FROM_DATA_XML
+   noinst_HEADERS += constants/data_xml.hpp
+endif
+
 if BUILD_LIB_FROM_PRAGMA
    noinst_HEADERS += constants/pragma_constants.hpp
 endif
