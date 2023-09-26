@@ -778,47 +778,6 @@ if test "x$panda_USE_LIB_OBJECT_CODE_WRAPPER" = xyes; then
   fi
 fi
 
-################################# CUDA setup ###################################
-if test "x$panda_USE_CUDA" = xyes; then
-#---------------------------------------------------------------------------
-# Setup CUDA paths
-#---------------------------------------------------------------------------
-   CUDA_CFLAGS="-I/usr/local/cuda/include"
-   CUDA_LIBS="-L/usr/local/cuda/lib -lcuda -lcudart -L$NVIDIA_CUDA_SDK/lib -lcutil"
-   NVCC="/usr/local/cuda/bin/nvcc"
-   AC_SUBST(CUDA_CFLAGS)
-   AC_SUBST(CUDA_LIBS)
-   AC_SUBST(NVCC)
-
-   AC_ARG_ENABLE([emu],
-     [  --enable-emu    Turn on device emulation for CUDA],
-     [case "${enableval}" in
-            yes) EMULATION=true;;
-            no)  EMULATION=false;;
-            *) AC_MSG_ERROR([bad value ${enableval} for --enable-emu]);;
-     esac],
-     [EMULATION=false]
-   )
-# ------------------------------------------------------------------------------
-# Setup nvcc flags
-# ------------------------------------------------------------------------------
-   if test x$PANDA_DEBUG = xtrue
-   then
-     NVCCFLAGS="-g"
-   else
-     NVCCFLAGS="-O3 -use_fast_math"
-   fi
-   if test x$EMULATION = xtrue
-   then
-     NVCCFLAGS+=" -deviceemu"
-   fi
-   NVCCFLAGS+=" -I$NVIDIA_CUDA_SDK/common/inc"
-   AC_SUBST(NVCCFLAGS)
-
-fi
-
-
-
 ################################## GSL stuff ###################################
 if test "x$panda_USE_LIB_GSL" = xyes; then
    AX_PATH_GSL(01.10,,AC_MSG_ERROR(could not find required version of GSL))

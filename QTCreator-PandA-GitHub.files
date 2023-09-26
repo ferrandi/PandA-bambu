@@ -43,7 +43,6 @@ build/config_headers/config_HAVE_COIN_OR.hpp
 build/config_headers/config_HAVE_COMPARE_MODELS_BUILT.hpp
 build/config_headers/config_HAVE_CORE_TOOLS.hpp
 build/config_headers/config_HAVE_CROSSTOOL_NG.hpp
-build/config_headers/config_HAVE_CUDA_FAULT_SIMULATION_BUILT.hpp
 build/config_headers/config_HAVE_DESIGN_ANALYSIS_BUILT.hpp
 build/config_headers/config_HAVE_DESIGN_FLOWS_BUILT.hpp
 build/config_headers/config_HAVE_DESIGN_OPTIMIZER.hpp
