@@ -44,8 +44,6 @@
 #ifndef FRONTEND_FLOW_STEP_FACTORY_HPP
 #define FRONTEND_FLOW_STEP_FACTORY_HPP
 
-#include "config_HAVE_ARCH_BUILT.hpp" // for HAVE_ARCH_BUILT
-
 #include "custom_set.hpp"               // for unordered_set
 #include "design_flow_step.hpp"         // for DesignFlowStep (...
 #include "design_flow_step_factory.hpp" // for DesignFlowStepFa...
@@ -65,24 +63,7 @@ class FrontendFlowStepFactory : public DesignFlowStepFactory
    /// The application manager
    const application_managerRef AppM;
 
-#if HAVE_ARCH_BUILT
-   /// The architecture manager
-   const ArchManagerRef arch_manager;
-#endif
-
  public:
-#if HAVE_ARCH_BUILT
-   /**
-    * Constructor
-    * @param AppM is the application manager
-    * @param arch_manager is the architecture manager
-    * @param design_flow_manager is the design flow manager
-    * @param _Param is the set of the parameters
-    */
-   FrontendFlowStepFactory(const application_managerRef AppM, const ArchManagerRef arch_manager,
-                           const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
-#endif
-
    /**
     * Constructor
     * @param AppM is the application manager

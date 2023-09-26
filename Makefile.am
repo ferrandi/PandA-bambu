@@ -88,7 +88,6 @@ dist-hook:
 	for file in \
         $(distdir)/ext/flopoco/src/ExpressionScanner.cpp $(distdir)/ext/flopoco/src/ExpressionParser.cpp \
 	$(distdir)/src/parser/polixml/xmlLexer.cpp $(distdir)/src/parser/polixml/xmlParser.hpp $(distdir)/src/parser/polixml/xmlParser.h $(distdir)/src/parser/polixml/xmlParser.cpp \
-	$(distdir)/src/parser/rtlgcc/rtlLexer.cpp $(distdir)/src/parser/rtlgcc/rtlParser.hpp $(distdir)/src/parser/rtlgcc/rtlParser.h $(distdir)/src/parser/rtlgcc/rtlParser.cpp \
 	$(distdir)/src/parser/compiler/treeLexer.cpp $(distdir)/src/parser/compiler/treeParser.hpp $(distdir)/src/parser/compiler/treeParser.h $(distdir)/src/parser/compiler/treeParser.cpp \
 	$(distdir)/src/parser/aadl/aadl_lexer.cpp $(distdir)/src/parser/aadl/aadl_yparser.hpp $(distdir)/src/parser/aadl/aadl_yparser.h $(distdir)/src/parser/aadl/aadl_yparser.cpp \
 	$(distdir)/src/parser/asn/asn_lexer.cpp $(distdir)/src/parser/asn/asn_yparser.hpp $(distdir)/src/parser/asn/asn_yparser.h $(distdir)/src/parser/asn/asn_yparser.cpp \

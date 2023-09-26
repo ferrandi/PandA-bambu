@@ -1,12 +1,6 @@
 default: all
 
 all:
-	 @if test -e src/logic_synthesis/Makefile.am; then \
-	       make --directory=src/logic_synthesis/2lev -f Makefile.init; \
-	       if test ! -d src/logic_synthesis/2lev/m4; then \
-	          mkdir src/logic_synthesis/2lev/m4; \
-	       fi \
-	 fi
 	 @if ! autoreconf -m -iv --warning=none > autoreconf_log 2>&1; then \
 	     if `grep -q"required directory" autoreconf_log`; then \
 	        grep -h "required directory" autoreconf_log | awk -F'directory' {'print $$2'} | awk {'print $$1'} | sort | uniq | while read -r line; do mkdir -v $$line; done; \
@@ -59,14 +53,9 @@ distclean :
 	@rm -rf ext/autoreconf_log ext/config.h.in ext/config.h.in~ ext/configure
 	@rm -rf ext/abseil-cpp/configure
 	@rm -rf ext/Coin-Cbc/missing
-	@rm -rf ext/cudd/config.h.in ext/cudd/config.h.in~ ext/cudd/configure
 	@rm -rf ext/flopoco/config.h.in ext/flopoco/config.h.in~ ext/flopoco/configure ext/flopoco/configure.ac ext/flopoco/m4 ext/flopoco/Makefile.am ext/flopoco/src/FPExpressions/ExpressionParser.h ext/flopoco/src/FPExpressions/FlopocoScanner.h ext/flopoco/src/Makefile.am
 	@rm -rf ext/libfplll-4.0.3/config.h.in ext/libfplll-4.0.3/config.h.in~ ext/libfplll-4.0.3/configure
-	@rm -rf ext/metslib-0.5.3/config/depcomp ext/metslib-0.5.3/config/missing ext/metslib-0.5.3/config.h.in ext/metslib-0.5.3/configure
-	@rm -rf ext/SimIt-PoliMi/config.h.in ext/SimIt-PoliMi/configure
 	@rm -rf ext/sollya/config.h.in ext/sollya/config.h.in~ ext/sollya/configure ext/sollya/m4/l*
-	@rm -rf ext/trng-4.17/compile ext/trng-4.17/missing ext/trng-4.17/configure ext/trng-4.17/depcomp ext/trng-4.17/m4/libtool.m4 ext/trng-4.17/m4/lt~obsolete.m4 ext/trng-4.17/m4/ltoptions.m4 ext/trng-4.17/m4/ltsugar.m4 ext/trng-4.17/m4/ltversion.m4 ext/trng-4.17/src/config.hpp.in ext/trng-4.17/src/config.hpp.in~ ext/trng-4.17/trng/config.hpp.in ext/trng-4.17/trng/config.hpp.in~
-	@rm -rf src/logic_synthesis/2lev/aclocal.m4 src/logic_synthesis/2lev/install-sh src/logic_synthesis/2lev/ltmain.sh src/logic_synthesis/2lev/m4 src/logic_synthesis/2lev/missing src/logic_synthesis/2lev/compile src/logic_synthesis/2lev/config.guess src/logic_synthesis/2lev/config.h.in src/logic_synthesis/2lev/config.h.in~ src/logic_synthesis/2lev/config.sub src/logic_synthesis/2lev/configure src/logic_synthesis/2lev/cudd src/logic_synthesis/2lev/depcomp
 
 install : all
 	rm -rf obj; \

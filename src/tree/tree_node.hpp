@@ -48,7 +48,6 @@
 #define TREE_NODE_HPP
 
 /// Autoheader include
-#include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "config_HAVE_UNORDERED.hpp"
 
@@ -80,9 +79,6 @@ REF_FORWARD_DECL(Range);
 template <class value>
 class TreeNodeMap;
 enum class TreeVocabularyTokenTypes_TokenEnum;
-#if HAVE_CODE_ESTIMATION_BUILT
-REF_FORWARD_DECL(WeightInformation);
-#endif
 //@}
 
 /**
@@ -740,9 +736,6 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
  */
 struct WeightedNode : public tree_node
 {
-#if HAVE_CODE_ESTIMATION_BUILT
-   WeightInformationRef weight_information;
-#endif
    /// visitor enum
    enum
    {

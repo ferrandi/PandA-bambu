@@ -45,17 +45,11 @@
  */
 
 /// Autoheader include
-#include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
 #include "config_HAVE_TREE_MANIPULATION_BUILT.hpp"
 #include "config_HAVE_TREE_PARSER_BUILT.hpp"
 
 /// parser/compiler include
 #include "token_interface.hpp"
-
-/// RTL include
-#if HAVE_CODE_ESTIMATION_BUILT
-#include "weight_information.hpp"
-#endif
 
 #include <ostream> // for operator<<
 
@@ -201,12 +195,7 @@ std::ostream& operator<<(std::ostream& os, const tree_nodeRef& tn)
    return os;
 }
 
-WeightedNode::WeightedNode(unsigned int i)
-    : tree_node(i)
-#if HAVE_CODE_ESTIMATION_BUILT
-      ,
-      weight_information(new WeightInformation())
-#endif
+WeightedNode::WeightedNode(unsigned int i) : tree_node(i)
 {
 }
 

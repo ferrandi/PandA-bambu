@@ -54,29 +54,14 @@ if BUILD_BAMBU
       -I$(top_srcdir)/src/parser/vcd
 endif
 
-if BUILD_LIB_CODE_ESTIMATION
-   lib_behavior_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/design_flows/codesign/estimation
-endif
-
 if BUILD_LIB_HOST_PROFILING
    lib_behavior_la_SOURCES += behavior/profiling_information.cpp
    noinst_HEADERS += behavior/profiling_information.hpp
 endif
 
-if BUILD_LIB_MAPPING
-   lib_behavior_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/machine
-endif
-
 if BUILD_LIB_PRAGMA
    lib_behavior_la_CPPFLAGS += \
       -I$(top_srcdir)/src/pragma
-endif
-
-if USE_SOURCE_CODE_STATISTICS_XML
-   lib_behavior_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/constants
 endif
 
 PRJ_DOC += behavior/behavior.doc

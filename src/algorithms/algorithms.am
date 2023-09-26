@@ -13,9 +13,7 @@ if BUILD_LIB_CLIQUECOVER
    -I$(top_srcdir)/src/algorithms/clique_covering \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)
-if BUILD_TRNG
-  lib_clique_covering_la_CPPFLAGS += -isystem $(top_builddir)/ext/trng-4.17
-endif
+
   noinst_HEADERS += algorithms/clique_covering/check_clique.hpp algorithms/clique_covering/clique_covering.hpp algorithms/clique_covering/clique_covering_graph.hpp algorithms/clique_covering/degree_coloring.hpp algorithms/clique_covering/dsatur2_coloring.hpp algorithms/clique_covering/dsatur_coloring.hpp algorithms/clique_covering/filter_clique.hpp algorithms/clique_covering/maxclique_dsatur_coloring.hpp
   lib_clique_covering_la_SOURCES = algorithms/clique_covering/clique_covering.cpp
   PRJ_DOC += algorithms/clique_covering/clique_covering.doc 

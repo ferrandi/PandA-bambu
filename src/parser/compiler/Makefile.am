@@ -14,21 +14,6 @@ lib_compilerparser_la_CPPFLAGS = \
    -I$(top_srcdir)/src/wrapper/compiler \
    $(AM_CPPFLAGS)
 
-if BUILD_LIB_CODE_ESTIMATION
-   lib_compilerparser_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/utility/probability_distribution
-endif
-
-if BUILD_LIB_MAPPING
-  lib_compilerparser_la_CPPFLAGS += \
-     -I$(top_srcdir)/src/machine
-endif
-
-if BUILD_LIB_RTL
-   lib_compilerparser_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/rtl
-endif
-
 AM_YFLAGS = -d -l --report=state,lookahead,itemset
 AM_LFLAGS = -L -B -+  -olex.yy.c
 
