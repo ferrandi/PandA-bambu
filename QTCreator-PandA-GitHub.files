@@ -6,7 +6,6 @@ build/config_headers/config_C_ALLOCA.hpp
 build/config_headers/config_F77_DUMMY_MAIN.hpp
 build/config_headers/config_FC_DUMMY_MAIN_EQ_F77.hpp
 build/config_headers/config_GRLIB_DIR.hpp
-build/config_headers/config_HAVE_A3.hpp
 build/config_headers/config_HAVE_ALLOCA.hpp
 build/config_headers/config_HAVE_ALLOCA_H.hpp
 build/config_headers/config_HAVE_ASSERTS.hpp
@@ -17,15 +16,12 @@ build/config_headers/config_HAVE_BISON_2_7_OR_GREATER.hpp
 build/config_headers/config_HAVE_BLAS.hpp
 build/config_headers/config_HAVE_BOOST.hpp
 build/config_headers/config_HAVE_BOOST.hpp.in
-build/config_headers/config_HAVE_BRIDGE_BUILT.hpp
 build/config_headers/config_HAVE_CIRCUIT_BUILT.hpp
-build/config_headers/config_HAVE_CMOS_BUILT.hpp
 build/config_headers/config_HAVE_COIN_OR.hpp
 build/config_headers/config_HAVE_CORE_TOOLS.hpp
 build/config_headers/config_HAVE_DESIGN_FLOWS_BUILT.hpp
 build/config_headers/config_HAVE_DESIGN_OPTIMIZER.hpp
 build/config_headers/config_HAVE_DLFCN_H.hpp
-build/config_headers/config_HAVE_DYN_METRIC_BUILT.hpp
 build/config_headers/config_HAVE_EUCALYPTUS_BUILT.hpp
 build/config_headers/config_HAVE_EXPERIMENTAL.hpp
 build/config_headers/config_HAVE_FLEX_2_5_34_OR_GREATER.hpp
@@ -38,11 +34,9 @@ build/config_headers/config_HAVE_FROM_AADL_ASN_BUILT.hpp
 build/config_headers/config_HAVE_FROM_C_BUILT.hpp
 build/config_headers/config_HAVE_FROM_DATA_XML_BUILT.hpp
 build/config_headers/config_HAVE_FROM_DISCREPANCY_BUILT.hpp
-build/config_headers/config_HAVE_FROM_ESTIMATION_BUILT.hpp
 build/config_headers/config_HAVE_FROM_POLIXML_BUILT.hpp
 build/config_headers/config_HAVE_FROM_PRAGMA_BUILT.hpp
 build/config_headers/config_HAVE_FRONTEND_ANALYSIS_BUILT.hpp
-build/config_headers/config_HAVE_GECCO_BUILT.hpp
 build/config_headers/config_HAVE_GETOPT_H.hpp
 build/config_headers/config_HAVE_GLPK.hpp
 build/config_headers/config_HAVE_GLPK_NESTED.hpp
@@ -96,8 +90,6 @@ build/config_headers/config_HAVE_I386_GCC7_MX32.hpp
 build/config_headers/config_HAVE_ILP_BUILT.hpp
 build/config_headers/config_HAVE_INTERMEDIATE_REPRESENTATIONS_BUILT.hpp
 build/config_headers/config_HAVE_INTTYPES_H.hpp
-build/config_headers/config_HAVE_IPXACT_BUILT.hpp
-build/config_headers/config_HAVE_KOALA_BUILT.hpp
 build/config_headers/config_HAVE_LAPACK.hpp
 build/config_headers/config_HAVE_LIBINTL_H.hpp
 build/config_headers/config_HAVE_LIBM.hpp

@@ -2,11 +2,6 @@
 DOX_TAGFILES =
 
 EXTRA_DIST= \
-   ac_prog_jar.m4 \
-   ac_prog_java.m4 \
-   ac_prog_java_works.m4 \
-   ac_prog_javac.m4 \
-   ac_prog_javac_works.m4 \
    acx_blas.m4 \
    acx_compile_warn.m4 \
    acx_lapack.m4 \
@@ -57,8 +52,6 @@ EXTRA_DIST= \
    panda_config_subdir.sh \
    po.m4 \
    progtest.m4 \
-   qt3.m4 \
-   qt4.m4 \
    searchfiles.m4 \
    stdint_h.m4 \
    treegcc.m4 \
