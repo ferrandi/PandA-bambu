@@ -42,7 +42,7 @@ dist :
 	make -f etc/scripts/Makeall dist CONFIGURE_OPTIONS="$(CONFIGURE_OPTIONS)"
 
 distclean :
-	@for dir in `find -name autom4te.cache`; do rm "$$dir"; done;
+	@for dir in `find -name autom4te.cache`; do rm -r "$$dir"; done;
 	@for file in `find src -name Makefile.in`; do rm  "$$file"; done;
 	@for file in `find -name test-driver`; do rm  "$$file"; done;
 	@for file in `find ext -name aclocal.m4`; do rm  "$$file"; done;
