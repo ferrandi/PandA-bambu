@@ -7,6 +7,7 @@ EXTRA_DIST= \
    acx_lapack.m4 \
    acx_lapackpp.m4 \
    acx_windows_paths.m4 \
+   append.m4 \
    as-scrub-include.m4 \
    atlas.m4 \
    ax_blas.m4 \
