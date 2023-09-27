@@ -73,21 +73,9 @@ if BUILD_LIB_HOST_PROFILING
 endif
 endif
 
-if BUILD_LIB_CODE_ESTIMATION
-   bambu_CPPFLAGS += \
-      -I$(top_srcdir)/src/design_flows/codesign/estimation \
-      -I$(top_srcdir)/src/utility/probability_distribution
-endif
-
 if BUILD_LIB_PRAGMA
   bambu_CPPFLAGS += \
-     -I$(top_srcdir)/src/design_flows/codesign \
      -I$(top_srcdir)/src/pragma
-endif
-
-if BUILD_TRNG
-   bambu_CPPFLAGS += \
-      -isystem $(top_builddir)/ext/trng-4.17
 endif
 
 lib_bambu_la_LIBADD += \
@@ -115,30 +103,6 @@ if BUILD_FLOPOCO
       $(top_builddir)/ext/sollya/libsollya.la
 endif
 
-if BUILD_LIB_2LEV
-   lib_bambu_la_LIBADD += \
-      $(top_builddir)/src/logic_synthesis/lib_logic_synthesis.la
-endif
-
-
-if BUILD_LIB_ARCH
-   lib_bambu_la_LIBADD += \
-      $(top_builddir)/src/machine/lib_machine.la
-endif
-
-if BUILD_LIB_BDD
-   lib_bambu_la_LIBADD += \
-      $(top_builddir)/src/algorithms/lib_algorithms.la \
-      $(top_builddir)/src/bdd/lib_bdd.la \
-      $(top_builddir)/ext/cudd/cplusplus/libobj.la\
-      $(top_builddir)/ext/cudd/cudd/libcudd.la 
-endif
-
-if BUILD_LIB_FROM_BOOLEAN
-   lib_bambu_la_LIBADD += \
-      $(top_builddir)/src/parser/boolean/lib_booleanparser.la
-endif
-
 if BUILD_LIB_ILP
    lib_bambu_la_LIBADD += lib_ilp.la
 endif
@@ -147,33 +111,8 @@ if BUILD_LIB_INTERMEDIATE_REPRESENTATIONS
    lib_bambu_la_LIBADD += lib_intermediate_representations.la
 endif
 
-if BUILD_LIB_LOGIC_SYNTHESIS
-  lib_bambu_la_LIBADD += \
-     $(top_builddir)/src/logic_synthesis/lib_logic_synthesis.la
-endif
-
-if BUILD_LIB_OBJECT_CODE_WRAPPER
-   lib_bambu_la_LIBADD += \
-      -lbfd
-endif
-
 if BUILD_LIB_PRAGMA
    lib_bambu_la_LIBADD += libpragma.la
-endif
-
-if BUILD_LIB_PROBABILITY_DISTRIBUTION
-   lib_bambu_la_LIBADD += \
-      $(top_builddir)/src/utility/probability_distribution/lib_ProbabilityDistribution.la
-endif
-
-if BUILD_LIB_RTL
-   lib_bambu_la_LIBADD += \
-      $(top_builddir)/src/rtl/lib_rtl.la
-endif
-
-if BUILD_TRNG
-   lib_bambu_la_LIBADD += \
-      $(top_builddir)/ext/trng-4.17/src/libtrng4.la
 endif
 
 lib_bambu_la_LIBADD += $(top_builddir)/ext/abseil-cpp/libabseil.la

@@ -783,10 +783,6 @@ or-tools/ortools/graph/assignment.h
 SUBDIRS = abseil-cpp
 DIST_SUBDIRS = abseil-cpp
 
-if BUILD_ABC
-   noinst_SCRIPTS =create_abc
-endif
-
 if BUILD_COIN_OR
    SUBDIRS += Coin-Cbc
    lib_LTLIBRARIES = libCoin_Cbc.la
@@ -801,31 +797,8 @@ if BUILD_COIN_OR
       Coin-Cbc/CoinUtils/src/libCoinUtils.la
 endif
 
-if BUILD_CROSSTOOL_NG
-   SUBDIRS += crosstool-ng
-endif
-
-if BUILD_METSLIB
-   SUBDIRS += metslib-0.5.3
-   DIST_SUBDIRS += metslib-0.5.3
-endif
-
-if BUILD_TRNG
-   SUBDIRS += trng-4.17
-   DIST_SUBDIRS += trng-4.17
-endif
-
-
-if BUILD_NODELIB
-   SUBDIRS += nodelib
-endif
-
 if BUILD_LP_SOLVE
    SUBDIRS += lpsolve5
-endif
-
-if BUILD_SIMIT
-   SUBDIRS += SimIt-PoliMi
 endif
 
 if BUILD_FLOPOCO
@@ -833,21 +806,7 @@ if BUILD_FLOPOCO
    DIST_SUBDIRS += libfplll-4.0.3 sollya flopoco
 endif
 
-if BUILD_VFLIB
-   SUBDIRS += vflib
-endif
-
 CLEANFILES = $(noinst_SCRIPT)
-
-create_abc:Makefile
-	touch create_abc
-	tar xzf $(top_srcdir)/abc70930.tar.gz
-	echo "cd abc70930; make"> create_abc
-	chmod +x create_abc
-	./create_abc
-
-clean-local:
-	-rm -rf abc
 
 .PHONY documentation: documentation-recursive
 .PHONY documentation-tag:documentation-tag-recursive

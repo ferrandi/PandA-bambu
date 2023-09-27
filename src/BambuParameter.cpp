@@ -49,7 +49,6 @@
 #include "config_HAVE_ILP_BUILT.hpp"
 #include "config_HAVE_LIBRARY_CHARACTERIZATION_BUILT.hpp"
 #include "config_HAVE_LP_SOLVE.hpp"
-#include "config_HAVE_MAPPING_BUILT.hpp"
 #include "config_HAVE_VCD_BUILT.hpp"
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 #include "config_PANDA_LIB_INSTALLDIR.hpp"
@@ -3651,18 +3650,9 @@ void BambuParameter::SetDefaults()
    /// maximum execution time: 0 means no time limit
    setOption(OPT_ilp_max_time, 0);
 
-#if HAVE_MAPPING_BUILT
-   setOption(OPT_driving_component_type, "ARM");
-#endif
-
    /// pragmas related
    setOption(OPT_parse_pragma, false);
    setOption(OPT_ignore_parallelism, false);
-
-   /// ---------- frontend analysis ----------//
-#if HAVE_FROM_RTL_BUILT
-   setOption(OPT_use_rtl, false);
-#endif
 
    setOption(OPT_frontend_statistics, false);
 

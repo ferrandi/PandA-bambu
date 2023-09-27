@@ -49,7 +49,6 @@
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 #include "config_HAVE_ILP_BUILT.hpp"
 #include "config_HAVE_PRAGMA_BUILT.hpp"
-#include "config_HAVE_RTL_BUILT.hpp"
 #include "config_HAVE_TASTE.hpp"
 
 #include "custom_set.hpp"       // for unordered_set

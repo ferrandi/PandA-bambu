@@ -41,9 +41,6 @@
  *
  */
 
-/// Autoheader include
-#include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
-
 /// parser/compiler include
 #include "token_interface.hpp"
 
@@ -54,9 +51,6 @@
 #include "tree_node.hpp"
 #include "tree_node_factory.hpp"
 #include "tree_reindex.hpp"
-#if HAVE_CODE_ESTIMATION_BUILT
-#include "weight_information.hpp"
-#endif
 #include "utility.hpp"
 
 #define CREATE_TREE_NODE_CASE_BODY(tree_node_name, node_id) \
@@ -692,16 +686,6 @@ void tree_node_factory::operator()(const attr* obj, unsigned int& mask)
 
 void tree_node_factory::operator()(const WeightedNode*, unsigned int&)
 {
-#if HAVE_CODE_ESTIMATION_BUILT
-   /// FIXME: TOK_TIME_WEIGHT not supported
-   SET_VALUE_OPT(TOK_SIZE_WEIGHT, weight_information->instruction_size, WeightedNode);
-   THROW_ASSERT(tree_node_schema.find(TOK(TOK_TIME_WEIGHT)) == tree_node_schema.end(),
-                "Field time weight not supported");
-   SET_VALUE_OPT(TOK_SIZE_WEIGHT, weight_information->instruction_size, WeightedNode);
-#if HAVE_RTL_BUILT
-   SET_VALUE_OPT(TOK_RTL_SIZE_WEIGHT, weight_information->rtl_instruction_size, WeightedNode);
-#endif
-#endif
 }
 
 void tree_node_factory::operator()(const srcp* obj, unsigned int& mask)

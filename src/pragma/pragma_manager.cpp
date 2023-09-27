@@ -42,26 +42,11 @@
  */
 
 /// Autoheader include
-#include "config_HAVE_CODESIGN.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
-#include "config_HAVE_GRAPH_PARTITIONING_BUILT.hpp"
-#include "config_HAVE_MAPPING_BUILT.hpp"
-#include "config_HAVE_PARTITIONING_BUILT.hpp"
-#include "config_HAVE_TASK_GRAPHS_BUILT.hpp"
 #include "config_NPROFILE.hpp"
 
 /// Header include
 #include "pragma_manager.hpp"
-
-/// design_flows/codesing/partitioning/graph_partitioning/ include
-#if HAVE_CODESIGN && HAVE_PARTITIONING_BUILT && HAVE_GRAPH_PARTITIONING_BUILT
-#include "partitioning_manager.hpp"
-#endif
-#if HAVE_MAPPING_BUILT
-/// intermediate_representations/mapping_annotations include
-#include "mapping_annotations.hpp"
-#include "unimodal_mapping_annotation.hpp"
-#endif
 
 /// Behavior include
 #include "application_manager.hpp"
@@ -77,12 +62,6 @@
 
 /// Graph include
 #include "graph.hpp"
-
-/// Machine include
-#if HAVE_MAPPING_BUILT
-#include "ArchManager.hpp"
-#include "machine_node.hpp"
-#endif
 
 /// Parameter include
 #include "Parameter.hpp"
@@ -100,11 +79,6 @@
 #include "custom_map.hpp"
 #include <list>
 #include <vector>
-
-/// Task graph include
-#if HAVE_TASK_GRAPHS_BUILT
-#include "task_graph_manager.hpp"
-#endif
 
 /// Tree include
 #include "ext_tree_node.hpp"
@@ -195,61 +169,6 @@ void pragma_manager::AddFunctionDefinitionPragmas(const std::string& function_na
    {
       std::match_results<std::string::const_iterator> what;
       std::regex expr;
-#if HAVE_MAPPING_BUILT
-      expr = std::regex(".*" STR_CST_pragma_keyword_call_hw ".*$", std::regex::grep);
-      std::regex_match(pragma, what, expr, std::regex_constants::match_default | std::regex_constants::match_partial);
-      if(what[0].matched)
-      {
-         std::vector<std::string> splitted = SplitString(pragma, " \t\n");
-         // #[\0]pragma call_hw N1 N2
-         std::vector<std::string>::iterator it =
-             std::find(splitted.begin(), splitted.end(), STR_CST_pragma_keyword_call_hw);
-         THROW_ASSERT(it != splitted.end(), "Something wrong");
-         do
-         {
-            ++it;
-         } while(it != splitted.end() && it->size() == 0);
-         THROW_ASSERT(it != splitted.end(), "Something wrong");
-         std::string HW_component = *it;
-         do
-         {
-            ++it;
-         } while(it != splitted.end() && it->size() == 0);
-         const MappingAnnotationRef mapping_annotation =
-             MappingAnnotationRef(new UnimodalMappingAnnotation(GetPointer<PartitioningManager>(application_manager)
-                                                                    ->CGetArchitectureManager()
-                                                                    ->get_machineRef_by_name(HW_component),
-                                                                param));
-         GetPointer<PartitioningManager>(application_manager)
-             ->GetMappingAnnotations()
-             ->AddPragmaMappingAnnotation(function_name, mapping_annotation);
-         continue;
-      }
-      expr = std::regex(".*issue.*$", std::regex::grep);
-      std::regex_match(pragma, what, expr, std::regex_constants::match_default | std::regex_constants::match_partial);
-      if(what[0].matched)
-      {
-         std::match_results<std::string::const_iterator> local_what;
-         expr = std::regex(".*blackbox.*$", std::regex::grep);
-         std::regex_match(pragma, local_what, expr,
-                          std::regex_constants::match_default | std::regex_constants::match_partial);
-         if(local_what[0].matched)
-         {
-            function_definition_pragmas[function_name].push_back(pragma);
-         }
-         else
-         {
-            expr = std::regex(".*mappable.*$", std::regex::grep);
-            std::regex_match(pragma, local_what, expr,
-                             std::regex_constants::match_default | std::regex_constants::match_partial);
-            if(not local_what[0].matched)
-            {
-               THROW_ERROR("Malformed \"issue\" pragma: " + pragma);
-            }
-         }
-         continue;
-      }
-#endif
       if(pragma.find("#pragma omp declare simd") == 0)
       {
          function_definition_pragmas[function_name].push_back(pragma);

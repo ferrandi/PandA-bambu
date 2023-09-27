@@ -50,9 +50,6 @@
 //#define YYDEBUG 1
 
 ///Autoheader include
-#include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
-#include "config_HAVE_MAPPING_BUILT.hpp"
-#include "config_HAVE_RTL_BUILT.hpp"
 #include "config_HAVE_BISON_2_7_OR_GREATER.hpp"
 
 #define YYLTYPE_IS_TRIVIAL 0
@@ -76,18 +73,8 @@ REF_FORWARD_DECL(TreeFlexLexer);
 ///Lexer include
 #include "treeLexer.hpp"
 
-///Machine include
-#if HAVE_MAPPING_BUILT
-#include "machine_node.hpp"
-#endif
-
 ///Parameter include
 #include "Parameter.hpp"
-
-///RTL include
-#if HAVE_RTL_BUILT
-#include "rtl_common.hpp"
-#endif
 
 ///STD include
 #include <cstdio>
@@ -106,10 +93,6 @@ REF_FORWARD_DECL(TreeFlexLexer);
 ///Utiliy include
 #include "exceptions.hpp"
 #include "fileIO.hpp"
-#if HAVE_CODE_ESTIMATION_BUILT
-#include "probability_distribution.hpp"
-#include "weight_information.hpp"
-#endif
 
 ///Wrapper include
 #include "compiler_wrapper.hpp"
@@ -131,11 +114,7 @@ REF_FORWARD_DECL(TreeFlexLexer);
 * MACROS
 */
 
-#if HAVE_RTL_BUILT
-#define SET_DATA(data, value) data = value
-#else
 #define SET_DATA(data, value)
-#endif
 
 #define NO_OPT(cond, action) if(cond) action else YYABORT;
 #define OPT(cond, action) if(cond) action
@@ -289,10 +268,6 @@ struct BisonParserData
       implement_node(false),
       id(0)
    {
-#if HAVE_MAPPING_BUILT
-      std::string driving_component_string = Param->getOption<std::string>(OPT_driving_component_type);
-      driving_component = processingElement::get_component_type((driving_component_string));
-#endif
    }
    //the set of parameter
    const ParameterConstRef Param;
@@ -335,22 +310,6 @@ struct BisonParserData
 
    ///current tree manager
    tree_managerRef current_TM;
-
-#if HAVE_RTL_BUILT
-   ///current list of enum rtl_kind
-   std::list<std::pair<enum rtl_kind, enum mode_kind> > rtls;
-
-   ///current rtl
-   enum rtl_kind single_rtl;
-
-   ///current mode_kind
-   enum mode_kind mode_rtl;
-#endif
-
-#if HAVE_MAPPING_BUILT
-   ///The type of the driving_component
-   ComponentTypeConstRef driving_component;
-#endif
 
    /// unique version identifier used for SSA_NAMEs objects
    static unsigned int global_uniq_vers_id;
@@ -2088,33 +2047,15 @@ bool pred;
                   wsrcp_opt         {;}
                   time_weight_opt
                   {
-#if HAVE_MAPPING_BUILT && HAVE_CODE_ESTIMATION_BUILT
-                     std::map<ComponentTypeConstRef, ProbabilityDistribution> weights;
-                     if((data->Param->getOption<bool>(OPT_gcc_costs)))
-                     {
-                        weights[data->driving_component] = boost::lexical_cast<long double>(data->curr_string_number);
-                     }
-                     OPT($9, GetPointer<gimple_node>(data->curr_tree_nodeRef)->weight_information->recursive_weight = weights);
-#endif
                   }
                   size_weight_opt
                   {
-#if HAVE_CODE_ESTIMATION_BUILT
-                     OPT($11, GetPointer<gimple_node>(data->curr_tree_nodeRef)->weight_information->instruction_size = boost::lexical_cast<unsigned>(data->curr_string_number));
-#endif
                   }
                   rtl_size_weight_opt
                   {
-#if HAVE_CODE_ESTIMATION_BUILT && HAVE_RTL_BUILT
-                     OPT($13, GetPointer<gimple_node>(data->curr_tree_nodeRef)->weight_information->rtl_instruction_size = boost::lexical_cast<unsigned>(data->curr_string_number));
-#endif
                   }
                   rtl_star
                   {
-#if HAVE_CODE_ESTIMATION_BUILT && HAVE_RTL_BUILT
-                       GetPointer<gimple_node>(data->curr_tree_nodeRef)->weight_information->rtl_nodes = data->rtls;
-                       data->rtls.clear();
-#endif
                   }
                 ;
 
@@ -2392,9 +2333,6 @@ bool pred;
               rtl
               rtl_mode
               {
-#if HAVE_RTL_BUILT
-                 data->rtls.push_back(std::pair<enum rtl_kind, enum mode_kind>(data->single_rtl, data->mode_rtl));
-#endif
               }
             ;
 

@@ -44,7 +44,6 @@
 
 /// Autoheader include
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
-#include "config_HAVE_PHYSICAL_LIBRARY_MODELS_BUILT.hpp"
 
 #include "custom_map.hpp"
 #include "custom_set.hpp"

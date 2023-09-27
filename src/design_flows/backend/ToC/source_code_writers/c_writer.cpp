@@ -48,10 +48,7 @@
  */
 #include "c_writer.hpp"
 
-#include "config_HAVE_ARM_COMPILER.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-#include "config_HAVE_SPARC_COMPILER.hpp"
-#include "config_HAVE_TASK_GRAPHS_BUILT.hpp"
 #include "config_PACKAGE_NAME.hpp"
 #include "config_PACKAGE_VERSION.hpp"
 #include "config_RELEASE.hpp"
@@ -380,24 +377,6 @@ void CWriter::WriteFunctionDeclaration(const unsigned int funId)
    const auto FB = HLSMgr->CGetFunctionBehavior(funId);
    const auto behavioral_helper = FB->CGetBehavioralHelper();
    const auto funName = behavioral_helper->get_function_name();
-#if HAVE_ARM_COMPILER
-   if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-          CompilerWrapper_CompilerTarget::CT_ARM_GCC and
-      behavioral_helper->is_var_args())
-   {
-      THROW_ERROR_CODE(VARARGS_EC, "Source code containing vargs function (" + behavioral_helper->get_function_name() +
-                                       ")produced using arm compiler can not be compiled by x86 compilers");
-   }
-#endif
-#if HAVE_SPARC_COMPILER
-   if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-          CompilerWrapper_CompilerTarget::CT_SPARC_GCC and
-      behavioral_helper->is_var_args())
-   {
-      THROW_ERROR_CODE(VARARGS_EC, "Source code containing vargs function (" + behavioral_helper->get_function_name() +
-                                       ") produced using sparc compiler can not be compiled by x86 compilers");
-   }
-#endif
    if(funName != "main")
    {
       instrWriter->declareFunction(funId);

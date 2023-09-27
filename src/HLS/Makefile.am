@@ -427,10 +427,6 @@ lib_exact_evaluation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/wrapper/compiler \
    $(AM_CPPFLAGS)
 lib_exact_evaluation_la_SOURCES=
-if BUILD_LIB_RTL
-   lib_exact_evaluation_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/rtl
-endif
 if BUILD_SIMULATION
    noinst_HEADERS += evaluation/exact/simulation_evaluation.hpp
    lib_exact_evaluation_la_SOURCES += evaluation/exact/simulation_evaluation.cpp
@@ -505,8 +501,6 @@ lib_function_allocation_la_SOURCES = \
    function_allocation/functions.cpp
 
 if BUILD_LIB_FROM_PRAGMA
-   lib_function_allocation_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/design_flows/codesign 
    noinst_HEADERS += \
       function_allocation/omp_function_allocation_CS.hpp \
       function_allocation/omp_function_allocation.hpp \
@@ -637,10 +631,6 @@ if BUILD_LIB_VCD
       -I$(top_srcdir)/src/HLS/vcd \
       -I$(top_srcdir)/src/HLS/virtual_components \
       -I$(top_srcdir)/src/parser/vcd
-endif
-if BUILD_TRNG
-   lib_hls_flow_la_CPPFLAGS += \
-      -isystem $(top_builddir)/ext/trng-4.17
 endif
 
 noinst_LTLIBRARIES += lib_interface.la

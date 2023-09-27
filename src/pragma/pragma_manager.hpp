@@ -47,8 +47,6 @@
 
 /// Autoheader include
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
-#include "config_HAVE_MAPPING_BUILT.hpp"
-#include "config_HAVE_TASK_GRAPHS_BUILT.hpp"
 
 /// graph include
 #include "graph.hpp"
