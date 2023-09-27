@@ -26,15 +26,13 @@ typedef struct {
 
 #define INFINITY INT_MAX
 
-typedef enum {false=0,true=1} bool;
-
 #pragma map generate_hw 0
-bool
+_Bool
 __attribute__ ((noinline))  
 bellmanford(int source[N_dest], int dest[N_dest], int weight [N_dest], int distance[N_dist], int edgecount, int nodecount, int src)
 {
     int i, j;
-    bool succeeded = true;
+    _Bool succeeded = 1;
 
     for (i=0; i < nodecount; ++i)
       distance[i] = INFINITY;
@@ -52,7 +50,7 @@ bellmanford(int source[N_dest], int dest[N_dest], int weight [N_dest], int dista
 
     for (i=0; i < edgecount; ++i) {
         if (distance[dest[i]] > distance[source[i]] + weight[i]) {
-            succeeded = false;
+            succeeded = 0;
             i = edgecount;
         }
     }
@@ -122,12 +120,12 @@ int main(void)
     success = bellmanford(source, dest, weight, dist, edgecount, nodecount, src);
     
 #ifndef EXT_DATASET
-    if (success != true)
+    if (success != 1)
 	printf("FAIL!\n");
     else
 	printf("PASS!\n");
 #else
-    if (success != false)
+    if (success != 0)
 	printf("FAIL!\n");
     else
 	printf("PASS!\n");

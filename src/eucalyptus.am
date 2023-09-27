@@ -38,24 +38,8 @@ lib_eucalyptus_la_LIBADD += \
    lib_utility.la \
    lib_wrapper.la
 
-if BUILD_LIB_CODE_ESTIMATION
-   eucalyptus_CPPFLAGS += \
-      -I$(top_srcdir)/src/design_flows/codesign/estimation \
-      -I$(top_srcdir)/src/utility/probability_distribution
-endif
-
-if BUILD_LIB_CODE_ESTIMATION
-   lib_eucalyptus_la_LIBADD += \
-      $(top_builddir)/src/utility/probability_distribution/lib_ProbabilityDistribution.la
-endif
-
 if BUILD_LIB_ALGORITHMS
    lib_eucalyptus_la_LIBADD += lib_algorithms.la
-endif
-
-if BUILD_LIB_ARCH
-   lib_eucalyptus_la_LIBADD += \
-      $(top_builddir)/src/machine/lib_machine.la
 endif
 
 if BUILD_LIB_BEHAVIOR
@@ -73,11 +57,6 @@ endif
 
 if BUILD_LIB_FROM_PRAGMA
    lib_eucalyptus_la_LIBADD += libpragma.la
-endif
-
-if BUILD_LIB_RTL
-   lib_eucalyptus_la_LIBADD += \
-      $(top_builddir)/src/rtl/lib_rtl.la
 endif
 
 if BUILD_LIB_TREE

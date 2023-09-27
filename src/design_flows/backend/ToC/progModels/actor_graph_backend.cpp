@@ -53,18 +53,8 @@ std::string ToString(ActorGraphBackend_Type actor_graph_backend_type)
 {
    switch(actor_graph_backend_type)
    {
-#if HAVE_MPPB
-      case ActorGraphBackend_Type::BA_MPPB:
-         return "MPPB";
-#endif
       case ActorGraphBackend_Type::BA_NONE:
          return "NONE";
-#if HAVE_GRAPH_PARTITIONING_BUILT
-      case ActorGraphBackend_Type::BA_OPENMP:
-         return "OpenMP";
-      case ActorGraphBackend_Type::BA_PTHREAD:
-         return "pthread";
-#endif
       default:
          THROW_UNREACHABLE("");
    }

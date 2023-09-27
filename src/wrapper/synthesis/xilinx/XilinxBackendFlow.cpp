@@ -77,6 +77,7 @@
 #define VIVADO_XILINX_OUTPUT "XILINX_OUTPUT"
 #define VIVADO_XILINX_POWER "XILINX_POWER"
 #define VIVADO_XILINX_DESIGN_DELAY "XILINX_DESIGN_DELAY"
+#define VIVADO_XILINX_URAM "XILINX_URAM"
 
 XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name,
                                      const generic_deviceRef _device)
@@ -136,7 +137,7 @@ XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                      "---Importing default scripts for target device family: " + device_string);
       parser = XMLDomParserRef(
-          new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/xilinx/") +
+          new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/xilinx/", true) +
                            default_data[device_string]));
    }
    parse_flow(parser);

@@ -315,25 +315,15 @@ lib_IR_manipulation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/frontend_analysis \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/parser/compiler \
-   -I$(top_srcdir)/src/rtl \
    -I$(top_srcdir)/src/technology \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
-   -I$(top_srcdir)/src/utility/probability_distribution \
    -I$(top_srcdir)/src/wrapper/compiler \
    $(AM_CPPFLAGS)
 
 if BUILD_LIB_FROM_PRAGMA
   lib_IR_manipulation_la_CPPFLAGS += \
    -I$(top_srcdir)/src/pragma
-if BUILD_LIB_CODESIGN
-if BUILD_LIB_PARTITIONING
-if BUILD_LIB_GRAPH_PARTITIONING
-  lib_IR_manipulation_la_CPPFLAGS += \
-   -I$(top_srcdir)/src/design_flows/codesign/partitioning/graph_partitioning
-endif
-endif
-endif
 endif
 
 noinst_HEADERS += \
@@ -444,16 +434,6 @@ if BUILD_BAMBU
       frontend_analysis/find_max_transformations.hpp
    lib_frontend_analysis_la_SOURCES += \
       frontend_analysis/find_max_transformations.cpp
-endif
-
-if BUILD_LIB_CODE_ESTIMATION
-   lib_frontend_analysis_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/utility/probability_distribution
-endif
-
-if BUILD_LIB_RTL
-   lib_frontend_analysis_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/rtl
 endif
 
 if BUILD_SOURCE_CODE_MANIPULATION

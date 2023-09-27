@@ -116,7 +116,7 @@ void EucalyptusParameter::PrintHelp(std::ostream& os) const
       << "        (default=/opt/mentor)\n\n"
       << "    --nanoxplore-root=<path>\n"
       << "        Define NanoXplore tools path. Given directory is searched for NXMap.\n"
-      << "        (default=/opt/NanoXplore/NXMap3)\n\n"
+      << "        (default=/opt/NanoXplore)\n\n"
       << "    --xilinx-root=<path>\n"
       << "        Define Xilinx tools path. Given directory is searched for both ISE and Vivado\n"
       << "        (default=/opt/Xilinx)\n\n"
@@ -679,7 +679,7 @@ void EucalyptusParameter::SetDefaults()
    setOption(OPT_lattice_root, "/opt/diamond:/usr/local/diamond");
    setOption(OPT_mentor_root, "/opt/mentor");
    setOption(OPT_mentor_optimizer, true);
-   setOption(OPT_nanoxplore_root, "/opt/NanoXplore/NXmap3");
+   setOption(OPT_nanoxplore_root, "/opt/NanoXplore");
    setOption(OPT_verilator_parallel, false);
    setOption(OPT_xilinx_root, "/opt/Xilinx");
 

@@ -12,7 +12,7 @@ EXTRA_DIST = Virtex-4.xml Virtex-4-Taste.xml xc4vlx100-10ff1513-seed.xml xc4vlx1
              Artix-7-VVD.xml xc7a100t-1csg324-VVD-seed.xml xc7a100t-1csg324-VVD.xml \
              Zynq-YOSYS-VVD.xml xc7z020-1clg484-YOSYS-VVD-seed.xml xc7z020-1clg484-YOSYS-VVD.xml \
              Kintex-Ultrascale-VVD.xml xcku060-3ffva1156-VVD-seed.xml xcku060-3ffva1156-VVD.xml \
-             Alveo-Ultrascale-VVD.xml xcu280-2Lfsvh2892-VVD-seed.xml xcu280-2Lfsvh2892-VVD.xml \
+             Alveo-Ultrascale-VVD.xml xcu280-2Lfsvh2892-VVD-seed.xml xcu280-2Lfsvh2892-VVD.xml xcu55c-2Lfsvh2892-VVD-seed.xml xcu55c-2Lfsvh2892-VVD.xml \
              characterize.sh characterize-vivado.sh
 
 #do not touch the following line

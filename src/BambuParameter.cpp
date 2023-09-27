@@ -49,7 +49,6 @@
 #include "config_HAVE_ILP_BUILT.hpp"
 #include "config_HAVE_LIBRARY_CHARACTERIZATION_BUILT.hpp"
 #include "config_HAVE_LP_SOLVE.hpp"
-#include "config_HAVE_MAPPING_BUILT.hpp"
 #include "config_HAVE_VCD_BUILT.hpp"
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 #include "config_PANDA_LIB_INSTALLDIR.hpp"
@@ -199,8 +198,8 @@
 #define OPT_TESTBENCH (1 + INPUT_OPT_TEST_SINGLE_NON_DETERMINISTIC_FLOW)
 #define OPT_TESTBENCH_ARGV (1 + OPT_TESTBENCH)
 #define OPT_TESTBENCH_PARAM_SIZE (1 + OPT_TESTBENCH_ARGV)
-#define OPT_TESTBENCH_EXTRA_GCC_FLAGS (1 + OPT_TESTBENCH_PARAM_SIZE)
-#define OPT_TIME_WEIGHT (1 + OPT_TESTBENCH_EXTRA_GCC_FLAGS)
+#define OPT_TB_EXTRA_GCC_OPTIONS (1 + OPT_TESTBENCH_PARAM_SIZE)
+#define OPT_TIME_WEIGHT (1 + OPT_TB_EXTRA_GCC_OPTIONS)
 #define OPT_TIMING_MODEL (1 + OPT_TIME_WEIGHT)
 #define OPT_TIMING_VIOLATION (1 + OPT_TIMING_MODEL)
 #define OPT_TOP_FNAME (1 + OPT_TIMING_VIOLATION)
@@ -274,9 +273,12 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --generate-tb=<file>\n"
       << "        Generate testbench using the given files. \n"
       << "        <file> must be a valid testbench XML file or a C/C++ file specifying\n"
-      << "        a main function calling the top-level interface.\n\n"
-      << "    --tb-arg=<arg string>\n"
-      << "        Command line options to pass to testbench main function. (May be repeated)\n\n"
+      << "        a main function calling the top-level interface. (May be repeated)\n\n"
+      << "    --tb-extra-gcc-options=<string>\n"
+      << "        Specify custom extra options to the compiler for testbench compilation only.\n\n"
+      << "    --tb-arg=<arg>\n"
+      << "        Passes <arg> to the testbench main function as an argument.\n"
+      << "        The option may be repeated to pass multiple arguments in order.\n\n"
       << "    --tb-param-size=<param_name>:<byte_size>\n"
       << "        A comma-separated list of pairs representing a pointer parameter name and\n"
       << "        the size for the related memory space. Specifying this option will disable\n"
@@ -418,11 +420,11 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Set the type of memory connections.\n"
       << "        Possible values for <type> are:\n"
       << "            MEM_ACC_11 - the accesses to the memory have a single direct\n"
-      << "                         connection or a single indirect connection (default)\n"
+      << "                         connection or a single indirect connection\n"
       << "            MEM_ACC_N1 - the accesses to the memory have n parallel direct\n"
       << "                         connections or a single indirect connection\n"
       << "            MEM_ACC_NN - the accesses to the memory have n parallel direct\n"
-      << "                         connections or n parallel indirect connections\n\n"
+      << "                         connections or n parallel indirect connections (default)\n\n"
       << "   --channels-number=<n>\n"
       << "        Define the number of parallel direct or indirect accesses.\n\n"
       << "   --memory-ctrl-type=type\n"
@@ -874,7 +876,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        (default=/opt/mentor)\n\n"
       << "    --nanoxplore-root=<path>\n"
       << "        Define NanoXplore tools path. Given directory is searched for NXMap.\n"
-      << "        (default=/opt/NanoXplore/NXMap3)\n\n"
+      << "        (default=/opt/NanoXplore)\n\n"
       << "    --xilinx-root=<path>\n"
       << "        Define Xilinx tools path. Given directory is searched for both ISE and Vivado\n"
       << "        (default=/opt/Xilinx)\n\n"
@@ -1027,7 +1029,7 @@ int BambuParameter::Exec()
       {"generate-tb", required_argument, nullptr, OPT_TESTBENCH},
       {"tb-arg", required_argument, nullptr, OPT_TESTBENCH_ARGV},
       {"tb-param-size", required_argument, nullptr, OPT_TESTBENCH_PARAM_SIZE},
-      {"testbench-extra-gcc-flags", required_argument, nullptr, OPT_TESTBENCH_EXTRA_GCC_FLAGS},
+      {"tb-extra-gcc-options", required_argument, nullptr, OPT_TB_EXTRA_GCC_OPTIONS},
       {"max-sim-cycles", required_argument, nullptr, OPT_MAX_SIM_CYCLES},
       {"generate-vcd", no_argument, nullptr, OPT_GENERATE_VCD},
       {"simulate", no_argument, nullptr, OPT_SIMULATE},
@@ -1250,7 +1252,7 @@ int BambuParameter::Exec()
             setOption(OPT_evaluation, true);
             /*
              * check if OPT_evaluation_mode has already been decided (for
-             * example with OPT_EVALUATION_MODE). in cas it's already set, we
+             * example with OPT_EVALUATION_MODE). In case it's already set, we
              * don't overwrite it since OPT_EVALUATION is meant to set the
              * objectives, not the mode, hence the mode set from other options
              * has precedence
@@ -1537,7 +1539,6 @@ int BambuParameter::Exec()
          }
          case OPT_HLS_DIV:
          {
-            setOption(OPT_hls_div, "NR");
             if(optarg && std::string(optarg) == "nr1")
             {
                setOption(OPT_hls_div, optarg);
@@ -1553,6 +1554,14 @@ int BambuParameter::Exec()
             else if(optarg && std::string(optarg) == "none")
             {
                setOption(OPT_hls_div, optarg);
+            }
+            else if(optarg && std::string(optarg) == "NR")
+            {
+               setOption(OPT_hls_div, optarg);
+            }
+            else
+            {
+               THROW_ERROR("BadParameters: unknown HLS division algorithm");
             }
             break;
          }
@@ -1793,9 +1802,14 @@ int BambuParameter::Exec()
             setOption(OPT_testbench_param_size, param_size);
             break;
          }
-         case OPT_TESTBENCH_EXTRA_GCC_FLAGS:
+         case OPT_TB_EXTRA_GCC_OPTIONS:
          {
-            setOption(OPT_testbench_extra_gcc_flags, optarg);
+            std::string tb_extra_gcc_options;
+            if(isOption(OPT_tb_extra_gcc_options))
+            {
+               tb_extra_gcc_options = getOption<std::string>(OPT_tb_extra_gcc_options) + " ";
+            }
+            setOption(OPT_tb_extra_gcc_options, tb_extra_gcc_options + std::string(optarg));
             break;
          }
          case OPT_MAX_SIM_CYCLES:
@@ -2950,7 +2964,7 @@ void BambuParameter::CheckParameters()
          };
          if(!all_of(objective_vector.begin(), objective_vector.end(), is_valid_evaluation_mode))
          {
-            THROW_ERROR("BadParameters: evaluation mode EXACT don't support given evaluation objectives");
+            THROW_ERROR("BadParameters: evaluation mode EXACT does not support the selected evaluation objectives.");
          }
       }
       else
@@ -3579,10 +3593,10 @@ void BambuParameter::CheckParameters()
       }
    }
 
-   if(isOption(OPT_no_parse_c_python) && !isOption(OPT_testbench_extra_gcc_flags))
+   if(isOption(OPT_no_parse_c_python) && !isOption(OPT_tb_extra_gcc_options))
    {
       THROW_ERROR("Include directories and library directories for Python bindings are missing.\n"
-                  "use --testbench-extra-gcc-flags=\"string\" to provide them");
+                  "use --tb-extra-gcc-options=\"string\" to provide them");
    }
    setOption<unsigned int>(OPT_host_compiler, static_cast<unsigned int>(default_compiler));
    if(isOption(OPT_lattice_settings))
@@ -3623,18 +3637,9 @@ void BambuParameter::SetDefaults()
    /// maximum execution time: 0 means no time limit
    setOption(OPT_ilp_max_time, 0);
 
-#if HAVE_MAPPING_BUILT
-   setOption(OPT_driving_component_type, "ARM");
-#endif
-
    /// pragmas related
    setOption(OPT_parse_pragma, false);
    setOption(OPT_ignore_parallelism, false);
-
-   /// ---------- frontend analysis ----------//
-#if HAVE_FROM_RTL_BUILT
-   setOption(OPT_use_rtl, false);
-#endif
 
    setOption(OPT_frontend_statistics, false);
 
@@ -3743,7 +3748,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_lattice_root, "/opt/diamond:/usr/local/diamond");
    setOption(OPT_mentor_root, "/opt/mentor");
    setOption(OPT_mentor_optimizer, true);
-   setOption(OPT_nanoxplore_root, "/opt/NanoXplore/NXmap3");
+   setOption(OPT_nanoxplore_root, "/opt/NanoXplore");
    setOption(OPT_verilator_parallel, false);
    setOption(OPT_xilinx_root, "/opt/Xilinx");
 
@@ -3779,7 +3784,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_gcc_defines, defines);
 
    setOption(OPT_soft_float, true);
-   setOption(OPT_hls_div, "nr1");
+   setOption(OPT_hls_div, "NR");
    setOption(OPT_hls_fpdiv, "SRT4");
    setOption(OPT_max_ulp, 1.0);
    setOption(OPT_skip_pipe_parameter, 0);
@@ -3855,6 +3860,6 @@ void BambuParameter::add_bambu_library(std::string lib)
       archive_files = getOption<std::string>(OPT_archive_files) + STR_CST_string_separator;
    }
 
-   setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_" +
-                                    CompilerWrapper::getCompilerSuffix(preferred_compiler) + VSuffix + ".a");
+   setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib", true) + lib +
+                                    "_" + CompilerWrapper::getCompilerSuffix(preferred_compiler) + VSuffix + ".a");
 }

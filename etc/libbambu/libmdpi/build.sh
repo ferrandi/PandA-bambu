@@ -27,12 +27,13 @@ m_option="$(grep -oE '(-mx?[0-9]+)' <<< ${CFLAGS})"
 if [ -z "${m_option}" ]; then
    echo "-m option not provided, default will be used $($CC -dumpmachine)"
 fi
-includes="$(grep -oE '((-I|-isystem) ?[^ ]+)' <<< ${CFLAGS} | tr '\n' ' ')"
-defines="$(grep -oE '(-D(\\.|[^ ])+)' <<< ${CFLAGS} | tr '\n' ' ')"
+includes="$(grep -oE '( (-I|-isystem) ?[^ ]+)' <<< ${CFLAGS} | tr '\n' ' ')"
+defines="$(grep -oE '( -D(\\.|[^ ])+)' <<< ${CFLAGS} | tr '\n' ' ')"
+libraries="$(grep -oE '( -[Ll](\\.|[^ ])+)' <<< ${CFLAGS} | tr '\n' ' ')"
 CFLAGS="${m_option} -fPIC -funroll-loops -O2 ${includes} ${defines}"
 # Forward LD_LIBRARY_PATH overrides
 IFS=':' read -r -a LD_LIBS <<< "${LD_LIBRARY_PATH}"
-LDFLAGS="-lpthread -lstdc++ -lm ${LD_LIBS[@]/#/-L}"
+LDFLAGS="-lpthread -lstdc++ -lm ${LD_LIBS[@]/#/-L} ${libraries}"
 mdpi_src="${script_dir}/mdpi.cpp"
 build_dir="$(dirname $(echo "$@" | sed -E 's/.*-o ([^ ]+).*/\1/'))"
 

@@ -6,10 +6,6 @@ lib_tree_la_CPPFLAGS =\
       -I$(top_srcdir)/src/utility \
       $(AM_CPPFLAGS)
 
-if BUILD_LIB_RTL
-  lib_tree_la_CPPFLAGS += -I$(top_srcdir)/src/rtl
-endif
-
 noinst_HEADERS += tree/tree_node.hpp tree/tree_reindex.hpp tree/tree_basic_block.hpp
 
 lib_tree_la_SOURCES = tree/tree_node.cpp tree/tree_reindex.cpp tree/tree_basic_block.cpp
@@ -19,11 +15,6 @@ if BUILD_BAMBU
       -I$(top_srcdir)/src/graph \
       -I$(top_srcdir)/src/behavior \
       -I$(top_srcdir)/src/HLS/scheduling
-endif
-
-if BUILD_LIB_RTL
-   lib_tree_la_CPPFLAGS += \
-     -I$(top_srcdir)/src/rtl
 endif
 
 if BUILD_LIB_TREE_MANIPULATION
@@ -44,17 +35,5 @@ if BUILD_LIB_TREE_MANIPULATION
    lib_tree_manipulation_la_SOURCES = \
      tree/tree_helper.cpp tree/behavioral_helper.cpp tree/var_pp_functor.cpp tree/tree_manager.cpp tree/tree_manipulation.cpp tree/prettyPrintVertex.cpp tree/ext_tree_node.cpp tree/tree_node_mask.cpp tree/raw_writer.cpp tree/tree_node_finder.cpp \
      tree/tree_node_factory.cpp tree/tree_nodes_merger.cpp tree/gimple_writer.cpp tree/type_casting.cpp tree/tree_node_dup.cpp tree/function_decl_refs.cpp
-if BUILD_LIB_CODE_ESTIMATION
-       lib_tree_manipulation_la_CPPFLAGS += \
-          -I$(top_srcdir)/src/utility/probability_distribution
-endif
-if BUILD_LIB_MAPPING
-       lib_tree_manipulation_la_CPPFLAGS += \
-       -I$(top_srcdir)/src/machine
-endif
-if BUILD_LIB_RTL
-       lib_tree_manipulation_la_CPPFLAGS += \
-          -I$(top_srcdir)/src/rtl
-endif
 endif
 
