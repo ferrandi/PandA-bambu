@@ -44,24 +44,12 @@
 #ifndef RAW_WRITER_HPP
 #define RAW_WRITER_HPP
 
-/// Autoheader include
-#include "config_HAVE_MAPPING_BUILT.hpp"
-#include "config_HAVE_RTL_BUILT.hpp"
-
-#if HAVE_RTL_BUILT
-#include "rtl_common.hpp"
-#endif
-
-/// STD include
-#include <ostream>
-
-/// Tree include
+#include "refcount.hpp"
 #include "tree_node.hpp"
 
-/// Utility include
-#include "refcount.hpp"
 #include <boost/preprocessor/facilities/empty.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
+#include <ostream>
 
 /**
  * @name forward declarations
@@ -74,11 +62,7 @@ REF_FORWARD_DECL(raw_writer);
 struct raw_writer : public tree_node_visitor
 {
    /// default constructor
-   explicit raw_writer(
-#if HAVE_MAPPING_BUILT
-       const ComponentTypeRef& _driving_component,
-#endif
-       std::ostream& _os);
+   explicit raw_writer(std::ostream& _os);
 
    /**
     * Write the field when t is not null
@@ -106,11 +90,6 @@ struct raw_writer : public tree_node_visitor
    BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO, BOOST_PP_EMPTY, OBJ_NOT_SPECIALIZED_SEQ)
 
  private:
-#if HAVE_MAPPING_BUILT
-   /// The driving component
-   const ComponentTypeRef& driving_component;
-#endif
-
    /// output stream
    std::ostream& os;
 };

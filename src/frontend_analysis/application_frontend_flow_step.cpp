@@ -45,7 +45,6 @@
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"    // for HAVE_FROM_PRA...
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp" // for HAVE_HOST_PRO...
 #include "config_HAVE_ILP_BUILT.hpp"            // for HAVE_ILP_BUILT
-#include "config_HAVE_RTL_BUILT.hpp"            // for HAVE_RTL_BUILT
 #include "config_HAVE_TASTE.hpp"                // for HAVE_TASTE
 
 #include "Parameter.hpp"                               // for Parameter

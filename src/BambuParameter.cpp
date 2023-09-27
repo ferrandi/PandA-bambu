@@ -49,7 +49,6 @@
 #include "config_HAVE_ILP_BUILT.hpp"
 #include "config_HAVE_LIBRARY_CHARACTERIZATION_BUILT.hpp"
 #include "config_HAVE_LP_SOLVE.hpp"
-#include "config_HAVE_MAPPING_BUILT.hpp"
 #include "config_HAVE_VCD_BUILT.hpp"
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 #include "config_PANDA_LIB_INSTALLDIR.hpp"
@@ -421,11 +420,11 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Set the type of memory connections.\n"
       << "        Possible values for <type> are:\n"
       << "            MEM_ACC_11 - the accesses to the memory have a single direct\n"
-      << "                         connection or a single indirect connection (default)\n"
+      << "                         connection or a single indirect connection\n"
       << "            MEM_ACC_N1 - the accesses to the memory have n parallel direct\n"
       << "                         connections or a single indirect connection\n"
       << "            MEM_ACC_NN - the accesses to the memory have n parallel direct\n"
-      << "                         connections or n parallel indirect connections\n\n"
+      << "                         connections or n parallel indirect connections (default)\n\n"
       << "   --channels-number=<n>\n"
       << "        Define the number of parallel direct or indirect accesses.\n\n"
       << "   --memory-ctrl-type=type\n"
@@ -1253,7 +1252,7 @@ int BambuParameter::Exec()
             setOption(OPT_evaluation, true);
             /*
              * check if OPT_evaluation_mode has already been decided (for
-             * example with OPT_EVALUATION_MODE). in cas it's already set, we
+             * example with OPT_EVALUATION_MODE). In case it's already set, we
              * don't overwrite it since OPT_EVALUATION is meant to set the
              * objectives, not the mode, hence the mode set from other options
              * has precedence
@@ -2965,7 +2964,7 @@ void BambuParameter::CheckParameters()
          };
          if(!all_of(objective_vector.begin(), objective_vector.end(), is_valid_evaluation_mode))
          {
-            THROW_ERROR("BadParameters: evaluation mode EXACT don't support given evaluation objectives");
+            THROW_ERROR("BadParameters: evaluation mode EXACT does not support the selected evaluation objectives.");
          }
       }
       else
@@ -3638,18 +3637,9 @@ void BambuParameter::SetDefaults()
    /// maximum execution time: 0 means no time limit
    setOption(OPT_ilp_max_time, 0);
 
-#if HAVE_MAPPING_BUILT
-   setOption(OPT_driving_component_type, "ARM");
-#endif
-
    /// pragmas related
    setOption(OPT_parse_pragma, false);
    setOption(OPT_ignore_parallelism, false);
-
-   /// ---------- frontend analysis ----------//
-#if HAVE_FROM_RTL_BUILT
-   setOption(OPT_use_rtl, false);
-#endif
 
    setOption(OPT_frontend_statistics, false);
 

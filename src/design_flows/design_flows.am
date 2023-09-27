@@ -109,8 +109,6 @@ endif
 if BUILD_LIB_PRAGMA
    lib_source_code_writers_la_CPPFLAGS += \
       -I$(top_srcdir)/src/pragma
-   lib_source_code_writers_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/utility/probability_distribution
 endif
 
   noinst_LTLIBRARIES +=  lib_ToC.la
@@ -130,16 +128,6 @@ endif
 noinst_HEADERS += \
    design_flows/backend/ToC/c_backend_information.hpp \
    design_flows/backend/ToC/c_backend_step_factory.hpp
-
-if BUILD_LIB_ACTOR_GRAPHS
-   lib_ToC_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/intermediate_representations/actor_graphs
-endif
-
-if BUILD_LIB_GRAPH_PARTITIONING
-   lib_ToC_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/design_flows/codesign/partitioning/graph_partitioning
-endif
 
   lib_ToC_la_LIBADD = lib_progModel.la lib_source_code_writers.la
 
@@ -203,19 +191,12 @@ if BUILD_LIB_TO_DATAFILE
    -I$(top_srcdir)/src/parser/polixml \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/utility \
-   -I$(top_srcdir)/src/utility/probability_distribution \
    -I$(top_builddir)/src/design_flows/backend/ToDataFile \
    $(AM_CPPFLAGS)
 
 if BUILD_LIB_HLS
   lib_ToDataFile_la_CPPFLAGS += \
    -I$(top_srcdir)/src/HLS/evaluation
-endif
-
-if BUILD_LIB_RTL
-  lib_ToDataFile_la_CPPFLAGS += \
-   -I$(top_srcdir)/src/parser/rtlgcc \
-   -I$(top_srcdir)/src/rtl
 endif
 
   noinst_HEADERS += \
@@ -246,12 +227,6 @@ design_flows/backend/ToDataFile/latex_format_stat.data: $(top_srcdir)/etc/script
   lib_backend_la_LIBADD += lib_ToDataFile.la
 endif
    lib_design_flows_la_LIBADD += lib_backend.la
-endif
-
-if BUILD_LIB_CODESIGN
-   SUBDIRS += design_flows/codesign
-   DIST_SUBDIRS += design_flows/codesign
-   lib_design_flows_la_LIBADD += $(top_builddir)/src/design_flows/codesign/lib_codesign.la
 endif
 
 if BUILD_LIB_TECHNOLOGY

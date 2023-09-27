@@ -614,24 +614,6 @@ class BehavioralHelper
    virtual std::string PrintNode(unsigned int node_id, vertex v, const var_pp_functorConstRef vppf) const;
 
    /**
-    * This method returns true if the node specified in the parameters is
-    * a call expression.
-    * @param node is the ID of the node to be analyzed
-    * @return <b>true</b> if and only if the specified node is a call expression,
-    *    <b>false</b> otherwise
-    */
-   virtual bool isCallExpression(unsigned int nodeID) const;
-
-   /**
-    * This method returns the index of the function whose launch code is given as a string parameter.
-    * This information will be used to decide whether to insert or not the CUDA execution configuration
-    * launch code in the call expression.
-    * @param launch_code is the function launch code
-    * @return the called-function identifier
-    */
-   virtual unsigned int getCallExpressionIndex(std::string launch_code) const;
-
-   /**
     * This function prints the declaration of a variable without the closing ";".
     * For example the function prints on the stream os the following piece of C code:
     * \verbatim

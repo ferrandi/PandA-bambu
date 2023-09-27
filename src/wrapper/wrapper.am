@@ -25,20 +25,10 @@ if BUILD_LIB_FROM_C
     -I$(top_srcdir)/src/tree \
     -I$(top_srcdir)/src/utility \
     $(AM_CPPFLAGS)
-if BUILD_LIB_RTL
-    lib_compilerwrapper_la_CPPFLAGS += -I$(top_srcdir)/src/rtl\
-      -I$(top_srcdir)/src/parser/rtlgcc
-endif
   noinst_HEADERS += wrapper/compiler/compiler_wrapper.hpp
   lib_compilerwrapper_la_SOURCES = wrapper/compiler/compiler_wrapper.cpp
   lib_wrapper_la_LIBADD += lib_compilerwrapper.la
   PRJ_DOC += wrapper/compiler/compiler.doc
-endif
-
-if BUILD_LIB_TARGET_PROFILING
-  SUBDIRS += wrapper/target_architectures
-  DIST_SUBDIRS += wrapper/target_architectures
-  lib_wrapper_la_LIBADD += $(top_builddir)/src/wrapper/target_architectures/lib_target_architectureswrapper.la
 endif
 
 if BUILD_SIMULATION
@@ -133,12 +123,6 @@ if BUILD_SIMULATION
    lib_icaruswrapper.la
   lib_wrapper_la_LIBADD += lib_simulation.la
 
-endif
-
-if BUILD_NODELIB
-  SUBDIRS += NeuralNetwork
-  DIST_SUBDIRS += NeuralNetwork
-  lib_wrapper_la_LIBADD += $(top_builddir)/src/wrapper/NeuralNetwork/lib_NNWrapper.la
 endif
 
 if BUILD_SYNTHESIS
@@ -470,12 +454,6 @@ lib_flopocowrapper_la_CPPFLAGS = \
     -isystem $(FLOPOCO_DIR)/src \
     $(AM_CPPFLAGS)
   lib_wrapper_la_LIBADD += lib_flopocowrapper.la
-endif
-
-if BUILD_R
-  SUBDIRS += R
-  DIST_SUBDIRS += R
-  lib_wrapper_la_LIBADD += $(top_builddir)/src/wrapper/R/lib_Rwrapper.la
 endif
 
 #do not touch the following line

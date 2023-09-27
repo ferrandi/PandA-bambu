@@ -70,9 +70,6 @@
 /// The file where output messages of gcc are saved
 #define STR_CST_gcc_output "__gcc_output"
 
-/// The suffix of rtl files
-#define STR_CST_gcc_rtl_suffix ".rtlExpand"
-
 /// The list of tested versions of gcc
 #define STR_CST_gcc_supported_versions                                                                            \
    "4.5.2 4.5.3 4.5.4 4.6.1 4.6.3 4.6.4 4.7.0 4.7.2 4.7.3 4.7.4 4.8.0 4.8.1 4.8.2 4.8.3 4.8.4 4.8.5 4.9.0 4.9.1 " \

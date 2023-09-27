@@ -42,12 +42,9 @@
  */
 
 /// Autoheader include
-#include "config_HAVE_ASSERTS.hpp"               // for HAVE_ASSERTS
-#include "config_HAVE_CODE_ESTIMATION_BUILT.hpp" // for HAVE_CODE_ESTIMATIO...
-#include "config_HAVE_FROM_PRAGMA_BUILT.hpp"     // for HAVE_FROM_PRAGMA_BUILT
-#include "config_HAVE_RTL_BUILT.hpp"             // for HAVE_RTL_BUILT
-#include "config_HAVE_SPARC_COMPILER.hpp"        // for HAVE_SPARC_COMPILER
-#include "config_RELEASE.hpp"                    // for RELEASE
+#include "config_HAVE_ASSERTS.hpp"           // for HAVE_ASSERTS
+#include "config_HAVE_FROM_PRAGMA_BUILT.hpp" // for HAVE_FROM_PRAGMA_BUILT
+#include "config_RELEASE.hpp"                // for RELEASE
 
 /// Header include
 #include "behavioral_helper.hpp"
@@ -77,14 +74,6 @@
 /// parser/compiler include
 #include "token_interface.hpp"
 
-#if HAVE_RTL_BUILT
-/// RTL include
-#include "rtl_node.hpp"
-#endif
-#if HAVE_CODE_ESTIMATION_BUILT
-#include "weight_information.hpp"
-#endif
-
 /// Tree include
 #include "ext_tree_node.hpp"
 #include "tree_basic_block.hpp"
@@ -92,9 +81,6 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_reindex.hpp"
-#if HAVE_CODE_ESTIMATION_BUILT
-#include "weight_information.hpp"
-#endif
 
 /// Utility include
 #include "exceptions.hpp"
@@ -217,19 +203,6 @@ std::string BehavioralHelper::print_vertex(const OpGraphConstRef g, const vertex
          }
       }
       ret += "\\n";
-#if HAVE_RTL_BUILT && HAVE_CODE_ESTIMATION_BUILT
-      if(node && GET_CONST_NODE(node)->get_kind() != gimple_nop_K)
-      {
-         if(GetPointer<WeightedNode>(GET_CONST_NODE(node)))
-         {
-            const auto wn = GetPointerS<WeightedNode>(GET_CONST_NODE(node));
-            for(const auto& rn : filtered_rtl_nodes)
-            {
-               res += rtl_node::GetString(rn.first) + ":" + rtl_node::GetString(rn.second) + "\\n";
-            }
-         }
-      }
-#endif
       return ret;
    }
    else if(res != "")
@@ -1205,31 +1178,6 @@ unsigned int BehavioralHelper::get_pointed_type(const unsigned int type) const
 unsigned int BehavioralHelper::GetElements(const unsigned int type) const
 {
    return tree_helper::CGetElements(TM->CGetTreeReindex(type))->index;
-}
-
-bool BehavioralHelper::isCallExpression(unsigned int nodeID) const
-{
-   // get the tree node associated with the provided ID
-   const tree_nodeRef node = TM->GetTreeNode(nodeID);
-   if(node->get_kind() == call_expr_K || node->get_kind() == aggr_init_expr_K)
-   {
-      return true;
-   }
-   else
-   {
-      return false;
-   }
-}
-
-unsigned int BehavioralHelper::getCallExpressionIndex(std::string launch_code) const
-{
-   std::string temp = launch_code;
-   size_t pos = temp.find('(');
-   temp.erase(pos);
-
-   // now 'temp' variable contains the called-function name
-   const auto fu_node = TM->GetFunction(temp);
-   return fu_node ? fu_node->index : 0;
 }
 
 std::string BehavioralHelper::PrintVarDeclaration(unsigned int var, var_pp_functorConstRef vppf,
@@ -2875,13 +2823,6 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
       }
       case bit_field_ref_K:
       {
-#if HAVE_SPARC_COMPILER
-         if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-            CompilerWrapper_CompilerTarget::CT_SPARC_GCC)
-         {
-            THROW_ERROR_CODE(BITFIELD_EC, "Bitfield not supported by sparc cross compiler");
-         }
-#endif
          const auto bf = GetPointerS<const bit_field_ref>(node);
          const auto bpos = tree_helper::GetConstValue(bf->op2);
          res += "*((" + tree_helper::PrintType(TM, bf->type) + "* ) (((unsigned long int) &(" +

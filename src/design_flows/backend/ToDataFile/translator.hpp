@@ -43,14 +43,6 @@
 #ifndef TRANSLATOR_HPP
 #define TRANSLATOR_HPP
 
-/// Autoheader include
-#include "config_HAVE_RTL_BUILT.hpp"
-
-#if HAVE_RTL_BUILT
-/// RTL include
-#include "rtl_common.hpp"
-#endif
-
 /// STD include
 #include <ios>
 #include <list>
@@ -215,24 +207,6 @@ class Translator
     * @param Param is the set of the parameters
     */
    explicit Translator(const ParameterConstRef Param);
-
-#if HAVE_RTL_BUILT
-   /**
-    * Translate data from rapid_miner to rtl format
-    * @param input is the data
-    * @param output is where the data will be stored
-    */
-   void Translate(CustomUnorderedMap<std::string, long double> input,
-                  std::map<enum rtl_kind, std::map<enum mode_kind, long double>>& output) const;
-
-   /**
-    * Write rtl data to xml
-    * @param data is the data to be written
-    * @param file_name is the name of the file where data will be written
-    */
-   void write_to_xml(const std::map<enum rtl_kind, std::map<enum mode_kind, long double>>& data,
-                     const std::string& file_name) const;
-#endif
 
    /**
     * Write rtl data in csv format

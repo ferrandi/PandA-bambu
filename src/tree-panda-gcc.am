@@ -16,19 +16,12 @@ tree_panda_gcc_CPPFLAGS = \
    -I$(top_srcdir)/src/design_flows \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/frontend_analysis \
-   -I$(top_srcdir)/src/parser/machine \
    -I$(top_srcdir)/src/parser/compiler \
    -I$(top_srcdir)/src/HLS/ \
    -I$(top_srcdir)/src/HLS/interface \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/wrapper/compiler \
    $(AM_CPPFLAGS)
-
-if BUILD_LIB_CODE_ESTIMATION
-   tree_panda_gcc_CPPFLAGS += \
-      -I$(top_srcdir)/src/design_flows/codesign/estimation \
-      -I$(top_srcdir)/src/utility/probability_distribution
-endif
 
 lib_treepandagcc_la_LIBADD += \
    lib_algorithms.la \
@@ -43,19 +36,8 @@ lib_treepandagcc_la_LIBADD += \
    lib_utility.la \
    lib_wrapper.la
 
-if BUILD_LIB_ARCH
-   lib_treepandagcc_la_LIBADD += \
-   $(top_builddir)/src/machine/lib_machine.la
-endif
-
 if BUILD_LIB_CIRCUIT
    lib_treepandagcc_la_LIBADD += lib_circuit.la
-endif
-
-if BUILD_LIB_CODE_ESTIMATION
-   lib_treepandagcc_la_LIBADD += \
-      lib_ProbabilityDistribution.la \
-      lib_codesign.la
 endif
 
 if BUILD_LIB_FROM_PRAGMA
@@ -69,11 +51,6 @@ endif
 
 if BUILD_LIB_INTERMEDIATE_REPRESENTATIONS
    lib_treepandagcc_la_LIBADD += lib_intermediate_representations.la
-endif
-
-if BUILD_LIB_RTL
-   lib_treepandagcc_la_LIBADD += \
-      $(top_builddir)/src/rtl/lib_rtl.la
 endif
 
 if BUILD_LIB_TECHNOLOGY

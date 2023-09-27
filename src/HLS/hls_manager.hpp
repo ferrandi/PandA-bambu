@@ -118,7 +118,7 @@ class HLS_manager : public application_manager
    SimulationInformationRef RSim;
 
    /// Evaluations
-   CustomMap<std::string, std::vector<double>> evaluations;
+   CustomMap<std::string, double> evaluations;
 
    /// The auxiliary files
    std::list<std::string> aux_files;

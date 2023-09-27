@@ -1,10 +1,6 @@
 #this is file scripts/Makefile.am
 SUBDIRS= 
 DIST_SUBDIRS=
-if BUILD_MPPB
-   SUBDIRS += mppb
-   DIST_SUBDIRS += mppb
-endif
 
 if BUILD_LATEX_TABLE_FORMAT
    SUBDIRS += latex_table_format

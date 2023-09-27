@@ -45,7 +45,6 @@
  */
 
 /// Autoheader includes
-#include "config_HAVE_ACTOR_GRAPHS_BUILT.hpp"
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 #include "config_NPROFILE.hpp"
 
@@ -66,11 +65,6 @@
 /// design_flows/c_backend/ToC includes
 #include "c_backend_information.hpp"
 #include "c_backend_step_factory.hpp"
-
-#if HAVE_ACTOR_GRAPHS_BUILT
-/// design_flows/codesign include
-#include "actor_graph_flow_step_factory.hpp"
-#endif
 
 /// frontend_flow includes
 #include "frontend_flow_step.hpp"

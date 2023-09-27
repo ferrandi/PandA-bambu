@@ -51,12 +51,10 @@
 #include "add_op_phi_flow_edges.hpp"
 #include "bambu_frontend_flow.hpp"
 #include "basic_blocks_cfg_computation.hpp"
-#include "config_HAVE_ARCH_BUILT.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 #include "config_HAVE_ILP_BUILT.hpp"    // for HAVE_ILP_BUILT
 #include "config_HAVE_PRAGMA_BUILT.hpp" // for HAVE_PRAGMA_B...
-#include "config_HAVE_RTL_BUILT.hpp"    // for HAVE_RTL_BUILT
 #include "config_HAVE_TASTE.hpp"        // for HAVE_TASTE
 #include "design_flow_step.hpp"
 #include "exceptions.hpp" // for THROW_UNREACH...
@@ -158,15 +156,6 @@
 #include "pragma_analysis.hpp"
 #endif
 #include "symbolic_application_frontend_flow_step.hpp"
-
-#if HAVE_ARCH_BUILT
-FrontendFlowStepFactory::FrontendFlowStepFactory(const application_managerRef _AppM, const ArchManagerRef _arch_manager,
-                                                 const DesignFlowManagerConstRef _design_flow_manager,
-                                                 const ParameterConstRef _parameters)
-    : DesignFlowStepFactory(_design_flow_manager, _parameters), AppM(_AppM), arch_manager(_arch_manager)
-{
-}
-#endif
 
 FrontendFlowStepFactory::FrontendFlowStepFactory(const application_managerRef _AppM,
                                                  const DesignFlowManagerConstRef _design_flow_manager,

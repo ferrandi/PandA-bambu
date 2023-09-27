@@ -2,10 +2,10 @@
 <target>
    <device>
       <vendor value="Xilinx"/>
-      <family value="Kintex-Ultrascale-VVD"/>
-      <model value="xcku060"/>
-      <package value="-ffva1156"/>
-      <speed_grade value="-3-e"/>
+      <family value="Alveo-Ultrascale-VVD"/>
+      <model value="xcu55c"/>
+      <package value="-fsvh2892"/>
+      <speed_grade value="-2L-e"/>
       <BRAM_bitsize_min value="8"/>
       <BRAM_bitsize_max value="4096"/>
       <DSPs_x_sizes value="18"/>
