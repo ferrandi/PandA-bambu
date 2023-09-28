@@ -970,7 +970,7 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
          }();
          if(called_fname.find(STR_CST_interface_parameter_keyword) != std::string::npos)
          {
-            if(!boost::starts_with(called_fname, info.interface_id + STR_CST_interface_parameter_keyword))
+            if(!starts_with(called_fname, info.interface_id + STR_CST_interface_parameter_keyword))
             {
                THROW_ERROR("Shared memory operation is not supported with required I/O interface setup.");
             }

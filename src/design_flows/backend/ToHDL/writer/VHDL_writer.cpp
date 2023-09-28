@@ -1654,8 +1654,8 @@ void VHDL_writer::write_transition_output_functions(
             {
                continue;
             }
-            if(boost::starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") ||
-               boost::starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
+            if(starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") ||
+               starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
             {
                auto port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
                if(single_proc || output_index == i)
@@ -1964,8 +1964,8 @@ void VHDL_writer::write_transition_output_functions(
       {
          continue;
       }
-      if(boost::starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") ||
-         boost::starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
+      if(starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") ||
+         starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
       {
          auto port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
          if(single_proc || output_index == i)

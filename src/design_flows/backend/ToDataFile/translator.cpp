@@ -987,7 +987,7 @@ void Translator::read_column_formats(const XMLDomParserRef parser, std::list<Lat
    THROW_ASSERT(root->get_name() == STR_XML_latex_table_root, "XML root node not correct: " + root->get_name());
    if(CE_XVM(max_column_size, root))
    {
-      max_column_size = std::stoul(LOAD_XVM(max_column_size, root));
+      LOAD_XVM(max_column_size, root);
    }
    const xml_node::node_list list = root->get_children();
    xml_node::node_list::const_iterator child, child_end = list.end();

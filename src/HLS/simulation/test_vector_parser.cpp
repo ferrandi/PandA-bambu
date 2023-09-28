@@ -113,7 +113,7 @@ DesignFlowStep_Status TestVectorParser::Exec()
    if(parameters->isOption(OPT_testbench_input_file))
    {
       const auto tb_files = parameters->getOption<const CustomSet<std::string>>(OPT_testbench_input_file);
-      if(boost::ends_with(*tb_files.begin(), ".xml"))
+      if(ends_with(*tb_files.begin(), ".xml"))
       {
          THROW_ASSERT(tb_files.size() == 1, "XML testbench initialization must be in a single file.");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining " + *tb_files.begin());
@@ -255,7 +255,7 @@ TestVectorParser::ParseXMLFile(const std::filesystem::path& input_xml_filename) 
                {
                   const auto input_file_name = GetPath(input_xml_filename.parent_path()) + "/" +
                                                Enode->get_attribute(param + ":init_file")->get_value();
-                  if(boost::ends_with(input_file_name, ".dat"))
+                  if(ends_with(input_file_name, ".dat"))
                   {
                      test_vector[param] = input_file_name;
                   }

@@ -81,6 +81,17 @@ std::string capitalize(const std::string& str);
 
 std::string& capitalize(std::string& str);
 
+inline bool starts_with(const std::string& str, const std::string& pattern)
+{
+   return str.find(pattern) == 0;
+}
+
+inline bool ends_with(const std::string& str, const std::string& pattern)
+{
+   const auto pos = str.rfind(pattern);
+   return pos != std::string::npos && (pos + pattern.size()) == str.size();
+}
+
 /**
  * Function with print number in desired format
  * @param number is the number to be printed
