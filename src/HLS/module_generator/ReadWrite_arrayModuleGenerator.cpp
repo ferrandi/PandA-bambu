@@ -110,7 +110,7 @@ void ReadWrite_arrayModuleGenerator::InternalExec(std::ostream& out, structural_
                 "Parameter " + arg_name + " not found in function " + top_fname);
    const auto DesignAttributes = HLSMgr->design_attributes.at(top_fname).at(arg_name);
    THROW_ASSERT(DesignAttributes.count(attr_size), "");
-   const auto arraySize = boost::lexical_cast<unsigned>(DesignAttributes.at(attr_size));
+   const auto arraySize = std::stoull(DesignAttributes.at(attr_size));
 
    const auto isAlignedPowerOfTwo = _ports_in[i_in4].alignment == ceil_pow2(_ports_in[i_in4].alignment);
    const auto addressMaxValue = _ports_in[i_in4].alignment * arraySize - 1U;

@@ -85,7 +85,6 @@
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/graph_utility.hpp>
 #include <boost/graph/topological_sort.hpp>
-#include <boost/lexical_cast.hpp>
 #include <deque>
 #include <filesystem>
 #include <fstream>

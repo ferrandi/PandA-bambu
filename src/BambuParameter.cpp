@@ -85,7 +85,6 @@
 #include "tree_helper.hpp"
 #include "utility.hpp"
 #include <algorithm>
-#include <boost/lexical_cast.hpp>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
@@ -1951,7 +1950,7 @@ int BambuParameter::Exec()
 #if HAVE_FROM_PRAGMA_BUILT
          case OPT_NUM_ACCELERATORS:
          {
-            auto num_acc = boost::lexical_cast<unsigned>(std::string(optarg));
+            auto num_acc = std::stoull(std::string(optarg));
             if((num_acc != 0) && ((num_acc & (num_acc - 1)) == 0))
             {
                setOption(OPT_num_accelerators, std::string(optarg));
@@ -1966,7 +1965,7 @@ int BambuParameter::Exec()
          {
             if(optarg)
             {
-               const auto num = boost::lexical_cast<unsigned int>(std::string(optarg));
+               const auto num = std::stoull(std::string(optarg));
                if(!num)
                {
                   throw "Bad parameters: number of contexts must be a positive integer.";
@@ -2064,7 +2063,7 @@ int BambuParameter::Exec()
          }
          case OPT_MENTOR_OPTIMIZER:
          {
-            setOption(OPT_mentor_optimizer, boost::lexical_cast<bool>(optarg));
+            setOption(OPT_mentor_optimizer, static_cast<bool>(std::stoi(optarg)));
             break;
          }
          case OPT_NANOXPLORE_ROOT:

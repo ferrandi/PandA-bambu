@@ -60,10 +60,6 @@
 #include "exceptions.hpp"
 #include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/tokenizer.hpp>
-#include <boost/version.hpp>
 #include <filesystem>
 #include <fstream>
 

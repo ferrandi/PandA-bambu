@@ -582,7 +582,7 @@ DesignFlowStep_Status PragmaAnalysis::Exec()
                         std::string num = function_name;
                         num = num.substr(10, num.size());
                         num = num.substr(0, num.find('_'));
-                        std::string string_base = PM->getGenericPragma(boost::lexical_cast<unsigned int>(num));
+                        std::string string_base = PM->getGenericPragma(static_cast<unsigned>(std::stoul(num)));
                         string_base = string_base.substr(string_base.find("#pragma") + 8, string_base.size());
                         auto* el = GetPointer<gimple_pragma>(TM->get_tree_node_const(GET_INDEX_NODE(*it2)));
                         el->line = string_base;

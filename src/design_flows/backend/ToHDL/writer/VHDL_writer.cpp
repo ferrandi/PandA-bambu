@@ -53,7 +53,6 @@
 
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/range/adaptor/reversed.hpp>
 #include <boost/tokenizer.hpp>
 #include <fstream>
@@ -782,7 +781,7 @@ void VHDL_writer::write_vector_port_binding(const structural_objectRef& port, bo
             {
                auto* con = GetPointer<constant_o>(object_bounded);
                std::string trimmed_value = "";
-               auto long_value = boost::lexical_cast<unsigned long long>(con->get_value());
+               auto long_value = std::stoull(con->get_value());
                for(unsigned int ind = 0; ind < GET_TYPE_SIZE(con); ind++)
                {
                   trimmed_value = trimmed_value + (((1LLU << (GET_TYPE_SIZE(con) - ind - 1)) & long_value) ? '1' : '0');
@@ -831,10 +830,9 @@ void VHDL_writer::write_port_binding(const structural_objectRef& port, const str
       }
       else
       {
-         indented_output_stream->Append(
-             port_name + "(" +
-             STR(((boost::lexical_cast<unsigned int>(port->get_id()) + 1) * GET_TYPE_SIZE(port)) - 1) + " downto " +
-             STR(boost::lexical_cast<unsigned int>(port->get_id()) * GET_TYPE_SIZE(port)) + ") => ");
+         indented_output_stream->Append(port_name + "(" +
+                                        STR(((std::stoull(port->get_id()) + 1) * GET_TYPE_SIZE(port)) - 1) +
+                                        " downto " + STR(std::stoull(port->get_id()) * GET_TYPE_SIZE(port)) + ") => ");
       }
    }
    else if((port->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL ||
@@ -876,7 +874,7 @@ void VHDL_writer::write_port_binding(const structural_objectRef& port, const str
    {
       auto* con = GetPointer<constant_o>(object_bounded);
       std::string trimmed_value = "";
-      auto long_value = boost::lexical_cast<unsigned long long int>(con->get_value());
+      auto long_value = std::stoull(con->get_value());
       for(unsigned int ind = 0; ind < GET_TYPE_SIZE(con); ind++)
       {
          trimmed_value = trimmed_value + (((1LLU << (GET_TYPE_SIZE(con) - ind - 1)) & long_value) ? '1' : '0');
@@ -1006,7 +1004,7 @@ void VHDL_writer::write_io_signal_post_fix(const structural_objectRef& port, con
    {
       auto* con = GetPointer<constant_o>(sig);
       std::string trimmed_value = "";
-      auto long_value = boost::lexical_cast<unsigned long long int>(con->get_value());
+      auto long_value = std::stoull(con->get_value());
       for(unsigned int ind = 0; ind < GET_TYPE_SIZE(con); ind++)
       {
          trimmed_value = trimmed_value + (((1LLU << (GET_TYPE_SIZE(con) - ind - 1)) & long_value) ? '1' : '0');
@@ -1407,7 +1405,7 @@ void VHDL_writer::write_state_declaration(const structural_objectRef&, const std
    unsigned max_value = 0;
    for(auto it = list_of_states.begin(); it != it_end; ++it)
    {
-      max_value = std::max(max_value, boost::lexical_cast<unsigned int>(it->substr(strlen(STATE_NAME_PREFIX))));
+      max_value = std::max(max_value, static_cast<unsigned>(std::stoul(it->substr(strlen(STATE_NAME_PREFIX)))));
    }
    if(max_value != n_states - 1)
    {
@@ -1425,15 +1423,14 @@ void VHDL_writer::write_state_declaration(const structural_objectRef&, const std
             indented_output_stream->Append(
                 "constant " + state + ": std_logic_vector(" + STR(max_value) + " downto 0) := \"" +
                 encode_one_hot(1 + max_value,
-                               boost::lexical_cast<unsigned int>(state.substr(strlen(STATE_NAME_PREFIX)))) +
+                               static_cast<unsigned>(std::stoul(state.substr(strlen(STATE_NAME_PREFIX))))) +
                 "\";\n");
          }
          else
          {
             indented_output_stream->Append(
                 "constant " + state + ": std_logic_vector(" + STR(bitsnumber - 1) + " downto 0) := \"" +
-                NumberToBinaryString(boost::lexical_cast<size_t>(state.substr(strlen(STATE_NAME_PREFIX))), bitsnumber) +
-                "\";\n");
+                NumberToBinaryString(std::stoul(state.substr(strlen(STATE_NAME_PREFIX))), bitsnumber) + "\";\n");
          }
       }
       if(one_hot)
@@ -1834,7 +1831,7 @@ void VHDL_writer::write_transition_output_functions(
                               res_or_conditions += port_name;
                               if((*in_or_conditions_tokens_it)[0] == '&')
                               {
-                                 auto pos = boost::lexical_cast<unsigned int>((*in_or_conditions_tokens_it).substr(1));
+                                 auto pos = std::stoull((*in_or_conditions_tokens_it).substr(1));
                                  res_or_conditions += std::string("(") + STR(pos) + ") = '1'";
                               }
                               else
@@ -1845,9 +1842,8 @@ void VHDL_writer::write_transition_output_functions(
                                  {
                                     res_or_conditions +=
                                         "\"" +
-                                        NumberToBinaryString(
-                                            llabs(boost::lexical_cast<long long>(*in_or_conditions_tokens_it)),
-                                            port_size) +
+                                        NumberToBinaryString(llabs(std::stoll(*in_or_conditions_tokens_it)),
+                                                             port_size) +
                                         "\"";
                                  }
                                  else
@@ -2062,7 +2058,7 @@ void VHDL_writer::write_module_parametrization_decl(const structural_objectRef& 
          }
          std::string name = mem_add[0];
          std::string value = mem_add[1];
-         auto binary_value = NumberToBinaryString(boost::lexical_cast<unsigned long long int>(value));
+         auto binary_value = NumberToBinaryString(std::stoull(value));
          indented_output_stream->Append("  " + name + ": integer := " + value);
       }
    }

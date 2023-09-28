@@ -72,9 +72,6 @@
 #include "compiler_wrapper.hpp"
 #endif
 
-/// Boost include
-#include <boost/lexical_cast.hpp>
-
 /// Constants include
 #include "constant_strings.hpp"
 #include "constants.hpp"

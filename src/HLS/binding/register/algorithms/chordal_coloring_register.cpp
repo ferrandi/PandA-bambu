@@ -54,7 +54,6 @@
 #include "utility.hpp"
 
 #include <boost/graph/sequential_vertex_coloring.hpp>
-#include <boost/lexical_cast.hpp>
 
 #include <vector>
 

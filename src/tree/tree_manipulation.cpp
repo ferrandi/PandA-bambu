@@ -46,10 +46,8 @@
 /// Header include
 #include "tree_manipulation.hpp"
 
-#include <algorithm>              // for find
-#include <boost/lexical_cast.hpp> // for lexical_cast
+#include <algorithm> // for find
 #include <boost/range/adaptor/reversed.hpp>
-#include <boost/smart_ptr/shared_ptr.hpp> // for shared_ptr
 
 #include "Parameter.hpp"           // for Parameter
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_VERY_PEDANTIC

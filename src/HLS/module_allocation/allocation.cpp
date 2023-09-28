@@ -2601,7 +2601,7 @@ std::string allocation::get_compliant_pipelined_unit(double clock, const std::st
          temp_pipe_parameters = parameters_pairs[1];
          break;
       }
-      else if(boost::lexical_cast<unsigned long long>(parameters_pairs[0]) == module_prec)
+      else if(std::stoull(parameters_pairs[0]) == module_prec)
       {
          temp_pipe_parameters = parameters_pairs[1];
          break;

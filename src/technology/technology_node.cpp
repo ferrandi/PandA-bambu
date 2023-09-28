@@ -52,8 +52,6 @@
 #include "time_info.hpp"
 #include "xml_helper.hpp"
 #include <algorithm>
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 #include <list>
 #include <utility>
 
@@ -124,7 +122,7 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
             ;
             for(auto single_prec = precs.begin(); single_prec != precs.end() && *single_prec != ""; ++single_prec)
             {
-               auto type_uint = boost::lexical_cast<unsigned int>(*single_prec);
+               auto type_uint = static_cast<unsigned>(std::stoul(*single_prec));
                type_precs.push_back(type_uint);
             }
          }

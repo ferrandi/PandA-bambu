@@ -218,7 +218,7 @@ REF_FORWARD_DECL(TreeFlexLexer);
 * @param add_function is the name of function that add a NODE_ID
 */
 #define ADDV3(obj_node, add_function) \
-  addv3<obj_node, tree_nodeRef>(data->curr_tree_nodeRef, &obj_node::add_function, data->curr_NODE_ID, boost::lexical_cast<unsigned>(data->curr_string_number), data->current_TM);
+  addv3<obj_node, tree_nodeRef>(data->curr_tree_nodeRef, &obj_node::add_function, data->curr_NODE_ID, static_cast<unsigned>(std::stoul(data->curr_string_number)), data->current_TM);
 
 /**
 * Macro used to add an unsigned int to the object obj_node through the function add_function.
@@ -226,7 +226,7 @@ REF_FORWARD_DECL(TreeFlexLexer);
 * @param add_function is the name of function that add a NODE_ID
 */
 #define ADD_UNSIGNED(obj_node, add_function) \
-  add_unsigned<obj_node, tree_nodeRef>(data->curr_tree_nodeRef, &obj_node::add_function, data->curr_NODE_ID, boost::lexical_cast<unsigned>(data->curr_string_number), data->current_TM);
+  add_unsigned<obj_node, tree_nodeRef>(data->curr_tree_nodeRef, &obj_node::add_function, data->curr_NODE_ID, static_cast<unsigned>(std::stoul(data->curr_string_number)), data->current_TM);
 
 /**
 * Macro used to add a bloc to the object obj_node through the function add_function.
@@ -985,7 +985,7 @@ bool pred;
                wdecl_node          {}
                argt_opt            {OPT($5, NS(parm_decl, argt))}
                size_opt            {OPT($7, NS(parm_decl, size))}
-               algn                {NSV(parm_decl,algn, boost::lexical_cast<unsigned>(data->curr_string_number))}
+               algn                {NSV(parm_decl,algn, static_cast<unsigned>(std::stoul(data->curr_string_number)))}
                tok_artificial_opt  {OPT($11, NSV(decl_node, artificial_flag, true))}
                used                {NSV(parm_decl, used, std::stoi(data->curr_string_number))}
                parm_tok_register   {}
@@ -1038,7 +1038,7 @@ bool pred;
                var_decl_ext_stat    {}
                init_opt             {OPT($11, NS(var_decl, init))}
                size_opt             {OPT($13, NS(var_decl, size))}
-               algn                 {NSV(var_decl,algn, boost::lexical_cast<unsigned>(data->curr_string_number))}
+               algn                 {NSV(var_decl,algn, static_cast<unsigned>(std::stoul(data->curr_string_number)))}
                tok_packed_opt       {OPT($17, NSV(var_decl, packed_flag, true))}
                used                 {NSV(var_decl, used, std::stoi(data->curr_string_number))}
                var_decl_definitions {;}
@@ -1129,7 +1129,7 @@ bool pred;
    //real_type: TOK_BISON_REAL_TYPE^ type_node prec;
    wreal_type : TOK_BISON_REAL_TYPE{CTN(real_type)}
                 wtype_node
-                prec{NSV(real_type, prec, boost::lexical_cast<unsigned>(data->curr_string_number))}
+                prec{NSV(real_type, prec, static_cast<unsigned>(std::stoul(data->curr_string_number)))}
                 ;
 
    int_tok_unsigned : /*empty*/ | TOK_BISON_UNSIGNED{NSV(integer_type, unsigned_flag, true)};
@@ -1137,7 +1137,7 @@ bool pred;
    //integer_type: TOK_BISON_INTEGER_TYPE^ type_node prec (TOK_BISON_STRING)? (TOK_BISON_UNSIGNED)? (min)? (max)?;
    winteger_type : TOK_BISON_INTEGER_TYPE{CTN(integer_type)}
                    wtype_node
-                   prec{NSV(integer_type, prec, boost::lexical_cast<unsigned>(data->curr_string_number))}
+                   prec{NSV(integer_type, prec, static_cast<unsigned>(std::stoul(data->curr_string_number)))}
                    string_id_opt{OPT($6, NSV(integer_type, str, data->curr_string))}
                    int_tok_unsigned
                    min_opt{OPT($9, NS(integer_type,min))}
@@ -1149,7 +1149,7 @@ bool pred;
    //enumeral_type: TOK_BISON_ENUMERAL_TYPE^ type_node prec (TOK_BISON_UNSIGNED)? min max csts;
    wenumeral_type : TOK_BISON_ENUMERAL_TYPE{CTN(enumeral_type)}
                     wtype_node
-                    prec{NSV(enumeral_type, prec, boost::lexical_cast<unsigned>(data->curr_string_number))}
+                    prec{NSV(enumeral_type, prec, static_cast<unsigned>(std::stoul(data->curr_string_number)))}
                     enum_tok_unsigned
                     min_opt{OPT($7,NS(enumeral_type,min))}
                     max_opt{OPT($9, NS(enumeral_type,max))}
@@ -1234,7 +1234,7 @@ bool pred;
                   wdecl_node            {}
                   init_opt              {OPT($5, NS(result_decl, init))}
                   size                  {NS(result_decl, size)}
-                  algn                  {NSV(result_decl,algn, boost::lexical_cast<unsigned>(data->curr_string_number))}
+                  algn                  {NSV(result_decl,algn, static_cast<unsigned>(std::stoul(data->curr_string_number)))}
                   tok_packed_opt        {OPT($11, NSV(result_decl, packed_flag, true))}
                   smt_ann_opt           {OPT($13, NS(result_decl, smt_ann))}
                   ;
@@ -1245,7 +1245,7 @@ bool pred;
                  wattr                {}
                  init_opt             {OPT($7, NS(field_decl, init))}
                  size_opt             {OPT($9, NS(field_decl, size))}
-                 algn                 {NSV(field_decl,algn, boost::lexical_cast<unsigned>(data->curr_string_number))}
+                 algn                 {NSV(field_decl,algn, static_cast<unsigned>(std::stoul(data->curr_string_number)))}
                  tok_packed_opt       {OPT($13, NSV(field_decl, packed_flag, true))}
                  bpos_opt             {OPT($15, NS(field_decl, bpos))}
                  smt_ann_opt          {OPT($17, NS(field_decl, smt_ann))}
@@ -1631,7 +1631,7 @@ bool pred;
   tree_vec_op_opt : /*empty*/ | tree_vec_op;
 
   //tree_vec:       TOK_BISON_TREE_VEC^ lngt (op)*;
-  wtree_vec : TOK_BISON_TREE_VEC{CTN(tree_vec)}  lngt{NSV(tree_vec, lngt, boost::lexical_cast<size_t>(data->curr_string_number))}  tree_vec_op_opt;
+  wtree_vec : TOK_BISON_TREE_VEC{CTN(tree_vec)}  lngt{NSV(tree_vec, lngt, std::stoul(data->curr_string_number))}  tree_vec_op_opt;
 
   //template_id_expr: TOK_BISON_TEMPLATE_ID_EXPR^ expr_node;
   wtemplate_id_expr : TOK_BISON_TEMPLATE_ID_EXPR{CTN(template_id_expr)}  wexpr_node;
@@ -1642,8 +1642,8 @@ bool pred;
    wssa_name : TOK_BISON_SSA_NAME {CTN(ssa_name)}
                type_opt{OPT($3, NS(ssa_name,type))}
                var_opt{OPT($5, NS(ssa_name, var))}
-               vers{NSV(ssa_name, vers, (BisonParserData::global_uniq_vers_id++))NSV(ssa_name, orig_vers, boost::lexical_cast<unsigned>(data->curr_string_number))}
-               orig_vers_opt{OPT($9, NSV(ssa_name, orig_vers, boost::lexical_cast<unsigned>(data->curr_string_number)))}
+               vers{NSV(ssa_name, vers, (BisonParserData::global_uniq_vers_id++))NSV(ssa_name, orig_vers, static_cast<unsigned>(std::stoul(data->curr_string_number)))}
+               orig_vers_opt{OPT($9, NSV(ssa_name, orig_vers, static_cast<unsigned>(std::stoul(data->curr_string_number))))}
                ptr_info_opt{;}
                tok_ssa_name_def
                tok_virtual_opt{OPT($14, NSV(ssa_name, virtual_flag, true));}
@@ -1783,7 +1783,7 @@ bool pred;
                    | gimple_phi_tuples gimple_phi_tuples_pair
                    ;
 
-   gimple_phi_tuples_pair : def edge{GetPointer<gimple_phi>(data->curr_tree_nodeRef)->AddDefEdge(data->current_TM, gimple_phi::DefEdge(data->current_TM->GetTreeReindex(data->curr_NODE_ID), boost::lexical_cast<unsigned>(data->curr_string_number)));}
+   gimple_phi_tuples_pair : def edge{GetPointer<gimple_phi>(data->curr_tree_nodeRef)->AddDefEdge(data->current_TM, gimple_phi::DefEdge(data->current_TM->GetTreeReindex(data->curr_NODE_ID), static_cast<unsigned>(std::stoul(data->curr_string_number))));}
    ;
 
    //gimple_phi:       TOK_BISON_GIMPLE_PHI^ res (def edge)* (TOK_BISON_VIRTUAL)?;
@@ -2033,7 +2033,7 @@ bool pred;
                                          OPT($23, NSV(decl_node, libbambu_flag, true))
                                         }
                tok_C                    {}
-               uid_opt                  {NSV(decl_node, uid, boost::lexical_cast<unsigned>(data->curr_string_number))}
+               uid_opt                  {NSV(decl_node, uid, static_cast<unsigned>(std::stoul(data->curr_string_number)))}
                ;
 
    wexpr_node : type_opt  {OPT($1, NS(expr_node,type))}
@@ -2042,7 +2042,7 @@ bool pred;
 
    //gimple_node: wvops  (type)? (srcp)? (time_weight)? (size_weight)? (rtl_size_weight)?;
    wgimple_node : scpe_opt          {OPT($1, NS(gimple_node, scpe))}
-                  bb_index          {NSV(gimple_node, bb_index, boost::lexical_cast<unsigned>(data->curr_string_number))}
+                  bb_index          {NSV(gimple_node, bb_index, static_cast<unsigned>(std::stoul(data->curr_string_number)))}
                   mem_virtual_ops   {;}
                   wsrcp_opt         {;}
                   time_weight_opt
@@ -2065,7 +2065,7 @@ bool pred;
               unql_opt         {OPT($5, NS(type_node,unql))}
               size_opt         {OPT($7, NS(type_node,size))}
               scpe_opt         {OPT($9, NS(type_node,scpe))}
-              algn_opt         {OPT($11, NSV(type_node,algn, boost::lexical_cast<unsigned>(data->curr_string_number)))}
+              algn_opt         {OPT($11, NSV(type_node,algn, static_cast<unsigned>(std::stoul(data->curr_string_number))))}
               tok_packed_opt   {OPT($13, NSV(type_node, packed_flag, true))}
               tok_system_opt   {OPT($15, NSV(type_node, system_flag, true))}
               tok_libbambu_opt {
@@ -2298,7 +2298,7 @@ bool pred;
       winsertelement_expr : TOK_BISON_INSERTELEMENT_EXPR{CTN(insertelement_expr)}  wternary_expr;
 
       //srcp: TOK_BISON_SRCP^ TOK_BISON_STRING TOK_BISON_NUMBER;
-       wsrcp_opt     : /*empty*/| TOK_BISON_SRCP string_id{NSV(srcp, include_name, data->curr_string)} number_id{NSV(srcp, line_number, boost::lexical_cast<unsigned>(data->curr_string_number))} number_id{NSV(srcp, column_number, boost::lexical_cast<unsigned>(data->curr_string_number))};
+       wsrcp_opt     : /*empty*/| TOK_BISON_SRCP string_id{NSV(srcp, include_name, data->curr_string)} number_id{NSV(srcp, line_number, static_cast<unsigned>(std::stoul(data->curr_string_number)))} number_id{NSV(srcp, column_number, static_cast<unsigned>(std::stoul(data->curr_string_number)))};
 
 
 
@@ -2307,16 +2307,16 @@ bool pred;
            | TOK_BISON_HPL {data->current_TM->add_parallel_loop();NBV(bloc, hpl, 1)}
            ;
    wloop_id:  /* empty */
-           | TOK_BISON_LOOP_ID number_id{NBV(bloc, loop_id, boost::lexical_cast<unsigned>(data->curr_string_number))}
+           | TOK_BISON_LOOP_ID number_id{NBV(bloc, loop_id, static_cast<unsigned>(std::stoul(data->curr_string_number)))}
            ;
 
 
    wpred_star : /* emptyr */
-              | wpred_star wpred{ADDVALUE(bloc, add_pred, boost::lexical_cast<unsigned>(data->curr_string_number))}
+              | wpred_star wpred{ADDVALUE(bloc, add_pred, static_cast<unsigned>(std::stoul(data->curr_string_number)))}
               ;
 
    wsucc_star : /*empty*/
-              | wsucc_star wsucc{ADDVALUE(bloc, add_succ, boost::lexical_cast<unsigned>(data->curr_string_number))}
+              | wsucc_star wsucc{ADDVALUE(bloc, add_succ, static_cast<unsigned>(std::stoul(data->curr_string_number)))}
               ;
 
    phi_star : /*empty*/
@@ -2447,13 +2447,13 @@ bool pred;
 
    //bloc: TOK_BISON_BLOC^ TOK_BISON_NUMBER (TOK_BISON_HPL)? (pred)*  (succ)*  (phi)*  (stmt)*;
    wbloc : TOK_BISON_BLOC {;}
-           number_id      {CB(boost::lexical_cast<unsigned>(data->curr_string_number))}
+           number_id      {CB(static_cast<unsigned>(std::stoul(data->curr_string_number)))}
            tok_hpl        {;}
            wloop_id       {;}
            wpred_star     {;}
            wsucc_star     {;}
-           true_edge_opt  {OPT($13,NBV(bloc, true_edge, boost::lexical_cast<unsigned>(data->curr_string_number)))}
-           false_edge_opt {OPT($15,NBV(bloc, false_edge, boost::lexical_cast<unsigned>(data->curr_string_number)))}
+           true_edge_opt  {OPT($13,NBV(bloc, true_edge, static_cast<unsigned>(std::stoul(data->curr_string_number))))}
+           false_edge_opt {OPT($15,NBV(bloc, false_edge, static_cast<unsigned>(std::stoul(data->curr_string_number))))}
            phi_star       {;}
            stmt_star      {;}
            rtl_star       {;}

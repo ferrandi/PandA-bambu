@@ -61,7 +61,6 @@
 
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
 #include <fstream>
 #include <functional>
@@ -756,7 +755,7 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef& port,
             object_bounded->get_owner()->get_kind() == signal_vector_o_K)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bounded to a port of a port vector");
-            auto vector_position = boost::lexical_cast<unsigned int>(object_bounded->get_id());
+            auto vector_position = static_cast<unsigned>(std::stoul(object_bounded->get_id()));
             if(slice and slice->get_id() != object_bounded->get_owner()->get_id())
             {
                if(local_first_port_analyzed)
@@ -844,7 +843,7 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef& port,
             }
             auto* con = GetPointer<constant_o>(object_bounded);
             std::string trimmed_value = "";
-            auto long_value = boost::lexical_cast<unsigned long long int>(con->get_value());
+            auto long_value = std::stoull(con->get_value());
             for(unsigned int ind = 0; ind < GET_TYPE_SIZE(con); ind++)
             {
                trimmed_value = trimmed_value + (((1LLU << (GET_TYPE_SIZE(con) - ind - 1)) & long_value) ? '1' : '0');
@@ -990,7 +989,7 @@ void verilog_writer::write_port_binding(const structural_objectRef& port, const 
    {
       auto* con = GetPointer<constant_o>(object_bounded);
       std::string trimmed_value = "";
-      auto long_value = boost::lexical_cast<unsigned long long int>(con->get_value());
+      auto long_value = std::stoull(con->get_value());
       for(unsigned int ind = 0; ind < GET_TYPE_SIZE(con); ind++)
       {
          trimmed_value = trimmed_value + (((1LLU << (GET_TYPE_SIZE(con) - ind - 1)) & long_value) ? '1' : '0');
@@ -1016,7 +1015,7 @@ void verilog_writer::write_io_signal_post_fix(const structural_objectRef& port, 
    {
       auto* con = GetPointer<constant_o>(sig);
       std::string trimmed_value = "";
-      auto long_value = boost::lexical_cast<unsigned long long int>(con->get_value());
+      auto long_value = std::stoull(con->get_value());
       for(unsigned int ind = 0; ind < GET_TYPE_SIZE(con); ind++)
       {
          trimmed_value = trimmed_value + (((1LLU << (GET_TYPE_SIZE(con) - ind - 1)) & long_value) ? '1' : '0');
@@ -1224,7 +1223,7 @@ void verilog_writer::write_state_declaration(const structural_objectRef& cir,
    unsigned max_value = 0;
    for(auto it = list_of_states.begin(); it != it_end; ++it)
    {
-      max_value = std::max(max_value, boost::lexical_cast<unsigned int>(it->substr(strlen(STATE_NAME_PREFIX))));
+      max_value = std::max(max_value, static_cast<unsigned>(std::stoul(it->substr(strlen(STATE_NAME_PREFIX)))));
    }
    if(max_value != n_states - 1)
    {
@@ -1244,7 +1243,7 @@ void verilog_writer::write_state_declaration(const structural_objectRef& cir,
       {
          indented_output_stream->Append(
              *it + " = " + STR(max_value + 1) + "'b" +
-             encode_one_hot(1 + max_value, boost::lexical_cast<unsigned int>(it->substr(strlen(STATE_NAME_PREFIX)))));
+             encode_one_hot(1 + max_value, static_cast<unsigned>(std::stoul(it->substr(strlen(STATE_NAME_PREFIX))))));
       }
       else
       {
@@ -1829,7 +1828,7 @@ void verilog_writer::write_transition_output_functions(
                               if((*in_or_conditions_tokens_it)[0] == '&')
                               {
                                  auto n_bits = vec_size == 0 ? port_size : vec_size;
-                                 auto pos = boost::lexical_cast<unsigned int>((*in_or_conditions_tokens_it).substr(1));
+                                 auto pos = static_cast<unsigned>(std::stoul((*in_or_conditions_tokens_it).substr(1)));
                                  if(unique_case_condition)
                                  {
                                     res_or_conditions = "";

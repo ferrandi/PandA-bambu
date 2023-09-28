@@ -197,7 +197,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
                }
                else if(splitted.size() == 2)
                {
-                  num_resources = boost::lexical_cast<unsigned>(splitted.at(1));
+                  num_resources = static_cast<unsigned>(std::stoul(splitted.at(1)));
                }
                else
                {
