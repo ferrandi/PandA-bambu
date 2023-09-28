@@ -476,7 +476,6 @@ namespace clang
                                                               Width
 #endif
                                                                   .getQuantity());
-                     //llvm::errs() << attr_val["SizeInBytes"] << "\n";
                   };
 
                   if(isa<DecayedType>(argType))
@@ -490,7 +489,7 @@ namespace clang
                      else
                      {
                         const auto paramTypeRemTD = RemoveTypedef(argType);
-                        const auto paramTypeOrigTD =argType;
+                        const auto paramTypeOrigTD = argType;
                         ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
                         ParamTypeNameOrig = paramTypeOrigTD.getAsString(pp);
                         ParamTypeInclude = getIncludes(paramTypeOrigTD);
@@ -522,7 +521,7 @@ namespace clang
                      else
                      {
                         const auto suffix = argType->isPointerType() ? "*" : "&";
-                        const auto paramTypeOrigTD =argType->getPointeeType();
+                        const auto paramTypeOrigTD = argType->getPointeeType();
                         const auto paramTypeRemTD = RemoveTypedef(paramTypeOrigTD);
                         getSizeInBytes(paramTypeRemTD);
                         ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + suffix;
@@ -550,7 +549,7 @@ namespace clang
                   }
                   else
                   {
-                     const auto paramTypeOrigTD =argType;
+                     const auto paramTypeOrigTD = argType;
                      const auto paramTypeRemTD = RemoveTypedef(argType);
                      getSizeInBytes(paramTypeRemTD);
                      ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
@@ -593,28 +592,34 @@ namespace clang
                      const char remove = ' ';
 
                      size_t num_deleted = 0;
-                     for (int i = str.size() - 1; i > 0; i--) {
+                     for(int i = str.size() - 1; i > 0; i--)
+                     {
                         char curr = str[i];
-                        char prev = str[i-1];
+                        char prev = str[i - 1];
 
                         char curr_in_anchors = 0;
                         char prev_in_anchors = 0;
-                        for(size_t j = 0; j < sizeof(anchors)-1; j++) {
+                        for(size_t j = 0; j < sizeof(anchors) - 1; j++)
+                        {
                            curr_in_anchors |= (curr == anchors[j]);
                            prev_in_anchors |= (prev == anchors[j]);
                         }
 
-                               // "delete" the curr/prev char by shifting it to the end
-                        if (curr == remove && (i == str.size() - 1 || prev_in_anchors)) {
-                           for (size_t k = i; k < str.size() - 1; k++) {
-                              str[k] = str[k+1];
+                        // "delete" the curr/prev char by shifting it to the end
+                        if(curr == remove && (i == str.size() - 1 || prev_in_anchors))
+                        {
+                           for(size_t k = i; k < str.size() - 1; k++)
+                           {
+                              str[k] = str[k + 1];
                            }
                            str[str.size() - 1] = curr;
                            num_deleted++;
                         }
-                        else if (prev == remove && (i == 1 || curr_in_anchors)) {
-                           for (size_t k = i-1; k < str.size() - 1; k++) {
-                              str[k] = str[k+1];
+                        else if(prev == remove && (i == 1 || curr_in_anchors))
+                        {
+                           for(size_t k = i - 1; k < str.size() - 1; k++)
+                           {
+                              str[k] = str[k + 1];
                            }
                            str[str.size() - 1] = prev;
                            num_deleted++;
@@ -625,11 +630,9 @@ namespace clang
 #endif
                   };
 
-
-
                   remove_spaces(ParamTypeName);
                   remove_spaces(ParamTypeNameOrig);
-                  if(ParamTypeNameOrig=="size_t")
+                  if(ParamTypeNameOrig == "size_t")
                   {
                      ParamTypeInclude = "stddef.h";
                   }
@@ -658,9 +661,12 @@ namespace clang
 
       bool HandleTopLevelDecl(DeclGroupRef DG) override
       {
-         for(const auto& D : DG)
+         std::deque<Decl*> declQueue(DG.begin(), DG.end());
+         while(declQueue.size())
          {
-            if(const auto* FD = dyn_cast<FunctionDecl>(D))
+            auto decl = declQueue.front();
+            declQueue.pop_front();
+            if(auto FD = dyn_cast<FunctionDecl>(decl))
             {
                AnalyzeFunctionDecl(FD);
                const auto endLoc = FD->getSourceRange().getEnd();
@@ -668,19 +674,12 @@ namespace clang
                const auto filename = SM.getPresumedLoc(endLoc, false).getFilename();
                prevLoc[filename] = endLoc;
             }
-            else if(const auto* LSD = dyn_cast<LinkageSpecDecl>(D))
+            else if(isa<LinkageSpecDecl>(decl) || isa<NamespaceDecl>(decl))
             {
-               for(const auto& d : LSD->decls())
-               {
-                  if(const auto* fd = dyn_cast<FunctionDecl>(d))
-                  {
-                     AnalyzeFunctionDecl(fd);
-                     const auto endLoc = fd->getSourceRange().getEnd();
-                     const auto& SM = fd->getASTContext().getSourceManager();
-                     const auto filename = SM.getPresumedLoc(endLoc, false).getFilename();
-                     prevLoc[filename] = endLoc;
-                  }
-               }
+               auto declContext = cast<DeclContext>(decl);
+               if(declContext->isStdNamespace())
+                  continue;
+               declQueue.insert(declQueue.end(), declContext->decls_begin(), declContext->decls_end());
             }
          }
          return true;
@@ -743,7 +742,6 @@ namespace clang
             }
             const auto bundle = PP.getSpelling(Tok);
             attr_map[loc][pname]["bundle_name"] = bundle;
-            // llvm::errs() << " bundle=" << bundle;
          };
 
          const auto array_parse = [&]() {
@@ -754,7 +752,6 @@ namespace clang
             }
             const auto asize = PP.getSpelling(Tok);
             attr_map[loc][pname]["size"] = asize;
-            // llvm::errs() << " " << asize;
 
             PP.Lex(Tok);
             if(Tok.is(tok::identifier) && PP.getSpelling(Tok) == "bundle")
@@ -798,21 +795,18 @@ namespace clang
              {"array", array_parse},   {"m_axi", axi_parse},
              {"axis", end_parse}};
 
-         // llvm::errs() << "HLS_interface";
          PP.Lex(Tok);
          if(Tok.isNot(tok::identifier))
          {
             print_error("malformed");
          }
          pname = PP.getSpelling(Tok);
-         // llvm::errs() << " " << pname;
          PP.Lex(Tok);
          if(Tok.isNot(tok::identifier))
          {
             print_error("missing interface type");
          }
          interface = PP.getSpelling(Tok);
-         // llvm::errs() << " " << interface;
          const auto parser = interface_parser.find(interface);
          if(parser != interface_parser.end())
          {
@@ -823,7 +817,6 @@ namespace clang
          {
             print_error("interface type not supported");
          }
-         // llvm::errs() << "\n";
       }
    };
 
