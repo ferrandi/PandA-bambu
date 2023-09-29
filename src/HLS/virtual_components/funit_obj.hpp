@@ -46,8 +46,6 @@
 #ifndef FUNIT_HPP
 #define FUNIT_HPP
 
-#include <boost/lexical_cast.hpp>
-
 #include "generic_obj.hpp"
 #include "refcount.hpp"
 

@@ -137,14 +137,14 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_
    const auto addr_bitsize = STR(_ports_out[o_awaddr].type_size);
    const auto data_bitsize = STR(_ports_out[o_wdata].type_size);
 
-   unsigned way_size = 0;
+   unsigned long long way_size = 0;
 
    /* Get cache info */
    const std::string c_size_str = "WAY_LINES";
    const auto params = mod->GetParameters();
    if(params.find(c_size_str) != params.end())
    {
-      way_size = boost::lexical_cast<unsigned>(params.at(c_size_str));
+      way_size = std::stoull(params.at(c_size_str));
    }
 
    /* No cache, build the AXI controller */
@@ -202,7 +202,7 @@ reg [2:0] _present_state, _next_state;
       out << "reg [2:0] arsize, next_arsize;\n";
       out << "reg [1:0] arburst, next_arburst;\n";
       out << "reg [7:0] arlen, next_arlen;\n";
-      unsigned log_data_size = (boost::lexical_cast<unsigned>(data_bitsize) / 8);
+      auto log_data_size = std::stoull(data_bitsize) / 8;
       out << "reg [(" + STR(log_data_size) + ")-1:0] misalignment;\n";
       out << "reg [(" + data_bitsize + ")-1:0] read_mask, next_read_mask;\n";
 
@@ -518,17 +518,17 @@ end)";
    }
    else /* Connect to IOB cache, no need for AXI controller */
    {
-      unsigned line_off_w = ceil_log2(way_size);
-      unsigned word_off_w = 1;
+      auto line_off_w = ceil_log2(way_size);
+      unsigned long long word_off_w = 1;
       std::string be_data_w = data_bitsize;
       std::string n_ways = "1";
-      unsigned wtbuf_depth_w = 2;
+      unsigned long long wtbuf_depth_w = 2;
       std::string rep_policy = "0";
       std::string write_pol = "0";
 
       if(params.find("LINE_SIZE") != params.end())
       {
-         word_off_w = ceil_log2(boost::lexical_cast<unsigned>(params.at("LINE_SIZE")));
+         word_off_w = ceil_log2(std::stoull(params.at("LINE_SIZE")));
       }
       if(params.find("BUS_SIZE") != params.end())
       {
@@ -540,7 +540,7 @@ end)";
       }
       if(params.find("BUF_SIZE") != params.end())
       {
-         wtbuf_depth_w = ceil_log2(boost::lexical_cast<unsigned>(params.at("BUF_SIZE")));
+         wtbuf_depth_w = ceil_log2(std::stoull(params.at("BUF_SIZE")));
          if(wtbuf_depth_w < 1)
          {
             wtbuf_depth_w = 1;

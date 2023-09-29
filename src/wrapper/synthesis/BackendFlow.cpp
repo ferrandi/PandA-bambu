@@ -249,7 +249,7 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
    actual_parameters->parameter_values[PARAM_is_combinational] = STR(is_combinational);
    bool time_constrained = false;
    if(actual_parameters->parameter_values.find(PARAM_clk_period) != actual_parameters->parameter_values.end() and
-      boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]) != 0.0)
+      std::stod(actual_parameters->parameter_values[PARAM_clk_period]) != 0.0)
    {
       time_constrained = true;
    }
@@ -261,8 +261,7 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
       actual_parameters->parameter_values[PARAM_clk_period_ps] = STR(1000 * PARAM_clk_period_default);
    }
    actual_parameters->parameter_values[PARAM_clk_freq] =
-       STR((is_time_unit_PS ? 1000 : 1) * 1000 /
-           boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]));
+       STR((is_time_unit_PS ? 1000 : 1) * 1000 / std::stod(actual_parameters->parameter_values[PARAM_clk_period]));
 
    if(Param->isOption(OPT_clock_name))
    {

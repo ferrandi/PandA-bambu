@@ -47,7 +47,6 @@
 #define COMMANDPORT_OBJ_HPP
 
 #include "refcount.hpp"
-#include <boost/lexical_cast.hpp>
 #include <utility>
 
 #include "generic_obj.hpp"

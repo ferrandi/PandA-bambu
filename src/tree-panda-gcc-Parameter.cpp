@@ -56,7 +56,6 @@
 
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/predicate.hpp>
-#include <boost/lexical_cast.hpp>
 #include <climits>
 #include <cstring>
 #include <filesystem>

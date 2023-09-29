@@ -170,6 +170,5 @@ src/wrapper/synthesis
 src/wrapper/synthesis/altera
 src/wrapper/synthesis/lattice
 src/wrapper/synthesis/nanoxplore
-src/wrapper/synthesis/synopsys
 src/wrapper/synthesis/xilinx
 src/wrapper/synthesis/xilinx/ise

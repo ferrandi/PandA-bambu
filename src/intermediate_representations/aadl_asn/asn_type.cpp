@@ -41,8 +41,6 @@
 /// Header include
 #include "asn_type.hpp"
 
-/// booost include
-#include <boost/lexical_cast.hpp>
 #include <utility>
 
 /// utility includ
@@ -84,7 +82,7 @@ OctetStringAsnType::OctetStringAsnType(const std::string& _size) : AsnType(AsnTy
    THROW_ASSERT(_size.find(")") != std::string::npos, _size);
    const auto temp = _size.substr(_size.find('(') + 1);
    const auto temp2 = temp.substr(0, temp.find(')'));
-   size = boost::lexical_cast<size_t>(temp2);
+   size = std::stoul(temp2);
 }
 
 OctetStringAsnType::~OctetStringAsnType() = default;
@@ -110,7 +108,7 @@ SequenceOfAsnType::SequenceOfAsnType(std::string _element, const std::string& _s
    THROW_ASSERT(_size.find(")") != std::string::npos, _size);
    const auto temp = _size.substr(_size.find('(') + 1);
    const auto temp2 = temp.substr(0, temp.find(')'));
-   size = boost::lexical_cast<size_t>(temp2);
+   size = std::stoul(temp2);
 }
 
 SetAsnType::SetAsnType(std::list<std::pair<std::string, AsnTypeRef>> _fields)
@@ -119,6 +117,6 @@ SetAsnType::SetAsnType(std::list<std::pair<std::string, AsnTypeRef>> _fields)
 }
 
 SetOfAsnType::SetOfAsnType(std::string _element, const std::string& _size)
-    : AsnType(AsnType_Kind::SETOF), element(std::move(_element)), size(boost::lexical_cast<size_t>(_size))
+    : AsnType(AsnType_Kind::SETOF), element(std::move(_element)), size(std::stoul(_size))
 {
 }

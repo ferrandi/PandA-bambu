@@ -481,7 +481,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       script << "tb_srcs=(\n";
       for(const auto& src : tb_srcs)
       {
-         if(!boost::ends_with(src, ".xml"))
+         if(!ends_with(src, ".xml"))
          {
             script << "  \"" << src << "\"\n";
          }

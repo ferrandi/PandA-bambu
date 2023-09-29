@@ -80,7 +80,6 @@
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
 
-#include <boost/lexical_cast/try_lexical_convert.hpp>
 #include <regex>
 
 #define EPSILON 0.000000001
@@ -671,7 +670,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Is a pointer type");
                   const auto bundle_name = [&]() -> std::string {
                      if(interface_type == "m_axi" && arg_attributes.count(attr_way_lines) &&
-                        boost::lexical_cast<unsigned>(arg_attributes.at(attr_way_lines)))
+                        std::stoull(arg_attributes.at(attr_way_lines)))
                      {
                         THROW_ASSERT(arg_attributes.count(attr_bundle_name), "");
                         return arg_attributes.at(attr_bundle_name);
@@ -698,19 +697,12 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   if(arg_attributes.find(attr_size_in_bytes) != arg_attributes.end())
                   {
                      auto temp_factor = info.type == datatype::generic ?
-                                            (8 * boost::lexical_cast<unsigned>(arg_attributes.at(attr_size_in_bytes))) /
-                                                info.bitwidth :
+                                            (8 * std::stoull(arg_attributes.at(attr_size_in_bytes))) / info.bitwidth :
                                             1;
                      if(temp_factor > 1)
                      {
                         info.factor = temp_factor;
                      }
-                     //                     std::cerr << "size in bytes="
-                     //                               <<
-                     //                               boost::lexical_cast<unsigned>(arg_attributes.at(attr_size_in_bytes))
-                     //                               << " info.factor=" << info.factor << " info.bitwidth=" <<
-                     //                               info.bitwidth << "\n";
-                     //                     std::cerr << "interface_type=" << interface_type << "\n";
                   }
                   else
                   {
@@ -829,8 +821,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   if(arg_attributes.find(attr_size) != arg_attributes.end())
                   {
                      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                                    "---Size      : " +
-                                        STR(boost::lexical_cast<unsigned>(arg_attributes.at(attr_size))));
+                                    "---Size      : " + STR(std::stoull(arg_attributes.at(attr_size))));
                   }
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Alignment : " + STR(info.alignment));
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
@@ -979,7 +970,7 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
          }();
          if(called_fname.find(STR_CST_interface_parameter_keyword) != std::string::npos)
          {
-            if(!boost::starts_with(called_fname, info.interface_id + STR_CST_interface_parameter_keyword))
+            if(!starts_with(called_fname, info.interface_id + STR_CST_interface_parameter_keyword))
             {
                THROW_ERROR("Shared memory operation is not supported with required I/O interface setup.");
             }
@@ -1996,7 +1987,7 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
 
 void InterfaceInfer::create_resource_array(const std::set<std::string>& operationsR,
                                            const std::set<std::string>& operationsW, const std::string& bundle_name,
-                                           const interface_info& info, unsigned int arraySize) const
+                                           const interface_info& info, unsigned long long arraySize) const
 {
    const auto n_channels = parameters->getOption<unsigned int>(OPT_channels_number);
    const auto isDP = n_channels == 2;
@@ -2024,8 +2015,8 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
       GetPointerS<module>(interface_top)->set_license(GENERATED_LICENSE);
       GetPointerS<module>(interface_top)->set_multi_unit_multiplicity(n_resources);
       const auto address_bitsize = HLSMgr->get_address_bitsize();
-      const auto nbit = 64u - static_cast<unsigned>(__builtin_clzll(arraySize - 1U));
-      const auto nbitDataSize = 64u - static_cast<unsigned>(__builtin_clzll(info.bitwidth));
+      const auto nbit = 64u - static_cast<unsigned long long>(__builtin_clzll(arraySize - 1U));
+      const auto nbitDataSize = 64u - static_cast<unsigned long long>(__builtin_clzll(info.bitwidth));
       const structural_type_descriptorRef addrType(new structural_type_descriptor("bool", address_bitsize));
       const structural_type_descriptorRef address_interface_datatype(new structural_type_descriptor("bool", nbit));
       const structural_type_descriptorRef dataType(new structural_type_descriptor("bool", info.bitwidth));
@@ -2165,7 +2156,7 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
    const auto HLSMgr = GetPointerS<HLS_manager>(AppM);
    const auto HLS_D = HLSMgr->get_HLS_device();
    const auto TechMan = HLS_D->get_technology_manager();
-   unsigned way_lines = 0;
+   unsigned long long way_lines = 0;
 
    if(!TechMan->is_library_manager(INTERFACE_LIBRARY) ||
       !TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName))
@@ -2189,7 +2180,7 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       long long unsigned backEndBitsize = info.bitwidth;
       if(bundle_attr_map.find(attr_bus_size) != bundle_attr_map.end() && bundle_attr_map.at(attr_bus_size) != "")
       {
-         backEndBitsize = boost::lexical_cast<long long unsigned>(bundle_attr_map.at(attr_bus_size));
+         backEndBitsize = std::stoull(bundle_attr_map.at(attr_bus_size));
       }
 
       const structural_type_descriptorRef address_interface_datatype(
@@ -2421,7 +2412,7 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
                                "ReadWrite_" + info.name + "ModuleGenerator");
       if(bundle_attr_map.find(attr_way_lines) != bundle_attr_map.end())
       {
-         way_lines = boost::lexical_cast<unsigned>(bundle_attr_map.at(attr_way_lines));
+         way_lines = std::stoull(bundle_attr_map.at(attr_way_lines));
       }
       /* Add the dependency to the IOB_cache module if there is a cache */
       if(way_lines > 0)
@@ -2549,7 +2540,7 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
                            HLSMgr->design_attributes.find(fname)->second.find(arg_name)->second.end(),
                    "unexpected condition");
       const auto arraySizeSTR = HLSMgr->design_attributes.at(fname).at(arg_name).at(attr_size);
-      const auto arraySize = boost::lexical_cast<unsigned>(arraySizeSTR);
+      const auto arraySize = std::stoull(arraySizeSTR);
       if(arraySize == 0)
       {
          THROW_ERROR("array size equal to zero");

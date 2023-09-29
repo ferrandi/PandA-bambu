@@ -68,8 +68,6 @@
 #include "string_manipulation.hpp"
 #include "utility.hpp"
 
-#include <boost/algorithm/string/replace.hpp>
-
 /// PARAMETERS STUFF ***********************///
 #define INPUT_OPT_ACCURACY 256
 #define INPUT_OPT_BENCHMARK_BOUNDS (1 + INPUT_OPT_ACCURACY)

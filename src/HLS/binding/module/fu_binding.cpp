@@ -2339,8 +2339,7 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
       init_file_b.open(GetPath("0_" + init_filename));
    }
    unsigned long long vec_size = 0, elts_size = 0;
-   const auto bitsize_align =
-       is_sds ? 0ULL : boost::lexical_cast<unsigned long long>(fu_module->GetParameter("BRAM_BITSIZE"));
+   const auto bitsize_align = is_sds ? 0ULL : std::stoull(fu_module->GetParameter("BRAM_BITSIZE"));
    fill_array_ref_memory(init_file_a, init_file_b, ar, vec_size, elts_size, HLSMgr->Rmem, TreeM, is_sds, bitsize_align);
    THROW_ASSERT(vec_size, "at least one element is expected");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---elts_size " + STR(elts_size));

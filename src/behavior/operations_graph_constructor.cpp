@@ -52,11 +52,10 @@
 #include "string_manipulation.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "typed_node_info.hpp"    // for GET_NAME, ENTRY, EXIT
-#include <boost/lexical_cast.hpp> // for lexical_cast
-#include <boost/tuple/tuple.hpp>  // for tie
-#include <list>                   // for list
-#include <utility>                // for pair
+#include "typed_node_info.hpp"   // for GET_NAME, ENTRY, EXIT
+#include <boost/tuple/tuple.hpp> // for tie
+#include <list>                  // for list
+#include <utility>               // for pair
 
 operations_graph_constructor::operations_graph_constructor(OpGraphsCollectionRef _og)
     : og(std::move(_og)), op_graph(new OpGraph(og, -1))

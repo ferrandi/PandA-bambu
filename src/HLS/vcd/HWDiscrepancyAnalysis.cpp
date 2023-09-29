@@ -775,8 +775,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       const size_t trace_len =
           i.second.size() + 1; // use one entry more in the trace to avoid ever accessing out of bounds
       const size_t metadata_word_size = scope_to_best_metadata_bits.at(scope);
-      auto data_word_size =
-          boost::lexical_cast<size_t>(GetPointer<module>(curr_module)->GetParameter("EPP_TRACE_BITSIZE"));
+      auto data_word_size = std::stoul(GetPointer<module>(curr_module)->GetParameter("EPP_TRACE_BITSIZE"));
       if((Discr->hw_discrepancy_info->fu_id_to_max_epp_path_val.at(f_id) + 1) == (1ULL << data_word_size))
       {
          data_word_size++;

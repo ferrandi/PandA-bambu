@@ -49,7 +49,6 @@
 #include <boost/graph/filtered_graph.hpp>     // for in_edges, num_vertices
 #include <boost/iterator/filter_iterator.hpp> // for filter_iterator
 #include <boost/iterator/iterator_facade.hpp> // for operator!=, operator++
-#include <boost/lexical_cast.hpp>             // for lexical_cast
 #include <boost/tuple/tuple.hpp>              // for tie
 #include <iterator>                           // for advance
 #include <list>                               // for list

@@ -155,7 +155,7 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
                if(line.find("Function") != std::string::npos)
                {
                   const auto function_behavior =
-                      AppM->CGetFunctionBehavior(boost::lexical_cast<unsigned int>(splitted[1]));
+                      AppM->CGetFunctionBehavior(static_cast<unsigned>(std::stoul(splitted[1])));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Found data of function " +
                                      function_behavior->CGetBehavioralHelper()->get_function_name());
@@ -164,12 +164,11 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
                }
                else
                {
-                  const auto bb_index = boost::lexical_cast<unsigned int>(splitted[0]);
+                  const auto bb_index = static_cast<unsigned>(std::stoul(splitted[0]));
                   if(bb_index_map.find(bb_index) != bb_index_map.end())
                   {
                      const auto bb_vertex = bb_index_map.find(bb_index)->second;
-                     profiling_information->bb_executions[bb_vertex] =
-                         boost::lexical_cast<unsigned long long int>(splitted[1]);
+                     profiling_information->bb_executions[bb_vertex] = std::stoull(splitted[1]);
                   }
                   else
                   {

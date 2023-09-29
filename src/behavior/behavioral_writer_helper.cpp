@@ -46,12 +46,10 @@
 
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 
-#include "custom_map.hpp"                 // for _Rb_tree_const_iterator
-#include <boost/lexical_cast.hpp>         // for lexical_cast
-#include <boost/smart_ptr/shared_ptr.hpp> // for shared_ptr
-#include <list>                           // for list
-#include <string>                         // for string, operator<<
-#include <utility>                        // for pair
+#include "custom_map.hpp" // for _Rb_tree_const_iterator
+#include <list>           // for list
+#include <string>         // for string, operator<<
+#include <utility>        // for pair
 #if HAVE_HLS_BUILT
 #include "allocation_information.hpp" // for AllocationInformation
 #endif
