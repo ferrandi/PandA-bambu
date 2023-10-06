@@ -105,16 +105,18 @@ struct InterfaceInfer::interface_info
 
  public:
    std::string name;
-   const std::string interface_id;
+   const std::string arg_id;
+   const std::string interface_fname;
    unsigned alignment;
    unsigned long long bitwidth;
    unsigned long long factor;
    datatype type;
 
-   interface_info(const std::string& _interface_id, bool fixed_size)
+   interface_info(const std::string& _arg_id, const std::string& _interface_fname, bool fixed_size)
        : _fixed_size(fixed_size),
          name(""),
-         interface_id(_interface_id),
+         arg_id(_arg_id),
+         interface_fname(_interface_fname),
          alignment(1U),
          bitwidth(0ULL),
          factor(1ULL),
@@ -677,9 +679,9 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      }
                      return "";
                   }();
-                  interface_info info(bundle_name.size() ? bundle_name : arg_name, interface_type == "array" ||
-                                                                                       interface_type == "fifo" ||
-                                                                                       interface_type == "axis");
+                  interface_info info(arg_name, fname,
+                                      interface_type == "array" || interface_type == "fifo" ||
+                                          interface_type == "axis");
                   info.update(arg_ssa, HLSMgr->design_attributes.at(fname).at(arg_name).at(attr_typename), parameters);
 
                   std::list<tree_nodeRef> writeStmt;
@@ -970,9 +972,18 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
          }();
          if(called_fname.find(STR_CST_interface_parameter_keyword) != std::string::npos)
          {
-            if(!starts_with(called_fname, info.interface_id + STR_CST_interface_parameter_keyword))
+            const auto& DesignAttributes = GetPointer<HLS_manager>(AppM)->design_attributes[info.interface_fname];
+            const auto arg_id = called_fname.substr(0, called_fname.find(STR_CST_interface_parameter_keyword));
+            const auto bundle_id = DesignAttributes.at(arg_id).count(attr_bundle_name) ?
+                                       DesignAttributes.at(arg_id).at(attr_bundle_name) :
+                                       "";
+            const auto info_bundle_id = DesignAttributes.at(info.arg_id).count(attr_bundle_name) ?
+                                            DesignAttributes.at(info.arg_id).at(attr_bundle_name) :
+                                            "";
+            if(arg_id != info.arg_id && bundle_id != info_bundle_id)
             {
-               THROW_ERROR("Shared memory operation is not supported with required I/O interface setup.");
+               THROW_ERROR("Pattern not supported with required I/O interface: parameters '" + arg_id + "' and '" +
+                           info.arg_id + "' share a memory operation");
             }
             return call_type::ct_forward;
          }
