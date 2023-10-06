@@ -692,6 +692,10 @@ DesignFlowStep_Status InterfaceInfer::Exec()
 
                   if(!isRead && !isWrite)
                   {
+                     if(interface_type == "m_axi")
+                     {
+                        continue;
+                     }
                      THROW_ERROR("Parameter '" + arg_name + "' cannot have interface type '" + interface_type +
                                  "' since no load/store is associated with it");
                   }
