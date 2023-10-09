@@ -304,7 +304,7 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
           << "cd " << GetCurrentPath() << "\n"
           << "if [ ! -z \"$APPDIR\" ]; then LD_LIBRARY_PATH=\"\"; fi\n";
 
-   file_list.push_back(PANDA_DATA_INSTALLDIR "/panda/libmdpi/mdpi.c");
+   file_list.push_back(relocate_compiler_path(PANDA_DATA_INSTALLDIR) + "/panda/libmdpi/mdpi.c");
 
    const auto default_compiler = Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
    const auto opt_set = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_gcc_optimization_set);
@@ -381,7 +381,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       cflags.erase(static_cast<size_t>(what[0].first - cflags.c_str()),
                    static_cast<size_t>(what[0].second - what[0].first));
    }
-   beh_cflags += " -I" PANDA_DATA_INSTALLDIR "/panda/libmdpi/include";
+   beh_cflags += " -I" + relocate_compiler_path(PANDA_DATA_INSTALLDIR) + "/panda/libmdpi/include";
    beh_cflags += " -D__M_IPC_FILENAME=\\\\\\\"${SIM_DIR}/panda_ipc_mmap\\\\\\\"";
    beh_cflags += " -D__M_OUT_LVL=" + std::to_string(Param->getOption<int>(OPT_output_level));
    if(cflags.find("-m32") != std::string::npos)
@@ -444,7 +444,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       return files;
    }();
 
-   script << "make -C " PANDA_DATA_INSTALLDIR "/panda/libmdpi \\\n"
+   script << "make -C " << relocate_compiler_path(PANDA_DATA_INSTALLDIR) << "/panda/libmdpi \\\n"
           << "  SIM_DIR=\"${SIM_DIR}\" BEH_DIR=\"" << beh_dir << "\" \\\n"
           << "  TOP_FNAME=\"" << top_fname << "\" \\\n"
           << "  MTOP_FNAME=\"" << m_top_fname << "\" \\\n"
