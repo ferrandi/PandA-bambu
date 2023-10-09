@@ -757,7 +757,9 @@ void HLSCWriter::WriteMainTestbench()
    pp_call += ");\n";
    args_decl += "};\n";
 
-   indented_output_stream->AppendIndented(std::string() + R"(
+   indented_output_stream->AppendIndented(R"(
+#ifdef LIBMDPI_DRIVER
+
 #ifndef CUSTOM_VERIFICATION
 #ifdef __cplusplus
 #include <cstring>
@@ -766,8 +768,10 @@ void HLSCWriter::WriteMainTestbench()
 #endif
 #endif
 
+#define __LOCAL_ENTITY MDPI_ENTITY_DRIVER
 #include <mdpi/mdpi_debug.h>
-#include <mdpi/mdpi_wrapper.h>
+#include <mdpi/mdpi_driver.h>
+#include <mdpi/mdpi_user.h>
 
 #define typeof __typeof__
 #ifdef __cplusplus
@@ -949,7 +953,6 @@ static size_t __m_call_count = 0;
    }();
    indented_output_stream->Append("const long double max_ulp = " + max_ulp + ";\n");
    indented_output_stream->Append("size_t i;\n");
-   indented_output_stream->Append("enum mdpi_state state;\n");
    indented_output_stream->Append(args_init);
    indented_output_stream->Append(args_decl);
    indented_output_stream->Append("__m_memsetup(args, " + STR(args_decl_size) + ");\n\n");
@@ -957,21 +960,15 @@ static size_t __m_call_count = 0;
    indented_output_stream->Append("__m_arg_init(" + STR(args_decl_size) + ");\n");
    indented_output_stream->Append(args_set);
 
-   indented_output_stream->Append("\n__m_signal_to(MDPI_ENTITY_SIM, MDPI_SIM_SETUP);\n\n");
+   indented_output_stream->Append("\n__m_sim_start();\n\n");
    indented_output_stream->Append("#ifndef CUSTOM_VERIFICATION\n");
    indented_output_stream->Append(gold_call);
    indented_output_stream->Append("#endif\n\n");
    indented_output_stream->Append("#ifdef PP_VERIFICATION\n");
    indented_output_stream->Append(pp_call);
    indented_output_stream->Append("#endif\n\n");
-   indented_output_stream->Append("state = __m_wait_for(MDPI_ENTITY_COSIM);\n");
+   indented_output_stream->Append("__m_sim_end();\n");
    indented_output_stream->Append("__m_arg_fini();\n\n");
-
-   indented_output_stream->Append("if(state != MDPI_COSIM_INIT)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("error(\"Unexpected simulator state : %s\\n\", mdpi_state_str(state));\n");
-   indented_output_stream->Append("abort();\n");
-   indented_output_stream->Append("}\n");
 
    if(gold_cmp.size() || return_type)
    {
@@ -1020,6 +1017,10 @@ abort();
    const auto& test_vectors = HLSMgr->RSim->test_vectors;
    if(top_fname != "main" && test_vectors.size())
    {
+      indented_output_stream->Append("#else\n");
+      indented_output_stream->Append("#include <mdpi/mdpi_user.h>\n\n");
+      indented_output_stream->Append("extern " + top_decl + ";\n\n");
+
       indented_output_stream->Append("int main()\n{\n");
       // write additional initialization code needed by subclasses
       WriteExtraInitCode();
@@ -1064,6 +1065,7 @@ abort();
       indented_output_stream->Append("return 0;\n");
       indented_output_stream->Append("}\n");
    }
+   indented_output_stream->Append("#endif");
 }
 
 void HLSCWriter::WriteFile(const std::string& file_name)

@@ -31,7 +31,7 @@
  *
  */
 /**
- * @file mdpi_debug.h
+ * @file mdpi_driver.h
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
@@ -39,42 +39,32 @@
  * Last modified by $Author$
  *
  */
-#ifndef __MDPI_DEBUG_H
-#define __MDPI_DEBUG_H
+#ifndef __MDPI_DRIVER_H
+#define __MDPI_DRIVER_H
 
-#include <pthread.h>
+#include "mdpi_types.h"
 
-#ifdef __cplusplus
-#include <cstdio>
-#else
-#include <stdio.h>
-#endif
+#include <stddef.h>
 
-#ifdef __cplusplus
-extern "C"
-#else
-extern
-#endif
-    volatile pthread_t __m_main_tid;
+EXTERN_C void __m_arg_init(uint8_t argcount);
+EXTERN_C void __m_arg_fini();
+EXTERN_C void __m_setarg(uint8_t index, void* bits, uint16_t bitsize);
+EXTERN_C void __m_setptrarg(uint8_t index, bptr_t* bits, uint16_t bitsize);
+EXTERN_C void __m_memmap_init();
+EXTERN_C int __m_memmap(ptr_t dst, void* src, size_t bytes);
+EXTERN_C void __m_param_alloc(uint8_t idx, size_t size);
+EXTERN_C size_t __m_param_size(uint8_t idx);
 
-#ifndef __M_OUT_LVL
-#define __M_OUT_LVL 4
-#endif
+EXTERN_C void __m_init();
+EXTERN_C void __m_sim_start();
+EXTERN_C unsigned int __m_sim_end();
 
-#if __M_OUT_LVL >= 3
-#define info(str, ...) fprintf(stdout, "%s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", ##__VA_ARGS__)
-#else
-#define info(...)
-#endif
+EXTERN_C void __m_exit(int __status);
+EXTERN_C void __m_abort();
+EXTERN_C void __m_assert_fail(const char* __assertion, const char* __file, unsigned int __line, const char* __function);
 
-#if __M_OUT_LVL > 4
-#define debug(str, ...) \
-   fprintf(stdout, "%s %10s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", __func__, ##__VA_ARGS__)
-#define error(str, ...) debug("ERROR: " str, ##__VA_ARGS__)
-#else
-#define debug(...)
-#define error(str, ...) \
-   fprintf(stderr, "ERROR: %s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", ##__VA_ARGS__)
-#endif
+#define __m_setargptr(index, bits, bitsize) \
+   bptr_t __ptrval_##index = (bptr_t)bits;  \
+   __m_setptrarg(index, &__ptrval_##index, bitsize)
 
-#endif // __MDPI_DEBUG_H
+#endif // __MDPI_DRIVER_H
