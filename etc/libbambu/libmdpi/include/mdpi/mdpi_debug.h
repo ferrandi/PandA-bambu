@@ -31,7 +31,7 @@
  *
  */
 /**
- * @file mdpi_wrapper.h
+ * @file mdpi_debug.h
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
@@ -39,26 +39,39 @@
  * Last modified by $Author$
  *
  */
-#ifndef __MDPI_WRAPPER_H
-#define __MDPI_WRAPPER_H
+#ifndef __MDPI_DEBUG_H
+#define __MDPI_DEBUG_H
 
 #include "mdpi_types.h"
-#include "mdpi_user.h"
 
-EXTERN_C void __m_arg_init(uint8_t argcount);
-EXTERN_C void __m_arg_fini();
-EXTERN_C void __m_setarg(uint8_t index, void* bits, uint16_t bitsize);
-EXTERN_C void __m_setptrarg(uint8_t index, bptr_t* bits, uint16_t bitsize);
-EXTERN_C void __m_memmap_init();
-EXTERN_C int __m_memmap(ptr_t dst, void* src, size_t bytes);
-EXTERN_C void __m_param_alloc(uint8_t idx, size_t size);
-EXTERN_C size_t __m_param_size(uint8_t idx);
+#include <pthread.h>
 
-EXTERN_C void __m_signal_to(enum mdpi_entity entity, enum mdpi_state state);
-EXTERN_C enum mdpi_state __m_wait_for(enum mdpi_entity entity);
+#ifdef __cplusplus
+#include <cstdio>
+#else
+#include <stdio.h>
+#endif
 
-#define __m_setargptr(index, bits, bitsize) \
-   bptr_t __ptrval_##index = (bptr_t)bits;  \
-   __m_setptrarg(index, &__ptrval_##index, bitsize)
+#ifndef __LOCAL_ENTITY
+#error Must define __LOCAL_ENTITY for debug prints
+#endif
 
-#endif // __MDPI_WRAPPER_H
+#ifndef __M_OUT_LVL
+#define __M_OUT_LVL 4
+#endif
+
+#if __M_OUT_LVL >= 3
+#define info(str, ...) fprintf(stdout, "%s: " str, mdpi_entity_str(__LOCAL_ENTITY), ##__VA_ARGS__)
+#else
+#define info(...)
+#endif
+
+#if __M_OUT_LVL > 4
+#define debug(str, ...) fprintf(stdout, "%s %10s: " str, mdpi_entity_str(__LOCAL_ENTITY), __func__, ##__VA_ARGS__)
+#define error(str, ...) debug("ERROR: " str, ##__VA_ARGS__)
+#else
+#define debug(...)
+#define error(str, ...) fprintf(stderr, "ERROR: %s: " str, mdpi_entity_str(__LOCAL_ENTITY), ##__VA_ARGS__)
+#endif
+
+#endif // __MDPI_DEBUG_H
