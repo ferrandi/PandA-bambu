@@ -84,45 +84,6 @@ class Scheduling : public HLSFunctionStep
    const bool speculation;
 
    /**
-    * compute the branch tag given the edge and the control data flow graph.
-    * @param e is the edge.
-    * @param cdg is the controlling dependency graph.
-    * @param switch_set is filled with the switch tags in case the source of e is a switch vertex.
-    */
-   unsigned int compute_b_tag(const EdgeDescriptor& e, const OpGraphConstRef cdg,
-                              CustomOrderedSet<unsigned int>::const_iterator& switch_it,
-                              CustomOrderedSet<unsigned int>::const_iterator& switch_it_end) const;
-
-   /**
-    * Return the number of branches associated with the controlling vertex.
-    * @param cdg is the control dependency graph.
-    * @param controlling_vertex is the controlling vertex.
-    */
-   unsigned int compute_b_tag_size(const OpGraphConstRef cdg, vertex controlling_vertex) const;
-
-   /**
-    * return an unsigned int from 0 to compute_b_tag_size(controlling_vertex)-1 given a branch tag not normalized.
-    * @param controlling_vertex is the controlling vertex (used only for switch vertex).
-    * @param b_tag_not_normalized is the non normalized tag.
-    */
-   unsigned int b_tag_normalize(vertex controlling_vertex, unsigned int b_tag_not_normalized) const;
-
-   /**
-    * initialize the maps associated with the switch vertices.
-    * @param controlling_vertex is a switch vertex.
-    * @param cdg is the control dependency graph.
-    */
-   void init_switch_maps(vertex controlling_vertex, const OpGraphConstRef cdg);
-
-   /**
-    * Move up zero time operations in the previous step when possible
-    * @param HLS is the structure storing all the High level synthesis information
-    * @param dependence_graph is the graph to be scheduled
-    * @return the new last step in which an operation is scheduled
-    */
-   ControlStep anticipate_operations(const OpGraphConstRef dependence_graph);
-
-   /**
     * Compute the relationship of this step
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
