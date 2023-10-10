@@ -155,7 +155,7 @@ void __m_abrupt_exit(int)
    __local_operation.type = MDPI_OP_TYPE_STATE_CHANGE;
    __local_operation.payload.sc.state = MDPI_STATE_ABORT;
    __local_operation.payload.sc.retval = EXIT_FAILURE;
-   __ipc_complete(__LOCAL_ENTITY);
+   atomic_store(&__local_operation.handle, MDPI_IPC_STATE_DONE);
    error("Abrupt exception notification.\n");
 #if __M_OUT_LVL > 4
    fflush(stdout);
