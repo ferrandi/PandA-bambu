@@ -45,7 +45,6 @@
 #include "mdpi_types.h"
 #include <svdpi.h>
 
-EXTERN_C EXPORT void m_init();
 EXTERN_C EXPORT unsigned int m_next(unsigned int state);
 EXTERN_C EXPORT int m_fini();
 

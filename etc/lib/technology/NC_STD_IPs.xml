@@ -238,7 +238,6 @@ timeunit 1ps;
 timeprecision 1ps;
 `endif
 
-import &quot;DPI-C&quot; function void m_init();
 import &quot;DPI-C&quot; function int unsigned m_next(input int unsigned state);
 import &quot;DPI-C&quot; function int m_fini();
 
@@ -285,8 +284,6 @@ begin
   
   $display(&quot;Results file: %s&quot;, RESFILE);
   $display(&quot;Reset active: %0s&quot;, RESET_ACTIVE ? &quot;HIGH&quot; : &quot;LOW&quot;);
-
-  m_init();
 end
 
 assign reset = rst;
