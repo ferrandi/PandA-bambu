@@ -315,7 +315,8 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
    boost::replace_last(compiler_env, "\n", "\nCC=\"");
    compiler_env += "\"";
    script << compiler_env << "\n"
-          << "SIM_DIR=\"" << sim_dir << "\"\n\n";
+          << "SIM_DIR=\"" << sim_dir << "\"\n"
+          << "OUT_LVL=\"" << Param->getOption<int>(OPT_output_level) << "\"\n\n";
 
    script << "function cleanup {\n"
           << "   kill ${__testbench_pid} 2>&1 | true\n"
@@ -383,7 +384,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
    }
    beh_cflags += " -I" + relocate_compiler_path(PANDA_DATA_INSTALLDIR) + "/panda/libmdpi/include";
    beh_cflags += " -D__M_IPC_FILENAME=\\\\\\\"${SIM_DIR}/panda_ipc_mmap\\\\\\\"";
-   beh_cflags += " -D__M_OUT_LVL=" + std::to_string(Param->getOption<int>(OPT_output_level));
+   beh_cflags += " -D__M_OUT_LVL=${OUT_LVL}";
    if(cflags.find("-m32") != std::string::npos)
    {
       beh_cflags += " -DM32";
