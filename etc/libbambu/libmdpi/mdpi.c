@@ -61,7 +61,7 @@
 
 #define byte_offset(i) ((i & 3) << 3)
 
-void m_init()
+void __attribute__((constructor)) m_init()
 {
    debug("Initializing...\n");
 
