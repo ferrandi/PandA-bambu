@@ -484,9 +484,15 @@ static void __arg_write(unsigned int index, bptr_t buffer)
    memcpy(p->bits, buffer, byte_count);
 }
 
-static void __arg_size(mdpi_op_arg_t* op)
+static uint16_t __arg_size(unsigned int index)
 {
-   op->bitsize = static_cast<uint16_t>(__m_param_size(op->index));
+   debug("Parameter %u size\n", index);
+   if(index >= __m_params.size)
+   {
+      error("Parameter index out of bounds: %u\n", index);
+      __ipc_exit(MDPI_STATE_ERROR);
+   }
+   return __m_params.prms[index].bitsize;
 }
 
 static void* __m_driver_loop(void*)
@@ -521,7 +527,7 @@ static void* __m_driver_loop(void*)
             __ipc_complete(__LOCAL_ENTITY);
             break;
          case MDPI_OP_TYPE_ARG_SIZE:
-            __arg_size(&__local_operation.payload.arg);
+            __local_operation.payload.arg.bitsize = __arg_size(__local_operation.payload.arg.index);
             __ipc_complete(__LOCAL_ENTITY);
             break;
          case MDPI_OP_TYPE_NONE:
