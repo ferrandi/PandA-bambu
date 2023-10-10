@@ -467,7 +467,7 @@ static uint16_t __arg_read(unsigned int index, bptr_t buffer)
    }
    mdpi_parm_t* p = &__m_params.prms[index];
    uint16_t byte_count = (p->bitsize / 8) + ((p->bitsize % 8) != 0);
-   memcpy(buffer, __m_params.prms[index].bits, byte_count);
+   memcpy(buffer, p->bits, byte_count);
    return p->bitsize;
 }
 
@@ -533,7 +533,6 @@ static void* __m_driver_loop(void*)
          case MDPI_OP_TYPE_NONE:
          default:
             error("Unexpected transaction type: %u\n", __local_operation.type);
-            // TODO: notify simulator for error
             __ipc_exit(MDPI_STATE_ERROR);
             break;
       }

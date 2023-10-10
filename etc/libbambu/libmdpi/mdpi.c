@@ -110,12 +110,13 @@ unsigned int m_next(unsigned int state)
          exit(EXIT_FAILURE);
          break;
    }
+   debug("Next state: %s\n", mdpi_state_str((mdpi_state_t)(state_next)));
    if(state_next == MDPI_STATE_ERROR || state_next == MDPI_STATE_ABORT)
    {
       state_next = MDPI_STATE_END;
    }
 
-   assert((state_next == MDPI_STATE_READY || state_next == MDPI_STATE_END) && "Unexpected state required.");
+   assert((state_next == MDPI_STATE_SETUP || state_next == MDPI_STATE_END) && "Unexpected state required.");
 
    return state_next;
 }
