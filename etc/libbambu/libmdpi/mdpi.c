@@ -208,8 +208,9 @@ static void __attribute__((noinline)) __m_read(const uint16_t size, svLogicVecVa
 
    if(__remote_operation.payload.mem.addr == addr)
    {
+      uint16_t i;
 #pragma unroll(4)
-      for(uint16_t i = 0; i < size; ++i)
+      for(i = 0; i < size; ++i)
       {
          byte_t mem = __remote_operation.payload.mem.buffer[i];
          if(i % 4)
@@ -234,14 +235,15 @@ static void __attribute__((noinline)) __m_read(const uint16_t size, svLogicVecVa
 static void __attribute__((noinline))
 __m_write(const uint16_t max_bsize, uint16_t size, CONSTARG svLogicVecVal* data, ptr_t addr)
 {
+   uint16_t i;
+   const uint16_t bsize = (size / 8) + ((size % 8) != 0);
    __ipc_reserve(__REMOTE_ENTITY);
    __remote_operation.type = MDPI_OP_TYPE_MEM_WRITE;
    __remote_operation.payload.mem.addr = addr;
    __remote_operation.payload.mem.size = size;
-   const uint16_t bsize = (size / 8) + ((size % 8) != 0);
    assert((max_bsize * 8) >= size && "Memory write bitsize must be smaller than bus size");
 #pragma unroll(4)
-   for(uint16_t i = 0; i < bsize; ++i)
+   for(i = 0; i < bsize; ++i)
    {
 #ifndef NDEBUG
       byte_t bdata_byte = data[i / 4].bval >> byte_offset(i);

@@ -78,7 +78,7 @@ static mdpi_params_t __m_params;
 static std::map<uint8_t, size_t> __m_params_size;
 static std::map<ptr_t, bptr_t> __m_mmu;
 
-static void __ipc_exit(mdpi_state_t state)
+static void __ipc_exit(mdpi_state_t state, uint8_t retval)
 {
    mdpi_ipc_state_t expected;
    do
@@ -89,8 +89,13 @@ static void __ipc_exit(mdpi_state_t state)
    } while(!atomic_compare_exchange_strong(&__local_operation.handle, &expected, MDPI_IPC_STATE_WRITING));
    __local_operation.type = MDPI_OP_TYPE_STATE_CHANGE;
    __local_operation.payload.sc.state = state;
-   __local_operation.payload.sc.retval = EXIT_FAILURE;
-   __ipc_complete(__LOCAL_ENTITY);
+   __local_operation.payload.sc.retval = retval;
+   atomic_store(&__local_operation.handle, MDPI_IPC_STATE_DONE);
+}
+
+static void __ipc_abort()
+{
+   __ipc_exit(MDPI_STATE_ABORT, EXIT_FAILURE);
    // TODO: write sim report file
    exit(EXIT_FAILURE);
 }
@@ -114,7 +119,7 @@ void __m_sim_start()
       error("An error occurred on co-simulation thread creation.\n");
       errno = error;
       perror("pthread_create");
-      __ipc_exit(MDPI_STATE_ERROR);
+      __ipc_abort();
    }
 #else
    __m_driver_loop(NULL);
@@ -143,30 +148,21 @@ unsigned int __m_sim_end()
    return retval;
 }
 
-void __m_abrupt_exit(int)
+void __m_abrupt_exit(int __sig)
 {
-   mdpi_ipc_state_t expected;
-   do
-   {
-      expected = atomic_load(&__local_operation.handle);
-      if(expected == MDPI_IPC_STATE_WRITING)
-         continue;
-   } while(!atomic_compare_exchange_strong(&__local_operation.handle, &expected, MDPI_IPC_STATE_WRITING));
-   __local_operation.type = MDPI_OP_TYPE_STATE_CHANGE;
-   __local_operation.payload.sc.state = MDPI_STATE_ABORT;
-   __local_operation.payload.sc.retval = EXIT_FAILURE;
-   atomic_store(&__local_operation.handle, MDPI_IPC_STATE_DONE);
-   error("Abrupt exception notification.\n");
+   __ipc_exit(MDPI_STATE_ABORT, EXIT_FAILURE);
+   error("Abrupt exception: %u\n", __sig);
 #if __M_OUT_LVL > 4
    fflush(stdout);
 #else
    fflush(stderr);
 #endif
+   exit(EXIT_FAILURE);
 }
 
 void __attribute__((constructor)) __mdpi_driver_init()
 {
-   static const int __sigs[] = {SIGINT, SIGABRT, SIGIOT};
+   static const int __sigs[] = {SIGINT, SIGABRT, SIGSEGV};
    int error;
    size_t i;
 
@@ -192,33 +188,22 @@ void __attribute__((constructor)) __mdpi_driver_init()
 
 void __attribute__((destructor)) __mdpi_driver_fini()
 {
-   mdpi_ipc_state_t expected;
-   do
-   {
-      expected = atomic_load(&__local_operation.handle);
-      if(expected == MDPI_IPC_STATE_WRITING)
-         continue;
-   } while(!atomic_compare_exchange_strong(&__local_operation.handle, &expected, MDPI_IPC_STATE_WRITING));
-   __local_operation.type = MDPI_OP_TYPE_STATE_CHANGE;
-   __local_operation.payload.sc.state = MDPI_STATE_END;
-   __local_operation.payload.sc.retval = EXIT_SUCCESS;
-   __ipc_complete(__LOCAL_ENTITY);
-
+   __ipc_exit(MDPI_STATE_END, EXIT_SUCCESS);
    __ipc_fini();
-
    debug("Finalization completed.\n");
 }
 
 void __m_exit(int __status)
 {
    info("Exit called with value %d\n", __status);
-   __ipc_exit(MDPI_STATE_END);
+   __ipc_exit(MDPI_STATE_END, __status);
+   exit(__status);
 }
 
 void __m_abort()
 {
    error("Co-simulation called abort\n");
-   __ipc_exit(MDPI_STATE_ABORT);
+   __ipc_abort();
 }
 
 void __m_assert_fail(const char* __assertion, const char* __file, unsigned int __line, const char* __function)
@@ -463,7 +448,7 @@ static uint16_t __arg_read(unsigned int index, bptr_t buffer)
    if(index >= __m_params.size)
    {
       error("Parameter index out of bounds: %u\n", index);
-      __ipc_exit(MDPI_STATE_ERROR);
+      __ipc_abort();
    }
    mdpi_parm_t* p = &__m_params.prms[index];
    uint16_t byte_count = (p->bitsize / 8) + ((p->bitsize % 8) != 0);
@@ -477,7 +462,7 @@ static void __arg_write(unsigned int index, bptr_t buffer)
    if(index >= __m_params.size)
    {
       error("Parameter index out of bounds: %u\n", index);
-      __ipc_exit(MDPI_STATE_ERROR);
+      __ipc_abort();
    }
    mdpi_parm_t* p = &__m_params.prms[index];
    uint16_t byte_count = (p->bitsize / 8) + ((p->bitsize % 8) != 0);
@@ -490,7 +475,7 @@ static uint16_t __arg_size(unsigned int index)
    if(index >= __m_params.size)
    {
       error("Parameter index out of bounds: %u\n", index);
-      __ipc_exit(MDPI_STATE_ERROR);
+      __ipc_abort();
    }
    return __m_params.prms[index].bitsize;
 }
@@ -533,7 +518,7 @@ static void* __m_driver_loop(void*)
          case MDPI_OP_TYPE_NONE:
          default:
             error("Unexpected transaction type: %u\n", __local_operation.type);
-            __ipc_exit(MDPI_STATE_ERROR);
+            __ipc_abort();
             break;
       }
    }
