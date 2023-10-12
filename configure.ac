@@ -793,7 +793,7 @@ AM_CONDITIONAL(BUILD_LIB_DOMINANCE,  test "x$panda_USE_LIB_DOMINANCE" = xyes)
 AM_CONDITIONAL(BUILD_LIB_LOOPS,  test "x$panda_USE_LIB_LOOPS" = xyes)
 AM_CONDITIONAL(BUILD_LIB_SDC_SOLVER,  test "x$panda_USE_LIB_SDC_SOLVER" = xyes)
 
-if test "x$panda_USE_LIB_CLIQUECOVER" = xyes || test "x$panda_USE_LIB_DOMINANCE" = xyes || test "x$panda_USE_LIB_LOOPS" = xyes; then
+if test "x$panda_USE_LIB_CLIQUECOVER" = xyes || test "x$panda_USE_LIB_DOMINANCE" = xyes || test "x$panda_USE_LIB_LOOPS" = xyes || test "x$panda_USE_LIB_SDC_SOLVER" = xyes; then
   panda_USE_LIB_ALGORITHMS=yes;
 fi
 AM_CONDITIONAL(BUILD_LIB_ALGORITHMS,  test "x$panda_USE_LIB_ALGORITHMS" = xyes)
