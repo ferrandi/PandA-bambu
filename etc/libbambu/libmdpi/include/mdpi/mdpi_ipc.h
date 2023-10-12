@@ -197,6 +197,21 @@ static void __ipc_release(mdpi_entity_t entity)
    atomic_store(&__get_operation(entity).handle, MDPI_IPC_STATE_FREE);
 }
 
+static void __ipc_exit(mdpi_entity_t entity, mdpi_ipc_state_t ipc_state, mdpi_state_t state, uint8_t retval)
+{
+   mdpi_ipc_state_t expected;
+   do
+   {
+      expected = atomic_load(&__get_operation(entity).handle);
+      if(expected == MDPI_IPC_STATE_WRITING)
+         continue;
+   } while(!atomic_compare_exchange_strong(&__get_operation(entity).handle, &expected, MDPI_IPC_STATE_WRITING));
+   __get_operation(entity).type = MDPI_OP_TYPE_STATE_CHANGE;
+   __get_operation(entity).payload.sc.state = state;
+   __get_operation(entity).payload.sc.retval = retval;
+   atomic_store(&__get_operation(entity).handle, ipc_state);
+}
+
 static void __ipc_init()
 {
    unsigned init = 1;
