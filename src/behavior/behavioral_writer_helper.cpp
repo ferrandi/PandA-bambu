@@ -507,7 +507,7 @@ void OpWriter::operator()(std::ostream& out, const vertex& v) const
    }
    else
    {
-      out << "[";
+      out << "[shape=ellipse,";
    }
    out << "label=\"" << GET_NAME(printing_graph, v);
 #if HAVE_HLS_BUILT
