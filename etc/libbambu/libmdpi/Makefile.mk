@@ -79,7 +79,7 @@ MDPI_OBJ_DIR := $(OBJ_DIR)/mdpi
 DRIVER_SRC := $(libmdpi_root)/mdpi_driver.cpp
 MDPI_SRCS := $(libmdpi_root)/mdpi.c
 
-OBJS := $(patsubst %.ll,%.o,$(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(patsubst $(SRC_DIR)/%,$(OBJ_DIR)/%, $(SRCS)))))
+OBJS := $(patsubst %.ll,%.o,$(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(patsubst $(SRC_DIR)/%,$(OBJ_DIR)/%, $(filter-out %.gimplePSSA, $(SRCS))))))
 OBJS_M := $(patsubst %.o,%.m.o,$(OBJS))
 DRIVER_OBJ := $(addprefix $(MDPI_OBJ_DIR)/, $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(notdir $(DRIVER_SRC)))))
 COSIM_OBJ := $(addprefix $(MDPI_OBJ_DIR)/, $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(notdir $(COSIM_SRC)))))
