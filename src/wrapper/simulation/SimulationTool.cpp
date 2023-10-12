@@ -456,8 +456,8 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
           << "  BEH_CFLAGS=\"" << beh_cflags << "\" \\\n"
           << "  TB_CFLAGS=\"\" \\\n"
           << "  SRCS=\"" << srcs << "\" \\\n"
-          << "  COSIM_SRCS=\"" << cosim_src << "\" \\\n"
-          << "  PP_SRCS=\"" << pp_srcs << "\" \\\n"
+          << "  COSIM_SRC=\"" << cosim_src << "\" \\\n"
+          << "  PP_SRC=\"" << pp_srcs << "\" \\\n"
           << "  TB_SRCS=\"" << tb_srcs << "\" \\\n"
           << "  -j " << std::thread::hardware_concurrency() << " -f Makefile.mk\n\n";
 
