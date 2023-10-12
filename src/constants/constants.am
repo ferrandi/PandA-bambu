@@ -47,8 +47,3 @@ endif
 if BUILD_TASTE
    noinst_HEADERS += constants/taste_constants.hpp
 endif
-
-if USE_WEIGHT_MODELS_XML
-   noinst_HEADERS += constants/weights_xml.hpp
-endif
-

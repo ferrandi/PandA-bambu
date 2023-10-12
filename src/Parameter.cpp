@@ -41,12 +41,7 @@
 #include "Parameter.hpp"
 
 /// Autoheader include
-#include "config_HAVE_ARM_COMPILER.hpp"
-#include "config_HAVE_FROM_ARCH_BUILT.hpp"
-#include "config_HAVE_FROM_CSV_BUILT.hpp"
 #include "config_HAVE_FROM_C_BUILT.hpp"
-#include "config_HAVE_FROM_PSPLIB_BUILT.hpp"
-#include "config_HAVE_FROM_SDF3_BUILT.hpp"
 #include "config_HAVE_I386_CLANG10_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG11_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG12_COMPILER.hpp"
@@ -68,12 +63,7 @@
 #include "config_HAVE_I386_GCC6_COMPILER.hpp"
 #include "config_HAVE_I386_GCC7_COMPILER.hpp"
 #include "config_HAVE_I386_GCC8_COMPILER.hpp"
-#include "config_HAVE_PERFORMANCE_METRICS_XML.hpp"
-#include "config_HAVE_REGRESSORS_BUILT.hpp"
-#include "config_HAVE_SOURCE_CODE_STATISTICS_XML.hpp"
-#include "config_HAVE_SPARC_COMPILER.hpp"
 #include "config_HAVE_TO_DATAFILE_BUILT.hpp"
-#include "config_HAVE_WEIGHT_MODELS_XML.hpp"
 #include "config_PACKAGE_BUGREPORT.hpp"
 #include "config_PACKAGE_STRING.hpp"
 
@@ -82,17 +72,7 @@
 #include "compiler_wrapper.hpp"
 #endif
 
-/// Boost include
-#include <boost/lexical_cast.hpp>
-
 /// Constants include
-#if HAVE_REGRESSORS_BUILT
-#include "aggregated_features_xml.hpp"
-#include "skip_rows_xml.hpp"
-#endif
-#if HAVE_FROM_ARCH_BUILT
-#include "architecture_xml.hpp"
-#endif
 #include "constant_strings.hpp"
 #include "constants.hpp"
 #if HAVE_HLS_BUILT
@@ -102,25 +82,8 @@
 #if HAVE_TO_DATAFILE_BUILT
 #include "latex_table_xml.hpp"
 #endif
-#if HAVE_PERFORMANCE_METRICS_XML
-#include "metrics_xml.hpp"
-#endif
-#if HAVE_SOURCE_CODE_STATISTICS_XML
-#include "source_code_statistics_xml.hpp"
-#endif
-#if HAVE_PERFORMANCE_METRICS_XML
-#include "probability_distribution_xml.hpp"
-#endif
 #if HAVE_TECHNOLOGY_BUILT
 #include "technology_xml.hpp"
-#endif
-#if HAVE_FROM_SDF3_BUILT
-#include "sdf3_xml.hpp"
-#endif
-
-#if HAVE_CODE_ESTIMATION_BUILT
-/// design_flows/codesign/estimation include
-#include "actor_graph_estimator.hpp"
 #endif
 
 #if HAVE_FROM_C_BUILT
@@ -812,20 +775,6 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
 #endif
       case INPUT_OPT_COMPILER:
       {
-#if HAVE_ARM_COMPILER
-         if(std::string(optarg_param) == "ARM")
-         {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_ARM_GCC));
-            break;
-         }
-#endif
-#if HAVE_SPARC_COMPILER
-         if(std::string(optarg_param) == "SPARC")
-         {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_SPARC_GCC));
-            break;
-         }
-#endif
 #if HAVE_I386_GCC45_COMPILER
          if(std::string(optarg_param) == "I386_GCC45")
          {
@@ -1097,33 +1046,9 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::filesystem::path& file
    if(extension == ".csv")
    {
       const auto sub_extension = std::filesystem::path(file_name).replace_extension().extension().string();
-#if HAVE_FROM_CSV_BUILT
-      if(sub_extension == ".rtl")
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--CSV of RTL operations");
-         return Parameters_FileFormat::FF_CSV_RTL;
-      }
-      else if(sub_extension == ".tree")
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--CSV of TREE operations");
-         return Parameters_FileFormat::FF_CSV_TRE;
-      }
-#endif
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--generic CSV");
       return Parameters_FileFormat::FF_CSV;
    }
-#if HAVE_FROM_PSPLIB_BUILT
-   if(extension == ".mm")
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Multi mode project scheduling problem");
-      return Parameters_FileFormat::FF_PSPLIB_MM;
-   }
-   if(extension == ".sm")
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Single-mode project scheduling problem");
-      return Parameters_FileFormat::FF_PSPLIB_SM;
-   }
-#endif
    if(extension == ".tex")
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latex table");
@@ -1147,24 +1072,9 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::filesystem::path& file
          parser.Exec();
          THROW_ASSERT(parser, "Impossible to parse xml file " + file_name.string());
 
-#if HAVE_DESIGN_ANALYSIS_BUILT || HAVE_SOURCE_CODE_STATISTICS_XML || HAVE_FROM_SDF3_BUILT || HAVE_TO_DATAFILE_BUILT || \
-    HAVE_PERFORMANCE_METRICS_XML || HAVE_WEIGHT_MODELS_XML
+#if HAVE_TO_DATAFILE_BUILT
          const xml_element* root = parser.get_document()->get_root_node();
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Root node is " + root->get_name());
-#if HAVE_REGRESSORS_BUILT
-         if(root->get_name() == STR_XML_aggregated_features_root)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Aggregated features data");
-            return Parameters_FileFormat::FF_XML_AGG;
-         }
-#endif
-#if HAVE_FROM_ARCH_BUILT
-         if(root->get_name() == STR_XML_architecture_root)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Architecture description");
-            return Parameters_FileFormat::FF_XML_ARCHITECTURE;
-         }
-#endif
 #if HAVE_BAMBU_RESULTS_XML
          if(root->get_name() == "bambu_results")
          {
@@ -1179,25 +1089,11 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::filesystem::path& file
             return Parameters_FileFormat::FF_XML_CON;
          }
 #endif
-#if HAVE_DESIGN_ANALYSIS_BUILT
-         if(root->get_name() == STR_XML_design_analysis_hierarchy)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Design hierarchy");
-            return Parameters_FileFormat::FF_XML_DESIGN_HIERARCHY;
-         }
-#endif
          if(root->get_name() == STR_XML_experimental_setup_root)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Experimental setup");
             return Parameters_FileFormat::FF_XML_EXPERIMENTAL_SETUP;
          }
-#if HAVE_SOURCE_CODE_STATISTICS_XML
-         if(root->get_name() == STR_XML_source_code_statistics_root)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Source code statistics");
-            return Parameters_FileFormat::FF_XML_STAT;
-         }
-#endif
 #if HAVE_TECHNOLOGY_BUILT
          if(root->get_name() == STR_XML_technology_target_root)
          {
@@ -1215,20 +1111,6 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::filesystem::path& file
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Latex table format");
             return Parameters_FileFormat::FF_XML_TEX_TABLE;
-         }
-#endif
-#if HAVE_FROM_SDF3_BUILT
-         if(root->get_name() == STR_XML_sdf3_root)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Sdf3 format");
-            return Parameters_FileFormat::FF_XML_SDF3;
-         }
-#endif
-#if HAVE_REGRESSORS_BUILT
-         if(root->get_name() == STR_XML_skip_rows_root)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skip rows data");
-            return Parameters_FileFormat::FF_XML_SKIP_ROW;
          }
 #endif
 #endif
@@ -1343,12 +1225,6 @@ void Parameter::PrintGccOptionsUsage(std::ostream& os) const
       << "    --compiler=<compiler_version>\n"
       << "        Specify which compiler is used.\n"
       << "        Possible values for <compiler_version> are:\n"
-#if HAVE_ARM_COMPILER
-      << "            ARM\n"
-#endif
-#if HAVE_SPARC_COMPILER
-      << "            SPARC\n"
-#endif
 #if HAVE_I386_GCC45_COMPILER
       << "            I386_GCC45\n"
 #endif
@@ -1517,20 +1393,6 @@ HostProfiling_Method Parameter::getOption(const enum enum_option name) const
 }
 #endif
 
-#if HAVE_TARGET_PROFILING
-template <>
-InstrumentWriter_Level Parameter::getOption(const enum enum_option name) const
-{
-   return static_cast<InstrumentWriter_Level>(getOption<int>(name));
-}
-
-template <>
-TargetArchitecture_Kind Parameter::getOption(const enum enum_option name) const
-{
-   return static_cast<TargetArchitecture_Kind>(getOption<int>(name));
-}
-#endif
-
 #if HAVE_FROM_C_BUILT
 template <>
 CompilerWrapper_CompilerTarget Parameter::getOption(const enum enum_option name) const
@@ -1544,54 +1406,6 @@ Parameters_FileFormat Parameter::getOption(const enum enum_option name) const
 {
    return static_cast<Parameters_FileFormat>(getOption<int>(name));
 }
-
-#if HAVE_CODE_ESTIMATION_BUILT
-template <>
-CustomUnorderedSet<ActorGraphEstimator_Algorithm> Parameter::getOption(const enum enum_option name) const
-{
-   CustomUnorderedSet<ActorGraphEstimator_Algorithm> return_value;
-   const std::string temp = getOption<std::string>(name);
-
-   std::vector<std::string> splitted = SplitString(temp, ",");
-   size_t i_end = splitted.size();
-   for(size_t i = 0; i < i_end; i++)
-   {
-      if(splitted[i] == "")
-         continue;
-      if(splitted[i] == STR_CST_path_based)
-         return_value.insert(ActorGraphEstimator_Algorithm::PE_PATH_BASED);
-      else if(splitted[i] == STR_CST_worst_case)
-         return_value.insert(ActorGraphEstimator_Algorithm::PE_WORST_CASE);
-      else if(splitted[i] == STR_CST_average_case)
-         return_value.insert(ActorGraphEstimator_Algorithm::PE_AVERAGE_CASE);
-      else
-         THROW_ERROR("Unrecognized performance estimation algorithm: " + splitted[i]);
-   }
-   return return_value;
-}
-
-template <>
-ActorGraphEstimator_Algorithm Parameter::getOption(const enum enum_option name) const
-{
-   return static_cast<ActorGraphEstimator_Algorithm>(getOption<int>(name));
-}
-#endif
-
-#if HAVE_DIOPSIS
-template <>
-DiopsisInstrumentWriter_Type Parameter::getOption(const enum enum_option name) const
-{
-   return static_cast<DiopsisInstrumentWriter_Type>(getOption<int>(name));
-}
-#endif
-
-#if HAVE_DESIGN_ANALYSIS_BUILT
-template <>
-DesignAnalysis_Step Parameter::getOption(const enum enum_option name) const
-{
-   return static_cast<DesignAnalysis_Step>(getOption<int>(name));
-}
-#endif
 
 #if HAVE_FROM_C_BUILT
 template <>

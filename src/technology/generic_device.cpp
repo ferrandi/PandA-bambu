@@ -149,6 +149,7 @@ void generic_device::load_devices()
    default_device_data["xc7a100t-1csg324-VVD"] = "xc7a100t-1csg324-VVD.data";
    default_device_data["xcku060-3ffva1156-VVD"] = "xcku060-3ffva1156-VVD.data";
    default_device_data["xcu280-2Lfsvh2892-VVD"] = "xcu280-2Lfsvh2892-VVD.data";
+   default_device_data["xcu55c-2Lfsvh2892-VVD"] = "xcu55c-2Lfsvh2892-VVD.data";
 
    default_device_data["EP2C70F896C6"] = "EP2C70F896C6.data";
    default_device_data["EP2C70F896C6-R"] = "EP2C70F896C6-R.data";
@@ -195,9 +196,9 @@ void generic_device::load_devices()
             if(default_device_data.find(device_string) != default_device_data.end())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Loading " + device_string);
-               ret.insert(
-                   XMLDomParserRef(new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/technology/") +
-                                                    default_device_data[device_string])));
+               ret.insert(XMLDomParserRef(
+                   new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/technology/", true) +
+                                    default_device_data[device_string])));
             }
             else
             {

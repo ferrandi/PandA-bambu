@@ -54,8 +54,6 @@
 #include "storage_value_information.hpp"
 #include "utility.hpp"
 
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/lexical_cast.hpp>
 #include <vector>
 
 vertex_coloring_register::vertex_coloring_register(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,

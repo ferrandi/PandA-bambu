@@ -43,8 +43,6 @@
  */
 
 /// Autoheader include
-#include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
-#include "config_HAVE_RTL_BUILT.hpp"
 #include "exceptions.hpp"          // for THROW_ASSERT, THROW...
 #include "string_manipulation.hpp" // for STR
 #include "tree_common.hpp"         // for CharType_K, abs_expr_K
@@ -63,9 +61,6 @@
 #include "tree_node.hpp"
 #include "tree_node_dup.hpp"
 #include "tree_reindex.hpp"
-#if HAVE_CODE_ESTIMATION_BUILT
-#include "weight_information.hpp"
-#endif
 
 #define DECLARATION (2) // All nodes including declarations are duplicated (not function_decl)
 
@@ -870,15 +865,6 @@ void tree_node_dup::operator()(const WeightedNode* obj, unsigned int& mask)
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-#if HAVE_CODE_ESTIMATION_BUILT
-   SET_VALUE(weight_information->recursive_weight, WeightedNode);
-   SET_VALUE(weight_information->instruction_size, WeightedNode);
-#if HAVE_RTL_BUILT
-   SET_VALUE(weight_information->rtl_instruction_size, WeightedNode);
-   dynamic_cast<WeightedNode*>(curr_tree_node_ptr)->weight_information->rtl_nodes =
-       GetPointer<WeightedNode>(source_tn)->weight_information->rtl_nodes;
-#endif
-#endif
 }
 
 void tree_node_dup::operator()(const decl_node* obj, unsigned int& mask)

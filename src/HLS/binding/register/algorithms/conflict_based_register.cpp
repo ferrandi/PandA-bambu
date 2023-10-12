@@ -51,7 +51,6 @@
 #include "Parameter.hpp"
 #include "dbgPrintHelper.hpp"
 
-#include <boost/lexical_cast.hpp>
 #include <vector>
 
 /// HLS/binding/storage_value_insertion includes

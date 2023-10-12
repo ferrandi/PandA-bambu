@@ -47,7 +47,6 @@
 #include "custom_set.hpp"
 #include "graph.hpp"
 #include "refcount.hpp"
-#include <boost/lexical_cast.hpp>
 #include <iosfwd>
 #include <vector>
 

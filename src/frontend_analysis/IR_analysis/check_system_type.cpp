@@ -42,7 +42,6 @@
  */
 
 /// Autoheader include
-#include "config_HAVE_LEON3.hpp"
 #include "config_LIBBAMBU_SRCDIR.hpp"
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
@@ -135,10 +134,6 @@ const CustomUnorderedSet<std::string> CheckSystemType::library_system_functions 
 };
 
 const CustomUnorderedSet<std::string> CheckSystemType::library_system_includes = {{"math.h"}};
-
-#if HAVE_LEON3
-const CustomUnorderedSet<std::string> CheckSystemType::not_supported_leon3_functions = {{"fopen"}};
-#endif
 
 const CustomUnorderedMap<std::string, std::string> CheckSystemType::undefined_library_function_include = {
     {"atof", "stdlib.h"},     {"atoi", "stdlib.h"},   {"srand48", "stdlib.h"},
@@ -357,15 +352,6 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
             if(fd->name && GET_NODE(fd->name)->get_kind() == identifier_node_K)
             {
                const auto in = GetPointerS<identifier_node>(GET_NODE(fd->name));
-#if HAVE_LEON3
-               if(not_supported_leon3_functions.count(in->strg))
-               {
-                  if(parameters->getOption<bool>(OPT_without_operating_system))
-                  {
-                     THROW_ERROR("Leon3 without operating system does not support function " + in->strg);
-                  }
-               }
-#endif
                if(rename_function.count(in->strg))
                {
                   in->strg = rename_function.at(in->strg);

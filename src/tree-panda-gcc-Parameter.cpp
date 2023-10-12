@@ -42,7 +42,6 @@
 #include "tree-panda-gcc-Parameter.hpp"
 
 #include "config_HAVE_I386_CLANG16_COMPILER.hpp"
-#include "config_HAVE_MAPPING_BUILT.hpp"
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 #include "config_RELEASE.hpp"
 
@@ -57,7 +56,6 @@
 
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/predicate.hpp>
-#include <boost/lexical_cast.hpp>
 #include <climits>
 #include <cstring>
 #include <filesystem>
@@ -475,14 +473,8 @@ void tree_panda_gcc_parameter::SetDefaults()
 
    /// ---------- frontend analysis ----------//
    setOption(OPT_parse_pragma, false);
-#if HAVE_FROM_RTL_BUILT
-   setOption(OPT_use_rtl, false);
-#endif
    setOption(OPT_frontend_statistics, false);
    setOption(OPT_pretty_print, false);
-#if HAVE_MAPPING_BUILT
-   setOption(OPT_driving_component_type, "ARM");
-#endif
 
    // -- GCC options -- //
    setOption(OPT_default_compiler, CompilerWrapper::getDefaultCompiler());

@@ -65,8 +65,6 @@
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "exceptions.hpp"
 #include "string_manipulation.hpp" // for STR
-#include <boost/algorithm/string/replace.hpp>
-#include <boost/lexical_cast.hpp>
 #include <filesystem>
 #include <iostream>
 #include <regex>

@@ -450,6 +450,10 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       if(CompilerWrapper::isClangCheck(default_compiler))
       {
          script << " -fbracket-depth=1024";
+         if(CompilerWrapper::isCurrentOrNewer(default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG16))
+         {
+            script << " -Wno-error=int-conversion";
+         }
       }
       script
           << " -o " << pp_fileo << " " << pp_file.string() << "\n"
@@ -477,16 +481,15 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       script << "tb_srcs=(\n";
       for(const auto& src : tb_srcs)
       {
-         if(!boost::ends_with(src, ".xml"))
+         if(!ends_with(src, ".xml"))
          {
             script << "  \"" << src << "\"\n";
          }
       }
       script << ")\n"
-             << "TB_CFLAGS=\""
-             << (Param->isOption(OPT_testbench_extra_gcc_flags) ?
-                     Param->getOption<std::string>(OPT_testbench_extra_gcc_flags) :
-                     "")
+             << "CFLAGS+=\" "
+             << (Param->isOption(OPT_tb_extra_gcc_options) ? Param->getOption<std::string>(OPT_tb_extra_gcc_options) :
+                                                             "")
              << "\"\n"
              << "for src in \"${tb_srcs[@]}\"\n"
              << "do\n"
@@ -494,14 +497,19 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
              << "  case \"${obj}\" in\n"
              << "  *.c)  ;&\n"
              << "  *.cc) ;&\n"
-             << "  *.cpp)\n"
+             << "  *.cpp);&\n"
+             << "  *.ll)\n"
              << "    obj=\"" << output_dir << "/${obj%.*}.tb.o\"\n"
-             << "    ${CC} -c ${CFLAGS} ${TB_CFLAGS} -fPIC -o ${obj} ${src}\n"
+             << "    ${CC} -c ${CFLAGS} -fPIC -o ${obj} ${src}\n"
+             << "    src=${obj}\n"
+             << "    ;&\n"
+             << "  *.o)\n"
              << "    objcopy -W " << top_fname << " --redefine-sym main=m_cosim_main ${objcopy_common} ${obj}\n"
-             << "    objs+=(\"${obj}\")\n"
-             << "    ;;\n"
-             << "  *)\n"
              << "    objs+=(\"${src}\")\n"
+             << "    ;;\n"
+             << "   *)\n"
+             << "    echo \"Testbench file format not supported '${src}'\"\n"
+             << "    exit -1\n"
              << "    ;;\n"
              << "  esac\n"
              << "done\n\n";

@@ -46,18 +46,9 @@
  */
 
 /// Autoheader include
-#include "config_ARM_CPP_EXE.hpp"
-#include "config_ARM_EMPTY_PLUGIN.hpp"
-#include "config_ARM_GCC_EXE.hpp"
-#include "config_ARM_GCC_VERSION.hpp"
-#include "config_ARM_RTL_PLUGIN.hpp"
-#include "config_ARM_SSA_PLUGIN.hpp"
-#include "config_ARM_SSA_PLUGINCPP.hpp"
 #include "config_CLANG_PLUGIN_DIR.hpp"
 #include "config_EXTRA_CLANGPP_COMPILER_OPTION.hpp"
 #include "config_GCC_PLUGIN_DIR.hpp"
-#include "config_HAVE_ARM_COMPILER.hpp"
-#include "config_HAVE_FROM_RTL_BUILT.hpp"
 #include "config_HAVE_I386_CLANG10_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG10_M32.hpp"
 #include "config_HAVE_I386_CLANG10_M64.hpp"
@@ -136,8 +127,6 @@
 #include "config_HAVE_I386_GCC8_M32.hpp"
 #include "config_HAVE_I386_GCC8_M64.hpp"
 #include "config_HAVE_I386_GCC8_MX32.hpp"
-#include "config_HAVE_SPARC_COMPILER.hpp"
-#include "config_HAVE_SPARC_ELF_GCC.hpp"
 #include "config_I386_CLANG10_ASTANALYZER_PLUGIN.hpp"
 #include "config_I386_CLANG10_CSROA_PLUGIN.hpp"
 #include "config_I386_CLANG10_EMPTY_PLUGIN.hpp"
@@ -384,15 +373,6 @@
 #include "config_I386_LLVMVVD_LINK_EXE.hpp"
 #include "config_I386_LLVMVVD_OPT_EXE.hpp"
 #include "config_NPROFILE.hpp"
-#include "config_SPARC_CPP_EXE.hpp"
-#include "config_SPARC_ELF_CPP.hpp"
-#include "config_SPARC_ELF_GCC.hpp"
-#include "config_SPARC_EMPTY_PLUGIN.hpp"
-#include "config_SPARC_GCC_EXE.hpp"
-#include "config_SPARC_GCC_VERSION.hpp"
-#include "config_SPARC_RTL_PLUGIN.hpp"
-#include "config_SPARC_SSA_PLUGIN.hpp"
-#include "config_SPARC_SSA_PLUGINCPP.hpp"
 /// Header include
 #include "compiler_wrapper.hpp"
 
@@ -409,10 +389,6 @@
 /// HLS include
 #include "hls_step.hpp"
 
-/// RTL include
-#if HAVE_FROM_RTL_BUILT
-#include "parse_rtl.hpp"
-#endif
 /// STD include
 #include <cerrno>
 #include <string>
@@ -590,13 +566,6 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    else if((Param->isOption(OPT_gcc_E) && Param->getOption<bool>(OPT_gcc_E)) ||
            (Param->isOption(OPT_gcc_S) && Param->getOption<bool>(OPT_gcc_S)))
    {
-      ;
-#if HAVE_FROM_RTL_BUILT
-      else if(Param->getOption<bool>(OPT_use_rtl))
-      {
-         command += " -c -fplugin=" + compiler.rtl_plugin;
-      }
-#endif
    }
    else if(cm == CompilerWrapper_CompilerMode::CM_STD)
    {
@@ -993,16 +962,6 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
              std::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
          tree_managerRef TreeM = ParseTreeFile(Param, obj.string());
 
-#if HAVE_FROM_RTL_BUILT
-         if((Param->getOption<bool>(OPT_use_rtl)) &&
-            std::filesystem::exists(std::filesystem::path(leaf_name + STR_CST_gcc_rtl_suffix)))
-         {
-            obj = std::filesystem::path(leaf_name + STR_CST_gcc_rtl_suffix);
-            parse_rtl_File(obj.string(), TreeM, debug_level);
-            std::filesystem::rename(
-                obj, std::filesystem::path(output_temporary_directory + leaf_name + STR_CST_gcc_rtl_suffix));
-         }
-#endif
 #if !NPROFILE
          long int merge_time = 0;
          START_TIME(merge_time);
@@ -1365,13 +1324,6 @@ void CompilerWrapper::InitializeCompilerParameters()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Initializing gcc parameters");
    CompilerWrapper_OptimizationSet optimization_set = OS;
-   /// If we are compiling with sparc-elf-gcc
-#if HAVE_SPARC_COMPILER
-   if(compiler_target == CompilerWrapper_CompilerTarget::CT_SPARC_ELF_GCC)
-   {
-      optimization_set = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
-   }
-#endif
 
    if(Param->isOption(OPT_gcc_read_xml))
    {
@@ -1913,17 +1865,6 @@ void CompilerWrapper::SetCompilerDefault()
                {
                   break;
                }
-               case(CompilerWrapper_CompilerTarget::CT_ARM_GCC):
-               {
-                  optimization_flags["tree-copy-prop"] = false;
-                  break;
-               }
-               case(CompilerWrapper_CompilerTarget::CT_SPARC_GCC):
-               case(CompilerWrapper_CompilerTarget::CT_SPARC_ELF_GCC):
-               {
-                  optimization_flags["tree-copy-prop"] = false;
-                  break;
-               }
                case(CompilerWrapper_CompilerTarget::CT_NO_COMPILER):
                {
                   THROW_UNREACHABLE("Unexpected gcc target");
@@ -2001,11 +1942,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
    else
    {
 #ifndef NDEBUG
-      const bool debug_condition =
-#if HAVE_SPARC_COMPILER
-          (compiler_target == CompilerWrapper_CompilerTarget::CT_SPARC_ELF_GCC) ||
-#endif
-          (static_cast<int>(compiler_target) & static_cast<int>(compatible_compilers));
+      const bool debug_condition = static_cast<int>(compiler_target) & static_cast<int>(compatible_compilers);
       THROW_ASSERT(debug_condition,
                    "Required compiler is not among the compatible one: " + STR(static_cast<int>(compiler_target)) +
                        " vs " + STR(static_cast<int>(compatible_compilers)));
@@ -2095,9 +2032,6 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC45_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC45_TOPFNAME_PLUGIN;
       fillASTAnalyzer_plugin();
-#if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = gcc_plugin_dir + "";
-#endif
    }
 #endif
 #if HAVE_I386_GCC46_COMPILER
@@ -2128,9 +2062,6 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC46_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC46_TOPFNAME_PLUGIN;
       fillASTAnalyzer_plugin();
-#if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = gcc_plugin_dir + "";
-#endif
    }
 #endif
 #if HAVE_I386_GCC47_COMPILER
@@ -2167,9 +2098,6 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC47_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC47_TOPFNAME_PLUGIN;
       fillASTAnalyzer_plugin();
-#if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = gcc_plugin_dir + "";
-#endif
    }
 #endif
 #if HAVE_I386_GCC48_COMPILER
@@ -2208,9 +2136,6 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC48_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC48_TOPFNAME_PLUGIN;
       fillASTAnalyzer_plugin();
-#if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = gcc_plugin_dir + "";
-#endif
    }
 #endif
 #if HAVE_I386_GCC49_COMPILER
@@ -2241,9 +2166,6 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC49_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC49_TOPFNAME_PLUGIN;
       fillASTAnalyzer_plugin();
-#if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = gcc_plugin_dir + "";
-#endif
    }
 #endif
 #if HAVE_I386_GCC5_COMPILER
@@ -2274,9 +2196,6 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC5_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC5_TOPFNAME_PLUGIN;
       fillASTAnalyzer_plugin();
-#if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = gcc_plugin_dir + "";
-#endif
    }
 #endif
 
@@ -2308,9 +2227,6 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC6_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC6_TOPFNAME_PLUGIN;
       fillASTAnalyzer_plugin();
-#if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = gcc_plugin_dir + "";
-#endif
    }
 #endif
 
@@ -2342,9 +2258,6 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC7_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC7_TOPFNAME_PLUGIN;
       fillASTAnalyzer_plugin();
-#if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = gcc_plugin_dir + "";
-#endif
    }
 #endif
 
@@ -2376,9 +2289,6 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC8_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC8_TOPFNAME_PLUGIN;
       fillASTAnalyzer_plugin();
-#if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = gcc_plugin_dir + "";
-#endif
    }
 #endif
 
@@ -2733,44 +2643,6 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
    }
 #endif
 
-#if HAVE_SPARC_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_SPARC_GCC))
-   {
-      compiler.gcc = relocate_compiler_path(SPARC_GCC_EXE);
-      compiler.cpp = relocate_compiler_path(SPARC_CPP_EXE);
-      compiler.extra_options = gcc_extra_options;
-      compiler.empty_plugin_obj = gcc_plugin_dir + SPARC_EMPTY_PLUGIN + plugin_ext;
-      compiler.empty_plugin_name = SPARC_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj = gcc_plugin_dir + (flag_cpp ? SPARC_SSA_PLUGINCPP : SPARC_SSA_PLUGIN) + plugin_ext;
-      compiler.ssa_plugin_name = (flag_cpp ? SPARC_SSA_PLUGINCPP : SPARC_SSA_PLUGIN);
-#if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = gcc_plugin_dir + SPARC_RTL_PLUGIN + plugin_ext;
-#endif
-   }
-#endif
-#if HAVE_SPARC_ELF_GCC
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_SPARC_ELF_GCC))
-   {
-      compiler.gcc = SPARC_ELF_GCC;
-      compiler.cpp = SPARC_ELF_CPP;
-      compiler.extra_options = gcc_extra_options;
-   }
-#endif
-#if HAVE_ARM_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_ARM_GCC))
-   {
-      compiler.gcc = relocate_compiler_path(ARM_GCC_EXE);
-      compiler.cpp = relocate_compiler_path(ARM_CPP_EXE);
-      compiler.extra_options = gcc_extra_options + " -mlittle-endian -fsigned-char";
-      compiler.empty_plugin_obj = gcc_plugin_dir + ARM_EMPTY_PLUGIN + plugin_ext;
-      compiler.empty_plugin_name = ARM_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj = gcc_plugin_dir + (flag_cpp ? ARM_SSA_PLUGINCPP : ARM_SSA_PLUGIN) + plugin_ext;
-      compiler.ssa_plugin_name = (flag_cpp ? ARM_SSA_PLUGINCPP : ARM_SSA_PLUGIN);
-#if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = gcc_plugin_dir + ARM_RTL_PLUGIN + plugin_ext;
-#endif
-   }
-#endif
    if(compiler.gcc == "")
    {
       THROW_ERROR("Not found any compatible compiler");
@@ -2913,7 +2785,7 @@ size_t CompilerWrapper::GetSourceCodeLines(const ParameterConstRef Param)
       std::string line;
       getline(output_file, line);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Got " + line);
-      return boost::lexical_cast<size_t>(line);
+      return std::stoul(line);
    }
    else
    {
@@ -3228,7 +3100,8 @@ void CompilerWrapper::ReadXml(const std::string& file_name)
                            THROW_ERROR("Optimization flag node without name or value");
                         }
                         optimization_flags[optimization_flag_element->get_attribute(STR_XML_gcc_name)->get_value()] =
-                            boost::lexical_cast<bool>(optimization_flag_element->get_attribute(STR_XML_gcc_value));
+                            static_cast<bool>(
+                                std::stoi(optimization_flag_element->get_attribute(STR_XML_gcc_value)->get_value()));
                      }
                   }
                   else if(optimizations_child_element->get_name() == STR_XML_gcc_optimization_values)
@@ -3465,7 +3338,7 @@ size_t CompilerWrapper::ConvertVersion(const std::string& version)
    for(size_t index = version_tokens.size(); index > 0; index--)
    {
       const auto shifter = static_cast<size_t>(pow(100, static_cast<double>(version_tokens.size() - index)));
-      const auto value = boost::lexical_cast<size_t>(version_tokens[index - 1]);
+      const auto value = std::stoul(version_tokens[index - 1]);
       ret_value += (value * shifter);
    }
    return ret_value;
@@ -3835,12 +3708,6 @@ int CompilerWrapper::getCompatibleCompilers()
 #if HAVE_I386_CLANGVVD_COMPILER
           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD)
 #endif
-#if HAVE_ARM_COMPILER
-          | static_cast<int>(CompilerWrapper_CompilerTarget::CT_ARM_GCC)
-#endif
-#if HAVE_SPARC_COMPILER
-          | static_cast<int>(CompilerWrapper_CompilerTarget::CT_SPARC_GCC)
-#endif
        ;
 }
 
@@ -3943,9 +3810,6 @@ std::string CompilerWrapper::getCompilerSuffix(CompilerWrapper_CompilerTarget pc
          return "clang16";
       case CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD:
          return "clangvvd";
-      case CompilerWrapper_CompilerTarget::CT_ARM_GCC:
-      case CompilerWrapper_CompilerTarget::CT_SPARC_GCC:
-      case CompilerWrapper_CompilerTarget::CT_SPARC_ELF_GCC:
       case CompilerWrapper_CompilerTarget::CT_NO_COMPILER:
       default:
          THROW_ERROR("no compiler supported");
@@ -4280,19 +4144,6 @@ std::string CompilerWrapper::getCompilerVersion(int pc)
    if(pc & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD))
    {
       return I386_CLANGVVD_VERSION;
-   }
-#endif
-#if HAVE_SPARC_COMPILER
-   if(pc & (static_cast<int>(CompilerWrapper_CompilerTarget::CT_SPARC_GCC) |
-            static_cast<int>(CompilerWrapper_CompilerTarget::CT_SPARC_ELF_GCC)))
-   {
-      return SPARC_GCC_VERSION;
-   }
-#endif
-#if HAVE_ARM_COMPILER
-   if(pc & static_cast<int>(CompilerWrapper_CompilerTarget::CT_ARM_GCC))
-   {
-      return ARM_GCC_VERSION;
    }
 #endif
    THROW_ERROR("");

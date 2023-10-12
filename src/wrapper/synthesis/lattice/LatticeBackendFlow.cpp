@@ -103,7 +103,7 @@ LatticeBackendFlow::LatticeBackendFlow(const ParameterConstRef _Param, const std
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                      "Importing default scripts for target device family: " + device_string);
       parser = XMLDomParserRef(
-          new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/lattice/") +
+          new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/lattice/", true) +
                            default_data[device_string]));
    }
    parse_flow(parser);
@@ -171,7 +171,7 @@ void LatticeBackendFlow::xparse_utilization(const std::string& fn)
                            {
                               LOAD_XVM(value, nodeIt);
                               boost::replace_all(value, ",", "");
-                              design_values[stringID] = boost::lexical_cast<double>(value);
+                              design_values[stringID] = std::stod(value);
                            }
                         }
                      }
@@ -250,11 +250,11 @@ void LatticeBackendFlow::create_sdc(const DesignParametersRef dp)
 
    std::string sdc_filename = out_dir + "/" + dp->component_name + ".ldc";
    std::ofstream sdc_file(sdc_filename.c_str());
-   if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
+   if(!static_cast<bool>(std::stoi(dp->parameter_values[PARAM_is_combinational])))
    {
       sdc_file << "create_clock -period " + dp->parameter_values[PARAM_clk_period] + " -name " + clock +
                       " [get_ports " + clock + "]\n";
-      if((boost::lexical_cast<bool>(dp->parameter_values[PARAM_connect_iob]) ||
+      if((static_cast<bool>(std::stoi(dp->parameter_values[PARAM_connect_iob])) ||
           (Param->IsParameter("profile-top") && Param->GetParameter<int>("profile-top") == 1)) &&
          !Param->isOption(OPT_backend_sdc_extensions))
       {

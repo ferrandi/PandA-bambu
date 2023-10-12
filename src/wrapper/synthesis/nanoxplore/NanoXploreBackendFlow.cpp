@@ -122,7 +122,7 @@ NanoXploreBackendFlow::NanoXploreBackendFlow(const ParameterConstRef _Param, con
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                      "---Importing default scripts for target device family: " + device_string);
       parser = XMLDomParserRef(
-          new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/nanoxplore/") +
+          new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/nanoxplore/", true) +
                            default_data[device_string]));
    }
    parse_flow(parser);
@@ -190,7 +190,7 @@ void NanoXploreBackendFlow::xparse_utilization(const std::string& fn)
                            {
                               LOAD_XVM(value, nodeIt);
                               boost::replace_all(value, ",", "");
-                              design_values[stringID] = boost::lexical_cast<double>(value);
+                              design_values[stringID] = std::stod(value);
                            }
                         }
                      }
@@ -239,7 +239,7 @@ void NanoXploreBackendFlow::CheckSynthesisResults()
    time_m = time_info::factory(Param);
    if(design_values[NANOXPLORE_SLACK] != 0.0)
    {
-      auto clk_val = boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]);
+      auto clk_val = std::stod(actual_parameters->parameter_values[PARAM_clk_period]);
       auto del_val = design_values[NANOXPLORE_SLACK];
       double exec_time = clk_val - del_val;
       if(clk_val < del_val)

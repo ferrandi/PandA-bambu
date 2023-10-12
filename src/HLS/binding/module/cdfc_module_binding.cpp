@@ -41,6 +41,7 @@
  *
  */
 #include "cdfc_module_binding.hpp"
+
 #include "Parameter.hpp"
 #include "allocation_information.hpp"
 #include "behavioral_helper.hpp"
@@ -80,6 +81,7 @@
 #include "tree_node.hpp"
 #include "utility.hpp"
 #include "weighted_clique_register.hpp"
+
 #include <algorithm>
 #include <boost/range/adaptor/reversed.hpp>
 #include <cmath>

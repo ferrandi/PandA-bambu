@@ -47,7 +47,6 @@
 #include "exceptions.hpp"          // for THROW_ASSERT
 #include "string_manipulation.hpp" // for STR
 #include "tree_basic_block.hpp"    // for bloc, BB_ENTRY, BB_...
-#include <boost/lexical_cast.hpp>  // for lexical_cast
 #include <boost/tuple/tuple.hpp>   // for tie
 #include <cstddef>                 // for size_t
 #include <string>                  // for allocator, operator+

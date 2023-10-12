@@ -77,6 +77,7 @@
 #define VIVADO_XILINX_OUTPUT "XILINX_OUTPUT"
 #define VIVADO_XILINX_POWER "XILINX_POWER"
 #define VIVADO_XILINX_DESIGN_DELAY "XILINX_DESIGN_DELAY"
+#define VIVADO_XILINX_URAM "XILINX_URAM"
 
 XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name,
                                      const generic_deviceRef _device)
@@ -136,7 +137,7 @@ XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                      "---Importing default scripts for target device family: " + device_string);
       parser = XMLDomParserRef(
-          new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/xilinx/") +
+          new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/xilinx/", true) +
                            default_data[device_string]));
    }
    parse_flow(parser);
@@ -165,7 +166,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             {
                area_m = area_info::factory(Param);
             }
-            area_m->set_resource_value(area_info::REGISTERS, boost::lexical_cast<unsigned int>(token));
+            area_m->set_resource_value(area_info::REGISTERS, std::stod(token));
          }
          else if(line.size() and line.find("Number of Slice Flip Flops:") != std::string::npos)
          {
@@ -179,7 +180,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             {
                area_m = area_info::factory(Param);
             }
-            area_m->set_resource_value(area_info::REGISTERS, boost::lexical_cast<unsigned int>(token));
+            area_m->set_resource_value(area_info::REGISTERS, std::stod(token));
          }
          else if(line.size() and line.find("Number of 4 input LUTs:") != std::string::npos)
          {
@@ -193,7 +194,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             {
                area_m = area_info::factory(Param);
             }
-            area_m->set_resource_value(area_info::SLICE_LUTS, boost::lexical_cast<unsigned int>(token));
+            area_m->set_resource_value(area_info::SLICE_LUTS, std::stod(token));
          }
          else if(line.size() and line.find("Number of Slice LUTs:") != std::string::npos)
          {
@@ -207,7 +208,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             {
                area_m = area_info::factory(Param);
             }
-            area_m->set_resource_value(area_info::SLICE_LUTS, boost::lexical_cast<unsigned int>(token));
+            area_m->set_resource_value(area_info::SLICE_LUTS, std::stod(token));
          }
          else if(line.size() and line.find("Number of occupied Slices:") != std::string::npos)
          {
@@ -221,7 +222,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             {
                area_m = area_info::factory(Param);
             }
-            area_m->set_resource_value(area_info::SLICE, boost::lexical_cast<unsigned int>(token));
+            area_m->set_resource_value(area_info::SLICE, std::stod(token));
          }
          else if(line.size() and line.find("Number of LUT Flip Flop pairs used:") != std::string::npos)
          {
@@ -235,8 +236,8 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             {
                area_m = area_info::factory(Param);
             }
-            area_m->set_resource_value(area_info::LUT_FF_PAIRS, boost::lexical_cast<unsigned int>(token));
-            area_m->set_area_value(boost::lexical_cast<unsigned int>(token));
+            area_m->set_resource_value(area_info::LUT_FF_PAIRS, std::stod(token));
+            area_m->set_area_value(std::stod(token));
          }
          else if(line.size() and line.find("Number of DSP48Es:") != std::string::npos)
          {
@@ -250,7 +251,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             {
                area_m = area_info::factory(Param);
             }
-            area_m->set_resource_value(area_info::DSP, boost::lexical_cast<unsigned int>(token));
+            area_m->set_resource_value(area_info::DSP, std::stod(token));
          }
          else if(line.size() and line.find("Number of DSP48E1s:") != std::string::npos)
          {
@@ -264,7 +265,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             {
                area_m = area_info::factory(Param);
             }
-            area_m->set_resource_value(area_info::DSP, boost::lexical_cast<unsigned int>(token));
+            area_m->set_resource_value(area_info::DSP, std::stod(token));
          }
          else if(line.size() and line.find("Number of BlockRAM/FIFO:") != std::string::npos)
          {
@@ -278,7 +279,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             {
                area_m = area_info::factory(Param);
             }
-            area_m->set_resource_value(area_info::BRAM, boost::lexical_cast<unsigned int>(token));
+            area_m->set_resource_value(area_info::BRAM, std::stod(token));
          }
          else if(line.size() and line.find("Number of RAMB36E1/FIFO36E1s:") != std::string::npos)
          {
@@ -292,7 +293,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             {
                area_m = area_info::factory(Param);
             }
-            area_m->set_resource_value(area_info::BRAM, boost::lexical_cast<unsigned int>(token));
+            area_m->set_resource_value(area_info::BRAM, std::stod(token));
          }
          else if(line.size() and line.find("Number of FIFO16/RAMB16s:") != std::string::npos)
          {
@@ -306,7 +307,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             {
                area_m = area_info::factory(Param);
             }
-            area_m->set_resource_value(area_info::BRAM, boost::lexical_cast<unsigned int>(token));
+            area_m->set_resource_value(area_info::BRAM, std::stod(token));
          }
       }
    }
@@ -374,7 +375,7 @@ void XilinxBackendFlow::xparse_xst_utilization(const std::string& fn)
                               {
                                  LOAD_XVM(value, nodeIt);
                                  boost::replace_all(value, ",", "");
-                                 design_values[stringID] = boost::lexical_cast<unsigned int>(value);
+                                 design_values[stringID] = std::stod(value);
                               }
                            }
                         }
@@ -454,8 +455,8 @@ void XilinxBackendFlow::parse_timing(const std::string& log_file)
                tk = tk.substr(0, tk.find_first_of(' '));
                boost::replace_all(tk, "ns", "");
                time_m = time_info::factory(Param);
-               time_m->set_execution_time(boost::lexical_cast<double>(tk));
-               if(boost::lexical_cast<double>(tk) > Param->getOption<double>(OPT_clock_period))
+               time_m->set_execution_time(std::stod(tk));
+               if(std::stod(tk) > Param->getOption<double>(OPT_clock_period))
                {
                   CopyFile(Param->getOption<std::string>(OPT_output_directory) + "/Synthesis/xst/" +
                                actual_parameters->component_name + ".log",
@@ -490,7 +491,7 @@ void XilinxBackendFlow::parse_DSPs(const std::string& log_file)
             boost::trim(tk);
             tk = tk.substr(0, tk.find_first_of(' '));
             THROW_ASSERT(area_m, "missing area model");
-            area_m->set_resource_value(area_info::DSP, boost::lexical_cast<double>(tk));
+            area_m->set_resource_value(area_info::DSP, std::stod(tk));
          }
       }
    }
@@ -565,7 +566,7 @@ void XilinxBackendFlow::xparse_timing(const std::string& fn)
             THROW_UNREACHABLE("");
             return nullptr;
          }();
-         double period = std::abs(boost::lexical_cast<double>(child_text->get_content()));
+         double period = std::abs(std::stod(child_text->get_content()));
          time_m = time_info::factory(Param);
          time_m->set_execution_time(period);
          return;
@@ -754,7 +755,7 @@ void XilinxBackendFlow::vivado_xparse_utilization(const std::string& fn)
                            {
                               LOAD_XVM(value, nodeIt);
                               boost::replace_all(value, ",", "");
-                              design_values[stringID] = boost::lexical_cast<double>(value);
+                              design_values[stringID] = std::stod(value);
                            }
                         }
                      }
@@ -950,7 +951,7 @@ void XilinxBackendFlow::create_cf(const DesignParametersRef dp, bool xst)
    std::string ucf_filename = UCF_SUBDIR + dp->component_name + (xst ? ".xcf" : ".ucf");
    std::ofstream UCF_file(ucf_filename);
    THROW_ASSERT(dp->parameter_values.find(PARAM_clk_name) != dp->parameter_values.end(), "");
-   if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
+   if(!static_cast<bool>(std::stoi(dp->parameter_values[PARAM_is_combinational])))
    {
       UCF_file << "NET \"" << dp->parameter_values[PARAM_clk_name]
                << "\" TNM_NET = " << dp->parameter_values[PARAM_clk_name] << ";" << std::endl;

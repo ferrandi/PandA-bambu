@@ -1376,13 +1376,13 @@ void fu_binding::manage_memory_ports_chained(const structural_managerRef SM,
 void fu_binding::join_merge_split(
     const structural_managerRef SM, const hlsRef HLS,
     std::map<structural_objectRef, std::list<structural_objectRef>, jms_sorter>& primary_outs,
-    const structural_objectRef circuit, unsigned int& _unique_id) const
+    const structural_objectRef circuit, unsigned int& _unique_id)
 {
-   const auto js_name = "join_signal";
+   static const auto js_name = "join_signal";
+   static const auto ss_name = "split_signal";
+   static const auto bus_merger_res_name = "bus_merger";
    const auto js_library = HLS->HLS_D->get_technology_manager()->get_library(js_name);
-   const auto ss_name = "split_signal";
    const auto ss_library = HLS->HLS_D->get_technology_manager()->get_library(ss_name);
-   const auto bus_merger_res_name = "bus_merger";
    const auto bm_library = HLS->HLS_D->get_technology_manager()->get_library(bus_merger_res_name);
 
    for(const auto& po : primary_outs)
@@ -2339,8 +2339,7 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
       init_file_b.open(GetPath("0_" + init_filename));
    }
    unsigned long long vec_size = 0, elts_size = 0;
-   const auto bitsize_align =
-       is_sds ? 0ULL : boost::lexical_cast<unsigned long long>(fu_module->GetParameter("BRAM_BITSIZE"));
+   const auto bitsize_align = is_sds ? 0ULL : std::stoull(fu_module->GetParameter("BRAM_BITSIZE"));
    fill_array_ref_memory(init_file_a, init_file_b, ar, vec_size, elts_size, HLSMgr->Rmem, TreeM, is_sds, bitsize_align);
    THROW_ASSERT(vec_size, "at least one element is expected");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---elts_size " + STR(elts_size));

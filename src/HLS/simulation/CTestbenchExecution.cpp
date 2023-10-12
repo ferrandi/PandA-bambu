@@ -136,9 +136,9 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
          compiler_flags += "-fexcess-precision=standard ";
       }
    }
-   if(parameters->isOption(OPT_testbench_extra_gcc_flags))
+   if(parameters->isOption(OPT_tb_extra_gcc_options))
    {
-      compiler_flags += parameters->getOption<std::string>(OPT_testbench_extra_gcc_flags) + " ";
+      compiler_flags += parameters->getOption<std::string>(OPT_tb_extra_gcc_options) + " ";
    }
 
    if(parameters->isOption(OPT_gcc_optimizations))

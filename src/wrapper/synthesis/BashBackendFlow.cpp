@@ -96,8 +96,9 @@ BashBackendFlow::BashBackendFlow(const ParameterConstRef _Param, const std::stri
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                      "---Importing default scripts for target device family: " + device_string);
-      parser = XMLDomParserRef(new XMLDomParser(
-          relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/") + default_data[device_string]));
+      parser = XMLDomParserRef(
+          new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/", true) +
+                           default_data[device_string]));
    }
    parse_flow(parser);
 }
@@ -164,7 +165,7 @@ void BashBackendFlow::xparse_utilization(const std::string& fn)
                            {
                               LOAD_XVM(value, nodeIt);
                               boost::replace_all(value, ",", "");
-                              design_values[stringID] = boost::lexical_cast<double>(value);
+                              design_values[stringID] = std::stod(value);
                            }
                         }
                      }
@@ -199,7 +200,7 @@ void BashBackendFlow::create_sdc(const DesignParametersRef dp)
    std::string sdc_filename = out_dir + "/" + dp->component_name + ".sdc";
    std::ofstream SDC_file(sdc_filename.c_str());
    if(dp->parameter_values.find(PARAM_clk_name) != dp->parameter_values.end() &&
-      !boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
+      !static_cast<bool>(std::stoi(dp->parameter_values[PARAM_is_combinational])))
    {
       SDC_file << "create_clock " << dp->parameter_values[PARAM_clk_name] << " -period "
                << dp->parameter_values[PARAM_clk_period] << std::endl;

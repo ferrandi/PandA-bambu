@@ -81,21 +81,9 @@ if BUILD_LIB_HOST_PROFILING
 endif
 endif
 
-if BUILD_LIB_CODE_ESTIMATION
-   program_tests_CPPFLAGS += \
-      -I$(top_srcdir)/src/design_flows/codesign/estimation \
-      -I$(top_srcdir)/src/utility/probability_distribution
-endif
-
 if BUILD_LIB_PRAGMA
   program_tests_CPPFLAGS += \
-     -I$(top_srcdir)/src/design_flows/codesign \
      -I$(top_srcdir)/src/pragma
-endif
-
-if BUILD_TRNG
-   program_tests_CPPFLAGS += \
-      -I$(top_builddir)/ext/trng-4.17
 endif
 
 if BUILD_LIB_UTILITY

@@ -43,7 +43,6 @@
 #ifndef _APPLICATION_MANAGER_HPP_
 #define _APPLICATION_MANAGER_HPP_
 
-#include "config_HAVE_CODESIGN.hpp"
 #include "config_HAVE_FROM_DISCREPANCY_BUILT.hpp"
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 
@@ -77,14 +76,6 @@ class application_manager
 
    /// class representing the call graph of the application
    const CallGraphManagerRef call_graph_manager;
-
-#if HAVE_CODESIGN
-   /// The actor graphs (const version): key is the function indexi
-   CustomUnorderedMap<unsigned int, ActorGraphManagerConstRef> const_output_actor_graphs;
-
-   /// The actor graphs: key is the function index
-   CustomUnorderedMap<unsigned int, ActorGraphManagerRef> output_actor_graphs;
-#endif
 
    /// class containing all the parameters
    const ParameterConstRef Param;
@@ -271,41 +262,6 @@ class application_manager
    {
       return address_bitsize;
    }
-
-#if HAVE_CODESIGN
-   /**
-    * Returns the top actor graph for each function
-    * @return the top actor graph for each function
-    */
-   const CustomUnorderedMap<unsigned int, ActorGraphManagerConstRef>& CGetActorGraphs() const;
-
-   /**
-    * Returns the top actor graph for a function
-    * @param function_index is the index of the function
-    * @return its top actor graph
-    */
-   const ActorGraphManagerConstRef CGetActorGraph(const unsigned int function_index) const;
-
-   /**
-    * Returns the top actor graph for each function
-    * @return the top actor graph for each function
-    */
-   CustomUnorderedMap<unsigned int, ActorGraphManagerRef> GetActorGraphs();
-
-   /**
-    * Returns the top actor graph for a function
-    * @param function_index is the index of the function
-    * @return its top actor graph
-    */
-   ActorGraphManagerRef GetActorGraph(const unsigned int function_index);
-
-   /**
-    * Associate an actor graph manager with a function
-    * @param function_index is the index of the function to which the manager has to be associated
-    * @param actor_graph_manager is the actor graph manager to be associated
-    */
-   void AddActorGraphManager(const unsigned int function_index, const ActorGraphManagerRef actor_graph_manager);
-#endif
 
    /**
     * Return true if a new transformation can be applied

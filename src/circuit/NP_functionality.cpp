@@ -47,7 +47,6 @@
 #include "xml_element.hpp"                    // for xml_element
 #include "xml_helper.hpp"                     // for WRITE_XNVM2
 #include <boost/iterator/iterator_facade.hpp> // for operator!=
-#include <boost/lexical_cast.hpp>             // for lexical_...
 #include <boost/token_functions.hpp>          // for char_sep...
 #include <boost/tokenizer.hpp>                // for tokenize...
 #include <list>                               // for _List_co...
@@ -88,8 +87,6 @@ const char* NP_functionality::NP_functionaly_typeNames[] = {"TABLE",
                                                             "VHDL_GENERATOR",
                                                             "FLOPOCO_PROVIDED",
                                                             "BAMBU_PROVIDED",
-                                                            "BLIF_DESCRIPTION",
-                                                            "AIGER_DESCRIPTION",
                                                             "IP_COMPONENT",
                                                             "IP_LIBRARY",
                                                             "VERILOG_FILE_PROVIDED",
@@ -196,11 +193,11 @@ void NP_functionality::get_port_list(std::map<unsigned int, std::map<std::string
       THROW_ASSERT(ports.size() == 4, "Wrong format for NP_functionality::PORT_LIST functionality");
       if(ports[0] == "I")
       {
-         InPortMap[boost::lexical_cast<unsigned int>(ports[1])][ports[2]] = ports[3];
+         InPortMap[static_cast<unsigned>(std::stoul(ports[1]))][ports[2]] = ports[3];
       }
       if(ports[0] == "O")
       {
-         OutPortMap[boost::lexical_cast<unsigned int>(ports[1])][ports[2]] = ports[3];
+         OutPortMap[static_cast<unsigned>(std::stoul(ports[1]))][ports[2]] = ports[3];
       }
    }
 }

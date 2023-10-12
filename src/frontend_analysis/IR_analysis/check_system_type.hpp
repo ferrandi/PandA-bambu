@@ -43,8 +43,6 @@
 #ifndef CHECK_SYSTEM_TYPE_HPP
 #define CHECK_SYSTEM_TYPE_HPP
 
-#include "config_HAVE_LEON3.hpp"
-
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "function_frontend_flow_step.hpp"
@@ -87,11 +85,6 @@ class CheckSystemType : public FunctionFrontendFlowStep
 
    /// The set of headers which contains function which have to be considered library_system
    static const CustomUnorderedSet<std::string> library_system_includes;
-
-#if HAVE_LEON3
-   /// The set of system function not supported by bcc
-   static const CustomUnorderedSet<std::string> not_supported_leon3_functions;
-#endif
 
    /// Map undefined library function to corresponding header
    static const CustomUnorderedMap<std::string, std::string> undefined_library_function_include;

@@ -61,7 +61,6 @@
 #include "structural_manager.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
-#include <boost/lexical_cast.hpp>
 #include <list>
 #include <utility>
 

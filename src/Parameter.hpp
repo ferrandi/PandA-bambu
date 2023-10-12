@@ -46,19 +46,10 @@
 
 /// Autoheader include
 #include "config_HAVE_BAMBU_RESULTS_XML.hpp"
-#include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
-#include "config_HAVE_DESIGN_ANALYSIS_BUILT.hpp"
-#include "config_HAVE_DIOPSIS.hpp"
 #include "config_HAVE_FROM_AADL_ASN_BUILT.hpp"
-#include "config_HAVE_FROM_ARCH_BUILT.hpp"
 #include "config_HAVE_FROM_C_BUILT.hpp"
-#include "config_HAVE_FROM_PSPLIB_BUILT.hpp"
-#include "config_HAVE_FROM_SDF3_BUILT.hpp"
 #include "config_HAVE_HLS_BUILT.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-#include "config_HAVE_REGRESSORS_BUILT.hpp"
-#include "config_HAVE_SOURCE_CODE_STATISTICS_XML.hpp"
-#include "config_HAVE_TARGET_PROFILING.hpp"
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
 #include "config_HAVE_TO_C_BUILT.hpp"
 #include "config_RELEASE.hpp"
@@ -98,19 +89,6 @@ enum class HostProfiling_Method;
 enum class ActorGraphBackend_Type;
 enum class CompilerWrapper_CompilerTarget;
 #endif
-#if HAVE_DESIGN_ANALYSIS_BUILT
-enum class DesignAnalysis_Step;
-#endif
-#if HAVE_CODE_ESTIMATION_BUILT
-enum class ActorGraphEstimator_Algorithm;
-#endif
-#if HAVE_TARGET_PROFILING
-enum class InstrumentWriter_Level;
-enum class TargetArchitecture_Kind;
-#endif
-#if HAVE_DIOPSIS
-enum class DiopsisInstrumentWriter_Type;
-#endif
 
 /// An integer value to return if parameters have been right parsed
 #define PARAMETER_PARSED INT_MIN
@@ -137,7 +115,7 @@ enum class DiopsisInstrumentWriter_Type;
        profiling_output)(disable_bounded_function)(discrepancy)(discrepancy_force)(discrepancy_hw)(                    \
        discrepancy_no_load_pointers)(discrepancy_only)(discrepancy_permissive_ptrs)(generate_taste_architecture)(      \
        initial_internal_address)(mem_delay_read)(mem_delay_write)(memory_banks_number)(mixed_design)(                  \
-       no_parse_c_python)(num_accelerators)(post_rescheduling)(technology_file)(testbench_extra_gcc_flags)(            \
+       no_parse_c_python)(num_accelerators)(post_rescheduling)(technology_file)(tb_extra_gcc_options)(                 \
        timing_violation_abort)(top_design_name)(visualizer)(serialize_output)(use_ALUs)(range_analysis_mode)(          \
        fp_format)(fp_format_propagate)(fp_format_interface)(fp_rounding_mode)(fp_exception_mode)(parallel_backend)(    \
        interface_xml_filename)(lattice_root)(lattice_settings)(lattice_pmi_def)(lattice_pmi_tdpbe)(lattice_pmi_mul)(   \
@@ -153,10 +131,9 @@ enum class DiopsisInstrumentWriter_Type;
        input_file)(input_format)(no_clean)(no_parse_files)(no_return_zero)(output_file)(output_level)(               \
        output_temporary_directory)(output_directory)(panda_parameter)(parse_pragma)(pretty_print)(print_dot)(        \
        profiling_method)(program_name)(read_parameter_xml)(revision)(seed)(test_multiple_non_deterministic_flows)(   \
-       test_single_non_deterministic_flow)(top_functions_names)(use_rtl)(xml_input_configuration)(                   \
-       xml_output_configuration)(write_parameter_xml)(ignore_parallelism)(ignore_mapping)(mapping)(sequence_length)( \
-       without_transformation)(blackbox)(compare_models)(normalize_models)(compare_measure_regions)(hand_mapping)(   \
-       input_libraries)(frontend_statistics)(exec_argv)(path)
+       test_single_non_deterministic_flow)(top_functions_names)(xml_input_configuration)(xml_output_configuration)(  \
+       write_parameter_xml)(ignore_parallelism)(ignore_mapping)(mapping)(sequence_length)(without_transformation)(   \
+       blackbox)(input_libraries)(frontend_statistics)(exec_argv)(path)
 
 #define COMPILER_OPTIONS                                                                                              \
    (gcc_config)(gcc_costs)(gcc_defines)(gcc_extra_options)(gcc_include_sysdir)(gcc_includes)(gcc_libraries)(          \
@@ -168,10 +145,10 @@ enum class DiopsisInstrumentWriter_Type;
    (clock_period)(clock_name)(reset_name)(start_name)(done_name)(device_string)(synthesis_flow)(target_device_file)( \
        target_device_script)(top_component)(writer_language)
 
-#define SPIDER_OPTIONS                                                                                            \
-   (accuracy)(aggregated_features)(cross_validation)(experimental_setup_file)(interval_level)(latex_format_file)( \
-       max_bound)(maximum_error)(min_bound)(minimum_significance)(normalization_file)(normalization_sequences)(   \
-       output_format)(precision)(processing_element_type)(skip_rows)(surviving_benchmarks)
+#define SPIDER_OPTIONS                                                                                              \
+   (accuracy)(aggregated_features)(cross_validation)(experimental_setup_file)(latex_format_file)(max_bound)(        \
+       maximum_error)(min_bound)(minimum_significance)(normalization_file)(normalization_sequences)(output_format)( \
+       precision)(processing_element_type)(skip_rows)(surviving_benchmarks)
 
 #define EUCALIPTUS_OPTIONS (component_name)
 
@@ -300,10 +277,6 @@ enum class Parameters_FileFormat
    FF_LLVM_CPP,     /**< (Input/Output) LLVM source bitcode file generated from c++ source code*/
 #endif
    FF_CSV, /**< (Input) comma separated value */
-#if HAVE_FROM_PSPLIB_BUILT
-   FF_PSPLIB_MM, /**< (Input) Multi-mode Project Scheduling Problem */
-   FF_PSPLIB_SM, /**< (Input) Single-mode Project Scheduling Problem */
-#endif
 #if HAVE_FROM_C_BUILT
    FF_RAW, /**< (Input/Output) raw file */
 #endif
@@ -312,30 +285,15 @@ enum class Parameters_FileFormat
    FF_VERILOG, /**< (Input) verilog */
    FF_VHDL,    /**< (Input) vhdl */
    FF_XML,     /**< (Input/Output) XML */
-#if HAVE_REGRESSORS_BUILT
-   FF_XML_AGG, /**< (Input) XML aggregated features */
-#endif
-#if HAVE_FROM_ARCH_BUILT
-   FF_XML_ARCHITECTURE, /**< (Input) XML architecture file */
-#endif
 #if HAVE_BAMBU_RESULTS_XML
    FF_XML_BAMBU_RESULTS, /**< (Input) XML bambu results*/
 #endif
 #if HAVE_HLS_BUILT
    FF_XML_CON, /**< (Input) XML storing constraints */
 #endif
-#if HAVE_DESIGN_ANALYSIS_BUILT
-   FF_XML_DESIGN_HIERARCHY, /**< (Input) XML storing hierarchy of a design */
-#endif
    FF_XML_EXPERIMENTAL_SETUP, /**< (Input) XML storing experimental setup */
-#if HAVE_FROM_SDF3_BUILT
-   FF_XML_SDF3, /**< (Input) XML storing synchronous data flow graph */
-#endif
-   FF_XML_SKIP_ROW, /**< (Input) XML benchhmarks to be execluded from training set */
-#if HAVE_SOURCE_CODE_STATISTICS_XML
-   FF_XML_STAT, /**< (Input) XML statistics about source code files */
-#endif
-   FF_XML_SYM_SIM, /**< (Input) XML storing symbolic symulation results */
+   FF_XML_SKIP_ROW,           /**< (Input) XML benchhmarks to be execluded from training set */
+   FF_XML_SYM_SIM,            /**< (Input) XML storing symbolic symulation results */
 #if HAVE_TECHNOLOGY_BUILT
    FF_XML_TARGET, /**< (Input) XML storing information about a particular target device */
    FF_XML_TEC,    /**< (Input) XML storing technology libraries */
@@ -737,19 +695,9 @@ const CustomSet<std::string> Parameter::getOption(const enum enum_option name) c
 template <>
 const std::list<std::string> Parameter::getOption(const enum enum_option name) const;
 
-#if HAVE_TARGET_PROFILING
-template <>
-InstrumentWriter_Level Parameter::getOption(const enum enum_option name) const;
-#endif
-
 #if HAVE_HOST_PROFILING_BUILT
 template <>
 HostProfiling_Method Parameter::getOption(const enum enum_option name) const;
-#endif
-
-#if HAVE_TARGET_PROFILING
-template <>
-TargetArchitecture_Kind Parameter::getOption(const enum enum_option name) const;
 #endif
 
 template <>
@@ -758,24 +706,6 @@ Parameters_FileFormat Parameter::getOption(const enum enum_option name) const;
 #if HAVE_FROM_C_BUILT
 template <>
 CompilerWrapper_CompilerTarget Parameter::getOption(const enum enum_option name) const;
-#endif
-
-#if HAVE_CODE_ESTIMATION_BUILT
-template <>
-CustomUnorderedSet<ActorGraphEstimator_Algorithm> Parameter::getOption(const enum enum_option name) const;
-
-template <>
-ActorGraphEstimator_Algorithm Parameter::getOption(const enum enum_option name) const;
-#endif
-
-#if HAVE_DIOPSIS
-template <>
-DiopsisInstrumentWriter_Type Parameter::getOption(const enum enum_option name) const;
-#endif
-
-#if HAVE_DESIGN_ANALYSIS_BUILT
-template <>
-DesignAnalysis_Step Parameter::getOption(const enum enum_option name) const;
 #endif
 
 #if HAVE_FROM_C_BUILT

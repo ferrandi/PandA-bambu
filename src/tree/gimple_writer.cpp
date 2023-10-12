@@ -47,7 +47,6 @@
 #include "custom_map.hpp"                     // for unordered_map<>:...
 #include <algorithm>                          // for transform
 #include <boost/algorithm/string/replace.hpp> // for replace_all
-#include <boost/lexical_cast.hpp>             // for lexical_cast
 #include <cctype>                             // for toupper
 #include <cstddef>                            // for size_t
 #include <string>                             // for string, operator+

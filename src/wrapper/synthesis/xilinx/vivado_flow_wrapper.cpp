@@ -79,11 +79,11 @@ void vivado_flow_wrapper::create_sdc(const DesignParametersRef& dp)
 
    std::string sdc_filename = output_dir + "/" + dp->component_name + ".sdc";
    std::ofstream sdc_file(sdc_filename.c_str());
-   if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
+   if(!static_cast<bool>(std::stoi(dp->parameter_values[PARAM_is_combinational])))
    {
       sdc_file << "create_clock -period " + dp->parameter_values[PARAM_clk_period] + " -name " + clock +
                       " [get_ports " + clock + "]\n";
-      if((boost::lexical_cast<bool>(dp->parameter_values[PARAM_connect_iob]) ||
+      if((static_cast<bool>(std::stoi(dp->parameter_values[PARAM_connect_iob])) ||
           (Param->IsParameter("profile-top") && Param->GetParameter<int>("profile-top") == 1)) &&
          !Param->isOption(OPT_backend_sdc_extensions))
       {

@@ -56,7 +56,6 @@
 #include "custom_set.hpp"
 #include <boost/graph/depth_first_search.hpp>
 #include <boost/graph/graph_traits.hpp>
-#include <boost/lexical_cast.hpp> // for lexical_cast
 #include <iosfwd>
 #include <list>
 #include <ostream> // for operator<<, basic_o...

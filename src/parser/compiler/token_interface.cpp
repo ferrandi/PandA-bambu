@@ -66,7 +66,6 @@ REF_FORWARD_DECL(TreeFlexLexer);
 
 /// Utility include
 #include "exceptions.hpp"
-#include <boost/lexical_cast.hpp>
 
 #define NO_TOKEN (-1)
 

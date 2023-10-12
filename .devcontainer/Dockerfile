@@ -1,4 +1,4 @@
-ARG VARIANT=bionic-23.04
+ARG VARIANT=bionic-23.10
 
 FROM bambuhls/iverilog:${VARIANT} as iverilog
 FROM bambuhls/verilator:${VARIANT} as verilator

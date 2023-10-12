@@ -41,10 +41,7 @@
  *
  */
 
-/// Autoheader include
-#include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
-#include "config_HAVE_RTL_BUILT.hpp"
-
+#include "tree_nodes_merger.hpp"
 #include "exceptions.hpp"       // for THROW_ASSERT, THROW...
 #include "ext_tree_node.hpp"    // for gimple_pragma, gimp...
 #include "token_interface.hpp"  // for TOK, TreeVocabulary...
@@ -52,16 +49,10 @@
 #include "tree_common.hpp"      // for CharType_K, abs_expr_K
 #include "tree_manager.hpp"     // for tree_nodeRef, tree_...
 #include "tree_node.hpp"        // for tree_nodeRef, tree_...
-#include "tree_nodes_merger.hpp"
-#include "tree_reindex.hpp"       // for tree_reindex, tree_...
-#include <boost/lexical_cast.hpp> // for lexical_cast
-#include <string>                 // for string, operator+
-#include <utility>                // for pair
-#include <vector>                 // for vector, vector<>::c...
-
-#if HAVE_CODE_ESTIMATION_BUILT
-#include "weight_information.hpp"
-#endif
+#include "tree_reindex.hpp"     // for tree_reindex, tree_...
+#include <string>               // for string, operator+
+#include <utility>              // for pair
+#include <vector>               // for vector, vector<>::c...
 
 #define CHECK_AND_ADD(Tree_Node, visit_index)                                 \
    {                                                                          \
@@ -1514,15 +1505,6 @@ void tree_node_index_factory::operator()(const WeightedNode* obj, unsigned int& 
 {
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
-#if HAVE_CODE_ESTIMATION_BUILT
-   SET_VALUE(weight_information->recursive_weight, WeightedNode);
-   SET_VALUE(weight_information->instruction_size, WeightedNode);
-#if HAVE_RTL_BUILT
-   SET_VALUE(weight_information->rtl_instruction_size, WeightedNode);
-   dynamic_cast<WeightedNode*>(curr_tree_node_ptr)->weight_information->rtl_nodes =
-       GetPointer<WeightedNode>(source_tn)->weight_information->rtl_nodes;
-#endif
-#endif
 }
 
 void tree_node_index_factory::operator()(const decl_node* obj, unsigned int& mask)

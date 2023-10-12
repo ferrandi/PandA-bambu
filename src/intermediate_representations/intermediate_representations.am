@@ -10,12 +10,6 @@ lib_intermediate_representations_la_CPPFLAGS = \
     -I$(top_srcdir)/src/utility \
     $(AM_CPPFLAGS)
 
-if BUILD_LIB_ACTOR_GRAPHS
-   SUBDIRS += intermediate_representations/actor_graphs
-   DIST_SUBDIRS += intermediate_representations/actor_graphs
-   lib_intermediate_representations_la_LIBADD += $(top_builddir)/src/intermediate_representations/actor_graphs/lib_actor_graphs.la
-endif
-
 if BUILD_LIB_FROM_AADL_ASN
   noinst_LTLIBRARIES += lib_aadl_asn.la
   lib_aadl_asn_la_CPPFLAGS = \
@@ -50,12 +44,3 @@ if BUILD_LIB_HLS
    intermediate_representations/hls/hls_ir.cpp
   lib_intermediate_representations_la_LIBADD += lib_hls.la
 endif
-
-if BUILD_LIB_MAPPING
-   SUBDIRS += intermediate_representations/mapping_annotations
-   DIST_SUBDIRS += intermediate_representations/mapping_annotations
-   lib_intermediate_representations_la_LIBADD += \
-      $(top_builddir)/src/intermediate_representations/mapping_annotations/lib_mapping_annotations.la
-endif
-
-

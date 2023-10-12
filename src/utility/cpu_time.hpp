@@ -50,8 +50,6 @@
 #include "omp.h"
 #endif
 
-#include <boost/lexical_cast.hpp>
-
 #ifdef _WIN32
 #include <windows.h>
 #undef IN

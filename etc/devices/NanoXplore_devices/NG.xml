@@ -1,211 +1,221 @@
 <?xml version="1.0"?>
 <synthesis>
    <flow name="Synthesis">
-      <step id="nxpython_flow" config="nxpython_flow" />
+      <step id="nxpython_flow" config="nxpython_flow"/>
    </flow>
    <flow name="Characterization">
-      <step id="nxpython_flow" config="nxpython_flow" />
+      <step id="nxpython_flow" config="nxpython_flow"/>
    </flow>
    <nxpython config="nxpython_flow">
-      <cmd name="from functools import reduce" />
-      <cmd name="import glob, math, os, re, sys" />
-      <cmd name="try:" />
-      <cmd name="    from StringIO import StringIO ## for Python 2" />
-      <cmd name="except ImportError:" />
-      <cmd name="    from io import StringIO ## for Python 3" />
-      <cmd name="from os import path" />
-      <cmd name="NXMAPversion=2" />
-      <cmd name="try:" />
-      <cmd name="    from nanoxmap import * ## for nxMap 2.9.7" />
-      <cmd name="except (ImportError, ModuleNotFoundError):" />
-      <cmd name="    from nxmap import *" />
-      <cmd name="    NXMAPversion=3" />
-      <cmd name="print('NXmap version: {}'.format(NXMAPversion))" />
-      <cmd name="prjEXT='.nxm'" />
-      <cmd name="if NXMAPversion == 3:" />
-      <cmd name="    prjEXT='.nym'" />
-      <cmd name="result = StringIO()" />
+      <cmd name="from functools import reduce"/>
+      <cmd name="import glob, math, os, re, sys"/>
+      <cmd name="try:"/>
+      <cmd name="    from StringIO import StringIO ## for Python 2"/>
+      <cmd name="except ImportError:"/>
+      <cmd name="    from io import StringIO ## for Python 3"/>
+      <cmd name="from os import path"/>
+      <cmd name="nx_suite_version=0"/>
+      <cmd name="try:"/>
+      <cmd name="    from nxpython import *"/>
+      <cmd name="    nx_suite_version=4"/>
+      <cmd name="except:"/>
+      <cmd name="    try:"/>
+      <cmd name="        from nxmap import *"/>
+      <cmd name="        nx_suite_version=3"/>
+      <cmd name="    except:"/>
+      <cmd name="        try:"/>
+      <cmd name="            from nanoxmap import *"/>
+      <cmd name="            nx_suite_version=2"/>
+      <cmd name="        except:"/>
+      <cmd name="            print('Unable to find valid NXmap python module')"/>
+      <cmd name="            pass"/>
+      <cmd name="print('NXmap version: {}'.format(nx_suite_version))"/>
+      <cmd name="prjEXT='.nxm'"/>
+      <cmd name="if nx_suite_version &gt;= 3:"/>
+      <cmd name="    prjEXT='.nym'"/>
+      <cmd name="result = StringIO()"/>
 
-      <cmd name="table_corner = '+'" />
-      <cmd name="table_edge = '|'" />
-      <cmd name="table_row = '+--'" />
-      <cmd name="class PowerEstimation:" />
-      <cmd name="    def __init__(self):" />
-      <cmd name="        self.enable_rate = {'clock': 0.5,'FABRIC':0.5,'RAM':0.25,'DSP':0.25}" />
-      <cmd name="    def compute_power(temp, freq, luts, regs, brams, dsps):" />
-      <cmd name="        pass" />
-      <cmd name="class NG_ULTRA(PowerEstimation):" />
-      <cmd name="    def __init__(self):" />
-      <cmd name="        PowerEstimation.__init__(self)" />
-      <cmd name="        self.__ram_dyn_power_a = 0.02" />
-      <cmd name="        self.__ram_dyn_power_b = 0.09" />
-      <cmd name="        self.__dsp_dyn_power_a = 0.05" />
-      <cmd name="        self.__dsp_dyn_power_b = 0.47" />
-      <cmd name="        self.__voltage_vdd = 1.0" />
-      <cmd name="        self.__leakage = {'RF':{25: 26.32,-40: 26.32,125: 486.92},'DSP':{25: 47.04,-40: 47.04,125: 806.40},'FABRIC':{25: 640.0,-40: 640.0,125: 2000.0},'RAM':{25: 33.6,-40: 23.52,125: 739.2},'IO':{25:25.40,-40:25.40,125:59.41},'CKG':{25:0.31,-40:0.31,125:5.11},'HSSL':{25:2.96,-40:2.96,125:52.80},'SoC':{25:31.65,-40:31.65,125:873.59}}" />
-      <cmd name="    def compute_power(self, temp, freq, luts, regs, brams, dsps):" />
-      <cmd name="        pwr_rf = self.__leakage['RF'][temp]*self.__voltage_vdd" />
-      <cmd name="        pwr_clk = 0.000000000008*freq*1000000*1000 + 0.0625*0.000000000001*freq*self.enable_rate['clock']*1000000*regs" />
-      <cmd name="        pwr_logic = self.__leakage['FABRIC'][temp]*self.__voltage_vdd+((0.000000000000446*(freq*regs*self.enable_rate['FABRIC'])*1000000 + 0.000000000000403*(freq*luts*self.enable_rate['FABRIC'])*1000000)*1000*self.__voltage_vdd)*1.05" />
-      <cmd name="        pwr_bram = self.__leakage['RAM'][temp]*self.__voltage_vdd+brams*(self.__ram_dyn_power_a*freq*self.enable_rate['RAM']*+self.__ram_dyn_power_b)" />
-      <cmd name="        pwr_dsps = self.__leakage['DSP'][temp]*self.__voltage_vdd+dsps*(self.__dsp_dyn_power_a*freq*self.enable_rate['DSP']*+self.__dsp_dyn_power_b)" />
-      <cmd name="        pwr_io = self.__leakage['IO'][temp]" />
-      <cmd name="        pwr_ckg = self.__leakage['CKG'][temp]" />
-      <cmd name="        pwr_hssl = self.__leakage['HSSL'][temp]" />
-      <cmd name="        pwr_soc = self.__leakage['SoC'][temp]" />
-      <cmd name="        return pwr_rf + pwr_clk + pwr_logic + pwr_bram + pwr_dsps + pwr_io + pwr_ckg + pwr_hssl + pwr_soc" />
-      <cmd name="class NG_LARGE(PowerEstimation):" />
-      <cmd name="    def __init__(self):" />
-      <cmd name="        PowerEstimation.__init__(self)" />
-      <cmd name="        self.__voltage_vdd = 1.2" />
-      <cmd name="        self.__bram_write_rate = 0.5" />
-      <cmd name="        self.__leakage = {'IO': {25: 62.6, 125: 64.4}, 'CORE':{25: 479.9, 125: 955.9}}" />
-      <cmd name="    def compute_power(self, temp, freq, luts, regs, brams, dsps):" />
-      <cmd name="        if(temp != 25): raise Exception('Current version of the estimator only supports ambient temperature')" />
-      <cmd name="        pwr_core = self.__leakage['CORE'][temp]*self.__voltage_vdd" />
-      <cmd name="        pwr_clk = (0.00000008*(freq*self.enable_rate['clock']*regs) + 0.0107)*1000*(self.__voltage_vdd/1.2)**2" />
-      <cmd name="        pwr_logic = ((0.0000004*(self.enable_rate['FABRIC']*freq*regs) + 0.0173)*1000+ (0.0000004*(self.enable_rate['FABRIC']*freq*luts) + 0.0173)*1000)*(self.__voltage_vdd/1.2)**2" />
-      <cmd name="        pwr_ram = (((freq*brams*self.enable_rate['RAM'])*0.000018612*self.__bram_write_rate*1000)+((freq*brams*self.enable_rate['RAM'])*0.000017423*(1-self.__bram_write_rate)*1000))*(self.__voltage_vdd/1.2)**2" />
-      <cmd name="        pwr_dsps = (-0.000000001*(freq*dsps*self.enable_rate['DSP'])**2 + 0.0001*(freq*dsps*self.enable_rate['DSP']))*1000*(self.__voltage_vdd/1.2)**2" />
-      <cmd name="        pwr_io = self.__leakage['IO'][temp]" />
-      <cmd name="        pwr_ckg = 0" />
-      <cmd name="        pwr_hssl = 0" />
-      <cmd name="        return pwr_core + pwr_clk + pwr_logic + pwr_ram + pwr_dsps + pwr_io + pwr_ckg + pwr_hssl" />
-      <cmd name="class NG_MEDIUM(PowerEstimation):" />
-      <cmd name="    def __init__(self):" />
-      <cmd name="        PowerEstimation.__init__(self)" />
-      <cmd name="        self.__voltage_vdd = 1.2" />
-      <cmd name="        self.__bram_write_rate = 0.5" />
-      <cmd name="        self.__leakage = {'IO': {25: 580.9, 125: 522.4}, 'CORE':{25: 140.4, 125: 349.2}}" />
-      <cmd name="    def compute_power(self, temp, freq, luts, regs, brams, dsps):" />
-      <cmd name="        pwr_core = self.__leakage['CORE'][temp]*self.__voltage_vdd" />
-      <cmd name="        pwr_clk = (0.00000008*(freq*self.enable_rate['clock']*regs) + 0.0107)*1000*(self.__voltage_vdd/1.2)**2" />
-      <cmd name="        pwr_logic = ((0.0000004*(self.enable_rate['FABRIC']*freq*regs) + 0.0173)*1000+ (0.0000004*(self.enable_rate['FABRIC']*freq*luts) + 0.0173)*1000)*(self.__voltage_vdd/1.2)**2" />
-      <cmd name="        pwr_ram = (((freq*brams*self.enable_rate['RAM'])*0.000018612*self.__bram_write_rate*1000)+((freq*brams*self.enable_rate['RAM'])*0.000017423*(1-self.__bram_write_rate)*1000))*(self.__voltage_vdd/1.2)**2" />
-      <cmd name="        pwr_dsps = (-0.000000001*(freq*dsps*self.enable_rate['DSP'])**2 + 0.0001*(freq*dsps*self.enable_rate['DSP']))*1000*(self.__voltage_vdd/1.2)**2" />
-      <cmd name="        pwr_io = self.__leakage['IO'][temp]" />
-      <cmd name="        pwr_ckg = 0" />
-      <cmd name="        return pwr_core + pwr_clk + pwr_logic + pwr_ram + pwr_dsps + pwr_io + pwr_ckg" />
-      <cmd name="def power_estimation(device, temp, freq, luts, regs, brams, dsps):" />
-      <cmd name="    class_ = globals()[device.replace('-','_')]" />
-      <cmd name="    power = class_().compute_power(temp, freq, luts, regs, brams, dsps)" />
-      <cmd name="    return str(round(power / 1000.0, 3))" />
-      <cmd name="def first_table_after(table_header, lines):" />
-      <cmd name="    lines = lines[lines.index(next(iter(filter(lambda x: table_header in x, lines)), None)):]" />
-      <cmd name="    lines = lines[lines.index(next(iter(filter(lambda x: table_row in x, lines)), None)):]" />
-      <cmd name="    ltrim = lines[0].find(table_corner)" />
-      <cmd name="    try: lines = lines[:lines.index(next(iter(filter(lambda x: all(t not in x[ltrim:] for t in [table_row, table_edge]), lines)), None))]" />
-      <cmd name="    except Exception: None" />
-      <cmd name="    return list(map(lambda x: x[ltrim:], filter(lambda x: any(t in x[ltrim:] for t in [table_row, table_edge]), lines)))" />
-      <cmd name="def parse_ascii_table(table_lines):" />
-      <cmd name="    rows = []" />
-      <cmd name="    for line in table_lines:" />
-      <cmd name="        if table_row in line: continue" />
-      <cmd name="        splitted_line = list(map(str.strip, filter(lambda x: x!=table_edge, line.split(table_edge))))[1:-1]" />
-      <cmd name="        rows.append(['']*len(splitted_line))" />
-      <cmd name="        for i in range(len(splitted_line)): rows[-1][i] = splitted_line[i]" />
-      <cmd name="    return rows" />
-      <cmd name="def get_res(log_lines):" />
-      <cmd name="    num_re = re.compile(r&quot;(\d+)&quot;)" />
-      <cmd name="    first_num = lambda str: num_re.search(str).group(1)" />
-      <cmd name="    table_lines = first_table_after('List of Pins:', log_lines)" condition="!${__connect_iob__}" />
-      <cmd name="    table_lines = first_table_after('Ports used in current design.', log_lines)" condition="${__connect_iob__}" />
-      <cmd name="    rows = parse_ascii_table(table_lines)" />
-      <cmd name="    pin_table = dict(zip(rows[1], rows[2]))" />
-      <cmd name="    lines = log_lines[log_lines.index(next(iter(filter(lambda x: 'Reporting routed project' in x, log_lines)), None)):]" />
-      <cmd name="    table_lines = first_table_after('Reporting instances', lines)" />
-      <cmd name="    rows = parse_ascii_table(table_lines)" />
-      <cmd name="    res_table = dict(zip([' '.join([a,b,c]).strip() for a,b,c in zip(rows[0],rows[1],rows[2])], rows[3]))" />
-      <cmd name="    fe_num = '0'" />
-      <cmd name="    if NXMAPversion == 2:" />
-      <cmd name="        table_lines = first_table_after('The following table details the use of FEs.', lines)" />
-      <cmd name="        rows = parse_ascii_table(table_lines)" />
-      <cmd name="        fe_table = dict(zip(rows[2], rows[3]))" />
-      <cmd name="        fe_num = first_num(fe_table['Count'])" />
-      <cmd name="    elif NXMAPversion == 3:" />
-      <cmd name="        fe_num = first_num(next(iter(filter(lambda x: 'Estimated FE occupancy is' in x, lines))))" />
-      <cmd name="    table_lines = first_table_after('The following table lists the number of registers for each instance type', lines)" />
-      <cmd name="    rows = parse_ascii_table(table_lines)" />
-      <cmd name="    reg_table = dict(zip(rows[2], rows[3]))" />
-      <cmd name="    return [fe_num, first_num(res_table['4-LUT']), reg_table['Count'], first_num(res_table['Memory block']), str(reduce(lambda a, b: a + b, map(int, pin_table.values()))), first_num(res_table['Digital signal processor'])]" />
-      <cmd name="def get_timing(log_lines):" />
-      <cmd name="    table_lines = first_table_after('Reporting timing constraints', log_lines)" />
-      <cmd name="    rows = parse_ascii_table(table_lines)" />
-      <cmd name="    timing_table = dict(zip(rows[1], rows[2]))" />
-      <cmd name="    unit = timing_table['Setup/Recovery'][-2:]" />
-      <cmd name="    value = float(timing_table['Setup/Recovery'][:-2])" />
-      <cmd name="    if unit == 'ns': return str(value)" />
-      <cmd name="    elif unit == 'ps': return str(value / 1000.0)" />
-      <cmd name="    return timing_table['Setup/Recovery'][:-2]" />
+      <cmd name="table_corner = '+'"/>
+      <cmd name="table_edge = '|'"/>
+      <cmd name="table_row = '+--'"/>
+      <cmd name="class PowerEstimation:"/>
+      <cmd name="    def __init__(self):"/>
+      <cmd name="        self.enable_rate = {'clock': 0.5,'FABRIC':0.5,'RAM':0.25,'DSP':0.25}"/>
+      <cmd name="    def compute_power(temp, freq, luts, regs, brams, dsps):"/>
+      <cmd name="        pass"/>
+      <cmd name="class NG_ULTRA(PowerEstimation):"/>
+      <cmd name="    def __init__(self):"/>
+      <cmd name="        PowerEstimation.__init__(self)"/>
+      <cmd name="        self.__ram_dyn_power_a = 0.02"/>
+      <cmd name="        self.__ram_dyn_power_b = 0.09"/>
+      <cmd name="        self.__dsp_dyn_power_a = 0.05"/>
+      <cmd name="        self.__dsp_dyn_power_b = 0.47"/>
+      <cmd name="        self.__voltage_vdd = 1.0"/>
+      <cmd name="        self.__leakage = {'RF':{25: 26.32,-40: 26.32,125: 486.92},'DSP':{25: 47.04,-40: 47.04,125: 806.40},'FABRIC':{25: 640.0,-40: 640.0,125: 2000.0},'RAM':{25: 33.6,-40: 23.52,125: 739.2},'IO':{25:25.40,-40:25.40,125:59.41},'CKG':{25:0.31,-40:0.31,125:5.11},'HSSL':{25:2.96,-40:2.96,125:52.80},'SoC':{25:31.65,-40:31.65,125:873.59}}"/>
+      <cmd name="    def compute_power(self, temp, freq, luts, regs, brams, dsps):"/>
+      <cmd name="        pwr_rf = self.__leakage['RF'][temp]*self.__voltage_vdd"/>
+      <cmd name="        pwr_clk = 0.000000000008*freq*1000000*1000 + 0.0625*0.000000000001*freq*self.enable_rate['clock']*1000000*regs"/>
+      <cmd name="        pwr_logic = self.__leakage['FABRIC'][temp]*self.__voltage_vdd+((0.000000000000446*(freq*regs*self.enable_rate['FABRIC'])*1000000 + 0.000000000000403*(freq*luts*self.enable_rate['FABRIC'])*1000000)*1000*self.__voltage_vdd)*1.05"/>
+      <cmd name="        pwr_bram = self.__leakage['RAM'][temp]*self.__voltage_vdd+brams*(self.__ram_dyn_power_a*freq*self.enable_rate['RAM']*+self.__ram_dyn_power_b)"/>
+      <cmd name="        pwr_dsps = self.__leakage['DSP'][temp]*self.__voltage_vdd+dsps*(self.__dsp_dyn_power_a*freq*self.enable_rate['DSP']*+self.__dsp_dyn_power_b)"/>
+      <cmd name="        pwr_io = self.__leakage['IO'][temp]"/>
+      <cmd name="        pwr_ckg = self.__leakage['CKG'][temp]"/>
+      <cmd name="        pwr_hssl = self.__leakage['HSSL'][temp]"/>
+      <cmd name="        pwr_soc = self.__leakage['SoC'][temp]"/>
+      <cmd name="        return pwr_rf + pwr_clk + pwr_logic + pwr_bram + pwr_dsps + pwr_io + pwr_ckg + pwr_hssl + pwr_soc"/>
+      <cmd name="class NG_LARGE(PowerEstimation):"/>
+      <cmd name="    def __init__(self):"/>
+      <cmd name="        PowerEstimation.__init__(self)"/>
+      <cmd name="        self.__voltage_vdd = 1.2"/>
+      <cmd name="        self.__bram_write_rate = 0.5"/>
+      <cmd name="        self.__leakage = {'IO': {25: 62.6, 125: 64.4}, 'CORE':{25: 479.9, 125: 955.9}}"/>
+      <cmd name="    def compute_power(self, temp, freq, luts, regs, brams, dsps):"/>
+      <cmd name="        if(temp != 25): raise Exception('Current version of the estimator only supports ambient temperature')"/>
+      <cmd name="        pwr_core = self.__leakage['CORE'][temp]*self.__voltage_vdd"/>
+      <cmd name="        pwr_clk = (0.00000008*(freq*self.enable_rate['clock']*regs) + 0.0107)*1000*(self.__voltage_vdd/1.2)**2"/>
+      <cmd name="        pwr_logic = ((0.0000004*(self.enable_rate['FABRIC']*freq*regs) + 0.0173)*1000+ (0.0000004*(self.enable_rate['FABRIC']*freq*luts) + 0.0173)*1000)*(self.__voltage_vdd/1.2)**2"/>
+      <cmd name="        pwr_ram = (((freq*brams*self.enable_rate['RAM'])*0.000018612*self.__bram_write_rate*1000)+((freq*brams*self.enable_rate['RAM'])*0.000017423*(1-self.__bram_write_rate)*1000))*(self.__voltage_vdd/1.2)**2"/>
+      <cmd name="        pwr_dsps = (-0.000000001*(freq*dsps*self.enable_rate['DSP'])**2 + 0.0001*(freq*dsps*self.enable_rate['DSP']))*1000*(self.__voltage_vdd/1.2)**2"/>
+      <cmd name="        pwr_io = self.__leakage['IO'][temp]"/>
+      <cmd name="        pwr_ckg = 0"/>
+      <cmd name="        pwr_hssl = 0"/>
+      <cmd name="        return pwr_core + pwr_clk + pwr_logic + pwr_ram + pwr_dsps + pwr_io + pwr_ckg + pwr_hssl"/>
+      <cmd name="class NG_MEDIUM(PowerEstimation):"/>
+      <cmd name="    def __init__(self):"/>
+      <cmd name="        PowerEstimation.__init__(self)"/>
+      <cmd name="        self.__voltage_vdd = 1.2"/>
+      <cmd name="        self.__bram_write_rate = 0.5"/>
+      <cmd name="        self.__leakage = {'IO': {25: 580.9, 125: 522.4}, 'CORE':{25: 140.4, 125: 349.2}}"/>
+      <cmd name="    def compute_power(self, temp, freq, luts, regs, brams, dsps):"/>
+      <cmd name="        pwr_core = self.__leakage['CORE'][temp]*self.__voltage_vdd"/>
+      <cmd name="        pwr_clk = (0.00000008*(freq*self.enable_rate['clock']*regs) + 0.0107)*1000*(self.__voltage_vdd/1.2)**2"/>
+      <cmd name="        pwr_logic = ((0.0000004*(self.enable_rate['FABRIC']*freq*regs) + 0.0173)*1000+ (0.0000004*(self.enable_rate['FABRIC']*freq*luts) + 0.0173)*1000)*(self.__voltage_vdd/1.2)**2"/>
+      <cmd name="        pwr_ram = (((freq*brams*self.enable_rate['RAM'])*0.000018612*self.__bram_write_rate*1000)+((freq*brams*self.enable_rate['RAM'])*0.000017423*(1-self.__bram_write_rate)*1000))*(self.__voltage_vdd/1.2)**2"/>
+      <cmd name="        pwr_dsps = (-0.000000001*(freq*dsps*self.enable_rate['DSP'])**2 + 0.0001*(freq*dsps*self.enable_rate['DSP']))*1000*(self.__voltage_vdd/1.2)**2"/>
+      <cmd name="        pwr_io = self.__leakage['IO'][temp]"/>
+      <cmd name="        pwr_ckg = 0"/>
+      <cmd name="        return pwr_core + pwr_clk + pwr_logic + pwr_ram + pwr_dsps + pwr_io + pwr_ckg"/>
+      <cmd name="def power_estimation(device, temp, freq, luts, regs, brams, dsps):"/>
+      <cmd name="    class_ = globals()[device.replace('-','_')]"/>
+      <cmd name="    power = class_().compute_power(temp, freq, luts, regs, brams, dsps)"/>
+      <cmd name="    return str(round(power / 1000.0, 3))"/>
+      <cmd name="def first_table_after(table_header, lines):"/>
+      <cmd name="    lines = lines[lines.index(next(iter(filter(lambda x: table_header in x, lines)), None)):]"/>
+      <cmd name="    lines = lines[lines.index(next(iter(filter(lambda x: table_row in x, lines)), None)):]"/>
+      <cmd name="    ltrim = lines[0].find(table_corner)"/>
+      <cmd name="    try: lines = lines[:lines.index(next(iter(filter(lambda x: all(t not in x[ltrim:] for t in [table_row, table_edge]), lines)), None))]"/>
+      <cmd name="    except Exception: None"/>
+      <cmd name="    return list(map(lambda x: x[ltrim:], filter(lambda x: any(t in x[ltrim:] for t in [table_row, table_edge]), lines)))"/>
+      <cmd name="def parse_ascii_table(table_lines):"/>
+      <cmd name="    rows = []"/>
+      <cmd name="    for line in table_lines:"/>
+      <cmd name="        if table_row in line: continue"/>
+      <cmd name="        splitted_line = list(map(str.strip, filter(lambda x: x!=table_edge, line.split(table_edge))))[1:-1]"/>
+      <cmd name="        rows.append(['']*len(splitted_line))"/>
+      <cmd name="        for i in range(len(splitted_line)): rows[-1][i] = splitted_line[i]"/>
+      <cmd name="    return rows"/>
+      <cmd name="def get_res(log_lines):"/>
+      <cmd name="    num_re = re.compile(r&quot;(\d+)&quot;)"/>
+      <cmd name="    first_num = lambda str: num_re.search(str).group(1)"/>
+      <cmd name="    table_lines = first_table_after('List of Pins:', log_lines)" condition="!${__connect_iob__}"/>
+      <cmd name="    table_lines = first_table_after('Ports used in current design.', log_lines)" condition="${__connect_iob__}"/>
+      <cmd name="    rows = parse_ascii_table(table_lines)"/>
+      <cmd name="    pin_table = dict(zip(rows[1], rows[2]))"/>
+      <cmd name="    lines = log_lines[log_lines.index(next(iter(filter(lambda x: 'Reporting routed project' in x, log_lines)), None)):]"/>
+      <cmd name="    table_lines = first_table_after('Reporting instances', lines)"/>
+      <cmd name="    rows = parse_ascii_table(table_lines)"/>
+      <cmd name="    res_table = dict(zip([' '.join([a,b,c]).strip() for a,b,c in zip(rows[0],rows[1],rows[2])], rows[3]))"/>
+      <cmd name="    fe_num = '0'"/>
+      <cmd name="    if nx_suite_version == 2:"/>
+      <cmd name="        table_lines = first_table_after('The following table details the use of FEs.', lines)"/>
+      <cmd name="        rows = parse_ascii_table(table_lines)"/>
+      <cmd name="        fe_table = dict(zip(rows[2], rows[3]))"/>
+      <cmd name="        fe_num = first_num(fe_table['Count'])"/>
+      <cmd name="    else:"/>
+      <cmd name="        fe_num = first_num(next(iter(filter(lambda x: 'Estimated FE occupancy is' in x, lines))))"/>
+      <cmd name="    table_lines = first_table_after('The following table lists the number of registers for each instance type', lines)"/>
+      <cmd name="    rows = parse_ascii_table(table_lines)"/>
+      <cmd name="    reg_table = dict(zip(rows[2], rows[3]))"/>
+      <cmd name="    return [fe_num, first_num(res_table['4-LUT']), reg_table['Count'], first_num(res_table['Memory block']), str(reduce(lambda a, b: a + b, map(int, pin_table.values()))), first_num(res_table['Digital signal processor'])]"/>
+      <cmd name="def get_timing(log_lines):"/>
+      <cmd name="    table_lines = first_table_after('Reporting timing constraints', log_lines)"/>
+      <cmd name="    rows = parse_ascii_table(table_lines)"/>
+      <cmd name="    timing_table = dict(zip(rows[1], rows[2]))"/>
+      <cmd name="    unit = timing_table['Setup/Recovery'][-2:]"/>
+      <cmd name="    value = float(timing_table['Setup/Recovery'][:-2])"/>
+      <cmd name="    if unit == 'ns': return str(value)"/>
+      <cmd name="    elif unit == 'ps': return str(value / 1000.0)"/>
+      <cmd name="    return timing_table['Setup/Recovery'][:-2]"/>
 
-      <cmd name="dir = os.getcwd()" />
-      <cmd name="outdir = '${__nxpython_outdir__}/output'" />
-      <cmd name="if path.exists(os.path.join(dir, 'pads.py')): os.remove(os.path.join(dir, 'pads.py'))" condition="!${__connect_iob__}" />
-      <cmd name="sys.path.append(dir)" />
-      <cmd name="project = createProject(outdir)" />
-      <cmd name="if NXMAPversion == 3: setLogDirectory(outdir)" />
-      <cmd name="project.setVariantName('${__target_family__}-EMBEDDED')" condition="!${__connect_iob__}" />
-      <cmd name="project.setVariantName('${__target_family__}')" condition="${__connect_iob__}" />
-      <cmd name="project.setTopCellName('${__top_id__}')" />
-      <cmd name="project.addFiles('${__VHDL_library__}', [${__nxpython_sources_macro_list__}])" condition="${__has_VHDL_library__}" />
-      <cmd name="project.addFiles([${__nxpython_sources_macro_list__}])" condition="!${__has_VHDL_library__}" />
-      <cmd name="project.setOptions({'ManageAsynchronousReadPort': 'Yes', 'ManageUnconnectedOutputs': 'Ground', 'ManageUnconnectedSignals': 'Ground','DefaultRAMMapping': 'RAM', 'MaxRegisterCount': '12500'})" />
-      <cmd name="project.setOptions({'MappingEffort': 'High', 'TimingDriven': 'Yes'})" />
-      <cmd name="if NXMAPversion == 3: project.setOptions({'MappingEffort': 'High', 'TimingDriven': 'Yes', 'DensityEffort': 'Medium', 'BypassingEffort': 'High', 'PartitioningEffort': 'High', 'PolishingEffort': 'High', 'RoutingEffort': 'High'})" />
-      <cmd name="clock_period_ns = float(${__clk_period__})" />
-      <cmd name="project.createClock('getClockNet(${__clk_name__})', '${__clk_name__}', int(math.floor(clock_period_ns * float(1000))))" />
-      <cmd name="from ${__backend_script_extensions__} import ${__backend_script_extensions__}" condition="${__has_script_extensions__}" />
-      <cmd name="if path.exists(os.path.join(dir, 'pads.py')):" />
-      <cmd name="    from pads import pads" />
-      <cmd name="    project.addPads(pads)" />
-      <cmd name="project.save(os.path.join(outdir, 'native'+prjEXT))" />
-      <cmd name="if not project.synthesize(): sys.exit(1)" />
-      <cmd name="project.save(os.path.join(outdir, 'synthesized'+prjEXT))" />
-      <cmd name="if not project.place(): sys.exit(1)" />
-      <cmd name="project.save(os.path.join(outdir, 'placed'+prjEXT))" />
-      <cmd name="if NXMAPversion == 2 and not path.exists(os.path.join(dir, 'pads.py')): project.savePorts(os.path.join(dir, 'pads.py'))" />
-      <cmd name="if not project.route(): sys.exit(1)" />
-      <cmd name="project.save(os.path.join(outdir, 'routed'+prjEXT))" />
-      <cmd name="analyzer = project.createAnalyzer()" />
-      <cmd name="analyzer.launch()" />
-      <cmd name="analyzer.destroy()" />
-      <cmd name="project.generateBitstream(os.path.join(outdir, 'bitfile.nxb'))" />
-      <cmd name="#print 'Errors: ', getErrorCount()" />
-      <cmd name="#print 'Warnings: ', getWarningCount()" />
+      <cmd name="dir = os.getcwd()"/>
+      <cmd name="outdir = '${__nxpython_outdir__}/output'"/>
+      <cmd name="if path.exists(os.path.join(dir, 'pads.py')): os.remove(os.path.join(dir, 'pads.py'))" condition="!${__connect_iob__}"/>
+      <cmd name="sys.path.append(dir)"/>
+      <cmd name="project = createProject(outdir)"/>
+      <cmd name="if nx_suite_version &gt;= 3: setLogDirectory(outdir)"/>
+      <cmd name="project.setVariantName('${__target_family__}-EMBEDDED')" condition="!${__connect_iob__}"/>
+      <cmd name="project.setVariantName('${__target_family__}')" condition="${__connect_iob__}"/>
+      <cmd name="project.setTopCellName('${__top_id__}')"/>
+      <cmd name="project.addFiles('${__VHDL_library__}', [${__nxpython_sources_macro_list__}])" condition="${__has_VHDL_library__}"/>
+      <cmd name="project.addFiles([${__nxpython_sources_macro_list__}])" condition="!${__has_VHDL_library__}"/>
+      <cmd name="project.setOptions({'ManageAsynchronousReadPort': 'Yes', 'ManageUnconnectedOutputs': 'Ground', 'ManageUnconnectedSignals': 'Ground','DefaultRAMMapping': 'RAM', 'MaxRegisterCount': '12500'})"/>
+      <cmd name="project.setOptions({'MappingEffort': 'High', 'TimingDriven': 'Yes'})"/>
+      <cmd name="if nx_suite_version &gt;= 3: project.setOptions({'MappingEffort': 'High', 'TimingDriven': 'Yes', 'DensityEffort': 'Medium', 'BypassingEffort': 'High', 'PartitioningEffort': 'High', 'PolishingEffort': 'High', 'RoutingEffort': 'High'})"/>
+      <cmd name="clock_period_ns = float(${__clk_period__})"/>
+      <cmd name="if nx_suite_version &lt;= 3: project.setTimingUnit('ns')"/>
+      <cmd name="project.createClock(target= 'getClockNet(${__clk_name__})', name= '${__clk_name__}', period= clock_period_ns)"/>
+      <cmd name="from ${__backend_script_extensions__} import ${__backend_script_extensions__}" condition="${__has_script_extensions__}"/>
+      <cmd name="if path.exists(os.path.join(dir, 'pads.py')):"/>
+      <cmd name="    from pads import pads"/>
+      <cmd name="    project.addPads(pads)"/>
+      <cmd name="project.save(os.path.join(outdir, 'native'+prjEXT))"/>
+      <cmd name="if not project.synthesize(): sys.exit(1)"/>
+      <cmd name="project.save(os.path.join(outdir, 'synthesized'+prjEXT))"/>
+      <cmd name="if not project.place(): sys.exit(1)"/>
+      <cmd name="project.save(os.path.join(outdir, 'placed'+prjEXT))"/>
+      <cmd name="if nx_suite_version == 2 and not path.exists(os.path.join(dir, 'pads.py')): project.savePorts(os.path.join(dir, 'pads.py'))"/>
+      <cmd name="if not project.route(): sys.exit(1)"/>
+      <cmd name="project.save(os.path.join(outdir, 'routed'+prjEXT))"/>
+      <cmd name="analyzer = project.createAnalyzer()"/>
+      <cmd name="analyzer.launch()"/>
+      <cmd name="analyzer.destroy()"/>
+      <cmd name="project.generateBitstream(os.path.join(outdir, 'bitfile.nxb'))"/>
+      <cmd name="#print 'Errors: ', getErrorCount()"/>
+      <cmd name="#print 'Warnings: ', getWarningCount()"/>
 
-      <cmd name="if NXMAPversion == 2:" />
-      <cmd name="    fr = open(os.path.join(outdir, 'logs/Timing_Constraints_Report.timing'), &quot;r&quot;)" />
-      <cmd name="elif NXMAPversion == 3:" />
-      <cmd name="    fr = open(glob.glob(outdir + '/Timing_Constraints_Report_Routed_*.timing')[0], &quot;r&quot;)" />
-      <cmd name="lines = fr.readlines()" />
-      <cmd name="fr.close()" />
-      <cmd name="design_slack_ns = get_timing(lines)" />
-      <cmd name="if NXMAPversion == 2:" />
-      <cmd name="    fr = open(os.path.join(outdir, 'logs/general.log'), &quot;r&quot;)" />
-      <cmd name="elif NXMAPversion == 3:" />
-      <cmd name="    fr = open(os.path.join(outdir, 'progress.rpt'), &quot;r&quot;)" />
-      <cmd name="lines = fr.readlines()" />
-      <cmd name="fr.close()" />
-      <cmd name="FunctionalElements, LUTs, TotalRegisters, TotalMemBlocks, TotalIOPins, TotalDSPs = get_res(lines) " />
-      <cmd name="freq_mhz = 1000.0/(clock_period_ns - float(design_slack_ns))" />
-      <cmd name="power_W = power_estimation('${__target_family__}', 25, freq_mhz, int(LUTs), int(TotalRegisters), int(TotalMemBlocks), int(TotalDSPs))" />
+      <cmd name="if nx_suite_version == 2:"/>
+      <cmd name="    fr = open(os.path.join(outdir, 'logs/Timing_Constraints_Report.timing'), &quot;r&quot;)"/>
+      <cmd name="else:"/>
+      <cmd name="    fr = open(glob.glob(outdir + '/Timing_Constraints_Report_Routed_*.timing')[0], &quot;r&quot;)"/>
+      <cmd name="lines = fr.readlines()"/>
+      <cmd name="fr.close()"/>
+      <cmd name="design_slack_ns = get_timing(lines)"/>
+      <cmd name="if nx_suite_version == 2:"/>
+      <cmd name="    fr = open(os.path.join(outdir, 'logs/general.log'), &quot;r&quot;)"/>
+      <cmd name="else:"/>
+      <cmd name="    fr = open(os.path.join(outdir, 'progress.rpt'), &quot;r&quot;)"/>
+      <cmd name="lines = fr.readlines()"/>
+      <cmd name="fr.close()"/>
+      <cmd name="FunctionalElements, LUTs, TotalRegisters, TotalMemBlocks, TotalIOPins, TotalDSPs = get_res(lines) "/>
+      <cmd name="freq_mhz = 1000.0/(clock_period_ns - float(design_slack_ns))"/>
+      <cmd name="power_W = power_estimation('${__target_family__}', 25, freq_mhz, int(LUTs), int(TotalRegisters), int(TotalMemBlocks), int(TotalDSPs))"/>
 
-      <cmd name="fw = open('/${__nxpython_report__}', &quot;w&quot;)" />
-      <cmd name="fw.write('&lt;?xml version=\\&quot;1.0\\&quot;?&gt;\\n')" />
-      <cmd name="fw.write('&lt;document&gt;\\n')" />
-      <cmd name="fw.write('  &lt;application&gt;\\n')" />
-      <cmd name="fw.write('    &lt;section stringID=\\&quot;NANOXPLORE_SYNTHESIS_SUMMARY\\&quot;&gt;\\n')" />
-      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_FE\\&quot; value=\\&quot;'+FunctionalElements+'\\&quot;/&gt;\\n')" />
-      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_LUTS\\&quot; value=\\&quot;'+LUTs+'\\&quot;/&gt;\\n')" />
-      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_REGISTERS\\&quot; value=\\&quot;'+TotalRegisters+'\\&quot;/&gt;\\n')" />
-      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_MEM\\&quot; value=\\&quot;'+TotalMemBlocks+'\\&quot;/&gt;\\n')" />
-      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_IOPIN\\&quot; value=\\&quot;'+TotalIOPins+'\\&quot;/&gt;&quot;\\n')" />
-      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_DSPS\\&quot; value=\\&quot;'+TotalDSPs+'\\&quot;/&gt;&quot;\\n')" />
-      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_POWER\\&quot; value=\\&quot;'+power_W+'\\&quot;/&gt;&quot;\\n')" />
-      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_SLACK\&quot; value=\\&quot;'+design_slack_ns+'\\&quot;/&gt;\\n')" />
-      <cmd name="fw.write('    &lt;/section&gt;\\n')" />
-      <cmd name="fw.write('  &lt;/application&gt;\\n')" />
-      <cmd name="fw.write('&lt;/document&gt;\\n')" />
-      <cmd name="fw.close()" />
+      <cmd name="fw = open('/${__nxpython_report__}', &quot;w&quot;)"/>
+      <cmd name="fw.write('&lt;?xml version=\\&quot;1.0\\&quot;?&gt;\\n')"/>
+      <cmd name="fw.write('&lt;document&gt;\\n')"/>
+      <cmd name="fw.write('  &lt;application&gt;\\n')"/>
+      <cmd name="fw.write('    &lt;section stringID=\\&quot;NANOXPLORE_SYNTHESIS_SUMMARY\\&quot;&gt;\\n')"/>
+      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_FE\\&quot; value=\\&quot;'+FunctionalElements+'\\&quot;/&gt;\\n')"/>
+      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_LUTS\\&quot; value=\\&quot;'+LUTs+'\\&quot;/&gt;\\n')"/>
+      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_REGISTERS\\&quot; value=\\&quot;'+TotalRegisters+'\\&quot;/&gt;\\n')"/>
+      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_MEM\\&quot; value=\\&quot;'+TotalMemBlocks+'\\&quot;/&gt;\\n')"/>
+      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_IOPIN\\&quot; value=\\&quot;'+TotalIOPins+'\\&quot;/&gt;&quot;\\n')"/>
+      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_DSPS\\&quot; value=\\&quot;'+TotalDSPs+'\\&quot;/&gt;&quot;\\n')"/>
+      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_POWER\\&quot; value=\\&quot;'+power_W+'\\&quot;/&gt;&quot;\\n')"/>
+      <cmd name="fw.write('      &lt;item stringID=\\&quot;NANOXPLORE_SLACK\&quot; value=\\&quot;'+design_slack_ns+'\\&quot;/&gt;\\n')"/>
+      <cmd name="fw.write('    &lt;/section&gt;\\n')"/>
+      <cmd name="fw.write('  &lt;/application&gt;\\n')"/>
+      <cmd name="fw.write('&lt;/document&gt;\\n')"/>
+      <cmd name="fw.close()"/>
    </nxpython>
 </synthesis>

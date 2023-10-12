@@ -230,12 +230,11 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
       {
          THROW_ERROR("Value of " + param + " is missing in test vector");
       }
-      const auto test_v = (has_file_init && boost::ends_with(init_it->second, ".dat")) ?
-                              ("\"" + init_it->second + "\"") :
-                              init_it->second;
+      const auto test_v =
+          (has_file_init && ends_with(init_it->second, ".dat")) ? ("\"" + init_it->second + "\"") : init_it->second;
       if(tree_helper::IsPointerType(parm_type))
       {
-         const auto is_binary_init = boost::ends_with(test_v, ".dat");
+         const auto is_binary_init = ends_with(test_v, ".dat");
 
          std::string var_ptdtype;
          std::string temp_var_decl;
@@ -577,7 +576,7 @@ void HLSCWriter::WriteMainTestbench()
             return has_subnormals ? "flts" : "flt";
          }
          else if(tree_helper::IsStructType(t) || tree_helper::IsUnionType(t) || tree_helper::IsVoidType(t) ||
-                 boost::starts_with(tname, "void"))
+                 starts_with(tname, "void"))
          {
             return "mem";
          }

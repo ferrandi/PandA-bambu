@@ -46,24 +46,14 @@
 #ifndef COMPILER_WRAPPER_HPP
 #define COMPILER_WRAPPER_HPP
 
-/// Autoheader include
-#include "config_HAVE_ARM_COMPILER.hpp"
-#include "config_HAVE_FROM_RTL_BUILT.hpp"
-#include "config_HAVE_SPARC_COMPILER.hpp"
-
-/// boost include
-#include <filesystem>
-
-/// STD include
-#include <iosfwd>
-#include <vector>
-
-/// utility include
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
 #include "refcount.hpp"
+
 #include <filesystem>
+#include <iosfwd>
+#include <vector>
 
 REF_FORWARD_DECL(application_manager);
 CONSTREF_FORWARD_DECL(Parameter);
@@ -113,10 +103,7 @@ enum class CompilerWrapper_CompilerTarget
    CT_I386_CLANG12 = 131072,
    CT_I386_CLANG13 = 262144,
    CT_I386_CLANG16 = 524288,
-   CT_I386_CLANGVVD = 1048576,
-   CT_ARM_GCC = 2097152,
-   CT_SPARC_GCC = 4194304,
-   CT_SPARC_ELF_GCC = 8388608
+   CT_I386_CLANGVVD = 1048576
 };
 
 enum class CompilerWrapper_CompilerMode
@@ -186,10 +173,6 @@ class CompilerWrapper
       /// The clang llvm-opt executable
       std::string llvm_opt;
 
-#if HAVE_FROM_RTL_BUILT
-      /// The plugin to dump gimple and rtl
-      std::string rtl_plugin;
-#endif
       /// true when compiler is based on clang/llvm
       bool is_clang;
 

@@ -113,7 +113,7 @@ AllocationInformation::InitializeMuxDB(const AllocationInformationConstRef alloc
                temp_portsize_parameters = parameters_pairs[1];
                break;
             }
-            else if(boost::lexical_cast<unsigned int>(parameters_pairs[0]) == module_prec)
+            else if(static_cast<unsigned>(std::stoul(parameters_pairs[0])) == module_prec)
             {
                temp_portsize_parameters = parameters_pairs[1];
                break;
@@ -138,7 +138,7 @@ AllocationInformation::InitializeMuxDB(const AllocationInformationConstRef alloc
                {
                   cur_area = a_m->get_area_value();
                }
-               auto n_inputs_value = boost::lexical_cast<unsigned int>(n_inputs);
+               auto n_inputs_value = static_cast<unsigned>(std::stoul(n_inputs));
                mux_area_db[module_prec][n_inputs_value] = cur_area;
                auto* fu_cur_operation = GetPointer<operation>(fu_cur->get_operation(MUX_N_TO_1));
                mux_timing_db[module_prec][n_inputs_value] = fu_cur_operation->time_m->get_execution_time() *
@@ -236,8 +236,8 @@ AllocationInformation::InitializeDSPDB(const AllocationInformationConstRef alloc
          DSP_y_db.resize(n_elements);
          for(size_t index = 0; index < n_elements; ++index)
          {
-            DSP_x_db[index] = boost::lexical_cast<unsigned int>(DSPs_x_sizes_vec[index]);
-            DSP_y_db[index] = boost::lexical_cast<unsigned int>(DSPs_y_sizes_vec[index]);
+            DSP_x_db[index] = static_cast<unsigned>(std::stoul(DSPs_x_sizes_vec[index]));
+            DSP_y_db[index] = static_cast<unsigned>(std::stoul(DSPs_y_sizes_vec[index]));
          }
       }
    }
