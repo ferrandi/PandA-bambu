@@ -52,13 +52,21 @@
 #include "mdpi_debug.h"
 #include "mdpi_types.h"
 
+#ifndef __cplusplus
 #include <assert.h>
 #include <errno.h>
-#include <fcntl.h>
-#include <pthread.h>
 #include <stdatomic.h>
 #include <stdlib.h>
 #include <string.h>
+#else
+#include <atomic>
+#include <cassert>
+#include <cerrno>
+#include <cstdlib>
+#include <cstring>
+#define _Atomic(X) std::atomic<X>
+#endif
+#include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
 
