@@ -110,7 +110,7 @@ typedef enum
    MDPI_OP_TYPE_MEM_WRITE,
    MDPI_OP_TYPE_ARG_READ,
    MDPI_OP_TYPE_ARG_WRITE,
-   MDPI_OP_TYPE_ARG_SIZE
+   MDPI_OP_TYPE_PARAM_INFO
 } mdpi_op_type_t;
 
 typedef struct
@@ -129,6 +129,12 @@ typedef struct
 
 typedef struct
 {
+   uint8_t index;
+   uint64_t size;
+} __attribute__((aligned(8))) mdpi_op_param_t;
+
+typedef struct
+{
    mdpi_state_t state;
    uint8_t retval;
 } __attribute__((aligned(8))) mdpi_op_state_change_t;
@@ -140,6 +146,7 @@ typedef struct
    union
    {
       mdpi_op_state_change_t sc;
+      mdpi_op_param_t param;
       mdpi_op_mem_t mem;
       mdpi_op_arg_t arg;
    } payload;
