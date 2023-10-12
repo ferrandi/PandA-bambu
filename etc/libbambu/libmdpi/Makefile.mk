@@ -84,11 +84,11 @@ TB_OBJS := $(patsubst %.ll,$(OBJ_DIR)/%.tb.o,$(patsubst %.c,$(OBJ_DIR)/%.tb.o,$(
 
 override TB_CFLAGS := $(patsubst -fno-exceptions,,$(CFLAGS)) $(TB_CFLAGS) -I$(libmdpi_root)/include
 MDPI_CFLAGS := $(BEH_CFLAGS) # $(shell echo "$(CFLAGS)" | grep -oE '(-mx?[0-9]+)' | sed -E 's/-mx?/-DM/' | tr '[:lower:]' '[:upper:]')
-LIB_CFLAGS := $(MDPI_CFLAGS)
+LIB_CFLAGS := $(MDPI_CFLAGS) -std=c11
 DRIVER_CFLAGS := $(shell echo "$(TB_CFLAGS)" | grep -oE '(-mx?[0-9]+)')
 DRIVER_CFLAGS += $(shell echo "$(TB_CFLAGS)" | grep -oE '( (-I|-isystem) ?[^ ]+)' | tr '\n' ' ')
 DRIVER_CFLAGS += $(shell echo "$(TB_CFLAGS)" | grep -oE '( -D(\\.|[^ ])+)' | tr '\n' ' ')
-DRIVER_CFLAGS += $(MDPI_CFLAGS) -DMDPI_PARALLEL_VERIFICATION
+DRIVER_CFLAGS += $(MDPI_CFLAGS) -std=c++11 -DMDPI_PARALLEL_VERIFICATION
 
 COSIM_CFLAGS := -DLIBMDPI_DRIVER
 ifdef PP_SRCS
