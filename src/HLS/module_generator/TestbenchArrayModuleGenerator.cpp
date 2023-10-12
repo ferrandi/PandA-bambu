@@ -106,7 +106,7 @@ void TestbenchArrayModuleGenerator::InternalExec(std::ostream& out, structural_o
    }
    structural_manager::add_NP_functionality(mod_cir, NP_functionality::LIBRARY, np_library);
 
-   out << "parameter CHANNELS_NUMBER=" << n_channels << ",\n"
+   out << "localparam CHANNELS_NUMBER=" << n_channels << ",\n"
        << "  BITSIZE_address=BITSIZE_" << arg_name << "_address0,\n"
        << "  BITSIZE_dq=BITSIZE_" << arg_name << (if_dir == port_o::IN ? "_q0" : "_d0") << ",\n"
        << "  BITSIZE_ce=1,\n"
@@ -123,7 +123,7 @@ function automatic integer log2;
   `endif
 endfunction
 
-parameter )";
+localparam )";
 
    if(if_alignment == DesignAttributes.end())
    {
