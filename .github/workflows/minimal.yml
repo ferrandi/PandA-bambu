@@ -59,7 +59,7 @@ jobs:
     if: ${{needs.changes.outputs.ac_types == 'true'}}
     runs-on: [self-hosted]
     container:
-      image: bambuhls/dev:focal-23.04
+      image: bambuhls/dev:focal-23.10
       env:
         J: ${{env.host_jobs}}
     strategy:
