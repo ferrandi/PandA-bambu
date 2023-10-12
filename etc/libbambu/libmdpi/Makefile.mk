@@ -86,13 +86,13 @@ COSIM_OBJ := $(addprefix $(MDPI_OBJ_DIR)/, $(patsubst %.c,%.o,$(patsubst %.cpp,%
 
 override TB_CFLAGS := $(patsubst -fno-exceptions,,$(CFLAGS)) $(TB_CFLAGS) -I$(libmdpi_root)/include
 MDPI_CFLAGS := $(BEH_CFLAGS) # $(shell echo "$(CFLAGS)" | grep -oE '(-mx?[0-9]+)' | sed -E 's/-mx?/-DM/' | tr '[:lower:]' '[:upper:]')
-LIB_CFLAGS := $(MDPI_CFLAGS) -std=c11
+LIB_CFLAGS := $(MDPI_CFLAGS) $(shell if basename $(BEH_CC) | grep -q '++'; then echo -std=c++11; else echo -std=c11; fi)
 DRIVER_CFLAGS := $(shell echo "$(TB_CFLAGS)" | grep -oE '(-mx?[0-9]+)')
 DRIVER_CFLAGS += $(shell echo "$(TB_CFLAGS)" | grep -oE '( (-I|-isystem) ?[^ ]+)' | tr '\n' ' ')
 DRIVER_CFLAGS += $(shell echo "$(TB_CFLAGS)" | grep -oE '( -D(\\.|[^ ])+)' | tr '\n' ' ')
 DRIVER_CFLAGS += $(MDPI_CFLAGS) -std=c++11 -DMDPI_PARALLEL_VERIFICATION
 
-COSIM_CFLAGS := -DLIBMDPI_DRIVER
+COSIM_CFLAGS := $(MDPI_CFLAGS) $(CFLAGS) -DLIBMDPI_DRIVER
 ifdef PP_SRC
 	ifneq ($(TOP_FNAME),main)
 		$(call check_defined, MPPTOP_FNAME)
@@ -165,7 +165,7 @@ $(PP_OBJ): $(PP_SRC)
 
 $(COSIM_OBJ): $(COSIM_SRC)
 	@echo "Compiling $(notdir $<)"
-	@$(CC) $(CFLAGS) $(MDPI_CFLAGS) $(COSIM_CFLAGS) -fPIC -c -o $@ $<
+	@$(CC) $(COSIM_CFLAGS) -fPIC -c -o $@ $<
 
 $(DRIVER_OBJ): $(DRIVER_SRC)
 	@echo "Compiling $(notdir $<)"
