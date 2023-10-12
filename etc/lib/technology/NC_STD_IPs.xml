@@ -26,6 +26,7 @@ endfunction
 
 import &quot;DPI-C&quot; function void m_getarg(inout logic [127:0] data, input int unsigned index);
 import &quot;DPI-C&quot; function void m_setarg(input logic [127:0] data, input int unsigned index);
+import &quot;DPI-C&quot; function int unsigned m_getptrargsize(input int unsigned index);
 
 function automatic [BITSIZE_data-1:0] getarg(input int unsigned index);
   automatic reg [127:0] data = 0;
@@ -37,6 +38,10 @@ function automatic ptr_t getptrarg(input int unsigned index);
   automatic reg [127:0] data = 0;
   m_getarg(data, index);
   return data[$bits(ptr_t)-1:0];
+endfunction
+
+function automatic int unsigned getptrargsize(input int unsigned index);
+  return m_getptrargsize(index);
 endfunction
 
 function automatic void setarg(input logic [BITSIZE_data-1:0] data, input int unsigned index);

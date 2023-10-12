@@ -50,6 +50,7 @@ EXTERN_C EXPORT int m_fini();
 
 EXTERN_C EXPORT void m_getarg(svLogicVecVal* data, unsigned int index);
 EXTERN_C EXPORT void m_setarg(CONSTARG svLogicVecVal* data, unsigned int index);
+EXTERN_C EXPORT unsigned int m_getptrargsize(unsigned int index);
 
 EXTERN_C EXPORT void m_read8(svLogicVecVal* data, ptr_t addr);
 EXTERN_C EXPORT void m_read16(svLogicVecVal* data, ptr_t addr);
