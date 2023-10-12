@@ -1942,8 +1942,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
    else
    {
 #ifndef NDEBUG
-      const bool debug_condition =
-          static_cast<int>(compiler_target) & static_cast<int>(compatible_compilers);
+      const bool debug_condition = static_cast<int>(compiler_target) & static_cast<int>(compatible_compilers);
       THROW_ASSERT(debug_condition,
                    "Required compiler is not among the compatible one: " + STR(static_cast<int>(compiler_target)) +
                        " vs " + STR(static_cast<int>(compatible_compilers)));
@@ -2786,7 +2785,7 @@ size_t CompilerWrapper::GetSourceCodeLines(const ParameterConstRef Param)
       std::string line;
       getline(output_file, line);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Got " + line);
-      return boost::lexical_cast<size_t>(line);
+      return std::stoul(line);
    }
    else
    {
@@ -3101,7 +3100,8 @@ void CompilerWrapper::ReadXml(const std::string& file_name)
                            THROW_ERROR("Optimization flag node without name or value");
                         }
                         optimization_flags[optimization_flag_element->get_attribute(STR_XML_gcc_name)->get_value()] =
-                            boost::lexical_cast<bool>(optimization_flag_element->get_attribute(STR_XML_gcc_value));
+                            static_cast<bool>(
+                                std::stoi(optimization_flag_element->get_attribute(STR_XML_gcc_value)->get_value()));
                      }
                   }
                   else if(optimizations_child_element->get_name() == STR_XML_gcc_optimization_values)
@@ -3338,7 +3338,7 @@ size_t CompilerWrapper::ConvertVersion(const std::string& version)
    for(size_t index = version_tokens.size(); index > 0; index--)
    {
       const auto shifter = static_cast<size_t>(pow(100, static_cast<double>(version_tokens.size() - index)));
-      const auto value = boost::lexical_cast<size_t>(version_tokens[index - 1]);
+      const auto value = std::stoul(version_tokens[index - 1]);
       ret_value += (value * shifter);
    }
    return ret_value;

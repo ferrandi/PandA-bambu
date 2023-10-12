@@ -46,9 +46,6 @@
 ///Autoheader include
 #include "config_HAVE_BISON_2_7_OR_GREATER.hpp"
 
-///boost include
-#include <boost/lexical_cast.hpp>
-
 ///intermediate_representations/aadl_asn
 #include "aadl_information.hpp"
 #include "asn_type.hpp"
@@ -316,7 +313,7 @@ named_number : identifier /*NOTE: this rule is not present in the asn grammar */
              {
                 $$ = AsnParserNode();
                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, data->debug_level, "---Read " + $1.strg + "(" + $3.strg + ")");
-                $$.named_number_list.push_back(std::pair<std::string, unsigned int>($1.strg, boost::lexical_cast<unsigned int>($3.strg)));
+                $$.named_number_list.push_back(std::pair<std::string, unsigned int>($1.strg, static_cast<unsigned>(std::stoul($3.strg))));
              }
              ;
 

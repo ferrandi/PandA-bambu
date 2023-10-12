@@ -102,7 +102,8 @@ class InterfaceInfer : public ApplicationFrontendFlowStep
                                      const interface_info& info, bool IO_port) const;
 
    void create_resource_array(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
-                              const std::string& bundle_name, const interface_info& info, unsigned int arraySize) const;
+                              const std::string& bundle_name, const interface_info& info,
+                              unsigned long long arraySize) const;
 
    void create_resource_m_axi(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
                               const std::string& arg_name, const std::string& bundle_name, const interface_info& info,

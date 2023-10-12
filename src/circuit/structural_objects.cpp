@@ -68,7 +68,6 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/iterator/iterator_traits.hpp>
-#include <boost/lexical_cast.hpp>
 #include <climits>
 #include <iostream>
 #include <list>
@@ -1682,7 +1681,7 @@ void port_o::xload(const xml_element* Enode, structural_objectRef _owner, struct
    }
 
    structural_objectRef obj;
-   unsigned int minBit = UINT_MAX;
+   auto minBit = std::numeric_limits<unsigned>::max();
    // Recourse through child nodes:
    const xml_node::node_list list = Enode->get_children();
    for(const auto& iter : list)
@@ -1702,12 +1701,12 @@ void port_o::xload(const xml_element* Enode, structural_objectRef _owner, struct
          obj = structural_objectRef(new port_o(CM->get_debug_level(), _owner, dir, port_o_K));
          obj->xload(EnodeC, obj, CM);
          ports.push_back(obj);
-         auto _id = boost::lexical_cast<unsigned int>(obj->get_id());
+         auto _id = static_cast<unsigned>(std::stoul(obj->get_id()));
          minBit = std::min(minBit, _id);
          port_type = port_vector_o_K;
       }
    }
-   if(minBit == UINT_MAX)
+   if(minBit == std::numeric_limits<unsigned>::max())
    {
       lsb = 0;
    }
@@ -2744,7 +2743,7 @@ void signal_o::xload(const xml_element* Enode, structural_objectRef _owner, stru
       set_id(_id);
    }
    // Recourse through child nodes:
-   unsigned int minBit = UINT_MAX;
+   auto minBit = std::numeric_limits<unsigned>::max();
 
    const xml_node::node_list list = Enode->get_children();
    for(const auto& iter : list)
@@ -2759,12 +2758,12 @@ void signal_o::xload(const xml_element* Enode, structural_objectRef _owner, stru
          structural_objectRef obj = structural_objectRef(new signal_o(CM->get_debug_level(), _owner, signal_o_K));
          obj->xload(EnodeC, obj, CM);
          signals_.push_back(obj);
-         auto sig_id = boost::lexical_cast<unsigned int>(obj->get_id());
+         auto sig_id = static_cast<unsigned>(std::stoul(obj->get_id()));
          minBit = std::min(minBit, sig_id);
          signal_type = signal_vector_o_K;
       }
    }
-   if(minBit == UINT_MAX)
+   if(minBit == std::numeric_limits<unsigned>::max())
    {
       lsb = 0;
    }
@@ -4254,7 +4253,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          {
             std::string multi_unit_multiplicitySTR = text->get_content();
             xml_node::convert_escaped(multi_unit_multiplicitySTR);
-            multi_unit_multiplicity = boost::lexical_cast<unsigned>(multi_unit_multiplicitySTR);
+            multi_unit_multiplicity = static_cast<unsigned>(std::stoul(multi_unit_multiplicitySTR));
          }
       }
       else if(EnodeC->get_name() == GET_CLASS_NAME(keep_hierarchy))
@@ -4268,7 +4267,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          {
             std::string keep_hierarchySTR = text->get_content();
             xml_node::convert_escaped(keep_hierarchySTR);
-            keep_hierarchy = boost::lexical_cast<bool>(keep_hierarchySTR);
+            keep_hierarchy = static_cast<bool>(std::stoi(keep_hierarchySTR));
          }
       }
       else
@@ -4947,7 +4946,7 @@ void channel_o::xload(const xml_element* Enode, structural_objectRef _owner, str
          auto it_end = Alist.end();
          for(auto it = Alist.begin(); it != it_end; ++it)
          {
-            impl_interfaces[boost::lexical_cast<unsigned int>((*it)->get_name().c_str() + 2)] = (*it)->get_value();
+            impl_interfaces[static_cast<unsigned>(std::stoul((*it)->get_name().substr(2)))] = (*it)->get_value();
          }
       }
    }

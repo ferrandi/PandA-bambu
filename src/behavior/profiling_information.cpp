@@ -51,7 +51,6 @@
 #include "xml_helper.hpp"                 // for WRITE_XNVM2
 #include <boost/graph/adjacency_list.hpp> // for adjacency_list, source
 #include <boost/graph/filtered_graph.hpp> // for source, target
-#include <boost/lexical_cast.hpp>         // for lexical_cast
 #include <string>                         // for string, operator+
 #include <utility>                        // for pair
 

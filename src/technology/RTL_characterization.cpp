@@ -837,7 +837,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
          NUMBER_OF_BYTES_ALLOCATED = NUMBER_OF_BYTES_ALLOCATED / 16;
       }
       specialize_fu(spec_module, prec, BUS_DATA_BITSIZE, BUS_ADDR_BITSIZE, BUS_SIZE_BITSIZE, BUS_TAG_BITSIZE,
-                    n_portsize_parameters > 0 ? boost::lexical_cast<unsigned int>(portsize_parameters[portsize_index]) :
+                    n_portsize_parameters > 0 ? static_cast<unsigned>(std::stoul(portsize_parameters[portsize_index])) :
                                                 PORT_VECTOR_N_PORTS);
 
       if(fu_base_name == "MC_FU") /// add further specializations for this module
@@ -1253,7 +1253,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
             new_op->time_m->set_initiation_time(ii_default);
 
             unsigned int n_cycles;
-            n_cycles = boost::lexical_cast<unsigned int>(pipe_parameters[stage_index]);
+            n_cycles = static_cast<unsigned>(std::stoul(pipe_parameters[stage_index]));
             new_op->pipe_parameters = pipe_parameters[stage_index];
 
             if(n_cycles > 0 && PipelineDepth != 0)

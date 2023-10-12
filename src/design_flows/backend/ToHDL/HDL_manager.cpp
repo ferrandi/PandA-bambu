@@ -66,7 +66,6 @@
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 
-#include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
 #include <fstream>
 #include <iosfwd>
@@ -1192,7 +1191,7 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
       {
          std::vector<std::string> AssignPair = SplitString(assign, "=");
          THROW_ASSERT(AssignPair.size() == 2, "malformed FSM description " + STR(AssignPair.size()));
-         auto out = boost::lexical_cast<unsigned int>(AssignPair.at(0));
+         auto out = static_cast<unsigned>(std::stoul(AssignPair.at(0)));
          std::vector<std::string> inStateVec = SplitString(AssignPair.at(1), ",");
          for(const auto& inState : inStateVec)
          {
@@ -1201,7 +1200,7 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
             std::vector<std::string> inVec = SplitString(StateInsPair.at(1), "<");
             for(const auto& in : inVec)
             {
-               auto in_val = boost::lexical_cast<unsigned int>(in);
+               auto in_val = static_cast<unsigned>(std::stoul(in));
                bypass_signals[out][StateInsPair.at(0)].insert(in_val);
             }
          }

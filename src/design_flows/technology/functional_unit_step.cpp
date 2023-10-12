@@ -180,23 +180,23 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                   {
                      for(const auto& pipe_param : pipe_params)
                      {
-                        pipe_parameters[boost::lexical_cast<unsigned int>(DSP_y.first)].push_back(pipe_param);
-                        precision.insert(boost::lexical_cast<unsigned int>(DSP_y.first));
+                        pipe_parameters[DSP_y.first].push_back(pipe_param);
+                        precision.insert(DSP_y.first);
                      }
                   }
                }
-               else if(precision.find(boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])) !=
+               else if(precision.find(static_cast<unsigned>(std::stoul(precision_pipe_param_pair[0]))) !=
                        precision.end())
                {
                   for(const auto& pipe_param : pipe_params)
                   {
                      if(std::find(
-                            pipe_parameters[boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])].begin(),
-                            pipe_parameters[boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])].end(),
+                            pipe_parameters[static_cast<unsigned>(std::stoul(precision_pipe_param_pair[0]))].begin(),
+                            pipe_parameters[static_cast<unsigned>(std::stoul(precision_pipe_param_pair[0]))].end(),
                             pipe_param) ==
-                        pipe_parameters[boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])].end())
+                        pipe_parameters[static_cast<unsigned>(std::stoul(precision_pipe_param_pair[0]))].end())
                      {
-                        pipe_parameters[boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])].push_back(
+                        pipe_parameters[static_cast<unsigned>(std::stoul(precision_pipe_param_pair[0]))].push_back(
                             pipe_param);
                      }
                   }
@@ -232,20 +232,20 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                      }
                   }
                }
-               else if(precision.find(boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])) !=
+               else if(precision.find(static_cast<unsigned>(std::stoul(precision_portsize_param_pair[0]))) !=
                        precision.end())
                {
                   for(const auto& portsize_param : portsize_params)
                   {
                      if(std::find(
-                            portsize_parameters[boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])]
+                            portsize_parameters[static_cast<unsigned>(std::stoul(precision_portsize_param_pair[0]))]
                                 .begin(),
-                            portsize_parameters[boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])]
+                            portsize_parameters[static_cast<unsigned>(std::stoul(precision_portsize_param_pair[0]))]
                                 .end(),
                             portsize_param) ==
-                        portsize_parameters[boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])].end())
+                        portsize_parameters[static_cast<unsigned>(std::stoul(precision_portsize_param_pair[0]))].end())
                      {
-                        portsize_parameters[boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])]
+                        portsize_parameters[static_cast<unsigned>(std::stoul(precision_portsize_param_pair[0]))]
                             .push_back(portsize_param);
                      }
                   }
@@ -533,8 +533,8 @@ void FunctionalUnitStep::Initialize()
       std::vector<std::string> DSPs_y_sizes_vec = SplitString(DSPs_y_sizes, ",");
       for(size_t DSP_index = 0; DSP_index < DSPs_y_sizes_vec.size(); DSP_index++)
       {
-         const auto DSPs_x_value = boost::lexical_cast<unsigned int>(DSPs_x_sizes_vec[DSP_index]);
-         const auto DSPs_y_value = boost::lexical_cast<unsigned int>(DSPs_y_sizes_vec[DSP_index]);
+         const auto DSPs_x_value = static_cast<unsigned>(std::stoul(DSPs_x_sizes_vec[DSP_index]));
+         const auto DSPs_y_value = static_cast<unsigned>(std::stoul(DSPs_y_sizes_vec[DSP_index]));
          DSP_y_to_DSP_x[DSPs_y_value] = DSPs_x_value;
       }
    }

@@ -70,7 +70,6 @@
 #include "utility.hpp"
 #include "xml_helper.hpp"
 
-#include <boost/lexical_cast.hpp>
 #include <utility>
 
 #include "op_graph.hpp"

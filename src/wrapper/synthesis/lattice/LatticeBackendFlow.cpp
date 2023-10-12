@@ -171,7 +171,7 @@ void LatticeBackendFlow::xparse_utilization(const std::string& fn)
                            {
                               LOAD_XVM(value, nodeIt);
                               boost::replace_all(value, ",", "");
-                              design_values[stringID] = boost::lexical_cast<double>(value);
+                              design_values[stringID] = std::stod(value);
                            }
                         }
                      }
@@ -250,11 +250,11 @@ void LatticeBackendFlow::create_sdc(const DesignParametersRef dp)
 
    std::string sdc_filename = out_dir + "/" + dp->component_name + ".ldc";
    std::ofstream sdc_file(sdc_filename.c_str());
-   if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
+   if(!static_cast<bool>(std::stoi(dp->parameter_values[PARAM_is_combinational])))
    {
       sdc_file << "create_clock -period " + dp->parameter_values[PARAM_clk_period] + " -name " + clock +
                       " [get_ports " + clock + "]\n";
-      if((boost::lexical_cast<bool>(dp->parameter_values[PARAM_connect_iob]) ||
+      if((static_cast<bool>(std::stoi(dp->parameter_values[PARAM_connect_iob])) ||
           (Param->IsParameter("profile-top") && Param->GetParameter<int>("profile-top") == 1)) &&
          !Param->isOption(OPT_backend_sdc_extensions))
       {

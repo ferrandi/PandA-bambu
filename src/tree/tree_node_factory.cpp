@@ -560,7 +560,7 @@ void tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_no
          else if(tree_node_schema.find(TOK(TOK_OPERATOR)) != tree_node_schema.end())
          {
             cur = tree_nodeRef(new identifier_node(
-                node_id, boost::lexical_cast<bool>(tree_node_schema.find(TOK(TOK_OPERATOR))->second), &TM));
+                node_id, static_cast<bool>(std::stoi(tree_node_schema.find(TOK(TOK_OPERATOR))->second)), &TM));
          }
          else
          {
@@ -655,7 +655,7 @@ void tree_node_factory::operator()(const attr* obj, unsigned int& mask)
 #define SET_NODE_ID_OPT(token, field, type)                                                        \
    if(tree_node_schema.find(TOK(token)) != tree_node_schema.end())                                 \
    {                                                                                               \
-      auto node_id = boost::lexical_cast<unsigned int>(tree_node_schema.find(TOK(token))->second); \
+      auto node_id = static_cast<unsigned>(std::stoul(tree_node_schema.find(TOK(token))->second)); \
       dynamic_cast<type*>(curr_tree_node_ptr)->field = TM.GetTreeReindex(node_id);                 \
    }
 
@@ -663,7 +663,7 @@ void tree_node_factory::operator()(const attr* obj, unsigned int& mask)
    {                                                                                               \
       THROW_ASSERT(tree_node_schema.find(TOK(token)) != tree_node_schema.end(),                    \
                    std::string("tree_node_schema must have ") + STOK(token) + " value");           \
-      auto node_id = boost::lexical_cast<unsigned int>(tree_node_schema.find(TOK(token))->second); \
+      auto node_id = static_cast<unsigned>(std::stoul(tree_node_schema.find(TOK(token))->second)); \
       dynamic_cast<type*>(curr_tree_node_ptr)->field = TM.GetTreeReindex(node_id);                 \
    }
 
@@ -699,9 +699,9 @@ void tree_node_factory::operator()(const srcp* obj, unsigned int& mask)
    std::string::size_type colon_pos = srcp_str.rfind(':', colon_pos2 - 1);
    dynamic_cast<srcp*>(curr_tree_node_ptr)->include_name = srcp_str.substr(0, colon_pos);
    dynamic_cast<srcp*>(curr_tree_node_ptr)->line_number =
-       boost::lexical_cast<unsigned int>(srcp_str.substr(colon_pos + 1, colon_pos2 - colon_pos - 1));
+       static_cast<unsigned>(std::stoul(srcp_str.substr(colon_pos + 1, colon_pos2 - colon_pos - 1)));
    dynamic_cast<srcp*>(curr_tree_node_ptr)->column_number =
-       boost::lexical_cast<unsigned int>(srcp_str.substr(colon_pos2 + 1));
+       static_cast<unsigned>(std::stoul(srcp_str.substr(colon_pos2 + 1)));
 }
 
 void tree_node_factory::operator()(const decl_node* obj, unsigned int& mask)
@@ -783,7 +783,7 @@ void tree_node_factory::operator()(const type_node* obj, unsigned int& mask)
    if(tree_node_schema.find(TOK(TOK_QUAL)) != tree_node_schema.end())
    {
       dynamic_cast<type_node*>(curr_tree_node_ptr)->qual = static_cast<TreeVocabularyTokenTypes_TokenEnum>(
-          boost::lexical_cast<unsigned int>(tree_node_schema.find(TOK(TOK_QUAL))->second));
+          static_cast<unsigned>(std::stoul(tree_node_schema.find(TOK(TOK_QUAL))->second)));
    }
    SET_NODE_ID_OPT(TOK_NAME, name, type_node);
    SET_NODE_ID_OPT(TOK_UNQL, unql, type_node);

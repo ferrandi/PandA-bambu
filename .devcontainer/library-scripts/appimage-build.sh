@@ -16,6 +16,11 @@ pkg_dir="$1"
 shift
 out_file="$1"
 shift
+skip_package=0
+if [ "$1" == "--skip-package" ]; then
+   skip_package=1
+   shift
+fi
 config_args="$@"
 
 parallel=""
@@ -37,8 +42,9 @@ fi
 echo "Build PandA Bambu HLS"
 make --directory=${build_dir} ${parallel} install-strip DESTDIR="${pkg_dir}"
 
-echo "Generating AppImage..."
-mkdir -p "$(dirname ${out_file})"
-ARCH=x86_64 appimagetool ${pkg_dir} ${out_file} 2> /dev/null
-
+if [ "${skip_package}" != "1" ]; then
+   echo "Generating AppImage..."
+   mkdir -p "$(dirname ${out_file})"
+   ARCH=x86_64 appimagetool ${pkg_dir} ${out_file} 2> /dev/null
+fi
 echo "AppImage built succesfully"

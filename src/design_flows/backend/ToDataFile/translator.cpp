@@ -395,7 +395,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
             {
                if(line.second.find(latex_column_format.source_name) != line.second.end())
                {
-                  total += boost::lexical_cast<long double>(line.second[latex_column_format.source_name]);
+                  total += std::stold(line.second[latex_column_format.source_name]);
                   found = true;
                }
             }
@@ -414,7 +414,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
             {
                if(line.second.find(latex_column_format.source_name) != line.second.end())
                {
-                  total += boost::lexical_cast<long double>(line.second[latex_column_format.source_name]);
+                  total += std::stold(line.second[latex_column_format.source_name]);
                   found = true;
                }
             }
@@ -443,7 +443,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
                std::stringstream modified_string_stream;
                modified_string_stream.setf(std::ios::fixed, std::ios::floatfield);
                modified_string_stream.precision(column.precision);
-               modified_string_stream << boost::lexical_cast<long double>((line.second)[column.source_name]);
+               modified_string_stream << std::stold((line.second)[column.source_name]);
                (line.second)[column.source_name] = modified_string_stream.str();
             }
          }
@@ -452,7 +452,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
             std::stringstream modified_string_stream;
             modified_string_stream.setf(std::ios::fixed, std::ios::floatfield);
             modified_string_stream.precision(column.precision);
-            modified_string_stream << boost::lexical_cast<long double>(totals[column.source_name]);
+            modified_string_stream << std::stold(totals[column.source_name]);
             totals[column.source_name] = modified_string_stream.str();
          }
       }
@@ -476,9 +476,9 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
             for(column_to_be_compared = columns_to_be_compared.begin();
                 column_to_be_compared != column_to_be_compared_end; ++column_to_be_compared)
             {
-               if(not LatexColumnFormat::Compare(boost::lexical_cast<long double>(line.second[column.source_name]),
+               if(not LatexColumnFormat::Compare(std::stold(line.second[column.source_name]),
                                                  column.comparison_operator,
-                                                 boost::lexical_cast<long double>(line.second[*column_to_be_compared])))
+                                                 std::stold(line.second[*column_to_be_compared])))
                {
                   bold = false;
                   break;
@@ -951,7 +951,7 @@ std::string Translator::get_exponential_notation(const std::string& input) const
    std::ostringstream output;
    output << std::setiosflags(std::ios::scientific);
    output << std::setprecision(Param->getOption<int>(OPT_precision));
-   output << boost::lexical_cast<long double>(input);
+   output << std::stold(input);
    std::string result = output.str();
    std::string mantissa = result.substr(0, result.find('e'));
    std::string exponent = result.substr(result.find('e') + 1);
@@ -987,7 +987,7 @@ void Translator::read_column_formats(const XMLDomParserRef parser, std::list<Lat
    THROW_ASSERT(root->get_name() == STR_XML_latex_table_root, "XML root node not correct: " + root->get_name());
    if(CE_XVM(max_column_size, root))
    {
-      max_column_size = boost::lexical_cast<size_t>(LOAD_XVM(max_column_size, root));
+      LOAD_XVM(max_column_size, root);
    }
    const xml_node::node_list list = root->get_children();
    xml_node::node_list::const_iterator child, child_end = list.end();

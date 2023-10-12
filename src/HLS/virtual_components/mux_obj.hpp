@@ -46,7 +46,6 @@
 #define MUX_OBJ_HPP
 
 #include "refcount.hpp"
-#include <boost/lexical_cast.hpp>
 
 #include "generic_obj.hpp"
 #include "graph.hpp"

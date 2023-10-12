@@ -63,8 +63,6 @@
 #include "utility.hpp"
 #include "xml_helper.hpp"
 
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 #include <filesystem>
 
 const unsigned int technology_manager::XML = 1 << 0;

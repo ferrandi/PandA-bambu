@@ -1,4 +1,4 @@
-ARG VARIANT=focal-23.04
+ARG VARIANT=focal-23.10
 
 FROM bambuhls/yosys:${VARIANT} as yosys
 FROM bambuhls/iverilog:${VARIANT} as iverilog

@@ -44,12 +44,11 @@
 
 #ifndef AUGMENTED_VECTOR_HPP
 #define AUGMENTED_VECTOR_HPP
-#include "exceptions.hpp"         // for THROW_ASSERT
-#include <boost/lexical_cast.hpp> // for lexical_cast
-#include <cmath>                  // for sqrtl
-#include <cstddef>                // for size_t, ptrdiff_t
-#include <string>                 // for string
-#include <vector>                 // for vector
+#include "exceptions.hpp" // for THROW_ASSERT
+#include <cmath>          // for sqrtl
+#include <cstddef>        // for size_t, ptrdiff_t
+#include <string>         // for string
+#include <vector>         // for vector
 
 template <class T>
 class AugmentedVector

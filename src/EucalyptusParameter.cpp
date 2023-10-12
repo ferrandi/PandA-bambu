@@ -208,7 +208,7 @@ int EucalyptusParameter::Exec()
          }
          case OPT_MENTOR_OPTIMIZER:
          {
-            setOption(OPT_mentor_optimizer, boost::lexical_cast<bool>(optarg));
+            setOption(OPT_mentor_optimizer, static_cast<bool>(std::stoi(optarg)));
             break;
          }
          case OPT_NANOXPLORE_ROOT:

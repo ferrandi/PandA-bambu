@@ -47,16 +47,14 @@
 #include "Parameter.hpp"         // for OPT_dot_directory
 #include "behavioral_helper.hpp" // for BehavioralHelper
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-#include "exceptions.hpp"                     // for THROW_ASSERT, THROW...
-#include "function_behavior.hpp"              // for FunctionBehavior
-#include "graph.hpp"                          // for graph, Cget_edge_info
-#include "loops.hpp"                          // for FunctionBehaviorRef
-#include "string_manipulation.hpp"            // for add_escape
-#include <boost/iterator/iterator_facade.hpp> // for operator!=, operator++
-#include <boost/lexical_cast.hpp>             // for lexical_cast
-#include <filesystem>                         // for create_directories
-#include <ostream>                            // for operator<<, ostream
-#include <utility>                            // for pair
+#include "exceptions.hpp"          // for THROW_ASSERT, THROW...
+#include "function_behavior.hpp"   // for FunctionBehavior
+#include "graph.hpp"               // for graph, Cget_edge_info
+#include "loops.hpp"               // for FunctionBehaviorRef
+#include "string_manipulation.hpp" // for add_escape
+#include <filesystem>              // for create_directories
+#include <ostream>                 // for operator<<, ostream
+#include <utility>                 // for pair
 
 FunctionInfo::FunctionInfo() : nodeID(0)
 {

@@ -54,7 +54,6 @@
 #include "tree_manager.hpp"
 #include "utility.hpp"
 
-#include <boost/lexical_cast.hpp>
 #include <csignal>
 #include <cstdlib>
 #include <filesystem>

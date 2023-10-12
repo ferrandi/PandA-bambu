@@ -300,7 +300,6 @@ panda_USE_LIB_PARSER=no;
 panda_USE_LIB_POLIXML=no;
 panda_USE_LIB_PRAGMA=no;
 panda_USE_LIB_RTL_CHARACTERIZATION=no;
-panda_USE_LIB_SDC_SOLVER=no;
 panda_USE_LIB_SIMULATION_WRAPPER=no;
 panda_USE_LIB_SYNTHESIS_WRAPPER=no;
 panda_USE_LIB_TECHNOLOGY=no;
@@ -312,6 +311,7 @@ panda_USE_LIB_UTILITY=no;
 panda_USE_LIB_VCD=no;
 panda_USE_LIB_VCD_PARSER=no;
 panda_USE_LIB_WRAPPER=no;
+panda_USE_LIB_SDC_SOLVER=no;
 
 MIN_GCC_VERSION=0.0.0
 MAX_GCC_VERSION=9.9.9
@@ -378,11 +378,12 @@ if test "x$panda_USE_BAMBU" = xyes; then
   panda_USE_LIB_VCD=yes;
   panda_USE_LIB_VCD_PARSER=yes;
   panda_USE_PARAMETER=yes;
-  panda_USE_LIB_SDC_SOLVER=yes;
   panda_USE_SPIDER=yes;
   panda_USE_SYNTHESIS_TOOL=yes;
   panda_USE_TASTE=yes;
   panda_USE_TREE_PANDA_GCC=yes;
+  panda_USE_LIB_SDC_SOLVER=yes;
+
   AS_VERSION_COMPARE($MIN_GCC_VERSION, [4.5.0], [MIN_GCC_VERSION=4.5.0],,)
   AS_VERSION_COMPARE($MAX_GCC_VERSION, [9.0.0],,,[MAX_GCC_VERSION=9.0.0])
   AS_VERSION_COMPARE($MIN_CLANG_VERSION, [4.0.0], [MIN_CLANG_VERSION=4.0.0],,)
@@ -602,7 +603,7 @@ if test "x$panda_USE_ABSEIL" = xyes; then
    $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/abseil-cpp $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'"
    if test $? != 0; then
       AC_MSG_ERROR("Error in abseil configuration")
-   fi
+fi
    AC_DEFINE(HAVE_ABSEIL, 1, "Define if abseil is used")
    ABSEIL_DIR="$TOPSRCDIR/ext/abseil-cpp"
    ABSEIL_OBJDIR="ext/abseil-cpp"
@@ -622,7 +623,7 @@ if test "x$panda_USE_COIN_OR" = xyes; then
    $TOPSRCDIR/etc/macros/panda_config_subdir.sh ext/Coin-Cbc $ac_configure_args "'CXXFLAGS=${CXXFLAGS_EXT}'" "'CFLAGS=${CFLAGS_EXT}'" "'LDFLAGS=$LDFLAGS'"
    if test $? != 0; then
       AC_MSG_ERROR("Error in Coin-Cbc configuration")
-   fi
+fi
    AC_DEFINE(HAVE_COIN_OR, 1, "Define if coin-or is used")
    COIN_OR_DIR="$TOPSRCDIR/Coin-Cbc"
    COIN_OR_OBJDIR="ext/Coin-Cbc"

@@ -77,7 +77,6 @@
 
 #include "custom_set.hpp"
 #include <algorithm>
-#include <boost/lexical_cast.hpp>
 #include <list>
 #include <tuple>
 #include <utility>

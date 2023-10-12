@@ -464,8 +464,7 @@ DesignFlowStep_Status Evaluation::Exec()
       {
          THROW_ASSERT(HLSMgr->evaluations.find("TOTAL_CYCLES") != HLSMgr->evaluations.end(), "Cycles value not found");
          THROW_ASSERT(HLSMgr->evaluations.find("FREQUENCY") != HLSMgr->evaluations.end(), "Frequency value not found");
-         value = STR(HLSMgr->evaluations.find("TOTAL_CYCLES")->second /
-                     HLSMgr->evaluations.find("FREQUENCY")->second);
+         value = STR(HLSMgr->evaluations.find("TOTAL_CYCLES")->second / HLSMgr->evaluations.find("FREQUENCY")->second);
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Tot. Time                : " + value);
       }
       else

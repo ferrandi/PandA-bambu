@@ -286,7 +286,7 @@ void flopoco_wrapper::add_FU(const std::string& FU_type, unsigned int FU_prec_in
    if(pipe_parameter != "" && pipe_parameter != "0")
    {
       target->setPipelined();
-      freq = boost::lexical_cast<double>(pipe_parameter);
+      freq = std::stod(pipe_parameter);
    }
    else
    {

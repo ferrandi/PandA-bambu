@@ -1,6 +1,6 @@
 
-FROM bambuhls/verilator:focal-23.04 as verilator
-FROM bambuhls/dev-yosys:focal-23.04 as base
+FROM bambuhls/verilator:focal-23.10 as verilator
+FROM bambuhls/dev-yosys:focal-23.10 as base
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt update && apt install -y --no-install-recommends \
    python3-defusedxml python3-distutils \

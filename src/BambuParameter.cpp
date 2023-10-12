@@ -85,7 +85,6 @@
 #include "tree_helper.hpp"
 #include "utility.hpp"
 #include <algorithm>
-#include <boost/lexical_cast.hpp>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
@@ -1938,7 +1937,7 @@ int BambuParameter::Exec()
 #if HAVE_FROM_PRAGMA_BUILT
          case OPT_NUM_ACCELERATORS:
          {
-            auto num_acc = boost::lexical_cast<unsigned>(std::string(optarg));
+            auto num_acc = std::stoull(std::string(optarg));
             if((num_acc != 0) && ((num_acc & (num_acc - 1)) == 0))
             {
                setOption(OPT_num_accelerators, std::string(optarg));
@@ -1953,7 +1952,7 @@ int BambuParameter::Exec()
          {
             if(optarg)
             {
-               const auto num = boost::lexical_cast<unsigned int>(std::string(optarg));
+               const auto num = std::stoull(std::string(optarg));
                if(!num)
                {
                   throw "Bad parameters: number of contexts must be a positive integer.";
@@ -2051,7 +2050,7 @@ int BambuParameter::Exec()
          }
          case OPT_MENTOR_OPTIMIZER:
          {
-            setOption(OPT_mentor_optimizer, boost::lexical_cast<bool>(optarg));
+            setOption(OPT_mentor_optimizer, static_cast<bool>(std::stoi(optarg)));
             break;
          }
          case OPT_NANOXPLORE_ROOT:
@@ -2943,7 +2942,7 @@ void BambuParameter::CheckParameters()
             {
                THROW_ERROR("Simulation cannot be enabled with multiple top functions");
             }
-            if(isOption(OPT_device_string) && boost::starts_with(getOption<std::string>(OPT_device_string), "LFE"))
+            if(isOption(OPT_device_string) && starts_with(getOption<std::string>(OPT_device_string), "LFE"))
             {
                if(getOption<std::string>(OPT_simulator) == "VERILATOR")
                {
@@ -3603,7 +3602,7 @@ void BambuParameter::CheckParameters()
    {
       if(isOption(OPT_evaluation_objectives) &&
          getOption<std::string>(OPT_evaluation_objectives).find("AREA") != std::string::npos &&
-         isOption(OPT_device_string) && boost::starts_with(getOption<std::string>(OPT_device_string), "LFE") &&
+         isOption(OPT_device_string) && starts_with(getOption<std::string>(OPT_device_string), "LFE") &&
          !getOption<bool>(OPT_connect_iob))
       {
          THROW_WARNING("--connect-iob must be used when target is a Lattice board");
@@ -3615,7 +3614,7 @@ void BambuParameter::CheckParameters()
       setOption(OPT_bitvalue_ipa, false);
    }
 
-   if(boost::starts_with(getOption<std::string>(OPT_device_string), "nx"))
+   if(starts_with(getOption<std::string>(OPT_device_string), "nx"))
    {
       THROW_WARNING("Asynchronous memories are disabled by default when targeting NanoXplore devices");
       setOption(OPT_use_asynchronous_memories, false);
