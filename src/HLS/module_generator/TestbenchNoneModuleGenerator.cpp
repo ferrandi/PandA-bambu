@@ -89,7 +89,7 @@ void TestbenchNoneModuleGenerator::InternalExec(std::ostream& out, structural_ob
                                    structural_type_descriptorRef(new structural_type_descriptor("bool", port_size)));
       np_library += " " + port_name;
    };
-   out << "parameter BITSIZE_data=BITSIZE_" << arg_name << (in_suffix.size() ? in_suffix : out_suffix) << ";\n"
+   out << "localparam BITSIZE_data=BITSIZE_" << arg_name << (in_suffix.size() ? in_suffix : out_suffix) << ";\n"
        << R"(
 arg_utils a_utils();
 mem_utils #(BITSIZE_data) m_utils();

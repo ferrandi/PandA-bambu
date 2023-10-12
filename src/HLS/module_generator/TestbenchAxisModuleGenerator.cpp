@@ -106,17 +106,18 @@ function automatic integer log2;
   `endif
 endfunction
 
-parameter BITSIZE_data=BITSIZE_)"
-       << port_prefix << "_TDATA,\n";
+localparam BITSIZE_data=BITSIZE_)"
+       << port_prefix << "_TDATA,\n  ";
    if(if_alignment == DesignAttributes.end())
    {
-      out << "ALIGNMENT=log2(BITSIZE_data) > 3 ? (1<<(log2(BITSIZE_data)-3)) : 1;\n";
+      out << "ALIGNMENT=log2(BITSIZE_data) > 3 ? (1<<(log2(BITSIZE_data)-3)) : 1";
    }
    else
    {
-      out << "ALIGNMENT=" << if_alignment->second << ";\n";
+      out << "ALIGNMENT=" << if_alignment->second;
    }
-   out << R"(
+   out << R"(;
+
 arg_utils a_utils();
 mem_utils #(BITSIZE_data) m_utils();
 )";
