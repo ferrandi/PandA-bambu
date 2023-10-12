@@ -78,19 +78,9 @@ static mdpi_params_t __m_params;
 static std::map<uint8_t, size_t> __m_params_size;
 static std::map<ptr_t, bptr_t> __m_mmu;
 
-static void __ipc_exit(mdpi_state_t state, uint8_t retval)
+static FORCE_INLINE void __ipc_exit(mdpi_state_t state, uint8_t retval)
 {
-   mdpi_ipc_state_t expected;
-   do
-   {
-      expected = atomic_load(&__local_operation.handle);
-      if(expected == MDPI_IPC_STATE_WRITING)
-         continue;
-   } while(!atomic_compare_exchange_strong(&__local_operation.handle, &expected, MDPI_IPC_STATE_WRITING));
-   __local_operation.type = MDPI_OP_TYPE_STATE_CHANGE;
-   __local_operation.payload.sc.state = state;
-   __local_operation.payload.sc.retval = retval;
-   atomic_store(&__local_operation.handle, MDPI_IPC_STATE_DONE);
+   __ipc_exit(__LOCAL_ENTITY, MDPI_IPC_STATE_DONE, state, retval);
 }
 
 static void __ipc_abort()

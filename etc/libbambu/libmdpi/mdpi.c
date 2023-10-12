@@ -61,7 +61,9 @@
 
 #define byte_offset(i) ((i & 3) << 3)
 
-void __attribute__((constructor)) m_init()
+static int __fini_trigger = 1;
+
+void __attribute__((constructor)) __m_init()
 {
    debug("Initializing...\n");
 
@@ -72,6 +74,16 @@ void __attribute__((constructor)) m_init()
    debug("Initialization successful\n");
 }
 
+void __attribute__((destructor)) __m_fini()
+{
+   if(__fini_trigger)
+   {
+      __ipc_exit(__REMOTE_ENTITY, MDPI_IPC_STATE_REQUEST, MDPI_STATE_END, EXIT_SUCCESS);
+      __ipc_fini();
+      debug("Finalization successful\n");
+   }
+}
+
 int m_fini()
 {
    int retval;
@@ -79,6 +91,7 @@ int m_fini()
    assert(__remote_operation.type == MDPI_OP_TYPE_STATE_CHANGE && "Unexpected cosim end state.");
    retval = ((uint16_t)(__remote_operation.payload.sc.retval) << 8) | (__remote_operation.payload.sc.state & 0xFF);
 
+   __fini_trigger = 0;
    __ipc_fini();
 
    debug("Finalization successful\n");
