@@ -65,6 +65,7 @@ UINT_STRONG_TYPEDEF(ControlStep);
 CONSTREF_FORWARD_DECL(FunctionBehavior);
 enum class FunctionFrontendFlowStep_Movable;
 class HLS_manager;
+class OpVertexSet;
 CONSTREF_FORWARD_DECL(HLS_manager);
 CONSTREF_FORWARD_DECL(OpGraph);
 CONSTREF_FORWARD_DECL(Parameter);
@@ -235,7 +236,8 @@ class Schedule
     * Function that writes the dot file of the scheduling by using the AT&T direct graph representation.
     * @param file_name is the file name
     */
-   void WriteDot(const std::string& file_name) const;
+   void WriteDot(const std::string& file_name, OpGraphConstRef sub_op_graph = OpGraphConstRef(),
+                 OpVertexSet* opSet = nullptr) const;
 
    /**
     * Sets the speculation map

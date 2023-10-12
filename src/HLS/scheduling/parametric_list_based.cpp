@@ -2029,6 +2029,12 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
       exec(operations, executions_number == 1 ? ControlStep(0) : ctrl_steps);
 #endif
       ctrl_steps = HLS->Rsch->get_csteps();
+      if(parameters->getOption<bool>(OPT_print_dot))
+      {
+         auto subgraph = FB->CGetOpGraph(FunctionBehavior::FSDG, operations);
+         HLS->Rsch->WriteDot("HLS_scheduling_BB" + STR(bbg->CGetBBNodeInfo(*vi)->block->number) + ".dot", subgraph,
+                             &operations);
+      }
    }
    HLS->Rsch->set_spec(get_spec());
 
