@@ -432,7 +432,7 @@ static void __mem_write(const uint16_t size, bptr_t data, ptr_t addr)
    }
 }
 
-static uint16_t __arg_read(unsigned int index, bptr_t buffer)
+static uint16_t __arg_read(uint8_t index, bptr_t buffer)
 {
    debug("Parameter %u read\n", index);
    if(index >= __m_params.size)
@@ -446,7 +446,7 @@ static uint16_t __arg_read(unsigned int index, bptr_t buffer)
    return p->bitsize;
 }
 
-static void __arg_write(unsigned int index, bptr_t buffer)
+static void __arg_write(uint8_t index, bptr_t buffer)
 {
    debug("Parameter %u write\n", index);
    if(index >= __m_params.size)
@@ -459,15 +459,16 @@ static void __arg_write(unsigned int index, bptr_t buffer)
    memcpy(p->bits, buffer, byte_count);
 }
 
-static uint16_t __arg_size(unsigned int index)
+static uint64_t __param_size(uint8_t index)
 {
    debug("Parameter %u size\n", index);
-   if(index >= __m_params.size)
+   const std::map<uint8_t, size_t>::iterator mps_it = __m_params_size.find(index);
+   if(mps_it == __m_params_size.end())
    {
       error("Parameter index out of bounds: %u\n", index);
       __ipc_abort();
    }
-   return __m_params.prms[index].bitsize;
+   return mps_it->second;
 }
 
 static void* __m_driver_loop(void*)
@@ -501,8 +502,8 @@ static void* __m_driver_loop(void*)
             __arg_write(__local_operation.payload.arg.index, __local_operation.payload.arg.buffer);
             __ipc_complete(__LOCAL_ENTITY);
             break;
-         case MDPI_OP_TYPE_ARG_SIZE:
-            __local_operation.payload.arg.bitsize = __arg_size(__local_operation.payload.arg.index);
+         case MDPI_OP_TYPE_PARAM_INFO:
+            __local_operation.payload.param.size = __param_size(__local_operation.payload.param.index);
             __ipc_complete(__LOCAL_ENTITY);
             break;
          case MDPI_OP_TYPE_NONE:

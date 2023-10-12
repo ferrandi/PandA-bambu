@@ -136,21 +136,21 @@ unsigned int m_next(unsigned int state)
 
 unsigned int m_getptrargsize(unsigned int index)
 {
-   uint16_t bitsize;
+   uint64_t size;
    __ipc_reserve(__REMOTE_ENTITY);
-   __remote_operation.type = MDPI_OP_TYPE_ARG_SIZE;
-   __remote_operation.payload.arg.index = index;
+   __remote_operation.type = MDPI_OP_TYPE_PARAM_INFO;
+   __remote_operation.payload.param.index = index;
    __ipc_commit(__REMOTE_ENTITY);
    __ipc_wait(__REMOTE_ENTITY, MDPI_IPC_STATE_DONE);
-   if(__remote_operation.payload.arg.index != index)
+   if(__remote_operation.payload.param.index != index)
    {
       __ipc_release(__REMOTE_ENTITY);
       error("Parameter %u size read failed.\n", index);
       abort();
    }
-   bitsize = __remote_operation.payload.arg.bitsize;
+   size = __remote_operation.payload.param.size;
    __ipc_release(__REMOTE_ENTITY);
-   return bitsize;
+   return size;
 }
 
 void m_getarg(svLogicVecVal* data, unsigned int index)
@@ -195,6 +195,19 @@ void m_setarg(CONSTARG svLogicVecVal* data, unsigned int index)
    debug("Parameter %u write\n", index);
 
    bitsize = m_getptrargsize(index);
+   __ipc_reserve(__REMOTE_ENTITY);
+   __remote_operation.type = MDPI_OP_TYPE_ARG_READ;
+   __remote_operation.payload.arg.index = index;
+   __ipc_commit(__REMOTE_ENTITY);
+   __ipc_wait(__REMOTE_ENTITY, MDPI_IPC_STATE_DONE);
+   if(__remote_operation.payload.arg.index != index)
+   {
+      __ipc_release(__REMOTE_ENTITY);
+      error("Parameter %u read failed.\n", index);
+      abort();
+   }
+   bitsize = __remote_operation.payload.arg.bitsize;
+   __ipc_release(__REMOTE_ENTITY);
 
    __ipc_reserve(__REMOTE_ENTITY);
    __remote_operation.type = MDPI_OP_TYPE_ARG_WRITE;
