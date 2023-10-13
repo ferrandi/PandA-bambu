@@ -102,7 +102,7 @@ buildenv-sync : compose-up
 	@docker compose -f .devcontainer/docker-compose.yml exec buildenv rsync -avuq --filter=':- .gitignore' --exclude='/.git*' /mirror/ /workspace/
 	@echo "Sync completed"
 
-buildenv-shell :
+buildenv-shell : compose-up
 	@docker compose -f .devcontainer/docker-compose.yml exec -i -e J=$J buildenv bash
 	@docker compose -f .devcontainer/docker-compose.yml stop -t 0
 
