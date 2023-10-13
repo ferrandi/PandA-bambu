@@ -319,13 +319,14 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
           << "OUT_LVL=\"" << Param->getOption<int>(OPT_output_level) << "\"\n\n";
 
    script << "function cleanup {\n"
-          << "   kill ${__testbench_pid} 2>&1 | true\n"
+          << "   if ${__testbench_pid}; then kill ${__testbench_pid}; fi\n"
           << "}\n"
           << "trap cleanup EXIT\n\n";
 
    GenerateScript(script, top_filename, file_list);
 
-   script << "wait ${__testbench_pid}\n";
+   script << "wait ${__testbench_pid}\n"
+          << "__testbench_pid=0\n";
 
    // Create the simulation script
    generated_script = GetPath("./" + std::string("simulate_") + top_filename + std::string(".sh"));
@@ -442,6 +443,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
              boost::replace_all_copy(Param->getOption<std::string>(OPT_no_parse_files), STR_CST_string_separator, " ") +
              " ";
       }
+      boost::trim(files);
       return files;
    }();
 
@@ -463,9 +465,9 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
 
    const auto testbench_exe = "${SIM_DIR}/testbench";
    script << "if [ -f " << testbench_exe << " ]; then\n"
-          << "  " << testbench_exe << " 2>&1 | tee ${SIM_DIR}/testbench.log &\n"
+          << "  " << testbench_exe << " \"$@\" 2>&1 | tee ${SIM_DIR}/testbench.log &\n"
           << "  __testbench_pid=$!\n"
-          << "  echo \"Launched user application process with PID ${__testbench_pid}\"\n"
+          << "  echo \"Launched user testbench (PID ${__testbench_pid}) with args: $@\"\n"
           << "fi\n\n";
 
    return cflags;

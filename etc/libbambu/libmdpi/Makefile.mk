@@ -69,20 +69,26 @@ $(call check_defined, COSIM_SRC)  # PandA Bambu HLS generated co-simulation sour
 
 IPC_FILENAME := $(shell echo "$(BEH_CFLAGS)" | sed -E 's/.*__M_IPC_FILENAME=?\"([^ ]+)?\".*/\1/')
 SRC_DIR := $(shell echo "$(SRCS)" | sed 's/ /\n/g' | sed -e '$$!{N;s/^\(.*\).*\n\1.*$$/\1\n\1/;D;}' | sed 's/\(.*\)\/.*/\1/')
-OBJ_DIR := $(SIM_DIR)/obj
-MDPI_OBJ_DIR := $(OBJ_DIR)/mdpi
+TB_SRC_DIR := $(shell echo "$(TB_SRCS)" | sed 's/ /\n/g' | sed -e '$$!{N;s/^\(.*\).*\n\1.*$$/\1\n\1/;D;}' | sed 's/\(.*\)\/.*/\1/')
+BUILD_DIR := $(SIM_DIR)/build
+OBJ_DIR := $(BUILD_DIR)/obj
+TB_OBJ_DIR := $(BUILD_DIR)/tb
+MDPI_OBJ_DIR := $(BUILD_DIR)/mdpi
 
 DRIVER_SRC := $(libmdpi_root)/mdpi_driver.cpp
 MDPI_SRCS := $(libmdpi_root)/mdpi.c
 
-OBJS := $(patsubst %.ll,%.o,$(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(patsubst $(SRC_DIR)/%,$(OBJ_DIR)/%, $(filter-out %.gimplePSSA, $(SRCS))))))
-OBJS_M := $(patsubst %.o,%.m.o,$(OBJS))
-DRIVER_OBJ := $(addprefix $(MDPI_OBJ_DIR)/, $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(notdir $(DRIVER_SRC)))))
-COSIM_OBJ := $(addprefix $(MDPI_OBJ_DIR)/, $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(notdir $(COSIM_SRC)))))
+OBJS := $(patsubst $(SRC_DIR)/%,$(OBJ_DIR)/%.o, $(filter-out %.gimplePSSA, $(SRCS)))
+TB_OBJS := $(patsubst $(TB_SRC_DIR)/%,$(TB_OBJ_DIR)/%.o, $(TB_SRCS))
+DRIVER_OBJ := $(patsubst %,$(MDPI_OBJ_DIR)/%.o, $(notdir $(DRIVER_SRC)))
+COSIM_OBJ := $(patsubst %,$(MDPI_OBJ_DIR)/%.o, $(notdir $(COSIM_SRC)))
 
 override TB_CFLAGS := $(patsubst -fno-exceptions,,$(CFLAGS)) $(TB_CFLAGS) -I$(libmdpi_root)/include
 MDPI_CFLAGS := $(BEH_CFLAGS) # $(shell echo "$(CFLAGS)" | grep -oE '(-mx?[0-9]+)' | sed -E 's/-mx?/-DM/' | tr '[:lower:]' '[:upper:]')
-LIB_CFLAGS := $(MDPI_CFLAGS) $(shell if basename $(BEH_CC) | grep -q '++'; then echo -std=c++11; else echo -std=c11; fi)
+LIB_CFLAGS := $(MDPI_CFLAGS)
+ifdef BEH_CC
+	LIB_CFLAGS += $(shell if basename $(BEH_CC) | grep -q '++'; then echo -std=c++11; else echo -std=c11; fi)
+endif
 DRIVER_CFLAGS := $(shell echo "$(TB_CFLAGS)" | grep -oE '(-mx?[0-9]+)')
 DRIVER_CFLAGS += $(shell echo "$(TB_CFLAGS)" | grep -oE '( (-I|-isystem) ?[^ ]+)' | tr '\n' ' ')
 DRIVER_CFLAGS += $(shell echo "$(TB_CFLAGS)" | grep -oE '( -D(\\.|[^ ])+)' | tr '\n' ' ')
@@ -95,11 +101,11 @@ ifdef PP_SRC
 			$(error Undefined MPPTOP_FNAME)
 		endif
 		COSIM_CFLAGS += -DPP_VERIFICATION
-		PP_OBJ := $(patsubst %.c,$(OBJ_DIR)/%.o,$(notdir $(PP_SRC)))
+		PP_OBJ := $(patsubst %,$(OBJ_DIR)/%.pp.o,$(notdir $(PP_SRC)))
 	endif
 endif
 
-PP_CFLAGS := -fno-strict-aliasing -Wno-error=int-conversion
+PP_CFLAGS := -fno-strict-aliasing $(shell if basename "$(CC)" | grep -q clang; then echo -Wno-error=int-conversion; fi)
 PP_CFLAGS += $(shell if [ ! -z "$$(basename $(CC) | grep clang)" ]; then echo "-fbracket-depth=1024"; fi)
 
 DRIVER_LDFLAGS := $(shell echo "$(TB_CFLAGS)" | grep -oE '(-mx?[0-9]+)')
@@ -123,8 +129,6 @@ DRIVER_LIB := $(SIM_DIR)/libmdpi_driver.so
 MDPI_LIB := $(BEH_DIR)/libmdpi.so
 TB_TARGET := $(SIM_DIR)/testbench
 
-$(shell mkdir -p $(OBJ_DIR) $(MDPI_OBJ_DIR))
-
 .PHONY: all libs libmdpi libmdpi_driver testbench clean
 
 all: libs testbench
@@ -139,7 +143,7 @@ testbench: $(TB_TARGET)
 	@rm -rf $(IPC_FILENAME)
 
 clean:
-	@rm -rf $(OBJ_DIR) $(DRIVER_LIB) $(MDPI_LIB) $(IPC_FILENAME)
+	@rm -rf $(BUILD_DIR) $(DRIVER_LIB) $(MDPI_LIB) $(IPC_FILENAME)
 
 $(MDPI_LIB): $(MDPI_SRCS)
 ifdef BEH_CC
@@ -147,35 +151,42 @@ ifdef BEH_CC
 	@$(BEH_CC) $(LIB_LDFLAGS) $(LIB_CFLAGS) -o $@ $^
 endif
 
-$(OBJS): $(SRCS)
-	@echo "Compiling $(notdir $^)"
-	@cd $(OBJ_DIR); $(CC) $(CFLAGS) -fPIC -c $^
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%
+	@echo "Compiling $(notdir $<)"
+	@mkdir -p $$(dirname $@)
+	@$(CC) $(CFLAGS) -fPIC -c -o $@ $<
+	@objcopy $(REDEFINE_TOP) $@
 
-$(OBJS_M): $(OBJ_DIR)/%.m.o : $(OBJ_DIR)/%.o
-	@echo "Redefine top symbol $(notdir $<)"
-	@objcopy $(REDEFINE_TOP) $< $@
+$(TB_OBJ_DIR)/%.o: $(TB_SRC_DIR)/%
+	@echo "Compiling testbench $(notdir $<)"
+	@mkdir -p $$(dirname $@)
+	@$(CC) $(TB_CFLAGS) -fPIC -c -o $@ $<
+	@objcopy $(WEAKEN_TOP) $(REDEFINE_SYS) $@
 
 $(PP_OBJ): $(PP_SRC)
 	@echo "Compiling $(notdir $<)"
+	@mkdir -p $$(dirname $@)
 	@$(CC) $(CFLAGS) $(PP_CFLAGS) -fPIC -c -o $@ $<
-	@objcopy --keep-global-symbol $(TOP_FNAME) $$(nm $@ | grep -o '[^[:space:]]*get_pc_thunk[^[:space:]]*' | sed 's/^/--keep-global-symbol /' | tr '\\n' ' ') $@
+	@objcopy --keep-global-symbol $(TOP_FNAME) $$(nm $@ | grep -o '[^[:space:]]*get_pc_thunk[^[:space:]]*' | sed 's/^/--keep-global-symbol /' | tr '\n' ' ') $@
 	@objcopy --redefine-sym $(TOP_FNAME)=$(MPPTOP_FNAME) $@
 
 $(COSIM_OBJ): $(COSIM_SRC)
 	@echo "Compiling $(notdir $<)"
+	@mkdir -p $$(dirname $@)
 	@$(CC) $(COSIM_CFLAGS) -fPIC -c -o $@ $<
 
 $(DRIVER_OBJ): $(DRIVER_SRC)
 	@echo "Compiling $(notdir $<)"
+	@mkdir -p $$(dirname $@)
 	@$(CC) $(DRIVER_CFLAGS) -fPIC -c -o $@ $<
 
-$(DRIVER_LIB): $(OBJS_M) $(DRIVER_OBJ) $(COSIM_OBJ) $(PP_OBJ)
+$(DRIVER_LIB): $(OBJS) $(DRIVER_OBJ) $(COSIM_OBJ) $(PP_OBJ)
 	@echo "Linking $(notdir $@)"
 	@$(CC) $(DRIVER_LDFLAGS) -shared -o $@ $^
 	@objcopy $(REDEFINE_SYS) $@
 
-$(TB_TARGET): $(TB_SRCS) $(DRIVER_LIB)
+$(TB_TARGET): $(TB_OBJS) $(OBJS) $(DRIVER_OBJ) $(COSIM_OBJ) $(PP_OBJ)
 ifdef TB_SRCS
 	@echo "Linking $(notdir $@)"
-	@$(CC) $(TB_CFLAGS) -o $@ $^
+	@$(CC) $(DRIVER_LDFLAGS) -o $@ $^
 endif
