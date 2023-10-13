@@ -80,16 +80,16 @@ typedef byte_t* bptr_t;
 #define BPTR_FORMAT "0x%016llX"
 #endif
 
-#if M32
-typedef unsigned int ptr_t;
-#define PTR_FORMAT "0x%08X"
-#else
+#ifdef M64
 typedef sv_longint_unsigned_t ptr_t;
 #if defined(MODEL_TECH) || defined(XILINX_SIMULATOR)
 #define PTR_FORMAT "0x%016zX"
 #else
 #define PTR_FORMAT "0x%016llX"
 #endif
+#else
+typedef unsigned int ptr_t;
+#define PTR_FORMAT "0x%08X"
 #endif
 #define PTR_SIZE (sizeof(ptr_t) * 8)
 

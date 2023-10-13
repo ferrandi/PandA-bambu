@@ -151,13 +151,13 @@ typedef struct
       mdpi_op_param_t param;
       mdpi_op_mem_t mem;
       mdpi_op_arg_t arg;
-   } payload;
-} IPC_STRUCT_ATTR mdpi_ipc_op_t;
+   } __attribute__((aligned(8))) payload;
+} __attribute__((aligned(8))) mdpi_ipc_op_t;
 
 typedef struct
 {
    mdpi_ipc_op_t operation[MDPI_ENTITY_COUNT];
-} IPC_STRUCT_ATTR mdpi_ipc_file_t;
+} __attribute__((aligned(8))) mdpi_ipc_file_t;
 
 static mdpi_ipc_file_t* __m_ipc_file = NULL;
 
