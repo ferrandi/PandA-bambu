@@ -49,6 +49,8 @@
 #define __USE_FILE_OFFSET64
 #define _FILE_OFFSET_BITS 64
 
+#define IPC_STRUCT_ATTR __attribute__((aligned(8), packed))
+
 #include "mdpi_debug.h"
 #include "mdpi_types.h"
 
@@ -118,26 +120,26 @@ typedef struct
    ptr_t addr;
    uint16_t size; // Size in bytes
    byte_t buffer[4096];
-} __attribute__((aligned(8))) mdpi_op_mem_t;
+} IPC_STRUCT_ATTR mdpi_op_mem_t;
 
 typedef struct
 {
    uint8_t index;
    uint16_t bitsize;
    byte_t buffer[4096];
-} __attribute__((aligned(8))) mdpi_op_arg_t;
+} IPC_STRUCT_ATTR mdpi_op_arg_t;
 
 typedef struct
 {
    uint8_t index;
    uint64_t size;
-} __attribute__((aligned(8))) mdpi_op_param_t;
+} IPC_STRUCT_ATTR mdpi_op_param_t;
 
 typedef struct
 {
    mdpi_state_t state;
    uint8_t retval;
-} __attribute__((aligned(8))) mdpi_op_state_change_t;
+} IPC_STRUCT_ATTR mdpi_op_state_change_t;
 
 typedef struct
 {
@@ -150,12 +152,12 @@ typedef struct
       mdpi_op_mem_t mem;
       mdpi_op_arg_t arg;
    } payload;
-} __attribute__((aligned(8))) mdpi_ipc_op_t;
+} IPC_STRUCT_ATTR mdpi_ipc_op_t;
 
 typedef struct
 {
    mdpi_ipc_op_t operation[MDPI_ENTITY_COUNT];
-} __attribute__((aligned(8))) mdpi_ipc_file_t;
+} IPC_STRUCT_ATTR mdpi_ipc_file_t;
 
 static mdpi_ipc_file_t* __m_ipc_file = NULL;
 
