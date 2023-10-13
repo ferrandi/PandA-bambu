@@ -42,12 +42,8 @@
 
 default: all
 
-check_defined = \
-    $(strip $(foreach 1,$1, \
-        $(call __check_defined,$1,$(strip $(value 2)))))
-__check_defined = \
-    $(if $(value $1),, \
-      $(error Undefined $1$(if $2, ($2))))
+check_defined = $(strip $(foreach 1,$1, $(call __check_defined,$1,$(strip $(value 2)))))
+__check_defined = $(if $(value $1),, $(error Undefined $1$(if $2, ($2))))
 
 libmdpi_root := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
@@ -95,8 +91,10 @@ DRIVER_CFLAGS += $(MDPI_CFLAGS) -std=c++11 -DMDPI_PARALLEL_VERIFICATION
 COSIM_CFLAGS := $(MDPI_CFLAGS) $(CFLAGS) -DLIBMDPI_DRIVER
 ifdef PP_SRC
 	ifneq ($(TOP_FNAME),main)
-		$(call check_defined, MPPTOP_FNAME)
-  		COSIM_CFLAGS += -DPP_VERIFICATION
+		ifndef MPPTOP_FNAME
+			$(error Undefined MPPTOP_FNAME)
+		endif
+		COSIM_CFLAGS += -DPP_VERIFICATION
 		PP_OBJ := $(patsubst %.c,$(OBJ_DIR)/%.o,$(notdir $(PP_SRC)))
 	endif
 endif
