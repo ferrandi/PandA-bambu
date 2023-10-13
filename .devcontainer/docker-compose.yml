@@ -11,4 +11,5 @@ services:
     volumes:
       - bambu_compilers:/compilers
       - ../:/mirror:ro
+      - ../build:/workspace/build
       - ../panda_dist:/panda_dist
