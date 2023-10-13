@@ -250,12 +250,14 @@ static void __ipc_init()
    if(init)
    {
       // Ensure that the file will hold enough space
-      if(ftruncate(ipc_descriptor, sizeof(mdpi_ipc_file_t)) == -1)
+      lseek(ipc_descriptor, sizeof(mdpi_ipc_file_t), SEEK_SET);
+      if(write(ipc_descriptor, "", 1) < 1)
       {
          error("Error writing IPC file: %s\n", __M_IPC_FILENAME);
          perror("MDPI library initialization error");
          exit(EXIT_FAILURE);
       }
+      lseek(ipc_descriptor, 0, SEEK_SET);
    }
 
    __m_ipc_file =
