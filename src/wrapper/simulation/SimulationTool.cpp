@@ -414,7 +414,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
    const auto srcs =
        boost::replace_all_copy(Param->getOption<std::string>(OPT_input_file), STR_CST_string_separator, " ");
    const std::string cosim_src = "${SIM_DIR}/" STR_CST_testbench_generation_basename ".c";
-   const auto pp_srcs = Param->isOption(OPT_pretty_print) ? cosim_src : "";
+   const auto pp_srcs = Param->isOption(OPT_pretty_print) ? Param->getOption<std::string>(OPT_pretty_print) : "";
    const auto tb_srcs = [&]() {
       std::string files;
       if(Param->isOption(OPT_testbench_input_file))
