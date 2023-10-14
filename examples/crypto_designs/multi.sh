@@ -1,8 +1,8 @@
 #!/bin/bash
-#!/bin/bash
 script=$(readlink -e $0)
 root_dir=$(dirname $script)
 current_dir=$(pwd)
+
 cd $root_dir/multi-keccak
 ./autogen.sh
 return_value=$?
