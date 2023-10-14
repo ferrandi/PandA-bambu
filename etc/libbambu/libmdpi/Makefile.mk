@@ -52,11 +52,11 @@ $(call check_defined, TOP_FNAME)  # top function mangled name
 $(call check_defined, MTOP_FNAME) # top function mangled name with __m_ prefix
 $(call check_defined, SIM_DIR)    # HLS_output/simulation absolute path
 $(call check_defined, BEH_DIR)    # HLS_output/<sim_id>_beh absolute path
-$(call check_defined, SRCS)       # PandA Bambu HLS input source files
 $(call check_defined, COSIM_SRC)  # PandA Bambu HLS generated co-simulation source files
 
 ###
 # The following variables may also be defined:
+#   SRCS       : PandA Bambu HLS input source files
 #   BEH_CC     : alternative compiler for libmdpi compilation
 #   CFLAGS     : compilation flags for SRCS, COSIM_SRCS, and TB_SRCS
 #   BEH_CFLAGS : includes and defines for svdpi.h
@@ -68,6 +68,7 @@ $(call check_defined, COSIM_SRC)  # PandA Bambu HLS generated co-simulation sour
 ### Environment below is automatically populated, do not override
 
 IPC_FILENAME := $(shell echo "$(BEH_CFLAGS)" | sed -E 's/.*__M_IPC_FILENAME=?\"([^ ]+)?\".*/\1/')
+override SRCS := $(filter-out %.gimplePSSA, $(SRCS))
 SRC_DIR := $(shell echo "$(SRCS)" | sed 's/ /\n/g' | sed -e '$$!{N;s/^\(.*\).*\n\1.*$$/\1\n\1/;D;}' | sed 's/\(.*\)\/.*/\1/')
 TB_SRC_DIR := $(shell echo "$(TB_SRCS)" | sed 's/ /\n/g' | sed -e '$$!{N;s/^\(.*\).*\n\1.*$$/\1\n\1/;D;}' | sed 's/\(.*\)\/.*/\1/')
 BUILD_DIR := $(SIM_DIR)/build
@@ -78,7 +79,7 @@ MDPI_OBJ_DIR := $(BUILD_DIR)/mdpi
 DRIVER_SRC := $(libmdpi_root)/mdpi_driver.cpp
 MDPI_SRCS := $(libmdpi_root)/mdpi.c
 
-OBJS := $(patsubst $(SRC_DIR)/%,$(OBJ_DIR)/%.o, $(filter-out %.gimplePSSA, $(SRCS)))
+OBJS := $(patsubst $(SRC_DIR)/%,$(OBJ_DIR)/%.o, $(SRCS))
 TB_OBJS := $(patsubst $(TB_SRC_DIR)/%,$(TB_OBJ_DIR)/%.o, $(TB_SRCS))
 DRIVER_OBJ := $(patsubst %,$(MDPI_OBJ_DIR)/%.o, $(notdir $(DRIVER_SRC)))
 COSIM_OBJ := $(patsubst %,$(MDPI_OBJ_DIR)/%.o, $(notdir $(COSIM_SRC)))
