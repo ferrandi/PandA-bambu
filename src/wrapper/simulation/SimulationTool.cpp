@@ -314,19 +314,30 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
                                           std::regex("([\\w\\d]+=(\".*\"|[^\\s]+))\\s*"), "export $1\n");
    boost::replace_last(compiler_env, "\n", "\nCC=\"");
    compiler_env += "\"";
-   script << compiler_env << "\n"
-          << "SIM_DIR=\"" << sim_dir << "\"\n"
-          << "OUT_LVL=\"" << Param->getOption<int>(OPT_output_level) << "\"\n\n";
 
-   script << "function cleanup {\n"
-          << "   if ${__testbench_pid}; then kill ${__testbench_pid}; fi\n"
-          << "}\n"
+   script << compiler_env << "\n";
+
+   if(Param->isOption(OPT_testbench_input_file) &&
+      starts_with(Param->getOption<std::string>(OPT_testbench_input_file), "elf:"))
+   {
+      script << "SYS_ELF=\"" << Param->getOption<std::string>(OPT_testbench_input_file).substr(4) << "\"\n";
+   }
+   else
+   {
+      script << "SYS_ELF=\"" << sim_dir << "/testbench\"\n";
+   }
+
+   script << "SIM_DIR=\"" << sim_dir << "\"\n"
+          << "OUT_LVL=\"" << Param->getOption<int>(OPT_output_level) << "\"\n\n"
+          << "### Do not edit below\n\n";
+
+   script << "function cleanup { if ${__sys_elf_pid}; then kill ${__sys_elf_pid}; fi }\n"
           << "trap cleanup EXIT\n\n";
 
    GenerateScript(script, top_filename, file_list);
 
-   script << "wait ${__testbench_pid}\n"
-          << "__testbench_pid=0\n";
+   script << "wait ${__sys_elf_pid}\n"
+          << "__sys_elf_pid=0\n";
 
    // Create the simulation script
    generated_script = GetPath("./" + std::string("simulate_") + top_filename + std::string(".sh"));
@@ -423,6 +434,10 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       if(Param->isOption(OPT_testbench_input_file))
       {
          const auto tb_files = Param->getOption<const CustomSet<std::string>>(OPT_testbench_input_file);
+         if(starts_with(*tb_files.begin(), "elf:"))
+         {
+            return files;
+         }
          for(const auto& filename : tb_files)
          {
             if(ends_with(filename, ".xml"))
@@ -435,7 +450,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
             }
          }
       }
-      if(Param->isOption(OPT_testbench_input_string))
+      else if(Param->isOption(OPT_testbench_input_string))
       {
          files += cosim_src + " ";
       }
@@ -465,12 +480,19 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
           << "  TB_SRCS=\"" << tb_srcs << "\" \\\n"
           << "  -j " << std::thread::hardware_concurrency() << " -f Makefile.mk\n\n";
 
-   const auto testbench_exe = "${SIM_DIR}/testbench";
-   script << "if [ -f " << testbench_exe << " ]; then\n"
-          << "  " << testbench_exe << " \"$@\" 2>&1 | tee ${SIM_DIR}/testbench.log &\n"
-          << "  __testbench_pid=$!\n"
-          << "  echo \"Launched user testbench (PID ${__testbench_pid}) with args: $@\"\n"
-          << "fi\n\n";
+   script
+       << "if [ -f ${SYS_ELF} ]; then\n"
+       << "  function get_class { readelf -h $1 | grep Class: | sed -E 's/.*Class:\\s*(\\w+)/\\1/'; }\n"
+       << "  sys_elf_class=\"$(get_class ${SYS_ELF})\"\n"
+       << "  driver_elf_class=\"$(get_class ${SIM_DIR}/libmdpi_driver.so)\"\n"
+       << "  if [ \"${sys_elf_class}\" != \"${driver_elf_class}\" ]; then\n"
+       << "    echo \"ERROR: Wrong system application ELF class: ${sys_elf_class} != ${driver_elf_class}\"; exit 1;\n"
+       << "  fi\n"
+       << "  LD_PRELOAD=${SIM_DIR}/libmdpi_driver.so ${SYS_ELF} \"$@\" 2>&1 | tee ${SIM_DIR}/$(basename "
+          "${SYS_ELF}).log &\n"
+       << "  __sys_elf_pid=$!\n"
+       << "  echo \"Launched user testbench (PID ${__sys_elf_pid}) with args: $@\"\n"
+       << "fi\n\n";
 
    return cflags;
 }
