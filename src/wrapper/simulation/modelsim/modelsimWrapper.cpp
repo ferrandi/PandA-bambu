@@ -109,15 +109,15 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
       std::string flags;
       if(cflags.find("-m32") != std::string::npos)
       {
-         flags += " +define+M32";
+         flags += " +define+__M32";
       }
       else if(cflags.find("-mx32") != std::string::npos)
       {
-         flags += " +define+MX32";
+         flags += " +define+__MX32";
       }
       else if(cflags.find("-m64") != std::string::npos)
       {
-         flags += " +define+M64";
+         flags += " +define+__M64";
       }
       if(Param->isOption(OPT_generate_vcd) && Param->getOption<bool>(OPT_generate_vcd))
       {
@@ -190,9 +190,7 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
       {
          THROW_UNREACHABLE("Extension not recognized! " + file_path.string());
       }
-      script << "if [ $? -ne 0 ]; then" << std::endl;
-      script << "   exit 1;" << std::endl;
-      script << "fi" << std::endl << std::endl;
+      script << "if [ $? -ne 0 ]; then exit 1; fi" << std::endl << std::endl;
    }
 
    script << MODELSIM_VSIM << " " << vflags << " -noautoldlibpath";

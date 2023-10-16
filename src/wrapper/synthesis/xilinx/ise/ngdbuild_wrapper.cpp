@@ -96,8 +96,6 @@ std::string ngdbuild_wrapper::get_command_line(const DesignParametersRef& dp) co
       }
    }
    s << std::endl;
-   s << "if [ $? -ne 0 ]; then" << std::endl;
-   s << "   exit 1;" << std::endl;
-   s << "fi" << std::endl;
+   s << "if [ $? -ne 0 ]; then exit 1; fi" << std::endl;
    return s.str();
 }

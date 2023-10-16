@@ -80,7 +80,7 @@ typedef byte_t* bptr_t;
 #define BPTR_FORMAT "0x%016llX"
 #endif
 
-#ifdef M64
+#ifdef __M64
 typedef sv_longint_unsigned_t ptr_t;
 #if defined(MODEL_TECH) || defined(XILINX_SIMULATOR)
 #define PTR_FORMAT "0x%016zX"
