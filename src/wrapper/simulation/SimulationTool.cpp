@@ -399,15 +399,15 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
    beh_cflags += " -D__M_OUT_LVL=${OUT_LVL}";
    if(cflags.find("-m32") != std::string::npos)
    {
-      beh_cflags += " -DM32";
+      beh_cflags += " -D__M32";
    }
    else if(cflags.find("-mx32") != std::string::npos)
    {
-      beh_cflags += " -DMX32";
+      beh_cflags += " -D__MX32";
    }
    else if(cflags.find("-m64") != std::string::npos)
    {
-      beh_cflags += " -DM64";
+      beh_cflags += " -D__M64";
    }
    beh_cflags += " -O2";
 

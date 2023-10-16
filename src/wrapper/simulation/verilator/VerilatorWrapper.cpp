@@ -110,15 +110,15 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
       std::string flags;
       if(cflags.find("-m32") != std::string::npos)
       {
-         flags += " +define+M32";
+         flags += " +define+__M32";
       }
       else if(cflags.find("-mx32") != std::string::npos)
       {
-         flags += " +define+MX32";
+         flags += " +define+__MX32";
       }
       else if(cflags.find("-m64") != std::string::npos)
       {
-         flags += " +define+M64";
+         flags += " +define+__M64";
       }
       return flags;
    }();
@@ -161,9 +161,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
       }
    }
    script << " --top-module bambu_testbench" << std::endl
-          << "if [ $? -ne 0 ]; then" << std::endl
-          << "   exit 1;" << std::endl
-          << "fi" << std::endl
+          << "if [ $? -ne 0 ]; then exit 1; fi" << std::endl
           << std::endl
           << std::endl
           << "ln -sf " + output_directory + " ${obj_dir}\n";
