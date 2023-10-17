@@ -14,14 +14,30 @@
          "problemMatcher": "$gcc"
       },
       {
-         "label": "Build AppImage",
+         "label": "Build AppImage unpacked",
          "type": "shell",
          "command": "make",
          "args": [
             "-f",
             "Makefile.init",
             "appimage-build",
-            "APP_CONFIGURE=\"--skip-package --enable-flopoco --enable-glpk --enable-opt --enable-release --enable-Werror CC=gcc-8 CXX=g++-8\"",
+            "APP_CONFIGURE=\"--skip-package --enable-glpk --enable-opt --enable-release --enable-Werror CC=gcc-8 CXX=g++-8\"",
+            "J=4"
+         ],
+         "problemMatcher": "$gcc",
+         "group": {
+            "kind": "build"
+         }
+      },
+      {
+         "label": "Build AppImage release",
+         "type": "shell",
+         "command": "make",
+         "args": [
+            "-f",
+            "Makefile.init",
+            "appimage-build",
+            "APP_CONFIGURE=\"--enable-glpk --enable-opt --enable-release --enable-Werror CC=gcc-8 CXX=g++-8\"",
             "J=4"
          ],
          "problemMatcher": "$gcc",
