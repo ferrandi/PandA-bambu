@@ -6,13 +6,13 @@ ENV TZ=Europe/Rome
 WORKDIR /tmp
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
    && apt-get update && apt-get install -y --no-install-recommends \
-   autoconf autoconf-archive automake bison bzip2 ca-certificates ccache curl \
-   doxygen flex git graphviz lsb-release make pkg-config rsync \
-   texlive-latex-recommended texlive-latex-extra time wget xz-utils \
-   g++ gcc gcc-multilib g++-multilib libc6-dev-i386 linux-libc-dev zlib1g-dev \
-   libbdd-dev libfl-dev libglpk-dev libicu-dev libltdl-dev liblzma-dev libmpc-dev \
-   libmpfi-dev libmpfr-dev libsuitesparse-dev libtinfo5 libtool libxml2-dev \
-   locales \
+      autoconf autoconf-archive automake bison bzip2 ca-certificates ccache \
+      curl doxygen flex g++ g++-multilib gcc gcc-multilib ghostscript git \
+      graphviz libbdd-dev libc6-dev-i386 libfl-dev libglpk-dev libicu-dev \
+      libltdl-dev liblzma-dev libmpc-dev libmpfi-dev libmpfr-dev \
+      libsuitesparse-dev libtinfo5 libtool libxml2-dev linux-libc-dev locales \
+      lsb-release make pkg-config rsync texlive-fonts-recommended \
+      texlive-latex-extra texlive-latex-recommended time wget xz-utils zlib1g-dev \
    && rm -rf /var/lib/apt/lists/* \
    && update-ca-certificates \
    && locale-gen en_US.UTF-8 \
