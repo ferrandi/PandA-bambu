@@ -35,12 +35,11 @@
 
 \page tutorials_page Tutorials
 
-This page contains some tutorials which may help during the utilization of the PandA project. In particular, these tutorials are directed towards the developers and they should provide them some guidelines to help them producing better code.
+This page contains some tutorials which may help during the utilization of the PandA project. 
+In particular, these tutorials are directed towards the developers and they should provide them some guidelines to help them producing better code.
 
-- \ref svn
-- \ref documentation_how_to contains hints on how to create good and useful documentation files
-- \ref makefiles_how_to is a short tutorial showing how to write good makefiles for PandA
-- \ref programming_style list the conventions and the guidelines which you should follow to produce good code
-- \ref graphs_how_to contains a brief explanation with examples on how it is possible to use the boost::graph library
+- \ref dev_guide_documentation contains hints on how to create good and useful documentation files
+- \ref dev_guide_makefiles is a short tutorial showing how to write good makefiles for PandA
+- \ref dev_guide_programming list the conventions and the guidelines which you should follow to produce good code
 
 */

@@ -41,7 +41,7 @@
 
   \section HLS_overview High-Level Synthesis overview
 
-  Forty years ago, Electronics Magazine asked Intel co-founder Gordon Moore to 
+  In the '70, Electronics Magazine asked Intel co-founder Gordon Moore to 
   write an article summarizing the state of the electronics industry. When 
   writing the article, Moore noted that the number of devices (which then 
   included transistors and resistors) inside chips was doubling every year, 

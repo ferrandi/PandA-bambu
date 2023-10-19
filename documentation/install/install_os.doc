@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2023 Politecnico di Milano
+ *              Copyright (c) 2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,8 +31,13 @@
  *
 */
 /*!
-  \page src_HLS_datapath_page Datapath creation
+  \page install_supportedos Supported Operating Systems
+  PandA supports the following operating systems on x86 and x86-64 processor architectures.
+  - Red Hat Enterprise Workstation/Server 8.3 (64-bit)
+  - CentOS (64-bit)
+  - Ubuntu Linux 18.04.1 LTS; 18.04.2 LTS, 18.04.3 LTS; 18.04.4 LTS; 18.04.5 LTS; 18.04.6 LTS; and 20.04 LTS, 20.04.1 LTS, 20.04.2 LTS, 20.04.3 LTS, 20.04.4 LTS; 20.04.5 LTS; 22.04 LTS and 22.04.1 LTS (64-bit)
+  - Debian Linux 9, 10, 11 (64-bit)
 
-
+  Operating systems not reported in the list above may still be supported but have not been tested.
 
 */

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2023 Politecnico di Milano
+ *              Copyright (c) 2004-2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,6 +31,14 @@
  *
 */
 /*!
-  \page src_HLS_estimation High-level syntesis result estimation
+  \page panda_install Install PandA framework
+  There are many options to compile and install the PandA framwork depending on the user needs. 
+  Firstly, check that your operationg system is supported, then chose the option that better fits your needs and follow the installation steps.
+
+  This section contains the following chapters:
+  - \ref install_supportedos
+  - \ref install_appimage
+  - \ref install_source
+  - \ref install_docker
 
 */

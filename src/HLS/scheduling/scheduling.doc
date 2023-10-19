@@ -31,7 +31,7 @@
  *
 */
 /*!
-  \page src_HLS_scheduling_general Scheduling
+  \page src_HLS_scheduling_general HLS Scheduling
 
 \section scheduling_definition Scheduling problem definition
 
