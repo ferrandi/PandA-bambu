@@ -55,10 +55,6 @@
   Furthermore, to compile the PandA Bambu HLS tool, at least one of the supported Clang LLVM compilers must be installed on the host machine.
   Common Clang and GCC compilers are used as frontend from the High-Level Synthesis flow to process the input source code and generate the internal Intermediate Representation (IR).
   Supported fronted compilers are:
-  - GNU GCC 4.5.4
-  - GNU GCC 4.6.4
-  - GNU GCC 4.7.4
-  - GNU GCC 4.8.5
   - GNU GCC 4.9.4
   - GNU GCC 5.5.0
   - GNU GCC 6.5.0
@@ -172,10 +168,6 @@
                            specify the root directory for boost (optional)
    --with-blas=<lib>       use BLAS library <lib>
    --with-lapack=<lib>     use LAPACK library <lib>
-   --with-gcc45=executable-path path where the GCC 4.5 is installed
-   --with-gcc46=executable-path path where the GCC 4.6 is installed
-   --with-gcc47=executable-path path where the GCC 4.7 is installed
-   --with-gcc48=executable-path path where the GCC 4.8 is installed
    --with-gcc49=executable-path path where the GCC 4.9 is installed
    --with-gcc5=executable-path path where the GCC 5 is installed
    --with-gcc6=executable-path path where the GCC 6 is installed
@@ -239,8 +231,9 @@
 
 
   \section install_source_next Next steps
-  - \ref bambu_overview "PandA Bambu HLS Introduction"
-  - \ref tutorials_page "Tutorials and presentations"
+  - \ref bambu_overview
+  - \ref bambu101_page
+  - \ref dev_page
 
 
 */

@@ -1,5 +1,6 @@
 EXTRA_DIST += \
    %D%/generic_MachSuite.sh \
+   %D%/machsuite.doc \
    %D%/MachSuite/nw/nw/nw.c \
    %D%/MachSuite/nw/nw/nw.h \
    %D%/MachSuite/nw/nw/check.data \

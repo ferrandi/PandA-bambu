@@ -2,15 +2,18 @@
 DIST_SUBDIRS = img
 
 PRJ_DOC = \
-   root.doc \
-   panda.doc \
    authors.doc \
    license.doc \
    panda_sdk.doc \
-   tutorials.doc \
-   dev_guidelines/documentation.doc \
-   dev_guidelines/makefiles.doc \
-   dev_guidelines/programming.doc \
+   panda.doc \
+   root.doc \
+   bambu101/basic_usage/basic_usage.doc \
+   bambu101/systemsim/systemsim.doc \
+   bambu101/bambu101.doc \
+   dev101/guidelines/documentation.doc \
+   dev101/guidelines/makefiles.doc \
+   dev101/guidelines/programming.doc \
+   dev101/dev.doc \
    install/install_appimage.doc \
    install/install_docker.doc \
    install/install_os.doc \

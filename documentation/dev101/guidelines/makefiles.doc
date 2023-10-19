@@ -31,7 +31,7 @@
  *
 */
 /*!
-\page dev_guide_makefiles How to Write Makefiles for PandA
+\page dev_guide_makefiles Write Makefiles for PandA project
 
 This file contains a brief explanation on the strcture of the makefiles used in PandA; at the end we will also see what are the steps needed to create a new makefile and to hook it to the main compilation chain.
 	

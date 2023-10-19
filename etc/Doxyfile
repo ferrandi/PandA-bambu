@@ -771,21 +771,8 @@ FILE_PATTERNS          = *.c \
                          *.cc \
                          *.cxx \
                          *.cpp \
-                         *.c++ \
-                         *.java \
-                         *.ii \
-                         *.ixx \
-                         *.ipp \
-                         *.i++ \
-                         *.inl \
-                         *.idl \
-                         *.ddl \
-                         *.odl \
                          *.h \
-                         *.hh \
-                         *.hxx \
                          *.hpp \
-                         *.h++ \
                          *.cs \
                          *.d \
                          *.php \
@@ -793,22 +780,14 @@ FILE_PATTERNS          = *.c \
                          *.php5 \
                          *.phtml \
                          *.inc \
-                         *.m \
-                         *.mm \
                          *.dox \
                          *.py \
                          *.f90 \
                          *.f \
                          *.for \
-                         *.tcl \
-                         *.vhd \
-                         *.vhdl \
                          *.ucf \
                          *.qsf \
                          *.as \
-                         *.js \
-                         *.C \
-                         *.H \
                          *.doc
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should
@@ -1556,7 +1535,7 @@ EXTRA_SEARCH_MAPPINGS  =
 # If the GENERATE_LATEX tag is set to YES doxygen will generate LaTeX output.
 # The default value is: YES.
 
-GENERATE_LATEX         = NO
+GENERATE_LATEX         = $(DOX_GENERATE_LATEX)
 
 # The LATEX_OUTPUT tag is used to specify where the LaTeX docs will be put. 
 # If a relative path is entered the value of OUTPUT_DIRECTORY will be 
