@@ -31,12 +31,30 @@
  *
 */
 /*!
-   \mainpage PandA Project
+   \mainpage PandA Project Documentation
+   The primary objective of the PandA project is to develop a usable framework that will enable the research of new ideas in the HW-SW Co-Design field.<br/>
+   The PandA framework includes methodologies supporting the research on the high-level synthesis of hardware accelerators, parallelism extraction for embedded systems, hardware/software partitioning and mapping, metrics for performance estimation of embedded software applications, and dynamically reconfigurable devices.
 
-   PandA links:
-   - PandA documentation: \ref PandA_DOC "PandA framework"
-   - PandA on Web: http://panda.dei.polimi.it
+   PandA software is released under the \ref panda_license "GNU General Public License version 3" and developed at Politecnico di Milano (Italy).
 
-   Sub-projects:
-   - High-Level Synthesis project: \ref src_bambu "bambu"
+
+   \section main_getstarted Getting started
+   The following can be helpful to start using the PandA framework and understand its features:
+   - \ref panda_install
+   - \ref panda_overview
+   - \ref bambu_start
+   - \ref examples_page
+   - \ref tutorials_page
+
+
+   \section main_devlines Developer's guidelines
+   The PandA framework is an open-source project where you can integrate your own algorithms to enhance the available features and build new ones as needed.<br/>
+   The following can be useful to approach the PandA codebase and start developing:
+   - \ref bambu_overview
+   - \ref install_docker
+   - \ref dev_guide_makefiles
+   - \ref dev_guide_programming
+   - \ref dev_guide_documentation
+
+
 */

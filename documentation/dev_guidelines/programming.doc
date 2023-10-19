@@ -31,7 +31,7 @@
  *
 */
 /*!
-\page programming_style Guidelines about Good Programming into PandA
+\page dev_guide_programming Guidelines about Good Programming into PandA
 
 \section programming_intro Introduction
 In this document we plan to shortly explain some useful guidelines to help you writing "good" code into the PandA Project. The main features which will be explained are:
@@ -52,7 +52,7 @@ for(int i = 0; i < n; i++)
 }
 \endverbatim
 - Indentation must be enforced by the use of 3 spaces, not the tabulator character.
-- Doxygen (see \ref documentation_how_to) comments of classes and methods must be written as:
+- Doxygen (see \ref dev_guide_documentation) comments of classes and methods must be written as:
 \verbatim
 /**
  * ....your documentation.....

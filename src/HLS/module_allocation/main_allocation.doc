@@ -31,9 +31,8 @@
  *
 */
 /*!
-  \page Allocation
+  \page src_HLS_module_allocation Module Allocation Overview
 
-  - \ref src_HLS_allocation_page this page gives information about allocation class
   - \ref src_HLS_binding_constraints_page this page explains how binding constraints are handled
   - \ref src_HLS_priority_constraints_page this page explains how priority constraints are handled
 

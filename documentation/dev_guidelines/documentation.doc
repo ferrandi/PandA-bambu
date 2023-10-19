@@ -32,7 +32,7 @@
 */
 /*!
 
-\page documentation_how_to How To Create Good Documentation
+\page dev_guide_documentation How To Create Good Documentation
 
 Documentation is a very important part (probably the most important) in an open-source project managed by more than one person: it is the only mean the other developers can used to know something about your work.
 It is important to write a clear documentation about what your classes, structures and methods do, but it is also useful to write some tutorials and generic guidelines about how to use the functionalities you implemented.

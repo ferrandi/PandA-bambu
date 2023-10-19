@@ -31,7 +31,7 @@
  *
 */
 /*!
-  \page src_frontend_pragma PragmaParser
+  \page src_frontend_pragma Pragma Parser
 
 This project parses source code files to extract information about pragma directives.
 */
