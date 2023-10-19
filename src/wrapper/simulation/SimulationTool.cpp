@@ -369,6 +369,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       std::string flags = " -fwrapv -ffloat-store -flax-vector-conversions -msse2 -mfpmath=sse -fno-strict-aliasing "
                           "-D__builtin_bambu_time_start\\(\\)= -D__builtin_bambu_time_stop\\(\\)= -D__BAMBU_SIM__";
       flags += " -I" + relocate_compiler_path(PANDA_INCLUDE_INSTALLDIR);
+      flags += " -I" + relocate_compiler_path(PANDA_DATA_INSTALLDIR) + "/panda/libmdpi/include";
       if(!Param->isOption(OPT_input_format) ||
          Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C)
       {
