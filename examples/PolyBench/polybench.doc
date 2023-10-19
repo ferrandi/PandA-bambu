@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2023 Politecnico di Milano
+ *              Copyright (C) 2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -30,16 +30,12 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-
 /*!
+  \page examples_polybench PolyBench Benchmark Suite
 
-\page tutorials_page Tutorials
 
-This page contains some tutorials which may help during the utilization of the PandA project. 
-In particular, these tutorials are directed towards the developers and they should provide them some guidelines to help them producing better code.
+  \section polybench_readme PolyBench original description
+  \verbinclude examples/PolyBench/PolyBenchC/README
 
-- \ref dev_guide_documentation contains hints on how to create good and useful documentation files
-- \ref dev_guide_makefiles is a short tutorial showing how to write good makefiles for PandA
-- \ref dev_guide_programming list the conventions and the guidelines which you should follow to produce good code
 
 */

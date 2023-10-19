@@ -107,8 +107,9 @@
   \endverbatim
 
   \section install_appimage_next Next steps
-  - \ref bambu_overview "PandA Bambu HLS Introduction"
-  - \ref tutorials_page "Tutorials and presentations"
+  - \ref bambu_overview
+  - \ref bambu101_page
+  - \ref dev_page
 
 
 */

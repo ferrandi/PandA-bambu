@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2023 Politecnico di Milano
+ *              Copyright (C) 2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,27 +31,25 @@
  *
 */
 /*!
-   \mainpage PandA Project Documentation
-   The primary objective of the PandA project is to develop a usable framework that will enable the research of new ideas in the HW-SW Co-Design field.<br/>
-   The PandA framework includes methodologies supporting the research on the high-level synthesis of hardware accelerators, parallelism extraction for embedded systems, hardware/software partitioning and mapping, metrics for performance estimation of embedded software applications, and dynamically reconfigurable devices.
-
-   PandA software is released under the \ref panda_license "GNU General Public License version 3" and developed at Politecnico di Milano (Italy).
-
-
-   \section main_getstarted Getting started
-   The following can be helpful to start using the PandA framework and understand its features:
-   - \ref panda_overview
-   - \ref panda_install
-   - \ref bambu101_page
-   - \ref examples_page
+  \page bambu101_systemsim Run HW/SW System-level Co-simulation with Bambu HLS
+  This chapter describes how to use the HW/SW System-level Co-simulation feature offered by Bambu HLS to integrate the generated RTL simulation in a C/C++ application.
+  
+  Sections summary:
+  - \ref systemsim_input
+  - \ref basic_synth
+  - \ref basic_sim
+  
+  
+  \section systemsim_input Prepare the C/C++ application
 
 
-   \section main_devlines Developer's guidelines
-   The PandA framework is an open-source project where you can integrate your own algorithms to enhance the available features and build new ones as needed.<br/>
-   The following can be useful to approach the PandA codebase and start developing:
-   - \ref bambu_overview
-   - \ref install_docker
-   - \ref dev_page
+
+  \section systemsim_synth Run the High-Level Synthesis with Bambu HLS
+
+
+
+  \section systemsim_sim Run the HW/SW simulation
+
 
 
 */

@@ -31,7 +31,7 @@
  *
 */
 /*!
-\page dev_guide_programming Guidelines about Good Programming into PandA
+\page dev_guide_programming Coding guidelines for PandA project codebase
 
 \section programming_intro Introduction
 In this document we plan to shortly explain some useful guidelines to help you writing "good" code into the PandA Project. The main features which will be explained are:

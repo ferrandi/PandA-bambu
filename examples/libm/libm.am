@@ -25,5 +25,5 @@ EXTRA_DIST += \
 %D%/libm_xc7z020-1clg484-VVD_10.0_OSF_sdc.tex \
 %D%/libm_xc7z020-1clg484-VVD_10.0_OSF_sdc_flopoco.tex \
 %D%/libm-test.c \
-%D%/README.txt \
+%D%/libm.doc \
 %D%/test-float.c
