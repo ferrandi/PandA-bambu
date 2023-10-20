@@ -54,10 +54,6 @@
 #include "config_HAVE_I386_CLANG8_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG9_COMPILER.hpp"
 #include "config_HAVE_I386_CLANGVVD_COMPILER.hpp"
-#include "config_HAVE_I386_GCC45_COMPILER.hpp"
-#include "config_HAVE_I386_GCC46_COMPILER.hpp"
-#include "config_HAVE_I386_GCC47_COMPILER.hpp"
-#include "config_HAVE_I386_GCC48_COMPILER.hpp"
 #include "config_HAVE_I386_GCC49_COMPILER.hpp"
 #include "config_HAVE_I386_GCC5_COMPILER.hpp"
 #include "config_HAVE_I386_GCC6_COMPILER.hpp"
@@ -775,34 +771,6 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
 #endif
       case INPUT_OPT_COMPILER:
       {
-#if HAVE_I386_GCC45_COMPILER
-         if(std::string(optarg_param) == "I386_GCC45")
-         {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC45));
-            break;
-         }
-#endif
-#if HAVE_I386_GCC46_COMPILER
-         if(std::string(optarg_param) == "I386_GCC46")
-         {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC46));
-            break;
-         }
-#endif
-#if HAVE_I386_GCC47_COMPILER
-         if(std::string(optarg_param) == "I386_GCC47")
-         {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC47));
-            break;
-         }
-#endif
-#if HAVE_I386_GCC48_COMPILER
-         if(std::string(optarg_param) == "I386_GCC48")
-         {
-            setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC48));
-            break;
-         }
-#endif
 #if HAVE_I386_GCC49_COMPILER
          if(std::string(optarg_param) == "I386_GCC49")
          {
@@ -1225,18 +1193,6 @@ void Parameter::PrintGccOptionsUsage(std::ostream& os) const
       << "    --compiler=<compiler_version>\n"
       << "        Specify which compiler is used.\n"
       << "        Possible values for <compiler_version> are:\n"
-#if HAVE_I386_GCC45_COMPILER
-      << "            I386_GCC45\n"
-#endif
-#if HAVE_I386_GCC46_COMPILER
-      << "            I386_GCC46\n"
-#endif
-#if HAVE_I386_GCC47_COMPILER
-      << "            I386_GCC47\n"
-#endif
-#if HAVE_I386_GCC48_COMPILER
-      << "            I386_GCC48\n"
-#endif
 #if HAVE_I386_GCC49_COMPILER
       << "            I386_GCC49\n"
 #endif

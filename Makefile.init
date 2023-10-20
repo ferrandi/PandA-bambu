@@ -106,16 +106,21 @@ buildenv-shell : compose-up
 	@docker compose -f .devcontainer/docker-compose.yml exec -i -e J=$J buildenv bash
 	@docker compose -f .devcontainer/docker-compose.yml stop -t 0
 
-appimage-build : buildenv-sync
+buildenv-build : buildenv-sync
 	@echo "Configure options: $(APP_CONFIGURE)"
 	@docker compose -f .devcontainer/docker-compose.yml exec -e J=$J buildenv bash /workspace/.devcontainer/library-scripts/appimage-build.sh /panda_dist/distdir /panda_dist/bambu.AppImage $(APP_CONFIGURE)
 	@docker compose -f .devcontainer/docker-compose.yml exec buildenv chown -R $(shell id -u):$(shell id -g) /panda_dist/distdir || true
 	@docker compose -f .devcontainer/docker-compose.yml stop -t 0
 
-appimage-setup : buildenv-sync
+buildenv-setup : buildenv-sync
 	@docker compose -f .devcontainer/docker-compose.yml exec buildenv bash /workspace/.devcontainer/library-scripts/compiler-download.sh / $(APP_COMPILERS) /compilers
 	@docker compose -f .devcontainer/docker-compose.yml exec buildenv bash /workspace/.devcontainer/library-scripts/compiler-setup.sh
 	@docker compose -f .devcontainer/docker-compose.yml exec buildenv bash /workspace/.devcontainer/library-scripts/appimage-setup.sh /panda_dist/distdir $(APP_COMPILERS) /compilers
+	@echo "Initializing PandA build environment"
+	@docker compose -f .devcontainer/docker-compose.yml exec buildenv make --directory=/workspace -f Makefile.init
+	@docker compose -f .devcontainer/docker-compose.yml stop -t 0
+
+buildenv-init : buildenv-sync
 	@echo "Initializing PandA build environment"
 	@docker compose -f .devcontainer/docker-compose.yml exec buildenv make --directory=/workspace -f Makefile.init
 	@docker compose -f .devcontainer/docker-compose.yml stop -t 0

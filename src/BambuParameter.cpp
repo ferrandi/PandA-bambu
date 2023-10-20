@@ -3180,8 +3180,7 @@ void BambuParameter::CheckParameters()
             tuning_optimizations += "inline-functions" + STR_CST_string_separator + "gcse-after-reload" +
                                     STR_CST_string_separator + "ipa-cp-clone" + STR_CST_string_separator +
                                     "unswitch-loops" + STR_CST_string_separator + "no-tree-loop-ivcanon";
-            if(default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48 ||
-               default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49 ||
+            if(default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49 ||
                default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5 ||
                default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6 ||
                default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7 ||
@@ -3602,11 +3601,7 @@ void BambuParameter::CheckParameters()
    }
    if(isOption(OPT_discrepancy) && getOption<bool>(OPT_discrepancy))
    {
-      if(default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC45 ||
-         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC46 ||
-         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC47 ||
-         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48 ||
-         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49)
+      if(default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49)
       {
          THROW_WARNING("discrepancy analysis can report false positives with old compilers, use --compiler=I386_GCC5 "
                        "or higher to avoid them");

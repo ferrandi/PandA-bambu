@@ -154,7 +154,7 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
    if(is_discrepancy && (!parameters->isOption(OPT_discrepancy_permissive_ptrs) ||
                          !parameters->getOption<bool>(OPT_discrepancy_permissive_ptrs)))
    {
-      if(is_clang || CompilerWrapper::isCurrentOrNewer(default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC48))
+      if(is_clang || CompilerWrapper::isCurrentOrNewer(default_compiler, CompilerWrapper_CompilerTarget::CT_I386_GCC49))
       {
          compiler_flags += "-g -fsanitize=address -fno-omit-frame-pointer -fno-common ";
       }
