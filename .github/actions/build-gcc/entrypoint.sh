@@ -10,8 +10,6 @@ shift
 
 workspace_dir=$PWD
 
-#Necessary for gcc-4.5
-export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
 ln -s /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h
 
 function cleanup {

@@ -83,10 +83,6 @@ enum class CompilerWrapper_OptimizationSet
 enum class CompilerWrapper_CompilerTarget
 {
    CT_NO_COMPILER = 0,
-   CT_I386_GCC45 = 1,
-   CT_I386_GCC46 = 2,
-   CT_I386_GCC47 = 4,
-   CT_I386_GCC48 = 8,
    CT_I386_GCC49 = 16,
    CT_I386_GCC5 = 32,
    CT_I386_GCC6 = 64,
