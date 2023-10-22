@@ -36,7 +36,8 @@ fi
 export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/:$LIBRARY_PATH
 if [ "$(cat ${build_dir}/current_build)" != "${config_args}" ]; then
    echo "Configuration necessary for ${config_args}"
-   cd ${build_dir} && ${repo_dir}/configure --prefix=/usr -C ${config_args} && echo "${config_args}" | tee "${build_dir}/current_build"
+   cd ${build_dir}; ${repo_dir}/configure --prefix=/usr -C ${config_args}
+   echo "${config_args}" | tee "${build_dir}/current_build"
 fi
 
 echo "Build PandA Bambu HLS"
