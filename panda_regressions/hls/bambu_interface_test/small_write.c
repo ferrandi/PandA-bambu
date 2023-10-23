@@ -13,14 +13,14 @@
     lru write_policy = wt
 #pragma HLS_cache bundle = gmem1 way_size = 16 line_size = 16 bus_size = 32 n_ways = 1 buffer_size = 2 rep_policy = \
     lru write_policy = wt    
-int vector_copy_plus(int* a, int* b)
+int __attribute__((noinline)) vector_copy_plus(int* a, int* b)
 {
     for(int i = 0; i < elem_number; i++)
     {
         b[i] = a[i] + 1;
     }
     return b[0];
-}
+}   
 
 #ifdef __BAMBU_SIM__
 #include <mdpi/mdpi_user.h>
