@@ -57,6 +57,8 @@ bambu_interface_test/ac_channels_64async-LL.cpp --top-fname=count_async --genera
 bambu_interface_test/hls_stream.cpp --top-fname=sum3numbers --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}"
 bambu_interface_test/hls_stream_axis.cpp --top-fname=sum3numbers --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}"
 bambu_interface_test/ac_range.cpp --top-fname=check_range --generate-tb=a=-1,b=2,c=0
+bambu_interface_test/small_write.c --top-fname=vector_copy_plus --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/small_write.c --benchmark-name=small_write
+bambu_interface_test/small_write.c --top-fname=vector_copy_plus --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/small_write.c --benchmark-name=small_write_delayed --mem-delay-read=20 --mem-delay-write=20
 bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG_BUFFER --benchmark-name=2mm_cache_big_buffer
 bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG_BUS --benchmark-name=2mm_cache_big_bus
 bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG --benchmark-name=2mm_cache_big
