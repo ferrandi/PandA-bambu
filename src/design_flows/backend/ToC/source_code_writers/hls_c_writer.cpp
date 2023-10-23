@@ -410,7 +410,39 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
    const auto mem_vars = HLSMgr->Rmem->get_ext_memory_variables();
    const auto BH = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
    const auto parameters = BH->get_parameters();
-   const auto align = std::max(8ULL, HLSMgr->Rmem->get_bus_data_bitsize() / 8ULL);
+
+   const auto align_bus = [&]() { return std::max(8ULL, HLSMgr->Rmem->get_bus_data_bitsize() / 8ULL); }();
+   const auto align_infer = [&]() {
+      unsigned long long max = 0ULL;
+      auto da = HLSMgr->design_attributes;
+      for(auto function : da)
+      {
+         for(auto parameter : function.second)
+         {
+            for(auto attribute : parameter.second)
+            {
+               if(attribute.first == attr_interface_bitwidth)
+               {
+                  max = std::max(max, boost::lexical_cast<unsigned long long>(attribute.second));
+               }
+            }
+         }
+      }
+      return max / 8ULL;
+   }();
+   const auto align = std::max(align_bus, align_infer);
+
+   const auto fnode = TM->CGetTreeReindex(BH->get_function_index());
+   const auto fname = tree_helper::GetMangledFunctionName(GetPointerS<const function_decl>(GET_CONST_NODE(fnode)));
+   const auto& DesignAttributes = HLSMgr->design_attributes;
+   const auto function_if = [&]() -> const std::map<std::string, std::map<interface_attributes, std::string>>* {
+      const auto it = DesignAttributes.find(fname);
+      if(it != DesignAttributes.end())
+      {
+         return &it->second;
+      }
+      return nullptr;
+   }();
    indented_output_stream->Append(R"(
 typedef struct
 {
@@ -420,10 +452,60 @@ const ptr_t addrmap;
 void* addr;
 } __m_memmap_t;
 
+typedef struct
+{
+size_t alignment;
+void* addr;
+} __m_varmap_t;
+
 static int cmpptr(const ptr_t a, const ptr_t b) { return a < b ? -1 : (a > b); }
 static int cmpaddr(const void* a, const void* b) { return cmpptr((ptr_t)((__m_memmap_t*)a)->addr, (ptr_t)((__m_memmap_t*)b)->addr); }
 
-static void __m_memsetup(void* args[], size_t args_count)
+static void __m_argsmapsetup( __m_varmap_t* args_map)
+{
+)");
+   const auto top_params = BH->GetParameters();
+   int i = 0;
+   for(const auto& param : top_params)
+   {
+      const auto param_name = BH->PrintVariable(GET_INDEX_CONST_NODE(param));
+      if(function_if)
+      {
+         if((*function_if).find(param_name) != (*function_if).end())
+         {
+            unsigned long long param_size = 1U;
+            unsigned long long line_size = 1U;
+            const auto attributes = function_if->at(param_name);
+            for(auto attribute : attributes)
+            {
+               if(attribute.first == attr_interface_bitwidth)
+               {
+                  param_size = boost::lexical_cast<unsigned long long>(attribute.second);
+               }
+               if(attribute.first == attr_line_size)
+               {
+                  line_size = boost::lexical_cast<unsigned long long>(attribute.second);
+               }
+            }
+            indented_output_stream->Append("args_map[" + STR(i) +
+                                           "].alignment = " + STR(std::max(align, param_size * line_size)) + ";\n");
+         }
+         else
+         {
+            indented_output_stream->Append("args_map[" + STR(i) + "].alignment = " + STR(align) + ";\n");
+         }
+         i++;
+      }
+      else
+      {
+         indented_output_stream->Append("args_map[" + STR(i) + "].alignment = " + STR(align) + ";\n");
+         i++;
+      }
+   }
+   indented_output_stream->Append(R"(
+}
+
+static void __m_memsetup(void* args[], size_t args_count, __m_varmap_t* args_map)
 {
 int error = 0;
 size_t i;
@@ -496,8 +578,19 @@ for(i = 0; i < args_count; ++i)
 {
 const size_t size = __m_param_size(i);
 base_addr += (align - 1) - ((base_addr - 1) % align);
+if((size % (args_map[i].alignment)) != 0)
+{
+const size_t aligned_size = size + (args_map[i].alignment - 1) - ((size - 1) % args_map[i].alignment);
+args_map[i].addr =  malloc(aligned_size);
+memcpy(args_map[i].addr, args[i], size);
+error |= __m_memmap(base_addr, args_map[i].addr, aligned_size);
+base_addr += aligned_size;
+}
+else
+{
 error |= __m_memmap(base_addr, args[i], size);
 base_addr += size;
+}
 }
 if(error)
 {
@@ -951,11 +1044,13 @@ static size_t __m_call_count = 0;
       }
       return par;
    }();
+   indented_output_stream->Append("static __m_varmap_t args_map[" + STR(args_decl_size) + "];\n");
    indented_output_stream->Append("const long double max_ulp = " + max_ulp + ";\n");
    indented_output_stream->Append("size_t i;\n");
    indented_output_stream->Append(args_init);
    indented_output_stream->Append(args_decl);
-   indented_output_stream->Append("__m_memsetup(args, " + STR(args_decl_size) + ");\n\n");
+   indented_output_stream->Append("__m_argsmapsetup(args_map);\n\n");
+   indented_output_stream->Append("__m_memsetup(args, " + STR(args_decl_size) + ", args_map);\n\n");
 
    indented_output_stream->Append("__m_arg_init(" + STR(args_decl_size) + ");\n");
    indented_output_stream->Append(args_set);
