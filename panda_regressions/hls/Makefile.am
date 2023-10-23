@@ -34,6 +34,7 @@ EXTRA_DIST= \
    %D%/bambu_specific_test3_list \
    %D%/bambu_specific_test3.sh \
    %D%/bambu_interface_test/2mm.c \
+   %D%/bambu_interface_test/small_write.c \
    %D%/bambu_interface_test/ac_channels_64async.cpp \
    %D%/bambu_interface_test/ac_channels_64.cpp \
    %D%/bambu_interface_test/ac_channels_64async-LL.cpp \
