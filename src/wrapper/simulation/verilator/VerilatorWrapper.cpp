@@ -42,8 +42,6 @@
  */
 #include "VerilatorWrapper.hpp"
 
-#include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
-
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
 #include "constants.hpp"
