@@ -454,16 +454,17 @@ void* addr;
 
 typedef struct
 {
+size_t size;
 size_t alignment;
 void* addr;
+void* or_addr;
 } __m_varmap_t;
 
 static int cmpptr(const ptr_t a, const ptr_t b) { return a < b ? -1 : (a > b); }
 static int cmpaddr(const void* a, const void* b) { return cmpptr((ptr_t)((__m_memmap_t*)a)->addr, (ptr_t)((__m_memmap_t*)b)->addr); }
 
-static void __m_argsmapsetup( __m_varmap_t* args_map)
-{
-)");
+static void __m_argsmapsetup( __m_varmap_t* args_map))");
+   indented_output_stream->Append("{\n");
    const auto top_params = BH->GetParameters();
    int i = 0;
    for(const auto& param : top_params)
@@ -502,8 +503,8 @@ static void __m_argsmapsetup( __m_varmap_t* args_map)
          i++;
       }
    }
-   indented_output_stream->Append(R"(
-}
+   indented_output_stream->Append("args_map[" + STR(i) + "].alignment = " + STR(align) + ";\n");
+   indented_output_stream->Append(R"(}
 
 static void __m_memsetup(void* args[], size_t args_count, __m_varmap_t* args_map)
 {
@@ -583,6 +584,9 @@ if((size % (args_map[i].alignment)) != 0)
 const size_t aligned_size = size + (args_map[i].alignment - 1) - ((size - 1) % args_map[i].alignment);
 args_map[i].addr =  malloc(aligned_size);
 memcpy(args_map[i].addr, args[i], size);
+args_map[i].or_addr = args[i];
+args[i] = args_map[i].addr;
+args_map[i].size = size;
 error |= __m_memmap(base_addr, args_map[i].addr, aligned_size);
 base_addr += aligned_size;
 }
@@ -590,6 +594,7 @@ else
 {
 error |= __m_memmap(base_addr, args[i], size);
 base_addr += size;
+args_map[i].size = 0;
 }
 }
 if(error)
@@ -599,6 +604,19 @@ abort();
 }
 
 )");
+
+   indented_output_stream->Append("static void __memwb(void* args[], __m_varmap_t* args_map)\n");
+   indented_output_stream->Append("{\n");
+   indented_output_stream->Append("for(int i = 0; i < " + STR(parameters.size() + 1) + "; i++)\n");
+   indented_output_stream->Append("{\n");
+   indented_output_stream->Append("if(args_map[i].size > 0)\n");
+   indented_output_stream->Append("{\n");
+   indented_output_stream->Append("args[i] = args_map[i].or_addr;\n");
+   indented_output_stream->Append("memcpy(args[i], args_map[i].addr, args_map[i].size);\n");
+   indented_output_stream->Append("free(args_map[i].addr);\n");
+   indented_output_stream->Append("}\n");
+   indented_output_stream->Append("}\n");
+   indented_output_stream->Append("}\n");
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written simulator init memory");
 }
@@ -1077,6 +1095,7 @@ static size_t __m_call_count = 0;
 #endif
 
 )");
+      indented_output_stream->Append("__memwb(args, args_map);\n\n");
       indented_output_stream->Append("size_t mismatch_count = 0;\n");
       indented_output_stream->Append(gold_cmp + "\n");
       if(return_type)
