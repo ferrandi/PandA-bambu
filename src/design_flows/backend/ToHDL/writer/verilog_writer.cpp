@@ -1205,10 +1205,6 @@ void verilog_writer::write_module_parametrization(const structural_objectRef& ci
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written module generics of " + cir->get_path());
 }
 
-void verilog_writer::write_tail(const structural_objectRef&)
-{
-}
-
 void verilog_writer::write_state_declaration(const structural_objectRef& cir,
                                              const std::list<std::string>& list_of_states, const std::string&,
                                              const std::string& reset_state, bool one_hot)

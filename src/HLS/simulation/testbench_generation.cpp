@@ -614,7 +614,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
    HDL_manager HDLMgr(HLSMgr, HLSMgr->get_HLS_device(), parameters);
    std::list<std::string> hdl_files, aux_files;
    const std::list<structural_objectRef> tb_circuits = {tb_cir};
-   HDLMgr.hdl_gen(tb_filename, tb_circuits, false, hdl_files, aux_files);
+   HDLMgr.hdl_gen(tb_filename, tb_circuits, hdl_files, aux_files, true);
    THROW_ASSERT(hdl_files.size() == 1, "Expected single testbench file");
    THROW_ASSERT(aux_files.size() <= 1, "Expected at most a single testbench aux file");
    if(aux_files.size())

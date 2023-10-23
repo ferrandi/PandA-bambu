@@ -1156,7 +1156,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
       std::list<std::string> hdl_files, aux_files;
       std::list<structural_objectRef> circuits;
       circuits.push_back(circuit);
-      HDL->hdl_gen(fu_name, circuits, false, hdl_files, aux_files);
+      HDL->hdl_gen(fu_name, circuits, hdl_files, aux_files, false);
       int PipelineDepth = -1;
 #if HAVE_FLOPOCO
       if(n_pipe_parameters > 0 && NPF && NPF->exist_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) &&
