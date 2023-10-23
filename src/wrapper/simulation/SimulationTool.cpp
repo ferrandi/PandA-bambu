@@ -42,7 +42,6 @@
 
 #include "config_HAVE_ASSERTS.hpp"
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
-#include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
 
 #include "ISE_isim_wrapper.hpp"
 #include "IcarusWrapper.hpp"

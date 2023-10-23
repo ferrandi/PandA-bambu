@@ -43,8 +43,6 @@
  */
 #include "modelsimWrapper.hpp"
 
-#include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
-
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
 #include "custom_set.hpp"
