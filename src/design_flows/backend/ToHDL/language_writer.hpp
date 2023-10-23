@@ -258,11 +258,6 @@ class language_writer
     */
    virtual void write_module_parametrization(const structural_objectRef& cir) = 0;
    /**
-    * Write the tail part of the file. Write some lines of comments and some debugging code.
-    * @param cir is the top component.
-    */
-   virtual void write_tail(const structural_objectRef& cir) = 0;
-   /**
     * write the declaration of all the states of the finite state machine.
     * @param list_of_states is the list of all the states.
     */
