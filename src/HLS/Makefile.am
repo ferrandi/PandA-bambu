@@ -90,8 +90,6 @@ lib_datapath_creation_la_SOURCES = \
    architecture_creation/datapath_creation/datapath_cs.cpp \
    architecture_creation/datapath_creation/datapath_parallel_cs.cpp
 
-PRJ_DOC += architecture_creation/datapath_creation/datapath.doc
-
 noinst_LTLIBRARIES += lib_architecture_creation.la
 noinst_HEADERS += \
    architecture_creation/top_entity.hpp \
@@ -473,7 +471,6 @@ lib_evaluation_la_SOURCES = \
    evaluation/evaluation_base_step.cpp \
    evaluation/dry_run_evaluation.cpp
 lib_evaluation_la_LIBADD = lib_exact_evaluation.la
-PRJ_DOC += evaluation/evaluation.doc
 
 noinst_LTLIBRARIES += lib_function_allocation.la
 lib_function_allocation_la_CPPFLAGS = \
@@ -796,7 +793,6 @@ lib_allocation_la_SOURCES = \
 #DOCUMENTATION STUFF
 PRJ_DOC += \
    module_allocation/main_allocation.doc \
-   module_allocation/allocation.doc \
    module_allocation/binding_constraints.doc
 
 noinst_LTLIBRARIES += lib_scheduling.la

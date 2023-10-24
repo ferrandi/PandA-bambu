@@ -16,5 +16,3 @@ libpragma_la_CPPFLAGS = \
 noinst_HEADERS += pragma/pragma_manager.hpp
 libpragma_la_SOURCES = pragma/pragma_manager.cpp
 
-PRJ_DOC += pragma/pragma.doc
-
