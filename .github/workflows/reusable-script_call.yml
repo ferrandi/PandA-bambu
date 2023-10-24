@@ -1,0 +1,86 @@
+name: Reusable Script Caller
+
+on:
+  workflow_call:
+    inputs:
+      package-name:
+        description: "Bambu AppImage package name"
+        required: true
+        type: string
+      compiler:
+        description: "Compiler used during tests"
+        required: true
+        type: string
+      script:
+        description: "Script name for the test"
+        required: true
+        type: string
+      args:
+        description: "Arguments to be used during tests"
+        required: false
+        type: string
+        default: ""
+    secrets:
+      CI_STORAGE_URL:
+        required: true
+      CI_STORAGE_USER:
+        required: true
+      CI_STORAGE_TOKEN:
+        required: true
+
+env:
+  report-dir: test-reports
+  storage-url: ${{secrets.CI_STORAGE_URL}}
+  storage-user: ${{secrets.CI_STORAGE_USER}}
+  storage-token: ${{secrets.CI_STORAGE_TOKEN}}
+  host_jobs: $J
+
+jobs:
+  script_call:
+    runs-on: [self-hosted, long]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{inputs.package-name}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+      - name: Generate out name
+        id: get
+        shell: bash
+        run: |
+          COMPILER="$(echo '${{inputs.compiler}}' | cut -d' ' -f1 | sed -r 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
+          SCRIPT="$(echo '${{inputs.script}}' | cut -d' ' -f1 | sed -r 's/(\.sh|generic_gcc_)//g')"
+          OUTNAME="${COMPILER}_${SCRIPT}"
+          if [[ "${{inputs.args}}" = *-c=--speculative-sdc-scheduling* ]]; then
+            OUTNAME+="_sdc"
+          fi
+          echo "outname=$OUTNAME" >> $GITHUB_OUTPUT
+      - name: Launch test suite
+        id: suite
+        shell: bash
+        run: |
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          mkdir ${{env.report-dir}}
+          out_dir="$PWD/${{env.report-dir}}"
+          echo "test-reports-dir=$out_dir" >> $GITHUB_OUTPUT
+          ./panda_regressions/hls/${{inputs.script}} \
+            --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" \
+            --table="$out_dir/perf.tex" -c=--compiler=${{inputs.compiler}} ${{inputs.args}}
+      - name: Upload test reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{steps.get.outputs.outname}}
+          path: ${{steps.suite.outputs.test-reports-dir}}
