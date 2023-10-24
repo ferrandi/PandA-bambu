@@ -1,13 +1,31 @@
 noinst_LTLIBRARIES += lib_design_flows.la
 lib_design_flows_la_LIBADD =
-lib_design_flows_la_SOURCES = design_flows/design_flow.cpp design_flows/design_flow_aux_step.cpp design_flows/design_flow_factory.cpp design_flows/design_flow_graph.cpp design_flows/design_flow_manager.cpp design_flows/design_flow_step.cpp design_flows/design_flow_step_factory.cpp design_flows/non_deterministic_flows.cpp
-noinst_HEADERS += design_flows/design_flow.hpp design_flows/design_flow_aux_step.hpp design_flows/design_flow_factory.hpp design_flows/design_flow_graph.hpp design_flows/design_flow_manager.hpp design_flows/design_flow_step.hpp design_flows/design_flow_step_factory.hpp design_flows/non_deterministic_flows.hpp
+lib_design_flows_la_SOURCES = \
+  design_flows/design_flow.cpp \
+  design_flows/design_flow_aux_step.cpp \
+  design_flows/design_flow_factory.cpp \
+  design_flows/design_flow_graph.cpp \
+  design_flows/design_flow_manager.cpp \
+  design_flows/design_flow_step.cpp \
+  design_flows/design_flow_step_factory.cpp \
+  design_flows/non_deterministic_flows.cpp
+
+noinst_HEADERS += \
+  design_flows/design_flow.hpp \
+  design_flows/design_flow_aux_step.hpp \
+  design_flows/design_flow_factory.hpp \
+  design_flows/design_flow_graph.hpp \
+  design_flows/design_flow_manager.hpp \
+  design_flows/design_flow_step.hpp \
+  design_flows/design_flow_step_factory.hpp \
+  design_flows/non_deterministic_flows.hpp
+
 lib_design_flows_la_CPPFLAGS = \
-   -I$(top_srcdir)/src \
-   -I$(top_srcdir)/src/constants \
-   -I$(top_srcdir)/src/graph \
-   -I$(top_srcdir)/src/utility \
-   $(AM_CPPFLAGS)
+  -I$(top_srcdir)/src \
+  -I$(top_srcdir)/src/constants \
+  -I$(top_srcdir)/src/graph \
+  -I$(top_srcdir)/src/utility \
+  $(AM_CPPFLAGS)
 
 if BUILD_LIB_BACKEND
   noinst_LTLIBRARIES += lib_backend.la 
@@ -17,21 +35,21 @@ if BUILD_LIB_BACKEND
 if BUILD_LIB_TO_C
   noinst_LTLIBRARIES += lib_progModel.la
   lib_progModel_la_CPPFLAGS = \
-   -I$(top_srcdir)/src/ \
-   -I$(top_srcdir)/src/algorithms/dominance \
-   -I$(top_srcdir)/src/algorithms/loops_detection \
-   -I$(top_srcdir)/src/behavior \
-   -I$(top_srcdir)/src/design_flows \
-   -I$(top_srcdir)/src/design_flows/backend/ToC \
-   -I$(top_srcdir)/src/design_flows/backend/ToC/progModels \
-   -I$(top_srcdir)/src/design_flows/backend/ToC/source_code_writers \
-   -I$(top_srcdir)/src/frontend_analysis \
-   -I$(top_srcdir)/src/graph \
-   -I$(top_srcdir)/src/parser/polixml \
-   -I$(top_srcdir)/src/polixml \
-   -I$(top_srcdir)/src/tree \
-   -I$(top_srcdir)/src/utility \
-   $(AM_CPPFLAGS)
+    -I$(top_srcdir)/src/ \
+    -I$(top_srcdir)/src/algorithms/dominance \
+    -I$(top_srcdir)/src/algorithms/loops_detection \
+    -I$(top_srcdir)/src/behavior \
+    -I$(top_srcdir)/src/design_flows \
+    -I$(top_srcdir)/src/design_flows/backend/ToC \
+    -I$(top_srcdir)/src/design_flows/backend/ToC/progModels \
+    -I$(top_srcdir)/src/design_flows/backend/ToC/source_code_writers \
+    -I$(top_srcdir)/src/frontend_analysis \
+    -I$(top_srcdir)/src/graph \
+    -I$(top_srcdir)/src/parser/polixml \
+    -I$(top_srcdir)/src/polixml \
+    -I$(top_srcdir)/src/tree \
+    -I$(top_srcdir)/src/utility \
+    $(AM_CPPFLAGS)
   noinst_HEADERS += \
     design_flows/backend/ToC/progModels/actor_graph_backend.hpp
   lib_progModel_la_SOURCES = \
@@ -43,91 +61,94 @@ if BUILD_LIB_TO_C
 endif
 
 if BUILD_LIB_HLS
-  lib_progModel_la_CPPFLAGS += \
-   -I$(top_srcdir)/src/HLS
+  lib_progModel_la_CPPFLAGS += -I$(top_srcdir)/src/HLS
 endif
 
   noinst_LTLIBRARIES += lib_source_code_writers.la
   lib_source_code_writers_la_CPPFLAGS = \
-   -I$(top_srcdir)/src \
-   -I$(top_srcdir)/src/constants \
-   -I$(top_srcdir)/src/algorithms/dominance \
-   -I$(top_srcdir)/src/algorithms/loops_detection \
-   -I$(top_srcdir)/src/behavior \
-   -I$(top_srcdir)/src/design_flows \
-   -I$(top_srcdir)/src/design_flows/backend/ToC \
-   -I$(top_srcdir)/src/design_flows/backend/ToHDL \
-   -I$(top_srcdir)/src/design_flows/backend/ToC/progModels \
-   -I$(top_srcdir)/src/frontend_analysis \
-   -I$(top_srcdir)/src/frontend_analysis/IR_analysis \
-   -I$(top_srcdir)/src/graph \
-   -I$(top_srcdir)/src/parser/compiler \
-   -I$(top_srcdir)/src/tree \
-   -I$(top_srcdir)/src/utility \
-   -I$(top_srcdir)/src/wrapper/compiler \
-   -I$(top_srcdir)/src/HLS/binding/module/ \
-   -I$(top_srcdir)/src/HLS/module_allocation/ \
-   -I$(top_srcdir)/src/HLS/scheduling \
-   -I$(top_srcdir)/src/HLS/stg \
-   -I$(top_srcdir)/src/HLS/vcd \
-   -I$(top_srcdir)/src/HLS \
-   -I$(top_srcdir)/src/parser/discrepancy \
-   -I$(top_srcdir)/src/parser/vcd \
-   -I$(top_srcdir)/src/technology \
-   $(AM_CPPFLAGS)
-  noinst_HEADERS += design_flows/backend/ToC/source_code_writers/c_writer.hpp design_flows/backend/ToC/source_code_writers/instruction_writer.hpp
-  lib_source_code_writers_la_SOURCES = design_flows/backend/ToC/source_code_writers/c_writer.cpp design_flows/backend/ToC/source_code_writers/instruction_writer.cpp
+    -I$(top_srcdir)/src \
+    -I$(top_srcdir)/src/constants \
+    -I$(top_srcdir)/src/algorithms/dominance \
+    -I$(top_srcdir)/src/algorithms/loops_detection \
+    -I$(top_srcdir)/src/behavior \
+    -I$(top_srcdir)/src/design_flows \
+    -I$(top_srcdir)/src/design_flows/backend/ToC \
+    -I$(top_srcdir)/src/design_flows/backend/ToHDL \
+    -I$(top_srcdir)/src/design_flows/backend/ToC/progModels \
+    -I$(top_srcdir)/src/frontend_analysis \
+    -I$(top_srcdir)/src/frontend_analysis/IR_analysis \
+    -I$(top_srcdir)/src/graph \
+    -I$(top_srcdir)/src/parser/compiler \
+    -I$(top_srcdir)/src/tree \
+    -I$(top_srcdir)/src/utility \
+    -I$(top_srcdir)/src/wrapper/compiler \
+    -I$(top_srcdir)/src/HLS/binding/module/ \
+    -I$(top_srcdir)/src/HLS/module_allocation/ \
+    -I$(top_srcdir)/src/HLS/scheduling \
+    -I$(top_srcdir)/src/HLS/stg \
+    -I$(top_srcdir)/src/HLS/vcd \
+    -I$(top_srcdir)/src/HLS \
+    -I$(top_srcdir)/src/parser/discrepancy \
+    -I$(top_srcdir)/src/parser/vcd \
+    -I$(top_srcdir)/src/technology \
+    $(AM_CPPFLAGS)
+  noinst_HEADERS += \
+    design_flows/backend/ToC/source_code_writers/c_writer.hpp \
+    design_flows/backend/ToC/source_code_writers/instruction_writer.hpp
+  lib_source_code_writers_la_SOURCES = \
+    design_flows/backend/ToC/source_code_writers/c_writer.cpp \
+    design_flows/backend/ToC/source_code_writers/instruction_writer.cpp
 
 if BUILD_BAMBU
-   noinst_HEADERS += \
-      design_flows/backend/ToC/source_code_writers/hls_c_writer.hpp \
-      design_flows/backend/ToC/source_code_writers/hls_instruction_writer.hpp\
-      design_flows/backend/ToC/source_code_writers/discrepancy_analysis_c_writer.hpp\
-      design_flows/backend/ToC/source_code_writers/discrepancy_instruction_writer.hpp
-   lib_source_code_writers_la_SOURCES += \
-      design_flows/backend/ToC/source_code_writers/hls_c_writer.cpp \
-      design_flows/backend/ToC/source_code_writers/hls_instruction_writer.cpp\
-      design_flows/backend/ToC/source_code_writers/discrepancy_analysis_c_writer.cpp\
-      design_flows/backend/ToC/source_code_writers/discrepancy_instruction_writer.cpp
-   lib_source_code_writers_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/circuit \
-      -I$(top_srcdir)/src/HLS \
-      -I$(top_srcdir)/src/HLS/memory \
-      -I$(top_srcdir)/src/HLS/simulation \
-      -I$(top_srcdir)/src/intermediate_representations \
-      -I$(top_srcdir)/src/intermediate_representations/hls \
-      -I$(top_srcdir)/src/technology
+  noinst_HEADERS += \
+    design_flows/backend/ToC/source_code_writers/hls_c_writer.hpp \
+    design_flows/backend/ToC/source_code_writers/hls_instruction_writer.hpp\
+    design_flows/backend/ToC/source_code_writers/discrepancy_analysis_c_writer.hpp\
+    design_flows/backend/ToC/source_code_writers/discrepancy_instruction_writer.hpp
+  lib_source_code_writers_la_SOURCES += \
+    design_flows/backend/ToC/source_code_writers/hls_c_writer.cpp \
+    design_flows/backend/ToC/source_code_writers/hls_instruction_writer.cpp\
+    design_flows/backend/ToC/source_code_writers/discrepancy_analysis_c_writer.cpp\
+    design_flows/backend/ToC/source_code_writers/discrepancy_instruction_writer.cpp
+  lib_source_code_writers_la_CPPFLAGS += \
+    -I$(top_srcdir)/src/circuit \
+    -I$(top_srcdir)/src/HLS \
+    -I$(top_srcdir)/src/HLS/memory \
+    -I$(top_srcdir)/src/HLS/simulation \
+    -I$(top_srcdir)/src/intermediate_representations \
+    -I$(top_srcdir)/src/intermediate_representations/hls \
+    -I$(top_srcdir)/src/technology
 endif
 if BUILD_LIB_HOST_PROFILING
-   noinst_HEADERS += \
-      design_flows/backend/ToC/source_code_writers/basic_blocks_profiling_c_writer.hpp \
-      design_flows/backend/ToC/source_code_writers/edge_c_writer.hpp
-   lib_source_code_writers_la_SOURCES += \
-      design_flows/backend/ToC/source_code_writers/basic_blocks_profiling_c_writer.cpp \
-      design_flows/backend/ToC/source_code_writers/edge_c_writer.cpp
+  noinst_HEADERS += \
+    design_flows/backend/ToC/source_code_writers/basic_blocks_profiling_c_writer.hpp \
+    design_flows/backend/ToC/source_code_writers/edge_c_writer.hpp
+  lib_source_code_writers_la_SOURCES += \
+    design_flows/backend/ToC/source_code_writers/basic_blocks_profiling_c_writer.cpp \
+    design_flows/backend/ToC/source_code_writers/edge_c_writer.cpp
 endif
 if BUILD_LIB_PRAGMA
-   lib_source_code_writers_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/pragma
+  lib_source_code_writers_la_CPPFLAGS += \
+    -I$(top_srcdir)/src/pragma
 endif
 
   noinst_LTLIBRARIES +=  lib_ToC.la
   lib_ToC_la_CPPFLAGS = \
-   -I$(top_srcdir)/src \
-   -I$(top_srcdir)/src/behavior \
-   -I$(top_srcdir)/src/design_flows \
-   -I$(top_srcdir)/src/design_flows/backend/ToC/progModels \
-   -I$(top_srcdir)/src/design_flows/backend/ToC/source_code_writers \
-   -I$(top_srcdir)/src/graph \
-   -I$(top_srcdir)/src/HLS \
-   -I$(top_srcdir)/src/utility \
-   $(AM_CPPFLAGS)
+    -I$(top_srcdir)/src \
+    -I$(top_srcdir)/src/behavior \
+    -I$(top_srcdir)/src/design_flows \
+    -I$(top_srcdir)/src/design_flows/backend/ToC/progModels \
+    -I$(top_srcdir)/src/design_flows/backend/ToC/source_code_writers \
+    -I$(top_srcdir)/src/graph \
+    -I$(top_srcdir)/src/HLS \
+    -I$(top_srcdir)/src/utility \
+    $(AM_CPPFLAGS)
   lib_ToC_la_SOURCES = \
-   design_flows/backend/ToC/c_backend_information.cpp \
-   design_flows/backend/ToC/c_backend_step_factory.cpp
-noinst_HEADERS += \
-   design_flows/backend/ToC/c_backend_information.hpp \
-   design_flows/backend/ToC/c_backend_step_factory.hpp
+    design_flows/backend/ToC/c_backend_information.cpp \
+    design_flows/backend/ToC/c_backend_step_factory.cpp
+  noinst_HEADERS += \
+    design_flows/backend/ToC/c_backend_information.hpp \
+    design_flows/backend/ToC/c_backend_step_factory.hpp
 
   lib_ToC_la_LIBADD = lib_progModel.la lib_source_code_writers.la
 
@@ -137,43 +158,54 @@ endif
 if BUILD_LIB_TO_HDL
   noinst_LTLIBRARIES += lib_HDL_writers.la
   lib_HDL_writers_la_CPPFLAGS = \
-   -I$(top_srcdir)/src \
-   -I$(top_srcdir)/src/behavior \
-   -I$(top_srcdir)/src/circuit \
-   -I$(top_srcdir)/src/constants/ \
-   -I$(top_srcdir)/src/design_flows \
-   -I$(top_srcdir)/src/design_flows/backend/ToHDL \
-   -I$(top_srcdir)/src/graph \
-   -I$(top_srcdir)/src/HLS/scheduling\
-   -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/tree \
-   -I$(top_srcdir)/src/utility \
-   -I$(top_srcdir)/src/HLS/stg \
-   $(AM_CPPFLAGS)
-  noinst_HEADERS += design_flows/backend/ToHDL/writer/verilog_writer.hpp design_flows/backend/ToHDL/writer/sv_writer.hpp design_flows/backend/ToHDL/writer/VHDL_writer.hpp
-  lib_HDL_writers_la_SOURCES = design_flows/backend/ToHDL/writer/verilog_writer.cpp design_flows/backend/ToHDL/writer/sv_writer.cpp design_flows/backend/ToHDL/writer/VHDL_writer.cpp
+    -I$(top_srcdir)/src \
+    -I$(top_srcdir)/src/behavior \
+    -I$(top_srcdir)/src/circuit \
+    -I$(top_srcdir)/src/constants/ \
+    -I$(top_srcdir)/src/design_flows \
+    -I$(top_srcdir)/src/design_flows/backend/ToHDL \
+    -I$(top_srcdir)/src/graph \
+    -I$(top_srcdir)/src/HLS/scheduling\
+    -I$(top_srcdir)/src/technology \
+    -I$(top_srcdir)/src/tree \
+    -I$(top_srcdir)/src/utility \
+    -I$(top_srcdir)/src/HLS/stg \
+    $(AM_CPPFLAGS)
+  noinst_HEADERS += \
+    design_flows/backend/ToHDL/writer/verilog_writer.hpp \
+    design_flows/backend/ToHDL/writer/sv_writer.hpp \
+    design_flows/backend/ToHDL/writer/VHDL_writer.hpp
+  lib_HDL_writers_la_SOURCES = \
+    design_flows/backend/ToHDL/writer/verilog_writer.cpp \
+    design_flows/backend/ToHDL/writer/sv_writer.cpp \
+    design_flows/backend/ToHDL/writer/VHDL_writer.cpp
 
   noinst_LTLIBRARIES += lib_ToHDL.la
-  lib_ToHDL_la_CPPFLAGS = -I$(top_srcdir)/src \
-                        -I$(top_srcdir)/src/behavior \
-                        -I$(top_srcdir)/src/circuit \
-                        -I$(top_srcdir)/src/constants \
-                        -I$(top_srcdir)/src/design_flows/ \
-                        -I$(top_srcdir)/src/design_flows/backend/ToHDL \
-                        -I$(top_srcdir)/src/design_flows/backend/ToHDL/writer \
-                        -I$(top_srcdir)/src/graph \
-                        -I$(top_srcdir)/src/HLS \
-                        -I$(top_srcdir)/src/technology \
-                        -I$(top_srcdir)/src/tree \
-                        -I$(top_srcdir)/src/utility \
-                        $(AM_CPPFLAGS)
+  lib_ToHDL_la_CPPFLAGS = \
+    -I$(top_srcdir)/src \
+    -I$(top_srcdir)/src/behavior \
+    -I$(top_srcdir)/src/circuit \
+    -I$(top_srcdir)/src/constants \
+    -I$(top_srcdir)/src/design_flows/ \
+    -I$(top_srcdir)/src/design_flows/backend/ToHDL \
+    -I$(top_srcdir)/src/design_flows/backend/ToHDL/writer \
+    -I$(top_srcdir)/src/graph \
+    -I$(top_srcdir)/src/HLS \
+    -I$(top_srcdir)/src/technology \
+    -I$(top_srcdir)/src/tree \
+    -I$(top_srcdir)/src/utility \
+    $(AM_CPPFLAGS)
 if BUILD_FLOPOCO
   lib_ToHDL_la_CPPFLAGS += -I$(top_srcdir)/src/wrapper/flopoco
 endif
   lib_ToHDL_la_LIBADD = lib_HDL_writers.la
 
-noinst_HEADERS += design_flows/backend/ToHDL/HDL_manager.hpp design_flows/backend/ToHDL/language_writer.hpp
-lib_ToHDL_la_SOURCES = design_flows/backend/ToHDL/HDL_manager.cpp design_flows/backend/ToHDL/language_writer.cpp
+  noinst_HEADERS += \
+    design_flows/backend/ToHDL/HDL_manager.hpp \
+    design_flows/backend/ToHDL/language_writer.hpp
+  lib_ToHDL_la_SOURCES = \
+    design_flows/backend/ToHDL/HDL_manager.cpp \
+    design_flows/backend/ToHDL/language_writer.cpp
 
   PRJ_DOC += design_flows/backend/ToHDL/ToHDL.doc
   lib_backend_la_LIBADD += lib_ToHDL.la
@@ -182,17 +214,17 @@ endif
 if BUILD_LIB_TO_DATAFILE
   noinst_LTLIBRARIES += lib_ToDataFile.la
   lib_ToDataFile_la_CPPFLAGS = \
-   -I$(top_srcdir)/src \
-   -I$(top_srcdir)/src/constants \
-   -I$(top_srcdir)/src/design_flows \
-   -I$(top_srcdir)/src/graph\
-   -I$(top_srcdir)/src/HLS/\
-   -I$(top_srcdir)/src/HLS/evaluation \
-   -I$(top_srcdir)/src/parser/polixml \
-   -I$(top_srcdir)/src/polixml \
-   -I$(top_srcdir)/src/utility \
-   -I$(top_builddir)/src/design_flows/backend/ToDataFile \
-   $(AM_CPPFLAGS)
+    -I$(top_srcdir)/src \
+    -I$(top_srcdir)/src/constants \
+    -I$(top_srcdir)/src/design_flows \
+    -I$(top_srcdir)/src/graph\
+    -I$(top_srcdir)/src/HLS/\
+    -I$(top_srcdir)/src/HLS/evaluation \
+    -I$(top_srcdir)/src/parser/polixml \
+    -I$(top_srcdir)/src/polixml \
+    -I$(top_srcdir)/src/utility \
+    -I$(top_builddir)/src/design_flows/backend/ToDataFile \
+    $(AM_CPPFLAGS)
 
 if BUILD_LIB_HLS
   lib_ToDataFile_la_CPPFLAGS += \
@@ -200,23 +232,21 @@ if BUILD_LIB_HLS
 endif
 
   noinst_HEADERS += \
-   design_flows/backend/ToDataFile/to_data_file_step.hpp \
-   design_flows/backend/ToDataFile/to_data_file_step_factory.hpp \
-   design_flows/backend/ToDataFile/translator.hpp
+    design_flows/backend/ToDataFile/to_data_file_step.hpp \
+    design_flows/backend/ToDataFile/to_data_file_step_factory.hpp \
+    design_flows/backend/ToDataFile/translator.hpp
   lib_ToDataFile_la_SOURCES = \
-   design_flows/backend/ToDataFile/to_data_file_step.cpp \
-   design_flows/backend/ToDataFile/to_data_file_step_factory.cpp \
-   design_flows/backend/ToDataFile/translator.cpp
+    design_flows/backend/ToDataFile/to_data_file_step.cpp \
+    design_flows/backend/ToDataFile/to_data_file_step_factory.cpp \
+    design_flows/backend/ToDataFile/translator.cpp
 
 if BUILD_LIB_CIRCUIT
-  noinst_HEADERS += \
-   design_flows/backend/ToDataFile/generate_fu_list.hpp
-  lib_ToDataFile_la_SOURCES += \
-   design_flows/backend/ToDataFile/generate_fu_list.cpp
+  noinst_HEADERS += design_flows/backend/ToDataFile/generate_fu_list.hpp
+  lib_ToDataFile_la_SOURCES += design_flows/backend/ToDataFile/generate_fu_list.cpp
   lib_ToDataFile_la_CPPFLAGS += \
-   -I$(top_srcdir)/src/circuit \
-   -I$(top_srcdir)/src/design_flows/technology \
-   -I$(top_srcdir)/src/technology
+    -I$(top_srcdir)/src/circuit \
+    -I$(top_srcdir)/src/design_flows/technology \
+    -I$(top_srcdir)/src/technology
 endif
 
 design_flows/backend/ToDataFile/translator.cpp : design_flows/backend/ToDataFile/latex_format_stat.data
@@ -232,53 +262,53 @@ endif
 if BUILD_LIB_TECHNOLOGY
   noinst_LTLIBRARIES += lib_technology_df.la
   noinst_HEADERS += \
-   design_flows/technology/fix_characterization.hpp \
-   design_flows/technology/load_builtin_technology.hpp \
-   design_flows/technology/load_default_technology.hpp \
-   design_flows/technology/load_device_technology.hpp \
-   design_flows/technology/load_file_technology.hpp \
-   design_flows/technology/load_technology.hpp \
-   design_flows/technology/technology_flow_step.hpp \
-   design_flows/technology/technology_flow_step_factory.hpp \
-   design_flows/technology/write_technology.hpp
+    design_flows/technology/fix_characterization.hpp \
+    design_flows/technology/load_builtin_technology.hpp \
+    design_flows/technology/load_default_technology.hpp \
+    design_flows/technology/load_device_technology.hpp \
+    design_flows/technology/load_file_technology.hpp \
+    design_flows/technology/load_technology.hpp \
+    design_flows/technology/technology_flow_step.hpp \
+    design_flows/technology/technology_flow_step_factory.hpp \
+    design_flows/technology/write_technology.hpp
   lib_technology_df_la_SOURCES = \
-   design_flows/technology/fix_characterization.cpp \
-   design_flows/technology/load_default_technology.cpp \
-   design_flows/technology/load_device_technology.cpp \
-   design_flows/technology/load_file_technology.cpp \
-   design_flows/technology/load_technology.cpp \
-   design_flows/technology/technology_flow_step.cpp \
-   design_flows/technology/technology_flow_step_factory.cpp \
-   design_flows/technology/write_technology.cpp
+    design_flows/technology/fix_characterization.cpp \
+    design_flows/technology/load_default_technology.cpp \
+    design_flows/technology/load_device_technology.cpp \
+    design_flows/technology/load_file_technology.cpp \
+    design_flows/technology/load_technology.cpp \
+    design_flows/technology/technology_flow_step.cpp \
+    design_flows/technology/technology_flow_step_factory.cpp \
+    design_flows/technology/write_technology.cpp
 
 if BUILD_LIB_CIRCUIT
   noinst_HEADERS += \
-      design_flows/technology/functional_unit_step.hpp \
-      design_flows/technology/load_builtin_technology.hpp
+    design_flows/technology/functional_unit_step.hpp \
+    design_flows/technology/load_builtin_technology.hpp
   lib_technology_df_la_SOURCES += \
-      design_flows/technology/functional_unit_step.cpp \
-      design_flows/technology/load_builtin_technology.cpp
+    design_flows/technology/functional_unit_step.cpp \
+    design_flows/technology/load_builtin_technology.cpp
 endif
 
   lib_technology_df_la_CPPFLAGS = \
-   -I$(top_srcdir)/src \
-   -I$(top_srcdir)/src/behavior \
-   -I$(top_srcdir)/src/circuit \
-   -I$(top_srcdir)/src/constants \
-   -I$(top_srcdir)/src/design_flows \
-   -I$(top_srcdir)/src/graph \
-   -I$(top_srcdir)/src/HLS \
-   -I$(top_srcdir)/src/HLS/module_allocation \
-   -I$(top_srcdir)/src/HLS/scheduling \
-   -I$(top_srcdir)/src/intermediate_representations \
-   -I$(top_srcdir)/src/intermediate_representations/hls \
-   -I$(top_srcdir)/src/parser/polixml \
-   -I$(top_srcdir)/src/polixml \
-   -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/tree \
-   -I$(top_srcdir)/src/utility \
-   -I$(top_builddir)/src/design_flows/technology \
-   $(AM_CPPFLAGS)
+    -I$(top_srcdir)/src \
+    -I$(top_srcdir)/src/behavior \
+    -I$(top_srcdir)/src/circuit \
+    -I$(top_srcdir)/src/constants \
+    -I$(top_srcdir)/src/design_flows \
+    -I$(top_srcdir)/src/graph \
+    -I$(top_srcdir)/src/HLS \
+    -I$(top_srcdir)/src/HLS/module_allocation \
+    -I$(top_srcdir)/src/HLS/scheduling \
+    -I$(top_srcdir)/src/intermediate_representations \
+    -I$(top_srcdir)/src/intermediate_representations/hls \
+    -I$(top_srcdir)/src/parser/polixml \
+    -I$(top_srcdir)/src/polixml \
+    -I$(top_srcdir)/src/technology \
+    -I$(top_srcdir)/src/tree \
+    -I$(top_srcdir)/src/utility \
+    -I$(top_builddir)/src/design_flows/technology \
+    $(AM_CPPFLAGS)
 design_flows/technology/load_default_technology.cpp : design_flows/technology/C_COMPLEX_IPs.data design_flows/technology/C_FP_IPs.data design_flows/technology/C_HLS_IPs.data design_flows/technology/C_IO_IPs.data design_flows/technology/C_MEM_IPs.data \
     design_flows/technology/C_PROFILING_IPs.data design_flows/technology/CS_COMPONENT.data design_flows/technology/C_STD_IPs.data design_flows/technology/C_VEC_IPs.data design_flows/technology/NC_HLS_IPs.data design_flows/technology/NC_MEM_IPs.data design_flows/technology/NC_PC_IPs.data design_flows/technology/C_PC_IPs.data\
     design_flows/technology/NC_SF_IPs.data design_flows/technology/NC_STD_IPs.data design_flows/technology/NC_VEC_IPs.data design_flows/technology/NC_wishbone_IPs.data
@@ -337,11 +367,26 @@ design_flows/technology/NC_wishbone_IPs.data: $(top_srcdir)/etc/lib/technology/N
 
    lib_design_flows_la_LIBADD += lib_technology_df.la
 
-design_flows_dir = $(pkgdatadir)/design_flows
-design_flows_technology_dir = $(design_flows_dir)/technology
-design_flows_technology__DATA =  design_flows/technology/C_COMPLEX_IPs.data design_flows/technology/CS_COMPONENT.data design_flows/technology/C_FP_IPs.data design_flows/technology/C_HLS_IPs.data design_flows/technology/C_IO_IPs.data design_flows/technology/C_MEM_IPs.data \
-                                 design_flows/technology/C_PROFILING_IPs.data design_flows/technology/C_STD_IPs.data design_flows/technology/C_VEC_IPs.data design_flows/technology/NC_HLS_IPs.data design_flows/technology/NC_MEM_IPs.data design_flows/technology/NC_PC_IPs.data design_flows/technology/C_PC_IPs.data\
-                                 design_flows/technology/NC_SF_IPs.data design_flows/technology/NC_STD_IPs.data design_flows/technology/NC_VEC_IPs.data design_flows/technology/NC_wishbone_IPs.data
+  design_flows_dir = $(pkgdatadir)/design_flows
+  design_flows_technology_dir = $(design_flows_dir)/technology
+  design_flows_technology__DATA = \
+    design_flows/technology/C_COMPLEX_IPs.data \
+    design_flows/technology/CS_COMPONENT.data \
+    design_flows/technology/C_FP_IPs.data \
+    design_flows/technology/C_HLS_IPs.data \
+    design_flows/technology/C_IO_IPs.data \
+    design_flows/technology/C_MEM_IPs.data \
+    design_flows/technology/C_PROFILING_IPs.data \
+    design_flows/technology/C_STD_IPs.data \
+    design_flows/technology/C_VEC_IPs.data \
+    design_flows/technology/NC_HLS_IPs.data \
+    design_flows/technology/NC_MEM_IPs.data \
+    design_flows/technology/NC_PC_IPs.data \
+    design_flows/technology/C_PC_IPs.data\
+    design_flows/technology/NC_SF_IPs.data \
+    design_flows/technology/NC_STD_IPs.data \
+    design_flows/technology/NC_VEC_IPs.data \
+    design_flows/technology/NC_wishbone_IPs.data
 
 endif
 
