@@ -871,12 +871,10 @@ void HLSCWriter::WriteMainTestbench()
    indented_output_stream->AppendIndented(R"(
 #ifdef LIBMDPI_DRIVER
 
-#ifndef CUSTOM_VERIFICATION
 #ifdef __cplusplus
 #include <cstring>
 #else
 #include <string.h>
-#endif
 #endif
 
 #define __LOCAL_ENTITY MDPI_ENTITY_DRIVER
