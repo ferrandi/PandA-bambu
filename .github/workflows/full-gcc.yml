@@ -88,6 +88,7 @@ jobs:
     with:
       package-name: ${{needs.build.outputs.package-name}}
       compiler: ${{matrix.compiler}}
+      additional-args: -c=--simulator=VERILATOR -t150m
     secrets: inherit
   
   grs-sdc:
@@ -100,7 +101,7 @@ jobs:
     with:
       package-name: ${{needs.build.outputs.package-name}}
       compiler: ${{matrix.compiler}}
-      additional-args: -c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1,memset-3
+      additional-args: -c=--simulator=VERILATOR -t150m -c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1,memset-3
     secrets: inherit
 
   grs-vhdl:

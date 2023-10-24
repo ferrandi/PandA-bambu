@@ -45,7 +45,7 @@ jobs:
     with:
       package-name: ${{needs.build.outputs.package-name}}
       compiler: ${{inputs.compiler}}
-      additional-args: ${{inputs.additional-args}}
+      additional-args: -c=--simulator=VERILATOR -t150m ${{inputs.additional-args}}
     secrets: inherit
 
   success:
