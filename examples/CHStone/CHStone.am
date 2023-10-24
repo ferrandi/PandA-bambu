@@ -79,4 +79,4 @@ EXTRA_DIST += \
    %D%/CHStone/mips/mips.c \
    %D%/generic_CHStone.sh \
    %D%/chstone_list.lattice \
-   chstone.doc
+   %D%/chstone.doc
