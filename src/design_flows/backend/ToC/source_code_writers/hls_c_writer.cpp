@@ -481,7 +481,7 @@ static void __m_argsmapsetup( __m_varmap_t* args_map))");
             {
                if(attribute.first == attr_interface_bitwidth)
                {
-                  param_size = boost::lexical_cast<unsigned long long>(attribute.second);
+                  param_size = std::max(1ULL, (boost::lexical_cast<unsigned long long>(attribute.second) / 8ULL));
                }
                if(attribute.first == attr_line_size)
                {
