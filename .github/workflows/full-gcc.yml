@@ -80,15 +80,31 @@ jobs:
 
   grs:
     needs: [build, simulate-all]
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [I386_GCC49, I386_GCC5, I386_GCC6, I386_GCC7, I386_GCC8]
     uses: ./.github/workflows/reusable-grs.yml
     with:
       package-name: ${{needs.build.outputs.package-name}}
-      test-compilers: I386_GCC49,I386_GCC5,I386_GCC6,I386_GCC7,I386_GCC8
-      additional-args: \"\",\"-c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1,memset-3\"
+      compiler: ${{matrix.compiler}}
+    secrets: inherit
+  
+  grs-sdc:
+    needs: [build, grs]
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [I386_GCC49, I386_GCC5, I386_GCC6, I386_GCC7, I386_GCC8]
+    uses: ./.github/workflows/reusable-grs.yml
+    with:
+      package-name: ${{needs.build.outputs.package-name}}
+      compiler: ${{matrix.compiler}}
+      additional-args: -c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1,memset-3
     secrets: inherit
 
   grs-vhdl:
-    needs: [build, simulate-all]
+    needs: [build, grs]
     uses: ./.github/workflows/reusable-grs-vhdl.yml
     with:
       package-name: ${{needs.build.outputs.package-name}}

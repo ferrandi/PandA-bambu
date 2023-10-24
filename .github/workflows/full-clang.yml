@@ -79,15 +79,31 @@ jobs:
 
   grs:
     needs: [build, simulate-all]
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [I386_CLANG4, I386_CLANG5, I386_CLANG6, I386_CLANG7, I386_CLANG8, I386_CLANG9, I386_CLANG10, I386_CLANG11, I386_CLANG12, I386_CLANG13, I386_CLANG16]
     uses: ./.github/workflows/reusable-grs.yml
     with:
       package-name: ${{needs.build.outputs.package-name}}
-      test-compilers: I386_CLANG4,I386_CLANG5,I386_CLANG6,I386_CLANG7,I386_CLANG8,I386_CLANG9,I386_CLANG10,I386_CLANG11,I386_CLANG12,I386_CLANG13,I386_CLANG16
-      additional-args: \"\",\"-c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1\"
+      compiler: ${{matrix.compiler}}
+    secrets: inherit
+  
+  grs-sdc:
+    needs: [build, grs]
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [I386_CLANG4, I386_CLANG5, I386_CLANG6, I386_CLANG7, I386_CLANG8, I386_CLANG9, I386_CLANG10, I386_CLANG11, I386_CLANG12, I386_CLANG13, I386_CLANG16]
+    uses: ./.github/workflows/reusable-grs.yml
+    with:
+      package-name: ${{needs.build.outputs.package-name}}
+      compiler: ${{matrix.compiler}}
+      additional-args: -c=--speculative-sdc-scheduling --skip_list 20040705-1,20040705-2,20040629-1
     secrets: inherit
 
   grs-vhdl:
-    needs: [build, simulate-all]
+    needs: [build, grs]
     uses: ./.github/workflows/reusable-grs-vhdl.yml
     with:
       package-name: ${{needs.build.outputs.package-name}}
