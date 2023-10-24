@@ -488,22 +488,22 @@ static void __m_argsmapsetup( __m_varmap_t* args_map))");
                   line_size = boost::lexical_cast<unsigned long long>(attribute.second);
                }
             }
-            indented_output_stream->Append("args_map[" + STR(i) +
-                                           "].alignment = " + STR(std::max(align, param_size * line_size)) + ";\n");
+            indented_output_stream->Append("args_map[" + STR(i) + "].alignment = " + STR(param_size * line_size) +
+                                           ";\n");
          }
          else
          {
-            indented_output_stream->Append("args_map[" + STR(i) + "].alignment = " + STR(align) + ";\n");
+            indented_output_stream->Append("args_map[" + STR(i) + "].alignment = 1;\n");
          }
          i++;
       }
       else
       {
-         indented_output_stream->Append("args_map[" + STR(i) + "].alignment = " + STR(align) + ";\n");
+         indented_output_stream->Append("args_map[" + STR(i) + "].alignment = 1;\n");
          i++;
       }
    }
-   indented_output_stream->Append("args_map[" + STR(i) + "].alignment = " + STR(align) + ";\n");
+   indented_output_stream->Append("args_map[" + STR(i) + "].alignment = 1;\n");
    indented_output_stream->Append(R"(}
 
 static void __m_memsetup(void* args[], size_t args_count, __m_varmap_t* args_map)
