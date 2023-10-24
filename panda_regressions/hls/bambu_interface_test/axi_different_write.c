@@ -3,19 +3,27 @@
 #endif
 
 #ifndef elem_number
-#define elem_number 20
+#define elem_number 256
 #endif
 
 #pragma HLS_interface a m_axi direct bundle = gmem0
 #pragma HLS_interface b m_axi direct bundle = gmem1
+#pragma HLS_interface n m_axi direct bundle = gmem2
 
+#if defined(BIG_BUS)
+#pragma HLS_cache bundle = gmem0 way_size = 16 line_size = 16 bus_size = 64 n_ways = 1 buffer_size = 2 rep_policy = \
+    lru write_policy = wt
+#pragma HLS_cache bundle = gmem2 way_size = 16 line_size = 16 bus_size = 64 n_ways = 1 buffer_size = 2 rep_policy = \
+    lru write_policy = wt 
+#else
 #pragma HLS_cache bundle = gmem0 way_size = 16 line_size = 16 bus_size = 32 n_ways = 1 buffer_size = 2 rep_policy = \
     lru write_policy = wt
-#pragma HLS_cache bundle = gmem1 way_size = 16 line_size = 16 bus_size = 32 n_ways = 1 buffer_size = 2 rep_policy = \
-    lru write_policy = wt    
-int __attribute__((noinline)) vector_copy_plus(int* a, int* b)
+#pragma HLS_cache bundle = gmem2 way_size = 16 line_size = 16 bus_size = 32 n_ways = 1 buffer_size = 2 rep_policy = \
+    lru write_policy = wt 
+#endif
+int __attribute__((noinline)) vector_copy_plus(int* a, int* b, int* n)
 {
-    for(int i = 0; i < elem_number; i++)
+    for(int i = 0; i < (*n); i++)
     {
         b[i] = a[i] + 1;
     }
@@ -37,11 +45,13 @@ int main()
         B[i] = (DATA_TYPE)3*i;
     }
 
+    int element_count = elem_number;
+
 #ifdef __BAMBU_SIM__
    m_param_alloc(0, sizeof(A));
    m_param_alloc(1, sizeof(B));
 #endif
-   vector_copy_plus(A, B);
+   vector_copy_plus(A, B, &element_count);
 
    return 0;
 }
