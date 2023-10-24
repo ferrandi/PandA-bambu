@@ -464,7 +464,8 @@ static int cmpptr(const ptr_t a, const ptr_t b) { return a < b ? -1 : (a > b); }
 static int cmpaddr(const void* a, const void* b) { return cmpptr((ptr_t)((__m_memmap_t*)a)->addr, (ptr_t)((__m_memmap_t*)b)->addr); }
 
 static void __m_argsmapsetup( __m_varmap_t* args_map))");
-   indented_output_stream->Append("{\n");
+   indented_output_stream->Append("\n{\n");
+   indented_output_stream->Append("info(\"Initializing argument map\\n\");\n");
    const auto top_params = BH->GetParameters();
    int i = 0;
    for(const auto& param : top_params)
@@ -584,6 +585,7 @@ if((size % (args_map[i].alignment)) != 0)
 const size_t aligned_size = size + (args_map[i].alignment - 1) - ((size - 1) % args_map[i].alignment);
 args_map[i].addr =  malloc(aligned_size);
 memcpy(args_map[i].addr, args[i], size);
+info("Allocated %zu bytes for parameter %zu and initialized %zu\n", aligned_size, i, size);
 args_map[i].or_addr = args[i];
 args[i] = args_map[i].addr;
 args_map[i].size = size;
