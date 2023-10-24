@@ -13887,7 +13887,7 @@ wire valid,tagsmatch;
           <port_o id="clk" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="rst" dir="IN">
+          <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="arst" dir="IN">
@@ -13986,7 +13986,7 @@ wire valid,tagsmatch;
    reg r_empty;
    reg w_full;
 
-   reg error = 0, next_error;
+   reg error, next_error;
    reg w_full_nxt = 0;
    reg write_fail_reg;
 
@@ -13995,18 +13995,18 @@ wire valid,tagsmatch;
 
    //write address
    `IOB_VAR(w_addr, W_ADDR_W)
-   `IOB_COUNTER_ARRE(clk, arst, rst, w_en_int, w_addr)
+   `IOB_COUNTER_ARRE(clk, arst, reset, w_en_int, w_addr)
 
    //effective read enable
    wire                   r_en_int  = (r_en &amp; ~r_empty) || write_fail;
 
    //backup address (to read in case of write fail)
    `IOB_VAR(b_addr, R_ADDR_W)
-   `IOB_COUNTER_ARRE(clk, arst, rst, write_done, b_addr)
+   `IOB_COUNTER_ARRE(clk, arst, reset, write_done, b_addr)
    
    //read address
    `IOB_VAR(r_addr, R_ADDR_W)
-   `IOB_COUNTER_ARRE(clk, arst, rst, r_en_int, r_addr)
+   `IOB_COUNTER_ARRE(clk, arst, reset, r_en_int, r_addr)
 
     assign dirty = w_full || r_addr != b_addr; 
 
@@ -14016,7 +14016,7 @@ wire valid,tagsmatch;
    
    //FIFO level
    reg [ADDR_W+1:0]         level_nxt;
-   `IOB_REG_ARR(clk, arst, 1&apos;b0, rst, 1&apos;b0, level, level_nxt[0+:ADDR_W+1])
+   `IOB_REG_ARR(clk, arst, 1&apos;b0, reset, 1&apos;b0, level, level_nxt[0+:ADDR_W+1])
    
    reg [W_ADDR_W - 1:0] w_addr_next;
 
@@ -14050,10 +14050,19 @@ wire valid,tagsmatch;
        end
    end
    
-   always @(posedge clk) begin
+always @(posedge clk) 
+begin
+  if(reset == 0)
+  begin
+    write_fail_reg &lt;= 0;
+    error &lt;= 0;
+  end
+  else
+  begin
     write_fail_reg &lt;= write_fail;
     error &lt;= next_error;
-   end
+  end
+end
 
    //FIFO empty
    `IOB_WIRE(r_empty_nxt, 1)
@@ -14965,7 +14974,7 @@ wire valid,tagsmatch;
          write_buffer
            (
             .clk     (clk),
-            .rst     (reset),
+            .reset   (reset),
             .arst    (reset),
 
             .ext_mem_w_en   (mem_w_en),
@@ -15053,7 +15062,7 @@ wire valid,tagsmatch;
         write_buffer
         (
           .clk     (clk),
-          .rst     (reset),
+          .reset   (reset),
           .arst    (reset),
           .ext_mem_w_en   (mem_w_en),
           .ext_mem_w_addr (mem_w_addr),
