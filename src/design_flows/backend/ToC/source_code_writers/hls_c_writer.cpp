@@ -609,7 +609,8 @@ abort();
 
    indented_output_stream->Append("static void __memwb(void* args[], __m_varmap_t* args_map)\n");
    indented_output_stream->Append("{\n");
-   indented_output_stream->Append("for(int i = 0; i < " + STR(parameters.size() + 1) + "; i++)\n");
+   indented_output_stream->Append("size_t i = 0;\n");
+   indented_output_stream->Append("for(i = 0; i < " + STR(parameters.size() + 1) + "; i++)\n");
    indented_output_stream->Append("{\n");
    indented_output_stream->Append("if(args_map[i].size > 0)\n");
    indented_output_stream->Append("{\n");
