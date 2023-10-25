@@ -1,4 +1,4 @@
-name: Reusable Script Caller
+name: Reusable Panda Test Script Caller
 
 on:
   workflow_call:
@@ -12,7 +12,7 @@ on:
         required: true
         type: string
       script:
-        description: "Script name for the test"
+        description: "Panda test script filename"
         required: true
         type: string
       args:
@@ -20,6 +20,11 @@ on:
         required: false
         type: string
         default: ""
+      name:
+        description: "Job display name"
+        required: false
+        type: string
+        default: "${{inputs.script}} (Compiler: ${{inputs.compiler}})"
     secrets:
       CI_STORAGE_URL:
         required: true
@@ -36,8 +41,9 @@ env:
   host_jobs: $J
 
 jobs:
-  script_call:
+  test_panda:
     runs-on: [self-hosted, long]
+    name: ${{inputs.name}}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -75,7 +81,7 @@ jobs:
           mkdir ${{env.report-dir}}
           out_dir="$PWD/${{env.report-dir}}"
           echo "test-reports-dir=$out_dir" >> $GITHUB_OUTPUT
-          ./panda_regressions/hls/${{inputs.script}} \
+          ${{inputs.script}} \
             --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" \
             --table="$out_dir/perf.tex" -c=--compiler=${{inputs.compiler}} ${{inputs.args}}
       - name: Upload test reports
