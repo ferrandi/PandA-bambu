@@ -57,17 +57,35 @@ bambu_interface_test/ac_channels_64async-LL.cpp --top-fname=count_async --genera
 bambu_interface_test/hls_stream.cpp --top-fname=sum3numbers --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}"
 bambu_interface_test/hls_stream_axis.cpp --top-fname=sum3numbers --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}"
 bambu_interface_test/ac_range.cpp --top-fname=check_range --generate-tb=a=-1,b=2,c=0
-# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG_BUFFER --benchmark-name=2mm_cache_big_buffer
-# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG_BUS --benchmark-name=2mm_cache_big_bus
-# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG --benchmark-name=2mm_cache_big
-# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG_LINE --benchmark-name=2mm_cache_big_line
-# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DFULLY_ASS --benchmark-name=2mm_cache_fully_ass
-# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c
-# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DSET_ASS --benchmark-name=2mm_cache_set_ass
-# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DSIMPLE --benchmark-name=2mm_cache_simple
-# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DSMALL_LINE --benchmark-name=2mm_cache_small_line
-# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG_BUFFER_WB --benchmark-name=2mm_cache_big_buffer_wb
-# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DWRITE_BACK --benchmark-name=2mm_cache_write_back
-# bambu_interface_test/2mm.c --top-fname=mmult_tile --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DTILED --benchmark-name=2mm_tiled_cache
+bambu_interface_test/axi_small_write.c --top-fname=vector_copy_plus --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/axi_small_write.c --benchmark-name=axi_small_write
+bambu_interface_test/axi_small_write.c --top-fname=vector_copy_plus --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/axi_small_write.c -DBIG_BUS --benchmark-name=axi_small_write_64 -m64
+bambu_interface_test/axi_small_write.c --top-fname=vector_copy_plus --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/axi_small_write.c --benchmark-name=axi_small_write_delayed --mem-delay-read=20 --mem-delay-write=20
+bambu_interface_test/axi_different_write.c --top-fname=vector_copy_plus --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/axi_different_write.c --benchmark-name=axi_different_write
+bambu_interface_test/axi_different_write.c --top-fname=vector_copy_plus --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/axi_different_write.c -DBIG_BUS --benchmark-name=axi_different_write_64 -m64
+bambu_interface_test/axi_different_write.c --top-fname=vector_copy_plus --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/axi_different_write.c --benchmark-name=axi_different_write_delayed --mem-delay-read=20 --mem-delay-write=20
+bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG_BUFFER --benchmark-name=2mm_cache_big_buffer
+bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG_BUS --benchmark-name=2mm_cache_big_bus
+bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG --benchmark-name=2mm_cache_big
+bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG_LINE --benchmark-name=2mm_cache_big_line
+bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DFULLY_ASS --benchmark-name=2mm_cache_fully_ass
+bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c
+bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DSET_ASS --benchmark-name=2mm_cache_set_ass
+bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DSIMPLE --benchmark-name=2mm_cache_simple
+bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DSMALL_LINE --benchmark-name=2mm_cache_small_line
+bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG_BUFFER_WB --benchmark-name=2mm_cache_big_buffer_wb
+bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DWRITE_BACK --benchmark-name=2mm_cache_write_back
+bambu_interface_test/2mm.c --top-fname=mmult_tile --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DTILED --benchmark-name=2mm_tiled_cache
+bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG_BUFFER --benchmark-name=2mm_cache_big_buffer_delayed --mem-delay-read=20 --mem-delay-write=20
+bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG_BUS --benchmark-name=2mm_cache_big_bus_delayed --mem-delay-read=20 --mem-delay-write=20
+bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG --benchmark-name=2mm_cache_big_delayed --mem-delay-read=20 --mem-delay-write=20
+bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG_LINE --benchmark-name=2mm_cache_big_line_delayed --mem-delay-read=20 --mem-delay-write=20
+bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DFULLY_ASS --benchmark-name=2mm_cache_fully_ass_delayed --mem-delay-read=20 --mem-delay-write=20
+bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c --benchmark-name=2mm_delayed --mem-delay-read=20 --mem-delay-write=20
+bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DSET_ASS --benchmark-name=2mm_cache_set_ass_delayed --mem-delay-read=20 --mem-delay-write=20
+bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DSIMPLE --benchmark-name=2mm_cache_simple_delayed --mem-delay-read=20 --mem-delay-write=20
+bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DSMALL_LINE --benchmark-name=2mm_cache_small_line_delayed --mem-delay-read=20 --mem-delay-write=20
+bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG_BUFFER_WB --benchmark-name=2mm_cache_big_buffer_wb_delayed --mem-delay-read=20 --mem-delay-write=20
+bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DWRITE_BACK --benchmark-name=2mm_cache_write_back_delayed --mem-delay-read=20 --mem-delay-write=20
+bambu_interface_test/2mm.c --top-fname=mmult_tile --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DTILED --benchmark-name=2mm_tiled_cache_delayed --mem-delay-read=20 --mem-delay-write=20
 bambu_interface_test/test_open.c --benchmark-name=open  --top-fname=main --expose-globals --generate-interface=MINIMAL --file-input-data=BENCHMARKS_ROOT/bambu_interface_test/bin_test.dat --channels-type=MEM_ACC_11
 bambu_interface_test/test_open.c --benchmark-name=openn --top-fname=main --expose-globals --generate-interface=MINIMAL --file-input-data=BENCHMARKS_ROOT/bambu_interface_test/bin_test.dat --channels-type=MEM_ACC_NN
