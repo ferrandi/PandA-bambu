@@ -4,7 +4,7 @@ ggo_require_compiler=1
 . $script_dir/../../panda_regressions/hls/generic_getopt.sh
 
 BATCH_ARGS=("--soft-float" "--registered-inputs=top" "--panda-parameter=profile-top=1" "--simulate" "--fp-format-propagate" "-DCUSTOM_VERIFICATION")
-BATCH_ARGS+=("--generate-tb=${script_dir}/common/harness.c" "--generate-tb=${script_dir}/common/support.c" "--generate-tb=$(readlink -e ${script_dir}/../../etc/libbambu/softfloat/softfloat.c)")
+BATCH_ARGS+=("--tb-extra-gcc-options=-D_FILE_OFFSET_BITS=64" "--generate-tb=${script_dir}/common/harness.c" "--generate-tb=${script_dir}/common/support.c" "--generate-tb=$(readlink -e ${script_dir}/../../etc/libbambu/softfloat/softfloat.c)")
 BATCH_ARGS+=("-I${script_dir}/common" "-I$(readlink -e ${script_dir}/../../etc/libbambu)" "-I$(readlink -e ${script_dir}/../../etc/libbambu/softfloat)")
 OUT_SUFFIX="${compiler}_truefloat"
 
