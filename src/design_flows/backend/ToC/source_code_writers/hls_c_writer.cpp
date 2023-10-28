@@ -411,38 +411,27 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
    const auto BH = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
    const auto parameters = BH->get_parameters();
 
-   const auto align_bus = [&]() { return std::max(8ULL, HLSMgr->Rmem->get_bus_data_bitsize() / 8ULL); }();
+   const auto align_bus = std::max(8ULL, HLSMgr->Rmem->get_bus_data_bitsize() / 8ULL);
    const auto align_infer = [&]() {
+      const auto top_fname_mngl = BH->GetMangledFunctionName();
+      const auto arg_attributes = HLSMgr->design_attributes.find(top_fname_mngl);
       unsigned long long max = 0ULL;
-      auto da = HLSMgr->design_attributes;
-      for(auto function : da)
+
+      if(arg_attributes != HLSMgr->design_attributes.end())
       {
-         for(auto parameter : function.second)
+         for(auto& parameter : arg_attributes->second)
          {
-            for(auto attribute : parameter.second)
+            const auto if_align = parameter.second.find(attr_interface_alignment);
+            if(if_align != parameter.second.end())
             {
-               if(attribute.first == attr_interface_bitwidth)
-               {
-                  max = std::max(max, boost::lexical_cast<unsigned long long>(attribute.second));
-               }
+               max = std::max(max, boost::lexical_cast<unsigned long long>(if_align->second));
             }
          }
       }
-      return max / 8ULL;
+      return max;
    }();
    const auto align = std::max(align_bus, align_infer);
 
-   const auto fnode = TM->CGetTreeReindex(BH->get_function_index());
-   const auto fname = tree_helper::GetMangledFunctionName(GetPointerS<const function_decl>(GET_CONST_NODE(fnode)));
-   const auto& DesignAttributes = HLSMgr->design_attributes;
-   const auto function_if = [&]() -> const std::map<std::string, std::map<interface_attributes, std::string>>* {
-      const auto it = DesignAttributes.find(fname);
-      if(it != DesignAttributes.end())
-      {
-         return &it->second;
-      }
-      return nullptr;
-   }();
    indented_output_stream->Append(R"(
 typedef struct
 {
@@ -454,60 +443,15 @@ void* addr;
 
 typedef struct
 {
-size_t size;
-size_t alignment;
 void* addr;
-void* or_addr;
-} __m_varmap_t;
+size_t align;
+void* map_addr;
+} __m_argmap_t;
 
 static int cmpptr(const ptr_t a, const ptr_t b) { return a < b ? -1 : (a > b); }
 static int cmpaddr(const void* a, const void* b) { return cmpptr((ptr_t)((__m_memmap_t*)a)->addr, (ptr_t)((__m_memmap_t*)b)->addr); }
 
-static void __m_argsmapsetup( __m_varmap_t* args_map))");
-   indented_output_stream->Append("\n{\n");
-   indented_output_stream->Append("info(\"Initializing argument map\\n\");\n");
-   const auto top_params = BH->GetParameters();
-   int i = 0;
-   for(const auto& param : top_params)
-   {
-      const auto param_name = BH->PrintVariable(GET_INDEX_CONST_NODE(param));
-      if(function_if)
-      {
-         if((*function_if).find(param_name) != (*function_if).end())
-         {
-            unsigned long long param_size = 1U;
-            unsigned long long line_size = 1U;
-            const auto attributes = function_if->at(param_name);
-            for(auto attribute : attributes)
-            {
-               if(attribute.first == attr_interface_bitwidth)
-               {
-                  param_size = std::max(1ULL, (boost::lexical_cast<unsigned long long>(attribute.second) / 8ULL));
-               }
-               if(attribute.first == attr_line_size)
-               {
-                  line_size = boost::lexical_cast<unsigned long long>(attribute.second);
-               }
-            }
-            indented_output_stream->Append("args_map[" + STR(i) + "].alignment = " + STR(param_size * line_size) +
-                                           ";\n");
-         }
-         else
-         {
-            indented_output_stream->Append("args_map[" + STR(i) + "].alignment = 1;\n");
-         }
-         i++;
-      }
-      else
-      {
-         indented_output_stream->Append("args_map[" + STR(i) + "].alignment = 1;\n");
-         i++;
-      }
-   }
-   indented_output_stream->Append("args_map[" + STR(i) + "].alignment = 1;\n");
-   indented_output_stream->Append(R"(}
-
-static void __m_memsetup(void* args[], size_t args_count, __m_varmap_t* args_map)
+static void __m_memsetup(__m_argmap_t args[], size_t args_count)
 {
 int error = 0;
 size_t i;
@@ -578,26 +522,19 @@ error |= __m_memmap(memmap_init[i].addrmap, memmap_init[i].addr, memmap_init[i].
 
 for(i = 0; i < args_count; ++i)
 {
-const size_t size = __m_param_size(i);
+const size_t arg_size = __m_param_size(i);
+size_t map_size = arg_size;
 base_addr += (align - 1) - ((base_addr - 1) % align);
-if((size % (args_map[i].alignment)) != 0)
+args[i].map_addr = args[i].addr;
+if(arg_size % args[i].align)
 {
-const size_t aligned_size = size + (args_map[i].alignment - 1) - ((size - 1) % args_map[i].alignment);
-args_map[i].addr =  malloc(aligned_size);
-memcpy(args_map[i].addr, args[i], size);
-info("Allocated %zu bytes for parameter %zu and initialized %zu\n", aligned_size, i, size);
-args_map[i].or_addr = args[i];
-args[i] = args_map[i].addr;
-args_map[i].size = size;
-error |= __m_memmap(base_addr, args_map[i].addr, aligned_size);
-base_addr += aligned_size;
+map_size = arg_size + (args[i].align - 1) - ((arg_size - 1) % args[i].align);
+info("Parameter %zu map size extended: %zu bytes -> %zu bytes\n", i, arg_size, map_size);
+args[i].map_addr = malloc(map_size);
+memcpy(args[i].map_addr, args[i].addr, arg_size);
 }
-else
-{
-error |= __m_memmap(base_addr, args[i], size);
-base_addr += size;
-args_map[i].size = 0;
-}
+error |= __m_memmap(base_addr, args[i].map_addr, map_size);
+base_addr += map_size;
 }
 if(error)
 {
@@ -605,21 +542,21 @@ abort();
 }
 }
 
-)");
+static void __m_argmap_fini(__m_argmap_t args[], size_t args_count)
+{
+size_t i = 0;
+for(i = 0; i < args_count; i++)
+{
+if(args[i].map_addr != args[i].addr)
+{
+memcpy(args[i].addr, args[i].map_addr, __m_param_size(i));
+free(args[i].map_addr);
+args[i].map_addr = args[i].addr;
+}
+}
+}
 
-   indented_output_stream->Append("static void __memwb(void* args[], __m_varmap_t* args_map)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("size_t i = 0;\n");
-   indented_output_stream->Append("for(i = 0; i < " + STR(parameters.size() + 1) + "; i++)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("if(args_map[i].size > 0)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("args[i] = args_map[i].or_addr;\n");
-   indented_output_stream->Append("memcpy(args[i], args_map[i].addr, args_map[i].size);\n");
-   indented_output_stream->Append("free(args_map[i].addr);\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("}\n");
+)");
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written simulator init memory");
 }
@@ -718,7 +655,7 @@ void HLSCWriter::WriteMainTestbench()
    std::string gold_call;
    std::string pp_call;
    std::string args_init;
-   std::string args_decl = "void* args[] = {";
+   std::string args_decl = "__m_argmap_t args[] = {\n";
    std::string args_set;
    std::string gold_cmp;
    size_t param_idx = 0;
@@ -731,7 +668,7 @@ void HLSCWriter::WriteMainTestbench()
       pp_call += "retval_pp = ";
       args_init = "__m_param_alloc(" + STR(top_params.size()) + ", sizeof(" + return_type_str + "));\n";
       args_decl = return_type_str + " retval, retval_gold, retval_pp;\n" + args_decl;
-      args_set += "__m_setarg(" + STR(top_params.size()) + ", args[" + STR(top_params.size()) + "], " +
+      args_set += "__m_setarg(" + STR(top_params.size()) + ", args[" + STR(top_params.size()) + "].map_addr, " +
                   STR(tree_helper::Size(return_type)) + ");\n";
    }
    else
@@ -748,6 +685,7 @@ void HLSCWriter::WriteMainTestbench()
       for(const auto& arg : top_params)
       {
          std::string arg_typename, arg_interface, arg_size;
+         unsigned long long arg_align = 1;
          const auto arg_type = tree_helper::CGetType(arg);
          if(arg_signature_typename != HLSMgr->design_interface_typename_orig_signature.end())
          {
@@ -764,13 +702,29 @@ void HLSCWriter::WriteMainTestbench()
             const auto param_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
             THROW_ASSERT(arg_attributes->second.count(param_name),
                          "Attributes missing for parameter " + param_name + " in function " + top_fname);
-            THROW_ASSERT(arg_attributes->second.at(param_name).count(attr_interface_type),
+            const auto& param_attributes = arg_attributes->second.at(param_name);
+            THROW_ASSERT(param_attributes.count(attr_interface_type),
                          "Attribute 'interface type' is missing for parameter " + param_name);
-            arg_interface = arg_attributes->second.at(param_name).at(attr_interface_type);
+            arg_interface = param_attributes.at(attr_interface_type);
+            if(param_attributes.find(attr_bus_size) != param_attributes.end())
+            {
+               THROW_ASSERT(param_attributes.find(attr_line_size) != param_attributes.end(),
+                            "Expected line size attribute for parameter '" + param_name + "'");
+               const auto bus_size = boost::lexical_cast<unsigned long long>(param_attributes.at(attr_bus_size));
+               const auto line_size = boost::lexical_cast<unsigned long long>(param_attributes.at(attr_line_size));
+               arg_align = line_size * bus_size / 8ULL;
+            }
+            else
+            {
+               THROW_ASSERT(param_attributes.find(attr_interface_alignment) != param_attributes.end(),
+                            "Expected alignment attribute for parameter '" + param_name + "'");
+               arg_align = boost::lexical_cast<unsigned long long>(param_attributes.at(attr_interface_alignment));
+            }
          }
          else
          {
             arg_interface = "default";
+            arg_align = get_aligned_bitsize(tree_helper::Size(arg_type)) >> 3;
          }
          if(arg_typename.find("(*)") != std::string::npos)
          {
@@ -782,6 +736,7 @@ void HLSCWriter::WriteMainTestbench()
          const auto is_reference_type = arg_typename.back() == '&';
          top_decl += arg_typename + " " + arg_name + ", ";
          gold_decl += arg_typename + ", ";
+         args_decl += "{";
          std::cmatch what;
          const auto arg_is_channel =
              std::regex_search(arg_typename.data(), what, std::regex("(ac_channel|stream|hls::stream)<(.*)>"));
@@ -793,7 +748,7 @@ void HLSCWriter::WriteMainTestbench()
             gold_call += arg_name + ", ";
             gold_cmp += "m_channelcmp(" + STR(param_idx) + ", " + cmp_type(arg_type, channel_type) + ");\n";
             args_init += "m_channel_init(" + STR(param_idx) + ");\n";
-            args_decl += arg_name + "_sim, ";
+            args_decl += arg_name + "_sim";
             args_set += "__m_setargptr";
          }
          else if(is_pointer_type)
@@ -828,7 +783,7 @@ void HLSCWriter::WriteMainTestbench()
                       "__m_param_alloc(" + STR(param_idx) + ", sizeof(*" + arg_name + ") * " + STR(array_size) + ");\n";
                }
             }
-            args_decl += "(void*)" + arg_name + ", ";
+            args_decl += "(void*)" + arg_name;
             args_set += "m_setargptr";
          }
          else if(is_reference_type)
@@ -838,7 +793,7 @@ void HLSCWriter::WriteMainTestbench()
             pp_call += "(" + tree_helper::PrintType(TM, arg_type, false, true) + "*)" + arg_name + "_pp, ";
             gold_cmp += "m_argcmp(" + STR(param_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
             args_init += "__m_param_alloc(" + STR(param_idx) + ", sizeof(" + arg_typename + "));\n";
-            args_decl += "(void*)&" + arg_name + ", ";
+            args_decl += "(void*)&" + arg_name;
             args_set += "m_setargptr";
          }
          else
@@ -846,10 +801,11 @@ void HLSCWriter::WriteMainTestbench()
             gold_call += arg_name + ", ";
             pp_call += arg_name + ", ";
             args_init += "__m_param_alloc(" + STR(param_idx) + ", sizeof(" + arg_typename + "));\n";
-            args_decl += "(void*)&" + arg_name + ", ";
+            args_decl += "(void*)&" + arg_name;
             args_set += arg_interface == "default" ? "__m_setarg" : "m_setargptr";
          }
-         args_set += "(" + STR(param_idx) + ", args[" + STR(param_idx) + "], " + arg_size + ");\n";
+         args_decl += ", " + std::to_string(arg_align) + ", NULL},\n";
+         args_set += "(" + STR(param_idx) + ", args[" + STR(param_idx) + "].map_addr, " + arg_size + ");\n";
          ++param_idx;
       }
       top_decl.erase(top_decl.size() - 2);
@@ -863,7 +819,7 @@ void HLSCWriter::WriteMainTestbench()
    }
    if(return_type)
    {
-      args_decl += +"(void*)&retval";
+      args_decl += +"{(void*)&retval, 1, NULL}";
    }
    top_decl += ")\n";
    gold_decl += ");\n";
@@ -1063,13 +1019,11 @@ static size_t __m_call_count = 0;
       }
       return par;
    }();
-   indented_output_stream->Append("static __m_varmap_t args_map[" + STR(args_decl_size) + "];\n");
    indented_output_stream->Append("const long double max_ulp = " + max_ulp + ";\n");
    indented_output_stream->Append("size_t i;\n");
    indented_output_stream->Append(args_init);
    indented_output_stream->Append(args_decl);
-   indented_output_stream->Append("__m_argsmapsetup(args_map);\n\n");
-   indented_output_stream->Append("__m_memsetup(args, " + STR(args_decl_size) + ", args_map);\n\n");
+   indented_output_stream->Append("__m_memsetup(args, " + STR(args_decl_size) + ");\n\n");
 
    indented_output_stream->Append("__m_arg_init(" + STR(args_decl_size) + ");\n");
    indented_output_stream->Append(args_set);
@@ -1096,7 +1050,7 @@ static size_t __m_call_count = 0;
 #endif
 
 )");
-      indented_output_stream->Append("__memwb(args, args_map);\n\n");
+      indented_output_stream->Append("__m_argmap_fini(args, " + STR(args_decl_size) + ");\n\n");
       indented_output_stream->Append("size_t mismatch_count = 0;\n");
       indented_output_stream->Append(gold_cmp + "\n");
       if(return_type)
