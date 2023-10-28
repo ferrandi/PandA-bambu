@@ -67,7 +67,7 @@ jobs:
         shell: bash
         run: |
           COMPILER="$(echo '${{inputs.compiler}}' | cut -d' ' -f1 | sed -r 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
-          SCRIPT="$(echo '${{inputs.script}}' | cut -d' ' -f1 | sed -r 's/(\.sh|generic_gcc_)//g')"
+          SCRIPT="$(basename '${{inputs.script}}' | cut -d' ' -f1 | sed -r 's/(\.sh|generic_gcc_)//g')"
           OUTNAME="${COMPILER}_${SCRIPT}"
           if [[ "${{inputs.args}}" = *-c=--speculative-sdc-scheduling* ]]; then
             OUTNAME+="_sdc"

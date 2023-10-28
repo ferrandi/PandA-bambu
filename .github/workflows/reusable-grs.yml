@@ -72,7 +72,7 @@ jobs:
     uses: ./.github/workflows/reusable-script_call.yml
     with:
       name: "LibM (Compiler: ${{inputs.compiler}})"
-      script: generic_libm-tests.sh
+      script: ./panda_regressions/hls/generic_libm-tests.sh
       package-name: ${{inputs.package-name}}
       compiler: ${{inputs.compiler}}
       args: ${{inputs.additional-args}}
