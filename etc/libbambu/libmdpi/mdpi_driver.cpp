@@ -198,7 +198,12 @@ void __m_abort()
 
 void __m_assert_fail(const char* __assertion, const char* __file, unsigned int __line, const char* __function)
 {
-   error("%s: %d: %s: Assertion `%s' failed.\n", __file, __line, __function, __assertion);
+#if __M_OUT_LVL > 4
+   fprintf(stdout,
+#else
+   fprintf(stderr,
+#endif
+           "%s: %d: %s: Assertion `%s' failed.\n", __file, __line, __function, __assertion);
    __m_abort();
 }
 
