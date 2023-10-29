@@ -462,6 +462,8 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       boost::trim(files);
       return files;
    }();
+   const auto tb_extra_cflags =
+       Param->isOption(OPT_tb_extra_gcc_options) ? Param->getOption<std::string>(OPT_tb_extra_gcc_options) : "";
 
    script << "make -C " << relocate_compiler_path(PANDA_DATA_INSTALLDIR) << "/panda/libmdpi \\\n"
           << "  SIM_DIR=\"${SIM_DIR}\" BEH_DIR=\"" << beh_dir << "\" \\\n"
@@ -472,7 +474,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
           << "  BEH_CC=\"${BEH_CC}\" \\\n"
           << "  CFLAGS=\"" << cflags << "\" \\\n"
           << "  BEH_CFLAGS=\"" << beh_cflags << "\" \\\n"
-          << "  TB_CFLAGS=\"\" \\\n"
+          << "  TB_CFLAGS=\"" << tb_extra_cflags << "\" \\\n"
           << "  SRCS=\"" << srcs << "\" \\\n"
           << "  COSIM_SRC=\"" << cosim_src << "\" \\\n"
           << "  PP_SRC=\"" << pp_srcs << "\" \\\n"
