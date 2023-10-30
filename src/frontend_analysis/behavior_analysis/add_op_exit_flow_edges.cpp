@@ -125,9 +125,6 @@ DesignFlowStep_Status AddOpExitFlowEdges::InternalExec()
    {
       if((GET_TYPE(fcfg, *v) & TYPE_LAST_OP) != 0)
       {
-/// NOTE: the old version of this code added a flow edge from all the operations which reach last op and not only from
-/// the operations of the same basic block: was there any actual reason to do in this way?
-#if 1
          for(const auto operation : basic_block_graph
                                         ->CGetBBNodeInfo(basic_block_graph->CGetBBGraphInfo()
                                                              ->bb_index_map.find(fcfg->CGetOpNodeInfo(*v)->bb_index)
@@ -140,17 +137,6 @@ DesignFlowStep_Status AddOpExitFlowEdges::InternalExec()
                function_behavior->ogc->AddEdge(operation, *v, FLG_SELECTOR);
             }
          }
-#else
-         VertexIterator u, u_end;
-         for(boost::tie(u, u_end) = boost::vertices(*fcfg); u != u_end; u++)
-         {
-            const bool reachability = function_behavior->CheckReachability(*u, *v);
-            if(reachability and ((GET_TYPE(fcfg, *u) & TYPE_LAST_OP) == 0))
-            {
-               function_behavior->ogc->AddEdge(*u, *v, FLG_SELECTOR);
-            }
-         }
-#endif
       }
    }
    if(parameters->getOption<bool>(OPT_print_dot))
