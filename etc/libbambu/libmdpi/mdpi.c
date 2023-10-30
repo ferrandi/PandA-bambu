@@ -202,7 +202,6 @@ void m_setarg(CONSTARG svLogicVecVal* data, unsigned int index)
 
    debug("Parameter %u write\n", index);
 
-   bitsize = m_getptrargsize(index);
    __ipc_reserve(__REMOTE_ENTITY);
    __remote_operation.type = MDPI_OP_TYPE_ARG_READ;
    __remote_operation.payload.arg.index = index;

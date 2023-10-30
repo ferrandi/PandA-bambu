@@ -122,8 +122,8 @@ typedef struct
    byte_t buffer[4096];
 } IPC_STRUCT_ATTR mdpi_op_mem_t;
 
-#define MDPI_ARG_IDX_OUT_OF_BOUNDS -1
-#define MDPI_ARG_IDX_EMPTY -2
+#define MDPI_ARG_IDX_OUT_OF_BOUNDS (UINT8_MAX)
+#define MDPI_ARG_IDX_EMPTY (UINT8_MAX - 1)
 
 typedef struct
 {
