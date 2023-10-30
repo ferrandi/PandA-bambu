@@ -289,7 +289,7 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation& co
    }
 }
 
-template <bool do_estimation, bool do_conversion, typename vertex_type, class cluster_type, bool IS_DEBUGGING = true>
+template <bool do_estimation, bool do_conversion, typename vertex_type, class cluster_type>
 void estimate_muxes(const connection_relation& con_rel, unsigned long long mux_prec, double& tot_mux_delay,
                     double& tot_mux_area, const cluster_type& cluster, unsigned int& total_muxes,
                     unsigned int& n_shared, const CustomUnorderedMap<vertex_type, vertex>& converter,
@@ -308,10 +308,13 @@ void estimate_muxes(const connection_relation& con_rel, unsigned long long mux_p
    std::vector<CustomUnorderedSet<unsigned int>> chained_in;
    std::vector<CustomUnorderedSet<std::pair<unsigned int, unsigned int>>> module_in;
    std::vector<CustomUnorderedSet<std::pair<unsigned int, unsigned int>>> module_in_reg;
+   CustomUnorderedSet<std::pair<unsigned int, unsigned int>> module_out;
+#ifndef NDEBUG
    CustomUnorderedSet<unsigned int> regs_out;
    CustomUnorderedSet<vertex> chained_out;
-   CustomUnorderedSet<std::pair<unsigned int, unsigned int>> module_out;
-   unsigned int n_tot_outgoing_edges = 0, n_tot_outgoing_unbound_operations = 0, n_tot_shared = 0;
+   unsigned int n_tot_outgoing_edges = 0, n_tot_outgoing_unbound_operations = 0;
+#endif
+   unsigned int n_tot_shared = 0;
    unsigned int max_port_index = 0;
    for(auto cv : cluster)
    {
@@ -429,7 +432,8 @@ void estimate_muxes(const connection_relation& con_rel, unsigned long long mux_p
          }
       }
 
-      if(IS_DEBUGGING && has_register_done)
+#ifndef NDEBUG
+      if(has_register_done)
       {
          auto var_written = HLSMgr->get_produced_value(HLS->functionId, current_v);
          if(var_written)
@@ -449,14 +453,14 @@ void estimate_muxes(const connection_relation& con_rel, unsigned long long mux_p
             }
          }
       }
+#endif
       for(const auto& oe : data->CGetOutEdges(current_v))
       {
          if((data->GetSelector(oe) & (DFG_SCA_SELECTOR | FB_DFG_SCA_SELECTOR)))
          {
-            if(IS_DEBUGGING)
-            {
-               ++n_tot_outgoing_edges;
-            }
+#ifndef NDEBUG
+            ++n_tot_outgoing_edges;
+#endif
             vertex tgt = boost::target(oe, *data);
             if(fu->get_index(tgt) != INFINITE_UINT)
             {
@@ -469,9 +473,11 @@ void estimate_muxes(const connection_relation& con_rel, unsigned long long mux_p
                   module_out.insert(std::make_pair(fu->get_assign(tgt), fu->get_index(tgt)));
                }
             }
-            else if(IS_DEBUGGING)
+            else
             {
+#ifndef NDEBUG
                ++n_tot_outgoing_unbound_operations;
+#endif
             }
          }
       }
@@ -483,17 +489,14 @@ void estimate_muxes(const connection_relation& con_rel, unsigned long long mux_p
    tot_mux_delay = 0;
    for(unsigned int port_index = 0; port_index < max_port_index; ++port_index)
    {
-      if(IS_DEBUGGING)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Ports " + STR(port_index));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reg in ports: " + STR(regs_in[port_index].size()));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Chained in ports: " + STR(chained_in[port_index].size()));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Module in ports: " + STR(module_in[port_index].size()));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Module in reg ports: " + STR(module_in_reg[port_index].size()));
-      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Ports " + STR(port_index));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reg in ports: " + STR(regs_in[port_index].size()));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---Chained in ports: " + STR(chained_in[port_index].size()));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---Module in ports: " + STR(module_in[port_index].size()));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---Module in reg ports: " + STR(module_in_reg[port_index].size()));
       unsigned int current_muxs = 0;
       current_muxs += static_cast<unsigned int>(regs_in[port_index].size());
       current_muxs += static_cast<unsigned int>(chained_in[port_index].size());
@@ -510,20 +513,17 @@ void estimate_muxes(const connection_relation& con_rel, unsigned long long mux_p
              std::max(tot_mux_delay, HLS->allocation_information->estimate_muxNto1_delay(mux_prec, current_muxs));
       }
    }
-   if(IS_DEBUGGING)
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "---total number of outgoing edges: " + STR(n_tot_outgoing_edges));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "---total number of outgoing unbound operations: " + STR(n_tot_outgoing_unbound_operations));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "---total number of outgoing bound modules: " + STR(module_out.size()));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---total number of modules shared: " + STR(n_tot_shared));
+   if(has_register_done)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "---total number of outgoing edges: " + STR(n_tot_outgoing_edges));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "---total number of outgoing unbound operations: " + STR(n_tot_outgoing_unbound_operations));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "---total number of outgoing bound modules: " + STR(module_out.size()));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---total number of modules shared: " + STR(n_tot_shared));
-      if(has_register_done)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reg out ports: " + STR(regs_out.size()));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Chained out ports: " + STR(chained_out.size()));
-      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reg out ports: " + STR(regs_out.size()));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Chained out ports: " + STR(chained_out.size()));
    }
    n_shared = n_tot_shared;
 }

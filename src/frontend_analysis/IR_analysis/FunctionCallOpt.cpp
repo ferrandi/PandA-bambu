@@ -255,9 +255,9 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "Versioning required for call statement " + GET_CONST_NODE(stmt)->ToString());
                      const auto call_node = GET_CONST_NODE(stmt);
-                     tree_nodeRef called_fn;
+                     tree_nodeRef called_fn = nullptr;
                      tree_nodeRef ret_val = nullptr;
-                     std::vector<tree_nodeRef> const* args;
+                     std::vector<tree_nodeRef> const* args = nullptr;
                      if(call_node->get_kind() == gimple_call_K)
                      {
                         const auto gc = GetPointerS<const gimple_call>(call_node);

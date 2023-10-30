@@ -83,6 +83,7 @@ REF_FORWARD_DECL(AadlFlexLexer);
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wredundant-decls"
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7) || (defined(__clang__) && __clang_major__ >= 6)
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
 #endif
