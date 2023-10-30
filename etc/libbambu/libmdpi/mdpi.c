@@ -165,8 +165,16 @@ void m_getarg(svLogicVecVal* data, unsigned int index)
    if(__remote_operation.payload.arg.index != index)
    {
       __ipc_release(__REMOTE_ENTITY);
-      error("Parameter %u read failed.\n", index);
-      abort();
+      if(__remote_operation.payload.arg.index == MDPI_ARG_IDX_EMPTY)
+      {
+         debug("Parameter %u fake pipelined read.", index);
+      }
+      else
+      {
+         error("Parameter %u read failed.\n", index);
+         abort();
+      }
+      return;
    }
 
    bitsize = __remote_operation.payload.arg.bitsize;
@@ -203,8 +211,16 @@ void m_setarg(CONSTARG svLogicVecVal* data, unsigned int index)
    if(__remote_operation.payload.arg.index != index)
    {
       __ipc_release(__REMOTE_ENTITY);
-      error("Parameter %u read failed.\n", index);
-      abort();
+      if(__remote_operation.payload.arg.index == MDPI_ARG_IDX_EMPTY)
+      {
+         debug("Parameter %u fake pipelined write.", index);
+      }
+      else
+      {
+         error("Parameter %u read failed.\n", index);
+         abort();
+      }
+      return;
    }
    bitsize = __remote_operation.payload.arg.bitsize;
    __ipc_release(__REMOTE_ENTITY);
