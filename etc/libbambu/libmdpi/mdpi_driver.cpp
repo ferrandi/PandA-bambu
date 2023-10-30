@@ -437,41 +437,62 @@ static void __mem_write(const uint16_t size, bptr_t data, ptr_t addr)
    }
 }
 
-static uint16_t __arg_read(uint8_t index, bptr_t buffer)
+static uint16_t __arg_read(uint8_t* index, bptr_t buffer)
 {
-   debug("Parameter %u read\n", index);
-   if(index >= __m_params.size)
+   debug("Parameter %u read\n", *index);
+   if(__m_params.size == 0)
    {
-      error("Parameter index out of bounds: %u\n", index);
-      __ipc_abort();
+      error("Parameter read on uninitialized parameters' list.\n");
+      *index = MDPI_ARG_IDX_EMPTY;
+      return 0;
    }
-   mdpi_parm_t* p = &__m_params.prms[index];
+   else if(*index >= __m_params.size)
+   {
+      error("Parameter index out of bounds: %u\n", *index);
+      *index = MDPI_ARG_IDX_OUT_OF_BOUNDS;
+      return 0;
+   }
+   mdpi_parm_t* p = &__m_params.prms[*index];
    uint16_t byte_count = (p->bitsize / 8) + ((p->bitsize % 8) != 0);
    memcpy(buffer, p->bits, byte_count);
    return p->bitsize;
 }
 
-static void __arg_write(uint8_t index, bptr_t buffer)
+static void __arg_write(uint8_t* index, bptr_t buffer)
 {
-   debug("Parameter %u write\n", index);
-   if(index >= __m_params.size)
+   debug("Parameter %u write\n", *index);
+   if(__m_params.size == 0)
    {
-      error("Parameter index out of bounds: %u\n", index);
-      __ipc_abort();
+      error("Parameter write on uninitialized parameters' list.\n");
+      *index = MDPI_ARG_IDX_EMPTY;
+      return;
    }
-   mdpi_parm_t* p = &__m_params.prms[index];
+   else if(*index >= __m_params.size)
+   {
+      error("Parameter index out of bounds: %u\n", *index);
+      *index = MDPI_ARG_IDX_OUT_OF_BOUNDS;
+      return;
+   }
+   mdpi_parm_t* p = &__m_params.prms[*index];
    uint16_t byte_count = (p->bitsize / 8) + ((p->bitsize % 8) != 0);
    memcpy(p->bits, buffer, byte_count);
 }
 
-static uint64_t __param_size(uint8_t index)
+static uint64_t __param_size(uint8_t* index)
 {
-   debug("Parameter %u size\n", index);
-   const std::map<uint8_t, size_t>::iterator mps_it = __m_params_size.find(index);
+   debug("Parameter %u size\n", *index);
+   if(__m_params_size.empty())
+   {
+      error("Parameter size request on uninitialized parameters' list.\n");
+      *index = MDPI_ARG_IDX_EMPTY;
+      return 0;
+   }
+   const std::map<uint8_t, size_t>::iterator mps_it = __m_params_size.find(*index);
    if(mps_it == __m_params_size.end())
    {
-      error("Parameter index out of bounds: %u\n", index);
-      __ipc_abort();
+      error("Parameter index out of bounds: %u\n", *index);
+      *index = MDPI_ARG_IDX_OUT_OF_BOUNDS;
+      return 0;
    }
    return mps_it->second;
 }
@@ -500,15 +521,15 @@ static void* __m_driver_loop(void*)
             break;
          case MDPI_OP_TYPE_ARG_READ:
             __local_operation.payload.arg.bitsize =
-                __arg_read(__local_operation.payload.arg.index, __local_operation.payload.arg.buffer);
+                __arg_read(&__local_operation.payload.arg.index, __local_operation.payload.arg.buffer);
             __ipc_complete(__LOCAL_ENTITY);
             break;
          case MDPI_OP_TYPE_ARG_WRITE:
-            __arg_write(__local_operation.payload.arg.index, __local_operation.payload.arg.buffer);
+            __arg_write(&__local_operation.payload.arg.index, __local_operation.payload.arg.buffer);
             __ipc_complete(__LOCAL_ENTITY);
             break;
          case MDPI_OP_TYPE_PARAM_INFO:
-            __local_operation.payload.param.size = __param_size(__local_operation.payload.param.index);
+            __local_operation.payload.param.size = __param_size(&__local_operation.payload.param.index);
             __ipc_complete(__LOCAL_ENTITY);
             break;
          case MDPI_OP_TYPE_NONE:
