@@ -447,6 +447,8 @@ end"/>
           <parameter name="base_addr">1073741824</parameter>
           <parameter name="MEM_DUMP">0</parameter>
           <parameter name="MEM_DUMP_FILE">&quot;&quot;memdump.csv&quot;&quot;</parameter>
+          <parameter name="QUEUE_SIZE">4</parameter>
+          <parameter name="QUEUE_BITSIZE">2</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -503,7 +505,7 @@ end"/>
           </port_o>
           <NP_functionality
             IP_COMPONENT="mem_utils"
-            LIBRARY="TestbenchMEMMinimal MEM_DELAY_READ MEM_DELAY_WRITE PIPELINED base_addr MEM_DUMP MEM_DUMP_FILE M_DataRdy M_Rdata_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_back_pressure Sout_DataRdy Sout_Rdata_ram S_oe_ram S_we_ram S_addr_ram S_data_ram_size S_Wdata_ram"
+            LIBRARY="TestbenchMEMMinimal MEM_DELAY_READ MEM_DELAY_WRITE PIPELINED base_addr MEM_DUMP MEM_DUMP_FILE QUEUE_SIZE QUEUE_BITSIZE M_DataRdy M_Rdata_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_back_pressure Sout_DataRdy Sout_Rdata_ram S_oe_ram S_we_ram S_addr_ram S_data_ram_size S_Wdata_ram"
             VERILOG_PROVIDED="
 localparam MEM_DELAY_MAX= MEM_DELAY_READ &gt; MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM_DELAY_WRITE,
   ACTIVE_READ= MEM_DELAY_READ &gt; 1 ? (MEM_DELAY_READ-2) : 0,
@@ -538,7 +540,6 @@ assign S_data_ram_size = Mout_data_ram_size;
 assign S_Wdata_ram = Mout_Wdata_ram;
 assign M_DataRdy = _M_DataRdy;
 assign M_Rdata_ram = _M_Rdata_ram;
-assign Mout_back_pressure = 0;
 
 generate
   if(MEM_DUMP)
@@ -572,6 +573,26 @@ generate
     wire [BITSIZE_Wdata-1:0] Wdata;
     reg [BITSIZE_ready-1:0] Wready, Rready;
     reg [BITSIZE_Rdata-1:0] Rdata;
+
+    reg [QUEUE_BITSIZE-1:0] queue_counter;
+    wire [QUEUE_BITSIZE-1:0] queue_counter_next;
+
+    assign Mout_back_pressure[i] = (queue_counter - _M_DataRdy[BITSIZE_ready*i+:BITSIZE_ready]) == (QUEUE_SIZE - 1);
+
+    always @(posedge clock)
+    begin
+      if(1RESET_VALUE)
+      begin
+        queue_counter &lt;= 0;
+      end
+      else
+      begin
+        queue_counter &lt;= queue_counter_next;
+      end
+    end
+
+    assign queue_counter_next = queue_counter + ((Mout_we_ram[i] || Mout_oe_ram[i]) &amp;&amp; ((queue_counter  - _M_DataRdy[BITSIZE_ready*i+:BITSIZE_ready]) < (QUEUE_SIZE - 1))) - _M_DataRdy[BITSIZE_ready*i+:BITSIZE_ready];
+
     
     if(MEM_DELAY_MAX &gt; 1)
     begin : requests_queue
