@@ -41,7 +41,7 @@
 #include "SimulationTool.hpp"
 
 #include "config_HAVE_ASSERTS.hpp"
-#include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
 
 #include "ISE_isim_wrapper.hpp"
 #include "IcarusWrapper.hpp"
@@ -61,6 +61,7 @@
 #include <cmath>
 #include <regex>
 #include <string>
+#include <thread>
 #include <vector>
 
 SimulationTool::type_t SimulationTool::to_sim_type(const std::string& str)
@@ -290,8 +291,7 @@ void SimulationTool::DetermineCycles(unsigned long long int& accum_cycles, unsig
    n_testcases = i;
 }
 
-std::string SimulationTool::GenerateSimulationScript(const std::string& top_filename,
-                                                     const std::list<std::string>& file_list)
+std::string SimulationTool::GenerateSimulationScript(const std::string& top_filename, std::list<std::string> file_list)
 {
    std::ostringstream script;
    script << "#!/bin/bash\n"
@@ -303,7 +303,40 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
           << "cd " << GetCurrentPath() << "\n"
           << "if [ ! -z \"$APPDIR\" ]; then LD_LIBRARY_PATH=\"\"; fi\n";
 
+   file_list.push_back(relocate_compiler_path(PANDA_DATA_INSTALLDIR) + "/panda/libmdpi/mdpi.c");
+
+   const auto default_compiler = Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
+   const auto opt_set = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_gcc_optimization_set);
+   const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(Param, default_compiler, opt_set));
+   const auto sim_dir = Param->getOption<std::string>(OPT_output_directory) + "/simulation/";
+   auto compiler_env = std::regex_replace("\n" + compiler_wrapper->GetCompiler().gcc,
+                                          std::regex("([\\w\\d]+=(\".*\"|[^\\s]+))\\s*"), "export $1\n");
+   boost::replace_last(compiler_env, "\n", "\nCC=\"");
+   compiler_env += "\"";
+
+   script << compiler_env << "\n";
+
+   if(Param->isOption(OPT_testbench_input_file) &&
+      starts_with(Param->getOption<std::string>(OPT_testbench_input_file), "elf:"))
+   {
+      script << "SYS_ELF=\"" << Param->getOption<std::string>(OPT_testbench_input_file).substr(4) << "\"\n";
+   }
+   else
+   {
+      script << "SYS_ELF=\"" << sim_dir << "/testbench\"\n";
+   }
+
+   script << "SIM_DIR=\"" << sim_dir << "\"\n"
+          << "OUT_LVL=\"" << Param->getOption<int>(OPT_output_level) << "\"\n\n"
+          << "### Do not edit below\n\n";
+
+   script << "function cleanup { if [ ${__sys_elf_pid} -ne 0 ]; then kill ${__sys_elf_pid}; fi }\n"
+          << "trap cleanup EXIT\n\n";
+
    GenerateScript(script, top_filename, file_list);
+
+   script << "wait ${__sys_elf_pid}\n"
+          << "__sys_elf_pid=0\n";
 
    // Create the simulation script
    generated_script = GetPath("./" + std::string("simulate_") + top_filename + std::string(".sh"));
@@ -324,18 +357,17 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
    return generated_script;
 }
 
-std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& script, const std::string& output_dir,
-                                                       std::string& cflags) const
+std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& script, const std::string& beh_dir,
+                                                       std::string& beh_cflags) const
 {
    const auto default_compiler = Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
    const auto opt_set = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_gcc_optimization_set);
    const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(Param, default_compiler, opt_set));
 
    const auto extra_compiler_flags = [&]() {
-      std::string flags = cflags +
-                          " -fwrapv -ffloat-store -flax-vector-conversions -msse2 -mfpmath=sse -fno-strict-aliasing "
-                          "-D__builtin_bambu_time_start()= -D__builtin_bambu_time_stop()= -D__BAMBU_SIM__";
-      flags += " -I" + relocate_compiler_path(PANDA_INCLUDE_INSTALLDIR);
+      std::string flags = " -fwrapv -ffloat-store -flax-vector-conversions -msse2 -mfpmath=sse -fno-strict-aliasing "
+                          "-D__builtin_bambu_time_start\\(\\)= -D__builtin_bambu_time_stop\\(\\)= -D__BAMBU_SIM__";
+      flags += " -I" + relocate_compiler_path(PANDA_DATA_INSTALLDIR) + "/panda/libmdpi/include";
       if(!Param->isOption(OPT_input_format) ||
          Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C)
       {
@@ -352,8 +384,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       }
       return flags;
    }();
-   cflags = compiler_wrapper->GetCompilerParameters(extra_compiler_flags);
-   boost::replace_all(cflags, "-fno-exceptions", "");
+   auto cflags = compiler_wrapper->GetCompilerParameters(extra_compiler_flags);
    std::cmatch what;
    std::string kill_printf;
    if(std::regex_search(cflags.c_str(), what, std::regex("\\s*(\\-D'?printf[^=]*='?)'*")))
@@ -362,6 +393,22 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       cflags.erase(static_cast<size_t>(what[0].first - cflags.c_str()),
                    static_cast<size_t>(what[0].second - what[0].first));
    }
+   beh_cflags += " -I" + relocate_compiler_path(PANDA_DATA_INSTALLDIR) + "/panda/libmdpi/include";
+   beh_cflags += " -D__M_IPC_FILENAME=\\\\\\\"${SIM_DIR}/panda_ipc_mmap\\\\\\\"";
+   beh_cflags += " -D__M_OUT_LVL=${OUT_LVL}";
+   if(cflags.find("-m32") != std::string::npos)
+   {
+      beh_cflags += " -D__M32";
+   }
+   else if(cflags.find("-mx32") != std::string::npos)
+   {
+      beh_cflags += " -D__MX32";
+   }
+   else if(cflags.find("-m64") != std::string::npos)
+   {
+      beh_cflags += " -D__M64";
+   }
+   beh_cflags += " -O2";
 
    const auto top_dfname = string_demangle(top_fname);
    const auto add_fname_prefix = [&](const std::string& prefix) {
@@ -373,155 +420,82 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
       }
       return prefix + top_fname;
    };
+   const auto m_top_fname = add_fname_prefix("__m_");
+   const auto m_pp_top_fname = add_fname_prefix("__m_pp_");
+   const auto srcs =
+       Param->getOption<Parameters_FileFormat>(OPT_input_format) != Parameters_FileFormat::FF_RAW ?
+           boost::replace_all_copy(Param->getOption<std::string>(OPT_input_file), STR_CST_string_separator, " ") :
+           "";
+   const std::string cosim_src = "${SIM_DIR}/" STR_CST_testbench_generation_basename ".c";
+   const auto pp_srcs = Param->isOption(OPT_pretty_print) ? Param->getOption<std::string>(OPT_pretty_print) : "";
    const auto tb_srcs = [&]() {
-      CustomSet<std::string> srcs;
+      std::string files;
       if(Param->isOption(OPT_testbench_input_file))
       {
          const auto tb_files = Param->getOption<const CustomSet<std::string>>(OPT_testbench_input_file);
-         srcs.insert(tb_files.begin(), tb_files.end());
+         if(starts_with(*tb_files.begin(), "elf:"))
+         {
+            return files;
+         }
+         for(const auto& filename : tb_files)
+         {
+            if(ends_with(filename, ".xml"))
+            {
+               files += cosim_src + " ";
+            }
+            else
+            {
+               files += filename + " ";
+            }
+         }
+      }
+      else if(Param->isOption(OPT_testbench_input_string))
+      {
+         files += cosim_src + " ";
       }
       if(Param->isOption(OPT_no_parse_files))
       {
-         const auto no_parse_files = Param->getOption<const CustomSet<std::string>>(OPT_no_parse_files);
-         srcs.insert(no_parse_files.begin(), no_parse_files.end());
+         files +=
+             boost::replace_all_copy(Param->getOption<std::string>(OPT_no_parse_files), STR_CST_string_separator, " ") +
+             " ";
       }
-      return srcs;
+      boost::trim(files);
+      return files;
    }();
+   const auto tb_extra_cflags =
+       Param->isOption(OPT_tb_extra_gcc_options) ? Param->getOption<std::string>(OPT_tb_extra_gcc_options) : "";
 
-   script << "cosim_argv_h=\"" << Param->getOption<std::string>(OPT_output_directory) << "/simulation/cosim_argv.h\"\n"
-          << "argv=(\"$@\")\n"
-          << "cat > ${cosim_argv_h} << EOF\n"
-          << "#ifndef M_COSIM_ARGV_H\n"
-          << "//////////////////////////////////////////////////////////\n"
-          << "//    Automatically generated by the PandA framework    //\n"
-          << "//////////////////////////////////////////////////////////\n"
-          << "\n"
-          << "static const char* __m_cosim_argv[] = {\n"
-          << "  \"m_cosim_main\"$(printf ',\\n  \"%s\"' \"${argv[@]}\")\n"
-          << "  };\n"
-          << "#endif // M_COSIM_ARGV_H\n"
-          << "EOF\n";
+   script << "make -C " << relocate_compiler_path(PANDA_DATA_INSTALLDIR) << "/panda/libmdpi \\\n"
+          << "  SIM_DIR=\"${SIM_DIR}\" BEH_DIR=\"" << beh_dir << "\" \\\n"
+          << "  TOP_FNAME=\"" << top_fname << "\" \\\n"
+          << "  MTOP_FNAME=\"" << m_top_fname << "\" \\\n"
+          << "  MPPTOP_FNAME=\"" << m_pp_top_fname << "\" \\\n"
+          << "  CC=\"${CC}\" \\\n"
+          << "  BEH_CC=\"${BEH_CC}\" \\\n"
+          << "  CFLAGS=\"" << cflags << "\" \\\n"
+          << "  BEH_CFLAGS=\"" << beh_cflags << "\" \\\n"
+          << "  TB_CFLAGS=\"" << tb_extra_cflags << "\" \\\n"
+          << "  SRCS=\"" << srcs << "\" \\\n"
+          << "  COSIM_SRC=\"" << cosim_src << "\" \\\n"
+          << "  PP_SRC=\"" << pp_srcs << "\" \\\n"
+          << "  TB_SRCS=\"" << tb_srcs << "\" \\\n"
+          << "  -j " << std::thread::hardware_concurrency() << " -f Makefile.mk\n\n";
 
-   auto compiler_env = std::regex_replace("\n" + compiler_wrapper->GetCompiler().gcc,
-                                          std::regex("([\\w\\d]+=(\".*\"|[^\\s]+))\\s*"), "export $1\n");
-   boost::replace_last(compiler_env, "\n", "\nexport CC=\"");
-   compiler_env += "\"";
-   script << compiler_env << "\n"
-          << "export CFLAGS=\"" << cflags << "\"\n"
-          << "objcopy_common=\"--redefine-sym exit=__m_exit --redefine-sym abort=__m_abort --redefine-sym "
-             "__assert_fail=__m_assert_fail\"\n\n";
+   script
+       << "if [ -f ${SYS_ELF} ]; then\n"
+       << "  function get_class { readelf -h $1 | grep Class: | sed -E 's/.*Class:\\s*(\\w+)/\\1/'; }\n"
+       << "  sys_elf_class=\"$(get_class ${SYS_ELF})\"\n"
+       << "  driver_elf_class=\"$(get_class ${SIM_DIR}/libmdpi_driver.so)\"\n"
+       << "  if [ \"${sys_elf_class}\" != \"${driver_elf_class}\" ]; then\n"
+       << "    echo \"ERROR: Wrong system application ELF class: ${sys_elf_class} != ${driver_elf_class}\"; exit 1;\n"
+       << "  fi\n"
+       << "  LD_PRELOAD=${SIM_DIR}/libmdpi_driver.so ${SYS_ELF} \"$@\" 2>&1 | tee ${SIM_DIR}/$(basename "
+          "${SYS_ELF}).log &\n"
+       << "  __sys_elf_pid=$!\n"
+       << "  echo \"Launched user testbench (PID ${__sys_elf_pid}) with args: $@\"\n"
+       << "fi\n\n";
 
-   if(!Param->isOption(OPT_input_format) ||
-      Param->getOption<Parameters_FileFormat>(OPT_input_format) != Parameters_FileFormat::FF_RAW)
-   {
-      const auto input_files = Param->getOption<const CustomSet<std::string>>(OPT_input_file);
-      const auto m_top_fname = add_fname_prefix("__m_");
-      script << "srcs=(\n";
-      for(const auto& src : input_files)
-      {
-         script << "  \"" << src << "\"\n";
-      }
-      script << ")\n"
-             << "objs=()\n"
-             << "for src in \"${srcs[@]}\"\n"
-             << "do\n"
-             << "  obj=\"$(basename ${src})\"\n"
-             << "  case \"${obj}\" in\n"
-             << "  *.gimplePSSA)\n"
-             << "    continue\n"
-             << "    ;;\n"
-             << "  *)\n"
-             << "    obj=\"" << output_dir << "/${obj%.*}.o\"\n"
-             << "    ${CC} -c ${CFLAGS} " << kill_printf << " -fPIC -o ${obj} ${src}\n"
-             << "    objcopy --weaken --redefine-sym " << top_fname << "=" << m_top_fname
-             << " ${objcopy_common} ${obj}\n"
-             << "    objs+=(\"${obj}\")\n"
-             << "    ;;\n"
-             << "  esac\n"
-             << "done\n\n";
-   }
-
-   if(Param->isOption(OPT_pretty_print))
-   {
-      const auto m_pp_top_fname = add_fname_prefix("__m_pp_");
-      const auto pp_file = std::filesystem::path(Param->getOption<std::string>(OPT_pretty_print));
-      const auto pp_fileo = output_dir + "/" + pp_file.stem().string() + ".o";
-      script << "${CC} -c ${CFLAGS} -fno-strict-aliasing -fPIC";
-      if(CompilerWrapper::isClangCheck(default_compiler))
-      {
-         script << " -fbracket-depth=1024";
-         if(CompilerWrapper::isCurrentOrNewer(default_compiler, CompilerWrapper_CompilerTarget::CT_I386_CLANG16))
-         {
-            script << " -Wno-error=int-conversion";
-         }
-      }
-      script
-          << " -o " << pp_fileo << " " << pp_file.string() << "\n"
-          << "objcopy --keep-global-symbol " << top_fname << " $(nm " << pp_fileo
-          << " | grep -o '[^[:space:]]*get_pc_thunk[^[:space:]]*' | sed 's/^/--keep-global-symbol /' | tr '\\n' ' ') "
-          << pp_fileo << "\n"
-          << "objcopy --redefine-sym " << top_fname << "=" << m_pp_top_fname << " ${objcopy_common} " << pp_fileo
-          << "\n"
-          << "objs+=(\"" << pp_fileo << "\")\n\n";
-   }
-
-   const auto dpi_cwrapper_file =
-       Param->getOption<std::string>(OPT_output_directory) + "/simulation/" STR_CST_testbench_generation_basename ".c";
-   script << "${CC} -c ${CFLAGS}";
-   if(Param->isOption(OPT_pretty_print) && top_fname != "main")
-   {
-      script << " -DPP_VERIFICATION";
-   }
-   script << " -fPIC -o " << output_dir << "/m_wrapper.o " << dpi_cwrapper_file << "\n"
-          << "objcopy --redefine-sym main=m_cosim_main ${objcopy_common} " << output_dir << "/m_wrapper.o\n"
-          << "objs+=(\"" << output_dir << "/m_wrapper.o\")\n\n";
-
-   if(tb_srcs.size())
-   {
-      script << "tb_srcs=(\n";
-      for(const auto& src : tb_srcs)
-      {
-         if(!ends_with(src, ".xml"))
-         {
-            script << "  \"" << src << "\"\n";
-         }
-      }
-      script << ")\n"
-             << "CFLAGS+=\" "
-             << (Param->isOption(OPT_tb_extra_gcc_options) ? Param->getOption<std::string>(OPT_tb_extra_gcc_options) :
-                                                             "")
-             << "\"\n"
-             << "for src in \"${tb_srcs[@]}\"\n"
-             << "do\n"
-             << "  obj=\"$(basename ${src})\"\n"
-             << "  case \"${obj}\" in\n"
-             << "  *.c)  ;&\n"
-             << "  *.cc) ;&\n"
-             << "  *.cpp);&\n"
-             << "  *.ll)\n"
-             << "    obj=\"" << output_dir << "/${obj%.*}.tb.o\"\n"
-             << "    ${CC} -c ${CFLAGS} -fPIC -o ${obj} ${src}\n"
-             << "    src=${obj}\n"
-             << "    ;&\n"
-             << "  *.o)\n"
-             << "    objcopy -W " << top_fname << " --redefine-sym main=m_cosim_main ${objcopy_common} ${obj}\n"
-             << "    objs+=(\"${src}\")\n"
-             << "    ;;\n"
-             << "   *)\n"
-             << "    echo \"Testbench file format not supported '${src}'\"\n"
-             << "    exit -1\n"
-             << "    ;;\n"
-             << "  esac\n"
-             << "done\n\n";
-   }
-
-   script << "CFLAGS+=\" -D__M_OUT_LVL=" << Param->getOption<int>(OPT_output_level)
-          << " -D__M_COSIM_ARGV=\\\"${cosim_argv_h}\\\"\"\n";
-
-   const auto libtb_filename = output_dir + "/libtb.so";
-   script << "bash " << relocate_compiler_path(PANDA_INCLUDE_INSTALLDIR "/mdpi/build.sh") << " ${objs[*]} -o "
-          << libtb_filename << "\n\n";
-   return libtb_filename;
+   return cflags;
 }
 
 void SimulationTool::Clean() const

@@ -270,9 +270,13 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --no-mixed-design\n"
       << "        Avoid mixed output RTL language designs.\n\n"
       << "    --generate-tb=<file>\n"
-      << "        Generate testbench using the given files. \n"
+      << "        Generate testbench using the given files.\n"
       << "        <file> must be a valid testbench XML file or a C/C++ file specifying\n"
       << "        a main function calling the top-level interface. (May be repeated)\n\n"
+      << "    --generate-tb=elf:<exe>\n"
+      << "        Generate testbench environment using <exe> as system simulation.\n"
+      << "        <exe> must be an executable that dynamically loads the synthesized\n"
+      << "        top-function symbol.\n\n"
       << "    --tb-extra-gcc-options=<string>\n"
       << "        Specify custom extra options to the compiler for testbench compilation only.\n\n"
       << "    --tb-arg=<arg>\n"
@@ -1754,9 +1758,21 @@ int BambuParameter::Exec()
          case OPT_TESTBENCH:
          {
             setOption(OPT_generate_testbench, true);
-            const auto arg = TrimSpaces(std::string(optarg));
+            auto arg = TrimSpaces(std::string(optarg));
             std::error_code ec;
-            if(std::filesystem::exists(GetPath(arg), ec))
+            if(starts_with(arg, "elf:"))
+            {
+               arg = arg.substr(4);
+               if(std::filesystem::exists(GetPath(arg), ec))
+               {
+                  setOption(OPT_testbench_input_file, "elf:" + GetPath(arg));
+               }
+               else
+               {
+                  THROW_ERROR("BadParameters: testbench executable does not exist.");
+               }
+            }
+            else if(std::filesystem::exists(GetPath(arg), ec))
             {
                std::string prev;
                if(isOption(OPT_testbench_input_file))
@@ -3151,8 +3167,7 @@ void BambuParameter::CheckParameters()
             tuning_optimizations += "inline-functions" + STR_CST_string_separator + "gcse-after-reload" +
                                     STR_CST_string_separator + "ipa-cp-clone" + STR_CST_string_separator +
                                     "unswitch-loops" + STR_CST_string_separator + "no-tree-loop-ivcanon";
-            if(default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48 ||
-               default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49 ||
+            if(default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49 ||
                default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5 ||
                default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6 ||
                default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7 ||
@@ -3573,11 +3588,7 @@ void BambuParameter::CheckParameters()
    }
    if(isOption(OPT_discrepancy) && getOption<bool>(OPT_discrepancy))
    {
-      if(default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC45 ||
-         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC46 ||
-         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC47 ||
-         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48 ||
-         default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49)
+      if(default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49)
       {
          THROW_WARNING("discrepancy analysis can report false positives with old compilers, use --compiler=I386_GCC5 "
                        "or higher to avoid them");

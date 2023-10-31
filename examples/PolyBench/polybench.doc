@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2023 Politecnico di Milano
+ *              Copyright (C) 2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,8 +31,11 @@
  *
 */
 /*!
-  \page src_HLS_datapath_page Datapath creation
+  \page examples_polybench PolyBench Benchmark Suite
 
+
+  \section polybench_readme PolyBench original description
+  \verbinclude examples/PolyBench/PolyBenchC/README
 
 
 */

@@ -18,7 +18,7 @@ on:
         required: false
         type: string
         default: --enable-glpk --enable-flopoco --enable-opt --with-opt-level=2 --enable-release --with-gcc8=/bin/false
-      test-compilers:
+      compiler:
         description: "Compiler used during tests"
         required: false
         type: string
@@ -44,8 +44,8 @@ jobs:
     uses: ./.github/workflows/reusable-grs.yml
     with:
       package-name: ${{needs.build.outputs.package-name}}
-      test-compilers: ${{inputs.test-compilers}}
-      additional-args: ${{inputs.additional-args}}
+      compiler: ${{inputs.compiler}}
+      additional-args: -c=--simulator=VERILATOR -t150m ${{inputs.additional-args}}
     secrets: inherit
 
   success:

@@ -61,6 +61,7 @@
 #define XSIM_VLOG "xvlog"
 #define XSIM_VHDL "xvhdl"
 #define XSIM_XELAB "xelab"
+#define XSIM_XSC "xsc"
 
 // constructor
 VIVADO_xsim_wrapper::VIVADO_xsim_wrapper(const ParameterConstRef& _Param, const std::string& _suffix,
@@ -84,6 +85,10 @@ static const std::string& create_project_file(const std::string& project_filenam
    std::ofstream prj_file(project_filename);
    for(auto const& file : file_list)
    {
+      if(ends_with(file, "mdpi.c"))
+      {
+         continue;
+      }
       std::filesystem::path file_path(file);
       const auto extension = file_path.extension().string();
       if(extension == ".vhd" || extension == ".vhdl" || extension == ".VHD" || extension == ".VHDL")
@@ -113,36 +118,32 @@ static const std::string& create_project_file(const std::string& project_filenam
 void VIVADO_xsim_wrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename,
                                          const std::list<std::string>& file_list)
 {
-   const auto xilinx_root = Param->isOption(OPT_xilinx_root) ? Param->getOption<std::string>(OPT_xilinx_root) : "";
-   std::string cflags =
-       "-DXILINX_SIMULATOR " + (xilinx_root.size() ? (" -I" + xilinx_root + "/data/xsim/include") : "");
-
-   log_file = "${work_dir}/" + top_filename + "_xsim.log";
    script << "#configuration" << std::endl;
-   script << "work_dir=\"" << XSIM_SUBDIR << suffix << "\"" << std::endl;
    const auto setupscr =
        Param->isOption(OPT_xilinx_vivado_settings) ? Param->getOption<std::string>(OPT_xilinx_vivado_settings) : "";
    if(!setupscr.empty())
    {
       script << ". " << setupscr << " >& /dev/null;" << std::endl << std::endl;
    }
-
-   const auto prj_file = create_project_file(XSIM_SUBDIR + suffix + "/" + top_filename + ".prj", file_list);
-   std::string libtb_filename = GenerateLibraryBuildScript(script, "${work_dir}", cflags);
-   libtb_filename = libtb_filename.substr(12, libtb_filename.size() - 15);
+   script << "BEH_DIR=\"" << XSIM_SUBDIR << suffix << "\"" << std::endl << "BEH_CC=\"${CC}\"" << std::endl << std::endl;
+   log_file = "${BEH_DIR}/" + top_filename + "_xsim.log";
+   const auto xilinx_root = Param->isOption(OPT_xilinx_root) ? Param->getOption<std::string>(OPT_xilinx_root) : "";
+   std::string beh_cflags =
+       "-DXILINX_SIMULATOR " + (xilinx_root.size() ? ("-I" + xilinx_root + "/data/xsim/include") : "");
+   const auto cflags = GenerateLibraryBuildScript(script, "${BEH_DIR}", beh_cflags);
    const auto vflags = [&]() {
       std::string flags;
       if(cflags.find("-m32") != std::string::npos)
       {
-         flags += " -define M32";
+         flags += " -define __M32";
       }
       else if(cflags.find("-mx32") != std::string::npos)
       {
-         flags += " -define MX32";
+         flags += " -define __MX32";
       }
       else if(cflags.find("-m64") != std::string::npos)
       {
-         flags += " -define M64";
+         flags += " -define __M64";
       }
       if(Param->isOption(OPT_generate_vcd) && Param->getOption<bool>(OPT_generate_vcd))
       {
@@ -154,8 +155,9 @@ void VIVADO_xsim_wrapper::GenerateScript(std::ostringstream& script, const std::
       }
       return flags;
    }();
+   const auto prj_file = create_project_file(XSIM_SUBDIR + suffix + "/" + top_filename + ".prj", file_list);
 
-   script << XSIM_XELAB " -sv_root ${work_dir} -sv_lib " << libtb_filename << " " << vflags << " -prj " << prj_file;
+   script << XSIM_XELAB " -sv_root ${BEH_DIR} -sv_lib libmdpi " << vflags << " -prj " << prj_file;
    if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
    {
       script << " --debug all --rangecheck -O2";

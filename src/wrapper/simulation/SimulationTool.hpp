@@ -83,7 +83,7 @@ class SimulationTool
                                const std::list<std::string>& file_list) = 0;
 
    std::string GenerateLibraryBuildScript(std::ostringstream& script, const std::string& libtb_filename,
-                                          std::string& cflags) const;
+                                          std::string& beh_cflags) const;
 
  public:
    /**
@@ -110,8 +110,7 @@ class SimulationTool
    /**
     * Generates the proper simulation script
     */
-   virtual std::string GenerateSimulationScript(const std::string& top_filename,
-                                                const std::list<std::string>& file_list);
+   virtual std::string GenerateSimulationScript(const std::string& top_filename, std::list<std::string> file_list);
 
    /**
     * Performs the simulation and returns the number of cycles

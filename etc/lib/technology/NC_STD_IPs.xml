@@ -238,19 +238,18 @@ timeunit 1ps;
 timeprecision 1ps;
 `endif
 
-import &quot;DPI-C&quot; function void m_init();
 import &quot;DPI-C&quot; function int unsigned m_next(input int unsigned state);
 import &quot;DPI-C&quot; function int m_fini();
 
 localparam [6:0] 
-  SIM_READY   =7&apos;d1,
-  COSIM_INIT  =7&apos;d2,
-  SIM_SETUP   =7&apos;d4,
-  SIM_RUNNING =7&apos;d8,
-  SIM_END     =7&apos;d16,
-  COSIM_END   =7&apos;d32,
-  COSIM_ABORT =7&apos;d64;
-reg [$bits(SIM_READY)-1:0] state, state_next, state_succ, state_succ_next;
+  STATE_READY   =7&apos;b0000001,
+  STATE_SETUP   =7&apos;b0000010,
+  STATE_RUNNING =7&apos;b0000100,
+  STATE_END     =7&apos;b0001000,
+  STATE_ERROR   =7&apos;b0010000,
+  STATE_ABORT   =7&apos;b0100000,
+  SIM_DONE      =7&apos;b1000000;
+reg [$bits(STATE_READY)-1:0] state, state_next, state_succ, state_succ_next;
 
 reg rst, rst_next, setup, setup_next, start, start_next;
 integer rst_count, rst_count_next;
@@ -269,10 +268,10 @@ begin
   $fwrite(res_file, &quot;&quot;);
   $fclose(res_file);
   
-  state = SIM_READY;
-  state_next = SIM_READY;
-  state_succ = SIM_READY;
-  state_succ_next = SIM_READY;
+  state = STATE_READY;
+  state_next = STATE_READY;
+  state_succ = STATE_READY;
+  state_succ_next = STATE_READY;
   rst = ~RESET_ACTIVE;
   rst_next = ~RESET_ACTIVE;
   rst_count = RESET_CYCLES - 1;
@@ -285,8 +284,6 @@ begin
   
   $display(&quot;Results file: %s&quot;, RESFILE);
   $display(&quot;Reset active: %0s&quot;, RESET_ACTIVE ? &quot;HIGH&quot; : &quot;LOW&quot;);
-
-  m_init();
 end
 
 assign reset = rst;
@@ -302,15 +299,15 @@ begin
   setup &lt;= setup_next;
   start &lt;= start_next;
   case(state_next)
-  SIM_READY:
+  STATE_READY:
     begin
-      automatic integer unsigned next_state = m_next(COSIM_INIT);
+      automatic integer unsigned next_state = m_next(STATE_READY);
       `ifndef NDEBUG
       $display(&quot;Sim: next state: %0d&quot;, next_state);
       `endif
       state_succ &lt;= next_state[$bits(state_succ)-1:0];
     end
-  SIM_SETUP:
+  STATE_SETUP:
     begin
       automatic time start_time = $time + CLOCK_PERIOD;
       automatic time start_cycle = $rtoi(start_time/CLOCK_PERIOD);
@@ -326,7 +323,7 @@ begin
       end
       over_time &lt;= start_cycle + MAX_SIM_CYCLES;
     end
-  SIM_RUNNING:
+  STATE_RUNNING:
     begin
       automatic time curr_cycle = $rtoi($time/CLOCK_PERIOD);
       if(curr_cycle >= over_time)
@@ -339,7 +336,7 @@ begin
         $finish;
       end
     end
-  SIM_END:
+  SIM_DONE:
     begin
       automatic time curr_time = $time;
       automatic time curr_cycle = $rtoi(curr_time/CLOCK_PERIOD);
@@ -351,12 +348,12 @@ begin
       $display(&quot;Sim: DUT port writeback\nSim: Simulation ended at cycle %0d&quot;, curr_cycle);
       `endif
     end
-  COSIM_END:
+  STATE_END:
     begin
       automatic integer r = m_fini();
       automatic integer res_file;
       res_file = $fopen(RESFILE, &quot;a&quot;);
-      if(r[$bits(SIM_READY)-1:0] == COSIM_ABORT)
+      if(r[$bits(STATE_READY)-1:0] == STATE_ABORT)
       begin
         $fwrite(res_file, &quot;\nA\n&quot;);
         $display(&quot;Sim: Testbench aborted&quot;);
@@ -384,16 +381,16 @@ begin
   state_next = state;
   state_succ_next = state_succ;
   case(state)
-  SIM_READY:
+  STATE_READY:
     begin
       state_next = state_succ;
-      if(state_succ == SIM_SETUP)
+      if(state_succ == STATE_SETUP)
       begin
         rst_next = RESET_ACTIVE;
         rst_count_next = RESET_CYCLES - 1;
       end
     end
-  SIM_SETUP:
+  STATE_SETUP:
     begin
       if(rst_count >= 0)
       begin
@@ -403,32 +400,32 @@ begin
       end
       else
       begin
-        state_next = SIM_RUNNING;
+        state_next = STATE_RUNNING;
         rst_next = ~RESET_ACTIVE;
         setup_next = 0;
         start_next = 1;
       end
     end
-  SIM_RUNNING:
+  STATE_RUNNING:
     begin
       start_next = 0;
       if(done_port)
       begin
-        state_next = SIM_END;
+        state_next = SIM_DONE;
       end
     end
-  SIM_END:
+  SIM_DONE:
     begin
       // A clock cycle must pass to allow interface modules 
-      // finalization operations before m_next(SIM_END) is called
-      state_next = SIM_READY;
+      // finalization operations
+      state_next = STATE_READY;
     end
-  COSIM_END:
+  STATE_END:
     begin
     end
   default:
     begin
-      state_next = SIM_READY;
+      state_next = STATE_READY;
     end
   endcase
 end"/>

@@ -67,8 +67,6 @@ class FunctionCallOpt : public FunctionFrontendFlowStep
  private:
    static CustomMap<unsigned int, CustomSet<std::tuple<unsigned int, FunctionOptType>>> opt_call;
 
-   static unsigned int version_uid;
-
    static size_t inline_max_cost;
 
    CustomMap<unsigned int, unsigned int> caller_bb;

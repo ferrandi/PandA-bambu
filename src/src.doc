@@ -31,20 +31,19 @@
  *
 */
 /*!
-  \page src_main_page Tools and Projects 
+  \page tools_overview PandA Tools and Libraries
  
   \section src_intro Introduction
- 
-  This is the Tools and (Sub)Projects introduction
-  
+  The PandA project contains the the set of tools and libraries reported below.
+
+
   \section src_tools Tools
-
   The tools that can be configured and so enabled are:
-  \if BAMBU - \ref src_bambu provides high-level synthesis functionalities \endif
-  \if EUCALYPTUS - \ref src_eucalyptus allows the characterization of resources in the technology library \endif
+    - \ref bambu_overview provides high-level synthesis functionalities
+    - \ref eucalyptus_overview allows the characterization of resources in the technology library
 
-  \section src_subprojects Subprojects 
 
+  \section src_subprojects Libraries sub-projects 
   Creation and dumping of intermediate representation:
   - Subproject \ref src_parser_page "Parsers:" provides all the available parsers, adopted to acquire the data that the tools use as input to their algorithms.
   - Subproject \ref src_graph_page "Graph:" contains the definition of the graph-based descriptions.
@@ -59,26 +58,13 @@
   - Subproject \ref src_circuit_page "Circuit:" describes a generic data structure representing a circuit.
   - Subproject \ref src_wrapper_page "Wrappers:" it provides classes to wrap commercial synthesis tools.
 
-  \if BAMBU
   Bambu tool:
-  - Subproject \ref src_HLS_page provides algorithms for high-level synthesis. \endif
-
-  \if PANDA
-  Panda tool:
-  - Subproject \ref src_codesign_page provides functionalities for HW/SW Codesign; in particular it includes  classes to compute metrics over circuits and classes to perform partitioning (both of circuits and of C specifications in the form of graphs) \endif
-
-  \if KOALA
-  Koala tool:
-  - Subproject \ref src_regularity_page Extract structural and functional regularity from circuit graphs.
-  - Subproject \ref src_edif_page provides the data structures necessary to manage a circuit described using the \b edif format \endif
-
-  \if GUI
-  Graphic User Interfaces:
-  - Subproject \ref src_gui_page provides to PandA a graphical based interface. For the time being the graphical interface is mainly devoted to test the data structure developed by the project. \endif
+  - Subproject \ref src_HLS_page provides algorithms for high-level synthesis.
 
   Development aids: 
   - Subproject \ref src_algorithms_page contains a set of useful algorithms that can be used to aid problem solution into development.
   - Subproject \ref src_ilp_page provides utilities used to solve ILP formulations. 
   - Subproject \ref src_utility_page contains some useful macros and functions.
+
 
 */

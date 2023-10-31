@@ -35,7 +35,7 @@
  * @brief High level Synthesis tool.
  *
  * Main file used to perform high-level synthesis starting from a C-based specification.
- * See \ref src_bambu for further information
+ * See \ref bambu_overview for further information
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Christian Pilato <pilato@elet.polimi.it>

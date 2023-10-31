@@ -1,0 +1,61 @@
+{
+   "version": "2.0.0",
+   "tasks": [
+      {
+         "label": "Buildenv setup",
+         "type": "shell",
+         "command": "make",
+         "args": [
+            "-f",
+            "Makefile.init",
+            "buildenv-setup",
+            "APP_COMPILERS=gcc-4.9,gcc-5,gcc-6,gcc-7,gcc-8,clang-4,clang-5,clang-6,clang-7,clang-8,clang-9,clang-10,clang-11,clang-12,clang-13,clang-16"
+         ],
+         "problemMatcher": "$gcc"
+      },
+      {
+         "label": "Build AppImage unpacked",
+         "type": "shell",
+         "command": "make",
+         "args": [
+            "-f",
+            "Makefile.init",
+            "buildenv-build",
+            "APP_CONFIGURE=\"--skip-package --enable-glpk --enable-opt --enable-release --enable-Werror CC=gcc-8 CXX=g++-8\"",
+            "J=4"
+         ],
+         "problemMatcher": "$gcc",
+         "group": {
+            "kind": "build"
+         }
+      },
+      {
+         "label": "Build AppImage release",
+         "type": "shell",
+         "command": "make",
+         "args": [
+            "-f",
+            "Makefile.init",
+            "buildenv-build",
+            "APP_CONFIGURE=\"--enable-glpk --enable-opt --enable-release --enable-Werror CC=gcc-8 CXX=g++-8\"",
+            "J=4"
+         ],
+         "problemMatcher": "$gcc",
+         "group": {
+            "kind": "build",
+            "isDefault": true
+         }
+      },
+      {
+         "label": "Launch buildenv shell",
+         "type": "shell",
+         "command": "make",
+         "args": [
+            "-f",
+            "Makefile.init",
+            "buildenv-shell"
+         ],
+         "problemMatcher": []
+      }
+   ]
+}

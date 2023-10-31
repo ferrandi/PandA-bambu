@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project
+ *                              PandA Project 
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2023 Politecnico di Milano
+ *              Copyright (C) 2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,6 +31,25 @@
  *
 */
 /*!
-  \page src_pragma_page Pragma Parsing
+  \page bambu101_basic_usage Synthesize C applications with Bambu HLS
+  This chapter describes how to use Bambu HLS to generate an RTL description starting from a simple C application.
   
+  Sections summary:
+  - \ref basic_input
+  - \ref basic_synth
+  - \ref basic_outputs
+  
+  
+  \section basic_input Prepare the C application
+
+
+
+  \section basic_synth Run the High-Level Synthesis with Bambu HLS
+
+
+
+  \section basic_outputs Generated outputs
+
+
+
 */

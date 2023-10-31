@@ -97,16 +97,6 @@
 #include "config_HAVE_I386_CLANGVVD_M32.hpp"
 #include "config_HAVE_I386_CLANGVVD_M64.hpp"
 #include "config_HAVE_I386_CLANGVVD_MX32.hpp"
-#include "config_HAVE_I386_GCC45_COMPILER.hpp"
-#include "config_HAVE_I386_GCC46_COMPILER.hpp"
-#include "config_HAVE_I386_GCC47_COMPILER.hpp"
-#include "config_HAVE_I386_GCC47_M32.hpp"
-#include "config_HAVE_I386_GCC47_M64.hpp"
-#include "config_HAVE_I386_GCC47_MX32.hpp"
-#include "config_HAVE_I386_GCC48_COMPILER.hpp"
-#include "config_HAVE_I386_GCC48_M32.hpp"
-#include "config_HAVE_I386_GCC48_M64.hpp"
-#include "config_HAVE_I386_GCC48_MX32.hpp"
 #include "config_HAVE_I386_GCC49_COMPILER.hpp"
 #include "config_HAVE_I386_GCC49_M32.hpp"
 #include "config_HAVE_I386_GCC49_M64.hpp"
@@ -272,43 +262,11 @@
 #include "config_I386_CLANG_CPP8_EXE.hpp"
 #include "config_I386_CLANG_CPP9_EXE.hpp"
 #include "config_I386_CLANG_CPPVVD_EXE.hpp"
-#include "config_I386_CPP45_EXE.hpp"
-#include "config_I386_CPP46_EXE.hpp"
-#include "config_I386_CPP47_EXE.hpp"
-#include "config_I386_CPP48_EXE.hpp"
 #include "config_I386_CPP49_EXE.hpp"
 #include "config_I386_CPP5_EXE.hpp"
 #include "config_I386_CPP6_EXE.hpp"
 #include "config_I386_CPP7_EXE.hpp"
 #include "config_I386_CPP8_EXE.hpp"
-#include "config_I386_GCC45_EMPTY_PLUGIN.hpp"
-#include "config_I386_GCC45_EXE.hpp"
-#include "config_I386_GCC45_SSAVRP_PLUGIN.hpp"
-#include "config_I386_GCC45_SSA_PLUGIN.hpp"
-#include "config_I386_GCC45_SSA_PLUGINCPP.hpp"
-#include "config_I386_GCC45_TOPFNAME_PLUGIN.hpp"
-#include "config_I386_GCC45_VERSION.hpp"
-#include "config_I386_GCC46_EMPTY_PLUGIN.hpp"
-#include "config_I386_GCC46_EXE.hpp"
-#include "config_I386_GCC46_SSAVRP_PLUGIN.hpp"
-#include "config_I386_GCC46_SSA_PLUGIN.hpp"
-#include "config_I386_GCC46_SSA_PLUGINCPP.hpp"
-#include "config_I386_GCC46_TOPFNAME_PLUGIN.hpp"
-#include "config_I386_GCC46_VERSION.hpp"
-#include "config_I386_GCC47_EMPTY_PLUGIN.hpp"
-#include "config_I386_GCC47_EXE.hpp"
-#include "config_I386_GCC47_SSAVRP_PLUGIN.hpp"
-#include "config_I386_GCC47_SSA_PLUGIN.hpp"
-#include "config_I386_GCC47_SSA_PLUGINCPP.hpp"
-#include "config_I386_GCC47_TOPFNAME_PLUGIN.hpp"
-#include "config_I386_GCC47_VERSION.hpp"
-#include "config_I386_GCC48_EMPTY_PLUGIN.hpp"
-#include "config_I386_GCC48_EXE.hpp"
-#include "config_I386_GCC48_SSAVRP_PLUGIN.hpp"
-#include "config_I386_GCC48_SSA_PLUGIN.hpp"
-#include "config_I386_GCC48_SSA_PLUGINCPP.hpp"
-#include "config_I386_GCC48_TOPFNAME_PLUGIN.hpp"
-#include "config_I386_GCC48_VERSION.hpp"
 #include "config_I386_GCC49_EMPTY_PLUGIN.hpp"
 #include "config_I386_GCC49_EXE.hpp"
 #include "config_I386_GCC49_SSA_PLUGIN.hpp"
@@ -339,10 +297,6 @@
 #include "config_I386_GCC8_SSA_PLUGINCPP.hpp"
 #include "config_I386_GCC8_TOPFNAME_PLUGIN.hpp"
 #include "config_I386_GCC8_VERSION.hpp"
-#include "config_I386_GPP45_EXE.hpp"
-#include "config_I386_GPP46_EXE.hpp"
-#include "config_I386_GPP47_EXE.hpp"
-#include "config_I386_GPP48_EXE.hpp"
 #include "config_I386_GPP49_EXE.hpp"
 #include "config_I386_GPP5_EXE.hpp"
 #include "config_I386_GPP6_EXE.hpp"
@@ -1584,10 +1538,7 @@ void CompilerWrapper::SetBambuDefault()
       optimization_flags["ipa-pta"] = true;
    }
 
-   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC46 ||
-      compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC47 ||
-      compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48 ||
-      compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49 ||
+   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49 ||
       compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5 ||
       compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6 ||
       compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7 ||
@@ -1634,9 +1585,7 @@ void CompilerWrapper::SetBambuDefault()
    ///-f option with values
    // optimization_values["tree-parallelize-loops"]=1;///requires tree-loop-optimize
    ///-param option with with values
-   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC47 ||
-      compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48 ||
-      compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49 ||
+   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49 ||
       compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5 ||
       compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6 ||
       compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7 ||
@@ -1645,8 +1594,7 @@ void CompilerWrapper::SetBambuDefault()
       parameter_values["tree-reassoc-width"] =
           128; // Set the maximum number of instructions executed in parallel in reassociated tree.
    }
-   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48 ||
-      compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49 ||
+   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49 ||
       compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5 ||
       compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6 ||
       compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7 ||
@@ -1736,37 +1684,6 @@ void CompilerWrapper::SetCompilerDefault()
             /// optimization_flags["unit-at-a-time"] = false;
             switch(compiler_target)
             {
-               case(CompilerWrapper_CompilerTarget::CT_I386_GCC45):
-               {
-                  optimization_flags["tree-copy-prop"] = false;
-                  break;
-               }
-               case(CompilerWrapper_CompilerTarget::CT_I386_GCC46):
-               {
-                  optimization_flags["compare-elim"] = false;
-                  optimization_flags["ipa-profile"] = false;
-                  optimization_flags["tree-copy-prop"] = false;
-                  optimization_flags["tree-copyrename"] = false;
-                  break;
-               }
-               case(CompilerWrapper_CompilerTarget::CT_I386_GCC47):
-               {
-                  optimization_flags["compare-elim"] = false;
-                  optimization_flags["ipa-profile"] = false;
-                  optimization_flags["tree-copy-prop"] = false;
-                  optimization_flags["tree-copyrename"] = false;
-                  break;
-               }
-               case(CompilerWrapper_CompilerTarget::CT_I386_GCC48):
-               {
-                  optimization_flags["compare-elim"] = false;
-                  optimization_flags["ipa-profile"] = false;
-                  optimization_flags["tree-bit-ccp"] = false;
-                  optimization_flags["tree-copy-prop"] = false;
-                  optimization_flags["tree-copyrename"] = false;
-                  optimization_flags["tree-slsr"] = false;
-                  break;
-               }
                case(CompilerWrapper_CompilerTarget::CT_I386_GCC49):
                {
                   optimization_flags["compare-elim"] = false;
@@ -1959,8 +1876,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
        "/";
    const std::string plugin_ext = ".so";
 
-#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || \
-    HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER ||    \
+#if HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || \
     HAVE_I386_GCC8_COMPILER
    auto fillASTAnalyzer_plugin = [&] {
 #if HAVE_I386_CLANG16_COMPILER
@@ -2003,140 +1919,6 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
 #endif
    };
-#endif
-#if HAVE_I386_GCC45_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC45))
-   {
-      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP45_EXE) : relocate_compiler_path(I386_GCC45_EXE);
-      compiler.cpp = relocate_compiler_path(I386_CPP45_EXE);
-      compiler.extra_options =
-          Param->getOption<std::string>(OPT_gcc_m32_mx32) + " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
-      if(optimization_flags.find("tree-vectorize") != optimization_flags.end() &&
-         optimization_flags.find("tree-vectorize")->second)
-         compiler.extra_options += " -msse2 -mfpmath=sse";
-      else
-         compiler.extra_options += " -mno-sse2";
-      compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC45_EMPTY_PLUGIN + plugin_ext;
-      compiler.empty_plugin_name = I386_GCC45_EMPTY_PLUGIN;
-      if(optimization_flags.find("tree-vrp") != optimization_flags.end() && optimization_flags.find("tree-vrp")->second)
-      {
-         compiler.ssa_plugin_obj = gcc_plugin_dir + I386_GCC45_SSAVRP_PLUGIN + plugin_ext;
-         compiler.ssa_plugin_name = I386_GCC45_SSAVRP_PLUGIN;
-      }
-      else
-      {
-         compiler.ssa_plugin_obj =
-             gcc_plugin_dir + (flag_cpp ? I386_GCC45_SSA_PLUGINCPP : I386_GCC45_SSA_PLUGIN) + plugin_ext;
-         compiler.ssa_plugin_name = (flag_cpp ? I386_GCC45_SSA_PLUGINCPP : I386_GCC45_SSA_PLUGIN);
-      }
-      compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC45_TOPFNAME_PLUGIN + plugin_ext;
-      compiler.topfname_plugin_name = I386_GCC45_TOPFNAME_PLUGIN;
-      fillASTAnalyzer_plugin();
-   }
-#endif
-#if HAVE_I386_GCC46_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC46))
-   {
-      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP46_EXE) : relocate_compiler_path(I386_GCC46_EXE);
-      compiler.cpp = relocate_compiler_path(I386_CPP46_EXE);
-      compiler.extra_options =
-          Param->getOption<std::string>(OPT_gcc_m32_mx32) + " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
-      if(optimization_flags.find("tree-vectorize") != optimization_flags.end() &&
-         optimization_flags.find("tree-vectorize")->second)
-         compiler.extra_options += " -msse2 -mfpmath=sse";
-      else
-         compiler.extra_options += " -mno-sse2";
-      compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC46_EMPTY_PLUGIN + plugin_ext;
-      compiler.empty_plugin_name = I386_GCC46_EMPTY_PLUGIN;
-      if(optimization_flags.find("tree-vrp") != optimization_flags.end() && optimization_flags.find("tree-vrp")->second)
-      {
-         compiler.ssa_plugin_obj = gcc_plugin_dir + I386_GCC46_SSAVRP_PLUGIN + plugin_ext;
-         compiler.ssa_plugin_name = I386_GCC46_SSAVRP_PLUGIN;
-      }
-      else
-      {
-         compiler.ssa_plugin_obj =
-             gcc_plugin_dir + (flag_cpp ? I386_GCC46_SSA_PLUGINCPP : I386_GCC46_SSA_PLUGIN) + plugin_ext;
-         compiler.ssa_plugin_name = (flag_cpp ? I386_GCC46_SSA_PLUGINCPP : I386_GCC46_SSA_PLUGIN);
-      }
-      compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC46_TOPFNAME_PLUGIN + plugin_ext;
-      compiler.topfname_plugin_name = I386_GCC46_TOPFNAME_PLUGIN;
-      fillASTAnalyzer_plugin();
-   }
-#endif
-#if HAVE_I386_GCC47_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC47))
-   {
-      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP47_EXE) : relocate_compiler_path(I386_GCC47_EXE);
-      compiler.cpp = relocate_compiler_path(I386_CPP47_EXE);
-      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
-      if(optimization_flags.find("tree-vectorize") != optimization_flags.end() &&
-         optimization_flags.find("tree-vectorize")->second)
-      {
-#if HAVE_I386_GCC47_MX32
-         compiler.extra_options += " -mx32";
-#else
-         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
-#endif
-         compiler.extra_options += " -msse2 -mfpmath=sse";
-      }
-      else
-         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
-      compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC47_EMPTY_PLUGIN + plugin_ext;
-      compiler.empty_plugin_name = I386_GCC47_EMPTY_PLUGIN;
-      if(optimization_flags.find("tree-vrp") != optimization_flags.end() && optimization_flags.find("tree-vrp")->second)
-      {
-         compiler.ssa_plugin_obj = gcc_plugin_dir + I386_GCC47_SSAVRP_PLUGIN + plugin_ext;
-         compiler.ssa_plugin_name = I386_GCC47_SSAVRP_PLUGIN;
-      }
-      else
-      {
-         compiler.ssa_plugin_obj =
-             gcc_plugin_dir + (flag_cpp ? I386_GCC47_SSA_PLUGINCPP : I386_GCC47_SSA_PLUGIN) + plugin_ext;
-         compiler.ssa_plugin_name = (flag_cpp ? I386_GCC47_SSA_PLUGINCPP : I386_GCC47_SSA_PLUGIN);
-      }
-      compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC47_TOPFNAME_PLUGIN + plugin_ext;
-      compiler.topfname_plugin_name = I386_GCC47_TOPFNAME_PLUGIN;
-      fillASTAnalyzer_plugin();
-   }
-#endif
-#if HAVE_I386_GCC48_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC48))
-   {
-      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP48_EXE) : relocate_compiler_path(I386_GCC48_EXE);
-      compiler.cpp = relocate_compiler_path(I386_CPP48_EXE);
-      compiler.extra_options = " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
-      if(optimization_flags.find("tree-vectorize") != optimization_flags.end() &&
-         optimization_flags.find("tree-vectorize")->second)
-      {
-#if HAVE_I386_GCC48_MX32
-         compiler.extra_options += " -mx32";
-#else
-         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
-#endif
-         compiler.extra_options += " -msse2 -mfpmath=sse";
-      }
-      else
-      {
-         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
-      }
-      compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC48_EMPTY_PLUGIN + plugin_ext;
-      compiler.empty_plugin_name = I386_GCC48_EMPTY_PLUGIN;
-      if(optimization_flags.find("tree-vrp") != optimization_flags.end() && optimization_flags.find("tree-vrp")->second)
-      {
-         compiler.ssa_plugin_obj = gcc_plugin_dir + I386_GCC48_SSAVRP_PLUGIN + plugin_ext;
-         compiler.ssa_plugin_name = I386_GCC48_SSAVRP_PLUGIN;
-      }
-      else
-      {
-         compiler.ssa_plugin_obj =
-             gcc_plugin_dir + (flag_cpp ? I386_GCC48_SSA_PLUGINCPP : I386_GCC48_SSA_PLUGIN) + plugin_ext;
-         compiler.ssa_plugin_name = (flag_cpp ? I386_GCC48_SSA_PLUGINCPP : I386_GCC48_SSA_PLUGIN);
-      }
-      compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC48_TOPFNAME_PLUGIN + plugin_ext;
-      compiler.topfname_plugin_name = I386_GCC48_TOPFNAME_PLUGIN;
-      fillASTAnalyzer_plugin();
-   }
 #endif
 #if HAVE_I386_GCC49_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC49))
@@ -3635,9 +3417,7 @@ bool CompilerWrapper::isClangCheck(CompilerWrapper_CompilerTarget ct)
 
 bool CompilerWrapper::isGccCheck(CompilerWrapper_CompilerTarget ct)
 {
-   return ct == CompilerWrapper_CompilerTarget::CT_I386_GCC45 || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC46 ||
-          ct == CompilerWrapper_CompilerTarget::CT_I386_GCC47 || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC48 ||
-          ct == CompilerWrapper_CompilerTarget::CT_I386_GCC49 || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC5 ||
+   return ct == CompilerWrapper_CompilerTarget::CT_I386_GCC49 || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC5 ||
           ct == CompilerWrapper_CompilerTarget::CT_I386_GCC6 || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC7 ||
           ct == CompilerWrapper_CompilerTarget::CT_I386_GCC8;
 }
@@ -3645,18 +3425,6 @@ bool CompilerWrapper::isGccCheck(CompilerWrapper_CompilerTarget ct)
 int CompilerWrapper::getCompatibleCompilers()
 {
    return 0
-#if HAVE_I386_GCC45_COMPILER
-          | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC45)
-#endif
-#if HAVE_I386_GCC46_COMPILER
-          | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC46)
-#endif
-#if HAVE_I386_GCC47_COMPILER
-          | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC47)
-#endif
-#if HAVE_I386_GCC48_COMPILER
-          | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC48)
-#endif
 #if HAVE_I386_GCC49_COMPILER
           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC49)
 #endif
@@ -3726,14 +3494,6 @@ int CompilerWrapper::getDefaultCompiler()
        static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC6);
 #elif HAVE_I386_GCC5_COMPILER
        static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC5);
-#elif HAVE_I386_GCC47_COMPILER
-       static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC47);
-#elif HAVE_I386_GCC46_COMPILER
-       static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC46);
-#elif HAVE_I386_GCC45_COMPILER
-       static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC45);
-#elif HAVE_I386_GCC48_COMPILER
-       static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC48);
 #elif HAVE_I386_CLANG4_COMPILER
        static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG4);
 #elif HAVE_I386_CLANG5_COMPILER
@@ -3768,14 +3528,6 @@ std::string CompilerWrapper::getCompilerSuffix(CompilerWrapper_CompilerTarget pc
 {
    switch(pc)
    {
-      case CompilerWrapper_CompilerTarget::CT_I386_GCC45:
-         return "gcc45";
-      case CompilerWrapper_CompilerTarget::CT_I386_GCC46:
-         return "gcc46";
-      case CompilerWrapper_CompilerTarget::CT_I386_GCC47:
-         return "gcc47";
-      case CompilerWrapper_CompilerTarget::CT_I386_GCC48:
-         return "gcc48";
       case CompilerWrapper_CompilerTarget::CT_I386_GCC49:
          return "gcc49";
       case CompilerWrapper_CompilerTarget::CT_I386_GCC5:
@@ -3820,12 +3572,6 @@ std::string CompilerWrapper::getCompilerSuffix(CompilerWrapper_CompilerTarget pc
 bool CompilerWrapper::hasCompilerM64(CompilerWrapper_CompilerTarget ct)
 {
    return false
-#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64)
-          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC47
-#endif
-#if(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64)
-          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC48
-#endif
 #if(HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M64)
           || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
@@ -3883,12 +3629,6 @@ bool CompilerWrapper::hasCompilerM64(CompilerWrapper_CompilerTarget ct)
 bool CompilerWrapper::hasCompilerMX32(CompilerWrapper_CompilerTarget ct)
 {
    return false
-#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32)
-          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC47
-#endif
-#if(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32)
-          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC48
-#endif
 #if(HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32)
           || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
@@ -3946,18 +3686,6 @@ bool CompilerWrapper::hasCompilerMX32(CompilerWrapper_CompilerTarget ct)
 bool CompilerWrapper::hasCompilerGCCM32(CompilerWrapper_CompilerTarget ct)
 {
    return false
-#if(HAVE_I386_GCC45_COMPILER)
-          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC45
-#endif
-#if(HAVE_I386_GCC46_COMPILER)
-          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC46
-#endif
-#if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M32)
-          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC47
-#endif
-#if(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M32)
-          || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC48
-#endif
 #if(HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M32)
           || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
@@ -4020,30 +3748,6 @@ bool CompilerWrapper::hasCompilerCLANGM32(CompilerWrapper_CompilerTarget ct)
 
 std::string CompilerWrapper::getCompilerVersion(int pc)
 {
-#if HAVE_I386_GCC45_COMPILER
-   if(pc & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC45))
-   {
-      return I386_GCC45_VERSION;
-   }
-#endif
-#if HAVE_I386_GCC46_COMPILER
-   if(pc & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC46))
-   {
-      return I386_GCC46_VERSION;
-   }
-#endif
-#if HAVE_I386_GCC47_COMPILER
-   if(pc & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC47))
-   {
-      return I386_GCC47_VERSION;
-   }
-#endif
-#if HAVE_I386_GCC48_COMPILER
-   if(pc & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC48))
-   {
-      return I386_GCC48_VERSION;
-   }
-#endif
 #if HAVE_I386_GCC49_COMPILER
    if(pc & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC49))
    {

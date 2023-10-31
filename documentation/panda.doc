@@ -31,67 +31,99 @@
  *
 */
 /*!
-  \page PandA_DOC PandA: A framework for hardware - software design of embedded systems
+  \page panda_overview PandA Framework overview
 
-  \ref panda_authors
-
-  \ref panda_license
-
-  \section intro Introduction
-  PandA project aims at providing an open-source framework covering different aspects of the hardware - software design of embedded systems. PandA supports the research of new ideas on hardware design starting from logic to high-level synthesis on architectures integrating reconfigurable hardware and on embedded system design considering early performance estimation and optimization, including automatic parallelization, mapping and scheduling.
+  \section panda_overview_intro PandA: A framework for hardware - software design of embedded systems
+  PandA project aims at providing an open-source framework covering different aspects of the hardware - software design of embedded systems. 
+  PandA supports the research of new ideas on hardware design starting from logic to high-level synthesis on architectures integrating reconfigurable hardware and on 
+  embedded system design considering early performance estimation and optimization, including automatic parallelization, mapping and scheduling.
 
   The current research program considers the following topics:
+    - Starting from previous works on parallelizing compilers, the PandA project aims at the definition of a methodology that extracts from the control and data flow graph 
+    of a sequential program a data structure that exposes the parallelism inherent in the specification. The analysis of this data structure commonly used by parallelizing 
+    compilers, represents the startup point for the definition of a new hardware and software analysis tools. In fact, the effect of speculative code transformations on 
+    mixed control-data flow designs has demonstrated effective results on schedule lengths and possibility on the resources requirements. On the software side, \c MultiProcessor 
+    systems are becoming more and more common, not only in the high performance segment, but also in the consumer and embedded ones. Developing new programs for these new 
+    archictectures is not easy: the developer needs to correctly decompose the application in order to enhance its performance and in order to exploit the multiple 
+    processing elements available.
+    - Starting from state-of-art algorithms about high-level synthesis and evolutionary computation, the PandA project aims at the definition of a methodology that 
+    performs design space exploration and synthesis of hardware modules starting from a behavioral description written in C language up to directly create the related 
+    structural RTL description in a HDL language, such as Verilog, VHDL or SystemC.
 
-    - Starting from previous works on parallelizing compilers, the PandA project aims at the definition of a methodology that extracts from the control and data flow graph of a sequential program a data structure that exposes the parallelism inherent in the specification. The analysis of this data structure commonly used by parallelizing compilers, represents the startup point for the definition of a new hardware and software analysis tools. In fact, the effect of speculative code transformations on mixed control-data flow designs has demonstrated effective results on schedule lengths and possibility on the resources requirements. On the software side, \c MultiProcessor systems are becoming more and more common, not only in the high performance segment, but also in the consumer and embedded ones. Developing new programs for these new archictectures is not easy: the developer needs to correctly decompose the application in order to enhance its performance and in order to exploit the multiple processing elements available.
-    - Starting from state-of-art algorithms about high-level synthesis and evolutionary computation, the PandA project aims at the definition of a methodology that performs design space exploration and synthesis of hardware modules starting from a behavioral description written in C language up to directly create the related structural RTL description in a HDL language, such as Verilog, VHDL or SystemC.
+  \subsection panda_overview_in_formats Supported input formats (outdated)
 
-  \subsection input_formats Supported input formats
-
-  Currently, PandA can accept specification written in a pure C code. To support the parsing of the code and the integration of different compiler optimizations, it was decided to adopt the front-end capabilities of the GNU GCC compiler (http://gcc.gnu.org/). From the version 3.5, the GCC front-end parses the source language and produces GENERIC trees, which are then turned into GIMPLE, a simple intermediate representation that leverage the designer from many details of the code.
+  Currently, PandA can accept specification written in a pure C code. 
+  To support the parsing of the code and the integration of different compiler optimizations, it was decided to adopt the front-end capabilities of the GNU GCC 
+  compiler (http://gcc.gnu.org/). 
+  From the version 3.5, the GCC front-end parses the source language and produces GENERIC trees, which are then turned into GIMPLE, a simple intermediate representation that 
+  leverage the designer from many details of the code.
   At the moment, PandA front-end is based on the intermediate representation generated by the GCC ver 4.5/4.6/4.7.
 
-  \image html gcc_schema.png "GCC internal structure." width=10cm
+  \image html gcc_schema.png "GCC internal structure." width=50%
   \image latex gcc_schema.png "GCC internal structure." width=10cm
 
-  The first intermediate representation, GENERIC, is a common representation, language independent, used to serve as an interface between the parser and the optimizer. GIMPLE is also a language independent, tree based representation of the source specification but it is used for target and language independent optimizations (e.g., inlining, constant propagation, tail call elimination, redundancy elimination, etc). With respect to GENERIC, GIMPLE is more restrictive, since its expressions has no more than three operands,
-  it has no control flow structures (everything is lowered to gotos) and expressions with side-effects are only allowed on the right hand side of the assignments. Although GIMPLE has no control flow structures, GCC
-  also builds the control flow graph (CFG) to perform language independent optimizations.
-  All these data are what we need to perform a static analysis of the design specification code. Instead of integrating PandA in GCC we follow a modular design style. In fact, we save in an ASCII file the GIMPLE data structure by exploiting the debugging features of GCC (i.e., the -fdump-tree-oplower-raw GCC option). Actually, the dump performed with this option is performed on a per function basis and therefore several GIMPLE tree nodes are unnecessarily duplicated. To avoid this problem we have slightly modified the tree dump functions of GCC removing some duplication and simplifying the format of the ASCII file. Following the grammar of these files we build a parser able to rebuild the GIMPLE data structure into the PandA framework, thus allowing an independent analysis of the GCC data structures. Obviously, the extraction
-  of GIMPLE information from GCC introduces some overheads but it also allows a modular decoupling between the GCC compiler and our toolset. The GCC analysis and the GIMPLE parsing corresponds to the first two steps performed by the PandA framework to analyze the design specification.
+  The first intermediate representation, GENERIC, is a common representation, language independent, used to serve as an interface between the parser and the optimizer. 
+  GIMPLE is also a language independent, tree based representation of the source specification but it is used for target and language independent optimizations (e.g., inlining, 
+  constant propagation, tail call elimination, redundancy elimination, etc). With respect to GENERIC, GIMPLE is more restrictive, since its expressions has no more than three 
+  operands, it has no control flow structures (everything is lowered to gotos) and expressions with side-effects are only allowed on the right hand side of the assignments. 
+  Although GIMPLE has no control flow structures, GCC also builds the control flow graph (CFG) to perform language independent optimizations.
+  All these data are what we need to perform a static analysis of the design specification code. 
+  Instead of integrating PandA in GCC we follow a modular design style. In fact, we save in an ASCII file the GIMPLE data structure by exploiting the debugging features of GCC 
+  (i.e., the -fdump-tree-oplower-raw GCC option). 
+  Actually, the dump performed with this option is performed on a per function basis and therefore several GIMPLE tree nodes are unnecessarily duplicated. 
+  To avoid this problem we have slightly modified the tree dump functions of GCC removing some duplication and simplifying the format of the ASCII file. 
+  Following the grammar of these files we build a parser able to rebuild the GIMPLE data structure into the PandA framework, thus allowing an independent analysis of the GCC data 
+  structures. Obviously, the extraction of GIMPLE information from GCC introduces some overheads but it also allows a modular decoupling between the GCC compiler and our toolset. 
+  The GCC analysis and the GIMPLE parsing corresponds to the first two steps performed by the PandA framework to analyze the design specification.
 
-  \image html panda_flow.png "PandA analysis flow." width=10cm
+  \image html panda_flow.png "PandA analysis flow." width=50%
   \image latex panda_flow.png "PandA analysis flow." width=10cm
 
   The next step, Graphs and Structural info extraction, builds a layer of functions and data structures providing for
     - the CFG of each function present in the specification.
     - helper functions providing information on the size and type of all data present in the source code.
 
-  The CFG, the same extracted from the GCC, represents the sequencing of the operations as described in the language specification. Each CFG node has an identifier, the list of variables read and written and has a reference to the corresponding GIMPLE node. Call functions are also associated with the identifier of the called functions, if present in the specification (i.e., they are not system directives or undefined symbols).
-  Moreover, it is worth noting that this representation is collected right after all the (activated) compiler optimizations, just before the target-dependent ones, and it is represented in the Static Single Assignment (SSA) form. This greatly improves the quality of the produced modules by avoiding a conservative approach about, for example, the liveness of the variables and, thus, simplifying the analysis algorithms.
+  The CFG, the same extracted from the GCC, represents the sequencing of the operations as described in the language specification. 
+  Each CFG node has an identifier, the list of variables read and written and has a reference to the corresponding GIMPLE node. 
+  Call functions are also associated with the identifier of the called functions, if present in the specification (i.e., they are not system directives or undefined symbols).
+  Moreover, it is worth noting that this representation is collected right after all the (activated) compiler optimizations, just before the target-dependent ones, and it is 
+  represented in the Static Single Assignment (SSA) form. 
+  This greatly improves the quality of the produced modules by avoiding a conservative approach about, for example, the liveness of the variables and, thus, simplifying the 
+  analysis algorithms.
 
   Given this information, a data dependency analysis is performed to identify the correlation between variable uses and definitions.
-  In addition to control and data flow graph, other graphs have also been analysed, such has the system dependency graph (SDG). In particular, PandA includes a high-level synthesizer which exploits the intrinsic parallelism of this intermediate representation.
+  In addition to control and data flow graph, other graphs have also been analysed, such has the system dependency graph (SDG). 
+  In particular, PandA includes a high-level synthesizer which exploits the intrinsic parallelism of this intermediate representation.
   All graphs related to a function in the initial specification are managed by a \c function_behavior while the structural information is collected in a \c structural_manager. 
 
   To accomplish this task the PandA project has been designed in a modular way. Its structure in fact is composed of several sub-projects that highly interact together:
-  - <em>behavioral description layer</em>, this is the first sub-project in PandA, it translates a behavioral system description (which gives the specification of the system) written in C into a tree structure. It was decided to use the translation capabilities of the GNU GCC compiler (http://www.gnu.org), which, from version 3.5, offers the possibility to dump on file the syntax tree structure representing the compiled source code. This sub-project extracts from the dumped tree the interesting information and thus simplifies the work of the PandA team for what concerns all those optimizations like loop unrolling, constant propagation, etc and useful in an HW-SW Codesign flow. 
+  - <em>behavioral description layer</em>, this is the first sub-project in PandA, it translates a behavioral system description (which gives the specification of the system) 
+  written in C into a tree structure. 
+  It was decided to use the translation capabilities of the GNU GCC compiler (http://www.gnu.org), which, from version 3.5, offers the possibility to dump on file the syntax 
+  tree structure representing the compiled source code. 
+  This sub-project extracts from the dumped tree the interesting information and thus simplifies the work of the PandA team for what concerns all those optimizations like 
+  loop unrolling, constant propagation, etc and useful in an HW-SW Codesign flow. 
  
-  - <em>graph, technology and circuit layer</em>, this sub-project works side by side with the behavioral 
-    description layer and allows to develop analysis and synthesis algorithms, such as the high-level synthesis ones currently provided, without requiring to work at the behavioral description layer. We currently provide information for:
-      -# the system specification represented as CFG - control flow graph;
-      -# the technology descriptions and constraints of the specification;
-      -# the schematic description of the system.
-     All these layers provide data-structures mainly based on BOOST graph library and on STL data structures.
+  - <em>graph, technology and circuit layer</em>, this sub-project works side by side with the behavioral description layer and allows to develop analysis and synthesis 
+  algorithms, such as the high-level synthesis ones currently provided, without requiring to work at the behavioral description layer. 
+  We currently provide information for:
+    -# the system specification represented as CFG - control flow graph;
+    -# the technology descriptions and constraints of the specification;
+    -# the schematic description of the system.
+  All these layers provide data-structures mainly based on BOOST graph library and on STL data structures.
 
-  - <em>high-level synthesis layer</em>, this sub-project aims at developing a synthesizer that produces the controller and the data-path, classical output of the high-level synthesis, from a given input specification.
+  - <em>high-level synthesis layer</em>, this sub-project aims at developing a synthesizer that produces the controller and the data-path, classical output of the high-level 
+  synthesis, from a given input specification.
+
 
   \section subprojects Sub-projects
-  PandA Sub-projects are described in \ref src_main_page.
+  PandA Sub-projects are described in \ref tools_overview.
 
-   \section dev_info Developers tools and conventions
-   PandA's developers should read the following sections:
-   - \ref panda_install
-   - \ref panda_sdk
-   - \ref tutorials_page
+
+  \section dev_info Developers tools and conventions
+  PandA's developers should read the following sections:
+  - \ref panda_install
+  - \ref panda_sdk
+  - \ref dev_page
 
 */

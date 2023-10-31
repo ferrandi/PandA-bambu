@@ -64,6 +64,8 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
+#include <functional>
+
 #define PARAMETER_INLINE_MAX_COST "inline-max-cost"
 #define DEAFULT_MAX_INLINE_CONST 60
 
@@ -71,7 +73,6 @@ CustomSet<unsigned int> FunctionCallOpt::always_inline;
 CustomSet<unsigned int> FunctionCallOpt::never_inline;
 CustomMap<unsigned int, CustomSet<std::tuple<unsigned int, FunctionOptType>>> FunctionCallOpt::opt_call;
 size_t FunctionCallOpt::inline_max_cost = DEAFULT_MAX_INLINE_CONST;
-unsigned FunctionCallOpt::version_uid = 1U;
 
 static CustomUnorderedMap<kind, size_t> op_costs = {
     {call_expr_K, 8},          {mult_expr_K, 3},      {widen_mult_expr_K, 3},   {widen_mult_hi_expr_K, 3},
@@ -80,6 +81,26 @@ static CustomUnorderedMap<kind, size_t> op_costs = {
     {ceil_mod_expr_K, 3},      {floor_mod_expr_K, 3}, {view_convert_expr_K, 0}, {convert_expr_K, 0},
     {nop_expr_K, 0},           {ssa_name_K, 0},       {addr_expr_K, 0},         {bit_ior_concat_expr_K, 0},
     {extract_bit_expr_K, 0}};
+
+static std::string __arg_suffix(const std::vector<tree_nodeRef>& tns)
+{
+   std::stringstream suffix;
+   for(const auto& tn : tns)
+   {
+      if(tree_helper::IsConstant(tn))
+      {
+         suffix << tn;
+      }
+      else
+      {
+         suffix << "_" << STR(GET_INDEX_CONST_NODE(tn));
+      }
+   }
+   const auto hash = std::hash<std::string>{}(suffix.str());
+   suffix.str(std::string());
+   suffix << "_" << std::hex << hash;
+   return suffix.str();
+}
 
 FunctionCallOpt::FunctionCallOpt(const ParameterConstRef Param, const application_managerRef _AppM,
                                  unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
@@ -234,9 +255,9 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "Versioning required for call statement " + GET_CONST_NODE(stmt)->ToString());
                      const auto call_node = GET_CONST_NODE(stmt);
-                     tree_nodeRef called_fn;
+                     tree_nodeRef called_fn = nullptr;
                      tree_nodeRef ret_val = nullptr;
-                     std::vector<tree_nodeRef> const* args;
+                     std::vector<tree_nodeRef> const* args = nullptr;
                      if(call_node->get_kind() == gimple_call_K)
                      {
                         const auto gc = GetPointerS<const gimple_call>(call_node);
@@ -263,11 +284,20 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                      THROW_ASSERT(GET_CONST_NODE(called_fn)->get_kind() == function_decl_K,
                                   "Call statement should address a function declaration");
 
-                     const auto version_fn = tree_man->CloneFunction(called_fn, "_const" + STR(version_uid++));
+                     const auto version_suffix = __arg_suffix(*args);
+                     if(ends_with(tree_helper::GetFunctionName(TM, called_fn), version_suffix))
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call already versioned...");
+                        continue;
+                     }
+                     const auto version_fn = tree_man->CloneFunction(called_fn, version_suffix);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call before versioning : " + STR(stmt));
                      if(ret_val)
                      {
-                        const auto ce = tree_man->CreateCallExpr(version_fn, *args, BUILTIN_SRCP);
+                        const auto has_args =
+                            !GetPointer<const function_decl>(GET_CONST_NODE(version_fn))->list_of_args.empty();
+                        const auto ce = tree_man->CreateCallExpr(
+                            version_fn, has_args ? *args : std::vector<tree_nodeRef>(), BUILTIN_SRCP);
                         const auto ga = GetPointerS<const gimple_assign>(call_node);
                         AppM->GetCallGraphManager()->RemoveCallPoint(function_id, called_fn->index, stmt->index);
                         TM->ReplaceTreeNode(stmt, ga->op1, ce);

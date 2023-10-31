@@ -641,7 +641,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             auto& arg_attributes = DesignAttributes.at(arg_name);
             arg_attributes[attr_interface_dir] = port_o::GetString(port_o::IN);
             arg_attributes[attr_interface_bitwidth] = STR(tree_helper::Size(arg_type));
-            arg_attributes[attr_interface_alignment] = STR(get_aligned_bitsize(tree_helper::Size(arg_type)));
+            arg_attributes[attr_interface_alignment] = STR(get_aligned_bitsize(tree_helper::Size(arg_type)) >> 3);
             auto& interface_type = arg_attributes.at(attr_interface_type);
             if(interface_type == "bus")
             {

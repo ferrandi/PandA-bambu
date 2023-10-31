@@ -340,13 +340,10 @@ void SDCScheduling2::sdc_schedule(std::map<vertex, int>& vals_vertex, const hlsR
    ssspSolver.init();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Built the delay graph");
 
-   int index = 0;
    for(const auto operation : loop_operations)
    {
       std::vector<double> vals;
       auto op_varindex = operation_to_varindex.at(operation);
-      // std::cerr << "index" << index << "\n";
-      ++index;
       ssspSolver.exec(op_varindex, vals);
       double max_delay = 0.0;
       unsigned int val_index = 0;

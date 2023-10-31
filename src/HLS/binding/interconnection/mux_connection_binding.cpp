@@ -1231,7 +1231,9 @@ void mux_connection_binding::create_connections()
                        "  * Operation: " + GET_NAME(data, *op) + " " + data->CGetOpNodeInfo(*op)->GetOperation());
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                        "     - FU: " + HLS->allocation_information->get_fu_name(fu).first);
+#ifndef NDEBUG
          unsigned int index = 0;
+#endif
          std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(HLS->functionId, *op);
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - " + std::to_string(var_read.size()) + " reads");
          for(auto& num : var_read)
@@ -1246,7 +1248,9 @@ void mux_connection_binding::create_connections()
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                              "     - " + std::to_string(index) + ". Read: " + BH->PrintVariable(std::get<0>(num)));
             }
+#ifndef NDEBUG
             ++index;
+#endif
          }
       }
       const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(*op);

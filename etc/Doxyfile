@@ -771,21 +771,8 @@ FILE_PATTERNS          = *.c \
                          *.cc \
                          *.cxx \
                          *.cpp \
-                         *.c++ \
-                         *.java \
-                         *.ii \
-                         *.ixx \
-                         *.ipp \
-                         *.i++ \
-                         *.inl \
-                         *.idl \
-                         *.ddl \
-                         *.odl \
                          *.h \
-                         *.hh \
-                         *.hxx \
                          *.hpp \
-                         *.h++ \
                          *.cs \
                          *.d \
                          *.php \
@@ -793,24 +780,14 @@ FILE_PATTERNS          = *.c \
                          *.php5 \
                          *.phtml \
                          *.inc \
-                         *.m \
-                         *.markdown \
-                         *.md \
-                         *.mm \
                          *.dox \
                          *.py \
                          *.f90 \
                          *.f \
                          *.for \
-                         *.tcl \
-                         *.vhd \
-                         *.vhdl \
                          *.ucf \
                          *.qsf \
                          *.as \
-                         *.js \
-                         *.C \
-                         *.H \
                          *.doc
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should

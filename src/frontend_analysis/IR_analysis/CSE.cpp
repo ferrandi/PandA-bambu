@@ -185,7 +185,9 @@ DesignFlowStep_Status CSE::InternalExec()
    }
    bool IR_changed = false;
    restart_phi_opt = false;
+#ifndef NDEBUG
    size_t n_equiv_stmt = 0;
+#endif
    const auto IRman = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
    /// define a map relating variables and columns
    std::map<vertex, CustomUnorderedMapStable<CSE_tuple_key_type, tree_nodeRef>> unique_table;
@@ -361,7 +363,9 @@ DesignFlowStep_Status CSE::InternalExec()
 
                AppM->RegisterTransformation(GetName(), stmt);
                IR_changed = true;
+#ifndef NDEBUG
                ++n_equiv_stmt;
+#endif
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "<--Updated/Removed duplicated statement " + STR(dead_ga->op0));
             }

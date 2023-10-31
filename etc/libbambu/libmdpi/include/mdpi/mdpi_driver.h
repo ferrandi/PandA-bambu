@@ -7,12 +7,12 @@
  *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
  *             ***********************************************
- *                              PandA Project 
+ *                              PandA Project
  *                     URL: http://panda.dei.polimi.it
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2023 Politecnico di Milano
+ *              Copyright (C) 2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -29,18 +29,42 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
+/**
+ * @file mdpi_driver.h
+ *
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
+ * $Revision$
+ * $Date$
+ * Last modified by $Author$
+ *
+ */
+#ifndef __MDPI_DRIVER_H
+#define __MDPI_DRIVER_H
 
-/*!
+#include "mdpi_types.h"
 
-\page tutorials_page Tutorials
+#include <stddef.h>
 
-This page contains some tutorials which may help during the utilization of the PandA project. In particular, these tutorials are directed towards the developers and they should provide them some guidelines to help them producing better code.
+EXTERN_C void __m_arg_init(uint8_t argcount);
+EXTERN_C void __m_arg_fini();
+EXTERN_C void __m_setarg(uint8_t index, void* bits, uint16_t bitsize);
+EXTERN_C void __m_setptrarg(uint8_t index, bptr_t* bits, uint16_t bitsize);
+EXTERN_C void __m_memmap_init();
+EXTERN_C int __m_memmap(ptr_t dst, void* src, size_t bytes);
+EXTERN_C void __m_param_alloc(uint8_t idx, size_t size);
+EXTERN_C size_t __m_param_size(uint8_t idx);
 
-- \ref svn
-- \ref documentation_how_to contains hints on how to create good and useful documentation files
-- \ref makefiles_how_to is a short tutorial showing how to write good makefiles for PandA
-- \ref programming_style list the conventions and the guidelines which you should follow to produce good code
-- \ref graphs_how_to contains a brief explanation with examples on how it is possible to use the boost::graph library
+EXTERN_C void __m_init();
+EXTERN_C void __m_sim_start();
+EXTERN_C unsigned int __m_sim_end();
 
-*/
+EXTERN_C void __m_exit(int __status);
+EXTERN_C void __m_abort();
+EXTERN_C void __m_assert_fail(const char* __assertion, const char* __file, unsigned int __line, const char* __function);
+
+#define __m_setargptr(index, bits, bitsize) \
+   bptr_t __ptrval_##index = (bptr_t)bits;  \
+   __m_setptrarg(index, &__ptrval_##index, bitsize)
+
+#endif // __MDPI_DRIVER_H

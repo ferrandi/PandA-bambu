@@ -1,0 +1,68 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project 
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (C) 2023 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/*!
+  \page bambu101_page Getting started - Bambu HLS
+
+  \section PandA Bambu HLS
+
+  Bambu HLS is the High-Level Synthesis (HLS) tool of the PandA Framework that automates the design process that takes an abstract behavioral description of a digital system, 
+  usually C/C++ (but not only), and generates a Register-Transfer Level (RTL) description that realizes the given behavior.
+  RTL generation only represents the core of the HLS flow, while Bambu HLS also offers a wide set of optimizations and customization capabilites to the user.
+  Finally, there is also the possibility to perform RTL simulation and verification of the generated design against the input description.
+
+  In the following sections you will find information on how to use the Bambu HLS tool to exploit all of its capabilites:
+  - Hardware interfaces setup (registers, ready/valid, FIFO, AXI-Stream, AXI4, ...)
+  - Target-independet optimizations (loop unrolling, function inlining, function versioning, custom floating-point arithmetic, ...)
+  - Hardware-oriented optimizations (datapath pipelining, resource sharing, ...)
+  - HLS algorithms (scheduling, allocation, binding)
+  - External IP integration
+  - HW/SW Co-simulation
+  - Hardware synthesis support
+
+
+  \section bambu101_base Basic usage
+  - \ref bambu101_basic_usage
+  - \ref bambu101_interface
+  - \ref bambu101_memory
+  - \ref bambu101_ip_integration
+
+
+  \section bambu101_advanced Advanced features
+  - \ref bambu101_frontendopt
+  - \ref bambu101_hardwareopt
+  - \ref bambu101_scheduling
+  - \ref bambu101_systemsim
+  - \ref bambu101_truefloat
+  - \ref bambu101_cache
+
+*/

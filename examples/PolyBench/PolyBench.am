@@ -82,4 +82,5 @@ EXTRA_DIST += \
    %D%/polybench_list.int \
    %D%/generic_polybench.sh \
    %D%/generic_polybench.int.sh \
-   %D%/polybench_list
+   %D%/polybench_list \
+   %D%/polybench.doc
