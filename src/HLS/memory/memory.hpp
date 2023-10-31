@@ -66,7 +66,7 @@ class xml_element;
 class memory
 {
  private:
-   /// datastructure containing tree information
+   /// data-structure containing tree information
    const tree_managerConstRef TreeM;
 
    /// set of variables allocated outside the top module

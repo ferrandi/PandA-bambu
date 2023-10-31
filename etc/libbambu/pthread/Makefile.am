@@ -6,30 +6,6 @@ pkglib_LIBRARIES =
 common_treegccflags = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/gcc_plugin -finline-limit=10000 -O3 -I$(BOOST_DIR)
 common_treegccflags_clang = --output-temporary-directory=/tmp -iplugindir=$(top_builddir)/etc/clang_plugin -O3 -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
 
-if BUILD_I386_GCC45
-pkglib_LIBRARIES += libpthread_gcc45.a
-libpthread_gcc45_a_SOURCES = pthread.c
-libpthread_gcc45_a_CFLAGS = --compiler=I386_GCC45 $(common_treegccflags)
-endif
-
-if BUILD_I386_GCC46
-pkglib_LIBRARIES += libpthread_gcc46.a
-libpthread_gcc46_a_SOURCES = pthread.c
-libpthread_gcc46_a_CFLAGS = --compiler=I386_GCC46  $(common_treegccflags)
-endif
-
-if BUILD_I386_GCC47
-pkglib_LIBRARIES += libpthread_gcc47.a
-libpthread_gcc47_a_SOURCES = pthread.c
-libpthread_gcc47_a_CFLAGS = --compiler=I386_GCC47  $(common_treegccflags)
-endif
-
-if BUILD_I386_GCC48
-pkglib_LIBRARIES += libpthread_gcc48.a
-libpthread_gcc48_a_SOURCES = pthread.c
-libpthread_gcc48_a_CFLAGS = -fno-tree-loop-distribute-patterns --compiler=I386_GCC48 $(common_treegccflags)
-endif
-
 if BUILD_I386_GCC49
 pkglib_LIBRARIES += libpthread_gcc49.a
 libpthread_gcc49_a_SOURCES = pthread.c
@@ -124,5 +100,11 @@ if BUILD_I386_CLANG13
 pkglib_LIBRARIES += libpthread_clang13.a
 libpthread_clang13_a_SOURCES = pthread.c
 libpthread_clang13_a_CFLAGS = --compiler=I386_CLANG13 $(common_treegccflags_clang)
+endif
+
+if BUILD_I386_CLANG16
+pkglib_LIBRARIES += libpthread_clang16.a
+libpthread_clang16_a_SOURCES = pthread.c
+libpthread_clang16_a_CFLAGS = --compiler=I386_CLANG16 $(common_treegccflags_clang)
 endif
 

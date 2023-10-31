@@ -44,9 +44,7 @@
  */
 
 /// Autoheader include
-#include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
 #include "config_HAVE_HEXFLOAT.hpp"
-#include "config_HAVE_MAPPING_BUILT.hpp"
 #include "config_NPROFILE.hpp"
 
 /// Header include
@@ -62,10 +60,6 @@
 #include <cstdio>
 #endif
 
-/// Machine include
-#if HAVE_MAPPING_BUILT
-#include "machine_node.hpp"
-#endif
 /// Parameter include
 #include "Parameter.hpp"
 
@@ -83,9 +77,6 @@
 #include "tree_node_finder.hpp"
 #include "tree_nodes_merger.hpp"
 #include "tree_reindex.hpp"
-#if HAVE_CODE_ESTIMATION_BUILT
-#include "weight_information.hpp"
-#endif
 
 /// Wrapper include
 #include "compiler_wrapper.hpp"
@@ -204,13 +195,25 @@ tree_nodeRef tree_manager::GetFunction(const std::string& function_name) const
       const auto& curr_tn = function_decl_node.second;
       const auto fd = GetPointerS<const function_decl>(curr_tn);
       const auto id_name = GET_CONST_NODE(fd->name);
-      std::string simple_name;
+      std::string simple_name, mangled_name;
       if(id_name->get_kind() == identifier_node_K)
       {
          const auto in = GetPointerS<const identifier_node>(id_name);
          if(!in->operator_flag)
          {
             simple_name = in->strg;
+         }
+      }
+      if(fd->mngl)
+      {
+         tree_nodeRef mangled_id_name = GET_NODE(fd->mngl);
+         if(mangled_id_name->get_kind() == identifier_node_K)
+         {
+            auto* in = GetPointer<identifier_node>(mangled_id_name);
+            if(!in->operator_flag)
+            {
+               mangled_name = in->strg;
+            }
          }
       }
       const auto name = [&]() {
@@ -227,7 +230,8 @@ tree_nodeRef tree_manager::GetFunction(const std::string& function_name) const
          return fname;
       }();
       if(name == function_name || function_name == std::string("-") ||
-         (!simple_name.empty() && function_name == simple_name))
+         (!simple_name.empty() && function_name == simple_name) ||
+         (!mangled_name.empty() && mangled_name == function_name))
       {
          return CGetTreeReindex(function_decl_node.first);
       }
@@ -279,14 +283,7 @@ unsigned int tree_manager::function_index_mngl(const std::string& function_name)
 
 void tree_manager::print(std::ostream& os) const
 {
-#if HAVE_MAPPING_BUILT
-   std::string component_type_string = Param->getOption<std::string>(OPT_driving_component_type);
-#endif
-   raw_writer RW(
-#if HAVE_MAPPING_BUILT
-       processingElement::get_component_type(component_type_string),
-#endif
-       os);
+   raw_writer RW(os);
 
    os << STOK(TOK_GCC_VERSION) << ": \"" << CompilerWrapper::current_compiler_version << "\"\n";
    os << STOK(TOK_PLUGIN_VERSION) << ": \"" << CompilerWrapper::current_plugin_version << "\"\n";
@@ -592,14 +589,6 @@ void tree_manager::collapse_into(const unsigned int& funID,
                break;
             }
 
-            if((Param->getOption<bool>(OPT_compare_models) or Param->getOption<bool>(OPT_normalize_models) or
-                Param->getOption<bool>(OPT_compare_measure_regions) or Param->isOption(OPT_hand_mapping)) and
-               (GET_NODE(gm->op1)->get_kind() == call_expr_K || GET_NODE(gm->op1)->get_kind() == aggr_init_expr_K))
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                              "---The gimple assignment has call_expr on the right and we are target profiling");
-               break;
-            }
             if(gm->predicate)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---The gimple assignment is predicated");
@@ -785,13 +774,6 @@ void tree_manager::collapse_into(const unsigned int& funID,
                         }
 
                         auto* new_gm = GetPointer<gimple_assign>(GET_NODE(tree_reindexRef_gm));
-#if HAVE_CODE_ESTIMATION_BUILT
-                        new_gm->weight_information->instruction_size = gm->weight_information->instruction_size;
-#if HAVE_RTL_BUILT
-                        new_gm->weight_information->rtl_instruction_size = gm->weight_information->rtl_instruction_size;
-#endif
-                        new_gm->weight_information->recursive_weight = gm->weight_information->recursive_weight;
-#endif
                         new_gm->memuse = gm->memuse;
                         new_gm->memdef = gm->memdef;
                         new_gm->vuses = gm->vuses;
@@ -872,28 +854,6 @@ void tree_manager::collapse_into(const unsigned int& funID,
                   }
                }
             }
-#if HAVE_CODE_ESTIMATION_BUILT
-            THROW_ASSERT(GetPointer<WeightedNode>(GET_NODE(stack.front())),
-                         "Tree node in front of the stack is not weighted. Kind is " +
-                             std::string(GET_NODE(stack.front())->get_kind_text()));
-            if(GetPointer<WeightedNode>(GET_NODE(gm->op1)))
-            {
-               const std::map<ComponentTypeConstRef, ProbabilityDistribution>& weights =
-                   GetPointer<WeightedNode>(GET_NODE(gm->op1))->weight_information->recursive_weight;
-               std::map<ComponentTypeConstRef, ProbabilityDistribution>::const_iterator w, w_end = weights.end();
-               for(w = weights.begin(); w != w_end; ++w)
-               {
-                  GetPointer<WeightedNode>(GET_NODE(stack.front()))->weight_information->recursive_weight[w->first] +=
-                      w->second;
-               }
-            }
-#if HAVE_RTL_BUILT
-            GetPointer<WeightedNode>(GET_NODE(stack.front()))->weight_information->rtl_instruction_size +=
-                gm->weight_information->rtl_instruction_size;
-#endif
-            GetPointer<WeightedNode>(GET_NODE(stack.front()))->weight_information->instruction_size +=
-                gm->weight_information->instruction_size;
-#endif
             for(const auto& stmt : curr_block->CGetStmtList())
             {
                // Remove the definition statements contained in curr_block
@@ -2018,7 +1978,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
                // THROW_ASSERT(global_decl_symbol_table.find(symbol_name+"-"+symbol_scope) ==
                // global_decl_symbol_table.end(), "duplicated symbol in global_decl_symbol_table:
                // "+global_decl_symbol_table.find(symbol_name+"-"+symbol_scope)->first + " == " +
-               // boost::lexical_cast<std::string>(ti.first));
+               // std::to_string(ti.first));
                continue;
             }
 

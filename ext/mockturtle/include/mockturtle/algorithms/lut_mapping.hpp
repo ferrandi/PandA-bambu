@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -68,13 +68,13 @@ struct lut_mapping_params
    *
    * The first round is used for delay optimization.
    */
-  uint32_t rounds{2u};
+  uint32_t rounds{ 2u };
 
   /*! \brief Number of rounds for exact area optimization. */
-  uint32_t rounds_ela{1u};
+  uint32_t rounds_ela{ 1u };
 
   /*! \brief Be verbose. */
-  bool verbose{false};
+  bool verbose{ false };
 };
 
 /*! \brief Statistics for lut_mapping.
@@ -85,7 +85,7 @@ struct lut_mapping_params
 struct lut_mapping_stats
 {
   /*! \brief Total runtime. */
-  stopwatch<>::duration time_total{0};
+  stopwatch<>::duration time_total{ 0 };
 
   void report() const
   {
@@ -140,10 +140,10 @@ public:
     } );
 
     init_nodes();
-    //print_state();
+    // print_state();
 
     set_mapping_refs<false>();
-    //print_state();
+    // print_state();
 
     while ( iteration < ps.rounds )
     {
@@ -168,8 +168,7 @@ private:
   {
     ntk.foreach_node( [this]( auto n, auto ) {
       const auto index = ntk.node_to_index( n );
-
-      if ( ntk.is_constant( n ) || ntk.is_pi( n ) )
+      if ( ntk.is_constant( n ) || ntk.is_ci( n ) )
       {
         /* all terminals have flow 1.0 */
         flow_refs[index] = 1.0f;
@@ -189,12 +188,12 @@ private:
   {
     for ( auto const& n : top_order )
     {
-      if ( ntk.is_constant( n ) || ntk.is_pi( n ) )
+      if ( ntk.is_constant( n ) || ntk.is_ci( n ) )
         continue;
       compute_best_cut<ELA>( ntk.node_to_index( n ) );
     }
     set_mapping_refs<ELA>();
-    //print_state();
+    // print_state();
   }
 
   template<bool ELA>
@@ -204,7 +203,7 @@ private:
 
     /* compute current delay and update mapping refs */
     delay = 0;
-    ntk.foreach_po( [this]( auto s ) {
+    ntk.foreach_co( [this]( auto s ) {
       const auto index = ntk.node_to_index( ntk.get_node( s ) );
       delay = std::max( delay, delays[index] );
 
@@ -219,7 +218,7 @@ private:
     for ( auto it = top_order.rbegin(); it != top_order.rend(); ++it )
     {
       /* skip constants and PIs (TODO: stop earlier) */
-      if ( ntk.is_constant( *it ) || ntk.is_pi( *it ) )
+      if ( ntk.is_constant( *it ) || ntk.is_ci( *it ) )
         continue;
 
       const auto index = ntk.node_to_index( *it );
@@ -236,7 +235,7 @@ private:
       area++;
     }
 
-    /* blend flow referenes */
+    /* blend flow references */
     for ( auto i = 0u; i < ntk.size(); ++i )
     {
       flow_refs[i] = coef * flow_refs[i] + ( 1.0f - coef ) * std::max( 1.0f, static_cast<float>( map_refs[i] ) );
@@ -247,8 +246,8 @@ private:
 
   std::pair<float, uint32_t> cut_flow( cut_t const& cut )
   {
-    uint32_t time{0u};
-    float flow{0.0f};
+    uint32_t time{ 0u };
+    float flow{ 0.0f };
 
     for ( auto leaf : cut )
     {
@@ -256,7 +255,7 @@ private:
       flow += flows[leaf];
     }
 
-    return {flow + cut_area( cut ), time + 1u};
+    return { flow + cut_area( cut ), time + 1u };
   }
 
   /* reference cut:
@@ -268,7 +267,7 @@ private:
     uint32_t count = cut_area( cut );
     for ( auto leaf : cut )
     {
-      if ( ntk.is_constant( ntk.index_to_node( leaf ) ) || ntk.is_pi( ntk.index_to_node( leaf ) ) )
+      if ( ntk.is_constant( ntk.index_to_node( leaf ) ) || ntk.is_ci( ntk.index_to_node( leaf ) ) )
         continue;
 
       if ( map_refs[leaf]++ == 0 )
@@ -289,7 +288,7 @@ private:
     uint32_t count = cut_area( cut );
     for ( auto leaf : cut )
     {
-      if ( ntk.is_constant( ntk.index_to_node( leaf ) ) || ntk.is_pi( ntk.index_to_node( leaf ) ) )
+      if ( ntk.is_constant( ntk.index_to_node( leaf ) ) || ntk.is_ci( ntk.index_to_node( leaf ) ) )
         continue;
 
       if ( --map_refs[leaf] == 0 )
@@ -314,7 +313,7 @@ private:
 
     for ( auto leaf : cut )
     {
-      if ( ntk.is_constant( ntk.index_to_node( leaf ) ) || ntk.is_pi( ntk.index_to_node( leaf ) ) )
+      if ( ntk.is_constant( ntk.index_to_node( leaf ) ) || ntk.is_ci( ntk.index_to_node( leaf ) ) )
         continue;
 
       tmp_area.push_back( leaf );
@@ -345,14 +344,14 @@ private:
   template<bool ELA>
   void compute_best_cut( uint32_t index )
   {
-    constexpr auto mf_eps{0.005f};
+    constexpr auto mf_eps{ 0.005f };
 
     float flow;
-    uint32_t time{0};
-    int32_t best_cut{-1};
-    float best_flow{std::numeric_limits<float>::max()};
-    uint32_t best_time{std::numeric_limits<uint32_t>::max()};
-    int32_t cut_index{-1};
+    uint32_t time{ 0 };
+    int32_t best_cut{ -1 };
+    float best_flow{ std::numeric_limits<float>::max() };
+    uint32_t best_time{ std::numeric_limits<uint32_t>::max() };
+    int32_t cut_index{ -1 };
 
     if constexpr ( ELA )
     {
@@ -418,7 +417,7 @@ private:
 
     for ( auto const& n : top_order )
     {
-      if ( ntk.is_constant( n ) || ntk.is_pi( n ) )
+      if ( ntk.is_constant( n ) || ntk.is_ci( n ) )
         continue;
 
       const auto index = ntk.node_to_index( n );
@@ -444,7 +443,7 @@ private:
     for ( auto i = 0u; i < ntk.size(); ++i )
     {
       std::cout << fmt::format( "*** Obj = {:>3} (node = {:>3})  FlowRefs = {:5.2f}  MapRefs = {:>2}  Flow = {:5.2f}  Delay = {:>3}\n", i, ntk.index_to_node( i ), flow_refs[i], map_refs[i], flows[i], delays[i] );
-      //std::cout << cuts.cuts( i );
+      // std::cout << cuts.cuts( i );
     }
     std::cout << fmt::format( "Level = {}  Area = {}\n", delay, area );
   }
@@ -454,10 +453,10 @@ private:
   lut_mapping_params const& ps;
   lut_mapping_stats& st;
 
-  uint32_t iteration{0}; /* current mapping iteration */
-  uint32_t delay{0};     /* current delay of the mapping */
-  uint32_t area{0};      /* current area of the mapping */
-  //bool ela{false};       /* compute exact area */
+  uint32_t iteration{ 0 }; /* current mapping iteration */
+  uint32_t delay{ 0 };     /* current delay of the mapping */
+  uint32_t area{ 0 };      /* current area of the mapping */
+  // bool ela{false};       /* compute exact area */
 
   std::vector<node<Ntk>> top_order;
   std::vector<float> flow_refs;
@@ -493,17 +492,17 @@ private:
  *
  * **Required network functions:**
  * - `size`
- * - `is_pi`
+ * - `is_ci`
  * - `is_constant`
  * - `node_to_index`
  * - `index_to_node`
  * - `get_node`
- * - `foreach_po`
+ * - `foreach_co`
  * - `foreach_node`
  * - `fanout_size`
  * - `clear_mapping`
  * - `add_to_mapping`
- * - `set_lut_funtion` (if `StoreFunction` is true)
+ * - `set_lut_function` (if `StoreFunction` is true)
  *
    \verbatim embed:rst
 
@@ -518,12 +517,12 @@ void lut_mapping( Ntk& ntk, lut_mapping_params const& ps = {}, lut_mapping_stats
 {
   static_assert( is_network_type_v<Ntk>, "Ntk is not a network type" );
   static_assert( has_size_v<Ntk>, "Ntk does not implement the size method" );
-  static_assert( has_is_pi_v<Ntk>, "Ntk does not implement the is_pi method" );
+  static_assert( has_is_ci_v<Ntk>, "Ntk does not implement the is_ci method" );
   static_assert( has_is_constant_v<Ntk>, "Ntk does not implement the is_constant method" );
   static_assert( has_node_to_index_v<Ntk>, "Ntk does not implement the node_to_index method" );
   static_assert( has_index_to_node_v<Ntk>, "Ntk does not implement the index_to_node method" );
   static_assert( has_get_node_v<Ntk>, "Ntk does not implement the get_node method" );
-  static_assert( has_foreach_po_v<Ntk>, "Ntk does not implement the foreach_po method" );
+  static_assert( has_foreach_co_v<Ntk>, "Ntk does not implement the foreach_co method" );
   static_assert( has_foreach_node_v<Ntk>, "Ntk does not implement the foreach_node method" );
   static_assert( has_fanout_size_v<Ntk>, "Ntk does not implement the fanout_size method" );
   static_assert( has_clear_mapping_v<Ntk>, "Ntk does not implement the clear_mapping method" );

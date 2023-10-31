@@ -65,27 +65,27 @@ DesignFlowStep_Status DryRunEvaluation::Exec()
    std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
    for(const auto& objective : objective_vector)
    {
-      HLSMgr->evaluations[objective] = std::vector<double>(1, 0.0);
+      HLSMgr->evaluations[objective] = 0.0;
       if(objective == "CYCLES")
       {
-         HLSMgr->evaluations["NUM_EXECUTIONS"] = std::vector<double>(1, 1);
-         HLSMgr->evaluations["TOTAL_CYCLES"] = std::vector<double>(1, 0.0);
+         HLSMgr->evaluations["NUM_EXECUTIONS"] = 1;
+         HLSMgr->evaluations["TOTAL_CYCLES"] = 0.0;
       }
       if(objective == "FREQUENCY" or objective == "TIME" or objective == "TOTAL_TIME" or objective == "AREAxTIME")
       {
          auto clock_period = parameters->getOption<double>(OPT_clock_period);
-         HLSMgr->evaluations["PERIOD"] = std::vector<double>(1, clock_period);
+         HLSMgr->evaluations["PERIOD"] = clock_period;
       }
       if(objective == "TIME")
       {
          auto clock_period = parameters->getOption<double>(OPT_clock_period);
-         HLSMgr->evaluations["CYCLES"] = std::vector<double>(1, 0.0);
-         HLSMgr->evaluations["FREQUENCY"] = std::vector<double>(1, 1000 / clock_period);
+         HLSMgr->evaluations["CYCLES"] = 0.0;
+         HLSMgr->evaluations["FREQUENCY"] = 1000 / clock_period;
       }
       if(objective == "PERIOD")
       {
          auto clock_period = parameters->getOption<double>(OPT_clock_period);
-         HLSMgr->evaluations[objective] = std::vector<double>(1, clock_period);
+         HLSMgr->evaluations[objective] = clock_period;
       }
    }
    return DesignFlowStep_Status::SUCCESS;

@@ -43,25 +43,18 @@
 
 #ifndef VHDL_WRITER_HPP
 #define VHDL_WRITER_HPP
-
-/// Autoheader include
-#include "config_HAVE_FROM_C_BUILT.hpp"
-
 #include "language_writer.hpp"
 
-/// STD include
-#include <string>
-
-/// STL include
 #include "custom_set.hpp"
 #include <list>
+#include <set>
+#include <string>
 #include <vector>
 
 struct VHDL_writer : public language_writer
 {
  protected:
-   static const char* tokenNames[];
-   CustomOrderedSet<std::string> keywords;
+   static const std::set<std::string> keywords;
 
    CustomOrderedSet<std::string> list_of_comp_already_def;
 
@@ -69,6 +62,8 @@ struct VHDL_writer : public language_writer
    const technology_managerConstRef TM;
 
  public:
+   static bool check_keyword_vhdl(const std::string& id);
+
    /**
     * Return the name of the language writer.
     */
@@ -186,11 +181,6 @@ struct VHDL_writer : public language_writer
     */
    void write_module_parametrization(const structural_objectRef& cir) override;
    /**
-    * Write the tail part of the file. Write some lines of comments and some debugging code.
-    * @param cir is the top component.
-    */
-   void write_tail(const structural_objectRef& cir) override;
-   /**
     * write the declaration of all the states of the finite state machine.
     * @param list_of_states is the list of all the states.
     */
@@ -262,7 +252,7 @@ struct VHDL_writer : public language_writer
       return true;
    }
 
-   bool check_keyword(std::string) const override;
+   bool check_keyword(const std::string&) const override;
 
    /**
     * Write a builtin component

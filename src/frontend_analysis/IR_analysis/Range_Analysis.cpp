@@ -65,8 +65,8 @@
 #include "dead_code_elimination.hpp"
 
 /// HLS include
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 
 /// HLS/memory include
 #include "memory.hpp"
@@ -90,9 +90,9 @@
 #include "Bit_Value_opt.hpp"
 #include "bit_lattice.hpp"
 
-#include "dbgPrintHelper.hpp"              // for DEBUG_LEVEL_
-#include "string_manipulation.hpp"         // for GET_CLASS
-#include <boost/filesystem/operations.hpp> // for create_directories
+#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "string_manipulation.hpp" // for GET_CLASS
+#include <filesystem>              // for create_directories
 
 #define RA_JUMPSET
 //    #define EARLY_DEAD_CODE_RESTART     // Abort analysis when dead code is detected instead of waiting step's end
@@ -3530,8 +3530,8 @@ unsigned int evaluateBranch(const tree_nodeRef br_op, const blocRef branchBB
       {
          const auto lc = tree_helper::get_integer_cst_value(l);
          const auto rc = tree_helper::get_integer_cst_value(r);
-         RangeRef lhs(new Range(Regular, Range::MAX_BIT_INT, lc, lc));
-         RangeRef rhs(new Range(Regular, Range::MAX_BIT_INT, rc, rc));
+         RangeRef lhs(new Range(Regular, Range::max_digits, lc, lc));
+         RangeRef rhs(new Range(Regular, Range::max_digits, rc, rc));
          const auto branchValue = BinaryOpNode::evaluate(bin_op->get_kind(), 1, lhs, rhs, isSignedType(bin_op->op0));
          THROW_ASSERT(branchValue->isConstant(), "Constant binary operation should resolve to either true or false");
          if(branchValue->getUnsignedMax())
@@ -3988,7 +3988,7 @@ static RangeRef constructor_range(const tree_managerConstRef TM, const tree_node
       const auto el = GET_CONST_NODE(i.second);
       THROW_ASSERT(el, "unexpected condition");
 
-      if(el->get_kind() == constructor_K && GetPointer<array_type>(GET_CONST_NODE(GetPointer<constructor>(el)->type)))
+      if(el->get_kind() == constructor_K && tree_helper::IsArrayEquivType(GetPointerS<const constructor>(el)->type))
       {
          THROW_ASSERT(array_dims.size() > 1 || GET_CONST_NODE(c->type)->get_kind() == record_type_K,
                       "invalid nested constructors:" + tn->ToString() + " " + STR(array_dims.size()));
@@ -4242,7 +4242,7 @@ ControlDepNode::ControlDepNode(VarNode* _sink, VarNode* _source)
 
 RangeRef ControlDepNode::eval() const
 {
-   return RangeRef(new Range(Regular, Range::MAX_BIT_INT));
+   return RangeRef(new Range(Regular, Range::max_digits));
 }
 
 void ControlDepNode::print(std::ostream& /*OS*/) const
@@ -6226,9 +6226,9 @@ class ConstraintGraph : public NodeContainer
    std::string printToFile(const std::string& file_name, const ParameterConstRef parameters) const
    {
       std::string output_directory = parameters->getOption<std::string>(OPT_dot_directory) + "RangeAnalysis/";
-      if(!boost::filesystem::exists(output_directory))
+      if(!std::filesystem::exists(output_directory))
       {
-         boost::filesystem::create_directories(output_directory);
+         std::filesystem::create_directories(output_directory);
       }
       const std::string full_name = output_directory + file_name;
       std::ofstream file(full_name);

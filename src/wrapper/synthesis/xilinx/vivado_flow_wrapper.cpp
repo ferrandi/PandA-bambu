@@ -43,19 +43,19 @@
  */
 /// Header include
 #include "vivado_flow_wrapper.hpp"
-#include "XilinxBackendFlow.hpp"
 
-#include "ToolManager.hpp"
-#include "xml_script_command.hpp"
-
+#include "DesignParameters.hpp"
 #include "Parameter.hpp"
+#include "ToolManager.hpp"
+#include "XilinxBackendFlow.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "xml_script_command.hpp"
 
 #define PARAM_vivado_outdir "vivado_outdir"
 
 // constructor
 vivado_flow_wrapper::vivado_flow_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir,
-                                         const target_deviceRef& _device)
+                                         const generic_deviceRef& _device)
     : XilinxWrapper(_Param, VIVADO_FLOW_TOOL_EXEC, _device, _output_dir, VIVADO_FLOW_TOOL_ID)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the VIVADO_FLOW wrapper...");
@@ -79,11 +79,11 @@ void vivado_flow_wrapper::create_sdc(const DesignParametersRef& dp)
 
    std::string sdc_filename = output_dir + "/" + dp->component_name + ".sdc";
    std::ofstream sdc_file(sdc_filename.c_str());
-   if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
+   if(!static_cast<bool>(std::stoi(dp->parameter_values[PARAM_is_combinational])))
    {
       sdc_file << "create_clock -period " + dp->parameter_values[PARAM_clk_period] + " -name " + clock +
                       " [get_ports " + clock + "]\n";
-      if((boost::lexical_cast<bool>(dp->parameter_values[PARAM_connect_iob]) ||
+      if((static_cast<bool>(std::stoi(dp->parameter_values[PARAM_connect_iob])) ||
           (Param->IsParameter("profile-top") && Param->GetParameter<int>("profile-top") == 1)) &&
          !Param->isOption(OPT_backend_sdc_extensions))
       {

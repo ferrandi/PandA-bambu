@@ -44,8 +44,6 @@
 #define HLS_STEP_HPP
 
 /// Autoheader include
-#include "config_HAVE_BEAGLE.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "config_HAVE_ILP_BUILT.hpp"
 #include "config_HAVE_LIBRARY_CHARACTERIZATION_BUILT.hpp"
@@ -77,20 +75,19 @@ class xml_element;
 class HLSFlowStepSpecialization
 {
  public:
-   /**
-    * Destructor
-    */
+   HLSFlowStepSpecialization();
+
    virtual ~HLSFlowStepSpecialization();
 
    /**
     * Return the string representation of this
     */
-   virtual const std::string GetKindText() const = 0;
+   virtual std::string GetKindText() const = 0;
 
    /**
     * Return the contribution to the signature of a step given by the specialization
     */
-   virtual const std::string GetSignature() const = 0;
+   virtual std::string GetSignature() const = 0;
 };
 /// const refcount definition of the class
 using HLSFlowStepSpecializationConstRef = refcount<const HLSFlowStepSpecialization>;
@@ -100,23 +97,13 @@ enum class HLSFlowStep_Type
    UNKNOWN = 0,
    ADD_LIBRARY,
    ALLOCATION,
-#if HAVE_EXPERIMENTAL
-   AREA_ESTIMATION,
-   AXI4LITE_INTERFACE_GENERATION,
-#endif
    BB_STG_CREATOR,
    CALL_GRAPH_UNFOLDING,
    CDFC_MODULE_BINDING,
-#if HAVE_EXPERIMENTAL
-   CHAINING_BASED_LIVENESS,
-#endif
    CHORDAL_COLORING_REGISTER_BINDING,
    CLASSIC_DATAPATH_CREATOR,
    DATAPATH_CS_CREATOR,
    DATAPATH_CS_PARALLEL_CREATOR,
-#if HAVE_EXPERIMENTAL
-   CLOCK_SLACK_ESTIMATION,
-#endif
    CLASSICAL_HLS_SYNTHESIS_FLOW,
    COLORING_REGISTER_BINDING,
    CONTROL_FLOW_CHECKER,
@@ -126,35 +113,12 @@ enum class HLSFlowStep_Type
    DOMINATOR_MEMORY_ALLOCATION,
    DOMINATOR_MEMORY_ALLOCATION_CS,
    DRY_RUN_EVALUATION,
-#if HAVE_BEAGLE
-   DSE_DESIGN_FLOW,
-#endif
-#if HAVE_EXPERIMENTAL
-   DUMP_DESIGN_FLOW,
-#endif
    EASY_MODULE_BINDING,
-#if HAVE_EXPERIMENTAL
-   EDGES_REDUCTION_EVALUATION,
-   EPDG_SCHED_CHAINING,
-#endif
    EVALUATION,
-#if HAVE_EXPERIMENTAL
-   EXPLORE_MUX_DESIGN_FLOW,
-   EXPORT_PCORE,
-#endif
-#if HAVE_EXPERIMENTAL
-   FSL_INTERFACE_GENERATION,
-#endif
    FSM_CONTROLLER_CREATOR,
    FSM_CS_CONTROLLER_CREATOR,
    FSM_NI_SSA_LIVENESS,
-#if HAVE_EXPERIMENTAL
-   FU_REG_BINDING_DESIGN_FLOW,
-#endif
    GENERATE_HDL,
-#if HAVE_EXPERIMENTAL
-   GENERATE_RESP,
-#endif
    GENERATE_SIMULATION_SCRIPT,
    GENERATE_SYNTHESIS_SCRIPT,
 #if HAVE_TASTE
@@ -165,37 +129,18 @@ enum class HLSFlowStep_Type
    HLS_SYNTHESIS_FLOW,
    HW_PATH_COMPUTATION,
    HW_DISCREPANCY_ANALYSIS,
-#if HAVE_ILP_BUILT && HAVE_EXPERIMENTAL
-   ILP_NEW_FORM_SCHEDULING,
-   ILP_SCHEDULING,
-#endif
    INFERRED_INTERFACE_GENERATION,
    INITIALIZE_HLS,
    INTERFACE_CS_GENERATION,
-#if HAVE_EXPERIMENTAL
-   K_COFAMILY_REGISTER_BINDING,
-   LEFT_EDGE_REGISTER_BINDING,
-#endif
    LIST_BASED_SCHEDULING,
-#if HAVE_EXPERIMENTAL
-   MEMORY_CONFLICT_GRAPH,
-#endif
    MINIMAL_INTERFACE_GENERATION,
-   MINIMAL_TESTBENCH_GENERATION,
    MUX_INTERCONNECTION_BINDING,
-#if HAVE_EXPERIMENTAL
-   NPI_INTERFACE_GENERATION,
-   NUM_AF_EDGES_EVALUATION,
-#endif
 #if HAVE_FROM_PRAGMA_BUILT
    OMP_ALLOCATION,
 #endif
 #if HAVE_FROM_PRAGMA_BUILT
 #endif
    OMP_BODY_LOOP_SYNTHESIS_FLOW,
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
-   OMP_FOR_WRAPPER_SYNTHESIS_FLOW,
-#endif
 #if HAVE_FROM_PRAGMA_BUILT
    OMP_FOR_WRAPPER_CS_SYNTHESIS_FLOW,
 #endif
@@ -205,17 +150,11 @@ enum class HLSFlowStep_Type
 #if HAVE_FROM_PRAGMA_BUILT
    OMP_FUNCTION_ALLOCATION_CS,
 #endif
-#if HAVE_EXPERIMENTAL
-   PARALLEL_CONTROLLER_CREATOR,
-#endif
    PIPELINE_CONTROLLER_CREATOR,
    PORT_SWAPPING,
    SCHED_CHAINING,
 #if HAVE_ILP_BUILT
    SDC_SCHEDULING,
-#endif
-#if HAVE_ILP_BUILT && HAVE_EXPERIMENTAL
-   SILP_SCHEDULING,
 #endif
 #if HAVE_SIMULATION_WRAPPER_BUILT
    SIMULATION_EVALUATION,
@@ -228,13 +167,7 @@ enum class HLSFlowStep_Type
    TASTE_INTERFACE_GENERATION,
 #endif
    TESTBENCH_GENERATION,
-   TESTBENCH_MEMORY_ALLOCATION,
-   TESTBENCH_VALUES_C_GENERATION,
-   TESTBENCH_VALUES_XML_GENERATION,
    TEST_VECTOR_PARSER,
-#if HAVE_EXPERIMENTAL
-   TIME_ESTIMATION,
-#endif
    TOP_ENTITY_CS_CREATION,
    TOP_ENTITY_CS_PARALLEL_CREATION,
    TOP_ENTITY_CREATION,
@@ -249,12 +182,8 @@ enum class HLSFlowStep_Type
    VIRTUAL_DESIGN_FLOW,
    WB4_INTERCON_INTERFACE_GENERATION,
    WB4_INTERFACE_GENERATION,
-   WB4_TESTBENCH_GENERATION,
    WEIGHTED_CLIQUE_REGISTER_BINDING,
-   WRITE_HLS_SUMMARY,
-#if HAVE_EXPERIMENTAL
-   XML_HLS_SYNTHESIS_FLOW,
-#endif
+   WRITE_HLS_SUMMARY
 };
 
 enum class HLSFlowStep_Relationship
@@ -293,7 +222,7 @@ class HLS_step : public DesignFlowStep
    /**
     * Constructor
     * @param Param class containing all the parameters
-    * @param HLS class containing all the HLS datastructures
+    * @param HLS class containing all the HLS data-structures
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type is the type of this hls flow step
     */
@@ -304,13 +233,44 @@ class HLS_step : public DesignFlowStep
    /**
     * Destructor
     */
-   virtual ~HLS_step() override;
+   ~HLS_step() override;
 
    /**
     * Return a unified identifier of this design step
     * @return the signature of the design step
     */
-   const std::string GetSignature() const override;
+   std::string GetSignature() const override;
+
+   /**
+    * Return the name of this design step
+    * @return the name of the pass (for debug purpose)
+    */
+   std::string GetName() const override;
+
+   /**
+    * Return the name of the type of this frontend flow step
+    */
+   virtual std::string GetKindText() const;
+
+   /**
+    * Given a HLS flow step type, return the name of the type
+    * @param hls_flow_step_type is the type to be considered
+    * @return the name of the type
+    */
+   static std::string EnumToName(const HLSFlowStep_Type hls_flow_step_type);
+
+   /**
+    * Return the factory to create this type of steps
+    */
+   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const final;
+
+   /**
+    * Compute the relationships of a step with other steps
+    * @param dependencies is where relationships will be stored
+    * @param relationship_type is the type of relationship to be computed
+    */
+   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
     * Compute the signature of a hls flow step
@@ -320,37 +280,6 @@ class HLS_step : public DesignFlowStep
     */
    static const std::string ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
                                              const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
-
-   /**
-    * Return the name of this design step
-    * @return the name of the pass (for debug purpose)
-    */
-   const std::string GetName() const override;
-
-   /**
-    * Return the name of the type of this frontend flow step
-    */
-   virtual const std::string GetKindText() const;
-
-   /**
-    * Given a HLS flow step type, return the name of the type
-    * @param hls_flow_step_type is the type to be considered
-    * @return the name of the type
-    */
-   static const std::string EnumToName(const HLSFlowStep_Type hls_flow_step_type);
-
-   /**
-    * Return the factory to create this type of steps
-    */
-   const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
-
-   /**
-    * Compute the relationships of a step with other steps
-    * @param dependencies is where relationships will be stored
-    * @param relationship_type is the type of relationship to be computed
-    */
-   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
-                             const DesignFlowStep::RelationshipType relationship_type) override;
 };
 /// refcount definition of the class
 using HLS_stepRef = refcount<HLS_step>;

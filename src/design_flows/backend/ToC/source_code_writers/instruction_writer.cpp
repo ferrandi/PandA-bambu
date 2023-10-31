@@ -55,14 +55,6 @@
 #include "tree_manager.hpp"
 #include "var_pp_functor.hpp"
 
-#include "config_HAVE_GRAPH_PARTITIONING_BUILT.hpp"
-#include "config_HAVE_MPPB.hpp"
-
-#if HAVE_GRAPH_PARTITIONING_BUILT
-#include "partitioning_manager.hpp"
-#include "pthread_instruction_writer.hpp"
-#endif
-
 InstructionWriter::InstructionWriter(const application_managerConstRef _AppM,
                                      const IndentedOutputStreamRef _indented_output_stream,
                                      const ParameterConstRef _parameters)
@@ -78,26 +70,10 @@ InstructionWriterRef InstructionWriter::CreateInstructionWriter(const ActorGraph
 {
    switch(actor_graph_backend_type)
    {
-#if HAVE_MPPB
-      case(ActorGraphBackend_Type::BA_MPPB):
-      {
-         return InstructionWriterRef(new MppbInstructionWriter(AppM, indented_output_stream, true, parameters));
-      }
-#endif
-#if HAVE_GRAPH_PARTITIONING_BUILT
-      case(ActorGraphBackend_Type::BA_OPENMP):
-#endif
       case(ActorGraphBackend_Type::BA_NONE):
       {
          return InstructionWriterRef(new InstructionWriter(AppM, indented_output_stream, parameters));
       }
-#if HAVE_GRAPH_PARTITIONING_BUILT
-      case(ActorGraphBackend_Type::BA_PTHREAD):
-      {
-         return InstructionWriterRef(new PThreadInstructionWriter(RefcountCast<const PartitioningManager>(AppM),
-                                                                  indented_output_stream, parameters));
-      }
-#endif
       default:
       {
          THROW_UNREACHABLE("");

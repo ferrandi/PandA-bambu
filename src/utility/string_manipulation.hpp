@@ -42,6 +42,7 @@
 
 #include <boost/lexical_cast.hpp>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 /**
@@ -76,21 +77,36 @@ std::string TrimSpaces(const std::string& value);
 
 std::string string_demangle(const std::string& input);
 
+std::string capitalize(const std::string& str);
+
+std::string& capitalize(std::string& str);
+
+inline bool starts_with(const std::string& str, const std::string& pattern)
+{
+   return str.find(pattern) == 0;
+}
+
+inline bool ends_with(const std::string& str, const std::string& pattern)
+{
+   const auto pos = str.rfind(pattern);
+   return pos != std::string::npos && (pos + pattern.size()) == str.size();
+}
+
 /**
  * Function with print number in desired format
  * @param number is the number to be printed
  * @param precision is the precision
  * @param size is the size of the string
  */
-template <typename numeric_type>
-inline std::string NumberToString(const numeric_type number, const size_t precision, const size_t size)
+template <typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
+inline std::string NumberToString(const T number, const size_t precision, const size_t size)
 {
    std::stringstream return_stream;
    return_stream.width(static_cast<std::streamsize>(size));
    return_stream.fill(' ');
    return_stream.setf(std::ios::fixed, std::ios::floatfield);
    return_stream.precision(static_cast<std::streamsize>(precision));
-   return_stream << boost::lexical_cast<long double>(number);
+   return_stream << static_cast<long double>(number);
    return return_stream.str();
 }
 
@@ -99,13 +115,13 @@ inline std::string NumberToString(const numeric_type number, const size_t precis
  * @param number is the number to be printed
  * @param precision is the precision
  */
-template <typename numeric_type>
-inline std::string NumberToString(const numeric_type number, const size_t precision)
+template <typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
+inline std::string NumberToString(const T number, const size_t precision)
 {
    std::stringstream return_stream;
    return_stream.setf(std::ios::fixed, std::ios::floatfield);
    return_stream.precision(static_cast<std::streamsize>(precision));
-   return_stream << boost::lexical_cast<long double>(number);
+   return_stream << static_cast<long double>(number);
    return return_stream.str();
 }
 
@@ -114,8 +130,8 @@ inline std::string NumberToString(const numeric_type number, const size_t precis
  * @param number is the number to be printed
  * @param precision is the minimum number of digits to be printed
  */
-template <typename numeric_type>
-inline std::string NumberToBinaryString(const numeric_type number, const size_t precision = 0)
+template <typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
+inline std::string NumberToBinaryString(const T number, const size_t precision = 0)
 {
    std::string ret;
    auto temp_number = number;

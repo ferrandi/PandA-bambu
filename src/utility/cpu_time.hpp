@@ -50,8 +50,6 @@
 #include "omp.h"
 #endif
 
-#include <boost/lexical_cast.hpp>
-
 #ifdef _WIN32
 #include <windows.h>
 #undef IN
@@ -112,15 +110,15 @@ inline long int p_cpu_time()
 inline std::string print_cpu_time(long int t)
 {
    std::string ost;
-   ost = boost::lexical_cast<std::string>(t / 1000) + ".";
+   ost = std::to_string(t / 1000) + ".";
    long centisec = (t % 1000) / 10;
    if(centisec < 10)
    {
-      ost += "0" + boost::lexical_cast<std::string>(centisec);
+      ost += "0" + std::to_string(centisec);
    }
    else
    {
-      ost += boost::lexical_cast<std::string>(centisec);
+      ost += std::to_string(centisec);
    }
    return ost;
 }

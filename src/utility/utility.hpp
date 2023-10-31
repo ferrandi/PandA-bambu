@@ -120,7 +120,7 @@ std::string convert_vector_to_string(const std::vector<G>& vector_form, const st
    std::string string_form;
    for(unsigned int i = 0; i < vector_form.size(); i++)
    {
-      auto element_string = boost::lexical_cast<std::string>(vector_form[i]);
+      auto element_string = STR(vector_form[i]);
       if(trim_empty_elements and element_string.size() == 0)
       {
          continue;
@@ -215,11 +215,6 @@ class string_separator
    {
    }
 };
-
-/**
- * Macro which "pretty prints" a multi-line string
- */
-#define PP_ONE_LINE(multi_line_string) boost::regex_replace(multi_line_string, boost::regex("\\n"), "\\\\n")
 
 /**
  * Concept checking class

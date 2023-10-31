@@ -42,8 +42,6 @@
 #ifndef _BACKEND_FLOW_HPP_
 #define _BACKEND_FLOW_HPP_
 
-/// Autoheader include
-#include "config_HAVE_IPXACT_BUILT.hpp"
 #include "config_HAVE_SIMULATION_WRAPPER_BUILT.hpp"
 #include "config_HAVE_TASTE.hpp"
 
@@ -52,27 +50,23 @@
 #include "refcount.hpp"
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(SynthesisTool);
-REF_FORWARD_DECL(target_manager);
-REF_FORWARD_DECL(target_device);
-REF_FORWARD_DECL(area_model);
-REF_FORWARD_DECL(time_model);
+REF_FORWARD_DECL(generic_device);
+REF_FORWARD_DECL(area_info);
+REF_FORWARD_DECL(time_info);
 REF_FORWARD_DECL(Design_manager);
 REF_FORWARD_DECL(BackendFlow);
-REF_FORWARD_DECL(DesignParameters);
 REF_FORWARD_DECL(HDL_manager);
 REF_FORWARD_DECL(language_writer);
 REF_FORWARD_DECL(structural_manager);
 REF_FORWARD_DECL(technology_node);
 REF_FORWARD_DECL(XMLDomParser);
+REF_FORWARD_DECL(DesignParameters);
 class xml_element;
 using fileIO_istreamRef = refcount<std::istream>;
 
-#include "custom_map.hpp"
 #include "custom_set.hpp"
 #include <string>
 #include <vector>
-
-#include "DesignParameters.hpp"
 
 struct BackendStep
 {
@@ -99,7 +93,6 @@ class BackendFlow
    /// implemented flow
    using type_t = enum {
       UNKNOWN,
-      ASIC,
       XILINX_FPGA,
 #if HAVE_TASTE
       XILINX_TASTE_FPGA,
@@ -130,16 +123,16 @@ class BackendFlow
    std::map<std::string, std::string> default_data;
 
    /// information about the target device
-   const target_managerRef target;
+   const generic_deviceRef device;
 
    /// root node of the configuration device
    xml_element* root;
 
    /// pointer to the data structure containing information about the resources
-   area_modelRef area_m;
+   area_infoRef area_m;
 
    /// pointer to the data structure containing timing information
-   time_modelRef time_m;
+   time_infoRef time_m;
 
    /// ordered list of synthesis steps
    std::vector<BackendStepRef> steps;
@@ -184,7 +177,7 @@ class BackendFlow
     * @param flow_name is a string representing the name of the flow
     * @param target is the data structure containing all the information about the target of the synthesis
     */
-   BackendFlow(const ParameterConstRef Param, std::string flow_name, const target_managerRef _manager);
+   BackendFlow(const ParameterConstRef Param, std::string flow_name, const generic_deviceRef _device);
 
    /**
     * Destructor
@@ -195,12 +188,12 @@ class BackendFlow
     * Creates the flow specification based on the given parameters
     */
    static BackendFlowRef CreateFlow(const ParameterConstRef Param, const std::string& flow_name,
-                                    const target_managerRef target);
+                                    const generic_deviceRef _device);
 
    /**
     * Determines the type of the backend flow based on the target device
     */
-   static type_t DetermineBackendFlowType(const target_deviceRef device, const ParameterConstRef parameters);
+   static type_t DetermineBackendFlowType(const generic_deviceRef device, const ParameterConstRef parameters);
 
    /**
     * Generates the synthesis scripts for the specified design
@@ -243,7 +236,7 @@ class BackendFlow
 
    /**
     * Adds a backend step to the list of the ones to be performed
-    * @param step is the reference to the datastructure containing information about the step
+    * @param step is the reference to the data-structure containing information about the step
     */
    void add_backend_step(const BackendStepRef& step);
 
@@ -251,13 +244,6 @@ class BackendFlow
     * Returns the name of the flow
     */
    std::string get_flow_name() const;
-
-#if HAVE_IPXACT_BUILT
-   /**
-    * Parses an XML-based configuration based on IP-XACT standard
-    */
-   static BackendFlowRef xload_generator_chain(const ParameterConstRef Param, const std::string& xml_file);
-#endif
 
    /**
     * Sets parameters
@@ -273,12 +259,12 @@ class BackendFlow
    /**
     * Returns the list of used resources
     */
-   area_modelRef get_used_resources() const;
+   area_infoRef get_used_resources() const;
 
    /**
     * Returns the timing information
     */
-   time_modelRef get_timing_results() const;
+   time_infoRef get_timing_results() const;
 };
 /// refcount definition of the class
 using BackendFlowRef = refcount<BackendFlow>;

@@ -73,8 +73,6 @@ class HWCallPathCalculator : public boost::default_dfs_visitor
  public:
    HWCallPathCalculator(const HLS_managerRef _HLSMgr);
 
-   ~HWCallPathCalculator();
-
    void start_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph& ufcg);
    void discover_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph& ufcg);
    void finish_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph&);
@@ -86,69 +84,17 @@ HWCallPathCalculator::HWCallPathCalculator(const HLS_managerRef _HLSMgr) : HLSMg
    THROW_ASSERT(HLSMgr->RDiscr, "Discr data structure is not correctly initialized");
 }
 
-HWCallPathCalculator::~HWCallPathCalculator() = default;
-
 void HWCallPathCalculator::start_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph& ufcg)
 {
-   // cleanup internal data structures
    scope = std::stack<std::string>();
    shared_fun_scope.clear();
-   top_fun_scope.clear();
-   // start doing the real things
-   const auto parameters = HLSMgr->get_parameter();
-   std::string interface_scope;
-   std::string top_interface_name;
-   std::string simulator_scope;
-
    const auto top_fu_name =
        Cget_node_info<UnfoldedFunctionInfo>(v, ufcg)->behavior->CGetBehavioralHelper()->get_function_name();
-   // top module scope
-   std::string top_name = "_" + top_fu_name + "_i0" HIERARCHY_SEPARATOR;
-   if(HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction() ||
-      (parameters->isOption(OPT_interface_type) &&
-       parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION))
-   {
-      top_name += "_" + top_fu_name + "_int_i0" HIERARCHY_SEPARATOR;
-   }
 
-   // top interface scope (depending on the interface)
-   if(parameters->isOption(OPT_interface_type) &&
-      (parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION ||
-       parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION))
-   {
-      top_interface_name = top_fu_name;
-      interface_scope = top_interface_name + HIERARCHY_SEPARATOR;
-   }
-   else if(parameters->isOption(OPT_interface_type) &&
-           parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
-   {
-      top_interface_name = top_fu_name + "_minimal_interface_wb4_interface";
-      interface_scope = top_interface_name + HIERARCHY_SEPARATOR + top_fu_name + "_i0" HIERARCHY_SEPARATOR;
-   }
-   else
-   {
-      THROW_ERROR("signal selection for this interface type is not supported in discrepancy");
-   }
-   // simulation top scope, depends on simulator and interface
-   if(parameters->isOption(OPT_simulator))
-   {
-      if(parameters->getOption<std::string>(OPT_simulator) == "MODELSIM" ||
-         parameters->getOption<std::string>(OPT_simulator) == "ICARUS" ||
-         parameters->getOption<std::string>(OPT_simulator) == "XSIM")
-      {
-         simulator_scope = top_interface_name + "_tb_top" HIERARCHY_SEPARATOR "DUT" HIERARCHY_SEPARATOR;
-      }
-      else if(parameters->getOption<std::string>(OPT_simulator) == "VERILATOR")
-      {
-         simulator_scope = "TOP" HIERARCHY_SEPARATOR "v" HIERARCHY_SEPARATOR;
-      }
-   }
-   else
-   {
-      THROW_ERROR("signal selection for discrepancy analysis is supported only for simulators: ICARUS, XSIM, VERILATOR "
-                  "and MODELSIM");
-   }
-   top_fun_scope = simulator_scope + interface_scope + top_name;
+   top_fun_scope = "clocked_bambu_testbench" HIERARCHY_SEPARATOR "bambu_testbench" HIERARCHY_SEPARATOR
+                   "system" HIERARCHY_SEPARATOR "DUT" HIERARCHY_SEPARATOR "top" HIERARCHY_SEPARATOR "_" +
+                   top_fu_name + "_i0" HIERARCHY_SEPARATOR;
+
    HLSMgr->RDiscr->unfolded_v_to_scope[v] = top_fun_scope;
    const auto f_id = Cget_node_info<UnfoldedFunctionInfo>(v, ufcg)->f_id;
    HLSMgr->RDiscr->f_id_to_scope[f_id].insert(top_fun_scope);

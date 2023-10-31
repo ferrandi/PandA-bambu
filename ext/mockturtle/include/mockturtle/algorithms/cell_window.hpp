@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -68,9 +68,8 @@ template<class Ntk>
 class cell_window_storage
 {
 public:
-  cell_window_storage( Ntk const& ntk ) :
-        _cell_refs( ntk ),
-        _cell_parents( ntk )
+  cell_window_storage( Ntk const& ntk ) : _cell_refs( ntk ),
+                                          _cell_parents( ntk )
   {
     if ( ntk.get_node( ntk.get_constant( true ) ) != ntk.get_node( ntk.get_constant( false ) ) )
     {
@@ -95,12 +94,12 @@ public:
   std::vector<node<Ntk>> _index_to_node;
   phmap::flat_hash_map<node<Ntk>, uint32_t> _node_to_index;
 
-  uint32_t _num_constants{1u};
+  uint32_t _num_constants{ 1u };
   uint32_t _max_gates{};
-  bool _has_mapping{true};
+  bool _has_mapping{ true };
 };
 
-}
+} // namespace detail
 
 template<class Ntk>
 class cell_window : public Ntk
@@ -113,7 +112,7 @@ public:
 public:
   cell_window( Ntk const& ntk, uint32_t max_gates = 64 )
       : Ntk( ntk ),
-      _storage( std::make_shared<detail::cell_window_storage<Ntk>>( ntk ) )
+        _storage( std::make_shared<detail::cell_window_storage<Ntk>>( ntk ) )
   {
     static_assert( is_network_type_v<Ntk>, "Ntk is not a network type" );
     static_assert( has_is_cell_root_v<Ntk>, "Ntk does not implement the is_cell_root method" );
@@ -135,7 +134,7 @@ public:
   {
     init_cell_refs();
 
-    //print_time<> pt;
+    // print_time<> pt;
     assert( Ntk::is_cell_root( pivot ) );
 
     // reset old window
@@ -361,7 +360,7 @@ private:
         const auto best = max_element_unary(
             candidates.begin(), candidates.end(),
             [&]( auto const& cand ) {
-              auto cnt{0};
+              auto cnt{ 0 };
               this->foreach_cell_fanin( cand, [&]( auto const& n2 ) {
                 cnt += inputs.count( n2 );
               } );
@@ -407,7 +406,7 @@ private:
         const auto best = max_element_unary(
             candidates.begin(), candidates.end(),
             [&]( auto const& cand ) {
-              auto cnt{0};
+              auto cnt{ 0 };
               this->foreach_cell_fanin( cand, [&]( auto const& n2 ) {
                 cnt += inputs.count( n2 );
               } );
@@ -489,11 +488,13 @@ private:
     }
 
     auto idx = _storage->_num_constants;
-    for ( auto const& n : _storage->_leaves ) {
+    for ( auto const& n : _storage->_leaves )
+    {
       _storage->_node_to_index[_storage->_index_to_node[idx] = n] = idx;
       ++idx;
     }
-    for ( auto const& n : _storage->_gates ) {
+    for ( auto const& n : _storage->_gates )
+    {
       _storage->_node_to_index[_storage->_index_to_node[idx] = n] = idx;
       ++idx;
     }

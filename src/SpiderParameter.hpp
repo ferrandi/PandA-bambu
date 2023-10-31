@@ -74,7 +74,7 @@ class SpiderParameter : public Parameter
    void PrintProgramName(std::ostream& os) const override;
 
    /**
-    * Sets the default values for the Zebu tool
+    * Sets the default values for the spider tool
     */
    void SetDefaults() override;
 

@@ -88,13 +88,11 @@ determine_memory_accesses::ComputeFrontendRelationships(const DesignFlowStep::Re
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-#if HAVE_BAMBU_BUILT
          if(parameters->isOption(OPT_writer_language))
          {
             relationships.insert(std::make_pair(HDL_VAR_DECL_FIX, SAME_FUNCTION));
          }
          else
-#endif
          {
             relationships.insert(std::make_pair(VAR_DECL_FIX, SAME_FUNCTION));
          }

@@ -42,38 +42,21 @@
  * Last modified by $Author$
  *
  */
-/// Autoheader include
-#include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
-#include "config_HAVE_MAPPING_BUILT.hpp"
-#include "config_HAVE_RTL_BUILT.hpp"
-
-/// Header include
 #include "raw_writer.hpp"
 
-#include "custom_map.hpp" // for map, map<>::cons...
-#include "custom_set.hpp" // for unordered_set<>:...
-#include <cstddef>        // for size_t
-#include <list>           // for list, list<>::co...
-#include <utility>        // for pair
-#include <vector>         // for vector, vector<>...
-
-#include "exceptions.hpp" // for THROW_ERROR
-
-/// parser/compiler include
-#include "token_interface.hpp"
-
-#if HAVE_RTL_BUILT
-#include "rtl_node.hpp"
-#endif
-
-/// Tree include
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "exceptions.hpp"
 #include "ext_tree_node.hpp"
+#include "token_interface.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#if HAVE_CODE_ESTIMATION_BUILT
-#include "weight_information.hpp"
-#endif
+
+#include <cstddef>
+#include <list>
+#include <utility>
+#include <vector>
 
 /**
  * Macro which writes on an output stream a named field of string type.
@@ -116,16 +99,7 @@
    os << " "                                                     \
       << "srcp: \"" << (include_name) << "\":" << (line_number) << ":" << column_number
 
-raw_writer::raw_writer(
-#if HAVE_MAPPING_BUILT
-    const ComponentTypeRef& _driving_component,
-#endif
-    std::ostream& _os)
-    :
-#if HAVE_MAPPING_BUILT
-      driving_component(_driving_component),
-#endif
-      os(_os)
+raw_writer::raw_writer(std::ostream& _os) : os(_os)
 {
 }
 
@@ -237,12 +211,10 @@ void raw_writer::operator()(const decl_node* obj, unsigned int& mask)
    {
       WRITE_TOKEN(os, TOK_LIBRARY_SYSTEM);
    }
-#if HAVE_BAMBU_BUILT
    if(obj->libbambu_flag)
    {
       WRITE_TOKEN(os, TOK_LIBBAMBU);
    }
-#endif
    write_when_not_null(STOK(TOK_CHAN), obj->chan);
    if(obj->C_flag)
    {
@@ -260,18 +232,6 @@ void raw_writer::operator()(const expr_node* obj, unsigned int& mask)
    obj->WeightedNode::visit(this);
    write_when_not_null(STOK(TOK_TYPE), obj->type);
    obj->srcp::visit(this);
-#if HAVE_CODE_ESTIMATION_BUILT
-   obj->weight_information->recursive_weight.find(driving_component);
-   if(obj->weight_information->recursive_weight.find(driving_component) !=
-      obj->weight_information->recursive_weight.end())
-      WRITE_NFIELD(os, STOK(TOK_TIME_WEIGHT),
-                   obj->weight_information->recursive_weight.find(driving_component)->second);
-   if(obj->weight_information->instruction_size)
-      WRITE_NFIELD(os, STOK(TOK_SIZE_WEIGHT), obj->weight_information->instruction_size);
-#endif
-#if HAVE_CODE_ESTIMATION_BUILT && HAVE_RTL_BUILT
-   write_when_not_null_rtl(obj->weight_information->rtl_nodes);
-#endif
 }
 
 void raw_writer::operator()(const gimple_node* obj, unsigned int& mask)
@@ -295,22 +255,11 @@ void raw_writer::operator()(const gimple_node* obj, unsigned int& mask)
       write_when_not_null(STOK(TOK_VOVER), vover);
    }
    obj->srcp::visit(this);
-#if HAVE_CODE_ESTIMATION_BUILT
-   if(obj->weight_information->recursive_weight.find(driving_component) !=
-      obj->weight_information->recursive_weight.end())
-      WRITE_NFIELD(os, STOK(TOK_TIME_WEIGHT),
-                   obj->weight_information->recursive_weight.find(driving_component)->second);
-   if(obj->weight_information->instruction_size)
-      WRITE_NFIELD(os, STOK(TOK_SIZE_WEIGHT), obj->weight_information->instruction_size);
-#endif
    auto vend2 = obj->pragmas.end();
    for(auto i = obj->pragmas.begin(); i != vend2; ++i)
    {
       write_when_not_null(STOK(TOK_PRAGMA), *i);
    }
-#if HAVE_CODE_ESTIMATION_BUILT && HAVE_RTL_BUILT
-   write_when_not_null_rtl(obj->weight_information->rtl_nodes);
-#endif
 }
 
 void raw_writer::operator()(const unary_expr* obj, unsigned int& mask)
@@ -371,12 +320,10 @@ void raw_writer::operator()(const type_node* obj, unsigned int& mask)
    {
       WRITE_TOKEN(os, TOK_SYSTEM);
    }
-#if HAVE_BAMBU_BUILT
    if(obj->libbambu_flag)
    {
       WRITE_TOKEN(os, TOK_LIBBAMBU);
    }
-#endif
 }
 
 void raw_writer::operator()(const memory_tag* obj, unsigned int& mask)

@@ -61,8 +61,8 @@
 #include "funit_obj.hpp"
 #include "generic_obj.hpp"
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "multi_unbounded_obj.hpp"
 #include "mux_conn.hpp"
 #include "mux_obj.hpp"
@@ -72,13 +72,11 @@
 #include "structural_manager.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
-#include "time_model.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 
 #include "custom_set.hpp"
 #include <algorithm>
-#include <boost/lexical_cast.hpp>
 #include <list>
 #include <tuple>
 #include <utility>
@@ -518,7 +516,7 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
                   conn_type = structural_type_descriptor::VECTOR_BOOL;
                }
             }
-            add_datapath_connection(HLS->HLS_T->get_technology_manager(), SM, sign, port_tgt, conn_type);
+            add_datapath_connection(HLS->HLS_D->get_technology_manager(), SM, sign, port_tgt, conn_type);
             break;
          }
          case connection_obj::BY_MUX:
@@ -599,7 +597,7 @@ void conn_binding::mux_allocation(const hlsRef HLS, const structural_managerRef 
          /// adding input connection
          auto mux_input = mux_object->get_in_port(in_mux);
          THROW_ASSERT(mux_input, "classic_datapath::mux_allocation - In port does not exist");
-         add_datapath_connection(HLS->HLS_T->get_technology_manager(), SM, src, mux_input, conn_type);
+         add_datapath_connection(HLS->HLS_D->get_technology_manager(), SM, src, mux_input, conn_type);
 
          return;
       }
@@ -608,8 +606,8 @@ void conn_binding::mux_allocation(const hlsRef HLS, const structural_managerRef 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---MUX must be allocated");
          std::string name = i.first->get_string();
          mux = SM->add_module_from_technology_library(name, MUX_GATE_STD,
-                                                      HLS->HLS_T->get_technology_manager()->get_library(MUX_GATE_STD),
-                                                      circuit, HLS->HLS_T->get_technology_manager());
+                                                      HLS->HLS_D->get_technology_manager()->get_library(MUX_GATE_STD),
+                                                      circuit, HLS->HLS_D->get_technology_manager());
          i.first->set_structural_obj(mux);
 
          /// mux selector in datapath interface
@@ -630,7 +628,7 @@ void conn_binding::mux_allocation(const hlsRef HLS, const structural_managerRef 
          /// adding input connection
          auto mux_input = mux_object->get_in_port(in_mux);
          THROW_ASSERT(mux_input, "classic_datapath::mux_allocation - In port does not exist");
-         add_datapath_connection(HLS->HLS_T->get_technology_manager(), SM, src, mux_input, conn_type);
+         add_datapath_connection(HLS->HLS_D->get_technology_manager(), SM, src, mux_input, conn_type);
 
          /// adding output signal to the multiplexer
          structural_objectRef port_out_mux = mux_object->get_out_port(0);
@@ -644,7 +642,7 @@ void conn_binding::mux_allocation(const hlsRef HLS, const structural_managerRef 
          src = sign;
       }
    }
-   add_datapath_connection(HLS->HLS_T->get_technology_manager(), SM, src, tgt, conn_type);
+   add_datapath_connection(HLS->HLS_D->get_technology_manager(), SM, src, tgt, conn_type);
 }
 
 void conn_binding::add_datapath_connection(const technology_managerRef TM, const structural_managerRef SM,
@@ -863,8 +861,8 @@ void conn_binding::add_sparse_logic_dp(const hlsRef HLS, const structural_manage
       }
       ++resource_index;
       sparse_component = SM->add_module_from_technology_library(
-          resource_instance_name, resource_name, HLS->HLS_T->get_technology_manager()->get_library(resource_name),
-          circuit, HLS->HLS_T->get_technology_manager());
+          resource_instance_name, resource_name, HLS->HLS_D->get_technology_manager()->get_library(resource_name),
+          circuit, HLS->HLS_D->get_technology_manager());
       component->set_structural_obj(sparse_component);
       auto* sparse_module = GetPointer<module>(sparse_component);
 
@@ -1126,7 +1124,8 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
                const auto multiplicity = GetPointer<module>(call.first->get_owner())->get_multi_unit_multiplicity();
 #endif
                THROW_ASSERT(multiplicity == GetPointer<port_o>(call.first)->get_ports_size(), "unexpected condition");
-               THROW_ASSERT(index < multiplicity, "unexpected condition");
+               THROW_ASSERT(index < multiplicity,
+                            "unexpected condition: index: " + STR(index) + ", multiplicity: " + STR(multiplicity));
                auto sp_i = GetPointer<port_o>(call.first)->get_port(index);
                toOred[sp_i].push_back(*ports_it);
 
@@ -1141,7 +1140,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
                }
                else
                {
-                  const auto TM = HLS->HLS_T->get_technology_manager();
+                  const auto TM = HLS->HLS_D->get_technology_manager();
                   const auto library = TM->get_library(OR_GATE_STD);
                   const auto or_gate = SM->add_module_from_technology_library(
                       "or_" + pp_pair.first->get_owner()->get_id() + STR(unique_id), OR_GATE_STD, library,
@@ -1164,7 +1163,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
          }
          else
          {
-            const auto TM = HLS->HLS_T->get_technology_manager();
+            const auto TM = HLS->HLS_D->get_technology_manager();
             const auto library = TM->get_library(OR_GATE_STD);
             const auto or_gate = SM->add_module_from_technology_library(
                 "or_" + call.first->get_owner()->get_id() + STR(unique_id), OR_GATE_STD, library, SM->get_circ(), TM);

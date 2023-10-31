@@ -38,71 +38,50 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_FROM_C_BUILT.hpp"
-
 #include "VHDL_writer.hpp"
 
 #include "HDL_manager.hpp"
-
 #include "NP_functionality.hpp"
+#include "Parameter.hpp"
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
+#include "indented_output_stream.hpp"
+#include "state_transition_graph_manager.hpp"
+#include "string_manipulation.hpp"
 #include "structural_objects.hpp"
+#include "technology_node.hpp"
 
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/range/adaptor/reversed.hpp>
 #include <boost/tokenizer.hpp>
 #include <fstream>
 #include <functional>
 #include <iosfwd>
-#include <vector>
-
-///. include
-#include "Parameter.hpp"
-
-/// HLS/stg include
-#include "state_transition_graph_manager.hpp"
-
-/// STL include
 #include <utility>
 
-/// technology/physical_library include
-#include "technology_node.hpp"
-
-/// utility include
-#include "indented_output_stream.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-
-const char* VHDL_writer::tokenNames[] = {
-    "abs",          "access",     "after",   "alias",     "all",       "and",
-    "architecture", "array",      "assert",  "attribute", "begin",     "block",
-    "body",         "buffer",     "bus",     "case",      "component", "configuration",
-    "constant",     "disconnect", "downto",  "else",      "elsif",     "end",
-    "entity",       "exit",       "file",    "for",       "function",  "generate",
-    "generic",      "group",      "guarded", "if",        "impure",    "in",
-    "inertial",     "inout",      "is",      "label",     "library",   "linkage",
-    "literal",      "loop",       "map",     "mod",       "nand",      "new",
-    "next",         "nor",        "not",     "null",      "of",        "on",
-    "open",         "or",         "others",  "out",       "package",   "port",
-    "postponed",    "procedure",  "process", "pure",      "range",     "record",
-    "register",     "reject",     "rem",     "return",    "rol",       "ror",
-    "select",       "severity",   "signal",  "shared",    "sla",       "sli",
-    "sra",          "srl",        "subtype", "then",      "to",        "transport",
-    "type",         "unaffected", "units",   "until",     "use",       "variable",
-    "wait",         "when",       "while",   "with",      "xnor",      "xor"};
+const std::set<std::string> VHDL_writer::keywords = {
+    "ABS",          "ACCESS",     "AFTER",   "ALIAS",     "ALL",       "AND",
+    "ARCHITECTURE", "ARRAY",      "ASSERT",  "ATTRIBUTE", "BEGIN",     "BLOCK",
+    "BODY",         "BUFFER",     "BUS",     "CASE",      "COMPONENT", "CONFIGURATION",
+    "CONSTANT",     "DISCONNECT", "DOWNTO",  "ELSE",      "ELSIF",     "END",
+    "ENTITY",       "EXIT",       "FILE",    "FOR",       "FUNCTION",  "GENERATE",
+    "GENERIC",      "GROUP",      "GUARDED", "IF",        "IMPURE",    "IN",
+    "INERTIAL",     "INOUT",      "IS",      "LABEL",     "LIBRARY",   "LINKAGE",
+    "LITERAL",      "LOOP",       "MAP",     "MOD",       "NAND",      "NEW",
+    "NEXT",         "NOR",        "NOT",     "NULL",      "OF",        "ON",
+    "OPEN",         "OR",         "OTHERS",  "OUT",       "PACKAGE",   "PORT",
+    "POSTPONED",    "PROCEDURE",  "PROCESS", "PURE",      "RANGE",     "RECORD",
+    "REGISTER",     "REJECT",     "REM",     "RETURN",    "ROL",       "ROR",
+    "SELECT",       "SEVERITY",   "SIGNAL",  "SHARED",    "SLA",       "SLI",
+    "SRA",          "SRL",        "SUBTYPE", "THEN",      "TO",        "TRANSPORT",
+    "TYPE",         "UNAFFECTED", "UNITS",   "UNTIL",     "USE",       "VARIABLE",
+    "WAIT",         "WHEN",       "WHILE",   "WITH",      "XNOR",      "XOR"};
 
 VHDL_writer::VHDL_writer(const technology_managerConstRef _TM, const ParameterConstRef _parameters)
     : language_writer(STD_OPENING_CHAR, STD_OPENING_CHAR, _parameters), TM(_TM)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
-   for(auto& tokenName : tokenNames)
-   {
-      keywords.insert(boost::to_upper_copy<std::string>(tokenName));
-   }
 }
 
 VHDL_writer::~VHDL_writer() = default;
@@ -226,7 +205,7 @@ std::string VHDL_writer::type_converter_size(const structural_objectRef& cir)
             }
             else
             {
-               return " (" + boost::lexical_cast<std::string>(Type->size - 1) + " downto 0)";
+               return " (" + std::to_string(Type->size - 1) + " downto 0)";
             }
          }
          else
@@ -241,7 +220,7 @@ std::string VHDL_writer::type_converter_size(const structural_objectRef& cir)
             }
             else
             {
-               return " (0 to " + boost::lexical_cast<std::string>(Type->size - 1) + ")";
+               return " (0 to " + std::to_string(Type->size - 1) + ")";
             }
          }
       }
@@ -258,8 +237,7 @@ std::string VHDL_writer::type_converter_size(const structural_objectRef& cir)
             {
                auto lsb = GetPointer<port_o>(cir)->get_lsb();
                return "((" + (PORTSIZE_PREFIX + port_name) + "*" + (BITSIZE_PREFIX + port_name) + ")+(" +
-                      boost::lexical_cast<std::string>(static_cast<int>(lsb) - 1) + ") downto " +
-                      boost::lexical_cast<std::string>(lsb) + ") ";
+                      std::to_string(static_cast<int>(lsb) - 1) + ") downto " + std::to_string(lsb) + ") ";
             }
             else
             {
@@ -277,8 +255,7 @@ std::string VHDL_writer::type_converter_size(const structural_objectRef& cir)
                auto lsb = GetPointer<signal_o>(cir)->get_lsb();
                auto msb = size_fs * n_sign + lsb;
 
-               return "(" + boost::lexical_cast<std::string>(static_cast<int>(msb) - 1) + " downto " +
-                      boost::lexical_cast<std::string>(lsb) + ") ";
+               return "(" + std::to_string(static_cast<int>(msb) - 1) + " downto " + std::to_string(lsb) + ") ";
             }
             else if(cir->get_kind() == port_vector_o_K)
             {
@@ -288,12 +265,11 @@ std::string VHDL_writer::type_converter_size(const structural_objectRef& cir)
                const auto Type_fp = first_port->get_typeRef();
                auto size_fp = Type_fp->vector_size > 0 ? Type_fp->size * Type_fp->vector_size : Type_fp->size;
                auto msb = size_fp * n_ports + lsb;
-               return "(" + boost::lexical_cast<std::string>(static_cast<int>(msb) - 1) + " downto " +
-                      boost::lexical_cast<std::string>(lsb) + ") ";
+               return "(" + std::to_string(static_cast<int>(msb) - 1) + " downto " + std::to_string(lsb) + ") ";
             }
             if(Type->vector_size > 1 && Type->size == 1)
             {
-               return "(" + boost::lexical_cast<std::string>(static_cast<int>(Type->vector_size) - 1) + " downto 0) ";
+               return "(" + std::to_string(static_cast<int>(Type->vector_size) - 1) + " downto 0) ";
             }
             else if(Type->vector_size == 1 && Type->size == 1)
             {
@@ -301,7 +277,7 @@ std::string VHDL_writer::type_converter_size(const structural_objectRef& cir)
             }
             else if(Type->vector_size == 0 && Type->size != 0)
             {
-               return "(" + boost::lexical_cast<std::string>(static_cast<int>(Type->size) - 1) + " downto 0) ";
+               return "(" + std::to_string(static_cast<int>(Type->size) - 1) + " downto 0) ";
             }
             else
             {
@@ -392,11 +368,9 @@ std::string VHDL_writer::may_slice_string(const structural_objectRef& cir)
             if(Owner->get_kind() == port_vector_o_K)
             {
                auto lsb = GetPointer<port_o>(Owner)->get_lsb();
-               return "(((" + boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_id()) + "+1)*" +
-                      (BITSIZE_PREFIX + port_name) + ")+(" +
-                      boost::lexical_cast<std::string>(static_cast<int>(lsb) - 1) + ") downto (" +
-                      boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_id()) + "*" +
-                      (BITSIZE_PREFIX + port_name) + ")+" + boost::lexical_cast<std::string>(lsb) + ")";
+               return "(((" + GetPointer<port_o>(cir)->get_id() + "+1)*" + (BITSIZE_PREFIX + port_name) + ")+(" +
+                      std::to_string(static_cast<int>(lsb) - 1) + ") downto (" + GetPointer<port_o>(cir)->get_id() +
+                      "*" + (BITSIZE_PREFIX + port_name) + ")+" + std::to_string(lsb) + ")";
             }
             else
             {
@@ -411,14 +385,11 @@ std::string VHDL_writer::may_slice_string(const structural_objectRef& cir)
                auto size_fp = Type_fp->vector_size > 0 ? Type_fp->size * Type_fp->vector_size : Type_fp->size;
                auto lsb = GetPointer<port_o>(Owner)->get_lsb();
                return "(" +
-                      boost::lexical_cast<std::string>(
-                          (1 + boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) *
-                              static_cast<int>(size_fp) +
-                          static_cast<int>(lsb) - 1) +
+                      std::to_string((1 + std::stoi(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) +
+                                     static_cast<int>(lsb) - 1) +
                       " downto " +
-                      boost::lexical_cast<std::string>((boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) *
-                                                           static_cast<int>(size_fp) +
-                                                       static_cast<int>(lsb)) +
+                      std::to_string((std::stoi(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) +
+                                     static_cast<int>(lsb)) +
                       ")";
             }
             else
@@ -437,12 +408,10 @@ std::string VHDL_writer::may_slice_string(const structural_objectRef& cir)
             if(Owner->get_kind() == port_vector_o_K)
             {
                auto lsb = GetPointer<port_o>(Owner)->get_lsb();
-               return "(((" + boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_id()) + "+1)*" +
-                      (BITSIZE_PREFIX + port_name) + "*" + (NUM_ELEM_PREFIX + port_name) + ")+(" +
-                      boost::lexical_cast<std::string>(static_cast<int>(lsb) - 1) + ") downto (" +
-                      boost::lexical_cast<std::string>(GetPointer<port_o>(cir)->get_id()) + "*" +
-                      (BITSIZE_PREFIX + port_name) + "*" + (NUM_ELEM_PREFIX + port_name) + ")+" +
-                      boost::lexical_cast<std::string>(lsb) + ")";
+               return "(((" + GetPointer<port_o>(cir)->get_id() + "+1)*" + (BITSIZE_PREFIX + port_name) + "*" +
+                      (NUM_ELEM_PREFIX + port_name) + ")+(" + std::to_string(static_cast<int>(lsb) - 1) + ") downto (" +
+                      GetPointer<port_o>(cir)->get_id() + "*" + (BITSIZE_PREFIX + port_name) + "*" +
+                      (NUM_ELEM_PREFIX + port_name) + ")+" + std::to_string(lsb) + ")";
             }
             else
             {
@@ -457,14 +426,11 @@ std::string VHDL_writer::may_slice_string(const structural_objectRef& cir)
                auto size_fp = Type_fp->vector_size > 0 ? Type_fp->size * Type_fp->vector_size : Type_fp->size;
                auto lsb = GetPointer<port_o>(Owner)->get_lsb();
                return "(" +
-                      boost::lexical_cast<std::string>(
-                          (1 + boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) *
-                              static_cast<int>(size_fp) +
-                          static_cast<int>(lsb) - 1) +
+                      std::to_string((1 + std::stoi(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) +
+                                     static_cast<int>(lsb) - 1) +
                       " downto " +
-                      boost::lexical_cast<std::string>((boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) *
-                                                           static_cast<int>(size_fp) +
-                                                       static_cast<int>(lsb)) +
+                      std::to_string((std::stoi(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) +
+                                     static_cast<int>(lsb)) +
                       ")";
             }
             else
@@ -815,7 +781,7 @@ void VHDL_writer::write_vector_port_binding(const structural_objectRef& port, bo
             {
                auto* con = GetPointer<constant_o>(object_bounded);
                std::string trimmed_value = "";
-               auto long_value = boost::lexical_cast<unsigned long long>(con->get_value());
+               auto long_value = std::stoull(con->get_value());
                for(unsigned int ind = 0; ind < GET_TYPE_SIZE(con); ind++)
                {
                   trimmed_value = trimmed_value + (((1LLU << (GET_TYPE_SIZE(con) - ind - 1)) & long_value) ? '1' : '0');
@@ -843,11 +809,11 @@ void VHDL_writer::write_vector_port_binding(const structural_objectRef& port, bo
 void VHDL_writer::write_port_binding(const structural_objectRef& port, const structural_objectRef& object_bounded,
                                      bool first_port_analyzed)
 {
+   THROW_ASSERT(port, "NULL object_bounded received");
    INDENT_DBG_MEX(
        DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
        "-->Write port binding " + port->get_id() + " (" + port->get_typeRef()->get_name() + ") => " +
            (object_bounded ? object_bounded->get_id() + " (" + object_bounded->get_typeRef()->get_name() + ")" : ""));
-   THROW_ASSERT(port, "NULL object_bounded received");
    THROW_ASSERT(port->get_kind() == port_o_K, "Expected a port got something of different");
    THROW_ASSERT(port->get_owner(), "The port has to have an owner");
    if(first_port_analyzed)
@@ -858,21 +824,20 @@ void VHDL_writer::write_port_binding(const structural_objectRef& port, const str
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Vector port");
       const auto port_name = HDL_manager::convert_to_identifier(this, port->get_owner()->get_id());
-      if(object_bounded->get_typeRef()->type == structural_type_descriptor::BOOL)
+      if(object_bounded && object_bounded->get_typeRef()->type == structural_type_descriptor::BOOL)
       {
          indented_output_stream->Append(port_name + "(" + STR(port->get_id()) + ") => ");
       }
       else
       {
-         indented_output_stream->Append(
-             port_name + "(" +
-             STR(((boost::lexical_cast<unsigned int>(port->get_id()) + 1) * GET_TYPE_SIZE(port)) - 1) + " downto " +
-             STR(boost::lexical_cast<unsigned int>(port->get_id()) * GET_TYPE_SIZE(port)) + ") => ");
+         indented_output_stream->Append(port_name + "(" +
+                                        STR(((std::stoull(port->get_id()) + 1) * GET_TYPE_SIZE(port)) - 1) +
+                                        " downto " + STR(std::stoull(port->get_id()) * GET_TYPE_SIZE(port)) + ") => ");
       }
    }
-   else if((port->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL or
-            port->get_typeRef()->type == structural_type_descriptor::UINT) and
-           object_bounded->get_typeRef()->type == structural_type_descriptor::BOOL)
+   else if((port->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL ||
+            port->get_typeRef()->type == structural_type_descriptor::UINT) &&
+           object_bounded && object_bounded->get_typeRef()->type == structural_type_descriptor::BOOL)
    {
       indented_output_stream->Append(HDL_manager::convert_to_identifier(this, port->get_id()) + "(0) => ");
    }
@@ -909,7 +874,7 @@ void VHDL_writer::write_port_binding(const structural_objectRef& port, const str
    {
       auto* con = GetPointer<constant_o>(object_bounded);
       std::string trimmed_value = "";
-      auto long_value = boost::lexical_cast<unsigned long long int>(con->get_value());
+      auto long_value = std::stoull(con->get_value());
       for(unsigned int ind = 0; ind < GET_TYPE_SIZE(con); ind++)
       {
          trimmed_value = trimmed_value + (((1LLU << (GET_TYPE_SIZE(con) - ind - 1)) & long_value) ? '1' : '0');
@@ -1039,7 +1004,7 @@ void VHDL_writer::write_io_signal_post_fix(const structural_objectRef& port, con
    {
       auto* con = GetPointer<constant_o>(sig);
       std::string trimmed_value = "";
-      auto long_value = boost::lexical_cast<unsigned long long int>(con->get_value());
+      auto long_value = std::stoull(con->get_value());
       for(unsigned int ind = 0; ind < GET_TYPE_SIZE(con); ind++)
       {
          trimmed_value = trimmed_value + (((1LLU << (GET_TYPE_SIZE(con) - ind - 1)) & long_value) ? '1' : '0');
@@ -1371,6 +1336,7 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
                   break;
                }
                case structural_type_descriptor::INT:
+               case structural_type_descriptor::REAL:
                {
                   if(parameter.front() == '\"' and parameter.back() == '\"')
                   {
@@ -1401,7 +1367,6 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
                }
                case structural_type_descriptor::BOOL:
                case structural_type_descriptor::UINT:
-               case structural_type_descriptor::REAL:
                case structural_type_descriptor::USER:
                case structural_type_descriptor::VECTOR_INT:
                case structural_type_descriptor::VECTOR_UINT:
@@ -1426,10 +1391,6 @@ void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written module generics of " + cir->get_path());
 }
 
-void VHDL_writer::write_tail(const structural_objectRef&)
-{
-}
-
 void VHDL_writer::write_state_declaration(const structural_objectRef&, const std::list<std::string>& list_of_states,
                                           const std::string&, const std::string& reset_state, bool one_hot)
 {
@@ -1440,7 +1401,7 @@ void VHDL_writer::write_state_declaration(const structural_objectRef&, const std
    unsigned max_value = 0;
    for(auto it = list_of_states.begin(); it != it_end; ++it)
    {
-      max_value = std::max(max_value, boost::lexical_cast<unsigned int>(it->substr(strlen(STATE_NAME_PREFIX))));
+      max_value = std::max(max_value, static_cast<unsigned>(std::stoul(it->substr(strlen(STATE_NAME_PREFIX)))));
    }
    if(max_value != n_states - 1)
    {
@@ -1458,15 +1419,14 @@ void VHDL_writer::write_state_declaration(const structural_objectRef&, const std
             indented_output_stream->Append(
                 "constant " + state + ": std_logic_vector(" + STR(max_value) + " downto 0) := \"" +
                 encode_one_hot(1 + max_value,
-                               boost::lexical_cast<unsigned int>(state.substr(strlen(STATE_NAME_PREFIX)))) +
+                               static_cast<unsigned>(std::stoul(state.substr(strlen(STATE_NAME_PREFIX))))) +
                 "\";\n");
          }
          else
          {
             indented_output_stream->Append(
                 "constant " + state + ": std_logic_vector(" + STR(bitsnumber - 1) + " downto 0) := \"" +
-                NumberToBinaryString(boost::lexical_cast<size_t>(state.substr(strlen(STATE_NAME_PREFIX))), bitsnumber) +
-                "\";\n");
+                NumberToBinaryString(std::stoul(state.substr(strlen(STATE_NAME_PREFIX))), bitsnumber) + "\";\n");
          }
       }
       if(one_hot)
@@ -1690,8 +1650,8 @@ void VHDL_writer::write_transition_output_functions(
             {
                continue;
             }
-            if(boost::starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") ||
-               boost::starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
+            if(starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") ||
+               starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
             {
                auto port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
                if(single_proc || output_index == i)
@@ -1867,7 +1827,7 @@ void VHDL_writer::write_transition_output_functions(
                               res_or_conditions += port_name;
                               if((*in_or_conditions_tokens_it)[0] == '&')
                               {
-                                 auto pos = boost::lexical_cast<unsigned int>((*in_or_conditions_tokens_it).substr(1));
+                                 auto pos = std::stoull((*in_or_conditions_tokens_it).substr(1));
                                  res_or_conditions += std::string("(") + STR(pos) + ") = '1'";
                               }
                               else
@@ -1878,9 +1838,8 @@ void VHDL_writer::write_transition_output_functions(
                                  {
                                     res_or_conditions +=
                                         "\"" +
-                                        NumberToBinaryString(
-                                            llabs(boost::lexical_cast<long long>(*in_or_conditions_tokens_it)),
-                                            port_size) +
+                                        NumberToBinaryString(llabs(std::stoll(*in_or_conditions_tokens_it)),
+                                                             port_size) +
                                         "\"";
                                  }
                                  else
@@ -2001,8 +1960,8 @@ void VHDL_writer::write_transition_output_functions(
       {
          continue;
       }
-      if(boost::starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") ||
-         boost::starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
+      if(starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") ||
+         starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
       {
          auto port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
          if(single_proc || output_index == i)
@@ -2034,7 +1993,6 @@ void VHDL_writer::write_NP_functionalities(const structural_objectRef& cir)
    std::string beh_desc = np->get_NP_functionality(NP_functionality::VHDL_PROVIDED);
    THROW_ASSERT(beh_desc != "", "VHDL behavioral description is missing for module: " +
                                     HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)));
-   remove_escaped(beh_desc);
    /// manage reset by preprocessing the behavioral description
    if(!parameters->getOption<bool>(OPT_reset_level))
    {
@@ -2096,7 +2054,7 @@ void VHDL_writer::write_module_parametrization_decl(const structural_objectRef& 
          }
          std::string name = mem_add[0];
          std::string value = mem_add[1];
-         auto binary_value = NumberToBinaryString(boost::lexical_cast<unsigned long long int>(value));
+         auto binary_value = NumberToBinaryString(std::stoull(value));
          indented_output_stream->Append("  " + name + ": integer := " + value);
       }
    }
@@ -2170,9 +2128,13 @@ void VHDL_writer::write_module_parametrization_decl(const structural_objectRef& 
                   indented_output_stream->Append(" " + name + ": std_logic_vector");
                   break;
                }
+               case structural_type_descriptor::REAL:
+               {
+                  indented_output_stream->Append(" " + name + ": real");
+                  break;
+               }
                case structural_type_descriptor::BOOL:
                case structural_type_descriptor::UINT:
-               case structural_type_descriptor::REAL:
                case structural_type_descriptor::USER:
                case structural_type_descriptor::VECTOR_INT:
                case structural_type_descriptor::VECTOR_UINT:
@@ -2195,9 +2157,14 @@ void VHDL_writer::write_module_parametrization_decl(const structural_objectRef& 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written generics of entity " + cir->get_id());
 }
 
-bool VHDL_writer::check_keyword(std::string id) const
+bool VHDL_writer::check_keyword(const std::string& id) const
 {
-   return keywords.find(boost::to_upper_copy<std::string>(id)) != keywords.end();
+   return check_keyword_vhdl(id);
+}
+
+bool VHDL_writer::check_keyword_vhdl(const std::string& id)
+{
+   return keywords.count(boost::to_upper_copy(id));
 }
 
 void VHDL_writer::WriteBuiltin(const structural_objectConstRef component)

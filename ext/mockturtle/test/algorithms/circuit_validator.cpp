@@ -1,12 +1,12 @@
 #include <catch.hpp>
 
+#include <bill/sat/interface/abc_bsat2.hpp>
 #include <mockturtle/algorithms/circuit_validator.hpp>
 #include <mockturtle/networks/aig.hpp>
-#include <mockturtle/networks/xag.hpp>
 #include <mockturtle/networks/mig.hpp>
-#include <mockturtle/views/fanout_view.hpp>
+#include <mockturtle/networks/xag.hpp>
 #include <mockturtle/utils/index_list.hpp>
-#include <bill/sat/interface/abc_bsat2.hpp>
+#include <mockturtle/views/fanout_view.hpp>
 
 using namespace mockturtle;
 
@@ -49,7 +49,7 @@ TEST_CASE( "Validating EQ nodes in MIG", "[validator]" )
   auto const b = mig.create_pi();
   auto const c = mig.create_pi();
 
-  auto const f1 = mig.create_maj( a, b, mig.get_constant( false ) ); // a & b
+  auto const f1 = mig.create_maj( a, b, mig.get_constant( false ) );  // a & b
   auto const f2 = mig.create_maj( f1, c, mig.get_constant( false ) ); // a & b & c
 
   auto const f3 = mig.create_maj( !b, !c, mig.get_constant( true ) ); // !b | !c
@@ -77,8 +77,8 @@ TEST_CASE( "Validating with non-existing circuit", "[validator]" )
   id_list.add_and( 3, 5 );
   id_list.add_output( 6 );
 
-  CHECK( *( v.validate( f3, {aig.get_node( f1 ), aig.get_node( f2 )}, id_list, true ) ) == true );
-  CHECK( *( v.validate( aig.get_node( f3 ), {aig.get_node( f1 ), aig.get_node( f2 )}, id_list, false ) ) == true );
+  CHECK( *( v.validate( f3, { aig.get_node( f1 ), aig.get_node( f2 ) }, id_list, true ) ) == true );
+  CHECK( *( v.validate( aig.get_node( f3 ), { aig.get_node( f1 ), aig.get_node( f2 ) }, id_list, false ) ) == true );
 }
 
 TEST_CASE( "Validating after circuit update", "[validator]" )
@@ -141,7 +141,7 @@ TEST_CASE( "Generate multiple patterns", "[validator]" )
   circuit_validator<aig_network, bill::solvers::bsat2, true, false, false> v( aig );
 
   CHECK( *( v.validate( f2, false ) ) == false ); /* f2 is not a constant 0 */
-  std::vector<std::vector<bool>> block_pattern( {v.cex} );
+  std::vector<std::vector<bool>> block_pattern( { v.cex } );
   auto const patterns = v.generate_pattern( f2, true, block_pattern, 10 ); /* generate patterns making f2 = 1 */
   CHECK( patterns.size() == 3u );
   for ( auto const& pattern : patterns )
@@ -173,15 +173,15 @@ TEST_CASE( "Validating with ODC", "[validator]" )
   aig.create_po( h );
 
   validator_params ps;
-  fanout_view view{aig};
+  fanout_view view{ aig };
   circuit_validator<fanout_view<aig_network>, bill::solvers::bsat2, false, false, true> v( view, ps );
 
   /* considering only 1 level, f1 can not be substituted with const 0 */
-  ps.odc_levels = 1;
+  v.set_odc_levels( 1 );
   CHECK( *( v.validate( aig.get_node( f1 ), false ) ) == false );
-  
+
   /* considering 2 levels, f1 can be substituted with const 0 */
-  ps.odc_levels = 2;
+  v.set_odc_levels( 2 );
   CHECK( *( v.validate( f1, false ) ) == true );
   CHECK( *( v.validate( aig.get_node( f1 ), aig.get_constant( false ) ) ) == true );
 }

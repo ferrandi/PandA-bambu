@@ -53,7 +53,7 @@
 #include "function_behavior.hpp"
 
 /// HLS include
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_step.hpp"
@@ -119,7 +119,7 @@ short_circuit_taf::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
          relationships.insert(std::make_pair(SWITCH_FIX, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
          if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING)
          {
             relationships.insert(std::make_pair(UPDATE_SCHEDULE, SAME_FUNCTION));

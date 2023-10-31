@@ -44,13 +44,6 @@
 #ifndef ACTOR_GRAPH_BACKEND_HPP
 #define ACTOR_GRAPH_BACKEND_HPP
 
-/// Autoheader includes
-#include "config_HAVE_GRAPH_PARTITIONING_BUILT.hpp"
-#include "config_HAVE_MPPB.hpp"
-
-/// intermediate_representations/actor_graphs include
-#include "actor_graph_backend.hpp"
-
 /// utility includes
 #include "refcount.hpp"
 
@@ -71,14 +64,7 @@ enum class ActorGraph_Type;
  */
 enum class ActorGraphBackend_Type
 {
-#if HAVE_MPPB
-   BA_MPPB, /**< Mppb backend */
-#endif
    BA_NONE, /**< Plain backend */
-#if HAVE_GRAPH_PARTITIONING_BUILT
-   BA_OPENMP, /**< Openmp backend */
-   BA_PTHREAD /**< Pthread backend */
-#endif
 };
 
 std::string ToString(ActorGraphBackend_Type actor_graph_backend_type);

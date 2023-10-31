@@ -43,46 +43,29 @@
  *
  */
 
-/// Header include
 #include "split_return.hpp"
-
-#include "phi_opt.hpp"
-
-/// Behavior include
+#include "Parameter.hpp"
 #include "application_manager.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
-
-/// Parameter include
-#include "Parameter.hpp"
-
-/// HLS include
 #include "hls.hpp"
 #include "hls_manager.hpp"
-
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#include "phi_opt.hpp"
+#if HAVE_ILP_BUILT
 #include "hls_step.hpp"
 #endif
-
-/// parser/compiler include
-#include "token_interface.hpp"
-
-/// STD include
-#include <fstream>
-
-/// STL include
 #include "custom_set.hpp"
-
-/// tree includes
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "ext_tree_node.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
+#include "token_interface.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include <fstream>
 
 SplitReturn::SplitReturn(const ParameterConstRef _parameters, const application_managerRef _AppM,
                          unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
@@ -130,7 +113,7 @@ bool SplitReturn::HasToBeExecuted() const
    {
       return false;
    }
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
    if(parameters->isOption(OPT_scheduling_algorithm) &&
       parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING)
    {

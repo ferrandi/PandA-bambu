@@ -46,7 +46,6 @@
 #define LANGUAGE_WRITER_HPP
 
 /// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_C_BUILT.hpp"
 
 /// utility include
@@ -80,11 +79,6 @@ enum class HDLWriter_Language
 {
    VERILOG = 0,
    SYSTEM_VERILOG,
-#if HAVE_EXPERIMENTAL
-   SYSTEMC,
-   BLIF,
-   EDIF,
-#endif
    VHDL
 };
 
@@ -264,11 +258,6 @@ class language_writer
     */
    virtual void write_module_parametrization(const structural_objectRef& cir) = 0;
    /**
-    * Write the tail part of the file. Write some lines of comments and some debugging code.
-    * @param cir is the top component.
-    */
-   virtual void write_tail(const structural_objectRef& cir) = 0;
-   /**
     * write the declaration of all the states of the finite state machine.
     * @param list_of_states is the list of all the states.
     */
@@ -331,15 +320,13 @@ class language_writer
     */
    static unsigned int bitnumber(unsigned long long n);
 
-   virtual bool check_keyword(std::string id) const = 0;
+   virtual bool check_keyword(const std::string& id) const = 0;
 
    /**
     * Write a builtin component
     * @param component is the component to be printed
     */
    virtual void WriteBuiltin(const structural_objectConstRef component) = 0;
-
-   virtual void write_timing_specification(const technology_managerConstRef TM, const structural_objectRef& cir);
 
    /**
     * Dump the content of the write as a string

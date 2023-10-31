@@ -18,7 +18,7 @@ TEST_CASE( "SDCs in simple AIG", "[dont_cares]" )
   auto f3 = aig.create_and( f1, f2 );
   aig.create_po( f3 );
 
-  std::vector<node<aig_network>> leaves{{aig.get_node( f1 ), aig.get_node( f2 )}};
+  std::vector<node<aig_network>> leaves{ { aig.get_node( f1 ), aig.get_node( f2 ) } };
   const auto tt = satisfiability_dont_cares( aig, leaves );
 
   CHECK( tt._bits[0] == 0x8u );
@@ -34,7 +34,7 @@ TEST_CASE( "ODCs in simple AIG", "[dont_cares]" )
   auto f3 = aig.create_and( f1, f2 );
   aig.create_po( f3 );
 
-  std::vector<node<aig_network>> leaves{{aig.get_node( a ), aig.get_node( b )}};
+  std::vector<node<aig_network>> leaves{ { aig.get_node( a ), aig.get_node( b ) } };
   const auto f1_odc = observability_dont_cares( aig, aig.get_node( f1 ), leaves, { aig.get_node( f3 ) } );
   CHECK( f1_odc._bits[0] == 0xd );
 
@@ -53,10 +53,10 @@ TEST_CASE( "SDCs in simple AIG using satisfiability checker", "[dont_cares]" )
   aig.create_po( f3 );
 
   satisfiability_dont_cares_checker<aig_network> checker( aig );
-  CHECK( !checker.is_dont_care( aig.get_node( f3 ), std::vector<bool>{{false, false}} ) );
-  CHECK( !checker.is_dont_care( aig.get_node( f3 ), std::vector<bool>{{false, true}} ) );
-  CHECK( !checker.is_dont_care( aig.get_node( f3 ), std::vector<bool>{{true, false}} ) );
-  CHECK( checker.is_dont_care( aig.get_node( f3 ), std::vector<bool>{{true, true}} ) );
+  CHECK( !checker.is_dont_care( aig.get_node( f3 ), std::vector<bool>{ { false, false } } ) );
+  CHECK( !checker.is_dont_care( aig.get_node( f3 ), std::vector<bool>{ { false, true } } ) );
+  CHECK( !checker.is_dont_care( aig.get_node( f3 ), std::vector<bool>{ { true, false } } ) );
+  CHECK( checker.is_dont_care( aig.get_node( f3 ), std::vector<bool>{ { true, true } } ) );
 }
 
 TEST_CASE( "ODCs with partial simulation", "[dont_cares]" )
@@ -73,10 +73,10 @@ TEST_CASE( "ODCs with partial simulation", "[dont_cares]" )
   aig.create_po( f4 );
 
   partial_simulator sim( 4, 0 );
-  sim.add_pattern( std::vector<bool>({1, 1, 1, 1}) );
-  sim.add_pattern( std::vector<bool>({0, 0, 1, 0}) );
-  sim.add_pattern( std::vector<bool>({1, 0, 0, 0}) );
-  
+  sim.add_pattern( std::vector<bool>( { 1, 1, 1, 1 } ) );
+  sim.add_pattern( std::vector<bool>( { 0, 0, 1, 0 } ) );
+  sim.add_pattern( std::vector<bool>( { 1, 0, 0, 0 } ) );
+
   fanout_view<aig_network> ntk( aig );
   unordered_node_map<kitty::partial_truth_table, fanout_view<aig_network>> tts( ntk );
 
@@ -85,5 +85,4 @@ TEST_CASE( "ODCs with partial simulation", "[dont_cares]" )
 
   const auto odc_glob = observability_dont_cares( ntk, ntk.get_node( f1 ), sim, tts, -1 );
   CHECK( odc_glob._bits[0] == 0x6 );
-
 }

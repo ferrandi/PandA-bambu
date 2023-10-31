@@ -50,16 +50,16 @@
 #include "cpu_time.hpp"
 #include "function_behavior.hpp"
 #include "functions.hpp"
+#include "generic_device.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "math_function.hpp"
 #include "memory.hpp"
 #include "op_graph.hpp"
 #include "polixml.hpp"
 #include "string_manipulation.hpp"
-#include "target_device.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 #include "tree_helper.hpp"
@@ -72,7 +72,7 @@
 
 /// STD includes
 #include <algorithm>
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
 #include <limits>
 #include <list>
 #include <string>
@@ -205,9 +205,10 @@ void mem_dominator_allocation::Initialize()
       for(const auto& source_file : HLSMgr->input_files)
       {
          const auto output_temporary_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
-         const std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
+         const std::string leaf_name =
+             source_file.second == "-" ? "stdin-" : std::filesystem::path(source_file.second).filename().string();
          const auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".memory_allocation.xml";
-         if((boost::filesystem::exists(boost::filesystem::path(XMLfilename))))
+         if((std::filesystem::exists(std::filesystem::path(XMLfilename))))
          {
             xml_files.push_back(XMLfilename);
          }
@@ -336,7 +337,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Memory allocation information:");
    const auto TM = HLSMgr->get_tree_manager();
-   const auto HLS_T = HLSMgr->get_HLS_target();
+   const auto HLS_D = HLSMgr->get_HLS_device();
 
    const auto initial_internal_address_p = parameters->isOption(OPT_initial_internal_address);
    const auto initial_internal_address = initial_internal_address_p ?
@@ -346,11 +347,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
        parameters->isOption(OPT_unaligned_access) && parameters->getOption<bool>(OPT_unaligned_access);
    const auto assume_aligned_access_p =
        parameters->isOption(OPT_aligned_access) && parameters->getOption<bool>(OPT_aligned_access);
-   if(unaligned_access_p && assume_aligned_access_p)
-   {
-      THROW_ERROR("Both --unaligned-access and --aligned-access have been specified");
-   }
-   const auto max_bram = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max");
+   const auto max_bram = HLS_D->get_parameter<unsigned int>("BRAM_bitsize_max");
    /// TODO: to be fixed with information coming out from the target platform description
    HLSMgr->base_address = user_defined_base_address != UINT64_MAX ?
                               user_defined_base_address :
@@ -965,9 +962,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             const auto tgt = boost::target(e, *top_cg);
             const auto tgt_fu_name = functions::GetFUName(CGM->get_function(tgt), HLSMgr);
             if(HLSMgr->Rfuns->is_a_proxied_function(tgt_fu_name) ||
-               (parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-                    HLSFlowStep_Type::WB4_INTERFACE_GENERATION &&
-                HLSMgr->hasToBeInterfaced(f_id)))
+               (parameters->getOption<bool>(OPT_memory_mapped_top) && HLSMgr->hasToBeInterfaced(f_id)))
             {
                num_instances.at(top_id)[tgt] = 1;
             }
@@ -1300,15 +1295,13 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
          }
       }
       /// Round up to the next highest power of 2
-      max_byte_size = round_to_power2(max_byte_size);
+      max_byte_size = ceil_pow2(max_byte_size);
       HLSMgr->Rmem->set_internal_base_address_alignment(max_byte_size);
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
                      "Sparse memory alignemnt set to " + STR(max_byte_size) + " bytes");
    }
 
-   const auto memory_mapped_top_if =
-       parameters->getOption<bool>(OPT_memory_mapped_top) ||
-       parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION;
+   const auto memory_mapped_top_if = parameters->getOption<bool>(OPT_memory_mapped_top);
    const auto allocate_function_mem = [&](const func_id_t f_id, const top_id_t top_id, const memoryRef& Rmem) {
 #ifndef NDEBUG
       const auto dbg_lvl = Rmem == HLSMgr->Rmem ? debug_level : DEBUG_LEVEL_NONE;
@@ -1537,7 +1530,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    {
       HLSMgr->UpdateMemVersion();
       /// clean proxy library
-      const auto TechM = HLS_T->get_technology_manager();
+      const auto TechM = HLS_D->get_technology_manager();
       TechM->erase_library(PROXY_LIBRARY);
       TechM->erase_library(WORK_LIBRARY);
    }

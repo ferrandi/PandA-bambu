@@ -16,7 +16,7 @@ The seed XML file must contain the following fields, which identify the specific
 The following XML fields, instead, are used to describe characteristics of the FPGA fabric that can be found in the board documentation:
 * Number of inputs to a LUT (max_lut_size): 6
 * Bitwidth of the inputs to the multiplier in a DSP slice (DSPs_x and y_sizes): 18, 27
-* Default Vivado support for unaligned BRAM accesses (BRAM_bitsize_min and max): 8, 128
+* Default Vivado support for unaligned BRAM accesses (BRAM_bitsize_min and max): 8, 4096
 
 ## **Step 2 - Create a synthesis configuration XML file**
 
@@ -33,7 +33,7 @@ There are a few places in the Bambu source code that need to be updated:
 * Add family, seed, and sample characterization in [etc/devices/Xilinx_devices/Makefile.am](https://github.com/ferrandi/PandA-bambu/blob/main/etc/devices/Xilinx_devices/Makefile.am)
 * Add instructions to unpack characterization data in [src/wrapper/wrapper.am](https://github.com/ferrandi/PandA-bambu/blob/main/src/wrapper/wrapper.am) and [src/technology/technology.am](https://github.com/ferrandi/PandA-bambu/blob/main/src/technology/technology.am)
 * Add the new device family (if necessary) in [src/wrapper/synthesis/xilinx/XilinxBackendFlow.cpp](https://github.com/ferrandi/PandA-bambu/blob/main/src/wrapper/synthesis/xilinx/XilinxBackendFlow.cpp) and [src/wrapper/flopoco/flopoco_wrapper.cpp](https://github.com/ferrandi/PandA-bambu/blob/main/src/wrapper/flopoco/flopoco_wrapper.cpp).
-* Add the new device in [src/technology/target_device/FPGA/FPGA_device.cpp](https://github.com/ferrandi/PandA-bambu/blob/main/src/technology/target_device/FPGA/FPGA_device.cpp)
+* Add the new device in [src/technology/generic_device.cpp](https://github.com/ferrandi/PandA-bambu/blob/main/src/technology/generic_device.cpp)
 
 **The process might end here:** if the new board is very similar to one of the supported ones, old characterization results can be reused directly. Try it out by launching Bambu on a test file and selecting the new target device.
 

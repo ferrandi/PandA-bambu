@@ -157,6 +157,9 @@ public:
                 }
                 printf("\n");
             }
+            if (_callback) {
+                _callback(this);
+            }
             backtrack();
         } else {
             // It's always possible that this node is only connected to PIs
@@ -210,6 +213,9 @@ public:
                     printf("(%d, %d)", j, k);
                 }
                 printf("\n");
+            }
+            if (_callback) {
+                _callback(this);
             }
             backtrack();
         } else {
@@ -265,6 +271,9 @@ public:
                     printf("(%d, %d)", j, k);
                 }
                 printf("\n");
+            }
+            if (_callback) {
+                _callback(this);
             }
             backtrack();
         } else {

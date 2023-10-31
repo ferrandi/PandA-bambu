@@ -88,7 +88,7 @@ class tree_panda_gcc_parameter : public Parameter
    int Exec() override;
 
    /**
-    * Sets the default values for the Zebu tool
+    * Sets the default values for the tree-panda-gcc tool
     */
    void SetDefaults() override;
 };

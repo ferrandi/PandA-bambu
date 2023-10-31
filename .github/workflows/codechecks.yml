@@ -15,6 +15,7 @@ env:
   storage-user: ${{secrets.CI_STORAGE_USER}}
   storage-token: ${{secrets.CI_STORAGE_TOKEN}}
   host_jobs: $J
+  local-compilers-backup: $LOCAL_COMPILERS_BACKUP
 
 jobs:
   cppcheck:
@@ -49,7 +50,7 @@ jobs:
     runs-on: [self-hosted]
     env:
       dist-dir: dist
-      compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,gcc-8,clang-4,clang-5,clang-6,clang-7,clang-11,clang-12
+      compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,gcc-8,clang-4,clang-5,clang-6,clang-7,clang-11,clang-12,clang-13,clang-16
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -86,7 +87,7 @@ jobs:
         shell: bash
         run: |
           mkdir "${{env.dist-dir}}"
-          bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.dist-dir}}" "${{env.compilers}}"
+          bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.dist-dir}}" "${{env.compilers}}" "${{env.local-compilers-backup}}"
       - name: Scan build Bambu
         id: scanbuild
         uses: ./.github/actions/scanbuild
@@ -103,10 +104,12 @@ jobs:
     runs-on: [self-hosted, classA]
     env:
       dist-dir: dist
-      compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,gcc-8,clang-4,clang-5,clang-6,clang-7,clang-11,clang-12
+      compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,gcc-8,clang-4,clang-5,clang-6,clang-7,clang-11,clang-12,clang-13,clang-16
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: 'true'
       - name: Env setup
         id: setup
         shell: bash
@@ -140,7 +143,7 @@ jobs:
         shell: bash
         run: |
           mkdir "${{env.dist-dir}}"
-          bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.dist-dir}}" "${{env.compilers}}"
+          bash ./.devcontainer/library-scripts/compiler-download.sh "${{env.dist-dir}}" "${{env.compilers}}" "${{env.local-compilers-backup}}"
       - name: Make Dist
         uses: ./.github/actions/make-dist
         with:

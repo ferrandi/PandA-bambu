@@ -38,59 +38,40 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-
 #include "classic_datapath.hpp"
-
+#include "BambuParameter.hpp"
+#include "Parameter.hpp"
 #include "behavioral_helper.hpp"
-#include "function_behavior.hpp"
-#include "hls.hpp"
-#include "hls_manager.hpp"
-#include "hls_target.hpp"
-
 #include "commandport_obj.hpp"
+#include "conn_binding.hpp"
+#include "copyrights_strings.hpp"
+#include "custom_map.hpp"
 #include "dataport_obj.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
+#include "fu_binding.hpp"
+#include "function_behavior.hpp"
 #include "generic_obj.hpp"
+#include "hls.hpp"
+#include "hls_device.hpp"
+#include "hls_manager.hpp"
+#include "memory.hpp"
 #include "mux_conn.hpp"
 #include "mux_obj.hpp"
-
-#include "technology_manager.hpp"
-
-#include "BambuParameter.hpp"
-#include "conn_binding.hpp"
-#include "fu_binding.hpp"
-#include "memory.hpp"
 #include "reg_binding.hpp"
 #include "schedule.hpp"
 #include "state_transition_graph_manager.hpp"
-
-#include "exceptions.hpp"
-
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
-
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-
-#include "Parameter.hpp"
-#include "dbgPrintHelper.hpp"
-
-#include <boost/lexical_cast.hpp>
-
-/// STD includes
 #include <iosfwd>
-#include <string>
-
-/// STL includes
-#include "custom_map.hpp"
 #include <list>
-
-/// technology/physical_library include
-#include "technology_node.hpp"
-
-/// utility includes
-#include "copyrights_strings.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include <string>
 
 classic_datapath::classic_datapath(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                                    unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager,
@@ -168,7 +149,7 @@ DesignFlowStep_Status classic_datapath::InternalExec()
    if(n_elements == 0)
    {
       structural_objectRef dummy_gate = HLS->datapath->add_module_from_technology_library(
-          "dummy_REG", flipflop_SR, LIBRARY_STD, datapath_cir, HLS->HLS_T->get_technology_manager());
+          "dummy_REG", flipflop_SR, LIBRARY_STD, datapath_cir, HLS->HLS_D->get_technology_manager());
       structural_objectRef port_ck = dummy_gate->find_member(CLOCK_PORT_NAME, port_o_K, dummy_gate);
       if(port_ck)
       {
@@ -267,7 +248,7 @@ void classic_datapath::add_ports()
       {
          generic_objRef constant_obj = c.second;
          structural_objectRef const_obj = SM->add_module_from_technology_library(
-             "const_" + STR(num), CONSTANT_STD, LIBRARY_STD, circuit, HLS->HLS_T->get_technology_manager());
+             "const_" + STR(num), CONSTANT_STD, LIBRARY_STD, circuit, HLS->HLS_D->get_technology_manager());
 
          std::string value = std::get<0>(c.first);
          std::string param = std::get<1>(c.first);

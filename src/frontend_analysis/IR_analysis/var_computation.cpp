@@ -42,9 +42,6 @@
  *
  */
 
-/// Autoheader include
-#include "config_HAVE_I386_GCC45_COMPILER.hpp"
-
 /// Header include
 #include "var_computation.hpp"
 
@@ -69,7 +66,6 @@
 #include "tree_reindex.hpp"
 
 /// Utility include
-#include "boost/lexical_cast.hpp"
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 
@@ -77,7 +73,7 @@
 #include "compiler_wrapper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-#define TOSTRING(id) boost::lexical_cast<std::string>(id)
+#define TOSTRING(id) std::to_string(id)
 
 VarComputation::VarComputation(const ParameterConstRef _parameters, const application_managerRef _AppM,
                                unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
@@ -132,9 +128,6 @@ void VarComputation::Initialize()
             const OpNodeInfoRef op_node_info = mod_cfg->GetOpNodeInfo(*op);
             op_node_info->cited_variables.clear();
             op_node_info->variables.clear();
-#if HAVE_EXPERIMENTAL
-            op_node_info->dynamic_memory_locations.clear();
-#endif
             op_node_info->actual_parameters.clear();
             op_node_info->Initialize();
          }
@@ -346,16 +339,6 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
       }
       case var_decl_K:
       {
-#if HAVE_I386_GCC45_COMPILER
-         if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-            CompilerWrapper_CompilerTarget::CT_I386_GCC45)
-         {
-            if(tree_helper::IsVolatile(_tree_node))
-            {
-               THROW_ERROR("Volatile variables or types not supported with gcc 4.5");
-            }
-         }
-#endif
          ogc->AddSourceCodeVariable(op_vertex, tree_node->index);
          const auto* vd = GetPointer<const var_decl>(tree_node);
          if(vd && (!vd->scpe || GET_CONST_NODE(vd->scpe)->get_kind() == translation_unit_decl_K))
@@ -499,20 +482,6 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
       case CASE_TERNARY_EXPRESSION:
       {
          const auto* te = GetPointerS<const ternary_expr>(tree_node);
-         /// GCC 4.5 plugin does not writer vuse for component ref of volatile variable
-#if HAVE_I386_GCC45_COMPILER
-         if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-            CompilerWrapper_CompilerTarget::CT_I386_GCC45)
-         {
-            if(te->get_kind() == component_ref_K)
-            {
-               if(tree_helper::IsVolatile(te->op0))
-               {
-                  THROW_ERROR("Accessing field of volatile union/struct not supported with gcc 4.5");
-               }
-            }
-         }
-#endif
 
          if(te->get_kind() == component_ref_K || te->get_kind() == bit_field_ref_K)
          {

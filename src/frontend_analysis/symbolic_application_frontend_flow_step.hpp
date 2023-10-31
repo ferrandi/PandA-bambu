@@ -91,12 +91,12 @@ class SymbolicApplicationFrontendFlowStep : public ApplicationFrontendFlowStep
    /**
     * Return the type of this step
     */
-   const std::string GetKindText() const override;
+   std::string GetKindText() const override;
 
    /**
     * Return the signature of this step
     */
-   const std::string GetSignature() const override;
+   std::string GetSignature() const override;
 
    /**
     * Compute the signature of a symbolic application frontend flow step

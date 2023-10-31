@@ -900,7 +900,7 @@ double __hide_ieee754_jn(int n, double x)
    lx = GET_LO(x);
    /* if J(n,NaN) is NaN */
    if((ix | ((unsigned)(lx | -lx)) >> 31) > 0x7ff00000)
-      return x + x;
+      return X_PLUS_X(x);
    if(n < 0)
    {
       n = -n;
@@ -1096,7 +1096,7 @@ double __hide_ieee754_yn(int n, double x)
    lx = GET_LO(x);
    /* if Y(n,NaN) is NaN */
    if((ix | ((unsigned)(lx | -lx)) >> 31) > 0x7ff00000)
-      return x + x;
+      return X_PLUS_X(x);
    if((ix | lx) == 0)
       return -one / zero;
    if(hx < 0)

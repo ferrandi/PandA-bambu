@@ -73,11 +73,10 @@
 #include "structural_manager.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
-#include "time_model.hpp"
+#include "time_info.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-
 #include <boost/foreach.hpp>
 #include <boost/graph/depth_first_search.hpp>
 #include <boost/graph/graph_traits.hpp>
@@ -202,15 +201,12 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
 
    const auto CGM = HLSMgr->CGetCallGraphManager();
    const auto top_functions = CGM->GetRootFunctions();
-   const auto needMemoryMappedRegisters =
-       (top_functions.find(funId) != top_functions.end() &&
-        parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION) ||
-       (HLSMgr->hasToBeInterfaced(funId) and top_functions.find(funId) == top_functions.end()) ||
-       parameters->getOption<bool>(OPT_memory_mapped_top);
+   const auto needMemoryMappedRegisters = top_functions.count(funId) ?
+                                              parameters->getOption<bool>(OPT_memory_mapped_top) :
+                                              HLSMgr->hasToBeInterfaced(funId);
    bool has_registered_inputs = HLS->registered_inputs && !needMemoryMappedRegisters;
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   if(top_function_ids.find(funId) != top_function_ids.end() and
-      parameters->getOption<std::string>(OPT_registered_inputs) == "top")
+   if(top_function_ids.count(funId) && parameters->getOption<std::string>(OPT_registered_inputs) == "top")
    {
       has_registered_inputs = true;
    }
@@ -264,7 +260,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
    if(HLS->Param->isOption(OPT_context_switch))
    {
-      if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
+      if(omp_functions->kernel_functions.count(funId))
       {
          has_registered_inputs = true;
       }

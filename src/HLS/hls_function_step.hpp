@@ -41,9 +41,6 @@
 #ifndef HLS_FUNCION_STEP_HPP
 #define HLS_FUNCION_STEP_HPP
 
-/// Autoheader include
-#include "config_HAVE_STDCXX_11.hpp"
-
 /// Superclass include
 #include "hls_step.hpp"
 
@@ -71,8 +68,8 @@ class HLSFunctionStep : public HLS_step
    /// The version of memory representation on which this step was applied
    unsigned int memory_version;
 
-   virtual void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
-                                     const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
     * Execute the step
@@ -99,7 +96,7 @@ class HLSFunctionStep : public HLS_step
    /**
     * Destructor
     */
-   virtual ~HLSFunctionStep() override;
+   ~HLSFunctionStep() override;
 
    /**
     * Check if this step has actually to be executed
@@ -116,7 +113,7 @@ class HLSFunctionStep : public HLS_step
     * Return a unified identifier of this design step
     * @return the signature of the design step
     */
-   const std::string GetSignature() const override;
+   std::string GetSignature() const final;
 
    /**
     * Compute the signature of a hls flow step
@@ -125,24 +122,20 @@ class HLSFunctionStep : public HLS_step
     * @param function_id is the index of the function
     * @return the corresponding signature
     */
-   static const std::string ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
-                                             const HLSFlowStepSpecializationConstRef hls_flow_step_specialization,
-                                             const unsigned int function_id);
+   static std::string ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
+                                       const HLSFlowStepSpecializationConstRef hls_flow_step_specialization,
+                                       const unsigned int function_id);
 
    /**
     * Return the name of this design step
     * @return the name of the pass (for debug purpose)
     */
-   const std::string GetName() const override;
+   std::string GetName() const final;
 
    /**
     * Execute the step
     * @return the exit status of this step
     */
-   DesignFlowStep_Status Exec()
-#if HAVE_STDCXX_11
-       final
-#endif
-       ;
+   DesignFlowStep_Status Exec() final;
 };
 #endif

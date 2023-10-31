@@ -42,12 +42,9 @@
  */
 
 /// Autoheader include
-#include "config_HAVE_ASSERTS.hpp"               // for HAVE_ASSERTS
-#include "config_HAVE_CODE_ESTIMATION_BUILT.hpp" // for HAVE_CODE_ESTIMATIO...
-#include "config_HAVE_FROM_PRAGMA_BUILT.hpp"     // for HAVE_FROM_PRAGMA_BUILT
-#include "config_HAVE_RTL_BUILT.hpp"             // for HAVE_RTL_BUILT
-#include "config_HAVE_SPARC_COMPILER.hpp"        // for HAVE_SPARC_COMPILER
-#include "config_RELEASE.hpp"                    // for RELEASE
+#include "config_HAVE_ASSERTS.hpp"           // for HAVE_ASSERTS
+#include "config_HAVE_FROM_PRAGMA_BUILT.hpp" // for HAVE_FROM_PRAGMA_BUILT
+#include "config_RELEASE.hpp"                // for RELEASE
 
 /// Header include
 #include "behavioral_helper.hpp"
@@ -77,14 +74,6 @@
 /// parser/compiler include
 #include "token_interface.hpp"
 
-#if HAVE_RTL_BUILT
-/// RTL include
-#include "rtl_node.hpp"
-#endif
-#if HAVE_CODE_ESTIMATION_BUILT
-#include "weight_information.hpp"
-#endif
-
 /// Tree include
 #include "ext_tree_node.hpp"
 #include "tree_basic_block.hpp"
@@ -92,12 +81,8 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_reindex.hpp"
-#if HAVE_CODE_ESTIMATION_BUILT
-#include "weight_information.hpp"
-#endif
 
 /// Utility include
-#include "boost/lexical_cast.hpp"
 #include "exceptions.hpp"
 #include "string_manipulation.hpp" // for STR
 #include "var_pp_functor.hpp"
@@ -217,19 +202,6 @@ std::string BehavioralHelper::print_vertex(const OpGraphConstRef g, const vertex
          }
       }
       ret += "\\n";
-#if HAVE_RTL_BUILT && HAVE_CODE_ESTIMATION_BUILT
-      if(node && GET_CONST_NODE(node)->get_kind() != gimple_nop_K)
-      {
-         if(GetPointer<WeightedNode>(GET_CONST_NODE(node)))
-         {
-            const auto wn = GetPointerS<WeightedNode>(GET_CONST_NODE(node));
-            for(const auto& rn : filtered_rtl_nodes)
-            {
-               res += rtl_node::GetString(rn.first) + ":" + rtl_node::GetString(rn.second) + "\\n";
-            }
-         }
-      }
-#endif
       return ret;
    }
    else if(res != "")
@@ -744,14 +716,10 @@ std::string BehavioralHelper::PrintConstant(const tree_nodeConstRef& _node, cons
          {
             if(it && it->unsigned_flag)
             {
-               THROW_ASSERT(value <= std::numeric_limits<unsigned long long>::max(), "");
-               res += STR(static_cast<unsigned long long>(value & ((integer_cst_t(1) << it->prec) - 1)));
+               res += STR(value & ((integer_cst_t(1) << it->prec) - 1));
             }
             else
             {
-               THROW_ASSERT(std::numeric_limits<long long>::min() <= value &&
-                                value <= std::numeric_limits<long long>::max(),
-                            "Printing " + STR(node) + " as " + STR(value));
                res += STR(value);
             }
          }
@@ -1081,6 +1049,11 @@ std::string BehavioralHelper::get_function_name() const
    return function_name;
 }
 
+std::string BehavioralHelper::GetMangledFunctionName() const
+{
+   return tree_helper::GetMangledFunctionName(GetPointerS<const function_decl>(TM->CGetTreeNode(function_index)));
+}
+
 unsigned int BehavioralHelper::get_function_index() const
 {
    return function_index;
@@ -1206,31 +1179,6 @@ unsigned int BehavioralHelper::GetElements(const unsigned int type) const
    return tree_helper::CGetElements(TM->CGetTreeReindex(type))->index;
 }
 
-bool BehavioralHelper::isCallExpression(unsigned int nodeID) const
-{
-   // get the tree node associated with the provided ID
-   const tree_nodeRef node = TM->GetTreeNode(nodeID);
-   if(node->get_kind() == call_expr_K || node->get_kind() == aggr_init_expr_K)
-   {
-      return true;
-   }
-   else
-   {
-      return false;
-   }
-}
-
-unsigned int BehavioralHelper::getCallExpressionIndex(std::string launch_code) const
-{
-   std::string temp = launch_code;
-   size_t pos = temp.find('(');
-   temp.erase(pos);
-
-   // now 'temp' variable contains the called-function name
-   const auto fu_node = TM->GetFunction(temp);
-   return fu_node ? fu_node->index : 0;
-}
-
 std::string BehavioralHelper::PrintVarDeclaration(unsigned int var, var_pp_functorConstRef vppf,
                                                   bool init_has_to_be_printed) const
 {
@@ -1245,11 +1193,7 @@ std::string BehavioralHelper::PrintVarDeclaration(unsigned int var, var_pp_funct
       dn = GetPointerS<const decl_node>(curr_tn);
    }
    /// If it is not a decl node (then it is an ssa-name) or it's a not system decl_node
-   if(!dn || !(dn->operating_system_flag || dn->library_system_flag)
-#if HAVE_BAMBU_BUILT
-      || tree_helper::IsInLibbambu(curr_tn)
-#endif
-   )
+   if(!dn || !(dn->operating_system_flag || dn->library_system_flag) || tree_helper::IsInLibbambu(curr_tn))
    {
       return_value += tree_helper::PrintType(TM, tree_helper::CGetType(curr_tn), false, false, init_has_to_be_printed,
                                              curr_tn, vppf);
@@ -2878,13 +2822,6 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
       }
       case bit_field_ref_K:
       {
-#if HAVE_SPARC_COMPILER
-         if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-            CompilerWrapper_CompilerTarget::CT_SPARC_GCC)
-         {
-            THROW_ERROR_CODE(BITFIELD_EC, "Bitfield not supported by sparc cross compiler");
-         }
-#endif
          const auto bf = GetPointerS<const bit_field_ref>(node);
          const auto bpos = tree_helper::GetConstValue(bf->op2);
          res += "*((" + tree_helper::PrintType(TM, bf->type) + "* ) (((unsigned long int) &(" +
@@ -6294,7 +6231,7 @@ bool BehavioralHelper::IsDefaultSsaName(const unsigned int ssa_name_index) const
    return sn && sn->default_flag;
 }
 
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
 size_t BehavioralHelper::GetOmpForDegree() const
 {
    const auto fd = GetPointerS<const function_decl>(TM->get_tree_node_const(function_index));
@@ -6314,7 +6251,7 @@ bool BehavioralHelper::IsOmpBodyLoop() const
 }
 #endif
 
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
 bool BehavioralHelper::IsOmpAtomic() const
 {
    const auto fd = GetPointerS<const function_decl>(TM->get_tree_node_const(function_index));
@@ -6328,12 +6265,10 @@ bool BehavioralHelper::function_has_to_be_printed(unsigned int f_id) const
    {
       return false;
    }
-#if HAVE_BAMBU_BUILT
    if(tree_helper::IsInLibbambu(TM, f_id))
    {
       return true;
    }
-#endif
    return !tree_helper::is_system(TM, f_id);
 }
 
@@ -6342,7 +6277,6 @@ std::string BehavioralHelper::get_asm_string(const unsigned int node_index) cons
    return tree_helper::get_asm_string(TM, node_index);
 }
 
-#if HAVE_BAMBU_BUILT
 bool BehavioralHelper::CanBeSpeculated(const unsigned int node_index) const
 {
    if(node_index == ENTRY_ID || node_index == EXIT_ID)
@@ -6607,7 +6541,6 @@ bool BehavioralHelper::CanBeMoved(const unsigned int node_index) const
    }
    return true;
 }
-#endif
 
 bool BehavioralHelper::IsStore(const unsigned int statement_index) const
 {

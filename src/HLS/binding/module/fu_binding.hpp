@@ -105,7 +105,7 @@ class fu_binding
    /// allocation manager. Used to retrieve the string name of the functional units.
    AllocationInformationRef allocation_information;
 
-   /// information about the tree datastructure
+   /// information about the tree data-structure
    const tree_managerConstRef TreeM;
 
    /// The operation graph
@@ -129,22 +129,6 @@ class fu_binding
     * @param number is the new number of allocated units
     */
    void update_allocation(unsigned int unit, unsigned int number);
-
-   /**
-    * fill the memory of the array ref
-    * @param TreeM is the tree_manager
-    * @param init_file_a is the file where the data is written (all data stored in this file in case is_memory_splitted
-    * is false
-    * @param initi_file_b is the file where the data is written (only the odd elements are store in this file and only
-    * if is_memory_splitted is true
-    * @param ar is the array ref variable declaration
-    * @param vec_size is the number of the element of the array
-    * @param elts_size is the element size in bits
-    * @param is_memory_splitted is true when the allocated memory is splitted into two sets of BRAMs
-    */
-   void fill_array_ref_memory(std::ostream& init_file_a, std::ostream& init_file_b, unsigned int ar,
-                              long long int& vec_size, unsigned long long& elts_size, const memoryRef mem,
-                              bool is_memory_splitted, bool is_sds, module* fu_module);
 
    /**
     * Add an instance of the current port
@@ -357,17 +341,8 @@ class fu_binding
                                unsigned int ar, const std::string& base_address, unsigned long long rangesize,
                                bool is_memory_splitted, bool is_sparse_memory, bool is_sds);
 
-   static void write_init(const tree_managerConstRef TreeM, tree_nodeRef var_node, tree_nodeRef init_node,
-                          std::vector<std::string>& init_file, const memoryRef mem,
-                          unsigned long long element_precision);
-
    virtual bool manage_module_ports(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM,
                                     const structural_objectRef curr_gate, unsigned int num);
-
-   virtual void
-   join_merge_split(const structural_managerRef SM, const hlsRef HLS,
-                    std::map<structural_objectRef, std::list<structural_objectRef>, jms_sorter>& primary_outs,
-                    const structural_objectRef circuit, unsigned int& unique_id) const;
 
    /**
     * specify if vertex v have or not its ports swapped
@@ -391,6 +366,34 @@ class fu_binding
    {
       return has_resource_sharing_p;
    }
+
+   static void
+   join_merge_split(const structural_managerRef SM, const hlsRef HLS,
+                    std::map<structural_objectRef, std::list<structural_objectRef>, jms_sorter>& primary_outs,
+                    const structural_objectRef circuit, unsigned int& unique_id);
+
+   /**
+    * fill the memory of the array ref
+    * @param TreeM is the tree_manager
+    * @param init_file_a is the file where the data is written (all data stored in this file in case is_memory_splitted
+    * is false
+    * @param initi_file_b is the file where the data is written (only the odd elements are store in this file and only
+    * if is open)
+    * @param ar is the array ref variable declaration
+    * @param vec_size is the number of the element of the array
+    * @param elts_size is the element size in bits
+    * @param mem is the memory reference
+    * @param TM is the tree manager reference
+    * @param is_sds is true if SDS memory alignment is required
+    * @param bitsize_align is the memory alignment bitsize
+    */
+   static void fill_array_ref_memory(std::ostream& init_file_a, std::ostream& init_file_b, unsigned int ar,
+                                     unsigned long long& vec_size, unsigned long long& elts_size, const memoryRef mem,
+                                     tree_managerConstRef TM, bool is_sds, unsigned long long bitsize_align);
+
+   static void write_init(const tree_managerConstRef TreeM, tree_nodeRef var_node, tree_nodeRef init_node,
+                          std::vector<std::string>& init_file, const memoryRef mem,
+                          unsigned long long element_precision);
 };
 
 /**

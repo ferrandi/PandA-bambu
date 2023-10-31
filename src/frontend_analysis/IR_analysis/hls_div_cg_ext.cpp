@@ -55,8 +55,8 @@
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 
 /// Graph include
 #include "basic_block.hpp"
@@ -145,10 +145,9 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
       const auto fd = GetPointerS<function_decl>(curr_tn);
       const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
 
-      THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
-      const auto hls_target = GetPointer<const HLS_manager>(AppM)->get_HLS_target();
-      if(hls_target->get_target_device()->has_parameter("use_soft_64_mul") &&
-         hls_target->get_target_device()->get_parameter<size_t>("use_soft_64_mul"))
+      THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_device(), "unexpected condition");
+      const auto hls_d = GetPointer<const HLS_manager>(AppM)->get_HLS_device();
+      if(hls_d->has_parameter("use_soft_64_mul") && hls_d->get_parameter<size_t>("use_soft_64_mul"))
       {
          use64bitMul = true;
       }
@@ -211,8 +210,8 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
             if(fname == "__umul64" || fname == "__mul64")
             {
                THROW_ASSERT(ce->args.size() == 2, "unexpected condition");
-               const auto bitsize0 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(ce->args.at(0)));
-               const auto bitsize1 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(ce->args.at(1)));
+               const auto bitsize0 = ceil_pow2(tree_helper::Size(ce->args.at(0)));
+               const auto bitsize1 = ceil_pow2(tree_helper::Size(ce->args.at(1)));
                const auto bitsize = std::max(bitsize0, bitsize1);
                if(bitsize <= 32)
                {
@@ -268,8 +267,8 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
          if(be_type == exact_div_expr_K || be_type == trunc_div_expr_K || be_type == trunc_mod_expr_K)
          {
             const auto expr_type = tree_helper::CGetType(be->op0);
-            const auto bitsize0 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(be->op0));
-            const auto bitsize1 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(be->op1));
+            const auto bitsize0 = ceil_pow2(tree_helper::Size(be->op0));
+            const auto bitsize1 = ceil_pow2(tree_helper::Size(be->op1));
             const auto bitsize = std::max(bitsize0, bitsize1);
 
             const auto div_by_constant = [&]() {
@@ -311,8 +310,8 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
          else if(be_type == mult_expr_K && use64bitMul)
          {
             const auto expr_type = tree_helper::CGetType(be->op0);
-            const auto bitsize0 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(be->op0));
-            const auto bitsize1 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(be->op1));
+            const auto bitsize0 = ceil_pow2(tree_helper::Size(be->op0));
+            const auto bitsize1 = ceil_pow2(tree_helper::Size(be->op1));
             const auto bitsize = std::max(bitsize0, bitsize1);
             if(GET_CONST_NODE(expr_type)->get_kind() == integer_type_K && bitsize == 64)
             {

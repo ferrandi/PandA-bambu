@@ -44,6 +44,7 @@
 #include <cassert>
 #include <fstream>
 #include <sstream>
+#include <string>
 #include <vector>
 
 namespace lorina
@@ -178,7 +179,7 @@ private:
  * \param diag An optional diagnostic engine with callback methods for parse errors
  * \return Success if parsing has been successful, or parse error if parsing has failed
  */
-inline return_code read_bristol( std::istream& is, bristol_reader const& reader, diagnostic_engine* diag = nullptr )
+[[nodiscard]] inline return_code read_bristol( std::istream& is, const bristol_reader& reader, diagnostic_engine* diag = nullptr )
 {
   (void)diag;
   return bristol_parser( is, reader ).run();
@@ -194,15 +195,14 @@ inline return_code read_bristol( std::istream& is, bristol_reader const& reader,
  * \param diag An optional diagnostic engine with callback methods for parse errors
  * \return Success if parsing has been successful, or parse error if parsing has failed
  */
-inline return_code read_bristol( std::string const& filename, bristol_reader const& reader, diagnostic_engine* diag = nullptr )
+[[nodiscard]] inline return_code read_bristol( const std::string& filename, const bristol_reader& reader, diagnostic_engine* diag = nullptr )
 {
   std::ifstream in( filename, std::ifstream::in );
   if ( !in.is_open() )
   {
     if ( diag )
     {
-      diag->report( diagnostic_level::fatal,
-                    fmt::format( "could not open file `{0}`", filename ) );
+      diag->report( diag_id::ERR_FILE_OPEN ).add_argument( filename );
     }    
     return return_code::parse_error;
   }

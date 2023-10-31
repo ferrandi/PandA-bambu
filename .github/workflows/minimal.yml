@@ -24,39 +24,82 @@ jobs:
     uses: ./.github/workflows/build-appimage.yml
     with:
       package-name: bambu-minimal
-      compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,clang-4,clang-5,clang-6,clang-7,clang-11,clang-13
+      compilers: gcc-4.9,gcc-5,gcc-6,gcc-7,clang-4,clang-6,clang-7,clang-11,clang-13,clang-16
     secrets: inherit
 
+  changes:
+    runs-on: [self-hosted]
+    permissions:
+      pull-requests: read
+    outputs:
+      softfloat: ${{ steps.filter.outputs.softfloat }}
+      libm: ${{ steps.filter.outputs.libm }}
+      ac_types: ${{ steps.filter.outputs.ac_types }}
+    steps:
+      - name: Detect changes
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            softfloat:
+              - 'etc/libbambu/bambu_macros.h'
+              - 'etc/libbambu/mul64.c'
+              - 'etc/libbambu/softfloat/**'
+            libm:
+              - 'etc/libbambu/bambu_macros.h'
+              - 'etc/libbambu/mul64.c'
+              - 'etc/libbambu/libm/**'
+              - 'etc/libbambu/softfloat/**'
+            ac_types:
+              - 'etc/libbambu/ac_math/**'
+              - 'etc/libbambu/ac_types/**'
+
   ACMath-tests:
+    needs: [changes]
+    if: ${{needs.changes.outputs.ac_types == 'true'}}
     runs-on: [self-hosted]
     container:
-      image: bambuhls/appimage:focal
+      image: bambuhls/dev:focal-23.10
       env:
         J: ${{env.host_jobs}}
     strategy:
       matrix:
-        compiler: [gcc, gcc_c++17, clang, clang_c++17]
+        include:
+          - compiler: g++
+          - compiler: g++
+            flags: -std=c++17
+          - compiler: clang++
+          - compiler: clang++
+            flags: -std=c++17
+          - compiler: clang++-16
+            flags: -std=c++17
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: Install clang
-        if: ${{ startsWith(matrix.compiler, 'clang') }}
+      - name: Install Clang
+        if: ${{ matrix.compiler == 'clang++' }}
         shell: bash
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends clang
-      - name: Launch ACMath tests for ${{matrix.compiler}}
+      - name: Install Clang 16
+        if: ${{ matrix.compiler == 'clang++-16' }}
+        shell: bash
+        run: |
+          bash .devcontainer/library-scripts/compiler-download.sh / clang-16
+          bash .devcontainer/library-scripts/compiler-setup.sh
+      - name: Launch ACMath tests for ${{matrix.compiler}} ${{matrix.flags}}
         working-directory: ./etc/libbambu/ac_math
         shell: bash
-        run: ./ac_math_test_${{matrix.compiler}}.sh
+        run: ./ac_math_test.sh $(mktemp -d /tmp/ac_math_XXX) CXX=${{matrix.compiler}} CXXUSERFLAGS="${{matrix.flags}}"
 
   specific-test:
-    needs: [build, ACMath-tests]
+    needs: [build]
     runs-on: [self-hosted]
     strategy:
       fail-fast: false
       matrix:
-        id: ["", "2", "3", "4", "5", "6"]
+        id: ["", "2", "3", "5", "6"]
     env:
       args: -c=--simulator=VERILATOR
     steps:
@@ -77,7 +120,7 @@ jobs:
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
           echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
-      - name: Launch Bambu specific tests ${{matrix.id}}
+      - name: Launch Bambu specific test ${{matrix.id}}
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
@@ -98,17 +141,23 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: bambu_specific_test${{matrix.id}}
           path: ${{env.report-dir}}
   
-  specific-test-modelsim:
-    needs: [build]
+  interface-test:
+    needs: [build, ACMath-tests]
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: [self-hosted,mentor]
+    strategy:
+      fail-fast: false
+      matrix:
+        id: [""]
     env:
-      args: -c=--simulator=MODELSIM
+      script: ./panda_regressions/hls/bambu_interface_test${{matrix.id}}.sh
+      args: -c=--simulator=MODELSIM -c=--assert-debug
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -127,18 +176,59 @@ jobs:
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
           echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
-      - name: Launch Bambu specific tests
+      - name: Launch Bambu interface test ${{matrix.id}}
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
-          ./panda_regressions/hls/bambu_specific_test_modelsim.sh --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+          ${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: bambu_interface_test${{matrix.id}}
+          new-results: ${{env.report-dir}}/perf.csv
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        shell: bash
+        run: |
+          mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
-          name: bambu_specific_test_modelsim
+          name: bambu_interface_test${{matrix.id}}
           path: ${{env.report-dir}}
+
+  AXI4-verification:
+    needs: [build]
+    runs-on: [self-hosted,mentor]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Download Bambu AppImage
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{needs.build.outputs.package-name}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Setup binaries
+        id: setup
+        shell: bash
+        run: |
+          mkdir bin
+          ln -s $PWD/*.AppImage bin/bambu
+          ln -s $PWD/*.AppImage bin/spider
+          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
+      - name: Launch AXI test
+        shell: bash
+        run: |
+          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
+          ./panda_regressions/hls/bambu_axi_verification.sh
 
   gcc_regression_simple:
     needs: [build, specific-test]
@@ -154,13 +244,10 @@ jobs:
             args: -c=--compiler=I386_GCC49 -c=--reset-type=sync -c=--simulator=VERILATOR
           - setup: clang-4.0
             script: generic_gcc_regression_simple_eg.sh
-            args: -c=--compiler=I386_CLANG4 -c=--simulator=MODELSIM
-          - setup: clang-5.0
-            script: generic_gcc_regression_simple_eg_ext_pipelined.sh
-            args: -c=--compiler=I386_CLANG5 -c=--simulator=VERILATOR
+            args: -c=--compiler=I386_CLANG4 -c=--simulator=MODELSIM -c=--assert-debug
           - setup: clang-6.0
             script: generic_gcc_regression_simple_bambu.sh
-            args: -c=--compiler=I386_CLANG6 -c=--simulator=MODELSIM
+            args: -c=--compiler=I386_CLANG6 -c=--simulator=MODELSIM -c=--assert-debug
           - setup: clang-7
             script: generic_gcc_regression_simple_bambu.sh
             args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR
@@ -170,6 +257,9 @@ jobs:
           - setup: clang-13
             script: generic_gcc_regression_simple_eg_ext_pipelined.sh
             args: -c=--compiler=I386_CLANG13 -c=--simulator=VERILATOR
+          - setup: clang-16
+            script: generic_gcc_regression_simple_eg_ext_pipelined.sh
+            args: -c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR -c=-Wno-int-conversion
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -211,7 +301,7 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -266,7 +356,7 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -278,7 +368,7 @@ jobs:
     env:
       setup: gcc-7
       script: generic_gcc_regression_simple_bambu_vhdl.sh
-      args: -c=--compiler=I386_GCC7 -c=--simulator=MODELSIM
+      args: -c=--compiler=I386_GCC7 -c=--simulator=MODELSIM -c=--assert-debug
       outname: gcc-7_regression_simple-vhdl
     steps:
       - name: Checkout repository
@@ -321,7 +411,7 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -329,7 +419,7 @@ jobs:
 
   discrepancy-test:
     needs: [build, specific-test]
-    runs-on: [self-hosted, classA]
+    runs-on: [self-hosted]
     env:
       setup: gcc-7
       script: generic_discrepancy_eg_bambu.sh
@@ -362,13 +452,15 @@ jobs:
           echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
           ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
 
   softfloat-preliminary:
+    needs: [changes]
+    if: ${{needs.changes.outputs.softfloat == 'true'}}
     runs-on: [self-hosted]
     steps:
       - name: Checkout repository
@@ -387,6 +479,7 @@ jobs:
 
   softfloat-tests:
     needs: [build, softfloat-preliminary]
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: [self-hosted, mentor]
     env:
       script: multi_softfloat-tests.sh
@@ -433,13 +526,15 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
 
   libm-preliminary:
+    needs: [changes]
+    if: ${{needs.changes.outputs.libm == 'true'}}
     runs-on: [self-hosted]
     strategy:
       matrix:
@@ -461,25 +556,26 @@ jobs:
 
   libm-tests:
     needs: [build, libm-preliminary, softfloat-tests]
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: [self-hosted, mentor]
     strategy:
       fail-fast: false
       matrix:
         include:
           - setup: gcc-4.9
-            args: -c=--compiler=I386_GCC49 -c=--simulator=MODELSIM
+            args: -c=--compiler=I386_GCC49 -c=--simulator=MODELSIM -c=--assert-debug
           - setup: clang-4.0
             args: -c=--compiler=I386_CLANG4 -c=--simulator=VERILATOR
-          - setup: clang-5.0
-            args: -c=--compiler=I386_CLANG5 -c=--simulator=VERILATOR
           - setup: clang-6.0
             args: -c=--compiler=I386_CLANG6 -c=--simulator=VERILATOR
           - setup: clang-7
             args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR
           - setup: clang-11
-            args: -c=--compiler=I386_CLANG11 -c=--simulator=MODELSIM
+            args: -c=--compiler=I386_CLANG11 -c=--simulator=MODELSIM -c=--assert-debug
           - setup: clang-13
             args: -c=--compiler=I386_CLANG13 -c=--simulator=VERILATOR
+          - setup: clang-16
+            args: -c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR
     env:
       script: generic_libm-tests.sh
       args: -c=--speculative-sdc-scheduling
@@ -525,7 +621,7 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -536,11 +632,13 @@ jobs:
     runs-on: [self-hosted, mentor]
     env:
       script: multi_CHStone-frontend.sh
-      args: -c=--simulator=MODELSIM
+      args: -c=--simulator=MODELSIM -c=--assert-debug
       outname: multi_CHStone-frontend
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: 'true'
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -579,7 +677,7 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -631,7 +729,7 @@ jobs:
         with:
           script: ./docker_exec.sh
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -639,7 +737,7 @@ jobs:
 
   CHStone-memarch:
     needs: [build, CHStone-multi]
-    runs-on: [self-hosted, altera, intelFPGA, lattice, mentor, xilinx]
+    runs-on: [self-hosted, mentor]
     strategy:
       fail-fast: false
       matrix:
@@ -652,10 +750,12 @@ jobs:
             args: "-c=--speculative-sdc-scheduling"
     env:
       script: generic_CHStone-memarch.sh
-      args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}}
+      args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}} -c=--assert-debug
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: 'true'
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -680,7 +780,7 @@ jobs:
           echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
           ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}} ${{matrix.args}}
       - name: Generate out name
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         id: get
         shell: bash
         run: |
@@ -697,7 +797,7 @@ jobs:
           fi
           echo "outname=$OUTNAME" >> $GITHUB_OUTPUT
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{steps.get.outputs.outname}}
@@ -713,7 +813,7 @@ jobs:
     env:
       outname: omp_simd_${{matrix.device}}
       script: ./examples/omp_simd/generic_omp_simd.sh
-      args: -c=--simulator=MODELSIM -c=--compiler=I386_GCC49 -c=--clock-period=10 -c=--device-name=${{matrix.device}}
+      args: -c=--simulator=MODELSIM -c=--compiler=I386_GCC49 -c=--clock-period=10 -c=--device-name=${{matrix.device}} -c=--assert-debug
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -753,7 +853,7 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -772,7 +872,7 @@ jobs:
             args: -c=--evaluation=PERIOD,AREA,FREQUENCY,CLOCK_SLACK,REGISTERS,DSPS,BRAMS
             datapoints: PERIOD,AREA,REGISTERS,DSPS,BRAMS
           - test: lattice
-            datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
+            datapoints: CYCLES
           - test: nanoxplore
             datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
           - test: sim
@@ -786,6 +886,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: 'true'
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -825,7 +927,7 @@ jobs:
         run: |
           mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
       - name: Upload test reports
-        if: ${{ always() }}
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: ${{env.outname}}
@@ -862,12 +964,13 @@ jobs:
           ./examples/crypto_designs/multi.sh
 
   success:
-    if: ${{always()}}
+    if: ${{ !cancelled() }}
     needs:
       [
         gcc_regression_simple,
         gcc_regression_simple-vhdl,
         gcc_regression_simple-pretty_print,
+        interface-test,
         libm-tests,
         discrepancy-test,
         omp-simd,
@@ -886,6 +989,9 @@ jobs:
         run: exit 1
       - name: Check GCC Regression Simple pretty print status
         if: ${{ needs.gcc_regression_simple-pretty_print.result != 'success' }}
+        run: exit 1
+      - name: Check Interface Test status
+        if: ${{ needs.interface-test.result != 'success' }}
         run: exit 1
       - name: Check LibM Multi status
         if: ${{ needs.libm-tests.result != 'success' }}

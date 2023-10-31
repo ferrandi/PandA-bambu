@@ -38,18 +38,20 @@ The following code shows how to check functional equivalence of a root node to s
       }
    }
 
-   circuit_validator<aig_network>::gate::fanin gi1{0, true};
-   circuit_validator<aig_network>::gate::fanin gi2{1, true};
-   circuit_validator<aig_network>::gate g{{gi1, gi2}, circuit_validator<aig_network>::gate_type::AND};
+   std::vector<aig_network::node> divs;
+   divs.emplace_back( aig.get_node( f1 ) );
+   divs.emplace_back( aig.get_node( f2 ) );
 
-   circuit_validator<aig_network>::gate::fanin hi1{2, false};
-   circuit_validator<aig_network>::gate::fanin hi2{0, false};
-   circuit_validator<aig_network>::gate h{{hi1, hi2}, circuit_validator<aig_network>::gate_type::AND};
+   xag_index_list id_list;
+   id_list.add_inputs( 2 );
+   id_list.add_and( 3, 5 ); // f3 = NOT f1 AND NOT f2
+   id_list.add_and( 2, 6 ); // f4 = f1 AND f3
+   id_list.add_output( 9 ); // NOT f4
 
-   result = v.validate( f3, {aig.get_node( f1 ), aig.get_node( f2 )}, {g, h}, true );
+   result = v.validate( f3, divs, id_list );
    if ( result && *result )
    {
-     std::cout << "f3 is equivalent to NOT((NOT f1 AND NOT f2) AND f1)\n";
+     std::cout << "f3 is equivalent to NOT(f1 AND (NOT f1 AND NOT f2))\n";
    }
 
 **Parameters**
@@ -66,18 +68,17 @@ The following code shows how to check functional equivalence of a root node to s
 
 **Validate with non-existing circuit**
 
-.. doxygenfunction:: mockturtle::circuit_validator::validate( signal const&, std::vector<node> const&, std::vector<gate> const&, bool )
-.. doxygenfunction:: mockturtle::circuit_validator::validate( node const&, std::vector<node> const&, std::vector<gate> const&, bool )
-.. doxygenfunction:: mockturtle::circuit_validator::validate( signal const&, iterator_type, iterator_type, std::vector<gate> const&, bool )
-.. doxygenfunction:: mockturtle::circuit_validator::validate( node const&, iterator_type, iterator_type, std::vector<gate> const&, bool )
+A not-yet-created circuit built on existing nodes in the network can be represented by an index list and a list of support nodes.
+The index list must be one of the classes implemented in :ref:`index_list`.
 
-.. doxygenstruct:: mockturtle::circuit_validator::gate
-   :members: fanins, type
-.. doxygenstruct:: mockturtle::circuit_validator::gate::fanin
-   :members: index, inverted
+.. doxygenfunction:: mockturtle::circuit_validator::validate( signal const&, std::vector<node> const&, index_list_type const&, bool )
+.. doxygenfunction:: mockturtle::circuit_validator::validate( node const&, std::vector<node> const&, index_list_type const&, bool )
+.. doxygenfunction:: mockturtle::circuit_validator::validate( signal const&, iterator_type, iterator_type, index_list_type const&, bool )
+.. doxygenfunction:: mockturtle::circuit_validator::validate( node const&, iterator_type, iterator_type, index_list_type const&, bool )
 
-**Updating**
+**Utilizing don't-cares**
 
+.. doxygenfunction:: mockturtle::circuit_validator::set_odc_levels
 .. doxygenfunction:: mockturtle::circuit_validator::update
 
 **Generate multiple patterns**

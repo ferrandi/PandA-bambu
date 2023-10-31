@@ -71,7 +71,6 @@
 #include "tree_node.hpp"                               // for function_decl
 #include "tree_reindex.hpp"
 #include <boost/iterator/iterator_facade.hpp> // for operator!=
-#include <boost/lexical_cast.hpp>             // for lexical_cast
 #include <boost/tuple/tuple.hpp>              // for tie
 #include <iostream>                           // for ios_base::fai...
 #include <utility>                            // for pair
@@ -91,7 +90,7 @@ FunctionFrontendFlowStep::FunctionFrontendFlowStep(const application_managerRef 
 
 FunctionFrontendFlowStep::~FunctionFrontendFlowStep() = default;
 
-const std::string FunctionFrontendFlowStep::GetSignature() const
+std::string FunctionFrontendFlowStep::GetSignature() const
 {
    return ComputeSignature(frontend_flow_step_type, function_id);
 }
@@ -99,11 +98,10 @@ const std::string FunctionFrontendFlowStep::GetSignature() const
 const std::string FunctionFrontendFlowStep::ComputeSignature(const FrontendFlowStepType frontend_flow_step_type,
                                                              const unsigned int function_id)
 {
-   return "Frontend::" + boost::lexical_cast<std::string>(frontend_flow_step_type) +
-          "::" + boost::lexical_cast<std::string>(function_id);
+   return "Frontend::" + STR(frontend_flow_step_type) + "::" + std::to_string(function_id);
 }
 
-const std::string FunctionFrontendFlowStep::GetName() const
+std::string FunctionFrontendFlowStep::GetName() const
 {
 #ifndef NDEBUG
    const std::string version = bb_version != 0 ? ("(" + STR(bb_version) + ")") : "";

@@ -42,18 +42,12 @@
  */
 
 /// Autoheader include
-#include "config_HAVE_FROM_CSV_BUILT.hpp"
-#include "config_HAVE_R.hpp"
-#include "config_HAVE_REGRESSORS_BUILT.hpp"
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
 #include "config_RELEASE.hpp"
 
 /// Constants include
 #include "constant_strings.hpp"
 #include "constants.hpp"
-#if HAVE_REGRESSORS_BUILT
-#include "regressors_constants.hpp"
-#endif
 
 /// Header include
 #include "SpiderParameter.hpp"
@@ -73,8 +67,6 @@
 #include "fileIO.hpp"
 #include "string_manipulation.hpp"
 #include "utility.hpp"
-
-#include <boost/algorithm/string/replace.hpp>
 
 /// PARAMETERS STUFF ***********************///
 #define INPUT_OPT_ACCURACY 256
@@ -102,10 +94,6 @@ void SpiderParameter::PrintHelp(std::ostream& os) const
       << "    --sequence_length               Specify the length of the sequences\n"
       << "    --sequence-length               Specify the length of the sequences\n"
       << "    --surviving-benchmarks=<number> Remove all but <number> benchmarks from the input (default=300)\n"
-      << "    --simulator, -t <simulator>     Specify the simulator used in model building:"
-      << "                                      diopsis (default)\n"
-      << "                                      tsim\n"
-      << "                                      simit\n"
       << "    --analysis-level=<value>        Set the analysis level for instructions sequences analysis (default=0): "
          "\n"
       << "                                      0: no analysis is performed;\n"
@@ -143,21 +131,12 @@ void SpiderParameter::PrintHelp(std::ostream& os) const
       << "     xml        xml files\n"
       << "\n"
       << "  Other options:\n"
-#if HAVE_R
-      << "     --cross-validation=<value>     The value of cross validiation fold\n"
-      << "     --minimum-significance         The minimum significance required for a regressor\n"
-#endif
       << "     --normalization-sequences      Sequences of transformations to be applied before building performance "
          "model; sequences can be composed of:\n"
       << "                                    'L' - remove pseudo-linear dependent benchmarks\n"
       << "                                    'M' - remove smallest and largest benchmarks\n"
       << "                                    'R' - remove smallest benchmarks\n"
-      << "                                    'S' - normalize benchmarks\n"
-#if HAVE_R
-      << "     --prediction-interval-value=<value>\n"
-      << "                                    The value of the prediction interval to be computed for each benchmark\n"
-#endif
-       ;
+      << "                                    'S' - normalize benchmarks\n";
 #if HAVE_TECHNOLOGY_BUILT
    os << "     --components=<value>           The components to be inserted in the list of functional units to be "
          "characterized (default=all).\n";
@@ -200,13 +179,7 @@ int SpiderParameter::Exec()
 #if HAVE_TECHNOLOGY_BUILT
       {"components", required_argument, nullptr, INPUT_OPT_COMPONENTS},
 #endif
-#if HAVE_R
-      {"cross-validation", required_argument, nullptr, INPUT_OPT_CROSS_VALIDATION},
-#endif
       {"input-format", required_argument, nullptr, 'I'},
-#if HAVE_R
-      {"minimum-significance", required_argument, nullptr, INPUT_OPT_MINIMUM_SIGNIFICANCE},
-#endif
       {"normalization-sequences", required_argument, nullptr, INPUT_OPT_NORMALIZATION_SEQUENCES},
       {"normalize", required_argument, nullptr, INPUT_OPT_NORMALIZATION_WEIGHT_FILE},
       {"output-format", required_argument, nullptr, 'O'},
@@ -275,13 +248,6 @@ int SpiderParameter::Exec()
             setOption(OPT_cross_validation, optarg);
             break;
          }
-#if HAVE_R
-         case INPUT_OPT_MINIMUM_SIGNIFICANCE:
-         {
-            setOption(OPT_minimum_significance, optarg);
-            break;
-         }
-#endif
          case INPUT_OPT_NORMALIZATION_SEQUENCES:
          {
             setOption(OPT_normalization_sequences, optarg);
@@ -292,13 +258,6 @@ int SpiderParameter::Exec()
             setOption(OPT_normalization_file, optarg);
             break;
          }
-#if HAVE_R
-         case INPUT_OPT_PREDICTION_INTERVAL_VALUE:
-         {
-            setOption(OPT_interval_level, optarg);
-            break;
-         }
-#endif
          case INPUT_OPT_SEQUENCE_LENGTH:
          {
             setOption(OPT_sequence_length, optarg);
@@ -357,16 +316,8 @@ void SpiderParameter::SetDefaults()
 #else
    setOption(OPT_debug_level, DEBUG_LEVEL_MINIMUM);
 #endif
-   setOption(OPT_dump_genlib, false);
-#if HAVE_REGRESSORS_BUILT
-   setOption(OPT_interval_level, NUM_CST_default_prediction_interval_value);
-#endif
    setOption(OPT_max_bound, INFINITE_LONG_DOUBLE);
    setOption(OPT_min_bound, 0);
-#if HAVE_R
-   setOption(OPT_maximum_error, 0.2);
-   setOption(OPT_minimum_significance, 0);
-#endif
    setOption(OPT_normalization_sequences, "S");
    setOption(OPT_output_directory, GetPath("."));
    /// Output level
@@ -394,24 +345,12 @@ void SpiderParameter::CheckParameters()
          temp = GetFileFormat(input_file, true);
          switch(temp)
          {
-#if HAVE_REGRESSORS_BUILT
-            case(Parameters_FileFormat::FF_XML_AGG):
-               setOption(OPT_aggregated_features, input_file);
-               break;
-#endif
             case(Parameters_FileFormat::FF_XML_TEX_TABLE):
                setOption(OPT_latex_format_file, input_file);
                break;
             case(Parameters_FileFormat::FF_XML_SKIP_ROW):
                setOption(OPT_skip_rows, input_file);
                break;
-#if HAVE_FROM_LIBERTY
-            case(Parameters_FileFormat::FF_XML_CELLS):
-            case(Parameters_FileFormat::FF_LIB):
-               setOption(OPT_input_liberty_library_file, input_file);
-               input_format = temp;
-               break;
-#endif
 #if HAVE_TECHNOLOGY_BUILT
             case(Parameters_FileFormat::FF_XML_TARGET):
             {
@@ -441,14 +380,6 @@ void SpiderParameter::CheckParameters()
             case(Parameters_FileFormat::FF_LLVM_CPP):
 #endif
             case(Parameters_FileFormat::FF_CSV):
-#if HAVE_FROM_CSV_BUILT
-            case(Parameters_FileFormat::FF_CSV_RTL):
-            case(Parameters_FileFormat::FF_CSV_TRE):
-#endif
-#if HAVE_EXPERIMENTAL
-            case(Parameters_FileFormat::FF_LOG):
-            case(Parameters_FileFormat::FF_PA):
-#endif
 #if HAVE_FROM_C_BUILT
             case(Parameters_FileFormat::FF_RAW):
 #endif
@@ -456,19 +387,9 @@ void SpiderParameter::CheckParameters()
             case(Parameters_FileFormat::FF_VERILOG):
             case(Parameters_FileFormat::FF_VHDL):
             case(Parameters_FileFormat::FF_XML):
-#if HAVE_FROM_ARCH_BUILT
-            case(Parameters_FileFormat::FF_XML_ARCHITECTURE):
-#endif
             case(Parameters_FileFormat::FF_XML_BAMBU_RESULTS):
 #if HAVE_HLS_BUILT
             case(Parameters_FileFormat::FF_XML_CON):
-#endif
-            case(Parameters_FileFormat::FF_XML_IP_XACT_COMPONENT):
-            case(Parameters_FileFormat::FF_XML_IP_XACT_CONFIG):
-            case(Parameters_FileFormat::FF_XML_IP_XACT_DESIGN):
-            case(Parameters_FileFormat::FF_XML_IP_XACT_GENERATOR):
-#if HAVE_SOURCE_CODE_STATISTICS_XML
-            case(Parameters_FileFormat::FF_XML_STAT):
 #endif
             case(Parameters_FileFormat::FF_XML_SYM_SIM):
 #if HAVE_TECHNOLOGY_BUILT
@@ -500,15 +421,6 @@ void SpiderParameter::CheckParameters()
       Parameters_FileFormat output_format = GetFileFormat(getOption<std::string>(OPT_output_format), false);
       setOption(OPT_output_format, static_cast<int>(output_format));
    }
-#if HAVE_FROM_LIBERTY
-   if(getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_XML_CELLS ||
-      getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LIB)
-   {
-      const auto input_files = getOption<const CustomSet<std::string>>(OPT_input_file);
-      if(!(input_files.size() == 1 || (input_files.size() == 2 && isOption(OPT_aggregated_features))))
-         THROW_ERROR("Only a liberty file required");
-   }
-#endif
 #if HAVE_TECHNOLOGY_BUILT
    for(const auto& input_file : getOption<const CustomSet<std::string>>(OPT_input_file))
    {

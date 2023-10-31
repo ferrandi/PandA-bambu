@@ -1,11 +1,7 @@
 /* Software floating-point emulation.
    Definitions for IEEE Single Precision.
-   Copyright (C) 1997-2018 Free Software Foundation, Inc.
+   Copyright (C) 1997-2023 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
-   Contributed by Richard Henderson (rth@cygnus.com),
-        Jakub Jelinek (jj@ultra.linux.cz),
-        David S. Miller (davem@redhat.com) and
-        Peter Maydell (pmaydell@chiark.greenend.org.uk).
 
    The GNU C Library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -28,7 +24,10 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
+
+#ifndef SOFT_FP_SINGLE_H
+#define SOFT_FP_SINGLE_H 1
 
 #if _FP_W_TYPE_SIZE < 32
 #error "Here's a nickel kid.  Go buy yourself a real computer."
@@ -67,6 +66,7 @@ typedef float SFtype __attribute__((mode(SF)));
 union _FP_UNION_S
 {
    SFtype flt;
+   unsigned coded;
    struct _FP_STRUCT_LAYOUT
    {
 #if __BYTE_ORDER == __BIG_ENDIAN
@@ -74,83 +74,80 @@ union _FP_UNION_S
       unsigned exp : _FP_EXPBITS_S;
       unsigned frac : _FP_FRACBITS_S - (_FP_IMPLBIT_S != 0);
 #else
-      unsigned int coded;
+      unsigned frac : _FP_FRACBITS_S - (_FP_IMPLBIT_S != 0);
+      unsigned exp : _FP_EXPBITS_S;
+      unsigned sign : 1;
 #endif
-   } bits __attribute__((packed));
+   } bits;
 };
 
-#define FP_DECL_S(X)                             \
-   unsigned char X##_c __attribute__((unused));  \
-   _Bool X##_s __attribute__((unused));          \
-   unsigned short X##_e __attribute__((unused)); \
-   _FP_FRAC_DECL_1(X)
-//#define FP_DECL_S(X)		_FP_DECL (1, X)
-#define FP_UNPACK_RAW_S(X, val) _FP_UNPACK_RAW_1(S, X, val)
-#define FP_UNPACK_RAW_SP(X, val) _FP_UNPACK_RAW_1_P(S, X, val)
-#define FP_PACK_RAW_S(val, X) _FP_PACK_RAW_1(S, val, X)
-#define FP_PACK_RAW_SP(val, X)        \
-   do                                 \
-   {                                  \
-      if(!FP_INHIBIT_RESULTS)         \
-         _FP_PACK_RAW_1_P(S, val, X); \
+#define FP_DECL_S(X) _FP_DECL(1, X)
+#define FP_UNPACK_RAW_S(X, val) _FP_UNPACK_RAW_1(S, X, (val))
+#define FP_UNPACK_RAW_SP(X, val) _FP_UNPACK_RAW_1_P(S, X, (val))
+#define FP_PACK_RAW_S(val, X) _FP_PACK_RAW_1(S, (val), X)
+#define FP_PACK_RAW_SP(val, X)          \
+   do                                   \
+   {                                    \
+      if(!FP_INHIBIT_RESULTS)           \
+         _FP_PACK_RAW_1_P(S, (val), X); \
    } while(0)
 
 #define FP_UNPACK_S(X, val)          \
    do                                \
    {                                 \
-      _FP_UNPACK_RAW_1(S, X, val);   \
+      _FP_UNPACK_RAW_1(S, X, (val)); \
       _FP_UNPACK_CANONICAL(S, 1, X); \
    } while(0)
 
-#define FP_UNPACK_SP(X, val)         \
-   do                                \
-   {                                 \
-      _FP_UNPACK_RAW_1_P(S, X, val); \
-      _FP_UNPACK_CANONICAL(S, 1, X); \
+#define FP_UNPACK_SP(X, val)           \
+   do                                  \
+   {                                   \
+      _FP_UNPACK_RAW_1_P(S, X, (val)); \
+      _FP_UNPACK_CANONICAL(S, 1, X);   \
    } while(0)
 
-#define FP_UNPACK_SEMIRAW_S(X, val) \
-   do                               \
-   {                                \
-      _FP_UNPACK_RAW_1(S, X, val);  \
-      _FP_UNPACK_SEMIRAW(S, 1, X);  \
-   } while(0)
-
-#define FP_UNPACK_SEMIRAW_SP(X, val) \
+#define FP_UNPACK_SEMIRAW_S(X, val)  \
    do                                \
    {                                 \
-      _FP_UNPACK_RAW_1_P(S, X, val); \
+      _FP_UNPACK_RAW_1(S, X, (val)); \
       _FP_UNPACK_SEMIRAW(S, 1, X);   \
+   } while(0)
+
+#define FP_UNPACK_SEMIRAW_SP(X, val)   \
+   do                                  \
+   {                                   \
+      _FP_UNPACK_RAW_1_P(S, X, (val)); \
+      _FP_UNPACK_SEMIRAW(S, 1, X);     \
    } while(0)
 
 #define FP_PACK_S(val, X)          \
    do                              \
    {                               \
       _FP_PACK_CANONICAL(S, 1, X); \
-      _FP_PACK_RAW_1(S, val, X);   \
+      _FP_PACK_RAW_1(S, (val), X); \
    } while(0)
 
-#define FP_PACK_SP(val, X)            \
-   do                                 \
-   {                                  \
-      _FP_PACK_CANONICAL(S, 1, X);    \
-      if(!FP_INHIBIT_RESULTS)         \
-         _FP_PACK_RAW_1_P(S, val, X); \
+#define FP_PACK_SP(val, X)              \
+   do                                   \
+   {                                    \
+      _FP_PACK_CANONICAL(S, 1, X);      \
+      if(!FP_INHIBIT_RESULTS)           \
+         _FP_PACK_RAW_1_P(S, (val), X); \
    } while(0)
 
-#define FP_PACK_SEMIRAW_S(val, X) \
-   do                             \
-   {                              \
-      _FP_PACK_SEMIRAW(S, 1, X);  \
-      _FP_PACK_RAW_1(S, val, X);  \
+#define FP_PACK_SEMIRAW_S(val, X)  \
+   do                              \
+   {                               \
+      _FP_PACK_SEMIRAW(S, 1, X);   \
+      _FP_PACK_RAW_1(S, (val), X); \
    } while(0)
 
-#define FP_PACK_SEMIRAW_SP(val, X)    \
-   do                                 \
-   {                                  \
-      _FP_PACK_SEMIRAW(S, 1, X);      \
-      if(!FP_INHIBIT_RESULTS)         \
-         _FP_PACK_RAW_1_P(S, val, X); \
+#define FP_PACK_SEMIRAW_SP(val, X)      \
+   do                                   \
+   {                                    \
+      _FP_PACK_SEMIRAW(S, 1, X);        \
+      if(!FP_INHIBIT_RESULTS)           \
+         _FP_PACK_RAW_1_P(S, (val), X); \
    } while(0)
 
 #define FP_ISSIGNAN_S(X) _FP_ISSIGNAN(S, 1, X)
@@ -160,7 +157,7 @@ union _FP_UNION_S
 #define FP_MUL_S(R, X, Y) _FP_MUL(S, 1, R, X, Y)
 #define FP_DIV_S(R, X, Y) _FP_DIV(S, 1, R, X, Y)
 #define FP_SQRT_S(R, X) _FP_SQRT(S, 1, R, X)
-#define _FP_SQRT_MEAT_S(R, S, T, X, Q) _FP_SQRT_MEAT_1(R, S, T, X, Q)
+#define _FP_SQRT_MEAT_S(R, S, T, X, Q) _FP_SQRT_MEAT_1(R, S, T, X, (Q))
 
 #if _FP_W_TYPE_SIZE < 64
 #define FP_FMA_S(R, X, Y, Z) _FP_FMA(S, 1, 2, R, X, Y, Z)
@@ -168,12 +165,13 @@ union _FP_UNION_S
 #define FP_FMA_S(R, X, Y, Z) _FP_FMA(S, 1, 1, R, X, Y, Z)
 #endif
 
-#define FP_CMP_S(r, X, Y, un) _FP_CMP(S, 1, r, X, Y, un)
-#define FP_CMP_EQ_S(r, X, Y) _FP_CMP_EQ(S, 1, r, X, Y)
-#define FP_CMP_UNORD_S(r, X, Y) _FP_CMP_UNORD(S, 1, r, X, Y)
+#define FP_CMP_S(r, X, Y, un, ex) _FP_CMP(S, 1, (r), X, Y, (un), (ex))
+#define FP_CMP_EQ_S(r, X, Y, ex) _FP_CMP_EQ(S, 1, (r), X, Y, (ex))
+#define FP_CMP_UNORD_S(r, X, Y, ex) _FP_CMP_UNORD(S, 1, (r), X, Y, (ex))
 
-#define FP_TO_INT_S(r, X, rsz, rsg) _FP_TO_INT(S, 1, r, X, rsz, rsg)
-#define FP_FROM_INT_S(X, r, rs, rt) _FP_FROM_INT(S, 1, X, r, rs, rt)
+#define FP_TO_INT_S(r, X, rsz, rsg) _FP_TO_INT(S, 1, (r), X, (rsz), (rsg))
+#define FP_TO_INT_ROUND_S(r, X, rsz, rsg) _FP_TO_INT_ROUND(S, 1, (r), X, (rsz), (rsg))
+#define FP_FROM_INT_S(X, r, rs, rt) _FP_FROM_INT(S, 1, X, (r), (rs), rt)
 
 #define _FP_FRAC_HIGH_S(X) _FP_FRAC_HIGH_1(X)
 #define _FP_FRAC_HIGH_RAW_S(X) _FP_FRAC_HIGH_1(X)
@@ -183,3 +181,5 @@ union _FP_UNION_S
 #else
 #define _FP_FRAC_HIGH_DW_S(X) _FP_FRAC_HIGH_1(X)
 #endif
+
+#endif /* !SOFT_FP_SINGLE_H */

@@ -62,7 +62,7 @@
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
 /// HLS includes
 #include "hls.hpp"
 #include "hls_manager.hpp"
@@ -101,7 +101,7 @@ simple_code_motion::simple_code_motion(const ParameterConstRef _parameters, cons
       restart_ifmwi_opt(false),
       schedule(ScheduleRef()),
       conservative(
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
           (parameters->IsParameter("enable-conservative-sdc") &&
            parameters->GetParameter<bool>("enable-conservative-sdc") &&
            parameters->isOption(OPT_scheduling_algorithm) and
@@ -134,9 +134,6 @@ simple_code_motion::ComputeFrontendRelationships(const DesignFlowStep::Relations
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
-         relationships.insert(std::make_pair(CHECK_CRITICAL_SESSION, SAME_FUNCTION));
-#endif
 #if HAVE_ILP_BUILT
          relationships.insert(std::make_pair(SDC_CODE_MOTION, SAME_FUNCTION));
 #endif
@@ -166,7 +163,7 @@ simple_code_motion::ComputeFrontendRelationships(const DesignFlowStep::Relations
 
 void simple_code_motion::Initialize()
 {
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
    if(GetPointer<const HLS_manager>(AppM) && GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) &&
       GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
    {
@@ -189,13 +186,8 @@ void simple_code_motion::Initialize()
 #endif
 }
 
-FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned int
-#if(HAVE_BAMBU_BUILT) || !defined(NDEBUG)
-                                                                      bb_index
-#endif
-                                                                  ,
-                                                                  tree_nodeRef tn, bool& zero_delay,
-                                                                  const tree_managerRef TM)
+FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned int bb_index, tree_nodeRef tn,
+                                                                  bool& zero_delay, const tree_managerRef TM)
 {
    if(AppM->CGetFunctionBehavior(function_id)->is_simple_pipeline())
    {
@@ -252,7 +244,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
    }
 
    /// If we have the ending time information use it
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
    if(schedule)
    {
       auto movable = schedule->CanBeMoved(ga->index, bb_index);
@@ -970,46 +962,15 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                                                                FunctionFrontendFlowStep_Movable::MOVABLE))
                {
                   THROW_ASSERT(bb_dominator_map.find(bb_vertex) != bb_dominator_map.end(), "unexpected condition");
-#if HAVE_EXPERIMENTAL
-                  std::map<std::pair<unsigned int, blocRef>, std::pair<unsigned int, blocRef>> dom_diff;
-                  vertex curr_dom_bb = bb_dominator_map.find(bb_vertex)->second;
-                  loop_pipelined(*statement, TM, curr_bb, list_of_bloc.at(curr_bb)->loop_id, to_be_removed,
-                                 to_be_added_back, to_be_added_front, list_of_bloc, dom_diff,
-                                 direct_vertex_map[curr_dom_bb]);
-                  const std::map<std::pair<unsigned int, blocRef>, std::pair<unsigned int, blocRef>>::const_iterator
-                      dd_it_end = dom_diff.end();
-                  for(std::map<std::pair<unsigned int, blocRef>, std::pair<unsigned int, blocRef>>::const_iterator
-                          dd_it = dom_diff.begin();
-                      dd_it != dd_it_end; ++dd_it)
-                  {
-                     if(inverse_vertex_map.find(dd_it->first.first) == inverse_vertex_map.end())
-                     {
-                        inverse_vertex_map[dd_it->first.first] =
-                            GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(dd_it->first.second)));
-                        direct_vertex_map[inverse_vertex_map[dd_it->first.first]] = dd_it->first.first;
-                        bb_sorted_vertices.push_back(inverse_vertex_map[dd_it->first.first]);
-                     }
-                     if(inverse_vertex_map.find(dd_it->second.first) == inverse_vertex_map.end())
-                     {
-                        inverse_vertex_map[dd_it->second.first] =
-                            GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(dd_it->second.second)));
-                        direct_vertex_map[inverse_vertex_map[dd_it->second.first]] = dd_it->second.first;
-                        bb_sorted_vertices.push_back(inverse_vertex_map[dd_it->second.first]);
-                     }
-                     vertex dd_curr_vertex = inverse_vertex_map[dd_it->first.first];
-                     curr_dom_bb = inverse_vertex_map[dd_it->second.first];
-                     bb_dominator_map[dd_curr_vertex] = curr_dom_bb;
-                  }
-#endif
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "<--Skipped because uses ssa defined in the same block");
                continue;
             }
             if((gn->vuses.size() || (GetPointer<gimple_assign>(tn) &&
-                                     GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K))
-               // && (!schedule)
-               && !isFunctionPipelined && !parallel_bb)
+                                     (GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == call_expr_K ||
+                                      GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K))) &&
+               !isFunctionPipelined && !parallel_bb)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of vuses");
                continue; /// load cannot be code moved
@@ -1390,31 +1351,6 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
 
    modified ? function_behavior->UpdateBBVersion() : 0;
    return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
-}
-
-bool simple_code_motion::HasToBeExecuted() const
-{
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
-   if(parameters->getOption<bool>(OPT_parse_pragma))
-   {
-#if HAVE_EXPERIMENTAL
-      /// If unroll loop has not yet been executed skip simple code motion
-      const auto unroll_loops = design_flow_manager.lock()->GetDesignFlowStep(
-          FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::UNROLL_LOOPS, function_id));
-      if(unroll_loops)
-      {
-         const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const DesignFlowStepRef design_flow_step =
-             design_flow_graph->CGetDesignFlowStepInfo(unroll_loops)->design_flow_step;
-         if(GetPointer<const FunctionFrontendFlowStep>(design_flow_step)->CGetBBVersion() == 0)
-         {
-            return false;
-         }
-      }
-#endif
-   }
-#endif
-   return FunctionFrontendFlowStep::HasToBeExecuted();
 }
 
 bool simple_code_motion::IsScheduleBased() const

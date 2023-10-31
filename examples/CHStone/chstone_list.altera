@@ -1,0 +1,14 @@
+adpcm/adpcm.c ../constraints/altera/adpcm_constraints.O3.xml
+aes/aes.c
+blowfish/bf.c
+dfadd/dfadd.c
+dfdiv/dfdiv.c --benchmark-name=dfdiv
+dfdiv/dfdiv.c --benchmark-name=dfdiv_hls_div --hls-div=NR
+dfmul/dfmul.c
+dfsin/dfsin.c --benchmark-name=dfsin
+dfsin/dfsin.c --benchmark-name=dfsin_hls_div --hls-div=NR
+gsm/gsm.c
+jpeg/main.c --benchmark-name=jpeg -fno-tree-pre
+mips/mips.c
+motion/mpeg2.c
+sha/sha_driver.c

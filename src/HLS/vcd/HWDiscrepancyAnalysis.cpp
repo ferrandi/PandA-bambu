@@ -33,39 +33,35 @@
 /**
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
-
-// include class header
 #include "HWDiscrepancyAnalysis.hpp"
 
 #include "config_HAVE_ASSERTS.hpp"
 
-// include from ./
+#include "Discrepancy.hpp"
 #include "Parameter.hpp"
-
-// include from behavior/
 #include "basic_block.hpp"
+#include "behavioral_helper.hpp"
+#include "c_backend_information.hpp"
 #include "call_graph_manager.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "fileIO.hpp"
 #include "function_behavior.hpp"
-
-// includes from design_flows/backend/ToHDL
-#include "language_writer.hpp"
-
-// include from HLS/
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
-
-// include from HLS/stg/
+#include "language_writer.hpp"
+#include "parse_discrepancy.hpp"
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
+#include "string_manipulation.hpp"
+#include "structural_manager.hpp"
+#include "tree_basic_block.hpp"
+#include "tree_helper.hpp"
 
-// include from HLS/vcd/
-#include "Discrepancy.hpp"
+#include <boost/algorithm/string/case_conv.hpp>
+#include <boost/tokenizer.hpp>
 
-// include from parser/discrepancy/
-#include "parse_discrepancy.hpp"
-
-/// STD include
 #include <algorithm>
 #include <limits>
 #include <list>
@@ -73,20 +69,6 @@
 #include <tuple>
 #include <utility>
 #include <vector>
-
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-
-// include from tree/
-#include "behavioral_helper.hpp"
-#include "fileIO.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-#include "structural_manager.hpp"
-#include "tree_basic_block.hpp"
-#include "tree_helper.hpp"
-
-#include <boost/algorithm/string/case_conv.hpp>
-#include <boost/tokenizer.hpp>
 
 /// MAX metadata bit size
 #define MAX_METADATA_BITSIZE 10
@@ -114,8 +96,13 @@ HWDiscrepancyAnalysis::ComputeHLSRelationships(const DesignFlowStep::Relationshi
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::C_TESTBENCH_EXECUTION, HLSFlowStepSpecializationConstRef(),
-                                    HLSFlowStep_Relationship::TOP_FUNCTION));
+         ret.insert(std::make_tuple(
+             HLSFlowStep_Type::C_TESTBENCH_EXECUTION,
+             HLSFlowStepSpecializationConstRef(new CBackendInformation(
+                 CBackendInformation::CB_DISCREPANCY_ANALYSIS,
+                 parameters->getOption<std::string>(OPT_output_directory) + "/simulation/discrepancy.c",
+                 parameters->getOption<std::string>(OPT_output_directory) + "/simulation/dynamic_discrepancy_stats")),
+             HLSFlowStep_Relationship::TOP_FUNCTION));
          ret.insert(std::make_tuple(HLSFlowStep_Type::CALL_GRAPH_UNFOLDING, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::TOP_FUNCTION));
          ret.insert(std::make_tuple(HLSFlowStep_Type::HW_PATH_COMPUTATION, HLSFlowStepSpecializationConstRef(),
@@ -136,16 +123,18 @@ HWDiscrepancyAnalysis::ComputeHLSRelationships(const DesignFlowStep::Relationshi
    return ret;
 }
 
+bool HWDiscrepancyAnalysis::HasToBeExecuted() const
+{
+   return true;
+}
+
 DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
 {
    THROW_ASSERT(Discr, "Discr data structure is not correctly initialized");
    // parse the file containing the C traces
-   {
-      const std::string& ctrace_filename = Discr->c_trace_filename;
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Parsing C trace: " + ctrace_filename);
-      parse_discrepancy(ctrace_filename, Discr);
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Parsed C trace: " + ctrace_filename);
-   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Parsing C trace: " + Discr->c_trace_filename);
+   parse_discrepancy(Discr->c_trace_filename, Discr);
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Parsed C trace: " + Discr->c_trace_filename);
 #ifndef NDEBUG
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Printing parsed C control flow trace");
@@ -434,7 +423,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       // state_of_the_art memory usage
       {
          std::string vendor;
-         const auto tgt_device = HLSMgr->get_HLS_target()->get_target_device();
+         const auto tgt_device = HLSMgr->get_HLS_device();
          if(tgt_device->has_parameter("vendor"))
          {
             vendor = tgt_device->get_parameter<std::string>("vendor");
@@ -786,8 +775,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       const size_t trace_len =
           i.second.size() + 1; // use one entry more in the trace to avoid ever accessing out of bounds
       const size_t metadata_word_size = scope_to_best_metadata_bits.at(scope);
-      auto data_word_size =
-          boost::lexical_cast<size_t>(GetPointer<module>(curr_module)->GetParameter("EPP_TRACE_BITSIZE"));
+      auto data_word_size = std::stoul(GetPointer<module>(curr_module)->GetParameter("EPP_TRACE_BITSIZE"));
       if((Discr->hw_discrepancy_info->fu_id_to_max_epp_path_val.at(f_id) + 1) == (1ULL << data_word_size))
       {
          data_word_size++;
@@ -884,10 +872,6 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-bool HWDiscrepancyAnalysis::HasToBeExecuted() const
-{
-   return true;
-}
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #pragma GCC diagnostic pop
 #endif

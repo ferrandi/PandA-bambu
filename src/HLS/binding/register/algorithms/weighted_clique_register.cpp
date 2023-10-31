@@ -42,7 +42,7 @@
  */
 #include "weighted_clique_register.hpp"
 
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
 
 #include "check_clique.hpp"
 #include "clique_covering.hpp"
@@ -74,12 +74,12 @@ WeightedCliqueRegisterBindingSpecialization::WeightedCliqueRegisterBindingSpecia
 {
 }
 
-const std::string WeightedCliqueRegisterBindingSpecialization::GetKindText() const
+std::string WeightedCliqueRegisterBindingSpecialization::GetKindText() const
 {
    return CliqueCovering_AlgorithmToString(clique_covering_algorithm);
 }
 
-const std::string WeightedCliqueRegisterBindingSpecialization::GetSignature() const
+std::string WeightedCliqueRegisterBindingSpecialization::GetSignature() const
 {
    return STR(static_cast<unsigned int>(clique_covering_algorithm));
 }
@@ -128,6 +128,21 @@ DesignFlowStep_Status weighted_clique_register::RegisterBinding()
    }
    if(vertex_index > 0)
    {
+      if(clique_covering_algorithm == CliqueCovering_Algorithm::BIPARTITE_MATCHING)
+      {
+         const std::list<vertex>& support = HLS->Rliv->get_support();
+         unsigned current_partition = 0;
+         for(auto vState : support)
+         {
+            const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(vState);
+            for(auto l : live)
+            {
+               unsigned int sv = HLS->storage_value_information->get_storage_value_index(vState, l);
+               register_clique->add_subpartitions(current_partition, verts[sv]);
+            }
+            ++current_partition;
+         }
+      }
       HLS->Rreg->set_used_regs(num_registers);
       BOOST_FOREACH(compatibility_graph::edge_descriptor e, boost::edges(*CG))
       {
@@ -139,9 +154,9 @@ DesignFlowStep_Status weighted_clique_register::RegisterBinding()
       {
          const auto functionName = FB->CGetBehavioralHelper()->get_function_name();
          const auto output_directory = parameters->getOption<std::string>(OPT_dot_directory) + "/" + functionName + "/";
-         if(!boost::filesystem::exists(output_directory))
+         if(!std::filesystem::exists(output_directory))
          {
-            boost::filesystem::create_directories(output_directory);
+            std::filesystem::create_directories(output_directory);
          }
          const auto file_name = output_directory + "HLS_RegisterBinding.dot";
          register_clique->writeDot(file_name);

@@ -7,9 +7,7 @@ lib_data_xml_parser_la_CPPFLAGS = \
    -I$(top_srcdir)/src/ \
    -I$(top_srcdir)/src/constants \
    -I$(top_srcdir)/src/parser/polixml \
-   -I$(top_srcdir)/src/parser/rtlgcc \
    -I$(top_srcdir)/src/polixml \
-   -I$(top_srcdir)/src/rtl \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)

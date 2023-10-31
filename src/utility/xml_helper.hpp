@@ -43,11 +43,12 @@
 #ifndef XML_HELPER_HPP
 #define XML_HELPER_HPP
 
+#include "string_manipulation.hpp"
 #include <boost/lexical_cast.hpp>
 #include <boost/typeof/typeof.hpp> // for BOOST_TYPEOF_TPL
 
 /// WRITE XML Value Macro. Insert a value in an XML tree.
-#define WRITE_XVM(variable, node) (node)->set_attribute(#variable, boost::lexical_cast<std::string>(variable))
+#define WRITE_XVM(variable, node) (node)->set_attribute(#variable, STR(variable))
 
 /// WRITE XML Name Value Macro. Insert a value in an XML tree given the name of the attribute. The name is converted in
 /// a string.
@@ -58,8 +59,7 @@
 
 /// WRITE XML Name Value Macro third version. Insert a value in an XML tree given the name of the attribute; it sets the
 /// attribute with "value" field. It adds a child to node with variable name
-#define WRITE_VALUE(variable, node) \
-   WRITE_XNVM(value, boost::lexical_cast<std::string>(variable), (node)->add_child(#variable))
+#define WRITE_VALUE(variable, node) WRITE_XNVM(value, STR(variable), (node)->add_child(#variable))
 
 /// LOAD XML Value Macro. Set a variable starting from an XML value. Conversion is performed if needed.
 #define LOAD_XVM(variable, node) \
@@ -80,7 +80,7 @@
 
 /// LOAD XML Value Macro. Set a variable starting from an XML attribute composed of name and value.
 /// Conversion is performed if needed.
-#define GET_STRING_VALUE(node) boost::lexical_cast<std::string>((node)->get_attribute("value")->get_value())
+#define GET_STRING_VALUE(node) STR((node)->get_attribute("value")->get_value())
 
 #define GET_NODE_NAME(node) ((node)->get_name())
 

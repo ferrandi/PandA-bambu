@@ -53,8 +53,9 @@ OpenModuleGenerator::OpenModuleGenerator(const HLS_managerRef& _HLSMgr) : Regist
 {
 }
 
-void OpenModuleGenerator::InternalExec(std::ostream& out, const module* /* mod */, unsigned int /* function_id */,
-                                       vertex /* op_v */, const HDLWriter_Language /* language */,
+void OpenModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */,
+                                       unsigned int /* function_id */, vertex /* op_v */,
+                                       const HDLWriter_Language /* language */,
                                        const std::vector<ModuleGenerator::parameter>& /* _p */,
                                        const std::vector<ModuleGenerator::parameter>& /* _ports_in */,
                                        const std::vector<ModuleGenerator::parameter>& /* _ports_out */,
@@ -91,9 +92,9 @@ void OpenModuleGenerator::InternalExec(std::ostream& out, const module* /* mod *
                               modes + " & " + STR(O_WRONLY) + ") != 0 ? \"wb\" : \"rb\"" + "))";
 
    const auto fsm =
-       "  reg [nbits_buffer-1:0] _present_index 1INIT_ZERO_VALUE;\n"
+       "  reg [nbits_buffer-1:0] _present_index;\n"
        "  reg [nbits_buffer-1:0] _next_index;\n"
-       "  reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer 1INIT_ZERO_VALUE;\n"
+       "  reg [BITSIZE_Mout_addr_ram-1:0] _present_pointer;\n"
        "  reg [BITSIZE_Mout_addr_ram-1:0] _next_pointer;\n"
        "  reg done_port;\n"
        "  reg signed [BITSIZE_out1-1:0] temp_out1;\n"
@@ -211,7 +212,7 @@ void OpenModuleGenerator::InternalExec(std::ostream& out, const module* /* mod *
        "             done_port = 1'b1;\n"
        "             _next_state = S_0;\n"
        "           end\n"
-       "      endcase\n "
+       "      endcase\n"
        "  end\n";
 
    out << fsm;

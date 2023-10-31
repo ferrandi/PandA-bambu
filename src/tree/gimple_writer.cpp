@@ -47,7 +47,6 @@
 #include "custom_map.hpp"                     // for unordered_map<>:...
 #include <algorithm>                          // for transform
 #include <boost/algorithm/string/replace.hpp> // for replace_all
-#include <boost/lexical_cast.hpp>             // for lexical_cast
 #include <cctype>                             // for toupper
 #include <cstddef>                            // for size_t
 #include <string>                             // for string, operator+
@@ -762,8 +761,7 @@ void GimpleWriter::operator()(const type_node* obj, unsigned int& mask)
          }
          else
          {
-            THROW_ERROR(std::string("Node not yet supported: ") + obj->get_kind_text() + " with alignment " +
-                        STR(obj->algn));
+            os << "_BitInt(" << obj->algn << ")";
          }
       }
       else if(obj_type == boolean_type_K)
@@ -828,8 +826,7 @@ void GimpleWriter::operator()(const array_type* obj, unsigned int& mask)
    if(array_length->get_kind() == integer_cst_K)
    {
       const auto tn = GetPointer<type_node>(array_element);
-      os << boost::lexical_cast<std::string>(tree_helper::GetConstValue(obj->size) /
-                                             tree_helper::GetConstValue(tn->size));
+      os << STR(tree_helper::GetConstValue(obj->size) / tree_helper::GetConstValue(tn->size));
    }
 
    os << "]";

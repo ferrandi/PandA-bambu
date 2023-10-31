@@ -47,34 +47,25 @@
  */
 
 #include "WB4_interface.hpp"
-
-#include "application_manager.hpp"
-
-#include "behavioral_helper.hpp"
-
-#include "hls.hpp"
-#include "hls_constraints.hpp"
-#include "hls_manager.hpp"
-#include "hls_target.hpp"
-
 #include "HDL_manager.hpp"
 #include "Parameter.hpp"
+#include "application_manager.hpp"
+#include "behavioral_helper.hpp"
+#include "copyrights_strings.hpp"
+#include "hls.hpp"
+#include "hls_constraints.hpp"
+#include "hls_device.hpp"
+#include "hls_manager.hpp"
 #include "language_writer.hpp"
 #include "memory.hpp"
 #include "memory_allocation.hpp"
-
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
-
 #include "technology_manager.hpp"
+#include "technology_node.hpp"
 #include "technology_wishbone.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-
-/// technology/physical_library include
-#include "technology_node.hpp"
-
-#include "copyrights_strings.hpp"
 
 WB4_interface::WB4_interface(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId,
                              const DesignFlowManagerConstRef _design_flow_manager,
@@ -368,11 +359,6 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
    connect_with_signal_name(SM, wrappedObj, DONE_PORT_NAME, interfaceObj, WB_IRQ_PORT_NAME,
                             STR(DONE_PORT_NAME) + "_INT");
 
-   structural_objectRef constBitZero = SM->add_module_from_technology_library(
-       "constBitZero", CONSTANT_STD, LIBRARY_STD, interfaceObj, HLS->HLS_T->get_technology_manager());
-   constBitZero->SetParameter("value", "1'b0");
-   connect_with_signal(SM, wrappedObj, START_PORT_NAME, constBitZero, "out1");
-
    auto data_bus_bitsize = get_data_bus_bitsize();
    auto addr_bus_bitsize = get_addr_bus_bitsize();
 
@@ -396,7 +382,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
       connect_with_signal(SM, Mout_we_ram_port, interfaceObj->find_member(WB_WEOM_PORT_NAME, port_o_K, interfaceObj));
 
       structural_objectRef orGateReWe = SM->add_module_from_technology_library(
-          "orGateReWe", OR_GATE_STD, LIBRARY_STD, interfaceObj, HLS->HLS_T->get_technology_manager());
+          "orGateReWe", OR_GATE_STD, LIBRARY_STD, interfaceObj, HLS->HLS_D->get_technology_manager());
 
       structural_objectRef port_objReWe = orGateReWe->find_member("in", port_o_K, orGateReWe);
       auto* in_portReWe = GetPointer<port_o>(port_objReWe);
@@ -406,13 +392,13 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
       connect_with_signal(SM, Mout_oe_ram_port, in_portReWe->get_port(1));
 
       structural_objectRef notGateSTB = SM->add_module_from_technology_library(
-          "notGateSTB", NOT_GATE_STD, LIBRARY_STD, interfaceObj, HLS->HLS_T->get_technology_manager());
+          "notGateSTB", NOT_GATE_STD, LIBRARY_STD, interfaceObj, HLS->HLS_D->get_technology_manager());
 
       SM->add_connection(interfaceObj->find_member(WB_ACKIM_PORT_NAME, port_o_K, interfaceObj),
                          notGateSTB->find_member("in1", port_o_K, notGateSTB));
 
       structural_objectRef andGateSTB = SM->add_module_from_technology_library(
-          "andGateSTB", AND_GATE_STD, LIBRARY_STD, interfaceObj, HLS->HLS_T->get_technology_manager());
+          "andGateSTB", AND_GATE_STD, LIBRARY_STD, interfaceObj, HLS->HLS_D->get_technology_manager());
 
       structural_objectRef port_objAndSTB = andGateSTB->find_member("in", port_o_K, andGateSTB);
       auto* in_portAndSTB = GetPointer<port_o>(port_objAndSTB);
@@ -430,7 +416,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Adding addressRangeChecker");
          structural_objectRef addressRangeChecker =
              SM->add_module_from_technology_library("addressRangeChecker", ADDRESS_RANGE_CHECKER_WB, WBLIBRARY,
-                                                    interfaceObj, HLS->HLS_T->get_technology_manager());
+                                                    interfaceObj, HLS->HLS_D->get_technology_manager());
 
          structural_objectRef arcAddress = addressRangeChecker->find_member("address", port_o_K, addressRangeChecker);
          GetPointer<port_o>(arcAddress)->set_type(addr_type);
@@ -444,7 +430,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
          GetPointer<port_o>(arcMaxAddress)->set_type(addr_type);
 
          structural_objectRef constBaseAddress = SM->add_module_from_technology_library(
-             "const_base_address", CONSTANT_STD, LIBRARY_STD, interfaceObj, HLS->HLS_T->get_technology_manager());
+             "const_base_address", CONSTANT_STD, LIBRARY_STD, interfaceObj, HLS->HLS_D->get_technology_manager());
 
          structural_objectRef constBaseAddressOut1 = constBaseAddress->find_member("out1", port_o_K, constBaseAddress);
          GetPointer<port_o>(constBaseAddressOut1)->set_type(addr_type);
@@ -453,7 +439,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
          connect_with_signal(SM, addressRangeChecker, "base", constBaseAddress, "out1");
 
          structural_objectRef constMaxAddress = SM->add_module_from_technology_library(
-             "const_max_address", CONSTANT_STD, LIBRARY_STD, interfaceObj, HLS->HLS_T->get_technology_manager());
+             "const_max_address", CONSTANT_STD, LIBRARY_STD, interfaceObj, HLS->HLS_D->get_technology_manager());
 
          structural_objectRef constMaxAddressOut1 = constMaxAddress->find_member("out1", port_o_K, constMaxAddress);
          GetPointer<port_o>(constMaxAddressOut1)->set_type(addr_type);
@@ -464,7 +450,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
 
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Adding control signal");
          structural_objectRef internalNotGate = SM->add_module_from_technology_library(
-             "internalNotGate", NOT_GATE_STD, LIBRARY_STD, interfaceObj, HLS->HLS_T->get_technology_manager());
+             "internalNotGate", NOT_GATE_STD, LIBRARY_STD, interfaceObj, HLS->HLS_D->get_technology_manager());
          connect_with_signal_name(SM, addressRangeChecker, "isInRange", internalNotGate, "in1", "internal");
          structural_objectRef signNotInternal =
              SM->add_sign("notInternal", SM->get_circ(),
@@ -473,7 +459,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
          if(!only_mm_parameters_allocated)
          {
             structural_objectRef orGateControl = SM->add_module_from_technology_library(
-                "orGateControl", OR_GATE_STD, LIBRARY_STD, interfaceObj, HLS->HLS_T->get_technology_manager());
+                "orGateControl", OR_GATE_STD, LIBRARY_STD, interfaceObj, HLS->HLS_D->get_technology_manager());
             structural_objectRef port_objControl = orGateControl->find_member("in", port_o_K, orGateControl);
             auto* in_portControl = GetPointer<port_o>(port_objControl);
             in_portControl->add_n_ports(2, port_objControl);
@@ -502,7 +488,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
                PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Adding delayed mux control logic");
                structural_objectRef internalNotGate_delayed =
                    SM->add_module_from_technology_library("internalNotGate_delayed", NOT_INTERNAL_COMPONENT, WBLIBRARY,
-                                                          interfaceObj, HLS->HLS_T->get_technology_manager());
+                                                          interfaceObj, HLS->HLS_D->get_technology_manager());
 
                connect_with_signal_name(SM, addressRangeChecker, "isInRange", internalNotGate_delayed, "internal1",
                                         "internal");
@@ -516,7 +502,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
 
                structural_objectRef orGateControl_delayed =
                    SM->add_module_from_technology_library("orGateControl_delayed", OR_GATE_STD, LIBRARY_STD,
-                                                          interfaceObj, HLS->HLS_T->get_technology_manager());
+                                                          interfaceObj, HLS->HLS_D->get_technology_manager());
                structural_objectRef port_objControl_delayed =
                    orGateControl_delayed->find_member("in", port_o_K, orGateControl_delayed);
                auto* in_portControl_delayed = GetPointer<port_o>(port_objControl_delayed);
@@ -541,7 +527,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
 
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Connecting mux control logic to master output logic");
          structural_objectRef andGateStbCyc = SM->add_module_from_technology_library(
-             "andGateStbCyc", AND_GATE_STD, LIBRARY_STD, interfaceObj, HLS->HLS_T->get_technology_manager());
+             "andGateStbCyc", AND_GATE_STD, LIBRARY_STD, interfaceObj, HLS->HLS_D->get_technology_manager());
 
          structural_objectRef port_objStbCyc = andGateStbCyc->find_member("in", port_o_K, andGateStbCyc);
          auto* in_portStbCyc = GetPointer<port_o>(port_objStbCyc);
@@ -579,7 +565,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Adding slave input R/W enable logic");
       structural_objectRef andGateWeICS = SM->add_module_from_technology_library(
-          "andGateWeICS", AND_GATE_STD, LIBRARY_STD, interfaceObj, HLS->HLS_T->get_technology_manager());
+          "andGateWeICS", AND_GATE_STD, LIBRARY_STD, interfaceObj, HLS->HLS_D->get_technology_manager());
       structural_objectRef port_objWeICS = andGateWeICS->find_member("in", port_o_K, andGateWeICS);
       auto* in_portWeICS = GetPointer<port_o>(port_objWeICS);
       in_portWeICS->add_n_ports(3, port_objWeICS);
@@ -592,12 +578,12 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
                          in_portWeICS->get_port(2));
 
       structural_objectRef weISNotGate = SM->add_module_from_technology_library(
-          "weISNotGate", NOT_GATE_STD, LIBRARY_STD, interfaceObj, HLS->HLS_T->get_technology_manager());
+          "weISNotGate", NOT_GATE_STD, LIBRARY_STD, interfaceObj, HLS->HLS_D->get_technology_manager());
       SM->add_connection(interfaceObj->find_member(WB_WEIS_PORT_NAME, port_o_K, interfaceObj),
                          weISNotGate->find_member("in1", port_o_K, weISNotGate));
 
       structural_objectRef andGateReICS = SM->add_module_from_technology_library(
-          "andGateReICS", AND_GATE_STD, LIBRARY_STD, interfaceObj, HLS->HLS_T->get_technology_manager());
+          "andGateReICS", AND_GATE_STD, LIBRARY_STD, interfaceObj, HLS->HLS_D->get_technology_manager());
       structural_objectRef port_objReICS = andGateReICS->find_member("in", port_o_K, andGateReICS);
       auto* in_portReICS = GetPointer<port_o>(port_objReICS);
       in_portReICS->add_n_ports(3, port_objReICS);
@@ -624,8 +610,8 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
             PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Inserting weMux");
             // insert weMux
             structural_objectRef weMux = SM->add_module_from_technology_library(
-                "weMux", MUX_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(MUX_GATE_STD), interfaceObj,
-                HLS->HLS_T->get_technology_manager());
+                "weMux", MUX_GATE_STD, HLS->HLS_D->get_technology_manager()->get_library(MUX_GATE_STD), interfaceObj,
+                HLS->HLS_D->get_technology_manager());
 
             connect_with_signal_name(SM, andGateWeICS, "out1", weMux, "in1", "weI_CS");
             connect_with_signal(SM, Mout_we_ram_port, weMux->find_member("in2", port_o_K, weMux));
@@ -635,8 +621,8 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
             PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Inserting oeMux");
             // insert oeMux
             structural_objectRef oeMux = SM->add_module_from_technology_library(
-                "oeMux", MUX_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(MUX_GATE_STD), interfaceObj,
-                HLS->HLS_T->get_technology_manager());
+                "oeMux", MUX_GATE_STD, HLS->HLS_D->get_technology_manager()->get_library(MUX_GATE_STD), interfaceObj,
+                HLS->HLS_D->get_technology_manager());
 
             connect_with_signal_name(SM, andGateReICS, "out1", oeMux, "in1", "reI_CS");
             connect_with_signal(SM, Mout_oe_ram_port, oeMux->find_member("in2", port_o_K, oeMux));
@@ -674,8 +660,8 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
          {
             PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Inserting wDataMux");
             structural_objectRef wDataMux = SM->add_module_from_technology_library(
-                "wDataMux", MUX_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(MUX_GATE_STD), interfaceObj,
-                HLS->HLS_T->get_technology_manager());
+                "wDataMux", MUX_GATE_STD, HLS->HLS_D->get_technology_manager()->get_library(MUX_GATE_STD), interfaceObj,
+                HLS->HLS_D->get_technology_manager());
 
             structural_objectRef wDataMuxIn1 = wDataMux->find_member("in1", port_o_K, wDataMux);
             GetPointer<port_o>(wDataMuxIn1)->set_type(data_type);
@@ -720,8 +706,8 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
          {
             PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Inserting rDataMux");
             structural_objectRef rDataMux = SM->add_module_from_technology_library(
-                "rDataMux", MUX_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(MUX_GATE_STD), interfaceObj,
-                HLS->HLS_T->get_technology_manager());
+                "rDataMux", MUX_GATE_STD, HLS->HLS_D->get_technology_manager()->get_library(MUX_GATE_STD), interfaceObj,
+                HLS->HLS_D->get_technology_manager());
 
             structural_objectRef rDataMuxIn1 = rDataMux->find_member("in1", port_o_K, rDataMux);
             GetPointer<port_o>(rDataMuxIn1)->set_type(data_type);
@@ -756,7 +742,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
       drs_type = Mout_data_ram_size_port->get_typeRef();
       structural_objectRef dataRamSizeConverter =
           SM->add_module_from_technology_library("dataRamSizeConverter", DATARAMSIZE_CONVERTER_WB, WBLIBRARY,
-                                                 interfaceObj, HLS->HLS_T->get_technology_manager());
+                                                 interfaceObj, HLS->HLS_D->get_technology_manager());
 
       structural_objectRef dRSCIn = dataRamSizeConverter->find_member("dataRamSize", port_o_K, dataRamSizeConverter);
       GetPointer<port_o>(dRSCIn)->set_type(drs_type);
@@ -776,7 +762,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
       drs_type = S_data_ram_size_port->get_typeRef();
       // sel converter
       structural_objectRef selConverter = SM->add_module_from_technology_library(
-          "selConverter", SEL_CONVERTER_WB, WBLIBRARY, interfaceObj, HLS->HLS_T->get_technology_manager());
+          "selConverter", SEL_CONVERTER_WB, WBLIBRARY, interfaceObj, HLS->HLS_D->get_technology_manager());
 
       structural_objectRef selCOut = selConverter->find_member("dataRamSize", port_o_K, selConverter);
       GetPointer<port_o>(selCOut)->set_type(drs_type);
@@ -801,8 +787,8 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
                          "Mout_data_ram_size->get_typeRef() != S_data_ram_size->get_typeRef()");
             PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Inserting dRSMux");
             structural_objectRef dRSMux = SM->add_module_from_technology_library(
-                "dRSMux", MUX_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(MUX_GATE_STD), interfaceObj,
-                HLS->HLS_T->get_technology_manager());
+                "dRSMux", MUX_GATE_STD, HLS->HLS_D->get_technology_manager()->get_library(MUX_GATE_STD), interfaceObj,
+                HLS->HLS_D->get_technology_manager());
 
             structural_objectRef dRSMuxIn1 = dRSMux->find_member("in1", port_o_K, dRSMux);
             GetPointer<port_o>(dRSMuxIn1)->set_type(drs_type);
@@ -839,7 +825,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Adding slave addressFilter");
       structural_objectRef addressFilterAddrIS = SM->add_module_from_technology_library(
-          "addressFilterAddrIS", ADDRESS_FILTER_WB, WBLIBRARY, interfaceObj, HLS->HLS_T->get_technology_manager());
+          "addressFilterAddrIS", ADDRESS_FILTER_WB, WBLIBRARY, interfaceObj, HLS->HLS_D->get_technology_manager());
       GetPointer<module>(addressFilterAddrIS)
           ->SetParameter("MAX_ADDRESS",
                          baseAddressParameter + " + " + STR(HLSMgr->Rmem->get_last_address(HLS->functionId, HLSMgr)));
@@ -863,8 +849,8 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
          {
             PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Adding addrMux");
             structural_objectRef addrMux = SM->add_module_from_technology_library(
-                "addrMux", MUX_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(MUX_GATE_STD), interfaceObj,
-                HLS->HLS_T->get_technology_manager());
+                "addrMux", MUX_GATE_STD, HLS->HLS_D->get_technology_manager()->get_library(MUX_GATE_STD), interfaceObj,
+                HLS->HLS_D->get_technology_manager());
 
             structural_objectRef addrMuxIn1 = addrMux->find_member("in1", port_o_K, addrMux);
             GetPointer<port_o>(addrMuxIn1)->set_type(addr_type);
@@ -893,7 +879,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
       // ---- Data ready ack logic ----
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Inserting AckOSGate");
       structural_objectRef andGateAckOS = SM->add_module_from_technology_library(
-          "andGateAckOS", AND_GATE_STD, LIBRARY_STD, interfaceObj, HLS->HLS_T->get_technology_manager());
+          "andGateAckOS", AND_GATE_STD, LIBRARY_STD, interfaceObj, HLS->HLS_D->get_technology_manager());
 
       structural_objectRef port_objAndAckOS = andGateAckOS->find_member("in", port_o_K, andGateAckOS);
       auto* in_portAndAckOS = GetPointer<port_o>(port_objAndAckOS);
@@ -921,8 +907,8 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
          {
             PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Inserting dataRdyDemux");
             structural_objectRef dataRdyDemux = SM->add_module_from_technology_library(
-                "dataRdyDemux", DEMUX_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(DEMUX_GATE_STD),
-                interfaceObj, HLS->HLS_T->get_technology_manager());
+                "dataRdyDemux", DEMUX_GATE_STD, HLS->HLS_D->get_technology_manager()->get_library(DEMUX_GATE_STD),
+                interfaceObj, HLS->HLS_D->get_technology_manager());
 
             connect_with_signal_name(SM, dataRdyDemux->find_member("out2", port_o_K, dataRdyDemux),
                                      in_portAndAckOS->get_port(0), "Sout_DataRdyToWb");
@@ -932,8 +918,8 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
 
             PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Inserting soutDRMux");
             structural_objectRef soutDRMux = SM->add_module_from_technology_library(
-                "soutDRMux", MUX_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(MUX_GATE_STD),
-                interfaceObj, HLS->HLS_T->get_technology_manager());
+                "soutDRMux", MUX_GATE_STD, HLS->HLS_D->get_technology_manager()->get_library(MUX_GATE_STD),
+                interfaceObj, HLS->HLS_D->get_technology_manager());
 
             SM->add_connection(signControl, soutDRMux->find_member("sel", port_o_K, soutDRMux));
             SM->add_connection(interfaceObj->find_member(WB_ACKIM_PORT_NAME, port_o_K, interfaceObj),

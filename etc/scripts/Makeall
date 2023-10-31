@@ -69,8 +69,8 @@ dist:
 	   false; \
 	   exit; \
 	fi; \
-	tar xvf panda-0.9.*.tar.gz; \
-	cd panda-0.9.*[^z]; \
+	tar xvf panda-*.tar.gz; \
+	cd panda-*[^z]; \
 	make -f Makefile.init; \
 	if [ $$? != 0 ]; then \
 	   false; \

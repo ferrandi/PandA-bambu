@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2023  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,9 +27,11 @@
   \file refactoring.hpp
   \brief Refactoring
 
+  \author Alessandro Tempia Calvino
   \author Eleonora Testa
   \author Heinz Riener
   \author Mathias Soeken
+  \author Siang-Yun (Sonia) Lee
 */
 #pragma once
 
@@ -41,6 +43,8 @@
 #include "../views/cut_view.hpp"
 #include "../views/mffc_view.hpp"
 #include "../views/topo_view.hpp"
+#include "../views/window_view.hpp"
+#include "../views/color_view.hpp"
 #include "cleanup.hpp"
 #include "detail/mffc_utils.hpp"
 #include "dont_cares.hpp"
@@ -59,20 +63,23 @@ namespace mockturtle
  */
 struct refactoring_params
 {
-  /*! \brief Maximum number of PIs in MFFCs. */
-  uint32_t max_pis{6};
+  /*! \brief Maximum number of PIs of the MFFC or window. */
+  uint32_t max_pis{ 6 };
 
   /*! \brief Allow zero-gain substitutions */
-  bool allow_zero_gain{false};
+  bool allow_zero_gain{ false };
+
+  /*! \brief Extract a reconvergence-driven cut for large MFFcs */
+  bool use_reconvergence_cut{ true };
 
   /*! \brief Use don't cares for optimization. */
-  bool use_dont_cares{false};
+  bool use_dont_cares{ false };
 
   /*! \brief Show progress. */
-  bool progress{false};
+  bool progress{ false };
 
   /*! \brief Be verbose. */
-  bool verbose{false};
+  bool verbose{ false };
 };
 
 /*! \brief Statistics for refactoring.
@@ -83,16 +90,16 @@ struct refactoring_params
 struct refactoring_stats
 {
   /*! \brief Total runtime. */
-  stopwatch<>::duration time_total{0};
+  stopwatch<>::duration time_total{ 0 };
 
   /*! \brief Accumulated runtime for computing MFFCs. */
-  stopwatch<>::duration time_mffc{0};
+  stopwatch<>::duration time_mffc{ 0 };
 
   /*! \brief Accumulated runtime for rewriting. */
-  stopwatch<>::duration time_refactoring{0};
+  stopwatch<>::duration time_refactoring{ 0 };
 
   /*! \brief Accumulated runtime for simulating MFFCs. */
-  stopwatch<>::duration time_simulation{0};
+  stopwatch<>::duration time_simulation{ 0 };
 
   void report() const
   {
@@ -135,15 +142,18 @@ public:
 
   void run()
   {
-    progress_bar pbar{ntk.size(), "refactoring |{0}| node = {1:>4}   cand = {2:>4}   est. reduction = {3:>5}", ps.progress};
+    progress_bar pbar{ ntk.size(), "refactoring |{0}| node = {1:>4}   cand = {2:>4}   est. reduction = {3:>5}", ps.progress };
 
     stopwatch t( st.time_total );
 
     ntk.clear_visited();
-    ntk.clear_values();
-    ntk.foreach_node( [&]( auto const& n ) {
-      ntk.set_value( n, ntk.fanout_size( n ) );
-    } );
+
+    reconvergence_driven_cut_parameters rps;
+    rps.max_leaves = ps.max_pis;
+    reconvergence_driven_cut_statistics rst;
+    detail::reconvergence_driven_cut_impl<Ntk, false, false> reconv_cuts( ntk, rps, rst );
+
+    color_view<Ntk> color_ntk{ ntk };
 
     const auto size = ntk.num_gates();
     ntk.foreach_gate( [&]( auto const& n, auto i ) {
@@ -159,21 +169,54 @@ public:
 
       pbar( i, i, _candidates, _estimated_gain );
 
-      if ( mffc.num_pos() == 0 || mffc.num_pis() > ps.max_pis || mffc.size() < 4 )
+      if ( mffc.num_pos() == 0 || ( !ps.use_reconvergence_cut && mffc.num_pis() > ps.max_pis ) || mffc.size() < 4 )
       {
         return true;
       }
 
-      std::vector<signal<Ntk>> leaves( mffc.num_pis() );
-      mffc.foreach_pi( [&]( auto const& m, auto j ) {
-        leaves[j] = ntk.make_signal( m );
-      } );
+      kitty::dynamic_truth_table tt;
+      std::vector<signal<Ntk>> leaves( ps.max_pis );
+      uint32_t num_leaves = 0;
 
-      default_simulator<kitty::dynamic_truth_table> sim( mffc.num_pis() );
-      const auto tt = call_with_stopwatch( st.time_simulation,
-                                           [&]() { return simulate<kitty::dynamic_truth_table>( mffc, sim )[0]; } );
+      if ( mffc.num_pis() <= ps.max_pis )
+      {
+        /* use MFFC */
+        mffc.foreach_pi( [&]( auto const& m, auto j ) {
+          leaves[j] = ntk.make_signal( m );
+        } );
+
+        num_leaves = mffc.num_pis();
+
+        default_simulator<kitty::dynamic_truth_table> sim( mffc.num_pis() );
+        tt = call_with_stopwatch( st.time_simulation,
+                                  [&]() { return simulate<kitty::dynamic_truth_table>( mffc, sim )[0]; } );
+      }
+      else
+      {
+        /* compute a reconvergent-driven cut */
+        std::vector<node<Ntk>> roots = { n };
+        auto const extended_leaves = reconv_cuts.run( roots ).first;
+
+        num_leaves = extended_leaves.size();
+        assert( num_leaves <= ps.max_pis );
+
+        for ( auto j = 0u; j < num_leaves; ++j )
+        {
+          leaves[j] = ntk.make_signal( extended_leaves[j] );
+        }
+
+        cut_view<Ntk> cut( ntk, extended_leaves, ntk.make_signal( n ) );
+        default_simulator<kitty::dynamic_truth_table> sim( num_leaves );
+        tt = call_with_stopwatch( st.time_simulation,
+                                  [&]() { return simulate<kitty::dynamic_truth_table>( cut, sim )[0]; } );
+      }
 
       signal<Ntk> new_f;
+      bool resynthesized{ false };
+
+      ntk.incr_trav_id();
+      int32_t gain = recursive_deref_mark( n );
+
       {
         if ( ps.use_dont_cares )
         {
@@ -186,64 +229,87 @@ public:
             }
             stopwatch t( st.time_refactoring );
 
-            refactoring_fn( ntk, tt, satisfiability_dont_cares( ntk, pivots, 16u ), leaves.begin(), leaves.end(), [&]( auto const& f ) { new_f = f; return false; } );
+            refactoring_fn( ntk, tt, satisfiability_dont_cares( ntk, pivots, 16u ), leaves.begin(), leaves.begin() + num_leaves, [&]( auto const& f ) { new_f = f; resynthesized = true; return false; } );
           }
           else
           {
             stopwatch t( st.time_refactoring );
-            refactoring_fn( ntk, tt, leaves.begin(), leaves.end(), [&]( auto const& f ) { new_f = f; return false; } );
+            refactoring_fn( ntk, tt, leaves.begin(), leaves.begin() + num_leaves, [&]( auto const& f ) { new_f = f; resynthesized = true; return false; } );
           }
         }
         else
         {
           stopwatch t( st.time_refactoring );
-          refactoring_fn( ntk, tt, leaves.begin(), leaves.end(), [&]( auto const& f ) { new_f = f; return false; } );
+          refactoring_fn( ntk, tt, leaves.begin(), leaves.begin() + num_leaves, [&]( auto const& f ) { new_f = f; resynthesized = true; return false; } );
         }
       }
 
-      if ( n == ntk.get_node( new_f ) )
+      if ( !resynthesized || n == ntk.get_node( new_f ) )
       {
+        recursive_ref( n );
         return true;
       }
 
-      int32_t gain = recursive_deref( n );
-      gain -= recursive_ref( ntk.get_node( new_f ) );
+      /* ref only if it is a new node */
+      if ( ntk.fanout_size( ntk.get_node( new_f ) ) == 0 )
+      {
+        recursive_deref_check_mark( ntk.get_node( new_f ) );
+        gain -= recursive_ref( ntk.get_node( new_f ) );
+      }
+
+      recursive_ref( n );
 
       if ( gain > 0 || ( ps.allow_zero_gain && gain == 0 ) )
       {
-
         ++_candidates;
         _estimated_gain += gain;
         ntk.substitute_node( n, new_f );
-        ntk.set_value( n, 0 );
-        ntk.set_value( ntk.get_node( new_f ), ntk.fanout_size( ntk.get_node( new_f ) ) );
-        for ( auto i = 0u; i < leaves.size(); i++ )
-        {
-          ntk.set_value( ntk.get_node( leaves[i] ), ntk.fanout_size( ntk.get_node( leaves[i] ) ) );
-        }
       }
       else
       {
-        recursive_deref( ntk.get_node( new_f ) );
-        recursive_ref( n );
+        /* remove */
+        if ( ntk.fanout_size( ntk.get_node( new_f ) ) == 0 )
+          ntk.take_out_node( ntk.get_node( new_f ) );
       }
       return true;
     } );
   }
 
 private:
-  uint32_t recursive_deref( node<Ntk> const& n )
+  uint32_t recursive_deref_mark( node<Ntk> const& n )
   {
     /* terminate? */
     if ( ntk.is_constant( n ) || ntk.is_pi( n ) )
       return 0;
+    
+    ntk.set_visited( n, ntk.trav_id() );
 
     /* recursively collect nodes */
-    uint32_t value{cost_fn( ntk, n )};
+    uint32_t value{ cost_fn( ntk, n ) };
     ntk.foreach_fanin( n, [&]( auto const& s ) {
-      if ( ntk.decr_value( ntk.get_node( s ) ) == 0 )
+      if ( ntk.decr_fanout_size( ntk.get_node( s ) ) == 0 )
       {
-        value += recursive_deref( ntk.get_node( s ) );
+        value += recursive_deref_mark( ntk.get_node( s ) );
+      }
+    } );
+    return value;
+  }
+
+  uint32_t recursive_deref_check_mark( node<Ntk> const& n )
+  {
+    /* terminate? */
+    if ( ntk.is_constant( n ) || ntk.is_pi( n ) )
+      return 0;
+    
+    if ( ntk.visited( n ) == ntk.trav_id() )
+      return 0;
+
+    /* recursively collect nodes */
+    uint32_t value{ cost_fn( ntk, n ) };
+    ntk.foreach_fanin( n, [&]( auto const& s ) {
+      if ( ntk.decr_fanout_size( ntk.get_node( s ) ) == 0 )
+      {
+        value += recursive_deref_check_mark( ntk.get_node( s ) );
       }
     } );
     return value;
@@ -256,9 +322,9 @@ private:
       return 0;
 
     /* recursively collect nodes */
-    uint32_t value{cost_fn( ntk, n )};
+    uint32_t value{ cost_fn( ntk, n ) };
     ntk.foreach_fanin( n, [&]( auto const& s ) {
-      if ( ntk.incr_value( ntk.get_node( s ) ) == 0 )
+      if ( ntk.incr_fanout_size( ntk.get_node( s ) ) == 0 )
       {
         value += recursive_ref( ntk.get_node( s ) );
       }
@@ -273,8 +339,8 @@ private:
   refactoring_stats& st;
   NodeCostFn cost_fn;
 
-  uint32_t _candidates{0};
-  uint32_t _estimated_gain{0};
+  uint32_t _candidates{ 0 };
+  uint32_t _estimated_gain{ 0 };
 };
 
 } /* namespace detail */
@@ -283,6 +349,7 @@ private:
  *
  * This algorithm performs refactoring by collapsing maximal fanout-free cones
  * (MFFCs) into truth tables and recreating a new network structure from it.
+ * If the MFFC is too large a reconvergence-driven cut is extracted.
  * The algorithm performs changes directly in the input network and keeps the
  * substituted structures dangling in the network.  They can be cleaned up using
  * the `cleanup_dangling` algorithm.
@@ -329,8 +396,10 @@ void refactoring( Ntk& ntk, RefactoringFn&& refactoring_fn, refactoring_params c
   static_assert( has_set_value_v<Ntk>, "Ntk does not implement the set_value method" );
   static_assert( has_foreach_node_v<Ntk>, "Ntk does not implement the foreach_node method" );
 
+  fanout_view<Ntk> f_ntk{ ntk };
+
   refactoring_stats st;
-  detail::refactoring_impl<Ntk, RefactoringFn, NodeCostFn> p( ntk, refactoring_fn, ps, st, cost_fn );
+  detail::refactoring_impl<fanout_view<Ntk>, RefactoringFn, NodeCostFn> p( f_ntk, refactoring_fn, ps, st, cost_fn );
   p.run();
   if ( ps.verbose )
   {

@@ -58,7 +58,7 @@
 
 REF_FORWARD_DECL(HLS_constraints);
 CONSTREF_FORWARD_DECL(Parameter);
-REF_FORWARD_DECL(target_device);
+REF_FORWARD_DECL(generic_device);
 class xml_element;
 
 /// macro used to convert the functional unit name and the library in an unique string.
@@ -86,8 +86,6 @@ class HLS_constraints
 
    /// current value of the resource fraction
    double clock_period_resource_fraction;
-   /// default resource fraction for the clock period
-   static const double clock_period_resource_fraction_DEFAULT;
 
    /// Variable storing the number of registers.
    unsigned int registers;

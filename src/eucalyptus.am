@@ -22,10 +22,6 @@ eucalyptus_CPPFLAGS = -DPKGLIBDIR="\"$(pkglibdir)\"" -DPKGDATADIR="\"$(pkgdatadi
  -I$(top_srcdir)/src/HLS \
  -I$(top_srcdir)/src/parser/polixml \
  -I$(top_srcdir)/src/technology \
- -I$(top_srcdir)/src/technology/characterization \
- -I$(top_srcdir)/src/technology/physical_library \
- -I$(top_srcdir)/src/technology/target_device \
- -I$(top_srcdir)/src/technology/target_technology \
  -I$(top_srcdir)/src/utility \
  -I$(top_srcdir)/src/wrapper/compiler \
  $(AM_CPPFLAGS)
@@ -40,29 +36,10 @@ lib_eucalyptus_la_LIBADD += \
    lib_polixml.la \
    lib_technology.la \
    lib_utility.la \
-   lib_wrapper.la \
-   $(BOOST_FILESYSTEM_LIB) \
-   $(BOOST_SYSTEM_LIB) \
-   $(BOOST_REGEX_LIB)
-
-if BUILD_LIB_CODE_ESTIMATION
-   eucalyptus_CPPFLAGS += \
-      -I$(top_srcdir)/src/design_flows/codesign/estimation \
-      -I$(top_srcdir)/src/utility/probability_distribution
-endif
-
-if BUILD_LIB_CODE_ESTIMATION
-   lib_eucalyptus_la_LIBADD += \
-      $(top_builddir)/src/utility/probability_distribution/lib_ProbabilityDistribution.la
-endif
+   lib_wrapper.la
 
 if BUILD_LIB_ALGORITHMS
    lib_eucalyptus_la_LIBADD += lib_algorithms.la
-endif
-
-if BUILD_LIB_ARCH
-   lib_eucalyptus_la_LIBADD += \
-      $(top_builddir)/src/machine/lib_machine.la
 endif
 
 if BUILD_LIB_BEHAVIOR
@@ -80,11 +57,6 @@ endif
 
 if BUILD_LIB_FROM_PRAGMA
    lib_eucalyptus_la_LIBADD += libpragma.la
-endif
-
-if BUILD_LIB_RTL
-   lib_eucalyptus_la_LIBADD += \
-      $(top_builddir)/src/rtl/lib_rtl.la
 endif
 
 if BUILD_LIB_TREE

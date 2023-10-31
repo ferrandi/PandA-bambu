@@ -62,8 +62,8 @@ static bool check_value_opt(const std::map<TreeVocabularyTokenTypes_TokenEnum, s
                             const std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>::const_iterator& it_end,
                             const TreeVocabularyTokenTypes_TokenEnum& value)
 {
-   return it_element == it_end || value == static_cast<TreeVocabularyTokenTypes_TokenEnum>(
-                                               boost::lexical_cast<unsigned int>(it_element->second));
+   return it_element == it_end ||
+          value == static_cast<TreeVocabularyTokenTypes_TokenEnum>(std::stoull(it_element->second));
 }
 
 #define CHECK_VALUE_OPT(token, value) check_value_opt(tree_node_schema.find(TOK(token)), tree_node_schema.end(), value)
@@ -73,7 +73,7 @@ check_tree_node_opt(const std::map<TreeVocabularyTokenTypes_TokenEnum, std::stri
                     const std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>::const_iterator& it_end,
                     const tree_nodeRef& tn, const std::string&)
 {
-   return it_element == it_end || (tn && GET_INDEX_NODE(tn) == boost::lexical_cast<unsigned int>(it_element->second));
+   return it_element == it_end || (tn && GET_INDEX_NODE(tn) == std::stoull(it_element->second));
 }
 
 #define CHECK_TREE_NODE_OPT(token, treeN) \
@@ -108,9 +108,9 @@ void tree_node_finder::operator()(const srcp* obj, unsigned int& mask)
 {
    tree_node_mask::operator()(obj, mask);
    find_res = find_res && (tree_node_schema.find(TOK(TOK_SRCP)) == tree_node_schema.end() ||
-                           tree_node_schema.find(TOK(TOK_SRCP))->second ==
-                               obj->include_name + ":" + boost::lexical_cast<std::string>(obj->line_number) + ":" +
-                                   boost::lexical_cast<std::string>(obj->column_number));
+                           tree_node_schema.find(TOK(TOK_SRCP))->second == obj->include_name + ":" +
+                                                                               std::to_string(obj->line_number) + ":" +
+                                                                               std::to_string(obj->column_number));
 }
 
 void tree_node_finder::operator()(const decl_node* obj, unsigned int& mask)
@@ -123,10 +123,7 @@ void tree_node_finder::operator()(const decl_node* obj, unsigned int& mask)
               CHECK_VALUE_OPT(TOK_PACKED, obj->packed_flag) and
               CHECK_VALUE_OPT(TOK_OPERATING_SYSTEM, obj->operating_system_flag) and
               CHECK_VALUE_OPT(TOK_LIBRARY_SYSTEM, obj->library_system_flag) and
-#if HAVE_BAMBU_BUILT
-              CHECK_VALUE_OPT(TOK_LIBBAMBU, obj->libbambu_flag) and
-#endif
-              CHECK_VALUE_OPT(TOK_C, obj->C_flag);
+              CHECK_VALUE_OPT(TOK_LIBBAMBU, obj->libbambu_flag) and CHECK_VALUE_OPT(TOK_C, obj->C_flag);
 }
 
 void tree_node_finder::operator()(const expr_node* obj, unsigned int& mask)

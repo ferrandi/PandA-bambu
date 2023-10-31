@@ -43,21 +43,11 @@
 #ifndef OPERATIONS_CFG_COMPUTATION_HPP
 #define OPERATIONS_CFG_COMPUTATION_HPP
 
-/// Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
-
-/// Superclass include
-#include "function_frontend_flow_step.hpp"
-
-/// STD include
-#include <string>
-
-/// STL includes
 #include "custom_map.hpp"
-#include <list>
-
-/// utility include
+#include "function_frontend_flow_step.hpp"
 #include "refcount.hpp"
+#include <list>
+#include <string>
 
 /**
  * @name forward declarations

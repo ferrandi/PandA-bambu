@@ -161,7 +161,6 @@ class ProfilingInformation
    /// Friend defintion of profiling classes
    friend class BasicBlocksProfiling;
    friend class hpp_profiling;
-   friend class LoopsAnalysisZebu;
    friend class LoopsProfiling;
    friend class probability_path;
    friend class HostProfiling;

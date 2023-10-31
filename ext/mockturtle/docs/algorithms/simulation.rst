@@ -47,7 +47,7 @@ Simulate values for all nodes.
    const auto tts = simulate_nodes<kitty::dynamic_truth_table>( aig, sim );
 
    aig.foreach_node( [&]( auto const& n, auto i ) {
-     std::cout << fmt::format( "truth table of node {} is {}\n", i, tts[n] );
+     std::cout << fmt::format( "truth table of node {} is {}\n", i, kitty::to_hex( tts[n] ) );
    } );
 
 .. doxygenfunction:: mockturtle::simulate
@@ -84,7 +84,7 @@ Note that currently only AIG and XAG are supported.
 
 **Constructors**
 
-.. doxygenfunction:: mockturtle::partial_simulator::partial_simulator( unsigned, unsigned, std::default_random_engine::result_type )
+.. doxygenfunction:: mockturtle::partial_simulator::partial_simulator( uint32_t, uint32_t, std::default_random_engine::result_type )
 
 .. doxygenfunction:: mockturtle::partial_simulator::partial_simulator( std::vector<kitty::partial_truth_table> const& )
 
@@ -94,15 +94,15 @@ Note that currently only AIG and XAG are supported.
 
 .. doxygenfunction:: mockturtle::partial_simulator::add_pattern( std::vector<bool> const& )
 
-.. doxygenfunction:: mockturtle::partial_simulator::num_bits()
+.. doxygenfunction:: mockturtle::partial_simulator::num_bits
 
-.. doxygenfunction:: mockturtle::partial_simulator::get_patterns()
+.. doxygenfunction:: mockturtle::partial_simulator::get_patterns
 
 **Simulation**
 
-.. doxygenfunction:: mockturtle::simulate_nodes( Ntk const&, unordered_node_map<kitty::partial_truth_table, Ntk>&, Simulator const&, bool )
+.. doxygenfunction:: mockturtle::simulate_nodes( Ntk const&, Container&, Simulator const&, bool )
 
-.. doxygenfunction:: mockturtle::simulate_node( Ntk const&, typename Ntk::node const&, unordered_node_map<kitty::partial_truth_table, Ntk>&, Simulator const& )
+.. doxygenfunction:: mockturtle::simulate_node( Ntk const&, typename Ntk::node const&, Container&, Simulator const& )
 
 **Bit Packing**
 
@@ -112,4 +112,4 @@ To reduce the size of simulation pattern set during pattern generation, ``bit_pa
 
 .. doxygenfunction:: mockturtle::bit_packed_simulator::add_pattern( std::vector<bool> const&, std::vector<bool> const& )
 
-.. doxygenfunction:: mockturtle::bit_packed_simulator::pack_bits()
+.. doxygenfunction:: mockturtle::bit_packed_simulator::pack_bits

@@ -64,7 +64,6 @@
 #include <list>
 
 /// Utility include
-#include "boost/lexical_cast.hpp"
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "hash_helper.hpp"
@@ -128,8 +127,7 @@ DesignFlowStep_Status AddBbEcfgEdges::InternalExec()
       {
          continue;
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Considering loop " + boost::lexical_cast<std::string>((*loop)->GetId()));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering loop " + std::to_string((*loop)->GetId()));
 
       /// add Extended edges to manage in/out dependencies when we have multi-entries in a loop (aka irreducible loop)
       CustomUnorderedSet<vertex> loop_bbs;
@@ -195,11 +193,10 @@ DesignFlowStep_Status AddBbEcfgEdges::InternalExec()
          if(fbb->CGetBBNodeInfo(sp_back_edge.second)->loop_id == (*loop)->GetId())
          {
             sources.insert(sp_back_edge.first);
-            INDENT_DBG_MEX(
-                DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                "---Found source BB" +
-                    boost::lexical_cast<std::string>(fbb->CGetBBNodeInfo(sp_back_edge.first)->block->number) +
-                    " (Target is BB" + STR(fbb->CGetBBNodeInfo(sp_back_edge.second)->block->number) + ")");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Found source BB" +
+                               std::to_string(fbb->CGetBBNodeInfo(sp_back_edge.first)->block->number) +
+                               " (Target is BB" + STR(fbb->CGetBBNodeInfo(sp_back_edge.second)->block->number) + ")");
          }
       }
       /// Landing pads
@@ -258,9 +255,8 @@ DesignFlowStep_Status AddBbEcfgEdges::InternalExec()
          for(t = targets.begin(); t != t_end; ++t)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Adding edge from BB" +
-                               boost::lexical_cast<std::string>(fbb->CGetBBNodeInfo(*s)->block->number) + " to BB" +
-                               boost::lexical_cast<std::string>(fbb->CGetBBNodeInfo(*t)->block->number));
+                           "---Adding edge from BB" + std::to_string(fbb->CGetBBNodeInfo(*s)->block->number) +
+                               " to BB" + std::to_string(fbb->CGetBBNodeInfo(*t)->block->number));
             function_behavior->bbgc->AddEdge(*s, *t, ECFG_SELECTOR);
 #ifndef NDEBUG
             if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
@@ -291,8 +287,7 @@ DesignFlowStep_Status AddBbEcfgEdges::InternalExec()
 #endif
          }
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "<--Considered loop " + boost::lexical_cast<std::string>((*loop)->GetId()));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered loop " + std::to_string((*loop)->GetId()));
    }
 
    if(parameters->getOption<bool>(OPT_print_dot))

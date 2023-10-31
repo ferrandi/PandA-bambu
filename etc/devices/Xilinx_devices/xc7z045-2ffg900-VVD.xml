@@ -6,7 +6,7 @@
     <model value="xc7z045"/>
     <package value="ffg900"/>
     <speed_grade value="-2"/>
-    <BRAM_bitsize_max value="128"/>
+    <BRAM_bitsize_max value="4096"/>
     <BRAM_bitsize_min value="8"/>
     <DSPs_rx_sizes value="16"/>
     <DSPs_ry_sizes value="16"/>

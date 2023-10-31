@@ -66,7 +66,7 @@ REF_FORWARD_DECL(HDL_manager);
 REF_FORWARD_DECL(HLS_manager);
 REF_FORWARD_DECL(structural_object);
 REF_FORWARD_DECL(language_writer);
-REF_FORWARD_DECL(target_device);
+REF_FORWARD_DECL(generic_device);
 REF_FORWARD_DECL(flopoco_wrapper);
 REF_FORWARD_DECL(structural_manager);
 CONSTREF_FORWARD_DECL(technology_manager);
@@ -81,7 +81,7 @@ class HDL_manager
    const HLS_managerRef HLSMgr;
 
    /// reference to the target device
-   const target_deviceRef device;
+   const generic_deviceRef device;
 
    /// reference to the class containing all the technology information
    const technology_managerConstRef TM;
@@ -115,14 +115,14 @@ class HDL_manager
     * Generates the HDL description for the given components in the specified language
     */
    std::string write_components(const std::string& filename, const HDLWriter_Language language,
-                                const std::list<structural_objectRef>& components, bool equation,
+                                const std::list<structural_objectRef>& components,
                                 std::list<std::string>& aux_files) const;
 
    /**
     * Determines the proper language for each component and generates the corresponding HDL descriptions
     */
-   void write_components(const std::string& filename, const std::list<structural_objectRef>& components, bool equation,
-                         std::list<std::string>& hdl_files, std::list<std::string>& aux_files);
+   void write_components(const std::string& filename, const std::list<structural_objectRef>& components,
+                         std::list<std::string>& hdl_files, std::list<std::string>& aux_files, bool tb);
 
    /**
     * Writes the module description.
@@ -130,7 +130,7 @@ class HDL_manager
     * @param cir is the module to be written. The analysis does not consider the inner objects but just one level of the
     * hierarchy.
     */
-   void write_module(const language_writerRef writer, const structural_objectRef cir, bool equation,
+   void write_module(const language_writerRef writer, const structural_objectRef cir,
                      std::list<std::string>& aux_files) const;
 
    /**
@@ -178,7 +178,7 @@ class HDL_manager
     * @param device is the data structure containing information about the target device
     * @param parameters is the data structure containing all the parameters
     */
-   HDL_manager(const HLS_managerRef _HLSMgr, const target_deviceRef device, const ParameterConstRef parameters);
+   HDL_manager(const HLS_managerRef _HLSMgr, const generic_deviceRef device, const ParameterConstRef parameters);
 
    /**
     * Constructor
@@ -187,7 +187,7 @@ class HDL_manager
     * @param SM is the structural manager containing the top component
     * @param parameters is the data structure containing all the parameters
     */
-   HDL_manager(const HLS_managerRef HLSMgr, const target_deviceRef device, const structural_managerRef SM,
+   HDL_manager(const HLS_managerRef HLSMgr, const generic_deviceRef device, const structural_managerRef SM,
                const ParameterConstRef parameters);
 
    /**
@@ -199,22 +199,16 @@ class HDL_manager
     * Generates HDL code.
     * @param file_name is the name to be created
     * @param cirs are the structural objects representing the components to be generated
-    * @param equation specifies if the equation-based version of the component has to be generated
     * @param the created files (file_name + other files)
     * @param the created aux files
     */
-   void hdl_gen(const std::string& filename, const std::list<structural_objectRef>& cirs, bool equation,
-                std::list<std::string>& hdl_files, std::list<std::string>& aux_files);
+   void hdl_gen(const std::string& filename, const std::list<structural_objectRef>& cirs,
+                std::list<std::string>& hdl_files, std::list<std::string>& aux_files, bool tb);
 
    /**
     * Converts a generic string to a language compliant identifier
     */
    static std::string convert_to_identifier(const language_writer* writer, const std::string& id);
-
-   /**
-    * Converts a generic string to a language compliant identifier
-    */
-   static std::string convert_to_identifier(const std::string& id);
 
    /**
     * Returns the module typename taking into account even the flopoco customizations

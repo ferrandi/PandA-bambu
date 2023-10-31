@@ -44,8 +44,9 @@
 
 #include "exceptions.hpp"
 
-#include "boost/algorithm/string/case_conv.hpp"
-#include "boost/algorithm/string/trim.hpp"
+#include "DesignParameters.hpp"
+#include <boost/algorithm/string/case_conv.hpp>
+#include <boost/algorithm/string/trim.hpp>
 
 #include "xml_script_command.hpp"
 #include <boost/algorithm/string/predicate.hpp>
@@ -167,11 +168,11 @@ bool xml_script_node_t::evaluate_condition(const std::string* condition)
    }
    try
    {
-      if(boost::lexical_cast<unsigned int>(trimmed) == 0)
+      if(std::stoull(trimmed) == 0)
       {
          return false;
       }
-      else if(boost::lexical_cast<unsigned int>(trimmed) == 1)
+      else if(std::stoull(trimmed) == 1)
       {
          return true;
       }

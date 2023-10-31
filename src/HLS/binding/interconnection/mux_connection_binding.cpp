@@ -34,7 +34,7 @@
  * @file mux_connection_binding.cpp
  * @brief Implementation of mux_connection_binding class
  *
- * Implementation of mux_connection_binding class. In this class all datastructures have been filled and
+ * Implementation of mux_connection_binding class. In this class all data-structures have been filled and
  * then datapath circuit is created.
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
@@ -657,14 +657,13 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
       create_single_conn(data, op, C_obj, fu_obj, port_num, port_index, 0, precision, is_not_a_phi);
       return;
    }
-   const auto behavioral_helper = FB->CGetBehavioralHelper();
-   if(behavioral_helper->is_a_constant(tree_var))
+   const auto BH = FB->CGetBehavioralHelper();
+   if(BH->is_a_constant(tree_var))
    {
       THROW_ASSERT(precision, "a precision greater than 0 is expected: " + STR(precision));
       const auto C_value = HLSMgr->get_constant_string(tree_var, precision);
       const auto C_obj = HLS->Rconn->get_constant_obj(C_value, "", precision);
-      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                    "       - Tree constant value: " + behavioral_helper->PrintVariable(tree_var));
+      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "       - Tree constant value: " + BH->PrintVariable(tree_var));
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "         - " + C_value);
       create_single_conn(data, op, C_obj, fu_obj, port_num, port_index, tree_var, precision, is_not_a_phi);
       return;
@@ -1294,47 +1293,48 @@ void mux_connection_binding::add_conversion(unsigned int num, vertex op, unsigne
 
 void mux_connection_binding::create_connections()
 {
-   const tree_managerRef TreeM = HLSMgr->get_tree_manager();
-   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
-   const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
-   const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::FDFG);
+   const auto TreeM = HLSMgr->get_tree_manager();
+   const auto FB = HLSMgr->CGetFunctionBehavior(funId);
+   const auto BH = FB->CGetBehavioralHelper();
+   const auto data = FB->CGetOpGraph(FunctionBehavior::FDFG);
    auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
+   const StateTransitionGraphConstRef astg = HLS->STG->CGetAstg();
    if(parameters->getOption<int>(OPT_memory_banks_number) > 1 && !parameters->isOption(OPT_context_switch))
    {
-      HLS->Rconn = conn_bindingRef(new ParallelMemoryConnBinding(behavioral_helper, parameters));
+      HLS->Rconn = conn_bindingRef(new ParallelMemoryConnBinding(BH, parameters));
    }
    else
    {
-      HLS->Rconn = conn_bindingRef(conn_binding::create_conn_binding(HLSMgr, HLS, behavioral_helper, parameters));
+      HLS->Rconn = conn_bindingRef(conn_binding::create_conn_binding(HLSMgr, HLS, BH, parameters));
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Starting execution of interconnection binding");
 
    for(const auto& state2mu : HLS->STG->get_mu_ctrls())
    {
-      auto mu = state2mu.second;
-      structural_objectRef mu_mod = mu->get_structural_obj();
-      auto mut = GetPointer<multi_unbounded_obj>(mu);
-      generic_objRef en_port =
+      const auto& mu = state2mu.second;
+      const auto mu_mod = mu->get_structural_obj();
+      const auto mut = GetPointer<multi_unbounded_obj>(mu);
+      const auto en_port =
           HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::MULTI_UNBOUNDED_ENABLE, mu, 0);
       mut->set_mu_enable(en_port);
    }
 
-   auto num_regs = HLS->Rreg->get_used_regs();
-   for(unsigned int r = 0; r < num_regs; r++)
+   const auto num_regs = HLS->Rreg->get_used_regs();
+   for(auto r = 0U; r < num_regs; r++)
    {
-      generic_objRef reg_obj = HLS->Rreg->get(r);
-      generic_objRef sel_port = HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::WRENABLE, reg_obj, r);
+      const auto reg_obj = HLS->Rreg->get(r);
+      const auto sel_port = HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::WRENABLE, reg_obj, r);
       GetPointer<register_obj>(reg_obj)->set_wr_enable(sel_port);
    }
-   for(unsigned int i : HLS->Rfu->get_allocation_list())
+   for(const auto i : HLS->Rfu->get_allocation_list())
    {
       // number of instance functional unit i
-      auto num = HLS->Rfu->get_number(i);
+      const auto num = HLS->Rfu->get_number(i);
       for(unsigned int fu_num = 0; fu_num < num; fu_num++)
       {
          // get the functional unit object associated to i and fu_num (id and index)
-         generic_objRef tmp_Fu = HLS->Rfu->get(i, fu_num);
+         const auto tmp_Fu = HLS->Rfu->get(i, fu_num);
          std::vector<technology_nodeRef> tmp_ops_node =
              GetPointer<functional_unit>(HLS->allocation_information->get_fu(i))->get_operations();
 
@@ -1343,9 +1343,9 @@ void mux_connection_binding::create_connections()
             // check all operations associated to functional unit tmp_Fu
             for(unsigned int oper = 0; oper < tmp_ops_node.size(); oper++)
             {
-               generic_objRef sel_port =
+               const auto sel_port =
                    HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::SELECTOR, tmp_Fu, oper);
-               GetPointer<funit_obj>(tmp_Fu)->add_selector_op(sel_port, tmp_ops_node[oper]->get_name());
+               GetPointer<funit_obj>(tmp_Fu)->add_selector_op(sel_port, tmp_ops_node.at(oper)->get_name());
             }
          }
       }
@@ -1375,38 +1375,46 @@ void mux_connection_binding::create_connections()
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                        "     - FU: " + HLS->allocation_information->get_fu_name(fu).first);
          /// adding activation's state of selector related to operation op
-         std::vector<technology_nodeRef> tmp_ops_node =
-             GetPointer<functional_unit>(HLS->allocation_information->get_fu(fu))->get_operations();
-         if(tmp_ops_node.size() > 1)
+         const auto tmp_ops_node_size =
+             GetPointer<functional_unit>(HLS->allocation_information->get_fu(fu))->get_operations().size();
+         if(tmp_ops_node_size > 1U)
          {
             if(!GetPointer<funit_obj>(HLS->Rfu->get(fu, idx)))
             {
                THROW_ERROR("Functional unit " + HLS->allocation_information->get_string_name(fu) +
                            " does not have an instance " + STR(idx));
             }
-            generic_objRef selector_obj = GetPointer<funit_obj>(HLS->Rfu->get(fu, idx))
-                                              ->GetSelector_op(data->CGetOpNodeInfo(*op)->GetOperation());
+            const auto selector_obj = GetPointer<funit_obj>(HLS->Rfu->get(fu, idx))
+                                          ->GetSelector_op(data->CGetOpNodeInfo(*op)->GetOperation());
             if(!selector_obj)
             {
                THROW_ERROR("Functional unit " + HLS->allocation_information->get_string_name(fu) +
-                           " does not exist or it does not have selector " + data->CGetOpNodeInfo(*op)->GetOperation() +
-                           "(" + STR(idx) + ") Operation: " + STR(data->CGetOpNodeInfo(*op)->GetNodeId()));
+                           " does not have selector " + data->CGetOpNodeInfo(*op)->GetOperation() + "(" + STR(idx) +
+                           ") Operation: " + STR(data->CGetOpNodeInfo(*op)->GetNodeId()));
             }
             const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(*op);
             for(const auto state : running_states)
             {
-               GetPointer<commandport_obj>(selector_obj)
-                   ->add_activation(
-                       commandport_obj::transition(state, NULL_VERTEX, commandport_obj::data_operation_pair(0, *op)));
-               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                             "       - add activation for " + selector_obj->get_string() + " in state "
-                                 << HLS->Rliv->get_name(state));
+               bool is_starting_operation = std::find(astg->CGetStateInfo(state)->starting_operations.begin(),
+                                                      astg->CGetStateInfo(state)->starting_operations.end(),
+                                                      *op) != astg->CGetStateInfo(state)->starting_operations.end();
+               if(!(GET_TYPE(data, *op) & (TYPE_LOAD | TYPE_STORE)) || is_starting_operation)
+               {
+                  GetPointer<commandport_obj>(selector_obj)
+                      ->add_activation(commandport_obj::transition(state, NULL_VERTEX,
+                                                                   commandport_obj::data_operation_pair(0, *op)));
+                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                "       - add activation for " + selector_obj->get_string() + " in state "
+                                    << HLS->Rliv->get_name(state));
+               }
             }
          }
 
          const generic_objRef fu_obj = HLS->Rfu->get(*op);
          std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(HLS->functionId, *op);
+#ifndef NDEBUG
          unsigned int index = 0;
+#endif
          for(auto& num : var_read)
          {
             if(std::get<0>(num) == 0)
@@ -1417,9 +1425,11 @@ void mux_connection_binding::create_connections()
             else
             {
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                             "     - " << index << ". Read: " + behavioral_helper->PrintVariable(std::get<0>(num)));
+                             "     - " << index << ". Read: " + BH->PrintVariable(std::get<0>(num)));
             }
+#ifndef NDEBUG
             ++index;
+#endif
          }
          if(GET_TYPE(data, *op) & (TYPE_LOAD | TYPE_STORE))
          {
@@ -1442,15 +1452,27 @@ void mux_connection_binding::create_connections()
                {
                   Prec = GetPointerS<const integer_type>(GET_CONST_NODE(type))->prec;
                }
+               else if(type && (GET_CONST_NODE(type)->get_kind() == boolean_type_K))
+               {
+                  Prec = 8;
+               }
+               else if(type && (GET_CONST_NODE(type)->get_kind() == enumeral_type_K))
+               {
+                  Prec = GetPointerS<const enumeral_type>(GET_CONST_NODE(type))->prec;
+               }
                unsigned int algn = 0;
                if(type && (GET_CONST_NODE(type)->get_kind() == integer_type_K))
                {
                   algn = GetPointerS<const integer_type>(GET_CONST_NODE(type))->algn;
                }
+               else if(type && (GET_CONST_NODE(type)->get_kind() == boolean_type_K))
+               {
+                  algn = 8;
+               }
 #if USE_ALIGNMENT_INFO
                if(type && GetPointer<const type_node>(GET_CONST_NODE(type)))
                {
-                  alignment = GetPointerS<const type_node>(GET_CONST_NODE(type))->algn;
+                  algn = alignment = GetPointerS<const type_node>(GET_CONST_NODE(type))->algn;
                }
 #endif
                if(GET_TYPE(data, *op) & TYPE_STORE)
@@ -1552,28 +1574,19 @@ void mux_connection_binding::create_connections()
                                     bus_addr_bitsize, alignment);
                if(Prec != algn && Prec % algn)
                {
+                  HLS_manager::check_bitwidth(Prec);
                   determine_connection(
                       *op, HLS_manager::io_binding_type(0, Prec), fu_obj, 2, port_index, data,
                       static_cast<unsigned>(object_bitsize(TreeM, HLS_manager::io_binding_type(0, Prec))));
                }
                else
                {
-                  const auto IR_var_bitsize = tree_helper::Size(tn);
+                  const auto IR_var_bitsize = Prec != 0 ? Prec : tree_helper::Size(tn);
+                  HLS_manager::check_bitwidth(IR_var_bitsize);
                   unsigned int var_bitsize;
-                  if(Prec != algn && Prec % algn)
-                  {
-                     HLS_manager::check_bitwidth(Prec);
-                     var_bitsize = static_cast<unsigned int>(Prec);
-                  }
-                  else
-                  {
-                     var_bitsize = static_cast<unsigned int>(IR_var_bitsize);
-                  }
+                  var_bitsize = static_cast<unsigned int>(IR_var_bitsize);
                   determine_connection(
-                      *op,
-                      HLS_manager::io_binding_type(
-                          GET_INDEX_NODE(GetPointerS<const type_node>(GET_CONST_NODE(tn))->size), 0),
-                      fu_obj, 2, port_index, data,
+                      *op, HLS_manager::io_binding_type(0, var_bitsize), fu_obj, 2, port_index, data,
                       static_cast<unsigned>(object_bitsize(TreeM, HLS_manager::io_binding_type(0, var_bitsize))));
                }
             }
@@ -1626,7 +1639,7 @@ void mux_connection_binding::create_connections()
                else
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                "     - " << port_num << ". Read: " + behavioral_helper->PrintVariable(tree_var));
+                                "     - " << port_num << ". Read: " + BH->PrintVariable(tree_var));
                   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                 "          * " + GET_CONST_NODE(tree_var_node)->get_kind_text());
                   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -1732,12 +1745,11 @@ void mux_connection_binding::create_connections()
                   }
                }
                cur_phi_tree_var = tree_temp;
-               PRINT_DBG_MEX(
-                   DEBUG_LEVEL_PEDANTIC, debug_level,
-                   "Pre-Managing phi operation2 " + GET_NAME(data, *op) + " ending in state " +
-                       HLS->Rliv->get_name(estate) +
-                       (cur_phi_tree_var ? " for variable " + behavioral_helper->PrintVariable(cur_phi_tree_var) : ""));
-               THROW_ASSERT(cur_phi_tree_var, "something of wrong happen");
+               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                             "Pre-Managing phi operation2 " + GET_NAME(data, *op) + " ending in state " +
+                                 HLS->Rliv->get_name(estate) +
+                                 (cur_phi_tree_var ? " for variable " + BH->PrintVariable(cur_phi_tree_var) : ""));
+               THROW_ASSERT(cur_phi_tree_var, "something wrong happened");
                THROW_ASSERT(!HLSMgr->Rmem->has_base_address(tree_temp),
                             "phi cannot manage memory objects: @" + STR(tree_temp));
                THROW_ASSERT(!HLSMgr->Rmem->has_base_address(var_written),
@@ -1747,10 +1759,10 @@ void mux_connection_binding::create_connections()
                THROW_ASSERT(TreeM->CGetTreeNode(tree_temp)->get_kind() != misaligned_indirect_ref_K,
                             "unexpected phi use");
 
-               PRINT_DBG_MEX(
-                   DEBUG_LEVEL_PEDANTIC, debug_level,
-                   "Managing phi operation " + GET_NAME(data, *op) + " ending in state " + HLS->Rliv->get_name(estate) +
-                       (cur_phi_tree_var ? " for variable " + behavioral_helper->PrintVariable(cur_phi_tree_var) : ""));
+               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                             "Managing phi operation " + GET_NAME(data, *op) + " ending in state " +
+                                 HLS->Rliv->get_name(estate) +
+                                 (cur_phi_tree_var ? " for variable " + BH->PrintVariable(cur_phi_tree_var) : ""));
                if(HLS->storage_value_information->is_a_storage_value(estate, var_written))
                {
                   auto storage_value = HLS->storage_value_information->get_storage_value_index(estate, var_written);
@@ -2098,8 +2110,7 @@ void mux_connection_binding::create_connections()
          }
          else
          {
-            PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                          "     - Write: " + behavioral_helper->PrintVariable(var_written));
+            PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - Write: " + BH->PrintVariable(var_written));
             const CustomOrderedSet<vertex>& ending_states = HLS->Rliv->get_state_where_end(*op);
             for(const auto estate : ending_states)
             {

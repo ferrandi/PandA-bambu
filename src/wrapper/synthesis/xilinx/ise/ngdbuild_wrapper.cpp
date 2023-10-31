@@ -45,16 +45,16 @@
 /// Header include
 #include "ngdbuild_wrapper.hpp"
 
-#include "ToolManager.hpp"
-#include "xml_script_command.hpp"
-
+#include "DesignParameters.hpp"
 #include "Parameter.hpp"
+#include "ToolManager.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "xml_script_command.hpp"
 #include <iostream>
 
 // constructor
 ngdbuild_wrapper::ngdbuild_wrapper(const ParameterConstRef& _Param, const std::string& _output_dir,
-                                   const target_deviceRef& _device)
+                                   const generic_deviceRef& _device)
     : XilinxWrapper(_Param, NGDBUILD_TOOL_ID, _device, _output_dir, "ngdbuild")
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the NGDBUILD wrapper...");
@@ -96,8 +96,6 @@ std::string ngdbuild_wrapper::get_command_line(const DesignParametersRef& dp) co
       }
    }
    s << std::endl;
-   s << "if [ $? -ne 0 ]; then" << std::endl;
-   s << "   exit 1;" << std::endl;
-   s << "fi" << std::endl;
+   s << "if [ $? -ne 0 ]; then exit 1; fi" << std::endl;
    return s.str();
 }

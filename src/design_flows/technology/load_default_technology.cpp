@@ -40,29 +40,18 @@
  */
 #include "load_default_technology.hpp"
 
-/// Autoheader include
-#include "config_HAVE_KOALA_BUILT.hpp"
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
-/// parser/polixml include
+#include "custom_set.hpp"
+#include "fileIO.hpp"
+#include "string_manipulation.hpp"
+#include "technology_manager.hpp"
+#include "xml_document.hpp"
 #include "xml_dom_parser.hpp"
 
-/// polixml include
-#include "xml_document.hpp"
-
-/// STD include
 #include <string>
 
-/// STL include
-#include "custom_set.hpp"
-
-/// technology include
-#include "technology_manager.hpp"
-
-/// utility include
-#include "fileIO.hpp"
-
-LoadDefaultTechnology::LoadDefaultTechnology(const technology_managerRef _TM, const target_deviceRef _target,
+LoadDefaultTechnology::LoadDefaultTechnology(const technology_managerRef _TM, const generic_deviceRef _target,
                                              const DesignFlowManagerConstRef _design_flow_manager,
                                              const ParameterConstRef _parameters)
     : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_DEFAULT_TECHNOLOGY,
@@ -92,14 +81,14 @@ DesignFlowStep_Status LoadDefaultTechnology::Exec()
 
       for(i = 0; i < sizeof(builtin_resources_data) / sizeof(char*); ++i)
       {
-         XMLDomParser parser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/design_flows/technology/") +
+         XMLDomParser parser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/design_flows/technology/", true) +
                              builtin_resources_data[i]);
          parser.Exec();
          if(parser)
          {
             // Walk the tree:
             const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
-            TM->xload(node, target);
+            TM->xload(node);
          }
       }
    }

@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -75,7 +75,7 @@ inline std::vector<signal<Ntk>> zero_extend( Ntk& ntk, std::vector<signal<Ntk>> 
 
   assert( bitwidth >= a.size() );
 
-  auto ret{a};
+  auto ret{ a };
   for ( auto i = a.size(); i < bitwidth; ++i )
   {
     ret.emplace_back( ntk.get_constant( false ) );
@@ -124,7 +124,7 @@ std::vector<signal<Ntk>> binary_decoder( Ntk& ntk, std::vector<signal<Ntk>> cons
 
   if ( xs.size() == 1u )
   {
-    return {ntk.create_not( xs[0] ), xs[0]};
+    return { ntk.create_not( xs[0] ), xs[0] };
   }
 
   // recursion

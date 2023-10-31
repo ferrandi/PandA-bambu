@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -76,10 +76,10 @@ struct esop_rebalancing
 
       if ( max_level_mux < max_level && max_level_mux < best_level )
       {
-        callback( {dest.create_ite( inputs[index].f,
-                                    dest.create_nary_xor( and_terms1 ),
-                                    dest.create_nary_xor( and_terms0 ) ),
-                   max_level_mux},
+        callback( { dest.create_ite( inputs[index].f,
+                                     dest.create_nary_xor( and_terms1 ),
+                                     dest.create_nary_xor( and_terms0 ) ),
+                    max_level_mux },
                   num_and_gates0 + num_and_gates1 + 1u );
         return;
       }
@@ -87,7 +87,7 @@ struct esop_rebalancing
 
     if ( max_level < best_level || ( max_level == best_level && num_and_gates < best_cost ) )
     {
-      callback( {dest.create_nary_xor( and_terms ), max_level}, num_and_gates );
+      callback( { dest.create_nary_xor( and_terms ), max_level }, num_and_gates );
     }
   }
 
@@ -120,7 +120,7 @@ private:
         if ( cube.get_mask( i ) )
         {
           const auto [f, l] = arrival_times[i];
-          product_queue.push( {cube.get_bit( i ) ? f : dest.create_not( f ), l} );
+          product_queue.push( { cube.get_bit( i ) ? f : dest.create_not( f ), l } );
         }
       }
       if ( product_queue.size() )
@@ -131,7 +131,7 @@ private:
       and_terms.push_back( s );
       max_level = std::max( max_level, l );
     }
-    return {and_terms, max_level, num_and_gates};
+    return { and_terms, max_level, num_and_gates };
   }
 
   std::tuple<std::vector<signal<Ntk>>, uint32_t, uint32_t> create_function_from_spp( Ntk& dest, kitty::dynamic_truth_table const& func, std::vector<arrival_time_pair<Ntk>> const& arrival_times ) const
@@ -151,7 +151,7 @@ private:
         if ( cube.get_mask( i ) )
         {
           const auto [f, l] = arrival_times[i];
-          product_queue.push( {cube.get_bit( i ) ? f : dest.create_not( f ), l} );
+          product_queue.push( { cube.get_bit( i ) ? f : dest.create_not( f ), l } );
         }
       }
       for ( auto i = 0u; i < sums.size(); ++i )
@@ -170,7 +170,7 @@ private:
             }
           }
           const auto f = dest.create_nary_xor( xor_terms );
-          product_queue.push( {cube.get_bit( func.num_vars() + i ) ? f : dest.create_not( f ), xor_level} );
+          product_queue.push( { cube.get_bit( func.num_vars() + i ) ? f : dest.create_not( f ), xor_level } );
         }
       }
       if ( product_queue.size() )
@@ -181,14 +181,14 @@ private:
       and_terms.push_back( s );
       max_level = std::max( max_level, l );
     }
-    return {and_terms, max_level, num_and_gates};
+    return { and_terms, max_level, num_and_gates };
   }
 
   arrival_time_pair<Ntk> balanced_and_tree( Ntk& dest, arrival_time_queue<Ntk>& queue ) const
   {
     if ( queue.empty() )
     {
-      return {dest.get_constant( true ), 0u};
+      return { dest.get_constant( true ), 0u };
     }
 
     while ( queue.size() > 1u )
@@ -199,7 +199,7 @@ private:
       queue.pop();
       const auto s = dest.create_and( s1, s2 );
       const auto l = std::max( l1, l2 ) + 1;
-      queue.push( {s, l} );
+      queue.push( { s, l } );
     }
     return queue.top();
   }
@@ -223,8 +223,8 @@ private:
   mutable std::unordered_map<kitty::dynamic_truth_table, std::vector<kitty::cube>, kitty::hash<kitty::dynamic_truth_table>> sop_hash_;
 
 public:
-  bool spp_optimization{false};
-  bool mux_optimization{false};
+  bool spp_optimization{ false };
+  bool mux_optimization{ false };
 
 public:
   mutable uint32_t sop_cache_hits{};

@@ -44,7 +44,7 @@
  */
 #include "schedule.hpp"
 
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
 #include <ostream>
 
 #include "behavioral_helper.hpp"
@@ -61,8 +61,8 @@
 /// hls includes
 #include "hls.hpp"
 #include "hls_constraints.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 
 /// hls/module_allocation
 #include "allocation_information.hpp"
@@ -156,6 +156,7 @@ class ScheduleWriter : public GraphWriter
  private:
    /// The schedule to be printed
    const ScheduleConstRef sch;
+   const OpVertexSet* opSet;
 
  public:
    /**
@@ -163,8 +164,8 @@ class ScheduleWriter : public GraphWriter
     * @param op_graph is the operation graph to be printed
     * @param _sch is the schedule
     */
-   ScheduleWriter(const OpGraphConstRef op_graph, const ScheduleConstRef _sch)
-       : GraphWriter(op_graph.get(), 0), sch(_sch)
+   ScheduleWriter(const OpGraphConstRef op_graph, const ScheduleConstRef _sch, OpVertexSet* _opSet)
+       : GraphWriter(op_graph.get(), 0), sch(_sch), opSet(_opSet)
    {
    }
 
@@ -174,12 +175,15 @@ class ScheduleWriter : public GraphWriter
    void operator()(std::ostream& os) const override
    {
       os << "//Scheduling solution\n";
-      os << "splines=polyline;\n";
+      os << "splines=ortho;\n";
       std::map<ControlStep, UnorderedSetStdStable<vertex>> inverse_relation;
       VertexIterator v, v_end;
       for(boost::tie(v, v_end) = boost::vertices(*printing_graph); v != v_end; v++)
       {
-         inverse_relation[sch->get_cstep(*v).second].insert(*v);
+         if(!opSet || opSet->find(*v) != opSet->end())
+         {
+            inverse_relation[sch->get_cstep(*v).second].insert(*v);
+         }
       }
       for(auto level = ControlStep(0u); level < sch->get_csteps(); ++level)
       {
@@ -189,28 +193,39 @@ class ScheduleWriter : public GraphWriter
          {
             os << boost::get(boost::vertex_index_t(), *printing_graph)[operation] << " ";
          }
-         os << ";}\n";
+         os << " ;}\n";
       }
       for(auto level = ControlStep(1u); level < sch->get_csteps(); ++level)
       {
-         os << "CS" << level - 1u << "-> CS" << level << ";\n";
+         os << "CS" << level - 1u << " -> CS" << level << ";\n";
+      }
+      for(auto level = ControlStep(0u); level < sch->get_csteps(); ++level)
+      {
+         if(!inverse_relation[level].empty())
+         {
+            os << "CS" << level << " -> "
+               << boost::get(boost::vertex_index_t(), *printing_graph)[*inverse_relation[level].begin()]
+               << " [style=invis weight=1000 color=dimgrey];\n";
+         }
       }
    }
 };
 
-void Schedule::WriteDot(const std::string& file_name) const
+void Schedule::WriteDot(const std::string& file_name, OpGraphConstRef sub_op_graph, OpVertexSet* opSet) const
 {
-   const BehavioralHelperConstRef helper = op_graph->CGetOpGraphInfo()->BH;
+   auto local_op_graph = sub_op_graph ? sub_op_graph : op_graph;
+   const BehavioralHelperConstRef helper = local_op_graph->CGetOpGraphInfo()->BH;
    std::string output_directory =
        parameters->getOption<std::string>(OPT_dot_directory) + "/" + helper->get_function_name() + "/";
-   if(!boost::filesystem::exists(output_directory))
+   if(!std::filesystem::exists(output_directory))
    {
-      boost::filesystem::create_directories(output_directory);
+      std::filesystem::create_directories(output_directory);
    }
-   const VertexWriterConstRef op_label_writer(new OpWriter(op_graph.get(), 0));
-   const EdgeWriterConstRef op_edge_property_writer(new OpEdgeWriter(op_graph.get()));
-   const GraphWriterConstRef graph_writer(new ScheduleWriter(op_graph, ScheduleConstRef(this, null_deleter())));
-   op_graph->InternalWriteDot<const OpWriter, const OpEdgeWriter, const ScheduleWriter>(
+   const VertexWriterConstRef op_label_writer(new OpWriter(local_op_graph.get(), 0));
+   const EdgeWriterConstRef op_edge_property_writer(new OpEdgeWriter(local_op_graph.get()));
+   const GraphWriterConstRef graph_writer(
+       new ScheduleWriter(local_op_graph, ScheduleConstRef(this, null_deleter()), opSet));
+   local_op_graph->InternalWriteDot<const OpWriter, const OpEdgeWriter, const ScheduleWriter>(
        output_directory + file_name, op_label_writer, op_edge_property_writer, graph_writer);
 }
 

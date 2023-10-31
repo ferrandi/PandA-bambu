@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2021  EPFL
+ * Copyright (C) 2017-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -42,7 +42,7 @@
 namespace kitty
 {
 
-/*! \brief Computes all minterms 
+/*! \brief Computes all minterms
 
   \param tt Truth table
 */
@@ -51,9 +51,8 @@ std::vector<uint32_t> get_minterms( const TT& tt )
 {
   std::vector<uint32_t> m;
   m.reserve( count_ones( tt ) );
-  for_each_one_bit( tt, [&m]( auto index ) {
-    m.emplace_back( static_cast<uint32_t>( index ) );
-  } );
+  for_each_one_bit( tt, [&m]( auto index )
+                    { m.emplace_back( static_cast<uint32_t>( index ) ); } );
   return m;
 }
 
@@ -69,7 +68,8 @@ inline std::vector<std::pair<Iterator, Iterator>> get_jbuddies( Iterator begin, 
 
   while ( true )
   {
-    k = std::find_if( k, end, [mask]( auto m ) { return ( m & mask ) == 0; } );
+    k = std::find_if( k, end, [mask]( auto m )
+                      { return ( m & mask ) == 0; } );
     if ( k == end )
       break;
 
@@ -78,7 +78,8 @@ inline std::vector<std::pair<Iterator, Iterator>> get_jbuddies( Iterator begin, 
       kk = k + 1;
     }
 
-    kk = std::find_if( kk, end, [mask, &k]( auto m ) { return m >= ( *k | mask ); } );
+    kk = std::find_if( kk, end, [mask, &k]( auto m )
+                       { return m >= ( *k | mask ); } );
     if ( kk == end )
       break;
 
@@ -136,7 +137,7 @@ inline std::vector<cube> get_prime_implicants_morreale( const std::vector<uint32
   const auto m = minterms.size();
 
   std::vector<uint32_t> tags( 2 * m + n, 0 );
-  std::vector<uint32_t> stack( 2 * m + n , 0 );
+  std::vector<uint32_t> stack( 2 * m + n, 0 );
 
   uint32_t mask = ( 1 << n ) - 1;
   uint32_t A{};

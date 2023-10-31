@@ -106,12 +106,12 @@ class MemoryAllocationSpecialization : public HLSFlowStepSpecialization
    /**
     * Return the string representation of this
     */
-   const std::string GetKindText() const override;
+   std::string GetKindText() const override;
 
    /**
     * Return the contribution to the signature of a step given by the specialization
     */
-   const std::string GetSignature() const override;
+   std::string GetSignature() const override;
 };
 
 /**
@@ -138,7 +138,7 @@ class memory_allocation : public HLS_step
    void setup_memory_allocation();
 
    /**
-    * Performs a final analysis of the memory allocation to finalize the datastructure
+    * Performs a final analysis of the memory allocation to finalize the data-structure
     */
    void finalize_memory_allocation();
 

@@ -58,13 +58,6 @@
 
 /// implemented algorithms
 #include "parametric_list_based.hpp"
-#if HAVE_ILP_BUILT && HAVE_EXPERIMENTAL
-#include "ilp_loop_pipelining.hpp"
-#include "ilp_scheduling.hpp"
-#include "ilp_scheduling_new.hpp"
-#include "meilp_solver.hpp"
-#include "silp_scheduling.hpp"
-#endif
 
 #include "polixml.hpp"
 
@@ -116,7 +109,7 @@ Scheduling::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relat
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
          if(parameters->getOption<bool>(OPT_parse_pragma))
          {
             ret.insert(std::make_tuple(HLSFlowStep_Type::OMP_ALLOCATION, HLSFlowStepSpecializationConstRef(),
@@ -144,149 +137,4 @@ Scheduling::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relat
          THROW_UNREACHABLE("");
    }
    return ret;
-}
-
-unsigned int Scheduling::compute_b_tag_size(const OpGraphConstRef cdg, vertex controlling_vertex) const
-{
-   if(GET_TYPE(cdg.get(), controlling_vertex) & TYPE_ENTRY)
-   {
-      return 1;
-   }
-   else if(GET_TYPE(cdg.get(), controlling_vertex) & TYPE_IF)
-   {
-      return 2;
-   }
-   else if(GET_TYPE(cdg.get(), controlling_vertex) & TYPE_SWITCH)
-   {
-      THROW_ASSERT(switch_map_size.find(controlling_vertex) != switch_map_size.end(),
-                   "missing a controlling_vertex from the switch_map_size");
-      return switch_map_size.find(controlling_vertex)->second;
-   }
-   else
-   {
-      THROW_ERROR("Not yet supported conditional vertex");
-   }
-   return 0;
-}
-
-unsigned int Scheduling::compute_b_tag(const EdgeDescriptor& e, const OpGraphConstRef cdg,
-                                       CustomOrderedSet<unsigned int>::const_iterator& switch_it,
-                                       CustomOrderedSet<unsigned int>::const_iterator& switch_it_end) const
-{
-   vertex controlling_vertex = boost::source(e, *cdg);
-   if(GET_TYPE(cdg.get(), controlling_vertex) & TYPE_ENTRY)
-   {
-      return 0;
-   }
-   else if(GET_TYPE(cdg.get(), controlling_vertex) & TYPE_IF)
-   {
-      if(Cget_edge_info<OpEdgeInfo>(e, *cdg) && CDG_TRUE_CHECK(cdg.get(), e))
-      {
-         return 0;
-      }
-      else
-      {
-         return 1;
-      }
-   }
-   else if(GET_TYPE(cdg, controlling_vertex) & TYPE_SWITCH)
-   {
-      const CustomOrderedSet<unsigned int>& switch_set = EDGE_GET_NODEID(cdg.get(), e, CDG_SELECTOR);
-      switch_it = switch_set.begin();
-      switch_it_end = switch_set.end();
-      return 2;
-   }
-   else
-   {
-      THROW_ERROR("Not yet supported conditional vertex");
-   }
-   return 0;
-}
-
-unsigned int Scheduling::b_tag_normalize(vertex controlling_vertex, unsigned int b_tag_not_normalized) const
-{
-   auto snp_it = switch_normalizing_map.find(controlling_vertex);
-   THROW_ASSERT(snp_it != switch_normalizing_map.end(), "this controlling vertex is not of switch type");
-   auto snp_el_it = snp_it->second.find(b_tag_not_normalized);
-   THROW_ASSERT(snp_el_it != snp_it->second.end(), "switch_normalizing_map not correctly initialized");
-   return snp_el_it->second;
-}
-
-void Scheduling::init_switch_maps(vertex controlling_vertex, const OpGraphConstRef cdg)
-{
-   unsigned int curr_b_tag = 0;
-   switch_normalizing_map.insert(std::pair<vertex, CustomUnorderedMapUnstable<unsigned int, unsigned int>>(
-       controlling_vertex, CustomUnorderedMapUnstable<unsigned int, unsigned int>()));
-   auto snp_it = switch_normalizing_map.find(controlling_vertex);
-   OutEdgeIterator eo, eo_end;
-   for(boost::tie(eo, eo_end) = boost::out_edges(controlling_vertex, *cdg); eo != eo_end; eo++)
-   {
-      const CustomOrderedSet<unsigned int>& switch_set = EDGE_GET_NODEID(cdg, *eo, CDG_SELECTOR);
-      const CustomOrderedSet<unsigned int>::const_iterator switch_it_end = switch_set.end();
-      for(auto switch_it = switch_set.begin(); switch_it != switch_it_end; ++switch_it)
-      {
-         if(snp_it->second.find(*switch_it) == snp_it->second.end())
-         {
-            snp_it->second[*switch_it] = curr_b_tag++;
-         }
-      }
-   }
-   switch_map_size[controlling_vertex] = curr_b_tag;
-}
-
-ControlStep Scheduling::anticipate_operations(const OpGraphConstRef dependence_graph)
-{
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Scheduling::anticipate_operations - Begin");
-   /// The clock cycle
-   const double clock_cycle = HLS->HLS_C->get_clock_period();
-
-   /// Last control step
-   auto last_cs = ControlStep(0u);
-
-   std::list<vertex> operations;
-   boost::topological_sort(*dependence_graph, std::front_inserter(operations));
-   std::list<vertex>::const_iterator v, v_end = operations.end();
-   /// Checking vertex in topological order
-   for(v = operations.begin(); v != v_end; ++v)
-   {
-      /// Checking if operations is time zero
-      double execution_time =
-          HLS->allocation_information->get_execution_time(HLS->Rfu->get_assign(*v), *v, dependence_graph);
-      if(execution_time == 0.0)
-      {
-         InEdgeIterator ei, ei_end;
-         for(boost::tie(ei, ei_end) = boost::in_edges(*v, *dependence_graph); ei != ei_end; ei++)
-         {
-            vertex source = boost::source(*ei, *dependence_graph);
-            const auto ending_time = HLS->Rsch->get_cstep(source).second +
-                                     HLS->allocation_information->op_et_to_cycles(
-                                         HLS->allocation_information->get_execution_time(HLS->Rfu->get_assign(source),
-                                                                                         source, dependence_graph),
-                                         clock_cycle);
-            /// Operation can not be anticipated
-            if(ending_time > HLS->Rsch->get_cstep(*v).second)
-            {
-               break;
-            }
-
-            if(ending_time == HLS->Rsch->get_cstep(*v).second &&
-               (GET_TYPE(dependence_graph, source) & (TYPE_IF | TYPE_WHILE | TYPE_FOR | TYPE_SWITCH)))
-            {
-               break;
-            }
-         }
-         /// Operation can be anticipated
-         if(ei == ei_end && HLS->Rsch->get_cstep(*v).second > 0)
-         {
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Anticipating " + GET_NAME(dependence_graph, *v));
-            HLS->Rsch->set_execution(*v, HLS->Rsch->get_cstep(*v).second - 1);
-         }
-         if(HLS->Rsch->get_cstep(*v).second > last_cs)
-         {
-            last_cs = HLS->Rsch->get_cstep(*v).second;
-         }
-      }
-   }
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Scheduling::anticipate_operations - End");
-   return last_cs;
 }

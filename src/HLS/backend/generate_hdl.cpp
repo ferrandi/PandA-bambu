@@ -60,8 +60,8 @@
 #include "HDL_manager.hpp"
 
 /// HLS includes
+#include "hls_device.hpp"
 #include "hls_flow_step_factory.hpp"
-#include "hls_target.hpp"
 
 /// STD include
 #include <string>
@@ -117,12 +117,12 @@ bool generate_hdl::HasToBeExecuted() const
 
 DesignFlowStep_Status generate_hdl::Exec()
 {
-   HDL_manager HM(HLSMgr, HLSMgr->get_HLS_target()->get_target_device(), parameters);
+   HDL_manager HM(HLSMgr, HLSMgr->get_HLS_device(), parameters);
    const auto file_name = parameters->getOption<std::string>(OPT_top_file);
    std::list<structural_objectRef> top_circuits;
    const auto root_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    std::transform(root_functions.begin(), root_functions.end(), std::back_inserter(top_circuits),
                   [&](unsigned int top_function) { return HLSMgr->get_HLS(top_function)->top->get_circ(); });
-   HM.hdl_gen(file_name, top_circuits, false, HLSMgr->hdl_files, HLSMgr->aux_files);
+   HM.hdl_gen(file_name, top_circuits, HLSMgr->hdl_files, HLSMgr->aux_files, false);
    return DesignFlowStep_Status::SUCCESS;
 }

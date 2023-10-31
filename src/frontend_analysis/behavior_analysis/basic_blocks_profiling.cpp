@@ -37,13 +37,13 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-/// Header include
 #include "basic_blocks_profiling.hpp"
 
 #include "Parameter.hpp"
 #include "application_manager.hpp"
 #include "behavioral_helper.hpp"
 #include "c_backend.hpp"
+#include "c_backend_information.hpp"
 #include "c_backend_step_factory.hpp"
 #include "call_graph_manager.hpp"
 #include "compiler_wrapper.hpp"
@@ -53,11 +53,11 @@
 #include "fileIO.hpp"
 #include "function_behavior.hpp"
 #include "hash_helper.hpp"
+#include "hls_step.hpp"
 #include "host_profiling_constants.hpp"
 #include "profiling_information.hpp"
 #include "string_manipulation.hpp"
 
-/// STD include
 #include <string>
 #include <utility>
 #include <vector>
@@ -71,8 +71,6 @@ BasicBlocksProfiling::BasicBlocksProfiling(const application_managerRef _AppM,
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-BasicBlocksProfiling::~BasicBlocksProfiling() = default;
-
 const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 BasicBlocksProfiling::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType) const
 {
@@ -80,12 +78,34 @@ BasicBlocksProfiling::ComputeFrontendRelationships(const DesignFlowStep::Relatio
    return relationships;
 }
 
+void BasicBlocksProfiling::ComputeRelationships(DesignFlowStepSet& relationship,
+                                                const DesignFlowStep::RelationshipType relationship_type)
+{
+   if(relationship_type == DEPENDENCE_RELATIONSHIP)
+   {
+      const auto c_backend_factory =
+          GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
+      relationship.insert(c_backend_factory->CreateCBackendStep(
+          CBackendInformationConstRef(new CBackendInformation(CBackendInformation::CB_BBP, profiling_source_file))));
+   }
+   ApplicationFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
+}
+
+void BasicBlocksProfiling::Initialize()
+{
+   const auto functions = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
+   for(const auto function : functions)
+   {
+      AppM->GetFunctionBehavior(function)->profiling_information->Clear();
+   }
+}
+
 DesignFlowStep_Status BasicBlocksProfiling::Exec()
 {
-   boost::filesystem::path temporary_path(parameters->getOption<std::string>(OPT_output_temporary_directory));
+   std::filesystem::path temporary_path(parameters->getOption<std::string>(OPT_output_temporary_directory));
 
-   boost::filesystem::path run_name = temporary_path / ("run.tmp");
-   boost::filesystem::path profile_data_name = temporary_path / STR_CST_host_profiling_data;
+   std::filesystem::path run_name = temporary_path / ("run.tmp");
+   std::filesystem::path profile_data_name = temporary_path / STR_CST_host_profiling_data;
 
    const CompilerWrapperConstRef compiler_wrapper(
        new CompilerWrapper(this->parameters, parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_host_compiler),
@@ -106,16 +126,15 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Running with parameters: " + exec_argv);
       // The argument
-      boost::filesystem::remove(profile_data_name);
+      std::filesystem::remove(profile_data_name);
 
       const auto command = change_directory + "\"" + run_name.string() + "\" " + exec_argv + " ";
-      const auto ret = PandaSystem(parameters, command, temporary_path.string() + STR_CST_host_profiling_output);
+      const auto ret = PandaSystem(parameters, command, false, temporary_path.string() + STR_CST_host_profiling_output);
       if(IsError(ret))
       {
          if(errno and not parameters->getOption<bool>(OPT_no_return_zero))
          {
-            THROW_ERROR_CODE(PROFILING_EC,
-                             "Error " + boost::lexical_cast<std::string>(errno) + " during dynamic profiling");
+            THROW_ERROR_CODE(PROFILING_EC, "Error " + std::to_string(errno) + " during dynamic profiling");
          }
       }
 
@@ -136,7 +155,7 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
                if(line.find("Function") != std::string::npos)
                {
                   const auto function_behavior =
-                      AppM->CGetFunctionBehavior(boost::lexical_cast<unsigned int>(splitted[1]));
+                      AppM->CGetFunctionBehavior(static_cast<unsigned>(std::stoul(splitted[1])));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Found data of function " +
                                      function_behavior->CGetBehavioralHelper()->get_function_name());
@@ -145,12 +164,11 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
                }
                else
                {
-                  const auto bb_index = boost::lexical_cast<unsigned int>(splitted[0]);
+                  const auto bb_index = static_cast<unsigned>(std::stoul(splitted[0]));
                   if(bb_index_map.find(bb_index) != bb_index_map.end())
                   {
                      const auto bb_vertex = bb_index_map.find(bb_index)->second;
-                     profiling_information->bb_executions[bb_vertex] =
-                         boost::lexical_cast<unsigned long long int>(splitted[1]);
+                     profiling_information->bb_executions[bb_vertex] = std::stoull(splitted[1]);
                   }
                   else
                   {
@@ -177,30 +195,4 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
       }
    }
    return DesignFlowStep_Status::SUCCESS;
-}
-
-void BasicBlocksProfiling::Initialize()
-{
-   const auto functions = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
-   for(const auto function : functions)
-   {
-      AppM->GetFunctionBehavior(function)->profiling_information->Clear();
-   }
-}
-
-void BasicBlocksProfiling::ComputeRelationships(DesignFlowStepSet& relationship,
-                                                const DesignFlowStep::RelationshipType relationship_type)
-{
-   if(relationship_type == DEPENDENCE_RELATIONSHIP)
-   {
-      vertex backend_step = design_flow_manager.lock()->GetDesignFlowStep(CBackend::ComputeSignature(CBackend::CB_BBP));
-      const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-      const auto design_flow_step =
-          backend_step != NULL_VERTEX ?
-              design_flow_graph->CGetDesignFlowStepInfo(backend_step)->design_flow_step :
-              GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"))
-                  ->CreateCBackendStep(CBackend::CB_BBP, profiling_source_file, CBackendInformationConstRef());
-      relationship.insert(design_flow_step);
-   }
-   ApplicationFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }

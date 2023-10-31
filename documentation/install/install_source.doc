@@ -1,0 +1,239 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project 
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2004-2023 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/*!
+  \page install_source Build PandA framework from source
+  The PandA project is an open-source project and you can find the codebase on GitHub at https://github.com/ferrandi/PandA-bambu.
+
+
+  \section install_source_dep Install PandA build dependencies
+  To compile and install the PandA framework on one of the \ref install_supportedos "supported operating systems" you must first install essential build dependencies:
+  \verbatim
+  sudo apt-get install -y \
+      autoconf autoconf-archive automake bison bzip2 \
+      doxygen flex g++ g++-multilib gcc gcc-multilib ghostscript \
+      graphviz libbdd-dev libboost-all-dev libc6-dev-i386 libfl-dev libglpk-dev \
+      libicu-dev libltdl-dev liblzma-dev libmpc-dev libmpfi-dev libmpfr-dev \
+      libsuitesparse-dev libtinfo5 libtool libxml2-dev linux-libc-dev \
+      lsb-release make pkg-config texlive-fonts-recommended \
+      texlive-latex-extra texlive-latex-recommended time xz-utils zlib1g-dev
+  \endverbatim
+
+  \verbatim
+  NOTE: Boost libraries headers only are required, object libraries are not used by the PandA framework.
+  \endverbatim
+
+  Furthermore, to compile the PandA Bambu HLS tool, at least one of the supported Clang LLVM compilers must be installed on the host machine.
+  Common Clang and GCC compilers are used as frontend from the High-Level Synthesis flow to process the input source code and generate the internal Intermediate Representation (IR).
+  Supported fronted compilers are:
+  - GNU GCC 4.9.4
+  - GNU GCC 5.5.0
+  - GNU GCC 6.5.0
+  - GNU GCC 7.5.0
+  - GNU GCC 8.5.0
+  - Clang LLVM 4.0.0
+  - Clang LLVM 5.0.2
+  - Clang LLVM 6.0.1
+  - Clang LLVM 7.0.1
+  - Clang LLVM 8.0.0
+  - Clang LLVM 9.0.1
+  - Clang LLVM 10.0.1
+  - Clang LLVM 11.1.0
+  - Clang LLVM 12.0.1
+  - Clang LLVM 13.0.1
+  - Clang LLVM 16.0.0
+  
+  Exact supported distribution of each one of the supported compilers can be downloaded from PandA release website at https://release.bambuhls.eu/compiler for convenience.
+  Compilers packages from APT may be valid but are not guaranteed to work and are not tested, but may still be fine to use.
+  
+  To install GNU GCC compiler from APT, the following packages are required:
+  - gcc-<version>
+  - gcc-<version>-multilib
+  - gcc-<version>-plugin-dev
+  - g++-<version>
+  - g++-<version>-multilib
+  - gfortran-<version>          (optional)
+  - gfortran-<version>-multilib (optional)
+
+  To install Clang LLVM compiler from APT, the following packages are required:
+  - clang-<version>
+  - libclang-<version>-dev
+
+
+  \section install_source_clone Clone PandA repository
+  Once all build dependencies have been successfully installed on the host machine, you may clone the git repository of the PandA framework on your machine and enter the root directory:
+  \verbatim
+  git clone https://github.com/ferrandi/PandA-bambu
+  cd PandA-bambu
+  \endverbatim
+
+
+  \section install_source_configure Configure PandA build options
+  It is now necessary to run the Automake build configuration script.
+  The configuration of PandA framework exposes the following options:
+  \verbatim
+   Usage: ../configure [OPTION]... [VAR=VALUE]...
+
+   To assign environment variables (e.g., CC, CFLAGS...), specify them as
+   VAR=VALUE.  See below for descriptions of some of the useful variables.
+
+   Defaults for the options are specified in brackets.
+
+   Installation directories:
+   --prefix=PREFIX         install architecture-independent files in PREFIX
+                           [/usr/local]
+   --exec-prefix=EPREFIX   install architecture-dependent files in EPREFIX
+                           [PREFIX]
+
+   By default, `make install' will install all the files in
+   `/usr/local/bin', `/usr/local/lib' etc.  You can specify
+   an installation prefix other than `/usr/local' using `--prefix',
+   for instance `--prefix=$HOME'.
+
+   Optional Features:
+   --disable-option-checking  ignore unrecognized --enable/--with options
+   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
+   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+   --enable-silent-rules   less verbose build output (undo: "make V=1")
+   --disable-silent-rules  verbose build output (undo: "make V=0")
+   --enable-shared[=PKGS]  build shared libraries [default=no]
+   --enable-dependency-tracking
+                           do not reject slow dependency extractors
+   --disable-dependency-tracking
+                           speeds up one-time build
+   --enable-clanglibcpp         Clang is going to use libc++
+   --enable-oldclangabi         Clang plugins are compiled with the old abi
+   --disable-nls           do not use Native Language Support
+   --enable-fast-install[=PKGS]
+                           optimize for fast installation [default=no]
+   --enable-static[=PKGS]  build static libraries [default=yes]
+   --disable-libtool-lock  avoid locking (might break parallel builds)
+   --enable-all                 compile all tools
+   --enable-spider              compile spider tool for parse profiling analysis data
+   --enable-bambu               compile bambu tool for High-Level Synthesis
+   --enable-eucalyptus          compile eucalyptus tool for RTL characterization
+   --enable-treegcc             compile tree-panda-gcc tool for gimple compilation
+   --enable-release             compile the source code for release (default enabled)
+   --enable-unordered           compile the source code with unordered data structure (default disabled)
+   --enable-Werror              compile the source code with Werror option; a subset of possible warning is considered
+   --disable-asserts            disable most of the runtime check (default enabled)
+   --enable-debug               compile the source code with debug symbols (default disabled)
+   --enable-opt                 compile the source code with -O2 (default enabled)
+   --enable-allstatic           create static binaries
+   --enable-32bits              create 32bits binaries
+   --enable-flopoco             compile FloPoCo external library
+   --disable-openmp        do not use OpenMP
+
+   Optional Packages:
+   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
+   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+   --with-pic[=PKGS]       try to use only PIC/non-PIC objects [default=use
+                           both]
+   --with-aix-soname=aix|svr4|both
+                           shared library versioning (aka "SONAME") variant to
+                           provide on AIX, [default=aix].
+   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
+   --with-sysroot[=DIR]    Search for dependent libraries within DIR (or the
+                           compiler's sysroot if not specified).
+   --with-boost[=DIR]      use boost (default is yes) - it is possible to
+                           specify the root directory for boost (optional)
+   --with-blas=<lib>       use BLAS library <lib>
+   --with-lapack=<lib>     use LAPACK library <lib>
+   --with-gcc49=executable-path path where the GCC 4.9 is installed
+   --with-gcc5=executable-path path where the GCC 5 is installed
+   --with-gcc6=executable-path path where the GCC 6 is installed
+   --with-gcc7=executable-path path where the GCC 7 is installed
+   --with-gcc8=executable-path path where the GCC 8 is installed
+   --with-clang4=executable-path path where the CLANG 4.0 is installed
+   --with-clang5=executable-path path where the CLANG 5.0 is installed
+   --with-clang6=executable-path path where the CLANG 6.0 is installed
+   --with-clang7=executable-path path where the CLANG 7.0 is installed
+   --with-clang8=executable-path path where the CLANG 8.0 is installed
+   --with-clang9=executable-path path where the CLANG 9.0 is installed
+   --with-clang10=executable-path path where the CLANG 10.0 is installed
+   --with-clang11=executable-path path where the CLANG 11.0 is installed
+   --with-clang12=executable-path path where the CLANG 12.0 is installed
+   --with-clang13=executable-path path where the CLANG 13.0 is installed
+   --with-clang16=executable-path path where the CLANG 16.0 is installed
+   --with-clangvvd=executable-path path where the CLANG vvd is installed
+   --with-opt-level=<level> set the optimization level with which panda is compiled
+  \endverbatim
+
+  Install prefix path must always be specified for a successful build process.
+  Also, if frontend compilers are not available in system path (i.e. they have not been installed from APT), it is mandatory to add the corresponding option to set the compiler path: --with-clang<big_version>="/path/to/clang+llvm/bin/clang" for Clang LLVM compilers and --with-gcc<version>="/path/to/bin/gcc" for GNU GCC compilers.
+
+  By default, an optimized release version of all PandA framework tools is built, thus it is not necessary to use any additional option.<br/>
+  The following can be used to create a build directory and run the configuration for a release build of the PandA framework:
+  \verbatim
+  mkdir build
+  cd build
+  ../configure --prefix=/opt/panda
+  \endverbatim
+  The configure procedure can take a while, since some external libraries are compiled and installed in the given prefix path during the process.
+
+  It is also possible to set a specific compiler for the build process using CC and CXX variables. Both GNU GCC and Clang LLVM compilers may be used given the offer C++17 support:
+  \verbatim
+  ../configure --prefix=/opt/panda CC=clang-16 CXX=clang++-16
+  \endverbatim
+
+  \section install_source_build Build PandA framework
+  After the build configuration has completed successfully, it is possible to start the PandA framework build process by running make inside the build directory:
+  \verbatim
+  make -j 4
+  \endverbatim
+  \verbatim
+  NOTE: parallel builds may require a large amount of RAM on the system, an approximate 1GB per process has to be considered.
+  \endverbatim
+
+
+  \section install_source_install Install PandA framework
+  Finally, it is necessary to install the PandA frameowrk binaries and libraries using the make install command:
+  \verbatim
+  make install
+  \endverbatim
+
+  \section install_source_use Use PandA framework installed tools
+  Once the build and installation processes have been completed, you can find all PandA binaries in the prefix path you sepcified during the build configuration procedure inside the bin directory.
+  Following the above, you should have the following:
+  \verbatim
+  ls /opt/panda
+  bambu  eucalyptus  fplll  latticegen  sollya  spider  tree-panda-gcc
+  \endverbatim
+
+
+  \section install_source_next Next steps
+  - \ref bambu_overview
+  - \ref bambu101_page
+  - \ref dev_page
+
+
+*/

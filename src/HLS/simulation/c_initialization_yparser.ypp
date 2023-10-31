@@ -77,6 +77,7 @@ REF_FORWARD_DECL(CInitializationLexer);
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wredundant-decls"
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 
 /**
 * Class declarations

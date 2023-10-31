@@ -42,47 +42,38 @@
 #include "structural_objects.hpp"
 
 #include "config_HAVE_ASSERTS.hpp"
-#include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
-#include "config_HAVE_TUCANO_BUILT.hpp"
 #include "config_RELEASE.hpp"
 
-#include "HDL_manager.hpp"                    // for structur...
-#include "NP_functionality.hpp"               // for NP_funct...
-#include "custom_set.hpp"                     // for set, set...
-#include <algorithm>                          // for find, min
-#include <boost/algorithm/string/replace.hpp> // for replace_all
-#include <boost/iterator/iterator_facade.hpp> // for operator!=
-#include <boost/iterator/iterator_traits.hpp> // for iterator...
-#include <boost/lexical_cast.hpp>             // for lexical_...
-#include <climits>                            // for UINT_MAX
-#include <iostream>                           // for cout
-#include <list>                               // for _List_co...
-#include <memory>                             // for allocato...
-#include <utility>
-#if HAVE_BAMBU_BUILT
-#include "behavioral_helper.hpp" // for Behavior...
-#endif
-#include "dbgPrintHelper.hpp"     // for DEBUG_LE...
-#include "exceptions.hpp"         // for THROW_AS...
-#include "library_manager.hpp"    // for attribute
-#include "simple_indent.hpp"      // for simple_i...
-#include "structural_manager.hpp" // for structur...
-#include "technology_manager.hpp" // for technolo...
-#include "technology_node.hpp"    // for function...
-#include "utility.hpp"            // for GET_CLAS...
-#include "xml_attribute.hpp"      // for attribut...
-#include "xml_element.hpp"        // for xml_element
-#include "xml_helper.hpp"         // for CE_XVM
-#include "xml_node.hpp"           // for xml_node...
-#include "xml_text_node.hpp"      // for xml_text...
-
-/// utility include
+#include "HDL_manager.hpp"
+#include "NP_functionality.hpp"
+#include "behavioral_helper.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
+#include "library_manager.hpp"
+#include "simple_indent.hpp"
 #include "string_manipulation.hpp"
+#include "structural_manager.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
+#include "utility.hpp"
+#include "xml_attribute.hpp"
+#include "xml_element.hpp"
+#include "xml_helper.hpp"
+#include "xml_node.hpp"
+#include "xml_text_node.hpp"
 
-#if HAVE_EXPERIMENTAL
-#include "layout_model.hpp"
-#endif
+#include <algorithm>
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/iterator/iterator_facade.hpp>
+#include <boost/iterator/iterator_traits.hpp>
+#include <climits>
+#include <iostream>
+#include <list>
+#include <memory>
+#include <regex>
+#include <utility>
 
 inline std::string legalize(const std::string& id)
 {
@@ -102,7 +93,7 @@ const std::string structural_type_descriptor::get_name() const
    {
       if(type == i)
       {
-         return boost::lexical_cast<std::string>(s_typeNames[i]);
+         return std::string(s_typeNames[i]);
       }
    }
    return "UNKNOWN";
@@ -404,79 +395,6 @@ structural_type_descriptor::structural_type_descriptor(const std::string& type_n
    }
 }
 
-#if HAVE_TUCANO_BUILT
-structural_type_descriptor::structural_type_descriptor(unsigned int _treenode, tree_managerRef tm)
-{
-   bool is_a_function = false;
-   /// first set defaults
-   type = UNKNOWN;
-   size = size_DEFAULT;
-   vector_size = vector_size_DEFAULT;
-   treenode = _treenode;
-   while(true)
-   {
-      if(tree_helper::GetElements(tm, treenode))
-      {
-         treenode = tree_helper::GetElements(tm, treenode);
-         continue;
-      }
-      if(tree_helper::get_pointed_type(tm, treenode))
-      {
-         treenode = tree_helper::get_pointed_type(tm, treenode);
-         continue;
-      }
-      if(tree_helper::is_a_function(tm, treenode))
-      {
-         is_a_function = true;
-         continue;
-      }
-      break;
-   }
-   vector_size = tree_helper::size(tm, treenode);
-
-   if(is_a_function || tree_helper::is_module(tm, treenode) || tree_helper::is_channel(tm, treenode) ||
-      tree_helper::is_event(tm, treenode))
-   {
-      id_type = tree_helper::name_type(tm, treenode);
-      type = OTHER;
-   }
-   else
-   {
-      id_type = tree_helper::name_type(tm, treenode);
-      size = tree_helper::size(tm, treenode);
-      if(tree_helper::is_bool(tm, treenode))
-      {
-         if(vector_size)
-            type = VECTOR_BOOL;
-         else
-            type = BOOL;
-      }
-      else if(tree_helper::is_int(tm, treenode))
-      {
-         if(vector_size)
-            type = VECTOR_INT;
-         else
-            type = INT;
-      }
-      else if(tree_helper::is_unsigned(tm, treenode))
-      {
-         if(vector_size)
-            type = VECTOR_UINT;
-         else
-            type = UINT;
-      }
-      else
-      {
-         if(vector_size)
-            type = VECTOR_USER;
-         else
-            type = USER;
-      }
-   }
-}
-#endif
-
-#if HAVE_BAMBU_BUILT
 structural_type_descriptor::structural_type_descriptor(unsigned int index, const BehavioralHelperConstRef helper)
 {
    unsigned int type_index = helper->get_type(index);
@@ -589,7 +507,6 @@ structural_type_descriptor::structural_type_descriptor(unsigned int index, const
       }
    }
 }
-#endif
 
 bool structural_type_descriptor::check_type(structural_type_descriptorRef src_type,
                                             structural_type_descriptorRef dest_type)
@@ -762,8 +679,8 @@ void structural_object::type_resize(unsigned long long new_bit_size)
       }
       case structural_type_descriptor::BOOL:
       {
-         THROW_ASSERT(new_bit_size == 1, "BOOL only supports single bit values: " +
-                                             boost::lexical_cast<std::string>(new_bit_size) + " - " + get_path());
+         THROW_ASSERT(new_bit_size == 1,
+                      "BOOL only supports single bit values: " + std::to_string(new_bit_size) + " - " + get_path());
          type->size = new_bit_size;
          break;
       }
@@ -776,7 +693,7 @@ void structural_object::type_resize(unsigned long long new_bit_size)
       case structural_type_descriptor::UNKNOWN:
       default:
          THROW_ERROR("Not correct resizing  " + get_path() + " (" + type->id_type + ") New size " +
-                     boost::lexical_cast<std::string>(new_bit_size));
+                     std::to_string(new_bit_size));
    }
 }
 
@@ -823,7 +740,7 @@ void structural_object::type_resize(unsigned long long new_bit_size, unsigned lo
       case structural_type_descriptor::UNKNOWN:
       default:
          THROW_ERROR("Not correct resizing " + get_path() + " (" + type->id_type + ") New size " +
-                     boost::lexical_cast<std::string>(new_bit_size) + "(" + STR(new_vec_size) + ")");
+                     std::to_string(new_bit_size) + "(" + STR(new_vec_size) + ")");
    }
 }
 
@@ -944,6 +861,10 @@ structural_type_descriptor::s_type module::get_parameter_type(const technology_m
       }
       return structural_type_descriptor::VECTOR_BOOL;
    }
+   if(std::regex_search(default_value, std::regex("^\\d+\\.\\d+$")))
+   {
+      return structural_type_descriptor::REAL;
+   }
    if(default_value.front() >= '0' and default_value.front() <= '9')
    {
       return structural_type_descriptor::INT;
@@ -964,7 +885,7 @@ structural_type_descriptor::s_type module::get_parameter_type(const technology_m
 
 bool structural_object::ExistsParameter(std::string name) const
 {
-   return default_parameters.find(name) != default_parameters.end();
+   return default_parameters.count(name);
 }
 
 void structural_object::xload(const xml_element* Enode, structural_objectRef, structural_managerRef const&)
@@ -1018,7 +939,7 @@ void structural_object::xload(const xml_element* Enode, structural_objectRef, st
       }
    }
    THROW_ASSERT(has_structural_type_descriptor,
-                "A structural object has to have a type." + boost::lexical_cast<std::string>(Enode->get_line()));
+                "A structural object has to have a type." + std::to_string(Enode->get_line()));
 }
 
 void structural_object::xwrite(xml_element* Enode)
@@ -1760,7 +1681,7 @@ void port_o::xload(const xml_element* Enode, structural_objectRef _owner, struct
    }
 
    structural_objectRef obj;
-   unsigned int minBit = UINT_MAX;
+   auto minBit = std::numeric_limits<unsigned>::max();
    // Recourse through child nodes:
    const xml_node::node_list list = Enode->get_children();
    for(const auto& iter : list)
@@ -1772,8 +1693,7 @@ void port_o::xload(const xml_element* Enode, structural_objectRef _owner, struct
       }
       if(EnodeC->get_name() == GET_CLASS_NAME(port_o))
       {
-         THROW_ASSERT(CE_XVM(dir, EnodeC),
-                      "Port has to have a direction." + boost::lexical_cast<std::string>(EnodeC->get_line()));
+         THROW_ASSERT(CE_XVM(dir, EnodeC), "Port has to have a direction." + std::to_string(EnodeC->get_line()));
          std::string dir_string;
          LOAD_XVFM(dir_string, EnodeC, dir);
          THROW_ASSERT(dir == port_o::to_port_direction(dir_string),
@@ -1781,12 +1701,12 @@ void port_o::xload(const xml_element* Enode, structural_objectRef _owner, struct
          obj = structural_objectRef(new port_o(CM->get_debug_level(), _owner, dir, port_o_K));
          obj->xload(EnodeC, obj, CM);
          ports.push_back(obj);
-         auto _id = boost::lexical_cast<unsigned int>(obj->get_id());
+         auto _id = static_cast<unsigned>(std::stoul(obj->get_id()));
          minBit = std::min(minBit, _id);
          port_type = port_vector_o_K;
       }
    }
-   if(minBit == UINT_MAX)
+   if(minBit == std::numeric_limits<unsigned>::max())
    {
       lsb = 0;
    }
@@ -1864,7 +1784,7 @@ void port_o::xwrite(xml_element* rootnode)
    xml_element* Enode_CO = Enode->add_child_element("connected_objects");
    for(unsigned int i = 0; i < connected_objects.size(); i++)
    {
-      WRITE_XNVM2("CON" + boost::lexical_cast<std::string>(i), connected_objects[i].lock()->get_path(), Enode_CO);
+      WRITE_XNVM2("CON" + std::to_string(i), connected_objects[i].lock()->get_path(), Enode_CO);
    }
    if(is_clock != is_clock_DEFAULT)
    {
@@ -1933,11 +1853,7 @@ void port_o::xwrite(xml_element* rootnode)
 }
 
 #if HAVE_TECHNOLOGY_BUILT
-void port_o::xwrite_attributes(xml_element* rootnode, const technology_nodeRef&
-#if HAVE_EXPERIMENTAL
-                                                          tn
-#endif
-)
+void port_o::xwrite_attributes(xml_element* rootnode, const technology_nodeRef&)
 {
    xml_element* pin_node = rootnode->add_child_element("pin");
 
@@ -1949,21 +1865,6 @@ void port_o::xwrite_attributes(xml_element* rootnode, const technology_nodeRef&
       const attributeRef attr = attributes[o];
       attr->xwrite(pin_node, o);
    }
-
-#if HAVE_EXPERIMENTAL
-   /// writing pin layout information
-   if(GetPointer<functional_unit>(tn) && GetPointer<functional_unit>(tn)->layout_m)
-   {
-      GetPointer<functional_unit>(tn)->layout_m->xwrite(pin_node, get_id());
-   }
-
-   // For functional unit template we have to check that the underling functional unit has a layout
-   if(GetPointer<functional_unit_template>(tn) &&
-      GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->layout_m)
-   {
-      GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->layout_m->xwrite(pin_node, get_id());
-   }
-#endif
 }
 #endif
 
@@ -2477,7 +2378,7 @@ void constant_o::xwrite(xml_element* rootnode)
    xml_element* Enode_CO = Enode->add_child_element("connected_objects");
    for(unsigned int i = 0; i < connected_objects.size(); i++)
    {
-      WRITE_XNVM2("CON" + boost::lexical_cast<std::string>(i), connected_objects[i].lock()->get_path(), Enode_CO);
+      WRITE_XNVM2("CON" + std::to_string(i), connected_objects[i].lock()->get_path(), Enode_CO);
    }
 }
 
@@ -2842,7 +2743,7 @@ void signal_o::xload(const xml_element* Enode, structural_objectRef _owner, stru
       set_id(_id);
    }
    // Recourse through child nodes:
-   unsigned int minBit = UINT_MAX;
+   auto minBit = std::numeric_limits<unsigned>::max();
 
    const xml_node::node_list list = Enode->get_children();
    for(const auto& iter : list)
@@ -2857,12 +2758,12 @@ void signal_o::xload(const xml_element* Enode, structural_objectRef _owner, stru
          structural_objectRef obj = structural_objectRef(new signal_o(CM->get_debug_level(), _owner, signal_o_K));
          obj->xload(EnodeC, obj, CM);
          signals_.push_back(obj);
-         auto sig_id = boost::lexical_cast<unsigned int>(obj->get_id());
+         auto sig_id = static_cast<unsigned>(std::stoul(obj->get_id()));
          minBit = std::min(minBit, sig_id);
          signal_type = signal_vector_o_K;
       }
    }
-   if(minBit == UINT_MAX)
+   if(minBit == std::numeric_limits<unsigned>::max())
    {
       lsb = 0;
    }
@@ -2879,7 +2780,7 @@ void signal_o::xwrite(xml_element* rootnode)
    xml_element* Enode_CO = Enode->add_child_element("connected_objects");
    for(unsigned int i = 0; i < connected_objects.size(); i++)
    {
-      WRITE_XNVM2("CON" + boost::lexical_cast<std::string>(i), connected_objects[i].lock()->get_path(), Enode_CO);
+      WRITE_XNVM2("CON" + std::to_string(i), connected_objects[i].lock()->get_path(), Enode_CO);
    }
    for(auto& signal : signals_)
    {
@@ -2930,7 +2831,7 @@ void signal_o::add_n_signals(unsigned int n_signals, structural_objectRef _owner
    {
       p = structural_objectRef(new signal_o(debug_level, _owner, signal_o_K));
       p->set_type(get_typeRef());
-      p->set_id(boost::lexical_cast<std::string>(i));
+      p->set_id(std::to_string(i));
       signals_[i] = p;
    }
    THROW_ASSERT(signal_type == signal_vector_o_K, "inconsistent data structure");
@@ -3013,8 +2914,7 @@ bool module::get_keep_hierarchy() const
 
 structural_objectRef module::get_positional_port(unsigned int index) const
 {
-   THROW_ASSERT(positional_map.find(index) != positional_map.end(),
-                "no port at index " + boost::lexical_cast<std::string>(index));
+   THROW_ASSERT(positional_map.find(index) != positional_map.end(), "no port at index " + std::to_string(index));
    return positional_map.find(index)->second;
 }
 
@@ -3602,8 +3502,7 @@ void module::copy(structural_objectRef dest) const
 #endif
    for(unsigned int i = 0; i < last_position_port; i++)
    {
-      THROW_ASSERT(positional_map.find(i) != positional_map.end(),
-                   "port " + boost::lexical_cast<std::string>(i) + " does not exist");
+      THROW_ASSERT(positional_map.find(i) != positional_map.end(), "port " + std::to_string(i) + " does not exist");
       const structural_objectRef port = positional_map.find(i)->second;
       port_o::port_direction dir = port_o::GEN;
       if(port->get_kind() == port_o_K)
@@ -4124,8 +4023,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
       if(EnodeC->get_name() == GET_CLASS_NAME(port_o) || EnodeC->get_name() == GET_CLASS_NAME(port_vector_o))
       {
          port_o::port_direction dir;
-         THROW_ASSERT(CE_XVM(dir, EnodeC),
-                      "Port has to have a direction." + boost::lexical_cast<std::string>(EnodeC->get_line()));
+         THROW_ASSERT(CE_XVM(dir, EnodeC), "Port has to have a direction." + std::to_string(EnodeC->get_line()));
          std::string dir_string;
          LOAD_XVFM(dir_string, EnodeC, dir);
          dir = port_o::to_port_direction(dir_string);
@@ -4355,7 +4253,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          {
             std::string multi_unit_multiplicitySTR = text->get_content();
             xml_node::convert_escaped(multi_unit_multiplicitySTR);
-            multi_unit_multiplicity = boost::lexical_cast<unsigned>(multi_unit_multiplicitySTR);
+            multi_unit_multiplicity = static_cast<unsigned>(std::stoul(multi_unit_multiplicitySTR));
          }
       }
       else if(EnodeC->get_name() == GET_CLASS_NAME(keep_hierarchy))
@@ -4369,7 +4267,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          {
             std::string keep_hierarchySTR = text->get_content();
             xml_node::convert_escaped(keep_hierarchySTR);
-            keep_hierarchy = boost::lexical_cast<bool>(keep_hierarchySTR);
+            keep_hierarchy = static_cast<bool>(std::stoi(keep_hierarchySTR));
          }
       }
       else
@@ -4494,7 +4392,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          }
          else
          {
-            THROW_ERROR("Not supported connected size: " + boost::lexical_cast<std::string>(elements.size()));
+            THROW_ERROR("Not supported connected size: " + std::to_string(elements.size()));
          }
          THROW_ASSERT(connnected_object, "Connected object not correctly identified: " + conn);
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -4629,19 +4527,6 @@ void module::xwrite(xml_element* rootnode)
 void module::xwrite_attributes(xml_element* rootnode, const technology_nodeRef& tn)
 {
    structural_object::xwrite_attributes(rootnode, tn);
-
-#if HAVE_EXPERIMENTAL
-   /// writing pin layout information
-   if(GetPointer<functional_unit>(tn) && GetPointer<functional_unit>(tn)->layout_m)
-   {
-      GetPointer<functional_unit>(tn)->layout_m->xwrite(rootnode);
-   }
-   if(GetPointer<functional_unit_template>(tn) &&
-      GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->layout_m)
-   {
-      GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->layout_m->xwrite(rootnode, get_id());
-   }
-#endif
 
    if(in_ports.size())
    {
@@ -5061,7 +4946,7 @@ void channel_o::xload(const xml_element* Enode, structural_objectRef _owner, str
          auto it_end = Alist.end();
          for(auto it = Alist.begin(); it != it_end; ++it)
          {
-            impl_interfaces[boost::lexical_cast<unsigned int>((*it)->get_name().c_str() + 2)] = (*it)->get_value();
+            impl_interfaces[static_cast<unsigned>(std::stoul((*it)->get_name().substr(2)))] = (*it)->get_value();
          }
       }
    }
@@ -5075,12 +4960,12 @@ void channel_o::xwrite(xml_element* rootnode)
    auto it_end = impl_interfaces.end();
    for(auto it = impl_interfaces.begin(); it != it_end; ++it)
    {
-      WRITE_XNVM2("II" + boost::lexical_cast<std::string>(it->first), it->second, Enode_II);
+      WRITE_XNVM2("II" + std::to_string(it->first), it->second, Enode_II);
    }
    xml_element* Enode_CO = Enode->add_child_element("connected_objects");
    for(unsigned int i = 0; i < connected_objects.size(); i++)
    {
-      WRITE_XNVM2("CON" + boost::lexical_cast<std::string>(i), connected_objects[i].lock()->get_path(), Enode_CO);
+      WRITE_XNVM2("CON" + std::to_string(i), connected_objects[i].lock()->get_path(), Enode_CO);
    }
 }
 
@@ -5216,7 +5101,7 @@ void port_o::add_n_ports(unsigned int n_ports, structural_objectRef _owner)
    {
       structural_objectRef p = structural_objectRef(new port_o(debug_level, _owner, dir, port_o_K));
       p->set_type(get_typeRef());
-      p->set_id(boost::lexical_cast<std::string>(currentPortNumber + i));
+      p->set_id(std::to_string(currentPortNumber + i));
       ports.push_back(p);
    }
    THROW_ASSERT(port_type == port_vector_o_K, "inconsistent data structure");
@@ -5245,49 +5130,28 @@ unsigned long long port_o::get_port_size() const
    return get_typeRef()->size;
 }
 
-void port_o::resize_busport(unsigned long long bus_size_bitsize, unsigned long long bus_addr_bitsize,
-                            unsigned long long bus_data_bitsize, unsigned long long bus_tag_bitsize,
-                            structural_objectRef port)
+bool port_o::resize_if_busport(unsigned long long bus_size_bitsize, unsigned long long bus_addr_bitsize,
+                               unsigned long long bus_data_bitsize, unsigned long long bus_tag_bitsize,
+                               structural_objectRef port)
 {
-   if(GetPointer<port_o>(port)->get_is_data_bus())
+   const auto bus_bitsize = GetPointer<port_o>(port)->get_is_data_bus() ? bus_data_bitsize :
+                            GetPointer<port_o>(port)->get_is_addr_bus() ? bus_addr_bitsize :
+                            GetPointer<port_o>(port)->get_is_size_bus() ? bus_size_bitsize :
+                            GetPointer<port_o>(port)->get_is_tag_bus()  ? bus_tag_bitsize :
+                                                                          0U;
+   if(bus_bitsize)
    {
-      port->type_resize(bus_data_bitsize);
-   }
-   else if(GetPointer<port_o>(port)->get_is_addr_bus())
-   {
-      port->type_resize(bus_addr_bitsize);
-   }
-   else if(GetPointer<port_o>(port)->get_is_size_bus())
-   {
-      port->type_resize(bus_size_bitsize);
-   }
-   else if(GetPointer<port_o>(port)->get_is_tag_bus())
-   {
-      port->type_resize(bus_tag_bitsize);
-   }
-   if(port->get_kind() == port_vector_o_K)
-   {
-      for(unsigned int pi = 0; pi < GetPointer<port_o>(port)->get_ports_size(); ++pi)
+      port->type_resize(bus_bitsize);
+      if(port->get_kind() == port_vector_o_K)
       {
-         structural_objectRef port_d = GetPointer<port_o>(port)->get_port(pi);
-         if(GetPointer<port_o>(port)->get_is_data_bus())
+         for(auto pi = 0U; pi < GetPointer<port_o>(port)->get_ports_size(); ++pi)
          {
-            port_d->type_resize(bus_data_bitsize);
-         }
-         else if(GetPointer<port_o>(port)->get_is_addr_bus())
-         {
-            port_d->type_resize(bus_addr_bitsize);
-         }
-         else if(GetPointer<port_o>(port)->get_is_size_bus())
-         {
-            port_d->type_resize(bus_size_bitsize);
-         }
-         else if(GetPointer<port_o>(port)->get_is_tag_bus())
-         {
-            port_d->type_resize(bus_tag_bitsize);
+            const auto port_d = GetPointer<port_o>(port)->get_port(pi);
+            port_d->type_resize(bus_bitsize);
          }
       }
    }
+   return bus_bitsize;
 }
 
 void port_o::resize_std_port(unsigned long long bitsize_variable, unsigned long long n_elements,
@@ -5381,203 +5245,6 @@ void port_o::fix_port_properties(structural_objectRef port_i, structural_objectR
       GetPointer<port_o>(cir_port)->set_is_halved(true);
    }
 }
-
-#if HAVE_KOALA_BUILT
-std::string structural_object::get_equation(const structural_objectRef out_obj, const technology_managerConstRef TM,
-                                            CustomOrderedSet<structural_objectRef>& analyzed,
-                                            const CustomOrderedSet<structural_objectRef>& input_ports,
-                                            const CustomOrderedSet<structural_objectRef>& output_ports) const
-{
-   analyzed.insert(out_obj);
-
-   std::string EQ = out_obj->get_id();
-
-   if(input_ports.find(out_obj) != input_ports.end())
-   {
-      return EQ;
-   }
-
-   //    const structural_objectRef obj_owner = out_obj->get_owner();
-
-   switch(out_obj->get_kind())
-   {
-      case port_o_K:
-      {
-         const structural_objectRef owner = this->get_owner();
-         if(owner and GetPointer<port_o>(out_obj)->get_port_direction() == port_o::OUT)
-         {
-            const structural_type_descriptorRef STD = owner->get_typeRef();
-            std::string Library = TM->get_library(STD->id_type);
-            const technology_nodeRef& TN = TM->get_fu(STD->id_type, Library);
-            THROW_ASSERT(TN, "Module " + owner->get_path() + " is not stored into library");
-            functional_unit* fu = GetPointer<functional_unit>(TN);
-            THROW_ASSERT(fu, "Module " + owner->get_path() + " is not a functional unit");
-            const structural_objectRef strobj = fu->CM->get_circ();
-            NP_functionalityRef NPF = GetPointer<module>(owner)->get_NP_functionality();
-            if(!NPF)
-            {
-               NPF = GetPointer<module>(strobj)->get_NP_functionality();
-               THROW_ASSERT(NPF, "Functionality not available for element " + owner->get_id());
-            }
-            std::string tmp = NPF->get_NP_functionality(NP_functionality::EQUATION);
-            /*if (GetPointer<module>(strobj)->get_out_port_size() > 1)
-               THROW_ERROR("Multi-out module not supported");
-            */
-            std::vector<std::string> tokens = SplitString(tmp, ";");
-            for(unsigned int i = 0; i < tokens.size(); i++)
-            {
-               if(boost::algorithm::starts_with(tokens[i], out_obj->get_id()))
-                  EQ = tokens[i].substr(tokens[i].find("=") + 1, tokens[i].size());
-            }
-            // EQ = NPF->get_NP_functionality(NP_functionality::EQUATION);
-            for(unsigned int p = 0; p < GetPointer<module>(owner)->get_in_port_size(); p++)
-            {
-               const structural_objectRef inobj = GetPointer<module>(owner)->get_in_port(p);
-               std::string In = inobj->get_equation(inobj, TM, analyzed, input_ports, output_ports);
-               bool in_port = false;
-               for(CustomOrderedSet<structural_objectRef>::iterator k = input_ports.begin();
-                   k != input_ports.end() and !in_port; ++k)
-                  if((*k)->get_id() == In)
-                     in_port = true;
-               if(!in_port)
-                  In = "(" + In + ")";
-               boost::replace_all(EQ, GetPointer<module>(strobj)->get_in_port(p)->get_id(), In);
-            }
-         }
-         else
-         {
-            for(unsigned int p = 0; p < GetPointer<port_o>(out_obj)->get_connections_size(); p++)
-            {
-               const structural_objectRef obj = GetPointer<port_o>(out_obj)->get_connection(p);
-               if(output_ports.find(obj) != output_ports.end())
-                  continue;
-               if(obj /* and analyzed.find(obj) == analyzed.end()*/)
-               {
-                  EQ = obj->get_equation(obj, TM, analyzed, input_ports, output_ports);
-               }
-               else
-                  EQ = out_obj->get_id();
-            }
-         }
-         break;
-      }
-      case signal_o_K:
-      {
-         for(unsigned int p = 0; p < GetPointer<signal_o>(out_obj)->get_connected_objects_size(); p++)
-         {
-            const structural_objectRef obj = GetPointer<signal_o>(out_obj)->get_port(p);
-            if(obj and out_obj != obj /* and analyzed.find(obj) == analyzed.end()*/)
-            {
-               if(output_ports.find(obj) != output_ports.end() and analyzed.find(obj) == analyzed.end())
-               {
-                  return obj->get_id();
-               }
-               if(GetPointer<port_o>(obj)->get_port_direction() != port_o::OUT || obj->get_owner() == get_owner())
-                  continue;
-               EQ = obj->get_equation(obj, TM, analyzed, input_ports, output_ports);
-            }
-         }
-         break;
-      }
-      default:
-         THROW_ERROR("Not supported component " + std::string(out_obj->get_kind_text()));
-   }
-
-   return EQ;
-
-#if 0
-   switch (out_obj->get_kind())
-   {
-      case port_o_K:
-      {
-         /// get the module owner of the port
-         const structural_objectRef owner = this->get_owner();
-         ///this is the top of the hierarchy, it won't be in the library
-         if (!owner)
-         {
-            THROW_ASSERT(this == out_obj->get_owner().get(), "Malformed structure");
-            const structural_objectRef owner = out_obj->get_owner();
-            for(unsigned int p = 0; p < GetPointer<port_o>(out_obj)->get_connections_size(); p++)
-            {
-               const structural_objectRef obj = GetPointer<port_o>(out_obj)->get_connection(p);
-               if (obj and analyzed.find(obj) == analyzed.end())
-               {
-                  analyzed.insert(obj);
-                  EQ = obj->get_equation(obj, TM, analyzed, input_ports);
-               }
-               else
-                  EQ = out_obj->get_id();
-            }
-         }
-         ///if it is an output port, compute the internal equation of the component
-         else if (owner and GetPointer<port_o>(out_obj)->get_port_direction() == port_o::OUT)
-         {
-            analyzed.insert(owner);
-            const structural_type_descriptorRef STD = owner->get_typeRef();
-            const technology_nodeRef& TN = TM->get_fu(STD->id_type, "EDIF_LIB");
-            THROW_ASSERT(TN, "Module " + owner->get_path() + " is not stored into library");
-            functional_unit* fu = GetPointer<functional_unit>(TN);
-            THROW_ASSERT(fu, "Module " + owner->get_path() + " is not a functional unit");
-            const structural_objectRef strobj = fu->CM->get_circ();
-            NP_functionalityRef NPF = GetPointer<module>(owner)->get_NP_functionality();
-            if (!NPF)
-            {
-               NPF = GetPointer<module>(strobj)->get_NP_functionality();
-               THROW_ASSERT(NPF, "Functionality not available for element " + owner->get_id());
-            }
-               std::string tmp = NPF->get_NP_functionality(NP_functionality::EQUATION);
-               if (GetPointer<module>(strobj)->get_out_port_size() > 1)
-                  THROW_ERROR("Multi-out module not supported");
-               std::vector<std::string> tokens = SplitString(tmp, ";");
-               for(unsigned int i = 0; i < tokens.size(); i++)
-               {
-                  if (tokens[i].find(GetPointer<module>(strobj)->get_out_port(0)->get_id()) == 0)
-                     EQ = tokens[i].substr(tokens[i].find("=") + 1, tokens[i].size());
-               }
-               //EQ = NPF->get_NP_functionality(NP_functionality::EQUATION);
-               for(unsigned int p = 0; p < GetPointer<module>(owner)->get_in_port_size(); p++)
-               {
-                  const structural_objectRef inobj = GetPointer<module>(owner)->get_in_port(p);
-                  analyzed.insert(inobj);
-                  std::string In = inobj->get_equation(inobj, TM, analyzed, input_ports);
-                  boost::replace_all(EQ, GetPointer<module>(strobj)->get_in_port(p)->get_id(), In);
-               }
-            }
-            else
-            {
-               for(unsigned int p = 0; p < GetPointer<port_o>(out_obj)->get_connections_size(); p++)
-               {
-                  const structural_objectRef obj = GetPointer<port_o>(out_obj)->get_connection(p);
-                  if (obj and analyzed.find(obj) == analyzed.end())
-                  {
-                     analyzed.insert(obj);
-                     EQ = obj->get_equation(obj, TM, analyzed, input_ports);
-                  }
-                  else
-                     EQ = out_obj->get_id();
-               }
-            }
-            break;
-         }
-         case signal_o_K:
-         {
-            for(unsigned int p = 0; p < GetPointer<signal_o>(out_obj)->get_connected_objects_size(); p++)
-            {
-               const structural_objectRef obj = GetPointer<signal_o>(out_obj)->get_port(p);
-               if (obj  and analyzed.find(obj) == analyzed.end())
-               {
-                  analyzed.insert(obj);
-                  EQ = obj->get_equation(obj, TM, analyzed, input_ports);
-               }
-            }
-            break;
-         }
-         default:
-            THROW_ERROR("Not supported component " + std::string(out_obj->get_kind_text()));
-      }
-#endif
-}
-#endif
 
 #define __TO_STRING_HELPER(r, data, elem)                                           \
    name = #elem;                                                                    \

@@ -46,6 +46,7 @@
 
 /// Autoheader include
 #include "config_HAVE_ASSERTS.hpp" // for HAVE_ASSERTS
+#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FLOPOCO.hpp"
 #include "config_PACKAGE_BUGREPORT.hpp"
 #include "config_PACKAGE_NAME.hpp"
@@ -55,8 +56,7 @@
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 
-#include "FPGA_device.hpp"
-#include "target_device.hpp"
+#include "generic_device.hpp"
 
 #if HAVE_FLOPOCO
 #include "flopoco_wrapper.hpp"
@@ -66,7 +66,6 @@
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 
-#include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
 #include <fstream>
 #include <iosfwd>
@@ -96,7 +95,7 @@
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 
-HDL_manager::HDL_manager(const HLS_managerRef _HLSMgr, const target_deviceRef _device, const structural_managerRef _SM,
+HDL_manager::HDL_manager(const HLS_managerRef _HLSMgr, const generic_deviceRef _device, const structural_managerRef _SM,
                          const ParameterConstRef _parameters)
     : HLSMgr(_HLSMgr),
       device(_device),
@@ -111,7 +110,7 @@ HDL_manager::HDL_manager(const HLS_managerRef _HLSMgr, const target_deviceRef _d
 {
 }
 
-HDL_manager::HDL_manager(const HLS_managerRef _HLSMgr, const target_deviceRef _device,
+HDL_manager::HDL_manager(const HLS_managerRef _HLSMgr, const generic_deviceRef _device,
                          const ParameterConstRef _parameters)
     : HLSMgr(_HLSMgr),
       device(_device),
@@ -128,7 +127,7 @@ HDL_manager::HDL_manager(const HLS_managerRef _HLSMgr, const target_deviceRef _d
 HDL_manager::~HDL_manager() = default;
 
 std::string HDL_manager::write_components(const std::string& filename, HDLWriter_Language language,
-                                          const std::list<structural_objectRef>& components, bool equation,
+                                          const std::list<structural_objectRef>& components,
                                           std::list<std::string>& aux_files) const
 {
    language_writerRef writer = language_writer::create_writer(language, TM, parameters);
@@ -157,7 +156,7 @@ std::string HDL_manager::write_components(const std::string& filename, HDLWriter
       NP_functionalityRef npf = GetPointer<module>(c)->get_NP_functionality();
       if(npf and npf->get_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) != "")
       {
-         write_module(writer, c, equation, aux_files);
+         write_module(writer, c, aux_files);
          continue;
       }
       else if(npf and (npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED) != "" ||
@@ -226,11 +225,9 @@ std::string HDL_manager::write_components(const std::string& filename, HDLWriter
             THROW_ERROR("unexpected condition");
          }
       }
-      write_module(writer, obj, equation, aux_files);
+      write_module(writer, obj, aux_files);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written components");
-   /// write the tail of the file
-   writer->write_tail(structural_objectRef());
    auto filename_ext = GetPath(filename + writer->get_extension());
    writer->WriteFile(filename_ext);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written " + filename_ext);
@@ -238,8 +235,10 @@ std::string HDL_manager::write_components(const std::string& filename, HDLWriter
 }
 
 void HDL_manager::write_components(const std::string& filename, const std::list<structural_objectRef>& components,
-                                   bool equation, std::list<std::string>& hdl_files, std::list<std::string>& aux_files)
+                                   std::list<std::string>& hdl_files, std::list<std::string>& aux_files, bool tb)
 {
+   bool multiFileP =
+       !tb && parameters->IsParameter("enable-multifiles") && parameters->GetParameter<bool>("enable-multifiles");
    /// default language
    auto language = static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
 
@@ -292,16 +291,15 @@ void HDL_manager::write_components(const std::string& filename, const std::list<
          else if(np && (np->exist_NP_functionality(NP_functionality::VERILOG_PROVIDED) ||
                         np->exist_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED)))
          {
-#if HAVE_EXPERIMENTAL
-            const auto module_type = mod->get_typeRef()->id_type;
-            const auto fu = GetPointer<functional_unit>(TM->get_fu(module_type, TM->get_library(module_type)));
-            if(not parameters->getOption<bool>(OPT_mixed_design))
+            if(!parameters->getOption<bool>(OPT_mixed_design))
             {
-               THROW_ERROR("VHDL implementation of " + (*cit)->get_path() + " - type " + module_type +
-                           " is not available");
+               THROW_ERROR("VHDL implementation of " + component->get_path() + " is not available");
             }
+#if HAVE_EXPERIMENTAL
             else
             {
+               const auto module_type = mod->get_typeRef()->id_type;
+               const auto fu = GetPointer<functional_unit>(TM->get_fu(module_type, TM->get_library(module_type)));
                if(module_type.find("gimple_asm") == std::string::npos and
                   module_type.find("__builtin_trap") == std::string::npos and
                   module_type.find("return_value_mm_register") == std::string::npos and
@@ -329,14 +327,14 @@ void HDL_manager::write_components(const std::string& filename, const std::list<
                         np->exist_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) ||
                         np->exist_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED)))
          {
-#if HAVE_EXPERIMENTAL
-            if(not parameters->getOption<bool>(OPT_mixed_design))
+            if(!parameters->getOption<bool>(OPT_mixed_design))
             {
-               THROW_ERROR("Verilog implementation of " + (*cit)->get_path() + " is not available");
+               THROW_ERROR("Verilog implementation of " + component->get_path() + " is not available");
             }
             else
-#endif
+            {
                THROW_WARNING(component->get_path() + " is available only in VHDL");
+            }
             component_language[HDLWriter_Language::VHDL].push_back(component);
          }
          else if(np && np->exist_NP_functionality(NP_functionality::SYSTEM_VERILOG_PROVIDED))
@@ -357,15 +355,57 @@ void HDL_manager::write_components(const std::string& filename, const std::list<
       {
          continue;
       }
-      std::string generated_filename =
-          write_components(filename, l->first, component_language[l->first], equation, aux_files);
-      aux_files.push_back(generated_filename);
+      if(multiFileP)
+      {
+         language_writerRef writer = language_writer::create_writer(l->first, TM, parameters);
+         for(const auto& c : component_language[l->first])
+         {
+            std::list<structural_objectRef> singletonList;
+            singletonList.push_back(c);
+            std::string mod_name = convert_to_identifier(writer.get(), GET_TYPE_NAME(c));
+            std::string generated_filename = write_components(GetPath(mod_name), l->first, singletonList, aux_files);
+            aux_files.push_back(generated_filename);
+         }
+      }
+      else
+      {
+         std::string generated_filename = write_components(filename, l->first, component_language[l->first], aux_files);
+         aux_files.push_back(generated_filename);
+      }
    }
 
-   std::string complete_filename =
-       write_components(filename, language, component_language[language], equation, aux_files);
-   /// add the generated file to the global list
-   hdl_files.push_back(complete_filename);
+   if(multiFileP)
+   {
+      language_writerRef writer = language_writer::create_writer(language, TM, parameters);
+
+      auto counter = component_language[language].size();
+      for(const auto& c : component_language[language])
+      {
+         --counter;
+         std::list<structural_objectRef> singletonList;
+         singletonList.push_back(c);
+         std::string mod_name = convert_to_identifier(writer.get(), GET_TYPE_NAME(c));
+         if(counter == 0)
+         {
+            mod_name = filename;
+         }
+         std::string generated_filename = write_components(GetPath(mod_name), language, singletonList, aux_files);
+         if(counter == 0)
+         {
+            hdl_files.push_back(generated_filename);
+         }
+         else
+         {
+            aux_files.push_back(generated_filename);
+         }
+      }
+   }
+   else
+   {
+      std::string complete_filename = write_components(filename, language, component_language[language], aux_files);
+      /// add the generated file to the global list
+      hdl_files.push_back(complete_filename);
+   }
 
 #if HAVE_FLOPOCO
    /// as a last thing to do we wrote all the common FloPoCo components
@@ -377,8 +417,8 @@ void HDL_manager::write_components(const std::string& filename, const std::list<
 #endif
 }
 
-void HDL_manager::hdl_gen(const std::string& filename, const std::list<structural_objectRef>& cirs, bool equation,
-                          std::list<std::string>& hdl_files, std::list<std::string>& aux_files)
+void HDL_manager::hdl_gen(const std::string& filename, const std::list<structural_objectRef>& cirs,
+                          std::list<std::string>& hdl_files, std::list<std::string>& aux_files, bool tb)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                  "  compute the list of components for which a structural description exists");
@@ -401,8 +441,7 @@ void HDL_manager::hdl_gen(const std::string& filename, const std::list<structura
    }
 
    /// generate the HDL descriptions for all the components
-   write_components(filename, list_of_com, equation, hdl_files, aux_files);
-   return;
+   write_components(filename, list_of_com, hdl_files, aux_files, tb);
 }
 
 /**
@@ -449,47 +488,44 @@ void HDL_manager::get_post_order_structural_components(const structural_objectRe
       {
          auto* mod = GetPointer<module>(cir);
          unsigned int n_elements = mod->get_internal_objects_size();
-         if(n_elements)
+         for(unsigned int i = 0; i < n_elements; i++)
          {
-            for(unsigned int i = 0; i < n_elements; i++)
+            switch(mod->get_internal_object(i)->get_kind())
             {
-               switch(mod->get_internal_object(i)->get_kind())
+               case channel_o_K:
+               case component_o_K:
                {
-                  case channel_o_K:
-                  case component_o_K:
+                  if(!mod->get_internal_object(i)->get_black_box() &&
+                     !TM->IsBuiltin(GET_TYPE_NAME(mod->get_internal_object(i))))
                   {
-                     if(!mod->get_internal_object(i)->get_black_box() and
-                        not TM->IsBuiltin(GET_TYPE_NAME(mod->get_internal_object(i))))
-                     {
-                        get_post_order_structural_components(mod->get_internal_object(i), list_of_com);
-                     }
-                     break;
+                     get_post_order_structural_components(mod->get_internal_object(i), list_of_com);
                   }
-                  case constant_o_K:
-                  case signal_vector_o_K:
-                  case signal_o_K:
-                  case bus_connection_o_K:
-                     break; /// no action for signals and bus
-                  case action_o_K:
-                  case data_o_K:
-                  case event_o_K:
-                  case port_o_K:
-                  case port_vector_o_K:
-                  default:
-                     THROW_ERROR("Structural object not foreseen: " +
-                                 std::string(mod->get_internal_object(i)->get_kind_text()));
+                  break;
                }
+               case constant_o_K:
+               case signal_vector_o_K:
+               case signal_o_K:
+               case bus_connection_o_K:
+                  break; /// no action for signals and bus
+               case action_o_K:
+               case data_o_K:
+               case event_o_K:
+               case port_o_K:
+               case port_vector_o_K:
+               default:
+                  THROW_ERROR("Structural object not foreseen: " +
+                              std::string(mod->get_internal_object(i)->get_kind_text()));
             }
          }
-         NP_functionalityRef NPF = mod->get_NP_functionality();
-         if(NPF and NPF->exist_NP_functionality(NP_functionality::IP_COMPONENT))
+         const auto NPF = mod->get_NP_functionality();
+         if(NPF && NPF->exist_NP_functionality(NP_functionality::IP_COMPONENT))
          {
-            std::string ip_cores = NPF->get_NP_functionality(NP_functionality::IP_COMPONENT);
-            std::vector<std::string> ip_cores_list = convert_string_to_vector<std::string>(ip_cores, ",");
+            const auto ip_cores = NPF->get_NP_functionality(NP_functionality::IP_COMPONENT);
+            const auto ip_cores_list = convert_string_to_vector<std::string>(ip_cores, ",");
             for(const auto& ip_core : ip_cores_list)
             {
-               std::vector<std::string> ip_core_vec = convert_string_to_vector<std::string>(ip_core, ":");
-               if(ip_core_vec.size() < 1 or ip_core_vec.size() > 2)
+               const auto ip_core_vec = convert_string_to_vector<std::string>(ip_core, ":");
+               if(ip_core_vec.size() < 1 || ip_core_vec.size() > 2)
                {
                   THROW_ERROR("Malformed IP component definition \"" + ip_core + "\"");
                }
@@ -504,7 +540,7 @@ void HDL_manager::get_post_order_structural_components(const structural_objectRe
                   component_name = ip_core_vec[0];
                   library = TM->get_library(component_name);
                }
-               technology_nodeRef tn = TM->get_fu(component_name, library);
+               const auto tn = TM->get_fu(component_name, library);
                structural_objectRef core_cir;
                if(tn->get_kind() == functional_unit_K)
                {
@@ -609,7 +645,7 @@ void HDL_manager::io_signal_fix_ith_vector(const language_writerRef writer, cons
    }
 }
 
-void HDL_manager::write_module(const language_writerRef writer, const structural_objectRef cir, bool equation,
+void HDL_manager::write_module(const language_writerRef writer, const structural_objectRef cir,
                                std::list<std::string>& aux_files) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing module " + GET_TYPE_NAME(cir));
@@ -719,376 +755,361 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
    /// close the interface declaration and start the implementation
    writer->write_module_internal_declaration(cir);
 
-   /// specify the timing annotations to the components
-   if(parameters->getOption<bool>(OPT_timing_simulation))
+   /// write components declarations
+   /// write signal declarations
+   unsigned int n_elements = mod->get_internal_objects_size();
+   if(n_elements)
    {
-      /// specify timing characterization
-      writer->write_timing_specification(TM, cir);
-   }
+      writer->write_comment("Component and signal declarations\n");
 
-   if(equation)
-   {
-      std::string behav = np->get_NP_functionality(NP_functionality::EQUATION);
-      write_behavioral(writer, cir, behav);
-   }
-   else
-   {
-      /// write components declarations
-      /// write signal declarations
-      unsigned int n_elements = mod->get_internal_objects_size();
-      if(n_elements)
+      std::list<std::pair<std::string, structural_objectRef>> cs;
+      for(unsigned int i = 0; i < n_elements; i++)
       {
-         writer->write_comment("Component and signal declarations\n");
-
-         std::list<std::pair<std::string, structural_objectRef>> cs;
-         for(unsigned int i = 0; i < n_elements; i++)
+         switch(mod->get_internal_object(i)->get_kind())
          {
-            switch(mod->get_internal_object(i)->get_kind())
+            case constant_o_K:
             {
-               case constant_o_K:
-               {
-                  continue;
-               }
-               case channel_o_K:
-               case component_o_K:
-               {
-                  break;
-               }
-               case signal_vector_o_K:
-               case signal_o_K:
-               {
-                  cs.push_back(std::make_pair(mod->get_internal_object(i)->get_id(), mod->get_internal_object(i)));
-                  continue;
-               }
-               case bus_connection_o_K:
-                  THROW_ERROR("Bus connection not yes supported.");
-               case action_o_K:
-               case data_o_K:
-               case event_o_K:
-               case port_o_K:
-               case port_vector_o_K:
-               default:; // do nothing
+               continue;
             }
-            writer->write_component_declaration(mod->get_internal_object(i));
-         }
-         cs.sort();
-
-         for(auto& c : cs)
-         {
-            writer->write_signal_declaration(c.second);
-         }
-
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing module instantiation of " + cir->get_id());
-
-         /// write module_instantiation begin
-         writer->write_module_definition_begin(cir);
-
-         cs.clear();
-         /// write module instantiation & connection binding
-         for(unsigned int i = 0; i < n_elements; i++)
-         {
-            switch(mod->get_internal_object(i)->get_kind())
+            case channel_o_K:
+            case component_o_K:
             {
-               case channel_o_K:
-               case component_o_K:
-               {
-                  cs.push_back(std::make_pair(mod->get_internal_object(i)->get_id(), mod->get_internal_object(i)));
-                  break;
-               }
-               case action_o_K:
-               case bus_connection_o_K:
-               case constant_o_K:
-               case data_o_K:
-               case event_o_K:
-               case port_o_K:
-               case port_vector_o_K:
-               case signal_o_K:
-               case signal_vector_o_K:
-               default:; // do nothing
+               break;
             }
-         }
-         cs.sort();
-
-         for(auto& c : cs)
-         {
-            structural_objectRef obj = c.second;
-            if(TM->IsBuiltin(GET_TYPE_NAME(obj)))
+            case signal_vector_o_K:
+            case signal_o_K:
             {
-               writer->WriteBuiltin(obj);
+               cs.push_back(std::make_pair(mod->get_internal_object(i)->get_id(), mod->get_internal_object(i)));
+               continue;
             }
-            else
+            case bus_connection_o_K:
+               THROW_ERROR("Bus connection not yes supported.");
+            case action_o_K:
+            case data_o_K:
+            case event_o_K:
+            case port_o_K:
+            case port_vector_o_K:
+            default:; // do nothing
+         }
+         writer->write_component_declaration(mod->get_internal_object(i));
+      }
+      cs.sort();
+
+      for(auto& c : cs)
+      {
+         writer->write_signal_declaration(c.second);
+      }
+
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing module instantiation of " + cir->get_id());
+
+      /// write module_instantiation begin
+      writer->write_module_definition_begin(cir);
+
+      cs.clear();
+      /// write module instantiation & connection binding
+      for(unsigned int i = 0; i < n_elements; i++)
+      {
+         switch(mod->get_internal_object(i)->get_kind())
+         {
+            case channel_o_K:
+            case component_o_K:
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing module instance " + obj->get_id());
-               writer->write_module_instance_begin(obj, get_mod_typename(writer.get(), obj), true);
-               /// write IO ports binding
-               auto* mod_inst = GetPointer<module>(obj);
-               bool first_port_analyzed = false;
-               /// First output and then input. Some backend could have benefits from this ordering.
-               /// Some customization are possible, like direct translation of gates into built-in statements.
-               if(writer->has_output_prefix())
+               cs.push_back(std::make_pair(mod->get_internal_object(i)->get_id(), mod->get_internal_object(i)));
+               break;
+            }
+            case action_o_K:
+            case bus_connection_o_K:
+            case constant_o_K:
+            case data_o_K:
+            case event_o_K:
+            case port_o_K:
+            case port_vector_o_K:
+            case signal_o_K:
+            case signal_vector_o_K:
+            default:; // do nothing
+         }
+      }
+      cs.sort();
+
+      for(auto& c : cs)
+      {
+         structural_objectRef obj = c.second;
+         if(TM->IsBuiltin(GET_TYPE_NAME(obj)))
+         {
+            writer->WriteBuiltin(obj);
+         }
+         else
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing module instance " + obj->get_id());
+            writer->write_module_instance_begin(obj, get_mod_typename(writer.get(), obj), true);
+            /// write IO ports binding
+            auto* mod_inst = GetPointer<module>(obj);
+            bool first_port_analyzed = false;
+            /// First output and then input. Some backend could have benefits from this ordering.
+            /// Some customization are possible, like direct translation of gates into built-in statements.
+            if(writer->has_output_prefix())
+            {
+               if(mod_inst->get_out_port_size())
                {
-                  if(mod_inst->get_out_port_size())
-                  {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing output ports binding");
-                     // writer->write_comment("OUT binding\n");
-                     for(unsigned int i = 0; i < mod_inst->get_out_port_size(); i++)
-                     {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "-->Writing port binding of " + mod_inst->get_out_port(i)->get_id());
-                        if(mod_inst->get_out_port(i)->get_kind() == port_o_K)
-                        {
-                           const structural_objectRef object_bounded =
-                               GetPointer<port_o>(mod_inst->get_out_port(i))->find_bounded_object(cir);
-                           if(!object_bounded)
-                           {
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                             "<--Skipped " + mod_inst->get_out_port(i)->get_path());
-                              continue;
-                           }
-                           writer->write_port_binding(mod_inst->get_out_port(i), object_bounded, first_port_analyzed);
-                        }
-                        else
-                        {
-                           writer->write_vector_port_binding(mod_inst->get_out_port(i), first_port_analyzed);
-                        }
-                        first_port_analyzed = true;
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "<--Written port binding of " + mod_inst->get_out_port(i)->get_id());
-                     }
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written output ports binding");
-                  }
-               }
-               if(mod_inst->get_in_port_size())
-               {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing input ports binding");
-                  // writer->write_comment("IN binding\n");
-                  for(unsigned int i = 0; i < mod_inst->get_in_port_size(); i++)
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing output ports binding");
+                  // writer->write_comment("OUT binding\n");
+                  for(unsigned int i = 0; i < mod_inst->get_out_port_size(); i++)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "-->Writing port binding of " + mod_inst->get_in_port(i)->get_id());
-                     if(mod_inst->get_in_port(i)->get_kind() == port_o_K)
+                                    "-->Writing port binding of " + mod_inst->get_out_port(i)->get_id());
+                     if(mod_inst->get_out_port(i)->get_kind() == port_o_K)
                      {
                         const structural_objectRef object_bounded =
-                            GetPointer<port_o>(mod_inst->get_in_port(i))->find_bounded_object(cir);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---Bounded object is " +
-                                           (object_bounded ? object_bounded->get_path() : " nothing"));
-                        writer->write_port_binding(mod_inst->get_in_port(i), object_bounded, first_port_analyzed);
+                            GetPointer<port_o>(mod_inst->get_out_port(i))->find_bounded_object(cir);
+                        if(!object_bounded)
+                        {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                          "<--Skipped " + mod_inst->get_out_port(i)->get_path());
+                           continue;
+                        }
+                        writer->write_port_binding(mod_inst->get_out_port(i), object_bounded, first_port_analyzed);
                      }
                      else
                      {
-                        writer->write_vector_port_binding(mod_inst->get_in_port(i), first_port_analyzed);
+                        writer->write_vector_port_binding(mod_inst->get_out_port(i), first_port_analyzed);
                      }
                      first_port_analyzed = true;
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "<--Written port binding of " + mod_inst->get_in_port(i)->get_id());
+                                    "<--Written port binding of " + mod_inst->get_out_port(i)->get_id());
                   }
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written input ports binding");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written output ports binding");
                }
-               if(mod_inst->get_in_out_port_size())
+            }
+            if(mod_inst->get_in_port_size())
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing input ports binding");
+               // writer->write_comment("IN binding\n");
+               for(unsigned int i = 0; i < mod_inst->get_in_port_size(); i++)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing inout ports binding");
-                  // writer->write_comment("INOUT binding\n");
-                  for(unsigned int i = 0; i < mod_inst->get_in_out_port_size(); i++)
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "-->Writing port binding of " + mod_inst->get_in_port(i)->get_id());
+                  if(mod_inst->get_in_port(i)->get_kind() == port_o_K)
                   {
-                     if(mod_inst->get_in_out_port(i)->get_kind() == port_o_K)
+                     const structural_objectRef object_bounded =
+                         GetPointer<port_o>(mod_inst->get_in_port(i))->find_bounded_object(cir);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Bounded object is " +
+                                        (object_bounded ? object_bounded->get_path() : "nothing"));
+                     writer->write_port_binding(mod_inst->get_in_port(i), object_bounded, first_port_analyzed);
+                  }
+                  else
+                  {
+                     writer->write_vector_port_binding(mod_inst->get_in_port(i), first_port_analyzed);
+                  }
+                  first_port_analyzed = true;
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "<--Written port binding of " + mod_inst->get_in_port(i)->get_id());
+               }
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written input ports binding");
+            }
+            if(mod_inst->get_in_out_port_size())
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing inout ports binding");
+               // writer->write_comment("INOUT binding\n");
+               for(unsigned int i = 0; i < mod_inst->get_in_out_port_size(); i++)
+               {
+                  if(mod_inst->get_in_out_port(i)->get_kind() == port_o_K)
+                  {
+                     const structural_objectRef object_bounded =
+                         GetPointer<port_o>(mod_inst->get_in_out_port(i))->find_bounded_object();
+                     if(!object_bounded)
+                     {
+                        continue;
+                     }
+                     writer->write_port_binding(mod_inst->get_in_out_port(i), object_bounded, first_port_analyzed);
+                  }
+                  else
+                  {
+                     writer->write_vector_port_binding(mod_inst->get_in_out_port(i), first_port_analyzed);
+                  }
+                  first_port_analyzed = true;
+               }
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written inout ports binding");
+            }
+            if(mod_inst->get_gen_port_size())
+            {
+               // writer->write_comment("Ports binding\n");
+               for(unsigned int i = 0; i < mod_inst->get_gen_port_size(); i++)
+               {
+                  if(mod_inst->get_gen_port(i)->get_kind() == port_o_K)
+                  {
+                     writer->write_port_binding(mod_inst->get_gen_port(i),
+                                                GetPointer<port_o>(mod_inst->get_gen_port(i))->find_bounded_object(),
+                                                first_port_analyzed);
+                  }
+                  else
+                  {
+                     writer->write_vector_port_binding(mod_inst->get_gen_port(i), first_port_analyzed);
+                  }
+                  first_port_analyzed = true;
+               }
+            }
+            if(!writer->has_output_prefix())
+            {
+               if(mod_inst->get_out_port_size())
+               {
+                  // writer->write_comment("OUT binding\n");
+                  for(unsigned int i = 0; i < mod_inst->get_out_port_size(); i++)
+                  {
+                     if(mod_inst->get_out_port(i)->get_kind() == port_o_K)
                      {
                         const structural_objectRef object_bounded =
-                            GetPointer<port_o>(mod_inst->get_in_out_port(i))->find_bounded_object();
+                            GetPointer<port_o>(mod_inst->get_out_port(i))->find_bounded_object();
                         if(!object_bounded)
                         {
                            continue;
                         }
-                        writer->write_port_binding(mod_inst->get_in_out_port(i), object_bounded, first_port_analyzed);
+                        writer->write_port_binding(mod_inst->get_out_port(i), object_bounded, first_port_analyzed);
                      }
                      else
                      {
-                        writer->write_vector_port_binding(mod_inst->get_in_out_port(i), first_port_analyzed);
-                     }
-                     first_port_analyzed = true;
-                  }
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written inout ports binding");
-               }
-               if(mod_inst->get_gen_port_size())
-               {
-                  // writer->write_comment("Ports binding\n");
-                  for(unsigned int i = 0; i < mod_inst->get_gen_port_size(); i++)
-                  {
-                     if(mod_inst->get_gen_port(i)->get_kind() == port_o_K)
-                     {
-                        writer->write_port_binding(mod_inst->get_gen_port(i),
-                                                   GetPointer<port_o>(mod_inst->get_gen_port(i))->find_bounded_object(),
-                                                   first_port_analyzed);
-                     }
-                     else
-                     {
-                        writer->write_vector_port_binding(mod_inst->get_gen_port(i), first_port_analyzed);
+                        writer->write_vector_port_binding(mod_inst->get_out_port(i), first_port_analyzed);
                      }
                      first_port_analyzed = true;
                   }
                }
-               if(!writer->has_output_prefix())
-               {
-                  if(mod_inst->get_out_port_size())
-                  {
-                     // writer->write_comment("OUT binding\n");
-                     for(unsigned int i = 0; i < mod_inst->get_out_port_size(); i++)
-                     {
-                        if(mod_inst->get_out_port(i)->get_kind() == port_o_K)
-                        {
-                           const structural_objectRef object_bounded =
-                               GetPointer<port_o>(mod_inst->get_out_port(i))->find_bounded_object();
-                           if(!object_bounded)
-                           {
-                              continue;
-                           }
-                           writer->write_port_binding(mod_inst->get_out_port(i), object_bounded, first_port_analyzed);
-                        }
-                        else
-                        {
-                           writer->write_vector_port_binding(mod_inst->get_out_port(i), first_port_analyzed);
-                        }
-                        first_port_analyzed = true;
-                     }
-                  }
-               }
+            }
 
-               writer->write_module_instance_end(obj);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written module instance " + obj->get_id());
-            }
+            writer->write_module_instance_end(obj);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written module instance " + obj->get_id());
          }
+      }
 
-         /// write loop signal post fix
-         bool lspf = false;
-         if(mod->get_in_port_size())
-         {
-            for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
-            {
-               if(mod->get_in_port(i)->get_kind() == port_o_K)
-               {
-                  io_signal_fix_ith(writer, mod->get_in_port(i), lspf);
-               }
-               else
-               {
-                  io_signal_fix_ith_vector(writer, mod->get_in_port(i), lspf);
-                  auto* pv = GetPointer<port_o>(mod->get_in_port(i));
-                  for(unsigned int k = 0; k < pv->get_ports_size(); k++)
-                  {
-                     io_signal_fix_ith(writer, pv->get_port(k), lspf);
-                  }
-               }
-            }
-         }
-         if(mod->get_out_port_size())
-         {
-            for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
-            {
-               if(mod->get_out_port(i)->get_kind() == port_o_K)
-               {
-                  io_signal_fix_ith(writer, mod->get_out_port(i), lspf);
-               }
-               else
-               {
-                  io_signal_fix_ith_vector(writer, mod->get_out_port(i), lspf);
-                  auto* pv = GetPointer<port_o>(mod->get_out_port(i));
-                  for(unsigned int k = 0; k < pv->get_ports_size(); k++)
-                  {
-                     io_signal_fix_ith(writer, pv->get_port(k), lspf);
-                  }
-               }
-            }
-         }
-         if(mod->get_in_out_port_size())
-         {
-            for(unsigned int i = 0; i < mod->get_in_out_port_size(); i++)
-            {
-               if(mod->get_in_out_port(i)->get_kind() == port_o_K)
-               {
-                  io_signal_fix_ith(writer, mod->get_in_out_port(i), lspf);
-               }
-               else
-               {
-                  io_signal_fix_ith_vector(writer, mod->get_in_out_port(i), lspf);
-                  auto* pv = GetPointer<port_o>(mod->get_in_out_port(i));
-                  for(unsigned int k = 0; k < pv->get_ports_size(); k++)
-                  {
-                     io_signal_fix_ith(writer, pv->get_port(k), lspf);
-                  }
-               }
-            }
-         }
-         /// for generic ports the post fix is not required. A generic port is never attached to a signal.
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written module instantiation of " + cir->get_id());
-      }
-      /// check if there is some behavior attached to the module
-      else if(is_fsm(cir))
+      /// write loop signal post fix
+      bool lspf = false;
+      if(mod->get_in_port_size())
       {
-         THROW_ASSERT(np,
-                      "Behavior not expected: " + HDL_manager::convert_to_identifier(writer.get(), GET_TYPE_NAME(cir)));
-         THROW_ASSERT(!(np->exist_NP_functionality(NP_functionality::FSM) and
-                        np->exist_NP_functionality(NP_functionality::FSM_CS)),
-                      "Cannot exist both FSM and fsm_cs for the same function");
-         std::string fsm_desc;
-         if(np->exist_NP_functionality(NP_functionality::FSM_CS))
+         for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
          {
-            fsm_desc = np->get_NP_functionality(NP_functionality::FSM_CS);
-         }
-         else
-         {
-            fsm_desc = np->get_NP_functionality(NP_functionality::FSM);
-         }
-         THROW_ASSERT(fsm_desc != "",
-                      "Behavior not expected: " + HDL_manager::convert_to_identifier(writer.get(), GET_TYPE_NAME(cir)));
-         write_fsm(writer, cir, fsm_desc);
-      }
-      else if(np)
-      {
-         if(np->exist_NP_functionality(NP_functionality::IP_COMPONENT))
-         {
-            std::string ip_cores = np->get_NP_functionality(NP_functionality::IP_COMPONENT);
-            std::vector<std::string> ip_cores_list = convert_string_to_vector<std::string>(ip_cores, ",");
-            for(const auto& ip_core : ip_cores_list)
+            if(mod->get_in_port(i)->get_kind() == port_o_K)
             {
-               std::vector<std::string> ip_core_vec = convert_string_to_vector<std::string>(ip_core, ":");
-               if(ip_core_vec.size() < 1 or ip_core_vec.size() > 2)
+               io_signal_fix_ith(writer, mod->get_in_port(i), lspf);
+            }
+            else
+            {
+               io_signal_fix_ith_vector(writer, mod->get_in_port(i), lspf);
+               auto* pv = GetPointer<port_o>(mod->get_in_port(i));
+               for(unsigned int k = 0; k < pv->get_ports_size(); k++)
                {
-                  THROW_ERROR("Malformed IP component definition \"" + ip_core + "\"");
+                  io_signal_fix_ith(writer, pv->get_port(k), lspf);
                }
-               std::string library, component_name;
-               if(ip_core_vec.size() == 2)
-               {
-                  library = ip_core_vec[0];
-                  component_name = ip_core_vec[1];
-               }
-               else
-               {
-                  component_name = ip_core_vec[0];
-                  library = TM->get_library(component_name);
-               }
-               technology_nodeRef tn = TM->get_fu(component_name, library);
-               structural_objectRef core_cir;
-               if(tn->get_kind() == functional_unit_K)
-               {
-                  core_cir = GetPointer<functional_unit>(tn)->CM->get_circ();
-               }
-               else if(tn->get_kind() == functional_unit_template_K &&
-                       GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU))
-               {
-                  core_cir = GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->CM->get_circ();
-               }
-               else
-               {
-                  THROW_ERROR("Unexpected pattern");
-               }
-               writer->write_component_declaration(core_cir);
             }
          }
-         writer->write_NP_functionalities(cir);
+      }
+      if(mod->get_out_port_size())
+      {
+         for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
+         {
+            if(mod->get_out_port(i)->get_kind() == port_o_K)
+            {
+               io_signal_fix_ith(writer, mod->get_out_port(i), lspf);
+            }
+            else
+            {
+               io_signal_fix_ith_vector(writer, mod->get_out_port(i), lspf);
+               auto* pv = GetPointer<port_o>(mod->get_out_port(i));
+               for(unsigned int k = 0; k < pv->get_ports_size(); k++)
+               {
+                  io_signal_fix_ith(writer, pv->get_port(k), lspf);
+               }
+            }
+         }
+      }
+      if(mod->get_in_out_port_size())
+      {
+         for(unsigned int i = 0; i < mod->get_in_out_port_size(); i++)
+         {
+            if(mod->get_in_out_port(i)->get_kind() == port_o_K)
+            {
+               io_signal_fix_ith(writer, mod->get_in_out_port(i), lspf);
+            }
+            else
+            {
+               io_signal_fix_ith_vector(writer, mod->get_in_out_port(i), lspf);
+               auto* pv = GetPointer<port_o>(mod->get_in_out_port(i));
+               for(unsigned int k = 0; k < pv->get_ports_size(); k++)
+               {
+                  io_signal_fix_ith(writer, pv->get_port(k), lspf);
+               }
+            }
+         }
+      }
+      /// for generic ports the post fix is not required. A generic port is never attached to a signal.
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written module instantiation of " + cir->get_id());
+   }
+   /// check if there is some behavior attached to the module
+   else if(is_fsm(cir))
+   {
+      THROW_ASSERT(np,
+                   "Behavior not expected: " + HDL_manager::convert_to_identifier(writer.get(), GET_TYPE_NAME(cir)));
+      THROW_ASSERT(
+          !(np->exist_NP_functionality(NP_functionality::FSM) and np->exist_NP_functionality(NP_functionality::FSM_CS)),
+          "Cannot exist both FSM and fsm_cs for the same function");
+      std::string fsm_desc;
+      if(np->exist_NP_functionality(NP_functionality::FSM_CS))
+      {
+         fsm_desc = np->get_NP_functionality(NP_functionality::FSM_CS);
       }
       else
       {
-         THROW_ASSERT(!cir->get_black_box(), "black box component has to be managed in a different way");
+         fsm_desc = np->get_NP_functionality(NP_functionality::FSM);
       }
+      THROW_ASSERT(fsm_desc != "",
+                   "Behavior not expected: " + HDL_manager::convert_to_identifier(writer.get(), GET_TYPE_NAME(cir)));
+      write_fsm(writer, cir, fsm_desc);
+   }
+   else if(np)
+   {
+      if(np->exist_NP_functionality(NP_functionality::IP_COMPONENT))
+      {
+         std::string ip_cores = np->get_NP_functionality(NP_functionality::IP_COMPONENT);
+         std::vector<std::string> ip_cores_list = convert_string_to_vector<std::string>(ip_cores, ",");
+         for(const auto& ip_core : ip_cores_list)
+         {
+            std::vector<std::string> ip_core_vec = convert_string_to_vector<std::string>(ip_core, ":");
+            if(ip_core_vec.size() < 1 or ip_core_vec.size() > 2)
+            {
+               THROW_ERROR("Malformed IP component definition \"" + ip_core + "\"");
+            }
+            std::string library, component_name;
+            if(ip_core_vec.size() == 2)
+            {
+               library = ip_core_vec[0];
+               component_name = ip_core_vec[1];
+            }
+            else
+            {
+               component_name = ip_core_vec[0];
+               library = TM->get_library(component_name);
+            }
+            technology_nodeRef tn = TM->get_fu(component_name, library);
+            structural_objectRef core_cir;
+            if(tn->get_kind() == functional_unit_K)
+            {
+               core_cir = GetPointer<functional_unit>(tn)->CM->get_circ();
+            }
+            else if(tn->get_kind() == functional_unit_template_K &&
+                    GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU))
+            {
+               core_cir = GetPointer<functional_unit>(GetPointer<functional_unit_template>(tn)->FU)->CM->get_circ();
+            }
+            else
+            {
+               THROW_ERROR("Unexpected pattern");
+            }
+            writer->write_component_declaration(core_cir);
+         }
+      }
+      writer->write_NP_functionalities(cir);
+   }
+   else
+   {
+      THROW_ASSERT(!cir->get_black_box(), "black box component has to be managed in a different way");
    }
 
    /// write module_instantiation end
@@ -1121,7 +1142,7 @@ void HDL_manager::write_flopoco_module(const structural_objectRef& cir, std::lis
       }
    }
 #if HAVE_FLOPOCO
-   language_writerRef lan;
+   language_writerRef lan = language_writer::create_writer(HDLWriter_Language::VHDL, TM, parameters);
    std::string mod_type = mod_inst->get_NP_functionality()->get_NP_functionality(NP_functionality::FLOPOCO_PROVIDED);
    std::string mod_name = convert_to_identifier(lan.get(), GET_TYPE_NAME(cir));
    // Create the module
@@ -1204,7 +1225,7 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
       {
          std::vector<std::string> AssignPair = SplitString(assign, "=");
          THROW_ASSERT(AssignPair.size() == 2, "malformed FSM description " + STR(AssignPair.size()));
-         auto out = boost::lexical_cast<unsigned int>(AssignPair.at(0));
+         auto out = static_cast<unsigned>(std::stoul(AssignPair.at(0)));
          std::vector<std::string> inStateVec = SplitString(AssignPair.at(1), ",");
          for(const auto& inState : inStateVec)
          {
@@ -1213,7 +1234,7 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
             std::vector<std::string> inVec = SplitString(StateInsPair.at(1), "<");
             for(const auto& in : inVec)
             {
-               auto in_val = boost::lexical_cast<unsigned int>(in);
+               auto in_val = static_cast<unsigned>(std::stoul(in));
                bypass_signals[out][StateInsPair.at(0)].insert(in_val);
             }
          }
@@ -1339,12 +1360,6 @@ std::string HDL_manager::convert_to_identifier(const language_writer* writer, co
    }
    THROW_UNREACHABLE("");
    return ret;
-}
-
-std::string HDL_manager::convert_to_identifier(const std::string& id)
-{
-   const language_writer* lan = nullptr;
-   return convert_to_identifier(lan, id);
 }
 
 std::string HDL_manager::get_mod_typename(const language_writer* lan, const structural_objectRef& cir)

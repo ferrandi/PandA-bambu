@@ -36,17 +36,17 @@
 /// Header include
 #include "quartus_power_wrapper.hpp"
 
+#include "DesignParameters.hpp"
 #include "Parameter.hpp"
 #include "ToolManager.hpp"
 #include "dbgPrintHelper.hpp"
 #include "string_manipulation.hpp"
 #include "xml_script_command.hpp"
-
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 // constructor
 QuartusPowerWrapper::QuartusPowerWrapper(const ParameterConstRef _Param, const std::string& _output_dir,
-                                         const target_deviceRef _device)
+                                         const generic_deviceRef _device)
     : AlteraWrapper(_Param, QUARTUS_POWER_TOOL_EXEC, _device, _output_dir, QUARTUS_POWER_TOOL_ID)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the QUARTUS_POWER wrapper...");
@@ -97,9 +97,9 @@ void QuartusPowerWrapper::generate_synthesis_script(const DesignParametersRef& d
    remove_escaped(script_string);
 
    // Save the generated script
-   if(boost::filesystem::exists(file_name))
+   if(std::filesystem::exists(file_name))
    {
-      boost::filesystem::remove_all(file_name);
+      std::filesystem::remove_all(file_name);
    }
    script_name = file_name;
    std::ofstream file_stream(file_name.c_str());

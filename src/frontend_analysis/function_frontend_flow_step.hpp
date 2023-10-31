@@ -45,9 +45,6 @@
 #ifndef FUNCTION_FRONTEND_FLOW_STEP_HPP
 #define FUNCTION_FRONTEND_FLOW_STEP_HPP
 
-#include "config_HAVE_BAMBU_BUILT.hpp" // for HAVE_BAMBU_BUILT
-#include "config_HAVE_STDCXX_11.hpp"   // for HAVE_STDCXX_11
-
 #include "design_flow_step.hpp"   // for DesignFlowStep_S...
 #include "frontend_flow_step.hpp" // for FrontendFlowStep...
 #include "refcount.hpp"           // for REF_FORWARD_DECL
@@ -57,7 +54,6 @@ REF_FORWARD_DECL(ArchManager);
 CONSTREF_FORWARD_DECL(DesignFlowManager);
 REF_FORWARD_DECL(FunctionBehavior);
 
-#if HAVE_BAMBU_BUILT
 /**
  * Enum class used to specify if a statement can be moved
  */
@@ -67,7 +63,6 @@ enum class FunctionFrontendFlowStep_Movable
    TIMING,    /**< Operation cannot be moved because of timing */
    MOVABLE    /**< Operation can be moved */
 };
-#endif
 
 class FunctionFrontendFlowStep : public FrontendFlowStep
 {
@@ -127,23 +122,19 @@ class FunctionFrontendFlowStep : public FrontendFlowStep
    /**
     * Return the signature of this step
     */
-   const std::string GetSignature() const override;
+   std::string GetSignature() const override;
 
    /**
     * Return the name of this design step
     * @return the name of the pass (for debug purpose)
     */
-   const std::string GetName() const override;
+   std::string GetName() const override;
 
    /**
     * Execute the step
     * @return the exit status of this step
     */
-   DesignFlowStep_Status Exec()
-#if HAVE_STDCXX_11
-       final
-#endif
-       ;
+   DesignFlowStep_Status Exec() final;
 
    /**
     * Compute the signature of a function frontend flow step

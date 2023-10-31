@@ -46,8 +46,8 @@
 
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
-#include <boost/regex.hpp>
 #include <cxxabi.h>
+#include <regex>
 
 void add_escape(std::string& ioString, const std::string& to_be_escaped)
 {
@@ -113,7 +113,19 @@ std::string string_demangle(const std::string& input)
    return status == 0 ? std::string(res.get()) : "";
 }
 
-static const boost::regex fixed_def("a[cp]_(u)?fixed<\\s*(\\d+)\\s*,\\s*(\\d+),?\\s*(\\w+)?[^>]*>[^\\d-]*");
+std::string capitalize(const std::string& str)
+{
+   std::string s(str);
+   return capitalize(s);
+}
+
+std::string& capitalize(std::string& str)
+{
+   str[0] = static_cast<char>(toupper(str[0]));
+   return str;
+}
+
+static const std::regex fixed_def("a[cp]_(u)?fixed<\\s*(\\d+)\\s*,\\s*(\\d+),?\\s*(\\w+)?[^>]*>[^\\d-]*");
 #define FD_GROUP_U 1
 #define FD_GROUP_W 2
 #define FD_GROUP_D 3
@@ -139,16 +151,16 @@ std::string ConvertInBinary(const std::string& C_value, unsigned long long preci
    }
    else if(is_fixed)
    {
-      boost::cmatch what;
+      std::cmatch what;
 #if HAVE_ASSERTS
       const auto is_match =
 #endif
-          boost::regex_search(C_value.c_str(), what, fixed_def);
+          std::regex_search(C_value.c_str(), what, fixed_def);
       THROW_ASSERT(is_match, "");
-      const auto w = boost::lexical_cast<unsigned int>(
-          what[FD_GROUP_W].first, static_cast<size_t>(what[FD_GROUP_W].second - what[FD_GROUP_W].first));
-      const auto d = boost::lexical_cast<unsigned int>(
-          what[FD_GROUP_D].first, static_cast<size_t>(what[FD_GROUP_D].second - what[FD_GROUP_D].first));
+      const auto w = std::stoul(
+          std::string(what[FD_GROUP_W].first, static_cast<size_t>(what[FD_GROUP_W].second - what[FD_GROUP_W].first)));
+      const auto d = std::stoul(
+          std::string(what[FD_GROUP_D].first, static_cast<size_t>(what[FD_GROUP_D].second - what[FD_GROUP_D].first)));
       is_signed = (what[FD_GROUP_U].second - what[FD_GROUP_U].first) == 0 &&
                   ((what[FD_GROUP_SIGN].second - what[FD_GROUP_SIGN].first) == 0 ||
                    strncmp(what[FD_GROUP_SIGN].first, "true", 4) == 0);
@@ -245,7 +257,7 @@ std::string ConvertInBinary(const std::string& C_value, unsigned long long preci
          trimmed_value = trimmed_value.substr(0, trimmed_value.find('\''));
          if(trimmed_value[0] == '\\')
          {
-            ll_value = boost::lexical_cast<long long int>(trimmed_value.substr(1));
+            ll_value = std::stoll(trimmed_value.substr(1));
          }
          else
          {
@@ -287,19 +299,19 @@ std::string ConvertInBinary(const std::string& C_value, unsigned long long preci
    return trimmed_value;
 }
 
-static const boost::regex fixp_val("(\\d+\\.?\\d*)");
+static const std::regex fixp_val("(\\d+\\.?\\d*)");
 
 std::string FixedPointReinterpret(const std::string& FP_vector, const std::string& fp_typename)
 {
-   boost::cmatch what;
-   if(boost::regex_search(fp_typename.c_str(), what, fixed_def))
+   std::cmatch what;
+   if(std::regex_search(fp_typename.c_str(), what, fixed_def))
    {
-      const auto w = boost::lexical_cast<unsigned int>(
-          what[FD_GROUP_W].first, static_cast<size_t>(what[FD_GROUP_W].second - what[FD_GROUP_W].first));
-      const auto d = boost::lexical_cast<unsigned int>(
-          what[FD_GROUP_D].first, static_cast<size_t>(what[FD_GROUP_D].second - what[FD_GROUP_D].first));
+      const auto w = std::stoul(
+          std::string(what[FD_GROUP_W].first, static_cast<size_t>(what[FD_GROUP_W].second - what[FD_GROUP_W].first)));
+      const auto d = std::stoul(
+          std::string(what[FD_GROUP_D].first, static_cast<size_t>(what[FD_GROUP_D].second - what[FD_GROUP_D].first)));
       THROW_ASSERT(d < w, "Decimal part should be smaller then total length");
-      boost::sregex_token_iterator fix_val_it(FP_vector.begin(), FP_vector.end(), fixp_val), end;
+      std::sregex_token_iterator fix_val_it(FP_vector.begin(), FP_vector.end(), fixp_val), end;
       std::string new_vector = "{";
       while(fix_val_it != end)
       {
@@ -479,7 +491,7 @@ unsigned long long convert_fp_to_bits(std::string num, unsigned long long precis
    return 0;
 }
 
-static const boost::regex ac_type_def("a[cp]_(u)?(\\w+)<\\s*(\\d+)\\s*,?\\s*(\\d+)?,?\\s*(\\w+)?[^>]*>");
+static const std::regex ac_type_def("a[cp]_(u)?(\\w+)<\\s*(\\d+)\\s*,?\\s*(\\d+)?,?\\s*(\\w+)?[^>]*>");
 #define AC_GROUP_U 1
 #define AC_GROUP_T 2
 #define AC_GROUP_W 3
@@ -487,24 +499,19 @@ static const boost::regex ac_type_def("a[cp]_(u)?(\\w+)<\\s*(\\d+)\\s*,?\\s*(\\d
 
 unsigned long long ac_type_bitwidth(const std::string& intType, bool& is_signed, bool& is_fixed)
 {
-   boost::cmatch what;
+   std::cmatch what;
    is_signed = false;
    is_fixed = false;
-   if(boost::regex_search(intType.c_str(), what, ac_type_def))
+   if(std::regex_search(intType.c_str(), what, ac_type_def))
    {
-      auto w = boost::lexical_cast<unsigned int>(what[AC_GROUP_W].first,
-                                                 static_cast<size_t>(what[AC_GROUP_W].second - what[AC_GROUP_W].first));
+      auto w = std::stoull(
+          std::string(what[AC_GROUP_W].first, static_cast<size_t>(what[AC_GROUP_W].second - what[AC_GROUP_W].first)));
       is_signed = (what[AC_GROUP_U].second - what[AC_GROUP_U].first) == 0 &&
                   ((what[AC_GROUP_SIGN].second - what[AC_GROUP_SIGN].first) == 0 ||
                    strncmp(what[AC_GROUP_SIGN].first, "true", 4) == 0);
       is_fixed =
           std::string(what[AC_GROUP_T].first, static_cast<size_t>(what[AC_GROUP_T].second - what[AC_GROUP_T].first))
               .find("fixed") != std::string::npos;
-      // if(is_fixed && (w % 32) != 0)
-      // {
-      //    w = w - (w % 32) + 32;
-      // }
-      // std::cout << "AC type " << intType << " is " << w << " bits" << std::endl;
       return w;
    }
    return 0;

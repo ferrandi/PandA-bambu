@@ -41,7 +41,7 @@
 
   \section HLS_overview High-Level Synthesis overview
 
-  Forty years ago, Electronics Magazine asked Intel co-founder Gordon Moore to 
+  In the '70, Electronics Magazine asked Intel co-founder Gordon Moore to 
   write an article summarizing the state of the electronics industry. When 
   writing the article, Moore noted that the number of devices (which then 
   included transistors and resistors) inside chips was doubling every year, 
@@ -124,10 +124,6 @@ The major tasks in physical design are placement and wiring, called also routing
 
 Logic-level and physic synthesis steps have already been consistently automatized; for instance, logic synthesis has been well performed by Altera and Xilinx in their synthesis tools for FPGA design. The main problem up to now is that these tools require a RTL design described through an hardware description language to be synthesized. So a further step into design automation is to develop tools able to bridge the gap between behavioral specification and RTL design. This kind of tools have to be able to produce RTL design in a quite short time, with respect to design constraints. Besides, they have to be able to explore larger and larger design space region to find better and better solutions with respect to design goals. This is why <I>high-level synthesis</I> has been a very hot research topic over past two decades. 
 
-\if BEAGLE
-However, design space is too large and any optimal method is inefficient to handle the problem. Genetic algorithms are a good candidate to tackle such complex explorations, with their <i>simil-random</I> search. That feature has been 
-implemented in the mixed high-level syntesis (see \ref src_HLS_hls_flow_mixed_flow_page) that tries to exploit genetic algorithms to perform design space exploration in order to reduce objectives.
-\endif
 
   \section HLS_problem Problem description
 

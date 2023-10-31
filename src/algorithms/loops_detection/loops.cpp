@@ -56,7 +56,6 @@
 #include "custom_set.hpp"
 #include <boost/graph/depth_first_search.hpp>
 #include <boost/graph/graph_traits.hpp>
-#include <boost/lexical_cast.hpp> // for lexical_cast
 #include <iosfwd>
 #include <list>
 #include <ostream> // for operator<<, basic_o...
@@ -341,12 +340,12 @@ void Loops::DetectLoops()
    for(unsigned int index = max_level + 1; index > 0; --index)
    {
       unsigned int lev = index - 1;
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Level " + boost::lexical_cast<std::string>(lev));
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Level " + std::to_string(lev));
       bool irreducible = false;
       for(auto v : level_vertices_rel[lev])
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                       "Considering BB" + boost::lexical_cast<std::string>(cfg->CGetBBNodeInfo(v)->block->number));
+                       "Considering BB" + std::to_string(cfg->CGetBBNodeInfo(v)->block->number));
          const LoopRef loop = LoopRef(new Loop(cfg, v));
          bool reducible = false;
          CustomOrderedSet<vertex> visited;
@@ -357,10 +356,10 @@ void Loops::DetectLoops()
             vertex n = boost::target(*e_iter, *djg);
             if(is_edge_in_list(cj_edges, m, n) && is_edge_in_list(sp_back_edges, m, n))
             {
-               PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                             "Irreducible loop found: SP-BACK-EDGE=" +
-                                 boost::lexical_cast<std::string>(cfg->CGetBBNodeInfo(m)->block->number) + "->" +
-                                 boost::lexical_cast<std::string>(cfg->CGetBBNodeInfo(n)->block->number));
+               PRINT_DBG_MEX(
+                   DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                   "Irreducible loop found: SP-BACK-EDGE=" + std::to_string(cfg->CGetBBNodeInfo(m)->block->number) +
+                       "->" + std::to_string(cfg->CGetBBNodeInfo(n)->block->number));
                irreducible = true;
             }
             if(is_edge_in_list(bj_edges, m, n))
@@ -370,10 +369,10 @@ void Loops::DetectLoops()
                block_to_loop[n] = loop;
                DetectReducibleLoop(djg, visited, loop, m, n);
 
-               PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                             "Found a reducible Loop: SP-BACK-EDGE=" +
-                                 boost::lexical_cast<std::string>(cfg->CGetBBNodeInfo(m)->block->number) + "->" +
-                                 boost::lexical_cast<std::string>(cfg->CGetBBNodeInfo(n)->block->number));
+               PRINT_DBG_MEX(
+                   DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                   "Found a reducible Loop: SP-BACK-EDGE=" + std::to_string(cfg->CGetBBNodeInfo(m)->block->number) +
+                       "->" + std::to_string(cfg->CGetBBNodeInfo(n)->block->number));
             }
          }
          if(reducible)
@@ -485,10 +484,10 @@ void Loops::DetectIrreducibleLoop(const BBGraphRef djg, unsigned int min_level, 
    {
       unsigned int max_dfs = 0;
       vertex min_ord_ver = *(u.begin());
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "DetectIrreducibleLoop: starting vertex=" +
-                        boost::lexical_cast<std::string>(
-                            FB->GetBBGraph(FunctionBehavior::BB)->CGetBBNodeInfo(min_ord_ver)->block->number));
+      PRINT_DBG_MEX(
+          DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+          "DetectIrreducibleLoop: starting vertex=" +
+              std::to_string(FB->GetBBGraph(FunctionBehavior::BB)->CGetBBNodeInfo(min_ord_ver)->block->number));
       CustomUnorderedMap<vertex, unsigned int> dfs_order;
       std::list<vertex> s;
       CustomUnorderedMap<vertex, unsigned int> lowlink;
@@ -641,7 +640,7 @@ const LoopConstRef Loops::CGetLoop(unsigned int id) const
          return *it;
       }
    }
-   THROW_UNREACHABLE("Loop with id " + boost::lexical_cast<std::string>(id) + " doesn't exist");
+   THROW_UNREACHABLE("Loop with id " + std::to_string(id) + " doesn't exist");
    return LoopConstRef();
 }
 
@@ -656,7 +655,7 @@ const LoopRef Loops::GetLoop(unsigned int id)
          return *it;
       }
    }
-   THROW_UNREACHABLE("Loop with id " + boost::lexical_cast<std::string>(id) + " doesn't exist");
+   THROW_UNREACHABLE("Loop with id " + std::to_string(id) + " doesn't exist");
    return LoopRef();
 }
 
@@ -726,7 +725,7 @@ void Loops::WriteDot(const std::string& file_name
       CustomUnorderedSet<vertex>::const_iterator bb, bb_end = blocks.end();
       for(bb = blocks.begin(); bb != bb_end; ++bb)
       {
-         dot << " BB" + boost::lexical_cast<std::string>(cfg->CGetBBNodeInfo(*bb)->block->number);
+         dot << " BB" + std::to_string(cfg->CGetBBNodeInfo(*bb)->block->number);
       }
       dot << "\\n\"];" << std::endl;
    }

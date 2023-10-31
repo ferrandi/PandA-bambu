@@ -251,7 +251,7 @@ parser.add_argument("--devices", help="The devices to be characterized")
 parser.add_argument("--technology-files",
                     help="The technology files containing the components")
 parser.add_argument(
-    "--update", help="The components whose characterations have to be updated", default="all")
+    "--update", help="The components whose characterizations have to be updated", default="all")
 parser.add_argument(
     "--list-only", help="Only generate the list of characterizations (default=\"device_fu_list\").", default="")
 parser.add_argument(
@@ -278,7 +278,7 @@ parser.add_argument("--eucalyptus", help="The eucalyptus executable (default=euc
 parser.add_argument("--spider", help="The spider executable (default=spider)",
                     default="spider")
 parser.add_argument("--ulimit", help="The ulimit options",
-                    default="-f 8388608 -s 32768-v 16777216 ")
+                    default="-f 8388608 -s 32768 -v 16777216 ")
 
 args = parser.parse_args()
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')

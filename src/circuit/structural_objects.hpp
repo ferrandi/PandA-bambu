@@ -47,20 +47,13 @@
 #define STRUCTURAL_OBJECTS_HPP
 
 /// Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
-#include "config_HAVE_KOALA_BUILT.hpp"
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
-#include "config_HAVE_TUCANO_BUILT.hpp"
 
 #include "NP_functionality.hpp"
 #include "custom_map.hpp"
 #include "exceptions.hpp"
 #include "refcount.hpp"
 #include "simple_indent.hpp"
-
-#if HAVE_KOALA_BUILT
-#include "custom_set.hpp"
-#endif
 
 #include <boost/preprocessor/seq/for_each.hpp>
 #include <ostream>
@@ -72,12 +65,7 @@
  * @name Forward declarations.
  */
 //@{
-#if HAVE_TUCANO_BUILT
-REF_FORWARD_DECL(tree_manager);
-#endif
-#if HAVE_BAMBU_BUILT
 CONSTREF_FORWARD_DECL(BehavioralHelper);
-#endif
 REF_FORWARD_DECL(structural_manager);
 REF_FORWARD_DECL(NP_functionality);
 CONSTREF_FORWARD_DECL(structural_object);
@@ -201,22 +189,12 @@ struct structural_type_descriptor
    {
    }
 
-#if HAVE_TUCANO_BUILT
-   /**
-    * Object factory for SystemC objects.
-    * @param treenode is the treenode descriptor of the type.
-    */
-   structural_type_descriptor(unsigned int treenode, tree_managerRef tm);
-#endif
-
-#if HAVE_BAMBU_BUILT
    /**
     * Object factory used in HLS
     * @param index is the index descriptor of the type
     * @param helper is the BehavioralHelper
     */
    structural_type_descriptor(unsigned int index, const BehavioralHelperConstRef helper);
-#endif
 
    /**
     * Destructor
@@ -376,6 +354,8 @@ class structural_object
    CustomMap<std::string, std::string> default_parameters;
 
  protected:
+   friend structural_manager;
+
    /// debug level for the object
    int debug_level;
 
@@ -429,16 +409,6 @@ class structural_object
     * @param s is a string identifying the structural_object.
     */
    void set_id(const std::string& s);
-
-#if HAVE_KOALA_BUILT
-   /**
-    * Return the equation associated with the output port of the component
-    */
-   std::string get_equation(const structural_objectRef out_obj, const technology_managerConstRef TM,
-                            CustomOrderedSet<structural_objectRef>& analyzed,
-                            const CustomOrderedSet<structural_objectRef>& input_ports,
-                            const CustomOrderedSet<structural_objectRef>& output_ports) const;
-#endif
 
    /**
     * Return the identifier associated with the structural_object.
@@ -635,7 +605,8 @@ using structural_objectRef = refcount<structural_object>;
        M_AXI_RUSER)(M_AXI_RRESP)(M_AXI_BVALID)(M_AXI_BREADY)(M_AXI_BRESP)(M_AXI_BID)(M_AXI_BUSER)(S_AXIL_AWVALID)(     \
        S_AXIL_AWREADY)(S_AXIL_AWADDR)(S_AXIL_WVALID)(S_AXIL_WREADY)(S_AXIL_WDATA)(S_AXIL_WSTRB)(S_AXIL_ARVALID)(       \
        S_AXIL_ARREADY)(S_AXIL_ARADDR)(S_AXIL_RVALID)(S_AXIL_RREADY)(S_AXIL_RDATA)(S_AXIL_RRESP)(S_AXIL_BVALID)(        \
-       S_AXIL_BREADY)(S_AXIL_BRESP)(PI_S_AXIS_TVALID)(PI_S_AXIS_TREADY)(PI_M_AXIS_TREADY)(PI_M_AXIS_TVALID)
+       S_AXIL_BREADY)(S_AXIL_BRESP)(PI_S_AXIS_TVALID)(PI_S_AXIS_TREADY)(PI_S_AXIS_TDATA)(PI_M_AXIS_TVALID)(            \
+       PI_M_AXIS_TREADY)(PI_M_AXIS_TDATA)
 
 #define PORT_DIRECTION_ENUM (IN)(OUT)(IO)(GEN)(UNKNOWN)(TLM_IN)(TLM_OUT)(TLM_INOUT)
 
@@ -1035,10 +1006,11 @@ struct port_o : public structural_object
     * @param bus_data_bitsize bitsize of data
     * @param bus_tag_bitsize bitsize of tag
     * @param port is the port to be resized
+    * @return bool True if resize happened, false else
     */
-   static void resize_busport(unsigned long long bus_size_bitsize, unsigned long long bus_addr_bitsize,
-                              unsigned long long bus_data_bitsize, unsigned long long bus_tag_bitsize,
-                              structural_objectRef port);
+   static bool resize_if_busport(unsigned long long bus_size_bitsize, unsigned long long bus_addr_bitsize,
+                                 unsigned long long bus_data_bitsize, unsigned long long bus_tag_bitsize,
+                                 structural_objectRef port);
 
    /**
     * auxiliary function used to resize the standard ports
@@ -2237,7 +2209,7 @@ class module : public structural_object
 
    /**
     * Return a non-empty string when the component has been specialized.
-    * The string identify with respect what the component has been specialized (e.g., target_device, behavior...)
+    * The string identify with respect what the component has been specialized (e.g., generic_device, behavior...)
     */
    const std::string get_specialized() const
    {

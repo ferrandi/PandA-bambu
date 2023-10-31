@@ -2,528 +2,528 @@
 DIST_SUBDIRS = img
 
 PRJ_DOC = \
-           root.doc \
-           panda.doc \
-           authors.doc \
-           license.doc \
-           install.doc \
-           panda_sdk.doc \
-           makefiles.doc \
-           programming.doc \
-           documentation.doc  \
-           tutorials.doc \
-           graphs.doc\
-           web/bambu_install.txt\
-           web/bambu.txt\
-           web/panda_download.txt\
-           web/tutorial.txt\
-           web/bambu.txt\
-           tutorial_fpl_2017/FPL17-bambu_tutorial_v4.pdf\
-           tutorial_fpl_2017/Introduction.pdf\
-           tutorial_fpl_2017/lab1/Lecture1_HO.pdf\
-           tutorial_fpl_2017/lab2/Lecture2_HO.pdf\
-           tutorial_fpl_2017/Lecture1.pdf\
-           tutorial_fpl_2017/Lecture2A.pdf\
-           tutorial_fpl_2017/Lecture2B.pdf\
-           tutorial_fpl_2017/Lecture3.pdf\
-           tutorial_fpl_2017/Lecture4.pdf\
-           tutorial_fpl_2017/lab2/materials/2.1/hint.c\
-           tutorial_fpl_2017/lab2/materials/2.1/hint.sh\
-           tutorial_fpl_2017/lab2/materials/2.1/README\
-           tutorial_fpl_2017/lab2/materials/2.2/hint.sh\
-           tutorial_fpl_2017/lab2/materials/2.2/hint.xml\
-           tutorial_fpl_2017/lab2/materials/2.2/module.c\
-           tutorial_fpl_2017/lab2/materials/2.2/README\
-           tutorial_fpl_2017/lab2/materials/2.3/hint.sh\
-           tutorial_fpl_2017/lab2/materials/2.3/module.c\
-           tutorial_fpl_2017/lab2/materials/2.3/README\
-           tutorial_fpl_2017/lab2/materials/2.4/adpcm.c\
-           tutorial_fpl_2017/lab2/materials/2.4/hint.sh\
-           tutorial_fpl_2017/lab2/materials/2.4/README\
-           tutorial_fpl_2017/lab2/materials/2.5/adpcm.c\
-           tutorial_fpl_2017/lab2/materials/2.5/hint.txt\
-           tutorial_fpl_2017/lab2/materials/2.5/README\
-           tutorial_fpl_2017/lab2/materials/2.6/dfdiv.c\
-           tutorial_fpl_2017/lab2/materials/2.6/hint.txt\
-           tutorial_fpl_2017/lab2/materials/2.6/milieu.h\
-           tutorial_fpl_2017/lab2/materials/2.6/README\
-           tutorial_fpl_2017/lab2/materials/2.6/softfloat.c\
-           tutorial_fpl_2017/lab2/materials/2.6/softfloat.h\
-           tutorial_fpl_2017/lab2/materials/2.6/softfloat-macros\
-           tutorial_fpl_2017/lab2/materials/2.6/softfloat-specialize\
-           tutorial_fpl_2017/lab2/materials/2.6/SPARC-GCC.h\
-           tutorial_fpl_2017/lab2/materials/2.7/hint.sh\
-           tutorial_fpl_2017/lab2/materials/2.7/hint.txt\
-           tutorial_fpl_2017/lab2/materials/2.7/README\
-           tutorial_fpl_2017/lab2/solutions/2.1/module.c\
-           tutorial_fpl_2017/lab2/solutions/2.1/synthesize.sh\
-           tutorial_fpl_2017/lab2/solutions/2.2/module.c\
-           tutorial_fpl_2017/lab2/solutions/2.2/synthesize.sh\
-           tutorial_fpl_2017/lab2/solutions/2.2/testbench.xml\
-           tutorial_fpl_2017/lab2/solutions/2.3/module.c\
-           tutorial_fpl_2017/lab2/solutions/2.3/synthesize.sh\
-           tutorial_fpl_2017/lab2/solutions/2.4/adpcm.c\
-           tutorial_fpl_2017/lab2/solutions/2.4/synthesize.sh\
-           tutorial_fpl_2017/lab2/solutions/2.5/adpcm.c\
-           tutorial_fpl_2017/lab2/solutions/2.5/synthesize.sh\
-           tutorial_fpl_2017/lab2/solutions/2.6/dfdiv.c\
-           tutorial_fpl_2017/lab2/solutions/2.6/milieu.h\
-           tutorial_fpl_2017/lab2/solutions/2.6/softfloat.c\
-           tutorial_fpl_2017/lab2/solutions/2.6/softfloat.h\
-           tutorial_fpl_2017/lab2/solutions/2.6/softfloat-macros\
-           tutorial_fpl_2017/lab2/solutions/2.6/softfloat-specialize\
-           tutorial_fpl_2017/lab2/solutions/2.6/SPARC-GCC.h\
-           tutorial_fpl_2017/lab2/solutions/2.6/synthesize.sh\
-           tutorial_fpl_2017/lab2/solutions/2.7/list\
-           tutorial_fpl_2017/lab2/solutions/2.7/module.c\
-           tutorial_fpl_2017/lab2/solutions/2.7/synthesize.sh\
-           tutorial_fpl_2017/lab2/solutions/2.7/testbench.xml\
-           tutorial_fpl_2017/lab2/solutions/2.7/test_panda.py\
-           tutorial_fpl_2017/lab3/Lecture3_HO.pdf\
-           tutorial_fpl_2017/lab3/materials/3.1/adpcm.c\
-           tutorial_fpl_2017/lab3/materials/3.1/hint.sh\
-           tutorial_fpl_2017/lab3/materials/3.1/README\
-           tutorial_fpl_2017/lab3/materials/3.2/adpcm.c\
-           tutorial_fpl_2017/lab3/materials/3.2/hint.sh\
-           tutorial_fpl_2017/lab3/materials/3.2/README\
-           tutorial_fpl_2017/lab3/materials/3.3/hint1.sh\
-           tutorial_fpl_2017/lab3/materials/3.3/hint2.sh\
-           tutorial_fpl_2017/lab3/materials/3.3/imem.h\
-           tutorial_fpl_2017/lab3/materials/3.3/mips.c\
-           tutorial_fpl_2017/lab3/materials/3.3/README\
-           tutorial_fpl_2017/lab3/materials/3.4/hint1.sh\
-           tutorial_fpl_2017/lab3/materials/3.4/hint2.sh\
-           tutorial_fpl_2017/lab3/materials/3.4/imem.h\
-           tutorial_fpl_2017/lab3/materials/3.4/mips.c\
-           tutorial_fpl_2017/lab3/materials/3.4/README\
-           tutorial_fpl_2017/lab3/materials/3.5/hint1.sh\
-           tutorial_fpl_2017/lab3/materials/3.5/hint2.sh\
-           tutorial_fpl_2017/lab3/materials/3.5/imem.h\
-           tutorial_fpl_2017/lab3/materials/3.5/mips.c\
-           tutorial_fpl_2017/lab3/materials/3.5/README\
-           tutorial_fpl_2017/lab3/materials/3.6/hint1.sh\
-           tutorial_fpl_2017/lab3/materials/3.6/hint2.sh\
-           tutorial_fpl_2017/lab3/materials/3.6/imem.h\
-           tutorial_fpl_2017/lab3/materials/3.6/mips.c\
-           tutorial_fpl_2017/lab3/materials/3.6/README\
-           tutorial_fpl_2017/lab3/solutions/3.1/adpcm.c\
-           tutorial_fpl_2017/lab3/solutions/3.1/synthesize.sh\
-           tutorial_fpl_2017/lab3/solutions/3.2/adpcm.c\
-           tutorial_fpl_2017/lab3/solutions/3.2/synthesize.sh\
-           tutorial_fpl_2017/lab3/solutions/3.3/imem.h\
-           tutorial_fpl_2017/lab3/solutions/3.3/mips.c\
-           tutorial_fpl_2017/lab3/solutions/3.3/synthesize1.sh\
-           tutorial_fpl_2017/lab3/solutions/3.3/synthesize2.sh\
-           tutorial_fpl_2017/lab3/solutions/3.4/imem.h\
-           tutorial_fpl_2017/lab3/solutions/3.4/mips.c\
-           tutorial_fpl_2017/lab3/solutions/3.4/synthesize1.sh\
-           tutorial_fpl_2017/lab3/solutions/3.4/synthesize2.sh\
-           tutorial_fpl_2017/lab3/solutions/3.5/imem.h\
-           tutorial_fpl_2017/lab3/solutions/3.5/mips.c\
-           tutorial_fpl_2017/lab3/solutions/3.5/synthesize1.sh\
-           tutorial_fpl_2017/lab3/solutions/3.5/synthesize2.sh\
-           tutorial_fpl_2017/lab3/solutions/3.6/imem.h\
-           tutorial_fpl_2017/lab3/solutions/3.6/mips.c\
-           tutorial_fpl_2017/lab3/solutions/3.6/synthesize1.sh\
-           tutorial_fpl_2017/lab3/solutions/3.6/synthesize2.sh\
-           tutorial_fpl_2017/lab4/Lecture4_HO.pdf\
-           tutorial_fpl_2017/lab4/materials/4.1/checksum.c\
-           tutorial_fpl_2017/lab4/materials/4.1/checksum.h\
-           tutorial_fpl_2017/lab4/materials/4.1/checksum.v\
-           tutorial_fpl_2017/lab4/materials/4.1/main.c\
-           tutorial_fpl_2017/lab4/materials/4.1/README\
-           tutorial_fpl_2017/lab4/materials/4.2/main.c\
-           tutorial_fpl_2017/lab4/materials/4.2/operations.c\
-           tutorial_fpl_2017/lab4/materials/4.2/operations.v\
-           tutorial_fpl_2017/lab4/materials/4.2/README\
-           tutorial_fpl_2017/lab4/solutions/4.1/example_test.xml\
-           tutorial_fpl_2017/lab4/solutions/4.1/IP.xml\
-           tutorial_fpl_2017/lab4/solutions/4.2/example_testbench.xml\
-           tutorial_fpl_2017/lab4/solutions/4.2/IP.xml\
-           tutorial_fpl_2017/lab5/Lecture5_HO.pdf\
-           tutorial_fpl_2017/lab5/materials/5.1/hint.sh\
-           tutorial_fpl_2017/lab5/materials/5.1/hints.txt\
-           tutorial_fpl_2017/lab5/materials/5.1/module.c\
-           tutorial_fpl_2017/lab5/materials/5.1/README\
-           tutorial_fpl_2017/lab5/materials/5.1/test.xml\
-           tutorial_fpl_2017/lab5/materials/5.1/xc7z020-1clg484-VVD.xml\
-           tutorial_fpl_2017/lab5/solutions/5.1/bambu.sh\
-           tutorial_fpl_2017/lab5/solutions/5.1/module.c\
-           tutorial_fpl_2017/lab5/solutions/5.1/test.xml\
-           tutorial_fpl_2017/lab5/solutions/5.1/xc7z045-2ffg900-VVD.xml\
-           tutorial_fpt_2017/debugging/debugging.pdf\
-           tutorial_fpt_2017/debugging/first/main.c\
-           tutorial_fpt_2017/debugging/first/operations.c\
-           tutorial_fpt_2017/debugging/first/operations.v\
-           tutorial_fpt_2017/debugging/first/README\
-           tutorial_fpt_2017/debugging/first/solution/example_testbench.xml\
-           tutorial_fpt_2017/debugging/first/solution/IP.xml\
-           tutorial_fpt_2017/intro/Introduction.pdf\
-           tutorial_fpt_2017/intro/fifth/bambu.sh\
-           tutorial_fpt_2017/intro/fifth/constraints_STD.xml\
-           tutorial_fpt_2017/intro/fifth/main_test.c\
-           tutorial_fpt_2017/intro/fifth/module1.c\
-           tutorial_fpt_2017/intro/fifth/module1.v\
-           tutorial_fpt_2017/intro/fifth/module2.c\
-           tutorial_fpt_2017/intro/fifth/module2.v\
-           tutorial_fpt_2017/intro/fifth/module_lib.h\
-           tutorial_fpt_2017/intro/fifth/module_lib.xml\
-           tutorial_fpt_2017/intro/fifth/printer1.c\
-           tutorial_fpt_2017/intro/fifth/printer1.v\
-           tutorial_fpt_2017/intro/fifth/printer2.c\
-           tutorial_fpt_2017/intro/fifth/printer2.v\
-           tutorial_fpt_2017/intro/fifth/README.txt\
-           tutorial_fpt_2017/intro/fifth/test.xml\
-           tutorial_fpt_2017/intro/fifth/top.c\
-           tutorial_fpt_2017/intro/first/bambu.sh\
-           tutorial_fpt_2017/intro/first/module.c\
-           tutorial_fpt_2017/intro/fourth/bambu.sh\
-           tutorial_fpt_2017/intro/fourth/module.c\
-           tutorial_fpt_2017/intro/fourth/test.xml\
-           tutorial_fpt_2017/intro/second/bambu.sh\
-           tutorial_fpt_2017/intro/second/module.c\
-           tutorial_fpt_2017/intro/sixth/aggregate.h\
-           tutorial_fpt_2017/intro/sixth/bambu.sh\
-           tutorial_fpt_2017/intro/sixth/less.c\
-           tutorial_fpt_2017/intro/sixth/qsort.c\
-           tutorial_fpt_2017/intro/sixth/test.c\
-           tutorial_fpt_2017/intro/sixth/test.xml\
-           tutorial_fpt_2017/intro/third/autogen.sh\
-           tutorial_fpt_2017/intro/third/configure.ac\
-           tutorial_fpt_2017/intro/third/Makefile.am\
-           tutorial_fpt_2017/intro/third/multi.sh\
-           tutorial_fpt_2017/intro/third/test.xml\
-           tutorial_fpt_2017/intro/third/include/Keccak.h\
-           tutorial_fpt_2017/intro/third/include/Makefile.am\
-           tutorial_fpt_2017/intro/third/src/keccak_coproc.c\
-           tutorial_fpt_2017/intro/third/src/Makefile.am\
-           tutorial_fpt_2017/intro/third/src/chi/chi.c\
-           tutorial_fpt_2017/intro/third/src/chi/Makefile.am\
-           tutorial_fpt_2017/intro/third/src/iota/iota.c\
-           tutorial_fpt_2017/intro/third/src/iota/Makefile.am\
-           tutorial_fpt_2017/intro/third/src/pi/Makefile.am\
-           tutorial_fpt_2017/intro/third/src/pi/pi.c\
-           tutorial_fpt_2017/intro/third/src/rho/Makefile.am\
-           tutorial_fpt_2017/intro/third/src/rho/rho.c\
-           tutorial_fpt_2017/intro/third/src/theta/Makefile.am\
-           tutorial_fpt_2017/intro/third/src/theta/theta.c\
-           tutorial_fpt_2017/memory/memory.pdf\
-           tutorial_fpt_2017/memory/fifth/hint1.sh\
-           tutorial_fpt_2017/memory/fifth/hint2.sh\
-           tutorial_fpt_2017/memory/fifth/imem.h\
-           tutorial_fpt_2017/memory/fifth/mips.c\
-           tutorial_fpt_2017/memory/fifth/README\
-           tutorial_fpt_2017/memory/fifth/solution/imem.h\
-           tutorial_fpt_2017/memory/fifth/solution/mips.c\
-           tutorial_fpt_2017/memory/fifth/solution/synthesize1.sh\
-           tutorial_fpt_2017/memory/fifth/solution/synthesize2.sh\
-           tutorial_fpt_2017/memory/first/adpcm.c\
-           tutorial_fpt_2017/memory/first/hint.sh\
-           tutorial_fpt_2017/memory/first/README\
-           tutorial_fpt_2017/memory/first/solution/adpcm.c\
-           tutorial_fpt_2017/memory/first/solution/synthesize.sh\
-           tutorial_fpt_2017/memory/fourth/hint1.sh\
-           tutorial_fpt_2017/memory/fourth/hint2.sh\
-           tutorial_fpt_2017/memory/fourth/imem.h\
-           tutorial_fpt_2017/memory/fourth/mips.c\
-           tutorial_fpt_2017/memory/fourth/README\
-           tutorial_fpt_2017/memory/fourth/solution/imem.h\
-           tutorial_fpt_2017/memory/fourth/solution/mips.c\
-           tutorial_fpt_2017/memory/fourth/solution/synthesize1.sh\
-           tutorial_fpt_2017/memory/fourth/solution/synthesize2.sh\
-           tutorial_fpt_2017/memory/second/adpcm.c\
-           tutorial_fpt_2017/memory/second/hint.sh\
-           tutorial_fpt_2017/memory/second/README\
-           tutorial_fpt_2017/memory/second/solution/adpcm.c\
-           tutorial_fpt_2017/memory/second/solution/synthesize.sh\
-           tutorial_fpt_2017/memory/sixth/hint1.sh\
-           tutorial_fpt_2017/memory/sixth/hint2.sh\
-           tutorial_fpt_2017/memory/sixth/imem.h\
-           tutorial_fpt_2017/memory/sixth/mips.c\
-           tutorial_fpt_2017/memory/sixth/README\
-           tutorial_fpt_2017/memory/sixth/solution/imem.h\
-           tutorial_fpt_2017/memory/sixth/solution/mips.c\
-           tutorial_fpt_2017/memory/sixth/solution/synthesize1.sh\
-           tutorial_fpt_2017/memory/sixth/solution/synthesize2.sh\
-           tutorial_fpt_2017/memory/third/hint1.sh\
-           tutorial_fpt_2017/memory/third/hint2.sh\
-           tutorial_fpt_2017/memory/third/imem.h\
-           tutorial_fpt_2017/memory/third/mips.c\
-           tutorial_fpt_2017/memory/third/README\
-           tutorial_fpt_2017/memory/third/solution/imem.h\
-           tutorial_fpt_2017/memory/third/solution/mips.c\
-           tutorial_fpt_2017/memory/third/solution/synthesize1.sh\
-           tutorial_fpt_2017/memory/third/solution/synthesize2.sh\
-           tutorial_fpt_2017/optimizations/optimizations.pdf\
-           tutorial_fpt_2017/optimizations/first/adpcm.c\
-           tutorial_fpt_2017/optimizations/first/hint.sh\
-           tutorial_fpt_2017/optimizations/first/README\
-           tutorial_fpt_2017/optimizations/first/solution/adpcm.c\
-           tutorial_fpt_2017/optimizations/first/solution/synthesize.sh\
-           tutorial_fpt_2017/optimizations/fourth/hint.sh\
-           tutorial_fpt_2017/optimizations/fourth/hint.txt\
-           tutorial_fpt_2017/optimizations/fourth/README\
-           tutorial_fpt_2017/optimizations/fourth/solution/list\
-           tutorial_fpt_2017/optimizations/fourth/solution/module.c\
-           tutorial_fpt_2017/optimizations/fourth/solution/synthesize.sh\
-           tutorial_fpt_2017/optimizations/fourth/solution/testbench.xml\
-           tutorial_fpt_2017/optimizations/fourth/solution/test_panda.py\
-           tutorial_fpt_2017/optimizations/second/adpcm.c\
-           tutorial_fpt_2017/optimizations/second/hint.txt\
-           tutorial_fpt_2017/optimizations/second/README\
-           tutorial_fpt_2017/optimizations/second/solution/adpcm.c\
-           tutorial_fpt_2017/optimizations/second/solution/synthesize.sh\
-           tutorial_fpt_2017/optimizations/third/dfdiv.c\
-           tutorial_fpt_2017/optimizations/third/hint.txt\
-           tutorial_fpt_2017/optimizations/third/milieu.h\
-           tutorial_fpt_2017/optimizations/third/README\
-           tutorial_fpt_2017/optimizations/third/softfloat.c\
-           tutorial_fpt_2017/optimizations/third/softfloat.h\
-           tutorial_fpt_2017/optimizations/third/softfloat-macros\
-           tutorial_fpt_2017/optimizations/third/softfloat-specialize\
-           tutorial_fpt_2017/optimizations/third/SPARC-GCC.h\
-           tutorial_fpt_2017/optimizations/third/solution/dfdiv.c\
-           tutorial_fpt_2017/optimizations/third/solution/milieu.h\
-           tutorial_fpt_2017/optimizations/third/solution/softfloat.c\
-           tutorial_fpt_2017/optimizations/third/solution/softfloat.h\
-           tutorial_fpt_2017/optimizations/third/solution/softfloat-macros\
-           tutorial_fpt_2017/optimizations/third/solution/softfloat-specialize\
-           tutorial_fpt_2017/optimizations/third/solution/SPARC-GCC.h\
-           tutorial_fpt_2017/optimizations/third/solution/synthesize.sh\
-           tutorial_fpt_2017/target/target-customization.pdf\
-           tutorial_fpt_2017/target/first/hint.c\
-           tutorial_fpt_2017/target/first/hint.sh\
-           tutorial_fpt_2017/target/first/README\
-           tutorial_fpt_2017/target/first/solution/module.c\
-           tutorial_fpt_2017/target/first/solution/synthesize.sh\
-           tutorial_fpt_2017/target/second/hint.sh\
-           tutorial_fpt_2017/target/second/hint.xml\
-           tutorial_fpt_2017/target/second/module.c\
-           tutorial_fpt_2017/target/second/README\
-           tutorial_fpt_2017/target/second/solution/module.c\
-           tutorial_fpt_2017/target/second/solution/synthesize.sh\
-           tutorial_fpt_2017/target/second/solution/testbench.xml\
-           tutorial_fpt_2017/target/third/hint.sh\
-           tutorial_fpt_2017/target/third/module.c\
-           tutorial_fpt_2017/target/third/README\
-           tutorial_fpt_2017/target/third/solution/module.c\
-           tutorial_fpt_2017/target/third/solution/synthesize.sh\
-           tutorial_pnnl_2019/intro/first/module.c\
-           tutorial_pnnl_2019/intro/first/bambu.sh\
-           tutorial_pnnl_2019/PandA-bambu-PNNL19.pdf\
-           tutorial_pnnl_2019/VM-setup.pdf\
-           tutorial_pnnl_2019/1hHOBambu.pdf\
-           tutorial_pnnl_2019/memory/second/hint.sh\
-           tutorial_pnnl_2019/memory/second/solution/adpcm.c\
-           tutorial_pnnl_2019/memory/second/solution/synthesize.sh\
-           tutorial_pnnl_2019/memory/second/adpcm.c\
-           tutorial_pnnl_2019/memory/second/README\
-           tutorial_pnnl_2019/memory/fourth/mips.c\
-           tutorial_pnnl_2019/memory/fourth/imem.h\
-           tutorial_pnnl_2019/memory/fourth/solution/synthesize1.sh\
-           tutorial_pnnl_2019/memory/fourth/solution/mips.c\
-           tutorial_pnnl_2019/memory/fourth/solution/imem.h\
-           tutorial_pnnl_2019/memory/fourth/solution/synthesize2.sh\
-           tutorial_pnnl_2019/memory/fourth/hint1.sh\
-           tutorial_pnnl_2019/memory/fourth/hint2.sh\
-           tutorial_pnnl_2019/memory/fourth/README\
-           tutorial_pnnl_2019/memory/fifth/mips.c\
-           tutorial_pnnl_2019/memory/fifth/imem.h\
-           tutorial_pnnl_2019/memory/fifth/solution/synthesize1.sh\
-           tutorial_pnnl_2019/memory/fifth/solution/mips.c\
-           tutorial_pnnl_2019/memory/fifth/solution/imem.h\
-           tutorial_pnnl_2019/memory/fifth/solution/synthesize2.sh\
-           tutorial_pnnl_2019/memory/fifth/hint1.sh\
-           tutorial_pnnl_2019/memory/fifth/hint2.sh\
-           tutorial_pnnl_2019/memory/fifth/README\
-           tutorial_pnnl_2019/memory/first/hint.sh\
-           tutorial_pnnl_2019/memory/first/solution/adpcm.c\
-           tutorial_pnnl_2019/memory/first/solution/synthesize.sh\
-           tutorial_pnnl_2019/memory/first/adpcm.c\
-           tutorial_pnnl_2019/memory/first/README\
-           tutorial_pnnl_2019/memory/sixth/mips.c\
-           tutorial_pnnl_2019/memory/sixth/imem.h\
-           tutorial_pnnl_2019/memory/sixth/solution/synthesize1.sh\
-           tutorial_pnnl_2019/memory/sixth/solution/mips.c\
-           tutorial_pnnl_2019/memory/sixth/solution/imem.h\
-           tutorial_pnnl_2019/memory/sixth/solution/synthesize2.sh\
-           tutorial_pnnl_2019/memory/sixth/hint1.sh\
-           tutorial_pnnl_2019/memory/sixth/hint2.sh\
-           tutorial_pnnl_2019/memory/sixth/README\
-           tutorial_pnnl_2019/memory/third/mips.c\
-           tutorial_pnnl_2019/memory/third/imem.h\
-           tutorial_pnnl_2019/memory/third/solution/synthesize1.sh\
-           tutorial_pnnl_2019/memory/third/solution/mips.c\
-           tutorial_pnnl_2019/memory/third/solution/imem.h\
-           tutorial_pnnl_2019/memory/third/solution/synthesize2.sh\
-           tutorial_pnnl_2019/memory/third/hint1.sh\
-           tutorial_pnnl_2019/memory/third/hint2.sh\
-           tutorial_pnnl_2019/memory/third/README\
-           tutorial_pnnl_2019/optimizations/second/hint.txt\
-           tutorial_pnnl_2019/optimizations/second/solution/adpcm.c\
-           tutorial_pnnl_2019/optimizations/second/solution/synthesize.sh\
-           tutorial_pnnl_2019/optimizations/second/adpcm.c\
-           tutorial_pnnl_2019/optimizations/second/README\
-           tutorial_pnnl_2019/optimizations/first/hint.sh\
-           tutorial_pnnl_2019/optimizations/first/solution/adpcm.c\
-           tutorial_pnnl_2019/optimizations/first/solution/synthesize.sh\
-           tutorial_pnnl_2019/optimizations/first/adpcm.c\
-           tutorial_pnnl_2019/optimizations/first/README\
-           tutorial_pact_2019/Introduction/second/module.c\
-           tutorial_pact_2019/Introduction/second/bambu.sh\
-           tutorial_pact_2019/Introduction/fourth/test.xml\
-           tutorial_pact_2019/Introduction/fourth/module.c\
-           tutorial_pact_2019/Introduction/fourth/bambu.sh\
-           tutorial_pact_2019/Introduction/fifth/printer1.v\
-           tutorial_pact_2019/Introduction/fifth/constraints_STD.xml\
-           tutorial_pact_2019/Introduction/fifth/module_lib.xml\
-           tutorial_pact_2019/Introduction/fifth/test.xml\
-           tutorial_pact_2019/Introduction/fifth/module1.c\
-           tutorial_pact_2019/Introduction/fifth/top.c\
-           tutorial_pact_2019/Introduction/fifth/printer2.c\
-           tutorial_pact_2019/Introduction/fifth/printer2.v\
-           tutorial_pact_2019/Introduction/fifth/module1.v\
-           tutorial_pact_2019/Introduction/fifth/printer1.c\
-           tutorial_pact_2019/Introduction/fifth/module2.c\
-           tutorial_pact_2019/Introduction/fifth/main_test.c\
-           tutorial_pact_2019/Introduction/fifth/bambu.sh\
-           tutorial_pact_2019/Introduction/fifth/module_lib.h\
-           tutorial_pact_2019/Introduction/fifth/module2.v\
-           tutorial_pact_2019/Introduction/fifth/README.txt\
-           tutorial_pact_2019/Introduction/first/module.c\
-           tutorial_pact_2019/Introduction/first/bambu.sh\
-           tutorial_pact_2019/Introduction/sixth/test.xml\
-           tutorial_pact_2019/Introduction/sixth/test.c\
-           tutorial_pact_2019/Introduction/sixth/qsort.c\
-           tutorial_pact_2019/Introduction/sixth/bambu.sh\
-           tutorial_pact_2019/Introduction/sixth/less.c\
-           tutorial_pact_2019/Introduction/sixth/aggregate.h\
-           tutorial_pact_2019/Introduction/Introduction.pdf\
-           tutorial_pact_2019/Introduction/third/autogen.sh\
-           tutorial_pact_2019/Introduction/third/include/Makefile.am\
-           tutorial_pact_2019/Introduction/third/include/Keccak.h\
-           tutorial_pact_2019/Introduction/third/src/pi/Makefile.am\
-           tutorial_pact_2019/Introduction/third/src/pi/pi.c\
-           tutorial_pact_2019/Introduction/third/src/theta/Makefile.am\
-           tutorial_pact_2019/Introduction/third/src/theta/theta.c\
-           tutorial_pact_2019/Introduction/third/src/Makefile.am\
-           tutorial_pact_2019/Introduction/third/src/iota/Makefile.am\
-           tutorial_pact_2019/Introduction/third/src/iota/iota.c\
-           tutorial_pact_2019/Introduction/third/src/keccak_coproc.c\
-           tutorial_pact_2019/Introduction/third/src/chi/Makefile.am\
-           tutorial_pact_2019/Introduction/third/src/chi/chi.c\
-           tutorial_pact_2019/Introduction/third/src/rho/rho.c\
-           tutorial_pact_2019/Introduction/third/src/rho/Makefile.am\
-           tutorial_pact_2019/Introduction/third/test.xml\
-           tutorial_pact_2019/Introduction/third/multi.sh\
-           tutorial_pact_2019/Introduction/third/Makefile.am\
-           tutorial_pact_2019/Introduction/third/configure.ac\
-           tutorial_pact_2019/Target-Customization/second/hint.sh\
-           tutorial_pact_2019/Target-Customization/second/solution/testbench.xml\
-           tutorial_pact_2019/Target-Customization/second/solution/module.c\
-           tutorial_pact_2019/Target-Customization/second/solution/synthesize.sh\
-           tutorial_pact_2019/Target-Customization/second/module.c\
-           tutorial_pact_2019/Target-Customization/second/hint.xml\
-           tutorial_pact_2019/Target-Customization/second/README\
-           tutorial_pact_2019/Target-Customization/Target-Customization.pdf\
-           tutorial_pact_2019/Target-Customization/first/hint.sh\
-           tutorial_pact_2019/Target-Customization/first/solution/module.c\
-           tutorial_pact_2019/Target-Customization/first/solution/synthesize.sh\
-           tutorial_pact_2019/Target-Customization/first/hint.c\
-           tutorial_pact_2019/Target-Customization/first/README\
-           tutorial_pact_2019/Target-Customization/third/hint.sh\
-           tutorial_pact_2019/Target-Customization/third/solution/module.c\
-           tutorial_pact_2019/Target-Customization/third/solution/synthesize.sh\
-           tutorial_pact_2019/Target-Customization/third/module.c\
-           tutorial_pact_2019/Target-Customization/third/README\
-           tutorial_pact_2019/Context-Switch/second/trinityq4/lubm_trinityq4.c\
-           tutorial_pact_2019/Context-Switch/second/solution/bambu.sh\
-           tutorial_pact_2019/Context-Switch/second/bambu.sh\
-           tutorial_pact_2019/Context-Switch/second/common/simple_API.h\
-           tutorial_pact_2019/Context-Switch/second/common/load_graph.c\
-           tutorial_pact_2019/Context-Switch/second/common/atominIncrement.c\
-           tutorial_pact_2019/Context-Switch/second/common/data.c\
-           tutorial_pact_2019/Context-Switch/second/test-1.xml\
-           tutorial_pact_2019/Context-Switch/fourth/trinityq4/lubm_trinityq4.c\
-           tutorial_pact_2019/Context-Switch/fourth/solution/bambu.sh\
-           tutorial_pact_2019/Context-Switch/fourth/bambu.sh\
-           tutorial_pact_2019/Context-Switch/fourth/common/simple_API.h\
-           tutorial_pact_2019/Context-Switch/fourth/common/load_graph.c\
-           tutorial_pact_2019/Context-Switch/fourth/common/atominIncrement.c\
-           tutorial_pact_2019/Context-Switch/fourth/common/data.c\
-           tutorial_pact_2019/Context-Switch/fourth/test-1.xml\
-           tutorial_pact_2019/Context-Switch/first/trinityq4/lubm_trinityq4.c\
-           tutorial_pact_2019/Context-Switch/first/solution/bambu.sh\
-           tutorial_pact_2019/Context-Switch/first/bambu.sh\
-           tutorial_pact_2019/Context-Switch/first/common/simple_API.h\
-           tutorial_pact_2019/Context-Switch/first/common/load_graph.c\
-           tutorial_pact_2019/Context-Switch/first/common/atominIncrement.c\
-           tutorial_pact_2019/Context-Switch/first/common/data.c\
-           tutorial_pact_2019/Context-Switch/first/test-1.xml\
-           tutorial_pact_2019/Context-Switch/Context-Switch.pdf\
-           tutorial_pact_2019/Context-Switch/third/trinityq4/lubm_trinityq4.c\
-           tutorial_pact_2019/Context-Switch/third/solution/bambu.sh\
-           tutorial_pact_2019/Context-Switch/third/bambu.sh\
-           tutorial_pact_2019/Context-Switch/third/common/simple_API.h\
-           tutorial_pact_2019/Context-Switch/third/common/load_graph.c\
-           tutorial_pact_2019/Context-Switch/third/common/atominIncrement.c\
-           tutorial_pact_2019/Context-Switch/third/common/data.c\
-           tutorial_pact_2019/Context-Switch/third/test-1.xml\
-           tutorial_pact_2019/Optimization/second/hint.txt\
-           tutorial_pact_2019/Optimization/second/solution/adpcm.c\
-           tutorial_pact_2019/Optimization/second/solution/synthesize.sh\
-           tutorial_pact_2019/Optimization/second/adpcm.c\
-           tutorial_pact_2019/Optimization/second/README\
-           tutorial_pact_2019/Optimization/fourth/hint.sh\
-           tutorial_pact_2019/Optimization/fourth/hint.txt\
-           tutorial_pact_2019/Optimization/fourth/solution/testbench.xml\
-           tutorial_pact_2019/Optimization/fourth/solution/module.c\
-           tutorial_pact_2019/Optimization/fourth/solution/list\
-           tutorial_pact_2019/Optimization/fourth/solution/synthesize.sh\
-           tutorial_pact_2019/Optimization/fourth/solution/test_panda.py\
-           tutorial_pact_2019/Optimization/fourth/README\
-           tutorial_pact_2019/Optimization/first/hint.sh\
-           tutorial_pact_2019/Optimization/first/solution/adpcm.c\
-           tutorial_pact_2019/Optimization/first/solution/synthesize.sh\
-           tutorial_pact_2019/Optimization/first/adpcm.c\
-           tutorial_pact_2019/Optimization/first/README\
-           tutorial_pact_2019/Optimization/Optimizations.pdf\
-           tutorial_pact_2019/Optimization/third/milieu.h\
-           tutorial_pact_2019/Optimization/third/dfdiv.c\
-           tutorial_pact_2019/Optimization/third/softfloat-macros\
-           tutorial_pact_2019/Optimization/third/hint.txt\
-           tutorial_pact_2019/Optimization/third/solution/milieu.h\
-           tutorial_pact_2019/Optimization/third/solution/dfdiv.c\
-           tutorial_pact_2019/Optimization/third/solution/softfloat-macros\
-           tutorial_pact_2019/Optimization/third/solution/softfloat.c\
-           tutorial_pact_2019/Optimization/third/solution/SPARC-GCC.h\
-           tutorial_pact_2019/Optimization/third/solution/softfloat.h\
-           tutorial_pact_2019/Optimization/third/solution/softfloat-specialize\
-           tutorial_pact_2019/Optimization/third/solution/synthesize.sh\
-           tutorial_pact_2019/Optimization/third/softfloat.c\
-           tutorial_pact_2019/Optimization/third/SPARC-GCC.h\
-           tutorial_pact_2019/Optimization/third/softfloat.h\
-           tutorial_pact_2019/Optimization/third/README\
-           tutorial_pact_2019/Optimization/third/softfloat-specialize\
-           tutorial_pact_2019/SIMD/second/solution/bambu.sh\
-           tutorial_pact_2019/SIMD/second/histogram.h\
-           tutorial_pact_2019/SIMD/second/bambu.sh\
-           tutorial_pact_2019/SIMD/second/histogram.c\
-           tutorial_pact_2019/SIMD/first/solution/bambu.sh\
-           tutorial_pact_2019/SIMD/first/histogram.h\
-           tutorial_pact_2019/SIMD/first/bambu.sh\
-           tutorial_pact_2019/SIMD/first/histogram.c\
-           tutorial_pact_2019/SIMD/Simd.pdf\
-           tutorial_pact_2019/SIMD/third/solution/bambu.sh\
-           tutorial_pact_2019/SIMD/third/histogram.h\
-           tutorial_pact_2019/SIMD/third/bambu.sh\
-           tutorial_pact_2019/SIMD/third/histogram.c
+   authors.doc \
+   license.doc \
+   panda_sdk.doc \
+   panda.doc \
+   root.doc \
+   bambu101/basic_usage/basic_usage.doc \
+   bambu101/systemsim/systemsim.doc \
+   bambu101/bambu101.doc \
+   dev101/guidelines/documentation.doc \
+   dev101/guidelines/makefiles.doc \
+   dev101/guidelines/programming.doc \
+   dev101/dev.doc \
+   install/install_appimage.doc \
+   install/install_docker.doc \
+   install/install_os.doc \
+   install/install_source.doc \
+   install/install.doc \
+   web/bambu_install.txt \
+   web/bambu.txt \
+   web/panda_download.txt \
+   web/tutorial.txt \
+   web/bambu.txt \
+   tutorial_fpl_2017/FPL17-bambu_tutorial_v4.pdf \
+   tutorial_fpl_2017/Introduction.pdf \
+   tutorial_fpl_2017/lab1/Lecture1_HO.pdf \
+   tutorial_fpl_2017/lab2/Lecture2_HO.pdf \
+   tutorial_fpl_2017/Lecture1.pdf \
+   tutorial_fpl_2017/Lecture2A.pdf \
+   tutorial_fpl_2017/Lecture2B.pdf \
+   tutorial_fpl_2017/Lecture3.pdf \
+   tutorial_fpl_2017/Lecture4.pdf \
+   tutorial_fpl_2017/lab2/materials/2.1/hint.c \
+   tutorial_fpl_2017/lab2/materials/2.1/hint.sh \
+   tutorial_fpl_2017/lab2/materials/2.1/README \
+   tutorial_fpl_2017/lab2/materials/2.2/hint.sh \
+   tutorial_fpl_2017/lab2/materials/2.2/hint.xml \
+   tutorial_fpl_2017/lab2/materials/2.2/module.c \
+   tutorial_fpl_2017/lab2/materials/2.2/README \
+   tutorial_fpl_2017/lab2/materials/2.3/hint.sh \
+   tutorial_fpl_2017/lab2/materials/2.3/module.c \
+   tutorial_fpl_2017/lab2/materials/2.3/README \
+   tutorial_fpl_2017/lab2/materials/2.4/adpcm.c \
+   tutorial_fpl_2017/lab2/materials/2.4/hint.sh \
+   tutorial_fpl_2017/lab2/materials/2.4/README \
+   tutorial_fpl_2017/lab2/materials/2.5/adpcm.c \
+   tutorial_fpl_2017/lab2/materials/2.5/hint.txt \
+   tutorial_fpl_2017/lab2/materials/2.5/README \
+   tutorial_fpl_2017/lab2/materials/2.6/dfdiv.c \
+   tutorial_fpl_2017/lab2/materials/2.6/hint.txt \
+   tutorial_fpl_2017/lab2/materials/2.6/milieu.h \
+   tutorial_fpl_2017/lab2/materials/2.6/README \
+   tutorial_fpl_2017/lab2/materials/2.6/softfloat.c \
+   tutorial_fpl_2017/lab2/materials/2.6/softfloat.h \
+   tutorial_fpl_2017/lab2/materials/2.6/softfloat-macros \
+   tutorial_fpl_2017/lab2/materials/2.6/softfloat-specialize \
+   tutorial_fpl_2017/lab2/materials/2.6/SPARC-GCC.h \
+   tutorial_fpl_2017/lab2/materials/2.7/hint.sh \
+   tutorial_fpl_2017/lab2/materials/2.7/hint.txt \
+   tutorial_fpl_2017/lab2/materials/2.7/README \
+   tutorial_fpl_2017/lab2/solutions/2.1/module.c \
+   tutorial_fpl_2017/lab2/solutions/2.1/synthesize.sh \
+   tutorial_fpl_2017/lab2/solutions/2.2/module.c \
+   tutorial_fpl_2017/lab2/solutions/2.2/synthesize.sh \
+   tutorial_fpl_2017/lab2/solutions/2.2/testbench.xml \
+   tutorial_fpl_2017/lab2/solutions/2.3/module.c \
+   tutorial_fpl_2017/lab2/solutions/2.3/synthesize.sh \
+   tutorial_fpl_2017/lab2/solutions/2.4/adpcm.c \
+   tutorial_fpl_2017/lab2/solutions/2.4/synthesize.sh \
+   tutorial_fpl_2017/lab2/solutions/2.5/adpcm.c \
+   tutorial_fpl_2017/lab2/solutions/2.5/synthesize.sh \
+   tutorial_fpl_2017/lab2/solutions/2.6/dfdiv.c \
+   tutorial_fpl_2017/lab2/solutions/2.6/milieu.h \
+   tutorial_fpl_2017/lab2/solutions/2.6/softfloat.c \
+   tutorial_fpl_2017/lab2/solutions/2.6/softfloat.h \
+   tutorial_fpl_2017/lab2/solutions/2.6/softfloat-macros \
+   tutorial_fpl_2017/lab2/solutions/2.6/softfloat-specialize \
+   tutorial_fpl_2017/lab2/solutions/2.6/SPARC-GCC.h \
+   tutorial_fpl_2017/lab2/solutions/2.6/synthesize.sh \
+   tutorial_fpl_2017/lab2/solutions/2.7/list \
+   tutorial_fpl_2017/lab2/solutions/2.7/module.c \
+   tutorial_fpl_2017/lab2/solutions/2.7/synthesize.sh \
+   tutorial_fpl_2017/lab2/solutions/2.7/testbench.xml \
+   tutorial_fpl_2017/lab2/solutions/2.7/test_panda.py \
+   tutorial_fpl_2017/lab3/Lecture3_HO.pdf \
+   tutorial_fpl_2017/lab3/materials/3.1/adpcm.c \
+   tutorial_fpl_2017/lab3/materials/3.1/hint.sh \
+   tutorial_fpl_2017/lab3/materials/3.1/README \
+   tutorial_fpl_2017/lab3/materials/3.2/adpcm.c \
+   tutorial_fpl_2017/lab3/materials/3.2/hint.sh \
+   tutorial_fpl_2017/lab3/materials/3.2/README \
+   tutorial_fpl_2017/lab3/materials/3.3/hint1.sh \
+   tutorial_fpl_2017/lab3/materials/3.3/hint2.sh \
+   tutorial_fpl_2017/lab3/materials/3.3/imem.h \
+   tutorial_fpl_2017/lab3/materials/3.3/mips.c \
+   tutorial_fpl_2017/lab3/materials/3.3/README \
+   tutorial_fpl_2017/lab3/materials/3.4/hint1.sh \
+   tutorial_fpl_2017/lab3/materials/3.4/hint2.sh \
+   tutorial_fpl_2017/lab3/materials/3.4/imem.h \
+   tutorial_fpl_2017/lab3/materials/3.4/mips.c \
+   tutorial_fpl_2017/lab3/materials/3.4/README \
+   tutorial_fpl_2017/lab3/materials/3.5/hint1.sh \
+   tutorial_fpl_2017/lab3/materials/3.5/hint2.sh \
+   tutorial_fpl_2017/lab3/materials/3.5/imem.h \
+   tutorial_fpl_2017/lab3/materials/3.5/mips.c \
+   tutorial_fpl_2017/lab3/materials/3.5/README \
+   tutorial_fpl_2017/lab3/materials/3.6/hint1.sh \
+   tutorial_fpl_2017/lab3/materials/3.6/hint2.sh \
+   tutorial_fpl_2017/lab3/materials/3.6/imem.h \
+   tutorial_fpl_2017/lab3/materials/3.6/mips.c \
+   tutorial_fpl_2017/lab3/materials/3.6/README \
+   tutorial_fpl_2017/lab3/solutions/3.1/adpcm.c \
+   tutorial_fpl_2017/lab3/solutions/3.1/synthesize.sh \
+   tutorial_fpl_2017/lab3/solutions/3.2/adpcm.c \
+   tutorial_fpl_2017/lab3/solutions/3.2/synthesize.sh \
+   tutorial_fpl_2017/lab3/solutions/3.3/imem.h \
+   tutorial_fpl_2017/lab3/solutions/3.3/mips.c \
+   tutorial_fpl_2017/lab3/solutions/3.3/synthesize1.sh \
+   tutorial_fpl_2017/lab3/solutions/3.3/synthesize2.sh \
+   tutorial_fpl_2017/lab3/solutions/3.4/imem.h \
+   tutorial_fpl_2017/lab3/solutions/3.4/mips.c \
+   tutorial_fpl_2017/lab3/solutions/3.4/synthesize1.sh \
+   tutorial_fpl_2017/lab3/solutions/3.4/synthesize2.sh \
+   tutorial_fpl_2017/lab3/solutions/3.5/imem.h \
+   tutorial_fpl_2017/lab3/solutions/3.5/mips.c \
+   tutorial_fpl_2017/lab3/solutions/3.5/synthesize1.sh \
+   tutorial_fpl_2017/lab3/solutions/3.5/synthesize2.sh \
+   tutorial_fpl_2017/lab3/solutions/3.6/imem.h \
+   tutorial_fpl_2017/lab3/solutions/3.6/mips.c \
+   tutorial_fpl_2017/lab3/solutions/3.6/synthesize1.sh \
+   tutorial_fpl_2017/lab3/solutions/3.6/synthesize2.sh \
+   tutorial_fpl_2017/lab4/Lecture4_HO.pdf \
+   tutorial_fpl_2017/lab4/materials/4.1/checksum.c \
+   tutorial_fpl_2017/lab4/materials/4.1/checksum.h \
+   tutorial_fpl_2017/lab4/materials/4.1/checksum.v \
+   tutorial_fpl_2017/lab4/materials/4.1/main.c \
+   tutorial_fpl_2017/lab4/materials/4.1/README \
+   tutorial_fpl_2017/lab4/materials/4.2/main.c \
+   tutorial_fpl_2017/lab4/materials/4.2/operations.c \
+   tutorial_fpl_2017/lab4/materials/4.2/operations.v \
+   tutorial_fpl_2017/lab4/materials/4.2/README \
+   tutorial_fpl_2017/lab4/solutions/4.1/example_test.xml \
+   tutorial_fpl_2017/lab4/solutions/4.1/IP.xml \
+   tutorial_fpl_2017/lab4/solutions/4.2/example_testbench.xml \
+   tutorial_fpl_2017/lab4/solutions/4.2/IP.xml \
+   tutorial_fpl_2017/lab5/Lecture5_HO.pdf \
+   tutorial_fpl_2017/lab5/materials/5.1/hint.sh \
+   tutorial_fpl_2017/lab5/materials/5.1/hints.txt \
+   tutorial_fpl_2017/lab5/materials/5.1/module.c \
+   tutorial_fpl_2017/lab5/materials/5.1/README \
+   tutorial_fpl_2017/lab5/materials/5.1/test.xml \
+   tutorial_fpl_2017/lab5/materials/5.1/xc7z020-1clg484-VVD.xml \
+   tutorial_fpl_2017/lab5/solutions/5.1/bambu.sh \
+   tutorial_fpl_2017/lab5/solutions/5.1/module.c \
+   tutorial_fpl_2017/lab5/solutions/5.1/test.xml \
+   tutorial_fpl_2017/lab5/solutions/5.1/xc7z045-2ffg900-VVD.xml \
+   tutorial_fpt_2017/debugging/debugging.pdf \
+   tutorial_fpt_2017/debugging/first/main.c \
+   tutorial_fpt_2017/debugging/first/operations.c \
+   tutorial_fpt_2017/debugging/first/operations.v \
+   tutorial_fpt_2017/debugging/first/README \
+   tutorial_fpt_2017/debugging/first/solution/example_testbench.xml \
+   tutorial_fpt_2017/debugging/first/solution/IP.xml \
+   tutorial_fpt_2017/intro/Introduction.pdf \
+   tutorial_fpt_2017/intro/fifth/bambu.sh \
+   tutorial_fpt_2017/intro/fifth/constraints_STD.xml \
+   tutorial_fpt_2017/intro/fifth/main_test.c \
+   tutorial_fpt_2017/intro/fifth/module1.c \
+   tutorial_fpt_2017/intro/fifth/module1.v \
+   tutorial_fpt_2017/intro/fifth/module2.c \
+   tutorial_fpt_2017/intro/fifth/module2.v \
+   tutorial_fpt_2017/intro/fifth/module_lib.h \
+   tutorial_fpt_2017/intro/fifth/module_lib.xml \
+   tutorial_fpt_2017/intro/fifth/printer1.c \
+   tutorial_fpt_2017/intro/fifth/printer1.v \
+   tutorial_fpt_2017/intro/fifth/printer2.c \
+   tutorial_fpt_2017/intro/fifth/printer2.v \
+   tutorial_fpt_2017/intro/fifth/README.txt \
+   tutorial_fpt_2017/intro/fifth/test.xml \
+   tutorial_fpt_2017/intro/fifth/top.c \
+   tutorial_fpt_2017/intro/first/bambu.sh \
+   tutorial_fpt_2017/intro/first/module.c \
+   tutorial_fpt_2017/intro/fourth/bambu.sh \
+   tutorial_fpt_2017/intro/fourth/module.c \
+   tutorial_fpt_2017/intro/fourth/test.xml \
+   tutorial_fpt_2017/intro/second/bambu.sh \
+   tutorial_fpt_2017/intro/second/module.c \
+   tutorial_fpt_2017/intro/sixth/aggregate.h \
+   tutorial_fpt_2017/intro/sixth/bambu.sh \
+   tutorial_fpt_2017/intro/sixth/less.c \
+   tutorial_fpt_2017/intro/sixth/qsort.c \
+   tutorial_fpt_2017/intro/sixth/test.c \
+   tutorial_fpt_2017/intro/sixth/test.xml \
+   tutorial_fpt_2017/intro/third/autogen.sh \
+   tutorial_fpt_2017/intro/third/configure.ac \
+   tutorial_fpt_2017/intro/third/Makefile.am \
+   tutorial_fpt_2017/intro/third/multi.sh \
+   tutorial_fpt_2017/intro/third/test.xml \
+   tutorial_fpt_2017/intro/third/include/Keccak.h \
+   tutorial_fpt_2017/intro/third/include/Makefile.am \
+   tutorial_fpt_2017/intro/third/src/keccak_coproc.c \
+   tutorial_fpt_2017/intro/third/src/Makefile.am \
+   tutorial_fpt_2017/intro/third/src/chi/chi.c \
+   tutorial_fpt_2017/intro/third/src/chi/Makefile.am \
+   tutorial_fpt_2017/intro/third/src/iota/iota.c \
+   tutorial_fpt_2017/intro/third/src/iota/Makefile.am \
+   tutorial_fpt_2017/intro/third/src/pi/Makefile.am \
+   tutorial_fpt_2017/intro/third/src/pi/pi.c \
+   tutorial_fpt_2017/intro/third/src/rho/Makefile.am \
+   tutorial_fpt_2017/intro/third/src/rho/rho.c \
+   tutorial_fpt_2017/intro/third/src/theta/Makefile.am \
+   tutorial_fpt_2017/intro/third/src/theta/theta.c \
+   tutorial_fpt_2017/memory/memory.pdf \
+   tutorial_fpt_2017/memory/fifth/hint1.sh \
+   tutorial_fpt_2017/memory/fifth/hint2.sh \
+   tutorial_fpt_2017/memory/fifth/imem.h \
+   tutorial_fpt_2017/memory/fifth/mips.c \
+   tutorial_fpt_2017/memory/fifth/README \
+   tutorial_fpt_2017/memory/fifth/solution/imem.h \
+   tutorial_fpt_2017/memory/fifth/solution/mips.c \
+   tutorial_fpt_2017/memory/fifth/solution/synthesize1.sh \
+   tutorial_fpt_2017/memory/fifth/solution/synthesize2.sh \
+   tutorial_fpt_2017/memory/first/adpcm.c \
+   tutorial_fpt_2017/memory/first/hint.sh \
+   tutorial_fpt_2017/memory/first/README \
+   tutorial_fpt_2017/memory/first/solution/adpcm.c \
+   tutorial_fpt_2017/memory/first/solution/synthesize.sh \
+   tutorial_fpt_2017/memory/fourth/hint1.sh \
+   tutorial_fpt_2017/memory/fourth/hint2.sh \
+   tutorial_fpt_2017/memory/fourth/imem.h \
+   tutorial_fpt_2017/memory/fourth/mips.c \
+   tutorial_fpt_2017/memory/fourth/README \
+   tutorial_fpt_2017/memory/fourth/solution/imem.h \
+   tutorial_fpt_2017/memory/fourth/solution/mips.c \
+   tutorial_fpt_2017/memory/fourth/solution/synthesize1.sh \
+   tutorial_fpt_2017/memory/fourth/solution/synthesize2.sh \
+   tutorial_fpt_2017/memory/second/adpcm.c \
+   tutorial_fpt_2017/memory/second/hint.sh \
+   tutorial_fpt_2017/memory/second/README \
+   tutorial_fpt_2017/memory/second/solution/adpcm.c \
+   tutorial_fpt_2017/memory/second/solution/synthesize.sh \
+   tutorial_fpt_2017/memory/sixth/hint1.sh \
+   tutorial_fpt_2017/memory/sixth/hint2.sh \
+   tutorial_fpt_2017/memory/sixth/imem.h \
+   tutorial_fpt_2017/memory/sixth/mips.c \
+   tutorial_fpt_2017/memory/sixth/README \
+   tutorial_fpt_2017/memory/sixth/solution/imem.h \
+   tutorial_fpt_2017/memory/sixth/solution/mips.c \
+   tutorial_fpt_2017/memory/sixth/solution/synthesize1.sh \
+   tutorial_fpt_2017/memory/sixth/solution/synthesize2.sh \
+   tutorial_fpt_2017/memory/third/hint1.sh \
+   tutorial_fpt_2017/memory/third/hint2.sh \
+   tutorial_fpt_2017/memory/third/imem.h \
+   tutorial_fpt_2017/memory/third/mips.c \
+   tutorial_fpt_2017/memory/third/README \
+   tutorial_fpt_2017/memory/third/solution/imem.h \
+   tutorial_fpt_2017/memory/third/solution/mips.c \
+   tutorial_fpt_2017/memory/third/solution/synthesize1.sh \
+   tutorial_fpt_2017/memory/third/solution/synthesize2.sh \
+   tutorial_fpt_2017/optimizations/optimizations.pdf \
+   tutorial_fpt_2017/optimizations/first/adpcm.c \
+   tutorial_fpt_2017/optimizations/first/hint.sh \
+   tutorial_fpt_2017/optimizations/first/README \
+   tutorial_fpt_2017/optimizations/first/solution/adpcm.c \
+   tutorial_fpt_2017/optimizations/first/solution/synthesize.sh \
+   tutorial_fpt_2017/optimizations/fourth/hint.sh \
+   tutorial_fpt_2017/optimizations/fourth/hint.txt \
+   tutorial_fpt_2017/optimizations/fourth/README \
+   tutorial_fpt_2017/optimizations/fourth/solution/list \
+   tutorial_fpt_2017/optimizations/fourth/solution/module.c \
+   tutorial_fpt_2017/optimizations/fourth/solution/synthesize.sh \
+   tutorial_fpt_2017/optimizations/fourth/solution/testbench.xml \
+   tutorial_fpt_2017/optimizations/fourth/solution/test_panda.py \
+   tutorial_fpt_2017/optimizations/second/adpcm.c \
+   tutorial_fpt_2017/optimizations/second/hint.txt \
+   tutorial_fpt_2017/optimizations/second/README \
+   tutorial_fpt_2017/optimizations/second/solution/adpcm.c \
+   tutorial_fpt_2017/optimizations/second/solution/synthesize.sh \
+   tutorial_fpt_2017/optimizations/third/dfdiv.c \
+   tutorial_fpt_2017/optimizations/third/hint.txt \
+   tutorial_fpt_2017/optimizations/third/milieu.h \
+   tutorial_fpt_2017/optimizations/third/README \
+   tutorial_fpt_2017/optimizations/third/softfloat.c \
+   tutorial_fpt_2017/optimizations/third/softfloat.h \
+   tutorial_fpt_2017/optimizations/third/softfloat-macros \
+   tutorial_fpt_2017/optimizations/third/softfloat-specialize \
+   tutorial_fpt_2017/optimizations/third/SPARC-GCC.h \
+   tutorial_fpt_2017/optimizations/third/solution/dfdiv.c \
+   tutorial_fpt_2017/optimizations/third/solution/milieu.h \
+   tutorial_fpt_2017/optimizations/third/solution/softfloat.c \
+   tutorial_fpt_2017/optimizations/third/solution/softfloat.h \
+   tutorial_fpt_2017/optimizations/third/solution/softfloat-macros \
+   tutorial_fpt_2017/optimizations/third/solution/softfloat-specialize \
+   tutorial_fpt_2017/optimizations/third/solution/SPARC-GCC.h \
+   tutorial_fpt_2017/optimizations/third/solution/synthesize.sh \
+   tutorial_fpt_2017/target/target-customization.pdf \
+   tutorial_fpt_2017/target/first/hint.c \
+   tutorial_fpt_2017/target/first/hint.sh \
+   tutorial_fpt_2017/target/first/README \
+   tutorial_fpt_2017/target/first/solution/module.c \
+   tutorial_fpt_2017/target/first/solution/synthesize.sh \
+   tutorial_fpt_2017/target/second/hint.sh \
+   tutorial_fpt_2017/target/second/hint.xml \
+   tutorial_fpt_2017/target/second/module.c \
+   tutorial_fpt_2017/target/second/README \
+   tutorial_fpt_2017/target/second/solution/module.c \
+   tutorial_fpt_2017/target/second/solution/synthesize.sh \
+   tutorial_fpt_2017/target/second/solution/testbench.xml \
+   tutorial_fpt_2017/target/third/hint.sh \
+   tutorial_fpt_2017/target/third/module.c \
+   tutorial_fpt_2017/target/third/README \
+   tutorial_fpt_2017/target/third/solution/module.c \
+   tutorial_fpt_2017/target/third/solution/synthesize.sh \
+   tutorial_pnnl_2019/intro/first/module.c \
+   tutorial_pnnl_2019/intro/first/bambu.sh \
+   tutorial_pnnl_2019/PandA-bambu-PNNL19.pdf \
+   tutorial_pnnl_2019/VM-setup.pdf \
+   tutorial_pnnl_2019/1hHOBambu.pdf \
+   tutorial_pnnl_2019/memory/second/hint.sh \
+   tutorial_pnnl_2019/memory/second/solution/adpcm.c \
+   tutorial_pnnl_2019/memory/second/solution/synthesize.sh \
+   tutorial_pnnl_2019/memory/second/adpcm.c \
+   tutorial_pnnl_2019/memory/second/README \
+   tutorial_pnnl_2019/memory/fourth/mips.c \
+   tutorial_pnnl_2019/memory/fourth/imem.h \
+   tutorial_pnnl_2019/memory/fourth/solution/synthesize1.sh \
+   tutorial_pnnl_2019/memory/fourth/solution/mips.c \
+   tutorial_pnnl_2019/memory/fourth/solution/imem.h \
+   tutorial_pnnl_2019/memory/fourth/solution/synthesize2.sh \
+   tutorial_pnnl_2019/memory/fourth/hint1.sh \
+   tutorial_pnnl_2019/memory/fourth/hint2.sh \
+   tutorial_pnnl_2019/memory/fourth/README \
+   tutorial_pnnl_2019/memory/fifth/mips.c \
+   tutorial_pnnl_2019/memory/fifth/imem.h \
+   tutorial_pnnl_2019/memory/fifth/solution/synthesize1.sh \
+   tutorial_pnnl_2019/memory/fifth/solution/mips.c \
+   tutorial_pnnl_2019/memory/fifth/solution/imem.h \
+   tutorial_pnnl_2019/memory/fifth/solution/synthesize2.sh \
+   tutorial_pnnl_2019/memory/fifth/hint1.sh \
+   tutorial_pnnl_2019/memory/fifth/hint2.sh \
+   tutorial_pnnl_2019/memory/fifth/README \
+   tutorial_pnnl_2019/memory/first/hint.sh \
+   tutorial_pnnl_2019/memory/first/solution/adpcm.c \
+   tutorial_pnnl_2019/memory/first/solution/synthesize.sh \
+   tutorial_pnnl_2019/memory/first/adpcm.c \
+   tutorial_pnnl_2019/memory/first/README \
+   tutorial_pnnl_2019/memory/sixth/mips.c \
+   tutorial_pnnl_2019/memory/sixth/imem.h \
+   tutorial_pnnl_2019/memory/sixth/solution/synthesize1.sh \
+   tutorial_pnnl_2019/memory/sixth/solution/mips.c \
+   tutorial_pnnl_2019/memory/sixth/solution/imem.h \
+   tutorial_pnnl_2019/memory/sixth/solution/synthesize2.sh \
+   tutorial_pnnl_2019/memory/sixth/hint1.sh \
+   tutorial_pnnl_2019/memory/sixth/hint2.sh \
+   tutorial_pnnl_2019/memory/sixth/README \
+   tutorial_pnnl_2019/memory/third/mips.c \
+   tutorial_pnnl_2019/memory/third/imem.h \
+   tutorial_pnnl_2019/memory/third/solution/synthesize1.sh \
+   tutorial_pnnl_2019/memory/third/solution/mips.c \
+   tutorial_pnnl_2019/memory/third/solution/imem.h \
+   tutorial_pnnl_2019/memory/third/solution/synthesize2.sh \
+   tutorial_pnnl_2019/memory/third/hint1.sh \
+   tutorial_pnnl_2019/memory/third/hint2.sh \
+   tutorial_pnnl_2019/memory/third/README \
+   tutorial_pnnl_2019/optimizations/second/hint.txt \
+   tutorial_pnnl_2019/optimizations/second/solution/adpcm.c \
+   tutorial_pnnl_2019/optimizations/second/solution/synthesize.sh \
+   tutorial_pnnl_2019/optimizations/second/adpcm.c \
+   tutorial_pnnl_2019/optimizations/second/README \
+   tutorial_pnnl_2019/optimizations/first/hint.sh \
+   tutorial_pnnl_2019/optimizations/first/solution/adpcm.c \
+   tutorial_pnnl_2019/optimizations/first/solution/synthesize.sh \
+   tutorial_pnnl_2019/optimizations/first/adpcm.c \
+   tutorial_pnnl_2019/optimizations/first/README \
+   tutorial_pact_2019/Introduction/second/module.c \
+   tutorial_pact_2019/Introduction/second/bambu.sh \
+   tutorial_pact_2019/Introduction/fourth/test.xml \
+   tutorial_pact_2019/Introduction/fourth/module.c \
+   tutorial_pact_2019/Introduction/fourth/bambu.sh \
+   tutorial_pact_2019/Introduction/fifth/printer1.v \
+   tutorial_pact_2019/Introduction/fifth/constraints_STD.xml \
+   tutorial_pact_2019/Introduction/fifth/module_lib.xml \
+   tutorial_pact_2019/Introduction/fifth/test.xml \
+   tutorial_pact_2019/Introduction/fifth/module1.c \
+   tutorial_pact_2019/Introduction/fifth/top.c \
+   tutorial_pact_2019/Introduction/fifth/printer2.c \
+   tutorial_pact_2019/Introduction/fifth/printer2.v \
+   tutorial_pact_2019/Introduction/fifth/module1.v \
+   tutorial_pact_2019/Introduction/fifth/printer1.c \
+   tutorial_pact_2019/Introduction/fifth/module2.c \
+   tutorial_pact_2019/Introduction/fifth/main_test.c \
+   tutorial_pact_2019/Introduction/fifth/bambu.sh \
+   tutorial_pact_2019/Introduction/fifth/module_lib.h \
+   tutorial_pact_2019/Introduction/fifth/module2.v \
+   tutorial_pact_2019/Introduction/fifth/README.txt \
+   tutorial_pact_2019/Introduction/first/module.c \
+   tutorial_pact_2019/Introduction/first/bambu.sh \
+   tutorial_pact_2019/Introduction/sixth/test.xml \
+   tutorial_pact_2019/Introduction/sixth/test.c \
+   tutorial_pact_2019/Introduction/sixth/qsort.c \
+   tutorial_pact_2019/Introduction/sixth/bambu.sh \
+   tutorial_pact_2019/Introduction/sixth/less.c \
+   tutorial_pact_2019/Introduction/sixth/aggregate.h \
+   tutorial_pact_2019/Introduction/Introduction.pdf \
+   tutorial_pact_2019/Introduction/third/autogen.sh \
+   tutorial_pact_2019/Introduction/third/include/Makefile.am \
+   tutorial_pact_2019/Introduction/third/include/Keccak.h \
+   tutorial_pact_2019/Introduction/third/src/pi/Makefile.am \
+   tutorial_pact_2019/Introduction/third/src/pi/pi.c \
+   tutorial_pact_2019/Introduction/third/src/theta/Makefile.am \
+   tutorial_pact_2019/Introduction/third/src/theta/theta.c \
+   tutorial_pact_2019/Introduction/third/src/Makefile.am \
+   tutorial_pact_2019/Introduction/third/src/iota/Makefile.am \
+   tutorial_pact_2019/Introduction/third/src/iota/iota.c \
+   tutorial_pact_2019/Introduction/third/src/keccak_coproc.c \
+   tutorial_pact_2019/Introduction/third/src/chi/Makefile.am \
+   tutorial_pact_2019/Introduction/third/src/chi/chi.c \
+   tutorial_pact_2019/Introduction/third/src/rho/rho.c \
+   tutorial_pact_2019/Introduction/third/src/rho/Makefile.am \
+   tutorial_pact_2019/Introduction/third/test.xml \
+   tutorial_pact_2019/Introduction/third/multi.sh \
+   tutorial_pact_2019/Introduction/third/Makefile.am \
+   tutorial_pact_2019/Introduction/third/configure.ac \
+   tutorial_pact_2019/Target-Customization/second/hint.sh \
+   tutorial_pact_2019/Target-Customization/second/solution/testbench.xml \
+   tutorial_pact_2019/Target-Customization/second/solution/module.c \
+   tutorial_pact_2019/Target-Customization/second/solution/synthesize.sh \
+   tutorial_pact_2019/Target-Customization/second/module.c \
+   tutorial_pact_2019/Target-Customization/second/hint.xml \
+   tutorial_pact_2019/Target-Customization/second/README \
+   tutorial_pact_2019/Target-Customization/Target-Customization.pdf \
+   tutorial_pact_2019/Target-Customization/first/hint.sh \
+   tutorial_pact_2019/Target-Customization/first/solution/module.c \
+   tutorial_pact_2019/Target-Customization/first/solution/synthesize.sh \
+   tutorial_pact_2019/Target-Customization/first/hint.c \
+   tutorial_pact_2019/Target-Customization/first/README \
+   tutorial_pact_2019/Target-Customization/third/hint.sh \
+   tutorial_pact_2019/Target-Customization/third/solution/module.c \
+   tutorial_pact_2019/Target-Customization/third/solution/synthesize.sh \
+   tutorial_pact_2019/Target-Customization/third/module.c \
+   tutorial_pact_2019/Target-Customization/third/README \
+   tutorial_pact_2019/Context-Switch/second/trinityq4/lubm_trinityq4.c \
+   tutorial_pact_2019/Context-Switch/second/solution/bambu.sh \
+   tutorial_pact_2019/Context-Switch/second/bambu.sh \
+   tutorial_pact_2019/Context-Switch/second/common/simple_API.h \
+   tutorial_pact_2019/Context-Switch/second/common/load_graph.c \
+   tutorial_pact_2019/Context-Switch/second/common/atominIncrement.c \
+   tutorial_pact_2019/Context-Switch/second/common/data.c \
+   tutorial_pact_2019/Context-Switch/second/test-1.xml \
+   tutorial_pact_2019/Context-Switch/fourth/trinityq4/lubm_trinityq4.c \
+   tutorial_pact_2019/Context-Switch/fourth/solution/bambu.sh \
+   tutorial_pact_2019/Context-Switch/fourth/bambu.sh \
+   tutorial_pact_2019/Context-Switch/fourth/common/simple_API.h \
+   tutorial_pact_2019/Context-Switch/fourth/common/load_graph.c \
+   tutorial_pact_2019/Context-Switch/fourth/common/atominIncrement.c \
+   tutorial_pact_2019/Context-Switch/fourth/common/data.c \
+   tutorial_pact_2019/Context-Switch/fourth/test-1.xml \
+   tutorial_pact_2019/Context-Switch/first/trinityq4/lubm_trinityq4.c \
+   tutorial_pact_2019/Context-Switch/first/solution/bambu.sh \
+   tutorial_pact_2019/Context-Switch/first/bambu.sh \
+   tutorial_pact_2019/Context-Switch/first/common/simple_API.h \
+   tutorial_pact_2019/Context-Switch/first/common/load_graph.c \
+   tutorial_pact_2019/Context-Switch/first/common/atominIncrement.c \
+   tutorial_pact_2019/Context-Switch/first/common/data.c \
+   tutorial_pact_2019/Context-Switch/first/test-1.xml \
+   tutorial_pact_2019/Context-Switch/Context-Switch.pdf \
+   tutorial_pact_2019/Context-Switch/third/trinityq4/lubm_trinityq4.c \
+   tutorial_pact_2019/Context-Switch/third/solution/bambu.sh \
+   tutorial_pact_2019/Context-Switch/third/bambu.sh \
+   tutorial_pact_2019/Context-Switch/third/common/simple_API.h \
+   tutorial_pact_2019/Context-Switch/third/common/load_graph.c \
+   tutorial_pact_2019/Context-Switch/third/common/atominIncrement.c \
+   tutorial_pact_2019/Context-Switch/third/common/data.c \
+   tutorial_pact_2019/Context-Switch/third/test-1.xml \
+   tutorial_pact_2019/Optimization/second/hint.txt \
+   tutorial_pact_2019/Optimization/second/solution/adpcm.c \
+   tutorial_pact_2019/Optimization/second/solution/synthesize.sh \
+   tutorial_pact_2019/Optimization/second/adpcm.c \
+   tutorial_pact_2019/Optimization/second/README \
+   tutorial_pact_2019/Optimization/fourth/hint.sh \
+   tutorial_pact_2019/Optimization/fourth/hint.txt \
+   tutorial_pact_2019/Optimization/fourth/solution/testbench.xml \
+   tutorial_pact_2019/Optimization/fourth/solution/module.c \
+   tutorial_pact_2019/Optimization/fourth/solution/list \
+   tutorial_pact_2019/Optimization/fourth/solution/synthesize.sh \
+   tutorial_pact_2019/Optimization/fourth/solution/test_panda.py \
+   tutorial_pact_2019/Optimization/fourth/README \
+   tutorial_pact_2019/Optimization/first/hint.sh \
+   tutorial_pact_2019/Optimization/first/solution/adpcm.c \
+   tutorial_pact_2019/Optimization/first/solution/synthesize.sh \
+   tutorial_pact_2019/Optimization/first/adpcm.c \
+   tutorial_pact_2019/Optimization/first/README \
+   tutorial_pact_2019/Optimization/Optimizations.pdf \
+   tutorial_pact_2019/Optimization/third/milieu.h \
+   tutorial_pact_2019/Optimization/third/dfdiv.c \
+   tutorial_pact_2019/Optimization/third/softfloat-macros \
+   tutorial_pact_2019/Optimization/third/hint.txt \
+   tutorial_pact_2019/Optimization/third/solution/milieu.h \
+   tutorial_pact_2019/Optimization/third/solution/dfdiv.c \
+   tutorial_pact_2019/Optimization/third/solution/softfloat-macros \
+   tutorial_pact_2019/Optimization/third/solution/softfloat.c \
+   tutorial_pact_2019/Optimization/third/solution/SPARC-GCC.h \
+   tutorial_pact_2019/Optimization/third/solution/softfloat.h \
+   tutorial_pact_2019/Optimization/third/solution/softfloat-specialize \
+   tutorial_pact_2019/Optimization/third/solution/synthesize.sh \
+   tutorial_pact_2019/Optimization/third/softfloat.c \
+   tutorial_pact_2019/Optimization/third/SPARC-GCC.h \
+   tutorial_pact_2019/Optimization/third/softfloat.h \
+   tutorial_pact_2019/Optimization/third/README \
+   tutorial_pact_2019/Optimization/third/softfloat-specialize \
+   tutorial_pact_2019/SIMD/second/solution/bambu.sh \
+   tutorial_pact_2019/SIMD/second/histogram.h \
+   tutorial_pact_2019/SIMD/second/bambu.sh \
+   tutorial_pact_2019/SIMD/second/histogram.c \
+   tutorial_pact_2019/SIMD/first/solution/bambu.sh \
+   tutorial_pact_2019/SIMD/first/histogram.h \
+   tutorial_pact_2019/SIMD/first/bambu.sh \
+   tutorial_pact_2019/SIMD/first/histogram.c \
+   tutorial_pact_2019/SIMD/Simd.pdf \
+   tutorial_pact_2019/SIMD/third/solution/bambu.sh \
+   tutorial_pact_2019/SIMD/third/histogram.h \
+   tutorial_pact_2019/SIMD/third/bambu.sh \
+   tutorial_pact_2019/SIMD/third/histogram.c
 
  DOX_TAGFILES = src src/utility
  EXTRA_DIST = $(PRJ_DOC)
-
- #do not touch the following line
-
-
-
-

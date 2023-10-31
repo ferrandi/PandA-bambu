@@ -46,8 +46,6 @@
  */
 #include "structural_manager.hpp"
 
-#include "config_HAVE_BAMBU_BUILT.hpp"      // for HAVE_BAM...
-#include "config_HAVE_KOALA_BUILT.hpp"      // for HAVE_KOA...
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp" // for HAVE_TEC...
 
 #include "Parameter.hpp"                        // for Parameter
@@ -60,6 +58,12 @@
 #include "graph_info.hpp"                       // for GraphInf...
 #include "library_manager.hpp"                  // for attribute
 #include "refcount.hpp"                         // for GetPointer
+#include "string_manipulation.hpp"              // for GET_CLASS
+#include "technology_manager.hpp"               // for technolo...
+#include "technology_node.hpp"                  // for function...
+#include "typed_node_info.hpp"                  // for ENTRY, EXIT
+#include "xml_element.hpp"                      // for xml_element
+#include "xml_node.hpp"                         // for xml_node...
 #include <boost/algorithm/string/predicate.hpp> // for starts_with
 #include <boost/graph/adjacency_list.hpp>       // for target
 #include <boost/graph/filtered_graph.hpp>       // for edges
@@ -73,14 +77,6 @@
 #include <ostream>                              // for operator<<
 #include <utility>                              // for swap, pair
 #include <vector>                               // for vector
-#if HAVE_BAMBU_BUILT || HAVE_KOALA_BUILT || HAVE_EUCALYPTUS_BUILT
-#include "technology_manager.hpp" // for technolo...
-#include "technology_node.hpp"    // for function...
-#endif
-#include "string_manipulation.hpp" // for GET_CLASS
-#include "typed_node_info.hpp"     // for ENTRY, EXIT
-#include "xml_element.hpp"         // for xml_element
-#include "xml_node.hpp"            // for xml_node...
 
 structural_manager::structural_manager(const ParameterConstRef _Param)
     : Param(_Param), debug_level(_Param->get_class_debug_level(GET_CLASS(*this)))
@@ -132,14 +128,12 @@ void structural_manager::set_top_info(std::string id, structural_type_descriptor
    circ->set_type(module_type);
 }
 
-#if HAVE_BAMBU_BUILT || HAVE_KOALA_BUILT
 void structural_manager::set_top_info(const std::string& id, const technology_managerRef& LM,
                                       const std::string& Library)
 {
    structural_objectRef nullobj;
    circuit = this->add_module_from_technology_library(id, id, Library, nullobj, LM);
 }
-#endif
 
 structural_objectRef structural_manager::create(std::string id, so_kind ctype, structural_objectRef owner,
                                                 structural_type_descriptorRef obj_type, unsigned int treenode)
@@ -196,7 +190,7 @@ structural_objectRef structural_manager::add_port(const std::string& id, port_o:
 {
    THROW_ASSERT(owner, "missing the owner");
    THROW_ASSERT(!check_object(id, owner, port_o_K), "the object " + id + " is already present in " + owner->get_path());
-   structural_objectRef cp = structural_objectRef(new port_o(debug_level, owner, pdir, port_o_K));
+   structural_objectRef cp = structural_objectRef(new port_o(owner->debug_level, owner, pdir, port_o_K));
    cp->set_id(id);
    cp->set_treenode(treenode);
    cp->set_type(type_descr);
@@ -315,7 +309,7 @@ structural_objectRef structural_manager::add_port_vector(std::string id, port_o:
    THROW_ASSERT(owner, "missing the owner");
    THROW_ASSERT(!check_object(id, owner, port_vector_o_K),
                 "the object " + id + " is already present in " + owner->get_path());
-   structural_objectRef cp = structural_objectRef(new port_o(debug_level, owner, pdir, port_vector_o_K));
+   structural_objectRef cp = structural_objectRef(new port_o(owner->debug_level, owner, pdir, port_vector_o_K));
    cp->set_id(id);
    cp->set_treenode(treenode);
    cp->set_type(type_descr);
@@ -382,7 +376,7 @@ structural_objectRef structural_manager::add_sign_vector(std::string id, unsigne
    THROW_ASSERT(owner, "missing the owner");
    THROW_ASSERT(!check_object(id, owner, signal_o_K),
                 "the object " + id + " is already present in " + owner->get_path());
-   structural_objectRef cs = structural_objectRef(new signal_o(debug_level, owner, signal_vector_o_K));
+   structural_objectRef cs = structural_objectRef(new signal_o(owner->debug_level, owner, signal_vector_o_K));
    cs->set_id(id);
    cs->set_treenode(treenode);
    cs->set_type(sign_type);
@@ -420,7 +414,7 @@ structural_objectRef structural_manager::add_sign(std::string id, structural_obj
    THROW_ASSERT(owner, "missing the owner");
    THROW_ASSERT(!check_object(id, owner, signal_o_K),
                 "the object " + id + " is already present in " + owner->get_path());
-   structural_objectRef cs = structural_objectRef(new signal_o(debug_level, owner, signal_o_K));
+   structural_objectRef cs = structural_objectRef(new signal_o(owner->debug_level, owner, signal_o_K));
    cs->set_id(id);
    cs->set_treenode(treenode);
    cs->set_type(sign_type);
@@ -547,120 +541,11 @@ structural_objectRef structural_manager::add_constant(std::string id, structural
    return c_obj;
 }
 
-#if HAVE_TUCANO_BUILT
-structural_objectRef structural_manager::add_local_data(std::string id, structural_objectRef owner,
-                                                        unsigned int treenode, const tree_managerRef& treeM)
-{
-   THROW_ASSERT(owner, "missing the owner");
-   THROW_ASSERT((owner->get_kind() == component_o_K || owner->get_kind() == channel_o_K),
-                "Only components and channels can have a local_data");
-   THROW_ASSERT(!check_object(id, owner, data_o_K), "the object " + id + " is already present in " + owner->get_path());
-   structural_objectRef cs = structural_objectRef(new data_o(debug_level, owner));
-   cs->set_id(id);
-   cs->set_treenode(treenode);
-   cs->set_type(structural_type_descriptorRef(new structural_type_descriptor(treenode, treeM)));
-   module* own = GetPointer<module>(owner);
-   own->add_local_data(cs);
-   return cs;
-}
-
-structural_objectRef structural_manager::add_event(std::string id, structural_objectRef owner, unsigned int treenode,
-                                                   const tree_managerRef& treeM)
-{
-   THROW_ASSERT(owner, "missing the owner");
-   THROW_ASSERT(((owner->get_kind() == component_o_K) || (owner->get_kind() == channel_o_K)),
-                "Only components and channels can have events");
-   THROW_ASSERT(!check_object(id, owner, event_o_K),
-                "the object " + id + " is already present in " + owner->get_path());
-   structural_objectRef e = structural_objectRef(new event_o(debug_level, owner));
-   e->set_id(id);
-   e->set_type(structural_type_descriptorRef(new structural_type_descriptor(treenode, treeM)));
-   e->set_treenode(treenode);
-   module* own = GetPointer<module>(owner);
-   own->add_event(e);
-   return e;
-}
-
-structural_objectRef structural_manager::add_process(std::string id, structural_objectRef owner, unsigned int treenode,
-                                                     const tree_managerRef& treeM, std::string scope, int ft)
-{
-   THROW_ASSERT(owner, "missing the owner");
-   THROW_ASSERT(((owner->get_kind() == component_o_K) || (owner->get_kind() == channel_o_K)),
-                "Only components and channels can have processes");
-   THROW_ASSERT(!check_object(id, owner, action_o_K),
-                "the object " + id + " is already present in " + owner->get_path());
-   structural_objectRef p = structural_objectRef(new action_o(debug_level, owner));
-   p->set_id(id);
-   p->set_type(structural_type_descriptorRef(new structural_type_descriptor(treenode, treeM)));
-   p->set_treenode(treenode);
-   action_o* ad = GetPointer<action_o>(p);
-   ad->set_action_type(action_o::process_type(ft));
-   ad->set_scope(scope);
-   module* own = GetPointer<module>(owner);
-   own->add_process(p);
-   return p;
-}
-
-structural_objectRef structural_manager::add_service(std::string id, std::string interface, structural_objectRef owner,
-                                                     unsigned int treenode, const tree_managerRef& treeM,
-                                                     std::string scope)
-{
-   THROW_ASSERT(owner, "missing the owner");
-   THROW_ASSERT(((owner->get_kind() == component_o_K) || (owner->get_kind() == channel_o_K)),
-                "Only components and channels can have services");
-   THROW_ASSERT(!check_object(id, owner, action_o_K),
-                "the object " + id + " is already present in " + owner->get_path());
-   structural_objectRef s = structural_objectRef(new action_o(debug_level, owner));
-   s->set_id(id);
-   s->set_type(structural_type_descriptorRef(new structural_type_descriptor(treenode, treeM)));
-   s->set_treenode(treenode);
-   action_o* ad = GetPointer<action_o>(s);
-   ad->set_action_type(action_o::SERVICE);
-   ad->set_scope(scope);
-   module* own = GetPointer<module>(owner);
-   own->add_service(s);
-   if(owner->get_kind() == channel_o_K)
-   {
-      channel_o* own_ch = GetPointer<channel_o>(owner);
-      own_ch->add_interface(treenode, interface);
-   }
-   return s;
-}
-
-structural_objectRef structural_manager::add_process_param(std::string id, structural_objectRef owner,
-                                                           unsigned int treenode, const tree_managerRef& treeM)
-{
-   THROW_ASSERT(owner, "missing the owner");
-   THROW_ASSERT(!check_object(id, owner, data_o_K), "the object " + id + " is already present in " + owner->get_path());
-   structural_objectRef data = structural_objectRef(new data_o(debug_level, owner));
-   data->set_id(id);
-   data->set_type(structural_type_descriptorRef(new structural_type_descriptor(treenode, treeM)));
-   data->set_treenode(treenode);
-   action_o* ad = GetPointer<action_o>(owner);
-   ad->add_parameter(data);
-   return data;
-}
-
-structural_objectRef structural_manager::add_service_param(std::string id, structural_objectRef owner,
-                                                           unsigned int treenode, const tree_managerRef& treeM)
-{
-   THROW_ASSERT(owner, "missing the owner");
-   THROW_ASSERT(!check_object(id, owner, data_o_K), "the object " + id + " is already present in " + owner->get_path());
-   structural_objectRef data = structural_objectRef(new data_o(debug_level, owner));
-   data->set_id(id);
-   data->set_type(structural_type_descriptorRef(new structural_type_descriptor(treenode, treeM)));
-   data->set_treenode(treenode);
-   action_o* ad = GetPointer<action_o>(owner);
-   ad->add_parameter(data);
-   return data;
-}
-#endif
-
 void structural_manager::add_NP_functionality(structural_objectRef cir, NP_functionality::NP_functionaly_type dt,
                                               std::string functionality_description)
 {
    THROW_ASSERT((cir->get_kind() == component_o_K), "Only components can have a Non SystemC functionality");
-   auto* com = GetPointer<module>(cir);
+   const auto com = GetPointer<module>(cir);
    NP_functionalityRef f =
        (com->get_NP_functionality() ? com->get_NP_functionality() : NP_functionalityRef(new NP_functionality));
    f->add_NP_functionality(dt, functionality_description);
@@ -1176,7 +1061,6 @@ void structural_manager::INIT(bool permissive)
    build_graph(circuit, og);
 }
 
-#if HAVE_BAMBU_BUILT || HAVE_KOALA_BUILT || HAVE_EUCALYPTUS_BUILT
 structural_objectRef structural_manager::add_module_from_technology_library(const std::string& id,
                                                                             const std::string& fu_name,
                                                                             const std::string& library_name,
@@ -1211,7 +1095,6 @@ structural_objectRef structural_manager::add_module_from_technology_library(cons
    }
    return curr_gate;
 }
-#endif
 
 /**
  * this template function adds an edge to the bulk graph and possibly a label to the edge. Parallel edges are allowed.
@@ -1872,16 +1755,8 @@ void structural_manager::xload(const xml_element* node, structural_managerRef co
    }
 }
 
-void structural_manager::xwrite(xml_element* rootnode, const technology_nodeRef&
-#if HAVE_KOALA_BUILT
-                                                           tn
-#endif
-) const
+void structural_manager::xwrite(xml_element* rootnode, const technology_nodeRef&) const
 {
-#if HAVE_KOALA_BUILT
-   get_circ()->xwrite_attributes(rootnode, tn);
-#endif
-
    xml_element* CMnode = rootnode->add_child_element("circuit");
    get_circ()->xwrite(CMnode);
 }

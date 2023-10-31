@@ -65,11 +65,9 @@
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "exceptions.hpp"
 #include "string_manipulation.hpp" // for STR
-#include <boost/algorithm/string/replace.hpp>
-#include <boost/filesystem/operations.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/regex.hpp>
+#include <filesystem>
 #include <iostream>
+#include <regex>
 #include <set>
 
 /// built in type without parameter
@@ -636,7 +634,12 @@ std::tuple<std::string, unsigned int, unsigned int> tree_helper::GetSourcePath(c
    }
    if(include_name != "<built-in>")
    {
-      include_name = boost::filesystem::weakly_canonical(include_name).string();
+      std::error_code ec;
+      const auto canon_path = std::filesystem::weakly_canonical(include_name, ec);
+      if(!ec)
+      {
+         include_name = canon_path.string();
+      }
    }
    return std::tuple<std::string, unsigned int, unsigned int>(include_name, line_number, column_number);
 }
@@ -1093,7 +1096,6 @@ bool tree_helper::IsSystemType(const tree_nodeConstRef& _type)
    return false;
 }
 
-#if HAVE_BAMBU_BUILT
 bool tree_helper::IsInLibbambu(const tree_managerConstRef& TM, const unsigned int index)
 {
    const auto curr_tn = TM->CGetTreeReindex(index);
@@ -1113,7 +1115,6 @@ bool tree_helper::IsInLibbambu(const tree_nodeConstRef& _type)
    }
    return false;
 }
-#endif
 
 std::set<tree_nodeConstRef, TreeNodeConstSorter>
 tree_helper::GetTypesToBeDeclaredBefore(const tree_nodeConstRef& tn, const bool without_transformation)
@@ -2400,16 +2401,7 @@ static void getBuiltinFieldTypes(const tree_nodeConstRef& _type, std::list<tree_
             continue;
          }
          const auto fdType = tree_helper::CGetType(fld);
-         const auto fdType_kind = GET_CONST_NODE(fdType)->get_kind();
-         if(fdType_kind == record_type_K || fdType_kind == union_type_K || fdType_kind == array_type_K ||
-            fdType_kind == vector_type_K)
-         {
-            getBuiltinFieldTypes(fdType, listOfTypes, already_visited);
-         }
-         else
-         {
-            listOfTypes.push_back(fdType);
-         }
+         getBuiltinFieldTypes(fdType, listOfTypes, already_visited);
       }
    }
    else if(type->get_kind() == union_type_K)
@@ -2418,16 +2410,7 @@ static void getBuiltinFieldTypes(const tree_nodeConstRef& _type, std::list<tree_
       for(const auto& fld : ut->list_of_flds)
       {
          const auto fdType = tree_helper::CGetType(fld);
-         const auto fdType_kind = GET_CONST_NODE(fdType)->get_kind();
-         if(fdType_kind == record_type_K || fdType_kind == union_type_K || fdType_kind == array_type_K ||
-            fdType_kind == vector_type_K)
-         {
-            getBuiltinFieldTypes(fdType, listOfTypes, already_visited);
-         }
-         else
-         {
-            listOfTypes.push_back(fdType);
-         }
+         getBuiltinFieldTypes(fdType, listOfTypes, already_visited);
       }
    }
    else if(type->get_kind() == array_type_K)
@@ -2457,23 +2440,25 @@ static bool same_size_fields(const tree_nodeConstRef& t)
    {
       return false;
    }
+   if(tree_helper::IsStructType(t))
+   {
+      for(const auto& fld : GetPointerS<const record_type>(GET_CONST_NODE(t))->list_of_flds)
+      {
+         if(GetPointerS<const field_decl>(GET_CONST_NODE(fld))->is_bitfield())
+         {
+            return false;
+         }
+      }
+   }
 
-   auto sizeFlds = 0ull;
+   const auto sizeFlds = tree_helper::Size(listOfTypes.front());
+   if(ceil_pow2(sizeFlds) != sizeFlds)
+   {
+      return false;
+   }
    for(const auto& fldType : listOfTypes)
    {
-      if(!sizeFlds)
-      {
-         sizeFlds = tree_helper::Size(fldType);
-      }
-      else if(sizeFlds != tree_helper::Size(fldType))
-      {
-         return false;
-      }
-      else if(resize_to_1_8_16_32_64_128_256_512(sizeFlds) != sizeFlds)
-      {
-         return false;
-      }
-      else if(1 != sizeFlds)
+      if(sizeFlds != tree_helper::Size(fldType))
       {
          return false;
       }
@@ -5157,19 +5142,18 @@ unsigned int tree_helper::get_var_alignment(const tree_managerConstRef& TM, unsi
 
 std::string tree_helper::NormalizeTypename(const std::string& id)
 {
-   static const boost::regex rbase("[.:$]+");
-   static const boost::regex rtmpl("[*&<>\\-]|[, ]+");
+   static const std::regex rbase("[.:$]+");
+   static const std::regex rtmpl("[*&<>\\-]|[, ]+");
    std::string norm_typename;
-   boost::regex_replace(std::back_inserter(norm_typename), id.cbegin(), id.cend(), rbase, "_");
+   std::regex_replace(std::back_inserter(norm_typename), id.cbegin(), id.cend(), rbase, "_");
    const auto tmpl_start = norm_typename.find_first_of('<');
    if(tmpl_start != std::string::npos)
    {
       const auto tmpl_end = norm_typename.find_last_of('>');
       THROW_ASSERT(tmpl_end != std::string::npos, "");
       auto norm_template = norm_typename.substr(0, tmpl_start);
-      boost::regex_replace(std::back_inserter(norm_template),
-                           norm_typename.cbegin() + static_cast<long int>(tmpl_start),
-                           norm_typename.cbegin() + static_cast<long int>(tmpl_end + 1U), rtmpl, "_");
+      std::regex_replace(std::back_inserter(norm_template), norm_typename.cbegin() + static_cast<long int>(tmpl_start),
+                         norm_typename.cbegin() + static_cast<long int>(tmpl_end + 1U), rtmpl, "_");
       return norm_template;
    }
    return norm_typename;
@@ -5554,8 +5538,7 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
                   }
                   else
                   {
-                     THROW_ERROR(std::string("Node not yet supported: ") + node_type->get_kind_text() +
-                                 " with alignment " + STR(tn->algn));
+                     res += "_BitInt(" + STR(tn->algn) + ")";
                   }
                   break;
                }
@@ -6067,7 +6050,7 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
       case CASE_UNARY_EXPRESSION:
       default:
          THROW_UNREACHABLE("Type not yet supported " + STR(original_type) + " " + node_type->get_kind_text() + " " +
-                           STR(node_var));
+                           (node_var ? STR(node_var) : ""));
    }
    if(!skip_var_printing)
    {
@@ -6191,20 +6174,22 @@ tree_nodeConstRef tree_helper::GetFormalIth(const tree_nodeConstRef& _obj, unsig
    if(obj->get_kind() == gimple_call_K)
    {
       const auto gc = GetPointerS<const gimple_call>(obj);
+      THROW_ASSERT(gc->fn, "unexpected condition");
 
       const auto fn_type = GET_CONST_NODE(CGetType(gc->fn));
       if(fn_type->get_kind() == pointer_type_K)
       {
          const auto pt = GetPointerS<const pointer_type>(fn_type);
          THROW_ASSERT(pt->ptd, "unexpected pattern");
-         const auto ft = GetPointerS<const function_type>(GET_CONST_NODE(pt->ptd));
-         if(ft->varargs_flag)
+         const auto ft = GetPointer<const function_type>(GET_CONST_NODE(pt->ptd));
+         if(ft && ft->varargs_flag)
          {
             return tree_nodeConstRef();
          }
-         else if(ft->prms)
+         else if(ft && ft->prms)
          {
             auto tl = GetPointerS<const tree_list>(GET_CONST_NODE(ft->prms));
+            THROW_ASSERT(tl, "unexpected condition");
             unsigned int ith = 0;
             if(parm_index == ith)
             {
@@ -6252,12 +6237,12 @@ tree_nodeConstRef tree_helper::GetFormalIth(const tree_nodeConstRef& _obj, unsig
       {
          const auto pt = GetPointerS<const pointer_type>(fn_type);
          THROW_ASSERT(pt->ptd, "unexpected pattern");
-         const auto ft = GetPointerS<const function_type>(GET_CONST_NODE(pt->ptd));
-         if(ft->varargs_flag)
+         const auto ft = GetPointer<const function_type>(GET_CONST_NODE(pt->ptd));
+         if(ft && ft->varargs_flag)
          {
             return tree_nodeConstRef();
          }
-         else if(ft->prms)
+         else if(ft && ft->prms)
          {
             auto tl = GetPointerS<const tree_list>(GET_CONST_NODE(ft->prms));
             unsigned int ith = 0;

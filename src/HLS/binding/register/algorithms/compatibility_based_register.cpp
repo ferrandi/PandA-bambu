@@ -49,7 +49,6 @@
 #include "Parameter.hpp"
 #include "dbgPrintHelper.hpp"
 
-#include <boost/lexical_cast.hpp>
 #if BOOST_VERSION >= 106400
 #include <boost/serialization/array_wrapper.hpp>
 #endif

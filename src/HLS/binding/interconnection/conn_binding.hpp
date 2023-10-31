@@ -81,7 +81,7 @@ class conn_binding
    /// direction port identifier
    using direction_type = enum { IN = 0, OUT };
 
-   /// type of the datastructure
+   /// type of the data-structure
    using type_t = enum { STG = 0 };
 
    /// connection between two objects (<src, tgt, tgt_port, tgt_port_index>)

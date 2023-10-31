@@ -43,21 +43,21 @@
 #include "fix_characterization.hpp"
 
 #include "Parameter.hpp"
-#include "clb_model.hpp"
+#include "area_info.hpp"
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
+#include "generic_device.hpp"
 #include "library_manager.hpp"
 #include "string_manipulation.hpp"
-#include "target_device.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
-#include "time_model.hpp"
+#include "time_info.hpp"
 #include "utility.hpp"
 
 #include <string>
 #include <vector>
 
-FixCharacterization::FixCharacterization(const technology_managerRef _TM, const target_deviceRef _target,
+FixCharacterization::FixCharacterization(const technology_managerRef _TM, const generic_deviceRef _target,
                                          const DesignFlowManagerConstRef _design_flow_manager,
                                          const ParameterConstRef _parameters)
     : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::FIX_CHARACTERIZATION,
@@ -276,7 +276,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
             if(template_name == "plus_expr_FU" or template_name == "ui_plus_expr_FU" or template_name == "minus_expr_FU" or template_name == "ui_minus_expr_FU")
             {
                std::vector<std::string> template_parameters = SplitString(single_fu->fu_template_parameters, " ");
-               const auto output_size = boost::lexical_cast<size_t>(template_parameters.back());
+               const auto output_size = std::stoul(template_parameters.back());
                ///Strictly larger than 32 (i.e., not 32)
                if(output_size > 32)
                {
@@ -294,7 +294,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
             if(template_name == "ternary_alu_expr_FU" or template_name == "ui_ternary_alu_expr_FU" or template_name == "ternary_mm_expr_FU" or template_name == "ui_ternary_mm_expr_FU" or template_name == "ternary_mp_expr_FU" or template_name == "ui_ternary_mp_expr_FU" or template_name == "ternary_pm_expr_FU" or template_name == "ui_ternary_pm_expr_FU" or template_name == "ternary_plus_expr_FU" or template_name == "ui_ternary_plus_expr_FU")
             {
                std::vector<std::string> template_parameters = SplitString(single_fu->fu_template_parameters, " ");
-               const auto output_size = boost::lexical_cast<size_t>(template_parameters.back());
+               const auto output_size = std::stoul(template_parameters.back());
                ///Strictly larger than 32 (i.e., not 32)
                if(output_size > 32)
                {
@@ -345,7 +345,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fixing " + single_fu->get_name());
                   std::vector<std::string> template_parameters = SplitString(single_fu->fu_template_parameters, " ");
-                  const auto output_size = boost::lexical_cast<size_t>(template_parameters.back());
+                  const auto output_size = std::stoul(template_parameters.back());
                   std::string cell_name = template_name;
                   for(const auto& template_parameter : template_parameters)
                   {

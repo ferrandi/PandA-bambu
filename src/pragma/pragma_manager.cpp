@@ -42,26 +42,11 @@
  */
 
 /// Autoheader include
-#include "config_HAVE_CODESIGN.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
-#include "config_HAVE_GRAPH_PARTITIONING_BUILT.hpp"
-#include "config_HAVE_MAPPING_BUILT.hpp"
-#include "config_HAVE_PARTITIONING_BUILT.hpp"
-#include "config_HAVE_TASK_GRAPHS_BUILT.hpp"
 #include "config_NPROFILE.hpp"
 
 /// Header include
 #include "pragma_manager.hpp"
-
-/// design_flows/codesing/partitioning/graph_partitioning/ include
-#if HAVE_CODESIGN && HAVE_PARTITIONING_BUILT && HAVE_GRAPH_PARTITIONING_BUILT
-#include "partitioning_manager.hpp"
-#endif
-#if HAVE_MAPPING_BUILT
-/// intermediate_representations/mapping_annotations include
-#include "mapping_annotations.hpp"
-#include "unimodal_mapping_annotation.hpp"
-#endif
 
 /// Behavior include
 #include "application_manager.hpp"
@@ -77,12 +62,6 @@
 
 /// Graph include
 #include "graph.hpp"
-
-/// Machine include
-#if HAVE_MAPPING_BUILT
-#include "ArchManager.hpp"
-#include "machine_node.hpp"
-#endif
 
 /// Parameter include
 #include "Parameter.hpp"
@@ -101,11 +80,6 @@
 #include <list>
 #include <vector>
 
-/// Task graph include
-#if HAVE_TASK_GRAPHS_BUILT
-#include "task_graph_manager.hpp"
-#endif
-
 /// Tree include
 #include "ext_tree_node.hpp"
 #include "tree_basic_block.hpp"
@@ -123,7 +97,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/graph/depth_first_search.hpp>
 #include <boost/graph/reverse_graph.hpp>
-#include <boost/regex.hpp>
+#include <regex>
 
 const std::string pragma_manager::omp_directive_keywords[pragma_manager::OMP_UNKNOWN] = {
     "atomic",   "barrier",  "critical", "declare simd", "for",    "parallel for", "parallel sections",
@@ -193,61 +167,8 @@ void pragma_manager::AddFunctionDefinitionPragmas(const std::string& function_na
 {
    for(const auto& pragma : pragmas)
    {
-      boost::match_results<std::string::const_iterator> what;
-      boost::regex expr;
-#if HAVE_MAPPING_BUILT
-      expr = boost::regex(".*" STR_CST_pragma_keyword_call_hw ".*$", boost::regex::grep);
-      boost::regex_match(pragma, what, expr, boost::match_default | boost::match_partial);
-      if(what[0].matched)
-      {
-         std::vector<std::string> splitted = SplitString(pragma, " \t\n");
-         // #[\0]pragma call_hw N1 N2
-         std::vector<std::string>::iterator it =
-             std::find(splitted.begin(), splitted.end(), STR_CST_pragma_keyword_call_hw);
-         THROW_ASSERT(it != splitted.end(), "Something wrong");
-         do
-         {
-            ++it;
-         } while(it != splitted.end() && it->size() == 0);
-         THROW_ASSERT(it != splitted.end(), "Something wrong");
-         std::string HW_component = *it;
-         do
-         {
-            ++it;
-         } while(it != splitted.end() && it->size() == 0);
-         const MappingAnnotationRef mapping_annotation =
-             MappingAnnotationRef(new UnimodalMappingAnnotation(GetPointer<PartitioningManager>(application_manager)
-                                                                    ->CGetArchitectureManager()
-                                                                    ->get_machineRef_by_name(HW_component),
-                                                                param));
-         GetPointer<PartitioningManager>(application_manager)
-             ->GetMappingAnnotations()
-             ->AddPragmaMappingAnnotation(function_name, mapping_annotation);
-         continue;
-      }
-      expr = boost::regex(".*issue.*$", boost::regex::grep);
-      boost::regex_match(pragma, what, expr, boost::match_default | boost::match_partial);
-      if(what[0].matched)
-      {
-         boost::match_results<std::string::const_iterator> local_what;
-         expr = boost::regex(".*blackbox.*$", boost::regex::grep);
-         boost::regex_match(pragma, local_what, expr, boost::match_default | boost::match_partial);
-         if(local_what[0].matched)
-         {
-            function_definition_pragmas[function_name].push_back(pragma);
-         }
-         else
-         {
-            expr = boost::regex(".*mappable.*$", boost::regex::grep);
-            boost::regex_match(pragma, local_what, expr, boost::match_default | boost::match_partial);
-            if(not local_what[0].matched)
-            {
-               THROW_ERROR("Malformed \"issue\" pragma: " + pragma);
-            }
-         }
-         continue;
-      }
-#endif
+      std::match_results<std::string::const_iterator> what;
+      std::regex expr;
       if(pragma.find("#pragma omp declare simd") == 0)
       {
          function_definition_pragmas[function_name].push_back(pragma);
@@ -278,10 +199,10 @@ unsigned int pragma_manager::addBlackBoxPragma(const std::string& function_name,
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> schema;
    schema[TOK(TOK_SRCP)] = ":0:0";
    schema[TOK(TOK_SCPE)] = STR(function_id);
-   schema[TOK(TOK_IS_BLOCK)] = boost::lexical_cast<std::string>(false);
-   schema[TOK(TOK_OPEN)] = boost::lexical_cast<std::string>(false);
-   schema[TOK(TOK_PRAGMA_SCOPE)] = boost::lexical_cast<std::string>(scope);
-   schema[TOK(TOK_PRAGMA_DIRECTIVE)] = boost::lexical_cast<std::string>(directive);
+   schema[TOK(TOK_IS_BLOCK)] = STR(false);
+   schema[TOK(TOK_OPEN)] = STR(false);
+   schema[TOK(TOK_PRAGMA_SCOPE)] = std::to_string(scope);
+   schema[TOK(TOK_PRAGMA_DIRECTIVE)] = std::to_string(directive);
    unsigned int final_id = TM->new_tree_node_id();
    TM->create_tree_node(final_id, gimple_pragma_K, schema);
 
@@ -305,11 +226,11 @@ unsigned int pragma_manager::AddOmpSimdPragma(const std::string& line, unsigned 
       osp->clauses = ExtractClauses(line.substr(line.find("#pragma omp declare simd ")));
    }
 
-   tree_node_schema[TOK(TOK_IS_BLOCK)] = boost::lexical_cast<std::string>(true);
-   tree_node_schema[TOK(TOK_OPEN)] = boost::lexical_cast<std::string>(false);
-   tree_node_schema[TOK(TOK_PRAGMA_SCOPE)] = boost::lexical_cast<std::string>(scope_id);
-   tree_node_schema[TOK(TOK_PRAGMA_DIRECTIVE)] = boost::lexical_cast<std::string>(simd_id);
-   tree_node_schema[TOK(TOK_BB_INDEX)] = boost::lexical_cast<std::string>(0);
+   tree_node_schema[TOK(TOK_IS_BLOCK)] = STR(true);
+   tree_node_schema[TOK(TOK_OPEN)] = STR(false);
+   tree_node_schema[TOK(TOK_PRAGMA_SCOPE)] = std::to_string(scope_id);
+   tree_node_schema[TOK(TOK_PRAGMA_DIRECTIVE)] = std::to_string(simd_id);
+   tree_node_schema[TOK(TOK_BB_INDEX)] = std::to_string(0);
    tree_node_schema[TOK(TOK_SRCP)] = ":0:0";
    tree_node_schema[TOK(TOK_SCPE)] = STR(function_id);
    unsigned int pragma_id = TM->new_tree_node_id();
@@ -392,7 +313,7 @@ bool pragma_manager::CheckOmpFor(const application_managerConstRef app_man, cons
    vertex current = bb_operation_vertex;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Looking for an openmp associated with loop " +
-                      boost::lexical_cast<std::string>(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number));
+                      std::to_string(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number));
    while(boost::in_degree(current, *bb_cfg) == 1)
    {
       const BBNodeInfoConstRef info = bb_cfg->CGetBBNodeInfo(current);
@@ -426,7 +347,7 @@ void pragma_manager::CheckAddOmpFor(const unsigned int function_index, const ver
    vertex current = bb_operation_vertex;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Looking for an openmp associated with loop " +
-                      boost::lexical_cast<std::string>(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number));
+                      std::to_string(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number));
    while(boost::in_degree(current, *bb_cfg) == 1)
    {
       const auto info = bb_cfg->CGetBBNodeInfo(current);
@@ -467,7 +388,7 @@ void pragma_manager::CheckAddOmpSimd(const unsigned int function_index, const ve
    const auto current_loop_id = bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->loop_id;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Looking for an openmp simd associated with loop " +
-                      boost::lexical_cast<std::string>(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number));
+                      std::to_string(bb_cfg->CGetBBNodeInfo(bb_operation_vertex)->block->number));
    if(boost::in_degree(bb_operation_vertex, *bb_cfg) != 1)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not found");

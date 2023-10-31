@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2021  EPFL
+ * Copyright (C) 2018-2022  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -33,12 +33,11 @@
 
 #pragma once
 
-#include <kitty/dynamic_truth_table.hpp>
 #include "../../traits.hpp"
+#include <kitty/dynamic_truth_table.hpp>
 
 namespace mockturtle
 {
-
 
 template<class Ntk>
 class null_resynthesis

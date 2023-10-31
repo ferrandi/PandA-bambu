@@ -41,25 +41,18 @@
  * Last modified by $Author$
  *
  */
-
-/// Header include
 #include "tree_basic_block.hpp"
+
 #include "application_manager.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
 #include "op_graph.hpp"
-#include "tree_manager.hpp"
-
-#if HAVE_BAMBU_BUILT
-/// HLS/scheduling include
 #include "schedule.hpp"
-#endif
-
-/// tree includes
 #include "string_manipulation.hpp" // for STR
 #include "tree_helper.hpp"
+#include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
@@ -180,12 +173,10 @@ void bloc::ReorderLUTs()
                      auto gaPostponed = GetPointer<gimple_assign>(GET_NODE(*posPostponed));
                      current_uses.insert(gaPostponed->op0);
                      restart_postponed = true;
-#if HAVE_BAMBU_BUILT
                      if(schedule)
                      {
                         schedule->UpdateTime(gaPostponed->index);
                      }
-#endif
                      list_of_postponed_stmt.erase(posPostponed);
                      break;
                   }
@@ -211,7 +202,6 @@ void bloc::manageCallGraph(const application_managerRef& AppM, const tree_nodeRe
    if((ga && (GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K)) ||
       GET_NODE(statement)->get_kind() == gimple_call_K)
    {
-      THROW_ASSERT(AppM, "");
       const auto cg_man = AppM->GetCallGraphManager();
       THROW_ASSERT(cg_man, "");
       THROW_ASSERT(GetPointerS<const gimple_node>(GET_NODE(statement))->scpe, "statement " + statement->ToString());
@@ -234,7 +224,10 @@ void bloc::update_new_stmt(const application_managerRef& AppM, const tree_nodeRe
    /// This check is necessary since during parsing of statement list statement has not yet been filled
    if(GET_NODE(new_stmt))
    {
-      manageCallGraph(AppM, new_stmt);
+      if(AppM)
+      {
+         manageCallGraph(AppM, new_stmt);
+      }
       const auto gn = GetPointer<gimple_node>(GET_NODE(new_stmt));
       THROW_ASSERT(gn, "");
       gn->bb_index = number;
@@ -280,12 +273,10 @@ void bloc::update_new_stmt(const application_managerRef& AppM, const tree_nodeRe
          }
       }
    }
-#if HAVE_BAMBU_BUILT
    if(schedule)
    {
       schedule->UpdateTime(new_stmt->index);
    }
-#endif
 }
 
 const std::list<tree_nodeRef>& bloc::CGetStmtList() const

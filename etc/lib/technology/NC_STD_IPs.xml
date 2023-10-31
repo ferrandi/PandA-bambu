@@ -3,13 +3,1890 @@
   <library>
     <name>STD</name>
     <cell>
+      <name>arg_utils</name>
+      <circuit>
+        <component_o id="arg_utils">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="arg_utils"/>
+          <parameter name="BITSIZE_data">32</parameter>
+          <NP_functionality LIBRARY="arg_utils BITSIZE_data" VERILOG_PROVIDED="
+function automatic integer log2;
+  input integer value;
+  `ifdef _SIM_HAVE_CLOG2
+    log2 = $clog2(value);
+  `else
+    automatic integer temp_value = value-1;
+    for (log2=0; temp_value &gt; 0; log2=log2+1)
+      temp_value = temp_value &gt;&gt; 1;
+  `endif
+endfunction
+
+import &quot;DPI-C&quot; function void m_getarg(inout logic [127:0] data, input int unsigned index);
+import &quot;DPI-C&quot; function void m_setarg(input logic [127:0] data, input int unsigned index);
+import &quot;DPI-C&quot; function int unsigned m_getptrargsize(input int unsigned index);
+
+function automatic [BITSIZE_data-1:0] getarg(input int unsigned index);
+  automatic reg [127:0] data = 0;
+  m_getarg(data, index);
+  return data[BITSIZE_data-1:0];
+endfunction
+
+function automatic ptr_t getptrarg(input int unsigned index);
+  automatic reg [127:0] data = 0;
+  m_getarg(data, index);
+  return data[$bits(ptr_t)-1:0];
+endfunction
+
+function automatic int unsigned getptrargsize(input int unsigned index);
+  return m_getptrargsize(index);
+endfunction
+
+function automatic void setarg(input logic [BITSIZE_data-1:0] data, input int unsigned index);
+  automatic reg [127:0] _data = 0;
+  _data[BITSIZE_data-1:0] = data;
+  m_setarg(_data, index);
+endfunction"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>mem_utils</name>
+      <circuit>
+        <component_o id="mem_utils">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="mem_utils"/>
+          <parameter name="BITSIZE_data">32</parameter>
+          <NP_functionality LIBRARY="mem_utils BITSIZE_data" VERILOG_PROVIDED="
+function automatic integer log2;
+  input integer value;
+  `ifdef _SIM_HAVE_CLOG2
+    log2 = $clog2(value);
+  `else
+    automatic integer temp_value = value-1;
+    for (log2=0; temp_value &gt; 0; log2=log2+1)
+      temp_value = temp_value &gt;&gt; 1;
+  `endif
+endfunction
+
+localparam BITSIZE_mem_bus=1&lt;&lt;(log2(BITSIZE_data) &gt; 3 ? log2(BITSIZE_data) : 3),
+  BITSIZE_strobe=BITSIZE_mem_bus/8;
+
+import &quot;DPI-C&quot; function void m_read8    (output logic    [7:0] data, input ptr_t addr);
+import &quot;DPI-C&quot; function void m_read16   (output logic   [15:0] data, input ptr_t addr);
+import &quot;DPI-C&quot; function void m_read32   (output logic   [31:0] data, input ptr_t addr);
+import &quot;DPI-C&quot; function void m_read64   (output logic   [63:0] data, input ptr_t addr);
+import &quot;DPI-C&quot; function void m_read128  (output logic  [127:0] data, input ptr_t addr);
+import &quot;DPI-C&quot; function void m_read256  (output logic  [255:0] data, input ptr_t addr);
+import &quot;DPI-C&quot; function void m_read512  (output logic  [511:0] data, input ptr_t addr);
+import &quot;DPI-C&quot; function void m_read1024 (output logic [1023:0] data, input ptr_t addr);
+import &quot;DPI-C&quot; function void m_read2048 (output logic [2047:0] data, input ptr_t addr);
+import &quot;DPI-C&quot; function void m_read4096 (output logic [4095:0] data, input ptr_t addr);
+
+import &quot;DPI-C&quot; function void m_write8    (input shortint unsigned size, input logic    [7:0] data, input ptr_t addr);
+import &quot;DPI-C&quot; function void m_write16   (input shortint unsigned size, input logic   [15:0] data, input ptr_t addr);
+import &quot;DPI-C&quot; function void m_write32   (input shortint unsigned size, input logic   [31:0] data, input ptr_t addr);
+import &quot;DPI-C&quot; function void m_write64   (input shortint unsigned size, input logic   [63:0] data, input ptr_t addr);
+import &quot;DPI-C&quot; function void m_write128  (input shortint unsigned size, input logic  [127:0] data, input ptr_t addr);
+import &quot;DPI-C&quot; function void m_write256  (input shortint unsigned size, input logic  [255:0] data, input ptr_t addr);
+import &quot;DPI-C&quot; function void m_write512  (input shortint unsigned size, input logic  [511:0] data, input ptr_t addr);
+import &quot;DPI-C&quot; function void m_write1024 (input shortint unsigned size, input logic [1023:0] data, input ptr_t addr);
+import &quot;DPI-C&quot; function void m_write2048 (input shortint unsigned size, input logic [2047:0] data, input ptr_t addr);
+import &quot;DPI-C&quot; function void m_write4096 (input shortint unsigned size, input logic [4095:0] data, input ptr_t addr);
+
+function automatic [BITSIZE_data-1:0] read(input ptr_t addr);
+  automatic reg [4095:0] wtmp = 0;
+
+  if(BITSIZE_mem_bus == 8)
+    m_read8(wtmp[7:0], addr);
+  else if(BITSIZE_mem_bus == 16)
+    m_read16(wtmp[15:0], addr);
+  else if(BITSIZE_mem_bus == 32)
+    m_read32(wtmp[31:0], addr);
+  else if(BITSIZE_mem_bus == 64)
+    m_read64(wtmp[63:0], addr);
+  else if(BITSIZE_mem_bus == 128)
+    m_read128(wtmp[127:0], addr);
+  else if(BITSIZE_mem_bus == 256)
+    m_read256(wtmp[255:0], addr);
+  else if(BITSIZE_mem_bus == 512)
+    m_read512(wtmp[511:0], addr);
+  else if(BITSIZE_mem_bus == 1024)
+    m_read1024(wtmp[1023:0], addr);
+  else if(BITSIZE_mem_bus == 2048)
+    m_read2048(wtmp[2047:0], addr);
+  else if(BITSIZE_mem_bus == 4096)
+    m_read4096(wtmp[4095:0], addr);
+  else
+  begin
+    $display(&quot;Unsupported memory bus size: %0d&quot;, BITSIZE_mem_bus);
+    $finish;
+  end
+  return wtmp[BITSIZE_data-1:0];
+endfunction
+
+function automatic void write(
+  input shortint size,
+  input logic [BITSIZE_data-1:0] data,
+  input ptr_t addr);
+  automatic reg [4095:0] wtmp = 0;
+  
+  wtmp[BITSIZE_data-1:0] = data[BITSIZE_data-1:0];
+  if(BITSIZE_mem_bus == 8)
+    m_write8(size, wtmp[7:0], addr);
+  else if(BITSIZE_mem_bus == 16)
+    m_write16(size, wtmp[15:0], addr);
+  else if(BITSIZE_mem_bus == 32)
+    m_write32(size, wtmp[31:0], addr);
+  else if(BITSIZE_mem_bus == 64)
+    m_write64(size, wtmp[63:0], addr);
+  else if(BITSIZE_mem_bus == 128)
+    m_write128(size, wtmp[127:0], addr);
+  else if(BITSIZE_mem_bus == 256)
+    m_write256(size, wtmp[255:0], addr);
+  else if(BITSIZE_mem_bus == 512)
+    m_write512(size, wtmp[511:0], addr);
+  else if(BITSIZE_mem_bus == 1024)
+    m_write1024(size, wtmp[1023:0], addr);
+  else if(BITSIZE_mem_bus == 2048)
+    m_write2048(size, wtmp[2047:0], addr);
+  else if(BITSIZE_mem_bus == 4096)
+    m_write4096(size, wtmp[4095:0], addr);
+  else
+  begin
+    $display(&quot;Unsupported memory bus size: %0d&quot;, BITSIZE_mem_bus);
+    $finish;
+  end
+endfunction
+
+function automatic void write_strobe(
+  input logic [BITSIZE_strobe-1:0] strobe,
+  input logic [BITSIZE_data-1:0] data,
+  input ptr_t addr);
+  automatic shortint unsigned size = 0;
+  
+  while(strobe != 0 &amp;&amp; !strobe[0])
+  begin
+    addr = addr + 1;
+    strobe = strobe &gt;&gt; 1;
+  end
+  while(strobe[0])
+  begin
+    size = size + 8;
+    strobe = strobe &gt;&gt; 1;
+  end
+  if(strobe != 0)
+  begin
+    $display(&quot;Scattered strobe write operations not supported&quot;);
+    $finish;
+  end
+
+  write(size, data, addr);
+endfunction"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchDUT</name>
+      <circuit>
+        <component_o id="TestbenchDUT">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchDUT"/>
+          <NP_functionality IP_COMPONENT="join_signal,split_signal" VERILOG_GENERATOR="TestbenchDUTModuleGenerator"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchFSM</name>
+      <circuit>
+        <component_o id="TestbenchFSM">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchFSM"/>
+          <parameter name="RESFILE">&quot;&quot;results.txt&quot;&quot;</parameter>
+          <parameter name="RESET_ACTIVE">0</parameter>
+          <parameter name="RESET_CYCLES">1</parameter>
+          <parameter name="CLOCK_PERIOD">2.0</parameter>
+          <parameter name="MAX_SIM_CYCLES">200000000</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="setup_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="TestbenchFSM RESFILE RESET_ACTIVE RESET_CYCLES CLOCK_PERIOD MAX_SIM_CYCLES" VERILOG_PROVIDED="`ifdef VERILATOR
+timeunit 1ps;
+timeprecision 1ps;
+`endif
+
+import &quot;DPI-C&quot; function int unsigned m_next(input int unsigned state);
+import &quot;DPI-C&quot; function int m_fini();
+
+localparam [6:0] 
+  STATE_READY   =7&apos;b0000001,
+  STATE_SETUP   =7&apos;b0000010,
+  STATE_RUNNING =7&apos;b0000100,
+  STATE_END     =7&apos;b0001000,
+  STATE_ERROR   =7&apos;b0010000,
+  STATE_ABORT   =7&apos;b0100000,
+  SIM_DONE      =7&apos;b1000000;
+reg [$bits(STATE_READY)-1:0] state, state_next, state_succ, state_succ_next;
+
+reg rst, rst_next, setup, setup_next, start, start_next;
+integer rst_count, rst_count_next;
+time over_time;
+
+initial
+begin
+  // Open file results will be written
+  automatic integer res_file;
+  res_file = $fopen(RESFILE, &quot;w&quot;);
+  if (res_file == 0)
+  begin
+    $display(&quot;ERROR - Error opening the res_file&quot;);
+    $finish;// Terminate
+  end
+  $fwrite(res_file, &quot;&quot;);
+  $fclose(res_file);
+  
+  state = STATE_READY;
+  state_next = STATE_READY;
+  state_succ = STATE_READY;
+  state_succ_next = STATE_READY;
+  rst = ~RESET_ACTIVE;
+  rst_next = ~RESET_ACTIVE;
+  rst_count = RESET_CYCLES - 1;
+  rst_count_next = RESET_CYCLES - 1;
+  setup = 0;
+  setup_next = 0;
+  start = 0;
+  start_next = 0;
+  over_time = 0;
+  
+  $display(&quot;Results file: %s&quot;, RESFILE);
+  $display(&quot;Reset active: %0s&quot;, RESET_ACTIVE ? &quot;HIGH&quot; : &quot;LOW&quot;);
+end
+
+assign reset = rst;
+assign setup_port = setup;
+assign start_port = start;
+
+always @(posedge clock)
+begin
+  state &lt;= state_next;
+  state_succ &lt;= state_succ_next;
+  rst &lt;= rst_next;
+  rst_count &lt;= rst_count_next;
+  setup &lt;= setup_next;
+  start &lt;= start_next;
+  case(state_next)
+  STATE_READY:
+    begin
+      automatic integer unsigned next_state = m_next(STATE_READY);
+      `ifndef NDEBUG
+      $display(&quot;Sim: next state: %0d&quot;, next_state);
+      `endif
+      state_succ &lt;= next_state[$bits(state_succ)-1:0];
+    end
+  STATE_SETUP:
+    begin
+      automatic time start_time = $time + CLOCK_PERIOD;
+      automatic time start_cycle = $rtoi(start_time/CLOCK_PERIOD);
+      automatic integer res_file;
+      if(setup_next)
+      begin
+        res_file = $fopen(RESFILE, &quot;a&quot;);
+        $fwrite(res_file, &quot;%0d|&quot;, start_time);
+        $fclose(res_file);
+        `ifndef NDEBUG
+        $display(&quot;Sim: Argument setup\nSim: Simulation started at cycle %0d&quot;, start_cycle);
+        `endif
+      end
+      over_time &lt;= start_cycle + MAX_SIM_CYCLES;
+    end
+  STATE_RUNNING:
+    begin
+      automatic time curr_cycle = $rtoi($time/CLOCK_PERIOD);
+      if(curr_cycle >= over_time)
+      begin
+        automatic integer res_file;
+        res_file = $fopen(RESFILE, &quot;a&quot;);
+        $fwrite(res_file, &quot;X&quot;);
+        $fclose(res_file);
+        $display(&quot;Sim: Simulation exceeds %0d cycles&quot;, MAX_SIM_CYCLES);
+        $finish;
+      end
+    end
+  SIM_DONE:
+    begin
+      automatic time curr_time = $time;
+      automatic time curr_cycle = $rtoi(curr_time/CLOCK_PERIOD);
+      automatic integer res_file;
+      res_file = $fopen(RESFILE, &quot;a&quot;);
+      $fwrite(res_file, &quot;%0d,&quot;, curr_time);
+      $fclose(res_file);
+      `ifndef NDEBUG
+      $display(&quot;Sim: DUT port writeback\nSim: Simulation ended at cycle %0d&quot;, curr_cycle);
+      `endif
+    end
+  STATE_END:
+    begin
+      automatic integer r = m_fini();
+      automatic integer res_file;
+      res_file = $fopen(RESFILE, &quot;a&quot;);
+      if(r[$bits(STATE_READY)-1:0] == STATE_ABORT)
+      begin
+        $fwrite(res_file, &quot;\nA\n&quot;);
+        $display(&quot;Sim: Testbench aborted&quot;);
+      end
+      else
+      begin
+        $fwrite(res_file, &quot;\n%0d\n&quot;, r[15:8]);
+        $display(&quot;Sim: Testbench returned: %0d&quot;, r[15:8]);
+      end
+      $fclose(res_file);
+      $finish;
+    end
+  default:
+    begin
+    end
+  endcase
+end
+
+always @(*)
+begin
+  rst_next = rst;
+  rst_count_next = rst_count;
+  setup_next = setup;
+  start_next = start;
+  state_next = state;
+  state_succ_next = state_succ;
+  case(state)
+  STATE_READY:
+    begin
+      state_next = state_succ;
+      if(state_succ == STATE_SETUP)
+      begin
+        rst_next = RESET_ACTIVE;
+        rst_count_next = RESET_CYCLES - 1;
+      end
+    end
+  STATE_SETUP:
+    begin
+      if(rst_count >= 0)
+      begin
+        setup_next = rst_count == 0;
+        rst_next = rst_count > 0 ? RESET_ACTIVE : ~RESET_ACTIVE;
+        rst_count_next = rst_count - 1;
+      end
+      else
+      begin
+        state_next = STATE_RUNNING;
+        rst_next = ~RESET_ACTIVE;
+        setup_next = 0;
+        start_next = 1;
+      end
+    end
+  STATE_RUNNING:
+    begin
+      start_next = 0;
+      if(done_port)
+      begin
+        state_next = SIM_DONE;
+      end
+    end
+  SIM_DONE:
+    begin
+      // A clock cycle must pass to allow interface modules 
+      // finalization operations
+      state_next = STATE_READY;
+    end
+  STATE_END:
+    begin
+    end
+  default:
+    begin
+      state_next = STATE_READY;
+    end
+  endcase
+end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchMEMMinimal</name>
+      <circuit>
+        <component_o id="TestbenchMEMMinimal">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchMEMMinimal"/>
+          <parameter name="MEM_DELAY_READ">2</parameter>
+          <parameter name="MEM_DELAY_WRITE">1</parameter>
+          <parameter name="PIPELINED">1</parameter>
+          <parameter name="base_addr">1073741824</parameter>
+          <parameter name="MEM_DUMP">0</parameter>
+          <parameter name="MEM_DUMP_FILE">&quot;&quot;memdump.csv&quot;&quot;</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="M_DataRdy" dir="OUT" is_memory="1" is_master="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="M_Rdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="Mout_oe_ram" dir="IN" is_memory="1" is_master="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_we_ram" dir="IN" is_memory="1" is_master="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_addr_ram" dir="IN" is_memory="1" is_master="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_data_ram_size" dir="IN" is_memory="1" is_master="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="Mout_Wdata_ram" dir="IN" is_memory="1" is_master="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="Mout_back_pressure" dir="OUT" is_memory="1" is_master="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
+          </port_o>
+          <port_o id="Sout_DataRdy" dir="IN" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
+          </port_o>
+          <port_o id="Sout_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="S_oe_ram" dir="OUT" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
+          </port_o>
+          <port_o id="S_we_ram" dir="OUT" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
+          </port_o>
+          <port_o id="S_addr_ram" dir="OUT" is_memory="1" is_slave="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_data_ram_size" dir="OUT" is_memory="1" is_slave="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="S_Wdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <NP_functionality
+            IP_COMPONENT="mem_utils"
+            LIBRARY="TestbenchMEMMinimal MEM_DELAY_READ MEM_DELAY_WRITE PIPELINED base_addr MEM_DUMP MEM_DUMP_FILE M_DataRdy M_Rdata_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_back_pressure Sout_DataRdy Sout_Rdata_ram S_oe_ram S_we_ram S_addr_ram S_data_ram_size S_Wdata_ram"
+            VERILOG_PROVIDED="
+localparam MEM_DELAY_MAX= MEM_DELAY_READ &gt; MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM_DELAY_WRITE,
+  ACTIVE_READ= MEM_DELAY_READ &gt; 1 ? (MEM_DELAY_READ-2) : 0,
+  ACTIVE_WRITE= MEM_DELAY_WRITE &gt; 1 ? (MEM_DELAY_WRITE-2) : 0,
+  CHANNELS_NUMBER=BITSIZE_Mout_oe_ram,
+  BITSIZE_oe=1,
+  BITSIZE_we=1,
+  BITSIZE_addr=BITSIZE_Mout_addr_ram/CHANNELS_NUMBER,
+  BITSIZE_Wsize=BITSIZE_Mout_data_ram_size/CHANNELS_NUMBER,
+  BITSIZE_Wdata=BITSIZE_Mout_Wdata_ram/CHANNELS_NUMBER,
+  BITSIZE_ready=1,
+  BITSIZE_Rdata=BITSIZE_M_Rdata_ram/CHANNELS_NUMBER,
+  BITSIZE_item=BITSIZE_Wdata+BITSIZE_Wsize+BITSIZE_addr+BITSIZE_we+BITSIZE_oe,
+  OFFSET_oe=0,
+  OFFSET_we=OFFSET_oe+BITSIZE_oe,
+  OFFSET_addr=OFFSET_we+BITSIZE_we,
+  OFFSET_Wsize=OFFSET_addr+BITSIZE_addr,
+  OFFSET_Wdata=OFFSET_Wsize+BITSIZE_Wsize,
+  BITSIZE_S_Rdata=BITSIZE_Sout_Rdata_ram/BITSIZE_S_oe_ram,
+  BITSIZE_S_ready=1,
+  SLAVE_VALID=BITSIZE_Mout_oe_ram == BITSIZE_S_oe_ram;
+
+genvar i;
+integer dump_file;
+wire [BITSIZE_M_DataRdy-1:0] _M_DataRdy;
+wire [BITSIZE_M_Rdata_ram-1:0] _M_Rdata_ram;
+
+assign S_oe_ram = Mout_oe_ram;
+assign S_we_ram = Mout_we_ram;
+assign S_addr_ram = Mout_addr_ram;
+assign S_data_ram_size = Mout_data_ram_size;
+assign S_Wdata_ram = Mout_Wdata_ram;
+assign M_DataRdy = _M_DataRdy;
+assign M_Rdata_ram = _M_Rdata_ram;
+assign Mout_back_pressure = 0;
+
+generate
+  if(MEM_DUMP)
+  begin
+    initial
+    begin
+      dump_file = $fopen(MEM_DUMP_FILE, &quot;w&quot;);
+      $fwrite(dump_file, &quot;Channel,Operation,Address,Bitwidth,Data\n&quot;);
+    end
+
+    always@(posedge clock)
+    begin
+      if(done_port)
+      begin
+        $fflush(dump_file);
+      end
+    end
+  end
+endgenerate
+
+mem_utils #(BITSIZE_Rdata) m_utils();
+
+generate
+  for(i = 0; i &lt; CHANNELS_NUMBER; i = i + 1)
+  begin : channel
+    wire [MEM_DELAY_MAX*BITSIZE_item-1:0] queue_next;
+    wire [BITSIZE_oe-1:0] oe;
+    wire [BITSIZE_we-1:0] we;
+    ptr_t Waddr, Raddr;
+    shortint unsigned Wsize;
+    wire [BITSIZE_Wdata-1:0] Wdata;
+    reg [BITSIZE_ready-1:0] Wready, Rready;
+    reg [BITSIZE_Rdata-1:0] Rdata;
+    
+    if(MEM_DELAY_MAX &gt; 1)
+    begin : requests_queue
+      reg [MEM_DELAY_MAX*BITSIZE_item-1:0] queue;
+
+      if(PIPELINED)
+      begin : pipelined_handler
+        assign queue_next = {queue[(MEM_DELAY_MAX-1)*BITSIZE_item-1:0], {
+            Mout_Wdata_ram[BITSIZE_Wdata*i+:BITSIZE_Wdata], 
+            Mout_data_ram_size[BITSIZE_Wsize*i+:BITSIZE_Wsize],
+            Mout_addr_ram[BITSIZE_addr*i+:BITSIZE_addr],
+            Mout_we_ram[BITSIZE_we*i+:BITSIZE_we],
+            Mout_oe_ram[BITSIZE_oe*i+:BITSIZE_oe]}
+          };
+
+        always@(posedge clock)
+        begin
+          if(1RESET_VALUE)
+          begin
+            queue &lt;= 0;
+          end
+          else
+          begin
+            queue &lt;= queue_next;
+          end
+        end
+      end
+      else
+      begin : sequential_handler
+        reg tx_active;
+        wire tx_active_next;
+        assign queue_next = {queue[(MEM_DELAY_MAX-1)*BITSIZE_item-1:0],
+              {Mout_Wdata_ram[BITSIZE_Wdata*i+:BITSIZE_Wdata], 
+                Mout_data_ram_size[BITSIZE_Wsize*i+:BITSIZE_Wsize],
+                Mout_addr_ram[BITSIZE_addr*i+:BITSIZE_addr],
+                Mout_we_ram[BITSIZE_we*i+:BITSIZE_we],
+                Mout_oe_ram[BITSIZE_oe*i+:BITSIZE_oe]} &amp; {BITSIZE_item{~tx_active}}
+            };
+        assign  tx_active_next = Mout_oe_ram[BITSIZE_oe*i+:BITSIZE_oe] | Mout_we_ram[BITSIZE_we*i+:BITSIZE_we];
+        always@(posedge clock)
+        begin
+          if(1RESET_VALUE)
+          begin
+            tx_active &lt;= 0;
+            queue &lt;= 0;
+          end
+          else
+          begin
+            tx_active &lt;= tx_active_next;
+            queue &lt;= queue_next;
+          end
+        end
+      end
+    end
+    else
+    begin
+      assign queue_next = {Mout_Wdata_ram[BITSIZE_Wdata*i+:BITSIZE_Wdata], 
+        Mout_data_ram_size[BITSIZE_Wsize*i+:BITSIZE_Wsize],
+        Mout_addr_ram[BITSIZE_addr*i+:BITSIZE_addr],
+        Mout_we_ram[BITSIZE_we*i+:BITSIZE_we],
+        Mout_oe_ram[BITSIZE_oe*i+:BITSIZE_oe]};
+    end
+
+    assign oe = queue_next[ACTIVE_READ*BITSIZE_item+OFFSET_oe+:BITSIZE_oe];
+    assign Raddr = queue_next[ACTIVE_READ*BITSIZE_item+OFFSET_addr+:BITSIZE_addr];
+    assign _M_DataRdy[BITSIZE_ready*i+:BITSIZE_ready] = Wready | Rready | (Sout_DataRdy[BITSIZE_S_ready*i*SLAVE_VALID+:BITSIZE_S_ready] === 1&apos;b1);
+    assign _M_Rdata_ram[BITSIZE_Rdata*i+:BITSIZE_Rdata] = Rdata | (Sout_Rdata_ram[BITSIZE_S_Rdata*i*SLAVE_VALID+:BITSIZE_S_Rdata] &amp; {BITSIZE_S_Rdata{Sout_DataRdy[BITSIZE_S_ready*i*SLAVE_VALID+:BITSIZE_S_ready] === 1&apos;b1}});
+
+    if(MEM_DELAY_READ &gt; 1)
+    begin : read_channel
+      always@(posedge clock)
+      begin : read_channel
+        automatic reg [BITSIZE_Rdata-1:0] data;
+        Rready &lt;= 0;
+        Rdata &lt;= 0;
+        if(oe &amp;&amp; base_addr &lt;= Raddr)
+        begin
+          data = m_utils.read(Raddr);
+          Rdata &lt;= data;
+          Rready &lt;= 1;
+          if(MEM_DUMP)
+          begin
+            $fwrite(dump_file, &quot;%0d,r,%0X,%0d,%0X\n&quot;, i, Raddr, BITSIZE_Rdata, data);
+          end
+        end
+      end
+    end
+    else
+    begin
+      always@(negedge clock)
+      begin : read_channel
+        automatic reg [BITSIZE_Rdata-1:0] data;
+        Rready &lt;= 0;
+        Rdata &lt;= 0;
+        if(oe &amp;&amp; base_addr &lt;= Raddr)
+        begin
+          data = m_utils.read(Raddr);
+          Rdata &lt;= data;
+          Rready &lt;= 1;
+          if(MEM_DUMP)
+          begin
+            $fwrite(dump_file, &quot;%0d,r,%0X,%0d,%0X\n&quot;, i, Raddr, BITSIZE_Rdata, data);
+          end
+        end
+      end
+    end
+
+    assign we = queue_next[ACTIVE_WRITE*BITSIZE_item+OFFSET_we+:BITSIZE_we];
+    assign Waddr = queue_next[ACTIVE_WRITE*BITSIZE_item+OFFSET_addr+:BITSIZE_addr];
+    assign Wsize = {{16-BITSIZE_Wsize{1&apos;b0}}, queue_next[ACTIVE_WRITE*BITSIZE_item+OFFSET_Wsize+:BITSIZE_Wsize]};
+    assign Wdata = queue_next[ACTIVE_WRITE*BITSIZE_item+OFFSET_Wdata+:BITSIZE_Wdata];
+
+    if(MEM_DELAY_WRITE &gt; 1)
+    begin : write_channel
+      always@(posedge clock)
+      begin : write_channel
+        Wready &lt;= 0;
+        if(we &amp;&amp; base_addr &lt;= Waddr)
+        begin
+          m_utils.write(Wsize, Wdata, Waddr);
+          Wready &lt;= 1;
+          if(MEM_DUMP)
+          begin
+            $fwrite(dump_file, &quot;%0d,w,%0X,%0d,%0X\n&quot;, i, Waddr, Wsize, Wdata);
+          end
+        end
+      end
+    end
+    else
+    begin
+      always@(negedge clock)
+      begin : write_channel
+        Wready &lt;= 0;
+        if(we &amp;&amp; base_addr &lt;= Waddr)
+        begin
+          m_utils.write(Wsize, Wdata, Waddr);
+          Wready &lt;= 1;
+          if(MEM_DUMP)
+          begin
+            $fwrite(dump_file, &quot;%0d,w,%0X,%0d,%0X\n&quot;, i, Waddr, Wsize, Wdata);
+          end
+        end
+      end
+    end
+
+    always @(posedge clock)
+    begin
+      if (we &amp; oe)
+      begin
+        $display(&quot;ERROR - Mout_we_ram and Mout_oe_ram both enabled on channel %0d!&quot;, i);
+        $finish;
+      end
+    end
+  end
+endgenerate"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchMEMWishboneB4</name>
+      <circuit>
+        <component_o id="TestbenchMEMWishboneB4">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchMEMWishboneB4"/>
+          <parameter name="MEM_DELAY_READ">2</parameter>
+          <parameter name="MEM_DELAY_WRITE">1</parameter>
+          <parameter name="base_addr">1073741824</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="cyc_om" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="stb_om" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="we_om" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="addr_om" dir="IN" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="dat_om" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="sel_om" dir="IN" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="dat_im" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="stall_im" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="ack_im" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="cyc_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="stb_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="we_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="addr_is" dir="OUT" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="dat_is" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="sel_is" dir="OUT" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="dat_os" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="stall_os" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="ack_os" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality
+            IP_COMPONENT="mem_utils"
+            LIBRARY="TestbenchMEMWishboneB4 MEM_DELAY_READ MEM_DELAY_WRITE base_addr addr_om dat_om sel_om dat_im addr_is dat_is sel_is dat_os"
+            VERILOG_PROVIDED="localparam MEM_DELAY_MAX= MEM_DELAY_READ > MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM_DELAY_WRITE,
+  BITSIZE_item=BITSIZE_dat_im+1+1;
+reg cyc, stb, we, stall, ack;
+reg [BITSIZE_addr_om-1:0] addr;
+reg [BITSIZE_dat_om-1:0] Wdata;
+reg [7:0] size;
+reg [BITSIZE_dat_im-1:0] Rdata;
+
+reg [MEM_DELAY_MAX*BITSIZE_item-1:0] queue, queue_next;
+
+mem_utils #(BITSIZE_dat_im) m_utils();
+
+initial
+begin
+  stall = 0;
+  ack = 0;
+  Rdata = 0;
+  queue = 0;
+  queue_next = 0;
+end
+
+assign cyc_is = 0;
+assign stb_is = 0;
+assign addr_is = 0;
+assign dat_is = 0;
+assign sel_is = 0;
+
+assign cyc = cyc_om;
+assign stb = stb_om;
+assign we = we_om;
+assign addr = addr_om;
+assign Wdata = dat_om;
+assign size = sel_om;
+assign stall_im = stall; // &amp; cyc
+assign ack_im = ack; // &amp; cyc
+assign dat_im = Rdata; // &amp; {BITSIZE_dat_im{cyc}};
+
+always @(posedge clock)
+begin
+  automatic reg w_ack = queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_item] &amp; queue_next[(MEM_DELAY_WRITE-1)*BITSIZE_item+1];
+  automatic reg r_ack = queue_next[(MEM_DELAY_READ-1)*BITSIZE_item] &amp; ~queue_next[(MEM_DELAY_READ-1)*BITSIZE_item+1];
+  ack &lt;= w_ack | r_ack;
+  Rdata &lt;= queue_next[(MEM_DELAY_READ-1)*BITSIZE_item+2 +:BITSIZE_dat_im];
+  queue &lt;= queue_next;
+end
+
+always @(*)
+begin
+  queue_next = {queue[(MEM_DELAY_MAX-1)*BITSIZE_item-1:0], {BITSIZE_dat_im{1&apos;b0}}, 1&apos;b0, 1&apos;b0};
+  if(cyc &amp; stb)
+  begin
+    queue_next[1:0] = {we, 1&apos;b1};
+  end
+end
+
+always @(negedge clock)
+begin
+  if(queue_next[0])
+  begin
+    automatic ptr_t ptr_addr = addr;
+    if(queue_next[1])
+    begin
+      m_utils.write_strobe(sel_om, Wdata, ptr_addr);
+    end
+    else
+    begin
+      queue_next[BITSIZE_item-1:2] &lt;= m_utils.read(ptr_addr);
+    end
+  end
+end
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>IF_PORT_IN</name>
+      <circuit>
+        <component_o id="IF_PORT_IN">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="IF_PORT_IN"/>
+          <parameter name="index">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="setup_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="val_port" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality IP_COMPONENT="arg_utils" LIBRARY="IF_PORT_IN index val_port" VERILOG_PROVIDED="arg_utils #(BITSIZE_val_port) m_utils();
+reg [BITSIZE_val_port-1:0] val, val_next;
+assign val_port = val;
+
+initial
+begin
+  val = 0;
+  val_next = 0;
+end
+
+always @(posedge clock) 
+begin
+  val &lt;= val_next;
+  if(setup_port)
+  begin
+    val &lt;= m_utils.getarg(index);
+  end
+end
+
+always @(*)
+begin
+  val_next = val;
+end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchArgMapMinimal</name>
+      <circuit>
+        <component_o id="TestbenchArgMapMinimal">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchArgMapMinimal"/>
+          <parameter name="index">0</parameter>
+          <parameter name="tgt_addr">1024</parameter>
+          <parameter name="bitsize">32</parameter>
+          <parameter name="PIPELINED">1</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="setup_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="i_start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="S_oe_ram" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_we_ram" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_addr_ram" dir="OUT" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_Wdata_ram" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="S_data_ram_size" dir="OUT" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Sout_Rdata_ram" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="Sout_DataRdy" dir="IN" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality IP_COMPONENT="arg_utils" LIBRARY="TestbenchArgMapMinimal index tgt_addr bitsize PIPELINED S_oe_ram S_we_ram S_addr_ram S_Wdata_ram S_data_ram_size Sout_Rdata_ram Sout_DataRdy" VERILOG_PROVIDED="localparam HOLD=PIPELINED ? 1&apos;b0 : 1&apos;b1,
+  CHANNELS_NUMBER=BITSIZE_S_we_ram,
+  BITSIZE_we=1,
+  BITSIZE_addr=BITSIZE_S_addr_ram/CHANNELS_NUMBER,
+  BITSIZE_Wsize=BITSIZE_S_data_ram_size/CHANNELS_NUMBER,
+  BITSIZE_Wdata=BITSIZE_S_Wdata_ram/CHANNELS_NUMBER,
+  BITSIZE_ready=1;
+reg [bitsize-1:0] val, val_next;
+reg we, we_next, waiting, waiting_next, start, start_next;
+reg [BITSIZE_addr-1:0] addr, addr_next;
+reg [BITSIZE_Wdata-1:0] data, data_next;
+reg [BITSIZE_Wsize-1:0] data_size, data_size_next;
+wire rdy;
+
+arg_utils #(bitsize) a_utils();
+
+assign rdy = Sout_DataRdy[0];
+
+assign S_oe_ram = {BITSIZE_S_oe_ram{1&apos;b0}};
+assign S_we_ram = {{BITSIZE_S_we_ram-BITSIZE_we{1&apos;b0}}, we_next};
+assign S_addr_ram = {{BITSIZE_S_addr_ram-BITSIZE_addr{1&apos;b0}}, addr_next};
+assign S_Wdata_ram = {{BITSIZE_S_Wdata_ram-BITSIZE_Wdata{1&apos;b0}}, data_next};
+assign S_data_ram_size = {{BITSIZE_S_data_ram_size-BITSIZE_Wsize{1&apos;b0}}, data_size_next};
+assign start_port = start;
+
+always @(posedge clock) 
+begin
+  val &lt;= val_next;
+  we &lt;= we_next;
+  addr &lt;= addr_next;
+  data &lt;= data_next;
+  data_size &lt;= data_size_next;
+  waiting &lt;= waiting_next;
+  start &lt;= start_next;
+  if(1RESET_VALUE)
+  begin
+    val &lt;= 0;
+    we &lt;= 0;
+    addr &lt;= 0;
+    data &lt;= 0;
+    data_size &lt;= 0;
+    waiting &lt;= 0;
+    start &lt;= 0;
+  end
+  else if(setup_port)
+  begin
+    val &lt;= a_utils.getarg(index);
+  end
+end
+
+always @(*)
+begin
+  val_next = val;
+  we_next = we &amp; HOLD &amp; waiting &amp; ~rdy;
+  addr_next = addr &amp; {BITSIZE_addr{HOLD &amp; waiting &amp; ~rdy}};
+  data_next = data &amp; {BITSIZE_Wdata{HOLD &amp; waiting &amp; ~rdy}};
+  data_size_next = data_size &amp; {BITSIZE_Wsize{HOLD &amp; waiting &amp; ~rdy}};
+  waiting_next = waiting &amp; ~rdy;
+  start_next = waiting &amp; rdy;
+  if(i_start_port)
+  begin
+    we_next = 1;
+    addr_next = tgt_addr;
+    data_next = {{BITSIZE_Wdata-bitsize{1&apos;b0}}, val};
+    data_size_next = bitsize;
+    waiting_next = ~rdy;
+    start_next = rdy;
+  end
+end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchReturnMapMinimal</name>
+      <circuit>
+        <component_o id="TestbenchReturnMapMinimal">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchReturnMapMinimal"/>
+          <parameter name="index">0</parameter>
+          <parameter name="tgt_addr">1024</parameter>
+          <parameter name="bitsize">32</parameter>
+          <parameter name="PIPELINED">1</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="setup_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="i_start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="i_done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="S_oe_ram" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_we_ram" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_addr_ram" dir="OUT" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_Wdata_ram" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="S_data_ram_size" dir="OUT" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Sout_Rdata_ram" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="Sout_DataRdy" dir="IN" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality IP_COMPONENT="arg_utils" LIBRARY="TestbenchReturnMapMinimal index tgt_addr bitsize PIPELINED S_oe_ram S_we_ram S_addr_ram S_Wdata_ram S_data_ram_size Sout_Rdata_ram Sout_DataRdy" VERILOG_PROVIDED="localparam HOLD=PIPELINED ? 1&apos;b0 : 1&apos;b1,
+  CHANNELS_NUMBER=BITSIZE_S_oe_ram,
+  BITSIZE_oe=1,
+  BITSIZE_addr=BITSIZE_S_addr_ram/CHANNELS_NUMBER,
+  BITSIZE_ready=1,
+  BITSIZE_Rdata=BITSIZE_Sout_Rdata_ram/CHANNELS_NUMBER;
+reg oe, oe_next, waiting, waiting_next, done, done_next;
+reg [BITSIZE_addr-1:0] addr, addr_next;
+wire rdy;
+
+arg_utils #(bitsize) a_utils();
+
+assign rdy = Sout_DataRdy[0];
+
+assign S_oe_ram = {BITSIZE_S_oe_ram-BITSIZE_oe{1&apos;b0}, oe_next};
+assign S_we_ram = {BITSIZE_S_we_ram{1&apos;b0}};
+assign S_addr_ram = {{BITSIZE_S_addr_ram-BITSIZE_addr{1&apos;b0}}, addr_next};
+assign S_Wdata_ram = {BITSIZE_S_Wdata_ram{1&apos;b0}};
+assign S_data_ram_size = {BITSIZE_S_data_ram_size{1&apos;b0}};
+assign start_port = i_start_port;
+assign done_port = done;
+
+always @(posedge clock) 
+begin
+  oe &lt;= oe_next;
+  addr &lt;= addr_next;
+  waiting &lt;= waiting_next;
+  done &lt;= done_next;
+  if(1RESET_VALUE)
+  begin
+    oe &lt;= 0;
+    addr &lt;= 0;
+    waiting &lt;= 0;
+    done &lt;= 0;
+  end
+  else if(done_next)
+  begin
+    a_utils.setarg(Sout_Rdata_ram[BITSIZE_Rdata-1:0], index);
+  end
+end
+
+always @(*)
+begin
+  oe_next = oe &amp; HOLD &amp; waiting &amp; ~rdy;
+  addr_next = addr &amp; {BITSIZE_addr{HOLD &amp; waiting &amp; ~rdy}};
+  waiting_next = waiting &amp; ~rdy;
+  done_next = waiting &amp; rdy;
+  if(i_done_port)
+  begin
+    oe_next = 1;
+    addr_next = tgt_addr;
+    waiting_next = ~rdy;
+    done_next = rdy;
+  end
+end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchStartMapMinimal</name>
+      <circuit>
+        <component_o id="TestbenchStartMapMinimal">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchStartMapMinimal"/>
+          <parameter name="tgt_addr">1024</parameter>
+          <parameter name="PIPELINED">1</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="i_start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="S_oe_ram" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_we_ram" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_addr_ram" dir="OUT" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_Wdata_ram" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="S_data_ram_size" dir="OUT" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Sout_Rdata_ram" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="Sout_DataRdy" dir="IN" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="TestbenchStartMapMinimal tgt_addr PIPELINED S_oe_ram S_we_ram S_addr_ram S_Wdata_ram S_data_ram_size Sout_Rdata_ram Sout_DataRdy" VERILOG_PROVIDED="localparam HOLD=PIPELINED ? 1&apos;b0 : 1&apos;b1,
+  CHANNELS_NUMBER=BITSIZE_S_we_ram,
+  BITSIZE_we=1,
+  BITSIZE_addr=BITSIZE_S_addr_ram/CHANNELS_NUMBER,
+  BITSIZE_Wsize=BITSIZE_S_data_ram_size/CHANNELS_NUMBER,
+  BITSIZE_Wdata=BITSIZE_S_Wdata_ram/CHANNELS_NUMBER,
+  BITSIZE_ready=1;
+reg we, we_next, waiting, waiting_next, start, start_next;
+reg [BITSIZE_addr-1:0] addr, addr_next;
+reg [BITSIZE_Wdata-1:0] data, data_next;
+reg [BITSIZE_Wsize-1:0] data_size, data_size_next;
+wire rdy;
+
+assign rdy = Sout_DataRdy[0];
+
+assign S_oe_ram = {BITSIZE_S_oe_ram{1&apos;b0}};
+assign S_we_ram = {{BITSIZE_S_we_ram-BITSIZE_we{1&apos;b0}}, we_next};
+assign S_addr_ram = {{BITSIZE_S_addr_ram-BITSIZE_addr{1&apos;b0}}, addr_next};
+assign S_Wdata_ram = {{BITSIZE_S_Wdata_ram-BITSIZE_Wdata{1&apos;b0}}, data_next};
+assign S_data_ram_size = {{BITSIZE_S_data_ram_size-BITSIZE_Wsize{1&apos;b0}}, data_size_next};
+assign start_port = start;
+
+always @(posedge clock) 
+begin
+  we &lt;= we_next;
+  addr &lt;= addr_next;
+  data &lt;= data_next;
+  data_size &lt;= data_size_next;
+  waiting &lt;= waiting_next;
+  start &lt;= start_next;
+  if(1RESET_VALUE)
+  begin
+    we &lt;= 0;
+    addr &lt;= 0;
+    data &lt;= 0;
+    data_size &lt;= 0;
+    waiting &lt;= 0;
+    start &lt;= 0;
+  end
+end
+
+always @(*)
+begin
+  we_next = we &amp; HOLD &amp; waiting &amp; ~rdy;
+  addr_next = addr &amp; {BITSIZE_addr{HOLD &amp; waiting &amp; ~rdy}};
+  data_next = data &amp; {BITSIZE_Wdata{HOLD &amp; waiting &amp; ~rdy}};
+  data_size_next = data_size &amp; {BITSIZE_Wsize{HOLD &amp; waiting &amp; ~rdy}};
+  waiting_next = waiting &amp; ~rdy;
+  start_next = waiting &amp; rdy;
+  if(i_start_port)
+  begin
+    we_next = 1;
+    addr_next = tgt_addr;
+    data_next = 1;
+    data_size_next = 1;
+    waiting_next = ~rdy;
+    start_next = rdy;
+  end
+end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchArgMapWishboneB4</name>
+      <circuit>
+        <component_o id="TestbenchArgMapWishboneB4">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchArgMapWishboneB4"/>
+          <parameter name="index">0</parameter>
+          <parameter name="tgt_addr">1024</parameter>
+          <parameter name="bitsize">32</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="setup_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="i_start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="cyc_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="stb_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="we_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="addr_is" dir="OUT" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="dat_is" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="sel_is" dir="OUT" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="dat_os" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="stall_os" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="ack_os" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality IP_COMPONENT="arg_utils" LIBRARY="TestbenchArgMapWishboneB4 index tgt_addr bitsize addr_is dat_is sel_is dat_os" VERILOG_PROVIDED="localparam bytesize=((bitsize&gt;&gt;3)&lt;&lt;3) == bitsize ? (bitsize&gt;&gt;3) : ((bitsize&gt;&gt;3) + 1);
+reg [bitsize-1:0] val, val_next;
+reg cyc, cyc_next, stb, stb_next, we, we_next, stall, ack, start;
+reg [BITSIZE_addr_is-1:0] addr, addr_next;
+reg [BITSIZE_dat_is-1:0] data, data_next;
+reg [BITSIZE_sel_is-1:0] sel, sel_next;
+
+arg_utils #(bitsize) a_utils();
+
+initial
+begin
+  val = 0;
+  val_next = 0;
+  cyc = 0;
+  cyc_next = 0;
+  stb = 0;
+  stb_next = 0;
+  we = 0;
+  we_next = 0;
+  addr = 0;
+  addr_next = 0;
+  data = 0;
+  data_next = 0;
+  sel = 0;
+  sel_next = 0;
+  start = 0;
+end
+
+assign cyc_is = cyc_next;
+assign stb_is = stb_next;
+assign we_is = we_next;
+assign addr_is = addr_next;
+assign dat_is = data_next;
+assign sel_is = sel_next;
+assign stall = ~ack_os; // TODO: this should be stall_os
+assign ack = ack_os;
+assign start_port = start;
+
+always @(posedge clock) 
+begin
+  automatic reg active_tx = cyc_next &amp; ~ack;
+  automatic reg wait_tx = active_tx &amp; stall;
+  val &lt;= val_next;
+  cyc &lt;= active_tx;
+  stb &lt;= stb_next &amp; wait_tx;
+  we &lt;= we_next &amp; wait_tx;
+  addr &lt;= addr_next &amp; {BITSIZE_addr_is{wait_tx}};
+  data &lt;= data_next &amp; {BITSIZE_dat_is{wait_tx}};
+  sel &lt;= sel_next &amp; {BITSIZE_sel_is{wait_tx}};
+  start &lt;= ack &amp; cyc_next;
+  if(setup_port)
+  begin
+    val &lt;= a_utils.getarg(index);
+  end
+end
+
+always @(*)
+begin
+  val_next = val;
+  cyc_next = cyc;
+  stb_next = stb;
+  we_next = we;
+  addr_next = addr;
+  data_next = data;
+  sel_next = sel;
+  if(i_start_port)
+  begin
+    cyc_next = 1;
+    stb_next = 1;
+    we_next = 1;
+    addr_next = tgt_addr;
+    data_next[bitsize-1:0] = val;
+    sel_next = {bytesize{1&apos;b1}};
+  end
+end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchReturnMapWishboneB4</name>
+      <circuit>
+        <component_o id="TestbenchReturnMapWishboneB4">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchReturnMapWishboneB4"/>
+          <parameter name="index">0</parameter>
+          <parameter name="tgt_addr">1024</parameter>
+          <parameter name="bitsize">32</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="setup_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="i_start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="i_done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="cyc_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="stb_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="we_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="addr_is" dir="OUT" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="dat_is" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="sel_is" dir="OUT" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="dat_os" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="stall_os" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="ack_os" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality IP_COMPONENT="arg_utils" LIBRARY="TestbenchReturnMapWishboneB4 index tgt_addr bitsize addr_is dat_is sel_is dat_os" VERILOG_PROVIDED="localparam bytesize=((bitsize&gt;&gt;3)&lt;&lt;3) == bitsize ? (bitsize&gt;&gt;3) : ((bitsize&gt;&gt;3) + 1);
+reg cyc, cyc_next, stb, stb_next, stall, ack, done;
+reg [BITSIZE_addr_is-1:0] addr, addr_next;
+
+arg_utils #(bitsize) a_utils();
+
+initial
+begin
+  cyc = 0;
+  cyc_next = 0;
+  stb = 0;
+  stb_next = 0;
+  addr = 0;
+  addr_next = 0;
+  done = 0;
+end
+
+assign cyc_is = cyc_next;
+assign stb_is = stb_next;
+assign we_is = 0;
+assign addr_is = addr_next;
+assign dat_is = 0;
+assign sel_is = 0;
+assign stall = ~ack_os; // TODO: this should be stall_os
+assign ack = ack_os;
+assign start_port = i_start_port;
+assign done_port = done;
+
+always @(posedge clock) 
+begin
+  automatic reg active_tx = cyc_next &amp; ~ack;
+  automatic reg wait_tx = active_tx &amp; stall;
+  cyc &lt;= active_tx;
+  stb &lt;= stb_next &amp; wait_tx;
+  addr &lt;= addr_next &amp; {BITSIZE_addr_is{wait_tx}};
+  done &lt;= ack &amp; cyc_next;
+  if(ack &amp; cyc_next)
+  begin
+    a_utils.setarg(dat_os, index);
+  end
+end
+
+always @(*)
+begin
+  cyc_next = cyc;
+  stb_next = stb;
+  addr_next = addr;
+  if(i_done_port)
+  begin
+    cyc_next = 1;
+    stb_next = 1;
+    addr_next = tgt_addr;
+  end
+end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchStartMapWishboneB4</name>
+      <circuit>
+        <component_o id="TestbenchStartMapWishboneB4">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchStartMapWishboneB4"/>
+          <parameter name="tgt_addr">1024</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="i_start_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="cyc_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="stb_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="we_is" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="addr_is" dir="OUT" is_memory="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="dat_is" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="sel_is" dir="OUT" is_memory="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="dat_os" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="stall_os" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="ack_os" dir="IN" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="TestbenchStartMapWishboneB4 tgt_addr addr_is dat_is sel_is dat_os" VERILOG_PROVIDED="localparam bytesize=1;
+reg cyc, cyc_next, stb, stb_next, we, we_next, stall, ack, start;
+reg [BITSIZE_addr_is-1:0] addr, addr_next;
+reg [BITSIZE_dat_is-1:0] data, data_next;
+reg [BITSIZE_sel_is-1:0] sel, sel_next;
+
+initial
+begin
+  cyc = 0;
+  cyc_next = 0;
+  stb = 0;
+  stb_next = 0;
+  we = 0;
+  we_next = 0;
+  addr = 0;
+  addr_next = 0;
+  data = 0;
+  data_next = 0;
+  sel = 0;
+  sel_next = 0;
+  start = 0;
+end
+
+assign cyc_is = cyc_next;
+assign stb_is = stb_next;
+assign we_is = we_next;
+assign addr_is = addr_next;
+assign dat_is = data_next;
+assign sel_is = sel_next;
+assign stall = ~ack_os; // TODO: this should be stall_os
+assign ack = ack_os;
+assign start_port = start;
+
+always @(posedge clock) 
+begin
+  automatic reg active_tx = cyc_next &amp; ~ack;
+  automatic reg wait_tx = active_tx &amp; stall;
+  cyc &lt;= active_tx;
+  stb &lt;= stb_next &amp; wait_tx;
+  we &lt;= we_next &amp; wait_tx;
+  addr &lt;= addr_next &amp; {BITSIZE_addr_is{wait_tx}};
+  data &lt;= data_next &amp; {BITSIZE_dat_is{wait_tx}};
+  sel &lt;= sel_next &amp; {BITSIZE_sel_is{wait_tx}};
+  start &lt;= ack &amp; cyc_next;
+end
+
+always @(*)
+begin
+  cyc_next = cyc;
+  stb_next = stb;
+  we_next = we;
+  addr_next = addr;
+  data_next = data;
+  sel_next = sel;
+  if(i_start_port)
+  begin
+    cyc_next = 1;
+    stb_next = 1;
+    we_next = 1;
+    addr_next = tgt_addr;
+    data_next = 1;
+    sel_next = {bytesize{1&apos;b1}};
+  end
+end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>IF_PORT_OUT</name>
+      <circuit>
+        <component_o id="IF_PORT_OUT">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="IF_PORT_OUT"/>
+          <parameter name="index">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="val_port" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality
+            IP_COMPONENT="arg_utils"
+            LIBRARY="IF_PORT_OUT index val_port"
+            VERILOG_PROVIDED="arg_utils #(BITSIZE_val_port) m_utils();
+
+always @(posedge clock)
+begin
+  if(done_port)
+  begin
+    m_utils.setarg(val_port, index);
+  end
+end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchArray</name>
+      <circuit>
+        <component_o id="TestbenchArray">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchArray"/>
+          <parameter name="index">0</parameter>
+          <parameter name="WRITE_DELAY">1</parameter>
+          <parameter name="READ_DELAY">2</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="setup_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchArray index WRITE_DELAY READ_DELAY" VERILOG_GENERATOR="TestbenchArrayModuleGenerator"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchAcknowledge</name>
+      <circuit>
+        <component_o id="TestbenchAcknowledge">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchAcknowledge"/>
+          <parameter name="index">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="setup_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchAcknowledge index" VERILOG_GENERATOR="TestbenchAcknowledgeModuleGenerator"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchValid</name>
+      <circuit>
+        <component_o id="TestbenchValid">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchValid"/>
+          <parameter name="index">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="setup_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchValid index" VERILOG_GENERATOR="TestbenchValidModuleGenerator"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchOvalid</name>
+      <circuit>
+        <component_o id="TestbenchOvalid">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchOvalid"/>
+          <parameter name="index">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="setup_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchOvalid index" VERILOG_GENERATOR="TestbenchOvalidModuleGenerator"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchHandshake</name>
+      <circuit>
+        <component_o id="TestbenchHandshake">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchHandshake"/>
+          <parameter name="index">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="setup_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchHandshake index" VERILOG_GENERATOR="TestbenchHandshakeModuleGenerator"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchAxis</name>
+      <circuit>
+        <component_o id="TestbenchAxis">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchAxis"/>
+          <parameter name="index">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="setup_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchAxis index" VERILOG_GENERATOR="TestbenchAxisModuleGenerator"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchFifo</name>
+      <circuit>
+        <component_o id="TestbenchFifo">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchFifo"/>
+          <parameter name="index">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="setup_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchFifo index" VERILOG_GENERATOR="TestbenchFifoModuleGenerator"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchNone</name>
+      <circuit>
+        <component_o id="TestbenchNone">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchNone"/>
+          <parameter name="index">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="setup_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchNone index" VERILOG_GENERATOR="TestbenchNoneModuleGenerator"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchNone_registered</name>
+      <circuit>
+        <component_o id="TestbenchNone_registered">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchNone_registered"/>
+          <parameter name="index">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="setup_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchNone_registered index" VERILOG_GENERATOR="TestbenchNoneModuleGenerator"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchAXIM</name>
+      <circuit>
+        <component_o id="TestbenchAXIM">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchAXIM"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality IP_COMPONENT="mem_utils" LIBRARY="TestbenchAXIM" VERILOG_GENERATOR="TestbenchAXIMModuleGenerator"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
       <name>constant_value</name>
       <attribute name="area" value_type="float64">0</attribute>
       <circuit>
         <component_o id="constant_value">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Christian Pilato &lt;christian.pilato@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Christian Pilato &lt;christian.pilato@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="constant_value"/>
           <parameter name="value">&quot;0&quot;</parameter>
@@ -77,8 +1954,8 @@
       <circuit>
         <component_o id="gimple_asm_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2015-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2015-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="gimple_asm_FU"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -86,26 +1963,21 @@
           </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="var_arg" dir="IN" is_var_args="1">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="sel_gimple_asm" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="sel___gimple_asm" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="done_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -128,17 +2000,15 @@
       <circuit>
         <component_o id="switch_cond_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="switch_cond_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="switch_cond_FU in1 out1" VHDL_PROVIDED="begin
   out1 &lt;= in1;" VERILOG_PROVIDED="assign out1 = in1;"/>
@@ -153,17 +2023,15 @@
       <circuit>
         <component_o id="read_cond_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="read_cond_FU"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="read_cond_FU in1" VHDL_PROVIDED="constant zeroes : std_logic_vector(in1&apos;range) := (others =&gt; &apos;0&apos;); 
 constant xs : std_logic_vector(in1&apos;range) := (others =&gt; &apos;X&apos;);
@@ -179,17 +2047,15 @@ constant xs : std_logic_vector(in1&apos;range) := (others =&gt; &apos;X&apos;);
       <circuit>
         <component_o id="multi_read_cond_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="multi_read_cond_FU"/>
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="multi_read_cond_FU in1 out1" VHDL_PROVIDED="begin
   out1 &lt;= in1;" VERILOG_PROVIDED="assign out1 = in1;"/>
@@ -212,7 +2078,6 @@ constant xs : std_logic_vector(in1&apos;range) := (others =&gt; &apos;X&apos;);
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_1_1_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in1,BITSIZE_out1));
@@ -236,7 +2101,6 @@ constant xs : std_logic_vector(in1&apos;range) := (others =&gt; &apos;X&apos;);
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_1_1_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in1,BITSIZE_out1));
@@ -251,8 +2115,8 @@ constant xs : std_logic_vector(in1&apos;range) := (others =&gt; &apos;X&apos;);
       <circuit>
         <component_o id="ui_concat_2_1_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_2_1_FU"/>
           <port_o id="in1" dir="IN">
@@ -260,7 +2124,6 @@ constant xs : std_logic_vector(in1&apos;range) := (others =&gt; &apos;X&apos;);
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_2_1_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in1, BITSIZE_out1));
@@ -275,8 +2138,8 @@ constant xs : std_logic_vector(in1&apos;range) := (others =&gt; &apos;X&apos;);
       <circuit>
         <component_o id="concat_2_2_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_2_2_FU"/>
           <port_o id="in1" dir="IN">
@@ -287,7 +2150,6 @@ constant xs : std_logic_vector(in1&apos;range) := (others =&gt; &apos;X&apos;);
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_2_2_FU in1 in2 out1" VERILOG_PROVIDED="wire signed [BITSIZE_out1-1:0] tmp_in1;
 wire signed [BITSIZE_out1-1:0] tmp_in2;
@@ -306,8 +2168,8 @@ assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
       <circuit>
         <component_o id="ui_concat_2_2_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_2_2_FU"/>
           <port_o id="in1" dir="IN">
@@ -318,7 +2180,6 @@ assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_2_2_FU in1 in2 out1" VERILOG_PROVIDED="
 wire [BITSIZE_out1-1:0] tmp_in1;
@@ -353,18 +2214,15 @@ begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="concat_3_3_FU in1 in2 in3 out1" VERILOG_PROVIDED=
-"wire signed [BITSIZE_out1-1:0] tmp_in1;
+          <NP_functionality LIBRARY="concat_3_3_FU in1 in2 in3 out1" VERILOG_PROVIDED="wire signed [BITSIZE_out1-1:0] tmp_in1;
 wire signed [BITSIZE_out1-1:0] tmp_in2;
 wire signed [BITSIZE_out1-1:0] tmp_in3;
 assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign out1 = {tmp_in3, tmp_in2, tmp_in1};"
-VHDL_PROVIDED=
-"begin
+            VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "/>
         </component_o>
@@ -392,7 +2250,6 @@ VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_3_3_FU in1 in2 in3 out1" VERILOG_PROVIDED="
 wire [BITSIZE_out1-1:0] tmp_in1;
@@ -402,8 +2259,7 @@ assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign out1 = {tmp_in3, tmp_in2, tmp_in1};
-" VHDL_PROVIDED=
-"begin
+" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
   "/>
         </component_o>
@@ -416,8 +2272,8 @@ assign out1 = {tmp_in3, tmp_in2, tmp_in1};
       <circuit>
         <component_o id="concat_4_4_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_4_4_FU"/>
           <port_o id="in1" dir="IN">
@@ -434,7 +2290,6 @@ assign out1 = {tmp_in3, tmp_in2, tmp_in1};
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_4_4_FU in1 in2 in3 in4 out1" VERILOG_PROVIDED="
 wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -445,8 +2300,7 @@ assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign tmp_in4 = in4;
-assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
-"begin
+assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));"
           />
         </component_o>
@@ -459,8 +2313,8 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
       <circuit>
         <component_o id="ui_concat_4_4_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_4_4_FU"/>
           <port_o id="in1" dir="IN">
@@ -477,7 +2331,6 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_4_4_FU in1 in2 in3 in4 out1" VERILOG_PROVIDED="
 wire [BITSIZE_out1-1:0] tmp_in1;
@@ -488,8 +2341,7 @@ assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign tmp_in4 = in4;
-assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
-"begin
+assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));"
           />
         </component_o>
@@ -502,8 +2354,8 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
       <circuit>
         <component_o id="concat_4_1_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_4_1_FU"/>
           <port_o id="in1" dir="IN">
@@ -511,7 +2363,6 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_4_1_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in1, BITSIZE_out1));
@@ -526,8 +2377,8 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
       <circuit>
         <component_o id="ui_concat_4_1_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_4_1_FU"/>
           <port_o id="in1" dir="IN">
@@ -535,7 +2386,6 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_4_1_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in1, BITSIZE_out1));
@@ -550,8 +2400,8 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
       <circuit>
         <component_o id="concat_4_2_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_4_2_FU"/>
           <port_o id="in1" dir="IN">
@@ -562,15 +2412,13 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_4_2_FU in1 in2 out1" VERILOG_PROVIDED="
 wire signed [BITSIZE_out1-1:0] tmp_in1;
 wire signed [BITSIZE_out1-1:0] tmp_in2;
 assign tmp_in1 = in1;
 assign tmp_in2 = in2;
-assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED=
-"begin
+assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
    out1 &lt;= std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1));"
           />
         </component_o>
@@ -583,8 +2431,8 @@ assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED=
       <circuit>
         <component_o id="ui_concat_4_2_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_4_2_FU"/>
           <port_o id="in1" dir="IN">
@@ -595,15 +2443,13 @@ assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_4_2_FU in1 in2 out1" VERILOG_PROVIDED="
 wire signed [BITSIZE_out1-1:0] tmp_in1;
 wire signed [BITSIZE_out1-1:0] tmp_in2;
 assign tmp_in1 = in1;
 assign tmp_in2 = in2;
-assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED=
-"begin
+assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
    out1 &lt;= std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1));"
           />
         </component_o>
@@ -631,7 +2477,6 @@ assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_6_3_FU in1 in2 in3 out1" VERILOG_PROVIDED="
 wire [BITSIZE_out1-1:0] tmp_in1;
@@ -641,8 +2486,7 @@ assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign out1 = {tmp_in3, tmp_in2, tmp_in1};"
-VHDL_PROVIDED=
-"begin
+            VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "/>
         </component_o>
@@ -664,7 +2508,6 @@ VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_8_1_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in1, BITSIZE_out1));
@@ -688,7 +2531,6 @@ VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_8_1_FU in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in1, BITSIZE_out1));
@@ -703,8 +2545,8 @@ VHDL_PROVIDED=
       <circuit>
         <component_o id="concat_8_2_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_8_2_FU"/>
           <port_o id="in1" dir="IN">
@@ -715,7 +2557,6 @@ VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_8_2_FU in1 in2 out1" VERILOG_PROVIDED="
 wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -735,8 +2576,8 @@ assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
       <circuit>
         <component_o id="ui_concat_8_2_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_8_2_FU"/>
           <port_o id="in1" dir="IN">
@@ -747,7 +2588,6 @@ assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_8_2_FU in1 in2 out1" VERILOG_PROVIDED="
 wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -767,8 +2607,8 @@ assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
       <circuit>
         <component_o id="concat_8_4_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_8_4_FU"/>
           <port_o id="in1" dir="IN">
@@ -785,7 +2625,6 @@ assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_8_4_FU in1 in2 in3 in4 out1" VERILOG_PROVIDED="
 wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -796,8 +2635,7 @@ assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign tmp_in4 = in4;
-assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
-"begin
+assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));"
           />
         </component_o>
@@ -810,8 +2648,8 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
       <circuit>
         <component_o id="ui_concat_8_4_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_8_4_FU"/>
           <port_o id="in1" dir="IN">
@@ -828,7 +2666,6 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_8_4_FU in1 in2 in3 in4 out1" VERILOG_PROVIDED="
 wire [BITSIZE_out1-1:0] tmp_in1;
@@ -839,8 +2676,7 @@ assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign tmp_in4 = in4;
-assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
-"begin
+assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));"
           />
         </component_o>
@@ -853,8 +2689,8 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
       <circuit>
         <component_o id="concat_8_8_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_8_8_FU"/>
           <port_o id="in1" dir="IN">
@@ -883,7 +2719,6 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_8_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED="
 wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -917,8 +2752,8 @@ begin
       <circuit>
         <component_o id="ui_concat_8_8_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_8_8_FU"/>
           <port_o id="in1" dir="IN">
@@ -947,7 +2782,6 @@ begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_8_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED="
 wire [BITSIZE_out1-1:0] tmp_in1;
@@ -981,8 +2815,8 @@ begin
       <circuit>
         <component_o id="concat_16_16_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_16_16_FU"/>
           <port_o id="in1" dir="IN">
@@ -1035,7 +2869,6 @@ begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_16_16_FU in1 in2 in3 in4 in5 in6 in7 in8 in9 in10 in11 in12 in13 in14 in15 in16 out1" VERILOG_PROVIDED="
 wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -1084,8 +2917,8 @@ begin
       <circuit>
         <component_o id="ui_concat_16_16_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_16_16_FU"/>
           <port_o id="in1" dir="IN">
@@ -1138,7 +2971,6 @@ begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_16_16_FU in1 in2 in3 in4 in5 in6 in7 in8 in9 in10 in11 in12 in13 in14 in15 in16 out1" VERILOG_PROVIDED="
 wire [BITSIZE_out1-1:0] tmp_in1;
@@ -1187,8 +3019,8 @@ begin
       <circuit>
         <component_o id="concat_16_8_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_16_8_FU"/>
           <port_o id="in1" dir="IN">
@@ -1217,7 +3049,6 @@ begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_16_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED="
 wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -1236,8 +3067,7 @@ assign tmp_in5 = in5;
 assign tmp_in6 = in6;
 assign tmp_in7 = in7;
 assign tmp_in8 = in8;
-assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
-"begin
+assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
    out1 &lt;= std_logic_vector(resize(in8, BITSIZE_out1)) &amp; std_logic_vector(resize(in7, BITSIZE_out1)) &amp; std_logic_vector(resize(in6, BITSIZE_out1)) &amp; std_logic_vector(resize(in5, BITSIZE_out1)) &amp; std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "
           />
@@ -1251,8 +3081,8 @@ assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tm
       <circuit>
         <component_o id="ui_concat_16_8_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_16_8_FU"/>
           <port_o id="in1" dir="IN">
@@ -1281,7 +3111,6 @@ assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tm
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_16_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED="
 wire [BITSIZE_out1-1:0] tmp_in1;
@@ -1315,8 +3144,8 @@ begin
       <circuit>
         <component_o id="concat_16_4_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_16_4_FU"/>
           <port_o id="in1" dir="IN">
@@ -1333,7 +3162,6 @@ begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_16_4_FU in1 in2 in3 in4 out1" VERILOG_PROVIDED="
 wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -1344,7 +3172,7 @@ assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign tmp_in4 = in4;
-assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};"  VHDL_PROVIDED="
+assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="
 begin
   out1 &lt;= std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));"
           />
@@ -1358,8 +3186,8 @@ begin
       <circuit>
         <component_o id="ui_concat_16_4_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_16_4_FU"/>
           <port_o id="in1" dir="IN">
@@ -1376,7 +3204,6 @@ begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_16_4_FU in1 in2 in3 in4 out1" VERILOG_PROVIDED="
 wire [BITSIZE_out1-1:0] tmp_in1;
@@ -1387,7 +3214,7 @@ assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign tmp_in4 = in4;
-assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};"  VHDL_PROVIDED="
+assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="
 begin
   out1 &lt;= std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));"
           />
@@ -1416,7 +3243,6 @@ begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_12_3_FU in1 in2 in3 out1" VERILOG_PROVIDED="
 wire signed [BITSIZE_out1-1:0] tmp_in1;
@@ -1426,7 +3252,7 @@ assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign out1 = {tmp_in3, tmp_in2, tmp_in1};"
-VHDL_PROVIDED="
+            VHDL_PROVIDED="
 begin
   out1 &lt;= std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "/>
@@ -1455,18 +3281,15 @@ begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="ui_concat_12_3_FU in1 in2 in3 out1" VERILOG_PROVIDED=
-"wire [BITSIZE_out1-1:0] tmp_in1;
+          <NP_functionality LIBRARY="ui_concat_12_3_FU in1 in2 in3 out1" VERILOG_PROVIDED="wire [BITSIZE_out1-1:0] tmp_in1;
 wire [BITSIZE_out1-1:0] tmp_in2;
 wire [BITSIZE_out1-1:0] tmp_in3;
 assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign out1 = {tmp_in3, tmp_in2, tmp_in1};"
-VHDL_PROVIDED=
-"begin
+            VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "/>
         </component_o>
@@ -1479,8 +3302,8 @@ VHDL_PROVIDED=
       <circuit>
         <component_o id="concat_16_2_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_16_2_FU"/>
           <port_o id="in1" dir="IN">
@@ -1491,13 +3314,12 @@ VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_16_2_FU in1 in2 out1" VERILOG_PROVIDED="wire signed [BITSIZE_out1-1:0] tmp_in1;
 wire signed [BITSIZE_out1-1:0] tmp_in2;
 assign tmp_in1 = in1;
 assign tmp_in2 = in2;
-assign out1 = {tmp_in2, tmp_in1};"  VHDL_PROVIDED="begin
+assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "/>
         </component_o>
@@ -1510,8 +3332,8 @@ assign out1 = {tmp_in2, tmp_in1};"  VHDL_PROVIDED="begin
       <circuit>
         <component_o id="ui_concat_16_2_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_16_2_FU"/>
           <port_o id="in1" dir="IN">
@@ -1522,7 +3344,6 @@ assign out1 = {tmp_in2, tmp_in1};"  VHDL_PROVIDED="begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_16_2_FU in1 in2 out1" VERILOG_PROVIDED="wire [BITSIZE_out1-1:0] tmp_in1;
 wire [BITSIZE_out1-1:0] tmp_in2;
@@ -1556,18 +3377,15 @@ assign out1 = {tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="concat_24_3_FU in1 in2 in3 out1" VERILOG_PROVIDED=
-"wire signed [BITSIZE_out1-1:0] tmp_in1;
+          <NP_functionality LIBRARY="concat_24_3_FU in1 in2 in3 out1" VERILOG_PROVIDED="wire signed [BITSIZE_out1-1:0] tmp_in1;
 wire signed [BITSIZE_out1-1:0] tmp_in2;
 wire signed [BITSIZE_out1-1:0] tmp_in3;
 assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign out1 = {tmp_in3, tmp_in2, tmp_in1};
-" VHDL_PROVIDED=
-"begin
+" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "/>
         </component_o>
@@ -1595,18 +3413,15 @@ assign out1 = {tmp_in3, tmp_in2, tmp_in1};
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="ui_concat_24_3_FU in1 in2 in3 out1" VERILOG_PROVIDED=
-"wire signed [BITSIZE_out1-1:0] tmp_in1;
+          <NP_functionality LIBRARY="ui_concat_24_3_FU in1 in2 in3 out1" VERILOG_PROVIDED="wire signed [BITSIZE_out1-1:0] tmp_in1;
 wire signed [BITSIZE_out1-1:0] tmp_in2;
 wire signed [BITSIZE_out1-1:0] tmp_in3;
 assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign out1 = {tmp_in3, tmp_in2, tmp_in1};
-" VHDL_PROVIDED=
-"begin
+" VHDL_PROVIDED="begin
   out1 &lt;= std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "/>
         </component_o>
@@ -1637,7 +3452,6 @@ assign out1 = {tmp_in3, tmp_in2, tmp_in1};
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_32_4_FU in1 in2 in3 in4 out1" VERILOG_PROVIDED="wire signed [BITSIZE_out1-1:0] tmp_in1;
 wire signed [BITSIZE_out1-1:0] tmp_in2;
@@ -1647,8 +3461,7 @@ assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign tmp_in4 = in4;
-assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};"  VHDL_PROVIDED=
-"begin
+assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
    out1 &lt;= std_logic_vector(resize(in4,BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "/>
         </component_o>
@@ -1679,7 +3492,6 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};"  VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_32_4_FU in1 in2 in3 in4 out1" VERILOG_PROVIDED="wire [BITSIZE_out1-1:0] tmp_in1;
 wire [BITSIZE_out1-1:0] tmp_in2;
@@ -1689,8 +3501,7 @@ assign tmp_in1 = in1;
 assign tmp_in2 = in2;
 assign tmp_in3 = in3;
 assign tmp_in4 = in4;
-assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};"  VHDL_PROVIDED=
-"begin
+assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
    out1 &lt;= std_logic_vector(resize(in4,BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "/>
         </component_o>
@@ -1703,8 +3514,8 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};"  VHDL_PROVIDED=
       <circuit>
         <component_o id="concat_32_8_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_32_8_FU"/>
           <port_o id="in1" dir="IN">
@@ -1733,7 +3544,6 @@ assign out1 = {tmp_in4, tmp_in3, tmp_in2, tmp_in1};"  VHDL_PROVIDED=
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="concat_32_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED="wire signed [BITSIZE_out1-1:0] tmp_in1;
 wire signed [BITSIZE_out1-1:0] tmp_in2;
@@ -1751,8 +3561,7 @@ assign tmp_in5 = in5;
 assign tmp_in6 = in6;
 assign tmp_in7 = in7;
 assign tmp_in8 = in8;
-assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
-"begin
+assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
    out1 &lt;= std_logic_vector(resize(in8, BITSIZE_out1)) &amp; std_logic_vector(resize(in7, BITSIZE_out1)) &amp; std_logic_vector(resize(in6, BITSIZE_out1)) &amp; std_logic_vector(resize(in5, BITSIZE_out1)) &amp; std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "
           />
@@ -1766,8 +3575,8 @@ assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tm
       <circuit>
         <component_o id="ui_concat_32_8_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_32_8_FU"/>
           <port_o id="in1" dir="IN">
@@ -1796,7 +3605,6 @@ assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tm
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_concat_32_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED="wire [BITSIZE_out1-1:0] tmp_in1;
 wire [BITSIZE_out1-1:0] tmp_in2;
@@ -1814,8 +3622,7 @@ assign tmp_in5 = in5;
 assign tmp_in6 = in6;
 assign tmp_in7 = in7;
 assign tmp_in8 = in8;
-assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED=
-"begin
+assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tmp_in1};" VHDL_PROVIDED="begin
    out1 &lt;= std_logic_vector(resize(in8, BITSIZE_out1)) &amp; std_logic_vector(resize(in7, BITSIZE_out1)) &amp; std_logic_vector(resize(in6, BITSIZE_out1)) &amp; std_logic_vector(resize(in5, BITSIZE_out1)) &amp; std_logic_vector(resize(in4, BITSIZE_out1)) &amp; std_logic_vector(resize(in3, BITSIZE_out1)) &amp; std_logic_vector(resize(in2, BITSIZE_out1)) &amp; std_logic_vector(resize(in1, BITSIZE_out1));
 "
           />
@@ -1829,8 +3636,8 @@ assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tm
       <circuit>
         <component_o id="concat_64_8_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="concat_64_8_FU"/>
           <port_o id="in1" dir="IN">
@@ -1859,10 +3666,8 @@ assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tm
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="concat_64_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED=
-"wire signed [BITSIZE_out1-1:0] tmp_in1;
+          <NP_functionality LIBRARY="concat_64_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED="wire signed [BITSIZE_out1-1:0] tmp_in1;
 wire signed [BITSIZE_out1-1:0] tmp_in2;
 wire signed [BITSIZE_out1-1:0] tmp_in3;
 wire signed [BITSIZE_out1-1:0] tmp_in4;
@@ -1892,8 +3697,8 @@ assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tm
       <circuit>
         <component_o id="ui_concat_64_8_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_concat_64_8_FU"/>
           <port_o id="in1" dir="IN">
@@ -1922,10 +3727,8 @@ assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tm
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="ui_concat_64_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED=
-"wire signed [BITSIZE_out1-1:0] tmp_in1;
+          <NP_functionality LIBRARY="ui_concat_64_8_FU in1 in2 in3 in4 in5 in6 in7 in8 out1" VERILOG_PROVIDED="wire signed [BITSIZE_out1-1:0] tmp_in1;
 wire signed [BITSIZE_out1-1:0] tmp_in2;
 wire signed [BITSIZE_out1-1:0] tmp_in3;
 wire signed [BITSIZE_out1-1:0] tmp_in4;
@@ -1953,8 +3756,8 @@ assign out1 = {tmp_in8, tmp_in7, tmp_in6, tmp_in5, tmp_in4, tmp_in3, tmp_in2, tm
       <circuit>
         <component_o id="bus_merger">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2013-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2013-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="bus_merger"/>
           <port_vector_o id="in1" dir="IN">
@@ -1996,8 +3799,8 @@ end process;
       <circuit>
         <component_o id="DEMUX_GATE">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2012-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors> 
+          <copyright>Copyright (C) 2012-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="DEMUX_GATE"/>
           <port_o id="sel" dir="IN">
@@ -2017,172 +3820,19 @@ reg [BITSIZE_out1-1:0] out1;
 reg [BITSIZE_out2-1:0] out2;
 always @ (sel or in1)
   case (sel)
-    1'b1: {out1, out2} = {{BITSIZE_out1{1'b0}}, in1};
-    default: {out1, out2} = {in1, {BITSIZE_out2{1'b0}}};
+    1&apos;b1: {out1, out2} = {{BITSIZE_out1{1&apos;b0}}, in1};
+    default: {out1, out2} = {in1, {BITSIZE_out2{1&apos;b0}}};
   endcase"/>
         </component_o>
       </circuit>
     </template>
     <cell>
-      <name>FSL_handler</name>
-      <attribute name="area" value_type="float64">0</attribute>
-      <circuit>
-        <component_o id="FSL_handler">
-          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Davide Franceschelli &lt;davide.franceschelli@mail.polimi.it&gt;, Christian Pilato &lt;christian.pilato@polimi.it&gt;</authors> 
-          <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="FSL_handler"/>
-          <port_o id="core_reset" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
-          </port_o>
-          <port_o id="core_done" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
-          </port_o>
-          <port_vector_o id="IN_DATA" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
-          </port_vector_o>
-          <port_vector_o id="IN_ADDR" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
-          </port_vector_o>
-          <port_o id="FSLCLK" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
-          </port_o>
-          <port_o id="FSLRST" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
-          </port_o>
-          <port_o id="S_Clk" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
-          </port_o>
-          <port_o id="S_Read" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
-          </port_o>
-          <port_o id="S_Data" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
-            <connected_objects/>
-          </port_o>
-          <port_o id="S_Control" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
-          </port_o>
-          <port_o id="S_Exists" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
-          </port_o>
-          <port_o id="M_Clk" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
-          </port_o>
-          <port_o id="M_Write" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
-          </port_o>
-          <port_o id="M_Data" dir="OUT">
-          <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
-          <connected_objects/>
-          </port_o>
-          <port_o id="M_Control" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
-          </port_o>
-          <port_o id="M_Full" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
-          </port_o>
-          <NP_functionality LIBRARY="FSL_handler IN_DATA IN_ADDR S_Data M_Data in_words addr_words" VERILOG_PROVIDED="" VHDL_PROVIDED=" 
- type STATE_TYPE is (IDLE, READDATA, READADDR, WAITING, RUNNING);
-  
- signal STATE : STATE_TYPE := IDLE;
- signal n_reads : natural range 1 to in_words := 1;
- signal n_addr : natural range 1 to addr_words := 1;
- signal temp_addr : std_logic_vector(31 downto 0);
- signal stop : std_logic := &apos;0&apos;;
- 
-begin
- 
- S_Read &lt;= S_Exists when STATE = READDATA or STATE = READADDR else &apos;0&apos;;
- M_Write &lt;= &apos;0&apos;;
- M_Control &lt;= stop;
- 
- handler : process (FSLCLK) is     
- begin
-  if (FSLCLK&apos;event and FSLCLK = &apos;1&apos;) then
-   core_reset &lt;= &apos;0&apos;;
-   if (FSLRST = &apos;1&apos;) then
-    STATE &lt;= IDLE;
-   else
-    case STATE is                        
-    
-     when IDLE =>
-      if (S_Exists = &apos;1&apos; and stop = &apos;0&apos;) then
-       for i in 0 to in_words-1 loop
-        IN_DATA(BITSIZE_S_Data*(i+1)-1 downto i*BITSIZE_S_Data) &lt;= (others => &apos;Z&apos;);
-       end loop;
-       for i in 0 to addr_words-1 loop
-        IN_ADDR(BITSIZE_S_Data*(i+1)-1 downto i*BITSIZE_S_Data) &lt;= (others => &apos;Z&apos;);
-       end loop;
-
-       temp_addr &lt;= (others => &apos;Z&apos;);
-       STATE &lt;= READDATA;
-       n_reads &lt;= 1;
-      end if;
-            
-     when READDATA =>
-      if (S_Exists = &apos;1&apos;) then
-       IN_DATA(BITSIZE_S_Data*n_reads-1 downto (n_reads-1)*BITSIZE_S_Data) &lt;= S_Data;
-       if (n_reads = in_words) then
-        STATE &lt;= READADDR;
-        n_addr &lt;= 1;
-       else
-        n_reads &lt;= n_reads + 1;
-       end if;
-      end if;
-      
-     when READADDR =>
-      if (S_Exists = &apos;1&apos;) then
-       IN_ADDR(BITSIZE_S_Data*n_addr-1 downto (n_addr-1)*BITSIZE_S_Data) &lt;= S_Data;
-       if (n_addr = addr_words) then
-        core_reset &lt;= &apos;1&apos;;
-        STATE &lt;= WAITING;
-       else
-        n_addr &lt;= n_addr + 1;
-       end if;
-      end if;
-      
-     when WAITING =>
-      if (core_done = &apos;1&apos;) then
-       STATE &lt;= RUNNING;
-      end if;
-     
-     when RUNNING =>
-      if (core_done = &apos;1&apos;) then
-       stop &lt;= &apos;1&apos;;
-       STATE &lt;= IDLE;
-      end if;
-
-    end case;
-   end if;
-  end if;
- end process handler;
- "/>
-        </component_o>
-      </circuit>
-    </cell>
-    <cell>
       <name>flipflop_AR</name>
       <circuit>
         <component_o id="flipflop_AR">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="flipflop_AR"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2225,7 +3875,7 @@ begin
       <circuit>
         <component_o id="flipflop_SR">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
           <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="flipflop_SR"/>
@@ -2274,17 +3924,15 @@ begin
       <circuit>
         <component_o id="join_signal">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="join_signal"/>
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="join_signal in1 out1" VERILOG_PROVIDED="
 generate
@@ -2310,8 +3958,8 @@ begin
       <circuit>
         <component_o id="register_AR">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="register_AR"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2354,8 +4002,8 @@ begin
       <circuit>
         <component_o id="register_AR_NORETIME">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2013-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2013-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="register_AR_NORETIME"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2404,8 +4052,8 @@ begin
       <circuit>
         <component_o id="register_AR_NORETIME_INT">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2020-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2020-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="register_AR_NORETIME_INT"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2454,8 +4102,8 @@ begin
       <circuit>
         <component_o id="register_AR_NORETIME_UINT">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2020-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2020-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="register_AR_NORETIME_UINT"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2504,8 +4152,8 @@ begin
       <circuit>
         <component_o id="register_AR_NORETIME_REAL">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2020-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2020-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="register_AR_NORETIME_REAL"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2554,8 +4202,8 @@ begin
       <circuit>
         <component_o id="register_SARSE">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="register_SARSE"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2603,8 +4251,8 @@ begin
       <circuit>
         <component_o id="register_SE">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="register_SE"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2628,7 +4276,7 @@ assign out1 = reg_out1;
 always @(posedge clock)
   if (wenable)
     reg_out1 &lt;= in1;"
-VHDL_PROVIDED="
+            VHDL_PROVIDED="
 signal reg_out1 : std_logic_vector(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
 begin
   out1 &lt;= reg_out1;
@@ -2649,8 +4297,8 @@ begin
       <circuit>
         <component_o id="register_SR">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="register_SR"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2673,8 +4321,7 @@ always @(posedge clock)
     reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
   else
     reg_out1 &lt;= in1;"
-VHDL_PROVIDED=
-"signal reg_out1 : std_logic_vector(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
+            VHDL_PROVIDED="signal reg_out1 : std_logic_vector(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
 begin
   out1 &lt; reg_out1;
   process(clock)
@@ -2696,8 +4343,8 @@ begin
       <circuit>
         <component_o id="register_SRSE">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="register_SRSE"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2745,8 +4392,8 @@ begin
       <circuit>
         <component_o id="register_STD">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="register_STD"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2764,8 +4411,7 @@ begin
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="register_STD in1 out1" VERILOG_PROVIDED=
-"reg [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
+          <NP_functionality LIBRARY="register_STD in1 out1" VERILOG_PROVIDED="reg [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
 assign out1 = reg_out1;
 always @(posedge clock)
   reg_out1 &lt;= in1;
@@ -2808,8 +4454,7 @@ end process;
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="register_SHIFT CONTROLLER_LENGTH" VERILOG_PROVIDED=
-"
+          <NP_functionality LIBRARY="register_SHIFT CONTROLLER_LENGTH" VERILOG_PROVIDED="
 generate if (CONTROLLER_LENGTH == 0) 
 begin
   assign out1 = in1;
@@ -2858,17 +4503,15 @@ end generate nonzero_case;
       <circuit>
         <component_o id="split_signal">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="split_signal"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_o>
           <port_vector_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
           </port_vector_o>
           <NP_functionality LIBRARY="split_signal in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
   out1 &lt;= in1;"/>
@@ -2911,9 +4554,9 @@ end generate nonzero_case;
           <port_o id="stall_wenable" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="Stage_controller" VERILOG_PROVIDED="parameter [1:0] IDLE = 2'b00;
-  parameter [1:0] SEND = 2'b01;
-  parameter [1:0] FULL = 2'b10;
+          <NP_functionality LIBRARY="Stage_controller" VERILOG_PROVIDED="localparam [1:0] IDLE = 2&apos;b00;
+  localparam [1:0] SEND = 2&apos;b01;
+  localparam [1:0] FULL = 2&apos;b10;
 
   reg selector_out;
   reg std_wenable;
@@ -2996,22 +4639,19 @@ end generate nonzero_case;
       <circuit>
         <component_o id="ui_const_mult_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2014-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2014-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_const_mult_expr_FU"/>
           <parameter name="VALUE_PARAMETER">0</parameter>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_const_mult_expr_FU in1 in2 out1 VALUE_PARAMETER" VERILOG_PROVIDED="assign out1 = in1 * VALUE_PARAMETER;" VHDL_PROVIDED="begin
   out1 &lt;= resize(in1 * VALUE_PARAMETER, BITSIZE_out1);
@@ -3024,22 +4664,19 @@ end generate nonzero_case;
       <circuit>
         <component_o id="ui_align_plus_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2015-2023 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <copyright>Copyright (C) 2015-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_align_plus_expr_FU"/>
           <parameter name="VALUE_PARAMETER">0</parameter>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
-            <connected_objects/>
           </port_o>
           <NP_functionality LIBRARY="ui_align_plus_expr_FU in1 in2 out1 VALUE_PARAMETER" VERILOG_PROVIDED="generate if (BITSIZE_out1 &gt; VALUE_PARAMETER) assign out1[BITSIZE_out1-1:VALUE_PARAMETER] = (in1[BITSIZE_in1-1:VALUE_PARAMETER] + in2[BITSIZE_in2-1:VALUE_PARAMETER]); endgenerate
 generate if (VALUE_PARAMETER != 0) assign out1[VALUE_PARAMETER-1:0] = 0; endgenerate" VHDL_PROVIDED="begin
@@ -3049,4 +4686,3 @@ generate if (VALUE_PARAMETER != 0) assign out1[VALUE_PARAMETER-1:0] = 0; endgene
     </cell>
   </library>
 </technology>
-

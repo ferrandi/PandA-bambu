@@ -56,12 +56,12 @@ ParserFlowStep::ParserFlowStep(const DesignFlowManagerConstRef _design_flow_mana
 
 ParserFlowStep::~ParserFlowStep() = default;
 
-const std::string ParserFlowStep::GetSignature() const
+std::string ParserFlowStep::GetSignature() const
 {
    return ComputeSignature(parser_step_type, file_name);
 }
 
-const std::string ParserFlowStep::GetName() const
+std::string ParserFlowStep::GetName() const
 {
    return "Parser::" + GetKindText() + "::" + file_name;
 }
@@ -72,7 +72,7 @@ const std::string ParserFlowStep::ComputeSignature(const ParserFlowStep_Type par
    return "Parser::" + STR(parser_step_type) + "::" + file_name;
 }
 
-const std::string ParserFlowStep::GetKindText() const
+std::string ParserFlowStep::GetKindText() const
 {
    return EnumToKindText(parser_step_type);
 }
@@ -103,7 +103,7 @@ void ParserFlowStep::ComputeRelationships(DesignFlowStepSet&, const DesignFlowSt
 {
 }
 
-const DesignFlowStepFactoryConstRef ParserFlowStep::CGetDesignFlowStepFactory() const
+DesignFlowStepFactoryConstRef ParserFlowStep::CGetDesignFlowStepFactory() const
 {
    return design_flow_manager.lock()->CGetDesignFlowStepFactory("Parser");
 }

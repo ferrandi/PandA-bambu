@@ -138,6 +138,6 @@
   Official documentation can be found at http://www.doxygen.org/manual.html .
   
   \subsection doxygen_panda_doc Documenting code in PandA
-  To know how to write a good documentation into PandA project, please see \ref documentation_how_to.
+  To know how to write a good documentation into PandA project, please see \ref dev_guide_documentation.
   
 */

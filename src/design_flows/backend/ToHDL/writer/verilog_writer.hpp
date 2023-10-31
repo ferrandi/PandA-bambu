@@ -46,25 +46,23 @@
 
 #include "language_writer.hpp"
 
-/// STD include
-#include <string>
-
-/// STL include
-#include "custom_set.hpp"
 #include <list>
 #include <map>
+#include <set>
+#include <string>
 #include <vector>
 
 class verilog_writer : public language_writer
 {
  protected:
-   static const char* tokenNames[];
    /// map putting into relation standard gates with the corresponding built-in Verilog statements.
    static const std::map<std::string, std::string> builtin_to_verilog_keyword;
 
-   CustomOrderedSet<std::string> keywords;
+   static const std::set<std::string> keywords;
 
  public:
+   static bool check_keyword_verilog(const std::string& word);
+
    /**
     * Return the name of the language writer.
     */
@@ -193,11 +191,6 @@ class verilog_writer : public language_writer
     */
    void write_module_parametrization(const structural_objectRef& cir) override;
    /**
-    * Write the tail part of the file. Write some lines of comments and some debugging code.
-    * @param cir is the top component.
-    */
-   void write_tail(const structural_objectRef& cir) override;
-   /**
     * write the declaration of all the states of the finite state machine.
     * @param list_of_states is the list of all the states.
     */
@@ -267,9 +260,7 @@ class verilog_writer : public language_writer
       return true;
    }
 
-   bool check_keyword(std::string id) const override;
-
-   void write_timing_specification(const technology_managerConstRef TM, const structural_objectRef& cir) override;
+   bool check_keyword(const std::string& id) const override;
 
    void write_header() override;
 

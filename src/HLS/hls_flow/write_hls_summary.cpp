@@ -55,7 +55,7 @@
 #include "fileIO.hpp"
 #include "memory.hpp"
 
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
 
 WriteHLSSummary::WriteHLSSummary(const ParameterConstRef _parameters, const HLS_managerRef _hls_mgr,
                                  const DesignFlowManagerConstRef _design_flow_manager)
@@ -105,7 +105,7 @@ DesignFlowStep_Status WriteHLSSummary::Exec()
          do
          {
             candidate_out_file_name = out_file_name + "_" + std::to_string(progressive++) + ".xml";
-         } while(boost::filesystem::exists(candidate_out_file_name));
+         } while(std::filesystem::exists(candidate_out_file_name));
          out_file_name = candidate_out_file_name;
          HLSMgr->Rmem->xwrite(out_file_name);
       }
@@ -116,7 +116,7 @@ DesignFlowStep_Status WriteHLSSummary::Exec()
       do
       {
          candidate_out_file_name = out_file_name + "_" + std::to_string(progressive++) + ".xml";
-      } while (boost::filesystem::exists(candidate_out_file_name));
+      } while (std::filesystem::exists(candidate_out_file_name));
       out_file_name = candidate_out_file_name;
       HLSMgr->xwrite(out_file_name);
 #endif

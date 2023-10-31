@@ -3,11 +3,11 @@
 #include <algorithm>
 #include <vector>
 
-#include <mockturtle/traits.hpp>
 #include <mockturtle/generators/arithmetic.hpp>
 #include <mockturtle/networks/aig.hpp>
 #include <mockturtle/networks/xag.hpp>
 #include <mockturtle/properties/mccost.hpp>
+#include <mockturtle/traits.hpp>
 
 using namespace mockturtle;
 

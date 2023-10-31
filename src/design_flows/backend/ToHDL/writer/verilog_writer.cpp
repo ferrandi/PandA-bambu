@@ -57,11 +57,10 @@
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 #include "testbench_generation_constants.hpp"
-#include "time_model.hpp"
+#include "time_info.hpp"
 
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
 #include <fstream>
 #include <functional>
@@ -77,7 +76,7 @@ const std::map<std::string, std::string> verilog_writer::builtin_to_verilog_keyw
     {NOT_GATE_STD, "not"}, {DFF_GATE_STD, "dff"},   {BUFF_GATE_STD, "buf"},
 };
 
-const char* verilog_writer::tokenNames[] = {
+const std::set<std::string> verilog_writer::keywords = {
     "abs", "abstol", "access", "acos", "acosh", "always", "analog", "and", "asin", "asinh", "assign", "atan", "atan2",
     "atanh", "automatic", "begin", "bool", "buf", "bufif0", "bufif1", "case", "casex", "casez", "ceil", "cell", "cmos",
     "config", "continuous", "cos", "cosh", "ddt_nature", "deassign", "default", "defparam", "design", "disable",
@@ -417,11 +416,10 @@ std::string verilog_writer::may_slice_string(const structural_objectRef& cir)
                auto size_fp = Type_fp->vector_size > 0 ? Type_fp->size * Type_fp->vector_size : Type_fp->size;
                auto lsb = GetPointer<port_o>(Owner)->get_lsb();
                return "[" +
-                      STR((1 + boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) *
-                              static_cast<int>(size_fp) +
+                      STR((1 + std::stoi(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) +
                           static_cast<int>(lsb) - 1) +
                       ":" +
-                      STR((boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) +
+                      STR((std::stoi(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) +
                           static_cast<int>(lsb)) +
                       "]";
             }
@@ -459,11 +457,10 @@ std::string verilog_writer::may_slice_string(const structural_objectRef& cir)
                auto size_fp = Type_fp->vector_size > 0 ? Type_fp->size * Type_fp->vector_size : Type_fp->size;
                auto lsb = GetPointer<port_o>(Owner)->get_lsb();
                return "[" +
-                      STR((1 + boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) *
-                              static_cast<int>(size_fp) +
+                      STR((1 + std::stoi(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) +
                           static_cast<int>(lsb) - 1) +
                       ":" +
-                      STR((boost::lexical_cast<int>(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) +
+                      STR((std::stoi(GetPointer<port_o>(cir)->get_id())) * static_cast<int>(size_fp) +
                           static_cast<int>(lsb)) +
                       "]";
             }
@@ -758,7 +755,7 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef& port,
             object_bounded->get_owner()->get_kind() == signal_vector_o_K)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bounded to a port of a port vector");
-            auto vector_position = boost::lexical_cast<unsigned int>(object_bounded->get_id());
+            auto vector_position = static_cast<unsigned>(std::stoul(object_bounded->get_id()));
             if(slice and slice->get_id() != object_bounded->get_owner()->get_id())
             {
                if(local_first_port_analyzed)
@@ -846,7 +843,7 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef& port,
             }
             auto* con = GetPointer<constant_o>(object_bounded);
             std::string trimmed_value = "";
-            auto long_value = boost::lexical_cast<unsigned long long int>(con->get_value());
+            auto long_value = std::stoull(con->get_value());
             for(unsigned int ind = 0; ind < GET_TYPE_SIZE(con); ind++)
             {
                trimmed_value = trimmed_value + (((1LLU << (GET_TYPE_SIZE(con) - ind - 1)) & long_value) ? '1' : '0');
@@ -992,7 +989,7 @@ void verilog_writer::write_port_binding(const structural_objectRef& port, const 
    {
       auto* con = GetPointer<constant_o>(object_bounded);
       std::string trimmed_value = "";
-      auto long_value = boost::lexical_cast<unsigned long long int>(con->get_value());
+      auto long_value = std::stoull(con->get_value());
       for(unsigned int ind = 0; ind < GET_TYPE_SIZE(con); ind++)
       {
          trimmed_value = trimmed_value + (((1LLU << (GET_TYPE_SIZE(con) - ind - 1)) & long_value) ? '1' : '0');
@@ -1018,7 +1015,7 @@ void verilog_writer::write_io_signal_post_fix(const structural_objectRef& port, 
    {
       auto* con = GetPointer<constant_o>(sig);
       std::string trimmed_value = "";
-      auto long_value = boost::lexical_cast<unsigned long long int>(con->get_value());
+      auto long_value = std::stoull(con->get_value());
       for(unsigned int ind = 0; ind < GET_TYPE_SIZE(con); ind++)
       {
          trimmed_value = trimmed_value + (((1LLU << (GET_TYPE_SIZE(con) - ind - 1)) & long_value) ? '1' : '0');
@@ -1208,10 +1205,6 @@ void verilog_writer::write_module_parametrization(const structural_objectRef& ci
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written module generics of " + cir->get_path());
 }
 
-void verilog_writer::write_tail(const structural_objectRef&)
-{
-}
-
 void verilog_writer::write_state_declaration(const structural_objectRef& cir,
                                              const std::list<std::string>& list_of_states, const std::string&,
                                              const std::string& reset_state, bool one_hot)
@@ -1226,7 +1219,7 @@ void verilog_writer::write_state_declaration(const structural_objectRef& cir,
    unsigned max_value = 0;
    for(auto it = list_of_states.begin(); it != it_end; ++it)
    {
-      max_value = std::max(max_value, boost::lexical_cast<unsigned int>(it->substr(strlen(STATE_NAME_PREFIX))));
+      max_value = std::max(max_value, static_cast<unsigned>(std::stoul(it->substr(strlen(STATE_NAME_PREFIX)))));
    }
    if(max_value != n_states - 1)
    {
@@ -1246,7 +1239,7 @@ void verilog_writer::write_state_declaration(const structural_objectRef& cir,
       {
          indented_output_stream->Append(
              *it + " = " + STR(max_value + 1) + "'b" +
-             encode_one_hot(1 + max_value, boost::lexical_cast<unsigned int>(it->substr(strlen(STATE_NAME_PREFIX)))));
+             encode_one_hot(1 + max_value, static_cast<unsigned>(std::stoul(it->substr(strlen(STATE_NAME_PREFIX))))));
       }
       else
       {
@@ -1831,7 +1824,7 @@ void verilog_writer::write_transition_output_functions(
                               if((*in_or_conditions_tokens_it)[0] == '&')
                               {
                                  auto n_bits = vec_size == 0 ? port_size : vec_size;
-                                 auto pos = boost::lexical_cast<unsigned int>((*in_or_conditions_tokens_it).substr(1));
+                                 auto pos = static_cast<unsigned>(std::stoul((*in_or_conditions_tokens_it).substr(1)));
                                  if(unique_case_condition)
                                  {
                                     res_or_conditions = "";
@@ -1985,8 +1978,8 @@ void verilog_writer::write_transition_output_functions(
             {
                continue;
             }
-            if(boost::starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") ||
-               boost::starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
+            if(starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") ||
+               starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
             {
                port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
                if((single_proc || output_index == i) &&
@@ -2023,8 +2016,8 @@ void verilog_writer::write_transition_output_functions(
          {
             continue;
          }
-         if(boost::starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") ||
-            boost::starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
+         if(starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") ||
+            starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
          {
             port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
             if((single_proc || output_index == i) &&
@@ -2058,7 +2051,6 @@ void verilog_writer::write_NP_functionalities(const structural_objectRef& cir)
    std::string beh_desc = np->get_NP_functionality(NP_functionality::VERILOG_PROVIDED);
    THROW_ASSERT(beh_desc != "", "VERILOG behavioral description is missing for module: " +
                                     HDL_manager::convert_to_identifier(this, GET_TYPE_NAME(cir)));
-   remove_escaped(beh_desc);
    /// manage reset by preprocessing the behavioral description
    if(!parameters->getOption<bool>(OPT_reset_level))
    {
@@ -2224,109 +2216,44 @@ verilog_writer::verilog_writer(const ParameterConstRef _parameters)
     : language_writer(STD_OPENING_CHAR, STD_CLOSING_CHAR, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
-   for(auto& tokenName : tokenNames)
-   {
-      keywords.insert(tokenName);
-   }
 }
 
 verilog_writer::~verilog_writer() = default;
 
-bool verilog_writer::check_keyword(std::string id) const
+bool verilog_writer::check_keyword(const std::string& id) const
 {
-   return keywords.find(id) != keywords.end();
+   return check_keyword_verilog(id);
 }
 
-void verilog_writer::write_timing_specification(const technology_managerConstRef TM, const structural_objectRef& circ)
+bool verilog_writer::check_keyword_verilog(const std::string& id)
 {
-   auto* mod_inst = GetPointer<module>(circ);
-   if(mod_inst->get_internal_objects_size() > 0)
-   {
-      return;
-   }
-   const NP_functionalityRef& np = mod_inst->get_NP_functionality();
-   if(np && (np->exist_NP_functionality(NP_functionality::FSM) or np->exist_NP_functionality(NP_functionality::FSM_CS)))
-   {
-      return;
-   }
-
-   std::string library = TM->get_library(circ->get_typeRef()->id_type);
-   const technology_nodeRef& fu = TM->get_fu(circ->get_typeRef()->id_type, library);
-
-   if(!GetPointer<functional_unit>(fu))
-   {
-      return;
-   }
-
-   indented_output_stream->Append("\n");
-   write_comment("Timing annotations\n");
-   indented_output_stream->Append("specify\n");
-   indented_output_stream->Indent();
-   const functional_unit::operation_vec& ops = GetPointer<functional_unit>(fu)->get_operations();
-   for(unsigned int i = 0; i < ops.size(); i++)
-   {
-      std::map<std::string, std::map<std::string, double>> delays =
-          GetPointer<operation>(ops[i])->get_pin_to_pin_delay();
-      if(delays.size() == 0)
-      {
-         for(unsigned int out = 0; out < mod_inst->get_out_port_size(); out++)
-         {
-            for(unsigned int in = 0; in < mod_inst->get_in_port_size(); in++)
-            {
-               if(ops.size() > 1)
-               {
-                  indented_output_stream->Append("if (sel_" + GetPointer<operation>(ops[i])->operation_name +
-                                                 " == 1'b1) ");
-               }
-               THROW_ASSERT(GetPointer<operation>(ops[i])->time_m,
-                            "the operation has not any timing information associated with");
-               indented_output_stream->Append(
-                   "(" + mod_inst->get_in_port(in)->get_id() + " *> " + mod_inst->get_out_port(out)->get_id() +
-                   ") = " + STR(GetPointer<operation>(ops[i])->time_m->get_execution_time()) + ";\n");
-            }
-         }
-      }
-      else
-      {
-         for(auto& delay : delays)
-         {
-            for(auto o = delay.second.begin(); o != delay.second.end(); ++o)
-            {
-               if(ops.size() > 1)
-               {
-                  indented_output_stream->Append("if (sel_" + GetPointer<operation>(ops[i])->operation_name +
-                                                 " == 1'b1) ");
-               }
-               indented_output_stream->Append("(" + delay.first + " *> " + o->first + ") = " + STR(o->second) + ";\n");
-            }
-         }
-      }
-   }
-   indented_output_stream->Deindent();
-   indented_output_stream->Append("endspecify\n\n");
+   return keywords.count(id);
 }
 
 void verilog_writer::write_header()
 {
-   indented_output_stream->Append("`ifdef __ICARUS__\n");
-   indented_output_stream->Append("  `define _SIM_HAVE_CLOG2\n");
-   indented_output_stream->Append("`endif\n");
-   indented_output_stream->Append("`ifdef VERILATOR\n");
-   indented_output_stream->Append("  `define _SIM_HAVE_CLOG2\n");
-   indented_output_stream->Append("`endif\n");
-   indented_output_stream->Append("`ifdef MODEL_TECH\n");
-   indented_output_stream->Append("  `define _SIM_HAVE_CLOG2\n");
-   indented_output_stream->Append("`endif\n");
-   indented_output_stream->Append("`ifdef VCS\n");
-   indented_output_stream->Append("  `define _SIM_HAVE_CLOG2\n");
-   indented_output_stream->Append("`endif\n");
-   indented_output_stream->Append("`ifdef NCVERILOG\n");
-   indented_output_stream->Append("  `define _SIM_HAVE_CLOG2\n");
-   indented_output_stream->Append("`endif\n");
-   indented_output_stream->Append("`ifdef XILINX_SIMULATOR\n");
-   indented_output_stream->Append("  `define _SIM_HAVE_CLOG2\n");
-   indented_output_stream->Append("`endif\n");
-   indented_output_stream->Append("`ifdef XILINX_ISIM\n");
-   indented_output_stream->Append("  `define _SIM_HAVE_CLOG2\n");
-   indented_output_stream->Append("`endif\n\n");
+   indented_output_stream->Append(R"(
+`ifdef __ICARUS__
+  `define _SIM_HAVE_CLOG2
+`endif
+`ifdef VERILATOR
+  `define _SIM_HAVE_CLOG2
+`endif
+`ifdef MODEL_TECH
+  `define _SIM_HAVE_CLOG2
+`endif
+`ifdef VCS
+  `define _SIM_HAVE_CLOG2
+`endif
+`ifdef NCVERILOG
+  `define _SIM_HAVE_CLOG2
+`endif
+`ifdef XILINX_SIMULATOR
+  `define _SIM_HAVE_CLOG2
+`endif
+`ifdef XILINX_ISIM
+  `define _SIM_HAVE_CLOG2
+`endif
+
+)");
 }

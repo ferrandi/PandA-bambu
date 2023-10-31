@@ -2,8 +2,8 @@
 
 #include <kitty/constructors.hpp>
 #include <kitty/dynamic_truth_table.hpp>
-#include <mockturtle/algorithms/dsd_decomposition.hpp>
 #include <mockturtle/algorithms/decomposition.hpp>
+#include <mockturtle/algorithms/dsd_decomposition.hpp>
 #include <mockturtle/algorithms/simulation.hpp>
 #include <mockturtle/networks/aig.hpp>
 #include <mockturtle/networks/klut.hpp>
@@ -13,7 +13,7 @@ using namespace mockturtle;
 
 TEST_CASE( "Full DSD decomposition on some 4-input functions into AIGs", "[dsd_decomposition]" )
 {
-  std::vector<std::string> functions = {"b0bb", "00b0", "0804", "090f"};
+  std::vector<std::string> functions = { "b0bb", "00b0", "0804", "090f" };
 
   for ( auto const& func : functions )
   {
@@ -30,7 +30,7 @@ TEST_CASE( "Full DSD decomposition on some 4-input functions into AIGs", "[dsd_d
       CHECK( false );
       return aig.get_constant( false );
     };
-    aig.create_po( dsd_decomposition( aig, table, {x1, x2, x3, x4}, fn ) );
+    aig.create_po( dsd_decomposition( aig, table, { x1, x2, x3, x4 }, fn ) );
 
     default_simulator<kitty::dynamic_truth_table> sim( table.num_vars() );
     CHECK( simulate<kitty::dynamic_truth_table>( aig, sim )[0] == table );
@@ -39,9 +39,9 @@ TEST_CASE( "Full DSD decomposition on some 4-input functions into AIGs", "[dsd_d
 
 TEST_CASE( "Full DSD decomposition on some 10-input functions into XAGs", "[dsd_decomposition]" )
 {
-  std::vector<std::string> functions = {"0080004000080004ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-                                        "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003333bbbbf3f3fbfbff33ffbbfff3fffb",
-                                        "000000000000000000000000000000003333bbbbf3f3fbfbff33ffbbfff3fffb3333bbbbf3f3fbfbff33ffbbfff3fffb3333bbbbf3f3fbfbff33ffbbfff3fffb3333bbbbf3f3fbfbff33ffbbfff3fffb3333bbbbf3f3fbfbff33ffbbfff3fffb3333bbbbf3f3fbfbff33ffbbfff3fffb3333bbbbf3f3fbfbff33ffbbfff3fffb"};
+  std::vector<std::string> functions = { "0080004000080004ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                                         "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003333bbbbf3f3fbfbff33ffbbfff3fffb",
+                                         "000000000000000000000000000000003333bbbbf3f3fbfbff33ffbbfff3fffb3333bbbbf3f3fbfbff33ffbbfff3fffb3333bbbbf3f3fbfbff33ffbbfff3fffb3333bbbbf3f3fbfbff33ffbbfff3fffb3333bbbbf3f3fbfbff33ffbbfff3fffb3333bbbbf3f3fbfbff33ffbbfff3fffb3333bbbbf3f3fbfbff33ffbbfff3fffb" };
 
   for ( auto const& func : functions )
   {
@@ -79,7 +79,7 @@ TEST_CASE( "Partial DSD decomposition into k-LUT network", "[dsd_decomposition]"
     return ntk.create_node( children, remainder );
   };
 
-  ntk.create_po( dsd_decomposition( ntk, table, {x1, x2, x3, x4, x5}, fn ) );
+  ntk.create_po( dsd_decomposition( ntk, table, { x1, x2, x3, x4, x5 }, fn ) );
 
   CHECK( ntk.num_gates() == 3u );
 

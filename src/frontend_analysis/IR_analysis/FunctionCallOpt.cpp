@@ -42,15 +42,21 @@
 
 #include "FunctionCallOpt.hpp"
 
+#include "Dominance.hpp"
+#include "Parameter.hpp"
 #include "application_manager.hpp"
 #include "basic_block.hpp"
 #include "basic_blocks_graph_constructor.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "ext_tree_node.hpp"
 #include "function_behavior.hpp"
+#include "hls.hpp"
+#include "hls_manager.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
@@ -58,68 +64,79 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-#include "Dominance.hpp"
-#include "Parameter.hpp"
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
-#include "string_manipulation.hpp" // for GET_CLASS
+#include <functional>
 
 #define PARAMETER_INLINE_MAX_COST "inline-max-cost"
-#define DEAFULT_MAX_INLINE_CONST 65
+#define DEAFULT_MAX_INLINE_CONST 60
 
 CustomSet<unsigned int> FunctionCallOpt::always_inline;
 CustomSet<unsigned int> FunctionCallOpt::never_inline;
 CustomMap<unsigned int, CustomSet<std::tuple<unsigned int, FunctionOptType>>> FunctionCallOpt::opt_call;
-size_t FunctionCallOpt::max_inline_cost = DEAFULT_MAX_INLINE_CONST;
-unsigned FunctionCallOpt::version_uid = 1U;
+size_t FunctionCallOpt::inline_max_cost = DEAFULT_MAX_INLINE_CONST;
 
-static CustomUnorderedMap<kind, size_t> op_costs = {{mult_expr_K, DEAFULT_MAX_INLINE_CONST},
-                                                    {widen_mult_expr_K, DEAFULT_MAX_INLINE_CONST},
-                                                    {widen_mult_hi_expr_K, DEAFULT_MAX_INLINE_CONST},
-                                                    {widen_mult_lo_expr_K, DEAFULT_MAX_INLINE_CONST},
-                                                    {trunc_div_expr_K, DEAFULT_MAX_INLINE_CONST},
-                                                    {exact_div_expr_K, DEAFULT_MAX_INLINE_CONST},
-                                                    {round_div_expr_K, DEAFULT_MAX_INLINE_CONST},
-                                                    {ceil_div_expr_K, DEAFULT_MAX_INLINE_CONST},
-                                                    {floor_div_expr_K, DEAFULT_MAX_INLINE_CONST},
-                                                    {trunc_mod_expr_K, DEAFULT_MAX_INLINE_CONST},
-                                                    {round_mod_expr_K, DEAFULT_MAX_INLINE_CONST},
-                                                    {ceil_mod_expr_K, DEAFULT_MAX_INLINE_CONST},
-                                                    {floor_mod_expr_K, DEAFULT_MAX_INLINE_CONST},
-                                                    {view_convert_expr_K, 0},
-                                                    {nop_expr_K, 0},
-                                                    {call_expr_K, 8}};
+static CustomUnorderedMap<kind, size_t> op_costs = {
+    {call_expr_K, 8},          {mult_expr_K, 3},      {widen_mult_expr_K, 3},   {widen_mult_hi_expr_K, 3},
+    {widen_mult_lo_expr_K, 3}, {trunc_div_expr_K, 3}, {exact_div_expr_K, 3},    {round_div_expr_K, 3},
+    {ceil_div_expr_K, 3},      {floor_div_expr_K, 3}, {trunc_mod_expr_K, 3},    {round_mod_expr_K, 3},
+    {ceil_mod_expr_K, 3},      {floor_mod_expr_K, 3}, {view_convert_expr_K, 0}, {convert_expr_K, 0},
+    {nop_expr_K, 0},           {ssa_name_K, 0},       {addr_expr_K, 0},         {bit_ior_concat_expr_K, 0},
+    {extract_bit_expr_K, 0}};
+
+static std::string __arg_suffix(const std::vector<tree_nodeRef>& tns)
+{
+   std::stringstream suffix;
+   for(const auto& tn : tns)
+   {
+      if(tree_helper::IsConstant(tn))
+      {
+         suffix << tn;
+      }
+      else
+      {
+         suffix << "_" << STR(GET_INDEX_CONST_NODE(tn));
+      }
+   }
+   const auto hash = std::hash<std::string>{}(suffix.str());
+   suffix.str(std::string());
+   suffix << "_" << std::hex << hash;
+   return suffix.str();
+}
 
 FunctionCallOpt::FunctionCallOpt(const ParameterConstRef Param, const application_managerRef _AppM,
                                  unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, FUNCTION_CALL_OPT, _design_flow_manager, Param), caller_bb()
 {
    debug_level = Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
-   if(Param->IsParameter(PARAMETER_INLINE_MAX_COST))
+   if(never_inline.empty())
    {
-      max_inline_cost = Param->GetParameter<size_t>(PARAMETER_INLINE_MAX_COST);
-   }
-   if(Param->isOption(OPT_inline_functions))
-   {
-      const auto TM = AppM->get_tree_manager();
-      const auto fnames = SplitString(Param->getOption<std::string>(OPT_inline_functions), ",");
-      for(const auto& fname_cond : fnames)
+      if(Param->IsParameter(PARAMETER_INLINE_MAX_COST))
       {
-         const auto toks = SplitString(fname_cond, "=");
-         const auto& fname = toks.at(0);
-         const auto fnode = TM->GetFunction(fname);
-         if(fnode)
+         inline_max_cost = Param->GetParameter<size_t>(PARAMETER_INLINE_MAX_COST);
+      }
+      if(Param->isOption(OPT_inline_functions))
+      {
+         const auto TM = AppM->get_tree_manager();
+         const auto fnames = SplitString(Param->getOption<std::string>(OPT_inline_functions), ",");
+         for(const auto& fname_cond : fnames)
          {
-            auto& inline_set = (!(toks.size() > 1) || toks.at(1) == "1") ? always_inline : never_inline;
-            inline_set.insert(fnode->index);
-            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                           "Required " + STR((!(toks.size() > 1) || toks.at(1) == "1") ? "always" : "never") +
-                               " inline for function " + fname);
-         }
-         else
-         {
-            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Required inline function not found: " + fname);
+            const auto toks = SplitString(fname_cond, "=");
+            const auto& fname = toks.at(0);
+            const auto fnode = TM->GetFunction(fname);
+            if(fnode)
+            {
+               auto& inline_set = (!(toks.size() > 1) || toks.at(1) == "1") ? always_inline : never_inline;
+               inline_set.insert(fnode->index);
+               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                              "Required " + STR((!(toks.size() > 1) || toks.at(1) == "1") ? "always" : "never") +
+                                  " inline for function " + fname);
+            }
+            else
+            {
+               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Required inline function not found: " + fname);
+            }
          }
       }
+      never_inline.insert(0);
    }
 }
 
@@ -185,6 +202,13 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
 {
    THROW_ASSERT(!parameters->IsParameter("function-opt") || parameters->GetParameter<bool>("function-opt"),
                 "Function call optimization should not be executed");
+   if(GetPointer<const HLS_manager>(AppM) && GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) &&
+      GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---Function already scheduled, inlining is not possible any more");
+      return DesignFlowStep_Status::UNCHANGED;
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    const auto TM = AppM->get_tree_manager();
    const auto fd = GetPointerS<function_decl>(TM->GetTreeNode(function_id));
@@ -231,9 +255,9 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "Versioning required for call statement " + GET_CONST_NODE(stmt)->ToString());
                      const auto call_node = GET_CONST_NODE(stmt);
-                     tree_nodeRef called_fn;
+                     tree_nodeRef called_fn = nullptr;
                      tree_nodeRef ret_val = nullptr;
-                     std::vector<tree_nodeRef> const* args;
+                     std::vector<tree_nodeRef> const* args = nullptr;
                      if(call_node->get_kind() == gimple_call_K)
                      {
                         const auto gc = GetPointerS<const gimple_call>(call_node);
@@ -260,11 +284,20 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                      THROW_ASSERT(GET_CONST_NODE(called_fn)->get_kind() == function_decl_K,
                                   "Call statement should address a function declaration");
 
-                     const auto version_fn = tree_man->CloneFunction(called_fn, "_const" + STR(version_uid++));
+                     const auto version_suffix = __arg_suffix(*args);
+                     if(ends_with(tree_helper::GetFunctionName(TM, called_fn), version_suffix))
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call already versioned...");
+                        continue;
+                     }
+                     const auto version_fn = tree_man->CloneFunction(called_fn, version_suffix);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call before versioning : " + STR(stmt));
                      if(ret_val)
                      {
-                        const auto ce = tree_man->CreateCallExpr(version_fn, *args, BUILTIN_SRCP);
+                        const auto has_args =
+                            !GetPointer<const function_decl>(GET_CONST_NODE(version_fn))->list_of_args.empty();
+                        const auto ce = tree_man->CreateCallExpr(
+                            version_fn, has_args ? *args : std::vector<tree_nodeRef>(), BUILTIN_SRCP);
                         const auto ga = GetPointerS<const gimple_assign>(call_node);
                         AppM->GetCallGraphManager()->RemoveCallPoint(function_id, called_fn->index, stmt->index);
                         TM->ReplaceTreeNode(stmt, ga->op1, ce);
@@ -320,6 +353,10 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "Current function is marked as top RTL design, skipping...");
    }
+   else if(never_inline.count(function_id))
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Current function is marked as never inline, skipping...");
+   }
    else
    {
       const auto CGM = AppM->CGetCallGraphManager();
@@ -341,22 +378,23 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
       {
          const auto loop_count = detect_loops(sl);
          bool has_simd = false;
-         bool has_memory = false;
-         const auto body_cost = compute_cost(sl, has_simd, has_memory);
+         const auto body_cost = compute_cost(sl, has_simd);
          const auto omp_simd_enabled = parameters->getOption<int>(OPT_gcc_openmp_simd);
          has_simd &= omp_simd_enabled;
-         const bool force_inline =
-             always_inline.count(function_id) || ((body_cost * call_count) <= max_inline_cost) || call_count == 1;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Current function information:");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Internal loops : " + STR(loop_count));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call points    : " + STR(call_count));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Body cost      : " + STR(body_cost));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Memory access  : " + STR(has_memory ? "yes" : "no"));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---OpenMP SIMD    : " + STR(has_simd ? "yes" : "no"));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Force inline   : " + STR(force_inline ? "yes" : "no"));
-         if(!has_simd && !has_memory)
+                        "---Force inline   : " + STR(always_inline.count(function_id) ? "yes" : "no"));
+         const bool inline_funciton = always_inline.count(function_id) || ((body_cost * call_count) <= inline_max_cost);
+         if(has_simd)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "Current function has OpenMP SIMD constructs, inlining postponed");
+         }
+         else
          {
             InEdgeIterator ie, ie_end;
             for(boost::tie(ie, ie_end) = boost::in_edges(function_v, *CG); ie != ie_end; ++ie)
@@ -399,7 +437,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                                     "---Call statement carries alias dependencies, skipping...");
                      continue;
                   }
-                  if(force_inline)
+                  if(inline_funciton)
                   {
                      if(!omp_simd_enabled || loop_count == 0)
                      {
@@ -468,14 +506,6 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                                       TM, GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
             }
          }
-         else
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "Current function has " +
-                               STR((has_simd && has_memory) ? "OpenMP SIMD and memory access" :
-                                                              (has_simd ? "OpenMP SIMD" : "memory access")) +
-                               " constructs, inlining postponed");
-         }
       }
       else
       {
@@ -538,10 +568,9 @@ bool FunctionCallOpt::HasConstantArgs(const tree_nodeConstRef& call_stmt)
    return false;
 }
 
-size_t FunctionCallOpt::compute_cost(const statement_list* body, bool& has_simd, bool& has_memory)
+size_t FunctionCallOpt::compute_cost(const statement_list* body, bool& has_simd)
 {
    size_t total_cost = 0;
-   has_memory = false;
    has_simd = false;
    for(const auto& bb : body->list_of_bloc)
    {
@@ -550,11 +579,6 @@ size_t FunctionCallOpt::compute_cost(const statement_list* body, bool& has_simd,
          const auto stmt = GET_CONST_NODE(stmt_rdx);
          if(stmt->get_kind() == gimple_assign_K)
          {
-            // if(tree_helper::IsLoad(stmt, function_behavior->get_function_mem()) || tree_helper::IsStore(stmt,
-            // function_behavior->get_function_mem()))
-            // {
-            //    has_memory = true;
-            // }
             const auto ga = GetPointerS<const gimple_assign>(stmt);
             const auto op_kind = GET_CONST_NODE(ga->op1)->get_kind();
             const auto op_cost = op_costs.find(op_kind);
@@ -564,7 +588,15 @@ size_t FunctionCallOpt::compute_cost(const statement_list* body, bool& has_simd,
             }
             else
             {
-               total_cost += 1;
+               if(op_kind == lshift_expr_K || op_kind == rshift_expr_K || op_kind == bit_and_expr_K ||
+                  op_kind == bit_ior_expr_K)
+               {
+                  total_cost += !tree_helper::IsConstant(GetPointerS<const binary_expr>(GET_CONST_NODE(ga->op1))->op1);
+               }
+               else
+               {
+                  total_cost += 1;
+               }
             }
          }
          else if(stmt->get_kind() == gimple_cond_K || stmt->get_kind() == gimple_call_K)

@@ -91,7 +91,7 @@
 #include "math.h"
 #include "string_manipulation.hpp" // for GET_CLASS
 #include <boost/multiprecision/integer.hpp>
-#include <boost/regex.hpp>
+#include <regex>
 
 CustomMap<CallGraph::vertex_descriptor, FunctionVersionRef> soft_float_cg_ext::funcFF;
 CustomMap<unsigned int, std::array<tree_nodeRef, 8>> soft_float_cg_ext::versioning_args;
@@ -2800,16 +2800,16 @@ std::string FloatFormat::ToString() const
 FloatFormatRef FloatFormat::FromString(std::string ff_str)
 {
    std::replace(ff_str.begin(), ff_str.end(), '_', '-');
-   static const boost::regex fp_format("^e(\\d+)m(\\d+)b([_-]?\\d+)(\\D)(\\D)(\\D*)(\\d?)$");
-   boost::cmatch what;
-   if(boost::regex_search(ff_str.data(), what, fp_format))
+   static const std::regex fp_format("^e(\\d+)m(\\d+)b([_-]?\\d+)(\\D)(\\D)(\\D*)(\\d?)$");
+   std::cmatch what;
+   if(std::regex_search(ff_str.data(), what, fp_format))
    {
-      const auto e = boost::lexical_cast<int>(
-          what[FP_FORMAT_EXP].first, static_cast<size_t>(what[FP_FORMAT_EXP].second - what[FP_FORMAT_EXP].first));
-      const auto m = boost::lexical_cast<int>(
-          what[FP_FORMAT_SIG].first, static_cast<size_t>(what[FP_FORMAT_SIG].second - what[FP_FORMAT_SIG].first));
-      const auto b = boost::lexical_cast<int32_t>(
-          what[FP_FORMAT_BIAS].first, static_cast<size_t>(what[FP_FORMAT_BIAS].second - what[FP_FORMAT_BIAS].first));
+      const auto e = std::stoi(std::string(
+          what[FP_FORMAT_EXP].first, static_cast<size_t>(what[FP_FORMAT_EXP].second - what[FP_FORMAT_EXP].first)));
+      const auto m = std::stoi(std::string(
+          what[FP_FORMAT_SIG].first, static_cast<size_t>(what[FP_FORMAT_SIG].second - what[FP_FORMAT_SIG].first)));
+      const auto b = std::stoi(std::string(
+          what[FP_FORMAT_BIAS].first, static_cast<size_t>(what[FP_FORMAT_BIAS].second - what[FP_FORMAT_BIAS].first)));
       FloatFormatRef ff(new FloatFormat(static_cast<uint8_t>(e), static_cast<uint8_t>(m), b));
       switch(*what[FP_FORMAT_RND].first)
       {
@@ -2836,8 +2836,8 @@ FloatFormatRef FloatFormat::FromString(std::string ff_str)
          default:
             break;
       }
-      const auto spec = boost::lexical_cast<std::string>(
-          what[FP_FORMAT_SPEC].first, static_cast<size_t>(what[FP_FORMAT_SPEC].second - what[FP_FORMAT_SPEC].first));
+      const auto spec = std::string(what[FP_FORMAT_SPEC].first,
+                                    static_cast<size_t>(what[FP_FORMAT_SPEC].second - what[FP_FORMAT_SPEC].first));
       for(const auto& s : spec)
       {
          switch(s)
@@ -2854,7 +2854,7 @@ FloatFormatRef FloatFormat::FromString(std::string ff_str)
       }
       if(what[FP_FORMAT_SIGN].second - what[FP_FORMAT_SIGN].first)
       {
-         const auto sign = boost::lexical_cast<bool>(what[FP_FORMAT_SIGN].first, 1);
+         const auto sign = static_cast<bool>(std::stoi(std::string(what[FP_FORMAT_SIGN].first, 1)));
          ff->sign = sign ? bit_lattice::ONE : bit_lattice::ZERO;
       }
       return ff;

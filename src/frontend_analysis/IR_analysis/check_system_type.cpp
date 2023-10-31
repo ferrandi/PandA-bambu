@@ -42,7 +42,6 @@
  */
 
 /// Autoheader include
-#include "config_HAVE_LEON3.hpp"
 #include "config_LIBBAMBU_SRCDIR.hpp"
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
@@ -68,14 +67,13 @@
 #include "tree_reindex.hpp"
 
 /// Utility include
-#include "boost/filesystem/operations.hpp"
-#include "boost/filesystem/path.hpp"
+#include <filesystem>
 
 /// Wrapper include
 #include "compiler_wrapper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-#define FILENAME_NORM(name) ((boost::filesystem::path(name)).normalize().string())
+#define FILENAME_NORM(name) (std::filesystem::path(name).lexically_normal().string())
 
 std::vector<std::string> CheckSystemType::systemIncPath;
 
@@ -137,10 +135,6 @@ const CustomUnorderedSet<std::string> CheckSystemType::library_system_functions 
 
 const CustomUnorderedSet<std::string> CheckSystemType::library_system_includes = {{"math.h"}};
 
-#if HAVE_LEON3
-const CustomUnorderedSet<std::string> CheckSystemType::not_supported_leon3_functions = {{"fopen"}};
-#endif
-
 const CustomUnorderedMap<std::string, std::string> CheckSystemType::undefined_library_function_include = {
     {"atof", "stdlib.h"},     {"atoi", "stdlib.h"},   {"srand48", "stdlib.h"},
     {"va_start", "stdarg.h"}, {"va_end", "stdarg.h"}, {"lgamma", "math.h"},
@@ -170,9 +164,7 @@ CheckSystemType::ComputeFrontendRelationships(const DesignFlowStep::Relationship
    {
       case(PRECEDENCE_RELATIONSHIP):
       {
-#if HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
-#endif
          break;
       }
       case(DEPENDENCE_RELATIONSHIP):
@@ -360,15 +352,6 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
             if(fd->name && GET_NODE(fd->name)->get_kind() == identifier_node_K)
             {
                const auto in = GetPointerS<identifier_node>(GET_NODE(fd->name));
-#if HAVE_LEON3
-               if(not_supported_leon3_functions.count(in->strg))
-               {
-                  if(parameters->getOption<bool>(OPT_without_operating_system))
-                  {
-                     THROW_ERROR("Leon3 without operating system does not support function " + in->strg);
-                  }
-               }
-#endif
                if(rename_function.count(in->strg))
                {
                   in->strg = rename_function.at(in->strg);
@@ -394,7 +377,6 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
          {
             dn->library_system_flag = true;
          }
-#if HAVE_BAMBU_BUILT
          if(include.find("etc/libbambu") != std::string::npos)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---In libbambu");
@@ -404,8 +386,6 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---In libbambu");
          }
-#endif
-
          recursive_examinate(dn->type, already_visited);
          break;
       }
@@ -650,7 +630,6 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
             case record_type_K:
             {
                const auto rt = GetPointerS<record_type>(curr_tn);
-#if HAVE_BAMBU_BUILT
                for(const auto& it : rt->list_of_flds)
                {
                   recursive_examinate(it, already_visited);
@@ -659,7 +638,6 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
                      rt->libbambu_flag = true;
                   }
                }
-#endif
                for(const auto& it : rt->list_of_fncs)
                {
                   recursive_examinate(it, already_visited);
@@ -669,7 +647,6 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
             case union_type_K:
             {
                const auto ut = GetPointerS<union_type>(curr_tn);
-#if HAVE_BAMBU_BUILT
                for(const auto& it : ut->list_of_flds)
                {
                   recursive_examinate(it, already_visited);
@@ -678,7 +655,6 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
                      ut->libbambu_flag = true;
                   }
                }
-#endif
                for(const auto& it : ut->list_of_fncs)
                {
                   recursive_examinate(it, already_visited);
@@ -816,7 +792,6 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
          }
          bool is_system;
          const auto include = std::get<0>(behavioral_helper->get_definition(index, is_system));
-#if HAVE_BAMBU_BUILT
          if((include.find("etc/libbambu") != std::string::npos) ||
             (include.find(PANDA_DATA_INSTALLDIR "/panda/ac_types/include") != std::string::npos) ||
             (include.find(PANDA_DATA_INSTALLDIR "/panda/ac_math/include") != std::string::npos) ||
@@ -825,7 +800,6 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
          {
             ty->libbambu_flag = true;
          }
-#endif
          if(!ty->system_flag && (is_system || is_system_include(include)))
          {
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "System type");
@@ -969,6 +943,7 @@ void CheckSystemType::build_include_structures(ParameterConstRef parameters)
       if(tok_iter != "")
       {
          std::string temp;
+         std::error_code ec;
          if(getenv("MINGW_INST_DIR"))
          {
             std::string mingw_prefix = getenv("MINGW_INST_DIR");
@@ -984,30 +959,36 @@ void CheckSystemType::build_include_structures(ParameterConstRef parameters)
          {
             const std::string app_prefix = getenv("APPDIR");
             temp = FILENAME_NORM(tok_iter);
-            systemIncPath.push_back(boost::filesystem::weakly_canonical(temp).string());
-            if(temp.find(app_prefix) != 0)
+            const auto canon_temp = std::filesystem::weakly_canonical(temp, ec);
+            if(!ec)
             {
-               temp = app_prefix + "/" + FILENAME_NORM(tok_iter);
-            }
-            else
-            {
-               temp = temp.substr(app_prefix.size());
+               systemIncPath.push_back(canon_temp.string());
+               if(temp.find(app_prefix) != 0)
+               {
+                  temp = app_prefix + "/" + FILENAME_NORM(tok_iter);
+               }
+               else
+               {
+                  temp = temp.substr(app_prefix.size());
+               }
             }
          }
          else
          {
             temp = FILENAME_NORM(tok_iter);
          }
-         systemIncPath.push_back(boost::filesystem::weakly_canonical(temp).string());
+         const auto canon_temp = std::filesystem::weakly_canonical(temp, ec);
+         if(!ec)
+         {
+            systemIncPath.push_back(canon_temp.string());
+         }
       }
    }
    systemIncPath.push_back("/usr/local/share/hframework/include");
-#if HAVE_BAMBU_BUILT
    if(!parameters->isOption(OPT_pretty_print))
    {
       systemIncPath.push_back(LIBBAMBU_SRCDIR);
    }
-#endif
 }
 
 std::string CheckSystemType::getRealInclName(const std::string& include)
@@ -1023,12 +1004,10 @@ std::string CheckSystemType::getRealInclName(const std::string& include)
          if(inclNameToPath.find(trimmed) != inclNameToPath.end())
          {
             return inclNameToPath.find(trimmed)->second;
-#if HAVE_BAMBU_BUILT
          }
          else if(LIBBAMBU_SRCDIR == i && boost::algorithm::starts_with(trimmed, "libm/"))
          {
             return FILENAME_NORM("math.h");
-#endif
          }
          else
          {

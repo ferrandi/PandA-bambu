@@ -1,5 +1,6 @@
 noinst_LTLIBRARIES += lib_utility.la
 lib_utility_la_CPPFLAGS =  \
+   -I$(top_srcdir)/src/constants \
    $(AM_CPPFLAGS)
 noinst_HEADERS += \
    utility/APInt.hpp \
@@ -30,8 +31,8 @@ lib_utility_la_SOURCES = \
    utility/APInt.cpp \
    utility/cpu_stats.cpp \
    utility/exceptions.cpp \
+   utility/fileIO.cpp \
    utility/indented_output_stream.cpp \
-   utility/math_function.cpp \
    utility/simple_indent.cpp \
    utility/Statistics.cpp \
    utility/string_manipulation.cpp \
@@ -41,11 +42,3 @@ lib_utility_la_LIBADD = -lgmp
 if MINGW64
    lib_utility_la_LIBADD += -lws2_32 -lpsapi
 endif
-
-if BUILD_LIB_PROBABILITY_DISTRIBUTION
-  SUBDIRS += utility/probability_distribution
-  DIST_SUBDIRS += utility/probability_distribution
-  lib_utility_la_CPPFLAGS += -I$(top_srcdir)/src/utility/probability_distribution
-  lib_utility_la_LIBADD += $(top_builddir)/src/utility/probability_distribution/lib_ProbabilityDistribution.la
-endif
-

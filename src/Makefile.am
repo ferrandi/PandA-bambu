@@ -39,22 +39,12 @@ if BUILD_LIB_ALGORITHMS
 include $(top_srcdir)/src/algorithms/algorithms.am
 endif
 
-if BUILD_LIB_BDD
-  SUBDIRS += bdd
-  DIST_SUBDIRS += bdd
-endif
-
 if BUILD_LIB_BEHAVIOR
 include $(top_srcdir)/src/behavior/behavior.am
 endif
 
 if BUILD_LIB_CIRCUIT
 include $(top_srcdir)/src/circuit/circuit.am
-endif
-
-if BUILD_LIB_DESIGN_ANALYSIS
-  SUBDIRS += design_analysis
-  DIST_SUBDIRS += design_analysis
 endif
 
 if BUILD_LIB_DESIGN_FLOWS
@@ -79,23 +69,8 @@ if BUILD_LIB_INTERMEDIATE_REPRESENTATIONS
 include $(top_srcdir)/src/intermediate_representations/intermediate_representations.am
 endif
 
-if BUILD_LIB_FROM_IPXACT
-  SUBDIRS += ip_xact
-  DIST_SUBDIRS += ip_xact
-endif
-
 if BUILD_LIB_ILP
 include $(top_srcdir)/src/ilp/ilp.am
-endif
-
-if BUILD_LIB_LOGIC_SYNTHESIS
-  SUBDIRS += logic_synthesis
-  DIST_SUBDIRS += logic_synthesis
-endif
-
-if BUILD_LIB_ARCH
-  SUBDIRS += machine
-  DIST_SUBDIRS += machine
 endif
 
 if BUILD_LIB_PARSER
@@ -123,16 +98,6 @@ endif
 
 if BUILD_LIB_WRAPPER
 include $(top_srcdir)/src/wrapper/wrapper.am
-endif
-
-if BUILD_LIB_2LEV
-  SUBDIRS += logic_synthesis
-  DIST_SUBDIRS += logic_synthesis
-endif
-
-if BUILD_LIB_RTL
-  SUBDIRS += rtl
-  DIST_SUBDIRS += rtl
 endif
 
 if BUILD_LIB_TECHNOLOGY
@@ -165,7 +130,7 @@ include $(top_srcdir)/src/bambu.am
 endif
 
 ########################### DOC SECTION ###########################	
-DOX_TAGFILES = src/tree src/graph src/behavior src/technology src/utility src/parser src/edif src/algorithms src/circuit src/ilp src/regularity src/backend src/design_flows/backend/ToHDL src/codesign src/HLS src/HLS/module_allocation src/HLS/binding src/HLS/controller src/HLS/datapath src/HLS/estimation src/HLS/hls_flow src/HLS/target src/HLS/scheduling
+DOX_TAGFILES = src/tree src/graph src/behavior src/technology src/utility src/parser src/edif src/algorithms src/circuit src/ilp src/regularity src/backend src/design_flows/backend/ToHDL src/HLS src/HLS/module_allocation src/HLS/binding src/HLS/controller src/HLS/datapath src/HLS/estimation src/HLS/hls_flow src/HLS/target src/HLS/scheduling
 
 EXTRA_DIST += $(PRJ_DOC)
 

@@ -330,6 +330,7 @@ void*
 #endif
     calloc(size_t nmemb, size_t size)
 {
+   extern void* memset(void* dest, int val, size_t len);
    unsigned int upsize;
    void* mem;
    unsigned int bitsize, temp = POOL_SIZE;

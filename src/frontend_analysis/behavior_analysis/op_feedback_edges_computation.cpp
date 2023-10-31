@@ -95,10 +95,6 @@ op_feedback_edges_computation::ComputeFrontendRelationships(
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-#if HAVE_ZEBU_BUILT
-         relationships.insert(std::make_pair(LOOP_REGIONS_COMPUTATION, SAME_FUNCTION));
-         relationships.insert(std::make_pair(LOOPS_ANALYSIS_ZEBU, SAME_FUNCTION));
-#endif
          break;
       }
       default:
@@ -130,7 +126,7 @@ DesignFlowStep_Status op_feedback_edges_computation::InternalExec()
          vertex label_vertex = bb_node_info->statements_list.front();
          const auto bb_node_info_from = fbb->CGetBBNodeInfo(from_bb);
          THROW_ASSERT(bb_node_info_from->statements_list.size(),
-                      "Empty block " + boost::lexical_cast<std::string>(bb_node_info_from->block->number));
+                      "Empty block " + std::to_string(bb_node_info_from->block->number));
          vertex goto_vertex = bb_node_info_from->statements_list.back();
          /// add the feedback control dependence and the feedback control flow graph edges
          function_behavior->ogc->RemoveEdge(goto_vertex, label_vertex, CFG_SELECTOR);

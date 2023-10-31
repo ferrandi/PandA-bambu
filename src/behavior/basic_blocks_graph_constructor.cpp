@@ -47,7 +47,6 @@
 #include "exceptions.hpp"          // for THROW_ASSERT
 #include "string_manipulation.hpp" // for STR
 #include "tree_basic_block.hpp"    // for bloc, BB_ENTRY, BB_...
-#include <boost/lexical_cast.hpp>  // for lexical_cast
 #include <boost/tuple/tuple.hpp>   // for tie
 #include <cstddef>                 // for size_t
 #include <string>                  // for allocator, operator+
@@ -130,7 +129,7 @@ bool BasicBlocksGraphConstructor::check_vertex(unsigned int block_index) const
 vertex BasicBlocksGraphConstructor::Cget_vertex(unsigned int block_index) const
 {
    THROW_ASSERT(bb_index_map.find(block_index) != bb_index_map.end(),
-                "this vertex does not exist " + boost::lexical_cast<std::string>(block_index));
+                "this vertex does not exist " + std::to_string(block_index));
    return bb_index_map.find(block_index)->second;
 }
 

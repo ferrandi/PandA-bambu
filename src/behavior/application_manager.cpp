@@ -43,7 +43,6 @@
  */
 #include "application_manager.hpp"
 
-#include "config_HAVE_CODESIGN.hpp"
 #include "config_HAVE_FROM_DISCREPANCY_BUILT.hpp"
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 
@@ -327,42 +326,6 @@ tree_nodeConstRef application_manager::GetProducedValue(const tree_nodeConstRef&
    }
    return nullptr;
 }
-
-#if HAVE_CODESIGN
-void application_manager::AddActorGraphManager(const unsigned int function_index,
-                                               const ActorGraphManagerRef actor_graph_manager)
-{
-   THROW_ASSERT(const_output_actor_graphs.find(function_index) == const_output_actor_graphs.end(),
-                "Function " + boost::lexical_cast<std::string>(function_index) +
-                    " has alread an actor graph manager associated");
-   const_output_actor_graphs[function_index] = actor_graph_manager;
-   output_actor_graphs[function_index] = actor_graph_manager;
-}
-
-const CustomUnorderedMap<unsigned int, ActorGraphManagerConstRef>& application_manager::CGetActorGraphs() const
-{
-   return const_output_actor_graphs;
-}
-
-const ActorGraphManagerConstRef application_manager::CGetActorGraph(const unsigned int function_index) const
-{
-   THROW_ASSERT(const_output_actor_graphs.find(function_index) != const_output_actor_graphs.end(),
-                "Actor graph for function " + boost::lexical_cast<std::string>(function_index) + " not found");
-   return const_output_actor_graphs.find(function_index)->second;
-}
-
-ActorGraphManagerRef application_manager::GetActorGraph(const unsigned int function_index)
-{
-   THROW_ASSERT(output_actor_graphs.find(function_index) != output_actor_graphs.end(),
-                "Actor graph for function " + boost::lexical_cast<std::string>(function_index) + " not found ");
-   return output_actor_graphs.find(function_index)->second;
-}
-
-CustomUnorderedMap<unsigned int, ActorGraphManagerRef> application_manager::GetActorGraphs()
-{
-   return output_actor_graphs;
-}
-#endif
 
 void application_manager::add_written_object(unsigned int node_id)
 {

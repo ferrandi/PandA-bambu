@@ -121,7 +121,7 @@ std::string PragmaAnalysis::get_call_parameter(unsigned int tree_node, unsigned 
 {
    const tree_managerRef TM = AppM->get_tree_manager();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Asking parameter " + boost::lexical_cast<std::string>(idx) + " " + STR(tree_node));
+                  "-->Asking parameter " + std::to_string(idx) + " " + STR(tree_node));
    auto tn = TM->get_tree_node_const(tree_node);
    const gimple_call* ce = GetPointer<gimple_call>(tn);
    if(idx >= ce->args.size())
@@ -189,8 +189,8 @@ void PragmaAnalysis::create_omp_pragma(const unsigned int tree_node) const
    std::string include_name = GetPointer<srcp>(TM->get_tree_node_const(tree_node))->include_name;
    unsigned int line_number = GetPointer<srcp>(TM->get_tree_node_const(tree_node))->line_number;
    unsigned int column_number = GetPointer<srcp>(TM->get_tree_node_const(tree_node))->column_number;
-   tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" +
-                                     boost::lexical_cast<std::string>(column_number);
+   tree_node_schema[TOK(TOK_SRCP)] =
+       include_name + ":" + std::to_string(line_number) + ":" + std::to_string(column_number);
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> local_tn_schema;
    unsigned int directive_idx = 0, scope_idx = TM->new_tree_node_id();
@@ -240,7 +240,7 @@ void PragmaAnalysis::create_omp_pragma(const unsigned int tree_node) const
          case(pragma_manager::OMP_PARALLEL_SECTIONS):
          {
             std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> local_tn_schema1;
-            local_tn_schema1[TOK(TOK_PRAGMA_OMP_SHORTCUT)] = boost::lexical_cast<std::string>(true);
+            local_tn_schema1[TOK(TOK_PRAGMA_OMP_SHORTCUT)] = STR(true);
             unsigned int node_parallel = TM->new_tree_node_id();
             TM->create_tree_node(node_parallel, omp_parallel_pragma_K, local_tn_schema1);
             auto* pn = GetPointer<omp_parallel_pragma>(TM->get_tree_node_const(node_parallel));
@@ -249,8 +249,8 @@ void PragmaAnalysis::create_omp_pragma(const unsigned int tree_node) const
             unsigned int node_sections = TM->new_tree_node_id();
             TM->create_tree_node(node_sections, omp_sections_pragma_K, local_tn_schema1);
 
-            tree_node_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(node_parallel);
-            tree_node_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(node_sections);
+            tree_node_schema[TOK(TOK_OP0)] = std::to_string(node_parallel);
+            tree_node_schema[TOK(TOK_OP1)] = std::to_string(node_sections);
             directive_idx = TM->new_tree_node_id();
             TM->create_tree_node(directive_idx, omp_parallel_sections_pragma_K, tree_node_schema);
 
@@ -326,9 +326,9 @@ void PragmaAnalysis::create_omp_pragma(const unsigned int tree_node) const
          {
             const tree_nodeRef& pn = OpenParallelSections.back();
             local_tn_schema[TOK(TOK_OP0)] =
-                boost::lexical_cast<std::string>(GET_INDEX_NODE(GetPointer<omp_parallel_sections_pragma>(pn)->op0));
+                std::to_string(GET_INDEX_NODE(GetPointer<omp_parallel_sections_pragma>(pn)->op0));
             local_tn_schema[TOK(TOK_OP1)] =
-                boost::lexical_cast<std::string>(GET_INDEX_NODE(GetPointer<omp_parallel_sections_pragma>(pn)->op1));
+                std::to_string(GET_INDEX_NODE(GetPointer<omp_parallel_sections_pragma>(pn)->op1));
             directive_idx = TM->new_tree_node_id();
             TM->create_tree_node(directive_idx, omp_parallel_sections_pragma_K, local_tn_schema);
 
@@ -430,21 +430,21 @@ void PragmaAnalysis::create_omp_pragma(const unsigned int tree_node) const
    }
 
    tree_node_schema.clear();
-   tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" +
-                                     boost::lexical_cast<std::string>(column_number);
+   tree_node_schema[TOK(TOK_SRCP)] =
+       include_name + ":" + std::to_string(line_number) + ":" + std::to_string(column_number);
    tree_node_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_CONST_NODE(gc->scpe));
-   tree_node_schema[TOK(TOK_IS_BLOCK)] = boost::lexical_cast<std::string>(is_block);
-   tree_node_schema[TOK(TOK_OPEN)] = boost::lexical_cast<std::string>(is_opening);
-   tree_node_schema[TOK(TOK_PRAGMA_SCOPE)] = boost::lexical_cast<std::string>(scope_idx);
-   tree_node_schema[TOK(TOK_PRAGMA_DIRECTIVE)] = boost::lexical_cast<std::string>(directive_idx);
-   tree_node_schema[TOK(TOK_BB_INDEX)] = boost::lexical_cast<std::string>(gc->bb_index);
+   tree_node_schema[TOK(TOK_IS_BLOCK)] = STR(is_block);
+   tree_node_schema[TOK(TOK_OPEN)] = STR(is_opening);
+   tree_node_schema[TOK(TOK_PRAGMA_SCOPE)] = std::to_string(scope_idx);
+   tree_node_schema[TOK(TOK_PRAGMA_DIRECTIVE)] = std::to_string(directive_idx);
+   tree_node_schema[TOK(TOK_BB_INDEX)] = std::to_string(gc->bb_index);
    if(gc->memuse)
    {
-      tree_node_schema[TOK(TOK_MEMUSE)] = boost::lexical_cast<std::string>(GET_INDEX_NODE(gc->memuse));
+      tree_node_schema[TOK(TOK_MEMUSE)] = std::to_string(GET_INDEX_NODE(gc->memuse));
    }
    if(gc->memdef)
    {
-      tree_node_schema[TOK(TOK_MEMDEF)] = boost::lexical_cast<std::string>(GET_INDEX_NODE(gc->memdef));
+      tree_node_schema[TOK(TOK_MEMDEF)] = std::to_string(GET_INDEX_NODE(gc->memdef));
    }
    TM->create_tree_node(tree_node, gimple_pragma_K, tree_node_schema);
    GetPointer<gimple_pragma>(TM->get_tree_node_const(tree_node))->vuses = gc->vuses;
@@ -456,7 +456,7 @@ void PragmaAnalysis::create_map_pragma(const unsigned int node_id) const
 {
    const tree_managerRef TM = AppM->get_tree_manager();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Creating mapping pragma starting from tree node " + boost::lexical_cast<std::string>(node_id));
+                  "-->Creating mapping pragma starting from tree node " + std::to_string(node_id));
    const tree_nodeRef curr_tn = TM->get_tree_node_const(node_id);
    const auto* gc = GetPointer<const gimple_call>(curr_tn);
 #if HAVE_ASSERTS
@@ -490,22 +490,22 @@ void PragmaAnalysis::create_map_pragma(const unsigned int node_id) const
       {
          THROW_ERROR("Error in pragma syntax: second parameter of mapping pragma is " + fourth_parameter);
       }
-      directive_tn_schema[TOK(TOK_RECURSIVE)] = boost::lexical_cast<std::string>(true);
+      directive_tn_schema[TOK(TOK_RECURSIVE)] = STR(true);
    }
    TM->create_tree_node(directive_idx, call_point_hw_pragma_K, directive_tn_schema);
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> tree_node_schema;
-   tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" +
-                                     boost::lexical_cast<std::string>(column_number);
+   tree_node_schema[TOK(TOK_SRCP)] =
+       include_name + ":" + std::to_string(line_number) + ":" + std::to_string(column_number);
    tree_node_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_CONST_NODE(gc->scpe));
-   tree_node_schema[TOK(TOK_IS_BLOCK)] = boost::lexical_cast<std::string>(false);
-   tree_node_schema[TOK(TOK_OPEN)] = boost::lexical_cast<std::string>(false);
-   tree_node_schema[TOK(TOK_PRAGMA_SCOPE)] = boost::lexical_cast<std::string>(scope_idx);
-   tree_node_schema[TOK(TOK_PRAGMA_DIRECTIVE)] = boost::lexical_cast<std::string>(directive_idx);
-   tree_node_schema[TOK(TOK_BB_INDEX)] = boost::lexical_cast<std::string>(gc->bb_index);
+   tree_node_schema[TOK(TOK_IS_BLOCK)] = STR(false);
+   tree_node_schema[TOK(TOK_OPEN)] = STR(false);
+   tree_node_schema[TOK(TOK_PRAGMA_SCOPE)] = std::to_string(scope_idx);
+   tree_node_schema[TOK(TOK_PRAGMA_DIRECTIVE)] = std::to_string(directive_idx);
+   tree_node_schema[TOK(TOK_BB_INDEX)] = std::to_string(gc->bb_index);
    TM->create_tree_node(node_id, gimple_pragma_K, tree_node_schema);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "<--Created mapping pragma starting from tree node " + boost::lexical_cast<std::string>(node_id));
+                  "<--Created mapping pragma starting from tree node " + std::to_string(node_id));
 }
 
 DesignFlowStep_Status PragmaAnalysis::Exec()
@@ -529,14 +529,13 @@ DesignFlowStep_Status PragmaAnalysis::Exec()
       it_end = blocks.end();
       for(it = blocks.begin(); it != it_end; ++it)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Examining BB" + boost::lexical_cast<std::string>(it->first));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + std::to_string(it->first));
          const auto list_of_stmt = it->second->CGetStmtList();
          auto it2 = list_of_stmt.begin();
          while(it2 != list_of_stmt.end())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "-->Examining statement " + boost::lexical_cast<std::string>(GET_INDEX_NODE(*it2)));
+                           "-->Examining statement " + std::to_string(GET_INDEX_NODE(*it2)));
             const tree_nodeRef& TN = GET_NODE(*it2);
             if(TN->get_kind() == gimple_call_K)
             {
@@ -551,7 +550,7 @@ DesignFlowStep_Status PragmaAnalysis::Exec()
                      if(function_name.find(STR_CST_pragma_prefix) == std::string::npos)
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "<--Skip statement " + boost::lexical_cast<std::string>(GET_INDEX_NODE(*it2)));
+                                       "<--Skip statement " + std::to_string(GET_INDEX_NODE(*it2)));
                         it2++;
                         continue;
                      }
@@ -560,9 +559,8 @@ DesignFlowStep_Status PragmaAnalysis::Exec()
                      std::string include_name = GetPointer<srcp>(TN)->include_name;
                      unsigned int line_number = GetPointer<srcp>(TN)->line_number;
                      unsigned int column_number = GetPointer<srcp>(TN)->column_number;
-                     tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" +
-                                                       boost::lexical_cast<std::string>(line_number) + ":" +
-                                                       boost::lexical_cast<std::string>(column_number);
+                     tree_node_schema[TOK(TOK_SRCP)] =
+                         include_name + ":" + std::to_string(line_number) + ":" + std::to_string(column_number);
                      tree_node_schema[TOK(TOK_SCPE)] = STR(function);
 
                      // unsigned int scope, directive;
@@ -584,7 +582,7 @@ DesignFlowStep_Status PragmaAnalysis::Exec()
                         std::string num = function_name;
                         num = num.substr(10, num.size());
                         num = num.substr(0, num.find('_'));
-                        std::string string_base = PM->getGenericPragma(boost::lexical_cast<unsigned int>(num));
+                        std::string string_base = PM->getGenericPragma(static_cast<unsigned>(std::stoul(num)));
                         string_base = string_base.substr(string_base.find("#pragma") + 8, string_base.size());
                         auto* el = GetPointer<gimple_pragma>(TM->get_tree_node_const(GET_INDEX_NODE(*it2)));
                         el->line = string_base;
@@ -624,11 +622,10 @@ DesignFlowStep_Status PragmaAnalysis::Exec()
                }
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "<--Examined statement " + boost::lexical_cast<std::string>(GET_INDEX_NODE(*it2)));
+                           "<--Examined statement " + std::to_string(GET_INDEX_NODE(*it2)));
             it2++;
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "<--Examined BB" + boost::lexical_cast<std::string>(it->first));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined BB" + std::to_string(it->first));
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined function " + STR(function));
    }

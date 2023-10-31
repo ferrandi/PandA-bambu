@@ -67,7 +67,7 @@
 
 /// HLS include
 #include "hls_manager.hpp"
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
 /// HLS includes
 #include "hls.hpp"
 
@@ -128,9 +128,7 @@ CSE::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relatio
       {
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
-#if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
          relationships.insert(std::make_pair(SDC_CODE_MOTION, SAME_FUNCTION));
-#endif
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
          break;
       }
@@ -170,7 +168,7 @@ CSE::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relatio
 
 void CSE::Initialize()
 {
-#if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
+#if HAVE_ILP_BUILT
    if(GetPointer<const HLS_manager>(AppM) && GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id) &&
       GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)
    {
@@ -187,7 +185,9 @@ DesignFlowStep_Status CSE::InternalExec()
    }
    bool IR_changed = false;
    restart_phi_opt = false;
+#ifndef NDEBUG
    size_t n_equiv_stmt = 0;
+#endif
    const auto IRman = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
    /// define a map relating variables and columns
    std::map<vertex, CustomUnorderedMapStable<CSE_tuple_key_type, tree_nodeRef>> unique_table;
@@ -285,11 +285,36 @@ DesignFlowStep_Status CSE::InternalExec()
             const auto ref_ssa = GetPointerS<ssa_name>(GET_NODE(ref_ga->op0));
             const auto dead_ssa = GetPointerS<const ssa_name>(GET_CONST_NODE(dead_ga->op0));
 
+            if(ref_ssa->min)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---ref_min=" + STR(ref_ssa->min));
+            }
+            if(ref_ssa->max)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---ref_max=" + STR(ref_ssa->max));
+            }
+            if(dead_ssa->min)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dead_min=" + STR(dead_ssa->min));
+            }
+            if(dead_ssa->max)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dead_max=" + STR(dead_ssa->max));
+            }
+
+            if(!ref_ssa->bit_values.empty())
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---ref_bit_values=" + ref_ssa->bit_values);
+            }
+            if(!dead_ssa->bit_values.empty())
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---dead_bit_values=" + dead_ssa->bit_values);
+            }
+
             bool same_range = false;
             if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
             {
-               same_range = !ref_ssa->bit_values.empty() && dead_ssa->bit_values.empty() &&
-                            ref_ssa->bit_values == dead_ssa->bit_values;
+               same_range = dead_ssa->bit_values.empty() || ref_ssa->bit_values == dead_ssa->bit_values;
             }
             else
             {
@@ -304,6 +329,12 @@ DesignFlowStep_Status CSE::InternalExec()
                   if(dead_min == ref_min && dead_max == ref_max)
                   {
                      same_range = true;
+                  }
+                  else
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---replace equivalent statement before: ref_min=" + STR(ref_min) + " dead_min=" +
+                                        STR(dead_min) + " ref_max=" + STR(ref_max) + " dead_max=" + STR(dead_max));
                   }
                }
             }
@@ -332,9 +363,15 @@ DesignFlowStep_Status CSE::InternalExec()
 
                AppM->RegisterTransformation(GetName(), stmt);
                IR_changed = true;
+#ifndef NDEBUG
                ++n_equiv_stmt;
+#endif
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "<--Updated/Removed duplicated statement " + STR(dead_ga->op0));
+            }
+            else
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---not the same range");
             }
          }
       }

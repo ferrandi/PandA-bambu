@@ -448,7 +448,7 @@ static std::regex fairness( R"(^f(\d+) (.*)$)" );
  * \param diag An optional diagnostic engine with callback methods for parse errors
  * \return Success if parsing has been successful, or parse error if parsing has failed
  */
-inline return_code read_ascii_aiger( std::istream& in, const aiger_reader& reader, diagnostic_engine* diag = nullptr )
+[[nodiscard]] inline return_code read_ascii_aiger( std::istream& in, const aiger_reader& reader, diagnostic_engine* diag = nullptr )
 {
   return_code result = return_code::success;
 
@@ -487,8 +487,7 @@ inline return_code read_ascii_aiger( std::istream& in, const aiger_reader& reade
   {
     if ( diag )
     {
-      diag->report( diagnostic_level::fatal,
-                    fmt::format( "could not parse AIGER header `{0}`", header_line ) );
+      diag->report( diag_id::ERR_AIGER_HEADER ).add_argument( header_line );
     }
     return return_code::parse_error;
   }
@@ -513,8 +512,7 @@ inline return_code read_ascii_aiger( std::istream& in, const aiger_reader& reade
     {
       if ( diag )
       {
-        diag->report( diagnostic_level::fatal,
-                      fmt::format( "could not parse declaration of LATCH `{0}`", line ) );
+        diag->report( diag_id::ERR_AIGER_LATCH_DECLARATION ).add_argument( line );
       }
       return return_code::parse_error;
     }
@@ -602,8 +600,7 @@ inline return_code read_ascii_aiger( std::istream& in, const aiger_reader& reade
     {
       if ( diag )
       {
-        diag->report( diagnostic_level::fatal,
-                      fmt::format( "could not parse declaration of AND gate `{0}`", line ) );
+        diag->report( diag_id::ERR_AIGER_AND_DECLARATION ).add_argument( line );
       }
       return return_code::parse_error;
     }
@@ -670,15 +667,14 @@ inline return_code read_ascii_aiger( std::istream& in, const aiger_reader& reade
  * \param diag An optional diagnostic engine with callback methods for parse errors
  * \return Success if parsing has been successful, or parse error if parsing has failed
  */
-inline return_code read_ascii_aiger( const std::string& filename, const aiger_reader& reader, diagnostic_engine* diag = nullptr )
+[[nodiscard]] inline return_code read_ascii_aiger( const std::string& filename, const aiger_reader& reader, diagnostic_engine* diag = nullptr )
 {
   std::ifstream in( detail::word_exp_filename( filename ), std::ifstream::in );
   if ( !in.is_open() )
   {
     if ( diag )
     {
-      diag->report( diagnostic_level::fatal,
-                    fmt::format( "could not open file `{0}`", filename ) );
+      diag->report( diag_id::ERR_FILE_OPEN ).add_argument( filename );
     }
     return return_code::parse_error;
   }
@@ -700,7 +696,7 @@ inline return_code read_ascii_aiger( const std::string& filename, const aiger_re
  * \param diag An optional diagnostic engine with callback methods for parse errors
  * \return Success if parsing has been successful, or parse error if parsing has failed
  */
-inline return_code read_aiger( std::istream& in, const aiger_reader& reader, diagnostic_engine* diag = nullptr )
+[[nodiscard]] inline return_code read_aiger( std::istream& in, const aiger_reader& reader, diagnostic_engine* diag = nullptr )
 {
   return_code result = return_code::success;
 
@@ -739,8 +735,7 @@ inline return_code read_aiger( std::istream& in, const aiger_reader& reader, dia
   {
     if ( diag )
     {
-      diag->report( diagnostic_level::fatal,
-                    fmt::format( "could not parse AIGER header `{0}`", header_line ) );
+      diag->report( diag_id::ERR_AIGER_HEADER ).add_argument( header_line );
     }
     return return_code::parse_error;
   }
@@ -905,15 +900,14 @@ inline return_code read_aiger( std::istream& in, const aiger_reader& reader, dia
  * \param diag An optional diagnostic engine with callback methods for parse errors
  * \return Success if parsing has been successful, or parse error if parsing has failed
  */
-inline return_code read_aiger( const std::string& filename, const aiger_reader& reader, diagnostic_engine* diag = nullptr )
+[[nodiscard]] inline return_code read_aiger( const std::string& filename, const aiger_reader& reader, diagnostic_engine* diag = nullptr )
 {
   std::ifstream in( detail::word_exp_filename( filename ), std::ifstream::binary );
   if ( !in.is_open() )
   {
     if ( diag )
     {
-      diag->report( diagnostic_level::fatal,
-                    fmt::format( "could not open file `{0}`", filename ) );
+      diag->report( diag_id::ERR_FILE_OPEN ).add_argument( filename );
     }
     return return_code::parse_error;
   }

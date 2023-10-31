@@ -1,0 +1,55 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project 
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (C) 2004-2023 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/*!
+  \page examples_arf Auto-Regressive Filter benchmark
+
+  ARF is a digital implementation of an auto-regressive lattice filter. 
+  The benchmark consists of 16 multiplication and 12 addition operations. 
+  The ARF benchmark operates in a loop. 
+  This feature is exploited by exercising the simulation as closed loop system.
+     
+  Derived from:
+  \verbatim
+  N. Mukherjee, "Built-in in Self-Test for Functional Blocks in Data-Path Architectures", PhD thesis, McGill University, Montreal, 1996.
+  \endverbatim
+  where it is referred to:
+  \verbatim
+  R. Jain, "High-Level Area-Delay Prediction with Application to Behavioral Synthesis", PhD thesis, University of Southern California, Los Angeles, Usa, 1989.
+  \endverbatim
+  This directory includes a simple example of RTL synthesis and simulation of the ARF benchmark.
+  
+  Bambu HLS generates several dot files by passing the option `--print-dot`; in this case you may pass the option to the `generic_arf.sh` script as `--c=--print-dot`.
+  The scheduling of the arf function is stored in file _HLS_output/dot/arf/HLS_scheduling.dot_ while the FSM of the arf function annotated with the C statements is stored in file _HLS_output/dot/arf/HLS_STGraph.dot_.
+
+
+*/

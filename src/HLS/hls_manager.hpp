@@ -54,7 +54,7 @@
 
 REF_FORWARD_DECL(AadlInformation);
 REF_FORWARD_DECL(hls);
-REF_FORWARD_DECL(HLS_target);
+REF_FORWARD_DECL(HLS_device);
 REF_FORWARD_DECL(HLS_manager);
 REF_FORWARD_DECL(functions);
 REF_FORWARD_DECL(memory);
@@ -64,7 +64,11 @@ REF_FORWARD_DECL(BackendFlow);
 enum interface_attributes
 {
    attr_interface_type,
+   attr_interface_dir,
+   attr_interface_bitwidth,
+   attr_interface_alignment,
    attr_size,
+   attr_size_in_bytes,
    attr_offset,
    attr_bundle_name,
    attr_way_lines,
@@ -85,12 +89,12 @@ class HLS_manager : public application_manager
 
  private:
    /// information about the target device/technology for the synthesis
-   HLS_targetRef HLS_T;
+   HLS_deviceRef HLS_D;
 
-   /// map between the function id and the corresponding HLS datastructure
+   /// map between the function id and the corresponding HLS data-structure
    std::map<unsigned int, hlsRef> hlsMap;
 
-   /// reference to the datastructure implementing the backend flow
+   /// reference to the data-structure implementing the backend flow
    BackendFlowRef back_flow;
 
    /// The version of memory representation on which this step was applied
@@ -113,7 +117,7 @@ class HLS_manager : public application_manager
    SimulationInformationRef RSim;
 
    /// Evaluations
-   CustomMap<std::string, std::vector<double>> evaluations;
+   CustomMap<std::string, double> evaluations;
 
    /// The auxiliary files
    std::list<std::string> aux_files;
@@ -145,12 +149,12 @@ class HLS_manager : public application_manager
    std::map<unsigned, std::map<std::string, std::map<std::string, unsigned int>>> design_interface_constraints;
 
    /// global resource constraints
-   std::map<std::pair<std::string, std::string>, unsigned> global_resource_constraints;
+   std::map<std::pair<std::string, std::string>, std::pair<unsigned, unsigned>> global_resource_constraints;
 
    /**
     * Constructor.
     */
-   HLS_manager(const ParameterConstRef Param, const HLS_targetRef HLS_T);
+   HLS_manager(const ParameterConstRef Param, const HLS_deviceRef HLS_D);
 
    /**
     * Destructor.
@@ -158,7 +162,7 @@ class HLS_manager : public application_manager
    ~HLS_manager() override;
 
    /**
-    * Returns the HLS datastructure associated with a specific function
+    * Returns the HLS data-structure associated with a specific function
     */
    hlsRef get_HLS(unsigned int funId) const;
 
@@ -168,9 +172,9 @@ class HLS_manager : public application_manager
    static hlsRef create_HLS(const HLS_managerRef HLSMgr, unsigned int functionId);
 
    /**
-    * Returns the datastructure associated with the HLS target
+    * Returns the data-structure associated with the HLS target
     */
-   HLS_targetRef get_HLS_target() const;
+   HLS_deviceRef get_HLS_device() const;
 
    /**
     * Returns the backend flow

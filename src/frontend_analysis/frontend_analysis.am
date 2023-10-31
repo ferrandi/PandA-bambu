@@ -15,7 +15,6 @@ lib_behavior_analysis_la_CPPFLAGS = \
    -I$(top_srcdir)/src/parser/polixml \
    -I$(top_srcdir)/src/polixml\
    -I$(top_srcdir)/src/technology \
-   -I$(top_srcdir)/src/technology/target_device \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/HLS \
@@ -101,8 +100,7 @@ lib_IR_analysis_la_CPPFLAGS = \
    -I$(top_srcdir)/src/parser/compiler \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/polixml\
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/target_device \
+   -I$(top_srcdir)/src/technology \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper/compiler \
@@ -250,8 +248,8 @@ if BUILD_BAMBU
       -I$(top_srcdir)/src/HLS/scheduling \
       -I$(top_srcdir)/src/intermediate_representations \
       -I$(top_srcdir)/src/intermediate_representations/hls \
-      -I$(top_srcdir)/src/technology \
-      -I$(top_srcdir)/src/technology/physical_library/models
+      -I$(top_srcdir)/src/technology
+      
 if BUILD_MOCKTURTLE
    lib_IR_analysis_la_LIBADD = \
       $(top_builddir)/ext/lib_mockturtle.la
@@ -317,31 +315,15 @@ lib_IR_manipulation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/frontend_analysis \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/parser/compiler \
-   -I$(top_srcdir)/src/rtl \
-   -I$(top_srcdir)/src/technology/physical_library \
-   -I$(top_srcdir)/src/technology/target_device \
+   -I$(top_srcdir)/src/technology \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
-   -I$(top_srcdir)/src/utility/probability_distribution \
    -I$(top_srcdir)/src/wrapper/compiler \
    $(AM_CPPFLAGS)
-
-if BUILD_BAMBU
-lib_IR_manipulation_la_CPPFLAGS += \
-   -I$(top_srcdir)/src/technology/physical_library/models
-endif
 
 if BUILD_LIB_FROM_PRAGMA
   lib_IR_manipulation_la_CPPFLAGS += \
    -I$(top_srcdir)/src/pragma
-if BUILD_LIB_CODESIGN
-if BUILD_LIB_PARTITIONING
-if BUILD_LIB_GRAPH_PARTITIONING
-  lib_IR_manipulation_la_CPPFLAGS += \
-   -I$(top_srcdir)/src/design_flows/codesign/partitioning/graph_partitioning
-endif
-endif
-endif
 endif
 
 noinst_HEADERS += \
@@ -370,8 +352,8 @@ if BUILD_BAMBU
    lib_IR_manipulation_la_CPPFLAGS += \
       -I$(top_srcdir)/src/intermediate_representations \
       -I$(top_srcdir)/src/intermediate_representations/hls \
-      -I$(top_srcdir)/src/technology \
-      -I$(top_srcdir)/src/technology/target_device
+      -I$(top_srcdir)/src/technology 
+
 if BUILD_LIB_FROM_AADL_ASN
    lib_IR_manipulation_la_CPPFLAGS += \
       -I$(top_srcdir)/src/parser
@@ -442,8 +424,7 @@ if BUILD_BAMBU
       -I$(top_srcdir)/src/design_flows/backend/ToHDL \
       -I$(top_srcdir)/src/HLS \
       -I$(top_srcdir)/src/HLS/module_allocation \
-      -I$(top_srcdir)/src/technology \
-      -I$(top_srcdir)/src/technology/target_device
+      -I$(top_srcdir)/src/technology
 endif
 
 if BUILD_BAMBU
@@ -453,16 +434,6 @@ if BUILD_BAMBU
       frontend_analysis/find_max_transformations.hpp
    lib_frontend_analysis_la_SOURCES += \
       frontend_analysis/find_max_transformations.cpp
-endif
-
-if BUILD_LIB_CODE_ESTIMATION
-   lib_frontend_analysis_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/utility/probability_distribution
-endif
-
-if BUILD_LIB_RTL
-   lib_frontend_analysis_la_CPPFLAGS += \
-      -I$(top_srcdir)/src/rtl
 endif
 
 if BUILD_SOURCE_CODE_MANIPULATION

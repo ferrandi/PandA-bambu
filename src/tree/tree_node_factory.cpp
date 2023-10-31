@@ -41,9 +41,6 @@
  *
  */
 
-/// Autoheader include
-#include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
-
 /// parser/compiler include
 #include "token_interface.hpp"
 
@@ -54,9 +51,6 @@
 #include "tree_node.hpp"
 #include "tree_node_factory.hpp"
 #include "tree_reindex.hpp"
-#if HAVE_CODE_ESTIMATION_BUILT
-#include "weight_information.hpp"
-#endif
 #include "utility.hpp"
 
 #define CREATE_TREE_NODE_CASE_BODY(tree_node_name, node_id) \
@@ -566,7 +560,7 @@ void tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_no
          else if(tree_node_schema.find(TOK(TOK_OPERATOR)) != tree_node_schema.end())
          {
             cur = tree_nodeRef(new identifier_node(
-                node_id, boost::lexical_cast<bool>(tree_node_schema.find(TOK(TOK_OPERATOR))->second), &TM));
+                node_id, static_cast<bool>(std::stoi(tree_node_schema.find(TOK(TOK_OPERATOR))->second)), &TM));
          }
          else
          {
@@ -610,8 +604,7 @@ void tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_no
       case tree_reindex_K:
       case while_stmt_K:
       {
-         THROW_UNREACHABLE("Creation of tree node of type " + boost::lexical_cast<std::string>(tree_node_type) +
-                           " not implemented");
+         THROW_UNREACHABLE("Creation of tree node of type " + STR(tree_node_type) + " not implemented");
          break;
       }
       default:
@@ -662,7 +655,7 @@ void tree_node_factory::operator()(const attr* obj, unsigned int& mask)
 #define SET_NODE_ID_OPT(token, field, type)                                                        \
    if(tree_node_schema.find(TOK(token)) != tree_node_schema.end())                                 \
    {                                                                                               \
-      auto node_id = boost::lexical_cast<unsigned int>(tree_node_schema.find(TOK(token))->second); \
+      auto node_id = static_cast<unsigned>(std::stoul(tree_node_schema.find(TOK(token))->second)); \
       dynamic_cast<type*>(curr_tree_node_ptr)->field = TM.GetTreeReindex(node_id);                 \
    }
 
@@ -670,7 +663,7 @@ void tree_node_factory::operator()(const attr* obj, unsigned int& mask)
    {                                                                                               \
       THROW_ASSERT(tree_node_schema.find(TOK(token)) != tree_node_schema.end(),                    \
                    std::string("tree_node_schema must have ") + STOK(token) + " value");           \
-      auto node_id = boost::lexical_cast<unsigned int>(tree_node_schema.find(TOK(token))->second); \
+      auto node_id = static_cast<unsigned>(std::stoul(tree_node_schema.find(TOK(token))->second)); \
       dynamic_cast<type*>(curr_tree_node_ptr)->field = TM.GetTreeReindex(node_id);                 \
    }
 
@@ -693,16 +686,6 @@ void tree_node_factory::operator()(const attr* obj, unsigned int& mask)
 
 void tree_node_factory::operator()(const WeightedNode*, unsigned int&)
 {
-#if HAVE_CODE_ESTIMATION_BUILT
-   /// FIXME: TOK_TIME_WEIGHT not supported
-   SET_VALUE_OPT(TOK_SIZE_WEIGHT, weight_information->instruction_size, WeightedNode);
-   THROW_ASSERT(tree_node_schema.find(TOK(TOK_TIME_WEIGHT)) == tree_node_schema.end(),
-                "Field time weight not supported");
-   SET_VALUE_OPT(TOK_SIZE_WEIGHT, weight_information->instruction_size, WeightedNode);
-#if HAVE_RTL_BUILT
-   SET_VALUE_OPT(TOK_RTL_SIZE_WEIGHT, weight_information->rtl_instruction_size, WeightedNode);
-#endif
-#endif
 }
 
 void tree_node_factory::operator()(const srcp* obj, unsigned int& mask)
@@ -716,9 +699,9 @@ void tree_node_factory::operator()(const srcp* obj, unsigned int& mask)
    std::string::size_type colon_pos = srcp_str.rfind(':', colon_pos2 - 1);
    dynamic_cast<srcp*>(curr_tree_node_ptr)->include_name = srcp_str.substr(0, colon_pos);
    dynamic_cast<srcp*>(curr_tree_node_ptr)->line_number =
-       boost::lexical_cast<unsigned int>(srcp_str.substr(colon_pos + 1, colon_pos2 - colon_pos - 1));
+       static_cast<unsigned>(std::stoul(srcp_str.substr(colon_pos + 1, colon_pos2 - colon_pos - 1)));
    dynamic_cast<srcp*>(curr_tree_node_ptr)->column_number =
-       boost::lexical_cast<unsigned int>(srcp_str.substr(colon_pos2 + 1));
+       static_cast<unsigned>(std::stoul(srcp_str.substr(colon_pos2 + 1)));
 }
 
 void tree_node_factory::operator()(const decl_node* obj, unsigned int& mask)
@@ -737,9 +720,7 @@ void tree_node_factory::operator()(const decl_node* obj, unsigned int& mask)
    SET_VALUE_OPT(TOK_PACKED, packed_flag, decl_node);
    SET_VALUE_OPT(TOK_OPERATING_SYSTEM, operating_system_flag, decl_node);
    SET_VALUE_OPT(TOK_LIBRARY_SYSTEM, library_system_flag, decl_node);
-#if HAVE_BAMBU_BUILT
    SET_VALUE_OPT(TOK_LIBBAMBU, libbambu_flag, decl_node);
-#endif
    SET_VALUE_OPT(TOK_C, C_flag, decl_node);
 }
 
@@ -802,7 +783,7 @@ void tree_node_factory::operator()(const type_node* obj, unsigned int& mask)
    if(tree_node_schema.find(TOK(TOK_QUAL)) != tree_node_schema.end())
    {
       dynamic_cast<type_node*>(curr_tree_node_ptr)->qual = static_cast<TreeVocabularyTokenTypes_TokenEnum>(
-          boost::lexical_cast<unsigned int>(tree_node_schema.find(TOK(TOK_QUAL))->second));
+          static_cast<unsigned>(std::stoul(tree_node_schema.find(TOK(TOK_QUAL))->second)));
    }
    SET_NODE_ID_OPT(TOK_NAME, name, type_node);
    SET_NODE_ID_OPT(TOK_UNQL, unql, type_node);

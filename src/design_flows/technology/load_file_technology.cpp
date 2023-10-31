@@ -52,7 +52,7 @@
 #include "dbgPrintHelper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-LoadFileTechnology::LoadFileTechnology(const technology_managerRef _TM, const target_deviceRef _target,
+LoadFileTechnology::LoadFileTechnology(const technology_managerRef _TM, const generic_deviceRef _target,
                                        const DesignFlowManagerConstRef _design_flow_manager,
                                        const ParameterConstRef _parameters)
     : TechnologyFlowStep(_TM, _target, _design_flow_manager, TechnologyFlowStep_Type::LOAD_FILE_TECHNOLOGY, _parameters)
@@ -68,7 +68,7 @@ DesignFlowStep_Status LoadFileTechnology::Exec()
    for(const auto& tech_file : tech_files)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "---Reading file " + tech_file);
-      read_technology_File(tech_file, TM, parameters, target);
+      read_technology_File(tech_file, TM, parameters);
    }
    return DesignFlowStep_Status::SUCCESS;
 }

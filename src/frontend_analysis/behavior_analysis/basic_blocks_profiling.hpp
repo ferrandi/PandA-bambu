@@ -40,7 +40,6 @@
 #ifndef BASIC_BLOCKS_PROFILING_HPP
 #define BASIC_BLOCKS_PROFILING_HPP
 
-/// Superclass include
 #include "application_frontend_flow_step.hpp"
 
 /**
@@ -48,16 +47,14 @@
  */
 class BasicBlocksProfiling : public ApplicationFrontendFlowStep
 {
- protected:
    /// The instrumented source code
    const std::string profiling_source_file;
 
-   /**
-    * Return the set of analyses in relationship with this design step
-    * @param relationship_type is the type of relationship to be considered
-    */
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) final;
 
  public:
    /**
@@ -69,28 +66,8 @@ class BasicBlocksProfiling : public ApplicationFrontendFlowStep
    BasicBlocksProfiling(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager,
                         const ParameterConstRef parameters);
 
-   /**
-    *  Destructor
-    */
-   ~BasicBlocksProfiling() override;
+   void Initialize() final;
 
-   /**
-    * Performs the profiling step
-    * @return the exit status of this step
-    */
-   DesignFlowStep_Status Exec() override;
-
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
-   void Initialize() override;
-
-   /**
-    * Compute the relationships of a step with other steps
-    * @param dependencies is where relationships will be stored
-    * @param relationship_type is the type of relationship to be computed
-    */
-   void ComputeRelationships(DesignFlowStepSet& relationship,
-                             const DesignFlowStep::RelationshipType relationship_type) override;
+   DesignFlowStep_Status Exec() final;
 };
 #endif

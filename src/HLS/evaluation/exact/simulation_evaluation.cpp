@@ -37,36 +37,18 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "simulation_evaluation.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// HLS include
-#include "hls_manager.hpp"
-
-// include from HLS/simulation
 #include "SimulationInformation.hpp"
-
-/// STD include
-#include <string>
-
-/// STL include
+#include "SimulationTool.hpp"
 #include "custom_set.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "hls_manager.hpp"
+#include "utility.hpp"
+#include <string>
 #include <tuple>
 #include <vector>
-
-/// technology/physical_library/models includes
-#include "time_model.hpp"
-
-// include from wrapper/simulation
-#include "SimulationTool.hpp"
-
-/// utility includes
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
-#include "utility.hpp"
 
 SimulationEvaluation::SimulationEvaluation(const ParameterConstRef _Param, const HLS_managerRef _hls_mgr,
                                            const DesignFlowManagerConstRef _design_flow_manager)
@@ -110,13 +92,14 @@ SimulationEvaluation::ComputeHLSRelationships(const DesignFlowStep::Relationship
 
 DesignFlowStep_Status SimulationEvaluation::Exec()
 {
-   THROW_ASSERT(not already_executed, "simulation cannot be executed multiple times!");
+   THROW_ASSERT(!already_executed, "simulation cannot be executed multiple times!");
 
    HLSMgr->RSim->sim_tool->CheckExecution();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Executing simulation");
-   HLSMgr->RSim->avg_n_cycles = HLSMgr->RSim->sim_tool->Simulate(HLSMgr->RSim->tot_n_cycles, HLSMgr->RSim->n_testcases);
+   unsigned long long tot_cycles = 0, num_executions = 0;
+   HLSMgr->RSim->sim_tool->Simulate(tot_cycles, num_executions);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Executed simulation");
-   if(not parameters->isOption(OPT_no_clean) and not parameters->getOption<bool>(OPT_no_clean))
+   if(!parameters->isOption(OPT_no_clean) && !parameters->getOption<bool>(OPT_no_clean))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Cleaning up simulation files");
       HLSMgr->RSim->sim_tool->Clean();
@@ -126,15 +109,13 @@ DesignFlowStep_Status SimulationEvaluation::Exec()
    std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
    for(const auto& objective : objective_vector)
    {
-      if(objective == "CYCLES" or objective == "TIME" or objective == "TOTAL_CYCLES" or objective == "TOTAL_TIME" or
+      if(objective == "CYCLES" || objective == "TIME" || objective == "TOTAL_CYCLES" || objective == "TOTAL_TIME" ||
          objective == "TIMExAREA")
       {
-         unsigned long long int tot_cycles = HLSMgr->RSim->tot_n_cycles;
-         unsigned long long int avg_cycles = HLSMgr->RSim->avg_n_cycles;
-         const auto num_executions = HLSMgr->RSim->n_testcases;
-         HLSMgr->evaluations["TOTAL_CYCLES"] = std::vector<double>(1, static_cast<double>(tot_cycles));
-         HLSMgr->evaluations["CYCLES"] = std::vector<double>(1, static_cast<double>(avg_cycles));
-         HLSMgr->evaluations["NUM_EXECUTIONS"] = std::vector<double>(1, static_cast<double>(num_executions));
+         const auto avg_cycles = tot_cycles / num_executions;
+         HLSMgr->evaluations["TOTAL_CYCLES"] = static_cast<double>(tot_cycles);
+         HLSMgr->evaluations["CYCLES"] = static_cast<double>(avg_cycles);
+         HLSMgr->evaluations["NUM_EXECUTIONS"] = static_cast<double>(num_executions);
       }
    }
 

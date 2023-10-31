@@ -47,8 +47,8 @@
 #include "frontend_flow_step_factory.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "memory_allocation.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
@@ -97,25 +97,6 @@ void InitializeHLS::ComputeRelationships(DesignFlowStepSet& relationship,
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-#if HAVE_EXPERIMENTAL && HAVE_PRAGMA_BUILT
-         if(parameters->isOption(OPT_parse_pragma) and parameters->getOption<bool>(OPT_parse_pragma) and
-            relationship_type == PRECEDENCE_RELATIONSHIP)
-         {
-            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const ActorGraphFlowStepFactory* actor_graph_flow_step_factory =
-                GetPointer<const ActorGraphFlowStepFactory>(
-                    design_flow_manager.lock()->CGetDesignFlowStepFactory("ActorGraph"));
-            const std::string actor_graph_creator_signature =
-                ActorGraphFlowStep::ComputeSignature(ACTOR_GRAPHS_CREATOR, input_function, 0, "");
-            const vertex actor_graph_creator_step =
-                design_flow_manager.lock()->GetDesignFlowStep(actor_graph_creator_signature);
-            const DesignFlowStepRef design_flow_step =
-                actor_graph_creator_step ?
-                    design_flow_graph->CGetDesignFlowStepInfo(actor_graph_creator_step)->design_flow_step :
-                    actor_graph_flow_step_factory->CreateActorGraphStep(ACTOR_GRAPHS_CREATOR, input_function);
-            relationship.insert(design_flow_step);
-         }
-#endif
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -136,28 +117,14 @@ void InitializeHLS::Initialize()
 DesignFlowStep_Status InitializeHLS::InternalExec()
 {
    HLS = HLS_manager::create_HLS(HLSMgr, funId);
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
-   if(GetPointer<const function_decl>(HLSMgr->get_tree_manager()->CGetTreeNode(funId))->omp_for_wrapper)
+   HLS->controller_type = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_controller_architecture));
+   if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
    {
-      HLS->controller_type = HLSFlowStep_Type::PARALLEL_CONTROLLER_CREATOR;
-      HLS->module_binding_algorithm =
-          static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_fu_binding_algorithm));
-      HLS->liveness_algorithm = HLSFlowStep_Type::CHAINING_BASED_LIVENESS;
-      HLS->chaining_algorithm = HLSFlowStep_Type::EPDG_SCHED_CHAINING;
+      HLS->controller_type = HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR;
    }
-   else
-#endif
-   {
-      HLS->controller_type = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_controller_architecture));
-      if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
-      {
-         HLS->controller_type = HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR;
-      }
-      HLS->module_binding_algorithm =
-          static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_fu_binding_algorithm));
-      HLS->liveness_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_liveness_algorithm));
-      HLS->chaining_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_chaining_algorithm));
-   }
+   HLS->module_binding_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_fu_binding_algorithm));
+   HLS->liveness_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_liveness_algorithm));
+   HLS->chaining_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_chaining_algorithm));
 
    return DesignFlowStep_Status::SUCCESS;
 }

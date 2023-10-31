@@ -42,7 +42,6 @@
  */
 
 #include "symbolic_application_frontend_flow_step.hpp"
-#include "config_HAVE_ZEBU_BUILT.hpp" // for HAVE_ZEBU_BUILT
 
 #include "Parameter.hpp"                   // for Parameter, ParameterCon...
 #include "application_manager.hpp"         // for application_managerRef
@@ -50,7 +49,6 @@
 #include "function_frontend_flow_step.hpp" // for DesignFlowManagerConstRef
 #include "hash_helper.hpp"                 // for hash
 #include "string_manipulation.hpp"         // for GET_CLASS
-#include <boost/lexical_cast.hpp>          // for lexical_cast
 #include <iostream>                        // for ios_base::failure
 
 SymbolicApplicationFrontendFlowStep::SymbolicApplicationFrontendFlowStep(
@@ -77,9 +75,6 @@ SymbolicApplicationFrontendFlowStep::ComputeFrontendRelationships(
          relationships.insert(std::make_pair(represented_frontend_flow_step_type, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
-#if HAVE_ZEBU_BUILT
-         relationships.insert(std::make_pair(FUNCTION_POINTER_CALLGRAPH_COMPUTATION, WHOLE_APPLICATION));
-#endif
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -101,7 +96,7 @@ DesignFlowStep_Status SymbolicApplicationFrontendFlowStep::Exec()
    return DesignFlowStep_Status::EMPTY;
 }
 
-const std::string SymbolicApplicationFrontendFlowStep::GetKindText() const
+std::string SymbolicApplicationFrontendFlowStep::GetKindText() const
 {
    return "SymbolicApplicationFrontendFlowStep(" + EnumToKindText(represented_frontend_flow_step_type) + ")";
 }
@@ -109,11 +104,11 @@ const std::string SymbolicApplicationFrontendFlowStep::GetKindText() const
 const std::string
 SymbolicApplicationFrontendFlowStep::ComputeSignature(const FrontendFlowStepType represented_frontend_flow_step_type)
 {
-   return "Frontend::" + boost::lexical_cast<std::string>(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP) + "(" +
-          boost::lexical_cast<std::string>(represented_frontend_flow_step_type) + ")";
+   return "Frontend::" + STR(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP) + "(" + STR(represented_frontend_flow_step_type) +
+          ")";
 }
 
-const std::string SymbolicApplicationFrontendFlowStep::GetSignature() const
+std::string SymbolicApplicationFrontendFlowStep::GetSignature() const
 {
    return ComputeSignature(represented_frontend_flow_step_type);
 }

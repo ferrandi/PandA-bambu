@@ -1,163 +1,114 @@
 EXTRA_DIST += \
-%D%/aes/aes/aes.c \
-%D%/aes/aes/aes.h \
-%D%/aes/aes/aes_dir \
-%D%/aes/aes/aes_test.c \
-%D%/aes/aes/check.data \
-%D%/aes/aes/generate.c \
-%D%/aes/aes/hls.tcl \
-%D%/aes/aes/input.data \
-%D%/backprop/backprop/check.data \
-%D%/backprop/backprop/generate.c \
-%D%/backprop/backprop/hls.tcl \
-%D%/backprop/backprop/input.data \
-%D%/backprop/backprop/net.c \
-%D%/backprop/backprop/net.h \
-%D%/backprop/backprop/net_dir \
-%D%/backprop/backprop \
-%D%/bfs/bulk/bulk.c \
-%D%/bfs/bulk/bulk.h \
-%D%/bfs/bulk/bulk_dir \
-%D%/bfs/bulk/check.data \
-%D%/bfs/bulk/generate.c \
-%D%/bfs/bulk/hls.tcl  \
-%D%/bfs/bulk/input.data \
-%D%/bfs/bulk/matspy.py \
-%D%/bfs/queue/check.data \
-%D%/bfs/queue/generate.c \
-%D%/bfs/queue/hls.tcl \
-%D%/bfs/queue/input.data \
-%D%/bfs/queue/queue.c \
-%D%/bfs/queue/queue.h \
-%D%/bfs/queue/queue_dir \
-%D%/common/harness.c \
-%D%/fft/strided/check.data \
-%D%/fft/strided/fft.c \
-%D%/fft/strided/fft.h \
-%D%/fft/strided/fft_dir \
-%D%/fft/strided/fft_test.c \
-%D%/fft/strided/generate.c \
-%D%/fft/strided/hls.tcl \
-%D%/fft/strided/input.data \
-%D%/fft/transpose/check.data \
-%D%/fft/transpose/fft.c \
-%D%/fft/transpose/fft.h \
-%D%/fft/transpose/fft_dir \
-%D%/fft/transpose/fft_test.c \
-%D%/fft/transpose/generate.c \
-%D%/fft/transpose/hls.tcl \
-%D%/fft/transpose/input.data \
-%D%/gemm/blocked/bbgemm.c \
-%D%/gemm/blocked/bbgemm.h \
-%D%/gemm/blocked/bbgemm_dir \
-%D%/gemm/blocked/check.data \
-%D%/gemm/blocked/generate.c \
-%D%/gemm/blocked/hls.tcl \
-%D%/gemm/blocked/input.data \
-%D%/gemm/ncubed/check.data \
-%D%/gemm/ncubed/gemm.c \
-%D%/gemm/ncubed/gemm.h \
-%D%/gemm/ncubed/gemm_dir \
-%D%/gemm/ncubed/generate.c \
-%D%/gemm/ncubed/hls.tcl \
-%D%/gemm/ncubed/input.data \
-%D%/generic_MachSuite.sh \
-%D%/kmp/kmp/TR.h \
-%D%/kmp/kmp/TR.txt \
-%D%/kmp/kmp/check.data \
-%D%/kmp/kmp/generate.c \
-%D%/kmp/kmp/hls.tcl \
-%D%/kmp/kmp/input.data \
-%D%/kmp/kmp/kmp.c \
-%D%/kmp/kmp/kmp.h \
-%D%/kmp/kmp/kmp_dir \
-%D%/kmp/kmp/kmp_test.c \
-%D%/LICENSE \
-%D%/machsuite_list \
-%D%/MachSuite_xc7vx690t-3ffg1930-VVD_10.0_O2_sdc_hls_div.tex \
-%D%/md/grid/check.data \
-%D%/md/grid/generate.c \
-%D%/md/grid/grid_dir \
-%D%/md/grid/hls.tcl \
-%D%/md/grid/input.data \
-%D%/md/grid/md.c \
-%D%/md/grid/md.h \
-%D%/md/knn/check.data \
-%D%/md/knn/generate.c \
-%D%/md/knn/hls.tcl \
-%D%/md/knn/input.data \
-%D%/md/knn/knn_dir \
-%D%/md/knn/md.c \
-%D%/md/knn/md.h \
-%D%/md/knn/md_kernel_test.c \
-%D%/md/knn/point_stats.py \
-%D%/nw/nw/check.data \
-%D%/nw/nw/generate.c \
-%D%/nw/nw/hls.tcl \
-%D%/nw/nw/input.data \
-%D%/nw/nw/needwun.c \
-%D%/nw/nw/needwun.h \
-%D%/nw/nw/needwun_test.c \
-%D%/nw/nw/nw_dir \
-%D%/README.md \
-%D%/sort/merge/check.data \
-%D%/sort/merge/generate.c \
-%D%/sort/merge/hls.tcl \
-%D%/sort/merge/input.data \
-%D%/sort/merge/merge.c \
-%D%/sort/merge/merge.h \
-%D%/sort/merge/merge_dir \
-%D%/sort/radix/check.data \
-%D%/sort/radix/generate.c \
-%D%/sort/radix/hls.tcl \
-%D%/sort/radix/inline_dir \
-%D%/sort/radix/input.data \
-%D%/sort/radix/radix.c \
-%D%/sort/radix/radix.h \
-%D%/sort/radix/radix_dir \
-%D%/spmv/crs/494_bus.mtx \
-%D%/spmv/crs/494_bus_full.mtx \
-%D%/spmv/crs/check.data \
-%D%/spmv/crs/crs.c \
-%D%/spmv/crs/crs.h \
-%D%/spmv/crs/crs_dir \
-%D%/spmv/crs/crs_test.c \
-%D%/spmv/crs/generate.c \
-%D%/spmv/crs/hls.tcl \
-%D%/spmv/crs/input.data \
-%D%/spmv/crs/symmetry.py \
-%D%/spmv/ellpack/494_bus.mtx \
-%D%/spmv/ellpack/494_bus_full.mtx \
-%D%/spmv/ellpack/check.data \
-%D%/spmv/ellpack/ellpack.c \
-%D%/spmv/ellpack/ellpack.h \
-%D%/spmv/ellpack/ellpack_dir \
-%D%/spmv/ellpack/ellpack_test.c \
-%D%/spmv/ellpack/generate.c \
-%D%/spmv/ellpack/hls.tcl \
-%D%/spmv/ellpack/input.data \
-%D%/stencil/stencil2d/check.data \
-%D%/stencil/stencil2d/generate.c \
-%D%/stencil/stencil2d/hls.tcl \
-%D%/stencil/stencil2d/input.data \
-%D%/stencil/stencil2d/stencil.c \
-%D%/stencil/stencil2d/stencil.h \
-%D%/stencil/stencil2d/stencil_dir \
-%D%/stencil/stencil3d/check.data \
-%D%/stencil/stencil3d/generate.c \
-%D%/stencil/stencil3d/hls.tcl \
-%D%/stencil/stencil3d/input.data \
-%D%/stencil/stencil3d/stencil3d.c \
-%D%/stencil/stencil3d/stencil3d.h \
-%D%/stencil/stencil3d/stencil3d_dir \
-%D%/templates/Makefile_template \
-%D%/templates/generate_template.c \
-%D%/templates/harness_interface_template.h \
-%D%/viterbi/viterbi/check.data \
-%D%/viterbi/viterbi/generate.c \
-%D%/viterbi/viterbi/hls.tcl \
-%D%/viterbi/viterbi/input.data \
-%D%/viterbi/viterbi/viterbi.c \
-%D%/viterbi/viterbi/viterbi.h \
-%D%/viterbi/viterbi/viterbi_dir \
-%D%/viterbi/viterbi/viterbi_test.c
+   %D%/generic_MachSuite.sh \
+   %D%/machsuite.doc \
+   %D%/MachSuite/nw/nw/nw.c \
+   %D%/MachSuite/nw/nw/nw.h \
+   %D%/MachSuite/nw/nw/check.data \
+   %D%/MachSuite/nw/nw/input.data \
+   %D%/MachSuite/nw/nw/local_support.c \
+   %D%/MachSuite/common/harness.c \
+   %D%/MachSuite/common/support.c \
+   %D%/MachSuite/common/support.h \
+   %D%/MachSuite/common/test/input_sections \
+   %D%/MachSuite/common/test/test_support.c \
+   %D%/MachSuite/README.md \
+   %D%/MachSuite/fft/transpose/fft.c \
+   %D%/MachSuite/fft/transpose/fft.h \
+   %D%/MachSuite/fft/transpose/check.data \
+   %D%/MachSuite/fft/transpose/input.data \
+   %D%/MachSuite/fft/transpose/local_support.c \
+   %D%/MachSuite/fft/strided/fft.c \
+   %D%/MachSuite/fft/strided/fft.h \
+   %D%/MachSuite/fft/strided/check.data \
+   %D%/MachSuite/fft/strided/input.data \
+   %D%/MachSuite/fft/strided/local_support.c \
+   %D%/MachSuite/sort/radix/sort.c \
+   %D%/MachSuite/sort/radix/sort.h \
+   %D%/MachSuite/sort/radix/check.data \
+   %D%/MachSuite/sort/radix/input.data \
+   %D%/MachSuite/sort/radix/local_support.c \
+   %D%/MachSuite/sort/merge/sort.c \
+   %D%/MachSuite/sort/merge/sort.h \
+   %D%/MachSuite/sort/merge/check.data \
+   %D%/MachSuite/sort/merge/input.data \
+   %D%/MachSuite/sort/merge/local_support.c \
+   %D%/MachSuite/viterbi/viterbi/viterbi.c \
+   %D%/MachSuite/viterbi/viterbi/viterbi.h \
+   %D%/MachSuite/viterbi/viterbi/check.data \
+   %D%/MachSuite/viterbi/viterbi/input.data \
+   %D%/MachSuite/viterbi/viterbi/local_support.c \
+   %D%/MachSuite/kmp/kmp/kmp.c \
+   %D%/MachSuite/kmp/kmp/kmp.h \
+   %D%/MachSuite/kmp/kmp/TR.h \
+   %D%/MachSuite/kmp/kmp/check.data \
+   %D%/MachSuite/kmp/kmp/input.data \
+   %D%/MachSuite/kmp/kmp/local_support.c \
+   %D%/MachSuite/spmv/ellpack/spmv.h \
+   %D%/MachSuite/spmv/ellpack/494_bus.mtx \
+   %D%/MachSuite/spmv/ellpack/494_bus_full.mtx \
+   %D%/MachSuite/spmv/ellpack/spmv.c \
+   %D%/MachSuite/spmv/ellpack/check.data \
+   %D%/MachSuite/spmv/ellpack/input.data \
+   %D%/MachSuite/spmv/ellpack/local_support.c \
+   %D%/MachSuite/spmv/crs/spmv.h \
+   %D%/MachSuite/spmv/crs/494_bus.mtx \
+   %D%/MachSuite/spmv/crs/494_bus_full.mtx \
+   %D%/MachSuite/spmv/crs/spmv.c \
+   %D%/MachSuite/spmv/crs/check.data \
+   %D%/MachSuite/spmv/crs/input.data \
+   %D%/MachSuite/spmv/crs/local_support.c \
+   %D%/MachSuite/stencil/stencil2d/stencil.c \
+   %D%/MachSuite/stencil/stencil2d/stencil.h \
+   %D%/MachSuite/stencil/stencil2d/check.data \
+   %D%/MachSuite/stencil/stencil2d/input.data \
+   %D%/MachSuite/stencil/stencil2d/local_support.c \
+   %D%/MachSuite/stencil/stencil3d/stencil.c \
+   %D%/MachSuite/stencil/stencil3d/stencil.h \
+   %D%/MachSuite/stencil/stencil3d/check.data \
+   %D%/MachSuite/stencil/stencil3d/input.data \
+   %D%/MachSuite/stencil/stencil3d/local_support.c \
+   %D%/MachSuite/templates/support.c \
+   %D%/MachSuite/LICENSE \
+   %D%/MachSuite/aes/aes/aes.c \
+   %D%/MachSuite/aes/aes/aes.h \
+   %D%/MachSuite/aes/aes/check.data \
+   %D%/MachSuite/aes/aes/input.data \
+   %D%/MachSuite/aes/aes/local_support.c \
+   %D%/MachSuite/gemm/ncubed/gemm.c \
+   %D%/MachSuite/gemm/ncubed/gemm.h \
+   %D%/MachSuite/gemm/ncubed/check.data \
+   %D%/MachSuite/gemm/ncubed/input.data \
+   %D%/MachSuite/gemm/ncubed/local_support.c \
+   %D%/MachSuite/gemm/blocked/gemm.c \
+   %D%/MachSuite/gemm/blocked/gemm.h \
+   %D%/MachSuite/gemm/blocked/check.data \
+   %D%/MachSuite/gemm/blocked/input.data \
+   %D%/MachSuite/gemm/blocked/local_support.c \
+   %D%/MachSuite/backprop/backprop/backprop.h \
+   %D%/MachSuite/backprop/backprop/backprop.c \
+   %D%/MachSuite/backprop/backprop/check.data \
+   %D%/MachSuite/backprop/backprop/input.data \
+   %D%/MachSuite/backprop/backprop/local_support.c \
+   %D%/MachSuite/md/grid/md.h \
+   %D%/MachSuite/md/grid/md.c \
+   %D%/MachSuite/md/grid/check.data \
+   %D%/MachSuite/md/grid/input.data \
+   %D%/MachSuite/md/grid/local_support.c \
+   %D%/MachSuite/md/knn/md.h \
+   %D%/MachSuite/md/knn/md.c \
+   %D%/MachSuite/md/knn/check.data \
+   %D%/MachSuite/md/knn/input.data \
+   %D%/MachSuite/md/knn/local_support.c \
+   %D%/MachSuite/v2-status.md \
+   %D%/MachSuite/bfs/queue/bfs.h \
+   %D%/MachSuite/bfs/queue/bfs.c \
+   %D%/MachSuite/bfs/queue/check.data \
+   %D%/MachSuite/bfs/queue/input.data \
+   %D%/MachSuite/bfs/queue/local_support.c \
+   %D%/MachSuite/bfs/bulk/bfs.h \
+   %D%/MachSuite/bfs/bulk/bfs.c \
+   %D%/MachSuite/bfs/bulk/check.data \
+   %D%/MachSuite/bfs/bulk/input.data \
+   %D%/MachSuite/bfs/bulk/local_support.c \
+   %D%/machsuite_list \
+   %D%/backprop/backprop/check.data

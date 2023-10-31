@@ -44,23 +44,17 @@
 #define BEHAVIORAL_HELPER_HPP
 
 /// Autoheader include
-#include "config_HAVE_BAMBU_BUILT.hpp"
-#include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 
 #include "custom_map.hpp"
 #include "custom_set.hpp" // for set
 #include "custom_set.hpp"
+#include "graph.hpp"
+#include "refcount.hpp"
 #include <list>   // for list
 #include <string> // for string
 #include <tuple>
 #include <utility> // for pair
-
-/// graph include
-#include "graph.hpp"
-
-/// Utility include
-#include "refcount.hpp"
 /**
  * @name Forward declarations.
  */
@@ -231,6 +225,8 @@ class BehavioralHelper
     * Return the name of the function
     */
    std::string get_function_name() const;
+
+   std::string GetMangledFunctionName() const;
 
    /**
     * Return the index of the function
@@ -618,24 +614,6 @@ class BehavioralHelper
    virtual std::string PrintNode(unsigned int node_id, vertex v, const var_pp_functorConstRef vppf) const;
 
    /**
-    * This method returns true if the node specified in the parameters is
-    * a call expression.
-    * @param node is the ID of the node to be analyzed
-    * @return <b>true</b> if and only if the specified node is a call expression,
-    *    <b>false</b> otherwise
-    */
-   virtual bool isCallExpression(unsigned int nodeID) const;
-
-   /**
-    * This method returns the index of the function whose launch code is given as a string parameter.
-    * This information will be used to decide whether to insert or not the CUDA execution configuration
-    * launch code in the call expression.
-    * @param launch_code is the function launch code
-    * @return the called-function identifier
-    */
-   virtual unsigned int getCallExpressionIndex(std::string launch_code) const;
-
-   /**
     * This function prints the declaration of a variable without the closing ";".
     * For example the function prints on the stream os the following piece of C code:
     * \verbatim
@@ -680,7 +658,7 @@ class BehavioralHelper
     */
    bool IsDefaultSsaName(const unsigned int ssa_name_index) const;
 
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
    /**
     * Return the degree of parallelism for openmp for wrapper function, 0 otherwise
     */
@@ -697,7 +675,7 @@ class BehavioralHelper
    bool IsOmpBodyLoop() const;
 #endif
 
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
    /**
     * Return true if the function is an omp atomic instruction
     */
@@ -716,7 +694,6 @@ class BehavioralHelper
     */
    std::string get_asm_string(const unsigned int node_index) const;
 
-#if HAVE_BAMBU_BUILT
    /**
     * Return true if an operation can be speculated
     * @param node_index is the tree node index of the operation
@@ -728,7 +705,6 @@ class BehavioralHelper
     * @param node_index is the tree node index of the operation
     */
    bool CanBeMoved(const unsigned int node_index) const;
-#endif
 
    /**
     * Return if an operation is a store

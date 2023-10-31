@@ -16,48 +16,20 @@ spider_CPPFLAGS = -DPKGLIBDIR="\"$(pkglibdir)\"" -DPKGDATADIR="\"$(pkgdatadir)\"
    -I$(top_srcdir)/src/design_flows/backend/ToDataFile \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/ilp \
-   -I$(top_srcdir)/src/parser/csv \
    -I$(top_srcdir)/src/parser/data_xml \
    -I$(top_srcdir)/src/parser/polixml \
-   -I$(top_srcdir)/src/parser/profiling_analysis \
-   -I$(top_srcdir)/src/rtl \
    -I$(top_srcdir)/src/tree \
    $(AM_CPPFLAGS)
-
-if BUILD_LIB_EVALUATION
-   spider_CPPFLAGS += \
-      -I$(top_srcdir)/src/algorithms/evaluation
-endif
 
 if BUILD_LIB_FROM_C
    spider_CPPFLAGS += \
       -I$(top_srcdir)/src/wrapper/compiler
 endif
 
-if BUILD_LIB_REGRESSORS
-   spider_CPPFLAGS += \
-      -I$(top_srcdir)/src/algorithms/regressors \
-      -I$(top_srcdir)/src/algorithms/regressors/preprocessing
-endif
-
-if BUILD_LIBERTY_PARSER
-   spider_CPPFLAGS += \
-      -I$(top_srcdir)/src/technology/physical_library/models
-endif
-
-if BUILD_LIB_CODE_ESTIMATION
-   spider_CPPFLAGS += \
-      -I$(top_srcdir)/src/design_flows/codesign/estimation \
-      -I$(top_srcdir)/src/utility/probability_distribution
-endif
-
 if BUILD_LIB_TECHNOLOGY
    spider_CPPFLAGS += \
       -I$(top_srcdir)/src/design_flows/technology \
-      -I$(top_srcdir)/src/technology \
-      -I$(top_srcdir)/src/technology/physical_library \
-      -I$(top_srcdir)/src/technology/target_device \
-      -I$(top_srcdir)/src/technology/target_technology
+      -I$(top_srcdir)/src/technology
 endif
 
 lib_spider_la_LIBADD += \
@@ -67,19 +39,10 @@ lib_spider_la_LIBADD += \
       $(top_builddir)/src/parser/lib_parser.la \
       $(top_builddir)/src/parser/polixml/lib_xml_dom_parser.la \
       lib_polixml.la \
-      lib_utility.la \
-      $(BOOST_FILESYSTEM_LIB) \
-      $(BOOST_SYSTEM_LIB) \
-      $(BOOST_REGEX_LIB) \
-      $(GSL_LIBS)
+      lib_utility.la
 
 if BUILD_LIB_ALGORITHMS
    lib_spider_la_LIBADD += lib_algorithms.la
-endif
-
-if BUILD_LIB_ARCH
-   lib_spider_la_LIBADD += \
-      $(top_builddir)/src/machine/lib_machine.la
 endif
 
 if BUILD_LIB_BEHAVIOR
@@ -90,10 +53,6 @@ if BUILD_LIB_CIRCUIT
    lib_spider_la_LIBADD += lib_circuit.la
 endif
 
-if BUILD_LIB_FROM_BOOLEAN
-   lib_spider_la_LIBADD += \
-      $(top_builddir)/src/parser/boolean/lib_boolean_parser.la
-endif
 if BUILD_LIB_FROM_C
    lib_spider_la_LIBADD += lib_tree_manipulation.la
 endif
@@ -111,11 +70,6 @@ if BUILD_LIB_INTERMEDIATE_REPRESENTATIONS
    lib_spider_la_LIBADD += lib_intermediate_representations.la
 endif
 
-if BUILD_LIB_RTL
-   lib_spider_la_LIBADD += \
-      $(top_builddir)/src/rtl/lib_rtl.la
-endif
-
 if BUILD_LIB_TECHNOLOGY
    lib_spider_la_LIBADD += lib_technology.la
 endif
@@ -126,11 +80,6 @@ endif
 
 if BUILD_LIB_WRAPPER
    lib_spider_la_LIBADD += lib_wrapper.la
-endif
-
-if BUILD_R
-   lib_spider_la_LIBADD += \
-     $(RLOCALPACKAGEDIR)/RInside/lib/libRInside.a  -lR
 endif
 
 lib_spider_la_LIBADD += $(top_builddir)/ext/abseil-cpp/libabseil.la

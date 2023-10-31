@@ -40,14 +40,11 @@
 #ifndef GENERATE_FU_LIST_HPP
 #define GENERATE_FU_LIST_HPP
 
-/// Superclass include
 #include "functional_unit_step.hpp"
+#include "refcount.hpp"
 #include "to_data_file_step.hpp"
 
-/// utility include
-#include "refcount.hpp"
-
-REF_FORWARD_DECL(target_manager);
+REF_FORWARD_DECL(generic_device);
 
 class GenerateFuList : public ToDataFileStep, public FunctionalUnitStep
 {
@@ -67,11 +64,11 @@ class GenerateFuList : public ToDataFileStep, public FunctionalUnitStep
  public:
    /**
     * The constructor
-    * @param target is the target manager
+    * @param _device is the device
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   GenerateFuList(const target_managerRef target, const DesignFlowManagerConstRef design_flow_manager,
+   GenerateFuList(const generic_deviceRef _device, const DesignFlowManagerConstRef design_flow_manager,
                   const ParameterConstRef parameters);
 
    /**
@@ -98,18 +95,18 @@ class GenerateFuList : public ToDataFileStep, public FunctionalUnitStep
     * Return a unified identifier of this design step
     * @return the signature of the design step
     */
-   const std::string GetSignature() const override;
+   std::string GetSignature() const override;
 
    /**
     * Return the name of this design step
     * @return the name of the pass (for debug purpose)
     */
-   const std::string GetName() const override;
+   std::string GetName() const override;
 
    /**
     * Return the factory to create this type of steps
     */
-   const DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
+   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
 
    /**
     * Analyze the single cell

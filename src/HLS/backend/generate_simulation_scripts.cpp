@@ -52,8 +52,8 @@
 
 // include from HLS
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 
 // include from HLS/simulation
 #include "SimulationInformation.hpp"
@@ -130,8 +130,7 @@ DesignFlowStep_Status GenerateSimulationScripts::Exec()
    std::copy(HLSMgr->aux_files.begin(), HLSMgr->aux_files.end(), std::back_inserter(full_list));
    std::copy(HLSMgr->hdl_files.begin(), HLSMgr->hdl_files.end(), std::back_inserter(full_list));
    if(parameters->isOption(OPT_lattice_pmi_tdpbe) && parameters->isOption(OPT_lattice_pmi_mul) &&
-      BackendFlow::DetermineBackendFlowType(HLSMgr->get_HLS_target()->get_target_device(), parameters) ==
-          BackendFlow::LATTICE_FPGA)
+      BackendFlow::DetermineBackendFlowType(HLSMgr->get_HLS_device(), parameters) == BackendFlow::LATTICE_FPGA)
    {
       full_list.push_back(parameters->getOption<std::string>(OPT_lattice_pmi_tdpbe));
       full_list.push_back(parameters->getOption<std::string>(OPT_lattice_pmi_mul));
@@ -139,30 +138,10 @@ DesignFlowStep_Status GenerateSimulationScripts::Exec()
    THROW_ASSERT(HLSMgr->RSim->filename_bench != "", "Testbench not yet set");
    full_list.push_back(HLSMgr->RSim->filename_bench);
 
-   if(parameters->getOption<std::string>(OPT_simulator) == "MODELSIM")
-   {
-      HLSMgr->RSim->sim_tool = SimulationTool::CreateSimulationTool(SimulationTool::MODELSIM, parameters, suffix);
-   }
-   else if(parameters->getOption<std::string>(OPT_simulator) == "ISIM")
-   {
-      HLSMgr->RSim->sim_tool = SimulationTool::CreateSimulationTool(SimulationTool::ISIM, parameters, suffix);
-   }
-   else if(parameters->getOption<std::string>(OPT_simulator) == "XSIM")
-   {
-      HLSMgr->RSim->sim_tool = SimulationTool::CreateSimulationTool(SimulationTool::XSIM, parameters, suffix);
-   }
-   else if(parameters->getOption<std::string>(OPT_simulator) == "ICARUS")
-   {
-      HLSMgr->RSim->sim_tool = SimulationTool::CreateSimulationTool(SimulationTool::ICARUS, parameters, suffix);
-   }
-   else if(parameters->getOption<std::string>(OPT_simulator) == "VERILATOR")
-   {
-      HLSMgr->RSim->sim_tool = SimulationTool::CreateSimulationTool(SimulationTool::VERILATOR, parameters, suffix);
-   }
-   else
-   {
-      THROW_ERROR("Unknown simulator: " + parameters->getOption<std::string>(OPT_simulator));
-   }
+   HLSMgr->RSim->sim_tool = SimulationTool::CreateSimulationTool(
+       SimulationTool::to_sim_type(parameters->getOption<std::string>(OPT_simulator)), parameters, suffix,
+       HLSMgr->CGetFunctionBehavior(top_fun_id)->CGetBehavioralHelper()->GetMangledFunctionName());
+
    HLSMgr->RSim->sim_tool->GenerateSimulationScript(top_hls->top->get_circ()->get_id(), full_list);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Generated simulation scripts");
    return DesignFlowStep_Status::SUCCESS;

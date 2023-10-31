@@ -31,8 +31,6 @@ function cleanup {
 }
 trap cleanup EXIT
 
-#Necessary for gcc-4.5
-export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
 ln -sf /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h
 
 echo "::group::Initialize workspace"
@@ -146,8 +144,8 @@ unset PYTHONHOME  # Python is not bundled with this AppImage
 unset PYTHONPATH
 BINARY_NAME=\$(basename "\$ARGV0")
 BINARY_PATH="\$APPDIR/usr/bin/\$BINARY_NAME"
-if [ "\$BINARY_NAME" == "debug_terminal" ]; then
-   BINARY_PATH="/bin/bash"
+if [ "\$BINARY_NAME" == "panda_shell" ]; then
+   BINARY_PATH="\$SHELL"
 fi
 if [ ! -e "\$BINARY_PATH" ]; then
    BINARY_PATH="\$APPDIR/usr/bin/bambu"

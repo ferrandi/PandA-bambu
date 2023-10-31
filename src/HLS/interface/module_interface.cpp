@@ -93,8 +93,8 @@ module_interface::ComputeHLSRelationships(const DesignFlowStep::RelationshipType
       case DEPENDENCE_RELATIONSHIP:
       {
          const auto cg_man = HLSMgr->CGetCallGraphManager();
-         if(HLSMgr->hasToBeInterfaced(funId) and
-            (cg_man->ExistsAddressedFunction() or hls_flow_step_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION))
+         if(HLSMgr->hasToBeInterfaced(funId) &&
+            (cg_man->ExistsAddressedFunction() || parameters->getOption<bool>(OPT_memory_mapped_top)))
          {
             ret.insert(std::make_tuple(HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION,
                                        HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
@@ -188,7 +188,7 @@ void module_interface::AddSignal(const structural_managerRef SM, const structura
           port1_name.substr(port1_name.find('[') + 1, port1_name.size() - port1_base_name.size() - 2);
       const auto port1_vector = component1->find_member(port1_base_name, port_o_K, component1);
       THROW_ASSERT(port1_vector, port1_name + " is not in " + component1->get_path());
-      port1 = GetPointer<port_o>(port1_vector)->get_port(boost::lexical_cast<unsigned int>(port1_index));
+      port1 = GetPointer<port_o>(port1_vector)->get_port(static_cast<unsigned>(std::stoul(port1_index)));
       size1 = GetPointer<port_o>(port1_vector)->get_typeRef()->vector_size;
    }
    else
@@ -206,7 +206,7 @@ void module_interface::AddSignal(const structural_managerRef SM, const structura
           port2_name.substr(port2_name.find('[') + 1, port2_name.size() - port2_base_name.size() - 2);
       const auto port2_vector = component2->find_member(port2_base_name, port_o_K, component2);
       THROW_ASSERT(port2_vector, port2_base_name + " is not in " + component2->get_path());
-      port2 = GetPointer<port_o>(port2_vector)->get_port(boost::lexical_cast<unsigned int>(port2_index));
+      port2 = GetPointer<port_o>(port2_vector)->get_port(static_cast<unsigned>(std::stoul(port2_index)));
       size2 = GetPointer<port_o>(port2_vector)->get_typeRef()->vector_size;
    }
    else
@@ -252,7 +252,7 @@ void module_interface::AddConnection(const structural_managerRef SM, const struc
           port1_name.substr(port1_name.find('[') + 1, port1_name.size() - port1_base_name.size() - 2);
       const auto port1_vector = component1->find_member(port1_base_name, port_o_K, component1);
       THROW_ASSERT(port1_vector, port1_name + " is not in " + component1->get_path());
-      port1 = GetPointer<port_o>(port1_vector)->get_port(boost::lexical_cast<unsigned int>(port1_index));
+      port1 = GetPointer<port_o>(port1_vector)->get_port(static_cast<unsigned>(std::stoul(port1_index)));
       size1 = GetPointer<port_o>(port1_vector)->get_typeRef()->vector_size;
    }
    else
@@ -270,7 +270,7 @@ void module_interface::AddConnection(const structural_managerRef SM, const struc
           port2_name.substr(port2_name.find('[') + 1, port2_name.size() - port2_base_name.size() - 2);
       const auto port2_vector = component2->find_member(port2_base_name, port_o_K, component2);
       THROW_ASSERT(port2_vector, port2_base_name + " is not in " + component2->get_path());
-      port2 = GetPointer<port_o>(port2_vector)->get_port(boost::lexical_cast<unsigned int>(port2_index));
+      port2 = GetPointer<port_o>(port2_vector)->get_port(static_cast<unsigned>(std::stoul(port2_index)));
       size2 = GetPointer<port_o>(port2_vector)->get_typeRef()->vector_size;
    }
    else
@@ -305,7 +305,7 @@ void module_interface::AddConstant(const structural_managerRef SM, const structu
       const auto port_index = port_name.substr(port_name.find('[') + 1, port_name.size() - port_base_name.size() - 2);
       const auto port_vector = component->find_member(port_base_name, port_o_K, component);
       THROW_ASSERT(port_vector, port_name + " is not in " + component->get_path());
-      port = GetPointer<port_o>(port_vector)->get_port(boost::lexical_cast<unsigned int>(port_index));
+      port = GetPointer<port_o>(port_vector)->get_port(static_cast<unsigned>(std::stoul(port_index)));
       size = GetPointer<port_o>(port_vector)->get_typeRef()->vector_size;
    }
    else

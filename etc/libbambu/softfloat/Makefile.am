@@ -13,38 +13,6 @@ CC=$(top_builddir)/src/tree-panda-gcc
 CFLAGS=
 pkglib_LIBRARIES = 
 
-if BUILD_I386_GCC45
-pkglib_LIBRARIES += libsoftfloat_gcc45.a libsoftfloat_subnormals_gcc45.a
-libsoftfloat_gcc45_a_SOURCES = softfloat.c
-libsoftfloat_gcc45_a_CFLAGS = -O3 --compiler=I386_GCC45 -finline-limit=10000 $(common_cflags) -I$(BOOST_DIR)
-libsoftfloat_subnormals_gcc45_a_SOURCES = softfloat.c
-libsoftfloat_subnormals_gcc45_a_CFLAGS = -O3 --compiler=I386_GCC45 -finline-limit=10000 $(common_cflags_subnormals) -I$(BOOST_DIR)
-endif
-
-if BUILD_I386_GCC46
-pkglib_LIBRARIES += libsoftfloat_gcc46.a libsoftfloat_subnormals_gcc46.a
-libsoftfloat_gcc46_a_SOURCES = softfloat.c
-libsoftfloat_gcc46_a_CFLAGS = -O3 --compiler=I386_GCC46 -finline-limit=10000 $(common_cflags) -I$(BOOST_DIR)
-libsoftfloat_subnormals_gcc46_a_SOURCES = softfloat.c
-libsoftfloat_subnormals_gcc46_a_CFLAGS = -O3 --compiler=I386_GCC46 -finline-limit=10000 $(common_cflags_subnormals) -I$(BOOST_DIR)
-endif
-
-if BUILD_I386_GCC47
-pkglib_LIBRARIES += libsoftfloat_gcc47.a libsoftfloat_subnormals_gcc47.a
-libsoftfloat_gcc47_a_SOURCES = softfloat.c
-libsoftfloat_gcc47_a_CFLAGS = -O3 --compiler=I386_GCC47 -finline-limit=10000 $(common_cflags) -I$(BOOST_DIR)
-libsoftfloat_subnormals_gcc47_a_SOURCES = softfloat.c
-libsoftfloat_subnormals_gcc47_a_CFLAGS = -O3 --compiler=I386_GCC47 -finline-limit=10000 $(common_cflags_subnormals) -I$(BOOST_DIR)
-endif
-
-if BUILD_I386_GCC48
-pkglib_LIBRARIES += libsoftfloat_gcc48.a libsoftfloat_subnormals_gcc48.a
-libsoftfloat_gcc48_a_SOURCES = softfloat.c
-libsoftfloat_gcc48_a_CFLAGS = -O3 -fno-tree-loop-distribute-patterns --compiler=I386_GCC48 -finline-limit=10000 $(common_cflags) -I$(BOOST_DIR)
-libsoftfloat_subnormals_gcc48_a_SOURCES = softfloat.c
-libsoftfloat_subnormals_gcc48_a_CFLAGS = -O3 -fno-tree-loop-distribute-patterns --compiler=I386_GCC48 -finline-limit=10000 $(common_cflags_subnormals) -I$(BOOST_DIR)
-endif
-
 if BUILD_I386_GCC49
 pkglib_LIBRARIES += libsoftfloat_gcc49.a libsoftfloat_subnormals_gcc49.a
 libsoftfloat_gcc49_a_SOURCES = softfloat.c
@@ -173,4 +141,11 @@ libsoftfloat_subnormals_clang13_a_SOURCES = softfloat.c
 libsoftfloat_subnormals_clang13_a_CFLAGS = -O3 --compiler=I386_CLANG13 $(common_cflags_subnormals_clang) -I$(BOOST_DIR) -finline-functions --extra-gcc-options="-mllvm -inline-threshold=10000"
 endif
 
+if BUILD_I386_CLANG16
+pkglib_LIBRARIES += libsoftfloat_clang16.a libsoftfloat_subnormals_clang16.a
+libsoftfloat_clang16_a_SOURCES = softfloat.c
+libsoftfloat_clang16_a_CFLAGS = -O3 --compiler=I386_CLANG16 $(common_cflags_clang) -I$(BOOST_DIR) -finline-functions --extra-gcc-options="-mllvm -inline-threshold=10000"
+libsoftfloat_subnormals_clang16_a_SOURCES = softfloat.c
+libsoftfloat_subnormals_clang16_a_CFLAGS = -O3 --compiler=I386_CLANG16 $(common_cflags_subnormals_clang) -I$(BOOST_DIR) -finline-functions --extra-gcc-options="-mllvm -inline-threshold=10000"
+endif
 

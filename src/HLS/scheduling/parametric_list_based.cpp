@@ -312,7 +312,7 @@ ParametricListBasedSpecialization::ParametricListBasedSpecialization(
 {
 }
 
-const std::string ParametricListBasedSpecialization::GetKindText() const
+std::string ParametricListBasedSpecialization::GetKindText() const
 {
    switch(parametric_list_based_metric)
    {
@@ -328,7 +328,7 @@ const std::string ParametricListBasedSpecialization::GetKindText() const
    return "";
 }
 
-const std::string ParametricListBasedSpecialization::GetSignature() const
+std::string ParametricListBasedSpecialization::GetSignature() const
 {
    return GetKindText();
 }
@@ -391,7 +391,7 @@ void parametric_list_based::CheckSchedulabilityConditions(
     const fu_bindingRef res_binding, const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond,
     bool& cannotBeChained0, bool& chainingRetCond, bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2,
     bool& cannotBeChained3, bool& MultiCond0, bool& MultiCond1, bool& LoadStoreFunctionConflict,
-    bool& FunctionLoadStoreConflict, bool& proxyFunCond, bool unbounded_RW)
+    bool& FunctionLoadStoreConflict, bool& proxyFunCond, bool unbounded_RW, bool seeMulticycle)
 {
    predecessorsCond = current_ASAP.find(current_vertex) != current_ASAP.end() and
                       current_ASAP.find(current_vertex)->second > current_cycle;
@@ -452,11 +452,13 @@ void parametric_list_based::CheckSchedulabilityConditions(
    {
       return;
    }
-   MultiCond0 = (n_cycles > 1 && (unbounded_RW || unbounded)) ||
-                ((!is_pipelined && n_cycles > 0 && current_starting_time > (current_cycle_starting_time)) &&
-                 current_ending_time - (n_cycles - 1) * clock_cycle + setup_hold_time + phi_extra_time +
-                         (complex_op ? scheduling_mux_margins : 0) >
-                     current_cycle_ending_time);
+   MultiCond0 =
+       (n_cycles > 1 && (unbounded_RW || unbounded)) ||
+       (seeMulticycle && !HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type)) ||
+       ((!is_pipelined && n_cycles > 0 && current_starting_time > (current_cycle_starting_time)) &&
+        current_ending_time - (n_cycles - 1) * clock_cycle + setup_hold_time + phi_extra_time +
+                (complex_op ? scheduling_mux_margins : 0) >
+            current_cycle_ending_time);
    if(MultiCond0)
    {
       return;
@@ -745,7 +747,10 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
       bool RWFunctions = false;
       bool unbounded_RW = false;
       bool LoadStoreOp = false;
+      bool seeMulticycle = false;
       unsigned int n_scheduled_ops = 0;
+      const auto current_cycle_starting_time = from_strongtype_cast<double>(current_cycle) * clock_cycle;
+      const auto current_cycle_ending_time = from_strongtype_cast<double>(current_cycle + 1) * clock_cycle;
       seen_cstep_has_RET_conflict = cstep_has_RET_conflict =
           ((schedule->num_scheduled() - already_sch) != operations_number - 1) ? registering_output_p : false;
       std::set<std::string> proxy_functions_used;
@@ -756,7 +761,7 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                     "      operations_number " + std::to_string(operations_number));
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                     "      Scheduling in control step " + STR(current_cycle) +
-                        " (Time: " + STR(from_strongtype_cast<double>(current_cycle) * clock_cycle) + ")");
+                        " (Time: " + STR(current_cycle_starting_time) + ")");
       /// definition of the data structure used to check if a resource is available given a vertex
       /// in case a vertex is not included in a map this mean that the used resources are zero.
       /// First index is the functional unit type, second index is the controller node, third index is the condition
@@ -771,7 +776,11 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "         Considering live vertices...");
       while(live_vertex_it != live_vertices.end())
       {
-         if(ending_time.find(*live_vertex_it)->second <= from_strongtype_cast<double>(current_cycle) * clock_cycle)
+         if(ending_time.find(*live_vertex_it)->second > current_cycle_ending_time)
+         {
+            seeMulticycle = true;
+         }
+         if(ending_time.find(*live_vertex_it)->second <= current_cycle_starting_time)
          {
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                           "            Vertex " + GET_NAME(flow_graph, *live_vertex_it) + " dies");
@@ -844,16 +853,15 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
          do_again = false;
          while(ready_resources.size())
          {
-            unsigned int fu_type;
-            auto best_res_it = ready_resources.begin();
-            fu_type = *best_res_it;
+            const auto fu_type = *ready_resources.begin();
+            ready_resources.erase(ready_resources.begin());
+            THROW_ASSERT(fu_type != static_cast<unsigned>(-1), "");
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "-->Considering functional unit type " + STR(fu_type) + "(" +
                                HLS->allocation_information->get_fu_name(fu_type).first + "-" +
                                HLS->allocation_information->get_fu_name(fu_type).second + ")" + " at clock cycle " +
                                STR(current_cycle));
-            ready_resources.erase(best_res_it);
 
             auto& queue = priority_queues[fu_type];
             /// Ignore empty list
@@ -1035,9 +1043,6 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                /// stage period for pipelined units
                double current_stage_period;
 
-               const auto current_cycle_starting_time = from_strongtype_cast<double>(current_cycle) * clock_cycle;
-               const auto current_cycle_ending_time = from_strongtype_cast<double>(current_cycle + 1) * clock_cycle;
-
                double phi_extra_time;
                CustomMap<std::pair<unsigned int, unsigned int>, double> local_connection_map;
 
@@ -1053,7 +1058,7 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                    proxy_functions_used, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule,
                    predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond, cannotBeChained1, asyncCond,
                    cannotBeChained2, cannotBeChained3, MultiCond0, MultiCond1, LoadStoreFunctionConflict,
-                   FunctionLoadStoreConflict, proxyFunCond, unbounded_RW);
+                   FunctionLoadStoreConflict, proxyFunCond, unbounded_RW, seeMulticycle);
 
                /// checking if predecessors have finished
                if(predecessorsCond)
@@ -1072,8 +1077,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "                  Pipelined unit cannot be chained: starting time is " +
-                                    boost::lexical_cast<std::string>(current_starting_time) + " stage period is " +
-                                    boost::lexical_cast<std::string>(current_stage_period));
+                                    std::to_string(current_starting_time) + " stage period is " +
+                                    std::to_string(current_stage_period));
                   if(black_list.find(fu_type) == black_list.end())
                   {
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
@@ -1085,8 +1090,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "                  It cannot be chained: starting time is " +
-                                    boost::lexical_cast<std::string>(current_starting_time) + " ending time is " +
-                                    boost::lexical_cast<std::string>(current_ending_time));
+                                    std::to_string(current_starting_time) + " ending time is " +
+                                    std::to_string(current_ending_time));
                   if(black_list.find(fu_type) == black_list.end())
                   {
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
@@ -1112,8 +1117,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "                  Chaining with a store or a load or an unbounded in input is not "
                                 "possible -> starting time " +
-                                    boost::lexical_cast<std::string>(current_starting_time) +
-                                    " ending time: " + boost::lexical_cast<std::string>(current_ending_time));
+                                    std::to_string(current_starting_time) +
+                                    " ending time: " + std::to_string(current_ending_time));
                   if(black_list.find(fu_type) == black_list.end())
                   {
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
@@ -1126,8 +1131,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  READ_COND or MULTI_READ_COND
                cannot be chained with non-direct operations -> starting time " +
-               boost::lexical_cast<std::string>(current_starting_time) + " ending time: " +
-               boost::lexical_cast<std::string>(current_ending_time)); if(black_list.find(fu_type) == black_list.end())
+               std::to_string(current_starting_time) + " ending time: " +
+               std::to_string(current_ending_time)); if(black_list.find(fu_type) == black_list.end())
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   black_list.at(fu_type).insert(current_vertex);
                   continue;
@@ -1137,8 +1142,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   PRINT_DBG_MEX(
                       DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                       "                  Chaining with an asynchronous load is not possible -> starting time " +
-                          boost::lexical_cast<std::string>(current_starting_time) +
-                          " ending time: " + boost::lexical_cast<std::string>(current_ending_time));
+                          std::to_string(current_starting_time) +
+                          " ending time: " + std::to_string(current_ending_time));
                   if(black_list.find(fu_type) == black_list.end())
                   {
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
@@ -1150,8 +1155,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                TYPE_STORE) && HLS->allocation_information->is_indirect_access_memory_unit(fu_type))
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  Chaining with a store is not
-               possible -> starting time " + boost::lexical_cast<std::string>(current_starting_time) + " ending time: "
-               + boost::lexical_cast<std::string>(current_ending_time)); if(black_list.find(fu_type) ==
+               possible -> starting time " + std::to_string(current_starting_time) + " ending time: "
+               + std::to_string(current_ending_time)); if(black_list.find(fu_type) ==
                black_list.end()) black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   black_list.at(fu_type).insert(current_vertex);
                   continue;
@@ -1160,8 +1165,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                HLS->allocation_information->is_indirect_access_memory_unit(fu_type))
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  Chaining with a load is not
-               possible -> starting time " + boost::lexical_cast<std::string>(current_starting_time) + " ending time: "
-               + boost::lexical_cast<std::string>(current_ending_time)); if(black_list.find(fu_type) ==
+               possible -> starting time " + std::to_string(current_starting_time) + " ending time: "
+               + std::to_string(current_ending_time)); if(black_list.find(fu_type) ==
                black_list.end()) black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   black_list.at(fu_type).insert(current_vertex);
                   continue;
@@ -1170,8 +1175,8 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "                  Chaining is possible but not allowed -> starting time " +
-                                    boost::lexical_cast<std::string>(current_starting_time) +
-                                    " ending time: " + boost::lexical_cast<std::string>(current_ending_time));
+                                    std::to_string(current_starting_time) +
+                                    " ending time: " + std::to_string(current_ending_time));
                   if(black_list.find(fu_type) == black_list.end())
                   {
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
@@ -1377,6 +1382,13 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                                            current_cycle + ControlStep(static_cast<unsigned int>(
                                                                floor(ending_time[current_vertex] / clock_cycle) -
                                                                from_strongtype_cast<double>(current_cycle))));
+               /// check if we have operations taking more than one cycle
+               if(HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) &&
+                  ending_time[current_vertex] > current_cycle_ending_time)
+               {
+                  seeMulticycle = true;
+               }
+
                for(auto edge_connection_pair : local_connection_map)
                {
                   schedule->AddConnectionTimes(edge_connection_pair.first.first, edge_connection_pair.first.second,
@@ -1400,8 +1412,7 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
 
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                              "                  Current cycles ends at " + STR(current_cycle_ending_time) +
-                                 "  - operation ends at " +
-                                 boost::lexical_cast<std::string>(ending_time[current_vertex]));
+                                 "  - operation ends at " + STR(ending_time[current_vertex]));
                if(ending_time[current_vertex] > current_cycle_ending_time)
                {
                   live_vertices.insert(current_vertex);
@@ -1886,9 +1897,9 @@ void parametric_list_based::compute_starting_ending_time_alap(
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                  "                  Operation " + GET_NAME(flow_graph, v) + " starts at " +
-                     boost::lexical_cast<std::string>(current_starting_time) + " and should end before of " +
-                     boost::lexical_cast<std::string>(max_ending_time) + " execution time " + STR(op_execution_time) +
-                     " stage period " + STR(stage_period));
+                     std::to_string(current_starting_time) + " and should end before of " +
+                     std::to_string(max_ending_time) + " execution time " + STR(op_execution_time) + " stage period " +
+                     STR(stage_period));
 }
 
 bool parametric_list_based::BB_update_resources_use(unsigned int& used_resources, const unsigned int fu_type) const
@@ -2018,6 +2029,12 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
       exec(operations, executions_number == 1 ? ControlStep(0) : ctrl_steps);
 #endif
       ctrl_steps = HLS->Rsch->get_csteps();
+      if(parameters->getOption<bool>(OPT_print_dot))
+      {
+         auto subgraph = FB->CGetOpGraph(FunctionBehavior::FSDG, operations);
+         HLS->Rsch->WriteDot("HLS_scheduling_BB" + STR(bbg->CGetBBNodeInfo(*vi)->block->number) + ".dot", subgraph,
+                             &operations);
+      }
    }
    HLS->Rsch->set_spec(get_spec());
 
@@ -3260,7 +3277,7 @@ parametric_list_based::ComputeHLSRelationships(const DesignFlowStep::Relationshi
       {
 #if HAVE_ILP_BUILT
          if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING
-#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
             and HLSMgr->get_HLS(funId) and
             HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->GetOmpForDegree() == 0
 #endif

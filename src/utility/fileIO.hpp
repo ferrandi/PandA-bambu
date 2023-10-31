@@ -36,6 +36,7 @@
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
@@ -44,23 +45,14 @@
 #ifndef FILEIO_HPP
 #define FILEIO_HPP
 
-#include "Parameter.hpp"         // for ParameterConstRef
-#include "dbgPrintHelper.hpp"    // for OUTPUT_LEVEL_PED...
-#include "exceptions.hpp"        // for THROW_UNREACHABLE
-#include "file_IO_constants.hpp" // for STR_CST_file_IO_...
-#include "gzstream.hpp"          // for igzstream, ogzst...
-#include "refcount.hpp"          // for refcount
-#include "string_manipulation.hpp"
-#include <boost/filesystem/operations.hpp> // for copy_file, remove
-#include <boost/filesystem/path.hpp>       // for path
-#include <boost/lexical_cast.hpp>          // for lexical_cast
-#include <boost/system/error_code.hpp>     // for error_code
-#include <boost/version.hpp>               // for BOOST_VERSION
-#include <cstdio>                          // for size_t, fclose
-#include <cstdlib>                         // for system
-#include <iostream>                        // for operator<<, basi...
-#include <string>                          // for string, operator+
-#include <type_traits>
+#include "gzstream.hpp"
+#include "refcount.hpp"
+
+#include <filesystem>
+#include <iostream>
+#include <string>
+
+CONSTREF_FORWARD_DECL(Parameter);
 
 /// Return value of timeout signaling timeout has reached
 #define TIMEOUT 124
@@ -87,37 +79,14 @@ using fileIO_ostreamRef = refcount<std::ostream>;
  * @param name is the file name.
  * @return the refcount to the istream
  */
-inline fileIO_istreamRef fileIO_istream_open(const std::string& name)
-{
-   fileIO_istreamRef res_file;
-   res_file = fileIO_istreamRef(new igzstream((name).c_str()));
-   if(res_file->fail())
-   {
-      res_file = fileIO_istreamRef(new igzstream((name + ".gz").c_str()));
-      if(res_file->fail())
-      {
-         res_file = fileIO_istreamRef(new igzstream((name + ".Z").c_str()));
-         if(res_file->fail())
-         {
-            res_file = fileIO_istreamRef(new std::ifstream(name.c_str()));
-            if(res_file->fail())
-            {
-               THROW_ERROR("Error in opening " + name);
-            }
-         }
-      }
-   }
-   return res_file;
-}
+fileIO_istreamRef fileIO_istream_open(const std::string& name);
 
 /**
  * Create a fileIO_istreamRef starting from a string
  */
 inline fileIO_istreamRef fileIO_istream_open_from_string(const std::string& input)
 {
-   fileIO_istreamRef output;
-   output = fileIO_istreamRef(new std::istringstream(input));
-   return output;
+   return fileIO_istreamRef(new std::istringstream(input));
 }
 
 /**
@@ -128,16 +97,8 @@ inline fileIO_istreamRef fileIO_istream_open_from_string(const std::string& inpu
  */
 inline fileIO_ostreamRef fileIO_ostream_open(const std::string& name)
 {
-   fileIO_ostreamRef res_file;
-   res_file = fileIO_ostreamRef(new ogzstream((name).c_str()));
-   return res_file;
+   return fileIO_ostreamRef(new ogzstream((name).c_str()));
 }
-
-#ifdef _WIN32
-#define EXEEXT std::string(".exe")
-#else
-#define EXEEXT std::string("")
-#endif
 
 /**
  * Copy a file to the standard output
@@ -159,95 +120,6 @@ inline void CopyStdout(const std::string& filename)
    fclose(filese);
 }
 
-inline void rename_file(boost::filesystem::path from, boost::filesystem::path to)
-{
-#if BOOST_VERSION >= 104600
-   /// FIXME: this part has not yet been tested
-   boost::system::error_code return_error;
-   boost::filesystem::rename(from, to, return_error);
-   if(return_error.value())
-   {
-      boost::filesystem::remove(to);
-      boost::filesystem::copy_file(from, to);
-      boost::filesystem::remove(from);
-   }
-#else
-   try
-   {
-      boost::filesystem::rename(from, to);
-   }
-   catch(const boost::filesystem::basic_filesystem_error<boost::filesystem::path>)
-   {
-      boost::filesystem::remove(to);
-      boost::filesystem::copy_file(from, to);
-      boost::filesystem::remove(from);
-   }
-#endif
-}
-
-/**
- * Return the filename (base + extension) without the path
- * @param file is the starting file
- * @return the file without the path
- */
-inline std::string GetLeafFileName(boost::filesystem::path file)
-{
-#if BOOST_VERSION >= 104600
-   return file.filename().string();
-#else
-   return file.leaf();
-#endif
-}
-
-/**
- * Return the file without the extension
- * @param file is the starting file
- * @return the file without path and extension
- */
-inline std::string GetBaseName(boost::filesystem::path file)
-{
-   std::string basename;
-#if BOOST_VERSION >= 104600
-   basename = file.stem().string();
-#else
-   basename = file.stem();
-#endif
-   return basename;
-}
-
-/**
- * Return the directory given a file
- * @param file is the file
- * @return the directory
- */
-inline std::string GetDirectory(const boost::filesystem::path file)
-{
-#if BOOST_VERSION >= 104600
-   return file.parent_path().string();
-#else
-   return file.parent_path();
-#endif
-}
-
-/**
- * Return the extension of the file
- * @param file is the starting file
- * @return the extension of the file
- */
-inline std::string GetExtension(const std::string& file)
-{
-   return file.find('.') == std::string::npos ? "" : file.substr(file.find_last_of('.') + 1);
-}
-
-inline std::string GetExtension(boost::filesystem::path file)
-{
-   return GetExtension(file.string());
-}
-inline std::string GetExtension(const char* file)
-{
-   return GetExtension(std::string(file));
-}
-
 inline std::string GetCurrentPath()
 {
    std::string current_dir;
@@ -257,7 +129,7 @@ inline std::string GetCurrentPath()
    }
    else
    {
-      current_dir = boost::filesystem::current_path().string();
+      current_dir = std::filesystem::current_path().string();
    }
 #ifdef _WIN32
    boost::replace_all(current_dir, "\\", "/");
@@ -265,31 +137,40 @@ inline std::string GetCurrentPath()
    return current_dir;
 }
 
-inline std::string GetPath(const std::string& path)
+inline std::string GetPath(std::filesystem::path path)
 {
-   boost::filesystem::path local_path_file = path;
-   if(local_path_file.is_relative())
+   if(path.is_relative())
    {
-      local_path_file = boost::filesystem::path(GetCurrentPath()) / local_path_file;
+      path = std::filesystem::path(GetCurrentPath()) / path;
    }
-   return local_path_file.string();
+   return path.string();
 }
 
-inline std::string relocate_compiler_path(const std::string& path)
+inline std::string relocate_compiler_path(const std::string& path, bool resolve_path = false)
 {
    if(getenv("MINGW_INST_DIR"))
    {
-      std::string app_prefix = getenv("MINGW_INST_DIR");
-      return app_prefix + path;
+      if(resolve_path)
+      {
+         const auto app_prefix = getenv("MINGW_INST_DIR");
+         return app_prefix + path;
+      }
+      return "$MINGW_INST_DIR" + path;
    }
    else if(getenv("APPDIR"))
    {
-      std::string app_prefix = getenv("APPDIR");
-      return app_prefix + path;
+      if(resolve_path)
+      {
+         const auto app_prefix = getenv("APPDIR");
+         return app_prefix + path;
+      }
+      return "$APPDIR" + path;
    }
 #ifdef _WIN32
    else
+   {
       return "c:/msys64/" + path;
+   }
 #else
    else
    {
@@ -297,17 +178,13 @@ inline std::string relocate_compiler_path(const std::string& path)
    }
 #endif
 }
-inline bool ExistFile(const std::string& file)
-{
-   return boost::filesystem::exists(file);
-}
 
 /**
  * Copy file; if target already exist, overwrite
  * @param file_source is the file to be copied
  * @param file_target is the destination
  */
-inline void CopyFile(boost::filesystem::path file_source, boost::filesystem::path file_target)
+inline void CopyFile(std::filesystem::path file_source, std::filesystem::path file_target)
 {
    if(file_source.string() == "-")
    {
@@ -321,24 +198,15 @@ inline void CopyFile(boost::filesystem::path file_source, boost::filesystem::pat
    }
    else
    {
-      boost::filesystem::copy_file(file_source, file_target, boost::filesystem::copy_option::overwrite_if_exists);
+      std::filesystem::copy_file(file_source, file_target, std::filesystem::copy_options::overwrite_existing);
    }
-}
-
-/**
- * Build a path by combining two relative paths
- * @param first_part is the first part to be combined
- * @param second_part is the second part to be combined
- */
-inline std::string BuildPath(const std::string& first_part, const std::string second_part)
-{
-   return (boost::filesystem::path(first_part) / boost::filesystem::path(second_part)).string();
 }
 
 /**
  * System call forcing execution with bash
  * @param Param is the set of input parameters
  * @param system_command is the  to be executed
+ * @param host_exec specifies if the executable is expected to be in the host system or distributed within the AppImage
  * @param output is the file where output has to be saved
  * @param type specifies which streams have to be saved; possible values are 0 (none), 1 (stdout), 2 (stderr), 3(stdout
  * and stderr)
@@ -346,135 +214,12 @@ inline std::string BuildPath(const std::string& first_part, const std::string se
  * @param timeout is the timeout for the command (in minutes)
  * @return the value returned by the shell
  */
-inline int PandaSystem(const ParameterConstRef Param, const std::string& system_command, const std::string& output = "",
-                       const unsigned int type = 3, const bool background = false, const size_t timeout = 0)
-{
-   static size_t counter = 0;
-   const std::string actual_output = output == "" ? Param->getOption<std::string>(OPT_output_temporary_directory) +
-                                                        STR_CST_file_IO_shell_output_file + "_" +
-                                                        boost::lexical_cast<std::string>(counter) :
-                                                    GetPath(output);
-   const std::string script_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) +
-                                        STR_CST_file_IO_shell_script + "_" +
-                                        boost::lexical_cast<std::string>(counter++);
-   counter++;
-   std::ofstream script_file(script_file_name.c_str());
-   script_file << "#!/bin/bash" << std::endl;
-   script_file << "ulimit -s 131072" << std::endl;
-   script_file << "cd " << GetCurrentPath() << std::endl;
-   THROW_ASSERT(not background or timeout == 0, "Background and timeout cannot be specified at the same time");
-   if(background)
-   {
-      script_file << "(";
-   }
-   script_file << "(" << system_command << ") ";
-   if(Param->getOption<unsigned int>(OPT_output_level) >= OUTPUT_LEVEL_PEDANTIC)
-   {
-      switch(type)
-      {
-         case(0):
-         {
-            script_file << " > /dev/null 2>&1 ";
-            break;
-         }
-         case(1):
-         {
-            script_file << " 2>/dev/null | tee " << actual_output;
-            break;
-         }
-         case(2):
-         {
-            script_file << " 2>&1 1>/dev/null | tee " << actual_output;
-            break;
-         }
-         case(3):
-         {
-            script_file << " 2>&1 | tee " << actual_output;
-            break;
-         }
-         default:
-         {
-            THROW_UNREACHABLE("Unexpected type of stream selected " + boost::lexical_cast<std::string>(type));
-         }
-      }
-   }
-   else
-   {
-      switch(type)
-      {
-         case(0):
-         {
-            script_file << " > /dev/null 2>&1 ";
-            break;
-         }
-         case(1):
-         {
-            script_file << " 2> /dev/null > " << actual_output;
-            break;
-         }
-         case(2):
-         {
-            script_file << " > /dev/null 2> " << actual_output;
-            break;
-         }
-         case(3):
-         {
-            script_file << " > " << actual_output << " 2>&1 ";
-            break;
-         }
-         default:
-         {
-            THROW_UNREACHABLE("Unexpected type of stream selected " + boost::lexical_cast<std::string>(type));
-         }
-      }
-   }
-   if(background)
-   {
-      script_file << ") &";
-   }
-   script_file << std::endl;
-   if(Param->getOption<unsigned int>(OPT_output_level) >= OUTPUT_LEVEL_PEDANTIC)
-   {
-      script_file << "exit ${PIPESTATUS[0]}" << std::endl;
-   }
-   script_file.close();
-   if(timeout != 0)
-   {
-      const std::string timeout_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) +
-                                            STR_CST_file_IO_shell_script + "_" +
-                                            boost::lexical_cast<std::string>(counter++);
-      counter++;
-      std::ofstream timeout_file(timeout_file_name.c_str());
-      timeout_file << "#!/bin/bash" << std::endl;
-      timeout_file << "timeout --foreground " << boost::lexical_cast<std::string>(timeout) << "m bash -f "
-                   << script_file_name << std::endl;
-      timeout_file.close();
-      const std::string command = "bash -f " + timeout_file_name + "";
-      return system(command.c_str());
-   }
-   else
-   {
-      const std::string command = "bash -f " + script_file_name + "";
-      return system(command.c_str());
-   }
-}
+int PandaSystem(const ParameterConstRef Param, const std::string& system_command, bool host_exec = true,
+                const std::string& output = "", const unsigned int type = 3, const bool background = false,
+                const size_t timeout = 0);
 
-inline bool NaturalVersionOrder(const boost::filesystem::path& _x, const boost::filesystem::path& _y)
-{
-   const auto splitx = SplitString(_x.string(), ".");
-   const auto splity = SplitString(_y.string(), ".");
-   for(size_t i = 0U; i < splitx.size(); ++i)
-   {
-      if(splity.size() <= i)
-      {
-         return false;
-      }
-      if(splitx.at(i).size() != splity.at(i).size())
-      {
-         return splitx.at(i).size() < splity.at(i).size();
-      }
-      return splitx.at(i) < splity.at(i);
-   }
-   return false;
-}
+bool NaturalVersionOrder(const std::filesystem::path& _x, const std::filesystem::path& _y);
+
+std::filesystem::path unique_path(const std::filesystem::path& model);
+
 #endif

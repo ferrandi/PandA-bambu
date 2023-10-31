@@ -45,17 +45,9 @@
  */
 #ifndef _MODULE_GENERATOR_HPP_
 #define _MODULE_GENERATOR_HPP_
-
-/// graph include
-#include "graph.hpp"
-
-/// STL include
 #include "custom_map.hpp"
-
-/// technology/target_device include
-#include "target_device.hpp"
-
-/// utility include
+#include "generic_device.hpp"
+#include "graph.hpp"
 #include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(FunctionBehavior);
@@ -99,18 +91,19 @@ class ModuleGeneratorManager
 
    void add_port_parameters(structural_objectRef generated_port, structural_objectRef original_port);
 
-   std::string GenerateHDL(const std::string& hdl_template, const module* mod, unsigned int function_id, vertex op_v,
-                           const std::vector<std::tuple<unsigned int, unsigned int>>& required_variables,
+   std::string GenerateHDL(const std::string& hdl_template, structural_objectRef mod, unsigned int function_id,
+                           vertex op_v, const std::vector<std::tuple<unsigned int, unsigned int>>& required_variables,
                            HDLWriter_Language language);
 
    std::string get_specialized_name(unsigned int firstIndexToSpecialize,
                                     const std::vector<std::tuple<unsigned int, unsigned int>>& required_variables,
                                     const FunctionBehaviorConstRef FB) const;
 
-   void specialize_fu(std::string fuName, vertex ve, std::string libraryId, const FunctionBehaviorConstRef FB,
-                      std::string new_fu_name, std::map<std::string, technology_nodeRef>& new_fu);
+   void specialize_fu(const std::string& fu_name, vertex ve, const FunctionBehaviorConstRef FB,
+                      const std::string& libraryId, const std::string& new_fu_name,
+                      std::map<std::string, technology_nodeRef>& new_fu);
 
-   void create_generic_module(const std::string& fuName, vertex ve, const FunctionBehaviorConstRef FB,
+   void create_generic_module(const std::string& fu_name, vertex ve, const FunctionBehaviorConstRef FB,
                               const std::string& libraryId, const std::string& new_fu_name);
 };
 using ModuleGeneratorManagerRef = refcount<ModuleGeneratorManager>;

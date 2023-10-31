@@ -42,47 +42,33 @@
  *
  */
 #include "minimal_interface.hpp"
-
+#include "Parameter.hpp"
+#include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
+#include "copyrights_strings.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "fileIO.hpp"
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 #include "memory.hpp"
 #include "memory_allocation.hpp"
 #include "memory_symbol.hpp"
-
-#include "Parameter.hpp"
+#include "string_manipulation.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
+#include "technology_node.hpp"
+#include "testbench_generation.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-
-// behavior/ include
-#include "behavioral_helper.hpp"
-#include "call_graph_manager.hpp"
-
-// HLS/simulation include
-#include "testbench_generation_base_step.hpp"
-
-/// STD include
-#include <string>
-
-/// STL includes
-#include "custom_map.hpp"
-#include "custom_set.hpp"
 #include <list>
+#include <string>
 #include <utility>
 #include <vector>
-
-// technology/physical_library include
-#include "technology_node.hpp"
-
-/// utility include
-#include "copyrights_strings.hpp"
-#include "fileIO.hpp"
-#include "string_manipulation.hpp"
 
 minimal_interface::minimal_interface(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
                                      const DesignFlowManagerConstRef _design_flow_manager,
@@ -166,10 +152,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
        HLSMgr->Rmem->has_intern_shared_data() ||
        (memory_allocation_policy == MemoryAllocation_Policy::EXT_PIPELINED_BRAM) ||
        (memory_allocation_policy == MemoryAllocation_Policy::NO_BRAM) ||
-       (top_function_ids.count(funId) ?
-            parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION :
-            HLSMgr->hasToBeInterfaced(funId)) ||
-       parameters->getOption<bool>(OPT_memory_mapped_top);
+       (top_function_ids.count(funId) ? parameters->getOption<bool>(OPT_memory_mapped_top) :
+                                        HLSMgr->hasToBeInterfaced(funId));
    bool with_master = false;
    bool with_slave = false;
    for(auto i = 0U; i < GetPointerS<module>(wrappedObj)->get_in_port_size(); ++i)
@@ -215,7 +199,6 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       portsToConstant.insert(wrappedObj->find_member("Min_addr_ram", port_o_K, wrappedObj));
       portsToConstant.insert(wrappedObj->find_member("Min_Wdata_ram", port_o_K, wrappedObj));
       portsToConstant.insert(wrappedObj->find_member("Min_data_ram_size", port_o_K, wrappedObj));
-      portsToConstant.insert(wrappedObj->find_member("M_back_pressure", port_o_K, wrappedObj));
    }
 
    std::map<structural_objectRef, structural_objectRef> portsToConnect;
@@ -443,14 +426,14 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                is_memory_splitted = false;
                shared_memory = SM_minimal_interface->add_module_from_technology_library(
                    "shared_memory", STD_BRAM + latency_postfix, LIBRARY_STD, interfaceObj,
-                   HLSMgr->get_HLS_target()->get_technology_manager());
+                   HLSMgr->get_HLS_device()->get_technology_manager());
             }
             else
             {
                is_memory_splitted = true;
                shared_memory = SM_minimal_interface->add_module_from_technology_library(
                    "shared_memory", STD_BRAMN + latency_postfix, LIBRARY_STD, interfaceObj,
-                   HLSMgr->get_HLS_target()->get_technology_manager());
+                   HLSMgr->get_HLS_device()->get_technology_manager());
             }
             auto bus_data_bitsize = HLSMgr->Rmem->get_bus_data_bitsize();
             auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
@@ -553,8 +536,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             std::list<std::pair<unsigned int, memory_symbolRef>>::const_iterator m_next;
             for(auto m = mem_variables.begin(); m != mem_variables.end(); ++m)
             {
-               init_v = TestbenchGenerationBaseStep::print_var_init(HLSMgr->get_tree_manager(), m->first, HLSMgr->Rmem);
-               std::vector<std::string> splitted = SplitString(init_v, ",");
+               const auto splitted =
+                   TestbenchGeneration::print_var_init(HLSMgr->get_tree_manager(), m->first, HLSMgr->Rmem);
                unsigned int byte_allocated = 0;
                unsigned long long int actual_byte =
                    tree_helper::Size(HLSMgr->get_tree_manager()->CGetTreeReindex(m->first)) / 8;
@@ -1054,7 +1037,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                if(int_port)
                {
                   if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_RNONE ||
-                     GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_FDOUT)
+                     GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_FDOUT ||
+                     GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_S_AXIS_TDATA)
                   {
                      portsToSkip.insert(int_port);
                      if(port_in->get_kind() == port_vector_o_K)
@@ -1083,7 +1067,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                   if(int_port)
                   {
                      if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_WNONE ||
-                        GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_FDIN)
+                        GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_FDIN ||
+                        GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_M_AXIS_TDATA)
                      {
                         int_port = wrappedObj->find_member(port_name, port_o_K, wrappedObj);
                         THROW_ASSERT(int_port, "unexpected condition");
@@ -1122,7 +1107,10 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                            int_port = wrappedObj->find_member("_m_axis_" + port_name + "_TDATA", port_o_K, wrappedObj);
                            if(int_port)
                            {
-                              if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_FDIN)
+                              if(GetPointer<port_o>(int_port)->get_port_interface() ==
+                                     port_o::port_interface::PI_FDIN ||
+                                 GetPointer<port_o>(int_port)->get_port_interface() ==
+                                     port_o::port_interface::PI_M_AXIS_TDATA)
                               {
                                  int_port = wrappedObj->find_member(port_name, port_o_K, wrappedObj);
                                  THROW_ASSERT(int_port, "unexpected condition");
@@ -1137,7 +1125,9 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                               if(int_port)
                               {
                                  if(GetPointer<port_o>(int_port)->get_port_interface() ==
-                                    port_o::port_interface::PI_FDOUT)
+                                        port_o::port_interface::PI_FDOUT ||
+                                    GetPointer<port_o>(int_port)->get_port_interface() ==
+                                        port_o::port_interface::PI_S_AXIS_TDATA)
                                  {
                                     portsToSkip.insert(int_port);
                                     if(port_in->get_kind() == port_vector_o_K)
@@ -1368,7 +1358,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                               port_o::port_interface::S_AXIL_RDATA,    port_o::port_interface::S_AXIL_RRESP,
                               port_o::port_interface::S_AXIL_BVALID,   port_o::port_interface::S_AXIL_BREADY,
                               port_o::port_interface::S_AXIL_BRESP,    port_o::port_interface::PI_S_AXIS_TREADY,
-                              port_o::port_interface::PI_M_AXIS_TVALID}))
+                              port_o::port_interface::PI_S_AXIS_TDATA, port_o::port_interface::PI_M_AXIS_TVALID,
+                              port_o::port_interface::PI_M_AXIS_TDATA}))
          {
             portsToSkip.insert(port_out);
             std::string ext_name = port_name[0] == '_' ? port_name.substr(1) : port_name;
@@ -1413,7 +1404,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
          {
             if(port_out->get_typeRef()->type == structural_type_descriptor::INT)
             {
-               auto TM = HLSMgr->get_HLS_target()->get_technology_manager();
+               auto TM = HLSMgr->get_HLS_device()->get_technology_manager();
                std::string library_name = TM->get_library(VIEW_CONVERT_STD_INT);
                auto c_obj = SM_minimal_interface->add_module_from_technology_library(
                    port_name + "_" + VIEW_CONVERT_STD_INT, VIEW_CONVERT_STD_INT, library_name, interfaceObj, TM);
@@ -1434,7 +1425,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             }
             else if(port_out->get_typeRef()->type == structural_type_descriptor::UINT)
             {
-               auto TM = HLSMgr->get_HLS_target()->get_technology_manager();
+               auto TM = HLSMgr->get_HLS_device()->get_technology_manager();
                std::string library_name = TM->get_library(VIEW_CONVERT_STD_UINT);
                auto c_obj = SM_minimal_interface->add_module_from_technology_library(
                    port_name + "_" + VIEW_CONVERT_STD_UINT, VIEW_CONVERT_STD_UINT, library_name, interfaceObj, TM);

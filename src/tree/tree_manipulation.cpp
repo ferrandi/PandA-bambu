@@ -46,10 +46,8 @@
 /// Header include
 #include "tree_manipulation.hpp"
 
-#include <algorithm>              // for find
-#include <boost/lexical_cast.hpp> // for lexical_cast
+#include <algorithm> // for find
 #include <boost/range/adaptor/reversed.hpp>
-#include <boost/smart_ptr/shared_ptr.hpp> // for shared_ptr
 
 #include "Parameter.hpp"           // for Parameter
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_VERY_PEDANTIC
@@ -1516,7 +1514,7 @@ tree_nodeRef tree_manipulation::GetCustomIntegerType(unsigned long long prec, bo
 {
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
 
-   IR_schema[TOK(TOK_ALGN)] = STR(resize_to_1_8_16_32_64_128_256_512(prec));
+   IR_schema[TOK(TOK_ALGN)] = STR(get_aligned_bitsize(prec));
    IR_schema[TOK(TOK_PREC)] = STR(prec);
    IR_schema[TOK(TOK_UNSIGNED)] = STR(unsigned_p);
 
@@ -2842,16 +2840,19 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt
 
    auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
    const auto splitBBI = sl->list_of_bloc.rbegin()->first + 1;
+   THROW_ASSERT(!sl->list_of_bloc.count(splitBBI), "");
    const auto splitBB = sl->list_of_bloc[splitBBI] = blocRef(new bloc(splitBBI));
    splitBB->loop_id = block->loop_id;
    splitBB->SetSSAUsesComputed();
-   splitBB->schedule = block->schedule;
+   THROW_ASSERT(!block->schedule, "Inlining should not be allowed after scheduling");
 
    std::replace(block->list_of_pred.begin(), block->list_of_pred.end(), block->number, splitBB->number);
    splitBB->list_of_succ.assign(block->list_of_succ.cbegin(), block->list_of_succ.cend());
    block->list_of_succ.clear();
    splitBB->false_edge = block->false_edge;
    splitBB->true_edge = block->true_edge;
+   block->false_edge = 0;
+   block->true_edge = 0;
 
    for(const auto& bbi : splitBB->list_of_succ)
    {

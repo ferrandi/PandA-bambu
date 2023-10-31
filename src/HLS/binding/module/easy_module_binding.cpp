@@ -41,41 +41,26 @@
  *
  */
 #include "easy_module_binding.hpp"
-
-#include "function_behavior.hpp"
-#include "hls_manager.hpp"
-
+#include "Parameter.hpp"
+#include "allocation_information.hpp"
+#include "behavioral_helper.hpp"
+#include "cpu_time.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
 #include "fu_binding.hpp"
+#include "function_behavior.hpp"
 #include "graph.hpp"
+#include "hls.hpp"
+#include "hls_manager.hpp"
 #include "op_graph.hpp"
 #include "parallel_memory_fu_binding.hpp"
-
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_node.hpp"
-
-#include "Parameter.hpp"
-#include "dbgPrintHelper.hpp"
-
-/// HLS include
-#include "hls.hpp"
-
-/// HLS/allocation_information include
-#include "allocation_information.hpp"
-
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-
-/// tree include
-#include "behavioral_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-
-/// utility include
-#include "cpu_time.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-
-#include "custom_set.hpp"
 #include <iosfwd>
 #include <string>
 #include <tuple>

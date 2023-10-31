@@ -93,7 +93,7 @@ class reg_binding : public variable2obj<generic_objRef>
    /// relation between registers and their bitsize
    std::map<unsigned int, unsigned long long> bitsize_map;
 
-   /// HLS datastructure
+   /// HLS data-structure
    hlsRef HLS;
 
    /// information about all the HLS synthesis

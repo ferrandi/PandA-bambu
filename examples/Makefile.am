@@ -1,5 +1,7 @@
 AUTOMAKE_OPTIONS = subdir-objects
+
 EXTRA_DIST = \
+    examples.doc \
     panda_bench_altera_list \
     panda_bench_altera.sh \
     panda_bench_hw_list \
@@ -16,7 +18,9 @@ EXTRA_DIST = \
     panda_bench_xilinx_vvd.sh \
     panda_bench_yosys_list \
     panda_bench_yosys.sh
+
 TESTS =
+
 include $(top_srcdir)/examples/add_device_simple/add_device_simple.am
 include $(top_srcdir)/examples/arf/arf.am
 include $(top_srcdir)/examples/arf_res_sharing/arf_res_sharing.am
@@ -40,6 +44,7 @@ include $(top_srcdir)/examples/mm_float/mm_float.am
 include $(top_srcdir)/examples/omp_simd/omp_simd.am
 include $(top_srcdir)/examples/onnx/onnx.am
 include $(top_srcdir)/examples/parallel_queries/parallel_queries.am
+include $(top_srcdir)/examples/PolyBench/PolyBench.am
 include $(top_srcdir)/examples/pong/pong.am
 include $(top_srcdir)/examples/python-bindings/python-bindings.am
 include $(top_srcdir)/examples/rosetta/rosetta.am

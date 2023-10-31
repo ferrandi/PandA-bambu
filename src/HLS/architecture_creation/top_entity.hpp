@@ -55,13 +55,13 @@ class top_entity : public HLSFunctionStep
 
    /**
     * Adds the input/output ports to the circuit
-    * @param circuit is the reference to the datastructure representing the circuit
+    * @param circuit is the reference to the data-structure representing the circuit
     */
    void add_ports(structural_objectRef circuit, structural_objectRef clock_port, structural_objectRef reset_port);
 
    /**
     * Adds the command signals to the circuit
-    * @param circuit is the reference to the datastructure representing the circuit
+    * @param circuit is the reference to the data-structure representing the circuit
     */
    void add_command_signals(structural_objectRef circuit);
 

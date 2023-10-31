@@ -67,9 +67,7 @@ class FunctionCallOpt : public FunctionFrontendFlowStep
  private:
    static CustomMap<unsigned int, CustomSet<std::tuple<unsigned int, FunctionOptType>>> opt_call;
 
-   static unsigned int version_uid;
-
-   static size_t max_inline_cost;
+   static size_t inline_max_cost;
 
    CustomMap<unsigned int, unsigned int> caller_bb;
 
@@ -95,7 +93,7 @@ class FunctionCallOpt : public FunctionFrontendFlowStep
     * @param body function body to be considered
     * @return size_t Cost value
     */
-   size_t compute_cost(const statement_list* body, bool& has_simd, bool& has_memory);
+   size_t compute_cost(const statement_list* body, bool& has_simd);
 
    /**
     * Check if given function body has loops

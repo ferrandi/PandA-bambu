@@ -82,7 +82,7 @@ class BashBackendFlow : public BackendFlow
    /**
     * Constructor
     */
-   BashBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef target);
+   BashBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const generic_deviceRef _device);
 
    /**
     * Destructor

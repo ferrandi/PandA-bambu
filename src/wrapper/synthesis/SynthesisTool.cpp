@@ -43,12 +43,11 @@
 
 #include <utility>
 
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
-/// supported synthesis tools
-#include "DesignCompilerWrapper.hpp"
+#include "DesignParameters.hpp"
+#include "Parameter.hpp"
 #include "bash_flow_wrapper.hpp"
+#include "exceptions.hpp"
+#include "fileIO.hpp"
 #include "lattice_flow_wrapper.hpp"
 #include "map_wrapper.hpp"
 #include "ngdbuild_wrapper.hpp"
@@ -60,36 +59,15 @@
 #include "quartus_report_wrapper.hpp"
 #include "quartus_wrapper.hpp"
 #include "trce_wrapper.hpp"
-#include "vivado_flow_wrapper.hpp"
-#include "xst_wrapper.hpp"
-
-#if HAVE_EXPERIMENTAL
-#if 0
-#include "DesignOptimizerWrapper.hpp"
-#include "FormalityWrapper.hpp"
-#include "LibraryCompilerWrapper.hpp"
-#include "LibraryCreatorWrapper.hpp"
-#include "PrimeTimeWrapper.hpp"
-#include "SocEncounterWrapper.hpp"
-#include "xpwr_wrapper.hpp"
-#endif
-#endif
-
-#include "Parameter.hpp"
-
-#include "boost/filesystem.hpp"
-
-#include "exceptions.hpp"
-
-#include "fileIO.hpp"
 #include "utility.hpp"
+#include "vivado_flow_wrapper.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
-
-#include "DesignParameters.hpp"
 #include "xml_script_command.hpp"
+#include "xst_wrapper.hpp"
+#include <filesystem>
 
-SynthesisTool::SynthesisTool(const ParameterConstRef& _Param, std::string _tool_exec, const target_deviceRef& _device,
+SynthesisTool::SynthesisTool(const ParameterConstRef& _Param, std::string _tool_exec, const generic_deviceRef& _device,
                              const std::string& _flow_name, std::string _output_dir)
     : device(_device),
       Param(_Param),
@@ -112,15 +90,12 @@ bool SynthesisTool::has_scripts() const
 }
 
 SynthesisToolRef SynthesisTool::create_synthesis_tool(type_t type, const ParameterConstRef& _Param,
-                                                      const std::string& _output_dir, const target_deviceRef& _device)
+                                                      const std::string& _output_dir, const generic_deviceRef& _device)
 {
    switch(type)
    {
       case UNKNOWN:
          THROW_ERROR("Synthesis tool not specified");
-         break;
-      case DESIGN_COMPILER:
-         return SynthesisToolRef(new DesignCompilerWrapper(_Param, _device, _output_dir));
          break;
       case XST:
          return SynthesisToolRef(new xst_wrapper(_Param, _output_dir, _device));
@@ -169,39 +144,6 @@ SynthesisToolRef SynthesisTool::create_synthesis_tool(type_t type, const Paramet
       case BASH_FLOW:
          return SynthesisToolRef(new bash_flow_wrapper(_Param, _output_dir, _device));
          break;
-#if(0 && HAVE_EXPERIMENTAL)
-      case PRIME_TIME:
-         return SynthesisToolRef(new PrimeTimeWrapper(_Param, _device, _output_dir));
-         break;
-      case FORMALITY:
-         return SynthesisToolRef(new FormalityWrapper(_Param, _device, _output_dir));
-         break;
-      case LIBRARY_COMPILER:
-         return SynthesisToolRef(new LibraryCompilerWrapper(_Param, _device, _output_dir));
-         break;
-      case SOC_ENCOUNTER:
-         return SynthesisToolRef(new SoCEncounterWrapper(_Param, _device, _output_dir));
-         break;
-      case LIBRARY_CREATOR:
-         return SynthesisToolRef(new LibraryCreatorWrapper(_Param, _device, _output_dir));
-         break;
-      case DESIGN_OPTIMIZER:
-         return SynthesisToolRef(new DesignOptimizerWrapper(_Param, _device, _output_dir));
-         break;
-      case XPWR:
-         return SynthesisToolRef(new xpwr_wrapper(_Param, _output_dir));
-         break;
-#else
-#if HAVE_EXPERIMENTAL
-      case PRIME_TIME:
-      case FORMALITY:
-      case LIBRARY_COMPILER:
-      case SOC_ENCOUNTER:
-      case LIBRARY_CREATOR:
-      case DESIGN_OPTIMIZER:
-      case XPWR:
-#endif
-#endif
       default:
          THROW_ERROR("Synthesis tool currently not supported");
    }
@@ -232,18 +174,18 @@ void SynthesisTool::create_output_directory(const std::string& sub_dir)
    output_dir = general_output_dir + std::string("/") + output_dir;
 
    std::string candidate_dir;
-   if(boost::filesystem::exists(output_dir))
+   if(std::filesystem::exists(output_dir))
    {
       unsigned int progressive = 0;
       do
       {
-         candidate_dir = output_dir + "_" + boost::lexical_cast<std::string>(progressive++);
-      } while(boost::filesystem::exists(candidate_dir));
+         candidate_dir = output_dir + "_" + std::to_string(progressive++);
+      } while(std::filesystem::exists(candidate_dir));
       output_dir = candidate_dir;
    }
-   boost::filesystem::create_directories(output_dir);
-   boost::filesystem::create_directories(output_dir + "/input");
-   boost::filesystem::create_directories(output_dir + "/output");
+   std::filesystem::create_directories(output_dir);
+   std::filesystem::create_directories(output_dir + "/input");
+   std::filesystem::create_directories(output_dir + "/output");
 }
 
 void SynthesisTool::xload_scripts(const xml_element* child)

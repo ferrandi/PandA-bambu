@@ -45,8 +45,10 @@
 
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTConsumer.h>
+#include <clang/AST/ASTContext.h>
 #include <clang/AST/DeclCXX.h>
 #include <clang/AST/Mangle.h>
+#include <clang/AST/RecordLayout.h>
 #include <clang/AST/RecursiveASTVisitor.h>
 #include <clang/AST/Type.h>
 #include <clang/Frontend/CompilerInstance.h>
@@ -58,6 +60,8 @@
 
 #include <regex>
 #include <string>
+
+#define REWRITE_REGEX
 
 static std::map<std::string, std::map<clang::SourceLocation, std::map<std::string, std::string>>> file_loc_attr;
 
@@ -214,7 +218,15 @@ namespace clang
          {
             return getBaseTypeDecl(ty->getPointeeType());
          }
-         if(ty->isRecordType())
+         if(isa<ElaboratedType>(ty))
+         {
+            return getBaseTypeDecl(ty->getAs<ElaboratedType>()->getNamedType());
+         }
+         if(isa<TypedefType>(ty))
+         {
+            ND = ty->getAs<TypedefType>()->getDecl();
+         }
+         else if(ty->isRecordType())
          {
             ND = ty->getAs<RecordType>()->getDecl();
          }
@@ -239,12 +251,18 @@ namespace clang
          {
             return RemoveTypedef(t->getAs<TypedefType>()->getDecl()->getUnderlyingType());
          }
+         else if(t->getTypeClass() == Type::Elaborated && !t->isClassType())
+         {
+            return RemoveTypedef(t->getAs<ElaboratedType>()->getNamedType());
+         }
          else if(t->getTypeClass() == Type::TemplateSpecialization)
          {
             return t;
          }
          else
+         {
             return t;
+         }
       }
 
       std::string GetTypeNameCanonical(const QualType& t, const PrintingPolicy& pp) const
@@ -295,8 +313,7 @@ namespace clang
 
       void AnalyzeFunctionDecl(const FunctionDecl* FD)
       {
-         const auto print_error = [&](const std::string& msg)
-         {
+         const auto print_error = [&](const std::string& msg) {
             auto& D = CI.getDiagnostics();
             D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "%0")).AddString(msg);
          };
@@ -310,8 +327,7 @@ namespace clang
          const auto filename = SM.getPresumedLoc(locEnd, false).getFilename();
          const auto fname = getMangledName(FD);
 
-         const auto prev = [&]() -> SourceLocation
-         {
+         const auto prev = [&]() -> SourceLocation {
             const auto prev_it = prevLoc.find(filename);
             if(prev_it != prevLoc.end())
             {
@@ -333,8 +349,7 @@ namespace clang
          const auto loc_attr = file_loc_attr.find(filename);
          if(loc_attr != file_loc_attr.end())
          {
-            const auto prev = [&]() -> SourceLocation
-            {
+            const auto prev = [&]() -> SourceLocation {
                const auto prev_it = prevLoc.find(filename);
                if(prev_it != prevLoc.end())
                {
@@ -364,8 +379,7 @@ namespace clang
             {
                if(const auto PVD = dyn_cast<ParmVarDecl>(par))
                {
-                  const auto pname = [&]()
-                  {
+                  const auto pname = [&]() {
                      const auto name = PVD->getNameAsString();
                      if(name.empty())
                      {
@@ -381,9 +395,9 @@ namespace clang
                   std::string ParamTypeName;
                   std::string ParamTypeNameOrig;
                   std::string ParamTypeInclude;
-                  const auto getIncludes = [&](const clang::QualType& type)
-                  {
+                  const auto getIncludes = [&](const clang::QualType& type) {
                      std::string includes;
+
                      if(const auto BTD = getBaseTypeDecl(type))
                      {
                         includes = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
@@ -408,8 +422,7 @@ namespace clang
                      }
                      return includes;
                   };
-                  const auto manageArray = [&](const ConstantArrayType* CA, bool setInterfaceType)
-                  {
+                  const auto manageArray = [&](const ConstantArrayType* CA, bool setInterfaceType) {
                      auto OrigTotArraySize = CA->getSize();
                      std::string Dimensions;
                      if(!setInterfaceType)
@@ -431,11 +444,6 @@ namespace clang
 #endif
                         OrigTotArraySize *= n_el;
                      }
-                     const auto paramTypeRemTD = RemoveTypedef(CA->getElementType());
-                     ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + " *";
-                     ParamTypeNameOrig =
-                         paramTypeRemTD.getAsString(pp) + (Dimensions == "" ? " *" : " (*)" + Dimensions);
-                     ParamTypeInclude = getIncludes(paramTypeRemTD);
                      if(setInterfaceType)
                      {
                         interface = "array";
@@ -447,20 +455,44 @@ namespace clang
                         assert(array_size != "0");
                         attr_val["size"] = array_size;
                      }
+                     const auto paramTypeRemTD = RemoveTypedef(CA->getElementType());
+                     ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + " *";
+                     ParamTypeNameOrig =
+                         paramTypeRemTD.getAsString(pp) + (Dimensions == "" ? " *" : " (*)" + Dimensions);
+                     ParamTypeInclude = getIncludes(paramTypeRemTD);
                   };
+                  const auto getSizeInBytes = [&](QualType T) {
+                     if(T->isIncompleteType() || T->isTemplateTypeParmType() || isa<TemplateSpecializationType>(T))
+                     {
+                        attr_val["SizeInBytes"] = "1";
+                        return;
+                     }
+                     attr_val["SizeInBytes"] = std::to_string(FD->getASTContext()
+                                                                  .getTypeInfoDataSizeInChars(T)
+                                                                  .
+#if __clang_major__ <= 11
+                                                              first
+#else
+                                                              Width
+#endif
+                                                                  .getQuantity());
+                  };
+
                   if(isa<DecayedType>(argType))
                   {
-                     const auto DT = cast<DecayedType>(argType);
-                     if(DT->getOriginalType().IgnoreParens()->isConstantArrayType())
+                     const auto DT = cast<DecayedType>(argType)->getOriginalType().IgnoreParens();
+                     getSizeInBytes(DT);
+                     if(isa<ConstantArrayType>(DT))
                      {
-                        manageArray(llvm::cast<ConstantArrayType>(DT->getOriginalType().IgnoreParens()), true);
+                        manageArray(cast<ConstantArrayType>(DT), true);
                      }
                      else
                      {
                         const auto paramTypeRemTD = RemoveTypedef(argType);
+                        const auto paramTypeOrigTD = argType;
                         ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
-                        ParamTypeNameOrig = paramTypeRemTD.getAsString(pp);
-                        ParamTypeInclude = getIncludes(paramTypeRemTD);
+                        ParamTypeNameOrig = paramTypeOrigTD.getAsString(pp);
+                        ParamTypeInclude = getIncludes(paramTypeOrigTD);
                      }
                      if(attr_val.find("interface_type") != attr_val.end())
                      {
@@ -481,33 +513,20 @@ namespace clang
                   }
                   else if(argType->isPointerType() || argType->isReferenceType())
                   {
-                     if(const auto PT = llvm::dyn_cast<PointerType>(argType))
+                     if(isa<ConstantArrayType>(argType->getPointeeType().IgnoreParens()))
                      {
-                        if(const auto CA = llvm::dyn_cast<ConstantArrayType>(PT->getPointeeType().IgnoreParens()))
-                        {
-                           manageArray(CA, false);
-                        }
-                        else
-                        {
-                           const auto paramTypeRemTD = RemoveTypedef(PT->getPointeeType());
-                           ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + "*";
-                           ParamTypeNameOrig = paramTypeRemTD.getAsString(pp) + "*";
-                           ParamTypeInclude = getIncludes(paramTypeRemTD);
-                        }
-                     }
-                     else if(const auto RT = dyn_cast<ReferenceType>(argType))
-                     {
-                        const auto paramTypeRemTD = RemoveTypedef(RT->getPointeeType());
-                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + "&";
-                        ParamTypeNameOrig = paramTypeRemTD.getAsString(pp) + "&";
-                        ParamTypeInclude = getIncludes(paramTypeRemTD);
+                        getSizeInBytes(argType->getPointeeType().IgnoreParens());
+                        manageArray(cast<ConstantArrayType>(argType->getPointeeType().IgnoreParens()), false);
                      }
                      else
                      {
-                        const auto paramTypeRemTD = RemoveTypedef(argType);
-                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
-                        ParamTypeNameOrig = paramTypeRemTD.getAsString(pp);
-                        ParamTypeInclude = getIncludes(paramTypeRemTD);
+                        const auto suffix = argType->isPointerType() ? "*" : "&";
+                        const auto paramTypeOrigTD = argType->getPointeeType();
+                        const auto paramTypeRemTD = RemoveTypedef(paramTypeOrigTD);
+                        getSizeInBytes(paramTypeRemTD);
+                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + suffix;
+                        ParamTypeNameOrig = paramTypeOrigTD.getAsString(pp) + suffix;
+                        ParamTypeInclude = getIncludes(paramTypeOrigTD);
                      }
                      const auto is_channel_if = ParamTypeName.find("ac_channel<") == 0 ||
                                                 ParamTypeName.find("stream<") == 0 ||
@@ -520,7 +539,7 @@ namespace clang
                             interface != "handshake" && interface != "valid" && interface != "ovalid" &&
                             interface != "acknowledge" && interface != "fifo" && interface != "bus" &&
                             interface != "m_axi" && interface != "axis") ||
-                           (is_channel_if && interface != "fifo"))
+                           (is_channel_if && interface != "fifo" && interface != "axis"))
                         {
                            print_error("#pragma HLS_interface non-consistent with parameter of pointer "
                                        "type, where user defined interface is: " +
@@ -530,10 +549,12 @@ namespace clang
                   }
                   else
                   {
+                     const auto paramTypeOrigTD = argType;
                      const auto paramTypeRemTD = RemoveTypedef(argType);
+                     getSizeInBytes(paramTypeRemTD);
                      ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
-                     ParamTypeNameOrig = paramTypeRemTD.getAsString(pp);
-                     ParamTypeInclude = getIncludes(paramTypeRemTD);
+                     ParamTypeNameOrig = paramTypeOrigTD.getAsString(pp);
+                     ParamTypeInclude = getIncludes(paramTypeOrigTD);
                      if(!argType->isBuiltinType() && !argType->isEnumeralType())
                      {
                         interface = "none";
@@ -558,11 +579,63 @@ namespace clang
                   Fun2Params[fname].push_back(pname);
 
                   const auto remove_spaces = [](std::string& str) {
+                  // The default CentOS 7 system compiler is gcc 4.8.5, which ships an
+                  // incomplete version of <regex> in libstdc++. As such, the following
+                  // line of code will not compile with the system compiler or any other
+                  // compiler that relies on the default system libstdc++. When using
+                  // toolchains built with /opt/rh/devtoolset-9/ (gcc 9.3.1) or that can
+                  // provide their own c++ libs, this is no longer an issue.
+#ifndef REWRITE_REGEX
                      str = std::regex_replace(str, std::regex(" ([<>&*])|([<>&*]) | $|^ "), "$1$2");
+#else
+                     const char anchors[] = "[<>&*]";
+                     const char remove = ' ';
+
+                     size_t num_deleted = 0;
+                     for(int i = str.size() - 1; i > 0; i--)
+                     {
+                        char curr = str[i];
+                        char prev = str[i - 1];
+
+                        char curr_in_anchors = 0;
+                        char prev_in_anchors = 0;
+                        for(size_t j = 0; j < sizeof(anchors) - 1; j++)
+                        {
+                           curr_in_anchors |= (curr == anchors[j]);
+                           prev_in_anchors |= (prev == anchors[j]);
+                        }
+
+                        // "delete" the curr/prev char by shifting it to the end
+                        if(curr == remove && (i == str.size() - 1 || prev_in_anchors))
+                        {
+                           for(size_t k = i; k < str.size() - 1; k++)
+                           {
+                              str[k] = str[k + 1];
+                           }
+                           str[str.size() - 1] = curr;
+                           num_deleted++;
+                        }
+                        else if(prev == remove && (i == 1 || curr_in_anchors))
+                        {
+                           for(size_t k = i - 1; k < str.size() - 1; k++)
+                           {
+                              str[k] = str[k + 1];
+                           }
+                           str[str.size() - 1] = prev;
+                           num_deleted++;
+                        }
+                     }
+
+                     str.erase(str.end() - num_deleted, str.end());
+#endif
                   };
 
                   remove_spaces(ParamTypeName);
                   remove_spaces(ParamTypeNameOrig);
+                  if(ParamTypeNameOrig == "size_t")
+                  {
+                     ParamTypeInclude = "stddef.h";
+                  }
                   remove_spaces(ParamTypeInclude);
 
                   attr_val["interface_type"] = interface;
@@ -588,9 +661,12 @@ namespace clang
 
       bool HandleTopLevelDecl(DeclGroupRef DG) override
       {
-         for(const auto& D : DG)
+         std::deque<Decl*> declQueue(DG.begin(), DG.end());
+         while(declQueue.size())
          {
-            if(const auto* FD = dyn_cast<FunctionDecl>(D))
+            auto decl = declQueue.front();
+            declQueue.pop_front();
+            if(auto FD = dyn_cast<FunctionDecl>(decl))
             {
                AnalyzeFunctionDecl(FD);
                const auto endLoc = FD->getSourceRange().getEnd();
@@ -598,19 +674,12 @@ namespace clang
                const auto filename = SM.getPresumedLoc(endLoc, false).getFilename();
                prevLoc[filename] = endLoc;
             }
-            else if(const auto* LSD = dyn_cast<LinkageSpecDecl>(D))
+            else if(isa<LinkageSpecDecl>(decl) || isa<NamespaceDecl>(decl))
             {
-               for(const auto& d : LSD->decls())
-               {
-                  if(const auto* fd = dyn_cast<FunctionDecl>(d))
-                  {
-                     AnalyzeFunctionDecl(fd);
-                     const auto endLoc = fd->getSourceRange().getEnd();
-                     const auto& SM = fd->getASTContext().getSourceManager();
-                     const auto filename = SM.getPresumedLoc(endLoc, false).getFilename();
-                     prevLoc[filename] = endLoc;
-                  }
-               }
+               auto declContext = cast<DeclContext>(decl);
+               if(declContext->isStdNamespace())
+                  continue;
+               declQueue.insert(declQueue.end(), declContext->decls_begin(), declContext->decls_end());
             }
          }
          return true;
@@ -645,8 +714,7 @@ namespace clang
                         Token& PragmaTok) override
       {
          Token Tok{};
-         const auto print_error = [&](const std::string& msg)
-         {
+         const auto print_error = [&](const std::string& msg) {
             auto& D = PP.getDiagnostics();
             D.Report(Tok.getLocation(), D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface %0"))
                 .AddString(msg);
@@ -655,16 +723,14 @@ namespace clang
          std::string interface;
          const auto loc = PragmaTok.getLocation();
          const auto filename = PP.getSourceManager().getPresumedLoc(loc, false).getFilename();
-         const auto end_parse = [&]()
-         {
+         const auto end_parse = [&]() {
             PP.Lex(Tok);
             if(Tok.isNot(tok::eod))
             {
                print_error("malformed pragma, expecting end)");
             }
          };
-         const auto bundle_parse = [&]()
-         {
+         const auto bundle_parse = [&]() {
             PP.Lex(Tok);
             if(Tok.is(tok::equal))
             {
@@ -676,11 +742,9 @@ namespace clang
             }
             const auto bundle = PP.getSpelling(Tok);
             attr_map[loc][pname]["bundle_name"] = bundle;
-            // llvm::errs() << " bundle=" << bundle;
          };
 
-         const auto array_parse = [&]()
-         {
+         const auto array_parse = [&]() {
             PP.Lex(Tok);
             if(Tok.isNot(tok::numeric_constant))
             {
@@ -688,7 +752,6 @@ namespace clang
             }
             const auto asize = PP.getSpelling(Tok);
             attr_map[loc][pname]["size"] = asize;
-            // llvm::errs() << " " << asize;
 
             PP.Lex(Tok);
             if(Tok.is(tok::identifier) && PP.getSpelling(Tok) == "bundle")
@@ -701,8 +764,7 @@ namespace clang
                print_error("array malformed");
             }
          };
-         const auto axi_parse = [&]()
-         {
+         const auto axi_parse = [&]() {
             PP.Lex(Tok);
             if(Tok.isNot(tok::identifier))
             {
@@ -733,21 +795,18 @@ namespace clang
              {"array", array_parse},   {"m_axi", axi_parse},
              {"axis", end_parse}};
 
-         // llvm::errs() << "HLS_interface";
          PP.Lex(Tok);
          if(Tok.isNot(tok::identifier))
          {
             print_error("malformed");
          }
          pname = PP.getSpelling(Tok);
-         // llvm::errs() << " " << pname;
          PP.Lex(Tok);
          if(Tok.isNot(tok::identifier))
          {
             print_error("missing interface type");
          }
          interface = PP.getSpelling(Tok);
-         // llvm::errs() << " " << interface;
          const auto parser = interface_parser.find(interface);
          if(parser != interface_parser.end())
          {
@@ -758,7 +817,6 @@ namespace clang
          {
             print_error("interface type not supported");
          }
-         // llvm::errs() << "\n";
       }
    };
 
@@ -786,22 +844,19 @@ namespace clang
          std::string buffer_size = "";
          std::string rep_policy = "";
          std::string write_policy = "";
-         const auto print_error = [&](const std::string& msg)
-         {
+         const auto print_error = [&](const std::string& msg) {
             auto& D = PP.getDiagnostics();
             D.Report(Tok.getLocation(), D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_cache %0"))
                 .AddString(msg);
          };
-         const auto end_parse = [&]()
-         {
+         const auto end_parse = [&]() {
             PP.Lex(Tok);
             if(Tok.isNot(tok::eod))
             {
                print_error("malformed pragma, expecting end)");
             }
          };
-         const auto bundle_parse = [&]()
-         {
+         const auto bundle_parse = [&]() {
             PP.Lex(Tok);
             if(Tok.isNot(tok::equal))
             {
@@ -820,8 +875,7 @@ namespace clang
                }
             }
          };
-         const auto way_size_parse = [&]()
-         {
+         const auto way_size_parse = [&]() {
             PP.Lex(Tok);
             if(Tok.isNot(tok::equal))
             {
@@ -844,8 +898,7 @@ namespace clang
                }
             }
          };
-         const auto line_size_parse = [&]()
-         {
+         const auto line_size_parse = [&]() {
             PP.Lex(Tok);
             if(Tok.isNot(tok::equal))
             {
@@ -868,8 +921,7 @@ namespace clang
                }
             }
          };
-         const auto bus_size_parse = [&]()
-         {
+         const auto bus_size_parse = [&]() {
             PP.Lex(Tok);
             if(Tok.isNot(tok::equal))
             {
@@ -899,8 +951,7 @@ namespace clang
                }
             }
          };
-         const auto n_ways_parse = [&]()
-         {
+         const auto n_ways_parse = [&]() {
             PP.Lex(Tok);
             if(Tok.isNot(tok::equal))
             {
@@ -923,8 +974,7 @@ namespace clang
                }
             }
          };
-         const auto buffer_size_parse = [&]()
-         {
+         const auto buffer_size_parse = [&]() {
             PP.Lex(Tok);
             if(Tok.isNot(tok::equal))
             {
@@ -947,8 +997,7 @@ namespace clang
                }
             }
          };
-         const auto replacement_policy_parse = [&]()
-         {
+         const auto replacement_policy_parse = [&]() {
             PP.Lex(Tok);
             if(Tok.isNot(tok::equal))
             {
@@ -981,8 +1030,7 @@ namespace clang
                }
             }
          };
-         const auto write_policy_parse = [&]()
-         {
+         const auto write_policy_parse = [&]() {
             PP.Lex(Tok);
             if(Tok.isNot(tok::equal))
             {
@@ -1010,8 +1058,7 @@ namespace clang
             }
          };
 
-         const auto cache_parse = [&]()
-         {
+         const auto cache_parse = [&]() {
             PP.Lex(Tok);
             while(Tok.isNot(tok::eod))
             {

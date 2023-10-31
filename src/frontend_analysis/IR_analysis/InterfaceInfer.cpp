@@ -44,7 +44,7 @@
 
 #include "Parameter.hpp"
 #include "application_manager.hpp"
-#include "area_model.hpp"
+#include "area_info.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
@@ -55,9 +55,9 @@
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "function_behavior.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
 #include "hls_step.hpp"
-#include "hls_target.hpp"
 #include "language_writer.hpp"
 #include "library_manager.hpp"
 #include "math_function.hpp"
@@ -69,7 +69,7 @@
 #include "technology_flow_step_factory.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
-#include "time_model.hpp"
+#include "time_info.hpp"
 #include "token_interface.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
@@ -80,50 +80,112 @@
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
 
-#include <boost/lexical_cast/try_lexical_convert.hpp>
-#include <boost/regex.hpp>
+#include <regex>
 
 #define EPSILON 0.000000001
 #define ENCODE_FDNAME(arg_name, MODE, interface_type) \
    ((arg_name) + STR_CST_interface_parameter_keyword + (MODE) + (interface_type))
 
-InterfaceInfer::interface_info::interface_info() : name(""), alignment(1U), bitwidth(1ULL), type(datatype::generic)
+enum class InterfaceInfer::m_axi_type
 {
-}
+   none,
+   direct,
+   axi_slave
+};
 
-void InterfaceInfer::interface_info::update(const tree_nodeRef& tn, std::string type_name, ParameterConstRef parameters)
+enum class InterfaceInfer::datatype
 {
-   const auto ptd_type = tree_helper::CGetPointedType(tree_helper::CGetType(tn));
-   bool is_signed = tree_helper::IsSignedIntegerType(ptd_type);
-   bool is_fixed = false;
-   type_name = boost::regex_replace(type_name, boost::regex("(ac_channel|stream|hls::stream)<(.*)>"), "$2");
-   const auto ac_bitwidth = ac_type_bitwidth(type_name, is_signed, is_fixed);
-   const auto _type = ac_bitwidth != 0ULL ? datatype::ac_type :
-                                            (tree_helper::IsRealType(ptd_type) ? datatype::real : datatype::generic);
-   if(type != datatype::ac_type)
+   generic,
+   ac_type
+};
+
+struct InterfaceInfer::interface_info
+{
+   bool _fixed_size;
+
+ public:
+   std::string name;
+   const std::string arg_id;
+   const std::string interface_fname;
+   unsigned alignment;
+   unsigned long long bitwidth;
+   unsigned long long factor;
+   datatype type;
+
+   interface_info(const std::string& _arg_id, const std::string& _interface_fname, bool fixed_size)
+       : _fixed_size(fixed_size),
+         name(""),
+         arg_id(_arg_id),
+         interface_fname(_interface_fname),
+         alignment(1U),
+         bitwidth(0ULL),
+         factor(1ULL),
+         type(datatype::generic)
    {
-      const auto _bitwidth = [&]() {
+   }
+
+   void update(const tree_nodeRef& tn, const std::string& _type_name, ParameterConstRef parameters)
+   {
+      if(type != datatype::ac_type)
+      {
+         bool is_signed, is_fixed;
+         const auto type_name =
+             std::regex_replace(_type_name, std::regex("(ac_channel|stream|hls::stream)<(.*)>"), "$2");
+         const auto ac_bitwidth = ac_type_bitwidth(type_name, is_signed, is_fixed);
+         auto _type = ac_bitwidth != 0ULL ? datatype::ac_type : datatype::generic;
+         unsigned long long _bitwidth = 0;
          if(_type == datatype::ac_type)
          {
-            return ac_bitwidth;
+            _bitwidth = ac_bitwidth;
+            type = datatype::ac_type;
+            alignment = static_cast<unsigned>(get_aligned_ac_bitsize(_bitwidth) >> 3);
          }
-         else if(tree_helper::IsArrayEquivType(ptd_type))
+         else if(_type_name.empty())
          {
-            return tree_helper::GetArrayElementSize(ptd_type);
+            const auto ptd_type = tree_helper::CGetType(tn);
+            if(tree_helper::IsArrayEquivType(ptd_type))
+            {
+               if(tree_helper::IsStructType(ptd_type))
+               {
+                  _bitwidth = tree_helper::Size(tree_helper::CGetArrayBaseType(ptd_type));
+               }
+               else
+               {
+                  const auto elt_type = tree_helper::CGetArrayBaseType(ptd_type);
+                  if(tree_helper::IsStructType(elt_type))
+                  {
+                     if(!tree_helper::IsArrayEquivType(elt_type))
+                     {
+                        THROW_ERROR("Struct type not supported for interfacing: " + STR(elt_type));
+                     }
+                     _bitwidth = tree_helper::Size(tree_helper::CGetArrayBaseType(elt_type));
+                  }
+                  else
+                  {
+                     _bitwidth = tree_helper::Size(elt_type);
+                  }
+               }
+            }
+            else if(tree_helper::IsPointerType(ptd_type) || tree_helper::IsStructType(ptd_type))
+            {
+               _bitwidth = static_cast<unsigned long long>(CompilerWrapper::CGetPointerSize(parameters));
+            }
+            else
+            {
+               _bitwidth = tree_helper::Size(ptd_type);
+            }
+            const auto _alignment = static_cast<unsigned>(get_aligned_bitsize(_bitwidth) >> 3);
+            alignment = std::max(alignment, _alignment);
          }
-         else if(tree_helper::IsPointerType(ptd_type) || tree_helper::IsStructType(ptd_type))
+
+         if(_fixed_size && bitwidth && bitwidth != _bitwidth)
          {
-            return static_cast<unsigned long long>(CompilerWrapper::CGetPointerSize(parameters));
+            THROW_ERROR("Unaligned access not allowed for required interface!");
          }
-         return tree_helper::Size(ptd_type);
-      }();
-      const auto _alignment = static_cast<unsigned>(
-          (_type == datatype::ac_type ? get_aligned_ac_bitsize(_bitwidth) : get_aligned_bitsize(_bitwidth)) >> 3);
-      alignment = std::max(alignment, _alignment);
-      bitwidth = std::max(bitwidth, _bitwidth);
-      type = (_type == datatype::ac_type || _type == type) ? _type : datatype::generic;
+         bitwidth = std::max(bitwidth, _bitwidth);
+      }
    }
-}
+};
 
 InterfaceInfer::InterfaceInfer(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager,
                                const ParameterConstRef _parameters)
@@ -197,7 +259,7 @@ void InterfaceInfer::ComputeRelationships(DesignFlowStepSet& relationship,
    ApplicationFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }
 
-static const boost::regex signature_param_typename("((?:\\w+\\s*)+(?:<[^>]*>)?\\s*[\\*&]?\\s*)");
+static const std::regex signature_param_typename("((?:\\w+\\s*)+(?:<[^>]*>)?\\s*[\\*&]?\\s*)");
 
 bool InterfaceInfer::HasToBeExecuted() const
 {
@@ -209,7 +271,7 @@ void InterfaceInfer::Initialize()
    const auto HLSMgr = GetPointer<HLS_manager>(AppM);
    THROW_ASSERT(HLSMgr, "");
    const auto parseInterfaceXML = [&](const std::string& XMLfilename) {
-      if(boost::filesystem::exists(boost::filesystem::path(XMLfilename)))
+      if(std::filesystem::exists(std::filesystem::path(XMLfilename)))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
          XMLDomParser parser(XMLfilename);
@@ -253,6 +315,7 @@ void InterfaceInfer::Initialize()
                         std::string argName;
                         std::string interface_type;
                         std::string interfaceSize;
+                        std::string interfaceSizeInBytes;
                         std::string offset;
                         std::string bundleName;
                         bool bundle_p = false;
@@ -288,6 +351,10 @@ void InterfaceInfer::Initialize()
                            if(key == "size")
                            {
                               interfaceSize = value;
+                           }
+                           if(key == "SizeInBytes")
+                           {
+                              interfaceSizeInBytes = value;
                            }
                            if(key == "offset")
                            {
@@ -362,9 +429,14 @@ void InterfaceInfer::Initialize()
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                           "---|" + argName + "|" + interface_type + "|\n");
                            HLSMgr->design_attributes[fname][argName][attr_interface_type] = interface_type;
+                           HLSMgr->design_attributes[fname][argName][attr_typename] = interface_typename;
                            if(interface_type == "array")
                            {
                               HLSMgr->design_attributes[fname][argName][attr_size] = interfaceSize;
+                           }
+                           if(interfaceSizeInBytes != "")
+                           {
+                              HLSMgr->design_attributes[fname][argName][attr_size_in_bytes] = interfaceSizeInBytes;
                            }
                            if(interface_type == "m_axi")
                            {
@@ -407,7 +479,6 @@ void InterfaceInfer::Initialize()
                            }
                         }
 
-                        HLSMgr->design_attributes[fname][argName][attr_typename] = interface_typename;
                         HLSMgr->design_interface_typename_signature[fname].push_back(interface_typename);
                         HLSMgr->design_interface_typename_orig_signature[fname].push_back(interface_typenameOrig);
                         if((interface_typenameOrig.find("ap_int<") != std::string::npos ||
@@ -447,7 +518,8 @@ void InterfaceInfer::Initialize()
       for(const auto& source_file : AppM->input_files)
       {
          const auto output_temporary_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
-         const std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
+         const std::string leaf_name =
+             source_file.second == "-" ? "stdin-" : std::filesystem::path(source_file.second).filename().string();
          const auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".interface.xml";
          parseInterfaceXML(XMLfilename);
       }
@@ -488,7 +560,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Extracting interface from signature " + fname);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Demangled as " + dfname);
-            boost::sregex_token_iterator typename_it(dfname.begin(), dfname.end(), signature_param_typename, 0), end;
+            std::sregex_token_iterator typename_it(dfname.begin(), dfname.end(), signature_param_typename, 0), end;
             ++typename_it; // First match is the function name
             auto& top_design_interface_typename_signature = HLSMgr->design_interface_typename_signature[fname];
             auto& top_design_interface_typename_orig_signature =
@@ -506,7 +578,11 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Argument " + pname);
                const std::string tname(*typename_it);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Typename " + tname);
-               HLSMgr->design_attributes[fname][pname][attr_typename] = tname;
+               if(parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
+                  HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+               {
+                  HLSMgr->design_attributes[fname][pname][attr_typename] = tname;
+               }
                top_design_interface_typename_signature.push_back(tname);
                top_design_interface_typename_orig_signature.push_back(tname);
                if(tname.find("_fixed<") != std::string::npos)
@@ -533,225 +609,324 @@ DesignFlowStep_Status InterfaceInfer::Exec()
       if(parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
       {
          /* Check if there is at least one interface type associated to fname */
+#if HAVE_ASSERTS
          bool type_found = false;
-         for(auto& par : HLSMgr->design_attributes[fname])
+         if(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end())
          {
-            if(par.second.find(attr_interface_type) != par.second.end())
+            for(auto& par : HLSMgr->design_attributes.at(fname))
             {
-               type_found = true;
+               if(par.second.find(attr_interface_type) != par.second.end())
+               {
+                  type_found = true;
+               }
             }
          }
-         if(type_found)
-         {
-            const tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
+#endif
+         THROW_ASSERT(type_found, "");
+         const tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
 
-            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Analyzing function " + fname);
-            auto& DesignAttributes = HLSMgr->design_attributes.at(fname);
-            for(const auto& arg : fd->list_of_args)
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Analyzing function " + fname);
+         auto& DesignAttributes = HLSMgr->design_attributes[fname];
+         std::map<std::string, TreeNodeSet> bundle_vdefs;
+         for(const auto& arg : fd->list_of_args)
+         {
+            const auto arg_pd = GetPointerS<const parm_decl>(GET_CONST_NODE(arg));
+            const auto arg_id = GET_INDEX_NODE(arg);
+            const auto& arg_type = arg_pd->type;
+            THROW_ASSERT(GetPointer<const identifier_node>(GET_CONST_NODE(arg_pd->name)), "unexpected condition");
+            const auto& arg_name = GetPointerS<const identifier_node>(GET_CONST_NODE(arg_pd->name))->strg;
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Parameter @" + STR(arg_id) + " " + arg_name);
+            THROW_ASSERT(DesignAttributes.count(arg_name) && DesignAttributes.at(arg_name).count(attr_interface_type),
+                         "Not matched parameter name: " + arg_name);
+            auto& arg_attributes = DesignAttributes.at(arg_name);
+            arg_attributes[attr_interface_dir] = port_o::GetString(port_o::IN);
+            arg_attributes[attr_interface_bitwidth] = STR(tree_helper::Size(arg_type));
+            arg_attributes[attr_interface_alignment] = STR(get_aligned_bitsize(tree_helper::Size(arg_type)) >> 3);
+            auto& interface_type = arg_attributes.at(attr_interface_type);
+            if(interface_type == "bus")
             {
-               const auto arg_pd = GetPointerS<const parm_decl>(GET_CONST_NODE(arg));
-               const auto arg_id = GET_INDEX_NODE(arg);
-               const auto& arg_type = arg_pd->type;
-               THROW_ASSERT(GetPointer<const identifier_node>(GET_CONST_NODE(arg_pd->name)), "unexpected condition");
-               const auto& arg_name = GetPointerS<const identifier_node>(GET_CONST_NODE(arg_pd->name))->strg;
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Parameter @" + STR(arg_id) + " " + arg_name);
-               THROW_ASSERT(DesignAttributes.count(arg_name) &&
-                                DesignAttributes.at(arg_name).count(attr_interface_type),
-                            "Not matched parameter name: " + arg_name);
-               auto& interface_type = DesignAttributes.at(arg_name).at(attr_interface_type);
-               if(interface_type != "default")
+               interface_type = "default";
+            }
+            else if(interface_type != "default")
+            {
+               const auto arg_ssa_id = AppM->getSSAFromParm(top_id, arg_id);
+               const auto arg_ssa = TM->GetTreeReindex(arg_ssa_id);
+               THROW_ASSERT(GET_CONST_NODE(arg_ssa)->get_kind() == ssa_name_K, "");
+               if(GetPointerS<const ssa_name>(GET_CONST_NODE(arg_ssa))->CGetUseStmts().empty())
                {
-                  const auto arg_ssa_id = AppM->getSSAFromParm(top_id, arg_id);
-                  const auto arg_ssa = TM->GetTreeReindex(arg_ssa_id);
-                  THROW_ASSERT(GET_CONST_NODE(arg_ssa)->get_kind() == ssa_name_K, "");
-                  if(GetPointerS<const ssa_name>(GET_CONST_NODE(arg_ssa))->CGetUseStmts().empty())
-                  {
-                     THROW_WARNING("Parameter '" + arg_name + "' not used by any statement");
-                     if(tree_helper::IsPointerType(arg_type))
-                     {
-                        interface_type = "none";
-                     }
-                     else
-                     {
-                        THROW_ERROR("parameter not used: specified interface does not make sense - " + interface_type);
-                     }
-                     continue;
-                  }
-                  if(interface_type == "bus") /// TO BE FIXED
-                  {
-                     interface_type = "default";
-                     continue;
-                  }
+                  THROW_WARNING("Parameter '" + arg_name + "' not used by any statement");
                   if(tree_helper::IsPointerType(arg_type))
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Is a pointer type");
-                     interface_info info;
-                     info.update(arg_ssa, HLSMgr->design_attributes.at(fname).at(arg_name).at(attr_typename),
-                                 parameters);
-
-                     std::list<tree_nodeRef> writeStmt;
-                     std::list<tree_nodeRef> readStmt;
-                     ChasePointerInterface(arg_ssa, writeStmt, readStmt, info);
-                     const auto isRead = !readStmt.empty();
-                     const auto isWrite = !writeStmt.empty();
-
-                     if(!isRead && !isWrite)
-                     {
-                        THROW_ERROR("Parameter '" + arg_name + "' cannot have interface type '" + interface_type +
-                                    "' since no load/store is associated with it");
-                     }
-
-                     info.name = [&]() -> std::string {
-                        if(isRead && isWrite)
-                        {
-                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---I/O interface");
-                           if(interface_type == "ptrdefault")
-                           {
-                              if(parameters->IsParameter("none-ptrdefault") &&
-                                 parameters->GetParameter<int>("none-ptrdefault") == 1)
-                              {
-                                 return "none";
-                              }
-                              else if(parameters->IsParameter("none-registered-ptrdefault") &&
-                                      parameters->GetParameter<int>("none-registered-ptrdefault") == 1)
-                              {
-                                 return "none_registered";
-                              }
-                              return "ovalid";
-                           }
-                           else if(interface_type == "fifo" || interface_type == "axis")
-                           {
-                              THROW_ERROR("parameter " + arg_name + " cannot have interface " + interface_type +
-                                          " because it cannot be read and write at the same time");
-                           }
-                        }
-                        else if(isRead)
-                        {
-                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Read-only interface");
-                           if(interface_type == "ptrdefault")
-                           {
-                              return "none";
-                           }
-                           else if(interface_type == "ovalid")
-                           {
-                              THROW_ERROR("parameter " + arg_name + " cannot have interface " + interface_type +
-                                          " because it is read only");
-                           }
-                        }
-                        else if(isWrite)
-                        {
-                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Write-only interface");
-                           if(interface_type == "ptrdefault")
-                           {
-                              if(parameters->IsParameter("none-ptrdefault") &&
-                                 parameters->GetParameter<int>("none-ptrdefault") == 1)
-                              {
-                                 return "none";
-                              }
-                              else if(parameters->IsParameter("none-registered-ptrdefault") &&
-                                      parameters->GetParameter<int>("none-registered-ptrdefault") == 1)
-                              {
-                                 return "none_registered";
-                              }
-                              return "valid";
-                           }
-                        }
-                        return interface_type;
-                     }();
-                     interface_type = info.name;
-
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Interface specification:");
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Protocol  : " + interface_type);
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Bitwidth  : " + STR(info.bitwidth));
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Alignment : " + STR(info.alignment));
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
-
-                     std::set<std::string> operationsR, operationsW;
-                     const auto interface_datatype = tree_man->GetCustomIntegerType(info.bitwidth, true);
-                     const auto commonRWSignature = interface_type == "array" || interface_type == "m_axi";
-                     for(const auto& stmt : readStmt)
-                     {
-                        setReadInterface(stmt, arg_name, operationsR, commonRWSignature, interface_datatype, tree_man,
-                                         TM);
-                        add_to_modified(stmt);
-                     }
-                     for(const auto& stmt : writeStmt)
-                     {
-                        setWriteInterface(stmt, arg_name, operationsW, commonRWSignature, interface_datatype, tree_man,
-                                          TM);
-                        add_to_modified(stmt);
-                     }
-                     create_resource(operationsR, operationsW, arg_name, info, fname, top_id);
-                  }
-                  else if(interface_type == "none")
-                  {
-                     THROW_ERROR("Interface type '" + interface_type + "' for parameter '" + arg_name + "' unexpected");
+                     // BEAWARE: none is used here in place of default to avoid memory allocation to consider this as
+                     // an active pointer parameter
+                     interface_type = "none";
                   }
                   else
                   {
-                     THROW_ERROR("Interface type '" + interface_type + "' for parameter '" + arg_name +
-                                 "' is not supported");
+                     THROW_ERROR("parameter not used: specified interface does not make sense - " + interface_type);
                   }
+                  continue;
                }
-            }
-            /* Add cache flush operation */
-            std::set<std::string> bundle_names;
-            for(const auto& par : HLSMgr->design_attributes.at(fname))
-            {
-               if(par.second.find(attr_bundle_name) != par.second.end())
+               if(tree_helper::IsPointerType(arg_type))
                {
-                  const auto name = par.second.at(attr_bundle_name);
-                  /* Only check once per bundle */
-                  if(bundle_names.insert(name).second)
-                  {
-                     const auto interface_type = par.second.at(attr_interface_type);
-                     if(interface_type == "m_axi" && par.second.find(attr_way_lines) != par.second.end() &&
-                        boost::lexical_cast<unsigned>(par.second.at(attr_way_lines)) > 0)
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Is a pointer type");
+                  const auto bundle_name = [&]() -> std::string {
+                     if(interface_type == "m_axi" && arg_attributes.count(attr_way_lines) &&
+                        std::stoull(arg_attributes.at(attr_way_lines)))
                      {
-                        const auto instanceFname = ENCODE_FDNAME(name, "_Flush_", interface_type);
+                        THROW_ASSERT(arg_attributes.count(attr_bundle_name), "");
+                        return arg_attributes.at(attr_bundle_name);
+                     }
+                     return "";
+                  }();
+                  interface_info info(arg_name, fname,
+                                      interface_type == "array" || interface_type == "fifo" ||
+                                          interface_type == "axis");
+                  info.update(arg_ssa, HLSMgr->design_attributes.at(fname).at(arg_name).at(attr_typename), parameters);
 
-                        const auto stmt_sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+                  std::list<tree_nodeRef> writeStmt;
+                  std::list<tree_nodeRef> readStmt;
+                  ChasePointerInterface(arg_ssa, writeStmt, readStmt, info);
+                  const auto isRead = !readStmt.empty();
+                  const auto isWrite = !writeStmt.empty();
 
-                        const auto boolean_type = tree_man->GetBooleanType();
-                        const auto bitsize_type = tree_man->GetUnsignedIntegerType();
+                  if(!isRead && !isWrite)
+                  {
+                     if(interface_type == "m_axi")
+                     {
+                        continue;
+                     }
+                     THROW_ERROR("Parameter '" + arg_name + "' cannot have interface type '" + interface_type +
+                                 "' since no load/store is associated with it");
+                  }
 
-                        const auto function_decl_node = [&]() {
-                           std::vector<tree_nodeConstRef> argsT;
-                           argsT.push_back(boolean_type);
-                           argsT.push_back(bitsize_type);
-                           return tree_man->create_function_decl(instanceFname, fd->scpe, argsT,
-                                                                 tree_man->GetVoidType(), BUILTIN_SRCP, false);
-                        }();
-
-                        // Cache flush is indicated by a write of size 0.
-                        std::vector<tree_nodeRef> args;
-                        args.push_back(TM->CreateUniqueIntegerCst(1, boolean_type));
-                        args.push_back(TM->CreateUniqueIntegerCst(0, bitsize_type));
-                        for(const auto& bb : stmt_sl->list_of_bloc)
-                        {
-                           if(bb.first != BB_ENTRY)
-                           {
-                              if(std::find(bb.second->list_of_succ.begin(), bb.second->list_of_succ.end(), BB_EXIT) !=
-                                 bb.second->list_of_succ.end())
-                              {
-                                 const auto gc = tree_man->create_gimple_call(function_decl_node, args,
-                                                                              GET_INDEX_NODE(fd->scpe), BUILTIN_SRCP);
-                                 THROW_ASSERT(stmt_sl->list_of_bloc.find(bb.first) != stmt_sl->list_of_bloc.end(),
-                                              "BB not found in statement list");
-                                 THROW_ASSERT(stmt_sl->list_of_bloc.at(bb.first)->CGetStmtList().size() > 0,
-                                              "No statements in BB");
-                                 const auto return_stmt = stmt_sl->list_of_bloc.at(bb.first)->CGetStmtList().back();
-                                 stmt_sl->list_of_bloc.at(bb.first)->PushBefore(gc, return_stmt, AppM);
-                              }
-                           }
-                        }
+                  if(arg_attributes.find(attr_size_in_bytes) != arg_attributes.end())
+                  {
+                     auto temp_factor = info.type == datatype::generic ?
+                                            (8 * std::stoull(arg_attributes.at(attr_size_in_bytes))) / info.bitwidth :
+                                            1;
+                     if(temp_factor > 1)
+                     {
+                        info.factor = temp_factor;
                      }
                   }
+                  else
+                  {
+                     info.factor = 1;
+                  }
+                  info.name = [&]() -> std::string {
+                     if(isRead && isWrite)
+                     {
+                        arg_attributes[attr_interface_dir] = port_o::GetString(port_o::IO);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---I/O interface");
+                        if(interface_type == "array")
+                        {
+                           if(info.factor > 1)
+                           {
+                              arg_attributes[attr_size] = STR(info.factor);
+                           }
+                           return "array";
+                        }
+                        else if(interface_type == "ptrdefault")
+                        {
+                           if(info.factor > 1)
+                           {
+                              arg_attributes[attr_size] = STR(info.factor);
+                              return "array";
+                           }
+                           else if(parameters->IsParameter("none-ptrdefault") &&
+                                   parameters->GetParameter<int>("none-ptrdefault") == 1)
+                           {
+                              return "none";
+                           }
+                           else if(parameters->IsParameter("none-registered-ptrdefault") &&
+                                   parameters->GetParameter<int>("none-registered-ptrdefault") == 1)
+                           {
+                              return "none_registered";
+                           }
+                           return "ovalid";
+                        }
+                        else if(interface_type == "fifo" || interface_type == "axis")
+                        {
+                           THROW_ERROR("parameter " + arg_name + " cannot have interface " + interface_type +
+                                       " because it cannot be read and written at the same time");
+                        }
+                     }
+                     else if(isRead)
+                     {
+                        arg_attributes[attr_interface_dir] = port_o::GetString(port_o::IN);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Read-only interface");
+                        if(interface_type == "array")
+                        {
+                           if(info.factor > 1)
+                           {
+                              arg_attributes[attr_size] = STR(info.factor);
+                           }
+                           return "array";
+                        }
+                        else if(interface_type == "ptrdefault")
+                        {
+                           if(info.factor > 1)
+                           {
+                              arg_attributes[attr_size] = STR(info.factor);
+                              return "array";
+                           }
+                           return "none";
+                        }
+                        else if(interface_type == "ovalid")
+                        {
+                           THROW_ERROR("parameter " + arg_name + " cannot have interface " + interface_type +
+                                       " because it is read only");
+                        }
+                     }
+                     else if(isWrite)
+                     {
+                        arg_attributes[attr_interface_dir] = port_o::GetString(port_o::OUT);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Write-only interface");
+                        if(interface_type == "array")
+                        {
+                           if(info.factor > 1)
+                           {
+                              arg_attributes[attr_size] = STR(info.factor);
+                           }
+                           return "array";
+                        }
+                        else if(interface_type == "ptrdefault")
+                        {
+                           if(info.factor > 1)
+                           {
+                              arg_attributes[attr_size] = STR(info.factor);
+                              return "array";
+                           }
+                           else if(parameters->IsParameter("none-ptrdefault") &&
+                                   parameters->GetParameter<int>("none-ptrdefault") == 1)
+                           {
+                              return "none";
+                           }
+                           else if(parameters->IsParameter("none-registered-ptrdefault") &&
+                                   parameters->GetParameter<int>("none-registered-ptrdefault") == 1)
+                           {
+                              return "none_registered";
+                           }
+                           return "valid";
+                        }
+                     }
+                     return interface_type;
+                  }();
+                  arg_attributes[attr_interface_bitwidth] = STR(info.bitwidth);
+                  arg_attributes[attr_interface_alignment] = STR(info.alignment);
+                  interface_type = info.name;
+
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Interface specification:");
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Protocol  : " + interface_type);
+                  if(bundle_name.size())
+                  {
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Bundle    : " + bundle_name);
+                  }
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Bitwidth  : " + STR(info.bitwidth));
+                  if(arg_attributes.find(attr_size) != arg_attributes.end())
+                  {
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                    "---Size      : " + STR(std::stoull(arg_attributes.at(attr_size))));
+                  }
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Alignment : " + STR(info.alignment));
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
+                  THROW_ASSERT(info.bitwidth, "");
+
+                  std::set<std::string> operationsR, operationsW;
+                  const auto interface_datatype = tree_man->GetCustomIntegerType(info.bitwidth, true);
+                  const auto commonRWSignature = interface_type == "array" || interface_type == "m_axi";
+                  const auto store_vdef = [&](const tree_nodeRef& stmt) {
+                     if(bundle_name.size())
+                     {
+                        const auto& vdef = GetPointerS<const gimple_node>(GET_CONST_NODE(stmt))->vdef;
+                        if(vdef)
+                        {
+                           bundle_vdefs[bundle_name].insert(vdef);
+                        }
+                     }
+                  };
+                  for(const auto& stmt : readStmt)
+                  {
+                     setReadInterface(stmt, arg_name, operationsR, commonRWSignature, interface_datatype, tree_man, TM);
+                     add_to_modified(stmt);
+                     store_vdef(stmt);
+                  }
+                  for(const auto& stmt : writeStmt)
+                  {
+                     setWriteInterface(stmt, arg_name, operationsW, commonRWSignature, interface_datatype, tree_man,
+                                       TM);
+                     add_to_modified(stmt);
+                     store_vdef(stmt);
+                  }
+                  create_resource(operationsR, operationsW, arg_name, info, fname);
+               }
+               else if(interface_type == "none")
+               {
+                  THROW_ERROR("Interface type '" + interface_type + "' for parameter '" + arg_name + "' unexpected");
+               }
+               else
+               {
+                  THROW_ERROR("Interface type '" + interface_type + "' for parameter '" + arg_name +
+                              "' is not supported");
                }
             }
-
-            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--Analyzed function " + fname);
          }
+         /* Add cache flush operation */
+         for(const auto& bundle_vdef : bundle_vdefs)
+         {
+            const auto& bundle_name = bundle_vdef.first;
+            const auto& vdefs = bundle_vdef.second;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Interface finalizer for bundle " + bundle_name);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Virtuals count: " + STR(vdefs.size()));
+            const auto generate_fini_call = [&]() {
+               const auto fini_fname = ENCODE_FDNAME(bundle_name, "_Flush_", "m_axi");
+               std::vector<tree_nodeConstRef> argsT;
+               argsT.push_back(tree_man->GetBooleanType());
+               argsT.push_back(tree_man->GetUnsignedIntegerType());
+               const auto fini_fd = tree_man->create_function_decl(fini_fname, fd->scpe, argsT, tree_man->GetVoidType(),
+                                                                   BUILTIN_SRCP, false);
+
+               // Cache flush is indicated by a write of size 0.
+               std::vector<tree_nodeRef> args;
+               args.push_back(TM->CreateUniqueIntegerCst(1, argsT.at(0)));
+               args.push_back(TM->CreateUniqueIntegerCst(0, argsT.at(1)));
+               const auto fini_call =
+                   tree_man->create_gimple_call(fini_fd, args, GET_INDEX_NODE(fd->scpe), BUILTIN_SRCP);
+               const auto fini_node = GetPointerS<gimple_node>(GET_CONST_NODE(fini_call));
+               for(const auto& vdef : vdefs)
+               {
+                  fini_node->AddVuse(vdef);
+               }
+               return fini_call;
+            };
+
+            const auto sl = GetPointerS<const statement_list>(GET_CONST_NODE(fd->body));
+            for(const auto& bbi_bb : sl->list_of_bloc)
+            {
+               const auto& bb = bbi_bb.second;
+               const auto is_last = std::count(bb->list_of_succ.cbegin(), bb->list_of_succ.cend(), BB_EXIT);
+               if(bb->number != BB_ENTRY && is_last)
+               {
+                  const auto fini_call = generate_fini_call();
+                  THROW_ASSERT(bb->CGetStmtList().size(), "BB" + STR(bb->number) + " should not be empty");
+                  const auto last_stmt = bb->CGetStmtList().back();
+                  if(GetPointer<const gimple_return>(GET_CONST_NODE(last_stmt)))
+                  {
+                     bb->PushBefore(fini_call, last_stmt, AppM);
+                  }
+                  else
+                  {
+                     bb->PushBack(fini_call, AppM);
+                  }
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Added function call " + STR(fini_call) + " to BB" + STR(bb->number));
+               }
+            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+         }
+
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--Analyzed function " + fname);
       }
    }
    already_executed = true;
@@ -778,8 +953,9 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
       ct_write
    };
    const auto propagate_arg_use = [&](tree_nodeRef arg_var, size_t use_count, tree_nodeRef fd_node,
-                                      const std::vector<tree_nodeRef>& call_args) -> call_type {
+                                      const std::vector<tree_nodeRef>& call_args, tree_nodeRef& ssa_var) -> call_type {
       THROW_ASSERT(arg_var && fd_node, "unexpected condition");
+      ssa_var = arg_var;
       const auto call_fd = [&]() {
          const auto fd_kind = GET_CONST_NODE(fd_node)->get_kind();
          auto& fn = fd_node;
@@ -793,15 +969,87 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
       }();
       if(!call_fd->body)
       {
-         const auto called_fname = string_demangle(tree_helper::print_function_name(TM, call_fd));
-         if(called_fname.find("ac_channel") != std::string::npos)
+         const auto called_fname = [&]() {
+            const auto fname = tree_helper::print_function_name(TM, call_fd);
+            const auto demangled = string_demangle(fname);
+            return demangled.size() ? demangled : fname;
+         }();
+         if(called_fname.find(STR_CST_interface_parameter_keyword) != std::string::npos)
+         {
+            const auto& DesignAttributes = GetPointer<HLS_manager>(AppM)->design_attributes[info.interface_fname];
+            const auto arg_id = called_fname.substr(0, called_fname.find(STR_CST_interface_parameter_keyword));
+            const auto bundle_id = DesignAttributes.at(arg_id).count(attr_bundle_name) ?
+                                       DesignAttributes.at(arg_id).at(attr_bundle_name) :
+                                       "";
+            const auto info_bundle_id = DesignAttributes.at(info.arg_id).count(attr_bundle_name) ?
+                                            DesignAttributes.at(info.arg_id).at(attr_bundle_name) :
+                                            "";
+            if(arg_id != info.arg_id && bundle_id != info_bundle_id)
+            {
+               THROW_ERROR("Pattern not supported with required I/O interface: parameters '" + arg_id + "' and '" +
+                           info.arg_id + "' share a memory operation");
+            }
+            return call_type::ct_forward;
+         }
+         else if(called_fname.find("ac_channel") != std::string::npos)
          {
             if(called_fname.find("::_read") != std::string::npos)
             {
+               if(call_fd->list_of_args.size() >= 1 && call_fd->list_of_args.size() <= 3)
+               {
+                  auto ret_type = GET_CONST_NODE(call_fd->type);
+                  if(ret_type->get_kind() == function_type_K || ret_type->get_kind() == method_type_K)
+                  {
+                     const auto ft = GetPointerS<const function_type>(ret_type);
+                     if(GET_CONST_NODE(ft->retn)->get_kind() != void_type_K)
+                     {
+                        ssa_var = ft->retn;
+                     }
+                     else
+                     {
+                        THROW_ASSERT(call_fd->list_of_args.size() >= 2, "unexpected condition");
+                        THROW_ASSERT(call_args.size() >= 2, "unexpected condition");
+                        auto first_arg = call_args.at(0);
+                        THROW_ASSERT(tree_helper::IsPointerType(first_arg), "unexpected condition");
+                        ssa_var = TM->CGetTreeReindex(tree_helper::GetBaseVariable(first_arg)->index);
+                        THROW_ASSERT(ssa_var != first_arg, "unexpected condition");
+                     }
+                  }
+                  else
+                  {
+                     THROW_ERROR("unexpected condition");
+                  }
+               }
+               else
+               {
+                  THROW_ERROR("unexpected condition");
+               }
                return call_type::ct_read;
             }
             else if(called_fname.find("::_write") != std::string::npos)
             {
+               if(call_fd->list_of_args.size() == 2)
+               {
+                  auto ret_type = GET_CONST_NODE(call_fd->type);
+                  if(ret_type->get_kind() == void_type_K)
+                  {
+                     THROW_ERROR("unexpected condition");
+                  }
+                  if(tree_helper::IsPointerType(call_fd->list_of_args.at(1)))
+                  {
+                     auto second_arg = call_args.at(1);
+                     ssa_var = TM->CGetTreeReindex(tree_helper::GetBaseVariable(second_arg)->index);
+                     THROW_ASSERT(ssa_var != second_arg, "unexpected condition");
+                  }
+                  else
+                  {
+                     ssa_var = call_fd->list_of_args.at(1);
+                  }
+               }
+               else
+               {
+                  THROW_ERROR("unexpected condition");
+               }
                return call_type::ct_write;
             }
             THROW_UNREACHABLE("AC channel method not supported: " + called_fname);
@@ -833,38 +1081,53 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
          if(GetPointerS<const ssa_name>(GET_CONST_NODE(call_arg_ssa))->CGetUseStmts().size())
          {
             /// propagate design interfaces
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Pointer forwarded as function argument");
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "-->Pointer forwarded as function argument " + STR(par_index));
             ChasePointerInterfaceRecurse(Visited, call_arg_ssa, writeStmt, readStmt, info);
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Sub-function done");
          }
       }
       return call_type::ct_forward;
    };
-
-   std::queue<tree_nodeRef> pointer_ssa;
-   pointer_ssa.push(ssa_node);
-   while(pointer_ssa.size())
-   {
-      const auto ptr_node = pointer_ssa.front();
-      const auto ptr_ssa = GetPointer<const ssa_name>(GET_CONST_NODE(ptr_node));
-      pointer_ssa.pop();
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                     "-->SSA VARIABLE: " + ptr_ssa->ToString() + " with " + STR(ptr_ssa->CGetUseStmts().size()) +
-                         " use statements");
-      THROW_ASSERT(tree_helper::IsPointerType(ptr_node), "unexpected condition");
-      if(Visited.size())
+   const auto push_stmt = [&](tree_nodeRef stmt, call_type ct, tree_nodeRef val) {
+      if(ct == call_type::ct_forward)
       {
-         info.update(ptr_node, "", parameters);
+         return;
       }
-      for(const auto& stmt_count : ptr_ssa->CGetUseStmts())
+      if(ct == call_type::ct_read)
+      {
+         readStmt.push_back(stmt);
+         info.update(val, "", parameters);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  LOAD OPERATION");
+      }
+      else if(ct == call_type::ct_write)
+      {
+         writeStmt.push_back(stmt);
+         info.update(val, "", parameters);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  STORE OPERATION");
+      }
+   };
+   if(!Visited.insert(GET_INDEX_CONST_NODE(ssa_node)).second)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                     "---SKIPPED FUNCTION: already visited through argument " + ssa_node->ToString());
+      return;
+   }
+
+   std::queue<tree_nodeRef> chase_ssa;
+   chase_ssa.push(ssa_node);
+   while(chase_ssa.size())
+   {
+      ssa_node = chase_ssa.front();
+      const auto ssa_var = GetPointer<const ssa_name>(GET_CONST_NODE(ssa_node));
+      chase_ssa.pop();
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                     "-->SSA VARIABLE: " + ssa_var->ToString() + " with " + STR(ssa_var->CGetUseStmts().size()) +
+                         " use statements");
+      for(const auto& stmt_count : ssa_var->CGetUseStmts())
       {
          const auto use_stmt = GET_CONST_NODE(stmt_count.first);
          const auto& use_count = stmt_count.second;
-         if(!Visited.insert(GET_INDEX_CONST_NODE(stmt_count.first)).second)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---SKIPPED STMT: " + use_stmt->ToString());
-            continue;
-         }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---STMT: " + use_stmt->ToString());
          if(const auto ga = GetPointer<const gimple_assign>(use_stmt))
          {
@@ -881,19 +1144,19 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
                   THROW_ASSERT(op1_kind == ssa_name_K || GetPointer<const cst_node>(GET_CONST_NODE(ga->op1)),
                                "unexpected condition");
                   if(GetPointer<const cst_node>(GET_CONST_NODE(ga->op1)) ||
-                     GetPointer<const ssa_name>(GET_CONST_NODE(ga->op1)) != ptr_ssa)
+                     GetPointer<const ssa_name>(GET_CONST_NODE(ga->op1)) != ssa_var)
                   {
-                     writeStmt.push_back(stmt_count.first);
+                     push_stmt(stmt_count.first, call_type::ct_write, ga->op1);
                   }
                }
             }
             else if(op1_kind == mem_ref_K)
             {
-               readStmt.push_back(stmt_count.first);
+               push_stmt(stmt_count.first, call_type::ct_read, ga->op0);
                if(tree_helper::IsPointerType(ga->op0))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Pointer to pointer interface propagation");
-                  pointer_ssa.push(ga->op0);
+                  chase_ssa.push(ga->op0);
                }
             }
             else if(op1_kind == call_expr_K)
@@ -904,26 +1167,30 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
                {
                   THROW_ERROR("unexpected pattern");
                }
-               const auto ct = propagate_arg_use(ptr_node, use_count, ce->fn, ce->args);
-               if(ct == call_type::ct_read)
-               {
-                  readStmt.push_back(stmt_count.first);
-               }
-               else if(ct == call_type::ct_write)
-               {
-                  writeStmt.push_back(stmt_count.first);
-               }
+               tree_nodeRef ssa_val;
+               const auto ct = propagate_arg_use(ssa_node, use_count, ce->fn, ce->args, ssa_val);
+               push_stmt(stmt_count.first, ct, ssa_val);
             }
-            else if(tree_helper::IsPointerType(ga->op0) &&
-                    (op1_kind == nop_expr_K || op1_kind == view_convert_expr_K || op1_kind == ssa_name_K ||
-                     op1_kind == pointer_plus_expr_K || op1_kind == cond_expr_K))
+            else if(op1_kind == eq_expr_K || op1_kind == ne_expr_K || op1_kind == gt_expr_K || op1_kind == lt_expr_K ||
+                    op1_kind == ge_expr_K || op1_kind == le_expr_K)
             {
-               ChasePointerInterfaceRecurse(Visited, ga->op0, writeStmt, readStmt, info);
+               THROW_WARNING("Pattern potentially not supported: pointer parameter is used in a compare statement: " +
+                             use_stmt->ToString() + ":" + GET_CONST_NODE(ga->op1)->get_kind_text());
             }
             else
             {
-               THROW_WARNING("Pattern potentially not supported: parameter used in a non-supported statement " +
-                             use_stmt->ToString() + ":" + GET_CONST_NODE(ga->op1)->get_kind_text());
+               if(!tree_helper::IsPointerType(ga->op0))
+               {
+                  THROW_WARNING("Pattern potentially not supported: parameter converted to non-pointer type: " +
+                                use_stmt->ToString() + ":" + GET_CONST_NODE(ga->op1)->get_kind_text());
+               }
+               else if(op1_kind != nop_expr_K && op1_kind != view_convert_expr_K && op1_kind != ssa_name_K &&
+                       op1_kind != pointer_plus_expr_K && op1_kind != cond_expr_K)
+               {
+                  THROW_WARNING("Pattern potentially not supported: parameter used in a non-supported statement: " +
+                                use_stmt->ToString() + ":" + GET_CONST_NODE(ga->op1)->get_kind_text());
+               }
+               ChasePointerInterfaceRecurse(Visited, ga->op0, writeStmt, readStmt, info);
             }
          }
          else if(const auto gc = GetPointer<const gimple_call>(use_stmt))
@@ -936,15 +1203,9 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
                const auto ae_op = GET_CONST_NODE(ae->op);
                if(ae_op->get_kind() == function_decl_K)
                {
-                  const auto ct = propagate_arg_use(ptr_node, use_count, ae->op, gc->args);
-                  if(ct == call_type::ct_read)
-                  {
-                     readStmt.push_back(stmt_count.first);
-                  }
-                  else if(ct == call_type::ct_write)
-                  {
-                     writeStmt.push_back(stmt_count.first);
-                  }
+                  tree_nodeRef ssa_val;
+                  const auto ct = propagate_arg_use(ssa_node, use_count, ae->op, gc->args, ssa_val);
+                  push_stmt(stmt_count.first, ct, ssa_val);
                }
                else
                {
@@ -962,25 +1223,25 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
          }
          else if(const auto gp = GetPointer<const gimple_phi>(use_stmt))
          {
-            THROW_ASSERT(ptr_ssa, "unexpected condition");
-            THROW_ASSERT(!ptr_ssa->virtual_flag, "unexpected condition");
+            THROW_ASSERT(ssa_var, "unexpected condition");
+            THROW_ASSERT(!ssa_var->virtual_flag, "unexpected condition");
             ChasePointerInterfaceRecurse(Visited, gp->res, writeStmt, readStmt, info);
          }
          else
          {
-            THROW_ERROR("USE PATTERN unexpected" + use_stmt->ToString());
+            THROW_ERROR("USE PATTERN unexpected: " + use_stmt->ToString());
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
    }
 }
 
-void InterfaceInfer::ChasePointerInterface(tree_nodeRef ptr_ssa, std::list<tree_nodeRef>& writeStmt,
+void InterfaceInfer::ChasePointerInterface(tree_nodeRef ssa_node, std::list<tree_nodeRef>& writeStmt,
                                            std::list<tree_nodeRef>& readStmt, interface_info& info)
 {
    CustomOrderedSet<unsigned> Visited;
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Parameter uses:");
-   ChasePointerInterfaceRecurse(Visited, ptr_ssa, writeStmt, readStmt, info);
+   ChasePointerInterfaceRecurse(Visited, ssa_node, writeStmt, readStmt, info);
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
 }
 
@@ -1004,30 +1265,50 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
    const auto ref_call = GET_NODE(stmt)->get_kind() == gimple_call_K;
    if(ret_call || ref_call)
    {
+      bool valid_var;
+      tree_nodeRef valid_ptr;
+      tree_nodeConstRef data_type;
+      tree_nodeRef stmt_op0;
       tree_nodeRef data_ptr;
-      tree_nodeRef valid_var;
       if(ret_call)
       {
          const auto ga = GetPointerS<const gimple_assign>(GET_CONST_NODE(stmt));
+         stmt_op0 = ga->op0;
          const auto ce = GetPointerS<const call_expr>(GET_CONST_NODE(ga->op1));
-         THROW_ASSERT(ce->args.size() == 2, "unexpected condition");
-         data_ptr = ce->args.at(1);
-         valid_var = ga->op0;
+         valid_var = ce->args.size() == 2;
+         data_type = tree_helper::CGetType(ga->op0);
+         if(valid_var)
+         {
+            valid_ptr = ce->args.at(1);
+         }
+         else
+         {
+            THROW_ASSERT(ce->args.size() == 1, "unexpected condition");
+         }
       }
       else
       {
          const auto gc = GetPointerS<const gimple_call>(GET_CONST_NODE(stmt));
-         THROW_ASSERT(gc->args.size() == 2, "unexpected condition");
-         data_ptr = gc->args.at(1);
-         valid_var = nullptr;
+         valid_var = gc->args.size() == 3;
+         auto first_arg = gc->args.at(0);
+         THROW_ASSERT(tree_helper::IsPointerType(first_arg), "unexpected condition");
+         data_ptr = first_arg;
+         auto data_obj = TM->CGetTreeReindex(tree_helper::GetBaseVariable(first_arg)->index);
+         THROW_ASSERT(data_obj != first_arg, "unexpected condition");
+         data_type = tree_helper::CGetType(data_obj);
+         if(valid_var)
+         {
+            valid_ptr = gc->args.at(2);
+         }
+         else
+         {
+            THROW_ASSERT(gc->args.size() == 2, "unexpected condition");
+         }
       }
       THROW_ASSERT(!gn->memdef && !gn->memuse, "");
       THROW_ASSERT(gn->vdef, "");
       const auto vdef = gn->vdef;
 
-      const auto ptr_type = tree_helper::CGetType(data_ptr);
-      THROW_ASSERT(tree_helper::IsPointerType(ptr_type), "");
-      const auto data_type = tree_helper::CGetPointedType(ptr_type);
       const auto data_size = tree_helper::Size(data_type);
       const auto sel_type = tree_man->GetBooleanType();
       const auto ret_type = tree_man->GetCustomIntegerType(data_size + 1, true);
@@ -1042,36 +1323,73 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
       }();
 
       std::vector<tree_nodeRef> args;
-      args.push_back(TM->CreateUniqueIntegerCst(valid_var != nullptr, sel_type));
-      const auto ce = tree_man->CreateCallExpr(fdecl_node, args, BUILTIN_SRCP);
-      const auto ga = tree_man->CreateGimpleAssign(ret_type, nullptr, nullptr, ce, fd->index, BUILTIN_SRCP);
-      curr_bb->PushAfter(ga, stmt, AppM);
-      curr_bb->RemoveStmt(stmt, AppM);
-      const auto retval = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga))->op0;
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- AFTER: " + ga->ToString());
+      args.push_back(TM->CreateUniqueIntegerCst(valid_var, sel_type));
+      const auto new_ce = tree_man->CreateCallExpr(fdecl_node, args, BUILTIN_SRCP);
+      const auto new_call = tree_man->CreateGimpleAssign(ret_type, nullptr, nullptr, new_ce, fd->index, BUILTIN_SRCP);
+      curr_bb->PushBefore(new_call, stmt, AppM);
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- AFTER: " + new_call->ToString());
 
       // Mask and cast read data
+      const auto retval = GetPointerS<const gimple_assign>(GET_CONST_NODE(new_call))->op0;
       const auto be_mask = tree_man->create_binary_operation(
           ret_type, retval, TM->CreateUniqueIntegerCst((APInt(1) << data_size) - 1, ret_type), BUILTIN_SRCP,
           bit_and_expr_K);
       const auto ga_mask = tree_man->CreateGimpleAssign(ret_type, nullptr, nullptr, be_mask, fd->index, BUILTIN_SRCP);
-      curr_bb->PushAfter(ga_mask, ga, AppM);
+      curr_bb->PushBefore(ga_mask, stmt, AppM);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  MASK: " + ga_mask->ToString());
       const auto data_mask = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_mask))->op0;
-      const auto ga_data = tree_man->CreateNopExpr(data_mask, out_type, nullptr, nullptr, fd->index);
-      curr_bb->PushAfter(ga_data, ga_mask, AppM);
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  CAST: " + ga_data->ToString());
-      const auto data_var = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_data))->op0;
-      const auto ga_ptr = tree_man->CreateNopExpr(data_ptr, out_ptr_type, nullptr, nullptr, fd->index);
-      curr_bb->PushAfter(ga_ptr, ga_data, AppM);
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- PCAST: " + ga_ptr->ToString());
-      const auto out_data_ptr = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_ptr))->op0;
-      const auto data_ref = tree_man->create_binary_operation(
-          out_type, out_data_ptr, TM->CreateUniqueIntegerCst(0, out_ptr_type), BUILTIN_SRCP, mem_ref_K);
-      const auto ga_store = tree_man->create_gimple_modify_stmt(data_ref, data_var, fd->index, BUILTIN_SRCP);
-      GetPointerS<gimple_assign>(GET_NODE(ga_store))->vdef = vdef;
-      curr_bb->PushAfter(ga_store, ga_ptr, AppM);
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- STORE: " + ga_store->ToString());
+
+      tree_nodeRef last_stmt;
+      if(ret_call)
+      {
+         const auto nop_node = tree_man->create_unary_operation(data_type, data_mask, BUILTIN_SRCP, nop_expr_K);
+         const auto ga_data = tree_man->create_gimple_modify_stmt(stmt_op0, nop_node, fd->index, BUILTIN_SRCP);
+         curr_bb->PushBefore(ga_data, stmt, AppM);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  DATA: " + ga_data->ToString());
+         last_stmt = ga_data;
+      }
+      else
+      {
+         const auto ga_nop = tree_man->CreateNopExpr(data_mask, out_type, nullptr, nullptr, fd->index);
+         curr_bb->PushBefore(ga_nop, stmt, AppM);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  NOP: " + ga_nop->ToString());
+         const auto ga_nop_var_ptr = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_nop))->op0;
+
+         const auto data_ptr_type = tree_helper::CGetType(data_ptr);
+         const auto data_ref = tree_man->create_binary_operation(
+             data_type, data_ptr, TM->CreateUniqueIntegerCst(0, data_ptr_type), BUILTIN_SRCP, mem_ref_K);
+         const auto ga_store = tree_man->create_gimple_modify_stmt(data_ref, ga_nop_var_ptr, fd->index, BUILTIN_SRCP);
+         if(valid_var)
+         {
+            auto newSSAVdef = tree_man->create_ssa_name(tree_nodeRef(), tree_helper::CGetType(vdef), tree_nodeRef(),
+                                                        tree_nodeRef(), false, true);
+            GetPointerS<gimple_assign>(GET_NODE(ga_store))->SetVdef(newSSAVdef);
+            for(const auto& vuse : GetPointerS<gimple_assign>(GET_NODE(stmt))->vuses)
+            {
+               if(GetPointerS<gimple_node>(GET_NODE(ga_store))->AddVuse(vuse))
+               {
+                  GetPointerS<ssa_name>(GET_NODE(vuse))->AddUseStmt(ga_store);
+               }
+            }
+            THROW_ASSERT(GET_NODE(vdef)->get_kind() == ssa_name_K, "unexpected condition");
+            auto vdef_ssa = GetPointerS<ssa_name>(GET_NODE(vdef));
+            for(const auto& usingStmt : vdef_ssa->CGetUseStmts())
+            {
+               if(GetPointerS<gimple_node>(GET_NODE(usingStmt.first))->AddVuse(newSSAVdef))
+               {
+                  GetPointerS<ssa_name>(GET_NODE(newSSAVdef))->AddUseStmt(usingStmt.first);
+               }
+            }
+            curr_bb->PushBefore(ga_store, stmt, AppM);
+         }
+         else
+         {
+            curr_bb->Replace(stmt, ga_store, true, AppM);
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- STORE: " + ga_store->ToString());
+
+         last_stmt = ga_store;
+      }
 
       if(valid_var)
       {
@@ -1080,21 +1398,41 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
              ret_type, retval, TM->CreateUniqueIntegerCst(data_size, ret_type), BUILTIN_SRCP, rshift_expr_K);
          const auto ga_vshift =
              tree_man->CreateGimpleAssign(ret_type, nullptr, nullptr, be_vshift, fd->index, BUILTIN_SRCP);
-         curr_bb->PushAfter(ga_vshift, ga_data, AppM);
+         curr_bb->PushBefore(ga_vshift, stmt, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---VSHIFT: " + ga_vshift->ToString());
          const auto v_shift = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_vshift))->op0;
          const auto be_vmask = tree_man->create_binary_operation(
              ret_type, v_shift, TM->CreateUniqueIntegerCst(1, ret_type), BUILTIN_SRCP, bit_and_expr_K);
          const auto ga_vmask =
              tree_man->CreateGimpleAssign(ret_type, nullptr, nullptr, be_vmask, fd->index, BUILTIN_SRCP);
-         curr_bb->PushAfter(ga_vmask, ga_vshift, AppM);
+         curr_bb->PushBefore(ga_vmask, stmt, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- VMASK: " + ga_vmask->ToString());
          const auto v_mask = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_vmask))->op0;
-         const auto v_nop =
-             tree_man->create_unary_operation(tree_helper::CGetType(valid_var), v_mask, BUILTIN_SRCP, nop_expr_K);
-         const auto ga_v = tree_man->create_gimple_modify_stmt(valid_var, v_nop, fd->index, BUILTIN_SRCP);
-         curr_bb->PushAfter(ga_v, ga_vmask, AppM);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- VALID: " + ga_v->ToString());
+         const auto valid_ptr_type = tree_man->GetPointerType(tree_man->GetBooleanType());
+         THROW_ASSERT(tree_helper::IsPointerType(valid_ptr_type), "unexpected condition");
+         const auto valid_type = tree_helper::CGetPointedType(valid_ptr_type);
+         const auto ga_valid = tree_man->CreateNopExpr(v_mask, valid_type, nullptr, nullptr, fd->index);
+         curr_bb->PushBefore(ga_valid, stmt, AppM);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- VALID: " + ga_valid->ToString());
+         const auto valid_ref = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_valid))->op0;
+         const auto valid_memref = tree_man->create_binary_operation(
+             valid_type, valid_ptr, TM->CreateUniqueIntegerCst(0, valid_ptr_type), BUILTIN_SRCP, mem_ref_K);
+         const auto ga_valid_store =
+             tree_man->create_gimple_modify_stmt(valid_memref, valid_ref, fd->index, BUILTIN_SRCP);
+         curr_bb->Replace(stmt, ga_valid_store, true, AppM);
+         if(!ret_call)
+         {
+            auto ssaDef = GetPointerS<gimple_assign>(GET_NODE(last_stmt))->vdef;
+            if(GetPointerS<gimple_node>(GET_NODE(ga_valid_store))->AddVuse(ssaDef))
+            {
+               GetPointerS<ssa_name>(GET_NODE(ssaDef))->AddUseStmt(ga_valid_store);
+            }
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- VALID STORE: " + ga_valid_store->ToString());
+      }
+      else if(ret_call)
+      {
+         curr_bb->RemoveStmt(stmt, AppM);
       }
    }
    else
@@ -1127,19 +1465,8 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
          const auto sel_value = TM->CreateUniqueIntegerCst(0, boolean_type);
          const auto size_value =
              TM->CreateUniqueIntegerCst(static_cast<long long>(tree_helper::Size(actual_type)), bit_size_type);
-         const auto data_value = [&]() -> tree_nodeRef {
-            if(tree_helper::IsEnumType(interface_datatype) || tree_helper::IsPointerType(interface_datatype) ||
-               GET_CONST_NODE(interface_datatype)->get_kind() == integer_type_K)
-            {
-               return TM->CreateUniqueIntegerCst(0, interface_datatype);
-            }
-            else if(tree_helper::IsRealType(interface_datatype))
-            {
-               return TM->CreateUniqueRealCst(0.l, interface_datatype);
-            }
-            THROW_ERROR("unexpected data type");
-            return nullptr;
-         }();
+
+         const auto data_value = TM->CreateUniqueIntegerCst(0, interface_datatype);
          args.push_back(sel_value);
          args.push_back(size_value);
          args.push_back(data_value);
@@ -1203,27 +1530,44 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
    const auto ref_call = GET_NODE(stmt)->get_kind() == gimple_call_K;
    if(ret_call || ref_call)
    {
+      tree_nodeRef data_obj;
       tree_nodeRef data_ptr;
-      tree_nodeRef valid_var;
+      tree_nodeConstRef ret_type;
+      bool valid_var;
+      bool isAStruct = false;
       if(ret_call)
       {
          const auto ga = GetPointerS<const gimple_assign>(GET_CONST_NODE(stmt));
          const auto ce = GetPointerS<const call_expr>(GET_CONST_NODE(ga->op1));
          THROW_ASSERT(ce->args.size() == 2, "unexpected condition");
-         data_ptr = ce->args.at(1);
-         valid_var = ga->op0;
+         data_obj = ce->args.at(1);
+         if(tree_helper::IsPointerType(data_obj))
+         {
+            data_ptr = data_obj;
+            data_obj = TM->CGetTreeReindex(tree_helper::GetBaseVariable(data_obj)->index);
+            THROW_ASSERT(data_obj != data_ptr, "unexpected condition");
+            isAStruct = true;
+         }
+         valid_var = true;
+         ret_type = tree_helper::CGetType(ga->op0);
       }
       else
       {
          const auto gc = GetPointerS<const gimple_call>(GET_CONST_NODE(stmt));
          THROW_ASSERT(gc->args.size() == 2, "unexpected condition");
-         data_ptr = gc->args.at(1);
-         valid_var = nullptr;
+         data_obj = gc->args.at(1);
+         if(tree_helper::IsPointerType(data_obj))
+         {
+            data_ptr = data_obj;
+            data_obj = TM->CGetTreeReindex(tree_helper::GetBaseVariable(data_obj)->index);
+            THROW_ASSERT(data_obj != data_ptr, "unexpected condition");
+            isAStruct = true;
+         }
+         valid_var = false;
+         ret_type = tree_man->GetVoidType();
       }
 
-      const auto ptr_type = tree_helper::CGetType(data_ptr);
-      THROW_ASSERT(tree_helper::IsPointerType(ptr_type), "");
-      const auto data_type = tree_helper::CGetPointedType(ptr_type);
+      const auto data_type = tree_helper::CGetType(data_obj);
       const auto data_size = tree_helper::Size(data_type);
       const auto sel_type = tree_man->GetBooleanType();
       const auto out_type = tree_man->GetCustomIntegerType(data_size, true);
@@ -1234,41 +1578,55 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
          std::vector<tree_nodeConstRef> argsT;
          argsT.push_back(sel_type);
          argsT.push_back(data_type);
-         return tree_man->create_function_decl(interface_fname, fd->scpe, argsT, sel_type, BUILTIN_SRCP, false);
+         return tree_man->create_function_decl(interface_fname, fd->scpe, argsT, ret_type, BUILTIN_SRCP, false);
       }();
 
-      const auto ga_ptr = tree_man->CreateNopExpr(data_ptr, out_ptr_type, nullptr, nullptr, fd->index);
-      curr_bb->PushBefore(ga_ptr, stmt, AppM);
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- PCAST: " + ga_ptr->ToString());
-      const auto out_data_ptr = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_ptr))->op0;
-      const auto data_ref = tree_man->create_binary_operation(
-          out_type, out_data_ptr, TM->CreateUniqueIntegerCst(0, out_ptr_type), BUILTIN_SRCP, mem_ref_K);
-      const auto ga_load = tree_man->CreateGimpleAssign(out_type, nullptr, nullptr, data_ref, fd->index, BUILTIN_SRCP);
-      curr_bb->Replace(stmt, ga_load, true, AppM);
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  LOAD: " + ga_load->ToString());
-      const auto data_value = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_load))->op0;
+      tree_nodeRef lastStmt;
+      if(isAStruct)
+      {
+         const auto ga_ptr = tree_man->CreateNopExpr(data_ptr, out_ptr_type, nullptr, nullptr, fd->index);
+         curr_bb->PushBefore(ga_ptr, stmt, AppM);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- PCAST: " + ga_ptr->ToString());
+         const auto out_data_ptr = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_ptr))->op0;
+         const auto data_ref = tree_man->create_binary_operation(
+             out_type, out_data_ptr, TM->CreateUniqueIntegerCst(0, out_ptr_type), BUILTIN_SRCP, mem_ref_K);
+         const auto ga_load =
+             tree_man->CreateGimpleAssign(out_type, nullptr, nullptr, data_ref, fd->index, BUILTIN_SRCP);
+         curr_bb->Replace(stmt, ga_load, true, AppM);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  LOAD: " + ga_load->ToString());
+         data_obj = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_load))->op0;
+         lastStmt = ga_load;
+      }
 
       std::vector<tree_nodeRef> args;
-      args.push_back(TM->CreateUniqueIntegerCst(valid_var != nullptr, sel_type));
-      args.push_back(data_value);
+      args.push_back(TM->CreateUniqueIntegerCst(valid_var, sel_type));
+      args.push_back(data_obj);
       if(valid_var)
       {
+         const auto ga_stmt = GetPointerS<const gimple_assign>(GET_CONST_NODE(stmt));
          const auto ce = tree_man->CreateCallExpr(fdecl_node, args, BUILTIN_SRCP);
-         const auto ga_call = tree_man->CreateGimpleAssign(sel_type, nullptr, nullptr, ce, fd->index, BUILTIN_SRCP);
-         curr_bb->PushAfter(ga_call, ga_load, AppM);
+         const auto ga_call = tree_man->create_gimple_modify_stmt(ga_stmt->op0, ce, fd->index, BUILTIN_SRCP);
+         if(isAStruct)
+         {
+            curr_bb->PushAfter(ga_call, lastStmt, AppM);
+         }
+         else
+         {
+            curr_bb->Replace(stmt, ga_call, true, AppM);
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- AFTER: " + ga_call->ToString());
-         const auto out_valid = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_call))->op0;
-         const auto nop =
-             tree_man->create_unary_operation(tree_helper::CGetType(valid_var), out_valid, BUILTIN_SRCP, nop_expr_K);
-         const auto ga = tree_man->create_gimple_modify_stmt(
-             GetPointerS<const gimple_assign>(GET_CONST_NODE(stmt))->op0, nop, fd->index, BUILTIN_SRCP);
-         curr_bb->PushAfter(ga, ga_call, AppM);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- VCAST: " + ga->ToString());
       }
       else
       {
          const auto gc = tree_man->create_gimple_call(fdecl_node, args, fd->index, BUILTIN_SRCP);
-         curr_bb->PushAfter(gc, ga_load, AppM);
+         if(isAStruct)
+         {
+            curr_bb->PushAfter(gc, lastStmt, AppM);
+         }
+         else
+         {
+            curr_bb->Replace(stmt, gc, true, AppM);
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- AFTER: " + gc->ToString());
       }
    }
@@ -1340,7 +1698,7 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
 }
 
 void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& operations, const std::string& arg_name,
-                                                 const interface_info& info, bool IO_port, unsigned int top_id) const
+                                                 const interface_info& info, bool IO_port) const
 {
    if(operations.empty())
    {
@@ -1348,8 +1706,8 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
    }
    const std::string ResourceName = ENCODE_FDNAME(arg_name, "_Read_", info.name);
    const auto HLSMgr = GetPointer<HLS_manager>(AppM);
-   const auto HLS_T = HLSMgr->get_HLS_target();
-   const auto TechMan = HLS_T->get_technology_manager();
+   const auto HLS_D = HLSMgr->get_HLS_device();
+   const auto TechMan = HLS_D->get_technology_manager();
    if(!TechMan->is_library_manager(INTERFACE_LIBRARY) ||
       !TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName))
    {
@@ -1386,22 +1744,27 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
       }
       const auto addrPort = CM->add_port("in1", port_o::IN, interface_top, addrType);
       GetPointerS<port_o>(addrPort)->set_is_addr_bus(true);
+      GetPointerS<port_o>(addrPort)->set_port_alignment(info.alignment);
       CM->add_port("out1", port_o::OUT, interface_top, outType);
 
-      std::string port_data_name;
+      std::string port_data_name = "_" + arg_name;
+      port_o::port_interface port_if = port_o::port_interface::PI_RNONE;
       if(if_name == "axis")
       {
          port_data_name = "_s_axis_" + arg_name + "_TDATA";
+         port_if = port_o::port_interface::PI_S_AXIS_TDATA;
       }
-      else
+      else if(if_name == "fifo")
       {
-         port_data_name = "_" + arg_name + (if_name == "fifo" ? "_dout" : (IO_port ? "_i" : ""));
+         port_data_name += "_dout";
+         port_if = port_o::port_interface::PI_FDOUT;
+      }
+      else if(IO_port)
+      {
+         port_data_name += "_i";
       }
       const auto inPort = CM->add_port(port_data_name, port_o::IN, interface_top, dataType);
-      GetPointerS<port_o>(inPort)->set_port_alignment(info.alignment);
-      GetPointerS<port_o>(inPort)->set_port_interface((if_name == "axis" || if_name == "fifo") ?
-                                                          port_o::port_interface::PI_FDOUT :
-                                                          port_o::port_interface::PI_RNONE);
+      GetPointerS<port_o>(inPort)->set_port_interface(port_if);
       if(if_name == "acknowledge" || if_name == "handshake")
       {
          const auto inPort_o_ack =
@@ -1440,8 +1803,7 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
          TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
       }
       auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
-      const auto device = HLS_T->get_target_device();
-      fu->area_m = area_model::create_model(device->get_type(), parameters);
+      fu->area_m = area_info::factory(parameters);
       fu->area_m->set_area_value(0);
       if(!is_unbounded)
       {
@@ -1451,12 +1813,12 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
       for(const auto& fdName : operations)
       {
          const auto op = GetPointer<operation>(fu->get_operation(fdName));
-         op->time_m = time_model::create_model(device->get_type(), parameters);
+         op->time_m = time_info::factory(parameters);
          if(if_name == "fifo")
          {
             op->bounded = fdName.find("Async") != std::string::npos;
             const auto exec_time =
-                (!op->bounded ? HLS_T->get_technology_manager()->CGetSetupHoldTime() : 0.0) + EPSILON;
+                (!op->bounded ? HLS_D->get_technology_manager()->CGetSetupHoldTime() : 0.0) + EPSILON;
             const auto cycles = op->bounded ? 1U : 0U;
             op->time_m->set_execution_time(exec_time, cycles);
          }
@@ -1464,20 +1826,19 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
          {
             op->bounded = !is_unbounded;
             const auto exec_time =
-                (is_unbounded ? HLS_T->get_technology_manager()->CGetSetupHoldTime() : 0.0) + EPSILON;
+                (is_unbounded ? HLS_D->get_technology_manager()->CGetSetupHoldTime() : 0.0) + EPSILON;
             const auto cycles = if_name == "acknowledge" ? 1U : 0U;
             op->time_m->set_execution_time(exec_time, cycles);
          }
          op->time_m->set_synthesis_dependent(true);
       }
-      HLSMgr->design_interface_constraints[top_id][INTERFACE_LIBRARY][ResourceName] = 1U;
-      /// otherwise no constraints are required for this resource
+      HLSMgr->global_resource_constraints[std::make_pair(ResourceName, INTERFACE_LIBRARY)] = std::make_pair(1U, 1U);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created");
    }
 }
 
 void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& operations, const std::string& arg_name,
-                                                  const interface_info& info, bool IO_port, unsigned int top_id) const
+                                                  const interface_info& info, bool IO_port) const
 {
    if(operations.empty())
    {
@@ -1485,8 +1846,8 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
    }
    const std::string ResourceName = ENCODE_FDNAME(arg_name, "_Write_", info.name);
    const auto HLSMgr = GetPointer<HLS_manager>(AppM);
-   const auto HLS_T = HLSMgr->get_HLS_target();
-   const auto TechMan = HLS_T->get_technology_manager();
+   const auto HLS_D = HLSMgr->get_HLS_device();
+   const auto TechMan = HLS_D->get_technology_manager();
    if(!operations.empty() && !(TechMan->is_library_manager(INTERFACE_LIBRARY) &&
                                TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName)))
    {
@@ -1509,10 +1870,6 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
       const auto address_bitsize = HLSMgr->get_address_bitsize();
       structural_type_descriptorRef addrType(new structural_type_descriptor("bool", address_bitsize));
       structural_type_descriptorRef dataType(new structural_type_descriptor("bool", info.bitwidth));
-      if(info.type == datatype::real)
-      {
-         dataType->type = structural_type_descriptor::REAL;
-      }
       const auto nbitDataSize = 64u - static_cast<unsigned>(__builtin_clzll(info.bitwidth));
       structural_type_descriptorRef rwsize(new structural_type_descriptor("bool", nbitDataSize));
       structural_type_descriptorRef rwtype(new structural_type_descriptor("bool", info.bitwidth));
@@ -1534,23 +1891,29 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
       CM->add_port("in2", port_o::IN, interface_top, rwtype);
       const auto addrPort = CM->add_port("in3", port_o::IN, interface_top, addrType);
       GetPointerS<port_o>(addrPort)->set_is_addr_bus(true);
-      std::string port_data_name;
-      if(if_name == "axis")
-      {
-         port_data_name = "_m_axis_" + arg_name + "_TDATA";
-      }
-      else
-      {
-         port_data_name = "_" + arg_name + (if_name == "fifo" ? "_din" : (IO_port ? "_o" : ""));
-      }
-      if(if_name == "fifo")
+      GetPointerS<port_o>(addrPort)->set_port_alignment(info.alignment);
+      if(if_name == "fifo" || if_name == "axis")
       {
          CM->add_port("out1", port_o::OUT, interface_top, bool_type);
       }
+      std::string port_data_name = "_" + arg_name;
+      port_o::port_interface port_if = port_o::port_interface::PI_WNONE;
+      if(if_name == "axis")
+      {
+         port_data_name = "_m_axis_" + arg_name + "_TDATA";
+         port_if = port_o::port_interface::PI_M_AXIS_TDATA;
+      }
+      else if(if_name == "fifo")
+      {
+         port_data_name += "_din";
+         port_if = port_o::port_interface::PI_FDIN;
+      }
+      else if(IO_port)
+      {
+         port_data_name += "_o";
+      }
       const auto inPort_o = CM->add_port(port_data_name, port_o::OUT, interface_top, dataType);
-      GetPointerS<port_o>(inPort_o)->set_port_interface((if_name == "axis" || if_name == "fifo") ?
-                                                            port_o::port_interface::PI_FDIN :
-                                                            port_o::port_interface::PI_WNONE);
+      GetPointerS<port_o>(inPort_o)->set_port_interface(port_if);
       if(if_name == "acknowledge" || if_name == "handshake")
       {
          const auto inPort_o_ack =
@@ -1598,8 +1961,7 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
          TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
       }
       auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
-      const auto device = HLS_T->get_target_device();
-      fu->area_m = area_model::create_model(device->get_type(), parameters);
+      fu->area_m = area_info::factory(parameters);
       fu->area_m->set_area_value(0);
       if(!is_unbounded)
       {
@@ -1609,7 +1971,7 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
       for(const auto& fdName : operations)
       {
          const auto op_bounded = fdName.find("Async") != std::string::npos || !is_unbounded;
-         const auto exec_time = (!op_bounded ? HLS_T->get_technology_manager()->CGetSetupHoldTime() : 0.0) + EPSILON;
+         const auto exec_time = (!op_bounded ? HLS_D->get_technology_manager()->CGetSetupHoldTime() : 0.0) + EPSILON;
          const auto cycles = [&]() {
             if(if_name == "none_registered")
             {
@@ -1623,35 +1985,33 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
          }();
 
          const auto op = GetPointerS<operation>(fu->get_operation(fdName));
-         op->time_m = time_model::create_model(device->get_type(), parameters);
+         op->time_m = time_info::factory(parameters);
          op->bounded = op_bounded;
          op->time_m->set_execution_time(exec_time, cycles);
          if(if_name == "none_registered")
          {
-            op->time_m->set_stage_period(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON);
+            op->time_m->set_stage_period(HLS_D->get_technology_manager()->CGetSetupHoldTime() + EPSILON);
             op->time_m->set_initiation_time(ControlStep(1U));
          }
          op->time_m->set_synthesis_dependent(true);
       }
-      HLSMgr->design_interface_constraints[top_id][INTERFACE_LIBRARY][ResourceName] = 1U;
+      HLSMgr->global_resource_constraints[std::make_pair(ResourceName, INTERFACE_LIBRARY)] = std::make_pair(1U, 1U);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created");
    }
 }
 
 void InterfaceInfer::create_resource_array(const std::set<std::string>& operationsR,
                                            const std::set<std::string>& operationsW, const std::string& bundle_name,
-                                           const interface_info& info, unsigned int arraySize,
-                                           unsigned int top_id) const
+                                           const interface_info& info, unsigned long long arraySize) const
 {
    const auto n_channels = parameters->getOption<unsigned int>(OPT_channels_number);
-   const auto isDP = info.bitwidth <= 64ULL && n_channels == 2;
+   const auto isDP = n_channels == 2;
    const auto n_resources = isDP ? 2U : 1U;
    const auto read_write_string = (isDP ? std::string("ReadWriteDP_") : std::string("ReadWrite_"));
    const auto ResourceName = ENCODE_FDNAME(bundle_name, "", "");
    const auto HLSMgr = GetPointerS<HLS_manager>(AppM);
-   const auto HLS_T = HLSMgr->get_HLS_target();
-   const auto device_type = HLS_T->get_target_device()->get_type();
-   const auto TechMan = HLS_T->get_technology_manager();
+   const auto HLS_D = HLSMgr->get_HLS_device();
+   const auto TechMan = HLS_D->get_technology_manager();
    if(!TechMan->is_library_manager(INTERFACE_LIBRARY) ||
       !TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName))
    {
@@ -1669,18 +2029,12 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
       GetPointerS<module>(interface_top)->set_authors("Component automatically generated by bambu");
       GetPointerS<module>(interface_top)->set_license(GENERATED_LICENSE);
       GetPointerS<module>(interface_top)->set_multi_unit_multiplicity(n_resources);
-
-      const auto nbitAddress = 64u - static_cast<unsigned>(__builtin_clzll(arraySize * info.alignment - 1U));
       const auto address_bitsize = HLSMgr->get_address_bitsize();
-      const auto nbit = 64u - static_cast<unsigned>(__builtin_clzll(arraySize - 1U));
-      const auto nbitDataSize = 64u - static_cast<unsigned>(__builtin_clzll(info.bitwidth));
+      const auto nbit = 64u - static_cast<unsigned long long>(__builtin_clzll(arraySize - 1U));
+      const auto nbitDataSize = 64u - static_cast<unsigned long long>(__builtin_clzll(info.bitwidth));
       const structural_type_descriptorRef addrType(new structural_type_descriptor("bool", address_bitsize));
       const structural_type_descriptorRef address_interface_datatype(new structural_type_descriptor("bool", nbit));
       const structural_type_descriptorRef dataType(new structural_type_descriptor("bool", info.bitwidth));
-      if(info.type == datatype::real)
-      {
-         dataType->type = structural_type_descriptor::REAL;
-      }
       const structural_type_descriptorRef size1(new structural_type_descriptor("bool", 1));
       const structural_type_descriptorRef rwsize(new structural_type_descriptor("bool", nbitDataSize));
       const structural_type_descriptorRef rwtype(new structural_type_descriptor("bool", info.bitwidth));
@@ -1697,23 +2051,19 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
       const auto dataPort = CM->add_port_vector("in3", port_o::IN, n_resources, interface_top,
                                                 rwtype); // value written when the first operand is 1, 0 otherwise
       const auto addrPort = CM->add_port_vector("in4", port_o::IN, n_resources, interface_top, addrType); // address
-      GetPointerS<port_o>(dataPort)->set_port_alignment(nbitAddress);
-
       GetPointerS<port_o>(addrPort)->set_is_addr_bus(true);
-      // GetPointer<port_o>(addrPort)->set_is_var_args(true); /// required to activate the module generation
+      GetPointerS<port_o>(addrPort)->set_port_alignment(info.alignment);
 
       CM->add_port_vector("out1", port_o::OUT, n_resources, interface_top, rwtype);
 
       const auto inPort_address =
           CM->add_port("_" + bundle_name + "_address0", port_o::OUT, interface_top, address_interface_datatype);
       GetPointerS<port_o>(inPort_address)->set_port_interface(port_o::port_interface::PI_ADDRESS);
-      GetPointerS<port_o>(inPort_address)->set_port_alignment(info.alignment);
       if(isDP)
       {
          const auto inPort_address1 =
              CM->add_port("_" + bundle_name + "_address1", port_o::OUT, interface_top, address_interface_datatype);
          GetPointerS<port_o>(inPort_address1)->set_port_interface(port_o::port_interface::PI_ADDRESS);
-         GetPointerS<port_o>(inPort_address1)->set_port_alignment(info.alignment);
       }
 
       const auto inPort_ce = CM->add_port("_" + bundle_name + "_ce0", port_o::OUT, interface_top, bool_type);
@@ -1760,11 +2110,10 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
                                read_write_string + info.name + "ModuleGenerator");
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
       const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
-      fu->area_m = area_model::create_model(device_type, parameters);
+      fu->area_m = area_info::factory(parameters);
       fu->area_m->set_area_value(0);
-
-      /// add constraint on resource
-      HLSMgr->design_interface_constraints[top_id][INTERFACE_LIBRARY][ResourceName] = n_resources;
+      HLSMgr->global_resource_constraints[std::make_pair(ResourceName, INTERFACE_LIBRARY)] =
+          std::make_pair(n_resources, n_resources);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created");
    }
    for(const auto& fdName : operationsR)
@@ -1787,7 +2136,7 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
    for(const auto& fdName : operationsR)
    {
       const auto op = GetPointerS<operation>(fu->get_operation(fdName));
-      op->time_m = time_model::create_model(device_type, parameters);
+      op->time_m = time_info::factory(parameters);
       op->bounded = true;
       op->time_m->set_execution_time(load_delay, load_cycles);
       op->time_m->set_initiation_time(load_ii);
@@ -1803,7 +2152,7 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
    for(const auto& fdName : operationsW)
    {
       const auto op = GetPointerS<operation>(fu->get_operation(fdName));
-      op->time_m = time_model::create_model(device_type, parameters);
+      op->time_m = time_info::factory(parameters);
       op->bounded = true;
       op->time_m->set_execution_time(store_delay, store_cycles);
       op->time_m->set_initiation_time(store_ii);
@@ -1815,15 +2164,14 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
 void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operationsR,
                                            const std::set<std::string>& operationsW, const std::string& arg_name,
                                            const std::string& bundle_name, const interface_info& info, m_axi_type mat,
-                                           unsigned int top_id,
                                            const std::map<interface_attributes, std::string>& bundle_attr_map) const
 {
    const auto ResourceName = ENCODE_FDNAME(bundle_name, "", "");
    THROW_ASSERT(GetPointer<HLS_manager>(AppM), "");
    const auto HLSMgr = GetPointerS<HLS_manager>(AppM);
-   const auto HLS_T = HLSMgr->get_HLS_target();
-   const auto TechMan = HLS_T->get_technology_manager();
-   unsigned way_lines = 0;
+   const auto HLS_D = HLSMgr->get_HLS_device();
+   const auto TechMan = HLS_D->get_technology_manager();
+   unsigned long long way_lines = 0;
 
    if(!TechMan->is_library_manager(INTERFACE_LIBRARY) ||
       !TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName))
@@ -1847,7 +2195,7 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       long long unsigned backEndBitsize = info.bitwidth;
       if(bundle_attr_map.find(attr_bus_size) != bundle_attr_map.end() && bundle_attr_map.at(attr_bus_size) != "")
       {
-         backEndBitsize = boost::lexical_cast<long long unsigned>(bundle_attr_map.at(attr_bus_size));
+         backEndBitsize = std::stoull(bundle_attr_map.at(attr_bus_size));
       }
 
       const structural_type_descriptorRef address_interface_datatype(
@@ -1884,152 +2232,153 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       const auto addrPort = CM->add_port("in4", port_o::IN, interface_top, address_interface_datatype);
       GetPointerS<port_o>(addrPort)->set_is_addr_bus(true);
 
-      const auto awready = CM->add_port("_m_axi_" + bundle_name + "_AWREADY", port_o::IN, interface_top, bool_type);
+      const auto awready = CM->add_port("_m_axi_" + bundle_name + "_awready", port_o::IN, interface_top, bool_type);
       GetPointerS<port_o>(awready)->set_port_interface(port_o::port_interface::M_AXI_AWREADY);
 
-      const auto wready = CM->add_port("_m_axi_" + bundle_name + "_WREADY", port_o::IN, interface_top, bool_type);
+      const auto wready = CM->add_port("_m_axi_" + bundle_name + "_wready", port_o::IN, interface_top, bool_type);
       GetPointerS<port_o>(wready)->set_port_interface(port_o::port_interface::M_AXI_WREADY);
 
-      const auto bid = CM->add_port_vector("_m_axi_" + bundle_name + "_BID", port_o::IN, 1, interface_top, idType);
+      const auto bid = CM->add_port_vector("_m_axi_" + bundle_name + "_bid", port_o::IN, 1, interface_top, idType);
       GetPointerS<port_o>(bid)->set_port_interface(port_o::port_interface::M_AXI_BID);
 
-      const auto bresp = CM->add_port("_m_axi_" + bundle_name + "_BRESP", port_o::IN, interface_top, respType);
+      const auto bresp = CM->add_port("_m_axi_" + bundle_name + "_bresp", port_o::IN, interface_top, respType);
       GetPointerS<port_o>(bresp)->set_port_interface(port_o::port_interface::M_AXI_BRESP);
 
       const auto buser =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_BUSER", port_o::IN, 1, interface_top, userType);
+          CM->add_port_vector("_m_axi_" + bundle_name + "_buser", port_o::IN, 1, interface_top, userType);
       GetPointerS<port_o>(buser)->set_port_interface(port_o::port_interface::M_AXI_BUSER);
 
-      const auto bvalid = CM->add_port("_m_axi_" + bundle_name + "_BVALID", port_o::IN, interface_top, bool_type);
+      const auto bvalid = CM->add_port("_m_axi_" + bundle_name + "_bvalid", port_o::IN, interface_top, bool_type);
       GetPointerS<port_o>(bvalid)->set_port_interface(port_o::port_interface::M_AXI_BVALID);
 
-      const auto arready = CM->add_port("_m_axi_" + bundle_name + "_ARREADY", port_o::IN, interface_top, bool_type);
+      const auto arready = CM->add_port("_m_axi_" + bundle_name + "_arready", port_o::IN, interface_top, bool_type);
       GetPointerS<port_o>(arready)->set_port_interface(port_o::port_interface::M_AXI_ARREADY);
 
-      const auto rid = CM->add_port_vector("_m_axi_" + bundle_name + "_RID", port_o::IN, 1, interface_top, idType);
+      const auto rid = CM->add_port_vector("_m_axi_" + bundle_name + "_rid", port_o::IN, 1, interface_top, idType);
       GetPointerS<port_o>(rid)->set_port_interface(port_o::port_interface::M_AXI_RID);
 
-      const auto rdata = CM->add_port("_m_axi_" + bundle_name + "_RDATA", port_o::IN, interface_top, rwtypeOut);
+      const auto rdata = CM->add_port("_m_axi_" + bundle_name + "_rdata", port_o::IN, interface_top, rwtypeOut);
       GetPointerS<port_o>(rdata)->set_port_interface(port_o::port_interface::M_AXI_RDATA);
 
-      const auto rresp = CM->add_port("_m_axi_" + bundle_name + "_RRESP", port_o::IN, interface_top, respType);
+      const auto rresp = CM->add_port("_m_axi_" + bundle_name + "_rresp", port_o::IN, interface_top, respType);
       GetPointerS<port_o>(rresp)->set_port_interface(port_o::port_interface::M_AXI_RRESP);
 
-      const auto rlast = CM->add_port("_m_axi_" + bundle_name + "_RLAST", port_o::IN, interface_top, bool_type);
+      const auto rlast = CM->add_port("_m_axi_" + bundle_name + "_rlast", port_o::IN, interface_top, bool_type);
       GetPointerS<port_o>(rlast)->set_port_interface(port_o::port_interface::M_AXI_RLAST);
 
       const auto ruser =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_RUSER", port_o::IN, 1, interface_top, userType);
+          CM->add_port_vector("_m_axi_" + bundle_name + "_ruser", port_o::IN, 1, interface_top, userType);
       GetPointerS<port_o>(ruser)->set_port_interface(port_o::port_interface::M_AXI_RUSER);
 
-      const auto rvalid = CM->add_port("_m_axi_" + bundle_name + "_RVALID", port_o::IN, interface_top, bool_type);
+      const auto rvalid = CM->add_port("_m_axi_" + bundle_name + "_rvalid", port_o::IN, interface_top, bool_type);
       GetPointerS<port_o>(rvalid)->set_port_interface(port_o::port_interface::M_AXI_RVALID);
 
       CM->add_port(DONE_PORT_NAME, port_o::OUT, interface_top, bool_type);
       CM->add_port("out1", port_o::OUT, interface_top, rwtypeIn);
 
-      const auto awid = CM->add_port_vector("_m_axi_" + bundle_name + "_AWID", port_o::OUT, 1, interface_top, idType);
+      const auto awid = CM->add_port_vector("_m_axi_" + bundle_name + "_awid", port_o::OUT, 1, interface_top, idType);
       GetPointerS<port_o>(awid)->set_port_interface(port_o::port_interface::M_AXI_AWID);
 
       const auto awaddr =
-          CM->add_port("_m_axi_" + bundle_name + "_AWADDR", port_o::OUT, interface_top, address_interface_datatype);
+          CM->add_port("_m_axi_" + bundle_name + "_awaddr", port_o::OUT, interface_top, address_interface_datatype);
       GetPointerS<port_o>(awaddr)->set_port_interface(port_o::port_interface::M_AXI_AWADDR);
 
-      const auto awlen = CM->add_port("_m_axi_" + bundle_name + "_AWLEN", port_o::OUT, interface_top, lenType);
+      const auto awlen = CM->add_port("_m_axi_" + bundle_name + "_awlen", port_o::OUT, interface_top, lenType);
       GetPointerS<port_o>(awlen)->set_port_interface(port_o::port_interface::M_AXI_AWLEN);
 
-      const auto awsize = CM->add_port("_m_axi_" + bundle_name + "_AWSIZE", port_o::OUT, interface_top, sizeType);
+      const auto awsize = CM->add_port("_m_axi_" + bundle_name + "_awsize", port_o::OUT, interface_top, sizeType);
       GetPointerS<port_o>(awsize)->set_port_interface(port_o::port_interface::M_AXI_AWSIZE);
 
-      const auto awburst = CM->add_port("_m_axi_" + bundle_name + "_AWBURST", port_o::OUT, interface_top, burstType);
+      const auto awburst = CM->add_port("_m_axi_" + bundle_name + "_awburst", port_o::OUT, interface_top, burstType);
       GetPointerS<port_o>(awburst)->set_port_interface(port_o::port_interface::M_AXI_AWBURST);
 
       const auto awlock =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_AWLOCK", port_o::OUT, 1, interface_top, lockType);
+          CM->add_port_vector("_m_axi_" + bundle_name + "_awlock", port_o::OUT, 1, interface_top, lockType);
       GetPointerS<port_o>(awlock)->set_port_interface(port_o::port_interface::M_AXI_AWLOCK);
 
-      const auto awcache = CM->add_port("_m_axi_" + bundle_name + "_AWCACHE", port_o::OUT, interface_top, cacheType);
+      const auto awcache = CM->add_port("_m_axi_" + bundle_name + "_awcache", port_o::OUT, interface_top, cacheType);
       GetPointerS<port_o>(awcache)->set_port_interface(port_o::port_interface::M_AXI_AWCACHE);
 
-      const auto awprot = CM->add_port("_m_axi_" + bundle_name + "_AWPROT", port_o::OUT, interface_top, protType);
+      const auto awprot = CM->add_port("_m_axi_" + bundle_name + "_awprot", port_o::OUT, interface_top, protType);
       GetPointerS<port_o>(awprot)->set_port_interface(port_o::port_interface::M_AXI_AWPROT);
 
-      const auto awqos = CM->add_port("_m_axi_" + bundle_name + "_AWQOS", port_o::OUT, interface_top, qosType);
+      const auto awqos = CM->add_port("_m_axi_" + bundle_name + "_awqos", port_o::OUT, interface_top, qosType);
       GetPointerS<port_o>(awqos)->set_port_interface(port_o::port_interface::M_AXI_AWQOS);
 
-      const auto awregion = CM->add_port("_m_axi_" + bundle_name + "_AWREGION", port_o::OUT, interface_top, regionType);
+      const auto awregion = CM->add_port("_m_axi_" + bundle_name + "_awregion", port_o::OUT, interface_top, regionType);
       GetPointerS<port_o>(awregion)->set_port_interface(port_o::port_interface::M_AXI_AWREGION);
 
       const auto awuser =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_AWUSER", port_o::OUT, 1, interface_top, userType);
+          CM->add_port_vector("_m_axi_" + bundle_name + "_awuser", port_o::OUT, 1, interface_top, userType);
       GetPointerS<port_o>(awuser)->set_port_interface(port_o::port_interface::M_AXI_AWUSER);
 
-      const auto awvalid = CM->add_port("_m_axi_" + bundle_name + "_AWVALID", port_o::OUT, interface_top, bool_type);
+      const auto awvalid = CM->add_port("_m_axi_" + bundle_name + "_awvalid", port_o::OUT, interface_top, bool_type);
       GetPointerS<port_o>(awvalid)->set_port_interface(port_o::port_interface::M_AXI_AWVALID);
 
-      const auto wid = CM->add_port_vector("_m_axi_" + bundle_name + "_WID", port_o::OUT, 1, interface_top, idType);
-      GetPointerS<port_o>(wid)->set_port_interface(port_o::port_interface::M_AXI_WID);
+      // BEAWARE: this is AXI3 spec, AXI4 does not have WID
+      // const auto wid = CM->add_port_vector("_m_axi_" + bundle_name + "_wid", port_o::OUT, 1, interface_top, idType);
+      // GetPointerS<port_o>(wid)->set_port_interface(port_o::port_interface::M_AXI_WID);
 
-      const auto wdata = CM->add_port("_m_axi_" + bundle_name + "_WDATA", port_o::OUT, interface_top, rwtypeOut);
+      const auto wdata = CM->add_port("_m_axi_" + bundle_name + "_wdata", port_o::OUT, interface_top, rwtypeOut);
       GetPointerS<port_o>(wdata)->set_port_interface(port_o::port_interface::M_AXI_WDATA);
 
       const auto wstrb =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_WSTRB", port_o::OUT, 1, interface_top, strbType);
+          CM->add_port_vector("_m_axi_" + bundle_name + "_wstrb", port_o::OUT, 1, interface_top, strbType);
       GetPointerS<port_o>(wstrb)->set_port_interface(port_o::port_interface::M_AXI_WSTRB);
 
-      const auto wlast = CM->add_port("_m_axi_" + bundle_name + "_WLAST", port_o::OUT, interface_top, bool_type);
+      const auto wlast = CM->add_port("_m_axi_" + bundle_name + "_wlast", port_o::OUT, interface_top, bool_type);
       GetPointerS<port_o>(wlast)->set_port_interface(port_o::port_interface::M_AXI_WLAST);
 
       const auto wuser =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_WUSER", port_o::OUT, 1, interface_top, userType);
+          CM->add_port_vector("_m_axi_" + bundle_name + "_wuser", port_o::OUT, 1, interface_top, userType);
       GetPointerS<port_o>(wuser)->set_port_interface(port_o::port_interface::M_AXI_WUSER);
 
-      const auto wvalid = CM->add_port("_m_axi_" + bundle_name + "_WVALID", port_o::OUT, interface_top, bool_type);
+      const auto wvalid = CM->add_port("_m_axi_" + bundle_name + "_wvalid", port_o::OUT, interface_top, bool_type);
       GetPointerS<port_o>(wvalid)->set_port_interface(port_o::port_interface::M_AXI_WVALID);
 
-      const auto bready = CM->add_port("_m_axi_" + bundle_name + "_BREADY", port_o::OUT, interface_top, bool_type);
+      const auto bready = CM->add_port("_m_axi_" + bundle_name + "_bready", port_o::OUT, interface_top, bool_type);
       GetPointerS<port_o>(bready)->set_port_interface(port_o::port_interface::M_AXI_BREADY);
 
-      const auto arid = CM->add_port_vector("_m_axi_" + bundle_name + "_ARID", port_o::OUT, 1, interface_top, idType);
+      const auto arid = CM->add_port_vector("_m_axi_" + bundle_name + "_arid", port_o::OUT, 1, interface_top, idType);
       GetPointerS<port_o>(arid)->set_port_interface(port_o::port_interface::M_AXI_ARID);
 
       const auto araddr =
-          CM->add_port("_m_axi_" + bundle_name + "_ARADDR", port_o::OUT, interface_top, address_interface_datatype);
+          CM->add_port("_m_axi_" + bundle_name + "_araddr", port_o::OUT, interface_top, address_interface_datatype);
       GetPointerS<port_o>(araddr)->set_port_interface(port_o::port_interface::M_AXI_ARADDR);
 
-      const auto arlen = CM->add_port("_m_axi_" + bundle_name + "_ARLEN", port_o::OUT, interface_top, lenType);
+      const auto arlen = CM->add_port("_m_axi_" + bundle_name + "_arlen", port_o::OUT, interface_top, lenType);
       GetPointerS<port_o>(arlen)->set_port_interface(port_o::port_interface::M_AXI_ARLEN);
 
-      const auto arsize = CM->add_port("_m_axi_" + bundle_name + "_ARSIZE", port_o::OUT, interface_top, sizeType);
+      const auto arsize = CM->add_port("_m_axi_" + bundle_name + "_arsize", port_o::OUT, interface_top, sizeType);
       GetPointerS<port_o>(arsize)->set_port_interface(port_o::port_interface::M_AXI_ARSIZE);
 
-      const auto arburst = CM->add_port("_m_axi_" + bundle_name + "_ARBURST", port_o::OUT, interface_top, burstType);
+      const auto arburst = CM->add_port("_m_axi_" + bundle_name + "_arburst", port_o::OUT, interface_top, burstType);
       GetPointerS<port_o>(arburst)->set_port_interface(port_o::port_interface::M_AXI_ARBURST);
 
       const auto arlock =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_ARLOCK", port_o::OUT, 1, interface_top, lockType);
+          CM->add_port_vector("_m_axi_" + bundle_name + "_arlock", port_o::OUT, 1, interface_top, lockType);
       GetPointerS<port_o>(arlock)->set_port_interface(port_o::port_interface::M_AXI_ARLOCK);
 
-      const auto arcache = CM->add_port("_m_axi_" + bundle_name + "_ARCACHE", port_o::OUT, interface_top, cacheType);
+      const auto arcache = CM->add_port("_m_axi_" + bundle_name + "_arcache", port_o::OUT, interface_top, cacheType);
       GetPointerS<port_o>(arcache)->set_port_interface(port_o::port_interface::M_AXI_ARCACHE);
 
-      const auto arprot = CM->add_port("_m_axi_" + bundle_name + "_ARPROT", port_o::OUT, interface_top, protType);
+      const auto arprot = CM->add_port("_m_axi_" + bundle_name + "_arprot", port_o::OUT, interface_top, protType);
       GetPointerS<port_o>(arprot)->set_port_interface(port_o::port_interface::M_AXI_ARPROT);
 
-      const auto arqos = CM->add_port("_m_axi_" + bundle_name + "_ARQOS", port_o::OUT, interface_top, qosType);
+      const auto arqos = CM->add_port("_m_axi_" + bundle_name + "_arqos", port_o::OUT, interface_top, qosType);
       GetPointerS<port_o>(arqos)->set_port_interface(port_o::port_interface::M_AXI_ARQOS);
 
-      const auto arregion = CM->add_port("_m_axi_" + bundle_name + "_ARREGION", port_o::OUT, interface_top, regionType);
+      const auto arregion = CM->add_port("_m_axi_" + bundle_name + "_arregion", port_o::OUT, interface_top, regionType);
       GetPointerS<port_o>(arregion)->set_port_interface(port_o::port_interface::M_AXI_ARREGION);
 
       const auto aruser =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_ARUSER", port_o::OUT, 1, interface_top, userType);
+          CM->add_port_vector("_m_axi_" + bundle_name + "_aruser", port_o::OUT, 1, interface_top, userType);
       GetPointerS<port_o>(aruser)->set_port_interface(port_o::port_interface::M_AXI_ARUSER);
 
-      const auto arvalid = CM->add_port("_m_axi_" + bundle_name + "_ARVALID", port_o::OUT, interface_top, bool_type);
+      const auto arvalid = CM->add_port("_m_axi_" + bundle_name + "_arvalid", port_o::OUT, interface_top, bool_type);
       GetPointerS<port_o>(arvalid)->set_port_interface(port_o::port_interface::M_AXI_ARVALID);
 
-      const auto rready = CM->add_port("_m_axi_" + bundle_name + "_RREADY", port_o::OUT, interface_top, bool_type);
+      const auto rready = CM->add_port("_m_axi_" + bundle_name + "_rready", port_o::OUT, interface_top, bool_type);
       GetPointerS<port_o>(rready)->set_port_interface(port_o::port_interface::M_AXI_RREADY);
 
       if(mat == m_axi_type::axi_slave)
@@ -2078,7 +2427,7 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
                                "ReadWrite_" + info.name + "ModuleGenerator");
       if(bundle_attr_map.find(attr_way_lines) != bundle_attr_map.end())
       {
-         way_lines = boost::lexical_cast<unsigned>(bundle_attr_map.at(attr_way_lines));
+         way_lines = std::stoull(bundle_attr_map.at(attr_way_lines));
       }
       /* Add the dependency to the IOB_cache module if there is a cache */
       if(way_lines > 0)
@@ -2121,11 +2470,9 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
 
       const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
-      const auto device = HLS_T->get_target_device();
-      fu->area_m = area_model::create_model(device->get_type(), parameters);
+      fu->area_m = area_info::factory(parameters);
       fu->area_m->set_area_value(0);
-
-      HLSMgr->design_interface_constraints[top_id][INTERFACE_LIBRARY][ResourceName] = 1U;
+      HLSMgr->global_resource_constraints[std::make_pair(ResourceName, INTERFACE_LIBRARY)] = std::make_pair(1U, 1U);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created");
    }
 
@@ -2145,31 +2492,30 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, flushName);
    }
    const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
-   const auto device = HLS_T->get_target_device();
 
    for(const auto& fdName : operationsR)
    {
       const auto op = GetPointerS<operation>(fu->get_operation(fdName));
-      op->time_m = time_model::create_model(device->get_type(), parameters);
+      op->time_m = time_info::factory(parameters);
       op->bounded = false;
-      op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
+      op->time_m->set_execution_time(HLS_D->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
       op->time_m->set_synthesis_dependent(true);
    }
    for(const auto& fdName : operationsW)
    {
       const auto op = GetPointer<operation>(fu->get_operation(fdName));
-      op->time_m = time_model::create_model(device->get_type(), parameters);
+      op->time_m = time_info::factory(parameters);
       op->bounded = false;
-      op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
+      op->time_m->set_execution_time(HLS_D->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
       op->time_m->set_synthesis_dependent(true);
    }
 
    if(way_lines > 0)
    {
       const auto op = GetPointer<operation>(fu->get_operation(flushName));
-      op->time_m = time_model::create_model(device->get_type(), parameters);
+      op->time_m = time_info::factory(parameters);
       op->bounded = false;
-      op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
+      op->time_m->set_execution_time(HLS_D->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
       op->time_m->set_synthesis_dependent(true);
    }
    const auto address_bitsize = HLSMgr->get_address_bitsize();
@@ -2188,16 +2534,16 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
 }
 
 void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
-                                     const std::string& arg_name, const interface_info& info, const std::string& fname,
-                                     unsigned int top_id) const
+                                     const std::string& arg_name, const interface_info& info,
+                                     const std::string& fname) const
 {
    if(info.name == "none" || info.name == "none_registered" || info.name == "acknowledge" || info.name == "valid" ||
       info.name == "ovalid" || info.name == "handshake" || info.name == "fifo" || info.name == "axis")
    {
       THROW_ASSERT(!operationsR.empty() || !operationsW.empty(), "unexpected condition");
       const auto IO_P = !operationsR.empty() && !operationsW.empty();
-      create_resource_Read_simple(operationsR, arg_name, info, IO_P, top_id);
-      create_resource_Write_simple(operationsW, arg_name, info, IO_P, top_id);
+      create_resource_Read_simple(operationsR, arg_name, info, IO_P);
+      create_resource_Write_simple(operationsW, arg_name, info, IO_P);
    }
    else if(info.name == "array")
    {
@@ -2209,7 +2555,7 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
                            HLSMgr->design_attributes.find(fname)->second.find(arg_name)->second.end(),
                    "unexpected condition");
       const auto arraySizeSTR = HLSMgr->design_attributes.at(fname).at(arg_name).at(attr_size);
-      const auto arraySize = boost::lexical_cast<unsigned>(arraySizeSTR);
+      const auto arraySize = std::stoull(arraySizeSTR);
       if(arraySize == 0)
       {
          THROW_ERROR("array size equal to zero");
@@ -2224,7 +2570,7 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
          bundle_name = HLSMgr->design_attributes.at(fname).at(arg_name).at(attr_bundle_name);
       }
 
-      create_resource_array(operationsR, operationsW, bundle_name, info, arraySize, top_id);
+      create_resource_array(operationsR, operationsW, bundle_name, info, arraySize);
    }
    else if(info.name == "m_axi")
    {
@@ -2260,11 +2606,17 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
          }
       }
       if(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end() &&
-         HLSMgr->design_attributes.at(fname).find(arg_name) != HLSMgr->design_attributes.at(fname).end() &&
-         HLSMgr->design_attributes.at(fname).at(arg_name).find(attr_bundle_name) !=
-             HLSMgr->design_attributes.at(fname).at(arg_name).end())
+         HLSMgr->design_attributes.at(fname).find(arg_name) != HLSMgr->design_attributes.at(fname).end())
       {
-         bundle_name = HLSMgr->design_attributes.at(fname).at(arg_name).at(attr_bundle_name);
+         if(HLSMgr->design_attributes.at(fname).at(arg_name).find(attr_bundle_name) !=
+            HLSMgr->design_attributes.at(fname).at(arg_name).end())
+         {
+            bundle_name = HLSMgr->design_attributes.at(fname).at(arg_name).at(attr_bundle_name);
+         }
+         else
+         {
+            HLSMgr->design_attributes.at(fname).at(arg_name)[attr_bundle_name] = bundle_name;
+         }
       }
       if(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end())
       {
@@ -2347,7 +2699,7 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
             }
          }
       }
-      create_resource_m_axi(operationsR, operationsW, arg_name, bundle_name, info, mat, top_id, bundle_attr_map);
+      create_resource_m_axi(operationsR, operationsW, arg_name, bundle_name, info, mat, bundle_attr_map);
    }
    else
    {

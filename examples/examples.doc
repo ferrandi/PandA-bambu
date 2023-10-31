@@ -1,0 +1,69 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project 
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (C) 2023 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/*!
+  \page examples_page PandA Bambu HLS Application Examples
+
+  Here you can find a wide range of applications and benchmarks that show how the PandA Bambu HLS tool may be used in different scenarios.
+
+  \section examples_benchmarks Benchmark Suites
+  - \ref examples_chstone
+  - \ref examples_libm
+  - \ref examples_machsuite
+  - \ref examples_polybench
+  - \ref examples_rosetta
+  - \ref examples_softfloat
+  - \ref examples_truefloat
+
+
+  \section examples_crypto Cryptographic Applications examples
+  - \ref examples_arf
+  - \ref examples_crc
+  - \ref examples_keccak
+  - \ref examples_sha256
+
+
+  \section examples_algorithms Alghorithms acceleration examples
+  - \ref example_fft
+  - \ref example_bsearch
+  - \ref example_qsort
+  - \ref examples_mm
+
+
+  \section examples_fpga NEXYS 4 examples
+  - \ref examples_breakout
+  - \ref examples_led
+  - \ref examples_pong
+  - \ref examples_vgatest
+
+
+*/

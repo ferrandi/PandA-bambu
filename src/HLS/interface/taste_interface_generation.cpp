@@ -37,64 +37,33 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "taste_interface_generation.hpp"
-
-///. include
 #include "Parameter.hpp"
-
-/// circuit includes
-#include "structural_manager.hpp"
-#include "structural_objects.hpp"
-
-/// constants include
-#include "taste_constants.hpp"
-
-/// design_flows includes
+#include "aadl_information.hpp"
+#include "add_library.hpp"
+#include "behavioral_helper.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-
-/// HLS includes
+#include "fileIO.hpp"
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
-
-/// HLS/memory include
 #include "memory.hpp"
 #include "memory_cs.hpp"
-
-/// HLS/module_allocation include
-#include "add_library.hpp"
-
-/// HLS/stg include
 #include "state_transition_graph_manager.hpp"
-
-/// intermediate_representation/aadl_asn include
-#include "aadl_information.hpp"
-
-/// STD include
+#include "string_manipulation.hpp" // for GET_CLASS
+#include "structural_manager.hpp"
+#include "structural_objects.hpp"
+#include "taste_constants.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
+#include "tree_manager.hpp"
 #include <string>
-
-/// STL includes
-#include "custom_set.hpp"
 #include <tuple>
 #include <utility>
-
-/// technology include
-#include "technology_manager.hpp"
-
-/// technology/physical_library include
-#include "technology_node.hpp"
-
-/// tree includes
-#include "behavioral_helper.hpp"
-#include "tree_manager.hpp"
-
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
-#include "fileIO.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
 
 TasteInterfaceGeneration::TasteInterfaceGeneration(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
                                                    unsigned int _funId,
@@ -135,7 +104,7 @@ TasteInterfaceGeneration::ComputeHLSRelationships(const DesignFlowStep::Relation
 
 DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
 {
-   const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
+   const technology_managerRef TM = HLS->HLS_D->get_technology_manager();
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const auto function_name = FB->CGetBehavioralHelper()->get_function_name();
 
@@ -482,11 +451,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
          {
             GetPointer<port_o>(port)->add_n_ports(2, port);
          }
-         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() ||
-            GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
-         {
-            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
-         }
+         port_o::resize_if_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
       }
 
       const auto in1_port = memory->find_member("in1", port_vector_o_K, memory);
@@ -508,11 +473,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
          {
             GetPointer<port_o>(port)->add_n_ports(2, port);
          }
-         if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() ||
-            GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
-         {
-            port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
-         }
+         port_o::resize_if_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
       }
 
       CustomSet<std::pair<std::string, std::string>> mem_signals;

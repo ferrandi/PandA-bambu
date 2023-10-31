@@ -50,8 +50,8 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include <boost/filesystem/operations.hpp> // for create_directories
-#include <boost/tuple/tuple.hpp>           // for tie
+#include <boost/tuple/tuple.hpp> // for tie
+#include <filesystem>            // for create_directories
 #include <fstream>
 #include <utility> // for pair
 
@@ -111,19 +111,6 @@ void OpNodeInfo::Initialize()
        CustomSet<unsigned int>();
    variables[FunctionBehavior_VariableType::VIRTUAL][FunctionBehavior_VariableAccessType::ADDRESS] =
        CustomSet<unsigned int>();
-#if HAVE_EXPERIMENTAL
-   variables[FunctionBehavior_VariableType::AGGREGATE][FunctionBehavior_VariableAccessType::USE] =
-       CustomSet<unsigned int>();
-   variables[FunctionBehavior_VariableType::AGGREGATE][FunctionBehavior_VariableAccessType::DEFINITION] =
-       CustomSet<unsigned int>();
-   variables[FunctionBehavior_VariableType::AGGREGATE][FunctionBehavior_VariableAccessType::OVER] =
-       CustomSet<unsigned int>();
-   variables[FunctionBehavior_VariableType::AGGREGATE][FunctionBehavior_VariableAccessType::ADDRESS] =
-       CustomSet<unsigned int>();
-   dynamic_memory_locations[FunctionBehavior_VariableAccessType::USE] = CustomSet<MemoryAddress>();
-   dynamic_memory_locations[FunctionBehavior_VariableAccessType::DEFINITION] = CustomSet<MemoryAddress>();
-   dynamic_memory_locations[FunctionBehavior_VariableAccessType::OVER] = CustomSet<MemoryAddress>();
-#endif
 }
 
 OpNodeInfo::~OpNodeInfo() = default;
@@ -134,15 +121,6 @@ const CustomSet<unsigned int>& OpNodeInfo::GetVariables(const FunctionBehavior_V
    return variables.find(variable_type)->second.find(access_type)->second;
 }
 
-#if HAVE_EXPERIMENTAL
-const CustomSet<MemoryAddress>&
-OpNodeInfo::GetDynamicMemoryLocations(const FunctionBehavior_VariableAccessType access_type) const
-{
-   return dynamic_memory_locations.find(access_type)->second;
-}
-#endif
-
-#if HAVE_BAMBU_BUILT || HAVE_TUCANO_BUILT
 const std::string OpNodeInfo::GetOperation() const
 {
    if(vertex_name == ENTRY)
@@ -162,7 +140,6 @@ const std::string OpNodeInfo::GetOperation() const
                 "Node is not a gimple_node but a " + GET_NODE(node)->get_kind_text());
    return GetPointer<const gimple_node>(GET_NODE(node))->operation;
 }
-#endif
 
 unsigned int OpNodeInfo::GetNodeId() const
 {
@@ -256,17 +233,10 @@ void OpNodeInfo::Print(std::ostream& stream, const BehavioralHelperConstRef beha
    PrintVariablesList(stream, "source code variables", cited_variables, behavioral_helper, dotty_format);
    PrintVariablesLists(stream, "SCALARS", variables.find(FunctionBehavior_VariableType::SCALAR)->second,
                        behavioral_helper, dotty_format);
-#if HAVE_EXPERIMENTAL
-   PrintVariablesLists(stream, "AGGREGATE", variables.find(FunctionBehavior_VariableType::AGGREGATE)->second,
-                       behavioral_helper, dotty_format);
-#endif
    PrintVariablesLists(stream, "MEMORY", variables.find(FunctionBehavior_VariableType::MEMORY)->second,
                        behavioral_helper, dotty_format);
    PrintVariablesLists(stream, "VIRTUAL", variables.find(FunctionBehavior_VariableType::VIRTUAL)->second,
                        behavioral_helper, dotty_format);
-#if HAVE_EXPERIMENTAL
-   PrintMemoriesLists(stream, "DYNAMIC MEMORY", dynamic_memory_locations, behavioral_helper, dotty_format);
-#endif
 }
 
 OpGraphInfo::OpGraphInfo(const BehavioralHelperConstRef _BH)
@@ -367,9 +337,9 @@ void OpGraph::WriteDot(const std::string& file_name, const int detail_level) con
    const BehavioralHelperConstRef helper = CGetOpGraphInfo()->BH;
    std::string output_directory =
        collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + helper->get_function_name() + "/";
-   if(!boost::filesystem::exists(output_directory))
+   if(!std::filesystem::exists(output_directory))
    {
-      boost::filesystem::create_directories(output_directory);
+      std::filesystem::create_directories(output_directory);
    }
    const std::string full_name = output_directory + file_name;
    const VertexWriterConstRef op_label_writer(new OpWriter(this, detail_level));
@@ -454,9 +424,9 @@ void OpGraph::WriteDot(const std::string& file_name, const hlsConstRef HLS,
    const BehavioralHelperConstRef helper = CGetOpGraphInfo()->BH;
    std::string output_directory =
        collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + helper->get_function_name() + "/";
-   if(!boost::filesystem::exists(output_directory))
+   if(!std::filesystem::exists(output_directory))
    {
-      boost::filesystem::create_directories(output_directory);
+      std::filesystem::create_directories(output_directory);
    }
    const std::string full_name = output_directory + file_name;
    const VertexWriterConstRef op_label_writer(new TimedOpWriter(this, HLS, critical_paths));

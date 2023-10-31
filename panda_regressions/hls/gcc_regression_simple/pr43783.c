@@ -1,4 +1,7 @@
-typedef __attribute__((aligned(16)))
+typedef 
+ #ifndef __clang__
+__attribute__((aligned(16)))
+#endif
 struct {
   unsigned long long w[3];
 } UINT192;

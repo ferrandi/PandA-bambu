@@ -46,12 +46,10 @@
 
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 
-#include "custom_map.hpp"                 // for _Rb_tree_const_iterator
-#include <boost/lexical_cast.hpp>         // for lexical_cast
-#include <boost/smart_ptr/shared_ptr.hpp> // for shared_ptr
-#include <list>                           // for list
-#include <string>                         // for string, operator<<
-#include <utility>                        // for pair
+#include "custom_map.hpp" // for _Rb_tree_const_iterator
+#include <list>           // for list
+#include <string>         // for string, operator<<
+#include <utility>        // for pair
 #if HAVE_HLS_BUILT
 #include "allocation_information.hpp" // for AllocationInformation
 #endif
@@ -443,7 +441,7 @@ void BBEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e) const
    if(selector & PP_SELECTOR)
    {
       out << ",label=\"";
-      out << boost::lexical_cast<std::string>(bb_edge_info->get_epp_value());
+      out << std::to_string(bb_edge_info->get_epp_value());
       out << "\"";
    }
    else if(selector & FCFG_SELECTOR)
@@ -509,7 +507,7 @@ void OpWriter::operator()(std::ostream& out, const vertex& v) const
    }
    else
    {
-      out << "[";
+      out << "[shape=ellipse,";
    }
    out << "label=\"" << GET_NAME(printing_graph, v);
 #if HAVE_HLS_BUILT

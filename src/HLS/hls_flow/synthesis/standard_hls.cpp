@@ -40,9 +40,6 @@
  */
 #include "standard_hls.hpp"
 
-/// Autoheader include
-#include "config_HAVE_EXPERIMENTAL.hpp"
-
 #include "Parameter.hpp"
 #include "TopEntityMemoryMapped.hpp"
 #include "application_manager.hpp"
@@ -58,8 +55,8 @@
 
 #include "hls.hpp"
 #include "hls_constraints.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 
 /// HLS include
 #include "hls_flow_step_factory.hpp"
@@ -89,16 +86,6 @@ standard_hls::ComputeHLSRelationships(const DesignFlowStep::RelationshipType rel
       case DEPENDENCE_RELATIONSHIP:
       {
          HLSFlowStep_Type synthesis_flow = HLSFlowStep_Type::VIRTUAL_DESIGN_FLOW;
-#if HAVE_EXPERIMENTAL
-         if(parameters->isOption("explore-mux") && parameters->getOption<bool>("explore-mux"))
-         {
-            synthesis_flow = HLSFlowStep_Type::EXPLORE_MUX_DESIGN_FLOW;
-         }
-         if(parameters->isOption("explore-fu-reg") && parameters->getOption<bool>("explore-fu-reg"))
-         {
-            synthesis_flow = HLSFlowStep_Type::FU_REG_BINDING_DESIGN_FLOW;
-         }
-#endif
          ret.insert(std::make_tuple(synthesis_flow, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::SAME_FUNCTION));
          ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_datapath_architecture),
@@ -137,9 +124,8 @@ standard_hls::ComputeHLSRelationships(const DesignFlowStep::RelationshipType rel
          if(!found) // use standard
          {
             top_entity_type =
-                HLSMgr->hasToBeInterfaced(funId) and (HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction() or
-                                                      parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-                                                          HLSFlowStep_Type::WB4_INTERFACE_GENERATION) ?
+                HLSMgr->hasToBeInterfaced(funId) && (HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction() ||
+                                                     parameters->getOption<bool>(OPT_memory_mapped_top)) ?
                     HLSFlowStep_Type::TOP_ENTITY_MEMORY_MAPPED_CREATION :
                     HLSFlowStep_Type::TOP_ENTITY_CREATION;
          }

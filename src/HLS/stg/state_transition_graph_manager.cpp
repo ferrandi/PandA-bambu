@@ -51,8 +51,8 @@
 #include "behavioral_helper.hpp"
 #include "op_graph.hpp"
 
+#include "generic_device.hpp"
 #include "structural_manager.hpp"
-#include "target_device.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 
@@ -60,8 +60,8 @@
 #include "fu_binding.hpp"
 #include "function_behavior.hpp"
 #include "hls.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
 
 /// Parameter include
 #include "Parameter.hpp"
@@ -77,8 +77,11 @@
 #include "var_pp_functor.hpp"
 
 /// Utility include
-#include "boost/graph/topological_sort.hpp"
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include <boost/graph/topological_sort.hpp>
+
+#define PP_MAX_CYCLES_BOUNDED "max-cycles-bounded"
+#define DEFAULT_MAX_CYCLES_BOUNDED (8)
 
 StateTransitionGraphManager::StateTransitionGraphManager(const HLS_managerConstRef _HLSMgr, hlsRef _HLS,
                                                          const ParameterConstRef _Param)
@@ -98,6 +101,9 @@ StateTransitionGraphManager::StateTransitionGraphManager(const HLS_managerConstR
       Param(_Param),
       output_level(_Param->getOption<int>(OPT_output_level)),
       debug_level(_Param->getOption<int>(OPT_debug_level)),
+      _max_cycles_bounded(_Param->IsParameter(PP_MAX_CYCLES_BOUNDED) ?
+                              _Param->GetParameter<unsigned int>(PP_MAX_CYCLES_BOUNDED) :
+                              DEFAULT_MAX_CYCLES_BOUNDED),
       HLS(_HLS),
       STG_builder(StateTransitionGraph_constructorRef(
           new StateTransitionGraph_constructor(state_transition_graphs_collection, _HLSMgr, _HLS->functionId)))
@@ -159,7 +165,8 @@ void StateTransitionGraphManager::ComputeCyclesCount(bool is_pipelined)
       info->min_cycles = CSteps_min.find(info->exit_node)->second - 1;
       info->max_cycles = CSteps_max.find(info->exit_node)->second - 1;
       info->bounded =
-          is_pipelined || (info->min_cycles == info->max_cycles && info->min_cycles > 0 && !has_dummy_state);
+          is_pipelined || (info->min_cycles == info->max_cycles && info->max_cycles <= _max_cycles_bounded &&
+                           info->min_cycles > 0 && !has_dummy_state);
    }
    else
    {
@@ -302,9 +309,9 @@ void StateTransitionGraphManager::add_to_SM(structural_objectRef clock_port, str
    {
       auto mu = state2mu.second;
       std::string name = mu->get_string();
-      std::string library = HLS->HLS_T->get_technology_manager()->get_library(SIMPLEJOIN_STD);
+      std::string library = HLS->HLS_D->get_technology_manager()->get_library(SIMPLEJOIN_STD);
       structural_objectRef mu_mod = SM->add_module_from_technology_library(name, SIMPLEJOIN_STD, library, circuit,
-                                                                           HLS->HLS_T->get_technology_manager());
+                                                                           HLS->HLS_D->get_technology_manager());
       specialise_mu(mu_mod, mu);
 
       structural_objectRef port_ck = mu_mod->find_member(CLOCK_PORT_NAME, port_o_K, mu_mod);

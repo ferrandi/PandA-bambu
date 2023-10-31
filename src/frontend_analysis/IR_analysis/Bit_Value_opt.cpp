@@ -50,7 +50,6 @@
 
 /// Autoheader include
 #include "config_HAVE_FROM_DISCREPANCY_BUILT.hpp"
-#include "config_HAVE_STDCXX_17.hpp"
 
 // Behavior include
 #include "application_manager.hpp"
@@ -79,9 +78,9 @@
 // Tree include
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "ext_tree_node.hpp"
+#include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "hls_target.hpp"
-#include "math_function.hpp"       // for resize_to_1_8_16_32_64_128_256_512
+#include "math_function.hpp"       // for ceil_pow2
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
@@ -286,10 +285,10 @@ void Bit_Value_opt::propagateValue(const ssa_name* ssa, tree_managerRef TM, tree
 
 void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_manipulationRef IRman)
 {
-   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
-   const auto hls_target = GetPointerS<const HLS_manager>(AppM)->get_HLS_target();
-   THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "unexpected condition");
-   const auto max_lut_size = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
+   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_device(), "unexpected condition");
+   const auto hls_d = GetPointerS<const HLS_manager>(AppM)->get_HLS_device();
+   THROW_ASSERT(hls_d->has_parameter("max_lut_size"), "unexpected condition");
+   const auto max_lut_size = hls_d->get_parameter<size_t>("max_lut_size");
 
    /// in case propagate constants from parameters
    for(const auto& parm_decl_node : fd->list_of_args)
@@ -664,11 +663,11 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               if(GET_CONST_NODE(ga->predicate)->get_kind() != integer_cst_K ||
                                  tree_helper::GetConstValue(ga->predicate) != 0)
                               {
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                                "---zero predicated statement: " + stmt->ToString());
                                  const auto bt = IRman->GetBooleanType();
                                  const auto zeroval = TM->CreateUniqueIntegerCst(static_cast<long long int>(0), bt);
                                  TM->ReplaceTreeNode(stmt, ga->predicate, zeroval);
+                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                                "---zero predicated statement: " + stmt->ToString());
                                  modified = true;
                                  AppM->RegisterTransformation(GetName(), stmt);
                               }
@@ -722,10 +721,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         const auto op0 = GET_CONST_NODE(me->op0);
                         const auto op1 = GET_CONST_NODE(me->op1);
                         bool squareP = GET_INDEX_CONST_NODE(me->op0) == GET_INDEX_CONST_NODE(me->op1);
-                        const auto data_bitsize_in0 =
-                            resize_to_1_8_16_32_64_128_256_512(BitLatticeManipulator::Size(op0));
-                        const auto data_bitsize_in1 =
-                            resize_to_1_8_16_32_64_128_256_512(BitLatticeManipulator::Size(op1));
+                        const auto data_bitsize_in0 = ceil_pow2(BitLatticeManipulator::Size(op0));
+                        const auto data_bitsize_in1 = ceil_pow2(BitLatticeManipulator::Size(op1));
                         const auto isSigned = tree_helper::is_int(TM, GET_INDEX_CONST_NODE(ga_op_type));
                         if(!isSigned && GET_CONST_NODE(ga->op1)->get_kind() == mult_expr_K &&
                            (data_bitsize_in0 == 1 || data_bitsize_in1 == 1))
@@ -1235,7 +1232,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               }
                               else
                               {
-                                 if(cst_val >> shift_const == 0)
+                                 if((cst_val >> shift_const) == 0)
                                  {
                                     is_op1_null = true;
                                  }
@@ -2004,90 +2001,6 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                      };
                      cond_expr_BVO();
                   }
-#if !HAVE_STDCXX_17
-
-                  else if(GET_CONST_NODE(ga->op1)->get_kind() == truth_not_expr_K)
-                  {
-                     auto tne_BVO = [&] {
-                        const auto tne = GetPointer<const truth_not_expr>(GET_CONST_NODE(ga->op1));
-                        if(GET_CONST_NODE(tne->op)->get_kind() == integer_cst_K)
-                        {
-                           const auto const_value = tree_helper::GetConstValue(tne->op) == 0 ? 1LL : 0LL;
-                           const auto val = TM->CreateUniqueIntegerCst(const_value, ga_op_type);
-                           propagateValue(ssa, TM, ga->op0, val, DEBUG_CALLSITE);
-                        }
-                     };
-                     tne_BVO();
-                  }
-                  else if(GET_CONST_NODE(ga->op1)->get_kind() == truth_and_expr_K)
-                  {
-                     auto tae_BVO = [&] {
-                        const auto tae = GetPointer<const truth_and_expr>(GET_CONST_NODE(ga->op1));
-                        if(GET_CONST_NODE(tae->op0)->get_kind() == integer_cst_K ||
-                           GET_CONST_NODE(tae->op1)->get_kind() == integer_cst_K ||
-                           GET_INDEX_CONST_NODE(tae->op0) == GET_INDEX_CONST_NODE(tae->op1))
-                        {
-                           tree_nodeRef val;
-                           if(GET_CONST_NODE(tae->op0)->get_kind() == integer_cst_K)
-                           {
-                              const auto cst_val = tree_helper::GetConstValue(tae->op0);
-                              if(cst_val == 0)
-                                 val = tae->op0;
-                              else
-                                 val = tae->op1;
-                           }
-                           else if(GET_CONST_NODE(tae->op1)->get_kind() == integer_cst_K)
-                           {
-                              const auto cst_val = tree_helper::GetConstValue(tae->op1);
-                              if(cst_val == 0)
-                                 val = tae->op1;
-                              else
-                                 val = tae->op0;
-                           }
-                           else
-                           {
-                              val = tae->op0;
-                           }
-                           condPropageValue(val, DEBUG_CALLSITE);
-                        }
-                     };
-                     tae_BVO();
-                  }
-                  else if(GET_CONST_NODE(ga->op1)->get_kind() == truth_or_expr_K)
-                  {
-                     auto toe_BVO = [&] {
-                        const auto toe = GetPointer<const truth_or_expr>(GET_CONST_NODE(ga->op1));
-                        if(GET_CONST_NODE(toe->op0)->get_kind() == integer_cst_K ||
-                           GET_CONST_NODE(toe->op1)->get_kind() == integer_cst_K ||
-                           GET_INDEX_CONST_NODE(toe->op0) == GET_INDEX_CONST_NODE(toe->op1))
-                        {
-                           tree_nodeRef val;
-                           if(GET_CONST_NODE(toe->op0)->get_kind() == integer_cst_K)
-                           {
-                              const auto cst_val = tree_helper::GetConstValue(toe->op0);
-                              if(cst_val == 0)
-                                 val = toe->op1;
-                              else
-                                 val = toe->op0;
-                           }
-                           else if(GET_CONST_NODE(toe->op1)->get_kind() == integer_cst_K)
-                           {
-                              const auto cst_val = tree_helper::GetConstValue(toe->op1);
-                              if(cst_val == 0)
-                                 val = toe->op0;
-                              else
-                                 val = toe->op1;
-                           }
-                           else
-                           {
-                              val = toe->op0;
-                           }
-                           condPropageValue(val, DEBUG_CALLSITE);
-                        }
-                     };
-                     toe_BVO();
-                  }
-#endif
                   else if(GET_CONST_NODE(ga->op1)->get_kind() == bit_ior_expr_K)
                   {
                      auto bit_ior_expr_BVO = [&] {
@@ -2961,6 +2874,16 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                     AppM->RegisterTransformation(GetName(), stmt);
                                  }
                               }
+                           }
+                        }
+                        else if(tree_helper::IsSameType(ga->op0, ne->op))
+                        {
+                           auto bw_op1 = tree_helper::Size(ne->op);
+                           auto bw_op0 = tree_helper::Size(ga->op0);
+
+                           if(bw_op1 <= bw_op0)
+                           {
+                              propagateValue(ssa, TM, ga->op0, ne->op, DEBUG_CALLSITE);
                            }
                         }
                      };
