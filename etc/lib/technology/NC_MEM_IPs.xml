@@ -14052,7 +14052,7 @@ wire valid,tagsmatch;
    
 always @(posedge clk) 
 begin
-  if(reset == 0)
+  if(reset == 1&apos;b1)
   begin
     write_fail_reg &lt;= 0;
     error &lt;= 0;
@@ -17564,24 +17564,40 @@ end
 
    reg                                                                     Min_back_pressure;
 
+   wire [BITSIZE_Min_addr_ram - 1 : 0]                                     addr_reg_next;
    reg [BITSIZE_Min_addr_ram - 1 : 0]                                      addr_reg;
 
    reg                                                                     done;
-   reg [BITSIZE_Min_Rdata_ram - 1 : 0]                                     rdata;
+   wire [BITSIZE_Min_Rdata_ram - 1 : 0]                                    rdata;
 
-   always @(*) begin
+   always @(*) 
+   begin
      done_input_next = done_input ? 1&apos;b1 : done_input_reg;
-     if((Min_oe_ram || Min_we_ram) &amp;&amp; !data_valid_reg) begin
-       addr_reg = Min_addr_ram;
-     end
+     addr_reg_next = ((Min_oe_ram || Min_we_ram) &amp;&amp; !Min_back_pressure_in) ? Min_addr_ram : addr_reg;
    end
 
-   always @(posedge clock) begin
-     done_input_reg &lt;= done_input_next;
-     if((Min_oe_ram || Min_we_ram) &amp;&amp; !data_valid_reg) begin
+  always @(posedge clock)
+  begin
+    if(reset == 1&apos;b1)
+    begin
+      addr_reg &LT;= 0;
+      done_input_reg &lt;= 0;
+    end
+    else
+    begin
+      addr_reg &LT;= addr_reg_next;
+      done_input_reg &lt;= done_input_next;
+    end
+  end
+
+   always @(posedge clock) 
+   begin
+     if((Min_oe_ram || Min_we_ram) &amp;&amp; !data_valid_reg) 
+     begin
        acc_ctxt &lt;= Min_accelerator_context_in;
      end
-     if(done_input_next) begin
+     if(done_input_next) 
+     begin
        done &lt;= !dirty;
      end
      Min_back_pressure &lt;= data_valid_reg &amp;&amp; (Min_we_ram || Min_oe_ram) ? Min_back_pressure_progress : 1&apos;b0;
@@ -17589,7 +17605,7 @@ end
    end
 
    assign Min_accelerator_context = acc_ctxt;
-   assign Min_Rdata_ram = Min_datardy &amp;&amp; data_wstrb_reg == &apos;b0 ? rdata : &apos;b0;
+   assign Min_Rdata_ram = Min_datardy ? rdata : &apos;b0;
 
    IOB_front_end
      #(
@@ -17614,7 +17630,7 @@ end
       .reset (!reset),
       //front-end port
       .valid (Min_oe_ram || Min_we_ram),
-      .addr  (addr_reg[FE_ADDR_W - 1 : FE_BYTE_W]),
+      .addr  (addr_reg_next[FE_ADDR_W - 1 : FE_BYTE_W]),
       .wdata (Min_Wdata_ram),
       .wstrb ({FE_NBYTES{Min_we_ram}}),
       .rdata (rdata),
