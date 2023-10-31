@@ -1630,6 +1630,9 @@ end"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -1640,11 +1643,19 @@ end"/>
             IP_COMPONENT="arg_utils"
             LIBRARY="IF_PORT_OUT index val_port"
             VERILOG_PROVIDED="arg_utils #(BITSIZE_val_port) m_utils();
+// TODO: remove done_once patch when pipielining done signal has been fixed
+reg done_once;
+initial done_once = 0;
 
 always @(posedge clock)
 begin
-  if(done_port)
+  if(1RESET_VALUE)
   begin
+    done_once = 0;
+  end
+  else if(done_port &amp; ~done_once)
+  begin
+    done_once = 1;
     m_utils.setarg(val_port, index);
   end
 end"/>
