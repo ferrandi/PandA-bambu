@@ -31,7 +31,14 @@
  *
 */
 /*!
-  \page panda_install PandA Installation
+  \page panda_install Install PandA framework
+  There are many options to compile and install the PandA framwork depending on the user needs. 
+  Firstly, check that your operationg system is supported, then chose the option that better fits your needs and follow the installation steps.
 
-  \verbinclude INSTALL
+  This section contains the following chapters:
+  - \ref install_supportedos
+  - \ref install_appimage
+  - \ref install_source
+  - \ref install_docker
+
 */

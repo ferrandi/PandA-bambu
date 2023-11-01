@@ -14,7 +14,7 @@ DIST_SUBDIRS += panda_regressions panda_unit src etc examples style documentatio
 #########################################################
 DOX_PROJECT_NAME= $(strip $(if $(subst $(shell (cd $(top_builddir); pwd )),,$(PWD)), $(strip $(subst /,_, $(subst $(shell (cd $(top_builddir); pwd ))/,,$(PWD)))), PandA))
 # Directories and files to be scanned for the generation of the documentation
-DOX_SRCFILES ="$(top_srcdir)/src $(top_srcdir)/documentation"
+DOX_SRCFILES ="$(top_srcdir)/documentation $(top_srcdir)/examples $(top_srcdir)/src"
 # Directory where the Doxygen \include command looks for file to be included
 DOX_EXAMPLE_PATH=$(top_srcdir)
 # Directory where the documentation will be placed

@@ -101,7 +101,7 @@ function automatic integer log2;
   `endif
 endfunction
 
-parameter BITSIZE_data=BITSIZE_)"
+localparam BITSIZE_data=BITSIZE_)"
        << arg_name << (if_dir == port_o::IN ? "_dout" : "_din") << ",\n  ";
    if(if_alignment == DesignAttributes.end())
    {

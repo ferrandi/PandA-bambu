@@ -31,7 +31,7 @@
  *
  */
 /**
- * @file mdpi_debug.h
+ * @file mdpi_types.h
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
@@ -39,42 +39,79 @@
  * Last modified by $Author$
  *
  */
-#ifndef __MDPI_DEBUG_H
-#define __MDPI_DEBUG_H
+#ifndef __MDPI_TYPES_H
+#define __MDPI_TYPES_H
 
-#include <pthread.h>
-
+#ifndef EXTERN_C
 #ifdef __cplusplus
-#include <cstdio>
+#define EXTERN_C extern "C"
 #else
-#include <stdio.h>
+#define EXTERN_C
+#endif
 #endif
 
-#ifdef __cplusplus
-extern "C"
+#include <bits/wordsize.h>
+#include <stdint.h>
+
+#if defined(VERILATOR) // Verilator
+typedef long long sv_longint_t;
+typedef unsigned long long sv_longint_unsigned_t;
+#define NO_SHORTREAL
+#define CONSTARG const
+#define EXPORT
+#elif defined(MODEL_TECH) || defined(XILINX_SIMULATOR) // ModelSim or XSim
+typedef int64_t sv_longint_t;
+typedef uint64_t sv_longint_unsigned_t;
+#define CONSTARG const
+#define EXPORT DPI_DLLESPEC
 #else
-extern
-#endif
-    volatile pthread_t __m_main_tid;
-
-#ifndef __M_OUT_LVL
-#define __M_OUT_LVL 4
+#error "Unknown simulator for DPI"
 #endif
 
-#if __M_OUT_LVL >= 3
-#define info(str, ...) fprintf(stdout, "%s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", ##__VA_ARGS__)
+typedef uint8_t byte_t;
+typedef byte_t* bptr_t;
+#if __WORDSIZE == 32
+#define bptr_to_int(v) reinterpret_cast<unsigned>(v)
+#define ptr_to_bptr(v) reinterpret_cast<bptr_t>(static_cast<unsigned>(v))
+#define BPTR_FORMAT "0x%08X"
 #else
-#define info(...)
+#define bptr_to_int(v) reinterpret_cast<unsigned long long>(v)
+#define ptr_to_bptr(v) reinterpret_cast<bptr_t>(static_cast<unsigned long long>(v))
+#define BPTR_FORMAT "0x%016llX"
 #endif
 
-#if __M_OUT_LVL > 4
-#define debug(str, ...) \
-   fprintf(stdout, "%s %10s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", __func__, ##__VA_ARGS__)
-#define error(str, ...) debug("ERROR: " str, ##__VA_ARGS__)
+#ifdef __M64
+typedef sv_longint_unsigned_t ptr_t;
+#if defined(MODEL_TECH) || defined(XILINX_SIMULATOR)
+#define PTR_FORMAT "0x%016zX"
 #else
-#define debug(...)
-#define error(str, ...) \
-   fprintf(stderr, "ERROR: %s: " str, __m_main_tid == pthread_self() ? "Sim" : "Co-sim", ##__VA_ARGS__)
+#define PTR_FORMAT "0x%016llX"
 #endif
+#else
+typedef unsigned int ptr_t;
+#define PTR_FORMAT "0x%08X"
+#endif
+#define PTR_SIZE (sizeof(ptr_t) * 8)
 
-#endif // __MDPI_DEBUG_H
+typedef struct
+{
+   bptr_t bits;
+   uint16_t bitsize;
+} mdpi_parm_t;
+
+typedef struct
+{
+   mdpi_parm_t* prms;
+   uint8_t size;
+} mdpi_params_t;
+
+typedef enum
+{
+   MDPI_ENTITY_SIM = 0,
+   MDPI_ENTITY_DRIVER,
+   MDPI_ENTITY_COUNT
+} mdpi_entity_t;
+
+#define mdpi_entity_str(s) s == MDPI_ENTITY_DRIVER ? "MDPI driver" : (s == MDPI_ENTITY_SIM ? "Sim" : "Undefined")
+
+#endif // __MDPI_TYPES_H

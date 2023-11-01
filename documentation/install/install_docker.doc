@@ -1,0 +1,124 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project 
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2023 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/*!
+  \page install_docker Build PandA framework in container environment
+  The PandA framework also features a Docker build environment to allow easy and automated build environment setup.
+
+  The Docker build container method is strongly recommended if you need to build the PandA framework to easly allow reproducibility of any issues and avoid compatibility issues with the host machine.
+
+
+  \section Prerequisites
+  Before you begin, be sure you have installed both Docker and Docker Compose following the official install guide at https://docs.docker.com/desktop/.
+
+
+  \section install_docker_clone Clone PandA repository
+  Firstly, you may clone the git repository of the PandA framework on your machine and enter the root directory:
+  \verbatim
+  git clone https://github.com/ferrandi/PandA-bambu
+  cd PandA-bambu
+  \endverbatim
+
+
+  \section install_docker_overview Docker environment overview
+  The PandA build container environment is defined in the .devcontainer/docker-compose.yml file that is reported here:
+  
+  \verbinclude .devcontainer/docker-compose.yml
+
+  There is a single docker container with four mounting points:
+  - /compilers is attached to a docker volume to store PandA Bambu HLS frontend compilers 
+  - /mirror is a read-only mount of the the git repository root to give the container access to the codebase
+  - /build is the container build directory that is also mounted in the git repository root for accessibility during development
+  - /panda_dist is the distribution directory where compiled binaries are placed after successful build and it is mounted in the git repository root
+  
+  The base container is derived from Ubuntu 20.04 Bionic, but you may also chose an Ubuntu 22.04 Focal based container replacing bambuhls/dev:bionic-23.10 with bambuhls/dev:focal-23.10.
+  \verbatim
+  NOTE: the -23.10 suffix in the container tag refers to the build date of the container, not the Ubuntu OS version.
+  \endverbatim
+
+
+  \section install_docker_setup Docker environment setup
+  Basic prerequisites for the PandA framework build are already installed in the base container image, while frontend compilers for the PandA Bambu HLS tool must be downloaded manually.<br/>
+  The download and installation of compilers inside the build container is automated, thus you are just required to supply a comma-separated list of the compilers you need.<br/>
+  Available GNU GCC compilers are: gcc-4.9,gcc-5,gcc-6,gcc-7,gcc-8.<br/>
+  Available Clang LLVM compilers are: clang-4,clang-5,clang-6,clang-7,clang-8,clang-9,clang-10,clang-11,clang-12,clang-16.
+  
+  To run the build environment setup procedure you must run the following command (and replace the APP_COMPILERS string with yours):
+  \verbatim
+  make -f Makefile.init appimage-setup APP_COMPILERS="gcc-4.9,gcc-8,clang-12,clang-16"
+  \endverbatim
+
+  If you wish to add different compilers later you can run the command again with the updated APP_COMPILERS list.
+
+
+  \section install_docker_build Build PandA framework distribution
+  Once setup is completed, you need to run the compile command as follows:
+  \verbatim
+  make -f Makefile.init appimage-build
+  \endverbatim
+
+  This command will automatically run the Automake build configuration script and compile the PandA framework binaries.
+
+  You may also specify custom configuration options using the APP_CONFIGURE variable as follows:
+  \verbatim
+  make -f Makefile.init appimage-build APP_CONFIGURE="--disable-release"
+  \endverbatim
+
+  The Docker build environment generates the PandA AppImage package by default. This implies the packaging procedure is performed at the end of the compilation process: this may take 
+  a while and is not necessary unless you need the AppImage to be generated. 
+  Thus, if you plan to work on the code and build it frequently, you may want to avoid this step to be executed after each compilation run.<br/>
+  The AppImage package generation may be skipped by adding --skip-package at the beginning of the APP_CONFIGURE string:
+  \verbatim
+  make -f Makefile.init appimage-build APP_CONFIGURE="--skip-package <other_options>"
+  \endverbatim
+
+  
+  \section install_docker_run Launch generated PandA binaries
+  After a successful build, you can run the PandA Bambu HLS tool launching the generated AppImage from the panda_dist directory:
+  \verbatim
+  ./panda_dist/bambu.AppImage --help
+  \endverbatim
+  Further information on the AppImage usage are available on the \ref install_appimage "Install PandA framework AppImage distribution" page.
+
+  If you used the --skip-package flag in the previous step as a configure option, the bambu.AppImage package will not be generated. To run PandA framework tools you must use the following:
+  \verbatim
+  APPDIR="/abs/path/to/git_root/panda_dist/distdir" /abs/path/to/git_root/panda_dist/distdir/usr/bin/bambu --help
+  \endverbatim
+
+  
+  \section install_docker_next Next steps
+  - \ref bambu_overview
+  - \ref bambu101_page
+  - \ref dev_page
+
+
+*/

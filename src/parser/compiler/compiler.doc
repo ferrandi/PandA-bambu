@@ -31,7 +31,7 @@
  *
 */
 /*!
-  \page src_frontend_treegcc treeParser
+  \page src_frontend_treegcc Tree Parser
 
 This project parses the dump produced by the GCC compiler in order to transform it in an abstract representation to be used by the PandA framework.
 

@@ -43,8 +43,6 @@
  */
 #include "modelsimWrapper.hpp"
 
-#include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
-
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
 #include "custom_set.hpp"
@@ -101,21 +99,46 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
                                      const std::list<std::string>& file_list)
 {
    THROW_ASSERT(!file_list.empty(), "File list is empty");
+   script << "BEH_DIR=\"" << SIM_SUBDIR << suffix << "\"" << std::endl;
    const auto modelsim_bin = MODELSIM_BIN;
-   std::string cflags = "-DMODEL_TECH " + (modelsim_bin.size() ? (" -I" + modelsim_bin + "../include") : "");
+   std::string beh_cflags = "-DMODEL_TECH " + (modelsim_bin.size() ? ("-I" + modelsim_bin + "../include") : "");
+   const auto cflags = GenerateLibraryBuildScript(script, "${BEH_DIR}", beh_cflags);
+   const auto vflags = [&]() {
+      std::string flags;
+      if(cflags.find("-m32") != std::string::npos)
+      {
+         flags += " +define+__M32";
+      }
+      else if(cflags.find("-mx32") != std::string::npos)
+      {
+         flags += " +define+__MX32";
+      }
+      else if(cflags.find("-m64") != std::string::npos)
+      {
+         flags += " +define+__M64";
+      }
+      if(Param->isOption(OPT_generate_vcd) && Param->getOption<bool>(OPT_generate_vcd))
+      {
+         flags += " +define+GENERATE_VCD";
+      }
+      if(Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy))
+      {
+         flags += " +define+GENERATE_VCD_DISCREPANCY";
+      }
+      return flags;
+   }();
 
    std::string MODELSIM_OPTIMIZER_FLAGS_DEF = "";
    if(Param->getOption<bool>(OPT_mentor_optimizer))
    {
       MODELSIM_OPTIMIZER_FLAGS_DEF = "-O5";
    }
-   script << "beh_dir=\"" << SIM_SUBDIR << suffix << "\"" << std::endl;
-   script << "work_dir=\"${beh_dir}/modelsim_work\"" << std::endl;
-   script << "if [ ! -d ${beh_dir} ]; then" << std::endl;
-   script << "   mkdir -p ${beh_dir}" << std::endl;
+   script << "work_dir=\"${BEH_DIR}/modelsim_work\"" << std::endl;
+   script << "if [ ! -d ${BEH_DIR} ]; then" << std::endl;
+   script << "   mkdir -p ${BEH_DIR}" << std::endl;
    script << "fi" << std::endl << std::endl;
 
-   log_file = "${beh_dir}/" + top_filename + "_modelsim.log";
+   log_file = "${BEH_DIR}/" + top_filename + "_modelsim.log";
 
    script << "if [ -d ${work_dir} ]; then" << std::endl;
    script << "  " << MODELSIM_VDEL << " -all -lib ${work_dir}" << std::endl;
@@ -132,33 +155,6 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
 
    script << "sed -i 's/; AssertionFailAction = 1/AssertionFailAction = 2/g' modelsim.ini" << std::endl << std::endl;
 
-   std::string libtb_filename = GenerateLibraryBuildScript(script, "${work_dir}", cflags);
-   libtb_filename.erase(libtb_filename.size() - 3);
-   const auto vflags = [&]() {
-      std::string flags;
-      if(cflags.find("-m32") != std::string::npos)
-      {
-         flags += " -32 +define+M32";
-      }
-      else if(cflags.find("-mx32") != std::string::npos)
-      {
-         flags += " +define+MX32";
-      }
-      else if(cflags.find("-m64") != std::string::npos)
-      {
-         flags += " -64 +define+M64";
-      }
-      if(Param->isOption(OPT_generate_vcd) && Param->getOption<bool>(OPT_generate_vcd))
-      {
-         flags += " +define+GENERATE_VCD";
-      }
-      if(Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy))
-      {
-         flags += " +define+GENERATE_VCD_DISCREPANCY";
-      }
-      return flags;
-   }();
-
    /// prepare input files
    for(const auto& file : file_list)
    {
@@ -173,9 +169,6 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
             script << " -lint -check_synthesis -fsmsingle -fsmverbose w";
          }
          script << " -work work -2008 " << file << std::endl;
-         script << "if [ $? -ne 0 ]; then" << std::endl;
-         script << "   exit 1;" << std::endl;
-         script << "fi" << std::endl << std::endl;
       }
       else if(extension == ".v" || extension == ".V" || extension == ".sv" || extension == ".SV")
       {
@@ -185,17 +178,20 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
             script << " -lint -fsmsingle -hazards -pedanticerrors -fsmverbose w";
          }
          script << " -work work " << file << std::endl;
-         script << "if [ $? -ne 0 ]; then" << std::endl;
-         script << "   exit 1;" << std::endl;
-         script << "fi" << std::endl << std::endl;
+      }
+      else if(extension == ".c" || extension == ".cpp")
+      {
+         script << MODELSIM_VLOG << " " << MODELSIM_OPTIMIZER_FLAGS_DEF << " -sv -ccflags \"" << beh_cflags
+                << "\" -work work " << file << std::endl;
       }
       else
       {
          THROW_UNREACHABLE("Extension not recognized! " + file_path.string());
       }
+      script << "if [ $? -ne 0 ]; then exit 1; fi" << std::endl << std::endl;
    }
 
-   script << MODELSIM_VSIM << " " << vflags << " -noautoldlibpath -sv_lib " << libtb_filename;
+   script << MODELSIM_VSIM << " " << vflags << " -noautoldlibpath";
    if(Param->isOption(OPT_mentor_visualizer) && Param->isOption(OPT_visualizer) &&
       Param->getOption<bool>(OPT_visualizer))
    {

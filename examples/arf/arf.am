@@ -1,6 +1,7 @@
 EXTRA_DIST += \
     %D%/arf_list \
+    %D%/arf.doc \
     %D%/generic_arf.sh \
     %D%/module.c \
     %D%/test.xml \
-    %D%/README.txt
+    %D%/README.md

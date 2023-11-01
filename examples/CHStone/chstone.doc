@@ -31,6 +31,12 @@
  *
 */
 /*!
-  \page src_HLS_estimation High-level syntesis result estimation
+  \page examples_chstone CHStone Benchmark Suite
+
+  The CHStone Benchmark suite is composed of 12 C-based programs meant to test language support and synthesis capabilities of an High-Level Synthesis tool.
+
+  \section chstone_readme CHStone original description
+  \verbinclude examples/CHStone/CHStone/README
+
 
 */

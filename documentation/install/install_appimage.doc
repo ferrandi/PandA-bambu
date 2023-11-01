@@ -1,0 +1,115 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project 
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2023 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/*!
+  \page install_appimage Install PandA framework AppImage distribution
+  The easiest way to install PandA is to download the AppImage package from our website.
+  The AppImage is a self-contained pre-built distribution of the PandA framework that requires only a minimum set of prerequisites to be installed on the host machine.
+
+  You can find the latest PandA AppImage at https://release.bambuhls.eu/.
+
+  The following steps are needed to run the PandA AppImage distribution:
+
+  \section install_appimage_req Install AppImage prerequisites
+  Running PandA AppImage requires a minimum set of prerequisites to be installed in the host operationg system.
+
+  For Debian-based OS the following command may be used:
+  \verbatim
+  sudo apt-get install -y build-essential gcc-multilib g++-multilib libfuse-dev
+  \endverbatim
+
+  For CentOS/RHEL-based OS the following command may be used:
+  \verbatim
+  sudo dnf install -y fuse-libs gcc gcc-c++ glibc-devel.i686 libgcc.i686 libstdc++-devel.i686 ncurses-devel.i686
+  \endverbatim
+
+
+  \section install_appimage_download Download PandA AppImage
+  Now you may download your preferred PandA AppImage distribution from https://release.bambuhls.eu/.
+  You may use the following command to get the latest stable version:
+  \verbatim
+  wget https://release.bambuhls.eu/bambu-latest.AppImage
+  \endverbatim
+
+  You may use the following command to get the latest development version:
+  \verbatim
+  wget https://release.bambuhls.eu/bambu-latest-dev.AppImage
+  \endverbatim
+
+
+  \section install_appimage_setup Setup and run PandA framework tools
+  Once the download has completed, you need to give execution permissions to the AppImage package as follows:
+  \verbatim
+  chmod +x bambu-latest.AppImage
+  \endverbatim
+
+  Now you may use the AppImage directly as the PandA Bambu HLS executable as follows:
+  \verbatim
+  ./bambu-latest.AppImage --help
+  \endverbatim
+
+  \section install_appimage_system Install PandA AppImage system-wide
+  To use PandA framework tools easily you can create special links to the AppImage package directly in your system bin directory.
+  As an example, to install PandA Bambu HLS tool system-wide you can use the following command:
+  \verbatim
+  ln -s /absolute/path/to/downloaded/bambu-latest.AppImage /usr/bin/bambu
+  \endverbatim
+
+  After that, you can launch PandA Bambu HLS directly from any shell by just typing bambu.
+  
+  The same procedure is valid for any of the PandA framework tools:
+  - bambu
+  - eucalyptus
+  - spider
+
+
+  \section install_appimage_shell Launch a shell within the AppImage environment
+  The AppImage distribution is a self-contained package where all the dependencies required for the execution of PandA tools are embedded, thus generated scripts may not be able to run successfully outside this environment.
+  If you need to run generated scripts, like the HW/SW co-simulation script, you can start a shell within the AppImage environment by doing as follows.
+
+  First, create a link to the AppImage file and name it panda_shell:
+  \verbatim
+  ln -s /absolute/path/to/downloaded/bambu-latest.AppImage panda_shell
+  \endverbatim
+
+  Now launch the shell using the panda_shell link just created and use it as normal to launch PandA-related tools and scripts.
+  \verbatim
+  ./panda_shell
+  \endverbatim
+
+  \section install_appimage_next Next steps
+  - \ref bambu_overview
+  - \ref bambu101_page
+  - \ref dev_page
+
+
+*/

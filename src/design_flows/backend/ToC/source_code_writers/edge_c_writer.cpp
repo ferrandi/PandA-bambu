@@ -297,7 +297,6 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "There is no local_inc");
       // Counting not feedback incoming edges
-      unsigned int not_feedback_counter = 0;
       InEdgeIterator ei, ei_end;
       EdgeDescriptor only_edge;
       for(boost::tie(ei, ei_end) = boost::in_edges(current_vertex, *bb_fcfgGraph); ei != ei_end; ei++)
@@ -305,7 +304,6 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
          if(!(FB_CFG_SELECTOR & bb_fcfgGraph->GetSelector(*ei)))
          {
             only_edge = *ei;
-            not_feedback_counter++;
          }
       }
 

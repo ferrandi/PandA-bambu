@@ -123,6 +123,6 @@ DesignFlowStep_Status generate_hdl::Exec()
    const auto root_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    std::transform(root_functions.begin(), root_functions.end(), std::back_inserter(top_circuits),
                   [&](unsigned int top_function) { return HLSMgr->get_HLS(top_function)->top->get_circ(); });
-   HM.hdl_gen(file_name, top_circuits, false, HLSMgr->hdl_files, HLSMgr->aux_files);
+   HM.hdl_gen(file_name, top_circuits, HLSMgr->hdl_files, HLSMgr->aux_files, false);
    return DesignFlowStep_Status::SUCCESS;
 }

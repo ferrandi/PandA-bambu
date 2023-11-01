@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2023 Politecnico di Milano
+ *              Copyright (C) 2023 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,7 +31,25 @@
  *
 */
 /*!
-  \page src_algorithms_cliquecovering Clique covering algorithm
+  \page bambu101_systemsim Run HW/SW System-level Co-simulation with Bambu HLS
+  This chapter describes how to use the HW/SW System-level Co-simulation feature offered by Bambu HLS to integrate the generated RTL simulation in a C/C++ application.
+  
+  Sections summary:
+  - \ref systemsim_input
+  - \ref basic_synth
+  - \ref basic_sim
+  
+  
+  \section systemsim_input Prepare the C/C++ application
+
+
+
+  \section systemsim_synth Run the High-Level Synthesis with Bambu HLS
+
+
+
+  \section systemsim_sim Run the HW/SW simulation
+
 
 
 */

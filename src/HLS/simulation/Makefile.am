@@ -70,10 +70,9 @@ lib_simulation_la_SOURCES = \
    testbench_generation.cpp
 
 if BISON_2_7_OR_GREATER
-BUILT_SOURCES = c_initialization_yparser.hpp c_initialization_flex_lexer.cpp c_initialization_yparser.cpp
+   BUILT_SOURCES = c_initialization_yparser.hpp c_initialization_flex_lexer.cpp c_initialization_yparser.cpp
 else
-BUILT_SOURCES = c_initialization_yparser.h c_initialization_flex_lexer.cpp c_initialization_yparser.cpp
+   BUILT_SOURCES = c_initialization_yparser.h c_initialization_flex_lexer.cpp c_initialization_yparser.cpp
 endif
+
 CLEANFILES = $(BUILT_SOURCES) *.output
-
-

@@ -163,7 +163,6 @@ std::vector<std::map<std::string, std::string>> TestVectorParser::ParseUserStrin
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Preprocessed string " + tb_string);
       test_vectors.push_back(std::map<std::string, std::string>());
       std::vector<std::string> testbench_parameters = SplitString(tb_string, "$");
-      unsigned int index = 0;
       for(const auto& parameter : testbench_parameters)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Examining " + parameter);
@@ -174,7 +173,6 @@ std::vector<std::map<std::string, std::string>> TestVectorParser::ParseUserStrin
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + temp[0] + "=" + temp[1]);
          test_vectors.back()[temp[0]] = temp[1];
-         ++index;
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    }

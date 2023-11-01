@@ -5,8 +5,8 @@ lib_algorithms_la_SOURCES =
 noinst_HEADERS += algorithms/graph_helpers/cyclic_topological_sort.hpp
 
 if BUILD_LIB_CLIQUECOVER
-
   noinst_LTLIBRARIES +=  lib_clique_covering.la
+  
   lib_clique_covering_la_CPPFLAGS = \
    -I$(top_srcdir)/src/ \
    -isystem $(top_srcdir)/ext/or-tools \
@@ -14,31 +14,53 @@ if BUILD_LIB_CLIQUECOVER
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)
 
-  noinst_HEADERS += algorithms/clique_covering/check_clique.hpp algorithms/clique_covering/clique_covering.hpp algorithms/clique_covering/clique_covering_graph.hpp algorithms/clique_covering/degree_coloring.hpp algorithms/clique_covering/dsatur2_coloring.hpp algorithms/clique_covering/dsatur_coloring.hpp algorithms/clique_covering/filter_clique.hpp algorithms/clique_covering/maxclique_dsatur_coloring.hpp
+  noinst_HEADERS += \
+    algorithms/clique_covering/check_clique.hpp \
+    algorithms/clique_covering/clique_covering.hpp \
+    algorithms/clique_covering/clique_covering_graph.hpp \
+    algorithms/clique_covering/degree_coloring.hpp \
+    algorithms/clique_covering/dsatur2_coloring.hpp \
+    algorithms/clique_covering/dsatur_coloring.hpp \
+    algorithms/clique_covering/filter_clique.hpp \
+    algorithms/clique_covering/maxclique_dsatur_coloring.hpp
+
   lib_clique_covering_la_SOURCES = algorithms/clique_covering/clique_covering.cpp
-  PRJ_DOC += algorithms/clique_covering/clique_covering.doc 
-  EXTRA_DIST += algorithms/clique_covering/test_degree_coloring.cpp algorithms/clique_covering/test_dsatur2_coloring.cpp algorithms/clique_covering/test_dsatur_coloring.cpp algorithms/clique_covering/test_maxclique_dsatur_coloring.cpp
+
+  EXTRA_DIST += \
+    algorithms/clique_covering/test_degree_coloring.cpp \
+    algorithms/clique_covering/test_dsatur2_coloring.cpp \
+    algorithms/clique_covering/test_dsatur_coloring.cpp \
+    algorithms/clique_covering/test_maxclique_dsatur_coloring.cpp
+  
   lib_algorithms_la_LIBADD += lib_clique_covering.la
 endif
 
-
 if BUILD_LIB_DOMINANCE
   noinst_LTLIBRARIES += lib_dominance.la
-  noinst_HEADERS += algorithms/dominance/Dominance.hpp algorithms/dominance/weak_dominance.hpp
+
+  noinst_HEADERS += \
+    algorithms/dominance/Dominance.hpp \
+    algorithms/dominance/weak_dominance.hpp
+
   lib_dominance_la_CPPFLAGS = \
    -I$(top_srcdir)/src/ \
    -I$(top_srcdir)/src/algorithms/dominance \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)
+
   lib_dominance_la_SOURCES = algorithms/dominance/weak_dominance.cpp
-  PRJ_DOC += algorithms/dominance/Dominance.doc 
+
   lib_algorithms_la_LIBADD += lib_dominance.la
 endif
 
 if BUILD_LIB_LOOPS
   noinst_LTLIBRARIES += lib_loops_detection.la
-  noinst_HEADERS += algorithms/loops_detection/loops.hpp algorithms/loops_detection/loop.hpp
+
+  noinst_HEADERS += \
+    algorithms/loops_detection/loops.hpp \
+    algorithms/loops_detection/loop.hpp
+
   lib_loops_detection_la_CPPFLAGS = \
    -I$(top_srcdir)/src/ \
    -I$(top_srcdir)/src/algorithms/dominance \
@@ -48,7 +70,11 @@ if BUILD_LIB_LOOPS
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)
-  lib_loops_detection_la_SOURCES = algorithms/loops_detection/loops.cpp algorithms/loops_detection/loop.cpp
+
+  lib_loops_detection_la_SOURCES = \
+    algorithms/loops_detection/loops.cpp \
+    algorithms/loops_detection/loop.cpp
+
   lib_algorithms_la_LIBADD += lib_loops_detection.la
 endif
 if BUILD_LIB_SDC_SOLVER

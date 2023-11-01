@@ -70,18 +70,6 @@ inflate() {
       clang-4 )
          url="https://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz"
          ;;
-      gcc-4.5 )
-         url="${bambuhls_compiler_url}/gcc-4.5-bambu-Ubuntu_16.04.tar.xz"
-         ;;
-      gcc-4.6 )
-         url="${bambuhls_compiler_url}/gcc-4.6-bambu-Ubuntu_16.04.tar.xz"
-         ;;
-      gcc-4.7 )
-         url="${bambuhls_compiler_url}/gcc-4.7-bambu-Ubuntu_16.04.tar.xz"
-         ;;
-      gcc-4.8 )
-         url="${bambuhls_compiler_url}/gcc-4.8-bambu-Ubuntu_16.04.tar.xz"
-         ;;
       gcc-4.9 )
          url="${bambuhls_compiler_url}/gcc-4.9-bambu-Ubuntu_16.04.tar.xz"
          ;;
