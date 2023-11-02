@@ -783,11 +783,6 @@ jobs:
         shell: bash
         run: |
           OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')_CHStone-memarch1_"
-          if [[ "${{matrix.args}}" = *-c=--speculative-sdc-scheduling* ]]; then
-            OUTNAME+="w-spec"
-          else
-            OUTNAME+="wo-spec"
-          fi
           if [[ "${{matrix.args}}" = *-c=-wH* ]]; then
             OUTNAME+="-vhdl"
           else
@@ -809,12 +804,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - compiler: "I386_GCC7"
+          - compiler: "I386_CLANG13"
             args: ""
-          - compiler: "I386_GCC7"
+          - compiler: "I386_CLANG13"
             args: "-c=-wH"
-          - compiler: "I386_CLANG11"
-            args: "-c=--speculative-sdc-scheduling"
     env:
       script: generic_CHStone-memarch2.sh
       args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}} -c=--assert-debug
@@ -852,11 +845,6 @@ jobs:
         shell: bash
         run: |
           OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')_CHStone-memarch2_"
-          if [[ "${{matrix.args}}" = *-c=--speculative-sdc-scheduling* ]]; then
-            OUTNAME+="w-spec"
-          else
-            OUTNAME+="wo-spec"
-          fi
           if [[ "${{matrix.args}}" = *-c=-wH* ]]; then
             OUTNAME+="-vhdl"
           else
