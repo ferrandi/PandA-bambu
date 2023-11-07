@@ -1,3 +1,2 @@
 blowfish/bf.c --benchmark-name=bf-xc7z020-VVD  --device-name=xc7z020-1clg484-VVD
-gsm/gsm.c --benchmark-name=gsm-xc7z020-VVD     --device-name=xc7z020-1clg484-VVD
 
