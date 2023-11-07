@@ -410,18 +410,8 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostringstream& scrip
    }
    beh_cflags += " -O2";
 
-   const auto top_dfname = string_demangle(top_fname);
-   const auto add_fname_prefix = [&](const std::string& prefix) {
-      if(top_dfname.size() && top_fname != top_dfname)
-      {
-         const auto fname = top_dfname.substr(0, top_dfname.find('('));
-         return boost::replace_first_copy(top_fname, STR(fname.size()) + fname,
-                                          STR(fname.size() + prefix.size()) + prefix + fname);
-      }
-      return prefix + top_fname;
-   };
-   const auto m_top_fname = add_fname_prefix("__m_");
-   const auto m_pp_top_fname = add_fname_prefix("__m_pp_");
+   const auto m_top_fname = cxa_prefix_mangled(top_fname, "__m_");
+   const auto m_pp_top_fname = cxa_prefix_mangled(top_fname, "__m_pp_");
    const auto srcs =
        Param->getOption<Parameters_FileFormat>(OPT_input_format) != Parameters_FileFormat::FF_RAW ?
            boost::replace_all_copy(Param->getOption<std::string>(OPT_input_file), STR_CST_string_separator, " ") :
