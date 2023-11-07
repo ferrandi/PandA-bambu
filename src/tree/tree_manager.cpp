@@ -220,7 +220,7 @@ tree_nodeRef tree_manager::GetFunction(const std::string& function_name) const
          const auto fname = tree_helper::print_function_name(TM, fd);
          if(TM->is_CPP())
          {
-            auto demangled_name = string_demangle(fname);
+            auto demangled_name = cxa_demangle(fname);
             demangled_name = demangled_name.substr(0, demangled_name.find('('));
             if(!demangled_name.empty())
             {

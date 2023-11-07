@@ -106,11 +106,46 @@ std::string TrimSpaces(const std::string& value)
    }
    return temp;
 }
-std::string string_demangle(const std::string& input)
+std::string cxa_demangle(const std::string& input)
 {
    int status;
    std::unique_ptr<char, void (*)(void*)> res(abi::__cxa_demangle(input.data(), nullptr, nullptr, &status), std::free);
    return status == 0 ? std::string(res.get()) : "";
+}
+
+std::string cxa_rename_mangled(const std::string& signature, const std::string& new_fname)
+{
+   auto z_pos = signature.find('Z');
+   if(z_pos != std::string::npos)
+   {
+      const char* z_start = signature.data() + z_pos + 1;
+      char* z_end;
+      auto z_len = std::strtoul(z_start, &z_end, 10);
+      if(z_start != z_end)
+      {
+         return signature.substr(0, z_pos + 1) + std::to_string(new_fname.size()) + new_fname +
+                signature.substr(static_cast<size_t>(std::distance(signature.data(), static_cast<const char*>(z_end))) +
+                                 z_len);
+      }
+   }
+   return new_fname;
+}
+
+std::string cxa_prefix_mangled(const std::string& signature, const std::string& prefix)
+{
+   auto z_pos = signature.find('Z');
+   if(z_pos != std::string::npos)
+   {
+      const char* z_start = signature.data() + z_pos + 1;
+      char* z_end;
+      auto z_len = std::strtoul(z_start, &z_end, 10);
+      if(z_start != z_end)
+      {
+         return signature.substr(0, z_pos + 1) + std::to_string(prefix.size() + z_len) + prefix +
+                signature.substr(static_cast<size_t>(std::distance(signature.data(), static_cast<const char*>(z_end))));
+      }
+   }
+   return prefix + signature;
 }
 
 std::string capitalize(const std::string& str)

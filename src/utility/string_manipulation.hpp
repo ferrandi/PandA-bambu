@@ -75,7 +75,11 @@ void remove_escaped(std::string& ioString);
 
 std::string TrimSpaces(const std::string& value);
 
-std::string string_demangle(const std::string& input);
+std::string cxa_demangle(const std::string& input);
+
+std::string cxa_rename_mangled(const std::string& signature, const std::string& new_fname);
+
+std::string cxa_prefix_mangled(const std::string& signature, const std::string& prefix);
 
 std::string capitalize(const std::string& str);
 
@@ -171,7 +175,7 @@ unsigned long long convert_fp_to_bits(std::string num, unsigned long long precis
 /**
  * Macro returning the actual type of an object
  */
-#define GET_CLASS(obj) string_demangle(typeid(obj).name())
+#define GET_CLASS(obj) cxa_demangle(typeid(obj).name())
 
 /**
  * Convert a string storing a number in decimal format into a string in binary format
