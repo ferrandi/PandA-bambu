@@ -267,7 +267,10 @@ namespace clang
 
       std::string GetTypeNameCanonical(const QualType& t, const PrintingPolicy& pp) const
       {
-         auto typeName = t->getCanonicalTypeInternal().getAsString(pp);
+         std::string typeName;
+         llvm::raw_string_ostream ss(typeName);
+         t.getCanonicalType().print(ss, pp);
+         ss.str();
          const auto key = std::string("class ");
          const auto constkey = std::string("const class ");
          if(typeName.find(key) == 0)
@@ -339,7 +342,6 @@ namespace clang
          for(const auto& location_argument : attr_map)
          {
             const auto& loc = location_argument.first;
-            const auto& aattr = location_argument.second;
             if((prev.isInvalid() || prev < loc) && (loc < locEnd))
             {
                fun_arg_attr[fname].insert(attr_map[loc].begin(), attr_map[loc].end());
@@ -424,24 +426,10 @@ namespace clang
                   };
                   const auto manageArray = [&](const ConstantArrayType* CA, bool setInterfaceType) {
                      auto OrigTotArraySize = CA->getSize();
-                     std::string Dimensions;
-                     if(!setInterfaceType)
-                     {
-#if __clang_major__ >= 13
-                        Dimensions = "[" + llvm::toString(OrigTotArraySize, 10, false) + "]";
-#else
-                        Dimensions = "[" + OrigTotArraySize.toString(10, false) + "]";
-#endif
-                     }
                      while(CA->getElementType()->isConstantArrayType())
                      {
                         CA = cast<ConstantArrayType>(CA->getElementType());
                         const auto n_el = CA->getSize();
-#if __clang_major__ >= 13
-                        Dimensions = Dimensions + "[" + llvm::toString(n_el, 10, false) + "]";
-#else
-                        Dimensions = Dimensions + "[" + n_el.toString(10, false) + "]";
-#endif
                         OrigTotArraySize *= n_el;
                      }
                      if(setInterfaceType)
@@ -457,31 +445,29 @@ namespace clang
                      }
                      const auto paramTypeRemTD = RemoveTypedef(CA->getElementType());
                      ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + " *";
-                     ParamTypeNameOrig =
-                         paramTypeRemTD.getAsString(pp) + (Dimensions == "" ? " *" : " (*)" + Dimensions);
+                     ParamTypeNameOrig = GetTypeNameCanonical(CA->getElementType(), pp) + " *";
                      ParamTypeInclude = getIncludes(paramTypeRemTD);
                   };
-                  const auto getSizeInBytes = [&](QualType T) {
+                  const auto getSizeInBytes = [&](QualType T) -> int64_t {
                      if(T->isIncompleteType() || T->isTemplateTypeParmType() || isa<TemplateSpecializationType>(T))
                      {
-                        attr_val["SizeInBytes"] = "1";
-                        return;
+                        return 1;
                      }
-                     attr_val["SizeInBytes"] = std::to_string(FD->getASTContext()
-                                                                  .getTypeInfoDataSizeInChars(T)
-                                                                  .
+                     return FD->getASTContext()
+                         .getTypeInfoDataSizeInChars(T)
+                         .
 #if __clang_major__ <= 11
-                                                              first
+                         first
 #else
-                                                              Width
+                         Width
 #endif
-                                                                  .getQuantity());
+                         .getQuantity();
                   };
 
                   if(isa<DecayedType>(argType))
                   {
                      const auto DT = cast<DecayedType>(argType)->getOriginalType().IgnoreParens();
-                     getSizeInBytes(DT);
+                     attr_val["SizeInBytes"] = std::to_string(getSizeInBytes(DT));
                      if(isa<ConstantArrayType>(DT))
                      {
                         manageArray(cast<ConstantArrayType>(DT), true);
@@ -489,10 +475,9 @@ namespace clang
                      else
                      {
                         const auto paramTypeRemTD = RemoveTypedef(argType);
-                        const auto paramTypeOrigTD = argType;
                         ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
-                        ParamTypeNameOrig = paramTypeOrigTD.getAsString(pp);
-                        ParamTypeInclude = getIncludes(paramTypeOrigTD);
+                        ParamTypeNameOrig = GetTypeNameCanonical(argType, pp);
+                        ParamTypeInclude = getIncludes(argType);
                      }
                      if(attr_val.find("interface_type") != attr_val.end())
                      {
@@ -513,20 +498,19 @@ namespace clang
                   }
                   else if(argType->isPointerType() || argType->isReferenceType())
                   {
-                     if(isa<ConstantArrayType>(argType->getPointeeType().IgnoreParens()))
+                     const auto ptdType = argType->getPointeeType().IgnoreParens();
+                     attr_val["SizeInBytes"] = std::to_string(getSizeInBytes(ptdType));
+                     if(isa<ConstantArrayType>(ptdType))
                      {
-                        getSizeInBytes(argType->getPointeeType().IgnoreParens());
-                        manageArray(cast<ConstantArrayType>(argType->getPointeeType().IgnoreParens()), false);
+                        manageArray(cast<ConstantArrayType>(ptdType), false);
                      }
                      else
                      {
                         const auto suffix = argType->isPointerType() ? "*" : "&";
-                        const auto paramTypeOrigTD = argType->getPointeeType();
-                        const auto paramTypeRemTD = RemoveTypedef(paramTypeOrigTD);
-                        getSizeInBytes(paramTypeRemTD);
+                        const auto paramTypeRemTD = RemoveTypedef(ptdType);
                         ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + suffix;
-                        ParamTypeNameOrig = paramTypeOrigTD.getAsString(pp) + suffix;
-                        ParamTypeInclude = getIncludes(paramTypeOrigTD);
+                        ParamTypeNameOrig = GetTypeNameCanonical(argType, pp);
+                        ParamTypeInclude = getIncludes(ptdType);
                      }
                      const auto is_channel_if = ParamTypeName.find("ac_channel<") == 0 ||
                                                 ParamTypeName.find("stream<") == 0 ||
@@ -549,12 +533,11 @@ namespace clang
                   }
                   else
                   {
-                     const auto paramTypeOrigTD = argType;
                      const auto paramTypeRemTD = RemoveTypedef(argType);
-                     getSizeInBytes(paramTypeRemTD);
+                     attr_val["SizeInBytes"] = std::to_string(getSizeInBytes(paramTypeRemTD));
                      ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
-                     ParamTypeNameOrig = paramTypeOrigTD.getAsString(pp);
-                     ParamTypeInclude = getIncludes(paramTypeOrigTD);
+                     ParamTypeNameOrig = GetTypeNameCanonical(argType, pp);
+                     ParamTypeInclude = getIncludes(argType);
                      if(!argType->isBuiltinType() && !argType->isEnumeralType())
                      {
                         interface = "none";
@@ -722,7 +705,6 @@ namespace clang
          std::string pname;
          std::string interface;
          const auto loc = PragmaTok.getLocation();
-         const auto filename = PP.getSourceManager().getPresumedLoc(loc, false).getFilename();
          const auto end_parse = [&]() {
             PP.Lex(Tok);
             if(Tok.isNot(tok::eod))
@@ -848,13 +830,6 @@ namespace clang
             auto& D = PP.getDiagnostics();
             D.Report(Tok.getLocation(), D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_cache %0"))
                 .AddString(msg);
-         };
-         const auto end_parse = [&]() {
-            PP.Lex(Tok);
-            if(Tok.isNot(tok::eod))
-            {
-               print_error("malformed pragma, expecting end)");
-            }
          };
          const auto bundle_parse = [&]() {
             PP.Lex(Tok);
