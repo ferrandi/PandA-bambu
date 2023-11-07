@@ -5994,6 +5994,16 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
          res += print_type(TM, GET_INDEX_NODE(td->name), global, print_qualifiers);
          break;
       }
+      case parm_decl_K:
+      {
+         const auto pd = GetPointer<const parm_decl>(node_type);
+         if(pd->readonly_flag)
+         {
+            res += print_qualifiers ? "const " : "/*const*/ ";
+         }
+         res += PrintType(TM, pd->type, global, print_qualifiers);
+         break;
+      }
       case binfo_K:
       case block_K:
       case call_expr_K:
@@ -6006,7 +6016,6 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
       case lang_type_K:
       case namespace_decl_K:
       case offset_type_K:
-      case parm_decl_K:
       case qual_union_type_K:
       case result_decl_K:
       case set_type_K:
