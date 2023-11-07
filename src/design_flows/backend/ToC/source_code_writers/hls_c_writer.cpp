@@ -133,27 +133,39 @@ using namespace __AC_NAMESPACE;
 
    // get the root function to be tested by the testbench
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   THROW_ASSERT(top_function_ids.size() == 1, "Multiple top function");
-   const auto function_id = *(top_function_ids.begin());
-   const auto fnode = TM->CGetTreeNode(function_id);
-   const auto fd = GetPointerS<const function_decl>(fnode);
-   const auto fname = tree_helper::GetMangledFunctionName(fd);
-   auto& DesignInterfaceInclude = HLSMgr->design_interface_typenameinclude;
-   if(DesignInterfaceInclude.find(fname) != DesignInterfaceInclude.end())
+   CustomOrderedSet<std::string> includes;
+   CustomSet<std::string> top_fnames;
+   for(auto function_id : top_function_ids)
    {
-      CustomOrderedSet<std::string> includes;
-      const auto& DesignInterfaceArgsInclude = DesignInterfaceInclude.find(fname)->second;
-      for(const auto& argInclude : DesignInterfaceArgsInclude)
+      const auto fnode = TM->CGetTreeNode(function_id);
+      const auto fd = GetPointerS<const function_decl>(fnode);
+      const auto fname = tree_helper::GetMangledFunctionName(fd);
+      auto& DesignInterfaceInclude = HLSMgr->design_interface_typenameinclude;
+      if(DesignInterfaceInclude.find(fname) != DesignInterfaceInclude.end())
       {
-         const auto incls = convert_string_to_vector<std::string>(argInclude.second, ";");
-         includes.insert(incls.begin(), incls.end());
+         const auto& DesignInterfaceArgsInclude = DesignInterfaceInclude.find(fname)->second;
+         for(const auto& argInclude : DesignInterfaceArgsInclude)
+         {
+            const auto incls = convert_string_to_vector<std::string>(argInclude.second, ";");
+            includes.insert(incls.begin(), incls.end());
+         }
+         top_fnames.insert(fname);
       }
-      indented_output_stream->Append("#define " + fname + " __keep_your_declaration_out_of_my_code\n");
+   }
+   if(includes.size())
+   {
+      for(const auto& fname : top_fnames)
+      {
+         indented_output_stream->Append("#define " + fname + " __keep_your_declaration_out_of_my_code\n");
+      }
       for(const auto& inc : includes)
       {
          indented_output_stream->Append("#include \"" + inc + "\"\n");
       }
-      indented_output_stream->Append("#undef " + fname + "\n");
+      for(const auto& fname : top_fnames)
+      {
+         indented_output_stream->Append("#undef " + fname + "\n");
+      }
    }
 }
 
@@ -557,7 +569,6 @@ args[i].map_addr = args[i].addr;
 }
 
 )");
-
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written simulator init memory");
 }
 
@@ -695,7 +706,7 @@ void HLSCWriter::WriteMainTestbench()
          }
          else
          {
-            arg_typename = tree_helper::PrintType(TM, arg_type, false, true);
+            arg_typename = tree_helper::PrintType(TM, arg, false, true);
          }
          if(is_interface_inferred)
          {
@@ -754,7 +765,7 @@ void HLSCWriter::WriteMainTestbench()
          else if(is_pointer_type)
          {
             gold_call += "(" + arg_typename + ")" + arg_name + "_gold, ";
-            pp_call += "(" + tree_helper::PrintType(TM, arg_type, false, true) + ")" + arg_name + "_pp, ";
+            pp_call += "(" + tree_helper::PrintType(TM, arg, false, true) + ")" + arg_name + "_pp, ";
             gold_cmp += "m_argcmp(" + STR(param_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
             if(param_size_default.find(param_idx) != param_size_default.end())
             {
@@ -790,7 +801,7 @@ void HLSCWriter::WriteMainTestbench()
          {
             arg_typename.pop_back();
             gold_call += "*(" + arg_typename + "*)" + arg_name + "_gold, ";
-            pp_call += "(" + tree_helper::PrintType(TM, arg_type, false, true) + "*)" + arg_name + "_pp, ";
+            pp_call += "(" + tree_helper::PrintType(TM, arg, false, true) + "*)" + arg_name + "_pp, ";
             gold_cmp += "m_argcmp(" + STR(param_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
             args_init += "__m_param_alloc(" + STR(param_idx) + ", sizeof(" + arg_typename + "));\n";
             args_decl += "(void*)&" + arg_name;
