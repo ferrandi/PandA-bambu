@@ -555,7 +555,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
       }
       if(!typename_found)
       {
-         const auto dfname = string_demangle(fname);
+         const auto dfname = cxa_demangle(fname);
          if(!dfname.empty())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Extracting interface from signature " + fname);
@@ -971,7 +971,7 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
       {
          const auto called_fname = [&]() {
             const auto fname = tree_helper::print_function_name(TM, call_fd);
-            const auto demangled = string_demangle(fname);
+            const auto demangled = cxa_demangle(fname);
             return demangled.size() ? demangled : fname;
          }();
          if(called_fname.find(STR_CST_interface_parameter_keyword) != std::string::npos)
