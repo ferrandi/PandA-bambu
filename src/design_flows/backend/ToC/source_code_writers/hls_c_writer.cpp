@@ -653,7 +653,7 @@ void HLSCWriter::WriteMainTestbench()
       }
       return idx_size;
    }();
-   const auto extern_decl = top_fname == top_fname_mngl ? "EXTERN_C " : "";
+   const auto extern_decl = top_fname != top_fname_mngl ? "EXTERN_C " : "";
 
    std::string top_decl = extern_decl;
    std::string gold_decl = extern_decl;
@@ -687,9 +687,9 @@ void HLSCWriter::WriteMainTestbench()
       top_decl += "void";
       gold_decl += "void";
    }
-   top_decl += " " + top_fname + "(";
-   gold_decl += " __m_" + top_fname + "(";
-   gold_call += "__m_" + top_fname + "(";
+   top_decl += " " + top_fname_mngl + "(";
+   gold_decl += " " + cxa_prefix_mangled(top_fname_mngl, "__m_") + "(";
+   gold_call += cxa_prefix_mangled(top_fname_mngl, "__m_") + "(";
    pp_call += "__m_pp_" + top_fname + "(";
    if(top_params.size())
    {
