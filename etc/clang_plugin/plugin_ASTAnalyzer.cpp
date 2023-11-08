@@ -426,10 +426,24 @@ namespace clang
                   };
                   const auto manageArray = [&](const ConstantArrayType* CA, bool setInterfaceType) {
                      auto OrigTotArraySize = CA->getSize();
+                     std::string Dimensions;
+                     if(!setInterfaceType)
+                     {
+#if __clang_major__ >= 13
+                        Dimensions = "[" + llvm::toString(OrigTotArraySize, 10, false) + "]";
+#else
+                        Dimensions = "[" + OrigTotArraySize.toString(10, false) + "]";
+#endif
+                     }
                      while(CA->getElementType()->isConstantArrayType())
                      {
                         CA = cast<ConstantArrayType>(CA->getElementType());
                         const auto n_el = CA->getSize();
+#if __clang_major__ >= 13
+                        Dimensions = Dimensions + "[" + llvm::toString(n_el, 10, false) + "]";
+#else
+                        Dimensions = Dimensions + "[" + n_el.toString(10, false) + "]";
+#endif
                         OrigTotArraySize *= n_el;
                      }
                      if(setInterfaceType)
@@ -445,7 +459,8 @@ namespace clang
                      }
                      const auto paramTypeRemTD = RemoveTypedef(CA->getElementType());
                      ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + " *";
-                     ParamTypeNameOrig = GetTypeNameCanonical(CA->getElementType(), pp) + " *";
+                     ParamTypeNameOrig = GetTypeNameCanonical(CA->getElementType(), pp) +
+                                         (Dimensions == "" ? " *" : " (*)" + Dimensions);
                      ParamTypeInclude = getIncludes(paramTypeRemTD);
                   };
                   const auto getSizeInBytes = [&](QualType T) -> int64_t {
