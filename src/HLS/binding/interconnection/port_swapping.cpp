@@ -444,12 +444,9 @@ std::vector<std::pair<port_swapping::PSVertex, unsigned int>> port_swapping::p_s
 {
    auto g_vertices = vertices(g);
    std::vector<PSMultiStart> vector_sets;
-   int count = 0;
    for(auto iterator = g_vertices.first; iterator != g_vertices.second; ++iterator)
    {
       port_swapping_algorithm(g, vector_sets, boost::num_vertices(g), *iterator);
-
-      count++;
    }
    long unsigned int max = boost::num_vertices(g);
    PSMultiStart best_candidate;
