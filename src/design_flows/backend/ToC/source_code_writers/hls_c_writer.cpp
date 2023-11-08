@@ -167,6 +167,17 @@ using namespace __AC_NAMESPACE;
          indented_output_stream->Append("#undef " + fname + "\n");
       }
    }
+   indented_output_stream->Append(R"(
+
+#ifndef EXTERN_C
+#ifdef __cplusplus
+#define EXTERN_C extern "C"
+#else
+#define EXTERN_C
+#endif
+#endif
+
+)");
 }
 
 void HLSCWriter::WriteGlobalDeclarations()
@@ -348,17 +359,21 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef BH)
    const auto function_index = BH->get_function_index();
    const auto return_type_index = BH->GetFunctionReturnType(function_index);
 
-   auto function_name = BH->get_function_name();
-   // avoid collision with the main
-   if(function_name == "main")
-   {
-      const auto is_discrepancy = (Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) ||
-                                  (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw));
-      if(is_discrepancy)
+   const auto top_fname_mngl = BH->GetMangledFunctionName();
+   const auto function_name = [&]() -> std::string {
+      // avoid collision with the main
+      if(top_fname_mngl == "main")
       {
-         function_name = "_main";
+         const auto is_discrepancy =
+             (Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) ||
+             (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw));
+         if(is_discrepancy)
+         {
+            return "_main";
+         }
       }
-   }
+      return top_fname_mngl;
+   }();
    if(return_type_index)
    {
       indented_output_stream->Append(RETURN_PORT_NAME " = ");
@@ -367,7 +382,6 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef BH)
    indented_output_stream->Append(function_name + "(");
    bool is_first_argument = true;
    unsigned par_index = 0;
-   const auto top_fname_mngl = BH->GetMangledFunctionName();
    const auto& DesignInterfaceTypenameOrig = HLSMgr->design_interface_typename_orig_signature;
    for(const auto& par : BH->GetParameters())
    {
@@ -651,11 +665,11 @@ void HLSCWriter::WriteMainTestbench()
       }
       return idx_size;
    }();
-   const auto extern_decl = top_fname != top_fname_mngl ? "EXTERN_C " : "";
+   const auto cdecl = top_fname != top_fname_mngl ? "EXTERN_C " : "";
 
-   std::string top_decl = extern_decl;
-   std::string gold_decl = extern_decl;
-   std::string pp_decl = extern_decl +
+   std::string top_decl;
+   std::string gold_decl = cdecl;
+   std::string pp_decl = cdecl +
                          tree_helper::PrintType(TM, TM->CGetTreeReindex(top_id), false, true, false, nullptr,
                                                 var_pp_functorConstRef(new std_var_pp_functor(top_bh))) +
                          ";\n";
@@ -836,7 +850,8 @@ void HLSCWriter::WriteMainTestbench()
    pp_call += ");\n";
    args_decl += "};\n";
 
-   indented_output_stream->AppendIndented(R"(
+   indented_output_stream->AppendIndented(cdecl + top_decl.substr(0, top_decl.size() - 1) + R"(;
+
 #ifdef LIBMDPI_DRIVER
 
 #ifdef __cplusplus
@@ -1097,7 +1112,6 @@ abort();
    {
       indented_output_stream->Append("#else\n");
       indented_output_stream->Append("#include <mdpi/mdpi_user.h>\n\n");
-      indented_output_stream->Append("extern " + top_decl + ";\n\n");
 
       indented_output_stream->Append("int main()\n{\n");
       // write additional initialization code needed by subclasses
