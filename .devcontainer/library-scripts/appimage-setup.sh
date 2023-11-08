@@ -16,8 +16,8 @@ mkdir -p ${pkg_dir}
 echo "Inifating compilers..."
 bash ${script_dir}/compiler-download.sh $@
 
-GCC_BINS=("`find ${pkg_dir}/usr/bin -type f -regextype posix-extended -regex '.*g(cc|\+\+)-[0-9]+\.?[0-9]?'`")
-CLANG_BINS=("`find ${pkg_dir}/clang+llvm-*/bin -type f -regextype posix-extended -regex '.*clang-[0-9]+\.?[0-9]?'`")
+GCC_BINS=("`find ${pkg_dir}/usr/bin -type f -regextype posix-extended -regex '.*g(cc|\+\+)-[0-9]+\.?[0-9]?' 2> /dev/null`")
+CLANG_BINS=("`find ${pkg_dir}/clang+llvm-*/bin -type f -regextype posix-extended -regex '.*clang-[0-9]+\.?[0-9]?' 2> /dev/null`")
 CLANG_EXES=("clang" "clang++" "clang-cl" "clang-cpp" "ld.lld" "lld" "lld-link" "llvm-ar" "llvm-config" "llvm-dis" "llvm-link" "llvm-lto" "llvm-lto2" "llvm-ranlib" "mlir-opt" "mlir-translate" "opt")
 NO_DELETE="-name clang"
 for bin in ${CLANG_BINS}
