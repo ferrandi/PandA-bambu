@@ -222,21 +222,17 @@ namespace clang
          {
             return getBaseTypeDecl(ty->getAs<ElaboratedType>()->getNamedType());
          }
-         if(isa<TypedefType>(ty))
+         if(isa<TypedefType>(ty) || ty->getTypeClass() == Type::Typedef)
          {
-            ND = ty->getAs<TypedefType>()->getDecl();
+            return getBaseTypeDecl(ty->getAs<TypedefType>()->getDecl()->getUnderlyingType());
          }
-         else if(ty->isRecordType())
+         if(ty->isRecordType())
          {
             ND = ty->getAs<RecordType>()->getDecl();
          }
          else if(ty->isEnumeralType())
          {
             ND = ty->getAs<EnumType>()->getDecl();
-         }
-         else if(ty->getTypeClass() == Type::Typedef)
-         {
-            ND = ty->getAs<TypedefType>()->getDecl();
          }
          else if(ty->isArrayType())
          {
@@ -399,10 +395,11 @@ namespace clang
                   std::string ParamTypeInclude;
                   const auto getIncludes = [&](const clang::QualType& type) {
                      std::string includes;
-
                      if(const auto BTD = getBaseTypeDecl(type))
                      {
-                        includes = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
+                        const auto include_file =
+                            SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
+                        includes = include_file;
                      }
                      const auto tmpl_decl =
                          llvm::dyn_cast_or_null<ClassTemplateSpecializationDecl>(type->getAsTagDecl());
@@ -416,8 +413,9 @@ namespace clang
                            {
                               if(const auto BTD = getBaseTypeDecl(argT.getAsType()))
                               {
-                                 includes += std::string(";") +
-                                             SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
+                                 const auto include_file =
+                                     SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
+                                 includes += std::string(";") + include_file;
                               }
                            }
                         }
