@@ -199,7 +199,8 @@
 #define OPT_TESTBENCH (1 + INPUT_OPT_TEST_SINGLE_NON_DETERMINISTIC_FLOW)
 #define OPT_TESTBENCH_ARGV (1 + OPT_TESTBENCH)
 #define OPT_TESTBENCH_PARAM_SIZE (1 + OPT_TESTBENCH_ARGV)
-#define OPT_TB_EXTRA_GCC_OPTIONS (1 + OPT_TESTBENCH_PARAM_SIZE)
+#define OPT_TESTBENCH_MAP_MODE (1 + OPT_TESTBENCH_PARAM_SIZE)
+#define OPT_TB_EXTRA_GCC_OPTIONS (1 + OPT_TESTBENCH_MAP_MODE)
 #define OPT_TIME_WEIGHT (1 + OPT_TB_EXTRA_GCC_OPTIONS)
 #define OPT_TIMING_MODEL (1 + OPT_TIME_WEIGHT)
 #define OPT_TIMING_VIOLATION (1 + OPT_TIMING_MODEL)
@@ -288,6 +289,11 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        A comma-separated list of pairs representing a pointer parameter name and\n"
       << "        the size for the related memory space. Specifying this option will disable\n"
       << "        automated top-level function verification.\n\n"
+      << "    --tb-memory-mapping=<arg>\n"
+      << "        Testbench memory mapping mode:\n"
+      << "            DEVICE - Emulate host/device memory mapping (default)\n"
+      << "            SHARED - Emulate shared memory space between host and device\n"
+      << "                     (BEAWARE: no memory integrity checks in shared mode)\n\n"
       << "    --top-fname=<fun_name>\n"
       << "        Define the top function to be synthesized. (default=main)\n\n"
       << "    --top-rtldesign-name=<top_name>\n"
@@ -1040,6 +1046,7 @@ int BambuParameter::Exec()
       {"generate-tb", required_argument, nullptr, OPT_TESTBENCH},
       {"tb-arg", required_argument, nullptr, OPT_TESTBENCH_ARGV},
       {"tb-param-size", required_argument, nullptr, OPT_TESTBENCH_PARAM_SIZE},
+      {"tb-memory-mapping", required_argument, nullptr, OPT_TESTBENCH_MAP_MODE},
       {"tb-extra-gcc-options", required_argument, nullptr, OPT_TB_EXTRA_GCC_OPTIONS},
       {"max-sim-cycles", required_argument, nullptr, OPT_MAX_SIM_CYCLES},
       {"generate-vcd", no_argument, nullptr, OPT_GENERATE_VCD},
@@ -1828,6 +1835,16 @@ int BambuParameter::Exec()
                param_size = getOption<std::string>(OPT_testbench_param_size) + STR_CST_string_separator + param_size;
             }
             setOption(OPT_testbench_param_size, param_size);
+            break;
+         }
+         case OPT_TESTBENCH_MAP_MODE:
+         {
+            std::string map_mode(optarg);
+            if(map_mode != "DEVICE" && map_mode != "SHARED")
+            {
+               THROW_ERROR("BadParameters: testbench memory mapping mode not valid");
+            }
+            setOption(OPT_testbench_map_mode, map_mode);
             break;
          }
          case OPT_TB_EXTRA_GCC_OPTIONS:
@@ -3849,6 +3866,9 @@ void BambuParameter::SetDefaults()
    setOption(OPT_num_accelerators, 4);
 #endif
    setOption(OPT_memory_banks_number, 1);
+
+   /// ---------- Simulation options ----------- //
+   setOption(OPT_testbench_map_mode, "DEVICE");
 
    panda_parameters["CSE_size"] = "2";
    panda_parameters["PortSwapping"] = "1";
