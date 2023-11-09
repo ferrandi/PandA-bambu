@@ -169,11 +169,19 @@ using namespace __AC_NAMESPACE;
    }
    indented_output_stream->Append(R"(
 
-#ifndef EXTERN_C
+#ifndef CDECL
 #ifdef __cplusplus
-#define EXTERN_C extern "C"
+#define CDECL extern "C"
 #else
-#define EXTERN_C
+#define CDECL
+#endif
+#endif
+
+#ifndef EXTERN_CDECL
+#ifdef __cplusplus
+#define EXTERN_CDECL extern "C"
+#else
+#define EXTERN_CDECL extern
 #endif
 #endif
 
@@ -665,12 +673,10 @@ void HLSCWriter::WriteMainTestbench()
       }
       return idx_size;
    }();
-   const auto cdecl = top_fname != top_fname_mngl ? "EXTERN_C " : "";
 
    std::string top_decl;
-   std::string gold_decl = cdecl;
-   std::string pp_decl = cdecl +
-                         tree_helper::PrintType(TM, TM->CGetTreeReindex(top_id), false, true, false, nullptr,
+   std::string gold_decl = "EXTERN_CDECL ";
+   std::string pp_decl = tree_helper::PrintType(TM, TM->CGetTreeReindex(top_id), false, true, false, nullptr,
                                                 var_pp_functorConstRef(new std_var_pp_functor(top_bh))) +
                          ";\n";
    THROW_ASSERT(pp_decl.find(top_fname) != std::string::npos, "");
@@ -850,7 +856,7 @@ void HLSCWriter::WriteMainTestbench()
    pp_call += ");\n";
    args_decl += "};\n";
 
-   indented_output_stream->AppendIndented(cdecl + top_decl.substr(0, top_decl.size() - 1) + R"(;
+   indented_output_stream->AppendIndented("CDECL " + top_decl.substr(0, top_decl.size() - 1) + R"(;
 
 #ifdef LIBMDPI_DRIVER
 
