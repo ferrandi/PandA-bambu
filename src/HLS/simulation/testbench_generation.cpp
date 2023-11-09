@@ -647,10 +647,10 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       }
 
       bambu_tb_dpi << R"(
-`ifdef __M32
-typedef int unsigned ptr_t;
-`else
+`ifdef __M64
 typedef longint unsigned ptr_t;
+`else
+typedef int unsigned ptr_t;
 `endif
 
 )";

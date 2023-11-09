@@ -89,3 +89,4 @@ bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu
 bambu_interface_test/2mm.c --top-fname=mmult_tile --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DTILED --benchmark-name=2mm_tiled_cache_delayed --mem-delay-read=20 --mem-delay-write=20
 bambu_interface_test/test_open.c --benchmark-name=open  --top-fname=main --expose-globals --generate-interface=MINIMAL --file-input-data=BENCHMARKS_ROOT/bambu_interface_test/bin_test.dat --channels-type=MEM_ACC_11
 bambu_interface_test/test_open.c --benchmark-name=openn --top-fname=main --expose-globals --generate-interface=MINIMAL --file-input-data=BENCHMARKS_ROOT/bambu_interface_test/bin_test.dat --channels-type=MEM_ACC_NN
+bambu_interface_test/simple_c4_vector_8bits.cpp --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/simple_c4_vector_8bits.cpp -DCUSTOM_VERIFICATION --tb-memory-mapping=SHARED

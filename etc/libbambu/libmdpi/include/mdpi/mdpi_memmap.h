@@ -31,7 +31,7 @@
  *
  */
 /**
- * @file mdpi_driver.h
+ * @file mdpi_memmap.h
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
@@ -39,35 +39,26 @@
  * Last modified by $Author$
  *
  */
-#ifndef __MDPI_DRIVER_H
-#define __MDPI_DRIVER_H
+#ifndef __MDPI_MEMMAP_H
+#define __MDPI_MEMMAP_H
 
 #include "mdpi_types.h"
 
 #include <stddef.h>
 
-#define MDPI_MEMMAP_DEVICE 0
-#define MDPI_MEMMAP_SHARED 1
+class memmap
+{
+ protected:
+   memmap() = default;
 
-EXTERN_C void __m_arg_init(uint8_t argcount);
-EXTERN_C void __m_arg_fini();
-EXTERN_C void __m_setarg(uint8_t index, void* bits, uint16_t bitsize);
-EXTERN_C void __m_setptrarg(uint8_t index, bptr_t* bits, uint16_t bitsize);
-EXTERN_C void __m_memmap_init(int map_mode);
-EXTERN_C int __m_memmap(ptr_t dst, void* src, size_t bytes);
-EXTERN_C void __m_param_alloc(uint8_t idx, size_t size);
-EXTERN_C size_t __m_param_size(uint8_t idx);
+ public:
+   virtual ~memmap() = default;
 
-EXTERN_C void __m_init();
-EXTERN_C void __m_sim_start();
-EXTERN_C unsigned int __m_sim_end();
+   virtual int map(ptr_t dst, void* src, size_t bytes) = 0;
 
-EXTERN_C void __m_exit(int __status);
-EXTERN_C void __m_abort();
-EXTERN_C void __m_assert_fail(const char* __assertion, const char* __file, unsigned int __line, const char* __function);
+   virtual bptr_t addrmap(ptr_t sim_addr) = 0;
 
-#define __m_setargptr(index, bits, bitsize) \
-   bptr_t __ptrval_##index = (bptr_t)bits;  \
-   __m_setptrarg(index, &__ptrval_##index, bitsize)
+   virtual ptr_t mapaddr(const bptr_t addr) = 0;
+};
 
-#endif // __MDPI_DRIVER_H
+#endif // __MDPI_MEMMAP_H
