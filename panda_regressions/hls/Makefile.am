@@ -125,31 +125,6 @@ EXTRA_DIST= \
    %D%/bambu_specific_test/unsafe-fp-assoc-1.c.gimplePSSA \
    %D%/chstone_memarch_list \
    %D%/discrepancy_list \
-   %D%/function_pointers/bsearch_glibc/bsearch.c \
-   %D%/function_pointers/bsearch_glibc/bsearch-specialized.c \
-   %D%/function_pointers/bsearch_musl/bsearch.c \
-   %D%/function_pointers/bsearch_musl/bsearch-specialized.c \
-   %D%/function_pointers/bsearch_newlib/bsearch.c \
-   %D%/function_pointers/bsearch_newlib/bsearch-specialized.c \
-   %D%/function_pointers/bsearch_uclibc/bsearch.c \
-   %D%/function_pointers/bsearch_uclibc/bsearch-specialized.c \
-   %D%/function_pointers/common/aggregate.h \
-   %D%/function_pointers/common/bstest.c \
-   %D%/function_pointers/common/bstest-specialized.c \
-   %D%/function_pointers/common/bstest.xml \
-   %D%/function_pointers/common/less.c \
-   %D%/function_pointers/common/qstest.c \
-   %D%/function_pointers/common/qstest-specialized.c \
-   %D%/function_pointers/common/qstest.xml \
-   %D%/function_pointers_list_bsearch \
-   %D%/function_pointers_list_qsort \
-   %D%/function_pointers/qsort_glibc/qsort.c \
-   %D%/function_pointers/qsort_glibc/qsort-specialized.c \
-   %D%/function_pointers/qsort_musl/atomic.h \
-   %D%/function_pointers/qsort_musl/qsort.c \
-   %D%/function_pointers/qsort_musl/qsort-specialized.c \
-   %D%/function_pointers/qsort_uclibc/qsort.c \
-   %D%/function_pointers/qsort_uclibc/qsort-specialized.c \
    %D%/function_pointers.sh \
    %D%/gcc_regression_simple/20000112-1.c \
    %D%/gcc_regression_simple/20000113-1.c \
