@@ -13,6 +13,6 @@ python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=nn --channels-type=MEM_ACC_NN" \
    --args="--configuration-name=hl --bram-high-latency" \
    --args="--configuration-name=nn-hl --channels-type=MEM_ACC_NN --bram-high-latency" \
-   -l${BENCHMARKS_ROOT}/list \
+   -l${BENCHMARKS_ROOT}/function_pointers_list \
    -o "out${OUT_SUFFIX}" -b${BENCHMARKS_ROOT} \
    --name="${OUT_SUFFIX}" "$@"

@@ -15,3 +15,5 @@ bsearch/glibc/test-specialized.c  bsearch/glibc/bsearch-specialized.c  bsearch/g
 bsearch/uclibc/test-specialized.c bsearch/uclibc/bsearch-specialized.c bsearch/uclibc/less.c --top-fname=test --generate-tb=BENCHMARKS_ROOT/bsearch/tb.c -O3 --benchmark-name=bsearch-spec-uclibc
 bsearch/newlib/test-specialized.c bsearch/newlib/bsearch-specialized.c bsearch/newlib/less.c --top-fname=test --generate-tb=BENCHMARKS_ROOT/bsearch/tb.c -O3 --benchmark-name=bsearch-spec-newlib
 bsearch/musl/test-specialized.c   bsearch/musl/bsearch-specialized.c   bsearch/musl/less.c   --top-fname=test --generate-tb=BENCHMARKS_ROOT/bsearch/tb.c -O3 --benchmark-name=bsearch-spec-musl
+
+filtering_pipeline/filter.c filtering_pipeline/inverse.c filtering_pipeline/laplacian.c filtering_pipeline/sharpen.c filtering_pipeline/sobel.c filtering_pipeline/test.c -IBENCHMARKS_ROOT/filtering_pipeline/ --top-fname=test --generate-tb=BENCHMARKS_ROOT/filtering_pipeline/main.c --generate-tb=BENCHMARKS_ROOT/filtering_pipeline/mypgm.c --tb-arg=BENCHMARKS_ROOT/filtering_pipeline/chess.pgm -Os

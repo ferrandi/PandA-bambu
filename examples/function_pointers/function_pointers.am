@@ -1,78 +1,59 @@
 EXTRA_DIST += \
-   %D%/bambu.sh \
-   %D%/simple_raytrace \
-   %D%/simple_raytrace/simple_raytrace.c \
-   %D%/list_pipeline \
-   %D%/qsort \
-   %D%/qsort/glibc \
-   %D%/qsort/glibc/less.c \
-   %D%/qsort/glibc/test-specialized.c \
-   %D%/qsort/glibc/aggregate.h \
-   %D%/qsort/glibc/test.c \
-   %D%/qsort/glibc/qsort.c \
-   %D%/qsort/glibc/qsort-specialized.c \
-   %D%/qsort/musl \
-   %D%/qsort/musl/less.c \
-   %D%/qsort/musl/test-specialized.c \
-   %D%/qsort/musl/atomic.h \
-   %D%/qsort/musl/test.c \
-   %D%/qsort/musl/qsort.c \
-   %D%/qsort/musl/qsort-specialized.c \
-   %D%/qsort/tb.c \
-   %D%/qsort/uclibc \
-   %D%/qsort/uclibc/less.c \
-   %D%/qsort/uclibc/test-specialized.c \
-   %D%/qsort/uclibc/aggregate.h \
-   %D%/qsort/uclibc/test.c \
-   %D%/qsort/uclibc/qsort.c \
-   %D%/qsort/uclibc/qsort-specialized.c \
-   %D%/filtering_pipeline \
-   %D%/filtering_pipeline/inverse.c \
-   %D%/filtering_pipeline/test.xml \
-   %D%/filtering_pipeline/test-1.xml \
-   %D%/filtering_pipeline/main.c \
-   %D%/filtering_pipeline/filter.h \
-   %D%/filtering_pipeline/sobel.c \
-   %D%/filtering_pipeline/test-0.xml \
-   %D%/filtering_pipeline/mypgm.h \
-   %D%/filtering_pipeline/chess.pgm \
-   %D%/filtering_pipeline/filter.c \
-   %D%/filtering_pipeline/test.c \
-   %D%/filtering_pipeline/test \
-   %D%/filtering_pipeline/sharpen.c \
-   %D%/filtering_pipeline/mypgm.c \
-   %D%/filtering_pipeline/test-2.xml \
-   %D%/filtering_pipeline/laplacian.c \
-   %D%/function_pointers.sh \
-   %D%/list \
-   %D%/bsearch \
-   %D%/bsearch/glibc \
-   %D%/bsearch/glibc/less.c \
-   %D%/bsearch/glibc/test-specialized.c \
    %D%/bsearch/glibc/aggregate.h \
    %D%/bsearch/glibc/bsearch-specialized.c \
-   %D%/bsearch/glibc/test.c \
    %D%/bsearch/glibc/bsearch.c \
-   %D%/bsearch/musl \
-   %D%/bsearch/musl/less.c \
-   %D%/bsearch/musl/test-specialized.c \
+   %D%/bsearch/glibc/less.c \
+   %D%/bsearch/glibc/test-specialized.c \
+   %D%/bsearch/glibc/test.c \
    %D%/bsearch/musl/aggregate.h \
    %D%/bsearch/musl/bsearch-specialized.c \
-   %D%/bsearch/musl/test.c \
    %D%/bsearch/musl/bsearch.c \
-   %D%/bsearch/tb.c \
-   %D%/bsearch/uclibc \
-   %D%/bsearch/uclibc/less.c \
-   %D%/bsearch/uclibc/test-specialized.c \
-   %D%/bsearch/uclibc/aggregate.h \
-   %D%/bsearch/uclibc/bsearch-specialized.c \
-   %D%/bsearch/uclibc/test.c \
-   %D%/bsearch/uclibc/bsearch.c \
-   %D%/bsearch/newlib \
-   %D%/bsearch/newlib/less.c \
-   %D%/bsearch/newlib/test-specialized.c \
+   %D%/bsearch/musl/less.c \
+   %D%/bsearch/musl/test-specialized.c \
+   %D%/bsearch/musl/test.c \
    %D%/bsearch/newlib/aggregate.h \
    %D%/bsearch/newlib/bsearch-specialized.c \
-   %D%/bsearch/newlib/test.c \
    %D%/bsearch/newlib/bsearch.c \
-   %D%/filtering_pipeline.sh
+   %D%/bsearch/newlib/less.c \
+   %D%/bsearch/newlib/test-specialized.c \
+   %D%/bsearch/newlib/test.c \
+   %D%/bsearch/tb.c \
+   %D%/bsearch/uclibc/aggregate.h \
+   %D%/bsearch/uclibc/bsearch-specialized.c \
+   %D%/bsearch/uclibc/bsearch.c \
+   %D%/bsearch/uclibc/less.c \
+   %D%/bsearch/uclibc/test-specialized.c \
+   %D%/bsearch/uclibc/test.c \
+   %D%/filtering_pipeline/chess.pgm \
+   %D%/filtering_pipeline/filter.c \
+   %D%/filtering_pipeline/filter.h \
+   %D%/filtering_pipeline/inverse.c \
+   %D%/filtering_pipeline/laplacian.c \
+   %D%/filtering_pipeline/main.c \
+   %D%/filtering_pipeline/mypgm.c \
+   %D%/filtering_pipeline/mypgm.h \
+   %D%/filtering_pipeline/sharpen.c \
+   %D%/filtering_pipeline/sobel.c \
+   %D%/filtering_pipeline/test.c \
+   %D%/function_pointers.sh \
+   %D%/function_pointers_list \
+   %D%/qsort/glibc/aggregate.h \
+   %D%/qsort/glibc/less.c \
+   %D%/qsort/glibc/qsort-specialized.c \
+   %D%/qsort/glibc/qsort.c \
+   %D%/qsort/glibc/test-specialized.c \
+   %D%/qsort/glibc/test.c \
+   %D%/qsort/musl/atomic.h \
+   %D%/qsort/musl/less.c \
+   %D%/qsort/musl/qsort-specialized.c \
+   %D%/qsort/musl/qsort.c \
+   %D%/qsort/musl/test-specialized.c \
+   %D%/qsort/musl/test.c \
+   %D%/qsort/tb.c \
+   %D%/qsort/uclibc/aggregate.h \
+   %D%/qsort/uclibc/less.c \
+   %D%/qsort/uclibc/qsort-specialized.c \
+   %D%/qsort/uclibc/qsort.c \
+   %D%/qsort/uclibc/test-specialized.c \
+   %D%/qsort/uclibc/test.c \
+   %D%/simple_raytrace/simple_raytrace.c
