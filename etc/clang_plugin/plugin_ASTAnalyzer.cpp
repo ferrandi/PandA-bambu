@@ -263,10 +263,7 @@ namespace clang
 
       std::string GetTypeNameCanonical(const QualType& t, const PrintingPolicy& pp) const
       {
-         std::string typeName;
-         llvm::raw_string_ostream ss(typeName);
-         t.getCanonicalType().print(ss, pp);
-         ss.str();
+         auto typeName = t->getCanonicalTypeInternal().getAsString(pp);
          const auto key = std::string("class ");
          const auto constkey = std::string("const class ");
          if(typeName.find(key) == 0)
