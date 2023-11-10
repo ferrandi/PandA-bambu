@@ -431,6 +431,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
       return max;
    }();
    const auto align = std::max(align_bus, align_infer);
+   const auto tb_map_mode = "MDPI_MEMMAP_" + Param->getOption<std::string>(OPT_testbench_map_mode);
 
    indented_output_stream->Append(R"(
 typedef struct
@@ -447,9 +448,6 @@ void* addr;
 size_t align;
 void* map_addr;
 } __m_argmap_t;
-
-static int cmpptr(const ptr_t a, const ptr_t b) { return a < b ? -1 : (a > b); }
-static int cmpaddr(const void* a, const void* b) { return cmpptr((ptr_t)((__m_memmap_t*)a)->addr, (ptr_t)((__m_memmap_t*)b)->addr); }
 
 static void __m_memsetup(__m_argmap_t args[], size_t args_count)
 {
@@ -484,10 +482,10 @@ size_t i;
    }
    indented_output_stream->Append("};\n");
    indented_output_stream->Append("const ptr_t align = " + STR(align) + ";\n");
-   indented_output_stream->Append("ptr_t base_addr = " + STR(base_addr) + ";\n");
+   indented_output_stream->Append("ptr_t base_addr = " + STR(base_addr) + ";\n\n");
 
+   indented_output_stream->Append("__m_memmap_init(" + tb_map_mode + ");\n");
    indented_output_stream->Append(R"(
-__m_memmap_init();
 
 // Memory-mapped internal variables initialization
 for(i = 0; i < sizeof(memmap_init) / sizeof(*memmap_init); ++i)

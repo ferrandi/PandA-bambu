@@ -52,6 +52,7 @@
 
 #include <mdpi/mdpi_driver.h>
 #include <mdpi/mdpi_ipc.h>
+#include <mdpi/mdpi_memmap.h>
 #include <mdpi/mdpi_types.h>
 #include <mdpi/mdpi_user.h>
 
@@ -61,6 +62,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <map>
+#include <memory>
 
 #ifdef MDPI_PARALLEL_VERIFICATION
 #include <pthread.h>
@@ -70,13 +72,169 @@
 
 #define byte_offset(i) ((i & 3) << 3)
 
+#if(__WORDSIZE == 32 && !defined(__M64)) || (__WORDSIZE == 64 && defined(__M64))
+#define ENABLE_SHARED_MEMORY 1
+#else
+#define ENABLE_SHARED_MEMORY 0
+#endif
+
 static void* __m_driver_loop(void*);
 
 static pthread_t __m_ipc_driver = 0;
 
 static mdpi_params_t __m_params;
 static std::map<uint8_t, size_t> __m_params_size;
-static std::map<ptr_t, bptr_t> __m_mmu;
+static std::unique_ptr<memmap> __m_mapper;
+
+class device_memmap : public memmap
+{
+ private:
+   std::map<ptr_t, bptr_t> __m_mmu;
+
+ public:
+   device_memmap()
+   {
+      __m_mmu[0] = NULL;
+   }
+
+   int map(ptr_t dst, void* src, size_t bytes) override
+   {
+      bptr_t bits = reinterpret_cast<bptr_t>(src);
+      info("Address " BPTR_FORMAT " mapped at " PTR_FORMAT " (%zu bytes)\n", bptr_to_int(bits), dst, bytes);
+
+      const std::pair<std::map<ptr_t, bptr_t>::iterator, bool> base = __m_mmu.insert(std::make_pair(dst, bits - dst));
+      const std::pair<std::map<ptr_t, bptr_t>::iterator, bool> top =
+          __m_mmu.insert(std::make_pair<ptr_t, bptr_t>(dst + bytes, 0));
+      std::map<ptr_t, bptr_t>::iterator front = base.first, prev = base.first;
+      --prev;
+      std::map<ptr_t, bptr_t>::iterator back = top.first, next = top.first;
+      ++next;
+      if(!base.second)
+      {
+         if(!front->second)
+         {
+            front->second = bits - dst;
+            if(prev->second == front->second)
+            {
+               __m_mmu.erase(front);
+               front = prev;
+               --prev;
+            }
+         }
+         else if(front->second != (bits - dst))
+         {
+            error("Uncorrelated memory spaces overlap: " PTR_FORMAT "(" BPTR_FORMAT ") over " PTR_FORMAT "(" BPTR_FORMAT
+                  ").\n",
+                  dst, bptr_to_int(bits + dst), front->first, bptr_to_int(front->second + front->first));
+            return 1;
+         }
+      }
+      else if(prev->second)
+      {
+         if(prev->second != front->second)
+         {
+            error("Uncorrelated memory spaces overlap: " PTR_FORMAT "(" BPTR_FORMAT ") over " PTR_FORMAT "(" BPTR_FORMAT
+                  ").\n",
+                  front->first, bptr_to_int(front->second + front->first), prev->first,
+                  bptr_to_int(prev->second + prev->first));
+            return 1;
+         }
+         front = prev;
+      }
+      if(top.second && next != __m_mmu.end() && !next->second)
+      {
+         back = next;
+      }
+      next = front;
+      ++next;
+      if(next != back)
+      {
+         std::map<ptr_t, bptr_t>::iterator it = next;
+         for(; it != back; ++it)
+         {
+            if(it->second && it->second != front->second)
+            {
+               error("Uncorrelated memory spaces overlap: " PTR_FORMAT "(" BPTR_FORMAT ") over " PTR_FORMAT
+                     "(" BPTR_FORMAT ").\n",
+                     front->first, bptr_to_int(front->second + front->first), it->first,
+                     bptr_to_int(it->second + it->first));
+               return 1;
+            }
+         }
+         __m_mmu.erase(next, back);
+      }
+      return 0;
+   }
+
+   bptr_t addrmap(ptr_t sim_addr) override
+   {
+      std::map<ptr_t, bptr_t>::iterator mmu_it = --__m_mmu.upper_bound(sim_addr);
+      if(mmu_it != __m_mmu.begin() && mmu_it->second)
+      {
+         bptr_t addr = mmu_it->second + sim_addr;
+         return addr;
+      }
+      std::map<ptr_t, bptr_t>::iterator mmu_base;
+      if(mmu_it == __m_mmu.begin())
+      {
+         mmu_base = ++mmu_it;
+         ++mmu_it;
+      }
+      else
+      {
+         mmu_base = mmu_it;
+         --mmu_base;
+      }
+      error("Nearest memory space is [" PTR_FORMAT ", " PTR_FORMAT "] -> [" BPTR_FORMAT ", " BPTR_FORMAT
+            "] (%zu bytes).\n",
+            mmu_base->first, mmu_it->first, bptr_to_int(mmu_base->second + mmu_base->first),
+            bptr_to_int(mmu_base->second + mmu_it->first), static_cast<size_t>(mmu_it->first - mmu_base->first));
+      return 0;
+   }
+
+   ptr_t mapaddr(const bptr_t addr) override
+   {
+      std::map<ptr_t, bptr_t>::iterator curr = __m_mmu.begin(), prev;
+      do
+      {
+         if(curr->second)
+         {
+            prev = curr++;
+         }
+         else
+         {
+            prev = ++curr;
+            ++curr;
+         }
+      } while(prev != __m_mmu.end() && (addr < (prev->first + prev->second) || addr >= (curr->first + prev->second)));
+      if(prev == __m_mmu.end())
+      {
+         return 0;
+      }
+      return addr - prev->second;
+   }
+};
+
+#if ENABLE_SHARED_MEMORY
+class shared_memmap : public memmap
+{
+ public:
+   int map(ptr_t dst, void* src, size_t bytes) override
+   {
+      return 0;
+   }
+
+   bptr_t addrmap(ptr_t sim_addr) override
+   {
+      return reinterpret_cast<bptr_t>(sim_addr);
+   }
+
+   ptr_t mapaddr(const bptr_t addr) override
+   {
+      return reinterpret_cast<ptr_t>(addr);
+   }
+};
+#endif
 
 static FORCE_INLINE void __ipc_exit(mdpi_state_t state, uint8_t retval)
 {
@@ -88,6 +246,75 @@ static void __ipc_abort()
    __ipc_exit(MDPI_STATE_ABORT, EXIT_FAILURE);
    // TODO: write sim report file
    exit(EXIT_FAILURE);
+}
+
+void __m_abrupt_exit(int __sig)
+{
+   __ipc_exit(MDPI_STATE_ABORT, EXIT_FAILURE);
+   error("Abrupt exception: %u\n", __sig);
+#if __M_OUT_LVL > 4
+   fflush(stdout);
+#else
+   fflush(stderr);
+#endif
+   exit(EXIT_FAILURE);
+}
+
+void __m_exit(int __status)
+{
+   info("Exit called with value %d\n", __status);
+   __ipc_exit(MDPI_STATE_END, __status);
+   exit(__status);
+}
+
+void __m_abort()
+{
+   error("Co-simulation called abort\n");
+   __ipc_abort();
+}
+
+void __m_assert_fail(const char* __assertion, const char* __file, unsigned int __line, const char* __function)
+{
+#if __M_OUT_LVL > 4
+   fprintf(stdout,
+#else
+   fprintf(stderr,
+#endif
+           "%s: %d: %s: Assertion `%s' failed.\n", __file, __line, __function, __assertion);
+   __m_abort();
+}
+
+void __attribute__((constructor)) __mdpi_driver_init()
+{
+   static const int __sigs[] = {SIGINT, SIGABRT, SIGSEGV};
+   int error;
+   size_t i;
+
+   debug("Loading...\n");
+
+   __ipc_init();
+
+   struct sigaction sa;
+   memset(&sa, 0, sizeof(sa));
+   sa.sa_handler = __m_abrupt_exit;
+   error = sigfillset(&sa.sa_mask);
+   for(i = 0; i < (sizeof(__sigs) / sizeof(*__sigs)); ++i)
+   {
+      error = sigaction(__sigs[i], &sa, NULL);
+      if(error)
+      {
+         error("Cannot install signal %d handler: %s.\n", __sigs[i], strerror(errno));
+         exit(EXIT_FAILURE);
+      }
+   }
+   debug("Loading completed.\n");
+}
+
+void __attribute__((destructor)) __mdpi_driver_fini()
+{
+   __ipc_exit(MDPI_STATE_END, EXIT_SUCCESS);
+   __ipc_fini();
+   debug("Finalization completed.\n");
 }
 
 void __m_sim_start()
@@ -138,75 +365,6 @@ unsigned int __m_sim_end()
    return retval;
 }
 
-void __m_abrupt_exit(int __sig)
-{
-   __ipc_exit(MDPI_STATE_ABORT, EXIT_FAILURE);
-   error("Abrupt exception: %u\n", __sig);
-#if __M_OUT_LVL > 4
-   fflush(stdout);
-#else
-   fflush(stderr);
-#endif
-   exit(EXIT_FAILURE);
-}
-
-void __attribute__((constructor)) __mdpi_driver_init()
-{
-   static const int __sigs[] = {SIGINT, SIGABRT, SIGSEGV};
-   int error;
-   size_t i;
-
-   debug("Loading...\n");
-
-   __ipc_init();
-
-   struct sigaction sa;
-   memset(&sa, 0, sizeof(sa));
-   sa.sa_handler = __m_abrupt_exit;
-   error = sigfillset(&sa.sa_mask);
-   for(i = 0; i < (sizeof(__sigs) / sizeof(*__sigs)); ++i)
-   {
-      error = sigaction(__sigs[i], &sa, NULL);
-      if(error)
-      {
-         error("Cannot install signal %d handler: %s.\n", __sigs[i], strerror(errno));
-         exit(EXIT_FAILURE);
-      }
-   }
-   debug("Loading completed.\n");
-}
-
-void __attribute__((destructor)) __mdpi_driver_fini()
-{
-   __ipc_exit(MDPI_STATE_END, EXIT_SUCCESS);
-   __ipc_fini();
-   debug("Finalization completed.\n");
-}
-
-void __m_exit(int __status)
-{
-   info("Exit called with value %d\n", __status);
-   __ipc_exit(MDPI_STATE_END, __status);
-   exit(__status);
-}
-
-void __m_abort()
-{
-   error("Co-simulation called abort\n");
-   __ipc_abort();
-}
-
-void __m_assert_fail(const char* __assertion, const char* __file, unsigned int __line, const char* __function)
-{
-#if __M_OUT_LVL > 4
-   fprintf(stdout,
-#else
-   fprintf(stderr,
-#endif
-           "%s: %d: %s: Assertion `%s' failed.\n", __file, __line, __function, __assertion);
-   __m_abort();
-}
-
 void __m_arg_init(uint8_t argcount)
 {
    debug("Initializing shared memory for %u parameters\n", argcount);
@@ -237,32 +395,10 @@ void __m_setarg(uint8_t index, void* bits, uint16_t bitsize)
    __m_params.prms[index].bitsize = bitsize;
 }
 
-static ptr_t __m_reverse_memmap(const bptr_t addr)
-{
-   std::map<ptr_t, bptr_t>::iterator curr = __m_mmu.begin(), prev;
-   do
-   {
-      if(curr->second)
-      {
-         prev = curr++;
-      }
-      else
-      {
-         prev = ++curr;
-         ++curr;
-      }
-   } while(prev != __m_mmu.end() && (addr < (prev->first + prev->second) || addr >= (curr->first + prev->second)));
-   if(prev == __m_mmu.end())
-   {
-      return 0;
-   }
-   return addr - prev->second;
-}
-
 void __m_setptrarg(uint8_t index, bptr_t* bits, uint16_t bitsize)
 {
    const bptr_t addr = *bits;
-   const ptr_t dst = __m_reverse_memmap(addr);
+   const ptr_t dst = __m_mapper->mapaddr(addr);
    if(dst)
    {
       info("Pointer parameter " BPTR_FORMAT " mapped at " PTR_FORMAT "\n", bptr_to_int(addr), dst);
@@ -275,106 +411,29 @@ void __m_setptrarg(uint8_t index, bptr_t* bits, uint16_t bitsize)
    exit(EXIT_FAILURE);
 }
 
-void __m_memmap_init()
+void __m_memmap_init(int map_mode)
 {
    debug("Initializing co-simulation MMU\n");
-   __m_mmu.clear();
-   __m_mmu[0] = NULL;
-}
-
-int __m_memmap(ptr_t dst, void* _bits, size_t bytes)
-{
-   bptr_t bits = reinterpret_cast<bptr_t>(_bits);
-   info("Address " BPTR_FORMAT " mapped at " PTR_FORMAT " (%zu bytes)\n", bptr_to_int(bits), dst, bytes);
-
-   const std::pair<std::map<ptr_t, bptr_t>::iterator, bool> base = __m_mmu.insert(std::make_pair(dst, bits - dst));
-   const std::pair<std::map<ptr_t, bptr_t>::iterator, bool> top =
-       __m_mmu.insert(std::make_pair<ptr_t, bptr_t>(dst + bytes, 0));
-   std::map<ptr_t, bptr_t>::iterator front = base.first, prev = base.first;
-   --prev;
-   std::map<ptr_t, bptr_t>::iterator back = top.first, next = top.first;
-   ++next;
-   if(!base.second)
+   if(map_mode == MDPI_MEMMAP_DEVICE)
    {
-      if(!front->second)
-      {
-         front->second = bits - dst;
-         if(prev->second == front->second)
-         {
-            __m_mmu.erase(front);
-            front = prev;
-            --prev;
-         }
-      }
-      else if(front->second != (bits - dst))
-      {
-         error("Uncorrelated memory spaces overlap: " PTR_FORMAT "(" BPTR_FORMAT ") over " PTR_FORMAT "(" BPTR_FORMAT
-               ").\n",
-               dst, bptr_to_int(bits + dst), front->first, bptr_to_int(front->second + front->first));
-         return 1;
-      }
+      __m_mapper = std::unique_ptr<memmap>(new device_memmap());
    }
-   else if(prev->second)
+#if ENABLE_SHARED_MEMORY
+   else if(map_mode == MDPI_MEMMAP_SHARED)
    {
-      if(prev->second != front->second)
-      {
-         error("Uncorrelated memory spaces overlap: " PTR_FORMAT "(" BPTR_FORMAT ") over " PTR_FORMAT "(" BPTR_FORMAT
-               ").\n",
-               front->first, bptr_to_int(front->second + front->first), prev->first,
-               bptr_to_int(prev->second + prev->first));
-         return 1;
-      }
-      front = prev;
+      __m_mapper = std::unique_ptr<memmap>(new shared_memmap());
    }
-   if(top.second && next != __m_mmu.end() && !next->second)
-   {
-      back = next;
-   }
-   next = front;
-   ++next;
-   if(next != back)
-   {
-      std::map<ptr_t, bptr_t>::iterator it = next;
-      for(; it != back; ++it)
-      {
-         if(it->second && it->second != front->second)
-         {
-            error("Uncorrelated memory spaces overlap: " PTR_FORMAT "(" BPTR_FORMAT ") over " PTR_FORMAT "(" BPTR_FORMAT
-                  ").\n",
-                  front->first, bptr_to_int(front->second + front->first), it->first,
-                  bptr_to_int(it->second + it->first));
-            return 1;
-         }
-      }
-      __m_mmu.erase(next, back);
-   }
-   return 0;
-}
-
-static bptr_t __m_memaddr(ptr_t sim_addr)
-{
-   std::map<ptr_t, bptr_t>::iterator mmu_it = --__m_mmu.upper_bound(sim_addr);
-   if(mmu_it != __m_mmu.begin() && mmu_it->second)
-   {
-      bptr_t addr = mmu_it->second + sim_addr;
-      return addr;
-   }
-   std::map<ptr_t, bptr_t>::iterator mmu_base;
-   if(mmu_it == __m_mmu.begin())
-   {
-      mmu_base = ++mmu_it;
-      ++mmu_it;
-   }
+#endif
    else
    {
-      mmu_base = mmu_it;
-      --mmu_base;
+      error("Unsupported memory mapping mode '%d'.", map_mode);
+      exit(EXIT_FAILURE);
    }
-   error("Nearest memory space is [" PTR_FORMAT ", " PTR_FORMAT "] -> [" BPTR_FORMAT ", " BPTR_FORMAT
-         "] (%zu bytes).\n",
-         mmu_base->first, mmu_it->first, bptr_to_int(mmu_base->second + mmu_base->first),
-         bptr_to_int(mmu_base->second + mmu_it->first), static_cast<size_t>(mmu_it->first - mmu_base->first));
-   return 0;
+}
+
+int __m_memmap(ptr_t dst, void* src, size_t bytes)
+{
+   return __m_mapper->map(dst, src, bytes);
 }
 
 size_t __m_param_size(uint8_t idx)
@@ -400,7 +459,7 @@ void __m_param_alloc(uint8_t idx, size_t size)
 
 static void __mem_read(const uint16_t size, bptr_t data, ptr_t addr)
 {
-   bptr_t __addr = __m_memaddr(addr);
+   bptr_t __addr = __m_mapper->addrmap(addr);
    if(__addr)
    {
       debug("Read %u bytes at " PTR_FORMAT "->" BPTR_FORMAT "\n", size, addr, bptr_to_int(__addr));
@@ -416,7 +475,7 @@ static void __mem_read(const uint16_t size, bptr_t data, ptr_t addr)
 
 static void __mem_write(const uint16_t size, bptr_t data, ptr_t addr)
 {
-   bptr_t __addr = __m_memaddr(addr);
+   bptr_t __addr = __m_mapper->addrmap(addr);
    if(__addr)
    {
       debug("Write %u bits at " PTR_FORMAT "->" BPTR_FORMAT "\n", size, addr, bptr_to_int(__addr));

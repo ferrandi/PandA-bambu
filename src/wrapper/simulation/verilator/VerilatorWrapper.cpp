@@ -165,7 +165,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
           << "ln -sf " + output_directory + " ${obj_dir}\n";
 
    script << "make -C ${obj_dir}"
-          << " -j " << std::thread::hardware_concurrency() << " OPT=\"-fstrict-aliasing\""
+          << " -j " << nThreads << " OPT=\"-fstrict-aliasing\""
           << " -f Vbambu_testbench.mk Vbambu_testbench";
 #ifdef _WIN32
    /// VM_PARALLEL_BUILDS=1 removes the dependency from perl
