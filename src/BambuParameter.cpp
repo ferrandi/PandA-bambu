@@ -2534,6 +2534,10 @@ void BambuParameter::CheckParameters()
 
    if(!isOption(OPT_top_functions_names))
    {
+      if(getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+      {
+         THROW_ERROR("Top function name must be specified when interface inferece is enabled.");
+      }
       setOption(OPT_top_functions_names, "main");
       THROW_WARNING("Top function name was not specified: main will be set as top");
    }
