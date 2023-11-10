@@ -95,7 +95,7 @@ void IcarusWrapper::CheckExecution()
 {
 }
 
-void IcarusWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename,
+void IcarusWrapper::GenerateScript(std::ostream& script, const std::string& top_filename,
                                    const std::list<std::string>& file_list)
 {
    log_file = SIM_SUBDIR + suffix + "/" + top_filename + "_icarus.log";

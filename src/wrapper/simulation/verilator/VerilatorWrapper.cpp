@@ -82,7 +82,7 @@ void VerilatorWrapper::CheckExecution()
 {
 }
 
-void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename,
+void VerilatorWrapper::GenerateScript(std::ostream& script, const std::string& top_filename,
                                       const std::list<std::string>& file_list)
 {
    for(const auto& file : file_list)
