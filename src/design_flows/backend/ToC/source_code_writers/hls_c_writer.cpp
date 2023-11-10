@@ -274,7 +274,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
             if(var_ptdtype.find("(*)") != std::string::npos)
             {
                temp_var_decl = var_ptdtype;
-               temp_var_decl.replace(var_ptdtype.find("(*)"), 3, param + "_temp" + "[]");
+               temp_var_decl.replace(var_ptdtype.find("(*)"), 3, param + "_temp[]");
             }
             else
             {
@@ -369,16 +369,16 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef BH)
 
    const auto top_fname_mngl = BH->GetMangledFunctionName();
    const auto function_name = [&]() -> std::string {
-      // avoid collision with the main
-      if(top_fname_mngl == "main")
+      const auto is_discrepancy = (Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) ||
+                                  (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw));
+      if(is_discrepancy)
       {
-         const auto is_discrepancy =
-             (Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) ||
-             (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw));
-         if(is_discrepancy)
+         // avoid collision with the main
+         if(top_fname_mngl == "main")
          {
             return "_main";
          }
+         return BH->get_function_name();
       }
       return top_fname_mngl;
    }();
