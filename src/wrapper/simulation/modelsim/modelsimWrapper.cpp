@@ -95,7 +95,7 @@ void modelsimWrapper::CheckExecution()
 {
 }
 
-void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename,
+void modelsimWrapper::GenerateScript(std::ostream& script, const std::string& top_filename,
                                      const std::list<std::string>& file_list)
 {
    THROW_ASSERT(!file_list.empty(), "File list is empty");

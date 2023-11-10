@@ -115,7 +115,7 @@ static const std::string& create_project_file(const std::string& project_filenam
    return project_filename;
 }
 
-void VIVADO_xsim_wrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename,
+void VIVADO_xsim_wrapper::GenerateScript(std::ostream& script, const std::string& top_filename,
                                          const std::list<std::string>& file_list)
 {
    script << "#configuration" << std::endl;

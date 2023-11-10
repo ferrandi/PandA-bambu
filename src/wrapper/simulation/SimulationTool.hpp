@@ -79,10 +79,10 @@ class SimulationTool
    /**
     * Performs the actual writing
     */
-   virtual void GenerateScript(std::ostringstream& script, const std::string& top_filename,
+   virtual void GenerateScript(std::ostream& script, const std::string& top_filename,
                                const std::list<std::string>& file_list) = 0;
 
-   std::string GenerateLibraryBuildScript(std::ostringstream& script, const std::string& libtb_filename,
+   std::string GenerateLibraryBuildScript(std::ostream& script, const std::string& libtb_filename,
                                           std::string& beh_cflags) const;
 
  public:

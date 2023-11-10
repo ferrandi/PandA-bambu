@@ -116,7 +116,7 @@ std::string ISE_isim_wrapper::create_project_script(const std::string& top_filen
    return project_filename;
 }
 
-void ISE_isim_wrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename,
+void ISE_isim_wrapper::GenerateScript(std::ostream& script, const std::string& top_filename,
                                       const std::list<std::string>& file_list)
 {
    std::string project_file = create_project_script(top_filename, file_list);
