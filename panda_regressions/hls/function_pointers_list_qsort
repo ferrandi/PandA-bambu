@@ -1,7 +1,0 @@
-function_pointers/common/qstest.c function_pointers/common/less.c function_pointers/qsort_glibc/qsort.c --generate-tb=BENCHMARKS_ROOT/function_pointers/common/qstest.xml --benchmark-name=qsort-glibc
-function_pointers/common/qstest.c function_pointers/common/less.c function_pointers/qsort_musl/qsort.c --generate-tb=BENCHMARKS_ROOT/function_pointers/common/qstest.xml --benchmark-name=qsort-musl
-function_pointers/common/qstest.c function_pointers/common/less.c function_pointers/qsort_uclibc/qsort.c --generate-tb=BENCHMARKS_ROOT/function_pointers/common/qstest.xml --benchmark-name=qsort-uclibc
-function_pointers/common/qstest-specialized.c function_pointers/common/less.c function_pointers/qsort_glibc/qsort-specialized.c --generate-tb=BENCHMARKS_ROOT/function_pointers/common/qstest.xml --benchmark-name=qsort-glibc-spec
-function_pointers/common/qstest-specialized.c function_pointers/common/less.c function_pointers/qsort_musl/qsort-specialized.c --generate-tb=BENCHMARKS_ROOT/function_pointers/common/qstest.xml --benchmark-name=qsort-musl-spec
-function_pointers/common/qstest-specialized.c function_pointers/common/less.c function_pointers/qsort_uclibc/qsort-specialized.c --generate-tb=BENCHMARKS_ROOT/function_pointers/common/qstest.xml --benchmark-name=qsort-uclibc-spec
-
