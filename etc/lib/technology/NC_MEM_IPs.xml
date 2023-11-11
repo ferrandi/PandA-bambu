@@ -1298,13 +1298,13 @@ wire [nbits_byte_offset-1:0] byte_offset;
 wire [BITSIZE_in2-1:0] tmp_addr;
 wire [nbit_addr-1:0] relative_addr;
 
-reg we_ram_cs_delayed 1INIT_ZERO_VALUE;
-reg oe_ram_cs_delayed 1INIT_ZERO_VALUE;
-reg oe_ram_cs_delayed_registered 1INIT_ZERO_VALUE;
-reg oe_ram_cs_delayed_registered1 1INIT_ZERO_VALUE;
-reg [nbits_byte_offset-1:0] delayed_byte_offset 1INIT_ZERO_VALUE;
-reg [nbits_byte_offset-1:0] delayed_byte_offset_registered 1INIT_ZERO_VALUE;
-reg [nbits_byte_offset-1:0] delayed_byte_offset_registered1 1INIT_ZERO_VALUE;
+reg we_ram_cs_delayed;
+reg oe_ram_cs_delayed;
+reg oe_ram_cs_delayed_registered;
+reg oe_ram_cs_delayed_registered1;
+reg [nbits_byte_offset-1:0] delayed_byte_offset;
+reg [nbits_byte_offset-1:0] delayed_byte_offset_registered;
+reg [nbits_byte_offset-1:0] delayed_byte_offset_registered1;
 
 assign tmp_addr = (proxy_sel_LOAD||proxy_sel_STORE) ? proxy_in2 : in2;
 
@@ -1545,13 +1545,13 @@ function CONV(po2 : std_logic_vector(2*n_byte_on_databus-1 downto 0)) return std
    signal dout                           : std_logic_vector(2*BRAM_BITSIZE-1 downto 0);
    signal byte_offset                    : std_logic_vector(nbits_byte_offset-1 downto 0);
 
-   signal we_ram_cs_delayed              : std_logic 1INIT_ZERO_VALUEb;
-   signal oe_ram_cs_delayed              : std_logic 1INIT_ZERO_VALUEb;
-   signal oe_ram_cs_delayed_registered   : std_logic 1INIT_ZERO_VALUEb;
-   signal oe_ram_cs_delayed_registered1  : std_logic 1INIT_ZERO_VALUEb;
-   signal delayed_byte_offset            : std_logic_vector(nbits_byte_offset-1 downto 0) 1INIT_ZERO_VALUE;
-   signal delayed_byte_offset_registered : std_logic_vector(nbits_byte_offset-1 downto 0) 1INIT_ZERO_VALUE;
-   signal delayed_byte_offset_registered1 : std_logic_vector(nbits_byte_offset-1 downto 0) 1INIT_ZERO_VALUE;
+   signal we_ram_cs_delayed              : std_logic;
+   signal oe_ram_cs_delayed              : std_logic;
+   signal oe_ram_cs_delayed_registered   : std_logic;
+   signal oe_ram_cs_delayed_registered1  : std_logic;
+   signal delayed_byte_offset            : std_logic_vector(nbits_byte_offset-1 downto 0);
+   signal delayed_byte_offset_registered : std_logic_vector(nbits_byte_offset-1 downto 0);
+   signal delayed_byte_offset_registered1 : std_logic_vector(nbits_byte_offset-1 downto 0);
 begin
    tmp_addr &lt;= std_logic_vector(resize(unsigned(proxy_in2), BITSIZE_in2)) when ((proxy_sel_LOAD or proxy_sel_STORE) = &apos;1&apos;) else in2;
 
@@ -1964,16 +1964,16 @@ wire [memory_bitsize*max_n_reads-1:0] dout;
 wire [nbits_byte_offset*max_n_rw-1:0] byte_offset;
 wire [n_byte_on_databus*max_n_writes-1:0] be;
 
-reg [PORTSIZE_S_we_ram-1:0] we_ram_cs_delayed 1INIT_ZERO_VALUE;
-reg [PORTSIZE_S_oe_ram-1:0] oe_ram_cs_delayed 1INIT_ZERO_VALUE;
-reg [PORTSIZE_S_oe_ram-1:0] oe_ram_cs_delayed_registered 1INIT_ZERO_VALUE;
-reg [PORTSIZE_S_oe_ram-1:0] oe_ram_cs_delayed_registered1 1INIT_ZERO_VALUE;
-reg [max_n_reads-1:0] delayed_swapped_bit 1INIT_ZERO_VALUE;
-reg [max_n_reads-1:0] delayed_swapped_bit_registered 1INIT_ZERO_VALUE;
-reg [max_n_reads-1:0] delayed_swapped_bit_registered1 1INIT_ZERO_VALUE;
-reg [nbits_byte_offset*max_n_reads-1:0] delayed_byte_offset 1INIT_ZERO_VALUE;
-reg [nbits_byte_offset*max_n_reads-1:0] delayed_byte_offset_registered 1INIT_ZERO_VALUE;
-reg [nbits_byte_offset*max_n_reads-1:0] delayed_byte_offset_registered1 1INIT_ZERO_VALUE;
+reg [PORTSIZE_S_we_ram-1:0] we_ram_cs_delayed;
+reg [PORTSIZE_S_oe_ram-1:0] oe_ram_cs_delayed;
+reg [PORTSIZE_S_oe_ram-1:0] oe_ram_cs_delayed_registered;
+reg [PORTSIZE_S_oe_ram-1:0] oe_ram_cs_delayed_registered1;
+reg [max_n_reads-1:0] delayed_swapped_bit;
+reg [max_n_reads-1:0] delayed_swapped_bit_registered;
+reg [max_n_reads-1:0] delayed_swapped_bit_registered1;
+reg [nbits_byte_offset*max_n_reads-1:0] delayed_byte_offset;
+reg [nbits_byte_offset*max_n_reads-1:0] delayed_byte_offset_registered;
+reg [nbits_byte_offset*max_n_reads-1:0] delayed_byte_offset_registered1;
 
 generate
 genvar ind2;
@@ -2310,16 +2310,16 @@ function CONV(po2 : std_logic_vector(n_byte_on_databus-1 downto 0)) return std_l
    signal byte_offset                    : std_logic_vector(nbits_byte_offset*max_n_rw-1 downto 0);
    signal be                             : std_logic_vector(n_byte_on_databus*max_n_writes-1 downto 0);
 
-   signal we_ram_cs_delayed              : std_logic_vector(PORTSIZE_S_we_ram-1 downto 0) 1INIT_ZERO_VALUE;
-   signal oe_ram_cs_delayed              : std_logic_vector(PORTSIZE_S_oe_ram-1 downto 0) 1INIT_ZERO_VALUE;
-   signal oe_ram_cs_delayed_registered   : std_logic_vector(PORTSIZE_S_oe_ram-1 downto 0) 1INIT_ZERO_VALUE;
-   signal oe_ram_cs_delayed_registered1   : std_logic_vector(PORTSIZE_S_oe_ram-1 downto 0) 1INIT_ZERO_VALUE;
-   signal delayed_swapped_bit            : std_logic_vector(max_n_reads-1 downto 0) 1INIT_ZERO_VALUE;
-   signal delayed_swapped_bit_registered : std_logic_vector(max_n_reads-1 downto 0) 1INIT_ZERO_VALUE;
-   signal delayed_swapped_bit_registered1 : std_logic_vector(max_n_reads-1 downto 0) 1INIT_ZERO_VALUE;
-   signal delayed_byte_offset            : std_logic_vector(nbits_byte_offset*max_n_reads-1 downto 0) 1INIT_ZERO_VALUE;
-   signal delayed_byte_offset_registered : std_logic_vector(nbits_byte_offset*max_n_reads-1 downto 0) 1INIT_ZERO_VALUE;
-   signal delayed_byte_offset_registered1 : std_logic_vector(nbits_byte_offset*max_n_reads-1 downto 0) 1INIT_ZERO_VALUE;
+   signal we_ram_cs_delayed              : std_logic_vector(PORTSIZE_S_we_ram-1 downto 0);
+   signal oe_ram_cs_delayed              : std_logic_vector(PORTSIZE_S_oe_ram-1 downto 0);
+   signal oe_ram_cs_delayed_registered   : std_logic_vector(PORTSIZE_S_oe_ram-1 downto 0);
+   signal oe_ram_cs_delayed_registered1   : std_logic_vector(PORTSIZE_S_oe_ram-1 downto 0);
+   signal delayed_swapped_bit            : std_logic_vector(max_n_reads-1 downto 0);
+   signal delayed_swapped_bit_registered : std_logic_vector(max_n_reads-1 downto 0);
+   signal delayed_swapped_bit_registered1 : std_logic_vector(max_n_reads-1 downto 0);
+   signal delayed_byte_offset            : std_logic_vector(nbits_byte_offset*max_n_reads-1 downto 0);
+   signal delayed_byte_offset_registered : std_logic_vector(nbits_byte_offset*max_n_reads-1 downto 0);
+   signal delayed_byte_offset_registered1 : std_logic_vector(nbits_byte_offset*max_n_reads-1 downto 0);
 begin
    process(proxy_sel_LOAD, proxy_sel_STORE, proxy_in2, in2)
    begin
@@ -2793,10 +2793,10 @@ wire [BITSIZE_memory_addr_b-1:0] memory_addr_b_temp;
 
 wire [BRAM_BITSIZE-1:0] din_a_temp;
 wire [BRAM_BITSIZE-1:0] din_b_temp;
-reg [BITSIZE_dout_a-1:0] dout_a 1INIT_ZERO_VALUE;
-reg [BITSIZE_dout_a-1:0] dout_a_registered 1INIT_ZERO_VALUE;
-reg [BITSIZE_dout_b-1:0] dout_b 1INIT_ZERO_VALUE;
-reg [BITSIZE_dout_b-1:0] dout_b_registered 1INIT_ZERO_VALUE;
+reg [BITSIZE_dout_a-1:0] dout_a;
+reg [BITSIZE_dout_a-1:0] dout_a_registered;
+reg [BITSIZE_dout_b-1:0] dout_b;
+reg [BITSIZE_dout_b-1:0] dout_b_registered;
 reg [BRAM_BITSIZE-1:0] memory [0:n_mem_elements-1] /* synthesis syn_ramstyle = &quot;no_rw_check&quot; */;
 
 initial
@@ -2807,12 +2807,12 @@ end
 generate
   if(HIGH_LATENCY==2)
   begin
-    reg [n_byte_on_databus-1:0] we_a_reg 1INIT_ZERO_VALUE;
-    reg [n_byte_on_databus-1:0] we_b_reg 1INIT_ZERO_VALUE;
-    reg bram_write_reg 1INIT_ZERO_VALUE;
-    reg [BITSIZE_din_value_aggregated-1:0] din_value_aggregated_reg 1INIT_ZERO_VALUE;
-    reg [BITSIZE_memory_addr_a-1:0] memory_addr_a_reg 1INIT_ZERO_VALUE;
-    reg [BITSIZE_memory_addr_b-1:0] memory_addr_b_reg 1INIT_ZERO_VALUE;
+    reg [n_byte_on_databus-1:0] we_a_reg;
+    reg [n_byte_on_databus-1:0] we_b_reg;
+    reg bram_write_reg;
+    reg [BITSIZE_din_value_aggregated-1:0] din_value_aggregated_reg;
+    reg [BITSIZE_memory_addr_a-1:0] memory_addr_a_reg;
+    reg [BITSIZE_memory_addr_b-1:0] memory_addr_b_reg;
     always @ (posedge clock)
     begin
        memory_addr_a_reg &lt;= memory_addr_a;
@@ -2963,10 +2963,10 @@ wire [(PORTSIZE_din_value_aggregated_swapped*BITSIZE_din_value_aggregated_swappe
 
 wire [BRAM_BITSIZE-1:0] din_a_0_temp;
 wire [BRAM_BITSIZE-1:0] din_a_1_temp;
-reg [BRAM_BITSIZE-1:0] dout_a_0 1INIT_ZERO_VALUE;
-reg [BRAM_BITSIZE-1:0] dout_a_1 1INIT_ZERO_VALUE;
-reg [BRAM_BITSIZE-1:0] dout_a_0_registered 1INIT_ZERO_VALUE;
-reg [BRAM_BITSIZE-1:0] dout_a_1_registered 1INIT_ZERO_VALUE;
+reg [BRAM_BITSIZE-1:0] dout_a_0;
+reg [BRAM_BITSIZE-1:0] dout_a_1;
+reg [BRAM_BITSIZE-1:0] dout_a_0_registered;
+reg [BRAM_BITSIZE-1:0] dout_a_1_registered;
 
 integer index1, index2;
 reg [BRAM_BITSIZE-1:0] memory [0:n_mem_elements-1] /* synthesis syn_ramstyle = &quot;no_rw_check&quot; */;
@@ -2979,10 +2979,10 @@ end
 generate
   if(HIGH_LATENCY==2)
   begin
-    reg [(n_byte_on_databus/2)*max_n_writes-1:0] we_a_reg 1INIT_ZERO_VALUE;
-    reg [PORTSIZE_bram_write-1:0] bram_write_reg 1INIT_ZERO_VALUE;
-    reg [(PORTSIZE_din_value_aggregated_swapped*BITSIZE_din_value_aggregated_swapped)+(-1):0] din_value_aggregated_swapped_reg 1INIT_ZERO_VALUE;
-    reg [(PORTSIZE_memory_addr_a*BITSIZE_memory_addr_a)+(-1):0] memory_addr_a_reg 1INIT_ZERO_VALUE;
+    reg [(n_byte_on_databus/2)*max_n_writes-1:0] we_a_reg;
+    reg [PORTSIZE_bram_write-1:0] bram_write_reg;
+    reg [(PORTSIZE_din_value_aggregated_swapped*BITSIZE_din_value_aggregated_swapped)+(-1):0] din_value_aggregated_swapped_reg;
+    reg [(PORTSIZE_memory_addr_a*BITSIZE_memory_addr_a)+(-1):0] memory_addr_a_reg;
     always @ (posedge clock)
     begin
        we_a_reg &lt;= we_a;
@@ -3106,14 +3106,14 @@ signal memory_addr_a_1  :  std_logic_vector(nbit_read_addr-1 downto 0);
 signal we_a  :  std_logic_vector((n_byte_on_databus/2)*max_n_writes-1 downto 0);
 signal din_a_0  :  std_logic_vector(BRAM_BITSIZE-1 downto 0);
 signal din_a_1  :  std_logic_vector(BRAM_BITSIZE-1 downto 0);
-signal dout_a_0  :  std_logic_vector(BRAM_BITSIZE-1 downto 0) 1INIT_ZERO_VALUE;
-signal dout_a_1  :  std_logic_vector(BRAM_BITSIZE-1 downto 0) 1INIT_ZERO_VALUE;
-signal dout_a_0_registered  :  std_logic_vector(BRAM_BITSIZE-1 downto 0) 1INIT_ZERO_VALUE;
-signal dout_a_1_registered  :  std_logic_vector(BRAM_BITSIZE-1 downto 0) 1INIT_ZERO_VALUE;
-signal we_a_temp : std_logic_vector((n_byte_on_databus/2)*max_n_writes-1 downto 0) 1INIT_ZERO_VALUE;
-signal memory_addr_a_temp : std_logic_vector((PORTSIZE_memory_addr_a*BITSIZE_memory_addr_a)+(-1) downto 0) 1INIT_ZERO_VALUE;
-signal bram_write_temp : std_logic_vector(PORTSIZE_bram_write-1 downto 0) 1INIT_ZERO_VALUE;
-signal din_value_aggregated_swapped_temp : std_logic_vector((PORTSIZE_din_value_aggregated_swapped*BITSIZE_din_value_aggregated_swapped)+(-1) downto 0) 1INIT_ZERO_VALUE;
+signal dout_a_0  :  std_logic_vector(BRAM_BITSIZE-1 downto 0);
+signal dout_a_1  :  std_logic_vector(BRAM_BITSIZE-1 downto 0);
+signal dout_a_0_registered  :  std_logic_vector(BRAM_BITSIZE-1 downto 0);
+signal dout_a_1_registered  :  std_logic_vector(BRAM_BITSIZE-1 downto 0);
+signal we_a_temp : std_logic_vector((n_byte_on_databus/2)*max_n_writes-1 downto 0);
+signal memory_addr_a_temp : std_logic_vector((PORTSIZE_memory_addr_a*BITSIZE_memory_addr_a)+(-1) downto 0);
+signal bram_write_temp : std_logic_vector(PORTSIZE_bram_write-1 downto 0);
+signal din_value_aggregated_swapped_temp : std_logic_vector((PORTSIZE_din_value_aggregated_swapped*BITSIZE_din_value_aggregated_swapped)+(-1) downto 0);
 
 type mem_type is array (n_mem_elements-1 downto 0) of std_logic_vector(BRAM_BITSIZE-1 downto 0);
 
@@ -3136,10 +3136,10 @@ memory_addr_a_1 &lt;= memory_addr_a_temp(nbit_read_addr*2-1 downto nbit_read_add
 dout_a(BRAM_BITSIZE*(0+1)-1 downto BRAM_BITSIZE*0) &lt;= dout_a_0;
 dout_a(BRAM_BITSIZE*(1+1)-1 downto BRAM_BITSIZE*1) &lt;= dout_a_1;
 input_registration_2 : if HIGH_LATENCY=2 generate
-  signal we_a_reg : std_logic_vector((n_byte_on_databus/2)*max_n_writes-1 downto 0) 1INIT_ZERO_VALUE;
-  signal memory_addr_a_reg : std_logic_vector((PORTSIZE_memory_addr_a*BITSIZE_memory_addr_a)+(-1) downto 0) 1INIT_ZERO_VALUE;
-  signal bram_write_reg : std_logic_vector(PORTSIZE_bram_write-1 downto 0) 1INIT_ZERO_VALUE;
-  signal din_value_aggregated_swapped_reg : std_logic_vector((PORTSIZE_din_value_aggregated_swapped*BITSIZE_din_value_aggregated_swapped)+(-1) downto 0) 1INIT_ZERO_VALUE;
+  signal we_a_reg : std_logic_vector((n_byte_on_databus/2)*max_n_writes-1 downto 0);
+  signal memory_addr_a_reg : std_logic_vector((PORTSIZE_memory_addr_a*BITSIZE_memory_addr_a)+(-1) downto 0);
+  signal bram_write_reg : std_logic_vector(PORTSIZE_bram_write-1 downto 0);
+  signal din_value_aggregated_swapped_reg : std_logic_vector((PORTSIZE_din_value_aggregated_swapped*BITSIZE_din_value_aggregated_swapped)+(-1) downto 0);
 begin
   in_reg : process(clock)
   begin
@@ -3349,11 +3349,11 @@ end process;
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="BRAM_MEMORY_SV dout_a dout_b memory_addr_a memory_addr_b din_value_aggregated be MEMORY_INIT_file BRAM_BITSIZE nbit_read_addr n_byte_on_databus n_mem_elements n_bytes HIGH_LATENCY" IP_COMPONENT="BRAM_MEMORY_SV_CORE" VERILOG_PROVIDED="
-reg bram_write1 1INIT_ZERO_VALUE;
-reg [BITSIZE_memory_addr_a-1:0] memory_addr_a1 1INIT_ZERO_VALUE;
-reg [BITSIZE_memory_addr_b-1:0] memory_addr_b1 1INIT_ZERO_VALUE;
-reg [BITSIZE_be-1:0] be1 1INIT_ZERO_VALUE;
-reg [BITSIZE_din_value_aggregated-1:0] din_value_aggregated1 1INIT_ZERO_VALUE;
+reg bram_write1;
+reg [BITSIZE_memory_addr_a-1:0] memory_addr_a1;
+reg [BITSIZE_memory_addr_b-1:0] memory_addr_b1;
+reg [BITSIZE_be-1:0] be1;
+reg [BITSIZE_din_value_aggregated-1:0] din_value_aggregated1;
 
 generate
   if(HIGH_LATENCY==2)
@@ -3372,10 +3372,10 @@ endgenerate
 generate
 if(BRAM_BITSIZE == 8)
 begin
-  reg [(n_byte_on_databus)*8-1:0] dout_a_tmp 1INIT_ZERO_VALUE;
-  reg [(n_byte_on_databus)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
-  reg [(n_byte_on_databus)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
-  reg [(n_byte_on_databus)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
+  reg [(n_byte_on_databus)*8-1:0] dout_a_tmp;
+  reg [(n_byte_on_databus)*8-1:0] dout_b_tmp;
+  reg [(n_byte_on_databus)*8-1:0] dout_a_registered;
+  reg [(n_byte_on_databus)*8-1:0] dout_b_registered;
   reg [(n_byte_on_databus)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
   assign dout_a = dout_a_tmp;
   assign dout_b = dout_b_tmp;
@@ -3493,10 +3493,10 @@ else
 begin
   if(n_mem_elements == 1)
   begin
-    reg [(n_byte_on_databus)*8-1:0] dout_a_tmp 1INIT_ZERO_VALUE;
-    reg [(n_byte_on_databus)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
-    reg [(n_byte_on_databus)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
-    reg [(n_byte_on_databus)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
+    reg [(n_byte_on_databus)*8-1:0] dout_a_tmp;
+    reg [(n_byte_on_databus)*8-1:0] dout_b_tmp;
+    reg [(n_byte_on_databus)*8-1:0] dout_a_registered;
+    reg [(n_byte_on_databus)*8-1:0] dout_b_registered;
     reg [(n_byte_on_databus)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
     assign dout_a = dout_a_tmp;
     assign dout_b = dout_b_tmp;
@@ -3631,15 +3631,15 @@ endgenerate
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="BRAM_MEMORY_SV_CORE dout_a dout_b memory_addr_a memory_addr_b din_value_aggregated be MEMORY_INIT_file BRAM_BITSIZE nbit_read_addr n_byte_on_databus n_mem_elements n_bytes HIGH_LATENCY" VERILOG_PROVIDED="" SYSTEM_VERILOG_PROVIDED="
-reg [BITSIZE_dout_a-1:0] dout_a 1INIT_ZERO_VALUE;
-reg [BITSIZE_dout_a-1:0] dout_a_registered 1INIT_ZERO_VALUE;
-reg [BITSIZE_dout_b-1:0] dout_b 1INIT_ZERO_VALUE;
-reg [BITSIZE_dout_b-1:0] dout_b_registered 1INIT_ZERO_VALUE;
-reg [BITSIZE_memory_addr_a-1:0] memory_addr_a1 1INIT_ZERO_VALUE;
-reg [BITSIZE_memory_addr_b-1:0] memory_addr_b1 1INIT_ZERO_VALUE;
-reg bram_write1 1INIT_ZERO_VALUE;
-reg [BITSIZE_be-1:0] be1 1INIT_ZERO_VALUE;
-reg [BITSIZE_din_value_aggregated-1:0] din_value_aggregated1 1INIT_ZERO_VALUE;
+reg [BITSIZE_dout_a-1:0] dout_a;
+reg [BITSIZE_dout_a-1:0] dout_a_registered;
+reg [BITSIZE_dout_b-1:0] dout_b;
+reg [BITSIZE_dout_b-1:0] dout_b_registered;
+reg [BITSIZE_memory_addr_a-1:0] memory_addr_a1;
+reg [BITSIZE_memory_addr_b-1:0] memory_addr_b1;
+reg bram_write1;
+reg [BITSIZE_be-1:0] be1;
+reg [BITSIZE_din_value_aggregated-1:0] din_value_aggregated1;
 (* syn_ramstyle = &quot;no_rw_check&quot; *) reg [(BRAM_BITSIZE/8)-1:0][7:0] memory [0:n_mem_elements-1];
 
 initial
@@ -4278,10 +4278,10 @@ endgenerate"/>
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="BRAM_MEMORY_NN_SV bram_write dout_a memory_addr_a din_value_aggregated_swapped be_swapped MEMORY_INIT_file BRAM_BITSIZE nbit_read_addr n_byte_on_databus n_mem_elements max_n_reads max_n_writes memory_offset n_byte_on_databus_offset HIGH_LATENCY" IP_COMPONENT="BRAM_MEMORY_NN_SV_CORE" VERILOG_PROVIDED="
-reg [PORTSIZE_bram_write-1:0] bram_write1 1INIT_ZERO_VALUE;
-reg [(PORTSIZE_memory_addr_a*BITSIZE_memory_addr_a)+(-1):0] memory_addr_a1 1INIT_ZERO_VALUE;
-reg [(PORTSIZE_din_value_aggregated_swapped*BITSIZE_din_value_aggregated_swapped)+(-1):0] din_value_aggregated_swapped1 1INIT_ZERO_VALUE;
-reg [(PORTSIZE_be_swapped*BITSIZE_be_swapped)+(-1):0] be_swapped1 1INIT_ZERO_VALUE;
+reg [PORTSIZE_bram_write-1:0] bram_write1;
+reg [(PORTSIZE_memory_addr_a*BITSIZE_memory_addr_a)+(-1):0] memory_addr_a1;
+reg [(PORTSIZE_din_value_aggregated_swapped*BITSIZE_din_value_aggregated_swapped)+(-1):0] din_value_aggregated_swapped1;
+reg [(PORTSIZE_be_swapped*BITSIZE_be_swapped)+(-1):0] be_swapped1;
 
 generate
   if(HIGH_LATENCY==2)
@@ -4300,10 +4300,10 @@ endgenerate
 generate
 if(BRAM_BITSIZE == 8)
 begin
-  reg [(n_byte_on_databus/2)*8-1:0] dout_a_tmp 1INIT_ZERO_VALUE;
-  reg [(n_byte_on_databus/2)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
-  reg [(n_byte_on_databus/2)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
-  reg [(n_byte_on_databus/2)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
+  reg [(n_byte_on_databus/2)*8-1:0] dout_a_tmp;
+  reg [(n_byte_on_databus/2)*8-1:0] dout_b_tmp;
+  reg [(n_byte_on_databus/2)*8-1:0] dout_a_registered;
+  reg [(n_byte_on_databus/2)*8-1:0] dout_b_registered;
   reg [(n_byte_on_databus/2)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
   assign dout_a[BRAM_BITSIZE-1:0] = dout_a_tmp;
   assign dout_a[2*BRAM_BITSIZE-1:BRAM_BITSIZE] = dout_b_tmp;
@@ -4419,10 +4419,10 @@ else
 begin
   if(n_mem_elements == 1)
   begin
-    reg [(n_byte_on_databus/2)*8-1:0] dout_a_tmp 1INIT_ZERO_VALUE;
-    reg [(n_byte_on_databus/2)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
-    reg [(n_byte_on_databus/2)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
-    reg [(n_byte_on_databus/2)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
+    reg [(n_byte_on_databus/2)*8-1:0] dout_a_tmp;
+    reg [(n_byte_on_databus/2)*8-1:0] dout_b_tmp;
+    reg [(n_byte_on_databus/2)*8-1:0] dout_a_registered;
+    reg [(n_byte_on_databus/2)*8-1:0] dout_b_registered;
     reg [(n_byte_on_databus/2)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
     assign dout_a[BRAM_BITSIZE-1:0] = dout_a_tmp;
     assign dout_a[2*BRAM_BITSIZE-1:BRAM_BITSIZE] = dout_b_tmp;
@@ -4554,11 +4554,11 @@ endgenerate
           </port_vector_o>
           <NP_functionality LIBRARY="BRAM_MEMORY_NN_SV_CORE bram_write dout_a memory_addr_a din_value_aggregated_swapped be_swapped MEMORY_INIT_file BRAM_BITSIZE nbit_read_addr n_byte_on_databus n_mem_elements max_n_reads max_n_writes memory_offset n_byte_on_databus_offset HIGH_LATENCY" VERILOG_PROVIDED="" SYSTEM_VERILOG_PROVIDED="
 wire [(n_byte_on_databus/2)*max_n_writes-1:0] we_a;
-reg [PORTSIZE_dout_a*BITSIZE_dout_a-1:0] dout_a 1INIT_ZERO_VALUE;
-reg [PORTSIZE_dout_a*BITSIZE_dout_a-1:0] dout_a_registered 1INIT_ZERO_VALUE;
-reg [(PORTSIZE_memory_addr_a*BITSIZE_memory_addr_a)+(-1):0] memory_addr_a1 1INIT_ZERO_VALUE;
-reg [(PORTSIZE_din_value_aggregated_swapped*BITSIZE_din_value_aggregated_swapped)+(-1):0] din_value_aggregated_swapped1 1INIT_ZERO_VALUE;
-reg [(n_byte_on_databus/2)*max_n_writes-1:0] we_a1 1INIT_ZERO_VALUE;
+reg [PORTSIZE_dout_a*BITSIZE_dout_a-1:0] dout_a;
+reg [PORTSIZE_dout_a*BITSIZE_dout_a-1:0] dout_a_registered;
+reg [(PORTSIZE_memory_addr_a*BITSIZE_memory_addr_a)+(-1):0] memory_addr_a1;
+reg [(PORTSIZE_din_value_aggregated_swapped*BITSIZE_din_value_aggregated_swapped)+(-1):0] din_value_aggregated_swapped1;
+reg [(n_byte_on_databus/2)*max_n_writes-1:0] we_a1;
 
 (* syn_ramstyle = &quot;no_rw_check&quot; *) reg [(BRAM_BITSIZE/8)-1:0][7:0] memory_a [0:n_mem_elements-1];
 initial
@@ -6487,12 +6487,12 @@ begin
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
           </port_o>
           <NP_functionality LIBRARY="STD_SP_BRAM_BYTE Raddr Waddr MEMORY_INIT_file n_mem_elements byte_offset BRAM_BITSIZE HIGH_LATENCY" VERILOG_PROVIDED="
-reg [7:0] dout_a 1INIT_ZERO_VALUE;
-reg [7:0] dout_a_registered 1INIT_ZERO_VALUE;
-reg [7:0] din_value1 1INIT_ZERO_VALUE;
-reg [BITSIZE_Raddr-1:0] Raddr1 1INIT_ZERO_VALUE;
-reg [BITSIZE_Waddr-1:0] Waddr11INIT_ZERO_VALUE ;
-reg we_a1 1INIT_ZERO_VALUE;
+reg [7:0] dout_a;
+reg [7:0] dout_a_registered;
+reg [7:0] din_value1;
+reg [BITSIZE_Raddr-1:0] Raddr1;
+reg [BITSIZE_Waddr-1:0] Waddr1;
+reg we_a1;
 (* syn_ramstyle = &quot;no_rw_check&quot; *) reg [BRAM_BITSIZE-1:0] memory_a [0:n_mem_elements-1];
 initial
 begin
@@ -6634,12 +6634,12 @@ assign dout = din_array[ctrl];"/>
           </port_vector_o>
           <NP_functionality LIBRARY="STD_LIVE_VALUE_TABLE we_a Waddr Raddr read_selector n_mem_elements HIGH_LATENCY" VERILOG_PROVIDED="
 parameter max_portsize = PORTSIZE_Waddr &gt; PORTSIZE_Raddr ? PORTSIZE_Waddr : PORTSIZE_Raddr;
-reg [(PORTSIZE_read_selector*BITSIZE_read_selector)+(-1):0] read_selector 1INIT_ZERO_VALUE;
-reg [(PORTSIZE_read_selector*BITSIZE_read_selector)+(-1):0] read_selector_registered 1INIT_ZERO_VALUE;
-reg [PORTSIZE_we_a-1:0] we_a1 1INIT_ZERO_VALUE;
-reg [(PORTSIZE_Waddr*BITSIZE_Waddr)+(-1):0] Waddr1 1INIT_ZERO_VALUE;
-reg [(PORTSIZE_Raddr*BITSIZE_Raddr)+(-1):0] Raddr1 1INIT_ZERO_VALUE;
-reg [BITSIZE_read_selector-1:0] live_value_table [0:n_mem_elements-1] /* synthesis syn_ramstyle = &quot;no_rw_check&quot; */;
+reg [(PORTSIZE_read_selector*BITSIZE_read_selector)+(-1):0] read_selector;
+reg [(PORTSIZE_read_selector*BITSIZE_read_selector)+(-1):0] read_selector_registered;
+reg [PORTSIZE_we_a-1:0] we_a1;
+reg [(PORTSIZE_Waddr*BITSIZE_Waddr)+(-1):0] Waddr1;
+reg [(PORTSIZE_Raddr*BITSIZE_Raddr)+(-1):0] Raddr1;
+reg [BITSIZE_read_selector-1:0] live_value_table [0:n_mem_elements-1] /* synthesis syn_ramstyle = &quot;registers,no_rw_check&quot; */;
 
 integer index;
 initial
@@ -7043,16 +7043,16 @@ endgenerate"/>
           </port_o>
           <NP_functionality LIBRARY="TRUE_DUAL_PORT Addr_a Addr_b MEMORY_INIT_file n_mem_elements byte_offset BRAM_BITSIZE HIGH_LATENCY"
             VERILOG_PROVIDED="
-reg [7:0] dout_value_a1 1INIT_ZERO_VALUE;
-reg [7:0] dout_value_b1 1INIT_ZERO_VALUE;
-reg [7:0] dout_a_registered 1INIT_ZERO_VALUE;
-reg [7:0] dout_b_registered 1INIT_ZERO_VALUE;
-reg [7:0] din_value_a1 1INIT_ZERO_VALUE;
-reg [7:0] din_value_b1 1INIT_ZERO_VALUE;
-reg we_a1 1INIT_ZERO_VALUE;
-reg we_b1 1INIT_ZERO_VALUE;
-reg [BITSIZE_Addr_a-1:0] Addr_a1 1INIT_ZERO_VALUE;
-reg [BITSIZE_Addr_b-1:0] Addr_b1 1INIT_ZERO_VALUE;
+reg [7:0] dout_value_a1;
+reg [7:0] dout_value_b1;
+reg [7:0] dout_a_registered;
+reg [7:0] dout_b_registered;
+reg [7:0] din_value_a1;
+reg [7:0] din_value_b1;
+reg we_a1;
+reg we_b1;
+reg [BITSIZE_Addr_a-1:0] Addr_a1;
+reg [BITSIZE_Addr_b-1:0] Addr_b1;
 
 reg [BRAM_BITSIZE-1:0] memory [0:n_mem_elements-1] /* synthesis syn_ramstyle = &quot;no_rw_check&quot; */;
 
@@ -7118,16 +7118,16 @@ begin
 end
 "
             VHDL_PROVIDED="
-  signal dout_value_a1 : std_logic_vector(7 downto 0) 1INIT_ZERO_VALUE;
-  signal dout_value_b1 : std_logic_vector(7 downto 0) 1INIT_ZERO_VALUE;
-  signal dout_a_registered : std_logic_vector(7 downto 0) 1INIT_ZERO_VALUE;
-  signal dout_b_registered : std_logic_vector(7 downto 0) 1INIT_ZERO_VALUE;
-  signal din_value_a1 : std_logic_vector(7 downto 0) 1INIT_ZERO_VALUE;
-  signal din_value_b1 : std_logic_vector(7 downto 0) 1INIT_ZERO_VALUE;
-  signal we_a1 : std_logic 1INIT_ZERO_VALUEb;
-  signal we_b1 : std_logic 1INIT_ZERO_VALUEb;
-  signal Addr_a1 : std_logic_vector(BITSIZE_Addr_a-1 downto 0) 1INIT_ZERO_VALUE;
-  signal Addr_b1 : std_logic_vector(BITSIZE_Addr_b-1 downto 0) 1INIT_ZERO_VALUE;
+  signal dout_value_a1 : std_logic_vector(7 downto 0);
+  signal dout_value_b1 : std_logic_vector(7 downto 0);
+  signal dout_a_registered : std_logic_vector(7 downto 0);
+  signal dout_b_registered : std_logic_vector(7 downto 0);
+  signal din_value_a1 : std_logic_vector(7 downto 0);
+  signal din_value_b1 : std_logic_vector(7 downto 0);
+  signal we_a1 : std_logic;
+  signal we_b1 : std_logic;
+  signal Addr_a1 : std_logic_vector(BITSIZE_Addr_a-1 downto 0);
+  signal Addr_b1 : std_logic_vector(BITSIZE_Addr_b-1 downto 0);
 
   type mem_type is array(0 to n_mem_elements-1) of std_logic_vector(7 downto 0);
   impure function InitMemFromFile (MemFileName : in string) return mem_type is
@@ -7489,11 +7489,11 @@ endgenerate"/>
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="BRAM_MEMORY_PMI dout_a dout_b memory_addr_a memory_addr_b din_value_aggregated be MEMORY_INIT_file BRAM_BITSIZE nbit_read_addr n_byte_on_databus n_mem_elements n_bytes HIGH_LATENCY" VERILOG_PROVIDED="
-reg bram_write1 1INIT_ZERO_VALUE;
-reg [BITSIZE_memory_addr_a-1:0] memory_addr_a1 1INIT_ZERO_VALUE;
-reg [BITSIZE_memory_addr_b-1:0] memory_addr_b1 1INIT_ZERO_VALUE;
-reg [BITSIZE_be-1:0] be1 1INIT_ZERO_VALUE;
-reg [BITSIZE_din_value_aggregated-1:0] din_value_aggregated1 1INIT_ZERO_VALUE;
+reg bram_write1;
+reg [BITSIZE_memory_addr_a-1:0] memory_addr_a1;
+reg [BITSIZE_memory_addr_b-1:0] memory_addr_b1;
+reg [BITSIZE_be-1:0] be1;
+reg [BITSIZE_din_value_aggregated-1:0] din_value_aggregated1;
 
 generate
   if(HIGH_LATENCY==2)
@@ -7512,10 +7512,10 @@ endgenerate
 generate
 if(BRAM_BITSIZE == 8)
 begin
-  reg [(n_byte_on_databus)*8-1:0] dout_a_tmp 1INIT_ZERO_VALUE;
-  reg [(n_byte_on_databus)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
-  reg [(n_byte_on_databus)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
-  reg [(n_byte_on_databus)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
+  reg [(n_byte_on_databus)*8-1:0] dout_a_tmp;
+  reg [(n_byte_on_databus)*8-1:0] dout_b_tmp;
+  reg [(n_byte_on_databus)*8-1:0] dout_a_registered;
+  reg [(n_byte_on_databus)*8-1:0] dout_b_registered;
   reg [(n_byte_on_databus)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
   assign dout_a = dout_a_tmp;
   assign dout_b = dout_b_tmp;
@@ -7633,10 +7633,10 @@ else
 begin
   if(n_mem_elements == 1)
   begin
-    reg [(n_byte_on_databus)*8-1:0] dout_a_tmp 1INIT_ZERO_VALUE;
-    reg [(n_byte_on_databus)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
-    reg [(n_byte_on_databus)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
-    reg [(n_byte_on_databus)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
+    reg [(n_byte_on_databus)*8-1:0] dout_a_tmp;
+    reg [(n_byte_on_databus)*8-1:0] dout_b_tmp;
+    reg [(n_byte_on_databus)*8-1:0] dout_a_registered;
+    reg [(n_byte_on_databus)*8-1:0] dout_b_registered;
     reg [(n_byte_on_databus)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
     assign dout_a = dout_a_tmp;
     assign dout_b = dout_b_tmp;
@@ -7901,13 +7901,14 @@ end generate;
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="BRAM_MEMORY_CORE_SMALL dout_a bram_write memory_addr_a din_value_aggregated be MEMORY_INIT_file n_byte_on_databus n_mem_elements n_bytes HIGH_LATENCY" VERILOG_PROVIDED="
-reg [PORTSIZE_bram_write-1:0] bram_write1 1INIT_ZERO_VALUE;
-reg [(PORTSIZE_memory_addr_a*BITSIZE_memory_addr_a)-1:0] memory_addr_a1 1INIT_ZERO_VALUE;
-reg [(PORTSIZE_be*BITSIZE_be)-1:0] be1 1INIT_ZERO_VALUE;
-reg [(PORTSIZE_din_value_aggregated*BITSIZE_din_value_aggregated)-1:0] din_value_aggregated1 1INIT_ZERO_VALUE;
-reg [(PORTSIZE_dout_a*BITSIZE_dout_a)-1:0] dout_a_tmp 1INIT_ZERO_VALUE;
-reg [(PORTSIZE_dout_a*BITSIZE_dout_a)-1:0] dout_a_registered 1INIT_ZERO_VALUE;
+reg [PORTSIZE_bram_write-1:0] bram_write1;
+reg [(PORTSIZE_memory_addr_a*BITSIZE_memory_addr_a)-1:0] memory_addr_a1;
+reg [(PORTSIZE_be*BITSIZE_be)-1:0] be1;
+reg [(PORTSIZE_din_value_aggregated*BITSIZE_din_value_aggregated)-1:0] din_value_aggregated1;
+reg [(PORTSIZE_dout_a*BITSIZE_dout_a)-1:0] dout_a_tmp;
+reg [(PORTSIZE_dout_a*BITSIZE_dout_a)-1:0] dout_a_registered;
 reg [(n_byte_on_databus)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;registers,no_rw_check&quot; */ ;
+integer p1;
 
 initial
 begin
@@ -7929,11 +7930,9 @@ endgenerate
 
 assign dout_a = dout_a_tmp;
 
-generate
-genvar p1;
-  for (p1=0; p1&lt;PORTSIZE_memory_addr_a; p1=p1+1)
+  always @(posedge clock)
   begin
-    always @(posedge clock)
+    for (p1=0; p1&lt;PORTSIZE_memory_addr_a; p1=p1+1)
     begin
       if(HIGH_LATENCY == 0||HIGH_LATENCY == 1)
       begin
@@ -7973,15 +7972,14 @@ genvar p1;
       end
     end
   end
-endgenerate
 "
             VHDL_PROVIDED="
-  signal bram_write1 : std_logic_vector(PORTSIZE_bram_write-1 downto 0) 1INIT_ZERO_VALUE;
-  signal memory_addr_a1 : std_logic_vector((PORTSIZE_memory_addr_a*BITSIZE_memory_addr_a)-1 downto 0) 1INIT_ZERO_VALUE;
-  signal be1 : std_logic_vector((PORTSIZE_be*BITSIZE_be)-1 downto 0)  1INIT_ZERO_VALUE;
-  signal din_value_aggregated1 : std_logic_vector((PORTSIZE_din_value_aggregated*BITSIZE_din_value_aggregated)-1 downto 0) 1INIT_ZERO_VALUE;
-  signal dout_a_tmp : std_logic_vector((PORTSIZE_dout_a*BITSIZE_dout_a)-1 downto 0) 1INIT_ZERO_VALUE;
-  signal dout_a_registered : std_logic_vector((PORTSIZE_dout_a*BITSIZE_dout_a)-1 downto 0) 1INIT_ZERO_VALUE;
+  signal bram_write1 : std_logic_vector(PORTSIZE_bram_write-1 downto 0);
+  signal memory_addr_a1 : std_logic_vector((PORTSIZE_memory_addr_a*BITSIZE_memory_addr_a)-1 downto 0);
+  signal be1 : std_logic_vector((PORTSIZE_be*BITSIZE_be)-1 downto 0);
+  signal din_value_aggregated1 : std_logic_vector((PORTSIZE_din_value_aggregated*BITSIZE_din_value_aggregated)-1 downto 0);
+  signal dout_a_tmp : std_logic_vector((PORTSIZE_dout_a*BITSIZE_dout_a)-1 downto 0);
+  signal dout_a_registered : std_logic_vector((PORTSIZE_dout_a*BITSIZE_dout_a)-1 downto 0);
 
   type mem_type is array (n_mem_elements-1 downto 0) of std_logic_vector((n_byte_on_databus)*8-1 downto 0);
 
@@ -8136,17 +8134,17 @@ begin
           <NP_functionality LIBRARY="TRUE_DUAL_PORT_BYTE_ENABLING_RAM dout_a dout_b memory_addr_a memory_addr_b din_value_aggregated_a din_value_aggregated_b be_a be_b MEMORY_INIT_file BRAM_BITSIZE n_byte_on_databus n_mem_elements HIGH_LATENCY" VERILOG_PROVIDED="
 wire [n_byte_on_databus-1:0] we_a;
 wire [n_byte_on_databus-1:0] we_b;
-reg [n_byte_on_databus-1:0] we_a1 1INIT_ZERO_VALUE;
-reg [n_byte_on_databus-1:0] we_b1 1INIT_ZERO_VALUE;
-reg [BITSIZE_din_value_aggregated_a-1:0] din_value_aggregated_a1 1INIT_ZERO_VALUE;
-reg [BITSIZE_din_value_aggregated_b-1:0] din_value_aggregated_b1 1INIT_ZERO_VALUE;
+reg [n_byte_on_databus-1:0] we_a1;
+reg [n_byte_on_databus-1:0] we_b1;
+reg [BITSIZE_din_value_aggregated_a-1:0] din_value_aggregated_a1;
+reg [BITSIZE_din_value_aggregated_b-1:0] din_value_aggregated_b1;
 
-reg [BITSIZE_dout_a-1:0] dout_a 1INIT_ZERO_VALUE;
-reg [BITSIZE_dout_a-1:0] dout_a_registered 1INIT_ZERO_VALUE;
-reg [BITSIZE_dout_b-1:0] dout_b 1INIT_ZERO_VALUE;
-reg [BITSIZE_dout_b-1:0] dout_b_registered 1INIT_ZERO_VALUE;
-reg [BITSIZE_memory_addr_a-1:0] memory_addr_a1 1INIT_ZERO_VALUE;
-reg [BITSIZE_memory_addr_b-1:0] memory_addr_b1 1INIT_ZERO_VALUE;
+reg [BITSIZE_dout_a-1:0] dout_a;
+reg [BITSIZE_dout_a-1:0] dout_a_registered;
+reg [BITSIZE_dout_b-1:0] dout_b;
+reg [BITSIZE_dout_b-1:0] dout_b_registered;
+reg [BITSIZE_memory_addr_a-1:0] memory_addr_a1;
+reg [BITSIZE_memory_addr_b-1:0] memory_addr_b1;
 reg [BRAM_BITSIZE-1:0] memory [0:n_mem_elements-1] /* synthesis syn_ramstyle = &quot;no_rw_check&quot; */;
 integer i11, i12;
 
@@ -8240,17 +8238,17 @@ genvar i2_b;
 endgenerate"
             VHDL_PROVIDED="signal we_a : std_logic_vector(n_byte_on_databus-1 downto 0);
 signal we_b : std_logic_vector(n_byte_on_databus-1 downto 0);
-signal we_a1 : std_logic_vector(n_byte_on_databus-1 downto 0) 1INIT_ZERO_VALUE;
-signal we_b1 : std_logic_vector(n_byte_on_databus-1 downto 0) 1INIT_ZERO_VALUE;
-signal din_value_aggregated_a1 : std_logic_vector(BITSIZE_din_value_aggregated_a-1 downto 0) 1INIT_ZERO_VALUE;
-signal din_value_aggregated_b1 : std_logic_vector(BITSIZE_din_value_aggregated_b-1 downto 0) 1INIT_ZERO_VALUE;
+signal we_a1 : std_logic_vector(n_byte_on_databus-1 downto 0);
+signal we_b1 : std_logic_vector(n_byte_on_databus-1 downto 0);
+signal din_value_aggregated_a1 : std_logic_vector(BITSIZE_din_value_aggregated_a-1 downto 0);
+signal din_value_aggregated_b1 : std_logic_vector(BITSIZE_din_value_aggregated_b-1 downto 0);
 
-signal dout_a_0 : std_logic_vector(BITSIZE_dout_a-1 downto 0) 1INIT_ZERO_VALUE;
-signal dout_a_registered : std_logic_vector(BITSIZE_dout_a-1 downto 0) 1INIT_ZERO_VALUE;
-signal dout_b_0 : std_logic_vector(BITSIZE_dout_a-1 downto 0) 1INIT_ZERO_VALUE;
-signal dout_b_registered : std_logic_vector(BITSIZE_dout_a-1 downto 0) 1INIT_ZERO_VALUE;
-signal memory_addr_a1 : std_logic_vector(BITSIZE_memory_addr_a-1 downto 0) 1INIT_ZERO_VALUE;
-signal memory_addr_b1 : std_logic_vector(BITSIZE_memory_addr_b-1 downto 0) 1INIT_ZERO_VALUE;
+signal dout_a_0 : std_logic_vector(BITSIZE_dout_a-1 downto 0);
+signal dout_a_registered : std_logic_vector(BITSIZE_dout_a-1 downto 0);
+signal dout_b_0 : std_logic_vector(BITSIZE_dout_a-1 downto 0);
+signal dout_b_registered : std_logic_vector(BITSIZE_dout_a-1 downto 0);
+signal memory_addr_a1 : std_logic_vector(BITSIZE_memory_addr_a-1 downto 0);
+signal memory_addr_b1 : std_logic_vector(BITSIZE_memory_addr_b-1 downto 0);
 
 type mem_type is array (n_mem_elements-1 downto 0) of std_logic_vector(BRAM_BITSIZE-1 downto 0);
 
@@ -8432,7 +8430,7 @@ end process;
           <structural_type_descriptor id_type="BRAM_MEMORY_NN_NOBYTE_ENABLE"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
-          <parameter name="nbit_read_addr">32</parameter>
+          <parameter name="n_bytes">32</parameter>
           <parameter name="n_byte_on_databus">4</parameter>
           <parameter name="n_mem_elements">4</parameter>
           <parameter name="max_n_reads">2</parameter>
@@ -8458,7 +8456,7 @@ end process;
           <port_vector_o id="dout_a" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="BRAM_MEMORY_NN_NOBYTE_ENABLE bram_write dout_a memory_addr_a din_value_aggregated_swapped be_swapped MEMORY_INIT_file BRAM_BITSIZE nbit_read_addr n_byte_on_databus n_mem_elements max_n_reads max_n_writes memory_offset n_byte_on_databus_offset HIGH_LATENCY" IP_COMPONENT="STD_NRNW_BRAM_SB" VERILOG_PROVIDED="wire [(n_byte_on_databus/2)*max_n_writes-1:0] we_a;
+          <NP_functionality LIBRARY="BRAM_MEMORY_NN_NOBYTE_ENABLE bram_write dout_a memory_addr_a din_value_aggregated_swapped be_swapped MEMORY_INIT_file BRAM_BITSIZE n_bytes n_byte_on_databus n_mem_elements max_n_reads max_n_writes memory_offset n_byte_on_databus_offset HIGH_LATENCY" IP_COMPONENT="STD_NRNW_BRAM_SB" VERILOG_PROVIDED="wire [(n_byte_on_databus/2)*max_n_writes-1:0] we_a;
 wire [max_n_writes*BRAM_BITSIZE-1:0] din_value_swapped;
 
 STD_NRNW_BRAM_SB #(.BITSIZE_we_a(n_byte_on_databus/2), .PORTSIZE_we_a(max_n_writes), .BITSIZE_Addr(BITSIZE_memory_addr_a), .PORTSIZE_Addr(PORTSIZE_memory_addr_a), .BITSIZE_din_value(BITSIZE_din_value_aggregated_swapped/2), .PORTSIZE_din_value(max_n_writes), .BITSIZE_dout_value(BITSIZE_dout_a), .PORTSIZE_dout_value(PORTSIZE_dout_a), .MEMORY_INIT_file(MEMORY_INIT_file), .n_mem_elements(n_mem_elements), .BRAM_BITSIZE(BRAM_BITSIZE), .HIGH_LATENCY(HIGH_LATENCY)) STD_NRNW_BRAM_SB_instance (.clock(clock), .we_a(we_a), .Addr(memory_addr_a), .din_value(din_value_swapped), .dout_value(dout_a[BRAM_BITSIZE*max_n_reads-1:0]));
@@ -8525,11 +8523,11 @@ endgenerate"/>
 generate
 if(n_mem_elements == 1)
 begin
-  BRAM_MEMORY_CORE_SMALL #(.PORTSIZE_bram_write(PORTSIZE_bram_write), .BITSIZE_bram_write(BITSIZE_bram_write), .PORTSIZE_memory_addr_a(PORTSIZE_memory_addr_a), .BITSIZE_memory_addr_a(BITSIZE_memory_addr_a), .PORTSIZE_din_value_aggregated(PORTSIZE_din_value_aggregated_swapped), .BITSIZE_din_value_aggregated((n_byte_on_databus/2)*8), .PORTSIZE_be(PORTSIZE_be_swapped), .BITSIZE_be(n_byte_on_databus/PORTSIZE_be_swapped), .PORTSIZE_dout_a(PORTSIZE_dout_a), .BITSIZE_dout_a(BITSIZE_dout_a), .MEMORY_INIT_file(MEMORY_INIT_file), .n_byte_on_databus(n_byte_on_databus/2), .n_mem_elements(n_mem_elements), .n_bytes(n_bytes), .HIGH_LATENCY(HIGH_LATENCY)) BRAM_MEMORY_instance_small (.clock(clock), .bram_write(bram_write), .memory_addr_a(memory_addr_a), .din_value_aggregated({din_value_aggregated_swapped[(n_byte_on_databus/2)*8+2*BRAM_BITSIZE+memory_offset-1:2*BRAM_BITSIZE+memory_offset],din_value_aggregated_swapped[(n_byte_on_databus/2)*8+memory_offset-1:memory_offset]}), .be({be_swapped[n_byte_on_databus+n_byte_on_databus/2+n_byte_on_databus_offset-1:n_byte_on_databus+n_byte_on_databus_offset],be_swapped[n_byte_on_databus/2+n_byte_on_databus_offset-1:n_byte_on_databus_offset]}), .dout_a(dout_a));
+  BRAM_MEMORY_CORE_SMALL #(.PORTSIZE_bram_write(PORTSIZE_bram_write), .BITSIZE_bram_write(BITSIZE_bram_write), .PORTSIZE_memory_addr_a(PORTSIZE_memory_addr_a), .BITSIZE_memory_addr_a(BITSIZE_memory_addr_a), .PORTSIZE_din_value_aggregated(PORTSIZE_din_value_aggregated_swapped), .BITSIZE_din_value_aggregated((n_byte_on_databus/2)*8), .PORTSIZE_be(PORTSIZE_be_swapped), .BITSIZE_be(n_byte_on_databus/PORTSIZE_be_swapped), .PORTSIZE_dout_a(PORTSIZE_dout_a), .BITSIZE_dout_a(BITSIZE_dout_a), .MEMORY_INIT_file(MEMORY_INIT_file), .n_byte_on_databus(n_byte_on_databus/2), .n_mem_elements(n_mem_elements), .n_bytes(n_bytes), .HIGH_LATENCY(HIGH_LATENCY)) BRAM_MEMORY_instance_small (.clock(clock), .bram_write(bram_write), .memory_addr_a(memory_addr_a), .din_value_aggregated({din_value_aggregated_swapped[2*BRAM_BITSIZE+memory_offset+:(n_byte_on_databus/2)*8],din_value_aggregated_swapped[memory_offset+:(n_byte_on_databus/2)*8]}), .be({be_swapped[n_byte_on_databus+n_byte_on_databus_offset+:n_byte_on_databus/2],be_swapped[n_byte_on_databus_offset+:n_byte_on_databus/2]}), .dout_a(dout_a));
 end
 else
 begin
-  TRUE_DUAL_PORT_BYTE_ENABLING_RAM #(.BITSIZE_memory_addr_a(BITSIZE_memory_addr_a), .BITSIZE_memory_addr_b(BITSIZE_memory_addr_a), .BITSIZE_din_value_aggregated_a((n_byte_on_databus/2)*8), .BITSIZE_din_value_aggregated_b((n_byte_on_databus/2)*8), .BITSIZE_be_a(n_byte_on_databus/2), .BITSIZE_be_b(n_byte_on_databus/2), .BITSIZE_dout_a((n_byte_on_databus/2)*8), .BITSIZE_dout_b((n_byte_on_databus/2)*8), .MEMORY_INIT_file(MEMORY_INIT_file), .BRAM_BITSIZE(BRAM_BITSIZE), .n_byte_on_databus(n_byte_on_databus/2), .n_mem_elements(n_mem_elements), .HIGH_LATENCY(HIGH_LATENCY)) TRUE_DUAL_PORT_BYTE_ENABLING_RAM_instance (.clock(clock), .bram_write0(bram_write[0]), .bram_write1(bram_write[1]), .memory_addr_a(memory_addr_a[BITSIZE_memory_addr_a-1:0]), .memory_addr_b(memory_addr_a[2*BITSIZE_memory_addr_a-1:BITSIZE_memory_addr_a]), .din_value_aggregated_a(din_value_aggregated_swapped[memory_offset +: (n_byte_on_databus/2)*8]), .din_value_aggregated_b(din_value_aggregated_swapped[2*BRAM_BITSIZE+memory_offset +: (n_byte_on_databus/2)*8]), .be_a(be_swapped[n_byte_on_databus_offset +: n_byte_on_databus/2]), .be_b(be_swapped[n_byte_on_databus+n_byte_on_databus_offset +: n_byte_on_databus/2]), .dout_a(dout_a[BRAM_BITSIZE-1:0]), .dout_b(dout_a[2*BRAM_BITSIZE-1:BRAM_BITSIZE]));
+  TRUE_DUAL_PORT_BYTE_ENABLING_RAM #(.BITSIZE_memory_addr_a(BITSIZE_memory_addr_a), .BITSIZE_memory_addr_b(BITSIZE_memory_addr_a), .BITSIZE_din_value_aggregated_a((n_byte_on_databus/2)*8), .BITSIZE_din_value_aggregated_b((n_byte_on_databus/2)*8), .BITSIZE_be_a(n_byte_on_databus/2), .BITSIZE_be_b(n_byte_on_databus/2), .BITSIZE_dout_a((n_byte_on_databus/2)*8), .BITSIZE_dout_b((n_byte_on_databus/2)*8), .MEMORY_INIT_file(MEMORY_INIT_file), .BRAM_BITSIZE(BRAM_BITSIZE), .n_byte_on_databus(n_byte_on_databus/2), .n_mem_elements(n_mem_elements), .HIGH_LATENCY(HIGH_LATENCY)) TRUE_DUAL_PORT_BYTE_ENABLING_RAM_instance (.clock(clock), .bram_write0(bram_write[0]), .bram_write1(bram_write[1]), .memory_addr_a(memory_addr_a[BITSIZE_memory_addr_a-1:0]), .memory_addr_b(memory_addr_a[2*BITSIZE_memory_addr_a-1:BITSIZE_memory_addr_a]), .din_value_aggregated_a(din_value_aggregated_swapped[memory_offset +:(n_byte_on_databus/2)*8]), .din_value_aggregated_b(din_value_aggregated_swapped[2*BRAM_BITSIZE+memory_offset+:(n_byte_on_databus/2)*8]), .be_a(be_swapped[n_byte_on_databus_offset+:n_byte_on_databus/2]), .be_b(be_swapped[n_byte_on_databus+n_byte_on_databus_offset+:n_byte_on_databus/2]), .dout_a(dout_a[BRAM_BITSIZE-1:0]), .dout_b(dout_a[2*BRAM_BITSIZE-1:BRAM_BITSIZE]));
 end
 endgenerate
 "
@@ -8583,10 +8581,10 @@ end generate;
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="BRAM_MEMORY_NN_PMI bram_write dout_a memory_addr_a din_value_aggregated_swapped be_swapped MEMORY_INIT_file BRAM_BITSIZE nbit_read_addr n_byte_on_databus n_mem_elements max_n_reads max_n_writes memory_offset n_byte_on_databus_offset HIGH_LATENCY" VERILOG_PROVIDED="
-reg [PORTSIZE_bram_write-1:0] bram_write1 1INIT_ZERO_VALUE;
-reg [(PORTSIZE_memory_addr_a*BITSIZE_memory_addr_a)+(-1):0] memory_addr_a1 1INIT_ZERO_VALUE;
-reg [(PORTSIZE_din_value_aggregated_swapped*BITSIZE_din_value_aggregated_swapped)+(-1):0] din_value_aggregated_swapped1 1INIT_ZERO_VALUE;
-reg [(PORTSIZE_be_swapped*BITSIZE_be_swapped)+(-1):0] be_swapped1 1INIT_ZERO_VALUE;
+reg [PORTSIZE_bram_write-1:0] bram_write1;
+reg [(PORTSIZE_memory_addr_a*BITSIZE_memory_addr_a)+(-1):0] memory_addr_a1;
+reg [(PORTSIZE_din_value_aggregated_swapped*BITSIZE_din_value_aggregated_swapped)+(-1):0] din_value_aggregated_swapped1;
+reg [(PORTSIZE_be_swapped*BITSIZE_be_swapped)+(-1):0] be_swapped1;
 
 generate
   if(HIGH_LATENCY==2)
@@ -8604,10 +8602,10 @@ endgenerate
 generate
 if(BRAM_BITSIZE == 8)
 begin
-  reg [(n_byte_on_databus/2)*8-1:0] dout_a_tmp 1INIT_ZERO_VALUE;
-  reg [(n_byte_on_databus/2)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
-  reg [(n_byte_on_databus/2)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
-  reg [(n_byte_on_databus/2)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
+  reg [(n_byte_on_databus/2)*8-1:0] dout_a_tmp;
+  reg [(n_byte_on_databus/2)*8-1:0] dout_b_tmp;
+  reg [(n_byte_on_databus/2)*8-1:0] dout_a_registered;
+  reg [(n_byte_on_databus/2)*8-1:0] dout_b_registered;
   reg [(n_byte_on_databus/2)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
   assign dout_a[BRAM_BITSIZE-1:0] = dout_a_tmp;
   assign dout_a[2*BRAM_BITSIZE-1:BRAM_BITSIZE] = dout_b_tmp;
@@ -8723,10 +8721,10 @@ else
 begin
   if(n_mem_elements == 1)
   begin
-    reg [(n_byte_on_databus/2)*8-1:0] dout_a_tmp 1INIT_ZERO_VALUE;
-    reg [(n_byte_on_databus/2)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
-    reg [(n_byte_on_databus/2)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
-    reg [(n_byte_on_databus/2)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
+    reg [(n_byte_on_databus/2)*8-1:0] dout_a_tmp;
+    reg [(n_byte_on_databus/2)*8-1:0] dout_b_tmp;
+    reg [(n_byte_on_databus/2)*8-1:0] dout_a_registered;
+    reg [(n_byte_on_databus/2)*8-1:0] dout_b_registered;
     reg [(n_byte_on_databus/2)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
     assign dout_a[BRAM_BITSIZE-1:0] = dout_a_tmp;
     assign dout_a[2*BRAM_BITSIZE-1:BRAM_BITSIZE] = dout_b_tmp;
@@ -9934,19 +9932,19 @@ parameter nbit_addr = BITSIZE_in2 &gt; BITSIZE_proxy_in2 ? BITSIZE_in2 : BITSIZE
   
 wire [nbit_read_addr-1:0] memory_addr_a;
 wire [nbit_read_addr-1:0] memory_addr_a_mem;
-reg [nbit_read_addr-1:0] memory_addr_a1 1INIT_ZERO_VALUE;
+reg [nbit_read_addr-1:0] memory_addr_a1;
 
 wire bram_write;
 wire bram_write_mem;
-reg bram_write1 1INIT_ZERO_VALUE;
+reg bram_write1;
 wire [data_size-1:0] dout_a_tmp;
 wire [data_size-1:0] dout_a;
-reg [data_size-1:0] dout_a_registered 1INIT_ZERO_VALUE;
+reg [data_size-1:0] dout_a_registered;
 wire [nbit_addr-1:0] relative_addr;
 wire [nbit_addr-1:0] tmp_addr;
 wire [data_size-1:0] din_a;
 wire [data_size-1:0] din_a_mem;
-reg [data_size-1:0] din_a1 1INIT_ZERO_VALUE;
+reg [data_size-1:0] din_a1;
 
 STD_SP_BRAM #(.BITSIZE_data_in(data_size), .BITSIZE_data_out(data_size), .BITSIZE_address_in(nbit_read_addr), .n_elements(n_elements), .MEMORY_INIT_file(MEMORY_INIT_file), .READ_ONLY_MEMORY(READ_ONLY_MEMORY)) STD_SP_BRAM_instance (.data_out(dout_a_tmp), .write_enable(bram_write_mem), .clock(clock), .data_in(din_a_mem), .address_in(memory_addr_a_mem));
 
@@ -10018,21 +10016,21 @@ assign Sout_DataRdy = Sin_DataRdy;
   
   signal memory_addr_a : std_logic_vector(nbit_read_addr-1 downto 0);
   signal memory_addr_a_mem : std_logic_vector(nbit_read_addr-1 downto 0);
-  signal memory_addr_a1 : std_logic_vector(nbit_read_addr-1 downto 0) 1INIT_ZERO_VALUE;
+  signal memory_addr_a1 : std_logic_vector(nbit_read_addr-1 downto 0);
 
   signal bram_write : std_logic;
   signal bram_write_mem : std_logic;
-  signal bram_write1 : std_logic 1INIT_ZERO_VALUEb;
+  signal bram_write1 : std_logic;
 
   signal dout_a_tmp : std_logic_vector(data_size-1 downto 0) ;
   signal dout_a : std_logic_vector(data_size-1 downto 0);
-  signal dout_a_registered : std_logic_vector(data_size-1 downto 0) 1INIT_ZERO_VALUE;
+  signal dout_a_registered : std_logic_vector(data_size-1 downto 0);
 
   signal relative_addr : std_logic_vector(nbit_addr-1 downto 0);
   signal tmp_addr : std_logic_vector(nbit_addr-1 downto 0);
   signal din_a : std_logic_vector(data_size-1 downto 0);
   signal din_a_mem : std_logic_vector(data_size-1 downto 0);
-  signal din_a1 : std_logic_vector(data_size-1 downto 0) 1INIT_ZERO_VALUE;
+  signal din_a1 : std_logic_vector(data_size-1 downto 0);
 
 begin
 
@@ -10209,24 +10207,24 @@ parameter nbit_addr = BITSIZE_in2 &gt; BITSIZE_proxy_in2 ? BITSIZE_in2 : BITSIZE
   
 wire [nbit_read_addr-1:0] memory_addr_a;
 wire [nbit_read_addr-1:0] memory_addr_a_mem;
-reg [nbit_read_addr-1:0] memory_addr_a1 1INIT_ZERO_VALUE;
+reg [nbit_read_addr-1:0] memory_addr_a1;
 
 wire bram_write;
 wire bram_write_mem;
-reg bram_write1 1INIT_ZERO_VALUE;
+reg bram_write1;
 wire [data_size-1:0] dout_a_tmp;
 wire [data_size-1:0] dout_a;
-reg [data_size-1:0] dout_a_registered 1INIT_ZERO_VALUE;
+reg [data_size-1:0] dout_a_registered;
 wire cs, oe_ram_cs, we_ram_cs;
-reg we_ram_cs_delayed 1INIT_ZERO_VALUE;
-reg oe_ram_cs_delayed 1INIT_ZERO_VALUE;
-reg oe_ram_cs_delayed_registered 1INIT_ZERO_VALUE;
-reg oe_ram_cs_delayed_registered1 1INIT_ZERO_VALUE;
+reg we_ram_cs_delayed;
+reg oe_ram_cs_delayed;
+reg oe_ram_cs_delayed_registered;
+reg oe_ram_cs_delayed_registered1;
 wire [nbit_addr-1:0] relative_addr;
 wire [nbit_addr-1:0] tmp_addr;
 wire [data_size-1:0] din_a;
 wire [data_size-1:0] din_a_mem;
-reg [data_size-1:0] din_a1 1INIT_ZERO_VALUE;
+reg [data_size-1:0] din_a1;
 
 STD_SP_BRAM #(.BITSIZE_data_in(data_size), .BITSIZE_data_out(data_size), .BITSIZE_address_in(nbit_read_addr), .n_elements(n_elements), .MEMORY_INIT_file(MEMORY_INIT_file), .READ_ONLY_MEMORY(0)) STD_SP_BRAM_instance (.data_out(dout_a_tmp), .write_enable(bram_write_mem), .clock(clock), .data_in(din_a_mem), .address_in(memory_addr_a_mem));
 
@@ -10363,26 +10361,26 @@ endgenerate
   constant address_space_begin_u         : unsigned(nbit_addr-1 downto 0) := to_unsigned(address_space_begin, nbit_addr);
   signal memory_addr_a : std_logic_vector(nbit_read_addr-1 downto 0);
   signal memory_addr_a_mem : std_logic_vector(nbit_read_addr-1 downto 0);
-  signal memory_addr_a1 : std_logic_vector(nbit_read_addr-1 downto 0) 1INIT_ZERO_VALUE;
+  signal memory_addr_a1 : std_logic_vector(nbit_read_addr-1 downto 0);
 
   signal bram_write : std_logic;
   signal bram_write_mem : std_logic;
-  signal bram_write1 : std_logic 1INIT_ZERO_VALUEb;
+  signal bram_write1 : std_logic;
 
   signal dout_a_tmp : std_logic_vector(data_size-1 downto 0) ;
-  signal dout_a : std_logic_vector(data_size-1 downto 0) 1INIT_ZERO_VALUE;
-  signal dout_a_registered : std_logic_vector(data_size-1 downto 0) 1INIT_ZERO_VALUE;
+  signal dout_a : std_logic_vector(data_size-1 downto 0);
+  signal dout_a_registered : std_logic_vector(data_size-1 downto 0);
   signal cs, oe_ram_cs, we_ram_cs: std_logic;
-  signal we_ram_cs_delayed : std_logic 1INIT_ZERO_VALUEb;
-  signal oe_ram_cs_delayed : std_logic 1INIT_ZERO_VALUEb;
-  signal oe_ram_cs_delayed_registered : std_logic 1INIT_ZERO_VALUEb;
-  signal oe_ram_cs_delayed_registered1 : std_logic 1INIT_ZERO_VALUEb;
+  signal we_ram_cs_delayed : std_logic;
+  signal oe_ram_cs_delayed : std_logic;
+  signal oe_ram_cs_delayed_registered : std_logic;
+  signal oe_ram_cs_delayed_registered1 : std_logic;
 
   signal relative_addr : std_logic_vector(nbit_addr-1 downto 0);
   signal tmp_addr : std_logic_vector(nbit_addr-1 downto 0);
   signal din_a : std_logic_vector(data_size-1 downto 0);
   signal din_a_mem : std_logic_vector(data_size-1 downto 0);
-  signal din_a1 : std_logic_vector(data_size-1 downto 0) 1INIT_ZERO_VALUE;
+  signal din_a1 : std_logic_vector(data_size-1 downto 0);
 
 begin
 
@@ -10681,10 +10679,10 @@ wire [nbit_read_addr*max_n_rw-1:0] memory_addr_a_temp;
 
 wire [data_size*max_n_writes-1:0] din_value_aggregated;
 wire [data_size*max_n_writes-1:0] din_value_aggregated_temp;
-reg [data_size*max_n_reads-1:0] dout_a 1INIT_ZERO_VALUE;
-reg [data_size*max_n_reads-1:0] dout_a_registered 1INIT_ZERO_VALUE;
-reg [data_size-1:0] dout_a_registered_0 1INIT_ZERO_VALUE;
-reg [data_size-1:0] dout_a_registered_1 1INIT_ZERO_VALUE;
+reg [data_size*max_n_reads-1:0] dout_a;
+reg [data_size*max_n_reads-1:0] dout_a_registered;
+reg [data_size-1:0] dout_a_registered_0;
+reg [data_size-1:0] dout_a_registered_1;
 wire [nbit_addr*max_n_rw-1:0] tmp_addr;
 wire [nbit_addr*max_n_rw-1:0] relative_addr;
 integer index2;
@@ -10699,9 +10697,9 @@ end
 generate
   if(HIGH_LATENCY==2)
   begin
-    (* syn_keep=1 *)reg [nbit_read_addr*max_n_rw-1:0] memory_addr_a_reg 1INIT_ZERO_VALUE;
-    (* syn_keep=1 *)reg [data_size*max_n_writes-1:0] din_value_aggregated_reg 1INIT_ZERO_VALUE;
-    (* syn_keep=1 *)reg [max_n_writes-1:0] bram_write_reg 1INIT_ZERO_VALUE;
+    (* syn_keep=1 *)reg [nbit_read_addr*max_n_rw-1:0] memory_addr_a_reg;
+    (* syn_keep=1 *)reg [data_size*max_n_writes-1:0] din_value_aggregated_reg;
+    (* syn_keep=1 *)reg [max_n_writes-1:0] bram_write_reg;
     always @ (posedge clock)
     begin
        memory_addr_a_reg &lt;= memory_addr_a;
@@ -10977,17 +10975,17 @@ wire [PORTSIZE_S_we_ram-1:0] we_ram_cs;
 wire [data_size*PORTSIZE_S_Wdata_ram-1:0] S_Wdata_ram_int;
 wire [data_size*max_n_writes-1:0] din_value_aggregated;
 wire [data_size*max_n_writes-1:0] din_value_aggregated_temp;
-reg [data_size*max_n_reads-1:0] dout_a 1INIT_ZERO_VALUE;
-reg [data_size*max_n_reads-1:0] dout_a_registered 1INIT_ZERO_VALUE;
-reg [data_size-1:0] dout_a_registered_0 1INIT_ZERO_VALUE;
-reg [data_size-1:0] dout_a_registered_1 1INIT_ZERO_VALUE;
+reg [data_size*max_n_reads-1:0] dout_a;
+reg [data_size*max_n_reads-1:0] dout_a_registered;
+reg [data_size-1:0] dout_a_registered_0;
+reg [data_size-1:0] dout_a_registered_1 ;
 wire [nbit_addr*max_n_rw-1:0] tmp_addr;
 wire [nbit_addr*max_n_rw-1:0] relative_addr;
 integer index2;
-reg [PORTSIZE_S_we_ram-1:0] we_ram_cs_delayed 1INIT_ZERO_VALUE;
-reg [PORTSIZE_S_oe_ram-1:0] oe_ram_cs_delayed 1INIT_ZERO_VALUE;
-reg [PORTSIZE_S_oe_ram-1:0] oe_ram_cs_delayed_registered 1INIT_ZERO_VALUE;
-reg [PORTSIZE_S_oe_ram-1:0] oe_ram_cs_delayed_registered1 1INIT_ZERO_VALUE;
+reg [PORTSIZE_S_we_ram-1:0] we_ram_cs_delayed;
+reg [PORTSIZE_S_oe_ram-1:0] oe_ram_cs_delayed;
+reg [PORTSIZE_S_oe_ram-1:0] oe_ram_cs_delayed_registered;
+reg [PORTSIZE_S_oe_ram-1:0] oe_ram_cs_delayed_registered1;
 
 reg [data_size-1:0] memory [0:n_elements-1] /* synthesis syn_ramstyle = &quot;no_rw_check&quot; */;
 
@@ -10999,9 +10997,9 @@ end
 generate
   if(HIGH_LATENCY==2)
   begin
-    (* syn_keep=1 *)reg [nbit_read_addr*max_n_rw-1:0] memory_addr_a_reg 1INIT_ZERO_VALUE;
-    (* syn_keep=1 *)reg [data_size*max_n_writes-1:0] din_value_aggregated_reg 1INIT_ZERO_VALUE;
-    (* syn_keep=1 *)reg [max_n_writes-1:0] bram_write_reg 1INIT_ZERO_VALUE;
+    (* syn_keep=1 *)reg [nbit_read_addr*max_n_rw-1:0] memory_addr_a_reg;
+    (* syn_keep=1 *)reg [data_size*max_n_writes-1:0] din_value_aggregated_reg;
+    (* syn_keep=1 *)reg [max_n_writes-1:0] bram_write_reg;
     always @ (posedge clock)
     begin
        memory_addr_a_reg &lt;= memory_addr_a;
