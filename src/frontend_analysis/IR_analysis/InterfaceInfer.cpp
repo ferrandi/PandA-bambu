@@ -260,7 +260,7 @@ void InterfaceInfer::ComputeRelationships(DesignFlowStepSet& relationship,
    ApplicationFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }
 
-static const std::regex signature_param_typename("((?:\\w+\\s*)+(?:<[^>]*>)?\\s*[\\*&]?\\s*)");
+static const std::regex signature_param_typename("((?:\\w+\\s*)+(?:<[^>]*>)?\\s*[\\*&\\/]*\\s*)");
 
 bool InterfaceInfer::HasToBeExecuted() const
 {
