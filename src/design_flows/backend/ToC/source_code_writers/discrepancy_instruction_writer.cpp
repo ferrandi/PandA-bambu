@@ -60,8 +60,8 @@ discrepancy_instruction_writer::discrepancy_instruction_writer(const application
 void discrepancy_instruction_writer::declareFunction(const unsigned int function_id)
 {
    const auto FB = AppM->CGetFunctionBehavior(function_id);
-   const auto behavioral_helper = FB->CGetBehavioralHelper();
-   const auto funName = behavioral_helper->get_function_name();
+   const auto BH = FB->CGetBehavioralHelper();
+   const auto funName = BH->get_function_name();
    const auto TM = AppM->get_tree_manager();
    const auto node_fun = TM->CGetTreeReindex(function_id);
    THROW_ASSERT(GetPointer<function_decl>(GET_NODE(node_fun)), "expected a function decl");
@@ -69,11 +69,11 @@ void discrepancy_instruction_writer::declareFunction(const unsigned int function
        !tree_helper::IsStaticDeclaration(node_fun) && !tree_helper::IsExternDeclaration(node_fun) && funName != "main";
    if(prepend_static)
    {
-      GetPointer<function_decl>(GET_NODE(node_fun))->static_flag = true;
+      GetPointerS<function_decl>(GET_NODE(node_fun))->static_flag = true;
    }
    HLSInstructionWriter::declareFunction(function_id);
    if(prepend_static)
    {
-      GetPointer<function_decl>(GET_NODE(node_fun))->static_flag = false;
+      GetPointerS<function_decl>(GET_NODE(node_fun))->static_flag = false;
    }
 }

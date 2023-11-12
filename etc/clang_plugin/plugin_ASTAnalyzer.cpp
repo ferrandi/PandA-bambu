@@ -222,21 +222,17 @@ namespace clang
          {
             return getBaseTypeDecl(ty->getAs<ElaboratedType>()->getNamedType());
          }
-         if(isa<TypedefType>(ty))
+         if(isa<TypedefType>(ty) || ty->getTypeClass() == Type::Typedef)
          {
-            ND = ty->getAs<TypedefType>()->getDecl();
+            return getBaseTypeDecl(ty->getAs<TypedefType>()->getDecl()->getUnderlyingType());
          }
-         else if(ty->isRecordType())
+         if(ty->isRecordType())
          {
             ND = ty->getAs<RecordType>()->getDecl();
          }
          else if(ty->isEnumeralType())
          {
             ND = ty->getAs<EnumType>()->getDecl();
-         }
-         else if(ty->getTypeClass() == Type::Typedef)
-         {
-            ND = ty->getAs<TypedefType>()->getDecl();
          }
          else if(ty->isArrayType())
          {
@@ -339,7 +335,6 @@ namespace clang
          for(const auto& location_argument : attr_map)
          {
             const auto& loc = location_argument.first;
-            const auto& aattr = location_argument.second;
             if((prev.isInvalid() || prev < loc) && (loc < locEnd))
             {
                fun_arg_attr[fname].insert(attr_map[loc].begin(), attr_map[loc].end());
@@ -397,10 +392,11 @@ namespace clang
                   std::string ParamTypeInclude;
                   const auto getIncludes = [&](const clang::QualType& type) {
                      std::string includes;
-
                      if(const auto BTD = getBaseTypeDecl(type))
                      {
-                        includes = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
+                        const auto include_file =
+                            SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
+                        includes = include_file;
                      }
                      const auto tmpl_decl =
                          llvm::dyn_cast_or_null<ClassTemplateSpecializationDecl>(type->getAsTagDecl());
@@ -414,8 +410,9 @@ namespace clang
                            {
                               if(const auto BTD = getBaseTypeDecl(argT.getAsType()))
                               {
-                                 includes += std::string(";") +
-                                             SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
+                                 const auto include_file =
+                                     SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
+                                 includes += std::string(";") + include_file;
                               }
                            }
                         }
@@ -457,31 +454,30 @@ namespace clang
                      }
                      const auto paramTypeRemTD = RemoveTypedef(CA->getElementType());
                      ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + " *";
-                     ParamTypeNameOrig =
-                         paramTypeRemTD.getAsString(pp) + (Dimensions == "" ? " *" : " (*)" + Dimensions);
+                     ParamTypeNameOrig = GetTypeNameCanonical(CA->getElementType(), pp) +
+                                         (Dimensions == "" ? " *" : " (*)" + Dimensions);
                      ParamTypeInclude = getIncludes(paramTypeRemTD);
                   };
-                  const auto getSizeInBytes = [&](QualType T) {
+                  const auto getSizeInBytes = [&](QualType T) -> int64_t {
                      if(T->isIncompleteType() || T->isTemplateTypeParmType() || isa<TemplateSpecializationType>(T))
                      {
-                        attr_val["SizeInBytes"] = "1";
-                        return;
+                        return 1;
                      }
-                     attr_val["SizeInBytes"] = std::to_string(FD->getASTContext()
-                                                                  .getTypeInfoDataSizeInChars(T)
-                                                                  .
+                     return FD->getASTContext()
+                         .getTypeInfoDataSizeInChars(T)
+                         .
 #if __clang_major__ <= 11
-                                                              first
+                         first
 #else
-                                                              Width
+                         Width
 #endif
-                                                                  .getQuantity());
+                         .getQuantity();
                   };
 
                   if(isa<DecayedType>(argType))
                   {
                      const auto DT = cast<DecayedType>(argType)->getOriginalType().IgnoreParens();
-                     getSizeInBytes(DT);
+                     attr_val["SizeInBytes"] = std::to_string(getSizeInBytes(DT));
                      if(isa<ConstantArrayType>(DT))
                      {
                         manageArray(cast<ConstantArrayType>(DT), true);
@@ -489,10 +485,9 @@ namespace clang
                      else
                      {
                         const auto paramTypeRemTD = RemoveTypedef(argType);
-                        const auto paramTypeOrigTD = argType;
                         ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
-                        ParamTypeNameOrig = paramTypeOrigTD.getAsString(pp);
-                        ParamTypeInclude = getIncludes(paramTypeOrigTD);
+                        ParamTypeNameOrig = GetTypeNameCanonical(argType, pp);
+                        ParamTypeInclude = getIncludes(argType);
                      }
                      if(attr_val.find("interface_type") != attr_val.end())
                      {
@@ -513,20 +508,19 @@ namespace clang
                   }
                   else if(argType->isPointerType() || argType->isReferenceType())
                   {
-                     if(isa<ConstantArrayType>(argType->getPointeeType().IgnoreParens()))
+                     const auto ptdType = argType->getPointeeType().IgnoreParens();
+                     attr_val["SizeInBytes"] = std::to_string(getSizeInBytes(ptdType));
+                     if(isa<ConstantArrayType>(ptdType))
                      {
-                        getSizeInBytes(argType->getPointeeType().IgnoreParens());
-                        manageArray(cast<ConstantArrayType>(argType->getPointeeType().IgnoreParens()), false);
+                        manageArray(cast<ConstantArrayType>(ptdType), false);
                      }
                      else
                      {
                         const auto suffix = argType->isPointerType() ? "*" : "&";
-                        const auto paramTypeOrigTD = argType->getPointeeType();
-                        const auto paramTypeRemTD = RemoveTypedef(paramTypeOrigTD);
-                        getSizeInBytes(paramTypeRemTD);
+                        const auto paramTypeRemTD = RemoveTypedef(ptdType);
                         ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + suffix;
-                        ParamTypeNameOrig = paramTypeOrigTD.getAsString(pp) + suffix;
-                        ParamTypeInclude = getIncludes(paramTypeOrigTD);
+                        ParamTypeNameOrig = GetTypeNameCanonical(argType, pp);
+                        ParamTypeInclude = getIncludes(ptdType);
                      }
                      const auto is_channel_if = ParamTypeName.find("ac_channel<") == 0 ||
                                                 ParamTypeName.find("stream<") == 0 ||
@@ -549,12 +543,11 @@ namespace clang
                   }
                   else
                   {
-                     const auto paramTypeOrigTD = argType;
                      const auto paramTypeRemTD = RemoveTypedef(argType);
-                     getSizeInBytes(paramTypeRemTD);
+                     attr_val["SizeInBytes"] = std::to_string(getSizeInBytes(paramTypeRemTD));
                      ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
-                     ParamTypeNameOrig = paramTypeOrigTD.getAsString(pp);
-                     ParamTypeInclude = getIncludes(paramTypeOrigTD);
+                     ParamTypeNameOrig = GetTypeNameCanonical(argType, pp);
+                     ParamTypeInclude = getIncludes(argType);
                      if(!argType->isBuiltinType() && !argType->isEnumeralType())
                      {
                         interface = "none";
@@ -722,7 +715,6 @@ namespace clang
          std::string pname;
          std::string interface;
          const auto loc = PragmaTok.getLocation();
-         const auto filename = PP.getSourceManager().getPresumedLoc(loc, false).getFilename();
          const auto end_parse = [&]() {
             PP.Lex(Tok);
             if(Tok.isNot(tok::eod))
@@ -848,13 +840,6 @@ namespace clang
             auto& D = PP.getDiagnostics();
             D.Report(Tok.getLocation(), D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_cache %0"))
                 .AddString(msg);
-         };
-         const auto end_parse = [&]() {
-            PP.Lex(Tok);
-            if(Tok.isNot(tok::eod))
-            {
-               print_error("malformed pragma, expecting end)");
-            }
          };
          const auto bundle_parse = [&]() {
             PP.Lex(Tok);

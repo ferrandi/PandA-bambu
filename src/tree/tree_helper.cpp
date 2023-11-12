@@ -494,10 +494,6 @@ std::string tree_helper::print_function_name(const tree_managerConstRef& TM, con
    {
       name = GET_CONST_NODE(fd->name);
    }
-   else if(TM->is_CPP() && TM->is_top_function(fd))
-   {
-      name = GET_CONST_NODE(fd->name);
-   }
    else if(fd->mngl)
    {
       name = GET_CONST_NODE(fd->mngl);
@@ -5210,13 +5206,13 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
          {
             res = "extern ";
          }
-         else if(!fd->static_flag && TM->is_CPP() && !fd->mngl && function_name != "main")
-         {
-            res = "\n#ifdef __cplusplus\n  extern \"C\"\n#else\n  extern\n#endif\n";
-         }
-         if(fd->static_flag)
+         else if(fd->static_flag)
          {
             res = "static ";
+         }
+         else if(fd->mngl && function_name != "main")
+         {
+            res = "\n#ifdef __cplusplus\nextern \"C\"\n#endif\n";
          }
          const auto dn = GetPointer<const decl_node>(node_type);
          THROW_ASSERT(dn, "expected a declaration node");
@@ -5994,6 +5990,16 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
          res += print_type(TM, GET_INDEX_NODE(td->name), global, print_qualifiers);
          break;
       }
+      case parm_decl_K:
+      {
+         const auto pd = GetPointer<const parm_decl>(node_type);
+         if(pd->readonly_flag)
+         {
+            res += print_qualifiers ? "const " : "/*const*/ ";
+         }
+         res += PrintType(TM, pd->type, global, print_qualifiers);
+         break;
+      }
       case binfo_K:
       case block_K:
       case call_expr_K:
@@ -6006,7 +6012,6 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
       case lang_type_K:
       case namespace_decl_K:
       case offset_type_K:
-      case parm_decl_K:
       case qual_union_type_K:
       case result_decl_K:
       case set_type_K:

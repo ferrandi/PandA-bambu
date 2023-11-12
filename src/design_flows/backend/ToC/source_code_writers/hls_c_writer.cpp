@@ -133,28 +133,59 @@ using namespace __AC_NAMESPACE;
 
    // get the root function to be tested by the testbench
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   THROW_ASSERT(top_function_ids.size() == 1, "Multiple top function");
-   const auto function_id = *(top_function_ids.begin());
-   const auto fnode = TM->CGetTreeNode(function_id);
-   const auto fd = GetPointerS<const function_decl>(fnode);
-   const auto fname = tree_helper::GetMangledFunctionName(fd);
-   auto& DesignInterfaceInclude = HLSMgr->design_interface_typenameinclude;
-   if(DesignInterfaceInclude.find(fname) != DesignInterfaceInclude.end())
+   CustomOrderedSet<std::string> includes;
+   CustomSet<std::string> top_fnames;
+   for(auto function_id : top_function_ids)
    {
-      CustomOrderedSet<std::string> includes;
-      const auto& DesignInterfaceArgsInclude = DesignInterfaceInclude.find(fname)->second;
-      for(const auto& argInclude : DesignInterfaceArgsInclude)
+      const auto fnode = TM->CGetTreeNode(function_id);
+      const auto fd = GetPointerS<const function_decl>(fnode);
+      const auto fname = tree_helper::GetMangledFunctionName(fd);
+      auto& DesignInterfaceInclude = HLSMgr->design_interface_typenameinclude;
+      if(DesignInterfaceInclude.find(fname) != DesignInterfaceInclude.end())
       {
-         const auto incls = convert_string_to_vector<std::string>(argInclude.second, ";");
-         includes.insert(incls.begin(), incls.end());
+         const auto& DesignInterfaceArgsInclude = DesignInterfaceInclude.find(fname)->second;
+         for(const auto& argInclude : DesignInterfaceArgsInclude)
+         {
+            const auto incls = convert_string_to_vector<std::string>(argInclude.second, ";");
+            includes.insert(incls.begin(), incls.end());
+         }
+         top_fnames.insert(fname);
       }
-      indented_output_stream->Append("#define " + fname + " __keep_your_declaration_out_of_my_code\n");
+   }
+   if(includes.size())
+   {
+      for(const auto& fname : top_fnames)
+      {
+         indented_output_stream->Append("#define " + fname + " __keep_your_declaration_out_of_my_code\n");
+      }
       for(const auto& inc : includes)
       {
          indented_output_stream->Append("#include \"" + inc + "\"\n");
       }
-      indented_output_stream->Append("#undef " + fname + "\n");
+      for(const auto& fname : top_fnames)
+      {
+         indented_output_stream->Append("#undef " + fname + "\n");
+      }
    }
+   indented_output_stream->Append(R"(
+
+#ifndef CDECL
+#ifdef __cplusplus
+#define CDECL extern "C"
+#else
+#define CDECL
+#endif
+#endif
+
+#ifndef EXTERN_CDECL
+#ifdef __cplusplus
+#define EXTERN_CDECL extern "C"
+#else
+#define EXTERN_CDECL extern
+#endif
+#endif
+
+)");
 }
 
 void HLSCWriter::WriteGlobalDeclarations()
@@ -243,7 +274,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
             if(var_ptdtype.find("(*)") != std::string::npos)
             {
                temp_var_decl = var_ptdtype;
-               temp_var_decl.replace(var_ptdtype.find("(*)"), 3, param + "_temp" + "[]");
+               temp_var_decl.replace(var_ptdtype.find("(*)"), 3, param + "_temp[]");
             }
             else
             {
@@ -336,17 +367,21 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef BH)
    const auto function_index = BH->get_function_index();
    const auto return_type_index = BH->GetFunctionReturnType(function_index);
 
-   auto function_name = BH->get_function_name();
-   // avoid collision with the main
-   if(function_name == "main")
-   {
+   const auto top_fname_mngl = BH->GetMangledFunctionName();
+   const auto function_name = [&]() -> std::string {
       const auto is_discrepancy = (Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) ||
                                   (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw));
       if(is_discrepancy)
       {
-         function_name = "_main";
+         // avoid collision with the main
+         if(top_fname_mngl == "main")
+         {
+            return "_main";
+         }
+         return BH->get_function_name();
       }
-   }
+      return top_fname_mngl;
+   }();
    if(return_type_index)
    {
       indented_output_stream->Append(RETURN_PORT_NAME " = ");
@@ -355,7 +390,6 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef BH)
    indented_output_stream->Append(function_name + "(");
    bool is_first_argument = true;
    unsigned par_index = 0;
-   const auto top_fname_mngl = BH->GetMangledFunctionName();
    const auto& DesignInterfaceTypenameOrig = HLSMgr->design_interface_typename_orig_signature;
    for(const auto& par : BH->GetParameters())
    {
@@ -555,7 +589,6 @@ args[i].map_addr = args[i].addr;
 }
 
 )");
-
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written simulator init memory");
 }
 
@@ -640,12 +673,10 @@ void HLSCWriter::WriteMainTestbench()
       }
       return idx_size;
    }();
-   const auto extern_decl = top_fname == top_fname_mngl ? "EXTERN_C " : "";
 
-   std::string top_decl = extern_decl;
-   std::string gold_decl = extern_decl;
-   std::string pp_decl = extern_decl +
-                         tree_helper::PrintType(TM, TM->CGetTreeReindex(top_id), false, true, false, nullptr,
+   std::string top_decl;
+   std::string gold_decl = "EXTERN_CDECL ";
+   std::string pp_decl = tree_helper::PrintType(TM, TM->CGetTreeReindex(top_id), false, true, false, nullptr,
                                                 var_pp_functorConstRef(new std_var_pp_functor(top_bh))) +
                          ";\n";
    THROW_ASSERT(pp_decl.find(top_fname) != std::string::npos, "");
@@ -674,9 +705,9 @@ void HLSCWriter::WriteMainTestbench()
       top_decl += "void";
       gold_decl += "void";
    }
-   top_decl += " " + top_fname + "(";
-   gold_decl += " __m_" + top_fname + "(";
-   gold_call += "__m_" + top_fname + "(";
+   top_decl += " " + top_fname_mngl + "(";
+   gold_decl += " " + cxa_prefix_mangled(top_fname_mngl, "__m_") + "(";
+   gold_call += cxa_prefix_mangled(top_fname_mngl, "__m_") + "(";
    pp_call += "__m_pp_" + top_fname + "(";
    if(top_params.size())
    {
@@ -693,7 +724,7 @@ void HLSCWriter::WriteMainTestbench()
          }
          else
          {
-            arg_typename = tree_helper::PrintType(TM, arg_type, false, true);
+            arg_typename = tree_helper::PrintType(TM, arg, false, true);
          }
          if(is_interface_inferred)
          {
@@ -752,7 +783,7 @@ void HLSCWriter::WriteMainTestbench()
          else if(is_pointer_type)
          {
             gold_call += "(" + arg_typename + ")" + arg_name + "_gold, ";
-            pp_call += "(" + tree_helper::PrintType(TM, arg_type, false, true) + ")" + arg_name + "_pp, ";
+            pp_call += "(" + tree_helper::PrintType(TM, arg, false, true) + ")" + arg_name + "_pp, ";
             gold_cmp += "m_argcmp(" + STR(param_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
             if(param_size_default.find(param_idx) != param_size_default.end())
             {
@@ -788,7 +819,7 @@ void HLSCWriter::WriteMainTestbench()
          {
             arg_typename.pop_back();
             gold_call += "*(" + arg_typename + "*)" + arg_name + "_gold, ";
-            pp_call += "(" + tree_helper::PrintType(TM, arg_type, false, true) + "*)" + arg_name + "_pp, ";
+            pp_call += "(" + tree_helper::PrintType(TM, arg, false, true) + "*)" + arg_name + "_pp, ";
             gold_cmp += "m_argcmp(" + STR(param_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
             args_init += "__m_param_alloc(" + STR(param_idx) + ", sizeof(" + arg_typename + "));\n";
             args_decl += "(void*)&" + arg_name;
@@ -825,7 +856,8 @@ void HLSCWriter::WriteMainTestbench()
    pp_call += ");\n";
    args_decl += "};\n";
 
-   indented_output_stream->AppendIndented(R"(
+   indented_output_stream->AppendIndented("CDECL " + top_decl.substr(0, top_decl.size() - 1) + R"(;
+
 #ifdef LIBMDPI_DRIVER
 
 #ifdef __cplusplus
@@ -1086,7 +1118,6 @@ abort();
    {
       indented_output_stream->Append("#else\n");
       indented_output_stream->Append("#include <mdpi/mdpi_user.h>\n\n");
-      indented_output_stream->Append("extern " + top_decl + ";\n\n");
 
       indented_output_stream->Append("int main()\n{\n");
       // write additional initialization code needed by subclasses
