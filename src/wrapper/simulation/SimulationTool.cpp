@@ -336,7 +336,10 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
           << "OUT_LVL=\"" << Param->getOption<int>(OPT_output_level) << "\"\n\n"
           << "### Do not edit below\n\n";
 
-   script << "function cleanup { if [ ${__sys_elf_pid} -ne 0 ]; then kill ${__sys_elf_pid}; fi }\n"
+   script << "function cleanup {\n"
+          << "  if [ ${__sys_elf_pid} -ne 0 ]; then kill -s KILL ${__sys_elf_pid}; fi\n"
+          << "  if [ ! -z ${sys_elf_out} -ne 0 ]; then rm -f ${sys_elf_out}; fi\n"
+          << "}\n"
           << "trap cleanup EXIT\n\n";
 
    GenerateScript(script, top_filename, file_list);
@@ -469,10 +472,12 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, con
        << "  if [ \"${sys_elf_class}\" != \"${driver_elf_class}\" ]; then\n"
        << "    echo \"ERROR: Wrong system application ELF class: ${sys_elf_class} != ${driver_elf_class}\"; exit 1;\n"
        << "  fi\n"
-       << "  LD_PRELOAD=${SIM_DIR}/libmdpi_driver.so ${SYS_ELF} \"$@\" 2>&1 | tee ${SIM_DIR}/$(basename "
-          "${SYS_ELF}).log &\n"
+       << "  sys_elf_out=$(mktemp -d)\n"
+       << "  mkfifo \"${sys_elf_out}/pipe\"\n"
+       << "  LD_PRELOAD=${SIM_DIR}/libmdpi_driver.so ${SYS_ELF} \"$@\" 2>&1 > \"${sys_elf_out}/pipe\" &\n"
        << "  __sys_elf_pid=$!\n"
-       << "  echo \"Launched user testbench (PID ${__sys_elf_pid}) with args: $@\"\n"
+       << "  tee ${SIM_DIR}/$(basename ${SYS_ELF}).log < \"${sys_elf_out}/pipe\" &\n"
+       << "  echo \"Launched user testbench (PID ${__sys_elf_pid}:$!) with args: $@\"\n"
        << "fi\n\n";
 
    return cflags;
