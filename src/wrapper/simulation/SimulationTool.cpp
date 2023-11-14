@@ -336,16 +336,18 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
           << "OUT_LVL=\"" << Param->getOption<int>(OPT_output_level) << "\"\n\n"
           << "### Do not edit below\n\n";
 
-   script << "function cleanup {\n"
-          << "  if [ ${__sys_elf_pid} -ne 0 ]; then kill -s KILL ${__sys_elf_pid}; fi\n"
-          << "  if [ ! -z ${sys_elf_out} -ne 0 ]; then rm -f ${sys_elf_out}; fi\n"
+   script << "return_value=1\n"
+          << "function cleanup {\n"
+          << "  if [ -d /proc/${__sys_elf_pid} ]; then kill -s KILL ${__sys_elf_pid}; fi\n"
+          << "  if [ -d ${sys_elf_out} ]; then rm -rf ${sys_elf_out}; fi\n"
+          << "  exit $return_value\n"
           << "}\n"
           << "trap cleanup EXIT\n\n";
 
    GenerateScript(script, top_filename, file_list);
 
-   script << "wait ${__sys_elf_pid}\n"
-          << "__sys_elf_pid=0\n";
+   script << "return_value=$?\n"
+          << "wait ${__sys_elf_pid}\n";
 
    return generated_script;
 }
