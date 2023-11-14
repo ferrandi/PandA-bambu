@@ -193,16 +193,16 @@ void TestbenchAXIMModuleGenerator::InternalExec(std::ostream& out, structural_ob
        << "  BITSIZE_delay=32,\n"
        << "  BITSIZE_size=BITSIZE_" << port_prefix << "_arsize,\n"
        << "  BITSIZE_addr=BITSIZE_" << port_prefix << "_araddr,\n"
-       << "  OFFSET_delay=0,\n"
        << "  BITSIZE_wdata=BITSIZE_" << port_prefix << "_wdata,\n"
        << "  BITSIZE_wstrb=BITSIZE_" << port_prefix << "_wstrb,\n"
+       << "  OFFSET_delay=0,\n"
        << "  OFFSET_counter=OFFSET_delay+BITSIZE_delay,\n"
        << "  OFFSET_burst=OFFSET_counter+BITSIZE_counter,\n"
        << "  OFFSET_len=OFFSET_burst+BITSIZE_burst,\n"
        << "  OFFSET_size=OFFSET_len+BITSIZE_len,\n"
        << "  OFFSET_addr=OFFSET_size+BITSIZE_size,\n"
-       << "  OFFSET_wdata=OFFSET_addr+BITSIZE_wdata,\n"
-       << "  OFFSET_wstrb=OFFSET_wdata+BITSIZE_wstrb,\n"
+       << "  OFFSET_wdata=OFFSET_addr+BITSIZE_addr,\n"
+       << "  OFFSET_wstrb=OFFSET_wdata+BITSIZE_wdata,\n"
        << "  BITSIZE_aritem=BITSIZE_addr+BITSIZE_size+BITSIZE_len+BITSIZE_burst+BITSIZE_counter+BITSIZE_delay,\n"
        << "  "
           "BITSIZE_awitem=BITSIZE_wstrb+BITSIZE_wdata+BITSIZE_addr+BITSIZE_size+BITSIZE_len+BITSIZE_burst+BITSIZE_"
@@ -213,6 +213,9 @@ reg [QUEUE_SIZE*BITSIZE_aritem-1:0] arqueue;
 reg [QUEUE_SIZE*BITSIZE_aritem-1:0] next_arqueue;
 reg [QUEUE_SIZE*BITSIZE_awitem-1:0] awqueue; 
 reg [QUEUE_SIZE*BITSIZE_awitem-1:0] next_awqueue;
+reg [31:0] test_addr;
+reg [31:0] test_strb;
+reg [31:0] test_data;
 integer arqueue_size, next_arqueue_size;
 integer awqueue_size, next_awqueue_size;
 
@@ -395,6 +398,9 @@ always@(posedge clock)
 begin: write_seq
   automatic ptr_t currAddr;
   automatic ptr_t endAddr;
+  test_strb <=0;
+  test_addr <=0;
+  test_data <=0;
   if(wvalid && wready)
   begin
     if(next_awqueue_size > 0 && next_awqueue[OFFSET_delay+:BITSIZE_delay] == 1)
@@ -422,6 +428,9 @@ begin: write_seq
     end
     if(next_awqueue[OFFSET_wstrb+:BITSIZE_wstrb] != 0)
     begin
+      test_strb <= next_awqueue[OFFSET_wstrb+:BITSIZE_wstrb];
+      test_addr <= currAddr;
+      test_data <= next_awqueue[OFFSET_wdata+:BITSIZE_wdata];
       m_utils.write_strobe(next_awqueue[OFFSET_wstrb+:BITSIZE_wstrb], next_awqueue[OFFSET_wdata+:BITSIZE_wdata], currAddr);
     end
   end
