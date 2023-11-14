@@ -17580,12 +17580,12 @@ end
   begin
     if(reset == 1&apos;b1)
     begin
-      addr_reg &LT;= 0;
+      addr_reg &lt;= 0;
       done_input_reg &lt;= 0;
     end
     else
     begin
-      addr_reg &LT;= addr_reg_next;
+      addr_reg &lt;= addr_reg_next;
       done_input_reg &lt;= done_input_next;
     end
   end
@@ -17605,7 +17605,7 @@ end
    end
 
    assign Min_accelerator_context = acc_ctxt;
-   assign Min_Rdata_ram = Min_datardy ? rdata : &apos;b0;
+   assign Min_Rdata_ram = Min_datardy ? rdata : 0;
 
    IOB_front_end
      #(
