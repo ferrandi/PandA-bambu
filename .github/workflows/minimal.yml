@@ -735,7 +735,7 @@ jobs:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
 
-  CHStone-memarch1:
+  CHStone-memarch:
     needs: [build, CHStone-multi]
     runs-on: [self-hosted, mentor]
     strategy:
@@ -743,12 +743,17 @@ jobs:
       matrix:
         include:
           - compiler: "I386_GCC7"
-            args: ""
+            script: generic_CHStone-memarch1.sh
+            args: "-c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}} -c=--assert-debug "
           - compiler: "I386_GCC7"
-            args: "-c=-wH"
-    env:
-      script: generic_CHStone-memarch1.sh
-      args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}} -c=--assert-debug
+            script: generic_CHStone-memarch1.sh
+            args: "-c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}} -c=--assert-debug -c=-wH"
+          - compiler: "I386_CLANG13"
+            script: generic_CHStone-memarch2.sh
+            args: "-c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}} -c=--assert-debug"
+          - compiler: "I386_CLANG13"
+            script: generic_CHStone-memarch2.sh
+            args: "-c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}} -c=--assert-debug -c=-wH"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -782,69 +787,7 @@ jobs:
         id: get
         shell: bash
         run: |
-          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')_CHStone-memarch1_"
-          if [[ "${{matrix.args}}" = *-c=-wH* ]]; then
-            OUTNAME+="-vhdl"
-          else
-            OUTNAME+="-verilog"
-          fi
-          echo "outname=$OUTNAME" >> $GITHUB_OUTPUT
-      - name: Upload test reports
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{steps.get.outputs.outname}}
-          path: ${{steps.suite.outputs.test-reports-dir}}
-
-
-  CHStone-memarch2:
-    needs: [build, CHStone-multi]
-    runs-on: [self-hosted, mentor]
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - compiler: "I386_CLANG13"
-            args: ""
-          - compiler: "I386_CLANG13"
-            args: "-c=-wH"
-    env:
-      script: generic_CHStone-memarch2.sh
-      args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}} -c=--assert-debug
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          submodules: 'true'
-      - name: Download Bambu AppImage
-        uses: ./.github/actions/storage-download
-        with:
-          name: ${{needs.build.outputs.package-name}}
-          storage-url: "${{env.storage-url}}"
-          username: "${{env.storage-user}}"
-          password: "${{env.storage-token}}"
-      - name: Setup binaries
-        id: setup
-        shell: bash
-        run: |
-          mkdir bin
-          ln -s $PWD/*.AppImage bin/bambu
-          ln -s $PWD/*.AppImage bin/spider
-          echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
-      - name: Launch CHStone test suite
-        id: suite
-        shell: bash
-        run: |
-          export PATH=${{steps.setup.outputs.local-bin}}:$PATH
-          mkdir ${{env.report-dir}}
-          echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
-          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}} ${{matrix.args}}
-      - name: Generate out name
-        if: ${{ !cancelled() }}
-        id: get
-        shell: bash
-        run: |
-          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')_CHStone-memarch2_"
+          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')_CHStone-memarch_"
           if [[ "${{matrix.args}}" = *-c=-wH* ]]; then
             OUTNAME+="-vhdl"
           else
@@ -1030,8 +973,7 @@ jobs:
         discrepancy-test,
         omp-simd,
         Make-checks,
-        CHStone-memarch1,
-        CHStone-memarch2,
+        CHStone-memarch,
         Panda-bench,
         Panda-bench-yosys,
       ]
@@ -1062,10 +1004,7 @@ jobs:
         if: ${{ needs.Make-checks.result != 'success' }}
         run: exit 1
       - name: Check CHStone memory architecture 1 status
-        if: ${{ needs.CHStone-memarch1.result != 'success' }}
-        run: exit 1
-      - name: Check CHStone memory architecture 2 status
-        if: ${{ needs.CHStone-memarch2.result != 'success' }}
+        if: ${{ needs.CHStone-memarch.result != 'success' }}
         run: exit 1
       - name: Check PandA benchmarks status
         if: ${{ needs.Panda-bench.result != 'success' }}
