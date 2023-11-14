@@ -7366,14 +7366,14 @@ begin
   dout_a &lt;= dout_a_signal;
   dout_b &lt;= dout_b_signal;
 
-  L_write_enable_a : process(bram_write0, be)
+  L_write_enable_a : process(bram_write0, be_a)
   begin
     for i2_a in 0 to n_byte_on_databus-1 loop
       we_a(i2_a) &lt;= bram_write0 and be_a(i2_a);
     end loop;
   end process;
 
-  L_write_enable_b : process(bram_write1, be)
+  L_write_enable_b : process(bram_write1, be_b)
   begin
     for i2_b in 0 to n_byte_on_databus-1 loop
       we_b(i2_b) &lt;= bram_write1 and be_b(i2_b);
@@ -7856,9 +7856,15 @@ begin
 end
 endgenerate
 "
-            VHDL_PROVIDED="begin
+            VHDL_PROVIDED="
+signal memory_addr_a_tmp : std_logic_vector(2*BITSIZE_memory_addr_a-1 downto 0);
+signal dout_a_tmp : std_logic_vector(2*BITSIZE_dout_a-1 downto 0);
+begin
+memory_addr_a_tmp &lt;= memory_addr_b &amp; memory_addr_a;
+dout_a &lt;= dout_a_tmp(BITSIZE_dout_a-1 downto 0);
+dout_b &lt;= dout_a_tmp((2*BITSIZE_dout_a)-1 downto BITSIZE_dout_a);
 BRAM_MEMORY_CORE_SMALL_case : if (n_mem_elements = 1) generate
-  BRAM_MEMORY_CORE_SMALL_instance : BRAM_MEMORY_CORE_SMALL generic map (PORTSIZE_bram_write=&gt;2, BITSIZE_bram_write=&gt;1, PORTSIZE_memory_addr_a=&gt;2, BITSIZE_memory_addr_a=&gt;BITSIZE_memory_addr_a, PORTSIZE_din_value_aggregated=&gt;2, BITSIZE_din_value_aggregated=&gt;BITSIZE_din_value_aggregated/2, PORTSIZE_be=&gt;2, BITSIZE_be=&gt;BITSIZE_be/2, PORTSIZE_dout_a=&gt;2, BITSIZE_dout_a=&gt;BITSIZE_dout_a, MEMORY_INIT_file=&gt;MEMORY_INIT_file, n_byte_on_databus=&gt;n_byte_on_databus, n_mem_elements=&gt;n_mem_elements, n_bytes=&gt;n_bytes, HIGH_LATENCY=&gt;HIGH_LATENCY) port map (clock=&gt;clock, bram_write(0)=&gt;bram_write, bram_write(1)=&gt;bram_write, memory_addr_a(BITSIZE_memory_addr_a-1 downto 0)=&gt;memory_addr_a, memory_addr_a((2*BITSIZE_memory_addr_a)-1 downto BITSIZE_memory_addr_a)=&gt;memory_addr_b, din_value_aggregated=&gt;din_value_aggregated, be=&gt;be, dout_a(BITSIZE_dout_a-1 downto 0)=&gt;dout_a,dout_a((2*BITSIZE_dout_a)-1 downto BITSIZE_dout_a)=&gt;dout_b);
+  BRAM_MEMORY_CORE_SMALL_instance : BRAM_MEMORY_CORE_SMALL generic map (PORTSIZE_bram_write=&gt;2, BITSIZE_bram_write=&gt;1, PORTSIZE_memory_addr_a=&gt;2, BITSIZE_memory_addr_a=&gt;BITSIZE_memory_addr_a, PORTSIZE_din_value_aggregated=&gt;2, BITSIZE_din_value_aggregated=&gt;BITSIZE_din_value_aggregated/2, PORTSIZE_be=&gt;2, BITSIZE_be=&gt;BITSIZE_be/2, PORTSIZE_dout_a=&gt;2, BITSIZE_dout_a=&gt;BITSIZE_dout_a, MEMORY_INIT_file=&gt;MEMORY_INIT_file, n_byte_on_databus=&gt;n_byte_on_databus, n_mem_elements=&gt;n_mem_elements, n_bytes=&gt;n_bytes, HIGH_LATENCY=&gt;HIGH_LATENCY) port map (clock=&gt;clock, bram_write(0)=&gt;bram_write, bram_write(1)=&gt;bram_write, memory_addr_a=&gt;memory_addr_a_tmp, din_value_aggregated=&gt;din_value_aggregated, be=&gt;be, dout_a=&gt;dout_a_tmp);
 end generate;
 TRUE_DUAL_PORT_BYTE_ENABLING_RAM_else : if(n_mem_elements /= 1) generate
   TRUE_DUAL_PORT_BYTE_ENABLING_RAM_instance : TRUE_DUAL_PORT_BYTE_ENABLING_RAM generic map (BITSIZE_memory_addr_a=&gt;BITSIZE_memory_addr_a, BITSIZE_memory_addr_b=&gt;BITSIZE_memory_addr_b, BITSIZE_din_value_aggregated_a=&gt;BITSIZE_din_value_aggregated/2, BITSIZE_din_value_aggregated_b=&gt;BITSIZE_din_value_aggregated/2, BITSIZE_be_a=&gt;BITSIZE_be/2, BITSIZE_be_b=&gt;BITSIZE_be/2, BITSIZE_dout_a=&gt;BITSIZE_dout_a, BITSIZE_dout_b=&gt;BITSIZE_dout_b, MEMORY_INIT_file=&gt;MEMORY_INIT_file, BRAM_BITSIZE=&gt;BRAM_BITSIZE, n_byte_on_databus=&gt;n_byte_on_databus, n_mem_elements=&gt;n_mem_elements, HIGH_LATENCY=&gt;HIGH_LATENCY) port map (clock=&gt;clock, bram_write0=&gt;bram_write, bram_write1=&gt;bram_write, memory_addr_a=&gt;memory_addr_a, memory_addr_b=&gt;memory_addr_b, din_value_aggregated_a=&gt;din_value_aggregated(BITSIZE_din_value_aggregated/2-1 downto 0), din_value_aggregated_b=&gt;din_value_aggregated(BITSIZE_din_value_aggregated-1 downto BITSIZE_din_value_aggregated/2), be_a=&gt;be(BITSIZE_be/2-1 downto 0), be_b=&gt;be(BITSIZE_be-1 downto BITSIZE_be/2), dout_a=&gt;dout_a, dout_b=&gt;dout_b);
@@ -8531,9 +8537,14 @@ begin
 end
 endgenerate
 "
-            VHDL_PROVIDED="begin
+            VHDL_PROVIDED="
+signal din_value_aggregated_tmp : std_logic_vector((n_byte_on_databus*8)-1 downto 0);
+signal be_tmp : std_logic_vector(n_byte_on_databus-1 downto 0);
+begin
+din_value_aggregated_tmp &lt;= din_value_aggregated_swapped((n_byte_on_databus/2)*8+2*BRAM_BITSIZE+memory_offset-1 downto 2*BRAM_BITSIZE+memory_offset) &amp; din_value_aggregated_swapped((n_byte_on_databus/2)*8+memory_offset-1 downto memory_offset);
+be_tmp &lt;= be_swapped(n_byte_on_databus/2+n_byte_on_databus+n_byte_on_databus_offset-1 downto n_byte_on_databus+n_byte_on_databus_offset) &amp; be_swapped(n_byte_on_databus/2+n_byte_on_databus_offset-1 downto n_byte_on_databus_offset);
 BRAM_MEMORY_CORE_SMALL_case : if (n_mem_elements = 1) generate
-  BRAM_MEMORY_CORE_SMALL_instance : BRAM_MEMORY_CORE_SMALL generic map (PORTSIZE_bram_write=&gt;PORTSIZE_bram_write, BITSIZE_bram_write=&gt;BITSIZE_bram_write, PORTSIZE_memory_addr_a=&gt;PORTSIZE_memory_addr_a, BITSIZE_memory_addr_a=&gt;BITSIZE_memory_addr_a, PORTSIZE_din_value_aggregated=&gt;PORTSIZE_din_value_aggregated_swapped, BITSIZE_din_value_aggregated=&gt;(n_byte_on_databus/2)*8, PORTSIZE_be=&gt;PORTSIZE_be_swapped, BITSIZE_be=&gt;n_byte_on_databus/PORTSIZE_be_swapped, PORTSIZE_dout_a=&gt;PORTSIZE_dout_a, BITSIZE_dout_a=&gt;n_byte_on_databus*8, MEMORY_INIT_file=&gt;MEMORY_INIT_file, n_byte_on_databus=&gt;n_byte_on_databus/2, n_mem_elements=&gt;n_mem_elements, n_bytes=&gt;n_bytes, HIGH_LATENCY=&gt;HIGH_LATENCY) port map (clock=&gt;clock, bram_write=&gt;bram_write, memory_addr_a=&gt;memory_addr_a, din_value_aggregated((n_byte_on_databus)*8-1 downto (n_byte_on_databus/2)*8)=&gt;din_value_aggregated_swapped((n_byte_on_databus/2)*8+2*BRAM_BITSIZE+memory_offset-1 downto 2*BRAM_BITSIZE+memory_offset), din_value_aggregated((n_byte_on_databus/2)*8-1 downto 0)=&gt; din_value_aggregated_swapped((n_byte_on_databus/2)*8+memory_offset-1 downto memory_offset), be(n_byte_on_databus-1 downto n_byte_on_databus/2)=&gt;be_swapped(n_byte_on_databus/2+n_byte_on_databus+n_byte_on_databus_offset-1 downto n_byte_on_databus+n_byte_on_databus_offset), be(n_byte_on_databus/2-1 downto 0)=&gt;be_swapped(n_byte_on_databus/2+n_byte_on_databus_offset-1 downto n_byte_on_databus_offset), dout_a=&gt;dout_a);
+  BRAM_MEMORY_CORE_SMALL_instance : BRAM_MEMORY_CORE_SMALL generic map (PORTSIZE_bram_write=&gt;PORTSIZE_bram_write, BITSIZE_bram_write=&gt;BITSIZE_bram_write, PORTSIZE_memory_addr_a=&gt;PORTSIZE_memory_addr_a, BITSIZE_memory_addr_a=&gt;BITSIZE_memory_addr_a, PORTSIZE_din_value_aggregated=&gt;PORTSIZE_din_value_aggregated_swapped, BITSIZE_din_value_aggregated=&gt;(n_byte_on_databus/2)*8, PORTSIZE_be=&gt;PORTSIZE_be_swapped, BITSIZE_be=&gt;n_byte_on_databus/PORTSIZE_be_swapped, PORTSIZE_dout_a=&gt;PORTSIZE_dout_a, BITSIZE_dout_a=&gt;n_byte_on_databus*8, MEMORY_INIT_file=&gt;MEMORY_INIT_file, n_byte_on_databus=&gt;n_byte_on_databus/2, n_mem_elements=&gt;n_mem_elements, n_bytes=&gt;n_bytes, HIGH_LATENCY=&gt;HIGH_LATENCY) port map (clock=&gt;clock, bram_write=&gt;bram_write, memory_addr_a=&gt;memory_addr_a, din_value_aggregated=&gt;din_value_aggregated_tmp, be=&gt;be_tmp, dout_a=&gt;dout_a);
 end generate;
 TRUE_DUAL_PORT_BYTE_ENABLING_RAM_else : if(n_mem_elements /= 1) generate
   TRUE_DUAL_PORT_BYTE_ENABLING_RAM_instance : TRUE_DUAL_PORT_BYTE_ENABLING_RAM generic map (BITSIZE_memory_addr_a=&gt;BITSIZE_memory_addr_a, BITSIZE_memory_addr_b=&gt;BITSIZE_memory_addr_a, BITSIZE_din_value_aggregated_a=&gt;(n_byte_on_databus/2)*8, BITSIZE_din_value_aggregated_b=&gt;(n_byte_on_databus/2)*8, BITSIZE_be_a=&gt;n_byte_on_databus/2, BITSIZE_be_b=&gt;n_byte_on_databus/2, BITSIZE_dout_a=&gt;(n_byte_on_databus/2)*8, BITSIZE_dout_b=&gt;(n_byte_on_databus/2)*8, MEMORY_INIT_file=&gt;MEMORY_INIT_file, BRAM_BITSIZE=&gt;BRAM_BITSIZE, n_byte_on_databus=&gt;n_byte_on_databus/2, n_mem_elements=&gt;n_mem_elements, HIGH_LATENCY=&gt;HIGH_LATENCY) port map (clock=&gt;clock, bram_write0=&gt;bram_write(0), bram_write1=&gt;bram_write(1), memory_addr_a=&gt;memory_addr_a(BITSIZE_memory_addr_a-1 downto 0), memory_addr_b=&gt;memory_addr_a(2*BITSIZE_memory_addr_a-1 downto BITSIZE_memory_addr_a), din_value_aggregated_a=&gt; din_value_aggregated_swapped((n_byte_on_databus/2)*8+memory_offset-1 downto memory_offset), din_value_aggregated_b=&gt;din_value_aggregated_swapped((n_byte_on_databus/2)*8+2*BRAM_BITSIZE+memory_offset-1 downto 2*BRAM_BITSIZE+memory_offset), be_a=&gt;be_swapped(n_byte_on_databus/2+n_byte_on_databus_offset-1 downto n_byte_on_databus_offset), be_b=&gt;be_swapped(n_byte_on_databus/2+n_byte_on_databus+n_byte_on_databus_offset-1 downto n_byte_on_databus+n_byte_on_databus_offset), dout_a=&gt;dout_a(BRAM_BITSIZE-1 downto 0), dout_b=&gt;dout_a(2*BRAM_BITSIZE-1 downto BRAM_BITSIZE));
