@@ -260,6 +260,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
    {
       tb_mem =
           tb_top->add_module_from_technology_library("SystemMEM", "TestbenchMEMMinimal", LIBRARY_STD, tb_cir, TechM);
+      tb_mem->SetParameter("QUEUE_SIZE", STR(HLSMgr->get_parameter()->getOption<unsigned int>(OPT_tb_queue_size)));
       if(interface_type == HLSFlowStep_Type::INTERFACE_CS_GENERATION)
       {
          tb_mem->SetParameter("PIPELINED", "0");
