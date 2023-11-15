@@ -314,6 +314,11 @@ namespace clang
             D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "%0")).AddString(msg);
          };
 
+         if(!FD->hasBody())
+         {
+            return;
+         }
+
          auto& SM = FD->getASTContext().getSourceManager();
          std::map<std::string, std::string> interface_PragmaMap;
          std::map<std::string, std::string> interface_PragmaMapArraySize;
@@ -364,7 +369,7 @@ namespace clang
             }
          }
 
-         if(!FD->isVariadic() && FD->hasBody())
+         if(!FD->isVariadic())
          {
             Fun2Demangled[fname] = FD->getNameInfo().getName().getAsString();
             PRINT_DBG("function: " << fname << "\n");
