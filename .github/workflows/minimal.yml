@@ -742,21 +742,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - compiler: "I386_GCC7"
+          - compiler: I386_GCC7
             script: generic_CHStone-memarch1.sh
-            args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}} -c=--assert-debug
+            args: -c=--simulator=MODELSIM -c=--compiler=I386_GCC7 -c=--assert-debug
             language: verilog
-          - compiler: "I386_GCC7"
+          - compiler: I386_GCC7-vhdl
             script: generic_CHStone-memarch1.sh
-            args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}} -c=--assert-debug -c=-wH
+            args: -c=--simulator=MODELSIM -c=--compiler=I386_GCC7 -c=--assert-debug -c=-wH
             language: vhdl
-          - compiler: "I386_CLANG13"
+          - compiler: I386_CLANG13
             script: generic_CHStone-memarch2.sh
-            args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}} -c=--assert-debug
+            args: -c=--simulator=MODELSIM -c=--compiler=I386_CLANG13 -c=--assert-debug
             language: verilog
-          - compiler: "I386_CLANG13"
+          - compiler: I386_CLANG13-vhdl
             script: generic_CHStone-memarch2.sh
-            args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}} -c=--assert-debug -c=-wH
+            args: -c=--simulator=MODELSIM -c=--compiler=I386_CLANG13 -c=--assert-debug -c=-wH
             language: vhdl
     steps:
       - name: Checkout repository
