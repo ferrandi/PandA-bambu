@@ -744,16 +744,20 @@ jobs:
         include:
           - compiler: "I386_GCC7"
             script: generic_CHStone-memarch1.sh
-            args: "-c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}} -c=--assert-debug "
+            args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}} -c=--assert-debug
+            language: verilog
           - compiler: "I386_GCC7"
             script: generic_CHStone-memarch1.sh
-            args: "-c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}} -c=--assert-debug -c=-wH"
+            args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}} -c=--assert-debug -c=-wH
+            language: vhdl
           - compiler: "I386_CLANG13"
             script: generic_CHStone-memarch2.sh
-            args: "-c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}} -c=--assert-debug"
+            args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}} -c=--assert-debug
+            language: verilog
           - compiler: "I386_CLANG13"
             script: generic_CHStone-memarch2.sh
-            args: "-c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}} -c=--assert-debug -c=-wH"
+            args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}} -c=--assert-debug -c=-wH
+            language: vhdl
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -788,7 +792,7 @@ jobs:
         shell: bash
         run: |
           OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')_CHStone-memarch_"
-          if [[ "${{matrix.args}}" = *-c=-wH* ]]; then
+          if [[ "${{matrix.language}}" = vhdl ]]; then
             OUTNAME+="-vhdl"
           else
             OUTNAME+="-verilog"
