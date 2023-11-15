@@ -237,7 +237,7 @@ reg first_read, next_first_read;
           << "assign " << _ports_out[o_rready].name << " = axi_rready;\n"
           << "assign done_port = (" << _ports_in[i_bvalid].name << " && axi_bready) || (" << _ports_in[i_rvalid].name
           << " && " << _ports_in[i_rlast].name << " && axi_rready);\n"
-          << "assign out1 = done_port ? acc_rdata : 0;\n"
+          << "assign out1 = done_port ? next_acc_rdata : 0;\n"
           << R"(
 initial begin
   _present_state = S_IDLE;
