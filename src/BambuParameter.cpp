@@ -160,7 +160,8 @@
 #define OPT_MEMORY_MAPPED_TOP (1 + OPT_MAX_ULP)
 #define OPT_MEM_DELAY_READ (1 + OPT_MEMORY_MAPPED_TOP)
 #define OPT_MEM_DELAY_WRITE (1 + OPT_MEM_DELAY_READ)
-#define OPT_MEMORY_BANKS_NUMBER (1 + OPT_MEM_DELAY_WRITE)
+#define OPT_TB_QUEUE_SIZE (1 + OPT_MEM_DELAY_WRITE)
+#define OPT_MEMORY_BANKS_NUMBER (1 + OPT_TB_QUEUE_SIZE)
 #define OPT_MIN_INHERITANCE (1 + OPT_MEMORY_BANKS_NUMBER)
 #define OPT_MOSA_FLOW (1 + OPT_MIN_INHERITANCE)
 #define OPT_NO_MIXED_DESIGN (1 + OPT_MOSA_FLOW)
@@ -482,6 +483,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Define the external memory latency when LOAD are performed (default 2).\n\n"
       << "    --mem-delay-write=value\n"
       << "        Define the external memory latency when STORE are performed (default 1).\n\n"
+      << "    --tb-queue-size=value\n"
+      << "        Define the maximum number of requests accepted by the testbench (default 4).\n\n"
       << "    --expose-globals\n"
       << "        All global variables can be accessed from outside the accelerator.\n\n"
       << "    --data-bus-bitsize=<bitsize>\n"
@@ -1059,6 +1062,7 @@ int BambuParameter::Exec()
       {"memory-mapped-top", no_argument, nullptr, OPT_MEMORY_MAPPED_TOP},
       {"mem-delay-read", required_argument, nullptr, OPT_MEM_DELAY_READ},
       {"mem-delay-write", required_argument, nullptr, OPT_MEM_DELAY_WRITE},
+      {"tb-queue-size", required_argument, nullptr, OPT_TB_QUEUE_SIZE},
       {"host-profiling", no_argument, nullptr, OPT_HOST_PROFILING},
       {"disable-bitvalue-ipa", no_argument, nullptr, OPT_DISABLE_BITVALUE_IPA},
       {"discrepancy", no_argument, nullptr, OPT_DISCREPANCY},
@@ -1900,6 +1904,11 @@ int BambuParameter::Exec()
          case OPT_MEM_DELAY_WRITE:
          {
             setOption(OPT_mem_delay_write, optarg);
+            break;
+         }
+         case OPT_TB_QUEUE_SIZE:
+         {
+            setOption(OPT_tb_queue_size, optarg);
             break;
          }
 #if HAVE_HOST_PROFILING_BUILT
@@ -3754,6 +3763,7 @@ void BambuParameter::SetDefaults()
 
    setOption(OPT_mem_delay_read, 2);
    setOption(OPT_mem_delay_write, 1);
+   setOption(OPT_tb_queue_size, 4);
 
    /// -- Memory allocation -- //
    setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION);

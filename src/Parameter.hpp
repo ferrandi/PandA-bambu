@@ -114,7 +114,7 @@ enum class CompilerWrapper_CompilerTarget;
        weighted_clique_register_algorithm)(disable_function_proxy)(memory_mapped_top)(expose_globals)(connect_iob)(    \
        profiling_output)(disable_bounded_function)(discrepancy)(discrepancy_force)(discrepancy_hw)(                    \
        discrepancy_no_load_pointers)(discrepancy_only)(discrepancy_permissive_ptrs)(generate_taste_architecture)(      \
-       initial_internal_address)(mem_delay_read)(mem_delay_write)(memory_banks_number)(mixed_design)(                  \
+       initial_internal_address)(mem_delay_read)(mem_delay_write)(tb_queue_size)(memory_banks_number)(mixed_design)(   \
        no_parse_c_python)(num_accelerators)(post_rescheduling)(technology_file)(tb_extra_gcc_options)(                 \
        timing_violation_abort)(top_design_name)(visualizer)(serialize_output)(use_ALUs)(range_analysis_mode)(          \
        fp_format)(fp_format_propagate)(fp_format_interface)(fp_rounding_mode)(fp_exception_mode)(parallel_backend)(    \

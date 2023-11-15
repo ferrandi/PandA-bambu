@@ -185,7 +185,7 @@ void TestbenchAXIMModuleGenerator::InternalExec(std::ostream& out, structural_ob
        << "localparam WRITE_DELAY="
        << std::max(1U, (HLSMgr->get_parameter()->getOption<unsigned int>(OPT_mem_delay_write) - 1)) << ",\n"
        << "  READ_DELAY=" << (HLSMgr->get_parameter()->getOption<unsigned int>(OPT_mem_delay_read) - 1) << ",\n"
-       << "  QUEUE_SIZE=2,\n"
+       << "  QUEUE_SIZE=" << HLSMgr->get_parameter()->getOption<unsigned int>(OPT_tb_queue_size) << ",\n"
        << "  BITSIZE_data=BITSIZE_" << port_prefix << "_rdata,\n"
        << "  BITSIZE_counter=32,\n"
        << "  BITSIZE_burst=BITSIZE_" << port_prefix << "_arburst,\n"
