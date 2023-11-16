@@ -3542,19 +3542,6 @@ void BambuParameter::CheckParameters()
          THROW_ERROR("the number of channels cannot be specified for MEM_ACC_11");
       }
    }
-   if(isOption(OPT_channels_number) &&
-      (getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_N1 ||
-       getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN))
-   {
-      if(getOption<unsigned int>(OPT_channels_number) > 2 &&
-         getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::NO_BRAM &&
-         getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) !=
-             MemoryAllocation_Policy::EXT_PIPELINED_BRAM)
-      {
-         THROW_ERROR("no more than two channels is supported for MEM_ACC_N1 and MEM_ACC_NN: try to add this option "
-                     "--memory-allocation-policy=NO_BRAM or --memory-allocation-policy=EXT_PIPELINED_BRAM");
-      }
-   }
 
    if(getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
    {
