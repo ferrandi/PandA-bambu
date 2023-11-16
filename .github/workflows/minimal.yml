@@ -785,7 +785,7 @@ jobs:
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
-          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}} ${{matrix.args}}
+          ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}} ${{matrix.args}}
       - name: Generate out name
         if: ${{ !cancelled() }}
         id: get
