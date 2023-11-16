@@ -131,6 +131,7 @@ std::string VIVADO_xsim_wrapper::GenerateScript(std::ostream& script, const std:
    std::string beh_cflags =
        "-DXILINX_SIMULATOR " + (xilinx_root.size() ? ("-isystem " + xilinx_root + "/data/xsim/include") : "");
    const auto cflags = GenerateLibraryBuildScript(script, "${BEH_DIR}", beh_cflags);
+   startUserTestbench(script);
    const auto vflags = [&]() {
       std::string flags;
       if(cflags.find("-m32") != std::string::npos)
