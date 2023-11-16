@@ -6372,6 +6372,7 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1), .PORTSIZE_in1(PORTSIZE_in
           <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="n_elements">32</parameter>
           <parameter name="READ_ONLY_MEMORY">0</parameter>
+          <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -6390,8 +6391,21 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1), .PORTSIZE_in1(PORTSIZE_in
           <port_o id="data_out" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="STD_SP_BRAM data_in address_inr address_inw data_out MEMORY_INIT_file n_elements READ_ONLY_MEMORY" VERILOG_PROVIDED="
-reg [BITSIZE_data_out-1:0] data_out_r;
+          <NP_functionality LIBRARY="STD_SP_BRAM data_in address_inr address_inw data_out MEMORY_INIT_file n_elements READ_ONLY_MEMORY HIGH_LATENCY" VERILOG_PROVIDED="
+wire [BITSIZE_address_inr-1:0] address_inr_mem;
+reg [BITSIZE_address_inr-1:0] address_inr1;
+wire [BITSIZE_address_inw-1:0] address_inw_mem;
+reg [BITSIZE_address_inw-1:0] address_inw1;
+
+wire write_enable_mem;
+reg write_enable1;
+
+reg [BITSIZE_data_out-1:0] data_out_mem;
+reg [BITSIZE_data_out-1:0] data_out1;
+
+wire [BITSIZE_data_in-1:0] data_in_mem;
+reg [BITSIZE_data_in-1:0] data_in1;
+
 reg [BITSIZE_data_out-1:0] memory [0:n_elements-1]/* synthesis syn_ramstyle =  &quot;no_rw_check &quot; */;
 initial
 begin
@@ -6402,14 +6416,56 @@ always @(posedge clock)
 begin
   if(READ_ONLY_MEMORY==0)
   begin
-    if (write_enable)
-      memory[address_inw] &lt;= data_in;
+    if (write_enable_mem)
+      memory[address_inw_mem] &lt;= data_in_mem;
   end
-  data_out_r &lt;= memory[address_inr];
+  data_out_mem &lt;= memory[address_inr_mem];
 end
-assign data_out = data_out_r;
+
+assign data_out = HIGH_LATENCY==0 ? data_out_mem : data_out1;
+always @(posedge clock)
+  data_out1 &lt;= data_out_mem;
+
+
+generate
+  if(HIGH_LATENCY==2)
+  begin
+    always @ (posedge clock)
+    begin
+       address_inr1 &lt;= address_inr;
+       address_inw1 &lt;= address_inw;
+       write_enable1 &lt;= write_enable;
+       data_in1 &lt;= data_in;
+    end
+    assign address_inr_mem = address_inr1;
+    assign address_inw_mem = address_inw1;
+    assign write_enable_mem = write_enable1;
+    assign data_in_mem = data_in1;
+  end
+  else
+  begin
+    assign address_inr_mem = address_inr;
+    assign address_inw_mem = address_inw;
+    assign write_enable_mem = write_enable;
+    assign data_in_mem = data_in;
+  end
+endgenerate
 " VHDL_PROVIDED="
-  signal data_out_r : std_logic_vector(BITSIZE_data_out-1 downto 0);
+  signal address_inr_mem : std_logic_vector(BITSIZE_address_inr-1 downto 0);
+  signal address_inr1 : std_logic_vector(BITSIZE_address_inr-1 downto 0);
+  signal address_inw_mem : std_logic_vector(BITSIZE_address_inw-1 downto 0);
+  signal address_inw1 : std_logic_vector(BITSIZE_address_inw-1 downto 0);
+
+
+  signal write_enable_mem : std_logic;
+  signal write_enable1 : std_logic;
+
+  signal data_out_mem : std_logic_vector(BITSIZE_data_out-1 downto 0);
+  signal data_out1 : std_logic_vector(BITSIZE_data_out-1 downto 0);
+
+  signal data_in_mem : std_logic_vector(BITSIZE_data_in-1 downto 0);
+  signal data_in1 : std_logic_vector(BITSIZE_data_in-1 downto 0);
+  
   type mem_type is array (n_elements-1 downto 0) of std_logic_vector(BITSIZE_data_out-1 downto 0);
 
   impure function InitMemFromFile (MemFileName : in string) return mem_type is
@@ -6427,32 +6483,58 @@ assign data_out = data_out_r;
   signal mem : mem_type := InitMemFromFile(MEMORY_INIT_file);
 
 begin
+
+  DelayProcess : process(clock)
+  begin
+    if (clock&apos;event and clock=&apos;1&apos;) then
+       if(HIGH_LATENCY=2) then
+         address_inr1 &lt;= address_inr;
+         address_inw1 &lt;= address_inw;
+         write_enable1 &lt;= write_enable;
+         data_in1 &lt;= data_in;
+       end if;
+    end if;
+  end process;
+
+  address_inr_mem &lt;= address_inr1 when (HIGH_LATENCY=2) else address_inr;
+  address_inw_mem &lt;= address_inw1 when (HIGH_LATENCY=2) else address_inw;
+  write_enable_mem &lt;= write_enable1 when (HIGH_LATENCY=2) else write_enable;
+  data_in_mem &lt;= din_a1 when (HIGH_LATENCY=2) else data_in;
+
+  data_out &lt;= data_out_mem when (HIGH_LATENCY=0) else data_out1;
+
+  L1_registering : process(clock)
+  begin
+    if (clock&apos;event and clock=&apos;1&apos;) then
+      data_out1 &lt;= data_out_mem;
+    end if;
+  end process;
+
   L1_single_proc : process(clock)
   begin
     if (clock&apos;event and clock=&apos;1&apos;) then
       if(READ_ONLY_MEMORY=0) then
-        if(write_enable=&apos;1&apos;) then
+        if(write_enable_mem=&apos;1&apos;) then
 -- synthesis translate_off
-          if (to_integer(unsigned(address_inw)) &lt; n_elements) then
+          if (to_integer(unsigned(address_inw_mem)) &lt; n_elements) then
 -- synthesis translate_on
-            mem(to_integer(unsigned(address_inw))) &lt;= data_in;
+            mem(to_integer(unsigned(address_inw_mem))) &lt;= data_in_mem;
 -- synthesis translate_off
           end if;
 -- synthesis translate_on
         end if;
       end if;
 -- synthesis translate_off
-      if (to_integer(unsigned(address_inr)) &lt; n_elements) then
+      if (to_integer(unsigned(address_inr_mem)) &lt; n_elements) then
 -- synthesis translate_on
-        data_out_r &lt;= mem(to_integer(unsigned(address_inr)));
+        data_out_mem &lt;= mem(to_integer(unsigned(address_inr_mem)));
 -- synthesis translate_off
       else
-        data_out_r &lt;= (others =&gt; &apos;X&apos;);
+        data_out_mem &lt;= (others =&gt; &apos;X&apos;);
       end if;
 -- synthesis translate_on
     end if;
   end process;
-  data_out &lt;= data_out_r;
 "/>
         </component_o>
       </circuit>
@@ -6469,6 +6551,7 @@ begin
           <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="n_elements">32</parameter>
           <parameter name="READ_ONLY_MEMORY">0</parameter>
+          <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
          </port_o>
@@ -6487,9 +6570,23 @@ begin
           <port_vector_o id="data_out" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="STD_DP_BRAM write_enable data_in address_inr address_inw data_out MEMORY_INIT_file n_elements READ_ONLY_MEMORY" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="STD_DP_BRAM write_enable data_in address_inr address_inw data_out MEMORY_INIT_file n_elements READ_ONLY_MEMORY HIGH_LATENCY" 
+          VERILOG_PROVIDED="
 integer p1;
-reg [PORTSIZE_data_out*BITSIZE_data_out-1:0] data_out_r;
+wire [2*BITSIZE_address_inr-1:0] address_inr_mem;
+reg [2*BITSIZE_address_inr-1:0] address_inr1;
+wire [2*BITSIZE_address_inw-1:0] address_inw_mem;
+reg [2*BITSIZE_address_inw-1:0] address_inw1;
+
+wire [1:0] write_enable_mem;
+reg [1:0] write_enable1;
+
+reg [2*BITSIZE_data_out-1:0] data_out_mem;
+reg [2*BITSIZE_data_out-1:0] data_out1;
+
+wire [2*BITSIZE_data_in-1:0] data_in_mem;
+reg [2*BITSIZE_data_in-1:0] data_in1;
+
 reg [BITSIZE_data_out-1:0] memory [0:n_elements-1] /* synthesis syn_ramstyle = &quot;no_rw_check &quot; */;
 
 initial
@@ -6501,24 +6598,37 @@ always @(posedge clock)
 begin
   if(READ_ONLY_MEMORY==0)
   begin
-    if(write_enable[0])
-      memory[address_inw[BITSIZE_address_inw*0+:BITSIZE_address_inw]] &lt;= data_in[BITSIZE_data_in*0+:BITSIZE_data_in];
+    if(write_enable_mem[0])
+      memory[address_inw_mem[BITSIZE_address_inw*0+:BITSIZE_address_inw]] &lt;= data_in_mem[BITSIZE_data_in*0+:BITSIZE_data_in];
   end
-  data_out_r[BITSIZE_data_out*0+:BITSIZE_data_out] &lt;= memory[address_inr[BITSIZE_address_inr*0+:BITSIZE_address_inr]];
+  data_out_mem[BITSIZE_data_out*0+:BITSIZE_data_out] &lt;= memory[address_inr_mem[BITSIZE_address_inr*0+:BITSIZE_address_inr]];
 end
 always @(posedge clock)
 begin
     if(READ_ONLY_MEMORY==0)
     begin
-      if(write_enable[1])
-        memory[address_inw[BITSIZE_address_inw*1+:BITSIZE_address_inw]] &lt;= data_in[BITSIZE_data_in*1+:BITSIZE_data_in];
+      if(write_enable_mem[1])
+        memory[address_inw_mem[BITSIZE_address_inw*1+:BITSIZE_address_inw]] &lt;= data_in_mem[BITSIZE_data_in*1+:BITSIZE_data_in];
     end
-    data_out_r[BITSIZE_data_out*1+:BITSIZE_data_out] &lt;= memory[address_inr[BITSIZE_address_inr*1+:BITSIZE_address_inr]];
+    data_out_mem[BITSIZE_data_out*1+:BITSIZE_data_out] &lt;= memory[address_inr_mem[BITSIZE_address_inr*1+:BITSIZE_address_inr]];
 end
 
-assign data_out = data_out_r;
 " VHDL_PROVIDED="
-  signal data_out_r : std_logic_vector(PORTSIZE_data_out*BITSIZE_data_out-1 downto 0);
+  signal address_inr_mem : std_logic_vector(2*BITSIZE_address_inr-1 downto 0);
+  signal address_inr1 : std_logic_vector(2*BITSIZE_address_inr-1 downto 0);
+  signal address_inw_mem : std_logic_vector(2*BITSIZE_address_inw-1 downto 0);
+  signal address_inw1 : std_logic_vector(2*BITSIZE_address_inw-1 downto 0);
+
+
+  signal write_enable_mem : std_logic_vector(1 downto 0);
+  signal write_enable1 : std_logic_vector(1 downto 0);
+
+  signal data_out_mem : std_logic_vector(2*BITSIZE_data_out-1 downto 0);
+  signal data_out1 : std_logic_vector(2*BITSIZE_data_out-1 downto 0);
+
+  signal data_in_mem : std_logic_vector(2*BITSIZE_data_in-1 downto 0);
+  signal data_in1 : std_logic_vector(2*BITSIZE_data_in-1 downto 0);
+
   type mem_type is array (n_elements-1 downto 0) of std_logic_vector(BITSIZE_data_out-1 downto 0);
 
   impure function InitMemFromFile (MemFileName : in string) return mem_type is
@@ -6536,27 +6646,54 @@ assign data_out = data_out_r;
   signal mem : mem_type := InitMemFromFile(MEMORY_INIT_file);
 
 begin
+
+  DelayProcess : process(clock)
+  begin
+    if (clock&apos;event and clock=&apos;1&apos;) then
+       if(HIGH_LATENCY=2) then
+         address_inr1 &lt;= address_inr;
+         address_inw1 &lt;= address_inw;
+         write_enable1 &lt;= write_enable;
+         data_in1 &lt;= data_in;
+       end if;
+    end if;
+  end process;
+
+  address_inr_mem &lt;= address_inr1 when (HIGH_LATENCY=2) else address_inr;
+  address_inw_mem &lt;= address_inw1 when (HIGH_LATENCY=2) else address_inw;
+  write_enable_mem &lt;= write_enable1 when (HIGH_LATENCY=2) else write_enable;
+  data_in_mem &lt;= din_a1 when (HIGH_LATENCY=2) else data_in;
+
+  data_out &lt;= data_out_mem when (HIGH_LATENCY=0) else data_out1;
+
+  L1_registering : process(clock)
+  begin
+    if (clock&apos;event and clock=&apos;1&apos;) then
+      data_out1 &lt;= data_out_mem;
+    end if;
+  end process;
+
   L1_single_proc : process(clock)
   begin
     if (clock&apos;event and clock=&apos;1&apos;) then
         if(READ_ONLY_MEMORY=0) then
-          if(write_enable(0)=&apos;1&apos;) then
+          if(write_enable_mem(0)=&apos;1&apos;) then
 -- synthesis translate_off
-            if (to_integer(unsigned(address_inw((0+1)*BITSIZE_address_inw-1 downto 0*BITSIZE_address_inw))) &lt; n_elements) then
+            if (to_integer(unsigned(address_inw_mem((0+1)*BITSIZE_address_inw-1 downto 0*BITSIZE_address_inw))) &lt; n_elements) then
 -- synthesis translate_on
-              mem(to_integer(unsigned(address_inw((0+1)*BITSIZE_address_inw-1 downto 0*BITSIZE_address_inw)))) &lt;= data_in((0+1)*BITSIZE_data_in-1 downto 0*BITSIZE_data_in);
+              mem(to_integer(unsigned(address_inw_mem((0+1)*BITSIZE_address_inw-1 downto 0*BITSIZE_address_inw)))) &lt;= data_in_mem((0+1)*BITSIZE_data_in-1 downto 0*BITSIZE_data_in);
 -- synthesis translate_off
             end if;
 -- synthesis translate_on
           end if;
         end if;
 -- synthesis translate_off
-        if (to_integer(unsigned(address_inr((0+1)*BITSIZE_address_inr-1 downto 0*BITSIZE_address_inr))) &lt; n_elements) then
+        if (to_integer(unsigned(address_inr_mem((0+1)*BITSIZE_address_inr-1 downto 0*BITSIZE_address_inr))) &lt; n_elements) then
 -- synthesis translate_on
-          data_out_r((0+1)*BITSIZE_data_out-1 downto 0*BITSIZE_data_out) &lt;= mem(to_integer(unsigned(address_inr((0+1)*BITSIZE_address_inr-1 downto 0*BITSIZE_address_inr))));
+          data_out_mem((0+1)*BITSIZE_data_out-1 downto 0*BITSIZE_data_out) &lt;= mem(to_integer(unsigned(address_inr_mem((0+1)*BITSIZE_address_inr-1 downto 0*BITSIZE_address_inr))));
 -- synthesis translate_off
         else
-          data_out_r((0+1)*BITSIZE_data_out-1 downto 0*BITSIZE_data_out) &lt;= (others =&gt; &apos;X&apos;);
+          data_out_mem((0+1)*BITSIZE_data_out-1 downto 0*BITSIZE_data_out) &lt;= (others =&gt; &apos;X&apos;);
         end if;
 -- synthesis translate_on
     end if;
@@ -6565,28 +6702,27 @@ begin
   begin
     if (clock&apos;event and clock=&apos;1&apos;) then
         if(READ_ONLY_MEMORY=0) then
-          if(write_enable(1)=&apos;1&apos;) then
+          if(write_enable_mem(1)=&apos;1&apos;) then
 -- synthesis translate_off
-            if (to_integer(unsigned(address_inw((1+1)*BITSIZE_address_inw-1 downto 1*BITSIZE_address_inw))) &lt; n_elements) then
+            if (to_integer(unsigned(address_inw_mem((1+1)*BITSIZE_address_inw-1 downto 1*BITSIZE_address_inw))) &lt; n_elements) then
 -- synthesis translate_on
-              mem(to_integer(unsigned(address_inw((1+1)*BITSIZE_address_inw-1 downto 1*BITSIZE_address_inw)))) &lt;= data_in((1+1)*BITSIZE_data_in-1 downto 1*BITSIZE_data_in);
+              mem(to_integer(unsigned(address_inw_mem((1+1)*BITSIZE_address_inw-1 downto 1*BITSIZE_address_inw)))) &lt;= data_in_mem((1+1)*BITSIZE_data_in-1 downto 1*BITSIZE_data_in);
 -- synthesis translate_off
             end if;
 -- synthesis translate_on
           end if;
         end if;
 -- synthesis translate_off
-        if (to_integer(unsigned(address_inr((1+1)*BITSIZE_address_inr-1 downto 1*BITSIZE_address_inr))) &lt; n_elements) then
+        if (to_integer(unsigned(address_inr_mem((1+1)*BITSIZE_address_inr-1 downto 1*BITSIZE_address_inr))) &lt; n_elements) then
 -- synthesis translate_on
-          data_out_r((1+1)*BITSIZE_data_out-1 downto 1*BITSIZE_data_out) &lt;= mem(to_integer(unsigned(address_inr((1+1)*BITSIZE_address_inr-1 downto 1*BITSIZE_address_inr))));
+          data_out_mem((1+1)*BITSIZE_data_out-1 downto 1*BITSIZE_data_out) &lt;= mem(to_integer(unsigned(address_inr_mem((1+1)*BITSIZE_address_inr-1 downto 1*BITSIZE_address_inr))));
 -- synthesis translate_off
         else
-          data_out_r((1+1)*BITSIZE_data_out-1 downto 1*BITSIZE_data_out) &lt;= (others =&gt; &apos;X&apos;);
+          data_out_mem((1+1)*BITSIZE_data_out-1 downto 1*BITSIZE_data_out) &lt;= (others =&gt; &apos;X&apos;);
         end if;
 -- synthesis translate_on
     end if;
   end process;
-  data_out &lt;= data_out_r;
 "/>
         </component_o>
       </circuit>
@@ -6956,6 +7092,7 @@ STD_LIVE_VALUE_TABLE_BYTE #(.BITSIZE_we_a(BITSIZE_we_a), .PORTSIZE_we_a(PORTSIZE
           <structural_type_descriptor id_type="STD_LIVE_VALUE_TABLE"/>
           <parameter name="n_mem_elements">32</parameter>
           <parameter name="READ_ONLY_MEMORY">0</parameter>
+          <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -6971,16 +7108,22 @@ STD_LIVE_VALUE_TABLE_BYTE #(.BITSIZE_we_a(BITSIZE_we_a), .PORTSIZE_we_a(PORTSIZE
           <port_vector_o id="read_selector" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="STD_LIVE_VALUE_TABLE we_a waddr raddr read_selector n_mem_elements READ_ONLY_MEMORY" 
+          <NP_functionality LIBRARY="STD_LIVE_VALUE_TABLE we_a waddr raddr read_selector n_mem_elements READ_ONLY_MEMORY HIGH_LATENCY" 
           VERILOG_PROVIDED="
 parameter max_portsize = PORTSIZE_waddr &gt; PORTSIZE_raddr ? PORTSIZE_waddr : PORTSIZE_raddr;
-reg [(PORTSIZE_read_selector*BITSIZE_read_selector)+(-1):0] read_selector;
-reg [(PORTSIZE_read_selector*BITSIZE_read_selector)+(-1):0] read_selector_registered;
+
+reg [(PORTSIZE_read_selector*BITSIZE_read_selector)+(-1):0] read_selector_mem;
+reg [(PORTSIZE_read_selector*BITSIZE_read_selector)+(-1):0] read_selector1;
+wire [PORTSIZE_we_a-1:0] we_a_mem;
 reg [PORTSIZE_we_a-1:0] we_a1;
+wire [(PORTSIZE_waddr*BITSIZE_waddr)+(-1):0] waddr_mem;
 reg [(PORTSIZE_waddr*BITSIZE_waddr)+(-1):0] waddr1;
+wire [(PORTSIZE_raddr*BITSIZE_raddr)+(-1):0] raddr_mem;
 reg [(PORTSIZE_raddr*BITSIZE_raddr)+(-1):0] raddr1;
+
 reg [BITSIZE_read_selector-1:0] live_value_table [0:n_mem_elements-1] /* synthesis syn_ramstyle = &quot;registers,no_rw_check&quot; */;
 integer index, i1;
+
 initial
 begin
   for(index=0; index&lt;n_mem_elements; index=index+1)
@@ -6995,15 +7138,40 @@ begin
   begin : L1
     if(i1 &lt; PORTSIZE_waddr&amp;&amp; READ_ONLY_MEMORY==0)
     begin
-      if(we_a[i1])
-        live_value_table[waddr[i1*BITSIZE_waddr +: BITSIZE_waddr]] &lt;= i1[BITSIZE_read_selector-1:0];
+      if(we_a_mem[i1])
+        live_value_table[waddr_mem[i1*BITSIZE_waddr +: BITSIZE_waddr]] &lt;= i1[BITSIZE_read_selector-1:0];
     end
     if(i1 &lt; PORTSIZE_raddr)
     begin
-      read_selector[i1*BITSIZE_read_selector +: BITSIZE_read_selector] &lt;= live_value_table[raddr[i1*BITSIZE_raddr +: BITSIZE_raddr]];
+      read_selector_mem[i1*BITSIZE_read_selector +: BITSIZE_read_selector] &lt;= live_value_table[raddr_mem[i1*BITSIZE_raddr +: BITSIZE_raddr]];
     end
   end
 end
+
+assign read_selector = HIGH_LATENCY==0 ? read_selector_mem : read_selector1;
+always @(posedge clock)
+  read_selector1 &lt;= read_selector_mem;
+
+generate
+  if(HIGH_LATENCY==2)
+  begin
+    always @ (posedge clock)
+    begin
+       raddr1 &lt;= raddr;
+       waddr1 &lt;= waddr;
+       we_a1 &lt;= we_a;
+    end
+    assign raddr_mem = raddr1;
+    assign waddr_mem = waddr1;
+    assign we_a_mem = we_a1;
+  end
+  else
+  begin
+    assign raddr_mem = raddr;
+    assign waddr_mem = waddr;
+    assign we_a_mem = we_a;
+  end
+endgenerate
 "/>
         </component_o>
       </circuit>
@@ -7020,6 +7188,7 @@ end
           <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="n_mem_elements">32</parameter>
           <parameter name="READ_ONLY_MEMORY">0</parameter>
+          <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -7038,7 +7207,7 @@ end
           <port_vector_o id="dout_a" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="STD_NR_BRAM raddr waddr din_value dout_a MEMORY_INIT_file n_mem_elements READ_ONLY_MEMORY" IP_COMPONENT="STD_SP_BRAM" VERILOG_PROVIDED="generate
+          <NP_functionality LIBRARY="STD_NR_BRAM raddr waddr din_value dout_a MEMORY_INIT_file n_mem_elements READ_ONLY_MEMORY HIGH_LATENCY" IP_COMPONENT="STD_SP_BRAM" VERILOG_PROVIDED="generate
 genvar i1;
   for (i1=0; i1&lt;PORTSIZE_raddr; i1=i1+1)
   begin : L1
@@ -7049,7 +7218,9 @@ genvar i1;
       .BITSIZE_data_out(BITSIZE_dout_a), 
       .MEMORY_INIT_file(MEMORY_INIT_file), 
       .n_elements(n_mem_elements), 
-      .READ_ONLY_MEMORY(READ_ONLY_MEMORY)) 
+      .READ_ONLY_MEMORY(READ_ONLY_MEMORY),
+      .HIGH_LATENCY(HIGH_LATENCY)
+      ) 
     STD_SP_BRAM_instance (
       .clock(clock), 
       .write_enable(we_a), 
@@ -7074,6 +7245,7 @@ endgenerate"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="n_mem_elements">32</parameter>
           <parameter name="READ_ONLY_MEMORY">0</parameter>
+          <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -7092,7 +7264,7 @@ endgenerate"/>
           <port_vector_o id="dout_value" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="STD_NRNW_BRAM we_a raddr waddr din_value dout_value MEMORY_INIT_file n_mem_elements READ_ONLY_MEMORY" 
+          <NP_functionality LIBRARY="STD_NRNW_BRAM we_a raddr waddr din_value dout_value MEMORY_INIT_file n_mem_elements READ_ONLY_MEMORY HIGH_LATENCY" 
           IP_COMPONENT="STD_NR_BRAM,STD_N21_BYTEMUX,STD_LIVE_VALUE_TABLE" 
           VERILOG_PROVIDED="
 `ifndef _SIM_HAVE_CLOG2
@@ -7127,7 +7299,8 @@ genvar i1,i2;
       .PORTSIZE_dout_a(PORTSIZE_raddr), 
       .MEMORY_INIT_file(MEMORY_INIT_file), 
       .n_mem_elements(n_mem_elements),
-      .READ_ONLY_MEMORY(READ_ONLY_MEMORY) 
+      .READ_ONLY_MEMORY(READ_ONLY_MEMORY),
+      .HIGH_LATENCY(HIGH_LATENCY)
     )
     STD_NR_BRAM_instance (
       .clock(clock), 
@@ -7169,13 +7342,17 @@ STD_LIVE_VALUE_TABLE #(
   .BITSIZE_read_selector(nbit_write), 
   .PORTSIZE_read_selector(PORTSIZE_raddr), 
   .n_mem_elements(n_mem_elements),
-  .READ_ONLY_MEMORY(READ_ONLY_MEMORY)) 
+  .READ_ONLY_MEMORY(READ_ONLY_MEMORY),
+  .HIGH_LATENCY(HIGH_LATENCY)
+) 
 STD_LIVE_VALUE_TABLE_instance (
   .clock(clock), 
   .we_a(we_a), 
   .waddr(waddr), 
   .raddr(raddr), 
-  .read_selector(read_selector));"/>
+  .read_selector(read_selector)
+);
+"/>
         </component_o>
       </circuit>
     </cell>
@@ -7191,6 +7368,7 @@ STD_LIVE_VALUE_TABLE_instance (
           <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
           <parameter name="n_mem_elements">32</parameter>
           <parameter name="READ_ONLY_MEMORY">0</parameter>
+          <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -7209,7 +7387,7 @@ STD_LIVE_VALUE_TABLE_instance (
           <port_vector_o id="dout_value" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="STD_NRNW_BRAM_GEN we_a raddr waddr din_value dout_value MEMORY_INIT_file n_mem_elements READ_ONLY_MEMORY" 
+          <NP_functionality LIBRARY="STD_NRNW_BRAM_GEN we_a raddr waddr din_value dout_value MEMORY_INIT_file n_mem_elements READ_ONLY_MEMORY HIGH_LATENCY" 
           IP_COMPONENT="STD_NRNW_BRAM,STD_DP_BRAM" 
           VERILOG_PROVIDED="
 generate
@@ -7228,7 +7406,8 @@ begin
     .BITSIZE_address_inw(BITSIZE_waddr), 
     .n_elements(n_mem_elements), 
     .MEMORY_INIT_file(MEMORY_INIT_file), 
-    .READ_ONLY_MEMORY(READ_ONLY_MEMORY)
+    .READ_ONLY_MEMORY(READ_ONLY_MEMORY),
+    .HIGH_LATENCY(HIGH_LATENCY)
 
   ) STD_DP_BRAM_instance (
     .clock(clock), 
@@ -7254,7 +7433,8 @@ begin
     .BITSIZE_dout_value(BITSIZE_dout_value), 
     .MEMORY_INIT_file(MEMORY_INIT_file), 
     .n_mem_elements(n_mem_elements),
-    .READ_ONLY_MEMORY(READ_ONLY_MEMORY)
+    .READ_ONLY_MEMORY(READ_ONLY_MEMORY),
+    .HIGH_LATENCY(HIGH_LATENCY)
   ) STD_NRNW_BRAM_inst (
     .clock(clock), 
     .we_a(we_a), 
@@ -10380,20 +10560,12 @@ parameter nbit_addr = BITSIZE_in2 &gt; BITSIZE_proxy_in2 ? BITSIZE_in2 : BITSIZE
 `endif
   
 wire [nbit_read_addr-1:0] memory_addr_a;
-wire [nbit_read_addr-1:0] memory_addr_a_mem;
-reg [nbit_read_addr-1:0] memory_addr_a1;
-
 wire bram_write;
-wire bram_write_mem;
-reg bram_write1;
-wire [data_size-1:0] dout_a_tmp;
 wire [data_size-1:0] dout_a;
-reg [data_size-1:0] dout_a_registered;
+wire [data_size-1:0] din_a;
+
 wire [nbit_addr-1:0] relative_addr;
 wire [nbit_addr-1:0] tmp_addr;
-wire [data_size-1:0] din_a;
-wire [data_size-1:0] din_a_mem;
-reg [data_size-1:0] din_a1;
 
 STD_SP_BRAM #(
   .BITSIZE_data_in(data_size), 
@@ -10402,43 +10574,19 @@ STD_SP_BRAM #(
   .BITSIZE_address_inw(nbit_read_addr), 
   .n_elements(n_elements), 
   .MEMORY_INIT_file(MEMORY_INIT_file), 
-  .READ_ONLY_MEMORY(READ_ONLY_MEMORY)
+  .READ_ONLY_MEMORY(READ_ONLY_MEMORY),
+  .HIGH_LATENCY(HIGH_LATENCY)
 ) STD_SP_BRAM_instance (
-  .clock(clock), 
-  .write_enable(bram_write_mem), 
-  .data_in(din_a_mem), 
-  .address_inr(memory_addr_a_mem), 
-  .address_inw(memory_addr_a_mem),
-  .data_out(dout_a_tmp)
+  .clock(clock),
+  .write_enable(bram_write),
+  .data_in(din_a),
+  .address_inr(memory_addr_a),
+  .address_inw(memory_addr_a),
+  .data_out(dout_a)
 );
 
 assign din_a = proxy_sel_STORE ? proxy_in1 : in1;
 assign bram_write = sel_STORE || proxy_sel_STORE;
-generate
-  if(HIGH_LATENCY==2)
-  begin
-    always @ (posedge clock)
-    begin
-       memory_addr_a1 &lt;= memory_addr_a;
-       bram_write1 &lt;= bram_write;
-       din_a1 &lt;= din_a;
-    end
-    assign memory_addr_a_mem = memory_addr_a1;
-    assign bram_write_mem = bram_write1;
-    assign din_a_mem = din_a1;
-  end
-  else
-  begin
-    assign memory_addr_a_mem = memory_addr_a;
-    assign bram_write_mem = bram_write;
-    assign din_a_mem = din_a;
-  end
-endgenerate
-
-assign dout_a = HIGH_LATENCY==0 ? dout_a_tmp : dout_a_registered;
-
-always @(posedge clock)
-  dout_a_registered &lt;= dout_a_tmp;
 
 assign tmp_addr = (proxy_sel_LOAD||proxy_sel_STORE) ? proxy_in2 : in2;
 generate
@@ -10463,7 +10611,8 @@ assign Sout_DataRdy = Sin_DataRdy;
 // psl default clock = (posedge clock);
 // psl ERROR_SDS_data_ram_size: assert never {(data_size != in3 &amp;&amp; (sel_LOAD || sel_STORE)) || (data_size != proxy_in3 &amp;&amp; (proxy_sel_LOAD || proxy_sel_STORE))};
 // psl ERROR_SDS_alignment: assert never {(((in2-address_space_begin) %(ALIGNMENT/8) != 0) &amp;&amp; (sel_LOAD || sel_STORE)) || (((proxy_in2-address_space_begin) %(ALIGNMENT/8) != 0) &amp;&amp; (proxy_sel_LOAD || proxy_sel_STORE))};"
-            VHDL_PROVIDED="  function integer_ternary_operator(cond : boolean; op1 : integer; op2 : integer) return integer is
+            VHDL_PROVIDED="
+  function integer_ternary_operator(cond : boolean; op1 : integer; op2 : integer) return integer is
   begin
     if cond then
       return op1;
@@ -10479,53 +10628,34 @@ assign Sout_DataRdy = Sin_DataRdy;
   constant nbits_address_space_rangesize  : integer := integer(ceil(log2(real(address_space_rangesize)))); 
   
   signal memory_addr_a : std_logic_vector(nbit_read_addr-1 downto 0);
-  signal memory_addr_a_mem : std_logic_vector(nbit_read_addr-1 downto 0);
-  signal memory_addr_a1 : std_logic_vector(nbit_read_addr-1 downto 0);
-
   signal bram_write : std_logic;
-  signal bram_write_mem : std_logic;
-  signal bram_write1 : std_logic;
-
-  signal dout_a_tmp : std_logic_vector(data_size-1 downto 0) ;
   signal dout_a : std_logic_vector(data_size-1 downto 0);
-  signal dout_a_registered : std_logic_vector(data_size-1 downto 0);
+  signal din_a : std_logic_vector(data_size-1 downto 0);
 
   signal relative_addr : std_logic_vector(nbit_addr-1 downto 0);
   signal tmp_addr : std_logic_vector(nbit_addr-1 downto 0);
-  signal din_a : std_logic_vector(data_size-1 downto 0);
-  signal din_a_mem : std_logic_vector(data_size-1 downto 0);
-  signal din_a1 : std_logic_vector(data_size-1 downto 0);
 
 begin
 
-  STD_SP_BRAM_instance : STD_SP_BRAM generic map(BITSIZE_data_in=>data_size, BITSIZE_data_out=>data_size, BITSIZE_address_inr=>nbit_read_addr, BITSIZE_address_inw=>nbit_read_addr, n_elements=>n_elements, MEMORY_INIT_file=>MEMORY_INIT_file, READ_ONLY_MEMORY=>READ_ONLY_MEMORY) port map (data_out => dout_a_tmp, write_enable => bram_write_mem, clock => clock, data_in => din_a_mem, address_inr => memory_addr_a_mem, address_inw => memory_addr_a_mem);
+  STD_SP_BRAM_instance : STD_SP_BRAM generic map(
+    BITSIZE_data_in=>data_size, 
+    BITSIZE_data_out=>data_size, 
+    BITSIZE_address_inr=>nbit_read_addr, 
+    BITSIZE_address_inw=>nbit_read_addr, 
+    n_elements=>n_elements, 
+    MEMORY_INIT_file=>MEMORY_INIT_file, 
+    READ_ONLY_MEMORY=>READ_ONLY_MEMORY,
+    HIGH_LATENCY=>HIGH_LATENCY
+  ) port map (
+    data_out => dout_a,
+    write_enable => bram_write,
+    clock => clock,
+    data_in => din_a,
+    address_inr => memory_addr_a,
+    address_inw => memory_addr_a);
 
   din_a &lt;= std_logic_vector(resize(unsigned(proxy_in1), data_size))  when (proxy_sel_STORE = &apos;1&apos;) else std_logic_vector(resize(unsigned(in1), data_size));
   bram_write &lt;= sel_STORE or proxy_sel_STORE;
-
-  DelayProcess : process(clock)
-  begin
-    if (clock&apos;event and clock=&apos;1&apos;) then
-       if(HIGH_LATENCY=2) then
-         memory_addr_a1 &lt;= memory_addr_a;
-         bram_write1 &lt;= bram_write;
-         din_a1 &lt;= din_a;
-       end if;
-    end if;
-  end process;
-
-  memory_addr_a_mem &lt;= memory_addr_a1 when (HIGH_LATENCY=2) else memory_addr_a;
-  bram_write_mem &lt;= bram_write1 when (HIGH_LATENCY=2) else bram_write;
-  din_a_mem &lt;= din_a1 when (HIGH_LATENCY=2) else din_a;
-
-  dout_a &lt;= dout_a_tmp when (HIGH_LATENCY=0) else dout_a_registered;
-
-  L1_registering : process(clock)
-  begin
-    if (clock&apos;event and clock=&apos;1&apos;) then
-      dout_a_registered &lt;= dout_a_tmp;
-    end if;
-  end process;
 
   tmp_addr &lt;= proxy_in2 when ((proxy_sel_LOAD or proxy_sel_STORE)=&apos;1&apos;) else in2;
 
@@ -10642,7 +10772,7 @@ begin
           <port_o id="proxy_out1" dir="OUT" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_SDS_BUS_BASE in1 in2 in3 out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY USE_SPARSE_MEMORY HIGH_LATENCY ALIGNMENT proxy_in1 proxy_in2 proxy_in3 proxy_out1"
+          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_SDS_BUS_BASE in1 in2 in3 out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY HIGH_LATENCY ALIGNMENT proxy_in1 proxy_in2 proxy_in3 proxy_out1"
             IP_COMPONENT="STD_SP_BRAM"
             VERILOG_PROVIDED="
 `ifndef _SIM_HAVE_CLOG2
@@ -10670,15 +10800,10 @@ parameter nbit_addr = BITSIZE_in2 &gt; BITSIZE_proxy_in2 ? BITSIZE_in2 : BITSIZE
 `endif
   
 wire [nbit_read_addr-1:0] memory_addr_a;
-wire [nbit_read_addr-1:0] memory_addr_a_mem;
-reg [nbit_read_addr-1:0] memory_addr_a1;
-
 wire bram_write;
-wire bram_write_mem;
-reg bram_write1;
-wire [data_size-1:0] dout_a_tmp;
 wire [data_size-1:0] dout_a;
-reg [data_size-1:0] dout_a_registered;
+wire [data_size-1:0] din_a;
+
 wire cs, oe_ram_cs, we_ram_cs;
 reg we_ram_cs_delayed;
 reg oe_ram_cs_delayed;
@@ -10686,9 +10811,6 @@ reg oe_ram_cs_delayed_registered;
 reg oe_ram_cs_delayed_registered1;
 wire [nbit_addr-1:0] relative_addr;
 wire [nbit_addr-1:0] tmp_addr;
-wire [data_size-1:0] din_a;
-wire [data_size-1:0] din_a_mem;
-reg [data_size-1:0] din_a1;
 
 STD_SP_BRAM #(
   .BITSIZE_data_in(data_size), 
@@ -10697,43 +10819,19 @@ STD_SP_BRAM #(
   .BITSIZE_address_inw(nbit_read_addr), 
   .n_elements(n_elements), 
   .MEMORY_INIT_file(MEMORY_INIT_file), 
-  .READ_ONLY_MEMORY(0)
+  .READ_ONLY_MEMORY(READ_ONLY_MEMORY),
+  .HIGH_LATENCY(HIGH_LATENCY)
 ) STD_SP_BRAM_instance (
   .clock(clock), 
-  .write_enable(bram_write_mem),
-  .data_in(din_a_mem), 
-  .address_inr(memory_addr_a_mem), 
-  .address_inw(memory_addr_a_mem),
-  .data_out(dout_a_tmp)
+  .write_enable(bram_write),
+  .data_in(din_a),
+  .address_inr(memory_addr_a), 
+  .address_inw(memory_addr_a),
+  .data_out(dout_a)
 );
 
 assign din_a = proxy_sel_STORE ? proxy_in1 : sel_STORE ? in1 : S_Wdata_ram;
 assign bram_write = sel_STORE || proxy_sel_STORE || we_ram_cs;
-generate
-  if(HIGH_LATENCY==2)
-  begin
-    always @ (posedge clock)
-    begin
-       memory_addr_a1 &lt;= memory_addr_a;
-       bram_write1 &lt;= bram_write;
-       din_a1 &lt;= din_a;
-    end
-    assign memory_addr_a_mem = memory_addr_a1;
-    assign bram_write_mem = bram_write1;
-    assign din_a_mem = din_a1;
-  end
-  else
-  begin
-    assign memory_addr_a_mem = memory_addr_a;
-    assign bram_write_mem = bram_write;
-    assign din_a_mem = din_a;
-  end
-endgenerate
-
-assign dout_a = HIGH_LATENCY==0 ? dout_a_tmp : dout_a_registered;
-
-always @(posedge clock)
-  dout_a_registered &lt;= dout_a_tmp;
 
 assign tmp_addr = (proxy_sel_LOAD||proxy_sel_STORE) ? proxy_in2 : in2;
 
@@ -10863,34 +10961,26 @@ endgenerate
 
 begin
 
-  STD_SP_BRAM_instance : STD_SP_BRAM generic map(BITSIZE_data_in=>data_size, BITSIZE_data_out=>data_size, BITSIZE_address_inr=>nbit_read_addr, BITSIZE_address_inw=>nbit_read_addr, n_elements=>n_elements, MEMORY_INIT_file=>MEMORY_INIT_file, READ_ONLY_MEMORY=>0) port map (data_out => dout_a_tmp, write_enable => bram_write_mem, clock => clock, data_in => din_a_mem, address_inr => memory_addr_a_mem, address_inw => memory_addr_a_mem);
+  STD_SP_BRAM_instance : STD_SP_BRAM generic map(
+    BITSIZE_data_in=>data_size, 
+    BITSIZE_data_out=>data_size, 
+    BITSIZE_address_inr=>nbit_read_addr, 
+    BITSIZE_address_inw=>nbit_read_addr, 
+    n_elements=>n_elements, 
+    MEMORY_INIT_file=>MEMORY_INIT_file, 
+    READ_ONLY_MEMORY=>READ_ONLY_MEMORY,
+    HIGH_LATENCY=>HIGH_LATENCY
+  ) port map (
+    data_out => dout_a,
+    write_enable => bram_write,
+    clock => clock, 
+    data_in => din_a,
+    address_inr => memory_addr_a,
+    address_inw => memory_addr_a
+  );
 
   din_a &lt;= std_logic_vector(resize(unsigned(proxy_in1), data_size))  when (proxy_sel_STORE = &apos;1&apos;) else std_logic_vector(resize(unsigned(in1), data_size)) when  (sel_STORE = &apos;1&apos;) else std_logic_vector(resize(unsigned(S_Wdata_ram), data_size));
   bram_write &lt;= sel_STORE or proxy_sel_STORE or we_ram_cs;
-
-  DelayProcess : process(clock)
-  begin
-    if (clock&apos;event and clock=&apos;1&apos;) then
-       if(HIGH_LATENCY=2) then
-         memory_addr_a1 &lt;= memory_addr_a;
-         bram_write1 &lt;= bram_write;
-         din_a1 &lt;= din_a;
-       end if;
-    end if;
-  end process;
-
-  memory_addr_a_mem &lt;= memory_addr_a1 when (HIGH_LATENCY=2) else memory_addr_a;
-  bram_write_mem &lt;= bram_write1 when (HIGH_LATENCY=2) else bram_write;
-  din_a_mem &lt;= din_a1 when (HIGH_LATENCY=2) else din_a;
-
-  dout_a &lt;= dout_a_tmp when (HIGH_LATENCY=0) else dout_a_registered;
-
-  L1_registering : process(clock)
-  begin
-    if (clock&apos;event and clock=&apos;1&apos;) then
-      dout_a_registered &lt;= dout_a_tmp;
-    end if;
-  end process;
 
   tmp_addr &lt;= proxy_in2 when ((proxy_sel_LOAD or proxy_sel_STORE)=&apos;1&apos;) else in2;
 
@@ -11153,16 +11243,10 @@ parameter max_n_reads = PORTSIZE_sel_LOAD;
 parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
 
 wire [nbit_read_addr*max_n_rw-1:0] memory_addr_a;
-wire [nbit_read_addr*max_n_rw-1:0] memory_addr_a_mem;
-reg [nbit_read_addr*max_n_rw-1:0] memory_addr_a1;
 
 wire [max_n_writes-1:0] bram_write;
-wire [max_n_writes-1:0] bram_write_mem;
-reg  [max_n_writes-1:0] bram_write1;
 
-wire [data_size*max_n_reads-1:0] dout_a_tmp;
 wire [data_size*max_n_reads-1:0] dout_a;
-reg [data_size*max_n_reads-1:0] dout_a_registered;
 wire [nbit_addr*max_n_rw-1:0] relative_addr;
 wire [nbit_addr*max_n_rw-1:0] tmp_addr;
 wire [data_size*max_n_writes-1:0] din_a;
@@ -11170,26 +11254,27 @@ wire [data_size*max_n_writes-1:0] din_a_mem;
 reg [data_size*max_n_writes-1:0] din_a1;
 
 STD_NRNW_BRAM_GEN #(
-  .PORTSIZE_we_a(max_n_writes), 
-  .BITSIZE_we_a(1), 
-  .PORTSIZE_din_value(max_n_writes), 
-  .BITSIZE_din_value(data_size), 
-  .PORTSIZE_dout_value(max_n_reads), 
-  .BITSIZE_dout_value(data_size), 
-  .PORTSIZE_raddr(max_n_rw), 
-  .BITSIZE_raddr(nbit_read_addr), 
-  .PORTSIZE_waddr(max_n_rw), 
-  .BITSIZE_waddr(nbit_read_addr), 
-  .n_mem_elements(n_elements), 
-  .MEMORY_INIT_file(MEMORY_INIT_file), 
-  .READ_ONLY_MEMORY(READ_ONLY_MEMORY)
+  .PORTSIZE_we_a(max_n_writes),
+  .BITSIZE_we_a(1),
+  .PORTSIZE_din_value(max_n_writes),
+  .BITSIZE_din_value(data_size),
+  .PORTSIZE_dout_value(max_n_reads),
+  .BITSIZE_dout_value(data_size),
+  .PORTSIZE_raddr(max_n_rw),
+  .BITSIZE_raddr(nbit_read_addr),
+  .PORTSIZE_waddr(max_n_rw),
+  .BITSIZE_waddr(nbit_read_addr),
+  .n_mem_elements(n_elements),
+  .MEMORY_INIT_file(MEMORY_INIT_file),
+  .READ_ONLY_MEMORY(READ_ONLY_MEMORY),
+  .HIGH_LATENCY(HIGH_LATENCY)
 ) STD_NRNW_BRAM_GEN_instance (
-  .clock(clock), 
-  .we_a(bram_write_mem),
-  .din_value(din_a_mem), 
-  .raddr(memory_addr_a_mem), 
-  .waddr(memory_addr_a_mem),
-  .dout_value(dout_a_tmp)
+  .clock(clock),
+  .we_a(bram_write),
+  .din_value(din_a),
+  .raddr(memory_addr_a),
+  .waddr(memory_addr_a),
+  .dout_value(dout_a)
 );
 
 generate
@@ -11207,32 +11292,6 @@ genvar i21;
       assign bram_write[i21] = sel_STORE[i21] || proxy_sel_STORE[i21];
   end
 endgenerate
-
-generate
-  if(HIGH_LATENCY==2)
-  begin
-    always @ (posedge clock)
-    begin
-       memory_addr_a1 &lt;= memory_addr_a;
-       bram_write1 &lt;= bram_write;
-       din_a1 &lt;= din_a;
-    end
-    assign memory_addr_a_mem = memory_addr_a1;
-    assign bram_write_mem = bram_write1;
-    assign din_a_mem = din_a1;
-  end
-  else
-  begin
-    assign memory_addr_a_mem = memory_addr_a;
-    assign bram_write_mem = bram_write;
-    assign din_a_mem = din_a;
-  end
-endgenerate
-
-assign dout_a = HIGH_LATENCY==0 ? dout_a_tmp : dout_a_registered;
-
-always @(posedge clock)
-  dout_a_registered &lt;= dout_a_tmp;
 
 generate
 genvar ind2;
@@ -11388,15 +11447,9 @@ parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
 parameter n_bus_ports = PORTSIZE_S_addr_ram;
 
 wire [nbit_read_addr*max_n_rw-1:0] memory_addr_a;
-wire [nbit_read_addr*max_n_rw-1:0] memory_addr_a_mem;
-reg [nbit_read_addr*max_n_rw-1:0] memory_addr_a1;
   
 wire [max_n_writes-1:0] bram_write;
-wire [max_n_writes-1:0] bram_write_mem;
-reg [max_n_writes-1:0] bram_write1;
-wire [data_size*max_n_reads-1:0] dout_a_tmp;
 wire [data_size*max_n_reads-1:0] dout_a;
-reg [data_size*max_n_reads-1:0] dout_a_registered;
 wire [n_bus_ports-1:0] cs;
 wire [n_bus_ports-1:0] oe_ram_cs;
 wire [n_bus_ports-1:0] we_ram_cs;
@@ -11411,7 +11464,6 @@ wire [data_size*max_n_writes-1:0] din_a_mem;
 reg [data_size*max_n_writes-1:0] din_a1;
 wire [data_size*PORTSIZE_S_Wdata_ram-1:0] S_Wdata_ram_int;
 
-
 STD_NRNW_BRAM_GEN #(
   .PORTSIZE_we_a(max_n_writes), 
   .BITSIZE_we_a(1), 
@@ -11425,42 +11477,16 @@ STD_NRNW_BRAM_GEN #(
   .BITSIZE_waddr(nbit_read_addr), 
   .n_mem_elements(n_elements), 
   .MEMORY_INIT_file(MEMORY_INIT_file), 
-  .READ_ONLY_MEMORY(READ_ONLY_MEMORY)
+  .READ_ONLY_MEMORY(READ_ONLY_MEMORY),
+  .HIGH_LATENCY(HIGH_LATENCY)
 ) STD_NRNW_BRAM_GEN_instance (
   .clock(clock), 
-  .we_a(bram_write_mem), 
-  .din_value(din_a_mem), 
-  .raddr(memory_addr_a_mem), 
-  .waddr(memory_addr_a_mem),
-  .dout_value(dout_a_tmp)
+  .we_a(bram_write),
+  .din_value(din_a),
+  .raddr(memory_addr_a),
+  .waddr(memory_addr_a),
+  .dout_value(dout_a)
 );
-
-
-generate
-  if(HIGH_LATENCY==2)
-  begin
-    always @ (posedge clock)
-    begin
-       memory_addr_a1 &lt;= memory_addr_a;
-       bram_write1 &lt;= bram_write;
-       din_a1 &lt;= din_a;
-    end
-    assign memory_addr_a_mem = memory_addr_a1;
-    assign bram_write_mem = bram_write1;
-    assign din_a_mem = din_a1;
-  end
-  else
-  begin
-    assign memory_addr_a_mem = memory_addr_a;
-    assign bram_write_mem = bram_write;
-    assign din_a_mem = din_a;
-  end
-endgenerate
-
-assign dout_a = HIGH_LATENCY==0 ? dout_a_tmp : dout_a_registered;
-
-always @(posedge clock)
-  dout_a_registered &lt;= dout_a_tmp;
 
 generate
 genvar ind2;
