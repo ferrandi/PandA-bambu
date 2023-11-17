@@ -8549,7 +8549,7 @@ genvar i1;
       .n_mem_elements(n_mem_elements), 
       .byte_offset(byte_offset), 
       .BRAM_BITSIZE(BRAM_BITSIZE),
-      -READ_ONLY_MEMORY(READ_ONLY_MEMORY),
+      .READ_ONLY_MEMORY(READ_ONLY_MEMORY),
       .HIGH_LATENCY(HIGH_LATENCY)
      ) STD_SP_BRAM_BYTE_instance (
       .clock(clock), 
@@ -9173,7 +9173,6 @@ begin
   );
 end
 endgenerate
-
 "/>
         </component_o>
       </circuit>
