@@ -8100,7 +8100,8 @@ reg [BITSIZE_data_in-1:0] data_in1;
 reg [BITSIZE_data_out-1:0] memory [0:n_elements-1]/* synthesis syn_ramstyle =  &quot;no_rw_check &quot; */;
 initial
 begin
-  $readmemb(MEMORY_INIT_file, memory, 0, n_elements-1);
+  if (MEMORY_INIT_file != &quot;&quot;)
+    $readmemb(MEMORY_INIT_file, memory, 0, n_elements-1);
 end
 
 always @(posedge clock)
@@ -8282,7 +8283,8 @@ reg [BITSIZE_data_out-1:0] memory [0:n_elements-1] /* synthesis syn_ramstyle = &
 
 initial
 begin
-  $readmemb(MEMORY_INIT_file, memory, 0, n_elements-1);
+  if (MEMORY_INIT_file != &quot;&quot;)
+    $readmemb(MEMORY_INIT_file, memory, 0, n_elements-1);
 end
   
 always @(posedge clock)
@@ -15621,7 +15623,8 @@ assign Cache_wrdata = (writefrommem) ? S_rddata : M_wrdata;
     .BITSIZE_address_inw(LOG2CACHEDEPTH),
     .MEMORY_INIT_file(&quot;&quot;),
     .n_elements(CACHEDEPTH),
-    .READ_ONLY_MEMORY(0)
+    .READ_ONLY_MEMORY(0),
+    .HIGH_LATENCY(0)
 	) tagcache (
       .clock (clock),
       .write_enable(tagwrite),
@@ -15639,14 +15642,15 @@ assign Cache_wrdata = (writefrommem) ? S_rddata : M_wrdata;
     .BITSIZE_address_inw(LOG2CACHEDEPTH),
     .MEMORY_INIT_file(&quot;&quot;),
     .n_elements(CACHEDEPTH),
-    .READ_ONLY_MEMORY(0)
+    .READ_ONLY_MEMORY(0),
+    .HIGH_LATENCY(0)
   ) data_cache (
     .clock (clock),
     .write_enable(datawrite),
     .address_inr(M_address[LOG2CACHEDEPTH + LOG2DATAWIDTH -1: LOG2DATAWIDTH]),
     .address_inw(M_address[LOG2CACHEDEPTH + LOG2DATAWIDTH -1: LOG2DATAWIDTH]),
     .data_in (Cache_wrdata),
-			.data_out (Cache_rddata)
+    .data_out (Cache_rddata)
     );
 
   // ******************* Cache Controller **********************//
@@ -16916,17 +16920,20 @@ assign Cache_wrdata = (writefrommem) ? S_rddata : M_wrdata;
    reg [BITSIZE_r_data - 1 : 0] r_data;
    localparam DATA_W = BITSIZE_w_data;
    localparam ADDR_W = BITSIZE_w_addr;
-   //this allows ISE 14.7 to work; do not remove
-   localparam HEXFILE = &quot;none&quot;;
-   localparam mem_init_file_int = HEXFILE;
 
    // Declare the RAM
    reg [DATA_W-1:0]         mem [(2**ADDR_W)-1:0];
 
+   integer index;
    // Initialize the RAM
    initial
-     if(mem_init_file_int != &quot;none&quot;)
-       $readmemh(mem_init_file_int, mem, 0, (2**ADDR_W) - 1);
+   begin
+     for(index=0; index&lt;(2**ADDR_W); index=index+1)
+     begin
+       mem[index] = 0;
+     end
+   end
+
 
    //read port
    always @(posedge clock)
@@ -17375,22 +17382,23 @@ end
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="IOB_ram_sp addr dout din" VERILOG_PROVIDED="
-   localparam HEXFILE = &quot;none&quot;;
    localparam DATA_W = BITSIZE_dout;
    localparam ADDR_W = BITSIZE_addr;
    
-   //this allows ISE 14.7 to work; do not remove
-   localparam mem_init_file_int = HEXFILE;
-
    reg [BITSIZE_dout - 1 : 0] dout;
 
    // Declare the RAM
    reg [DATA_W-1:0]         ram[2**ADDR_W-1:0];
 
+   integer index;
    // Initialize the RAM
-   initial 
-     if(mem_init_file_int != &quot;none&quot;)
-       $readmemh(mem_init_file_int, ram, 0, 2**ADDR_W - 1);
+   initial
+   begin
+     for(index=0; index&lt;(2**ADDR_W); index=index+1)
+     begin
+       ram[index] = 0;
+     end
+   end
 
    // Operate the RAM
    always @ (posedge clock)
@@ -17429,7 +17437,6 @@ end
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="IOB_ram_sp_no_addr dout din" VERILOG_PROVIDED="
-   localparam HEXFILE = &quot;none&quot;;
    localparam DATA_W = BITSIZE_dout;
 
    reg [BITSIZE_dout - 1 : 0] dout;
@@ -17900,8 +17907,7 @@ end
            wire [NWAY_W:0]     node_id[NWAY_W:1];
            assign node_id[1] = tree_out[1] ? 3 : 2; // next node id @ level2 to traverse
            for (i = 2; i &lt;= NWAY_W; i = i + 1) begin : traverse_tree_level
-              // next node id @ level3, level4,
-  ..., to traverse
+              // next node id @ level3, level4, ..., to traverse
               assign node_id[i] = tree_out[node_id[i-1]] ? ((node_id[i-1]&lt;&lt;1)+1) : (node_id[i-1]&lt;&lt;1);
            end
 
