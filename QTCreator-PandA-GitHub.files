@@ -555,6 +555,15 @@ etc/libbambu/libm/wf_sqrt.c
 etc/libbambu/libm/wf_tgamma.c
 etc/libbambu/libm/wrf_gamma.c
 etc/libbambu/libm/wrf_lgamma.c
+etc/libbambu/libmdpi/include/mdpi/mdpi.h
+etc/libbambu/libmdpi/include/mdpi/mdpi_debug.h
+etc/libbambu/libmdpi/include/mdpi/mdpi_driver.h
+etc/libbambu/libmdpi/include/mdpi/mdpi_ipc.h
+etc/libbambu/libmdpi/include/mdpi/mdpi_memmap.h
+etc/libbambu/libmdpi/include/mdpi/mdpi_types.h
+etc/libbambu/libmdpi/include/mdpi/mdpi_user.h
+etc/libbambu/libmdpi/mdpi.c
+etc/libbambu/libmdpi/mdpi_driver.cpp
 etc/libbambu/memcmp.c
 etc/libbambu/memcpy.c
 etc/libbambu/memmgr.c
