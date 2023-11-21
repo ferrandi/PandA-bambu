@@ -1562,21 +1562,36 @@ void mux_connection_binding::create_connections()
                                "only complex objects are considered");
                }
 #endif
+               auto is_dual = HLS->allocation_information->is_dual_port_memory(fu);
+               auto port_offset = [&](unsigned pi) -> unsigned int {
+                  if(is_dual)
+                  {
+                     return (GET_TYPE(data, *op) & TYPE_LOAD) ? pi * 2 - 1 : pi * 2;
+                  }
+                  else
+                  {
+                     return pi;
+                  }
+               };
+
                THROW_ASSERT(!gm->predicate || tree_helper::Size(gm->predicate) == 1, STR(gm->predicate));
                auto var = gm->predicate ? HLS_manager::io_binding_type(gm->predicate->index, 0) :
                                           HLS_manager::io_binding_type(0, 1);
-               determine_connection(*op, var, fu_obj, 3, port_index, data, 1);
+               /// connect predicate port
+               determine_connection(*op, var, fu_obj, port_offset(3), port_index, data, 1);
 
                THROW_ASSERT(var_node->get_kind() == mem_ref_K, "MEMORY REFERENCE/LOAD-STORE type not supported: " +
                                                                    var_node->get_kind_text() + " " + STR(node_id));
 
-               determine_connection(*op, HLS_manager::io_binding_type(var_node_idx, 0), fu_obj, 1, port_index, data,
-                                    bus_addr_bitsize, alignment);
+               /// connect address port
+               determine_connection(*op, HLS_manager::io_binding_type(var_node_idx, 0), fu_obj, port_offset(1),
+                                    port_index, data, bus_addr_bitsize, alignment);
+               /// connect size port
                if(Prec != algn && Prec % algn)
                {
                   HLS_manager::check_bitwidth(Prec);
                   determine_connection(
-                      *op, HLS_manager::io_binding_type(0, Prec), fu_obj, 2, port_index, data,
+                      *op, HLS_manager::io_binding_type(0, Prec), fu_obj, port_offset(2), port_index, data,
                       static_cast<unsigned>(object_bitsize(TreeM, HLS_manager::io_binding_type(0, Prec))));
                }
                else
@@ -1586,7 +1601,7 @@ void mux_connection_binding::create_connections()
                   unsigned int var_bitsize;
                   var_bitsize = static_cast<unsigned int>(IR_var_bitsize);
                   determine_connection(
-                      *op, HLS_manager::io_binding_type(0, var_bitsize), fu_obj, 2, port_index, data,
+                      *op, HLS_manager::io_binding_type(0, var_bitsize), fu_obj, port_offset(2), port_index, data,
                       static_cast<unsigned>(object_bitsize(TreeM, HLS_manager::io_binding_type(0, var_bitsize))));
                }
             }

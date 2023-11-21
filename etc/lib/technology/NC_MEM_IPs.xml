@@ -973,7 +973,8 @@ PROXY_CTRLN #(.BITSIZE_in1(BITSIZE_in1),
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <port_vector_o id="in4" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/> predicate </port_vector_o>
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
           <port_vector_o id="sel_LOAD" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
@@ -1061,14 +1062,24 @@ PROXY_CTRLN #(.BITSIZE_in1(BITSIZE_in1),
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="in2" dir="IN" is_addr_bus="1">
+          <port_o id="in2r" dir="IN" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="in3" dir="IN" is_size_bus="1">
+          <port_o id="in2w" dir="IN" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="in4" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/> predicate </port_o>
+          <port_o id="in3r" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in3w" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in4_r" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in4w" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="sel_LOAD" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -1081,10 +1092,22 @@ PROXY_CTRLN #(.BITSIZE_in1(BITSIZE_in1),
           <port_o id="proxy_in1" dir="OUT" is_memory="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="proxy_in2" dir="OUT" is_addr_bus="1" is_memory="1">
+          <port_o id="proxy_in2r" dir="OUT" is_addr_bus="1" is_memory="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="proxy_in3" dir="OUT" is_size_bus="1" is_memory="1">
+          <port_o id="proxy_in2w" dir="OUT" is_addr_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in3r" dir="OUT" is_size_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in3w" dir="OUT" is_size_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in4r" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in4w" dir="OUT" is_memory="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="proxy_sel_LOAD" dir="OUT" is_memory="1">
@@ -1096,26 +1119,29 @@ PROXY_CTRLN #(.BITSIZE_in1(BITSIZE_in1),
           <port_o id="proxy_out1" dir="IN" is_memory="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="DPROXY_CTRL in1 in2 in3 out1 proxy_in1 proxy_in2 proxy_in3 proxy_out1" VERILOG_PROVIDED="wire int_sel_LOAD;
-wire int_sel_STORE;
-assign int_sel_LOAD = sel_LOAD &amp; in4;
-assign int_sel_STORE = sel_STORE &amp; in4;
+          <NP_functionality LIBRARY="DPROXY_CTRL in1 in2r in2w in3r in3w out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_out1" VERILOG_PROVIDED="
 assign out1 = proxy_out1;
-assign proxy_in1 = int_sel_STORE ? in1 : 0;
-assign proxy_in2 = (int_sel_LOAD|int_sel_STORE) ? in2 : 0;
-assign proxy_in3 = (int_sel_LOAD|int_sel_STORE) ? in3 : 0;
-assign proxy_sel_LOAD = int_sel_LOAD;
-assign proxy_sel_STORE = int_sel_STORE;" VHDL_PROVIDED="signal int_sel_LOAD : std_logic;
-signal int_sel_STORE : std_logic;
+assign proxy_in1 = in1;
+assign proxy_in2r = in2r;
+assign proxy_in2w = in2w;
+assign proxy_in3r = in3r;
+assign proxy_in3w = in3w;
+assign proxy_in4r = in4_r;
+assign proxy_in4w = in4w;
+assign proxy_sel_LOAD = sel_LOAD;
+assign proxy_sel_STORE = sel_STORE;"
+VHDL_PROVIDED="
 begin
   out1 &lt;= std_logic_vector(resize(unsigned(proxy_out1), BITSIZE_out1));
-  proxy_in1 &lt;= std_logic_vector(resize(unsigned(in1), BITSIZE_proxy_in1)) when (int_sel_STORE /= &apos;0&apos;) else (others =&gt; &apos;0&apos;);
-  proxy_in2 &lt;= in2 when ((int_sel_LOAD or int_sel_STORE) /= &apos;0&apos;) else (others =&gt; &apos;0&apos;);
-  proxy_in3 &lt;= in3 when ((int_sel_LOAD or int_sel_STORE) /= &apos;0&apos;) else (others =&gt; &apos;0&apos;);
-  proxy_sel_LOAD &lt;= int_sel_LOAD;
-  proxy_sel_STORE &lt;= int_sel_STORE;
-  int_sel_LOAD &lt;= sel_LOAD and in4;
-  int_sel_STORE &lt;= sel_STORE and in4;
+  proxy_in1 &lt;= std_logic_vector(resize(unsigned(in1), BITSIZE_proxy_in1));
+  proxy_in2r &lt;= in2r;
+  proxy_in2w &lt;= in2w;
+  proxy_in3r &lt;= in3r;
+  proxy_in3w &lt;= in3w;
+  proxy_in4r &lt;= in4_r;
+  proxy_in4w &lt;= in4w;
+  proxy_sel_LOAD &lt;= sel_LOAD;
+  proxy_sel_STORE &lt;= sel_STORE;
 "/>
         </component_o>
       </circuit>
@@ -1136,14 +1162,24 @@ begin
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="in2" dir="IN" is_addr_bus="1">
+          <port_vector_o id="in2r" dir="IN" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="in3" dir="IN" is_size_bus="1">
+          <port_vector_o id="in2w" dir="IN" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="in4" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/> predicate </port_vector_o>
+          <port_vector_o id="in3r" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="in3w" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="in4_r" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="in4w" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
           <port_vector_o id="sel_LOAD" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
@@ -1156,10 +1192,22 @@ begin
           <port_vector_o id="proxy_in1" dir="OUT" is_memory="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in2" dir="OUT" is_addr_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in2r" dir="OUT" is_addr_bus="1" is_memory="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in3" dir="OUT" is_size_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in2w" dir="OUT" is_addr_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in3r" dir="OUT" is_size_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in3w" dir="OUT" is_size_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in4r" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in4w" dir="OUT" is_memory="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <port_vector_o id="proxy_sel_LOAD" dir="OUT" is_memory="1">
@@ -1171,8 +1219,8 @@ begin
           <port_vector_o id="proxy_out1" dir="IN" is_memory="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="DPROXY_CTRLN in1 in2 in3 in4 sel_LOAD sel_STORE out1 proxy_in1 proxy_in2 proxy_in3 proxy_sel_LOAD proxy_sel_STORE proxy_out1" VERILOG_PROVIDED="wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
-wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
+          <NP_functionality LIBRARY="DPROXY_CTRLN in1 in2r in2w in3r in3w in4_r in4w sel_LOAD sel_STORE out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1" 
+          VERILOG_PROVIDED="
 generate
 genvar i0;
 for (i0=0; i0&lt;PORTSIZE_out1; i0=i0+1)
@@ -1184,27 +1232,41 @@ generate
 genvar i1;
 for (i1=0; i1&lt;PORTSIZE_in1; i1=i1+1)
   begin : L1
-    assign proxy_in1[(i1+1)*BITSIZE_proxy_in1-1:i1*BITSIZE_proxy_in1] = int_sel_STORE[i1] ? in1[(i1+1)*BITSIZE_in1-1:i1*BITSIZE_in1] : 0;
+    assign proxy_in1[(i1+1)*BITSIZE_proxy_in1-1:i1*BITSIZE_proxy_in1] = in1[(i1+1)*BITSIZE_in1-1:i1*BITSIZE_in1];
   end
 endgenerate
 generate
-genvar i2;
-for (i2=0; i2&lt;PORTSIZE_in2; i2=i2+1)
-  begin : L2
-    assign proxy_in2[(i2+1)*BITSIZE_proxy_in2-1:i2*BITSIZE_proxy_in2] = int_sel_LOAD[i2]|int_sel_STORE[i2] ? in2[(i2+1)*BITSIZE_in2-1:i2*BITSIZE_in2] : 0;
+genvar i2_r;
+for (i2_r=0; i2_r&lt;PORTSIZE_in2r; i2_r=i2_r+1)
+  begin : L2_r
+    assign proxy_in2r[(i2_r+1)*BITSIZE_proxy_in2r-1:i2_r*BITSIZE_proxy_in2r] = in2r[(i2_r+1)*BITSIZE_in2r-1:i2_r*BITSIZE_in2r];
   end
 endgenerate
 generate
-genvar i3;
-for (i3=0; i3&lt;PORTSIZE_in3; i3=i3+1)
-  begin : L3
-    assign proxy_in3[(i3+1)*BITSIZE_proxy_in3-1:i3*BITSIZE_proxy_in3] = int_sel_LOAD[i3]|int_sel_STORE[i3] ? in3[(i3+1)*BITSIZE_in3-1:i3*BITSIZE_in3] : 0;
+genvar i2_w;
+for (i2_w=0; i2_w&lt;PORTSIZE_in2w; i2_w=i2_w+1)
+  begin : L2_w
+    assign proxy_in2w[(i2_w+1)*BITSIZE_proxy_in2w-1:i2_w*BITSIZE_proxy_in2w] = in2w[(i2_w+1)*BITSIZE_in2w-1:i2_w*BITSIZE_in2w];
   end
 endgenerate
-assign int_sel_LOAD = sel_LOAD &amp; in4;
-assign int_sel_STORE = sel_STORE &amp; in4;
-assign proxy_sel_LOAD = int_sel_LOAD;
-assign proxy_sel_STORE = int_sel_STORE;"/>
+generate
+genvar i3_r;
+for (i3_r=0; i3_r&lt;PORTSIZE_in3r; i3_r=i3_r+1)
+  begin : L3_r
+    assign proxy_in3r[(i3_r+1)*BITSIZE_proxy_in3r-1:i3_r*BITSIZE_proxy_in3r] = in3r[(i3_r+1)*BITSIZE_in3r-1:i3_r*BITSIZE_in3r];
+  end
+endgenerate
+generate
+genvar i3_w;
+for (i3_w=0; i3_w&lt;PORTSIZE_in3w; i3_w=i3_w+1)
+  begin : L3_w
+    assign proxy_in3w[(i3_w+1)*BITSIZE_proxy_in3w-1:i3_w*BITSIZE_proxy_in3w] = in3w[(i3_w+1)*BITSIZE_in3w-1:i3_w*BITSIZE_in3w];
+  end
+endgenerate
+assign proxy_in4r = in4_r;
+assign proxy_in4w = in4w;
+assign proxy_sel_LOAD = sel_LOAD;
+assign proxy_sel_STORE = sel_STORE;"/>
         </component_o>
       </circuit>
     </cell>
@@ -8264,7 +8326,6 @@ begin
           </port_vector_o>
           <NP_functionality LIBRARY="STD_DP_BRAM write_enable data_in address_inr address_inw data_out MEMORY_INIT_file n_elements READ_ONLY_MEMORY HIGH_LATENCY" 
           VERILOG_PROVIDED="
-integer p1;
 wire [2*BITSIZE_address_inr-1:0] address_inr_mem;
 reg [2*BITSIZE_address_inr-1:0] address_inr1;
 wire [2*BITSIZE_address_inw-1:0] address_inw_mem;
@@ -8286,6 +8347,35 @@ begin
   if (MEMORY_INIT_file != &quot;&quot;)
     $readmemb(MEMORY_INIT_file, memory, 0, n_elements-1);
 end
+
+assign data_out = HIGH_LATENCY==0 ? data_out_mem : data_out1;
+always @(posedge clock)
+  data_out1 &lt;= data_out_mem;
+
+generate
+  if(HIGH_LATENCY==2)
+  begin
+    always @ (posedge clock)
+    begin
+       address_inr1 &lt;= address_inr;
+       address_inw1 &lt;= address_inw;
+       write_enable1 &lt;= write_enable;
+       data_in1 &lt;= data_in;
+    end
+    assign address_inr_mem = address_inr1;
+    assign address_inw_mem = address_inw1;
+    assign write_enable_mem = write_enable1;
+    assign data_in_mem = data_in1;
+  end
+  else
+  begin
+    assign address_inr_mem = address_inr;
+    assign address_inw_mem = address_inw;
+    assign write_enable_mem = write_enable;
+    assign data_in_mem = data_in;
+  end
+endgenerate
+
   
 always @(posedge clock)
 begin
@@ -8305,7 +8395,6 @@ begin
     end
     data_out_mem[BITSIZE_data_out*1+:BITSIZE_data_out] &lt;= memory[address_inr_mem[BITSIZE_address_inr*1+:BITSIZE_address_inr]];
 end
-
 " VHDL_PROVIDED="
   signal address_inr_mem : std_logic_vector(2*BITSIZE_address_inr-1 downto 0);
   signal address_inr1 : std_logic_vector(2*BITSIZE_address_inr-1 downto 0);
@@ -9120,7 +9209,7 @@ STD_LIVE_VALUE_TABLE_instance (
           IP_COMPONENT="STD_NRNW_BRAM,STD_DP_BRAM" 
           VERILOG_PROVIDED="
 generate
-if(PORTSIZE_raddr == 2 &amp; &amp; PORTSIZE_waddr == 2)
+if(PORTSIZE_raddr == 2 &amp;&amp; PORTSIZE_waddr == 2)
 begin
   STD_DP_BRAM #(
     .PORTSIZE_write_enable(PORTSIZE_we_a),
