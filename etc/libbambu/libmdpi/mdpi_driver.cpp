@@ -279,6 +279,13 @@ void __m_sig_handler(int __sig)
    }
    else
    {
+      if(__m_sim_pid)
+      {
+         kill(__m_sim_pid, SIGKILL);
+         info("Killing simulation process (PID: %d).\n", __m_sim_pid);
+         __m_sim_pid = 0;
+         wait(NULL);
+      }
       error("Abrupt exception: %u\n", __sig);
    }
    __ipc_exit(MDPI_STATE_ABORT, EXIT_FAILURE);
