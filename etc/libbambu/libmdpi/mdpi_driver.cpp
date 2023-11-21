@@ -40,9 +40,6 @@
  *
  */
 #define __LOCAL_ENTITY MDPI_ENTITY_DRIVER
-#define __REMOTE_ENTITY MDPI_ENTITY_SIM
-#define __local_operation __get_operation(__LOCAL_ENTITY)
-#define __remote_operation __get_operation(__REMOTE_ENTITY)
 
 #include <mdpi/mdpi_debug.h>
 
@@ -242,7 +239,7 @@ class shared_memmap : public memmap
 
 static FORCE_INLINE void __ipc_exit(mdpi_state_t state, uint8_t retval)
 {
-   __ipc_exit(__LOCAL_ENTITY, MDPI_IPC_STATE_DONE, state, retval);
+   __ipc_exit(MDPI_IPC_STATE_DONE, state, retval);
 }
 
 static void __ipc_abort()
@@ -330,7 +327,7 @@ void __attribute__((constructor)) __mdpi_driver_init()
 
    debug("Loading MDPI library...\n");
 
-   __ipc_init(MDPI_ENTITY_COUNT);
+   __ipc_init(1);
 
    for(i = 0; i < (sizeof(__sigs) / sizeof(*__sigs)); ++i)
    {
@@ -394,13 +391,13 @@ void __attribute__((destructor)) __mdpi_driver_fini()
 void __m_sim_start()
 {
    debug("Waiting for simulator state report...\n");
-   __ipc_wait(__LOCAL_ENTITY, MDPI_IPC_STATE_REQUEST);
-   assert(__local_operation.type == MDPI_OP_TYPE_STATE_CHANGE && "Unexpected simulator request.");
-   assert(__local_operation.payload.sc.state == MDPI_STATE_READY && "Unexpected simulator state.");
-   __local_operation.payload.sc.state = MDPI_STATE_SETUP;
-   __ipc_complete(__LOCAL_ENTITY);
-   debug("Simulator state: %s (%u)\n", mdpi_state_str(__local_operation.payload.sc.state),
-         __local_operation.payload.sc.retval);
+   __ipc_wait(MDPI_IPC_STATE_REQUEST);
+   assert(__m_ipc_operation.type == MDPI_OP_TYPE_STATE_CHANGE && "Unexpected simulator request.");
+   assert(__m_ipc_operation.payload.sc.state == MDPI_STATE_READY && "Unexpected simulator state.");
+   __m_ipc_operation.payload.sc.state = MDPI_STATE_SETUP;
+   __ipc_complete();
+   debug("Simulator state: %s (%u)\n", mdpi_state_str(__m_ipc_operation.payload.sc.state),
+         __m_ipc_operation.payload.sc.retval);
    debug("Launch simulation\n");
 
 #ifdef MDPI_PARALLEL_VERIFICATION
@@ -433,9 +430,9 @@ unsigned int __m_sim_end()
    }
 #endif
 
-   assert(__local_operation.type == MDPI_OP_TYPE_STATE_CHANGE && "Unexpected simulator request.");
-   retval = __local_operation.payload.sc.retval;
-   debug("Simulator state: %s (%u)\n", mdpi_state_str(__local_operation.payload.sc.state), retval);
+   assert(__m_ipc_operation.type == MDPI_OP_TYPE_STATE_CHANGE && "Unexpected simulator request.");
+   retval = __m_ipc_operation.payload.sc.retval;
+   debug("Simulator state: %s (%u)\n", mdpi_state_str(__m_ipc_operation.payload.sc.state), retval);
    return retval;
 }
 
@@ -636,38 +633,38 @@ static void* __m_driver_loop(void*)
 
    while(true)
    {
-      __ipc_wait(__LOCAL_ENTITY, MDPI_IPC_STATE_REQUEST);
-      switch(__local_operation.type)
+      __ipc_wait(MDPI_IPC_STATE_REQUEST);
+      switch(__m_ipc_operation.type)
       {
          case MDPI_OP_TYPE_STATE_CHANGE:
             return NULL;
             break;
          case MDPI_OP_TYPE_MEM_READ:
-            __mem_read(__local_operation.payload.mem.size, __local_operation.payload.mem.buffer,
-                       __local_operation.payload.mem.addr);
-            __ipc_complete(__LOCAL_ENTITY);
+            __mem_read(__m_ipc_operation.payload.mem.size, __m_ipc_operation.payload.mem.buffer,
+                       __m_ipc_operation.payload.mem.addr);
+            __ipc_complete();
             break;
          case MDPI_OP_TYPE_MEM_WRITE:
-            __mem_write(__local_operation.payload.mem.size, __local_operation.payload.mem.buffer,
-                        __local_operation.payload.mem.addr);
-            __ipc_complete(__LOCAL_ENTITY);
+            __mem_write(__m_ipc_operation.payload.mem.size, __m_ipc_operation.payload.mem.buffer,
+                        __m_ipc_operation.payload.mem.addr);
+            __ipc_complete();
             break;
          case MDPI_OP_TYPE_ARG_READ:
-            __local_operation.payload.arg.bitsize =
-                __arg_read(&__local_operation.payload.arg.index, __local_operation.payload.arg.buffer);
-            __ipc_complete(__LOCAL_ENTITY);
+            __m_ipc_operation.payload.arg.bitsize =
+                __arg_read(&__m_ipc_operation.payload.arg.index, __m_ipc_operation.payload.arg.buffer);
+            __ipc_complete();
             break;
          case MDPI_OP_TYPE_ARG_WRITE:
-            __arg_write(&__local_operation.payload.arg.index, __local_operation.payload.arg.buffer);
-            __ipc_complete(__LOCAL_ENTITY);
+            __arg_write(&__m_ipc_operation.payload.arg.index, __m_ipc_operation.payload.arg.buffer);
+            __ipc_complete();
             break;
          case MDPI_OP_TYPE_PARAM_INFO:
-            __local_operation.payload.param.size = __param_size(&__local_operation.payload.param.index);
-            __ipc_complete(__LOCAL_ENTITY);
+            __m_ipc_operation.payload.param.size = __param_size(&__m_ipc_operation.payload.param.index);
+            __ipc_complete();
             break;
          case MDPI_OP_TYPE_NONE:
          default:
-            error("Unexpected transaction type: %u\n", __local_operation.type);
+            error("Unexpected transaction type: %u\n", __m_ipc_operation.type);
             __ipc_abort();
             break;
       }

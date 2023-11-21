@@ -163,12 +163,12 @@ typedef struct
 
 typedef struct
 {
-   mdpi_op_t operation[MDPI_ENTITY_COUNT];
+   mdpi_op_t operation;
 } __attribute__((aligned(8))) mdpi_ipc_file_t;
 
 static mdpi_ipc_file_t* __m_ipc_file = NULL;
 
-#define __get_operation(entity) (__m_ipc_file->operation[entity])
+#define __m_ipc_operation (__m_ipc_file->operation)
 
 static int mdpi_op_init(mdpi_op_t* op)
 {
@@ -177,62 +177,62 @@ static int mdpi_op_init(mdpi_op_t* op)
    return 0;
 }
 
-static void __ipc_wait(mdpi_entity_t entity, mdpi_ipc_state_t state)
+static void __ipc_wait(mdpi_ipc_state_t state)
 {
-   while(atomic_load(&__get_operation(entity).handle) != state)
+   while(atomic_load(&__m_ipc_operation.handle) != state)
       ;
 }
 
-static void __ipc_reserve(mdpi_entity_t entity)
+static void __ipc_reserve()
 {
    mdpi_ipc_state_t expected;
    do
    {
       expected = MDPI_IPC_STATE_FREE;
-      __ipc_wait(entity, expected);
-   } while(!atomic_compare_exchange_strong(&__get_operation(entity).handle, &expected, MDPI_IPC_STATE_WRITING));
+      __ipc_wait(expected);
+   } while(!atomic_compare_exchange_strong(&__m_ipc_operation.handle, &expected, MDPI_IPC_STATE_WRITING));
 }
 
-static void __ipc_commit(mdpi_entity_t entity)
+static void __ipc_commit()
 {
 #ifndef NDEBUG
    mdpi_ipc_state_t expected = MDPI_IPC_STATE_WRITING;
-   atomic_compare_exchange_strong(&__get_operation(entity).handle, &expected, MDPI_IPC_STATE_REQUEST);
+   atomic_compare_exchange_strong(&__m_ipc_operation.handle, &expected, MDPI_IPC_STATE_REQUEST);
    assert(expected == MDPI_IPC_STATE_WRITING && "Illegal IPC commit operation.");
 #else
-   atomic_store(&__get_operation(entity).handle, MDPI_IPC_STATE_REQUEST);
+   atomic_store(&__m_ipc_operation.handle, MDPI_IPC_STATE_REQUEST);
 #endif
 }
 
-static void __ipc_complete(mdpi_entity_t entity)
+static void __ipc_complete()
 {
 #ifndef NDEBUG
    mdpi_ipc_state_t expected = MDPI_IPC_STATE_REQUEST;
-   atomic_compare_exchange_strong(&__get_operation(entity).handle, &expected, MDPI_IPC_STATE_DONE);
+   atomic_compare_exchange_strong(&__m_ipc_operation.handle, &expected, MDPI_IPC_STATE_DONE);
    assert(expected == MDPI_IPC_STATE_REQUEST && "Illegal IPC complete operation.");
 #else
-   atomic_store(&__get_operation(entity).handle, MDPI_IPC_STATE_DONE);
+   atomic_store(&__m_ipc_operation.handle, MDPI_IPC_STATE_DONE);
 #endif
 }
 
-static void __ipc_release(mdpi_entity_t entity)
+static void __ipc_release()
 {
-   atomic_store(&__get_operation(entity).handle, MDPI_IPC_STATE_FREE);
+   atomic_store(&__m_ipc_operation.handle, MDPI_IPC_STATE_FREE);
 }
 
-static void __ipc_exit(mdpi_entity_t entity, mdpi_ipc_state_t ipc_state, mdpi_state_t state, uint8_t retval)
+static void __ipc_exit(mdpi_ipc_state_t ipc_state, mdpi_state_t state, uint8_t retval)
 {
    mdpi_ipc_state_t expected;
    do
    {
-      expected = atomic_load(&__get_operation(entity).handle);
+      expected = atomic_load(&__m_ipc_operation.handle);
       if(expected == MDPI_IPC_STATE_WRITING)
          continue;
-   } while(!atomic_compare_exchange_strong(&__get_operation(entity).handle, &expected, MDPI_IPC_STATE_WRITING));
-   __get_operation(entity).type = MDPI_OP_TYPE_STATE_CHANGE;
-   __get_operation(entity).payload.sc.state = state;
-   __get_operation(entity).payload.sc.retval = retval;
-   atomic_store(&__get_operation(entity).handle, ipc_state);
+   } while(!atomic_compare_exchange_strong(&__m_ipc_operation.handle, &expected, MDPI_IPC_STATE_WRITING));
+   __m_ipc_operation.type = MDPI_OP_TYPE_STATE_CHANGE;
+   __m_ipc_operation.payload.sc.state = state;
+   __m_ipc_operation.payload.sc.retval = retval;
+   atomic_store(&__m_ipc_operation.handle, ipc_state);
 }
 
 static void __ipc_init(int init)
@@ -272,9 +272,9 @@ static void __ipc_init(int init)
    }
    debug("IPC file memory-mapping completed.\n");
 
-   while(init)
+   if(init)
    {
-      mdpi_op_init(&__m_ipc_file->operation[--init]);
+      mdpi_op_init(&__m_ipc_operation);
    }
 
    close(ipc_descriptor);
