@@ -208,8 +208,7 @@
 #define OPT_TOP_RTLDESIGN_NAME (1 + OPT_TOP_FNAME)
 #define OPT_UNALIGNED_ACCESS_PARAMETER (1 + OPT_TOP_RTLDESIGN_NAME)
 #define OPT_VHDL_LIBRARY_PARAMETER (1 + OPT_UNALIGNED_ACCESS_PARAMETER)
-#define OPT_VISUALIZER (1 + OPT_VHDL_LIBRARY_PARAMETER)
-#define OPT_XML_CONFIG (1 + OPT_VISUALIZER)
+#define OPT_XML_CONFIG (1 + OPT_VHDL_LIBRARY_PARAMETER)
 #define OPT_RANGE_ANALYSIS_MODE (1 + OPT_XML_CONFIG)
 #define OPT_FP_FORMAT (1 + OPT_RANGE_ANALYSIS_MODE)
 #define OPT_FP_FORMAT_PROPAGATE (1 + OPT_FP_FORMAT)
@@ -893,7 +892,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Define NanoXplore tools path. Given directory is searched for NXMap.\n"
       << "        (default=/opt/NanoXplore)\n\n"
       << "    --xilinx-root=<path>\n"
-      << "        Define Xilinx tools path. Given directory is searched for both ISE and Vivado\n"
+      << "        Define Xilinx tools path. Given directory is searched for Vivado\n"
       << "        (default=/opt/Xilinx)\n\n"
       << std::endl;
 }
@@ -1051,7 +1050,6 @@ int BambuParameter::Exec()
       {"max-sim-cycles", required_argument, nullptr, OPT_MAX_SIM_CYCLES},
       {"generate-vcd", no_argument, nullptr, OPT_GENERATE_VCD},
       {"simulate", no_argument, nullptr, OPT_SIMULATE},
-      {"mentor-visualizer", no_argument, nullptr, OPT_VISUALIZER},
       {"simulator", required_argument, nullptr, 0},
       {"enable-function-proxy", no_argument, nullptr, OPT_ENABLE_FUNCTION_PROXY},
       {"disable-function-proxy", no_argument, nullptr, OPT_DISABLE_FUNCTION_PROXY},
@@ -1373,11 +1371,6 @@ int BambuParameter::Exec()
                objective_string = objective_string + ",CYCLES";
             }
             setOption(OPT_evaluation_objectives, objective_string);
-            break;
-         }
-         case OPT_VISUALIZER:
-         {
-            setOption(OPT_visualizer, true);
             break;
          }
          case OPT_DEVICE_NAME:
@@ -2688,10 +2681,6 @@ void BambuParameter::CheckParameters()
       {
          setOption(OPT_mentor_modelsim_bin, dir + "/bin");
       }
-      if(std::filesystem::exists(dir + "/bin/visualizer"))
-      {
-         setOption(OPT_mentor_visualizer, dir + "/bin/visualizer");
-      }
    };
    for(const auto& mentor_dir : mentor_dirs)
    {
@@ -2706,10 +2695,6 @@ void BambuParameter::CheckParameters()
          }
          search_mentor(mentor_dir);
       }
-   }
-   if(isOption(OPT_visualizer) && getOption<bool>(OPT_visualizer) && !isOption(OPT_mentor_visualizer))
-   {
-      THROW_ERROR("Mentor Visualizer was not detected by Bambu. Please check --mentor-root option is correct.");
    }
 
    /// Search for NanoXPlore tools
@@ -2740,25 +2725,6 @@ void BambuParameter::CheckParameters()
    const auto target_64 = true;
    const auto xilinx_dirs = SplitString(getOption<std::string>(OPT_xilinx_root), ":");
    removeOption(OPT_xilinx_root);
-   const auto search_xilinx = [&](const std::string& dir) {
-      if(std::filesystem::exists(dir + "/ISE"))
-      {
-         if(target_64 && std::filesystem::exists(dir + "/settings64.sh"))
-         {
-            setOption(OPT_xilinx_settings, dir + "/settings64.sh");
-            setOption(OPT_xilinx_root, dir);
-         }
-         else if(std::filesystem::exists(dir + "/settings32.sh"))
-         {
-            setOption(OPT_xilinx_settings, dir + "/settings32.sh");
-            setOption(OPT_xilinx_root, dir);
-         }
-         if(std::filesystem::exists(dir + "/ISE/verilog/src/glbl.v"))
-         {
-            setOption(OPT_xilinx_glbl, dir + "/ISE/verilog/src/glbl.v");
-         }
-      }
-   };
    const auto search_xilinx_vivado = [&](const std::string& dir) {
       if(std::filesystem::exists(dir + "/ids_lite"))
       {
@@ -2778,27 +2744,6 @@ void BambuParameter::CheckParameters()
          }
       }
    };
-   for(const auto& xilinx_dir : xilinx_dirs)
-   {
-      if(std::filesystem::is_directory(xilinx_dir))
-      {
-         for(const auto& ver_dir : sorted_dirs(xilinx_dir))
-         {
-            if(std::filesystem::is_directory(ver_dir))
-            {
-               for(const auto& ise_dir : std::filesystem::directory_iterator(ver_dir))
-               {
-                  const auto ise_path = ise_dir.path().string();
-                  if(std::filesystem::is_directory(ise_dir) && ise_path.find("ISE") > ise_path.find_last_of('/'))
-                  {
-                     search_xilinx(ise_path);
-                  }
-               }
-            }
-         }
-         search_xilinx(xilinx_dir);
-      }
-   }
    for(const auto& xilinx_dir : xilinx_dirs)
    {
       if(std::filesystem::is_directory(xilinx_dir))

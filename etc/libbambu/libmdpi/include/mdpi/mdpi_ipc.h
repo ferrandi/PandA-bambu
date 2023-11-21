@@ -46,6 +46,10 @@
 #define __M_IPC_FILENAME "/tmp/panda_ipc_mmap"
 #endif
 
+#ifndef __M_IPC_SIM_CMD_ENV
+#define __M_IPC_SIM_CMD_ENV "M_IPC_SIM_CMD"
+#endif
+
 #define __USE_FILE_OFFSET64
 #define _FILE_OFFSET_BITS 64
 
@@ -155,16 +159,23 @@ typedef struct
       mdpi_op_mem_t mem;
       mdpi_op_arg_t arg;
    } __attribute__((aligned(8))) payload;
-} __attribute__((aligned(8))) mdpi_ipc_op_t;
+} __attribute__((aligned(8))) mdpi_op_t;
 
 typedef struct
 {
-   mdpi_ipc_op_t operation[MDPI_ENTITY_COUNT];
+   mdpi_op_t operation[MDPI_ENTITY_COUNT];
 } __attribute__((aligned(8))) mdpi_ipc_file_t;
 
 static mdpi_ipc_file_t* __m_ipc_file = NULL;
 
 #define __get_operation(entity) (__m_ipc_file->operation[entity])
+
+static int mdpi_op_init(mdpi_op_t* op)
+{
+   atomic_store(&op->handle, MDPI_IPC_STATE_FREE);
+   op->type = MDPI_OP_TYPE_NONE;
+   return 0;
+}
 
 static void __ipc_wait(mdpi_entity_t entity, mdpi_ipc_state_t state)
 {
@@ -224,26 +235,13 @@ static void __ipc_exit(mdpi_entity_t entity, mdpi_ipc_state_t ipc_state, mdpi_st
    atomic_store(&__get_operation(entity).handle, ipc_state);
 }
 
-static void __ipc_init()
+static void __ipc_init(int init)
 {
-   unsigned init = 1;
    int ipc_descriptor;
 
-   if(__m_ipc_file != NULL)
-   {
-      debug("IPC file memory-mapping already initialized.");
-      return;
-   }
-
    debug("IPC memory mapping on file %s\n", __M_IPC_FILENAME);
-   ipc_descriptor = open(__M_IPC_FILENAME, O_RDWR | O_CREAT | O_EXCL, 0664);
-   if(ipc_descriptor < 0 && errno == EEXIST)
-   {
-      init = 0;
-      debug("IPC file exists already.\n");
-      ipc_descriptor = open(__M_IPC_FILENAME, O_RDWR | O_CREAT, 0664);
-   }
-   else if(ipc_descriptor < 0)
+   ipc_descriptor = open(__M_IPC_FILENAME, O_RDWR | O_CREAT, 0664);
+   if(ipc_descriptor < 0)
    {
       error("Error opening IPC file: %s\n", __M_IPC_FILENAME);
       perror("MDPI library initialization error");
@@ -274,6 +272,11 @@ static void __ipc_init()
    }
    debug("IPC file memory-mapping completed.\n");
 
+   while(init)
+   {
+      mdpi_op_init(&__m_ipc_file->operation[--init]);
+   }
+
    close(ipc_descriptor);
 }
 
@@ -285,7 +288,7 @@ static void __ipc_fini()
       perror("MDPI library finalization error");
    }
 
-   // TODO: remove ipc file
+   // remove(__M_IPC_FILENAME);
 }
 
 #endif // __MDPI_IPC_H

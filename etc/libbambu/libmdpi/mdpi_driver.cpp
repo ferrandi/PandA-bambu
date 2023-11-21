@@ -63,6 +63,9 @@
 #include <cstdlib>
 #include <map>
 #include <memory>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #ifdef MDPI_PARALLEL_VERIFICATION
 #include <pthread.h>
@@ -80,6 +83,7 @@
 
 static void* __m_driver_loop(void*);
 
+static pid_t __m_sim_pid = 0;
 static pthread_t __m_ipc_driver = 0;
 
 static mdpi_params_t __m_params;
@@ -248,10 +252,36 @@ static void __ipc_abort()
    exit(EXIT_FAILURE);
 }
 
-void __m_abrupt_exit(int __sig)
+void __m_sig_handler(int __sig)
 {
+   if(__sig == SIGCHLD)
+   {
+      int status;
+      if(!__m_sim_pid)
+      {
+         return;
+      }
+      __m_sim_pid = 0;
+      if(wait(&status) == -1)
+      {
+         error("Error waiting for simulation process.\n");
+         perror("wait failed");
+      }
+      else
+      {
+         if(WIFEXITED(status) && !WEXITSTATUS(status))
+         {
+            debug("Simulation process exited with code %d.\n", WEXITSTATUS(status));
+            return;
+         }
+         error("Simulation process terminated with error.\n");
+      }
+   }
+   else
+   {
+      error("Abrupt exception: %u\n", __sig);
+   }
    __ipc_exit(MDPI_STATE_ABORT, EXIT_FAILURE);
-   error("Abrupt exception: %u\n", __sig);
 #if __M_OUT_LVL > 4
    fflush(stdout);
 #else
@@ -286,27 +316,50 @@ void __m_assert_fail(const char* __assertion, const char* __file, unsigned int _
 
 void __attribute__((constructor)) __mdpi_driver_init()
 {
-   static const int __sigs[] = {SIGINT, SIGABRT, SIGSEGV};
+   static const int __sigs[] = {SIGINT, SIGABRT, SIGSEGV, SIGCHLD};
    int error;
    size_t i;
+   char* sim_argv[4] = {"bash", "-c", NULL, NULL};
 
-   debug("Loading...\n");
+   debug("Loading MDPI library...\n");
 
-   __ipc_init();
+   __ipc_init(MDPI_ENTITY_COUNT);
 
-   struct sigaction sa;
-   memset(&sa, 0, sizeof(sa));
-   sa.sa_handler = __m_abrupt_exit;
-   error = sigfillset(&sa.sa_mask);
    for(i = 0; i < (sizeof(__sigs) / sizeof(*__sigs)); ++i)
    {
-      error = sigaction(__sigs[i], &sa, NULL);
+      signal(__sigs[i], __m_sig_handler);
+   }
+
+   __m_sim_pid = fork();
+   if(__m_sim_pid == -1)
+   {
+      error("Error forking simulation process.\n");
+      perror("fork");
+      exit(EXIT_FAILURE);
+   }
+   else if(!__m_sim_pid)
+   {
+      sim_argv[2] = getenv(__M_IPC_SIM_CMD_ENV);
+      if(!sim_argv[2])
+      {
+         error("Simulation command line environment variable not set.\n");
+         _exit(EXIT_FAILURE);
+      }
+      error = unsetenv("LD_PRELOAD");
       if(error)
       {
-         error("Cannot install signal %d handler: %s.\n", __sigs[i], strerror(errno));
-         exit(EXIT_FAILURE);
+         error("Failed to unset LD_PRELOAD.\n");
+         perror("unsetenv");
+         _exit(EXIT_FAILURE);
       }
+      debug("Simulation process command line: \"%s\"", sim_argv[2]);
+      error = execvp("bash", sim_argv);
+      error("Failed to launch simulation process.\n");
+      perror("execv");
+      _exit(EXIT_FAILURE);
    }
+   debug("Launched simulation process with PID %d.\n", __m_sim_pid);
+
    debug("Loading completed.\n");
 }
 
@@ -314,6 +367,20 @@ void __attribute__((destructor)) __mdpi_driver_fini()
 {
    __ipc_exit(MDPI_STATE_END, EXIT_SUCCESS);
    __ipc_fini();
+   if(__m_sim_pid)
+   {
+      int status;
+      __m_sim_pid = 0;
+      if(wait(&status) == -1)
+      {
+         error("Error waiting for simulation process.\n");
+         perror("wait failed");
+      }
+      else if(!WIFEXITED(status) || WEXITSTATUS(status))
+      {
+         error("Simulation process terminated with error.\n");
+      }
+   }
    debug("Finalization completed.\n");
 }
 

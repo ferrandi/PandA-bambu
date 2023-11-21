@@ -67,9 +67,7 @@ void __attribute__((constructor)) __m_init()
 {
    debug("Initializing...\n");
 
-   __ipc_init();
-
-   atomic_store(&__remote_operation.handle, MDPI_IPC_STATE_FREE);
+   __ipc_init(0);
 
    debug("Initialization successful\n");
 }

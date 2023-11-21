@@ -94,13 +94,12 @@ int ToolManager::execute_command(const std::string& _command_, const std::string
          THROW_ERROR(error_message);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Executed command: " + _command_);
-      return -1;
    }
    else
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Executed command: " + _command_);
-      return ret;
    }
+   return ret;
 }
 
 int ToolManager::check_command(const std::string& _tool_, const std::string& setupscr, const std::string& _host_,
@@ -345,13 +344,13 @@ int ToolManager::execute(const std::vector<std::string>& parameters, const std::
    std::string command = local ? create_command_line(command_line) : create_remote_command_line(command_line);
 
    THROW_ASSERT(!log_file.empty(), "Log file not set during executable " + executable);
-   execute_command(command, "Returned error code!", log_file, permissive);
+   const auto ret = execute_command(command, "Returned error code!", log_file, permissive);
 
    /// check that all expected files have been generated
    check_output_files(output_files);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Invoked tool execution");
 
-   return 0;
+   return ret;
 }
 
 void ToolManager::remove_files(const std::vector<std::string>& input_files, const std::vector<std::string>& files)

@@ -118,7 +118,7 @@ void EucalyptusParameter::PrintHelp(std::ostream& os) const
       << "        Define NanoXplore tools path. Given directory is searched for NXMap.\n"
       << "        (default=/opt/NanoXplore)\n\n"
       << "    --xilinx-root=<path>\n"
-      << "        Define Xilinx tools path. Given directory is searched for both ISE and Vivado\n"
+      << "        Define Xilinx tools path. Given directory is searched for Vivado\n"
       << "        (default=/opt/Xilinx)\n\n"
       << std::endl;
 }
@@ -457,10 +457,6 @@ void EucalyptusParameter::CheckParameters()
       {
          setOption(OPT_mentor_modelsim_bin, dir + "/bin");
       }
-      if(std::filesystem::exists(dir + "/bin/visualizer"))
-      {
-         setOption(OPT_mentor_visualizer, dir + "/bin/visualizer");
-      }
    };
    for(const auto& mentor_dir : mentor_dirs)
    {
@@ -475,10 +471,6 @@ void EucalyptusParameter::CheckParameters()
          }
          search_mentor(mentor_dir);
       }
-   }
-   if(isOption(OPT_visualizer) && getOption<bool>(OPT_visualizer) && !isOption(OPT_mentor_visualizer))
-   {
-      THROW_ERROR("Mentor Visualizer was not detected by Bambu. Please check --mentor-root option is correct.");
    }
 
    /// Search for NanoXPlore tools
@@ -509,23 +501,6 @@ void EucalyptusParameter::CheckParameters()
    const auto target_64 = true;
    const auto xilinx_dirs = SplitString(getOption<std::string>(OPT_xilinx_root), ":");
    removeOption(OPT_xilinx_root);
-   const auto search_xilinx = [&](const std::string& dir) {
-      if(std::filesystem::exists(dir + "/ISE"))
-      {
-         if(target_64 && std::filesystem::exists(dir + "/settings64.sh"))
-         {
-            setOption(OPT_xilinx_settings, dir + "/settings64.sh");
-         }
-         else if(std::filesystem::exists(dir + "/settings32.sh"))
-         {
-            setOption(OPT_xilinx_settings, dir + "/settings32.sh");
-         }
-         if(std::filesystem::exists(dir + "/ISE/verilog/src/glbl.v"))
-         {
-            setOption(OPT_xilinx_glbl, dir + "/ISE/verilog/src/glbl.v");
-         }
-      }
-   };
    const auto search_xilinx_vivado = [&](const std::string& dir) {
       if(std::filesystem::exists(dir + "/ids_lite"))
       {
@@ -543,27 +518,6 @@ void EucalyptusParameter::CheckParameters()
          }
       }
    };
-   for(const auto& xilinx_dir : xilinx_dirs)
-   {
-      if(std::filesystem::is_directory(xilinx_dir))
-      {
-         for(const auto& ver_dir : sorted_dirs(xilinx_dir))
-         {
-            if(std::filesystem::is_directory(ver_dir))
-            {
-               for(const auto& ise_dir : std::filesystem::directory_iterator(ver_dir))
-               {
-                  const auto ise_path = ise_dir.path().string();
-                  if(std::filesystem::is_directory(ise_dir) && ise_path.find("ISE") > ise_path.find_last_of('/'))
-                  {
-                     search_xilinx(ise_path);
-                  }
-               }
-            }
-         }
-         search_xilinx(xilinx_dir);
-      }
-   }
    for(const auto& xilinx_dir : xilinx_dirs)
    {
       if(std::filesystem::is_directory(xilinx_dir))
