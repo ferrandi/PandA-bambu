@@ -625,6 +625,13 @@ class AllocationInformation : public HLSFunctionIR
    bool is_direct_access_memory_unit(unsigned int fu_type) const;
 
    /**
+    * return true in case the memory has decoupled addresses for writing and reading
+    * @param fu_type is functional unit id
+    * @return true in case the memory has decoupled addresses for writing and reading
+    */
+   bool is_dual_port_memory(unsigned int fu_type) const;
+
+   /**
     * return true in case4 fu type is a memory unit accessed through a proxy module
     * @param fu_type is functional unit id
     * @return true in case the functiona unit has direct access through a proxy module
@@ -1018,7 +1025,7 @@ class AllocationInformation : public HLSFunctionIR
    bool is_simple_pointer_plus_expr(const unsigned int fu_name) const;
 
    static bool can_be_asynchronous_ram(tree_managerConstRef TM, unsigned int var, unsigned int threshold,
-                                       bool is_read_only_variable);
+                                       bool is_read_only_variable, unsigned int channel_number);
 
    /**
     * Check if two statements can be chained

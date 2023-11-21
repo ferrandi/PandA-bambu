@@ -2799,7 +2799,7 @@ void allocation::IntegrateTechnologyLibraries()
                if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
                   (AllocationInformation::can_be_asynchronous_ram(
                       TM, var, parameters->getOption<unsigned int>(OPT_distram_threshold),
-                      HLSMgr->Rmem->is_read_only_variable(var))))
+                      HLSMgr->Rmem->is_read_only_variable(var), 1)))
                {
                   current_fu = get_fu(ARRAY_1D_STD_DISTRAM_SDS);
                   bool is_asynchronous_ram_not_timing_compliant = is_ram_not_timing_compliant(HLS_C, var, current_fu);
@@ -2841,7 +2841,7 @@ void allocation::IntegrateTechnologyLibraries()
                if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
                   AllocationInformation::can_be_asynchronous_ram(
                       TM, var, parameters->getOption<unsigned int>(OPT_distram_threshold),
-                      HLSMgr->Rmem->is_read_only_variable(var)))
+                      HLSMgr->Rmem->is_read_only_variable(var), channels_number))
                {
                   current_fu = get_fu(ARRAY_1D_STD_DISTRAM_N1_SDS);
                   bool is_asynchronous_ram_not_timing_compliant = is_ram_not_timing_compliant(HLS_C, var, current_fu);
@@ -2884,7 +2884,7 @@ void allocation::IntegrateTechnologyLibraries()
                if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
                   AllocationInformation::can_be_asynchronous_ram(
                       TM, var, parameters->getOption<unsigned int>(OPT_distram_threshold),
-                      HLSMgr->Rmem->is_read_only_variable(var)))
+                      HLSMgr->Rmem->is_read_only_variable(var), channels_number))
                {
                   current_fu = get_fu(ARRAY_1D_STD_DISTRAM_NN_SDS);
                   bool is_asynchronous_ram_not_timing_compliant = is_ram_not_timing_compliant(HLS_C, var, current_fu);
@@ -2979,7 +2979,7 @@ void allocation::IntegrateTechnologyLibraries()
                   if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
                      AllocationInformation::can_be_asynchronous_ram(
                          TM, proxied_var_id, parameters->getOption<unsigned int>(OPT_distram_threshold),
-                         HLSMgr->Rmem->is_read_only_variable(proxied_var_id)))
+                         HLSMgr->Rmem->is_read_only_variable(proxied_var_id), 1))
                   {
                      technology_nodeRef a_fu = get_fu(ARRAY_1D_STD_DISTRAM_SDS);
                      bool is_asynchronous_ram_not_timing_compliant =
@@ -3024,7 +3024,7 @@ void allocation::IntegrateTechnologyLibraries()
                   if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
                      AllocationInformation::can_be_asynchronous_ram(
                          TM, proxied_var_id, parameters->getOption<unsigned int>(OPT_distram_threshold),
-                         HLSMgr->Rmem->is_read_only_variable(proxied_var_id)))
+                         HLSMgr->Rmem->is_read_only_variable(proxied_var_id), channels_number))
                   {
                      technology_nodeRef a_fu =
                          get_fu(is_nn ? ARRAY_1D_STD_DISTRAM_NN_SDS : ARRAY_1D_STD_DISTRAM_N1_SDS);
