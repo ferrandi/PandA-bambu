@@ -319,7 +319,8 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
 
    script << "SIM_DIR=\"" << sim_dir << "\"\n"
           << "OUT_LVL=\"" << Param->getOption<int>(OPT_output_level) << "\"\n\n"
-          << "### Do not edit below\n\n";
+          << "### Do not edit below\n\n"
+          << "M_IPC_FILENAME=\"$(mktemp --tmpdir panda_sock.XXXXXXXXXX)\"\n";
 
    auto sim_cmd = GenerateScript(script, top_filename, file_list);
    boost::replace_all(sim_cmd, "\"", "\\\"");
@@ -382,7 +383,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, con
                    static_cast<size_t>(what[0].second - what[0].first));
    }
    beh_cflags += " -isystem " + relocate_compiler_path(PANDA_DATA_INSTALLDIR) + "/panda/libmdpi/include";
-   beh_cflags += " -D__M_IPC_FILENAME=\\\\\\\"$(mktemp --tmpdir panda_sock.XXXXXXXXXX)\\\\\\\"";
+   beh_cflags += " -D__M_IPC_FILENAME=\\\\\\\"${M_IPC_FILENAME}\\\\\\\"";
    beh_cflags += " -D__M_OUT_LVL=${OUT_LVL}";
    if(cflags.find("-m32") != std::string::npos)
    {
