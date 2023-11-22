@@ -65,7 +65,7 @@ void __attribute__((constructor)) __m_init()
 {
    debug("Initializing...\n");
 
-   __ipc_init(0);
+   __ipc_init(__LOCAL_ENTITY);
 
    debug("Initialization successful\n");
 }
@@ -75,7 +75,7 @@ void __attribute__((destructor)) __m_fini()
    if(__fini_trigger)
    {
       __ipc_exit(MDPI_IPC_STATE_REQUEST, MDPI_STATE_END, EXIT_SUCCESS);
-      __ipc_fini();
+      __ipc_fini(__LOCAL_ENTITY);
       debug("Finalization successful\n");
    }
 }
@@ -88,7 +88,7 @@ int m_fini()
    retval = ((uint16_t)(__m_ipc_operation.payload.sc.retval) << 8) | (__m_ipc_operation.payload.sc.state & 0xFF);
 
    __fini_trigger = 0;
-   __ipc_fini();
+   __ipc_fini(__LOCAL_ENTITY);
 
    debug("Finalization successful\n");
    return retval;

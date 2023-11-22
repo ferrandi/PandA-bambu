@@ -382,7 +382,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, con
                    static_cast<size_t>(what[0].second - what[0].first));
    }
    beh_cflags += " -isystem " + relocate_compiler_path(PANDA_DATA_INSTALLDIR) + "/panda/libmdpi/include";
-   beh_cflags += " -D__M_IPC_FILENAME=\\\\\\\"${SIM_DIR}/panda_ipc_mmap\\\\\\\"";
+   beh_cflags += " -D__M_IPC_FILENAME=\\\\\\\"$(mktemp --tmpdir panda_sock.XXXXXXXXXX)\\\\\\\"";
    beh_cflags += " -D__M_OUT_LVL=${OUT_LVL}";
    if(cflags.find("-m32") != std::string::npos)
    {

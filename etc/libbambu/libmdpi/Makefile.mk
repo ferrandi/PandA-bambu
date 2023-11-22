@@ -67,7 +67,6 @@ $(call check_defined, COSIM_SRC)  # PandA Bambu HLS generated co-simulation sour
 
 ### Environment below is automatically populated, do not override
 
-IPC_FILENAME := $(shell echo "$(BEH_CFLAGS)" | sed -E 's/.*__M_IPC_FILENAME=?\"([^ ]+)?\".*/\1/')
 override SRCS := $(filter-out %.gimplePSSA, $(SRCS))
 SRC_DIR := $(shell echo "$(SRCS)" | sed 's/ /\n/g' | sed -e '$$!{N;s/^\(.*\).*\n\1.*$$/\1\n\1/;D;}' | sed 's/\(.*\)\/.*/\1/')
 TB_SRC_DIR := $(shell echo "$(TB_SRCS)" | sed 's/ /\n/g' | sed -e '$$!{N;s/^\(.*\).*\n\1.*$$/\1\n\1/;D;}' | sed 's/\(.*\)\/.*/\1/')
@@ -141,10 +140,9 @@ libmdpi: $(MDPI_LIB)
 libmdpi_driver: $(DRIVER_LIB)
 
 testbench: $(TB_TARGET)
-	@rm -rf $(IPC_FILENAME)
 
 clean:
-	@rm -rf $(BUILD_DIR) $(DRIVER_LIB) $(MDPI_LIB) $(IPC_FILENAME)
+	@rm -rf $(BUILD_DIR) $(DRIVER_LIB) $(MDPI_LIB)
 
 $(MDPI_LIB): $(MDPI_SRCS)
 ifdef BEH_CC

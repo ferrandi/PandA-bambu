@@ -327,7 +327,7 @@ void __attribute__((constructor)) __mdpi_driver_init()
 
    debug("Loading MDPI library...\n");
 
-   __ipc_init(1);
+   __ipc_init(__LOCAL_ENTITY);
 
    for(i = 0; i < (sizeof(__sigs) / sizeof(*__sigs)); ++i)
    {
@@ -372,7 +372,7 @@ void __attribute__((constructor)) __mdpi_driver_init()
 void __attribute__((destructor)) __mdpi_driver_fini()
 {
    __ipc_exit(MDPI_STATE_END, EXIT_SUCCESS);
-   __ipc_fini();
+   __ipc_fini(__LOCAL_ENTITY);
    if(__m_sim_pid)
    {
       int status;
