@@ -111,7 +111,7 @@ PP_CFLAGS += $(shell if [ ! -z "$$(basename $(CC) | grep clang)" ]; then echo "-
 DRIVER_LDFLAGS := $(shell echo "$(TB_CFLAGS)" | grep -oE '(-mx?[0-9]+)')
 DRIVER_LDFLAGS += $(shell echo "$(TB_CFLAGS)" | grep -oE '( -[Ll](\\.|[^ ])+)' | tr '\n' ' ')
 DRIVER_LDFLAGS += $(shell echo :$$LD_LIBRARY_PATH | sed 's/:$$//' | sed 's/:/ -L/g')
-DRIVER_LDFLAGS += -lpthread -lstdc++
+DRIVER_LDFLAGS += -lpthread -lstdc++ -lm
 
 LIB_LDFLAGS := 
 ifeq ($(BEH_CC),xsc)
