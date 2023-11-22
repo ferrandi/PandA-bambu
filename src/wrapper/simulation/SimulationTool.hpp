@@ -85,8 +85,6 @@ class SimulationTool
    std::string GenerateLibraryBuildScript(std::ostream& script, const std::string& libtb_filename,
                                           std::string& beh_cflags) const;
 
-   void startUserTestbench(std::ostream& script) const;
-
  public:
    /**
     * Constructor
