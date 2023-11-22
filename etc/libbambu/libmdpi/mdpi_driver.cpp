@@ -246,7 +246,6 @@ static FORCE_INLINE void __ipc_exit(mdpi_state_t state, uint8_t retval)
 static void __ipc_abort()
 {
    __ipc_exit(MDPI_STATE_ABORT, EXIT_FAILURE);
-   // TODO: write sim report file
    exit(EXIT_FAILURE);
 }
 
@@ -286,12 +285,12 @@ void __m_sig_handler(int __sig)
       }
       error("Abrupt exception: %u\n", __sig);
    }
-   __ipc_exit(MDPI_STATE_ABORT, EXIT_FAILURE);
 #if __M_OUT_LVL > 4
    fflush(stdout);
 #else
    fflush(stderr);
 #endif
+   __ipc_exit(MDPI_STATE_ABORT, EXIT_FAILURE);
    exit(EXIT_FAILURE);
 }
 
@@ -335,6 +334,7 @@ void __attribute__((constructor)) __mdpi_driver_init()
       signal(__sigs[i], __m_sig_handler);
    }
 
+   fflush(stdout);
    __m_sim_pid = fork();
    if(__m_sim_pid == -1)
    {
