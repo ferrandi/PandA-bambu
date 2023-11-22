@@ -239,7 +239,7 @@ class shared_memmap : public memmap
 
 static FORCE_INLINE void __ipc_exit(mdpi_state_t state, uint8_t retval)
 {
-   __ipc_exit(MDPI_IPC_STATE_DONE, state, retval);
+   __ipc_exit(MDPI_IPC_STATE_RESPONSE, state, retval);
 }
 
 static void __ipc_abort()
@@ -363,6 +363,8 @@ void __attribute__((constructor)) __mdpi_driver_init()
       _exit(EXIT_FAILURE);
    }
    debug("Launched simulation process with PID %d.\n", __m_sim_pid);
+
+   __ipc_init1();
 
    debug("Loading completed.\n");
 }
