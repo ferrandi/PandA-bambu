@@ -621,7 +621,8 @@ bool AllocationInformation::is_indirect_access_memory_unit(unsigned int fu_type)
    std::string memory_ctrl_type = GetPointer<functional_unit>(current_fu)->memory_ctrl_type;
    return memory_ctrl_type != "" && memory_ctrl_type != MEMORY_CTRL_TYPE_PROXY &&
           memory_ctrl_type != MEMORY_CTRL_TYPE_PROXYN && memory_ctrl_type != MEMORY_CTRL_TYPE_DPROXY &&
-          memory_ctrl_type != MEMORY_CTRL_TYPE_DPROXYN;
+          memory_ctrl_type != MEMORY_CTRL_TYPE_DPROXYN && memory_ctrl_type != MEMORY_CTRL_TYPE_SPROXY &&
+          memory_ctrl_type != MEMORY_CTRL_TYPE_SPROXYN;
 }
 
 double AllocationInformation::get_worst_execution_time(const unsigned int fu_name) const
@@ -880,8 +881,9 @@ bool AllocationInformation::is_dual_port_memory(unsigned int fu_type) const
    technology_nodeRef current_fu = get_fu(fu_type);
    std::string memory_type = GetPointer<functional_unit>(current_fu)->memory_type;
    std::string memory_ctrl_type = GetPointer<functional_unit>(current_fu)->memory_ctrl_type;
-   return memory_type == "ASYNCHRONOUS" || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY ||
-          memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN;
+   return memory_type == "ASYNCHRONOUS" || memory_type == "SYNCHRONOUS_SDS" ||
+          memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN ||
+          memory_ctrl_type == MEMORY_CTRL_TYPE_SPROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_SPROXYN;
 }
 
 bool AllocationInformation::is_direct_access_memory_unit(unsigned int fu_type) const
@@ -891,7 +893,8 @@ bool AllocationInformation::is_direct_access_memory_unit(unsigned int fu_type) c
    std::string memory_ctrl_type = GetPointer<functional_unit>(current_fu)->memory_ctrl_type;
    return memory_type != "" || memory_ctrl_type == MEMORY_CTRL_TYPE_PROXY ||
           memory_ctrl_type == MEMORY_CTRL_TYPE_PROXYN || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY ||
-          memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN;
+          memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN || memory_ctrl_type == MEMORY_CTRL_TYPE_SPROXY ||
+          memory_ctrl_type == MEMORY_CTRL_TYPE_SPROXYN;
 }
 
 bool AllocationInformation::is_direct_proxy_memory_unit(unsigned int fu_type) const
@@ -899,7 +902,8 @@ bool AllocationInformation::is_direct_proxy_memory_unit(unsigned int fu_type) co
    technology_nodeRef current_fu = get_fu(fu_type);
    std::string memory_ctrl_type = GetPointer<functional_unit>(current_fu)->memory_ctrl_type;
    return memory_ctrl_type == MEMORY_CTRL_TYPE_PROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_PROXYN ||
-          memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN;
+          memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN ||
+          memory_ctrl_type == MEMORY_CTRL_TYPE_SPROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_SPROXYN;
 }
 
 bool AllocationInformation::is_memory_unit(const unsigned int fu_name) const
@@ -2640,7 +2644,8 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
 #endif
    }
    else if(memory_ctrl_type == MEMORY_CTRL_TYPE_PROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_PROXYN ||
-           memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN)
+           memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN ||
+           memory_ctrl_type == MEMORY_CTRL_TYPE_SPROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_SPROXYN)
    {
       is_a_proxy = true;
       unsigned var = proxy_memory_units.find(fu)->second;
@@ -2666,7 +2671,8 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       technology_nodeRef f_unit_sds;
       if(Rmem->is_sds_var(var))
       {
-         if(memory_ctrl_type == MEMORY_CTRL_TYPE_PROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY)
+         if(memory_ctrl_type == MEMORY_CTRL_TYPE_PROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY ||
+            memory_ctrl_type == MEMORY_CTRL_TYPE_SPROXY)
          {
             if(Rmem->is_private_memory(var))
             {

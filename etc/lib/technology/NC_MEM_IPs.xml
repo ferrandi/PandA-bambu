@@ -1047,18 +1047,19 @@ PROXY_CTRLN #(.BITSIZE_in1(BITSIZE_in1),
       </circuit>
     </cell>
     <cell>
-      <name>DPROXY_CTRL</name>
-      <operation operation_name="LOAD"/>
+      <name>SPROXY_CTRL</name>
+      <operation operation_name="LOAD" initiation_time="1" cycles="2"/>
       <operation operation_name="STORE"/>
       <channels_type>MEM_ACC_11</channels_type>
-      <memory_ctrl_type>DPROXY</memory_ctrl_type>
+      <memory_ctrl_type>SPROXY</memory_ctrl_type>
+      <bram_load_latency>2</bram_load_latency>
       <circuit>
-        <component_o id="DPROXY_CTRL">
+        <component_o id="SPROXY_CTRL">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2023 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="DPROXY_CTRL"/>
+          <structural_type_descriptor id_type="SPROXY_CTRL"/>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
@@ -1074,7 +1075,7 @@ PROXY_CTRLN #(.BITSIZE_in1(BITSIZE_in1),
           <port_o id="in3w" dir="IN" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="in4_r" dir="IN">
+          <port_o id="in4r" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="in4w" dir="IN">
@@ -1105,10 +1106,10 @@ PROXY_CTRLN #(.BITSIZE_in1(BITSIZE_in1),
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="proxy_in4r" dir="OUT" is_memory="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="proxy_in4w" dir="OUT" is_memory="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="proxy_sel_LOAD" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -1119,14 +1120,14 @@ PROXY_CTRLN #(.BITSIZE_in1(BITSIZE_in1),
           <port_o id="proxy_out1" dir="IN" is_memory="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="DPROXY_CTRL in1 in2r in2w in3r in3w out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_out1" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="SPROXY_CTRL in1 in2r in2w in3r in3w out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_out1" VERILOG_PROVIDED="
 assign out1 = proxy_out1;
 assign proxy_in1 = in1;
 assign proxy_in2r = in2r;
 assign proxy_in2w = in2w;
 assign proxy_in3r = in3r;
 assign proxy_in3w = in3w;
-assign proxy_in4r = in4_r;
+assign proxy_in4r = in4r;
 assign proxy_in4w = in4w;
 assign proxy_sel_LOAD = sel_LOAD;
 assign proxy_sel_STORE = sel_STORE;"
@@ -1138,7 +1139,7 @@ begin
   proxy_in2w &lt;= in2w;
   proxy_in3r &lt;= in3r;
   proxy_in3w &lt;= in3w;
-  proxy_in4r &lt;= in4_r;
+  proxy_in4r &lt;= in4r;
   proxy_in4w &lt;= in4w;
   proxy_sel_LOAD &lt;= sel_LOAD;
   proxy_sel_STORE &lt;= sel_STORE;
@@ -1147,18 +1148,311 @@ begin
       </circuit>
     </cell>
     <cell>
-      <name>DPROXY_CTRLN</name>
-      <operation operation_name="LOAD"/>
+      <name>SPROXY_CTRL_3</name>
+      <operation operation_name="LOAD" initiation_time="1" cycles="3"/>
       <operation operation_name="STORE"/>
-      <channels_type>MEM_ACC_N1,MEM_ACC_NN</channels_type>
-      <memory_ctrl_type>DPROXYN</memory_ctrl_type>
+      <channels_type>MEM_ACC_11</channels_type>
+      <memory_ctrl_type>SPROXY</memory_ctrl_type>
+      <bram_load_latency>3</bram_load_latency>
       <circuit>
-        <component_o id="DPROXY_CTRLN">
+        <component_o id="SPROXY_CTRL_3">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2013-2023 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="DPROXY_CTRLN"/>
+          <structural_type_descriptor id_type="SPROXY_CTRL_3"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2r" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2w" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in3r" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in3w" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in4r" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in4w" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="sel_LOAD" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="sel_STORE" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in1" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in2r" dir="OUT" is_addr_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in2w" dir="OUT" is_addr_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in3r" dir="OUT" is_size_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in3w" dir="OUT" is_size_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in4r" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="proxy_in4w" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="proxy_sel_LOAD" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="proxy_sel_STORE" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="proxy_out1" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="SPROXY_CTRL_3 in1 in2r in2w in3r in3w out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_out1" IP_COMPONENT="SPROXY_CTRL" VERILOG_PROVIDED="
+SPROXY_CTRL #(.BITSIZE_in1(BITSIZE_in1),
+  .BITSIZE_in2r(BITSIZE_in2r),
+  .BITSIZE_in2w(BITSIZE_in2w),
+  .BITSIZE_in3r(BITSIZE_in3r),
+  .BITSIZE_in3w(BITSIZE_in3w),
+  .BITSIZE_out1(BITSIZE_out1),
+  .BITSIZE_proxy_in1(BITSIZE_proxy_in1),
+  .BITSIZE_proxy_in2r(BITSIZE_proxy_in2r),
+  .BITSIZE_proxy_in2w(BITSIZE_proxy_in2w),
+  .BITSIZE_proxy_in3r(BITSIZE_proxy_in3r),
+  .BITSIZE_proxy_in3w(BITSIZE_proxy_in3w),
+  .BITSIZE_proxy_out1(BITSIZE_proxy_out1)
+) SPROXY_CTRL_i0 (
+  .out1(out1),
+  .proxy_in1(proxy_in1),
+  .proxy_in2r(proxy_in2r),
+  .proxy_in2w(proxy_in2w),
+  .proxy_in3r(proxy_in3r),
+  .proxy_in3w(proxy_in3w),
+  .proxy_in4r(proxy_in4r),
+  .proxy_in4w(proxy_in4w),
+  .proxy_sel_LOAD(proxy_sel_LOAD),
+  .proxy_sel_STORE(proxy_sel_STORE),
+  .in1(in1),
+  .in2r(in2r),
+  .in2w(in2w),
+  .in3r(in3r),
+  .in3w(in3w),
+  .in4r(in4r),
+  .in4w(in4w),
+  .sel_LOAD(sel_LOAD),
+  .sel_STORE(sel_STORE),
+  .proxy_out1(proxy_out1));" VHDL_PROVIDED="
+begin
+SPROXY_CTRL_i0 : SPROXY_CTRL generic map(
+  BITSIZE_in1=>BITSIZE_in1,
+  BITSIZE_in2r=>BITSIZE_in2r,
+  BITSIZE_in2w=>BITSIZE_in2w,
+  BITSIZE_in3r=>BITSIZE_in3r,
+  BITSIZE_in3w=>BITSIZE_in3w,
+  BITSIZE_out1=>BITSIZE_out1,
+  BITSIZE_proxy_in1=>BITSIZE_proxy_in1,
+  BITSIZE_proxy_in2r=>BITSIZE_proxy_in2r,
+  BITSIZE_proxy_in2w=>BITSIZE_proxy_in2w,
+  BITSIZE_proxy_in3r=>BITSIZE_proxy_in3r,
+  BITSIZE_proxy_in3w=>BITSIZE_proxy_in3w,
+  BITSIZE_proxy_out1=>BITSIZE_proxy_out1
+) port map (
+  out1 => out1,
+  proxy_in1 => proxy_in1,
+  proxy_in2r => proxy_in2r,
+  proxy_in2w => proxy_in2w,
+  proxy_in3r => proxy_in3r,
+  proxy_in3w => proxy_in3w,
+  proxy_in4r => proxy_in4r,
+  proxy_in4w => proxy_in4w,
+  proxy_sel_LOAD => proxy_sel_LOAD,
+  proxy_sel_STORE => proxy_sel_STORE,
+  in1 => in1,
+  in2r => in2r,
+  in2w => in2w,
+  in3r => in3r,
+  in3w => in3w,
+  in4r => in4r,
+  in4w => in4w,
+  sel_LOAD => sel_LOAD,
+  sel_STORE => sel_STORE,
+  proxy_out1 => proxy_out1);"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>SPROXY_CTRL_4</name>
+      <operation operation_name="LOAD" initiation_time="1" cycles="4"/>
+      <operation operation_name="STORE" initiation_time="1" cycles="2"/>
+      <channels_type>MEM_ACC_11</channels_type>
+      <memory_ctrl_type>SPROXY</memory_ctrl_type>
+      <bram_load_latency>4</bram_load_latency>
+      <circuit>
+        <component_o id="SPROXY_CTRL_4">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2013-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="SPROXY_CTRL_4"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2r" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2w" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in3r" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in3w" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in4r" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in4w" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="sel_LOAD" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="sel_STORE" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in1" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in2r" dir="OUT" is_addr_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in2w" dir="OUT" is_addr_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in3r" dir="OUT" is_size_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in3w" dir="OUT" is_size_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in4r" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="proxy_in4w" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="proxy_sel_LOAD" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="proxy_sel_STORE" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="proxy_out1" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="SPROXY_CTRL_4 in1 in2r in2w in3r in3w out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_out1" IP_COMPONENT="SPROXY_CTRL" VERILOG_PROVIDED="
+SPROXY_CTRL #(.BITSIZE_in1(BITSIZE_in1),
+  .BITSIZE_in2r(BITSIZE_in2r),
+  .BITSIZE_in2w(BITSIZE_in2w),
+  .BITSIZE_in3r(BITSIZE_in3r),
+  .BITSIZE_in3w(BITSIZE_in3w),
+  .BITSIZE_out1(BITSIZE_out1),
+  .BITSIZE_proxy_in1(BITSIZE_proxy_in1),
+  .BITSIZE_proxy_in2r(BITSIZE_proxy_in2r),
+  .BITSIZE_proxy_in2w(BITSIZE_proxy_in2w),
+  .BITSIZE_proxy_in3r(BITSIZE_proxy_in3r),
+  .BITSIZE_proxy_in3w(BITSIZE_proxy_in3w),
+  .BITSIZE_proxy_out1(BITSIZE_proxy_out1)
+) SPROXY_CTRL_i0 (
+  .out1(out1),
+  .proxy_in1(proxy_in1),
+  .proxy_in2r(proxy_in2r),
+  .proxy_in2w(proxy_in2w),
+  .proxy_in3r(proxy_in3r),
+  .proxy_in3w(proxy_in3w),
+  .proxy_in4r(proxy_in4r),
+  .proxy_in4w(proxy_in4w),
+  .proxy_sel_LOAD(proxy_sel_LOAD),
+  .proxy_sel_STORE(proxy_sel_STORE),
+  .in1(in1),
+  .in2r(in2r),
+  .in2w(in2w),
+  .in3r(in3r),
+  .in3w(in3w),
+  .in4r(in4r),
+  .in4w(in4w),
+  .sel_LOAD(sel_LOAD),
+  .sel_STORE(sel_STORE),
+  .proxy_out1(proxy_out1));" VHDL_PROVIDED="
+begin
+SPROXY_CTRL_i0 : SPROXY_CTRL generic map(
+  BITSIZE_in1=>BITSIZE_in1,
+  BITSIZE_in2r=>BITSIZE_in2r,
+  BITSIZE_in2w=>BITSIZE_in2w,
+  BITSIZE_in3r=>BITSIZE_in3r,
+  BITSIZE_in3w=>BITSIZE_in3w,
+  BITSIZE_out1=>BITSIZE_out1,
+  BITSIZE_proxy_in1=>BITSIZE_proxy_in1,
+  BITSIZE_proxy_in2r=>BITSIZE_proxy_in2r,
+  BITSIZE_proxy_in2w=>BITSIZE_proxy_in2w,
+  BITSIZE_proxy_in3r=>BITSIZE_proxy_in3r,
+  BITSIZE_proxy_in3w=>BITSIZE_proxy_in3w,
+  BITSIZE_proxy_out1=>BITSIZE_proxy_out1
+) port map (
+  out1 => out1,
+  proxy_in1 => proxy_in1,
+  proxy_in2r => proxy_in2r,
+  proxy_in2w => proxy_in2w,
+  proxy_in3r => proxy_in3r,
+  proxy_in3w => proxy_in3w,
+  proxy_in4r => proxy_in4r,
+  proxy_in4w => proxy_in4w,
+  proxy_sel_LOAD => proxy_sel_LOAD,
+  proxy_sel_STORE => proxy_sel_STORE,
+  in1 => in1,
+  in2r => in2r,
+  in2w => in2w,
+  in3r => in3r,
+  in3w => in3w,
+  in4r => in4r,
+  in4w => in4w,
+  sel_LOAD => sel_LOAD,
+  sel_STORE => sel_STORE,
+  proxy_out1 => proxy_out1);"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>SPROXY_CTRLN</name>
+      <operation operation_name="LOAD" initiation_time="1" cycles="2"/>
+      <operation operation_name="STORE"/>
+      <channels_type>MEM_ACC_N1,MEM_ACC_NN</channels_type>
+      <memory_ctrl_type>SPROXYN</memory_ctrl_type>
+      <bram_load_latency>2</bram_load_latency>
+      <circuit>
+        <component_o id="SPROXY_CTRLN">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2013-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="SPROXY_CTRLN"/>
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
@@ -1174,7 +1468,7 @@ begin
           <port_vector_o id="in3w" dir="IN" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="in4_r" dir="IN">
+          <port_vector_o id="in4r" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <port_vector_o id="in4w" dir="IN">
@@ -1205,10 +1499,10 @@ begin
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <port_vector_o id="proxy_in4r" dir="OUT" is_memory="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <port_vector_o id="proxy_in4w" dir="OUT" is_memory="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <port_vector_o id="proxy_sel_LOAD" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -1219,7 +1513,7 @@ begin
           <port_vector_o id="proxy_out1" dir="IN" is_memory="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="DPROXY_CTRLN in1 in2r in2w in3r in3w in4_r in4w sel_LOAD sel_STORE out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1" 
+          <NP_functionality LIBRARY="SPROXY_CTRLN in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1" 
           VERILOG_PROVIDED="
 generate
 genvar i0;
@@ -1263,7 +1557,639 @@ for (i3_w=0; i3_w&lt;PORTSIZE_in3w; i3_w=i3_w+1)
     assign proxy_in3w[(i3_w+1)*BITSIZE_proxy_in3w-1:i3_w*BITSIZE_proxy_in3w] = in3w[(i3_w+1)*BITSIZE_in3w-1:i3_w*BITSIZE_in3w];
   end
 endgenerate
-assign proxy_in4r = in4_r;
+assign proxy_in4r = in4r;
+assign proxy_in4w = in4w;
+assign proxy_sel_LOAD = sel_LOAD;
+assign proxy_sel_STORE = sel_STORE;"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>SPROXY_CTRLN_3</name>
+      <operation operation_name="LOAD" initiation_time="1" cycles="3"/>
+      <operation operation_name="STORE"/>
+      <channels_type>MEM_ACC_N1,MEM_ACC_NN</channels_type>
+      <memory_ctrl_type>SPROXYN</memory_ctrl_type>
+      <bram_load_latency>3</bram_load_latency>
+      <circuit>
+        <component_o id="SPROXY_CTRLN_3">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2013-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="SPROXY_CTRLN_3"/>
+          <port_vector_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="in2r" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="in2w" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="in3r" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="in3w" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="in4r" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="in4w" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="sel_LOAD" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="sel_STORE" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in1" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in2r" dir="OUT" is_addr_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in2w" dir="OUT" is_addr_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in3r" dir="OUT" is_size_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in3w" dir="OUT" is_size_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in4r" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in4w" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_sel_LOAD" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_sel_STORE" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_out1" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="SPROXY_CTRLN_3 in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1" 
+          IP_COMPONENT="SPROXY_CTRLN" VERILOG_PROVIDED="
+SPROXY_CTRLN #(
+  .BITSIZE_in1(BITSIZE_in1),
+  .PORTSIZE_in1(PORTSIZE_in1),
+  .BITSIZE_in2r(BITSIZE_in2r),
+  .PORTSIZE_in2r(PORTSIZE_in2r),
+  .BITSIZE_in2w(BITSIZE_in2w),
+  .PORTSIZE_in2w(PORTSIZE_in2w),
+  .BITSIZE_in3r(BITSIZE_in3r),
+  .PORTSIZE_in3r(PORTSIZE_in3r),
+  .BITSIZE_in3w(BITSIZE_in3w),
+  .PORTSIZE_in3w(PORTSIZE_in3w),
+  .BITSIZE_in4r(BITSIZE_in4r),
+  .PORTSIZE_in4r(PORTSIZE_in4r),
+  .BITSIZE_in4w(BITSIZE_in4w),
+  .PORTSIZE_in4w(PORTSIZE_in4w),
+  .BITSIZE_sel_LOAD(BITSIZE_sel_LOAD),
+  .PORTSIZE_sel_LOAD(PORTSIZE_sel_LOAD),
+  .BITSIZE_sel_STORE(BITSIZE_sel_STORE),
+  .PORTSIZE_sel_STORE(PORTSIZE_sel_STORE),
+  .BITSIZE_out1(BITSIZE_out1),
+  .PORTSIZE_out1(PORTSIZE_out1),
+  .BITSIZE_proxy_in1(BITSIZE_proxy_in1),
+  .PORTSIZE_proxy_in1(PORTSIZE_proxy_in1),
+  .BITSIZE_proxy_in2r(BITSIZE_proxy_in2r),
+  .PORTSIZE_proxy_in2r(PORTSIZE_proxy_in2r),
+  .BITSIZE_proxy_in2w(BITSIZE_proxy_in2w),
+  .PORTSIZE_proxy_in2w(PORTSIZE_proxy_in2w),
+  .BITSIZE_proxy_in3r(BITSIZE_proxy_in3r),
+  .PORTSIZE_proxy_in3r(PORTSIZE_proxy_in3r),
+  .BITSIZE_proxy_in3w(BITSIZE_proxy_in3w),
+  .PORTSIZE_proxy_in3w(PORTSIZE_proxy_in3w),
+  .BITSIZE_proxy_in4r(BITSIZE_proxy_in4r),
+  .PORTSIZE_proxy_in4r(PORTSIZE_proxy_in4r),
+  .BITSIZE_proxy_in4w(BITSIZE_proxy_in4w),
+  .PORTSIZE_proxy_in4w(PORTSIZE_proxy_in4w),
+  .BITSIZE_proxy_sel_LOAD(BITSIZE_proxy_sel_LOAD),
+  .PORTSIZE_proxy_sel_LOAD(PORTSIZE_proxy_sel_LOAD),
+  .BITSIZE_proxy_sel_STORE(BITSIZE_proxy_sel_STORE),
+  .PORTSIZE_proxy_sel_STORE(PORTSIZE_proxy_sel_STORE),
+  .BITSIZE_proxy_out1(BITSIZE_proxy_out1),
+  .PORTSIZE_proxy_out1(PORTSIZE_proxy_out1)
+) SPROXY_CTRLN_i0 (
+  .out1(out1),
+  .proxy_in1(proxy_in1),
+  .proxy_in2r(proxy_in2r),
+  .proxy_in2w(proxy_in2w),
+  .proxy_in3r(proxy_in3r),
+  .proxy_in3w(proxy_in3w),
+  .proxy_in4r(proxy_in4r),
+  .proxy_in4w(proxy_in4w),
+  .proxy_sel_LOAD(proxy_sel_LOAD),
+  .proxy_sel_STORE(proxy_sel_STORE),
+  .in1(in1),
+  .in2r(in2r),
+  .in2w(in2w),
+  .in3r(in3r),
+  .in3w(in3w),
+  .in4r(in4r),
+  .in4w(in4w),
+  .sel_LOAD(sel_LOAD),
+  .sel_STORE(sel_STORE),
+  .proxy_out1(proxy_out1)
+);
+" VHDL_PROVIDED="begin
+  SPROXY_CTRLN_i0 : SPROXY_CTRLN generic map(BITSIZE_in1=>BITSIZE_in1,
+  PORTSIZE_in1=>PORTSIZE_in1,
+  BITSIZE_in2r=>BITSIZE_in2r,
+  PORTSIZE_in2r=>PORTSIZE_in2r,
+  BITSIZE_in2w=>BITSIZE_in2w,
+  PORTSIZE_in2w=>PORTSIZE_in2w,
+  BITSIZE_in3r=>BITSIZE_in3r,
+  PORTSIZE_in3r=>PORTSIZE_in3r,
+  BITSIZE_in3w=>BITSIZE_in3w,
+  PORTSIZE_in3w=>PORTSIZE_in3w,
+  BITSIZE_in4r=>BITSIZE_in4r,
+  PORTSIZE_in4r=>PORTSIZE_in4r,
+  BITSIZE_in4w=>BITSIZE_in4w,
+  PORTSIZE_in4w=>PORTSIZE_in4w,
+  BITSIZE_sel_LOAD=>BITSIZE_sel_LOAD,
+  PORTSIZE_sel_LOAD=>PORTSIZE_sel_LOAD,
+  BITSIZE_sel_STORE=>BITSIZE_sel_STORE,
+  PORTSIZE_sel_STORE=>PORTSIZE_sel_STORE,
+  BITSIZE_out1=>BITSIZE_out1,
+  PORTSIZE_out1=>PORTSIZE_out1,
+  BITSIZE_proxy_in1=>BITSIZE_proxy_in1,
+  PORTSIZE_proxy_in1=>PORTSIZE_proxy_in1,
+  BITSIZE_proxy_in2r=>BITSIZE_proxy_in2r,
+  PORTSIZE_proxy_in2r=>PORTSIZE_proxy_in2r,
+  BITSIZE_proxy_in2w=>BITSIZE_proxy_in2w,
+  PORTSIZE_proxy_in2w=>PORTSIZE_proxy_in2w,
+  BITSIZE_proxy_in3r=>BITSIZE_proxy_in3r,
+  PORTSIZE_proxy_in3r=>PORTSIZE_proxy_in3r,
+  BITSIZE_proxy_in3w=>BITSIZE_proxy_in3w,
+  PORTSIZE_proxy_in3w=>PORTSIZE_proxy_in3w,
+  BITSIZE_proxy_in4r=>BITSIZE_proxy_in4r,
+  PORTSIZE_proxy_in4r=>PORTSIZE_proxy_in4r,
+  BITSIZE_proxy_in4w=>BITSIZE_proxy_in4w,
+  PORTSIZE_proxy_in4w=>PORTSIZE_proxy_in4w,
+  BITSIZE_proxy_sel_LOAD=>BITSIZE_proxy_sel_LOAD,
+  PORTSIZE_proxy_sel_LOAD=>PORTSIZE_proxy_sel_LOAD,
+  BITSIZE_proxy_sel_STORE=>BITSIZE_proxy_sel_STORE,
+  PORTSIZE_proxy_sel_STORE=>PORTSIZE_proxy_sel_STORE,
+  BITSIZE_proxy_out1=>BITSIZE_proxy_out1,
+  PORTSIZE_proxy_out1=>PORTSIZE_proxy_out1
+) port map (
+  out1 => out1,
+  proxy_in1 => proxy_in1,
+  proxy_in2r => proxy_in2r,
+  proxy_in2w => proxy_in2w,
+  proxy_in3r => proxy_in3r,
+  proxy_in3w => proxy_in3w,
+  proxy_in4r => proxy_in4r,
+  proxy_in4w => proxy_in4w,
+  proxy_sel_LOAD => proxy_sel_LOAD,
+  proxy_sel_STORE => proxy_sel_STORE,
+  in1 => in1,
+  in2r => in2r,
+  in2w => in2w,
+  in3r => in3r,
+  in3w => in3w,
+  in4r => in4r,
+  in4w => in4w,
+  sel_LOAD => sel_LOAD,
+  sel_STORE => sel_STORE,
+  proxy_out1 => proxy_out1);"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>SPROXY_CTRLN_4</name>
+      <operation operation_name="LOAD" initiation_time="1" cycles="4"/>
+      <operation operation_name="STORE" initiation_time="1" cycles="2"/>
+      <channels_type>MEM_ACC_N1,MEM_ACC_NN</channels_type>
+      <memory_ctrl_type>SPROXYN</memory_ctrl_type>
+      <bram_load_latency>4</bram_load_latency>
+      <circuit>
+        <component_o id="SPROXY_CTRLN_4">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2013-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="SPROXY_CTRLN_4"/>
+          <port_vector_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="in2r" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="in2w" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="in3r" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="in3w" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="in4r" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="in4w" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="sel_LOAD" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="sel_STORE" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in1" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in2r" dir="OUT" is_addr_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in2w" dir="OUT" is_addr_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in3r" dir="OUT" is_size_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in3w" dir="OUT" is_size_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in4r" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in4w" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_sel_LOAD" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_sel_STORE" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_out1" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="SPROXY_CTRLN_4 in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1" 
+          IP_COMPONENT="SPROXY_CTRLN" VERILOG_PROVIDED="
+SPROXY_CTRLN #(
+  .BITSIZE_in1(BITSIZE_in1),
+  .PORTSIZE_in1(PORTSIZE_in1),
+  .BITSIZE_in2r(BITSIZE_in2r),
+  .PORTSIZE_in2r(PORTSIZE_in2r),
+  .BITSIZE_in2w(BITSIZE_in2w),
+  .PORTSIZE_in2w(PORTSIZE_in2w),
+  .BITSIZE_in3r(BITSIZE_in3r),
+  .PORTSIZE_in3r(PORTSIZE_in3r),
+  .BITSIZE_in3w(BITSIZE_in3w),
+  .PORTSIZE_in3w(PORTSIZE_in3w),
+  .BITSIZE_in4r(BITSIZE_in4r),
+  .PORTSIZE_in4r(PORTSIZE_in4r),
+  .BITSIZE_in4w(BITSIZE_in4w),
+  .PORTSIZE_in4w(PORTSIZE_in4w),
+  .BITSIZE_sel_LOAD(BITSIZE_sel_LOAD),
+  .PORTSIZE_sel_LOAD(PORTSIZE_sel_LOAD),
+  .BITSIZE_sel_STORE(BITSIZE_sel_STORE),
+  .PORTSIZE_sel_STORE(PORTSIZE_sel_STORE),
+  .BITSIZE_out1(BITSIZE_out1),
+  .PORTSIZE_out1(PORTSIZE_out1),
+  .BITSIZE_proxy_in1(BITSIZE_proxy_in1),
+  .PORTSIZE_proxy_in1(PORTSIZE_proxy_in1),
+  .BITSIZE_proxy_in2r(BITSIZE_proxy_in2r),
+  .PORTSIZE_proxy_in2r(PORTSIZE_proxy_in2r),
+  .BITSIZE_proxy_in2w(BITSIZE_proxy_in2w),
+  .PORTSIZE_proxy_in2w(PORTSIZE_proxy_in2w),
+  .BITSIZE_proxy_in3r(BITSIZE_proxy_in3r),
+  .PORTSIZE_proxy_in3r(PORTSIZE_proxy_in3r),
+  .BITSIZE_proxy_in3w(BITSIZE_proxy_in3w),
+  .PORTSIZE_proxy_in3w(PORTSIZE_proxy_in3w),
+  .BITSIZE_proxy_in4r(BITSIZE_proxy_in4r),
+  .PORTSIZE_proxy_in4r(PORTSIZE_proxy_in4r),
+  .BITSIZE_proxy_in4w(BITSIZE_proxy_in4w),
+  .PORTSIZE_proxy_in4w(PORTSIZE_proxy_in4w),
+  .BITSIZE_proxy_sel_LOAD(BITSIZE_proxy_sel_LOAD),
+  .PORTSIZE_proxy_sel_LOAD(PORTSIZE_proxy_sel_LOAD),
+  .BITSIZE_proxy_sel_STORE(BITSIZE_proxy_sel_STORE),
+  .PORTSIZE_proxy_sel_STORE(PORTSIZE_proxy_sel_STORE),
+  .BITSIZE_proxy_out1(BITSIZE_proxy_out1),
+  .PORTSIZE_proxy_out1(PORTSIZE_proxy_out1)
+) SPROXY_CTRLN_i0 (
+  .out1(out1),
+  .proxy_in1(proxy_in1),
+  .proxy_in2r(proxy_in2r),
+  .proxy_in2w(proxy_in2w),
+  .proxy_in3r(proxy_in3r),
+  .proxy_in3w(proxy_in3w),
+  .proxy_in4r(proxy_in4r),
+  .proxy_in4w(proxy_in4w),
+  .proxy_sel_LOAD(proxy_sel_LOAD),
+  .proxy_sel_STORE(proxy_sel_STORE),
+  .in1(in1),
+  .in2r(in2r),
+  .in2w(in2w),
+  .in3r(in3r),
+  .in3w(in3w),
+  .in4r(in4r),
+  .in4w(in4w),
+  .sel_LOAD(sel_LOAD),
+  .sel_STORE(sel_STORE),
+  .proxy_out1(proxy_out1)
+);
+" VHDL_PROVIDED="begin
+  SPROXY_CTRLN_i0 : SPROXY_CTRLN generic map(BITSIZE_in1=>BITSIZE_in1,
+  PORTSIZE_in1=>PORTSIZE_in1,
+  BITSIZE_in2r=>BITSIZE_in2r,
+  PORTSIZE_in2r=>PORTSIZE_in2r,
+  BITSIZE_in2w=>BITSIZE_in2w,
+  PORTSIZE_in2w=>PORTSIZE_in2w,
+  BITSIZE_in3r=>BITSIZE_in3r,
+  PORTSIZE_in3r=>PORTSIZE_in3r,
+  BITSIZE_in3w=>BITSIZE_in3w,
+  PORTSIZE_in3w=>PORTSIZE_in3w,
+  BITSIZE_in4r=>BITSIZE_in4r,
+  PORTSIZE_in4r=>PORTSIZE_in4r,
+  BITSIZE_in4w=>BITSIZE_in4w,
+  PORTSIZE_in4w=>PORTSIZE_in4w,
+  BITSIZE_sel_LOAD=>BITSIZE_sel_LOAD,
+  PORTSIZE_sel_LOAD=>PORTSIZE_sel_LOAD,
+  BITSIZE_sel_STORE=>BITSIZE_sel_STORE,
+  PORTSIZE_sel_STORE=>PORTSIZE_sel_STORE,
+  BITSIZE_out1=>BITSIZE_out1,
+  PORTSIZE_out1=>PORTSIZE_out1,
+  BITSIZE_proxy_in1=>BITSIZE_proxy_in1,
+  PORTSIZE_proxy_in1=>PORTSIZE_proxy_in1,
+  BITSIZE_proxy_in2r=>BITSIZE_proxy_in2r,
+  PORTSIZE_proxy_in2r=>PORTSIZE_proxy_in2r,
+  BITSIZE_proxy_in2w=>BITSIZE_proxy_in2w,
+  PORTSIZE_proxy_in2w=>PORTSIZE_proxy_in2w,
+  BITSIZE_proxy_in3r=>BITSIZE_proxy_in3r,
+  PORTSIZE_proxy_in3r=>PORTSIZE_proxy_in3r,
+  BITSIZE_proxy_in3w=>BITSIZE_proxy_in3w,
+  PORTSIZE_proxy_in3w=>PORTSIZE_proxy_in3w,
+  BITSIZE_proxy_in4r=>BITSIZE_proxy_in4r,
+  PORTSIZE_proxy_in4r=>PORTSIZE_proxy_in4r,
+  BITSIZE_proxy_in4w=>BITSIZE_proxy_in4w,
+  PORTSIZE_proxy_in4w=>PORTSIZE_proxy_in4w,
+  BITSIZE_proxy_sel_LOAD=>BITSIZE_proxy_sel_LOAD,
+  PORTSIZE_proxy_sel_LOAD=>PORTSIZE_proxy_sel_LOAD,
+  BITSIZE_proxy_sel_STORE=>BITSIZE_proxy_sel_STORE,
+  PORTSIZE_proxy_sel_STORE=>PORTSIZE_proxy_sel_STORE,
+  BITSIZE_proxy_out1=>BITSIZE_proxy_out1,
+  PORTSIZE_proxy_out1=>PORTSIZE_proxy_out1
+) port map (
+  out1 => out1,
+  proxy_in1 => proxy_in1,
+  proxy_in2r => proxy_in2r,
+  proxy_in2w => proxy_in2w,
+  proxy_in3r => proxy_in3r,
+  proxy_in3w => proxy_in3w,
+  proxy_in4r => proxy_in4r,
+  proxy_in4w => proxy_in4w,
+  proxy_sel_LOAD => proxy_sel_LOAD,
+  proxy_sel_STORE => proxy_sel_STORE,
+  in1 => in1,
+  in2r => in2r,
+  in2w => in2w,
+  in3r => in3r,
+  in3w => in3w,
+  in4r => in4r,
+  in4w => in4w,
+  sel_LOAD => sel_LOAD,
+  sel_STORE => sel_STORE,
+  proxy_out1 => proxy_out1);"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>DPROXY_CTRL</name>
+      <operation operation_name="LOAD"/>
+      <operation operation_name="STORE"/>
+      <channels_type>MEM_ACC_11</channels_type>
+      <memory_ctrl_type>DPROXY</memory_ctrl_type>
+      <circuit>
+        <component_o id="DPROXY_CTRL">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2013-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="DPROXY_CTRL"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2r" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in2w" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in3r" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in3w" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="in4r" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in4w" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="sel_LOAD" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="sel_STORE" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in1" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in2r" dir="OUT" is_addr_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in2w" dir="OUT" is_addr_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in3r" dir="OUT" is_size_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in3w" dir="OUT" is_size_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in4r" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="proxy_in4w" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="proxy_sel_LOAD" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="proxy_sel_STORE" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="proxy_out1" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="DPROXY_CTRL in1 in2r in2w in3r in3w out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_out1" VERILOG_PROVIDED="
+assign out1 = proxy_out1;
+assign proxy_in1 = in1;
+assign proxy_in2r = in2r;
+assign proxy_in2w = in2w;
+assign proxy_in3r = in3r;
+assign proxy_in3w = in3w;
+assign proxy_in4r = in4r;
+assign proxy_in4w = in4w;
+assign proxy_sel_LOAD = sel_LOAD;
+assign proxy_sel_STORE = sel_STORE;"
+VHDL_PROVIDED="
+begin
+  out1 &lt;= std_logic_vector(resize(unsigned(proxy_out1), BITSIZE_out1));
+  proxy_in1 &lt;= std_logic_vector(resize(unsigned(in1), BITSIZE_proxy_in1));
+  proxy_in2r &lt;= in2r;
+  proxy_in2w &lt;= in2w;
+  proxy_in3r &lt;= in3r;
+  proxy_in3w &lt;= in3w;
+  proxy_in4r &lt;= in4r;
+  proxy_in4w &lt;= in4w;
+  proxy_sel_LOAD &lt;= sel_LOAD;
+  proxy_sel_STORE &lt;= sel_STORE;
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>DPROXY_CTRLN</name>
+      <operation operation_name="LOAD"/>
+      <operation operation_name="STORE"/>
+      <channels_type>MEM_ACC_N1,MEM_ACC_NN</channels_type>
+      <memory_ctrl_type>DPROXYN</memory_ctrl_type>
+      <circuit>
+        <component_o id="DPROXY_CTRLN">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2013-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="DPROXY_CTRLN"/>
+          <port_vector_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="in2r" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="in2w" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="in3r" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="in3w" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="in4r" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="in4w" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="sel_LOAD" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="sel_STORE" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in1" dir="OUT" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in2r" dir="OUT" is_addr_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in2w" dir="OUT" is_addr_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in3r" dir="OUT" is_size_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in3w" dir="OUT" is_size_bus="1" is_memory="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in4r" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in4w" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_sel_LOAD" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_sel_STORE" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_out1" dir="IN" is_memory="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="DPROXY_CTRLN in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1" 
+          VERILOG_PROVIDED="
+generate
+genvar i0;
+for (i0=0; i0&lt;PORTSIZE_out1; i0=i0+1)
+  begin : L0
+    assign out1[(i0+1)*BITSIZE_out1-1:i0*BITSIZE_out1] = proxy_out1[(i0+1)*BITSIZE_proxy_out1-1:i0*BITSIZE_proxy_out1];
+  end
+endgenerate
+generate
+genvar i1;
+for (i1=0; i1&lt;PORTSIZE_in1; i1=i1+1)
+  begin : L1
+    assign proxy_in1[(i1+1)*BITSIZE_proxy_in1-1:i1*BITSIZE_proxy_in1] = in1[(i1+1)*BITSIZE_in1-1:i1*BITSIZE_in1];
+  end
+endgenerate
+generate
+genvar i2_r;
+for (i2_r=0; i2_r&lt;PORTSIZE_in2r; i2_r=i2_r+1)
+  begin : L2_r
+    assign proxy_in2r[(i2_r+1)*BITSIZE_proxy_in2r-1:i2_r*BITSIZE_proxy_in2r] = in2r[(i2_r+1)*BITSIZE_in2r-1:i2_r*BITSIZE_in2r];
+  end
+endgenerate
+generate
+genvar i2_w;
+for (i2_w=0; i2_w&lt;PORTSIZE_in2w; i2_w=i2_w+1)
+  begin : L2_w
+    assign proxy_in2w[(i2_w+1)*BITSIZE_proxy_in2w-1:i2_w*BITSIZE_proxy_in2w] = in2w[(i2_w+1)*BITSIZE_in2w-1:i2_w*BITSIZE_in2w];
+  end
+endgenerate
+generate
+genvar i3_r;
+for (i3_r=0; i3_r&lt;PORTSIZE_in3r; i3_r=i3_r+1)
+  begin : L3_r
+    assign proxy_in3r[(i3_r+1)*BITSIZE_proxy_in3r-1:i3_r*BITSIZE_proxy_in3r] = in3r[(i3_r+1)*BITSIZE_in3r-1:i3_r*BITSIZE_in3r];
+  end
+endgenerate
+generate
+genvar i3_w;
+for (i3_w=0; i3_w&lt;PORTSIZE_in3w; i3_w=i3_w+1)
+  begin : L3_w
+    assign proxy_in3w[(i3_w+1)*BITSIZE_proxy_in3w-1:i3_w*BITSIZE_proxy_in3w] = in3w[(i3_w+1)*BITSIZE_in3w-1:i3_w*BITSIZE_in3w];
+  end
+endgenerate
+assign proxy_in4r = in4r;
 assign proxy_in4w = in4w;
 assign proxy_sel_LOAD = sel_LOAD;
 assign proxy_sel_STORE = sel_STORE;"/>
@@ -8315,21 +9241,16 @@ begin
           <port_vector_o id="data_in" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="address_inr" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_vector_o>
-          <port_vector_o id="address_inw" dir="IN">
+          <port_vector_o id="address_in" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <port_vector_o id="data_out" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="STD_DP_BRAM write_enable data_in address_inr address_inw data_out MEMORY_INIT_file n_elements READ_ONLY_MEMORY HIGH_LATENCY" 
+          <NP_functionality LIBRARY="STD_DP_BRAM write_enable data_in address_in data_out MEMORY_INIT_file n_elements READ_ONLY_MEMORY HIGH_LATENCY" 
           VERILOG_PROVIDED="
-wire [2*BITSIZE_address_inr-1:0] address_inr_mem;
-reg [2*BITSIZE_address_inr-1:0] address_inr1;
-wire [2*BITSIZE_address_inw-1:0] address_inw_mem;
-reg [2*BITSIZE_address_inw-1:0] address_inw1;
+wire [2*BITSIZE_address_in-1:0] address_in_mem;
+reg [2*BITSIZE_address_in-1:0] address_in1;
 
 wire [1:0] write_enable_mem;
 reg [1:0] write_enable1;
@@ -8357,20 +9278,17 @@ generate
   begin
     always @ (posedge clock)
     begin
-       address_inr1 &lt;= address_inr;
-       address_inw1 &lt;= address_inw;
+       address_in1 &lt;= address_in;
        write_enable1 &lt;= write_enable;
        data_in1 &lt;= data_in;
     end
-    assign address_inr_mem = address_inr1;
-    assign address_inw_mem = address_inw1;
+    assign address_in_mem = address_in1;
     assign write_enable_mem = write_enable1;
     assign data_in_mem = data_in1;
   end
   else
   begin
-    assign address_inr_mem = address_inr;
-    assign address_inw_mem = address_inw;
+    assign address_in_mem = address_in;
     assign write_enable_mem = write_enable;
     assign data_in_mem = data_in;
   end
@@ -8382,24 +9300,22 @@ begin
   if(READ_ONLY_MEMORY==0)
   begin
     if(write_enable_mem[0])
-      memory[address_inw_mem[BITSIZE_address_inw*0+:BITSIZE_address_inw]] &lt;= data_in_mem[BITSIZE_data_in*0+:BITSIZE_data_in];
+      memory[address_in_mem[BITSIZE_address_in*0+:BITSIZE_address_in]] &lt;= data_in_mem[BITSIZE_data_in*0+:BITSIZE_data_in];
   end
-  data_out_mem[BITSIZE_data_out*0+:BITSIZE_data_out] &lt;= memory[address_inr_mem[BITSIZE_address_inr*0+:BITSIZE_address_inr]];
+  data_out_mem[BITSIZE_data_out*0+:BITSIZE_data_out] &lt;= memory[address_in_mem[BITSIZE_address_in*0+:BITSIZE_address_in]];
 end
 always @(posedge clock)
 begin
     if(READ_ONLY_MEMORY==0)
     begin
       if(write_enable_mem[1])
-        memory[address_inw_mem[BITSIZE_address_inw*1+:BITSIZE_address_inw]] &lt;= data_in_mem[BITSIZE_data_in*1+:BITSIZE_data_in];
+        memory[address_in_mem[BITSIZE_address_in*1+:BITSIZE_address_in]] &lt;= data_in_mem[BITSIZE_data_in*1+:BITSIZE_data_in];
     end
-    data_out_mem[BITSIZE_data_out*1+:BITSIZE_data_out] &lt;= memory[address_inr_mem[BITSIZE_address_inr*1+:BITSIZE_address_inr]];
+    data_out_mem[BITSIZE_data_out*1+:BITSIZE_data_out] &lt;= memory[address_in_mem[BITSIZE_address_in*1+:BITSIZE_address_in]];
 end
 " VHDL_PROVIDED="
-  signal address_inr_mem : std_logic_vector(2*BITSIZE_address_inr-1 downto 0);
-  signal address_inr1 : std_logic_vector(2*BITSIZE_address_inr-1 downto 0);
-  signal address_inw_mem : std_logic_vector(2*BITSIZE_address_inw-1 downto 0);
-  signal address_inw1 : std_logic_vector(2*BITSIZE_address_inw-1 downto 0);
+  signal address_in_mem : std_logic_vector(2*BITSIZE_address_in-1 downto 0);
+  signal address_in1 : std_logic_vector(2*BITSIZE_address_in-1 downto 0);
 
 
   signal write_enable_mem : std_logic_vector(1 downto 0);
@@ -8433,16 +9349,14 @@ begin
   begin
     if (clock&apos;event and clock=&apos;1&apos;) then
        if(HIGH_LATENCY=2) then
-         address_inr1 &lt;= address_inr;
-         address_inw1 &lt;= address_inw;
+         address_in1 &lt;= address_in;
          write_enable1 &lt;= write_enable;
          data_in1 &lt;= data_in;
        end if;
     end if;
   end process;
 
-  address_inr_mem &lt;= address_inr1 when (HIGH_LATENCY=2) else address_inr;
-  address_inw_mem &lt;= address_inw1 when (HIGH_LATENCY=2) else address_inw;
+  address_in_mem &lt;= address_in1 when (HIGH_LATENCY=2) else address_in;
   write_enable_mem &lt;= write_enable1 when (HIGH_LATENCY=2) else write_enable;
   data_in_mem &lt;= data_in1 when (HIGH_LATENCY=2) else data_in;
 
@@ -8461,18 +9375,18 @@ begin
         if(READ_ONLY_MEMORY=0) then
           if(write_enable_mem(0)=&apos;1&apos;) then
 -- synthesis translate_off
-            if (to_integer(unsigned(address_inw_mem((0+1)*BITSIZE_address_inw-1 downto 0*BITSIZE_address_inw))) &lt; n_elements) then
+            if (to_integer(unsigned(address_in_mem((0+1)*BITSIZE_address_in-1 downto 0*BITSIZE_address_in))) &lt; n_elements) then
 -- synthesis translate_on
-              mem(to_integer(unsigned(address_inw_mem((0+1)*BITSIZE_address_inw-1 downto 0*BITSIZE_address_inw)))) &lt;= data_in_mem((0+1)*BITSIZE_data_in-1 downto 0*BITSIZE_data_in);
+              mem(to_integer(unsigned(address_in_mem((0+1)*BITSIZE_address_in-1 downto 0*BITSIZE_address_in)))) &lt;= data_in_mem((0+1)*BITSIZE_data_in-1 downto 0*BITSIZE_data_in);
 -- synthesis translate_off
             end if;
 -- synthesis translate_on
           end if;
         end if;
 -- synthesis translate_off
-        if (to_integer(unsigned(address_inr_mem((0+1)*BITSIZE_address_inr-1 downto 0*BITSIZE_address_inr))) &lt; n_elements) then
+        if (to_integer(unsigned(address_in_mem((0+1)*BITSIZE_address_in-1 downto 0*BITSIZE_address_in))) &lt; n_elements) then
 -- synthesis translate_on
-          data_out_mem((0+1)*BITSIZE_data_out-1 downto 0*BITSIZE_data_out) &lt;= mem(to_integer(unsigned(address_inr_mem((0+1)*BITSIZE_address_inr-1 downto 0*BITSIZE_address_inr))));
+          data_out_mem((0+1)*BITSIZE_data_out-1 downto 0*BITSIZE_data_out) &lt;= mem(to_integer(unsigned(address_in_mem((0+1)*BITSIZE_address_in-1 downto 0*BITSIZE_address_in))));
 -- synthesis translate_off
         else
           data_out_mem((0+1)*BITSIZE_data_out-1 downto 0*BITSIZE_data_out) &lt;= (others =&gt; &apos;X&apos;);
@@ -8486,18 +9400,18 @@ begin
         if(READ_ONLY_MEMORY=0) then
           if(write_enable_mem(1)=&apos;1&apos;) then
 -- synthesis translate_off
-            if (to_integer(unsigned(address_inw_mem((1+1)*BITSIZE_address_inw-1 downto 1*BITSIZE_address_inw))) &lt; n_elements) then
+            if (to_integer(unsigned(address_in_mem((1+1)*BITSIZE_address_in-1 downto 1*BITSIZE_address_in))) &lt; n_elements) then
 -- synthesis translate_on
-              mem(to_integer(unsigned(address_inw_mem((1+1)*BITSIZE_address_inw-1 downto 1*BITSIZE_address_inw)))) &lt;= data_in_mem((1+1)*BITSIZE_data_in-1 downto 1*BITSIZE_data_in);
+              mem(to_integer(unsigned(address_in_mem((1+1)*BITSIZE_address_in-1 downto 1*BITSIZE_address_in)))) &lt;= data_in_mem((1+1)*BITSIZE_data_in-1 downto 1*BITSIZE_data_in);
 -- synthesis translate_off
             end if;
 -- synthesis translate_on
           end if;
         end if;
 -- synthesis translate_off
-        if (to_integer(unsigned(address_inr_mem((1+1)*BITSIZE_address_inr-1 downto 1*BITSIZE_address_inr))) &lt; n_elements) then
+        if (to_integer(unsigned(address_in_mem((1+1)*BITSIZE_address_in-1 downto 1*BITSIZE_address_in))) &lt; n_elements) then
 -- synthesis translate_on
-          data_out_mem((1+1)*BITSIZE_data_out-1 downto 1*BITSIZE_data_out) &lt;= mem(to_integer(unsigned(address_inr_mem((1+1)*BITSIZE_address_inr-1 downto 1*BITSIZE_address_inr))));
+          data_out_mem((1+1)*BITSIZE_data_out-1 downto 1*BITSIZE_data_out) &lt;= mem(to_integer(unsigned(address_in_mem((1+1)*BITSIZE_address_in-1 downto 1*BITSIZE_address_in))));
 -- synthesis translate_off
         else
           data_out_mem((1+1)*BITSIZE_data_out-1 downto 1*BITSIZE_data_out) &lt;= (others =&gt; &apos;X&apos;);
@@ -9208,9 +10122,13 @@ STD_LIVE_VALUE_TABLE_instance (
           <NP_functionality LIBRARY="STD_NRNW_BRAM_GEN we_a raddr waddr din_value dout_value MEMORY_INIT_file n_mem_elements READ_ONLY_MEMORY HIGH_LATENCY" 
           IP_COMPONENT="STD_NRNW_BRAM,STD_DP_BRAM" 
           VERILOG_PROVIDED="
+parameter nbit_addr = BITSIZE_raddr &gt; BITSIZE_waddr ? BITSIZE_raddr : BITSIZE_waddr;
+wire [2*nbit_addr-1:0] address_in;
 generate
 if(PORTSIZE_raddr == 2 &amp;&amp; PORTSIZE_waddr == 2)
 begin
+  assign address_in[0+:nbit_addr] = we_a[0] ? waddr[0+:BITSIZE_waddr] : raddr[0+:BITSIZE_raddr];
+  assign address_in[nbit_addr+:nbit_addr] = we_a[1] ? waddr[BITSIZE_waddr+:BITSIZE_waddr] : raddr[BITSIZE_raddr+:BITSIZE_raddr];
   STD_DP_BRAM #(
     .PORTSIZE_write_enable(PORTSIZE_we_a),
     .BITSIZE_write_enable(1),
@@ -9218,10 +10136,8 @@ begin
     .BITSIZE_data_in(BITSIZE_din_value), 
     .PORTSIZE_data_out(PORTSIZE_dout_value), 
     .BITSIZE_data_out(BITSIZE_dout_value), 
-    .PORTSIZE_address_inr(PORTSIZE_raddr), 
-    .BITSIZE_address_inr(BITSIZE_raddr), 
-    .PORTSIZE_address_inw(PORTSIZE_waddr), 
-    .BITSIZE_address_inw(BITSIZE_waddr), 
+    .PORTSIZE_address_in(2), 
+    .BITSIZE_address_in(nbit_addr), 
     .n_elements(n_mem_elements), 
     .MEMORY_INIT_file(MEMORY_INIT_file), 
     .READ_ONLY_MEMORY(READ_ONLY_MEMORY),
@@ -9230,8 +10146,7 @@ begin
     .clock(clock), 
     .write_enable(we_a),
     .data_in(din_value),
-    .address_inr(raddr),
-    .address_inw(waddr),
+    .address_in(address_in),
     .data_out(dout_value)
   );
 end
@@ -13339,32 +14254,40 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1),
           </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/> data to be written </port_o>
-          <port_o id="in2" dir="IN" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/> arrary address </port_o>
-          <port_o id="in3" dir="IN" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/> size of the element loaded or stored </port_o>
+          <port_o id="in2r" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/> read array address </port_o>
+          <port_o id="in2w" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/> write array address </port_o>
+          <port_o id="in3r" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/> size of the element to be loaded </port_o>
+          <port_o id="in3w" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/> size of the element to be stored </port_o>
+          <port_o id="in4r" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/> predicate for read </port_o>
+          <port_o id="in4w" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/> predicate for write </port_o>
           <port_o id="sel_LOAD" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="sel_STORE" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="S_oe_ram" dir="IN" is_memory="1" is_global="1" is_extern="1">
+          <port_o id="S_oe_ram" dir="IN" is_memory="1" is_slave="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="S_we_ram" dir="IN" is_memory="1" is_global="1" is_extern="1">
+          <port_o id="S_we_ram" dir="IN" is_memory="1" is_slave="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="S_addr_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_addr_bus="1">
+          <port_o id="S_addr_ram" dir="IN" is_memory="1" is_slave="1" is_global="1" is_extern="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="S_Wdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
+          <port_o id="S_Wdata_ram" dir="IN" is_memory="1" is_slave="1" is_global="1" is_extern="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
           </port_o>
           <port_o id="Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
           </port_o>
-          <port_o id="S_data_ram_size" dir="IN" is_memory="1" is_global="1" is_extern="1" is_size_bus="1">
+          <port_o id="S_data_ram_size" dir="IN" is_memory="1" is_slave="1" is_global="1" is_extern="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
@@ -13381,11 +14304,23 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1),
           <port_o id="proxy_in1" dir="IN" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="proxy_in2" dir="IN" is_addr_bus="1">
+          <port_o id="proxy_in2r" dir="IN" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="proxy_in3" dir="IN" is_size_bus="1">
+          <port_o id="proxy_in2w" dir="IN" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in3r" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in3w" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="proxy_in4r" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="proxy_in4w" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="proxy_sel_LOAD" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
@@ -13396,7 +14331,7 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1),
           <port_o id="proxy_out1" dir="OUT" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_SDS_BASE in1 in2 in3 out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY HIGH_LATENCY ALIGNMENT proxy_in1 proxy_in2 proxy_in3 proxy_out1"
+          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_SDS_BASE in1 in2r in2w in3r in3w out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY HIGH_LATENCY ALIGNMENT proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_out1" 
             IP_COMPONENT="STD_SP_BRAM"
             VERILOG_PROVIDED="
 `ifndef _SIM_HAVE_CLOG2
@@ -13411,7 +14346,8 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1),
   endfunction
 `endif
 parameter n_byte_on_databus = ALIGNMENT/8;
-parameter nbit_addr = BITSIZE_in2 &gt; BITSIZE_proxy_in2 ? BITSIZE_in2 : BITSIZE_proxy_in2;
+parameter nbit_addr_r = BITSIZE_in2r &gt; BITSIZE_proxy_in2r ? BITSIZE_in2r : BITSIZE_proxy_in2r;
+parameter nbit_addr_w = BITSIZE_in2w &gt; BITSIZE_proxy_in2w ? BITSIZE_in2w : BITSIZE_proxy_in2w;
 
 `ifdef _SIM_HAVE_CLOG2
   localparam nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
@@ -13423,13 +14359,17 @@ parameter nbit_addr = BITSIZE_in2 &gt; BITSIZE_proxy_in2 ? BITSIZE_in2 : BITSIZE
   localparam nbits_address_space_rangesize = log2(address_space_rangesize); 
 `endif
   
-wire [nbit_read_addr-1:0] memory_addr_a;
+wire [nbit_read_addr-1:0] memory_addr_a_r;
+wire [nbit_read_addr-1:0] memory_addr_a_w;
 wire bram_write;
 wire [data_size-1:0] dout_a;
 wire [data_size-1:0] din_a;
 
-wire [nbit_addr-1:0] relative_addr;
-wire [nbit_addr-1:0] tmp_addr;
+wire [nbit_addr_r-1:0] relative_addr_r;
+wire [nbit_addr_w-1:0] relative_addr_w;
+
+wire [nbit_addr_r-1:0] tmp_addr_r;
+wire [nbit_addr_w-1:0] tmp_addr_w;
 
 STD_SP_BRAM #(
   .BITSIZE_data_in(data_size), 
@@ -13444,28 +14384,45 @@ STD_SP_BRAM #(
   .clock(clock),
   .write_enable(bram_write),
   .data_in(din_a),
-  .address_inr(memory_addr_a),
-  .address_inw(memory_addr_a),
+  .address_inr(memory_addr_a_r),
+  .address_inw(memory_addr_a_w),
   .data_out(dout_a)
 );
 
-assign din_a = proxy_sel_STORE ? proxy_in1 : in1;
-assign bram_write = sel_STORE || proxy_sel_STORE;
+assign din_a = (proxy_sel_STORE &amp;&amp; proxy_in4w) ? proxy_in1 : in1;
+assign bram_write = (sel_STORE &amp;&amp; in4w) || (proxy_sel_STORE &amp;&amp; proxy_in4w);
 
-assign tmp_addr = (proxy_sel_LOAD||proxy_sel_STORE) ? proxy_in2 : in2;
+assign tmp_addr_r = (proxy_sel_LOAD &amp;&amp; proxy_in4r) ? proxy_in2r : in2r;
+assign tmp_addr_w = (proxy_sel_STORE &amp;&amp; proxy_in4w) ? proxy_in2w : in2w;
+
 generate
   if(USE_SPARSE_MEMORY==1)
-    assign relative_addr = tmp_addr[nbits_address_space_rangesize-1:0];
+    assign relative_addr_r = tmp_addr_r[nbits_address_space_rangesize-1:0];
   else
-    assign relative_addr = tmp_addr-address_space_begin[nbit_addr-1:0];
+    assign relative_addr_r = tmp_addr_r-address_space_begin[nbit_addr_r-1:0];
+endgenerate
+
+generate
+  if(USE_SPARSE_MEMORY==1)
+    assign relative_addr_w = tmp_addr_w[nbits_address_space_rangesize-1:0];
+  else
+    assign relative_addr_w = tmp_addr_w-address_space_begin[nbit_addr_w-1:0];
 endgenerate
 
 generate
   if (n_elements==1)
-    assign memory_addr_a = {nbit_read_addr{1&apos;b0}};
+    assign memory_addr_a_r = {nbit_read_addr{1&apos;b0}};
   else
-    assign memory_addr_a = relative_addr[nbit_read_addr+nbits_byte_offset-1:nbits_byte_offset];
+    assign memory_addr_a_r = relative_addr_r[nbit_read_addr+nbits_byte_offset-1:nbits_byte_offset];
 endgenerate
+
+generate
+  if (n_elements==1)
+    assign memory_addr_a_w = {nbit_read_addr{1&apos;b0}};
+  else
+    assign memory_addr_a_w = relative_addr_w[nbit_read_addr+nbits_byte_offset-1:nbits_byte_offset];
+endgenerate
+
 
 assign out1 = dout_a;
 assign proxy_out1 = dout_a;
@@ -13473,8 +14430,9 @@ assign Sout_Rdata_ram =Sin_Rdata_ram;
 assign Sout_DataRdy = Sin_DataRdy;
 // Add assertion here
 // psl default clock = (posedge clock);
-// psl ERROR_SDS_data_ram_size: assert never {(data_size != in3 &amp;&amp; (sel_LOAD || sel_STORE)) || (data_size != proxy_in3 &amp;&amp; (proxy_sel_LOAD || proxy_sel_STORE))};
-// psl ERROR_SDS_alignment: assert never {(((in2-address_space_begin) %(ALIGNMENT/8) != 0) &amp;&amp; (sel_LOAD || sel_STORE)) || (((proxy_in2-address_space_begin) %(ALIGNMENT/8) != 0) &amp;&amp; (proxy_sel_LOAD || proxy_sel_STORE))};"
+// psl ERROR_SDS_data_ram_size: assert never {((data_size != in3r &amp;&amp; sel_LOAD &amp;&amp; in4r) || (data_size != in3w &amp;&amp; sel_STORE &amp; in4w)) || ((data_size != proxy_in3r &amp;&amp; proxy_sel_LOAD &amp;&amp; proxy_in4r) || (data_size != proxy_in3w &amp;&amp; proxy_sel_STORE &amp;&amp; proxy_in4w))};
+// psl ERROR_SDS_alignment: assert never {(((in2r-address_space_begin) %(ALIGNMENT/8) != 0) &amp;&amp; sel_LOAD &amp;&amp; in4r) || (((in2r-address_space_begin) %(ALIGNMENT/8) != 0) &amp;&amp; sel_STORE &amp;&amp; in4w) || (((proxy_in2r-address_space_begin) %(ALIGNMENT/8) != 0) &amp;&amp; proxy_sel_LOAD  &amp;&amp; proxy_in4r) || (((proxy_in2w-address_space_begin) %(ALIGNMENT/8) != 0) &amp;&amp; proxy_sel_STORE &amp;&amp; proxy_in4w)};
+"
             VHDL_PROVIDED="
   function integer_ternary_operator(cond : boolean; op1 : integer; op2 : integer) return integer is
   begin
@@ -13485,19 +14443,25 @@ assign Sout_DataRdy = Sin_DataRdy;
     end if;
   end integer_ternary_operator;
   constant n_byte_on_databus : integer := ALIGNMENT/8;
-  constant nbit_addr         : integer := integer_ternary_operator(BITSIZE_in2 &gt; BITSIZE_proxy_in2, BITSIZE_in2, BITSIZE_proxy_in2);
+  constant nbit_addr_r         : integer := integer_ternary_operator(BITSIZE_in2r &gt; BITSIZE_proxy_in2r, BITSIZE_in2r, BITSIZE_proxy_in2r);
+  constant nbit_addr_w         : integer := integer_ternary_operator(BITSIZE_in2w &gt; BITSIZE_proxy_in2w, BITSIZE_in2w, BITSIZE_proxy_in2w);
   constant nbit_read_addr    : integer := integer_ternary_operator(n_elements = 1, 1, integer(ceil(log2(real(n_elements)))));
   constant nbits_byte_offset : integer := integer_ternary_operator(n_byte_on_databus &lt;= 1, 0, integer(ceil(log2(real(n_byte_on_databus)))));
 
   constant nbits_address_space_rangesize  : integer := integer(ceil(log2(real(address_space_rangesize)))); 
   
-  signal memory_addr_a : std_logic_vector(nbit_read_addr-1 downto 0);
+  signal memory_addr_a_r : std_logic_vector(nbit_read_addr-1 downto 0);
+  signal memory_addr_a_w : std_logic_vector(nbit_read_addr-1 downto 0);
+
   signal bram_write : std_logic;
   signal dout_a : std_logic_vector(data_size-1 downto 0);
   signal din_a : std_logic_vector(data_size-1 downto 0);
 
-  signal relative_addr : std_logic_vector(nbit_addr-1 downto 0);
-  signal tmp_addr : std_logic_vector(nbit_addr-1 downto 0);
+  signal relative_addr_r : std_logic_vector(nbit_addr_r-1 downto 0);
+  signal relative_addr_w : std_logic_vector(nbit_addr_w-1 downto 0);
+
+  signal tmp_addr_r : std_logic_vector(nbit_addr_r-1 downto 0);
+  signal tmp_addr_w : std_logic_vector(nbit_addr_w-1 downto 0);
 
 begin
 
@@ -13515,30 +14479,48 @@ begin
     write_enable => bram_write,
     clock => clock,
     data_in => din_a,
-    address_inr => memory_addr_a,
-    address_inw => memory_addr_a);
+    address_inr => memory_addr_a_r,
+    address_inw => memory_addr_a_w);
 
-  din_a &lt;= std_logic_vector(resize(unsigned(proxy_in1), data_size))  when (proxy_sel_STORE = &apos;1&apos;) else std_logic_vector(resize(unsigned(in1), data_size));
-  bram_write &lt;= sel_STORE or proxy_sel_STORE;
+  din_a &lt;= std_logic_vector(resize(unsigned(proxy_in1), data_size))  when ((proxy_sel_STORE = &apos;1&apos;) and (proxy_in4w = &apos;1&apos;)) else std_logic_vector(resize(unsigned(in1), data_size));
+  bram_write &lt;= (sel_STORE and in4w) or (proxy_sel_STORE and proxy_in4w);
 
-  tmp_addr &lt;= proxy_in2 when ((proxy_sel_LOAD or proxy_sel_STORE)=&apos;1&apos;) else in2;
+  tmp_addr_r &lt;= proxy_in2r when ((proxy_sel_LOAD  = &apos;1&apos;) and (proxy_in4r = &apos;1&apos;)) else in2r;
+  tmp_addr_w &lt;= proxy_in2w when ((proxy_sel_STORE = &apos;1&apos;) and (proxy_in4w = &apos;1&apos;)) else in2w;
 
-
-  L2 : process(relative_addr)
+  L2_r : process(relative_addr_r)
   begin
     if(n_elements=1) then
-      memory_addr_a &lt;= (others =&gt; &apos;0&apos;);
+      memory_addr_a_r &lt;= (others =&gt; &apos;0&apos;);
     else
-      memory_addr_a &lt;= relative_addr(nbit_read_addr+nbits_byte_offset-1 downto nbits_byte_offset);
+      memory_addr_a_r &lt;= relative_addr_r(nbit_read_addr+nbits_byte_offset-1 downto nbits_byte_offset);
     end if;
   end process;
 
-  L3 : process(tmp_addr)
+  L2_w : process(relative_addr_w)
+  begin
+    if(n_elements=1) then
+      memory_addr_a_w &lt;= (others =&gt; &apos;0&apos;);
+    else
+      memory_addr_a_w &lt;= relative_addr_w(nbit_read_addr+nbits_byte_offset-1 downto nbits_byte_offset);
+    end if;
+  end process;
+
+  L3_r : process(tmp_addr_r)
   begin
       if(USE_SPARSE_MEMORY=1) then
-        relative_addr &lt;= std_logic_vector(resize(unsigned(tmp_addr(nbits_address_space_rangesize-1 downto 0)), nbit_addr));
+        relative_addr_r &lt;= std_logic_vector(resize(unsigned(tmp_addr_r(nbits_address_space_rangesize-1 downto 0)), nbit_addr_r));
       else
-        relative_addr &lt;= std_logic_vector(resize(unsigned(tmp_addr), nbit_addr) - to_unsigned(address_space_begin, nbit_addr));
+        relative_addr_r &lt;= std_logic_vector(resize(unsigned(tmp_addr_r), nbit_addr_r) - to_unsigned(address_space_begin, nbit_addr_r));
+      end if;
+  end process;
+
+  L3_w : process(tmp_addr_w)
+  begin
+      if(USE_SPARSE_MEMORY=1) then
+        relative_addr_w &lt;= std_logic_vector(resize(unsigned(tmp_addr_w(nbits_address_space_rangesize-1 downto 0)), nbit_addr_w));
+      else
+        relative_addr_w &lt;= std_logic_vector(resize(unsigned(tmp_addr_w), nbit_addr_w) - to_unsigned(address_space_begin, nbit_addr_w));
       end if;
   end process;
 
@@ -14022,10 +15004,18 @@ begin
           </port_o>
           <port_vector_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/> data to be written </port_vector_o>
-          <port_vector_o id="in2" dir="IN" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/> arrary address </port_vector_o>
-          <port_vector_o id="in3" dir="IN" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/> size of the element loaded or stored </port_vector_o>
+          <port_vector_o id="in2r" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/> read array address </port_vector_o>
+          <port_vector_o id="in2w" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/> write array address </port_vector_o>
+          <port_vector_o id="in3r" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/> size of the element to be loaded </port_vector_o>
+          <port_vector_o id="in3w" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/> size of the element to be stored </port_vector_o>
+          <port_vector_o id="in4r" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/> read predicate </port_vector_o>
+          <port_vector_o id="in4w" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/> write predicate </port_vector_o>
           <port_vector_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/> data returned by a LOAD operation </port_vector_o>
           <port_vector_o id="sel_LOAD" dir="IN">
@@ -14034,16 +15024,16 @@ begin
           <port_vector_o id="sel_STORE" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <port_vector_o id="S_oe_ram" dir="IN" is_memory="1" is_global="1" is_extern="1">
+          <port_vector_o id="S_oe_ram" dir="IN" is_memory="1" is_slave="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <port_vector_o id="S_we_ram" dir="IN" is_memory="1" is_global="1" is_extern="1">
+          <port_vector_o id="S_we_ram" dir="IN" is_memory="1" is_slave="1" is_global="1" is_extern="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <port_vector_o id="S_addr_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_addr_bus="1">
+          <port_vector_o id="S_addr_ram" dir="IN" is_memory="1" is_slave="1" is_global="1" is_extern="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="S_Wdata_ram" dir="IN" is_memory="1" is_global="1" is_extern="1" is_data_bus="1">
+          <port_vector_o id="S_Wdata_ram" dir="IN" is_memory="1" is_slave="1" is_global="1" is_extern="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
           </port_vector_o>
           <port_vector_o id="Sin_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
@@ -14052,7 +15042,7 @@ begin
           <port_vector_o id="Sout_Rdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
           </port_vector_o>
-          <port_vector_o id="S_data_ram_size" dir="IN" is_memory="1" is_global="1" is_extern="1" is_size_bus="1">
+          <port_vector_o id="S_data_ram_size" dir="IN" is_memory="1" is_slave="1" is_global="1" is_extern="1" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <port_vector_o id="Sin_DataRdy" dir="IN" is_memory="1" is_slave="1">
@@ -14064,10 +15054,22 @@ begin
           <port_vector_o id="proxy_in1" dir="IN" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in2" dir="IN" is_addr_bus="1">
+          <port_vector_o id="proxy_in2r" dir="IN" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in3" dir="IN" is_size_bus="1">
+          <port_vector_o id="proxy_in2w" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in3r" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in3w" dir="IN" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in4r" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="proxy_in4w" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <port_vector_o id="proxy_sel_LOAD" dir="IN">
@@ -14079,7 +15081,7 @@ begin
           <port_vector_o id="proxy_out1" dir="OUT" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_NN_SDS_BASE in1 in2 in3 sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY HIGH_LATENCY ALIGNMENT proxy_in1 proxy_in2 proxy_in3 proxy_sel_LOAD proxy_sel_STORE proxy_out1" 
+          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_NN_SDS_BASE in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY HIGH_LATENCY ALIGNMENT proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1"
             IP_COMPONENT="STD_NRNW_BRAM_GEN"
             VERILOG_PROVIDED="
 `ifndef _SIM_HAVE_CLOG2
@@ -14094,7 +15096,8 @@ begin
   endfunction
 `endif
 parameter n_byte_on_databus = ALIGNMENT/8;
-parameter nbit_addr = BITSIZE_in2 &gt; BITSIZE_proxy_in2 ? BITSIZE_in2 : BITSIZE_proxy_in2;
+parameter nbit_addr_r = BITSIZE_in2r &gt; BITSIZE_proxy_in2r ? BITSIZE_in2r : BITSIZE_proxy_in2r;
+parameter nbit_addr_w = BITSIZE_in2w &gt; BITSIZE_proxy_in2w ? BITSIZE_in2w : BITSIZE_proxy_in2w;
 `ifdef _SIM_HAVE_CLOG2
   localparam nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
   localparam nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : $clog2(n_byte_on_databus);
@@ -14104,15 +15107,17 @@ parameter nbit_addr = BITSIZE_in2 &gt; BITSIZE_proxy_in2 ? BITSIZE_in2 : BITSIZE
 `endif
 parameter max_n_writes = PORTSIZE_sel_STORE;
 parameter max_n_reads = PORTSIZE_sel_LOAD;
-parameter max_n_rw = max_n_writes &gt; max_n_reads ? max_n_writes : max_n_reads;
 
-wire [nbit_read_addr*max_n_rw-1:0] memory_addr_a;
+wire [nbit_read_addr*max_n_reads-1:0] memory_addr_a_r;
+wire [nbit_read_addr*max_n_writes-1:0] memory_addr_a_w;
 
 wire [max_n_writes-1:0] bram_write;
 
 wire [data_size*max_n_reads-1:0] dout_a;
-wire [nbit_addr*max_n_rw-1:0] relative_addr;
-wire [nbit_addr*max_n_rw-1:0] tmp_addr;
+wire [nbit_addr_r*max_n_reads-1:0] relative_addr_r;
+wire [nbit_addr_w*max_n_writes-1:0] relative_addr_w;
+wire [nbit_addr_r*max_n_reads-1:0] tmp_addr_r;
+wire [nbit_addr_w*max_n_writes-1:0] tmp_addr_w;
 wire [data_size*max_n_writes-1:0] din_a;
 wire [data_size*max_n_writes-1:0] din_a_mem;
 reg [data_size*max_n_writes-1:0] din_a1;
@@ -14124,9 +15129,9 @@ STD_NRNW_BRAM_GEN #(
   .BITSIZE_din_value(data_size),
   .PORTSIZE_dout_value(max_n_reads),
   .BITSIZE_dout_value(data_size),
-  .PORTSIZE_raddr(max_n_rw),
+  .PORTSIZE_raddr(max_n_reads),
   .BITSIZE_raddr(nbit_read_addr),
-  .PORTSIZE_waddr(max_n_rw),
+  .PORTSIZE_waddr(max_n_writes),
   .BITSIZE_waddr(nbit_read_addr),
   .n_mem_elements(n_elements),
   .MEMORY_INIT_file(MEMORY_INIT_file),
@@ -14136,8 +15141,8 @@ STD_NRNW_BRAM_GEN #(
   .clock(clock),
   .we_a(bram_write),
   .din_value(din_a),
-  .raddr(memory_addr_a),
-  .waddr(memory_addr_a),
+  .raddr(memory_addr_a_r),
+  .waddr(memory_addr_a_w),
   .dout_value(dout_a)
 );
 
@@ -14145,7 +15150,7 @@ generate
 genvar i14;
   for (i14=0; i14&lt;max_n_writes; i14=i14+1)
   begin : L14
-    assign din_a[(i14+1)*data_size-1:i14*data_size] = proxy_sel_STORE[i14] ? proxy_in1[(i14+1)*BITSIZE_proxy_in1-1:i14*BITSIZE_proxy_in1] : in1[(i14+1)*BITSIZE_in1-1:i14*BITSIZE_in1];
+    assign din_a[(i14+1)*data_size-1:i14*data_size] = (proxy_sel_STORE[i14] &amp;&amp; proxy_in4w[i14]) ? proxy_in1[(i14+1)*BITSIZE_proxy_in1-1:i14*BITSIZE_proxy_in1] : in1[(i14+1)*BITSIZE_in1-1:i14*BITSIZE_in1];
   end
 endgenerate
 
@@ -14158,32 +15163,62 @@ genvar i21;
 endgenerate
 
 generate
-genvar ind2;
-for (ind2=0; ind2&lt;max_n_rw; ind2=ind2+1)
-  begin : Lind2
-    assign tmp_addr[(ind2+1)*nbit_addr-1:ind2*nbit_addr] = (proxy_sel_LOAD[ind2]||proxy_sel_STORE[ind2]) ? proxy_in2[(ind2+1)*BITSIZE_proxy_in2-1:ind2*BITSIZE_proxy_in2] : in2[(ind2+1)*BITSIZE_in2-1:ind2*BITSIZE_in2];
+genvar ind2r;
+for (ind2r=0; ind2r&lt;max_n_reads; ind2r=ind2r+1)
+  begin : Lind2r
+    assign tmp_addr_r[(ind2r+1)*nbit_addr_r-1:ind2r*nbit_addr_r] = (proxy_sel_LOAD[ind2r] &amp;&amp; proxy_in4r[ind2r]) ? proxy_in2r[(ind2r+1)*BITSIZE_proxy_in2r-1:ind2r*BITSIZE_proxy_in2r] : in2r[(ind2r+1)*BITSIZE_in2r-1:ind2r*BITSIZE_in2r];
   end
 endgenerate
 
 generate
-genvar i6;
-  for (i6=0; i6&lt;max_n_rw; i6=i6+1)
-  begin : L6
+genvar ind2w;
+for (ind2w=0; ind2w&lt;max_n_writes; ind2w=ind2w+1)
+  begin : Lind2w
+    assign tmp_addr_w[(ind2w+1)*nbit_addr_w-1:ind2w*nbit_addr_w] = (proxy_sel_STORE[ind2w] &amp;&amp; proxy_in4w[ind2w]) ? proxy_in2w[(ind2w+1)*BITSIZE_proxy_in2w-1:ind2w*BITSIZE_proxy_in2w] : in2w[(ind2w+1)*BITSIZE_in2w-1:ind2w*BITSIZE_in2w];
+  end
+endgenerate
+
+generate
+genvar i6r;
+  for (i6r=0; i6r&lt;max_n_reads; i6r=i6r+1)
+  begin : L6r
     if(USE_SPARSE_MEMORY==1)
-      assign relative_addr[(i6+1)*nbit_addr-1:i6*nbit_addr] = tmp_addr[(i6+1)*nbit_addr-1:i6*nbit_addr];
+      assign relative_addr_r[(i6r+1)*nbit_addr_r-1:i6r*nbit_addr_r] = tmp_addr_r[(i6r+1)*nbit_addr_r-1:i6r*nbit_addr_r];
     else
-      assign relative_addr[(i6+1)*nbit_addr-1:i6*nbit_addr] = tmp_addr[(i6+1)*nbit_addr-1:i6*nbit_addr]-address_space_begin;
+      assign relative_addr_r[(i6r+1)*nbit_addr_r-1:i6r*nbit_addr_r] = tmp_addr_r[(i6r+1)*nbit_addr_r-1:i6r*nbit_addr_r]-address_space_begin;
   end
 endgenerate
 
 generate
-genvar i7;
-  for (i7=0; i7&lt;max_n_rw; i7=i7+1)
-  begin : L7_A
-    if (n_elements==1)
-      assign memory_addr_a[(i7+1)*nbit_read_addr-1:i7*nbit_read_addr] = {nbit_read_addr{1&apos;b0}};
+genvar i6w;
+  for (i6w=0; i6w&lt;max_n_writes; i6w=i6w+1)
+  begin : L6w
+    if(USE_SPARSE_MEMORY==1)
+      assign relative_addr_w[(i6w+1)*nbit_addr_w-1:i6w*nbit_addr_w] = tmp_addr_w[(i6w+1)*nbit_addr_w-1:i6w*nbit_addr_w];
     else
-      assign memory_addr_a[(i7+1)*nbit_read_addr-1:i7*nbit_read_addr] = relative_addr[nbit_read_addr+nbits_byte_offset-1+i7*nbit_addr:nbits_byte_offset+i7*nbit_addr];
+      assign relative_addr_w[(i6w+1)*nbit_addr_w-1:i6w*nbit_addr_w] = tmp_addr_w[(i6w+1)*nbit_addr_w-1:i6w*nbit_addr_w]-address_space_begin;
+  end
+endgenerate
+
+generate
+genvar i7r;
+  for (i7r=0; i7r&lt;max_n_reads; i7r=i7r+1)
+  begin : L7_Ar
+    if (n_elements==1)
+      assign memory_addr_a_r[(i7r+1)*nbit_read_addr-1:i7r*nbit_read_addr] = {nbit_read_addr{1&apos;b0}};
+    else
+      assign memory_addr_a_r[(i7r+1)*nbit_read_addr-1:i7r*nbit_read_addr] = relative_addr_r[nbit_read_addr+nbits_byte_offset-1+i7r*nbit_addr_r:nbits_byte_offset+i7r*nbit_addr_r];
+  end
+endgenerate
+
+generate
+genvar i7w;
+  for (i7w=0; i7w&lt;max_n_writes; i7w=i7w+1)
+  begin : L7_Aw
+    if (n_elements==1)
+      assign memory_addr_a_w[(i7w+1)*nbit_read_addr-1:i7w*nbit_read_addr] = {nbit_read_addr{1&apos;b0}};
+    else
+      assign memory_addr_a_w[(i7w+1)*nbit_read_addr-1:i7w*nbit_read_addr] = relative_addr_w[nbit_read_addr+nbits_byte_offset-1+i7w*nbit_addr_w:nbits_byte_offset+i7w*nbit_addr_w];
   end
 endgenerate
 
