@@ -137,7 +137,7 @@ class ToolManager
     * @param parameters list of parameters to be given to the tool executable
     * @param output_files list of expected output files to be verified
     * @param log_file is the log file
-    * @return a flag that is true if the execution has been terminated with success, false otherwise.
+    * @return the return value of the executed process.
     */
    int execute(const std::vector<std::string>& parameters, const std::vector<std::string>& input_files,
                const std::vector<std::string>& output_files = std::vector<std::string>(),

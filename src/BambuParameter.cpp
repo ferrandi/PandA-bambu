@@ -209,8 +209,7 @@
 #define OPT_TOP_RTLDESIGN_NAME (1 + OPT_TOP_FNAME)
 #define OPT_UNALIGNED_ACCESS_PARAMETER (1 + OPT_TOP_RTLDESIGN_NAME)
 #define OPT_VHDL_LIBRARY_PARAMETER (1 + OPT_UNALIGNED_ACCESS_PARAMETER)
-#define OPT_VISUALIZER (1 + OPT_VHDL_LIBRARY_PARAMETER)
-#define OPT_XML_CONFIG (1 + OPT_VISUALIZER)
+#define OPT_XML_CONFIG (1 + OPT_VHDL_LIBRARY_PARAMETER)
 #define OPT_RANGE_ANALYSIS_MODE (1 + OPT_XML_CONFIG)
 #define OPT_FP_FORMAT (1 + OPT_RANGE_ANALYSIS_MODE)
 #define OPT_FP_FORMAT_PROPAGATE (1 + OPT_FP_FORMAT)
@@ -1054,7 +1053,6 @@ int BambuParameter::Exec()
       {"max-sim-cycles", required_argument, nullptr, OPT_MAX_SIM_CYCLES},
       {"generate-vcd", no_argument, nullptr, OPT_GENERATE_VCD},
       {"simulate", no_argument, nullptr, OPT_SIMULATE},
-      {"mentor-visualizer", no_argument, nullptr, OPT_VISUALIZER},
       {"simulator", required_argument, nullptr, 0},
       {"enable-function-proxy", no_argument, nullptr, OPT_ENABLE_FUNCTION_PROXY},
       {"disable-function-proxy", no_argument, nullptr, OPT_DISABLE_FUNCTION_PROXY},
@@ -1377,11 +1375,6 @@ int BambuParameter::Exec()
                objective_string = objective_string + ",CYCLES";
             }
             setOption(OPT_evaluation_objectives, objective_string);
-            break;
-         }
-         case OPT_VISUALIZER:
-         {
-            setOption(OPT_visualizer, true);
             break;
          }
          case OPT_DEVICE_NAME:
@@ -2697,10 +2690,6 @@ void BambuParameter::CheckParameters()
       {
          setOption(OPT_mentor_modelsim_bin, dir + "/bin");
       }
-      if(std::filesystem::exists(dir + "/bin/visualizer"))
-      {
-         setOption(OPT_mentor_visualizer, dir + "/bin/visualizer");
-      }
    };
    for(const auto& mentor_dir : mentor_dirs)
    {
@@ -2715,10 +2704,6 @@ void BambuParameter::CheckParameters()
          }
          search_mentor(mentor_dir);
       }
-   }
-   if(isOption(OPT_visualizer) && getOption<bool>(OPT_visualizer) && !isOption(OPT_mentor_visualizer))
-   {
-      THROW_ERROR("Mentor Visualizer was not detected by Bambu. Please check --mentor-root option is correct.");
    }
 
    /// Search for NanoXPlore tools

@@ -54,7 +54,7 @@ class SimulationTool
 {
  public:
    /// supported synthesis tools
-   using type_t = enum { UNKNOWN = 0, MODELSIM, ISIM, XSIM, ICARUS, VERILATOR };
+   using type_t = enum { UNKNOWN = 0, MODELSIM, XSIM, VERILATOR };
 
    static type_t to_sim_type(const std::string& str);
 
@@ -79,8 +79,8 @@ class SimulationTool
    /**
     * Performs the actual writing
     */
-   virtual void GenerateScript(std::ostream& script, const std::string& top_filename,
-                               const std::list<std::string>& file_list) = 0;
+   virtual std::string GenerateScript(std::ostream& script, const std::string& top_filename,
+                                      const std::list<std::string>& file_list) = 0;
 
    std::string GenerateLibraryBuildScript(std::ostream& script, const std::string& libtb_filename,
                                           std::string& beh_cflags) const;

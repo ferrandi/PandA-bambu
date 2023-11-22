@@ -17,7 +17,6 @@ lib_circuit_la_CPPFLAGS = \
    -I$(top_srcdir)/src/technology \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
-   -I$(top_srcdir)/src/wrapper/simulation/icarus \
    $(AM_CPPFLAGS)
 
 if BUILD_LIB_PRAGMA
