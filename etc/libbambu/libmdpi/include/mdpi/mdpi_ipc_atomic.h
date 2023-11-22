@@ -136,7 +136,7 @@ static void __ipc_exit(mdpi_ipc_state_t ipc_state, mdpi_state_t state, uint8_t r
    atomic_store(&__m_ipc_file->handle, ipc_state);
 }
 
-static void __ipc_init(int init)
+static void __ipc_init(mdpi_entity_t init)
 {
    int ipc_descriptor;
 
@@ -149,7 +149,7 @@ static void __ipc_init(int init)
       exit(EXIT_FAILURE);
    }
 
-   if(init)
+   if(init == MDPI_ENTITY_DRIVER)
    {
       // Ensure that the file will hold enough space
       lseek(ipc_descriptor, sizeof(mdpi_ipc_file_t), SEEK_SET);
@@ -173,7 +173,7 @@ static void __ipc_init(int init)
    }
    debug("IPC file memory-mapping completed.\n");
 
-   if(init)
+   if(init == MDPI_ENTITY_DRIVER)
    {
       atomic_store(&__m_ipc_file->handle, MDPI_IPC_STATE_FREE);
       mdpi_op_init(&__m_ipc_operation);

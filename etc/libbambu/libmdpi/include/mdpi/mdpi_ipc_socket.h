@@ -136,7 +136,7 @@ static void __ipc_set_socket_buffer_size(int socket_fd)
    }
 }
 
-static void __ipc_init(int server)
+static void __ipc_init(mdpi_entity_t init)
 {
    __m_ipc_file.socket = socket(AF_UNIX, SOCK_STREAM, 0);
    if(__m_ipc_file.socket == -1)
@@ -151,7 +151,7 @@ static void __ipc_init(int server)
    address.sun_family = AF_UNIX;
    strcpy(address.sun_path, __M_IPC_FILENAME);
 
-   if(server)
+   if(init == MDPI_ENTITY_DRIVER)
    {
       remove(address.sun_path);
       if(bind(__m_ipc_file.socket, (struct sockaddr*)&address, SUN_LEN(&address)) == -1)
@@ -201,10 +201,13 @@ static void __ipc_init1()
    debug("IPC socket connection completed.\n");
 }
 
-static void __ipc_fini()
+static void __ipc_fini(mdpi_entity_t init)
 {
    close(__m_ipc_file.socket);
-   // remove(__M_IPC_FILENAME);
+   if(init == MDPI_ENTITY_DRIVER)
+   {
+      remove(__M_IPC_FILENAME);
+   }
 }
 
 #endif // __MDPI_IPC_SOCKET_H
