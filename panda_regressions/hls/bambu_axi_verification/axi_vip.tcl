@@ -49,12 +49,7 @@ set_property -name {xsim.elaborate.debug_level} -value {off} -objects [get_files
 set_property -name {xsim.elaborate.relax} -value {false} -objects [get_filesets sim_1]
 set_property -name {xsim.elaborate.mt_level} -value {off} -objects [get_filesets sim_1]
 set_property -name {xsim.elaborate.xelab.more_options} -value "-sv_root $::env(OUT_DIR)/HLS_output/xsim_beh -sv_lib libmdpi -define M64" -objects [get_filesets sim_1]
-file delete $::env(OUT_DIR)/HLS_output/simulation/panda_ipc_mmap
-set ::env(M_IPC_SIM_CMD) "bash -c \"exit 0\""
 set __testbench_pid [exec bash -c "$::env(OUT_DIR)/HLS_output/simulation/testbench |& tee $::env(OUT_DIR)/HLS_output/simulation/testbench.log" &]
-after 5000 set stop_wait &
-vwait stop_wait
-unset stop_wait
 launch_simulation
 set finished [catch {exec ps -p ${__testbench_pid} >/dev/null}]
 close_sim
