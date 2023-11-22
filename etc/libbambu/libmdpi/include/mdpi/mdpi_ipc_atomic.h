@@ -94,7 +94,7 @@ static void __ipc_reserve()
    } while(!atomic_compare_exchange_strong(&__m_ipc_file->handle, &expected, MDPI_IPC_STATE_WRITING));
 }
 
-static void __ipc_commit()
+static void __ipc_request()
 {
 #ifndef NDEBUG
    mdpi_ipc_state_t expected = MDPI_IPC_STATE_WRITING;
@@ -105,7 +105,7 @@ static void __ipc_commit()
 #endif
 }
 
-static void __ipc_complete()
+static void __ipc_response()
 {
 #ifndef NDEBUG
    mdpi_ipc_state_t expected = MDPI_IPC_STATE_REQUEST;
