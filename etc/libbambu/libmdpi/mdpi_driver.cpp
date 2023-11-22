@@ -334,36 +334,39 @@ void __attribute__((constructor)) __mdpi_driver_init()
       signal(__sigs[i], __m_sig_handler);
    }
 
-   fflush(stdout);
-   __m_sim_pid = fork();
-   if(__m_sim_pid == -1)
+   sim_argv[2] = getenv(__M_IPC_SIM_CMD_ENV);
+   if(sim_argv[2] && strlen(sim_argv[2]))
    {
-      error("Error forking simulation process.\n");
-      perror("fork");
-      exit(EXIT_FAILURE);
-   }
-   else if(!__m_sim_pid)
-   {
-      sim_argv[2] = getenv(__M_IPC_SIM_CMD_ENV);
-      if(!sim_argv[2])
+      fflush(stdout);
+      __m_sim_pid = fork();
+      if(__m_sim_pid == -1)
       {
-         error("Simulation command line environment variable not set.\n");
+         error("Error forking simulation process.\n");
+         perror("fork");
+         exit(EXIT_FAILURE);
+      }
+      else if(!__m_sim_pid)
+      {
+         // Unset LD_PRELOAD to prevent the new process from loading mdpi_driver.so
+         error = unsetenv("LD_PRELOAD");
+         if(error)
+         {
+            error("Failed to unset LD_PRELOAD.\n");
+            perror("unsetenv");
+            _exit(EXIT_FAILURE);
+         }
+         debug("Simulation process command line: \"%s\"", sim_argv[2]);
+         error = execvp("bash", sim_argv);
+         error("Failed to launch simulation process.\n");
+         perror("execv");
          _exit(EXIT_FAILURE);
       }
-      error = unsetenv("LD_PRELOAD");
-      if(error)
-      {
-         error("Failed to unset LD_PRELOAD.\n");
-         perror("unsetenv");
-         _exit(EXIT_FAILURE);
-      }
-      debug("Simulation process command line: \"%s\"", sim_argv[2]);
-      error = execvp("bash", sim_argv);
-      error("Failed to launch simulation process.\n");
-      perror("execv");
-      _exit(EXIT_FAILURE);
+      debug("Launched simulation process with PID %d.\n", __m_sim_pid);
    }
-   debug("Launched simulation process with PID %d.\n", __m_sim_pid);
+   else
+   {
+      info("Simulation command line found empty, expecting simulator to be launched by others.\n");
+   }
 
    __ipc_init1();
 
