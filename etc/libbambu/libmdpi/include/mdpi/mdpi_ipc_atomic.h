@@ -146,7 +146,7 @@ static void __ipc_init(mdpi_entity_t init)
    {
       error("Error opening IPC file: %s\n", __M_IPC_FILENAME);
       perror("MDPI library initialization error");
-      exit(EXIT_FAILURE);
+      abort();
    }
 
    if(init == MDPI_ENTITY_DRIVER)
@@ -157,7 +157,7 @@ static void __ipc_init(mdpi_entity_t init)
       {
          error("Error writing IPC file: %s\n", __M_IPC_FILENAME);
          perror("MDPI library initialization error");
-         exit(EXIT_FAILURE);
+         abort();
       }
       lseek(ipc_descriptor, 0, SEEK_SET);
    }
@@ -169,7 +169,7 @@ static void __ipc_init(mdpi_entity_t init)
    {
       error("An error occurred while mapping IPC address range.\n");
       perror("MDPI library initialization error");
-      exit(EXIT_FAILURE);
+      abort();
    }
    debug("IPC file memory-mapping completed.\n");
 

@@ -39,6 +39,7 @@
  * Last modified by $Author$
  *
  */
+
 #include <mdpi/mdpi.h>
 
 #define __LOCAL_ENTITY MDPI_ENTITY_SIM
@@ -116,7 +117,7 @@ unsigned int m_next(unsigned int state)
          break;
       default:
          error("Unexpected state received from simulator: %s (%u)\n", mdpi_state_str((mdpi_state_t)(state)), state);
-         exit(EXIT_FAILURE);
+         abort();
          break;
    }
    debug("Next state: %s\n", mdpi_state_str((mdpi_state_t)(state_next)));
