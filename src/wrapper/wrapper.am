@@ -45,21 +45,6 @@ if BUILD_SIMULATION
   noinst_HEADERS += wrapper/simulation/verilator/VerilatorWrapper.hpp
   lib_verilatorwrapper_la_SOURCES = wrapper/simulation/verilator/VerilatorWrapper.cpp
 
-
-  noinst_LTLIBRARIES += lib_isimwrapper.la
-  lib_isimwrapper_la_CPPFLAGS = \
-    -I$(top_srcdir)/src \
-    -I$(top_srcdir)/src/constants \
-    -I$(top_srcdir)/src/parser/polixml \
-    -I$(top_srcdir)/src/polixml \
-    -I$(top_srcdir)/src/utility \
-    -I$(top_srcdir)/src/wrapper \
-    -I$(top_srcdir)/src/wrapper/simulation \
-    $(AM_CPPFLAGS)
-  noinst_HEADERS += wrapper/simulation/isim/ISE_isim_wrapper.hpp
-  lib_isimwrapper_la_SOURCES = wrapper/simulation/isim/ISE_isim_wrapper.cpp
-
-
   noinst_LTLIBRARIES += lib_xsimwrapper.la
   lib_xsimwrapper_la_CPPFLAGS = \
     -I$(top_srcdir)/src \
@@ -73,7 +58,6 @@ if BUILD_SIMULATION
   noinst_HEADERS += wrapper/simulation/xsim/VIVADO_xsim_wrapper.hpp
   lib_xsimwrapper_la_SOURCES = wrapper/simulation/xsim/VIVADO_xsim_wrapper.cpp
 
-
   noinst_LTLIBRARIES += lib_modelsimwrapper.la
   lib_modelsimwrapper_la_CPPFLAGS = \
     -I$(top_srcdir)/src \
@@ -85,20 +69,6 @@ if BUILD_SIMULATION
   noinst_HEADERS += wrapper/simulation/modelsim/modelsimWrapper.hpp
   lib_modelsimwrapper_la_SOURCES = wrapper/simulation/modelsim/modelsimWrapper.cpp
 
-
-  noinst_LTLIBRARIES += lib_icaruswrapper.la
-  lib_icaruswrapper_la_CPPFLAGS = \
-    -I$(top_srcdir)/src \
-    -I$(top_srcdir)/src/constants \
-    -I$(top_srcdir)/src/parser/polixml \
-    -I$(top_srcdir)/src/polixml \
-    -I$(top_srcdir)/src/tree \
-    -I$(top_srcdir)/src/utility \
-    -I$(top_srcdir)/src/wrapper/simulation \
-    $(AM_CPPFLAGS)
-  noinst_HEADERS += wrapper/simulation/icarus/IcarusWrapper.hpp
-  lib_icaruswrapper_la_SOURCES = wrapper/simulation/icarus/IcarusWrapper.cpp 
-
   noinst_LTLIBRARIES += lib_simulation.la
   lib_simulation_la_CPPFLAGS = \
     -I$(top_srcdir)/src \
@@ -107,9 +77,7 @@ if BUILD_SIMULATION
     -I$(top_srcdir)/src/wrapper \
     -I$(top_srcdir)/src/wrapper/compiler/\
     -I$(top_srcdir)/src/wrapper/simulation/\
-    -I$(top_srcdir)/src/wrapper/simulation/icarus \
     -I$(top_srcdir)/src/wrapper/simulation/modelsim \
-    -I$(top_srcdir)/src/wrapper/simulation/isim \
     -I$(top_srcdir)/src/wrapper/simulation/xsim \
     -I$(top_srcdir)/src/wrapper/simulation/verilator \
     $(AM_CPPFLAGS)
@@ -117,10 +85,8 @@ if BUILD_SIMULATION
   lib_simulation_la_SOURCES = wrapper/simulation/SimulationTool.cpp
   lib_simulation_la_LIBADD = \
     lib_verilatorwrapper.la \
-    lib_isimwrapper.la \
     lib_xsimwrapper.la \
-    lib_modelsimwrapper.la \
-    lib_icaruswrapper.la
+    lib_modelsimwrapper.la
   lib_wrapper_la_LIBADD += lib_simulation.la
 
 endif

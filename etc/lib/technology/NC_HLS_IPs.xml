@@ -1270,41 +1270,22 @@ timeprecision 1ps;
 `endif
 reg done_port 1INIT_ZERO_VALUE;
 // synthesis translate_off
+import &quot;DPI-C&quot; function void m_setarg(input logic [127:0] data, input int unsigned index);
 always @(posedge clock)
   if(start_port == 1&apos;b1)
   begin
     automatic integer res_file;
+    automatic reg [127:0] _status = {96'd0, status};
     res_file = $fopen(RESFILE,&quot;a&quot;);
     $fwrite(res_file, &quot;%0d\n&quot;, $time);
     $fwrite(res_file, &quot;%0d\n&quot;, status);
     $fclose(res_file);
+    m_setarg(_status, 0);
     $display(&quot;Sim: Exit called: %0d&quot;, status);
     $finish;
   end
 // synthesis translate_on
-always @(posedge clock) done_port &lt;= start_port;" VHDL_PROVIDED="begin
--- synthesis translate_off
-process(clock)
-  file res_file : text;
-begin
-    if (clock&apos;event and clock = &apos;1&apos;) then
-      if(start_port = &apos;1&apos;) then
-        file_open(res_file, RESFILE, APPEND_MODE);
-        write(res_file, integer&apos;image(now / 1 ns) &amp; LF &amp; integer&apos;image(to_integer(status)) &amp; LF);
-        file_close(res_file);
-        write(output, &quot;Sim: Exit called: &quot; &amp; integer&apos;image(to_integer(status)) &amp; LF);
-        finish(1);
-      end if;
-    end if;
-  end process;
--- synthesis translate_on
-process(clock)
-begin
-  if(clock&apos;event and clock = &apos;1&apos;) then
-    done_port &lt;= start_port;
-  end if;
-end process;
-"/>
+always @(posedge clock) done_port &lt;= start_port;" />
         </component_o>
       </circuit>
     </cell>
@@ -1342,40 +1323,21 @@ timeprecision 1ps;
 `endif
 reg done_port 1INIT_ZERO_VALUE;
 // synthesis translate_off
+import &quot;DPI-C&quot; function void m_setarg(input logic [127:0] data, input int unsigned index);
 always @(negedge clock)
   if(start_port == 1&apos;b1)
   begin
     automatic integer res_file;
+    automatic reg [127:0] _status = -1;
     res_file = $fopen(RESFILE,&quot;a&quot;);
     $fwrite(res_file, &quot;A\n&quot;);
     $fclose(res_file);
+    m_setarg(_status, 0);
     $display(&quot;ERROR: Sim: Abort called&quot;);
     $finish;
   end
 // synthesis translate_on
-always @(posedge clock) done_port &lt;= start_port;" VHDL_PROVIDED="begin
--- synthesis translate_off
-process(clock)
-  file res_file : text;
-begin
-    if (clock&apos;event and clock = &apos;1&apos;) then
-      if(start_port = &apos;1&apos;) then
-        file_open(res_file, RESFILE, APPEND_MODE);
-        write(res_file, &quot;A&quot; &amp; LF);
-        file_close(res_file);
-        write(output, &quot;ERROR: Sim: Abort called&quot; &amp; LF);
-        finish(1);
-      end if;
-    end if;
-  end process;
--- synthesis translate_on
-process(clock)
-begin
-  if(clock&apos;event and clock = &apos;1&apos;) then
-    done_port &lt;= start_port;
-  end if;
-end process;
-"/>
+always @(posedge clock) done_port &lt;= start_port;" />
         </component_o>
       </circuit>
     </cell>

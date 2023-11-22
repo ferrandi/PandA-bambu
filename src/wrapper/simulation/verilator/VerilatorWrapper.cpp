@@ -82,8 +82,8 @@ void VerilatorWrapper::CheckExecution()
 {
 }
 
-void VerilatorWrapper::GenerateScript(std::ostream& script, const std::string& top_filename,
-                                      const std::list<std::string>& file_list)
+std::string VerilatorWrapper::GenerateScript(std::ostream& script, const std::string& top_filename,
+                                             const std::list<std::string>& file_list)
 {
    for(const auto& file : file_list)
    {
@@ -102,7 +102,7 @@ void VerilatorWrapper::GenerateScript(std::ostream& script, const std::string& t
           << "BEH_CC=\"${CC}\"" << std::endl
           << "obj_dir=\"${BEH_DIR}/verilator_obj\"" << std::endl
           << std::endl;
-   std::string beh_cflags = "-DVERILATOR -I$(dirname $(which verilator))/../share/verilator/include/vltstd";
+   std::string beh_cflags = "-DVERILATOR -isystem $(dirname $(which verilator))/../share/verilator/include/vltstd";
    const auto cflags = GenerateLibraryBuildScript(script, "${BEH_DIR}", beh_cflags);
    const auto vflags = [&]() {
       std::string flags;
@@ -173,7 +173,7 @@ void VerilatorWrapper::GenerateScript(std::ostream& script, const std::string& t
 #endif
    script << std::endl << std::endl;
 
-   script << "${obj_dir}/Vbambu_testbench 2>&1 | tee " << log_file << std::endl << std::endl;
+   return "${obj_dir}/Vbambu_testbench 2>&1 | tee " + log_file;
 }
 
 void VerilatorWrapper::Clean() const

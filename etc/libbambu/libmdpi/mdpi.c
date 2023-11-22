@@ -42,8 +42,6 @@
 #include <mdpi/mdpi.h>
 
 #define __LOCAL_ENTITY MDPI_ENTITY_SIM
-#define __REMOTE_ENTITY MDPI_ENTITY_DRIVER
-#define __remote_operation __get_operation(__REMOTE_ENTITY)
 
 #include <mdpi/mdpi_debug.h>
 
@@ -67,9 +65,7 @@ void __attribute__((constructor)) __m_init()
 {
    debug("Initializing...\n");
 
-   __ipc_init();
-
-   atomic_store(&__remote_operation.handle, MDPI_IPC_STATE_FREE);
+   __ipc_init(0);
 
    debug("Initialization successful\n");
 }
@@ -78,7 +74,7 @@ void __attribute__((destructor)) __m_fini()
 {
    if(__fini_trigger)
    {
-      __ipc_exit(__REMOTE_ENTITY, MDPI_IPC_STATE_REQUEST, MDPI_STATE_END, EXIT_SUCCESS);
+      __ipc_exit(MDPI_IPC_STATE_REQUEST, MDPI_STATE_END, EXIT_SUCCESS);
       __ipc_fini();
       debug("Finalization successful\n");
    }
@@ -88,8 +84,8 @@ int m_fini()
 {
    int retval;
 
-   assert(__remote_operation.type == MDPI_OP_TYPE_STATE_CHANGE && "Unexpected cosim end state.");
-   retval = ((uint16_t)(__remote_operation.payload.sc.retval) << 8) | (__remote_operation.payload.sc.state & 0xFF);
+   assert(__m_ipc_operation.type == MDPI_OP_TYPE_STATE_CHANGE && "Unexpected cosim end state.");
+   retval = ((uint16_t)(__m_ipc_operation.payload.sc.retval) << 8) | (__m_ipc_operation.payload.sc.state & 0xFF);
 
    __fini_trigger = 0;
    __ipc_fini();
@@ -108,14 +104,14 @@ unsigned int m_next(unsigned int state)
       case MDPI_STATE_READY:
          do
          {
-            __ipc_reserve(__REMOTE_ENTITY);
-            __remote_operation.type = MDPI_OP_TYPE_STATE_CHANGE;
-            __remote_operation.payload.sc.state = (mdpi_state_t)(state);
-            __ipc_commit(__REMOTE_ENTITY);
+            __ipc_reserve();
+            __m_ipc_operation.type = MDPI_OP_TYPE_STATE_CHANGE;
+            __m_ipc_operation.payload.sc.state = (mdpi_state_t)(state);
+            __ipc_commit();
             debug("Next state required\n");
-            __ipc_wait(__REMOTE_ENTITY, MDPI_IPC_STATE_DONE);
-            state_next = __remote_operation.payload.sc.state;
-            __ipc_release(__REMOTE_ENTITY);
+            __ipc_wait(MDPI_IPC_STATE_DONE);
+            state_next = __m_ipc_operation.payload.sc.state;
+            __ipc_release();
          } while(state_next == state);
          break;
       default:
@@ -137,19 +133,19 @@ unsigned int m_next(unsigned int state)
 unsigned int m_getptrargsize(unsigned int index)
 {
    uint64_t size;
-   __ipc_reserve(__REMOTE_ENTITY);
-   __remote_operation.type = MDPI_OP_TYPE_PARAM_INFO;
-   __remote_operation.payload.param.index = index;
-   __ipc_commit(__REMOTE_ENTITY);
-   __ipc_wait(__REMOTE_ENTITY, MDPI_IPC_STATE_DONE);
-   if(__remote_operation.payload.param.index != index)
+   __ipc_reserve();
+   __m_ipc_operation.type = MDPI_OP_TYPE_PARAM_INFO;
+   __m_ipc_operation.payload.param.index = index;
+   __ipc_commit();
+   __ipc_wait(MDPI_IPC_STATE_DONE);
+   if(__m_ipc_operation.payload.param.index != index)
    {
-      __ipc_release(__REMOTE_ENTITY);
+      __ipc_release();
       error("Parameter %u size read failed.\n", index);
       abort();
    }
-   size = __remote_operation.payload.param.size;
-   __ipc_release(__REMOTE_ENTITY);
+   size = __m_ipc_operation.payload.param.size;
+   __ipc_release();
    return size;
 }
 
@@ -157,15 +153,15 @@ void m_getarg(svLogicVecVal* data, unsigned int index)
 {
    uint16_t bitsize, byte_count, i;
    debug("Parameter %u read\n", index);
-   __ipc_reserve(__REMOTE_ENTITY);
-   __remote_operation.type = MDPI_OP_TYPE_ARG_READ;
-   __remote_operation.payload.arg.index = index;
-   __ipc_commit(__REMOTE_ENTITY);
-   __ipc_wait(__REMOTE_ENTITY, MDPI_IPC_STATE_DONE);
-   if(__remote_operation.payload.arg.index != index)
+   __ipc_reserve();
+   __m_ipc_operation.type = MDPI_OP_TYPE_ARG_READ;
+   __m_ipc_operation.payload.arg.index = index;
+   __ipc_commit();
+   __ipc_wait(MDPI_IPC_STATE_DONE);
+   if(__m_ipc_operation.payload.arg.index != index)
    {
-      __ipc_release(__REMOTE_ENTITY);
-      if(__remote_operation.payload.arg.index == MDPI_ARG_IDX_EMPTY)
+      __ipc_release();
+      if(__m_ipc_operation.payload.arg.index == MDPI_ARG_IDX_EMPTY)
       {
          debug("Parameter %u fake pipelined read.", index);
       }
@@ -177,11 +173,11 @@ void m_getarg(svLogicVecVal* data, unsigned int index)
       return;
    }
 
-   bitsize = __remote_operation.payload.arg.bitsize;
+   bitsize = __m_ipc_operation.payload.arg.bitsize;
    byte_count = (bitsize / 8) + ((bitsize % 8) != 0);
    for(i = 0; i < byte_count; ++i)
    {
-      uint8_t mem = __remote_operation.payload.arg.buffer[i];
+      uint8_t mem = __m_ipc_operation.payload.arg.buffer[i];
       if(i % 4)
       {
          data[i / 4].aval |= (unsigned int)(mem) << byte_offset(i);
@@ -193,7 +189,7 @@ void m_getarg(svLogicVecVal* data, unsigned int index)
       }
    }
 
-   __ipc_release(__REMOTE_ENTITY);
+   __ipc_release();
 }
 
 void m_setarg(CONSTARG svLogicVecVal* data, unsigned int index)
@@ -202,15 +198,15 @@ void m_setarg(CONSTARG svLogicVecVal* data, unsigned int index)
 
    debug("Parameter %u write\n", index);
 
-   __ipc_reserve(__REMOTE_ENTITY);
-   __remote_operation.type = MDPI_OP_TYPE_ARG_READ;
-   __remote_operation.payload.arg.index = index;
-   __ipc_commit(__REMOTE_ENTITY);
-   __ipc_wait(__REMOTE_ENTITY, MDPI_IPC_STATE_DONE);
-   if(__remote_operation.payload.arg.index != index)
+   __ipc_reserve();
+   __m_ipc_operation.type = MDPI_OP_TYPE_ARG_READ;
+   __m_ipc_operation.payload.arg.index = index;
+   __ipc_commit();
+   __ipc_wait(MDPI_IPC_STATE_DONE);
+   if(__m_ipc_operation.payload.arg.index != index)
    {
-      __ipc_release(__REMOTE_ENTITY);
-      if(__remote_operation.payload.arg.index == MDPI_ARG_IDX_EMPTY)
+      __ipc_release();
+      if(__m_ipc_operation.payload.arg.index == MDPI_ARG_IDX_EMPTY)
       {
          debug("Parameter %u fake pipelined write.", index);
       }
@@ -221,46 +217,46 @@ void m_setarg(CONSTARG svLogicVecVal* data, unsigned int index)
       }
       return;
    }
-   bitsize = __remote_operation.payload.arg.bitsize;
-   __ipc_release(__REMOTE_ENTITY);
+   bitsize = __m_ipc_operation.payload.arg.bitsize;
+   __ipc_release();
 
-   __ipc_reserve(__REMOTE_ENTITY);
-   __remote_operation.type = MDPI_OP_TYPE_ARG_WRITE;
-   __remote_operation.payload.arg.index = index;
-   __remote_operation.payload.arg.bitsize = bitsize;
+   __ipc_reserve();
+   __m_ipc_operation.type = MDPI_OP_TYPE_ARG_WRITE;
+   __m_ipc_operation.payload.arg.index = index;
+   __m_ipc_operation.payload.arg.bitsize = bitsize;
    byte_count = (bitsize / 8) + ((bitsize % 8) != 0);
    for(i = 0; i < byte_count; ++i)
    {
       assert((data[i / 4].bval == 0) && "Memory write data must not contain undefined states X or Z from "
                                         "the simulation");
-      __remote_operation.payload.arg.buffer[i] = data[i / 4].aval >> byte_offset(i);
+      __m_ipc_operation.payload.arg.buffer[i] = data[i / 4].aval >> byte_offset(i);
    }
-   __ipc_commit(__REMOTE_ENTITY);
-   __ipc_wait(__REMOTE_ENTITY, MDPI_IPC_STATE_DONE);
-   if(__remote_operation.payload.arg.index != index)
+   __ipc_commit();
+   __ipc_wait(MDPI_IPC_STATE_DONE);
+   if(__m_ipc_operation.payload.arg.index != index)
    {
       error("Parameter %u write failed.\n", index);
       abort();
    }
-   __ipc_release(__REMOTE_ENTITY);
+   __ipc_release();
 }
 
 static void __attribute__((noinline)) __m_read(const uint16_t size, svLogicVecVal* data, ptr_t addr)
 {
-   __ipc_reserve(__REMOTE_ENTITY);
-   __remote_operation.type = MDPI_OP_TYPE_MEM_READ;
-   __remote_operation.payload.mem.addr = addr;
-   __remote_operation.payload.mem.size = size;
-   __ipc_commit(__REMOTE_ENTITY);
-   __ipc_wait(__REMOTE_ENTITY, MDPI_IPC_STATE_DONE);
+   __ipc_reserve();
+   __m_ipc_operation.type = MDPI_OP_TYPE_MEM_READ;
+   __m_ipc_operation.payload.mem.addr = addr;
+   __m_ipc_operation.payload.mem.size = size;
+   __ipc_commit();
+   __ipc_wait(MDPI_IPC_STATE_DONE);
 
-   if(__remote_operation.payload.mem.addr == addr)
+   if(__m_ipc_operation.payload.mem.addr == addr)
    {
       uint16_t i;
 #pragma unroll(4)
       for(i = 0; i < size; ++i)
       {
-         byte_t mem = __remote_operation.payload.mem.buffer[i];
+         byte_t mem = __m_ipc_operation.payload.mem.buffer[i];
          if(i % 4)
          {
             data[i / 4].aval |= (unsigned int)(mem) << byte_offset(i);
@@ -277,7 +273,7 @@ static void __attribute__((noinline)) __m_read(const uint16_t size, svLogicVecVa
       error("Read to non-mapped address " PTR_FORMAT ".\n", addr);
       abort();
    }
-   __ipc_release(__REMOTE_ENTITY);
+   __ipc_release();
 }
 
 static void __attribute__((noinline))
@@ -285,10 +281,10 @@ __m_write(const uint16_t max_bsize, uint16_t size, CONSTARG svLogicVecVal* data,
 {
    uint16_t i;
    const uint16_t bsize = (size / 8) + ((size % 8) != 0);
-   __ipc_reserve(__REMOTE_ENTITY);
-   __remote_operation.type = MDPI_OP_TYPE_MEM_WRITE;
-   __remote_operation.payload.mem.addr = addr;
-   __remote_operation.payload.mem.size = size;
+   __ipc_reserve();
+   __m_ipc_operation.type = MDPI_OP_TYPE_MEM_WRITE;
+   __m_ipc_operation.payload.mem.addr = addr;
+   __m_ipc_operation.payload.mem.size = size;
    assert((max_bsize * 8) >= size && "Memory write bitsize must be smaller than bus size");
 #pragma unroll(4)
    for(i = 0; i < bsize; ++i)
@@ -307,17 +303,17 @@ __m_write(const uint16_t max_bsize, uint16_t size, CONSTARG svLogicVecVal* data,
                                               "the simulation");
       }
 #endif
-      __remote_operation.payload.mem.buffer[i] = data[i / 4].aval >> byte_offset(i);
+      __m_ipc_operation.payload.mem.buffer[i] = data[i / 4].aval >> byte_offset(i);
    }
-   __ipc_commit(__REMOTE_ENTITY);
-   __ipc_wait(__REMOTE_ENTITY, MDPI_IPC_STATE_DONE);
+   __ipc_commit();
+   __ipc_wait(MDPI_IPC_STATE_DONE);
 
-   if(__remote_operation.payload.mem.addr != addr)
+   if(__m_ipc_operation.payload.mem.addr != addr)
    {
       error("Write to non-mapped address " PTR_FORMAT ".\n", addr);
       abort();
    }
-   __ipc_release(__REMOTE_ENTITY);
+   __ipc_release();
 }
 
 void m_read8(svLogicVecVal* data, ptr_t addr)

@@ -43,8 +43,6 @@
 #include "config_HAVE_ASSERTS.hpp"
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
-#include "ISE_isim_wrapper.hpp"
-#include "IcarusWrapper.hpp"
 #include "Parameter.hpp"
 #include "ToolManager.hpp"
 #include "VIVADO_xsim_wrapper.hpp"
@@ -70,17 +68,9 @@ SimulationTool::type_t SimulationTool::to_sim_type(const std::string& str)
    {
       return SimulationTool::MODELSIM;
    }
-   else if(str == "ISIM")
-   {
-      return SimulationTool::ISIM;
-   }
    else if(str == "XSIM")
    {
       return SimulationTool::XSIM;
-   }
-   else if(str == "ICARUS")
-   {
-      return SimulationTool::ICARUS;
    }
    else if(str == "VERILATOR")
    {
@@ -114,14 +104,8 @@ SimulationToolRef SimulationTool::CreateSimulationTool(type_t type, const Parame
       case MODELSIM:
          return SimulationToolRef(new modelsimWrapper(_Param, suffix, top_fname));
          break;
-      case ISIM:
-         return SimulationToolRef(new ISE_isim_wrapper(_Param, suffix, top_fname));
-         break;
       case XSIM:
          return SimulationToolRef(new VIVADO_xsim_wrapper(_Param, suffix, top_fname));
-         break;
-      case ICARUS:
-         return SimulationToolRef(new IcarusWrapper(_Param, suffix, top_fname));
          break;
       case VERILATOR:
          return SimulationToolRef(new VerilatorWrapper(_Param, suffix, top_fname));
@@ -165,7 +149,7 @@ void SimulationTool::Simulate(unsigned long long int& accum_cycles, unsigned lon
       parameters.push_back(tb_argv);
    }
    tool->execute(parameters, input_files, output_files,
-                 Param->getOption<std::string>(OPT_output_temporary_directory) + "/simulation_output");
+                 Param->getOption<std::string>(OPT_output_temporary_directory) + "/simulation_output", true);
 
    DetermineCycles(accum_cycles, n_testcases);
 }
@@ -311,6 +295,8 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
 
    file_list.push_back(relocate_compiler_path(PANDA_DATA_INSTALLDIR) + "/panda/libmdpi/mdpi.c");
 
+   const auto has_user_elf = Param->isOption(OPT_testbench_input_file) &&
+                             starts_with(Param->getOption<std::string>(OPT_testbench_input_file), "elf:");
    const auto default_compiler = Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
    const auto opt_set = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_gcc_optimization_set);
    const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(Param, default_compiler, opt_set));
@@ -322,8 +308,7 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
 
    script << compiler_env << "\n";
 
-   if(Param->isOption(OPT_testbench_input_file) &&
-      starts_with(Param->getOption<std::string>(OPT_testbench_input_file), "elf:"))
+   if(has_user_elf)
    {
       script << "SYS_ELF=\"" << Param->getOption<std::string>(OPT_testbench_input_file).substr(4) << "\"\n";
    }
@@ -336,18 +321,26 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
           << "OUT_LVL=\"" << Param->getOption<int>(OPT_output_level) << "\"\n\n"
           << "### Do not edit below\n\n";
 
-   script << "return_value=1\n"
-          << "function cleanup {\n"
-          << "  if [ -d /proc/${__sys_elf_pid} ]; then kill -s KILL ${__sys_elf_pid}; fi\n"
-          << "  if [ -d ${sys_elf_out} ]; then rm -rf ${sys_elf_out}; fi\n"
-          << "  exit $return_value\n"
-          << "}\n"
-          << "trap cleanup EXIT\n\n";
-
-   GenerateScript(script, top_filename, file_list);
-
-   script << "return_value=$?\n"
-          << "wait ${__sys_elf_pid}\n";
+   auto sim_cmd = GenerateScript(script, top_filename, file_list);
+   boost::replace_all(sim_cmd, "\"", "\\\"");
+   script
+       << "export M_IPC_SIM_CMD=\"" << sim_cmd << "; exit \\${PIPESTATUS[0]};\"\n\n"
+       << "if [ -f ${SYS_ELF} ]; then\n"
+       << "  function get_class { readelf -h $1 | grep Class: | sed -E 's/.*Class:\\s*(\\w+)/\\1/'; }\n"
+       << "  sys_elf_class=\"$(get_class ${SYS_ELF})\"\n"
+       << "  driver_elf_class=\"$(get_class ${SIM_DIR}/libmdpi_driver.so)\"\n"
+       << "  if [ \"${sys_elf_class}\" != \"${driver_elf_class}\" ]; then\n"
+       << "    echo \"ERROR: Wrong system application ELF class: ${sys_elf_class} != ${driver_elf_class}\"; exit 1;\n"
+       << "  fi\n"
+       << "  echo \"Launch user testbench with args: $@\"\n  ";
+   if(has_user_elf)
+   {
+      script << "LD_PRELOAD=${SIM_DIR}/libmdpi_driver.so ";
+   }
+   script << "${SYS_ELF} \"$@\" 2>&1 | tee ${SIM_DIR}/$(basename ${SYS_ELF}).log\n"
+          << "  exit ${PIPESTATUS[0]}\n"
+          << "fi\n"
+          << "exit -1\n\n";
 
    return generated_script;
 }
@@ -362,7 +355,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, con
    const auto extra_compiler_flags = [&]() {
       std::string flags = " -fwrapv -ffloat-store -flax-vector-conversions -msse2 -mfpmath=sse -fno-strict-aliasing "
                           "-D__builtin_bambu_time_start\\(\\)= -D__builtin_bambu_time_stop\\(\\)= -D__BAMBU_SIM__";
-      flags += " -I" + relocate_compiler_path(PANDA_DATA_INSTALLDIR) + "/panda/libmdpi/include";
+      flags += " -isystem " + relocate_compiler_path(PANDA_DATA_INSTALLDIR) + "/panda/libmdpi/include";
       if(!Param->isOption(OPT_input_format) ||
          Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C)
       {
@@ -388,7 +381,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, con
       cflags.erase(static_cast<size_t>(what[0].first - cflags.c_str()),
                    static_cast<size_t>(what[0].second - what[0].first));
    }
-   beh_cflags += " -I" + relocate_compiler_path(PANDA_DATA_INSTALLDIR) + "/panda/libmdpi/include";
+   beh_cflags += " -isystem " + relocate_compiler_path(PANDA_DATA_INSTALLDIR) + "/panda/libmdpi/include";
    beh_cflags += " -D__M_IPC_FILENAME=\\\\\\\"${SIM_DIR}/panda_ipc_mmap\\\\\\\"";
    beh_cflags += " -D__M_OUT_LVL=${OUT_LVL}";
    if(cflags.find("-m32") != std::string::npos)
@@ -465,22 +458,6 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, con
           << "  PP_SRC=\"" << pp_srcs << "\" \\\n"
           << "  TB_SRCS=\"" << tb_srcs << "\" \\\n"
           << "  -j " << std::thread::hardware_concurrency() << " -f Makefile.mk\n\n";
-
-   script
-       << "if [ -f ${SYS_ELF} ]; then\n"
-       << "  function get_class { readelf -h $1 | grep Class: | sed -E 's/.*Class:\\s*(\\w+)/\\1/'; }\n"
-       << "  sys_elf_class=\"$(get_class ${SYS_ELF})\"\n"
-       << "  driver_elf_class=\"$(get_class ${SIM_DIR}/libmdpi_driver.so)\"\n"
-       << "  if [ \"${sys_elf_class}\" != \"${driver_elf_class}\" ]; then\n"
-       << "    echo \"ERROR: Wrong system application ELF class: ${sys_elf_class} != ${driver_elf_class}\"; exit 1;\n"
-       << "  fi\n"
-       << "  sys_elf_out=$(mktemp -d)\n"
-       << "  mkfifo \"${sys_elf_out}/pipe\"\n"
-       << "  LD_PRELOAD=${SIM_DIR}/libmdpi_driver.so ${SYS_ELF} \"$@\" 2>&1 > \"${sys_elf_out}/pipe\" &\n"
-       << "  __sys_elf_pid=$!\n"
-       << "  tee ${SIM_DIR}/$(basename ${SYS_ELF}).log < \"${sys_elf_out}/pipe\" &\n"
-       << "  echo \"Launched user testbench (PID ${__sys_elf_pid}:$!) with args: $@\"\n"
-       << "fi\n\n";
 
    return cflags;
 }
