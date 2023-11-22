@@ -107,7 +107,7 @@ unsigned int m_next(unsigned int state)
             __ipc_reserve();
             __m_ipc_operation.type = MDPI_OP_TYPE_STATE_CHANGE;
             __m_ipc_operation.payload.sc.state = (mdpi_state_t)(state);
-            __ipc_commit();
+            __ipc_request();
             debug("Next state required\n");
             __ipc_wait(MDPI_IPC_STATE_RESPONSE);
             state_next = __m_ipc_operation.payload.sc.state;
@@ -136,7 +136,7 @@ unsigned int m_getptrargsize(unsigned int index)
    __ipc_reserve();
    __m_ipc_operation.type = MDPI_OP_TYPE_PARAM_INFO;
    __m_ipc_operation.payload.param.index = index;
-   __ipc_commit();
+   __ipc_request();
    __ipc_wait(MDPI_IPC_STATE_RESPONSE);
    if(__m_ipc_operation.payload.param.index != index)
    {
@@ -156,7 +156,7 @@ void m_getarg(svLogicVecVal* data, unsigned int index)
    __ipc_reserve();
    __m_ipc_operation.type = MDPI_OP_TYPE_ARG_READ;
    __m_ipc_operation.payload.arg.index = index;
-   __ipc_commit();
+   __ipc_request();
    __ipc_wait(MDPI_IPC_STATE_RESPONSE);
    if(__m_ipc_operation.payload.arg.index != index)
    {
@@ -201,7 +201,7 @@ void m_setarg(CONSTARG svLogicVecVal* data, unsigned int index)
    __ipc_reserve();
    __m_ipc_operation.type = MDPI_OP_TYPE_ARG_READ;
    __m_ipc_operation.payload.arg.index = index;
-   __ipc_commit();
+   __ipc_request();
    __ipc_wait(MDPI_IPC_STATE_RESPONSE);
    if(__m_ipc_operation.payload.arg.index != index)
    {
@@ -231,7 +231,7 @@ void m_setarg(CONSTARG svLogicVecVal* data, unsigned int index)
                                         "the simulation");
       __m_ipc_operation.payload.arg.buffer[i] = data[i / 4].aval >> byte_offset(i);
    }
-   __ipc_commit();
+   __ipc_request();
    __ipc_wait(MDPI_IPC_STATE_RESPONSE);
    if(__m_ipc_operation.payload.arg.index != index)
    {
@@ -247,7 +247,7 @@ static void __attribute__((noinline)) __m_read(const uint16_t size, svLogicVecVa
    __m_ipc_operation.type = MDPI_OP_TYPE_MEM_READ;
    __m_ipc_operation.payload.mem.addr = addr;
    __m_ipc_operation.payload.mem.size = size;
-   __ipc_commit();
+   __ipc_request();
    __ipc_wait(MDPI_IPC_STATE_RESPONSE);
 
    if(__m_ipc_operation.payload.mem.addr == addr)
@@ -305,7 +305,7 @@ __m_write(const uint16_t max_bsize, uint16_t size, CONSTARG svLogicVecVal* data,
 #endif
       __m_ipc_operation.payload.mem.buffer[i] = data[i / 4].aval >> byte_offset(i);
    }
-   __ipc_commit();
+   __ipc_request();
    __ipc_wait(MDPI_IPC_STATE_RESPONSE);
 
    if(__m_ipc_operation.payload.mem.addr != addr)

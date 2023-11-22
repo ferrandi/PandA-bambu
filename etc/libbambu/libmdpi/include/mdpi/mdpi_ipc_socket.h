@@ -91,7 +91,7 @@ static void __ipc_reserve()
 {
 }
 
-static void __ipc_commit()
+static void __ipc_request()
 {
    if(send(__m_ipc_file.socket, &__m_ipc_operation, sizeof(mdpi_op_t), 0) == -1)
    {
@@ -101,9 +101,9 @@ static void __ipc_commit()
    }
 }
 
-static void __ipc_complete()
+static void __ipc_response()
 {
-   __ipc_commit();
+   __ipc_request();
 }
 
 static void __ipc_release()
