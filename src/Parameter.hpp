@@ -116,14 +116,13 @@ enum class CompilerWrapper_CompilerTarget;
        discrepancy_no_load_pointers)(discrepancy_only)(discrepancy_permissive_ptrs)(generate_taste_architecture)(      \
        initial_internal_address)(mem_delay_read)(mem_delay_write)(memory_banks_number)(mixed_design)(                  \
        no_parse_c_python)(num_accelerators)(post_rescheduling)(technology_file)(tb_extra_gcc_options)(                 \
-       timing_violation_abort)(top_design_name)(visualizer)(serialize_output)(use_ALUs)(range_analysis_mode)(          \
-       fp_format)(fp_format_propagate)(fp_format_interface)(fp_rounding_mode)(fp_exception_mode)(parallel_backend)(    \
+       timing_violation_abort)(top_design_name)(serialize_output)(use_ALUs)(range_analysis_mode)(fp_format)(           \
+       fp_format_propagate)(fp_format_interface)(fp_rounding_mode)(fp_exception_mode)(parallel_backend)(               \
        interface_xml_filename)(lattice_root)(lattice_settings)(lattice_pmi_def)(lattice_pmi_tdpbe)(lattice_pmi_mul)(   \
        xilinx_root)(xilinx_settings)(xilinx_vivado_settings)(xilinx_glbl)(mentor_root)(mentor_modelsim_bin)(           \
-       mentor_visualizer)(mentor_optimizer)(verilator)(verilator_l2_name)(verilator_timescale_override)(               \
-       verilator_parallel)(icarus)(altera_root)(quartus_settings)(quartus_13_settings)(quartus_13_64bit)(              \
-       nanoxplore_root)(nanoxplore_settings)(nanoxplore_bypass)(shared_input_registers)(inline_functions)(             \
-       constraints_functions)
+       mentor_optimizer)(verilator)(verilator_l2_name)(verilator_timescale_override)(verilator_parallel)(icarus)(      \
+       altera_root)(quartus_settings)(quartus_13_settings)(quartus_13_64bit)(nanoxplore_root)(nanoxplore_settings)(    \
+       nanoxplore_bypass)(shared_input_registers)(inline_functions)(constraints_functions)
 
 #define FRAMEWORK_OPTIONS                                                                                            \
    (benchmark_name)(cat_args)(find_max_transformations)(max_transformations)(compatible_compilers)(compute_size_of)( \
