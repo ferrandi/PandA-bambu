@@ -154,14 +154,15 @@ static void __ipc_release();
 
 static void __ipc_exit(mdpi_ipc_state_t ipc_state, mdpi_state_t state, uint8_t retval);
 
-static void __ipc_init(int init);
+static void __ipc_init(mdpi_entity_t init);
 
 static void __ipc_init1();
 
-static void __ipc_fini();
+static void __ipc_fini(mdpi_entity_t init);
 
 #define __M_IPC_BACKEND_ATOMIC 0
 #define __M_IPC_BACKEND_SOCKET 1
+#define __M_IPC_BACKEND_MUTEX 2
 
 #ifndef __M_IPC_BACKEND
 #define __M_IPC_BACKEND __M_IPC_BACKEND_SOCKET
@@ -173,6 +174,10 @@ static void __ipc_fini();
 
 #if __M_IPC_BACKEND == __M_IPC_BACKEND_SOCKET
 #include "mdpi_ipc_socket.h"
+#endif
+
+#if __M_IPC_BACKEND == __M_IPC_BACKEND_MUTEX
+#include "mdpi_ipc_mutex.h"
 #endif
 
 #endif // __MDPI_IPC_H
