@@ -93,17 +93,72 @@ static void __ipc_reserve()
 
 static void __ipc_request()
 {
-   if(send(__m_ipc_file.socket, &__m_ipc_operation, sizeof(mdpi_op_t), 0) == -1)
+   size_t op_size = (size_t)(&((mdpi_op_t*)0)->payload);
+   switch(__m_ipc_operation.type)
    {
-      error("Unable to receive data.\n");
-      perror("recv failed");
+      case MDPI_OP_TYPE_MEM_WRITE:
+         op_size += __m_ipc_operation.payload.mem.size;
+         // fall through
+      case MDPI_OP_TYPE_MEM_READ:
+         op_size += (size_t)(((mdpi_op_mem_t*)0)->buffer);
+         break;
+      case MDPI_OP_TYPE_ARG_WRITE:
+         op_size += __m_ipc_operation.payload.arg.bitsize / 8 + ((__m_ipc_operation.payload.arg.bitsize % 8) != 0);
+         // fall through
+      case MDPI_OP_TYPE_ARG_READ:
+         op_size += (size_t)(((mdpi_op_arg_t*)0)->buffer);
+         break;
+      case MDPI_OP_TYPE_PARAM_INFO:
+         op_size += sizeof(mdpi_op_param_t);
+         break;
+      case MDPI_OP_TYPE_STATE_CHANGE:
+         op_size += sizeof(mdpi_op_state_change_t);
+         break;
+      case MDPI_OP_TYPE_NONE:
+      default:
+         break;
+   }
+   if(send(__m_ipc_file.socket, &__m_ipc_operation, op_size, 0) == -1)
+   {
+      error("Unable to send request data.\n");
+      perror("send failed");
       exit(EXIT_FAILURE);
    }
 }
 
 static void __ipc_response()
 {
-   __ipc_request();
+   size_t op_size = (size_t)(&((mdpi_op_t*)0)->payload);
+   switch(__m_ipc_operation.type)
+   {
+      case MDPI_OP_TYPE_MEM_READ:
+         op_size += __m_ipc_operation.payload.mem.size;
+         // fall through
+      case MDPI_OP_TYPE_MEM_WRITE:
+         op_size += (size_t)(((mdpi_op_mem_t*)0)->buffer);
+         break;
+      case MDPI_OP_TYPE_ARG_READ:
+         op_size += __m_ipc_operation.payload.arg.bitsize / 8 + ((__m_ipc_operation.payload.arg.bitsize % 8) != 0);
+         // fall through
+      case MDPI_OP_TYPE_ARG_WRITE:
+         op_size += (size_t)(((mdpi_op_arg_t*)0)->buffer);
+         break;
+      case MDPI_OP_TYPE_PARAM_INFO:
+         op_size += sizeof(mdpi_op_param_t);
+         break;
+      case MDPI_OP_TYPE_STATE_CHANGE:
+         op_size += sizeof(mdpi_op_state_change_t);
+         break;
+      case MDPI_OP_TYPE_NONE:
+      default:
+         break;
+   }
+   if(send(__m_ipc_file.socket, &__m_ipc_operation, op_size, 0) == -1)
+   {
+      error("Unable to send response data.\n");
+      perror("send failed");
+      exit(EXIT_FAILURE);
+   }
 }
 
 static void __ipc_release()
@@ -115,7 +170,7 @@ static void __ipc_exit(mdpi_ipc_state_t ipc_state, mdpi_state_t state, uint8_t r
    __m_ipc_operation.type = MDPI_OP_TYPE_STATE_CHANGE;
    __m_ipc_operation.payload.sc.state = state;
    __m_ipc_operation.payload.sc.retval = retval;
-   __ipc_commit();
+   __ipc_request();
 }
 
 static void __ipc_set_socket_buffer_size(int socket_fd)
