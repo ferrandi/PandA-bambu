@@ -397,7 +397,7 @@ void __m_sim_start()
    assert(__m_ipc_operation.type == MDPI_OP_TYPE_STATE_CHANGE && "Unexpected simulator request.");
    assert(__m_ipc_operation.payload.sc.state == MDPI_STATE_READY && "Unexpected simulator state.");
    __m_ipc_operation.payload.sc.state = MDPI_STATE_SETUP;
-   __ipc_complete();
+   __ipc_response();
    debug("Simulator state: %s (%u)\n", mdpi_state_str(__m_ipc_operation.payload.sc.state),
          __m_ipc_operation.payload.sc.retval);
    debug("Launch simulation\n");
@@ -644,25 +644,25 @@ static void* __m_driver_loop(void*)
          case MDPI_OP_TYPE_MEM_READ:
             __mem_read(__m_ipc_operation.payload.mem.size, __m_ipc_operation.payload.mem.buffer,
                        __m_ipc_operation.payload.mem.addr);
-            __ipc_complete();
+            __ipc_response();
             break;
          case MDPI_OP_TYPE_MEM_WRITE:
             __mem_write(__m_ipc_operation.payload.mem.size, __m_ipc_operation.payload.mem.buffer,
                         __m_ipc_operation.payload.mem.addr);
-            __ipc_complete();
+            __ipc_response();
             break;
          case MDPI_OP_TYPE_ARG_READ:
             __m_ipc_operation.payload.arg.bitsize =
                 __arg_read(&__m_ipc_operation.payload.arg.index, __m_ipc_operation.payload.arg.buffer);
-            __ipc_complete();
+            __ipc_response();
             break;
          case MDPI_OP_TYPE_ARG_WRITE:
             __arg_write(&__m_ipc_operation.payload.arg.index, __m_ipc_operation.payload.arg.buffer);
-            __ipc_complete();
+            __ipc_response();
             break;
          case MDPI_OP_TYPE_PARAM_INFO:
             __m_ipc_operation.payload.param.size = __param_size(&__m_ipc_operation.payload.param.index);
-            __ipc_complete();
+            __ipc_response();
             break;
          case MDPI_OP_TYPE_NONE:
          default:

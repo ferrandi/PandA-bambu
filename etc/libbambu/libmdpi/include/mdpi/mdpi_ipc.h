@@ -146,9 +146,9 @@ static void __ipc_wait(mdpi_ipc_state_t state);
 
 static void __ipc_reserve();
 
-static void __ipc_commit();
+static void __ipc_request();
 
-static void __ipc_complete();
+static void __ipc_response();
 
 static void __ipc_release();
 
