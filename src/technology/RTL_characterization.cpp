@@ -261,7 +261,8 @@ void RTLCharacterization::fix_proxies_execution_time_std()
       std::string memory_ctrl_type = current_fu->memory_ctrl_type;
       std::string bram_load_latency = current_fu->bram_load_latency;
       if(memory_ctrl_type == MEMORY_CTRL_TYPE_PROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY ||
-         fu_name == BMEMORY_STD || fu_name == BMEMORY_STD + (bram_load_latency != "2" ? high_latency_postfix : ""))
+         memory_ctrl_type == MEMORY_CTRL_TYPE_SPROXY || fu_name == BMEMORY_STD ||
+         fu_name == BMEMORY_STD + (bram_load_latency != "2" ? high_latency_postfix : ""))
       {
          if((!parameters->isOption(OPT_component_name) || current_fu->get_operations_num() == 0) &&
             completed.find(fu_name) == completed.end())
@@ -302,7 +303,8 @@ void RTLCharacterization::fix_proxies_execution_time_std()
          }
       }
       if(memory_ctrl_type == MEMORY_CTRL_TYPE_PROXYN || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN ||
-         fu_name == BMEMORY_STDN || fu_name == BMEMORY_STDN + (bram_load_latency != "2" ? high_latency_postfix : ""))
+         memory_ctrl_type == MEMORY_CTRL_TYPE_SPROXYN || fu_name == BMEMORY_STDN ||
+         fu_name == BMEMORY_STDN + (bram_load_latency != "2" ? high_latency_postfix : ""))
       {
          if((!parameters->isOption(OPT_component_name) || current_fu->get_operations_num() == 0) &&
             completed.find(fu_name) == completed.end())
