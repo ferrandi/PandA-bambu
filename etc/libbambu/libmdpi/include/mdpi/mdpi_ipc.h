@@ -50,31 +50,18 @@
 #define __M_IPC_SIM_CMD_ENV "M_IPC_SIM_CMD"
 #endif
 
-#define __USE_FILE_OFFSET64
-#define _FILE_OFFSET_BITS 64
-
 #define IPC_STRUCT_ATTR __attribute__((aligned(8), packed))
 
 #include "mdpi_debug.h"
 #include "mdpi_types.h"
 
-#ifndef __cplusplus
-#include <assert.h>
-#include <errno.h>
-#include <stdatomic.h>
-#include <stdlib.h>
-#include <string.h>
-#else
-#include <atomic>
-#include <cassert>
-#include <cerrno>
-#include <cstdlib>
-#include <cstring>
-#define _Atomic(X) std::atomic<X>
-#endif
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <unistd.h>
+typedef enum
+{
+   MDPI_IPC_STATE_FREE = 0,
+   MDPI_IPC_STATE_WRITING,
+   MDPI_IPC_STATE_REQUEST,
+   MDPI_IPC_STATE_RESPONSE
+} mdpi_ipc_state_t;
 
 // clang-format off
 typedef enum
@@ -87,26 +74,16 @@ typedef enum
    MDPI_STATE_ERROR     = 1 << 4,
    MDPI_STATE_ABORT     = 1 << 5,
 } mdpi_state_t;
+
+#define mdpi_state_str(s)                 \
+    s == MDPI_STATE_READY   ? "READY" :   \
+   (s == MDPI_STATE_SETUP   ? "SETUP" :   \
+   (s == MDPI_STATE_RUNNING ? "RUNNING" : \
+   (s == MDPI_STATE_END     ? "END" :     \
+   (s == MDPI_STATE_ERROR   ? "ERROR" :   \
+   (s == MDPI_STATE_ABORT   ? "ABORT" :   \
+                              "UNDEFINED")))))
 // clang-format on
-
-#define mdpi_state_str(s)               \
-   s == MDPI_STATE_READY ?              \
-       "READY" :                        \
-       (s == MDPI_STATE_SETUP ?         \
-            "SETUP" :                   \
-            (s == MDPI_STATE_RUNNING ?  \
-                 "RUNNING" :            \
-                 (s == MDPI_STATE_END ? \
-                      "END" :           \
-                      (s == MDPI_STATE_ERROR ? "ERROR" : (s == MDPI_STATE_ABORT ? "ABORT" : "UNDEFINED")))))
-
-typedef enum
-{
-   MDPI_IPC_STATE_FREE = 0,
-   MDPI_IPC_STATE_WRITING,
-   MDPI_IPC_STATE_REQUEST,
-   MDPI_IPC_STATE_DONE
-} mdpi_ipc_state_t;
 
 typedef enum
 {
@@ -123,7 +100,7 @@ typedef struct
 {
    ptr_t addr;
    uint16_t size; // Size in bytes
-   byte_t buffer[4096];
+   byte_t buffer[512];
 } IPC_STRUCT_ATTR mdpi_op_mem_t;
 
 #define MDPI_ARG_IDX_OUT_OF_BOUNDS (UINT8_MAX)
@@ -133,7 +110,7 @@ typedef struct
 {
    uint8_t index;
    uint16_t bitsize;
-   byte_t buffer[4096];
+   byte_t buffer[512];
 } IPC_STRUCT_ATTR mdpi_op_arg_t;
 
 typedef struct
@@ -150,7 +127,6 @@ typedef struct
 
 typedef struct
 {
-   _Atomic(mdpi_ipc_state_t) handle;
    mdpi_op_type_t type;
    union
    {
@@ -161,134 +137,42 @@ typedef struct
    } __attribute__((aligned(8))) payload;
 } __attribute__((aligned(8))) mdpi_op_t;
 
-typedef struct
+static inline __attribute__((always_inline)) void mdpi_op_init(mdpi_op_t* op)
 {
-   mdpi_op_t operation;
-} __attribute__((aligned(8))) mdpi_ipc_file_t;
-
-static mdpi_ipc_file_t* __m_ipc_file = NULL;
-
-#define __m_ipc_operation (__m_ipc_file->operation)
-
-static int mdpi_op_init(mdpi_op_t* op)
-{
-   atomic_store(&op->handle, MDPI_IPC_STATE_FREE);
    op->type = MDPI_OP_TYPE_NONE;
-   return 0;
 }
 
-static void __ipc_wait(mdpi_ipc_state_t state)
-{
-   while(atomic_load(&__m_ipc_operation.handle) != state)
-      ;
-}
+static void __ipc_wait(mdpi_ipc_state_t state);
 
-static void __ipc_reserve()
-{
-   mdpi_ipc_state_t expected;
-   do
-   {
-      expected = MDPI_IPC_STATE_FREE;
-      __ipc_wait(expected);
-   } while(!atomic_compare_exchange_strong(&__m_ipc_operation.handle, &expected, MDPI_IPC_STATE_WRITING));
-}
+static void __ipc_reserve();
 
-static void __ipc_commit()
-{
-#ifndef NDEBUG
-   mdpi_ipc_state_t expected = MDPI_IPC_STATE_WRITING;
-   atomic_compare_exchange_strong(&__m_ipc_operation.handle, &expected, MDPI_IPC_STATE_REQUEST);
-   assert(expected == MDPI_IPC_STATE_WRITING && "Illegal IPC commit operation.");
-#else
-   atomic_store(&__m_ipc_operation.handle, MDPI_IPC_STATE_REQUEST);
+static void __ipc_commit();
+
+static void __ipc_complete();
+
+static void __ipc_release();
+
+static void __ipc_exit(mdpi_ipc_state_t ipc_state, mdpi_state_t state, uint8_t retval);
+
+static void __ipc_init(int init);
+
+static void __ipc_init1();
+
+static void __ipc_fini();
+
+#define __M_IPC_BACKEND_ATOMIC 0
+#define __M_IPC_BACKEND_SOCKET 1
+
+#ifndef __M_IPC_BACKEND
+#define __M_IPC_BACKEND __M_IPC_BACKEND_SOCKET
 #endif
-}
 
-static void __ipc_complete()
-{
-#ifndef NDEBUG
-   mdpi_ipc_state_t expected = MDPI_IPC_STATE_REQUEST;
-   atomic_compare_exchange_strong(&__m_ipc_operation.handle, &expected, MDPI_IPC_STATE_DONE);
-   assert(expected == MDPI_IPC_STATE_REQUEST && "Illegal IPC complete operation.");
-#else
-   atomic_store(&__m_ipc_operation.handle, MDPI_IPC_STATE_DONE);
+#if __M_IPC_BACKEND == __M_IPC_BACKEND_ATOMIC
+#include "mdpi_ipc_atomic.h"
 #endif
-}
 
-static void __ipc_release()
-{
-   atomic_store(&__m_ipc_operation.handle, MDPI_IPC_STATE_FREE);
-}
-
-static void __ipc_exit(mdpi_ipc_state_t ipc_state, mdpi_state_t state, uint8_t retval)
-{
-   mdpi_ipc_state_t expected;
-   do
-   {
-      expected = atomic_load(&__m_ipc_operation.handle);
-      if(expected == MDPI_IPC_STATE_WRITING)
-         continue;
-   } while(!atomic_compare_exchange_strong(&__m_ipc_operation.handle, &expected, MDPI_IPC_STATE_WRITING));
-   __m_ipc_operation.type = MDPI_OP_TYPE_STATE_CHANGE;
-   __m_ipc_operation.payload.sc.state = state;
-   __m_ipc_operation.payload.sc.retval = retval;
-   atomic_store(&__m_ipc_operation.handle, ipc_state);
-}
-
-static void __ipc_init(int init)
-{
-   int ipc_descriptor;
-
-   debug("IPC memory mapping on file %s\n", __M_IPC_FILENAME);
-   ipc_descriptor = open(__M_IPC_FILENAME, O_RDWR | O_CREAT, 0664);
-   if(ipc_descriptor < 0)
-   {
-      error("Error opening IPC file: %s\n", __M_IPC_FILENAME);
-      perror("MDPI library initialization error");
-      exit(EXIT_FAILURE);
-   }
-
-   if(init)
-   {
-      // Ensure that the file will hold enough space
-      lseek(ipc_descriptor, sizeof(mdpi_ipc_file_t), SEEK_SET);
-      if(write(ipc_descriptor, "", 1) < 1)
-      {
-         error("Error writing IPC file: %s\n", __M_IPC_FILENAME);
-         perror("MDPI library initialization error");
-         exit(EXIT_FAILURE);
-      }
-      lseek(ipc_descriptor, 0, SEEK_SET);
-   }
-
-   __m_ipc_file =
-       (mdpi_ipc_file_t*)mmap(NULL, sizeof(mdpi_ipc_file_t), PROT_READ | PROT_WRITE, MAP_SHARED, ipc_descriptor, 0);
-
-   if(__m_ipc_file == MAP_FAILED)
-   {
-      error("An error occurred while mapping IPC address range.\n");
-      perror("MDPI library initialization error");
-      exit(EXIT_FAILURE);
-   }
-   debug("IPC file memory-mapping completed.\n");
-
-   if(init)
-   {
-      mdpi_op_init(&__m_ipc_operation);
-   }
-
-   close(ipc_descriptor);
-}
-
-static void __ipc_fini()
-{
-   if(munmap(__m_ipc_file, sizeof(mdpi_ipc_file_t)))
-   {
-      error("An error occurred while unmapping IPC address range.\n");
-      perror("MDPI library finalization error");
-   }
-
-   // remove(__M_IPC_FILENAME);
-}
+#if __M_IPC_BACKEND == __M_IPC_BACKEND_SOCKET
+#include "mdpi_ipc_socket.h"
+#endif
 
 #endif // __MDPI_IPC_H
