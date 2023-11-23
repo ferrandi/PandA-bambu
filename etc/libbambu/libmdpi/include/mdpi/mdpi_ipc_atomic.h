@@ -186,15 +186,17 @@ static void __ipc_init1()
 {
 }
 
-static void __ipc_fini()
+static void __ipc_fini(__attribute__((unused)) mdpi_entity_t init)
 {
    if(munmap(__m_ipc_file, sizeof(mdpi_ipc_file_t)))
    {
       error("An error occurred while unmapping IPC address range.\n");
       perror("MDPI library finalization error");
    }
-
-   // remove(__M_IPC_FILENAME);
+   if(init == MDPI_ENTITY_DRIVER)
+   {
+      remove(__M_IPC_FILENAME);
+   }
 }
 
 #endif // __MDPI_IPC_ATOMIC_H
