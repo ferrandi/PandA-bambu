@@ -3033,7 +3033,6 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS generic map (BITSIZE_in
 ARRAY_1D_STD_BRAM_NN_SDS_3 #(
   .BITSIZE_in1(BITSIZE_in1),
   .PORTSIZE_in1(PORTSIZE_in1),
-  .PORTSIZE_in1(PORTSIZE_in1),
   .BITSIZE_in2r(BITSIZE_in2r),
   .PORTSIZE_in2r(PORTSIZE_in2r),
   .BITSIZE_in2w(BITSIZE_in2w),
@@ -3081,7 +3080,6 @@ ARRAY_1D_STD_BRAM_NN_SDS_3 #(
   .USE_SPARSE_MEMORY(USE_SPARSE_MEMORY),
   .ALIGNMENT(ALIGNMENT),
   .BITSIZE_proxy_in1(BITSIZE_proxy_in1),
-  .PORTSIZE_proxy_in1(PORTSIZE_proxy_in1),
   .PORTSIZE_proxy_in1(PORTSIZE_proxy_in1),
   .BITSIZE_proxy_in2r(BITSIZE_proxy_in2r),
   .PORTSIZE_proxy_in2r(PORTSIZE_proxy_in2r),
@@ -3401,7 +3399,6 @@ ARRAY_1D_STD_BRAM_NN_SDS_4 #(
   .USE_SPARSE_MEMORY(USE_SPARSE_MEMORY),
   .ALIGNMENT(ALIGNMENT),
   .BITSIZE_proxy_in1(BITSIZE_proxy_in1),
-  .PORTSIZE_proxy_in1(PORTSIZE_proxy_in1),
   .PORTSIZE_proxy_in1(PORTSIZE_proxy_in1),
   .BITSIZE_proxy_in2r(BITSIZE_proxy_in2r),
   .PORTSIZE_proxy_in2r(PORTSIZE_proxy_in2r),
