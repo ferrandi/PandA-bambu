@@ -2760,7 +2760,6 @@ ARRAY_1D_STD_BRAM_NN_SDS #(
   .ALIGNMENT(ALIGNMENT),
   .BITSIZE_proxy_in1(BITSIZE_proxy_in1),
   .PORTSIZE_proxy_in1(PORTSIZE_proxy_in1),
-  .PORTSIZE_proxy_in1(PORTSIZE_proxy_in1),
   .BITSIZE_proxy_in2r(BITSIZE_proxy_in2r),
   .PORTSIZE_proxy_in2r(PORTSIZE_proxy_in2r),
   .BITSIZE_proxy_in2w(BITSIZE_proxy_in2w),
