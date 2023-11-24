@@ -2298,12 +2298,12 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
          n_elmts = num_elements.find(l->first)->second;
       }
       auto bitsize_variable = l->second;
-      auto piIndexLimit = 1;
+      auto piIndexLimit = 1U;
       if(is_dual && l->first)
       {
-         piIndexLimit = 2;
+         piIndexLimit = 2U;
       }
-      for(unsigned piOffset = 0; piOffset < piIndexLimit; ++piOffset)
+      for(auto piOffset = 0U; piOffset < piIndexLimit; ++piOffset)
       {
          structural_objectRef port = fu_module->get_in_port(l->first + offset + piOffset);
          port_o::resize_std_port(bitsize_variable, n_elmts, debug_level, port);
