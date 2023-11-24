@@ -138,6 +138,8 @@ std::string modelsimWrapper::GenerateScript(std::ostream& script, const std::str
    script << "   mkdir -p ${BEH_DIR}" << std::endl;
    script << "fi" << std::endl << std::endl;
 
+   log_file = "${BEH_DIR}/" + top_filename + "_modelsim.log";
+
    script << "if [ -d ${work_dir} ]; then" << std::endl;
    script << "  " << MODELSIM_VDEL << " -all -lib ${work_dir}" << std::endl;
    script << "fi" << std::endl << std::endl;
