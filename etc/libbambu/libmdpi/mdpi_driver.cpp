@@ -323,7 +323,19 @@ void __attribute__((constructor)) __mdpi_driver_init()
    static const int __sigs[] = {SIGINT, SIGABRT, SIGSEGV, SIGCHLD};
    int error;
    size_t i;
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wwrite-strings"
+#else
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wwrite-strings"
+#endif
    char* sim_argv[4] = {"bash", "-c", NULL, NULL};
+#ifdef __clang__
+#pragma clang diagnostic pop
+#else
+#pragma GCC diagnostic pop
+#endif
 
    debug("Loading MDPI library...\n");
 
@@ -675,6 +687,7 @@ static void* __m_driver_loop(void*)
             break;
       }
    }
+   debug("IPC thread completed.\n");
    return NULL;
 }
 
