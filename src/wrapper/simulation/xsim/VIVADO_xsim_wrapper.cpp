@@ -126,7 +126,7 @@ std::string VIVADO_xsim_wrapper::GenerateScript(std::ostream& script, const std:
       script << ". " << setupscr << " >& /dev/null;" << std::endl << std::endl;
    }
    script << "BEH_DIR=\"" << XSIM_SUBDIR << suffix << "\"" << std::endl << "BEH_CC=\"${CC}\"" << std::endl << std::endl;
-
+   log_file = "${BEH_DIR}/" + top_filename + "_xsim.log";
    const auto xilinx_root = Param->isOption(OPT_xilinx_root) ? Param->getOption<std::string>(OPT_xilinx_root) : "";
    std::string beh_cflags =
        "-DXILINX_SIMULATOR " + (xilinx_root.size() ? ("-isystem " + xilinx_root + "/data/xsim/include") : "");

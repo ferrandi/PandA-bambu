@@ -96,6 +96,7 @@ std::string VerilatorWrapper::GenerateScript(std::ostream& script, const std::st
                                     (Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) ||
                                     (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw));
    const auto output_directory = Param->getOption<std::string>(OPT_output_directory);
+   log_file = "${BEH_DIR}/" + top_filename + "_verilator.log";
    script << "export VM_PARALLEL_BUILDS=1" << std::endl
           << "BEH_DIR=\"" << SIM_SUBDIR << suffix << "\"" << std::endl
           << "BEH_CC=\"${CC}\"" << std::endl
