@@ -705,7 +705,9 @@ test6 (void)
     }
 }
 
+#if 0
 void *chk_fail_buf[];
+#endif
 volatile int chk_fail_allowed, chk_calls;
 volatile int memcpy_disallowed, mempcpy_disallowed, memmove_disallowed;
 volatile int memset_disallowed, strcpy_disallowed, stpcpy_disallowed;
