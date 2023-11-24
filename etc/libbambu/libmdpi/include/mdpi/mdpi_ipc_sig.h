@@ -104,9 +104,12 @@ static void __ipc_wait(mdpi_ipc_state_t state)
    {
       if(sigtimedwait(&sset, NULL, &tv) == -1)
       {
-         error("Unable to wait for signal.\n");
-         perror("sigtimedwait failed");
-         abort();
+         if(errno != EAGAIN && errno != EINTR)
+         {
+            error("Unable to wait for signal.\n");
+            perror("sigtimedwait failed");
+            abort();
+         }
       }
    }
 }
@@ -121,15 +124,21 @@ static void __ipc_reserve()
    } while(!atomic_compare_exchange_strong(&__m_ipc_file->handle, &expected, MDPI_IPC_STATE_WRITING));
 }
 
-#define __ipc_notify()                                                        \
-   do                                                                         \
-   {                                                                          \
-      if(kill(atomic_load(&__m_ipc_remote_pid), __M_IPC_BACKEND_SIGNO) == -1) \
-      {                                                                       \
-         error("Unable to send signal.\n");                                   \
-         perror("kill failed");                                               \
-         abort();                                                             \
-      }                                                                       \
+#define __ipc_notify()                                                           \
+   do                                                                            \
+   {                                                                             \
+      do                                                                         \
+      {                                                                          \
+         if(kill(atomic_load(&__m_ipc_remote_pid), __M_IPC_BACKEND_SIGNO) == -1) \
+         {                                                                       \
+            if(errno == EAGAIN || errno == EINTR)                                \
+               continue;                                                         \
+            error("Unable to send signal.\n");                                   \
+            perror("kill failed");                                               \
+            abort();                                                             \
+         }                                                                       \
+         break;                                                                  \
+      } while(1);                                                                \
    } while(0)
 
 static void __ipc_request()
