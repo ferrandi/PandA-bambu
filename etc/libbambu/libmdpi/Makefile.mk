@@ -84,7 +84,7 @@ DRIVER_OBJ := $(patsubst %,$(MDPI_OBJ_DIR)/%.o, $(notdir $(DRIVER_SRC)))
 COSIM_OBJ := $(patsubst %,$(MDPI_OBJ_DIR)/%.o, $(notdir $(COSIM_SRC)))
 
 override TB_CFLAGS := $(patsubst -fno-exceptions,,$(CFLAGS)) $(TB_CFLAGS) -I$(libmdpi_root)/include
-MDPI_CFLAGS := $(BEH_CFLAGS) # $(shell echo "$(CFLAGS)" | grep -oE '(-mx?[0-9]+)' | sed -E 's/-mx?/-DM/' | tr '[:lower:]' '[:upper:]')
+MDPI_CFLAGS := $(BEH_CFLAGS) -D_GNU_SOURCE # $(shell echo "$(CFLAGS)" | grep -oE '(-mx?[0-9]+)' | sed -E 's/-mx?/-DM/' | tr '[:lower:]' '[:upper:]')
 LIB_CFLAGS := $(MDPI_CFLAGS)
 ifdef BEH_CC
 	LIB_CFLAGS += $(shell if basename $(BEH_CC) | grep -q '++'; then echo -std=c++11; else echo -std=c11; fi)
