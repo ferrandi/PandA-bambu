@@ -2913,7 +2913,7 @@ double AllocationInformation::estimate_call_delay() const
    }
    else
    {
-      call_delay = hls->registered_inputs ? 0 : clock_budget;
+      call_delay = clock_budget;
       INDENT_DBG_MEX(
           DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
           "---Minimum slack " +
