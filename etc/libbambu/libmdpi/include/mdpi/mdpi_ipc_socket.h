@@ -47,6 +47,8 @@
 #ifndef __MDPI_IPC_SOCKET_H
 #define __MDPI_IPC_SOCKET_H
 
+#include <features.h>
+
 #define __M_IPC_BACKEND_SOCKET_TIMEOUT 120000
 
 #ifndef __cplusplus
@@ -70,7 +72,7 @@
 
 typedef struct
 {
-   int socket;
+   struct pollfd socket;
    mdpi_op_t operation;
 } mdpi_ipc_file_t;
 
@@ -80,7 +82,7 @@ static mdpi_ipc_file_t __m_ipc_file;
 
 static void __ipc_wait(__attribute__((unused)) mdpi_ipc_state_t state)
 {
-   if(__m_ipc_file.socket == -1 || recv(__m_ipc_file.socket, &__m_ipc_operation, sizeof(mdpi_op_t), 0) == -1)
+   if(__m_ipc_file.socket.fd == -1 || recv(__m_ipc_file.socket.fd, &__m_ipc_operation, sizeof(mdpi_op_t), 0) == -1)
    {
       error("Unable to receive data.\n");
       perror("recv failed");
@@ -94,7 +96,7 @@ static void __ipc_reserve()
 
 static void __ipc_request()
 {
-   size_t op_size = (size_t)(&((mdpi_op_t*)0)->payload);
+   int op_size = (size_t)(&((mdpi_op_t*)0)->payload);
    switch(__m_ipc_operation.type)
    {
       case MDPI_OP_TYPE_MEM_WRITE:
@@ -119,7 +121,7 @@ static void __ipc_request()
       default:
          break;
    }
-   if(__m_ipc_file.socket == -1 || send(__m_ipc_file.socket, &__m_ipc_operation, op_size, 0) == -1)
+   if(__m_ipc_file.socket.fd == -1 || send(__m_ipc_file.socket.fd, &__m_ipc_operation, op_size, 0) == -1)
    {
       error("Unable to send request data.\n");
       perror("send failed");
@@ -129,7 +131,7 @@ static void __ipc_request()
 
 static void __ipc_response()
 {
-   size_t op_size = (size_t)(&((mdpi_op_t*)0)->payload);
+   int op_size = (size_t)(&((mdpi_op_t*)0)->payload);
    switch(__m_ipc_operation.type)
    {
       case MDPI_OP_TYPE_MEM_READ:
@@ -154,7 +156,7 @@ static void __ipc_response()
       default:
          break;
    }
-   if(__m_ipc_file.socket == -1 || send(__m_ipc_file.socket, &__m_ipc_operation, op_size, 0) == -1)
+   if(__m_ipc_file.socket.fd == -1 || send(__m_ipc_file.socket.fd, &__m_ipc_operation, op_size, 0) == -1)
    {
       error("Unable to send response data.\n");
       perror("send failed");
@@ -168,7 +170,7 @@ static void __ipc_release()
 
 static void __ipc_exit(mdpi_ipc_state_t ipc_state, mdpi_state_t state, uint8_t retval)
 {
-   if(__m_ipc_file.socket != -1)
+   if(__m_ipc_file.socket.fd != -1)
    {
       __m_ipc_operation.type = MDPI_OP_TYPE_STATE_CHANGE;
       __m_ipc_operation.payload.sc.state = state;
@@ -177,17 +179,18 @@ static void __ipc_exit(mdpi_ipc_state_t ipc_state, mdpi_state_t state, uint8_t r
    }
 }
 
-static void __ipc_set_socket_buffer_size(int socket_fd)
+static void __ipc_setsockopt(int socket_fd)
 {
    int error;
    int buffer_size = sizeof(mdpi_op_t);
-   if(setsockopt(socket_fd, SOL_SOCKET, SO_SNDBUF, &buffer_size, sizeof buffer_size) == -1)
+
+   if(setsockopt(socket_fd, SOL_SOCKET, SO_SNDBUF, &buffer_size, sizeof(buffer_size)) == -1)
    {
       error("Error setting socket send buffer size.\n");
       perror("setsockopt failed");
       abort();
    }
-   if(setsockopt(socket_fd, SOL_SOCKET, SO_RCVBUF, &buffer_size, sizeof buffer_size) == -1)
+   if(setsockopt(socket_fd, SOL_SOCKET, SO_RCVBUF, &buffer_size, sizeof(buffer_size)) == -1)
    {
       error("Error setting socket receive buffer size.\n");
       perror("setsockopt failed");
@@ -197,8 +200,9 @@ static void __ipc_set_socket_buffer_size(int socket_fd)
 
 static void __ipc_init(mdpi_entity_t init)
 {
-   __m_ipc_file.socket = socket(AF_UNIX, SOCK_STREAM, 0);
-   if(__m_ipc_file.socket == -1)
+   __m_ipc_file.socket.events = POLLIN;
+   __m_ipc_file.socket.fd = socket(AF_UNIX, SOCK_STREAM, 0);
+   if(__m_ipc_file.socket.fd == -1)
    {
       error("Error opening IPC socket.\n");
       perror("socket failed");
@@ -213,18 +217,18 @@ static void __ipc_init(mdpi_entity_t init)
    if(init == MDPI_ENTITY_DRIVER)
    {
       remove(address.sun_path);
-      if(bind(__m_ipc_file.socket, (struct sockaddr*)&address, SUN_LEN(&address)) == -1)
+      if(bind(__m_ipc_file.socket.fd, (struct sockaddr*)&address, SUN_LEN(&address)) == -1)
       {
-         close(__m_ipc_file.socket);
-         __m_ipc_file.socket = -1;
+         close(__m_ipc_file.socket.fd);
+         __m_ipc_file.socket.fd = -1;
          error("Unable to bind testbench-side socket.\n");
          perror("bind failed");
          abort();
       }
-      if(listen(__m_ipc_file.socket, 1) == -1)
+      if(listen(__m_ipc_file.socket.fd, 1) == -1)
       {
-         close(__m_ipc_file.socket);
-         __m_ipc_file.socket = -1;
+         close(__m_ipc_file.socket.fd);
+         __m_ipc_file.socket.fd = -1;
          error("Unable to listen of testbench-side socket.\n");
          perror("listen failed");
          abort();
@@ -233,11 +237,11 @@ static void __ipc_init(mdpi_entity_t init)
    }
    else
    {
-      __ipc_set_socket_buffer_size(__m_ipc_file.socket);
-      if(connect(__m_ipc_file.socket, (struct sockaddr*)&address, SUN_LEN(&address)) == -1)
+      __ipc_setsockopt(__m_ipc_file.socket.fd);
+      if(connect(__m_ipc_file.socket.fd, (struct sockaddr*)&address, SUN_LEN(&address)) == -1)
       {
-         close(__m_ipc_file.socket);
-         __m_ipc_file.socket = -1;
+         close(__m_ipc_file.socket.fd);
+         __m_ipc_file.socket.fd = -1;
          error("Unable to connect simulator-side socket.\n");
          perror("connect failed");
          abort();
@@ -250,38 +254,34 @@ static void __ipc_init(mdpi_entity_t init)
 
 static void __ipc_init1()
 {
-   int retval;
-   struct pollfd pfds[1];
+   int retval, socket_fd;
 
-   pfds[0].fd = __m_ipc_file.socket;
-   pfds[0].events = POLLIN;
-   __m_ipc_file.socket = -1;
-
-   retval = poll(pfds, 1, __M_IPC_BACKEND_SOCKET_TIMEOUT);
+   retval = poll(&__m_ipc_file.socket, 1, __M_IPC_BACKEND_SOCKET_TIMEOUT);
    if(retval == -1)
    {
-      close(pfds[0].fd);
+      close(__m_ipc_file.socket.fd);
       error("Unable to monitor testbench socket file descriptor.\n");
       perror("poll failed");
       abort();
    }
    else if(retval)
    {
-      __m_ipc_file.socket = accept(pfds[0].fd, NULL, NULL);
-      if(__m_ipc_file.socket == -1)
+      socket_fd = __m_ipc_file.socket.fd;
+      __m_ipc_file.socket.fd = accept(__m_ipc_file.socket.fd, NULL, NULL);
+      if(__m_ipc_file.socket.fd == -1)
       {
-         close(pfds[0].fd);
+         close(socket_fd);
          error("Unable to accept socket at testbench side.\n");
          perror("accept failed");
          abort();
       }
-      __ipc_set_socket_buffer_size(__m_ipc_file.socket);
-      close(pfds[0].fd);
+      __ipc_setsockopt(__m_ipc_file.socket.fd);
+      close(socket_fd);
       debug("IPC socket connection completed.\n");
    }
    else
    {
-      close(pfds[0].fd);
+      close(__m_ipc_file.socket.fd);
       error("Unable to accept socket after %d seconds timeout.\n", __M_IPC_BACKEND_SOCKET_TIMEOUT);
       abort();
    }
@@ -289,9 +289,9 @@ static void __ipc_init1()
 
 static void __ipc_fini(mdpi_entity_t init)
 {
-   if(__m_ipc_file.socket != -1)
+   if(__m_ipc_file.socket.fd != -1)
    {
-      close(__m_ipc_file.socket);
+      close(__m_ipc_file.socket.fd);
    }
    if(init == MDPI_ENTITY_DRIVER)
    {
