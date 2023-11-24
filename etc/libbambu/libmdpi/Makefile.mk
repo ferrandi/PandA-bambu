@@ -177,7 +177,7 @@ $(COSIM_OBJ): $(COSIM_SRC)
 $(DRIVER_OBJ): $(DRIVER_SRC)
 	@echo "Compiling $(notdir $<)"
 	@mkdir -p $$(dirname $@)
-	@$(CXX) $(DRIVER_CFLAGS) -fPIC -c -xc++ -o $@ $<
+	@$(CC) $(DRIVER_CFLAGS) -fPIC -c -o $@ $<
 
 $(DRIVER_LIB): $(OBJS) $(DRIVER_OBJ) $(COSIM_OBJ) $(PP_OBJ)
 	@echo "Linking $(notdir $@)"
