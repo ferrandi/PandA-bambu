@@ -147,7 +147,7 @@ clean:
 $(MDPI_LIB): $(MDPI_SRCS)
 ifdef BEH_CC
 	@echo "Compiling $(notdir $@)"
-	@$(BEH_CC) $(LIB_LDFLAGS) $(LIB_CFLAGS) -o $@ $^
+	@$(BEH_CC) $(LIB_CFLAGS) -o $@ $^ $(LIB_LDFLAGS)
 endif
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%
@@ -181,11 +181,11 @@ $(DRIVER_OBJ): $(DRIVER_SRC)
 
 $(DRIVER_LIB): $(OBJS) $(DRIVER_OBJ) $(COSIM_OBJ) $(PP_OBJ)
 	@echo "Linking $(notdir $@)"
-	@$(CC) $(DRIVER_LDFLAGS) -shared -o $@ $^
+	@$(CC) -shared -o $@ $^ $(DRIVER_LDFLAGS)
 	@objcopy $(REDEFINE_SYS) $@
 
 $(TB_TARGET): $(TB_OBJS) $(OBJS) $(DRIVER_OBJ) $(COSIM_OBJ) $(PP_OBJ)
 ifdef TB_SRCS
 	@echo "Linking $(notdir $@)"
-	@$(CC) $(DRIVER_LDFLAGS) -o $@ $^
+	@$(CC) -o $@ $^ $(DRIVER_LDFLAGS)
 endif
