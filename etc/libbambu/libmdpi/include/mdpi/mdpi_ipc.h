@@ -160,8 +160,7 @@ static void __ipc_init1();
 
 static void __ipc_fini(mdpi_entity_t init);
 
-#define __M_IPC_BACKEND_ATOMIC 0
-#define __M_IPC_BACKEND_SOCKET 1
+#define __M_IPC_BACKEND_ATOMIC 1
 #define __M_IPC_BACKEND_SIG 2
 
 #ifndef __M_IPC_BACKEND
@@ -170,10 +169,6 @@ static void __ipc_fini(mdpi_entity_t init);
 
 #if __M_IPC_BACKEND == __M_IPC_BACKEND_ATOMIC
 #include "mdpi_ipc_atomic.h"
-#endif
-
-#if __M_IPC_BACKEND == __M_IPC_BACKEND_SOCKET
-#include "mdpi_ipc_socket.h"
 #endif
 
 #if __M_IPC_BACKEND == __M_IPC_BACKEND_SIG
