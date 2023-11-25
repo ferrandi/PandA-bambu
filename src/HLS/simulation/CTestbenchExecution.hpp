@@ -52,8 +52,6 @@ CONSTREF_FORWARD_DECL(CBackendInformation);
 class CTestbenchExecution : public HLS_step
 {
  protected:
-   const std::string output_directory;
-
    const CBackendInformationConstRef c_backend_info;
 
    void ComputeRelationships(DesignFlowStepSet& relationship,

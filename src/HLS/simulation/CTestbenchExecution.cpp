@@ -65,7 +65,6 @@ CTestbenchExecution::CTestbenchExecution(const ParameterConstRef Param, const HL
                                          const DesignFlowManagerConstRef _design_flow_manager,
                                          const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
     : HLS_step(Param, AppM, _design_flow_manager, HLSFlowStep_Type::C_TESTBENCH_EXECUTION),
-      output_directory(Param->getOption<std::string>(OPT_output_directory) + "/simulation/"),
       c_backend_info(RefcountCast<const CBackendInformation>(_hls_flow_step_specialization))
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
