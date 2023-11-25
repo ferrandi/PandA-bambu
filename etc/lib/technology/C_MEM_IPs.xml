@@ -2679,22 +2679,22 @@ ARRAY_1D_STD_BRAM_N1_instance : ARRAY_1D_STD_BRAM_N1_SP generic map (BITSIZE_in1
           <port_vector_o id="proxy_in1" dir="IN" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in2r" dir="IN" is_addr_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in2r" dir="IN" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in2w" dir="IN" is_addr_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in2w" dir="IN" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in3r" dir="IN" is_size_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in3r" dir="IN" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in3w" dir="IN" is_size_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in3w" dir="IN" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in4r" dir="IN" is_memory="1">
+          <port_vector_o id="proxy_in4r" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in4w" dir="IN" is_memory="1">
+          <port_vector_o id="proxy_in4w" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <port_vector_o id="proxy_sel_LOAD" dir="IN">
@@ -3000,22 +3000,22 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS generic map (BITSIZE_in
           <port_vector_o id="proxy_in1" dir="IN" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in2r" dir="IN" is_addr_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in2r" dir="IN" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in2w" dir="IN" is_addr_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in2w" dir="IN" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in3r" dir="IN" is_size_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in3r" dir="IN" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in3w" dir="IN" is_size_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in3w" dir="IN" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in4r" dir="IN" is_memory="1">
+          <port_vector_o id="proxy_in4r" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in4w" dir="IN" is_memory="1">
+          <port_vector_o id="proxy_in4w" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <port_vector_o id="proxy_sel_LOAD" dir="IN">
@@ -3319,22 +3319,22 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_3 generic map (BITSIZE_
           <port_vector_o id="proxy_in1" dir="IN" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in2r" dir="IN" is_addr_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in2r" dir="IN" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in2w" dir="IN" is_addr_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in2w" dir="IN" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in3r" dir="IN" is_size_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in3r" dir="IN" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in3w" dir="IN" is_size_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in3w" dir="IN" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in4r" dir="IN" is_memory="1">
+          <port_vector_o id="proxy_in4r" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in4w" dir="IN" is_memory="1">
+          <port_vector_o id="proxy_in4w" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <port_vector_o id="proxy_sel_LOAD" dir="IN">
@@ -5149,22 +5149,22 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SP generic map (BITSIZE_in1
           <port_vector_o id="proxy_in1" dir="IN" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in2r" dir="IN" is_addr_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in2r" dir="IN" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in2w" dir="IN" is_addr_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in2w" dir="IN" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in3r" dir="IN" is_size_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in3r" dir="IN" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in3w" dir="IN" is_size_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in3w" dir="IN" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in4r" dir="IN" is_memory="1">
+          <port_vector_o id="proxy_in4r" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in4w" dir="IN" is_memory="1">
+          <port_vector_o id="proxy_in4w" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <port_vector_o id="proxy_sel_LOAD" dir="IN">
@@ -5470,22 +5470,22 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BASE generic map (BITSI
           <port_vector_o id="proxy_in1" dir="IN" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in2r" dir="IN" is_addr_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in2r" dir="IN" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in2w" dir="IN" is_addr_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in2w" dir="IN" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in3r" dir="IN" is_size_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in3r" dir="IN" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in3w" dir="IN" is_size_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in3w" dir="IN" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in4r" dir="IN" is_memory="1">
+          <port_vector_o id="proxy_in4r" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in4w" dir="IN" is_memory="1">
+          <port_vector_o id="proxy_in4w" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <port_vector_o id="proxy_sel_LOAD" dir="IN">
@@ -5791,22 +5791,22 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BASE generic map (BITSI
           <port_vector_o id="proxy_in1" dir="IN" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in2r" dir="IN" is_addr_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in2r" dir="IN" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in2w" dir="IN" is_addr_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in2w" dir="IN" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in3r" dir="IN" is_size_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in3r" dir="IN" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in3w" dir="IN" is_size_bus="1" is_memory="1">
+          <port_vector_o id="proxy_in3w" dir="IN" is_size_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in4r" dir="IN" is_memory="1">
+          <port_vector_o id="proxy_in4r" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <port_vector_o id="proxy_in4w" dir="IN" is_memory="1">
+          <port_vector_o id="proxy_in4w" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <port_vector_o id="proxy_sel_LOAD" dir="IN">
