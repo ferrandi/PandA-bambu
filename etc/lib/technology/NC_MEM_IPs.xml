@@ -1569,7 +1569,7 @@ endgenerate
 
 generate
 genvar i3w;
-for (i3w=0; i3&lt;PORTSIZE_in3w; i3w=i3w+1)
+for (i3w=0; i3w&lt;PORTSIZE_in3w; i3w=i3w+1)
   begin : L3w
     assign proxy_in3w[(i3w+1)*BITSIZE_proxy_in3w-1:i3w*BITSIZE_proxy_in3w] = int_sel_STORE[i3w] ? in3w[(i3w+1)*BITSIZE_in3w-1:i3w*BITSIZE_in3w] : 0;
   end
