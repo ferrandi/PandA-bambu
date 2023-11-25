@@ -3045,9 +3045,10 @@ void allocation::IntegrateTechnologyLibraries()
                   }
                   else
                   {
-                     current_fu = get_fu(PROXY_CTRLN + allocation_information->get_latency_string(get_synch_ram_latency(
-                                                           is_nn ? ARRAY_1D_STD_BRAM_NN_SDS : ARRAY_1D_STD_BRAM_N1_SDS,
-                                                           latency_postfix, HLS_C, proxied_var_id)));
+                     current_fu =
+                         get_fu(SPROXY_CTRLN + allocation_information->get_latency_string(get_synch_ram_latency(
+                                                   is_nn ? ARRAY_1D_STD_BRAM_NN_SDS : ARRAY_1D_STD_BRAM_N1_SDS,
+                                                   latency_postfix, HLS_C, proxied_var_id)));
                   }
                }
             }
