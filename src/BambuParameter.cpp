@@ -3668,6 +3668,14 @@ void BambuParameter::SetDefaults()
    setOption(OPT_output_directory, GetPath("./HLS_output/"));
    setOption(OPT_simulation_output, GetPath("results.txt"));
    setOption(OPT_profiling_output, GetPath("profiling_results.txt"));
+   /// TODO this is a temporary hack. Before starting anything, the directory HLS_output/simulation/ needs to be
+   /// removed.
+   auto sim_dir = getOption<std::string>(OPT_output_directory) + "/simulation/";
+   if(std::filesystem::exists(sim_dir))
+   {
+      std::filesystem::remove_all(sim_dir);
+   }
+
    /// Debugging level
    setOption(OPT_output_level, OUTPUT_LEVEL_MINIMUM);
    setOption(OPT_debug_level, DEBUG_LEVEL_NONE);
