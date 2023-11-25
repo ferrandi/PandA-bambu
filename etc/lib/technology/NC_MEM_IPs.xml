@@ -1525,10 +1525,10 @@ SPROXY_CTRL_i0 : SPROXY_CTRL generic map(
           </port_vector_o>
           <NP_functionality LIBRARY="SPROXY_CTRLN in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1" 
           VERILOG_PROVIDED="
-wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
 wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
-assign int_sel_STORE = sel_STORE &amp; in4r;
-assign int_sel_LOAD = sel_LOAD &amp; in4w;
+wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
+assign int_sel_LOAD = sel_LOAD &amp; in4r;
+assign int_sel_STORE = sel_STORE &amp; in4w;
 generate
 genvar i0;
 for (i0=0; i0&lt;PORTSIZE_out1; i0=i0+1)
