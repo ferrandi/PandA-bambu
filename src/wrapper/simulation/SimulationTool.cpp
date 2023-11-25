@@ -320,7 +320,7 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
    script << "SIM_DIR=\"" << sim_dir << "\"\n"
           << "OUT_LVL=\"" << Param->getOption<int>(OPT_output_level) << "\"\n\n"
           << "### Do not edit below\n\n"
-          << "M_IPC_FILENAME=\"$(mktemp --tmpdir panda_sock.XXXXXXXXXX)\"\n";
+          << "M_IPC_FILENAME=\"${SIM_DIR}/panda_sock\"\n";
 
    auto sim_cmd = GenerateScript(script, top_filename, file_list);
    boost::replace_all(sim_cmd, "\"", "\\\"");
