@@ -15308,7 +15308,7 @@ generate
 genvar i21;
   for (i21=0; i21&lt;max_n_writes; i21=i21+1)
   begin : L21
-      assign bram_write[i21] = sel_STORE[i21] || proxy_sel_STORE[i21];
+      assign bram_write[i21] = (sel_STORE[i21] &amp;&amp; in4w[i14]) || (proxy_sel_STORE[i21] &amp;&amp; proxy_in4w[i14]);
   end
 endgenerate
 
