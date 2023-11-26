@@ -696,7 +696,7 @@ end)";
       out << "          .m_axi_arqos(" << _ports_out[o_arqos].name << "),\n";
       out << "          .m_axi_arvalid(" << _ports_out[o_arvalid].name << "),\n";
       out << "          .m_axi_rready(" << _ports_out[o_rready].name << "),\n";
-      out << "          .clk(clock),\n";
+      out << "          .clock(clock),\n";
       out << "          .reset(reset)\n";
       out << "       );\n";
       out << "`undef _CACHE_CNT\n";
