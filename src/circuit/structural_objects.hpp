@@ -95,6 +95,8 @@ class simple_indent;
 #define RETURN_PORT_NAME "return_port"
 #define START_PORT_NAME_CFC "start_port_CFC"
 #define DONE_PORT_NAME_CFC "done_port_CFC"
+#define MOUT_OE_PORT_NAME "Mout_oe_ram"
+#define MOUT_BACK_PRESSURE_PORT_NAME "Mout_back_pressure"
 #define PRESENT_STATE_PORT_NAME "present_state"
 #define NEXT_STATE_PORT_NAME "next_state"
 #define NOTIFIER_PORT_MISMATCH "out_mismatch"
