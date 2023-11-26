@@ -697,7 +697,7 @@ end)";
       out << "          .m_axi_arvalid(" << _ports_out[o_arvalid].name << "),\n";
       out << "          .m_axi_rready(" << _ports_out[o_rready].name << "),\n";
       out << "          .clk(clock),\n";
-      out << "          .reset(!reset) /* IOB reset is active high */\n";
+      out << "          .reset(reset)\n";
       out << "       );\n";
       out << "`undef _CACHE_CNT\n";
    }
