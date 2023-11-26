@@ -157,7 +157,7 @@ std::string VIVADO_xsim_wrapper::GenerateScript(std::ostream& script, const std:
    }();
    const auto prj_file = create_project_file(XSIM_SUBDIR + suffix + "/" + top_filename + ".prj", file_list);
 
-   std::string sim_cmd = "cd ${BEH_DIR}; rm -rf xsim.* xelab.*; " XSIM_XELAB " -sv_root ${BEH_DIR} -sv_lib libmdpi " +
+   std::string sim_cmd = "rm -rf xsim.* xelab.*; " XSIM_XELAB " -sv_root ${BEH_DIR} -sv_lib libmdpi " +
                          vflags + " -prj " + prj_file;
    if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
    {
