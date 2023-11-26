@@ -1231,7 +1231,8 @@ begin
           <port_o id="proxy_out1" dir="IN" is_memory="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="SPROXY_CTRL_3 in1 in2r in2w in3r in3w out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_out1" IP_COMPONENT="SPROXY_CTRL" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="SPROXY_CTRL_3 in1 in2r in2w in3r in3w out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_out1" 
+          IP_COMPONENT="SPROXY_CTRL" VERILOG_PROVIDED="
 SPROXY_CTRL #(.BITSIZE_in1(BITSIZE_in1),
   .BITSIZE_in2r(BITSIZE_in2r),
   .BITSIZE_in2w(BITSIZE_in2w),
@@ -1299,7 +1300,8 @@ SPROXY_CTRL_i0 : SPROXY_CTRL generic map(
   in4w => in4w,
   sel_LOAD => sel_LOAD,
   sel_STORE => sel_STORE,
-  proxy_out1 => proxy_out1);"/>
+  proxy_out1 => proxy_out1);"
+  />
         </component_o>
       </circuit>
     </cell>
@@ -1784,7 +1786,8 @@ SPROXY_CTRLN #(
   in4w => in4w,
   sel_LOAD => sel_LOAD,
   sel_STORE => sel_STORE,
-  proxy_out1 => proxy_out1);"/>
+  proxy_out1 => proxy_out1);"
+  />
         </component_o>
       </circuit>
     </cell>
@@ -2065,30 +2068,77 @@ SPROXY_CTRLN #(
           <port_o id="proxy_out1" dir="IN" is_memory="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="DPROXY_CTRL in1 in2r in2w in3r in3w out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_out1" VERILOG_PROVIDED="
-assign out1 = proxy_out1;
-assign proxy_in1 = in1;
-assign proxy_in2r = in2r;
-assign proxy_in2w = in2w;
-assign proxy_in3r = in3r;
-assign proxy_in3w = in3w;
-assign proxy_in4r = in4r;
-assign proxy_in4w = in4w;
-assign proxy_sel_LOAD = sel_LOAD;
-assign proxy_sel_STORE = sel_STORE;"
-VHDL_PROVIDED="
+          <NP_functionality LIBRARY="DPROXY_CTRL in1 in2r in2w in3r in3w out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_out1" 
+          IP_COMPONENT="SPROXY_CTRL" VERILOG_PROVIDED="
+SPROXY_CTRL #(.BITSIZE_in1(BITSIZE_in1),
+  .BITSIZE_in2r(BITSIZE_in2r),
+  .BITSIZE_in2w(BITSIZE_in2w),
+  .BITSIZE_in3r(BITSIZE_in3r),
+  .BITSIZE_in3w(BITSIZE_in3w),
+  .BITSIZE_out1(BITSIZE_out1),
+  .BITSIZE_proxy_in1(BITSIZE_proxy_in1),
+  .BITSIZE_proxy_in2r(BITSIZE_proxy_in2r),
+  .BITSIZE_proxy_in2w(BITSIZE_proxy_in2w),
+  .BITSIZE_proxy_in3r(BITSIZE_proxy_in3r),
+  .BITSIZE_proxy_in3w(BITSIZE_proxy_in3w),
+  .BITSIZE_proxy_out1(BITSIZE_proxy_out1)
+) SPROXY_CTRL_i0 (
+  .out1(out1),
+  .proxy_in1(proxy_in1),
+  .proxy_in2r(proxy_in2r),
+  .proxy_in2w(proxy_in2w),
+  .proxy_in3r(proxy_in3r),
+  .proxy_in3w(proxy_in3w),
+  .proxy_in4r(proxy_in4r),
+  .proxy_in4w(proxy_in4w),
+  .proxy_sel_LOAD(proxy_sel_LOAD),
+  .proxy_sel_STORE(proxy_sel_STORE),
+  .in1(in1),
+  .in2r(in2r),
+  .in2w(in2w),
+  .in3r(in3r),
+  .in3w(in3w),
+  .in4r(in4r),
+  .in4w(in4w),
+  .sel_LOAD(sel_LOAD),
+  .sel_STORE(sel_STORE),
+  .proxy_out1(proxy_out1));" VHDL_PROVIDED="
 begin
-  out1 &lt;= std_logic_vector(resize(unsigned(proxy_out1), BITSIZE_out1));
-  proxy_in1 &lt;= std_logic_vector(resize(unsigned(in1), BITSIZE_proxy_in1));
-  proxy_in2r &lt;= in2r;
-  proxy_in2w &lt;= in2w;
-  proxy_in3r &lt;= in3r;
-  proxy_in3w &lt;= in3w;
-  proxy_in4r &lt;= in4r;
-  proxy_in4w &lt;= in4w;
-  proxy_sel_LOAD &lt;= sel_LOAD;
-  proxy_sel_STORE &lt;= sel_STORE;
-"/>
+SPROXY_CTRL_i0 : SPROXY_CTRL generic map(
+  BITSIZE_in1=>BITSIZE_in1,
+  BITSIZE_in2r=>BITSIZE_in2r,
+  BITSIZE_in2w=>BITSIZE_in2w,
+  BITSIZE_in3r=>BITSIZE_in3r,
+  BITSIZE_in3w=>BITSIZE_in3w,
+  BITSIZE_out1=>BITSIZE_out1,
+  BITSIZE_proxy_in1=>BITSIZE_proxy_in1,
+  BITSIZE_proxy_in2r=>BITSIZE_proxy_in2r,
+  BITSIZE_proxy_in2w=>BITSIZE_proxy_in2w,
+  BITSIZE_proxy_in3r=>BITSIZE_proxy_in3r,
+  BITSIZE_proxy_in3w=>BITSIZE_proxy_in3w,
+  BITSIZE_proxy_out1=>BITSIZE_proxy_out1
+) port map (
+  out1 => out1,
+  proxy_in1 => proxy_in1,
+  proxy_in2r => proxy_in2r,
+  proxy_in2w => proxy_in2w,
+  proxy_in3r => proxy_in3r,
+  proxy_in3w => proxy_in3w,
+  proxy_in4r => proxy_in4r,
+  proxy_in4w => proxy_in4w,
+  proxy_sel_LOAD => proxy_sel_LOAD,
+  proxy_sel_STORE => proxy_sel_STORE,
+  in1 => in1,
+  in2r => in2r,
+  in2w => in2w,
+  in3r => in3r,
+  in3w => in3w,
+  in4r => in4r,
+  in4w => in4w,
+  sel_LOAD => sel_LOAD,
+  sel_STORE => sel_STORE,
+  proxy_out1 => proxy_out1);"
+  />
         </component_o>
       </circuit>
     </cell>
@@ -2166,53 +2216,133 @@ begin
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="DPROXY_CTRLN in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1" 
-          VERILOG_PROVIDED="
-generate
-genvar i0;
-for (i0=0; i0&lt;PORTSIZE_out1; i0=i0+1)
-  begin : L0
-    assign out1[(i0+1)*BITSIZE_out1-1:i0*BITSIZE_out1] = proxy_out1[(i0+1)*BITSIZE_proxy_out1-1:i0*BITSIZE_proxy_out1];
-  end
-endgenerate
-generate
-genvar i1;
-for (i1=0; i1&lt;PORTSIZE_in1; i1=i1+1)
-  begin : L1
-    assign proxy_in1[(i1+1)*BITSIZE_proxy_in1-1:i1*BITSIZE_proxy_in1] = in1[(i1+1)*BITSIZE_in1-1:i1*BITSIZE_in1];
-  end
-endgenerate
-generate
-genvar i2_r;
-for (i2_r=0; i2_r&lt;PORTSIZE_in2r; i2_r=i2_r+1)
-  begin : L2_r
-    assign proxy_in2r[(i2_r+1)*BITSIZE_proxy_in2r-1:i2_r*BITSIZE_proxy_in2r] = in2r[(i2_r+1)*BITSIZE_in2r-1:i2_r*BITSIZE_in2r];
-  end
-endgenerate
-generate
-genvar i2_w;
-for (i2_w=0; i2_w&lt;PORTSIZE_in2w; i2_w=i2_w+1)
-  begin : L2_w
-    assign proxy_in2w[(i2_w+1)*BITSIZE_proxy_in2w-1:i2_w*BITSIZE_proxy_in2w] = in2w[(i2_w+1)*BITSIZE_in2w-1:i2_w*BITSIZE_in2w];
-  end
-endgenerate
-generate
-genvar i3_r;
-for (i3_r=0; i3_r&lt;PORTSIZE_in3r; i3_r=i3_r+1)
-  begin : L3_r
-    assign proxy_in3r[(i3_r+1)*BITSIZE_proxy_in3r-1:i3_r*BITSIZE_proxy_in3r] = in3r[(i3_r+1)*BITSIZE_in3r-1:i3_r*BITSIZE_in3r];
-  end
-endgenerate
-generate
-genvar i3_w;
-for (i3_w=0; i3_w&lt;PORTSIZE_in3w; i3_w=i3_w+1)
-  begin : L3_w
-    assign proxy_in3w[(i3_w+1)*BITSIZE_proxy_in3w-1:i3_w*BITSIZE_proxy_in3w] = in3w[(i3_w+1)*BITSIZE_in3w-1:i3_w*BITSIZE_in3w];
-  end
-endgenerate
-assign proxy_in4r = in4r;
-assign proxy_in4w = in4w;
-assign proxy_sel_LOAD = sel_LOAD;
-assign proxy_sel_STORE = sel_STORE;"/>
+          IP_COMPONENT="SPROXY_CTRLN" VERILOG_PROVIDED="
+SPROXY_CTRLN #(
+  .BITSIZE_in1(BITSIZE_in1),
+  .PORTSIZE_in1(PORTSIZE_in1),
+  .BITSIZE_in2r(BITSIZE_in2r),
+  .PORTSIZE_in2r(PORTSIZE_in2r),
+  .BITSIZE_in2w(BITSIZE_in2w),
+  .PORTSIZE_in2w(PORTSIZE_in2w),
+  .BITSIZE_in3r(BITSIZE_in3r),
+  .PORTSIZE_in3r(PORTSIZE_in3r),
+  .BITSIZE_in3w(BITSIZE_in3w),
+  .PORTSIZE_in3w(PORTSIZE_in3w),
+  .BITSIZE_in4r(BITSIZE_in4r),
+  .PORTSIZE_in4r(PORTSIZE_in4r),
+  .BITSIZE_in4w(BITSIZE_in4w),
+  .PORTSIZE_in4w(PORTSIZE_in4w),
+  .BITSIZE_sel_LOAD(BITSIZE_sel_LOAD),
+  .PORTSIZE_sel_LOAD(PORTSIZE_sel_LOAD),
+  .BITSIZE_sel_STORE(BITSIZE_sel_STORE),
+  .PORTSIZE_sel_STORE(PORTSIZE_sel_STORE),
+  .BITSIZE_out1(BITSIZE_out1),
+  .PORTSIZE_out1(PORTSIZE_out1),
+  .BITSIZE_proxy_in1(BITSIZE_proxy_in1),
+  .PORTSIZE_proxy_in1(PORTSIZE_proxy_in1),
+  .BITSIZE_proxy_in2r(BITSIZE_proxy_in2r),
+  .PORTSIZE_proxy_in2r(PORTSIZE_proxy_in2r),
+  .BITSIZE_proxy_in2w(BITSIZE_proxy_in2w),
+  .PORTSIZE_proxy_in2w(PORTSIZE_proxy_in2w),
+  .BITSIZE_proxy_in3r(BITSIZE_proxy_in3r),
+  .PORTSIZE_proxy_in3r(PORTSIZE_proxy_in3r),
+  .BITSIZE_proxy_in3w(BITSIZE_proxy_in3w),
+  .PORTSIZE_proxy_in3w(PORTSIZE_proxy_in3w),
+  .BITSIZE_proxy_in4r(BITSIZE_proxy_in4r),
+  .PORTSIZE_proxy_in4r(PORTSIZE_proxy_in4r),
+  .BITSIZE_proxy_in4w(BITSIZE_proxy_in4w),
+  .PORTSIZE_proxy_in4w(PORTSIZE_proxy_in4w),
+  .BITSIZE_proxy_sel_LOAD(BITSIZE_proxy_sel_LOAD),
+  .PORTSIZE_proxy_sel_LOAD(PORTSIZE_proxy_sel_LOAD),
+  .BITSIZE_proxy_sel_STORE(BITSIZE_proxy_sel_STORE),
+  .PORTSIZE_proxy_sel_STORE(PORTSIZE_proxy_sel_STORE),
+  .BITSIZE_proxy_out1(BITSIZE_proxy_out1),
+  .PORTSIZE_proxy_out1(PORTSIZE_proxy_out1)
+) SPROXY_CTRLN_i0 (
+  .out1(out1),
+  .proxy_in1(proxy_in1),
+  .proxy_in2r(proxy_in2r),
+  .proxy_in2w(proxy_in2w),
+  .proxy_in3r(proxy_in3r),
+  .proxy_in3w(proxy_in3w),
+  .proxy_in4r(proxy_in4r),
+  .proxy_in4w(proxy_in4w),
+  .proxy_sel_LOAD(proxy_sel_LOAD),
+  .proxy_sel_STORE(proxy_sel_STORE),
+  .in1(in1),
+  .in2r(in2r),
+  .in2w(in2w),
+  .in3r(in3r),
+  .in3w(in3w),
+  .in4r(in4r),
+  .in4w(in4w),
+  .sel_LOAD(sel_LOAD),
+  .sel_STORE(sel_STORE),
+  .proxy_out1(proxy_out1)
+);
+" VHDL_PROVIDED="begin
+  SPROXY_CTRLN_i0 : SPROXY_CTRLN generic map(BITSIZE_in1=>BITSIZE_in1,
+  PORTSIZE_in1=>PORTSIZE_in1,
+  BITSIZE_in2r=>BITSIZE_in2r,
+  PORTSIZE_in2r=>PORTSIZE_in2r,
+  BITSIZE_in2w=>BITSIZE_in2w,
+  PORTSIZE_in2w=>PORTSIZE_in2w,
+  BITSIZE_in3r=>BITSIZE_in3r,
+  PORTSIZE_in3r=>PORTSIZE_in3r,
+  BITSIZE_in3w=>BITSIZE_in3w,
+  PORTSIZE_in3w=>PORTSIZE_in3w,
+  BITSIZE_in4r=>BITSIZE_in4r,
+  PORTSIZE_in4r=>PORTSIZE_in4r,
+  BITSIZE_in4w=>BITSIZE_in4w,
+  PORTSIZE_in4w=>PORTSIZE_in4w,
+  BITSIZE_sel_LOAD=>BITSIZE_sel_LOAD,
+  PORTSIZE_sel_LOAD=>PORTSIZE_sel_LOAD,
+  BITSIZE_sel_STORE=>BITSIZE_sel_STORE,
+  PORTSIZE_sel_STORE=>PORTSIZE_sel_STORE,
+  BITSIZE_out1=>BITSIZE_out1,
+  PORTSIZE_out1=>PORTSIZE_out1,
+  BITSIZE_proxy_in1=>BITSIZE_proxy_in1,
+  PORTSIZE_proxy_in1=>PORTSIZE_proxy_in1,
+  BITSIZE_proxy_in2r=>BITSIZE_proxy_in2r,
+  PORTSIZE_proxy_in2r=>PORTSIZE_proxy_in2r,
+  BITSIZE_proxy_in2w=>BITSIZE_proxy_in2w,
+  PORTSIZE_proxy_in2w=>PORTSIZE_proxy_in2w,
+  BITSIZE_proxy_in3r=>BITSIZE_proxy_in3r,
+  PORTSIZE_proxy_in3r=>PORTSIZE_proxy_in3r,
+  BITSIZE_proxy_in3w=>BITSIZE_proxy_in3w,
+  PORTSIZE_proxy_in3w=>PORTSIZE_proxy_in3w,
+  BITSIZE_proxy_in4r=>BITSIZE_proxy_in4r,
+  PORTSIZE_proxy_in4r=>PORTSIZE_proxy_in4r,
+  BITSIZE_proxy_in4w=>BITSIZE_proxy_in4w,
+  PORTSIZE_proxy_in4w=>PORTSIZE_proxy_in4w,
+  BITSIZE_proxy_sel_LOAD=>BITSIZE_proxy_sel_LOAD,
+  PORTSIZE_proxy_sel_LOAD=>PORTSIZE_proxy_sel_LOAD,
+  BITSIZE_proxy_sel_STORE=>BITSIZE_proxy_sel_STORE,
+  PORTSIZE_proxy_sel_STORE=>PORTSIZE_proxy_sel_STORE,
+  BITSIZE_proxy_out1=>BITSIZE_proxy_out1,
+  PORTSIZE_proxy_out1=>PORTSIZE_proxy_out1
+) port map (
+  out1 => out1,
+  proxy_in1 => proxy_in1,
+  proxy_in2r => proxy_in2r,
+  proxy_in2w => proxy_in2w,
+  proxy_in3r => proxy_in3r,
+  proxy_in3w => proxy_in3w,
+  proxy_in4r => proxy_in4r,
+  proxy_in4w => proxy_in4w,
+  proxy_sel_LOAD => proxy_sel_LOAD,
+  proxy_sel_STORE => proxy_sel_STORE,
+  in1 => in1,
+  in2r => in2r,
+  in2w => in2w,
+  in3r => in3r,
+  in3w => in3w,
+  in4r => in4r,
+  in4w => in4w,
+  sel_LOAD => sel_LOAD,
+  sel_STORE => sel_STORE,
+  proxy_out1 => proxy_out1);"
+/>
         </component_o>
       </circuit>
     </cell>
