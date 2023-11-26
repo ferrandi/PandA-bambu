@@ -8918,7 +8918,7 @@ assign Sout_DataRdy = Sin_DataRdy;
   end integer_ternary_operator;
 
   constant n_byte_on_databus : integer := ALIGNMENT/8;
-  constant nbit_addr_r         : integer := integer_ternary_operator(BITSIZE_in2r &gt; BITSIZE_proxy_in2r,BITSIZE_in2w,BITSIZE_proxy_in2r);
+  constant nbit_addr_r         : integer := integer_ternary_operator(BITSIZE_in2r &gt; BITSIZE_proxy_in2r,BITSIZE_in2r,BITSIZE_proxy_in2r);
   constant nbit_addr_w         : integer := integer_ternary_operator(BITSIZE_in2w &gt; BITSIZE_proxy_in2w,BITSIZE_in2w,BITSIZE_proxy_in2w);
   constant nbit_read_addr    : integer := integer_ternary_operator(n_elements = 1,1,integer(ceil(log2(real(n_elements)))));
   constant nbits_byte_offset : integer := integer_ternary_operator(n_byte_on_databus &lt;= 1,0,integer(ceil(log2(real(n_byte_on_databus)))));
@@ -9003,7 +9003,7 @@ begin
       end if;
   end process;
 
-  L3_w : process(tmp_addr_r)
+  L3_w : process(tmp_addr_w)
   begin
       if(USE_SPARSE_MEMORY=1) then
         relative_addr_w &lt;= tmp_addr_w(nbit_addr_w-1 downto 0);
@@ -9594,7 +9594,8 @@ genvar i20;
 endgenerate
 assign Sout_Rdata_ram =Sin_Rdata_ram;
 assign Sout_DataRdy = Sin_DataRdy;
-" VHDL_PROVIDED="  function integer_ternary_operator(cond : boolean; op1 : integer; op2 : integer) return integer is
+" VHDL_PROVIDED="
+function integer_ternary_operator(cond : boolean; op1 : integer; op2 : integer) return integer is
   begin
     if cond then
       return op1;
@@ -9708,7 +9709,7 @@ begin
 
   L14 : process(proxy_sel_STORE, proxy_in1, in1, proxy_in4w)
   begin
-    for i14 in 0 to max_n_reads-1 loop
+    for i14 in 0 to max_n_writes-1 loop
       if ((proxy_sel_STORE(i14)=&apos;1&apos;)  and (proxy_in4w(i14) = &apos;1&apos;)) then
         din_value_aggregated((i14+1)*data_size-1 downto i14*data_size) &lt;= std_logic_vector(resize(unsigned(proxy_in1((i14+1)*BITSIZE_proxy_in1-1 downto i14*BITSIZE_proxy_in1)), data_size));
       else
