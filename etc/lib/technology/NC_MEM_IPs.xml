@@ -12325,7 +12325,7 @@ end process;"/>
           <parameter name="LOG2DATAWIDTH"> 2 </parameter>
           <parameter name="CACHEDEPTH"> 1024 </parameter>
           <parameter name="LOG2CACHEDEPTH"> 10 </parameter>
-          <port_o id="clk" dir="IN" is_clock="1">
+          <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="M_address" dir="IN">
@@ -12396,7 +12396,7 @@ wire valid,tagsmatch;
     .n_elements(CACHEDEPTH),
     .READ_ONLY_MEMORY(0)
 	) tagcache (
-			.clock (clk),
+			.clock (clock),
       .write_enable(tagwrite),
 			.address_in (M_address[LOG2CACHEDEPTH + LOG2DATAWIDTH -1:LOG2DATAWIDTH]),
 			.data_in ({1&apos;b1,M_address[ADDRESSWIDTH-1:LOG2CACHEDEPTH]}),
@@ -12412,7 +12412,7 @@ wire valid,tagsmatch;
     .n_elements(CACHEDEPTH),
     .READ_ONLY_MEMORY(0)
   ) data_cache (
-			.clock (clk),
+			.clock (clock),
 			.write_enable(datawrite),
 			.address_in(M_address[LOG2CACHEDEPTH + LOG2DATAWIDTH -1: LOG2DATAWIDTH]),
 			.data_in (Cache_wrdata),
@@ -12420,7 +12420,7 @@ wire valid,tagsmatch;
     );
 
 	// ******************* Cache Controller **********************//
-	always @(posedge clk)
+	always @(posedge clock)
 		state&lt;=nextstate;
 
 	always @(M_read or M_write or state or S_wait or cachehit)
@@ -12504,7 +12504,7 @@ wire valid,tagsmatch;
           <parameter name="FE_BYTE_W"> 2 </parameter>
           <parameter name="CTRL_CACHE"> 0 </parameter>
           <parameter name="CTRL_CNT"> 0 </parameter>
-          <port_o id="clk" dir="IN" is_clock="1">
+          <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
@@ -12612,7 +12612,7 @@ wire valid,tagsmatch;
    // Input Data stored signals
    /////////////////////////////////////////////////////////////////////////////////
 
-   always @(posedge clk, posedge reset)
+   always @(posedge clock 1RESET_EDGE)
      begin
         if(1RESET_VALUE)
           begin
@@ -12635,7 +12635,7 @@ wire valid,tagsmatch;
              wdata_reg &lt;= wdata;
              wstrb_reg &lt;= wstrb;
           end
-     end // always @ (posedge clk, posedge reset)  
+     end
 
    
    //////////////////////////////////////////////////////////////////////////////////
@@ -12667,7 +12667,7 @@ wire valid,tagsmatch;
           <parameter name="WORD_OFF_W"> 3 </parameter>
           <parameter name="BE_ADDR_W"> 32 </parameter>
           <parameter name="AXI_ID"> 0 </parameter>
-          <port_o id="clk" dir="IN" is_clock="1">
+          <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
@@ -12788,7 +12788,7 @@ wire valid,tagsmatch;
            reg                                 slave_error;//axi slave_error during reply (m_axi_rresp[1] == 1) - burst can&apos;t be interrupted, so a flag needs to be active
            
            
-           always @(posedge clk, posedge reset)
+           always @(posedge clock 1RESET_EDGE)
              begin
                 if(1RESET_VALUE)
                   begin
@@ -12906,7 +12906,7 @@ wire valid,tagsmatch;
            reg [1:0]                           state;
 
            
-           always @(posedge clk, posedge reset)
+           always @(posedge clock 1RESET_EDGE)
              begin
                 if(1RESET_VALUE)
                    
@@ -13000,7 +13000,7 @@ wire valid,tagsmatch;
           <parameter name="AXI_ID"> 0 </parameter>
           <parameter name="WRITE_POL"> 0 </parameter>
           <parameter name="WORD_OFF_W"> 3 </parameter>
-          <port_o id="clk" dir="IN" is_clock="1">
+          <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
@@ -13159,7 +13159,7 @@ wire valid,tagsmatch;
               end
            end
     
-           always @(posedge clk, posedge  reset) begin
+           always @(posedge clock 1RESET_EDGE) begin
                if(1RESET_VALUE) begin
                    aw_state &lt;= aw_idle;
                    w_state &lt;= w_idle;
@@ -13227,7 +13227,7 @@ wire valid,tagsmatch;
             assign m_axi_wlast = &amp;word_counter &amp; m_axi_wvalid;     
            
       
-            always @(posedge clk, posedge  reset) begin
+            always @(posedge clock 1RESET_EDGE) begin
                 if(1RESET_VALUE) begin
                     aw_state &lt;= aw_idle;
                     w_state &lt;= w_idle;
@@ -13296,7 +13296,7 @@ wire valid,tagsmatch;
               assign m_axi_wstrb = {BE_NBYTES{1&apos;b1}}; //uses entire bandwidth
               assign m_axi_wlast = m_axi_wvalid;
 
-              always @(posedge clk, posedge  reset) begin
+              always @(posedge clock 1RESET_EDGE) begin
                 if(1RESET_VALUE) begin
                   aw_state &lt;= aw_idle;
                   w_state &lt;= w_idle;
@@ -13383,7 +13383,7 @@ wire valid,tagsmatch;
           <parameter name="BE_BYTE_W"> 32 </parameter>
           <parameter name="WRITE_POL"> 0 </parameter>
           <parameter name="AXI_ID"> 0 </parameter>
-          <port_o id="clk" dir="IN" is_clock="1">
+          <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
@@ -13591,7 +13591,7 @@ wire valid,tagsmatch;
       .m_axi_rlast(m_axi_rlast), //Read channel last word
       .m_axi_rvalid(m_axi_rvalid), //Read channel valid
       .m_axi_rready(m_axi_rready), //Read channel ready
-      .clk(clk),
+      .clock(clock),
       .reset(reset)
       );
 
@@ -13645,7 +13645,7 @@ wire valid,tagsmatch;
       .m_axi_bvalid(m_axi_bvalid), //Write response channel valid
       .m_axi_bready(m_axi_bready), //Write response channel ready
       /* END m_axi_write_portmap */
-      .clk(clk),
+      .clock(clock),
       .reset(reset)
       );
   "/>
@@ -13661,7 +13661,7 @@ wire valid,tagsmatch;
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_ram_2p"/>
-          <port_o id="clk" dir="IN" is_clock="1">
+          <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="w_en" dir="IN">
@@ -13699,12 +13699,12 @@ wire valid,tagsmatch;
        $readmemh(mem_init_file_int, mem, 0, (2**ADDR_W) - 1);
 
    //read port
-   always @(posedge clk)
+   always @(posedge clock)
       if(r_en)
         r_data &lt;= mem[r_addr];
 
    //write port
-   always @(posedge clk)
+   always @(posedge clock)
      if(w_en)
        mem[w_addr] &lt;= w_data;
   "/>
@@ -13723,7 +13723,7 @@ wire valid,tagsmatch;
           <parameter name="W_DATA_W"> 0 </parameter>
           <parameter name="R_DATA_W"> 0 </parameter>
           <parameter name="ADDR_W"> 0 </parameter>
-          <port_o id="clk" dir="IN" is_clock="1">
+          <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="ext_mem_w_en" dir="OUT">
@@ -13812,7 +13812,7 @@ wire valid,tagsmatch;
 
          //read address register
          reg [(R_ADDR_W-W_ADDR_W)-1:0] r_addr_lsbs_reg;
-         always @(posedge clk)
+         always @(posedge clock)
            if (r_en)
              r_addr_lsbs_reg &lt;= r_addr[(R_ADDR_W-W_ADDR_W)-1:0];
 
@@ -13884,7 +13884,7 @@ wire valid,tagsmatch;
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_fifo_sync"/>
-          <port_o id="clk" dir="IN" is_clock="1">
+          <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
@@ -13956,8 +13956,8 @@ wire valid,tagsmatch;
 
 
    //IOB_REGISTER
-   `define IOB_REG_AR(CLK, RST_VAL, OUT, IN) always @(posedge CLK, posedge reset) if (1RESET_VALUE) OUT &lt;= RST_VAL; else OUT &lt;= IN;
-   `define IOB_REG_ARE(CLK, RST_VAL, EN, OUT, IN) always @(posedge CLK, posedge reset) if (1RESET_VALUE) OUT &lt;= RST_VAL; \
+   `define IOB_REG_AR(CLK, RST_VAL, OUT, IN) always @(posedge CLK 1RESET_EDGE) if (1RESET_VALUE) OUT &lt;= RST_VAL; else OUT &lt;= IN;
+   `define IOB_REG_ARE(CLK, RST_VAL, EN, OUT, IN) always @(posedge CLK 1RESET_EDGE) if (1RESET_VALUE) OUT &lt;= RST_VAL; \
            else if (EN) OUT &lt;= IN;
 
 
@@ -13990,18 +13990,18 @@ wire valid,tagsmatch;
 
    //write address
    `IOB_VAR(w_addr, W_ADDR_W)
-   `IOB_COUNTER_ARE(clk, w_en_int, w_addr)
+   `IOB_COUNTER_ARE(clock, w_en_int, w_addr)
 
    //effective read enable
    wire                   r_en_int  = (r_en &amp; ~r_empty) || write_fail;
 
    //backup address (to read in case of write fail)
    `IOB_VAR(b_addr, R_ADDR_W)
-   `IOB_COUNTER_ARE(clk, write_done, b_addr)
+   `IOB_COUNTER_ARE(clock, write_done, b_addr)
    
    //read address
    `IOB_VAR(r_addr, R_ADDR_W)
-   `IOB_COUNTER_ARE(clk, r_en_int, r_addr)
+   `IOB_COUNTER_ARE(clock, r_en_int, r_addr)
 
     assign dirty = w_full || r_addr != b_addr; 
 
@@ -14011,7 +14011,7 @@ wire valid,tagsmatch;
    
    //FIFO level
    reg [ADDR_W+1:0]         level_nxt;
-   `IOB_REG_AR(clk, 1&apos;b0, level, level_nxt[0+:ADDR_W+1])
+   `IOB_REG_AR(clock, 1&apos;b0, level, level_nxt[0+:ADDR_W+1])
    
    reg [W_ADDR_W - 1:0] w_addr_next;
 
@@ -14045,7 +14045,7 @@ wire valid,tagsmatch;
        end
    end
    
-always @(posedge clk) 
+always @(posedge clock) 
 begin
   if(1RESET_VALUE)
   begin
@@ -14062,10 +14062,10 @@ end
    //FIFO empty
    `IOB_WIRE(r_empty_nxt, 1)
    assign r_empty_nxt = (level_nxt[0+:ADDR_W+1] &lt; r_incr) &amp;&amp; (next_error == 0);
-   `IOB_REG_AR(clk, 1&apos;d1, r_empty, r_empty_nxt)
+   `IOB_REG_AR(clock, 1&apos;d1, r_empty, r_empty_nxt)
 
    //FIFO full
-  `IOB_REG_AR(clk, 1&apos;d0, w_full, w_full_nxt)
+  `IOB_REG_AR(clock, 1&apos;d0, w_full, w_full_nxt)
 
    //FIFO memory
    IOB_ram_2p_asym
@@ -14085,7 +14085,7 @@ end
        )
     iob_ram_2p_asym0
      (
-      .clk           (clk),
+      .clock           (clock),
       
       .ext_mem_w_en  (ext_mem_w_en),
       .ext_mem_w_data(ext_mem_w_data),
@@ -14126,7 +14126,7 @@ end
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_ram_sp"/>
-          <port_o id="clk" dir="IN" is_clock="1">
+          <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="en" dir="IN">
@@ -14163,7 +14163,7 @@ end
        $readmemh(mem_init_file_int, ram, 0, 2**ADDR_W - 1);
 
    // Operate the RAM
-   always @ (posedge clk)
+   always @ (posedge clock)
      if(en)
        if (we)
          ram[addr] &lt;= din;
@@ -14183,7 +14183,7 @@ end
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_ram_sp_no_addr"/>
-          <port_o id="clk" dir="IN" is_clock="1">
+          <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="en" dir="IN">
@@ -14208,7 +14208,7 @@ end
    reg [DATA_W-1:0] 	      ram;
 
    // Operate the RAM
-   always @ (posedge clk)
+   always @ (posedge clock)
      if(en)
        if (we)
          ram &lt;= din;
@@ -14227,7 +14227,7 @@ end
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_gen_sp_ram"/>
-          <port_o id="clk" dir="IN" is_clock="1">
+          <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="en" dir="IN">
@@ -14260,7 +14260,7 @@ end
                  )
            iob_cache_mem
                (
-                .clk (clk),
+                .clock (clock),
                 .en  (en),
                 .we  (we[i]),
                 .addr(addr),
@@ -14282,7 +14282,7 @@ end
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_gen_sp_ram_no_addr"/>
-          <port_o id="clk" dir="IN" is_clock="1">
+          <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="en" dir="IN">
@@ -14310,7 +14310,7 @@ end
                  )
            iob_cache_mem
                (
-                .clk (clk),
+                .clock (clock),
                 .en  (en),
                 .we  (we[i]),
                 .dout(data_out[8*i +: 8]),
@@ -14363,7 +14363,7 @@ end
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_regfile_sp"/>
-          <port_o id="clk" dir="IN" is_clock="1">
+          <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="rst" dir="IN">
@@ -14395,7 +14395,7 @@ end
    genvar               i;
    generate
       for (i=0; i &lt; 2**ADDR_W; i=i+1) begin: register_file
-         always @(posedge clk)
+         always @(posedge clock)
            if (rst)
              reg_file[i] &lt;= {DATA_W{1&apos;b0}};
            else if (we)
@@ -14416,7 +14416,7 @@ end
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_regfile_sp_no_addr"/>
-          <port_o id="clk" dir="IN" is_clock="1">
+          <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="rst" dir="IN">
@@ -14441,7 +14441,7 @@ end
    assign r_data = reg_file;
 
    //write
-    always @(posedge clk)
+    always @(posedge clock)
       if (rst)
         reg_file &lt;= {DATA_W{1&apos;b0}};
       else if (we)
@@ -14460,7 +14460,7 @@ end
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_replacement_policy"/>
           <parameter name="REP_POLICY"> 2 </parameter>
-          <port_o id="clk" dir="IN" is_clock="1">
+          <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
@@ -14541,7 +14541,7 @@ end
                   )
               mru_memory //simply uses the same format as valid memory
                  (
-                    .clk    (clk      ),
+                    .clock    (clock      ),
                     .rst    (reset    ),
       
                     .we     (write_en ),
@@ -14557,7 +14557,7 @@ end
                   )
               mru_memory //simply uses the same format as valid memory
                  (
-                    .clk    (clk      ),
+                    .clock    (clock      ),
                     .rst    (reset    ),
       
                     .we     (write_en ),
@@ -14601,7 +14601,7 @@ end
                   )
               mru_memory //simply uses the same format as valid memory
                  (
-                    .clk    (clk      ),
+                    .clock    (clock      ),
                     .rst    (reset    ),
       
                     .we     (write_en ),
@@ -14618,7 +14618,7 @@ end
                   )
               mru_memory //simply uses the same format as valid memory
                  (
-                    .clk    (clk      ),
+                    .clock    (clock      ),
                     .rst    (reset    ),
       
                     .we     (write_en ),
@@ -14695,7 +14695,7 @@ end
                   )
               mru_memory //simply uses the same format as valid memory
                  (
-                    .clk    (clk          ),
+                    .clock    (clock          ),
                     .rst    (reset        ),
       
                     .we     (write_en     ),
@@ -14712,7 +14712,7 @@ end
                   )
               mru_memory //simply uses the same format as valid memory
                  (
-                    .clk    (clk          ),
+                    .clock    (clock          ),
                     .rst    (reset        ),
       
                     .we     (write_en     ),
@@ -14749,7 +14749,7 @@ end
           <parameter name="CTRL_CNT"> 0 </parameter>
           <parameter name="WRITE_POL"> 0 </parameter>
 
-          <port_o id="clk" dir="IN" is_clock="1">
+          <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
@@ -14944,7 +14944,7 @@ end
              )
          iob_ram_2p0
            (
-            .clk    (clk),
+            .clock    (clock),
 
             .w_en   (mem_w_en),
             .w_addr (mem_w_addr),
@@ -14967,7 +14967,7 @@ end
              )
          write_buffer
            (
-            .clk     (clk),
+            .clock     (clock),
             .reset   (reset),
 
             .ext_mem_w_en   (mem_w_en),
@@ -15033,7 +15033,7 @@ end
         )
         iob_ram_2p0
         (
-          .clk    (clk),
+          .clock    (clock),
           .w_en   (mem_w_en),
           .w_addr (mem_w_addr),
           .w_data (mem_w_data),
@@ -15054,7 +15054,7 @@ end
         )
         write_buffer
         (
-          .clk     (clk),
+          .clock     (clock),
           .reset   (reset),
           .ext_mem_w_en   (mem_w_en),
           .ext_mem_w_addr (mem_w_addr),
@@ -15103,7 +15103,7 @@ end
 
   generate
     if (WRITE_POL == `WRITE_THROUGH) begin
-      always @(posedge clk) begin
+      always @(posedge clock) begin
         write_hit_prev &lt;= write_access &amp; (|way_hit);
         //previous write position
         offset_prev &lt;= offset;
@@ -15112,7 +15112,7 @@ end
       assign raw = write_hit_prev &amp; (way_hit_prev == way_hit) &amp; (offset_prev == offset);
     end
     else begin //// if (WRITE_POL == WRITE_BACK)
-      always @(posedge clk) begin
+      always @(posedge clock) begin
         write_hit_prev &lt;= write_access; //all writes will have the data in cache in the end
         //previous write position
         offset_prev &lt;= offset;
@@ -15177,7 +15177,7 @@ end
                     .BITSIZE_data_out(FE_DATA_W),
                     .BITSIZE_data_in(FE_DATA_W)
                   ) cache_memory (
-                    .clk (clk),
+                    .clock (clock),
                     .en  (valid || flush),
                     .we ({FE_NBYTES{way_hit[k]}} &amp; line_wstrb[(j*(BE_DATA_W/FE_DATA_W)+i)*FE_NBYTES +: FE_NBYTES]),
                     .addr(flush ? flush_addr[LINE_OFF_W - 1 : 0] : (write_access &amp; way_hit[k] &amp; ((j*(BE_DATA_W/FE_DATA_W)+i) == offset))? index_reg : index),
@@ -15198,7 +15198,7 @@ end
                     .BITSIZE_data_out(FE_DATA_W),
                     .BITSIZE_data_in(FE_DATA_W)
                   ) cache_memory (
-                    .clk (clk),
+                    .clock (clock),
                     .en  (valid || flush),
                     .we ({FE_NBYTES{way_hit[k]}} &amp; line_wstrb[(j*(BE_DATA_W/FE_DATA_W)+i)*FE_NBYTES +: FE_NBYTES]),
                     .data_in ((replace)? read_rdata[i*FE_DATA_W +: FE_DATA_W] : wdata_reg),
@@ -15236,7 +15236,7 @@ end
            
            if(LINE_OFF_W &gt; 0) begin
               //valid-memory
-              always @ (posedge clk, posedge reset) begin
+              always @ (posedge clock 1RESET_EDGE) begin
                  if (1RESET_VALUE)
                     v_reg &lt;= 0;
                  else if (invalidate)
@@ -15249,7 +15249,7 @@ end
                  
               for(k = 0; k &lt; N_WAYS; k = k+1) begin : tag_mem_block
                  //valid-memory output stage register - 1 c.c. read-latency (cleaner simulation during rep.)
-                 always @(posedge clk)
+                 always @(posedge clock)
                     if(invalidate)
                        v[k] &lt;= 0;
                     else
@@ -15264,7 +15264,7 @@ end
                      )
                  tag_memory
                     (
-                       .clk (clk                                                           ),
+                       .clock (clock                                                           ),
                        .en  (valid || flush_state == S_ADDR                               ),
                        .we  (way_select[k] &amp; replace_valid                                 ),
                        .addr(flush_state == S_ADDR ? flush_addr[LINE_OFF_W - 1 : 0] : index),
@@ -15278,7 +15278,7 @@ end
               end
            end else begin
               //valid-memory
-              always @ (posedge clk, posedge reset) begin
+              always @ (posedge clock 1RESET_EDGE) begin
                  if (1RESET_VALUE)
                     v_reg &lt;= 0;
                  else if (invalidate)
@@ -15291,7 +15291,7 @@ end
                  
               for(k = 0; k &lt; N_WAYS; k = k+1) begin : tag_mem_block
                  //valid-memory output stage register - 1 c.c. read-latency (cleaner simulation during rep.)
-                 always @(posedge clk)
+                 always @(posedge clock)
                     if(invalidate)
                        v[k] &lt;= 0;
                     else
@@ -15305,7 +15305,7 @@ end
                     )
                  tag_memory
                     (
-                       .clk (clk                                                           ),
+                       .clock (clock                                                           ),
                        .en  (valid || flush_state == S_ADDR                               ),
                        .we  (way_select[k] &amp; replace_valid                                 ),
                        .din (tag                                                           ),
@@ -15333,7 +15333,7 @@ end
 	                        )
            replacement_policy_algorithm
              (
-              .clk       (clk             ),
+              .clock       (clock             ),
               .reset     (1RESET_VALUE|invalidate),
               .write_en  (ready           ),
               .way_hit   (way_hit         ),
@@ -15357,7 +15357,7 @@ end
            if(WRITE_POL == `WRITE_BACK)
              begin
                 if(LINE_OFF_W &gt; 0) begin
-                   always @ (posedge clk, posedge reset) begin
+                   always @ (posedge clock 1RESET_EDGE) begin
                       if (1RESET_VALUE)
                         dirty_reg &lt;= 0;
                       else if (flush_state == S_WRITE &amp;&amp; !buffer_full) begin
@@ -15370,11 +15370,11 @@ end
 
                    for(k = 0; k &lt; N_WAYS; k = k+1) begin : dirty_block
                      //valid-memory output stage register - 1 c.c. read-latency (cleaner simulation during rep.)
-                     always @(posedge clk)
+                     always @(posedge clock)
                        dirty[k] &lt;= dirty_reg [(2**LINE_OFF_W)*k + index];
                    end
                 end else begin
-                   always @ (posedge clk, posedge reset) begin
+                   always @ (posedge clock 1RESET_EDGE) begin
                       if (1RESET_VALUE)
                         dirty_reg &lt;= 0;
                       else if (flush_state == S_WRITE &amp;&amp; !buffer_full) begin
@@ -15387,7 +15387,7 @@ end
                    
                    for(k = 0; k &lt; N_WAYS; k = k+1) begin : dirty_block
                       //valid-memory output stage register - 1 c.c. read-latency (cleaner simulation during rep.)
-                      always @(posedge clk)
+                      always @(posedge clock)
                          dirty[k] &lt;= dirty_reg [k];
                    end
                 end
@@ -15406,7 +15406,7 @@ end
       else // (N_WAYS = 1)
         begin
            //valid-memory
-           always @ (posedge clk, posedge reset)
+           always @ (posedge clock 1RESET_EDGE)
              begin
                 if (1RESET_VALUE)
                   v_reg &lt;= 0;
@@ -15419,7 +15419,7 @@ end
              end
 
            //valid-memory output stage register - 1 c.c. read-latency (cleaner simulation during rep.)
-           always @(posedge clk)
+           always @(posedge clock)
              if(invalidate)
                v &lt;= 0;
              else
@@ -15434,7 +15434,7 @@ end
                )
            tag_memory
              (
-              .clk (clk),
+              .clock (clock),
               .en  (valid || flush_state == S_ADDR),
               .we  (replace_valid),
               .addr(flush_state == S_ADDR ? flush_addr[LINE_OFF_W - 1 : 0] : index),
@@ -15453,7 +15453,7 @@ end
            if(WRITE_POL == `WRITE_BACK)
              begin
                 //dirty-memory
-                always @ (posedge clk, posedge reset) begin
+                always @ (posedge clock 1RESET_EDGE) begin
                    if (1RESET_VALUE)
                      dirty_reg &lt;= 0;
                    else if(flush_state == S_WRITE &amp;&amp; !buffer_full) begin
@@ -15465,7 +15465,7 @@ end
                       dirty_reg &lt;= dirty_reg;
                 end
 
-                always @(posedge clk)
+                always @(posedge clock)
                   dirty &lt;= dirty_reg [index];
 
                   assign buf_w_en = ((write_access || read_access) &amp;&amp; (~(way_hit) &amp; dirty) &amp;&amp; replace_valid) || flush_state == S_WRITE;
@@ -15511,7 +15511,7 @@ end
         endcase
       end
       
-      always @(posedge clk) begin
+      always @(posedge clock) begin
         flush_state &lt;= next_flush_state;
         flush_addr &lt;= next_flush_addr;
         if(1RESET_VALUE) begin
@@ -15538,7 +15538,7 @@ end
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_cache_control"/>
           <parameter name="CTRL_CNT"> 1 </parameter>
-          <port_o id="clk" dir="IN" is_clock="1">
+          <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
@@ -15608,7 +15608,7 @@ end
            assign hit_cnt  = read_access_cnt  + write_access_cnt;
            assign miss_cnt = read_miss_cnt + write_miss_cnt;
            
-           always @ (posedge clk, posedge reset)
+           always @ (posedge clock 1RESET_EDGE)
              begin 		
 	        if (1RESET_VALUE) 
 	          begin
@@ -15651,9 +15651,9 @@ end
 		            write_miss_cnt &lt;= write_miss_cnt;
 	                 end
 	          end // else: !if(ctrl_arst)   
-             end // always @ (posedge clk, posedge ctrl_arst)
+             end // always @ (posedge clock, posedge ctrl_arst)
            
-           always @ (posedge clk)
+           always @ (posedge clock)
              begin
 	        rdata &lt;= {FE_DATA_W{1&apos;b0}};
 	        invalidate &lt;= 1&apos;b0;
@@ -15680,12 +15680,12 @@ end
               rdata &lt;= wtbuf_empty;
             else if (addr == `ADDR_BUFFER_FULL)
               rdata &lt;= wtbuf_full;
-             end // always @ (posedge clk)
+             end // always @ (posedge clock)
         end // if (CTRL_CNT)
       else
         begin
            
-           always @ (posedge clk)
+           always @ (posedge clock)
              begin
 	        rdata &lt;= {FE_DATA_W{1&apos;b0}};
 	        invalidate &lt;= 1&apos;b0;
@@ -15697,7 +15697,7 @@ end
                     rdata &lt;= wtbuf_empty;
                   else if (addr == `ADDR_BUFFER_FULL)
                     rdata &lt;= wtbuf_full;         
-             end // always @ (posedge clk)
+             end // always @ (posedge clock)
         end // else: !if(CTRL_CNT)  
    endgenerate                
   "/>
@@ -15726,7 +15726,7 @@ end
           <parameter name="CTRL_CACHE"> 0 </parameter>
           <parameter name="CTRL_CNT"> 0 </parameter>
 
-          <port_o id="clk" dir="IN" is_clock="1">
+          <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
@@ -15939,7 +15939,7 @@ end
        )
    front_end
      (
-      .clk   (clk),
+      .clock   (clock),
       .reset (reset),
       //front-end port
       .valid (valid),
@@ -15991,7 +15991,7 @@ end
        )
    cache_memory
      (
-      .clk   (clk),
+      .clock   (clock),
       .reset (reset),
       //front-end
       //internal data signals
@@ -16115,7 +16115,7 @@ end
       .m_axi_rlast(m_axi_rlast), //Read channel last word
       .m_axi_rvalid(m_axi_rvalid), //Read channel valid
       .m_axi_rready(m_axi_rready), //Read channel addr
-      .clk(clk),
+      .clock(clock),
       .reset(reset)
       );
    
@@ -16129,7 +16129,7 @@ end
             )
       cache_control
         (
-         .clk   (clk),
+         .clock   (clock),
          .reset (reset),
          //control&apos;s signals
          .valid (ctrl_valid),
@@ -16444,7 +16444,7 @@ end
        )
    front_end
      (
-      .clk   (clock),
+      .clock   (clock),
       .reset (!reset),
       //front-end port
       .valid (Min_oe_ram || Min_we_ram),
@@ -16496,7 +16496,7 @@ end
        )
    cache_memory
      (
-      .clk   (clock),
+      .clock   (clock),
       .reset (!reset),
       //front-end
       //internal data signals
@@ -16619,7 +16619,7 @@ end
       .m_axi_rlast(m_axi_rlast), //Read channel last word
       .m_axi_rvalid(m_axi_rvalid), //Read channel valid
       .m_axi_rready(m_axi_rready), //Read channel addr
-      .clk(clock),
+      .clock(clock),
       .reset(!reset))
       );
    
@@ -16633,7 +16633,7 @@ end
             )
       cache_control
         (
-         .clk   (clock),
+         .clock   (clock),
          .reset (!reset),
          //control&apos;s signals
          .valid (ctrl_valid),
@@ -16676,7 +16676,7 @@ end
           <parameter name="FE_ADDR_W"> 32 </parameter>
           <parameter name="FE_DATA_W"> 32 </parameter>
           <parameter name="WORD_OFF_W"> 3 </parameter>
-          <port_o id="clk" dir="IN" is_clock="1">
+          <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
@@ -16740,12 +16740,12 @@ end
              read             = 2&apos;d1, 
              delay            = 2&apos;d2;
 
-           always @ (posedge clk)
+           always @ (posedge clock)
              read_addr &lt;= word_counter;
            
            reg [1:0]            state;
 
-           always @(posedge clk, posedge reset)
+           always @(posedge clock 1RESET_EDGE)
              begin
                 if(1RESET_VALUE)
                   begin
@@ -16836,7 +16836,7 @@ end
            
            reg [1:0]                                  state;
 
-           always @(posedge clk, posedge reset)
+           always @(posedge clock 1RESET_EDGE)
              begin
                 if(1RESET_VALUE)
                   state &lt;= idle;
@@ -16920,7 +16920,7 @@ end
           <parameter name="FE_DATA_W"> 32 </parameter>
           <parameter name="WRITE_POL"> 0 </parameter>
           <parameter name="WORD_OFF_W"> 3 </parameter>
-          <port_o id="clk" dir="IN" is_clock="1">
+          <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
@@ -17019,7 +17019,7 @@ end
             end // always @ *
           end
 
-          always @(posedge clk, posedge reset) begin
+          always @(posedge clock 1RESET_EDGE) begin
             if(1RESET_VALUE)
               state &lt;= idle;
             else
@@ -17043,7 +17043,7 @@ end
                       state &lt;= delay;
                 end
               endcase // case (state)
-          end // always @ (posedge clk, posedge reset)
+          end // always @ (posedge clock 1RESET_EDGE)
 
          always @*
            begin
@@ -17067,7 +17067,7 @@ end
          if (LINE2MEM_W &gt; 0) begin
 
             reg [LINE2MEM_W-1:0] word_counter, word_counter_reg;
-            always @(posedge clk) word_counter_reg &lt;= word_counter;
+            always @(posedge clock) word_counter_reg &lt;= word_counter;
 
             // memory address
             assign mem_addr  = {BE_ADDR_W{1&apos;b0}} + {addr[FE_ADDR_W-1 - (FE_BYTE_W + WRITE_POL*WORD_OFF_W) : BE_BYTE_W + LINE2MEM_W - (FE_BYTE_W + WRITE_POL*WORD_OFF_W)], word_counter, {BE_BYTE_W{1&apos;b0}}};
@@ -17081,7 +17081,7 @@ end
 
             reg [1:0]            state;
 
-            always @(posedge clk, posedge reset)
+            always @(posedge clock 1RESET_EDGE)
               begin
                  if(1RESET_VALUE)
                    state &lt;= idle;
@@ -17108,7 +17108,7 @@ end
                             state &lt;= delay;
                        end
                    endcase // case (state)
-              end // always @ (posedge clk, posedge reset)
+              end // always @ (posedge clock 1RESET_EDGE)
 
             always @*
               begin
@@ -17154,7 +17154,7 @@ end
 
             reg [1:0]            state;
 
-            always @(posedge clk, posedge reset)
+            always @(posedge clock 1RESET_EDGE)
               begin
                  if(1RESET_VALUE)
                    state &lt;= idle;
@@ -17181,7 +17181,7 @@ end
                             state &lt;= delay;
                        end
                    endcase // case (state)
-              end // always @ (posedge clk, posedge reset)
+              end // always @ (posedge clock 1RESET_EDGE)
 
             always @*
               begin
@@ -17230,7 +17230,7 @@ end
           <parameter name="WORD_OFF_W"> 3 </parameter>
           <parameter name="BE_ADDR_W"> 32 </parameter>
           <parameter name="WRITE_POL"> 0 </parameter>
-          <port_o id="clk" dir="IN" is_clock="1">
+          <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
@@ -17323,7 +17323,7 @@ end
    
    reg                                                                       acc_ctxt_reg;
    
-   always @(posedge clk) begin
+   always @(posedge clock) begin
      if(write_valid || replace_valid) begin
         acc_ctxt_reg &lt;= acc_ctxt;
      end
@@ -17350,7 +17350,7 @@ end
        )
    read_fsm
      (
-      .clk(clk),
+      .clock(clock),
       .reset(reset),
       .replace_valid (replace_valid),
       .replace_addr (replace_addr),
@@ -17379,7 +17379,7 @@ end
        )
    write_fsm
      (
-      .clk(clk),
+      .clock(clock),
       .reset(reset),
       .valid (write_valid),
       .addr (write_addr),
@@ -17617,7 +17617,7 @@ end
        )
    front_end
      (
-      .clk   (clock),
+      .clock   (clock),
       .reset (!reset),
       //front-end port
       .valid (Min_oe_ram || Min_we_ram),
@@ -17669,7 +17669,7 @@ end
        )
    cache_memory
      (
-      .clk   (clock),
+      .clock   (clock),
       .reset (!reset),
       //front-end
       //internal data signals
@@ -17732,7 +17732,7 @@ end
         .BITSIZE_M_accelerator_context(BITSIZE_M_accelerator_context)
      ) 
      back_end (
-        .clk(clock),
+        .clock(clock),
         .reset(!reset),
         .write_valid (write_valid),
         .write_addr  (write_addr),
@@ -17772,7 +17772,7 @@ end
             )
       cache_control
         (
-         .clk   (clock),
+         .clock   (clock),
          .reset (!reset),
          //control&apos;s signals
          .valid (ctrl_valid),
