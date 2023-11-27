@@ -125,6 +125,7 @@ EXTRA_DIST= \
    %D%/bambu_specific_test/unsafe-fp-assoc-1.c.gimplePSSA \
    %D%/chstone_memarch_list1 \
    %D%/chstone_memarch_list2 \
+   %D%/gcc_memarch_list3 \
    %D%/discrepancy_list \
    %D%/gcc_regression_simple/20000112-1.c \
    %D%/gcc_regression_simple/20000113-1.c \
@@ -1106,6 +1107,7 @@ EXTRA_DIST= \
    %D%/generic_CHStone-frontend.sh \
    %D%/generic_CHStone-memarch1.sh \
    %D%/generic_CHStone-memarch2.sh \
+   %D%/generic_gcc-memarch3.sh \
    %D%/generic_discrepancy_eg_bambu.sh \
    %D%/generic_function_pointers.sh \
    %D%/generic_gcc_regression_simple_bambu_pretty_print.sh \

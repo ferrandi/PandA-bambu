@@ -735,7 +735,7 @@ jobs:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
 
-  CHStone-memarch:
+  memarch-tests:
     needs: [build, CHStone-multi]
     runs-on: [self-hosted, xilinx]
     strategy:
@@ -753,6 +753,12 @@ jobs:
             args: ""
           - compiler: I386_CLANG13
             script: generic_CHStone-memarch2.sh
+            args: -c=-wH
+          - compiler: I386_GCC7
+            script: generic_gcc-memarch3.sh
+            args: ""
+          - compiler: I386_GCC7
+            script: generic_gcc-memarch3.sh
             args: -c=-wH
     env:
       args: -c=--simulator=XSIM -c=--assert-debug -c=--compiler=${{matrix.compiler}} ${{matrix.args}}
@@ -789,7 +795,7 @@ jobs:
         id: get
         shell: bash
         run: |
-          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')_CHStone-memarch_"
+          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')_memarch-tests_"
           
           if [[ "${{env.args}}" = *-c=-wH* ]]; then
             OUTNAME+="vhdl"
@@ -976,7 +982,7 @@ jobs:
         discrepancy-test,
         omp-simd,
         Make-checks,
-        CHStone-memarch,
+        memarch-tests,
         Panda-bench,
         Panda-bench-yosys,
       ]
@@ -1007,7 +1013,7 @@ jobs:
         if: ${{ needs.Make-checks.result != 'success' }}
         run: exit 1
       - name: Check CHStone memory architecture 1 status
-        if: ${{ needs.CHStone-memarch.result != 'success' }}
+        if: ${{ needs.memarch-tests.result != 'success' }}
         run: exit 1
       - name: Check PandA benchmarks status
         if: ${{ needs.Panda-bench.result != 'success' }}
