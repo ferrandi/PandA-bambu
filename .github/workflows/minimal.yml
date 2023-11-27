@@ -737,7 +737,7 @@ jobs:
 
   memarch-tests:
     needs: [build, CHStone-multi]
-    runs-on: [self-hosted, xilinx]
+    runs-on: [self-hosted, mentor]
     strategy:
       fail-fast: false
       matrix:
@@ -754,14 +754,14 @@ jobs:
           - compiler: I386_CLANG13
             script: generic_CHStone-memarch2.sh
             args: -c=-wH
-          - compiler: I386_GCC7
+          - compiler: I386_CLANG11
             script: generic_gcc-memarch3.sh
             args: ""
-          - compiler: I386_GCC7
+          - compiler: I386_CLANG11
             script: generic_gcc-memarch3.sh
             args: -c=-wH
     env:
-      args: -c=--simulator=XSIM -c=--assert-debug -c=--compiler=${{matrix.compiler}} ${{matrix.args}}
+      args: -c=--simulator=MODELSIM -c=--assert-debug -c=--compiler=${{matrix.compiler}} ${{matrix.args}}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
