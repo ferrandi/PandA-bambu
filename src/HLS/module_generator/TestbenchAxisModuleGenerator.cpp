@@ -126,16 +126,14 @@ mem_utils #(BITSIZE_data) m_utils();
    {
       out << R"(
 ptr_t addr, addr_next, addr_last, addr_last_next;
-reg [BITSIZE_data-1:0] val, val_next;
+reg [BITSIZE_data-1:0] val;
+wire [BITSIZE_data-1:0] val_next;
 
 initial
 begin
   val = 0;
-  val_next = 0;
   addr = 0;
-  addr_next = 0;
   addr_last = 0;
-  addr_last_next = 0;
 end
 
 always @(posedge clock)
@@ -172,11 +170,12 @@ begin
   end
 end
 
+assign val_next = val;
+
 always @(*) 
 begin
   addr_next = addr;
   addr_last_next = addr_last;
-  val_next = val;
 end
 )";
       out << "assign " << port_prefix << "_TDATA = val;\n"
@@ -186,16 +185,14 @@ end
    {
       out << R"(
 ptr_t addr, addr_next, addr_last, addr_last_next;
-reg enable, enable_next;
+reg enable;
+wire enable_next;
 
 initial
 begin
   addr = 0;
-  addr_next = 0;
   addr_last = 0;
-  addr_last_next = 0;
   enable = 0;
-  enable_next = 0;
 end
 
 always @(posedge clock)
@@ -227,11 +224,12 @@ begin
   end
 end
 
+assign enable_next = enable && !done_port;
+
 always @(*) 
 begin
   addr_next = addr;
   addr_last_next = addr_last;
-  enable_next = enable && !done_port;
 end
 always @(negedge clock)
 begin

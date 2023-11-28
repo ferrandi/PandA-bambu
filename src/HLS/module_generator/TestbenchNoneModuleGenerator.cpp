@@ -99,12 +99,12 @@ mem_utils #(BITSIZE_data) m_utils();
    {
       add_port_parametric(in_suffix, port_o::OUT, 1U);
       out << R"(
-reg [BITSIZE_data-1:0] val, val_next;
+reg [BITSIZE_data-1:0] val;
+wire [BITSIZE_data-1:0] val_next;
 
 initial
 begin
   val = 0;
-  val_next = 0;
 end
 
 always @(posedge clock)
@@ -120,10 +120,7 @@ begin
   end
 end
 
-always @(*) 
-begin
-  val_next = val;
-end
+assign val_next = val;
 )";
       out << "assign " << arg_name << in_suffix << " = val;";
    }
