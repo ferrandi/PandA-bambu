@@ -9467,24 +9467,10 @@ begin
     if (clock&apos;event and clock=&apos;1&apos;) then
       if(READ_ONLY_MEMORY=0) then
         if(write_enable_mem=&apos;1&apos;) then
--- synthesis translate_off
-          if (to_integer(unsigned(address_inw_mem)) &lt; n_elements) then
--- synthesis translate_on
-            mem(to_integer(unsigned(address_inw_mem))) &lt;= data_in_mem;
--- synthesis translate_off
-          end if;
--- synthesis translate_on
+          mem(to_integer(unsigned(address_inw_mem))) &lt;= data_in_mem;
         end if;
       end if;
--- synthesis translate_off
-      if (to_integer(unsigned(address_inr_mem)) &lt; n_elements) then
--- synthesis translate_on
-        data_out_mem &lt;= mem(to_integer(unsigned(address_inr_mem)));
--- synthesis translate_off
-      else
-        data_out_mem &lt;= (others =&gt; &apos;X&apos;);
-      end if;
--- synthesis translate_on
+      data_out_mem &lt;= mem(to_integer(unsigned(address_inr_mem)));
     end if;
   end process;
 "/>
@@ -9614,7 +9600,7 @@ VHDL_PROVIDED="
       return mem;
   end function;
 
-  signal mem : mem_type := InitMemFromFile(MEMORY_INIT_file);
+  shared variable mem : mem_type := InitMemFromFile(MEMORY_INIT_file);
 
 begin
 
@@ -9645,51 +9631,23 @@ begin
   L1_single_proc : process(clock)
   begin
     if (clock&apos;event and clock=&apos;1&apos;) then
-        if(READ_ONLY_MEMORY=0) then
-          if(write_enable_mem(0)=&apos;1&apos;) then
--- synthesis translate_off
-            if (to_integer(unsigned(address_in_mem((0+1)*BITSIZE_address_in-1 downto 0*BITSIZE_address_in))) &lt; n_elements) then
--- synthesis translate_on
-              mem(to_integer(unsigned(address_in_mem((0+1)*BITSIZE_address_in-1 downto 0*BITSIZE_address_in)))) &lt;= data_in_mem((0+1)*BITSIZE_data_in-1 downto 0*BITSIZE_data_in);
--- synthesis translate_off
-            end if;
--- synthesis translate_on
-          end if;
+      if(READ_ONLY_MEMORY=0) then
+        if(write_enable_mem(0)=&apos;1&apos;) then
+          mem(to_integer(unsigned(address_in_mem((0+1)*BITSIZE_address_in-1 downto 0*BITSIZE_address_in)))) := data_in_mem((0+1)*BITSIZE_data_in-1 downto 0*BITSIZE_data_in);
         end if;
--- synthesis translate_off
-        if (to_integer(unsigned(address_in_mem((0+1)*BITSIZE_address_in-1 downto 0*BITSIZE_address_in))) &lt; n_elements) then
--- synthesis translate_on
-          data_out_mem((0+1)*BITSIZE_data_out-1 downto 0*BITSIZE_data_out) &lt;= mem(to_integer(unsigned(address_in_mem((0+1)*BITSIZE_address_in-1 downto 0*BITSIZE_address_in))));
--- synthesis translate_off
-        else
-          data_out_mem((0+1)*BITSIZE_data_out-1 downto 0*BITSIZE_data_out) &lt;= (others =&gt; &apos;X&apos;);
-        end if;
--- synthesis translate_on
+      end if;
+      data_out_mem((0+1)*BITSIZE_data_out-1 downto 0*BITSIZE_data_out) &lt;= mem(to_integer(unsigned(address_in_mem((0+1)*BITSIZE_address_in-1 downto 0*BITSIZE_address_in))));
     end if;
   end process;
   L2_single_proc : process(clock)
   begin
     if (clock&apos;event and clock=&apos;1&apos;) then
-        if(READ_ONLY_MEMORY=0) then
-          if(write_enable_mem(1)=&apos;1&apos;) then
--- synthesis translate_off
-            if (to_integer(unsigned(address_in_mem((1+1)*BITSIZE_address_in-1 downto 1*BITSIZE_address_in))) &lt; n_elements) then
--- synthesis translate_on
-              mem(to_integer(unsigned(address_in_mem((1+1)*BITSIZE_address_in-1 downto 1*BITSIZE_address_in)))) &lt;= data_in_mem((1+1)*BITSIZE_data_in-1 downto 1*BITSIZE_data_in);
--- synthesis translate_off
-            end if;
--- synthesis translate_on
-          end if;
+      if(READ_ONLY_MEMORY=0) then
+        if(write_enable_mem(1)=&apos;1&apos;) then
+          mem(to_integer(unsigned(address_in_mem((1+1)*BITSIZE_address_in-1 downto 1*BITSIZE_address_in)))) := data_in_mem((1+1)*BITSIZE_data_in-1 downto 1*BITSIZE_data_in);
         end if;
--- synthesis translate_off
-        if (to_integer(unsigned(address_in_mem((1+1)*BITSIZE_address_in-1 downto 1*BITSIZE_address_in))) &lt; n_elements) then
--- synthesis translate_on
-          data_out_mem((1+1)*BITSIZE_data_out-1 downto 1*BITSIZE_data_out) &lt;= mem(to_integer(unsigned(address_in_mem((1+1)*BITSIZE_address_in-1 downto 1*BITSIZE_address_in))));
--- synthesis translate_off
-        else
-          data_out_mem((1+1)*BITSIZE_data_out-1 downto 1*BITSIZE_data_out) &lt;= (others =&gt; &apos;X&apos;);
-        end if;
--- synthesis translate_on
+      end if;
+      data_out_mem((1+1)*BITSIZE_data_out-1 downto 1*BITSIZE_data_out) &lt;= mem(to_integer(unsigned(address_in_mem((1+1)*BITSIZE_address_in-1 downto 1*BITSIZE_address_in))));
     end if;
   end process;
 "/>
