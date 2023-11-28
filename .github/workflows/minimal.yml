@@ -887,6 +887,7 @@ jobs:
           - test: xilinx_ise
             datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
           - test: xilinx_vvd
+            args: -c=--parallel-backend
             datapoints: CYCLES,PERIOD,AREA,REGISTERS,DSPS,BRAMS
     env:
       outname: panda_bench_${{matrix.test}}
