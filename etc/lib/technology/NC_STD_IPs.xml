@@ -917,13 +917,13 @@ end
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality IP_COMPONENT="arg_utils" LIBRARY="IF_PORT_IN index val_port" VERILOG_PROVIDED="arg_utils #(BITSIZE_val_port) m_utils();
-reg [BITSIZE_val_port-1:0] val, val_next;
+reg [BITSIZE_val_port-1:0] val;
+wire [BITSIZE_val_port-1:0] val_next;
 assign val_port = val;
 
 initial
 begin
   val = 0;
-  val_next = 0;
 end
 
 always @(posedge clock) 
@@ -935,10 +935,7 @@ begin
   end
 end
 
-always @(*)
-begin
-  val_next = val;
-end"/>
+assign val_next = val;"/>
         </component_o>
       </circuit>
     </cell>
@@ -1334,7 +1331,8 @@ end"/>
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality IP_COMPONENT="arg_utils" LIBRARY="TestbenchArgMapWishboneB4 index tgt_addr bitsize addr_is dat_is sel_is dat_os" VERILOG_PROVIDED="localparam bytesize=((bitsize&gt;&gt;3)&lt;&lt;3) == bitsize ? (bitsize&gt;&gt;3) : ((bitsize&gt;&gt;3) + 1);
-reg [bitsize-1:0] val, val_next;
+reg [bitsize-1:0] val;
+wire [bitsize-1:0] val_next;
 reg cyc, cyc_next, stb, stb_next, we, we_next, stall, ack, start;
 reg [BITSIZE_addr_is-1:0] addr, addr_next;
 reg [BITSIZE_dat_is-1:0] data, data_next;
@@ -1345,19 +1343,12 @@ arg_utils #(bitsize) a_utils();
 initial
 begin
   val = 0;
-  val_next = 0;
   cyc = 0;
-  cyc_next = 0;
   stb = 0;
-  stb_next = 0;
   we = 0;
-  we_next = 0;
   addr = 0;
-  addr_next = 0;
   data = 0;
-  data_next = 0;
   sel = 0;
-  sel_next = 0;
   start = 0;
 end
 
@@ -1389,9 +1380,10 @@ begin
   end
 end
 
+assign val_next = val;
+
 always @(*)
 begin
-  val_next = val;
   cyc_next = cyc;
   stb_next = stb;
   we_next = we;
