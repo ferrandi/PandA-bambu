@@ -9650,7 +9650,7 @@ begin
 -- synthesis translate_off
             if (to_integer(unsigned(address_in_mem((0+1)*BITSIZE_address_in-1 downto 0*BITSIZE_address_in))) &lt; n_elements) then
 -- synthesis translate_on
-              mem(to_integer(unsigned(address_in_mem((0+1)*BITSIZE_address_in-1 downto 0*BITSIZE_address_in)))) &lt;= data_in_mem((0+1)*BITSIZE_data_in-1 downto 0*BITSIZE_data_in);
+              mem(to_integer(unsigned(address_in_mem((0+1)*BITSIZE_address_in-1 downto 0*BITSIZE_address_in)))) := data_in_mem((0+1)*BITSIZE_data_in-1 downto 0*BITSIZE_data_in);
 -- synthesis translate_off
             end if;
 -- synthesis translate_on
@@ -9659,7 +9659,7 @@ begin
 -- synthesis translate_off
         if (to_integer(unsigned(address_in_mem((0+1)*BITSIZE_address_in-1 downto 0*BITSIZE_address_in))) &lt; n_elements) then
 -- synthesis translate_on
-          data_out_mem((0+1)*BITSIZE_data_out-1 downto 0*BITSIZE_data_out) := mem(to_integer(unsigned(address_in_mem((0+1)*BITSIZE_address_in-1 downto 0*BITSIZE_address_in))));
+          data_out_mem((0+1)*BITSIZE_data_out-1 downto 0*BITSIZE_data_out) &lt;= mem(to_integer(unsigned(address_in_mem((0+1)*BITSIZE_address_in-1 downto 0*BITSIZE_address_in))));
 -- synthesis translate_off
         else
           data_out_mem((0+1)*BITSIZE_data_out-1 downto 0*BITSIZE_data_out) &lt;= (others =&gt; &apos;X&apos;);
@@ -9675,7 +9675,7 @@ begin
 -- synthesis translate_off
             if (to_integer(unsigned(address_in_mem((1+1)*BITSIZE_address_in-1 downto 1*BITSIZE_address_in))) &lt; n_elements) then
 -- synthesis translate_on
-              mem(to_integer(unsigned(address_in_mem((1+1)*BITSIZE_address_in-1 downto 1*BITSIZE_address_in)))) &lt;= data_in_mem((1+1)*BITSIZE_data_in-1 downto 1*BITSIZE_data_in);
+              mem(to_integer(unsigned(address_in_mem((1+1)*BITSIZE_address_in-1 downto 1*BITSIZE_address_in)))) := data_in_mem((1+1)*BITSIZE_data_in-1 downto 1*BITSIZE_data_in);
 -- synthesis translate_off
             end if;
 -- synthesis translate_on
@@ -9684,7 +9684,7 @@ begin
 -- synthesis translate_off
         if (to_integer(unsigned(address_in_mem((1+1)*BITSIZE_address_in-1 downto 1*BITSIZE_address_in))) &lt; n_elements) then
 -- synthesis translate_on
-          data_out_mem((1+1)*BITSIZE_data_out-1 downto 1*BITSIZE_data_out) := mem(to_integer(unsigned(address_in_mem((1+1)*BITSIZE_address_in-1 downto 1*BITSIZE_address_in))));
+          data_out_mem((1+1)*BITSIZE_data_out-1 downto 1*BITSIZE_data_out) &lt;= mem(to_integer(unsigned(address_in_mem((1+1)*BITSIZE_address_in-1 downto 1*BITSIZE_address_in))));
 -- synthesis translate_off
         else
           data_out_mem((1+1)*BITSIZE_data_out-1 downto 1*BITSIZE_data_out) &lt;= (others =&gt; &apos;X&apos;);
