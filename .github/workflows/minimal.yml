@@ -154,10 +154,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        id: [""]
+        simulator: [MODELSIM, VERILATOR]
     env:
-      script: ./panda_regressions/hls/bambu_interface_test${{matrix.id}}.sh
-      args: -c=--simulator=MODELSIM 
+      script: ./panda_regressions/hls/bambu_interface_test.sh
+      args: -c=--simulator=${{matrix.simulator}}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -176,7 +176,7 @@ jobs:
           ln -s $PWD/*.AppImage bin/bambu
           ln -s $PWD/*.AppImage bin/spider
           echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
-      - name: Launch Bambu interface test ${{matrix.id}}
+      - name: Launch Bambu interface test ${{matrix.simulator}}
         shell: bash
         run: |
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
@@ -186,7 +186,7 @@ jobs:
         id: perf-check
         uses: ./.github/actions/perf-check
         with:
-          test-id: bambu_interface_test${{matrix.id}}
+          test-id: bambu_interface_test${{matrix.simulator}}
           new-results: ${{env.report-dir}}/perf.csv
           storage-url: "${{env.storage-url}}"
           username: "${{env.storage-user}}"
@@ -200,7 +200,7 @@ jobs:
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
-          name: bambu_interface_test${{matrix.id}}
+          name: bambu_interface_test${{matrix.simulator}}
           path: ${{env.report-dir}}
 
   AXI4-verification:
