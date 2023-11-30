@@ -841,7 +841,6 @@ begin
   ack = 0;
   Rdata = 0;
   queue = 0;
-  queue_next = 0;
 end
 
 assign cyc_is = 0;
@@ -1469,11 +1468,8 @@ arg_utils #(bitsize) a_utils();
 initial
 begin
   cyc = 0;
-  cyc_next = 0;
   stb = 0;
-  stb_next = 0;
   addr = 0;
-  addr_next = 0;
   done = 0;
 end
 
@@ -1572,17 +1568,11 @@ reg [BITSIZE_sel_is-1:0] sel, sel_next;
 initial
 begin
   cyc = 0;
-  cyc_next = 0;
   stb = 0;
-  stb_next = 0;
   we = 0;
-  we_next = 0;
   addr = 0;
-  addr_next = 0;
   data = 0;
-  data_next = 0;
   sel = 0;
-  sel_next = 0;
   start = 0;
 end
 
