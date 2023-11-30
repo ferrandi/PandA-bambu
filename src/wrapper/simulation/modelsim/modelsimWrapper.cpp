@@ -95,13 +95,13 @@ void modelsimWrapper::CheckExecution()
 {
 }
 
-void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename,
-                                     const std::list<std::string>& file_list)
+std::string modelsimWrapper::GenerateScript(std::ostream& script, const std::string& top_filename,
+                                            const std::list<std::string>& file_list)
 {
    THROW_ASSERT(!file_list.empty(), "File list is empty");
    script << "BEH_DIR=\"" << SIM_SUBDIR << suffix << "\"" << std::endl;
    const auto modelsim_bin = MODELSIM_BIN;
-   std::string beh_cflags = "-DMODEL_TECH " + (modelsim_bin.size() ? ("-I" + modelsim_bin + "../include") : "");
+   std::string beh_cflags = "-DMODEL_TECH " + (modelsim_bin.size() ? ("-isystem " + modelsim_bin + "../include") : "");
    const auto cflags = GenerateLibraryBuildScript(script, "${BEH_DIR}", beh_cflags);
    const auto vflags = [&]() {
       std::string flags;
@@ -191,34 +191,21 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
       script << "if [ $? -ne 0 ]; then exit 1; fi" << std::endl << std::endl;
    }
 
-   script << MODELSIM_VSIM << " " << vflags << " -noautoldlibpath";
-   if(Param->isOption(OPT_mentor_visualizer) && Param->isOption(OPT_visualizer) &&
-      Param->getOption<bool>(OPT_visualizer))
-   {
-      script << " -qwavedb=+memory+signal+class+glitch+vhdlvariable";
-      MODELSIM_OPTIMIZER_FLAGS_DEF += " -debug -designfile design.bin";
-   }
+   std::string sim_cmd = MODELSIM_VSIM + " " + vflags + " -noautoldlibpath";
    if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
    {
-      script << " -pedanticerrors -assertdebug";
+      sim_cmd += " -pedanticerrors -assertdebug";
       MODELSIM_OPTIMIZER_FLAGS_DEF = "+acc -hazards " + MODELSIM_OPTIMIZER_FLAGS_DEF;
    }
-   script << " -c";
+   sim_cmd += " -c";
    if(!MODELSIM_OPTIMIZER_FLAGS_DEF.empty())
    {
-      script << " -voptargs=\"" + MODELSIM_OPTIMIZER_FLAGS_DEF << "\"";
+      sim_cmd += " -voptargs=\"" + MODELSIM_OPTIMIZER_FLAGS_DEF + "\"";
    }
-   script << " -do \"set StdArithNoWarnings 1; set StdNumNoWarnings 1; set NumericStdNoWarnings 1; onerror {quit "
-             "-f -code 1;}; run -all; exit -f;\"  work.clocked_bambu_testbench 2>&1 | tee "
-          << log_file << std::endl
-          << std::endl;
-   if(Param->isOption(OPT_mentor_visualizer) && Param->isOption(OPT_visualizer) &&
-      Param->getOption<bool>(OPT_visualizer))
-   {
-      script << Param->getOption<std::string>(OPT_mentor_visualizer) << " +designfile +wavefile -showglitches"
-             << std::endl
-             << std::endl;
-   }
+   sim_cmd += " -do \"set StdArithNoWarnings 1; set StdNumNoWarnings 1; set NumericStdNoWarnings 1; onerror {quit -f "
+              "-code 1;}; run -all; exit -f;\"  work.clocked_bambu_testbench 2>&1 | tee " +
+              log_file;
+   return sim_cmd;
 }
 
 void modelsimWrapper::Clean() const

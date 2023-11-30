@@ -13,9 +13,6 @@
 /* Global constant declaration */
 /* Image storage arrays */
 /* Prototype declaration of functions */
-void load_image_data(unsigned char *image1, unsigned int * x_size1, unsigned int * y_size1 );
-void save_image_data(unsigned char * image2, unsigned int x_size2, unsigned int y_size2);
-void load_image_file(char *filename, unsigned char **image1,
-                     unsigned int * x_size1, unsigned int * y_size1);
-void save_image_file(char *); /* image output*/
+void load_image_data(const char* file_name, unsigned char *image1, unsigned int * x_size1, unsigned int * y_size1 );
+void save_image_data(const char* file_name, unsigned char * image2, unsigned int x_size2, unsigned int y_size2);
 #endif /* MYPGM_H */

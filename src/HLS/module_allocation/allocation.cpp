@@ -1206,7 +1206,8 @@ bool allocation::check_for_memory_compliancy(bool Has_extern_allocated_data, tec
    /// LOAD/STORE operations on proxys have been already managed
    if(channels_type.size() &&
       (memory_ctrl_type == MEMORY_CTRL_TYPE_PROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_PROXYN ||
-       memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN))
+       memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN ||
+       memory_ctrl_type == MEMORY_CTRL_TYPE_SPROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_SPROXYN))
    {
       return true;
    }
@@ -2799,7 +2800,7 @@ void allocation::IntegrateTechnologyLibraries()
                if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
                   (AllocationInformation::can_be_asynchronous_ram(
                       TM, var, parameters->getOption<unsigned int>(OPT_distram_threshold),
-                      HLSMgr->Rmem->is_read_only_variable(var))))
+                      HLSMgr->Rmem->is_read_only_variable(var), 1)))
                {
                   current_fu = get_fu(ARRAY_1D_STD_DISTRAM_SDS);
                   bool is_asynchronous_ram_not_timing_compliant = is_ram_not_timing_compliant(HLS_C, var, current_fu);
@@ -2841,7 +2842,7 @@ void allocation::IntegrateTechnologyLibraries()
                if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
                   AllocationInformation::can_be_asynchronous_ram(
                       TM, var, parameters->getOption<unsigned int>(OPT_distram_threshold),
-                      HLSMgr->Rmem->is_read_only_variable(var)))
+                      HLSMgr->Rmem->is_read_only_variable(var), channels_number))
                {
                   current_fu = get_fu(ARRAY_1D_STD_DISTRAM_N1_SDS);
                   bool is_asynchronous_ram_not_timing_compliant = is_ram_not_timing_compliant(HLS_C, var, current_fu);
@@ -2884,7 +2885,7 @@ void allocation::IntegrateTechnologyLibraries()
                if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
                   AllocationInformation::can_be_asynchronous_ram(
                       TM, var, parameters->getOption<unsigned int>(OPT_distram_threshold),
-                      HLSMgr->Rmem->is_read_only_variable(var)))
+                      HLSMgr->Rmem->is_read_only_variable(var), channels_number))
                {
                   current_fu = get_fu(ARRAY_1D_STD_DISTRAM_NN_SDS);
                   bool is_asynchronous_ram_not_timing_compliant = is_ram_not_timing_compliant(HLS_C, var, current_fu);
@@ -2979,7 +2980,7 @@ void allocation::IntegrateTechnologyLibraries()
                   if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
                      AllocationInformation::can_be_asynchronous_ram(
                          TM, proxied_var_id, parameters->getOption<unsigned int>(OPT_distram_threshold),
-                         HLSMgr->Rmem->is_read_only_variable(proxied_var_id)))
+                         HLSMgr->Rmem->is_read_only_variable(proxied_var_id), 1))
                   {
                      technology_nodeRef a_fu = get_fu(ARRAY_1D_STD_DISTRAM_SDS);
                      bool is_asynchronous_ram_not_timing_compliant =
@@ -2987,8 +2988,8 @@ void allocation::IntegrateTechnologyLibraries()
                      if(is_asynchronous_ram_not_timing_compliant)
                      {
                         current_fu =
-                            get_fu(PROXY_CTRL + allocation_information->get_latency_string(get_synch_ram_latency(
-                                                    ARRAY_1D_STD_BRAM_SDS, latency_postfix, HLS_C, proxied_var_id)));
+                            get_fu(SPROXY_CTRL + allocation_information->get_latency_string(get_synch_ram_latency(
+                                                     ARRAY_1D_STD_BRAM_SDS, latency_postfix, HLS_C, proxied_var_id)));
                      }
                      else
                      {
@@ -2998,8 +2999,8 @@ void allocation::IntegrateTechnologyLibraries()
                   else
                   {
                      current_fu =
-                         get_fu(PROXY_CTRL + allocation_information->get_latency_string(get_synch_ram_latency(
-                                                 ARRAY_1D_STD_BRAM_SDS, latency_postfix, HLS_C, proxied_var_id)));
+                         get_fu(SPROXY_CTRL + allocation_information->get_latency_string(get_synch_ram_latency(
+                                                  ARRAY_1D_STD_BRAM_SDS, latency_postfix, HLS_C, proxied_var_id)));
                   }
                }
             }
@@ -3024,7 +3025,7 @@ void allocation::IntegrateTechnologyLibraries()
                   if(parameters->getOption<bool>(OPT_use_asynchronous_memories) &&
                      AllocationInformation::can_be_asynchronous_ram(
                          TM, proxied_var_id, parameters->getOption<unsigned int>(OPT_distram_threshold),
-                         HLSMgr->Rmem->is_read_only_variable(proxied_var_id)))
+                         HLSMgr->Rmem->is_read_only_variable(proxied_var_id), channels_number))
                   {
                      technology_nodeRef a_fu =
                          get_fu(is_nn ? ARRAY_1D_STD_DISTRAM_NN_SDS : ARRAY_1D_STD_DISTRAM_N1_SDS);
@@ -3033,9 +3034,9 @@ void allocation::IntegrateTechnologyLibraries()
                      if(is_asynchronous_ram_not_timing_compliant)
                      {
                         current_fu =
-                            get_fu(PROXY_CTRLN + allocation_information->get_latency_string(get_synch_ram_latency(
-                                                     is_nn ? ARRAY_1D_STD_BRAM_NN_SDS : ARRAY_1D_STD_BRAM_N1_SDS,
-                                                     latency_postfix, HLS_C, proxied_var_id)));
+                            get_fu(SPROXY_CTRLN + allocation_information->get_latency_string(get_synch_ram_latency(
+                                                      is_nn ? ARRAY_1D_STD_BRAM_NN_SDS : ARRAY_1D_STD_BRAM_N1_SDS,
+                                                      latency_postfix, HLS_C, proxied_var_id)));
                      }
                      else
                      {
@@ -3044,9 +3045,10 @@ void allocation::IntegrateTechnologyLibraries()
                   }
                   else
                   {
-                     current_fu = get_fu(PROXY_CTRLN + allocation_information->get_latency_string(get_synch_ram_latency(
-                                                           is_nn ? ARRAY_1D_STD_BRAM_NN_SDS : ARRAY_1D_STD_BRAM_N1_SDS,
-                                                           latency_postfix, HLS_C, proxied_var_id)));
+                     current_fu =
+                         get_fu(SPROXY_CTRLN + allocation_information->get_latency_string(get_synch_ram_latency(
+                                                   is_nn ? ARRAY_1D_STD_BRAM_NN_SDS : ARRAY_1D_STD_BRAM_N1_SDS,
+                                                   latency_postfix, HLS_C, proxied_var_id)));
                   }
                }
             }

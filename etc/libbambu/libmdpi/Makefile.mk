@@ -67,7 +67,6 @@ $(call check_defined, COSIM_SRC)  # PandA Bambu HLS generated co-simulation sour
 
 ### Environment below is automatically populated, do not override
 
-IPC_FILENAME := $(shell echo "$(BEH_CFLAGS)" | sed -E 's/.*__M_IPC_FILENAME=?\"([^ ]+)?\".*/\1/')
 override SRCS := $(filter-out %.gimplePSSA, $(SRCS))
 SRC_DIR := $(shell echo "$(SRCS)" | sed 's/ /\n/g' | sed -e '$$!{N;s/^\(.*\).*\n\1.*$$/\1\n\1/;D;}' | sed 's/\(.*\)\/.*/\1/')
 TB_SRC_DIR := $(shell echo "$(TB_SRCS)" | sed 's/ /\n/g' | sed -e '$$!{N;s/^\(.*\).*\n\1.*$$/\1\n\1/;D;}' | sed 's/\(.*\)\/.*/\1/')
@@ -85,7 +84,7 @@ DRIVER_OBJ := $(patsubst %,$(MDPI_OBJ_DIR)/%.o, $(notdir $(DRIVER_SRC)))
 COSIM_OBJ := $(patsubst %,$(MDPI_OBJ_DIR)/%.o, $(notdir $(COSIM_SRC)))
 
 override TB_CFLAGS := $(patsubst -fno-exceptions,,$(CFLAGS)) $(TB_CFLAGS) -I$(libmdpi_root)/include
-MDPI_CFLAGS := $(BEH_CFLAGS) # $(shell echo "$(CFLAGS)" | grep -oE '(-mx?[0-9]+)' | sed -E 's/-mx?/-DM/' | tr '[:lower:]' '[:upper:]')
+MDPI_CFLAGS := $(BEH_CFLAGS) -D_GNU_SOURCE # $(shell echo "$(CFLAGS)" | grep -oE '(-mx?[0-9]+)' | sed -E 's/-mx?/-DM/' | tr '[:lower:]' '[:upper:]')
 LIB_CFLAGS := $(MDPI_CFLAGS)
 ifdef BEH_CC
 	LIB_CFLAGS += $(shell if basename $(BEH_CC) | grep -q '++'; then echo -std=c++11; else echo -std=c11; fi)
@@ -112,7 +111,7 @@ PP_CFLAGS += $(shell if [ ! -z "$$(basename $(CC) | grep clang)" ]; then echo "-
 DRIVER_LDFLAGS := $(shell echo "$(TB_CFLAGS)" | grep -oE '(-mx?[0-9]+)')
 DRIVER_LDFLAGS += $(shell echo "$(TB_CFLAGS)" | grep -oE '( -[Ll](\\.|[^ ])+)' | tr '\n' ' ')
 DRIVER_LDFLAGS += $(shell echo :$$LD_LIBRARY_PATH | sed 's/:$$//' | sed 's/:/ -L/g')
-DRIVER_LDFLAGS += -lpthread -lstdc++
+DRIVER_LDFLAGS += -lpthread -lstdc++ -lm
 
 LIB_LDFLAGS := 
 ifeq ($(BEH_CC),xsc)
@@ -141,15 +140,14 @@ libmdpi: $(MDPI_LIB)
 libmdpi_driver: $(DRIVER_LIB)
 
 testbench: $(TB_TARGET)
-	@rm -rf $(IPC_FILENAME)
 
 clean:
-	@rm -rf $(BUILD_DIR) $(DRIVER_LIB) $(MDPI_LIB) $(IPC_FILENAME)
+	@rm -rf $(BUILD_DIR) $(DRIVER_LIB) $(MDPI_LIB)
 
 $(MDPI_LIB): $(MDPI_SRCS)
 ifdef BEH_CC
 	@echo "Compiling $(notdir $@)"
-	@$(BEH_CC) $(LIB_LDFLAGS) $(LIB_CFLAGS) -o $@ $^
+	@$(BEH_CC) $(LIB_CFLAGS) -o $@ $^ $(LIB_LDFLAGS)
 endif
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%
@@ -183,11 +181,11 @@ $(DRIVER_OBJ): $(DRIVER_SRC)
 
 $(DRIVER_LIB): $(OBJS) $(DRIVER_OBJ) $(COSIM_OBJ) $(PP_OBJ)
 	@echo "Linking $(notdir $@)"
-	@$(CC) $(DRIVER_LDFLAGS) -shared -o $@ $^
+	@$(CC) -shared -o $@ $^ $(DRIVER_LDFLAGS)
 	@objcopy $(REDEFINE_SYS) $@
 
 $(TB_TARGET): $(TB_OBJS) $(OBJS) $(DRIVER_OBJ) $(COSIM_OBJ) $(PP_OBJ)
 ifdef TB_SRCS
 	@echo "Linking $(notdir $@)"
-	@$(CC) $(DRIVER_LDFLAGS) -o $@ $^
+	@$(CC) -o $@ $^ $(DRIVER_LDFLAGS)
 endif

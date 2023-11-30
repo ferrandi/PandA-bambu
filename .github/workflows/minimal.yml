@@ -735,22 +735,33 @@ jobs:
           name: ${{env.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
 
-  CHStone-memarch:
+  memarch-tests:
     needs: [build, CHStone-multi]
     runs-on: [self-hosted, mentor]
     strategy:
       fail-fast: false
       matrix:
         include:
-          - compiler: "I386_GCC7"
+          - compiler: I386_GCC7
+            script: generic_CHStone-memarch1.sh
             args: ""
-          - compiler: "I386_GCC7"
-            args: "-c=-wH"
-          - compiler: "I386_CLANG11"
-            args: "-c=--speculative-sdc-scheduling"
+          - compiler: I386_GCC7
+            script: generic_CHStone-memarch1.sh
+            args: -c=-wH
+          - compiler: I386_CLANG13
+            script: generic_CHStone-memarch2.sh
+            args: ""
+          - compiler: I386_CLANG13
+            script: generic_CHStone-memarch2.sh
+            args: -c=-wH
+          - compiler: I386_CLANG11
+            script: generic_gcc-memarch3.sh
+            args: ""
+          - compiler: I386_CLANG11
+            script: generic_gcc-memarch3.sh
+            args: -c=-wH
     env:
-      script: generic_CHStone-memarch.sh
-      args: -c=--simulator=MODELSIM -c=--compiler=${{matrix.compiler}} -c=--assert-debug
+      args: -c=--simulator=MODELSIM -c=--assert-debug -c=--compiler=${{matrix.compiler}} ${{matrix.args}}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -778,22 +789,18 @@ jobs:
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           mkdir ${{env.report-dir}}
           echo "test-reports-dir=$PWD/${{env.report-dir}}" >> $GITHUB_OUTPUT
-          ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}} ${{matrix.args}}
+          ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="${{env.report-dir}}" --csv="${{env.report-dir}}/perf.csv" ${{env.args}}
       - name: Generate out name
         if: ${{ !cancelled() }}
         id: get
         shell: bash
         run: |
-          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')_CHStone-memarch_"
-          if [[ "${{matrix.args}}" = *-c=--speculative-sdc-scheduling* ]]; then
-            OUTNAME+="w-spec"
+          OUTNAME="$(echo '${{matrix.compiler}}' | sed 's/I386_//g' | tr '[:upper:]' '[:lower:]')_memarch-tests_"
+          
+          if [[ "${{env.args}}" = *-c=-wH* ]]; then
+            OUTNAME+="vhdl"
           else
-            OUTNAME+="wo-spec"
-          fi
-          if [[ "${{matrix.args}}" = *-c=-wH* ]]; then
-            OUTNAME+="-vhdl"
-          else
-            OUTNAME+="-verilog"
+            OUTNAME+="verilog"
           fi
           echo "outname=$OUTNAME" >> $GITHUB_OUTPUT
       - name: Upload test reports
@@ -975,7 +982,7 @@ jobs:
         discrepancy-test,
         omp-simd,
         Make-checks,
-        CHStone-memarch,
+        memarch-tests,
         Panda-bench,
         Panda-bench-yosys,
       ]
@@ -1005,8 +1012,8 @@ jobs:
       - name: Check Make Checks status
         if: ${{ needs.Make-checks.result != 'success' }}
         run: exit 1
-      - name: Check CHStone memory architecture status
-        if: ${{ needs.CHStone-memarch.result != 'success' }}
+      - name: Check CHStone memory architecture 1 status
+        if: ${{ needs.memarch-tests.result != 'success' }}
         run: exit 1
       - name: Check PandA benchmarks status
         if: ${{ needs.Panda-bench.result != 'success' }}

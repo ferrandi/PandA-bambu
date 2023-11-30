@@ -76,8 +76,8 @@ class VIVADO_xsim_wrapper : public SimulationTool
    /**
     * Generates the proper simulation script
     */
-   void GenerateScript(std::ostringstream& script, const std::string& top_filename,
-                       const std::list<std::string>& file_list) override;
+   std::string GenerateScript(std::ostream& script, const std::string& top_filename,
+                              const std::list<std::string>& file_list) override;
 
  public:
    /**

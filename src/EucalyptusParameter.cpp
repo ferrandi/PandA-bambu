@@ -457,10 +457,6 @@ void EucalyptusParameter::CheckParameters()
       {
          setOption(OPT_mentor_modelsim_bin, dir + "/bin");
       }
-      if(std::filesystem::exists(dir + "/bin/visualizer"))
-      {
-         setOption(OPT_mentor_visualizer, dir + "/bin/visualizer");
-      }
    };
    for(const auto& mentor_dir : mentor_dirs)
    {
@@ -475,10 +471,6 @@ void EucalyptusParameter::CheckParameters()
          }
          search_mentor(mentor_dir);
       }
-   }
-   if(isOption(OPT_visualizer) && getOption<bool>(OPT_visualizer) && !isOption(OPT_mentor_visualizer))
-   {
-      THROW_ERROR("Mentor Visualizer was not detected by Bambu. Please check --mentor-root option is correct.");
    }
 
    /// Search for NanoXPlore tools

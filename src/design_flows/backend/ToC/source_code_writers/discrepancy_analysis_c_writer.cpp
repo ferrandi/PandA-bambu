@@ -1010,21 +1010,21 @@ void DiscrepancyAnalysisCWriter::DeclareLocalVariables(const CustomSet<unsigned 
 
 void DiscrepancyAnalysisCWriter::WriteFunctionImplementation(unsigned int function_index)
 {
-   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(function_index);
-   const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
-   const std::string& funName = behavioral_helper->get_function_name();
-   tree_nodeRef node_fun = TM->GetTreeNode(function_index);
+   const auto FB = HLSMgr->CGetFunctionBehavior(function_index);
+   const auto BH = FB->CGetBehavioralHelper();
+   const auto funName = BH->get_function_name();
+   const auto node_fun = TM->GetTreeNode(function_index);
    THROW_ASSERT(GetPointer<function_decl>(node_fun), "expected a function decl");
    bool prepend_static = !tree_helper::is_static(TM, function_index) && !tree_helper::is_extern(TM, function_index) &&
                          (funName != "main");
    if(prepend_static)
    {
-      GetPointer<function_decl>(node_fun)->static_flag = true;
+      GetPointerS<function_decl>(node_fun)->static_flag = true;
    }
    CWriter::WriteFunctionImplementation(function_index);
    if(prepend_static)
    {
-      GetPointer<function_decl>(node_fun)->static_flag = false;
+      GetPointerS<function_decl>(node_fun)->static_flag = false;
    }
 }
 
@@ -1036,21 +1036,21 @@ void DiscrepancyAnalysisCWriter::WriteBBHeader(const unsigned int bb_number, con
 
 void DiscrepancyAnalysisCWriter::WriteFunctionDeclaration(const unsigned int funId)
 {
-   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
-   const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
-   const std::string& funName = behavioral_helper->get_function_name();
-   tree_nodeRef node_fun = TM->GetTreeNode(funId);
+   const auto FB = HLSMgr->CGetFunctionBehavior(funId);
+   const auto BH = FB->CGetBehavioralHelper();
+   const auto funName = BH->get_function_name();
+   const auto node_fun = TM->GetTreeNode(funId);
    THROW_ASSERT(GetPointer<function_decl>(node_fun), "expected a function decl");
-   bool prepend_static =
+   const auto prepend_static =
        !tree_helper::is_static(TM, funId) && !tree_helper::is_extern(TM, funId) && (funName != "main");
    if(prepend_static)
    {
-      GetPointer<function_decl>(node_fun)->static_flag = true;
+      GetPointerS<function_decl>(node_fun)->static_flag = true;
    }
    HLSCWriter::WriteFunctionDeclaration(funId);
    if(prepend_static)
    {
-      GetPointer<function_decl>(node_fun)->static_flag = false;
+      GetPointerS<function_decl>(node_fun)->static_flag = false;
    }
 }
 

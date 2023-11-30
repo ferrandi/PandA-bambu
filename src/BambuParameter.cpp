@@ -160,7 +160,8 @@
 #define OPT_MEMORY_MAPPED_TOP (1 + OPT_MAX_ULP)
 #define OPT_MEM_DELAY_READ (1 + OPT_MEMORY_MAPPED_TOP)
 #define OPT_MEM_DELAY_WRITE (1 + OPT_MEM_DELAY_READ)
-#define OPT_MEMORY_BANKS_NUMBER (1 + OPT_MEM_DELAY_WRITE)
+#define OPT_TB_QUEUE_SIZE (1 + OPT_MEM_DELAY_WRITE)
+#define OPT_MEMORY_BANKS_NUMBER (1 + OPT_TB_QUEUE_SIZE)
 #define OPT_MIN_INHERITANCE (1 + OPT_MEMORY_BANKS_NUMBER)
 #define OPT_MOSA_FLOW (1 + OPT_MIN_INHERITANCE)
 #define OPT_NO_MIXED_DESIGN (1 + OPT_MOSA_FLOW)
@@ -197,7 +198,8 @@
 #define OPT_TESTBENCH (1 + INPUT_OPT_TEST_SINGLE_NON_DETERMINISTIC_FLOW)
 #define OPT_TESTBENCH_ARGV (1 + OPT_TESTBENCH)
 #define OPT_TESTBENCH_PARAM_SIZE (1 + OPT_TESTBENCH_ARGV)
-#define OPT_TB_EXTRA_GCC_OPTIONS (1 + OPT_TESTBENCH_PARAM_SIZE)
+#define OPT_TESTBENCH_MAP_MODE (1 + OPT_TESTBENCH_PARAM_SIZE)
+#define OPT_TB_EXTRA_GCC_OPTIONS (1 + OPT_TESTBENCH_MAP_MODE)
 #define OPT_TIME_WEIGHT (1 + OPT_TB_EXTRA_GCC_OPTIONS)
 #define OPT_TIMING_MODEL (1 + OPT_TIME_WEIGHT)
 #define OPT_TIMING_VIOLATION (1 + OPT_TIMING_MODEL)
@@ -205,8 +207,7 @@
 #define OPT_TOP_RTLDESIGN_NAME (1 + OPT_TOP_FNAME)
 #define OPT_UNALIGNED_ACCESS_PARAMETER (1 + OPT_TOP_RTLDESIGN_NAME)
 #define OPT_VHDL_LIBRARY_PARAMETER (1 + OPT_UNALIGNED_ACCESS_PARAMETER)
-#define OPT_VISUALIZER (1 + OPT_VHDL_LIBRARY_PARAMETER)
-#define OPT_XML_CONFIG (1 + OPT_VISUALIZER)
+#define OPT_XML_CONFIG (1 + OPT_VHDL_LIBRARY_PARAMETER)
 #define OPT_RANGE_ANALYSIS_MODE (1 + OPT_XML_CONFIG)
 #define OPT_FP_FORMAT (1 + OPT_RANGE_ANALYSIS_MODE)
 #define OPT_FP_FORMAT_PROPAGATE (1 + OPT_FP_FORMAT)
@@ -286,6 +287,11 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        A comma-separated list of pairs representing a pointer parameter name and\n"
       << "        the size for the related memory space. Specifying this option will disable\n"
       << "        automated top-level function verification.\n\n"
+      << "    --tb-memory-mapping=<arg>\n"
+      << "        Testbench memory mapping mode:\n"
+      << "            DEVICE - Emulate host/device memory mapping (default)\n"
+      << "            SHARED - Emulate shared memory space between host and device\n"
+      << "                     (BEAWARE: no memory integrity checks in shared mode)\n\n"
       << "    --top-fname=<fun_name>\n"
       << "        Define the top function to be synthesized. (default=main)\n\n"
       << "    --top-rtldesign-name=<top_name>\n"
@@ -470,6 +476,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Define the external memory latency when LOAD are performed (default 2).\n\n"
       << "    --mem-delay-write=value\n"
       << "        Define the external memory latency when STORE are performed (default 1).\n\n"
+      << "    --tb-queue-size=value\n"
+      << "        Define the maximum number of requests accepted by the testbench (default 4).\n\n"
       << "    --expose-globals\n"
       << "        All global variables can be accessed from outside the accelerator.\n\n"
       << "    --data-bus-bitsize=<bitsize>\n"
@@ -1032,11 +1040,11 @@ int BambuParameter::Exec()
       {"generate-tb", required_argument, nullptr, OPT_TESTBENCH},
       {"tb-arg", required_argument, nullptr, OPT_TESTBENCH_ARGV},
       {"tb-param-size", required_argument, nullptr, OPT_TESTBENCH_PARAM_SIZE},
+      {"tb-memory-mapping", required_argument, nullptr, OPT_TESTBENCH_MAP_MODE},
       {"tb-extra-gcc-options", required_argument, nullptr, OPT_TB_EXTRA_GCC_OPTIONS},
       {"max-sim-cycles", required_argument, nullptr, OPT_MAX_SIM_CYCLES},
       {"generate-vcd", no_argument, nullptr, OPT_GENERATE_VCD},
       {"simulate", no_argument, nullptr, OPT_SIMULATE},
-      {"mentor-visualizer", no_argument, nullptr, OPT_VISUALIZER},
       {"simulator", required_argument, nullptr, 0},
       {"enable-function-proxy", no_argument, nullptr, OPT_ENABLE_FUNCTION_PROXY},
       {"disable-function-proxy", no_argument, nullptr, OPT_DISABLE_FUNCTION_PROXY},
@@ -1044,6 +1052,7 @@ int BambuParameter::Exec()
       {"memory-mapped-top", no_argument, nullptr, OPT_MEMORY_MAPPED_TOP},
       {"mem-delay-read", required_argument, nullptr, OPT_MEM_DELAY_READ},
       {"mem-delay-write", required_argument, nullptr, OPT_MEM_DELAY_WRITE},
+      {"tb-queue-size", required_argument, nullptr, OPT_TB_QUEUE_SIZE},
       {"host-profiling", no_argument, nullptr, OPT_HOST_PROFILING},
       {"disable-bitvalue-ipa", no_argument, nullptr, OPT_DISABLE_BITVALUE_IPA},
       {"discrepancy", no_argument, nullptr, OPT_DISCREPANCY},
@@ -1353,11 +1362,6 @@ int BambuParameter::Exec()
                objective_string = objective_string + ",CYCLES";
             }
             setOption(OPT_evaluation_objectives, objective_string);
-            break;
-         }
-         case OPT_VISUALIZER:
-         {
-            setOption(OPT_visualizer, true);
             break;
          }
          case OPT_DEVICE_NAME:
@@ -1817,6 +1821,16 @@ int BambuParameter::Exec()
             setOption(OPT_testbench_param_size, param_size);
             break;
          }
+         case OPT_TESTBENCH_MAP_MODE:
+         {
+            std::string map_mode(optarg);
+            if(map_mode != "DEVICE" && map_mode != "SHARED")
+            {
+               THROW_ERROR("BadParameters: testbench memory mapping mode not valid");
+            }
+            setOption(OPT_testbench_map_mode, map_mode);
+            break;
+         }
          case OPT_TB_EXTRA_GCC_OPTIONS:
          {
             std::string tb_extra_gcc_options;
@@ -1870,6 +1884,11 @@ int BambuParameter::Exec()
          case OPT_MEM_DELAY_WRITE:
          {
             setOption(OPT_mem_delay_write, optarg);
+            break;
+         }
+         case OPT_TB_QUEUE_SIZE:
+         {
+            setOption(OPT_tb_queue_size, optarg);
             break;
          }
 #if HAVE_HOST_PROFILING_BUILT
@@ -2504,6 +2523,10 @@ void BambuParameter::CheckParameters()
 
    if(!isOption(OPT_top_functions_names))
    {
+      if(getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+      {
+         THROW_ERROR("Top function name must be specified when interface inferece is enabled.");
+      }
       setOption(OPT_top_functions_names, "main");
       THROW_WARNING("Top function name was not specified: main will be set as top");
    }
@@ -2654,10 +2677,6 @@ void BambuParameter::CheckParameters()
       {
          setOption(OPT_mentor_modelsim_bin, dir + "/bin");
       }
-      if(std::filesystem::exists(dir + "/bin/visualizer"))
-      {
-         setOption(OPT_mentor_visualizer, dir + "/bin/visualizer");
-      }
    };
    for(const auto& mentor_dir : mentor_dirs)
    {
@@ -2672,10 +2691,6 @@ void BambuParameter::CheckParameters()
          }
          search_mentor(mentor_dir);
       }
-   }
-   if(isOption(OPT_visualizer) && getOption<bool>(OPT_visualizer) && !isOption(OPT_mentor_visualizer))
-   {
-      THROW_ERROR("Mentor Visualizer was not detected by Bambu. Please check --mentor-root option is correct.");
    }
 
    /// Search for NanoXPlore tools
@@ -3514,19 +3529,6 @@ void BambuParameter::CheckParameters()
          THROW_ERROR("the number of channels cannot be specified for MEM_ACC_11");
       }
    }
-   if(isOption(OPT_channels_number) &&
-      (getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_N1 ||
-       getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN))
-   {
-      if(getOption<unsigned int>(OPT_channels_number) > 2 &&
-         getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::NO_BRAM &&
-         getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) !=
-             MemoryAllocation_Policy::EXT_PIPELINED_BRAM)
-      {
-         THROW_ERROR("no more than two channels is supported for MEM_ACC_N1 and MEM_ACC_NN: try to add this option "
-                     "--memory-allocation-policy=NO_BRAM or --memory-allocation-policy=EXT_PIPELINED_BRAM");
-      }
-   }
 
    if(getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
    {
@@ -3640,6 +3642,14 @@ void BambuParameter::SetDefaults()
    setOption(OPT_output_directory, GetPath("./HLS_output/"));
    setOption(OPT_simulation_output, GetPath("results.txt"));
    setOption(OPT_profiling_output, GetPath("profiling_results.txt"));
+   /// TODO this is a temporary hack. Before starting anything, the directory HLS_output/simulation/ needs to be
+   /// removed.
+   auto sim_dir = getOption<std::string>(OPT_output_directory) + "/simulation/";
+   if(std::filesystem::exists(sim_dir))
+   {
+      std::filesystem::remove_all(sim_dir);
+   }
+
    /// Debugging level
    setOption(OPT_output_level, OUTPUT_LEVEL_MINIMUM);
    setOption(OPT_debug_level, DEBUG_LEVEL_NONE);
@@ -3718,6 +3728,7 @@ void BambuParameter::SetDefaults()
 
    setOption(OPT_mem_delay_read, 2);
    setOption(OPT_mem_delay_write, 1);
+   setOption(OPT_tb_queue_size, 4);
 
    /// -- Memory allocation -- //
    setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION);
@@ -3834,6 +3845,9 @@ void BambuParameter::SetDefaults()
    setOption(OPT_num_accelerators, 4);
 #endif
    setOption(OPT_memory_banks_number, 1);
+
+   /// ---------- Simulation options ----------- //
+   setOption(OPT_testbench_map_mode, "DEVICE");
 
    panda_parameters["CSE_size"] = "2";
    panda_parameters["PortSwapping"] = "1";

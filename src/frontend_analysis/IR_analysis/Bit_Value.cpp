@@ -1611,9 +1611,6 @@ void Bit_Value::initialize()
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
    };
 
-#ifndef NDEBUG
-   auto bloc_num = 1u;
-#endif
    /*
     * now do the real initialization on all the basic blocks
     */
@@ -1623,9 +1620,6 @@ void Bit_Value::initialize()
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Analyzing BB" + STR(B->number));
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->");
 
-#ifndef NDEBUG
-      auto statement_num = 1u;
-#endif
       for(const auto& phi : B->CGetPhiList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -1877,15 +1871,9 @@ void Bit_Value::initialize()
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                         "Analyzed " + stmt_node->get_kind_text() + ": " + STR(stmt_node));
-#ifndef NDEBUG
-         statement_num++;
-#endif
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Analyzed BB" + STR(B->number));
-#ifndef NDEBUG
-      bloc_num++;
-#endif
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Initialized best with all variables in the function:");
    print_bitstring_map(best);

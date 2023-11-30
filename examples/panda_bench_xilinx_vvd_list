@@ -31,7 +31,7 @@
 --configuration-name=fortran --benchmark-name=copy fortran/euclid.copy.f -fno-underscoring --top-fname=ngcd --generate-tb=BENCHMARKS_ROOT/fortran/test.copy.xml --speculative-sdc-scheduling --pretty-print=a.c
 --configuration-name=fortran --benchmark-name=base fortran/euclid.f      -fno-underscoring --top-fname=ngcd --generate-tb=BENCHMARKS_ROOT/fortran/test.xml      --speculative-sdc-scheduling --pretty-print=a.c
 
---configuration-name=funcp function_pointers/qsort_glibc/test.c function_pointers/qsort_glibc/less.c function_pointers/qsort_glibc/qsort.c --generate-tb=BENCHMARKS_ROOT/function_pointers/qsort_glibc/test.xml --experimental-setup=BAMBU --device-name=xc7z020-1clg484-VVD -Os --top-fname=test --soft-float
+--configuration-name=funcp function_pointers/qsort/glibc/test.c function_pointers/qsort/glibc/less.c function_pointers/qsort/glibc/qsort.c --generate-tb=BENCHMARKS_ROOT/function_pointers/qsort/tb.c --experimental-setup=BAMBU --device-name=xc7z020-1clg484-VVD -Os --top-fname=test
 
 --configuration-name=IPint IP_integration/top.c --generate-tb=BENCHMARKS_ROOT/IP_integration/main_test.c --experimental-setup=BAMBU --C-no-parse=BENCHMARKS_ROOT/IP_integration/module1.c,BENCHMARKS_ROOT/IP_integration/module2.c,BENCHMARKS_ROOT/IP_integration/printer1.c,BENCHMARKS_ROOT/IP_integration/printer2.c --file-input-data=BENCHMARKS_ROOT/IP_integration/module1.v,BENCHMARKS_ROOT/IP_integration/module2.v,BENCHMARKS_ROOT/IP_integration/printer1.v,BENCHMARKS_ROOT/IP_integration/printer2.v IP_integration/module_lib.xml --top-fname=my_ip IP_integration/constraints_STD.xml --memory-allocation-policy=ALL_BRAM -O3 --enable-function-proxy
 
