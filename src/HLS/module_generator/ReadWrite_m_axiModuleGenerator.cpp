@@ -97,7 +97,6 @@ enum out_port
    o_awregion,
    o_awuser,
    o_awvalid,
-   // o_wid, only AXI3 has wid
    o_wdata,
    o_wstrb,
    o_wlast,
@@ -132,7 +131,7 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_
                                                   const std::vector<ModuleGenerator::parameter>& _ports_out,
                                                   const std::vector<ModuleGenerator::parameter>& /* _ports_inout */)
 {
-   THROW_ASSERT(_ports_in.size() >= i_last, "");
+   THROW_ASSERT(_ports_in.size() >= i_last, "(_ports_in.size() = " + STR(_ports_in.size()) + ")");
    THROW_ASSERT(_ports_out.size() >= o_last, "");
    const auto addr_bitsize = STR(_ports_out[o_awaddr].type_size);
    const auto data_bitsize = STR(_ports_out[o_wdata].type_size);
@@ -172,7 +171,6 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_
       out << "assign " << _ports_out[o_awqos].name << " = 0;\n";
       out << "assign " << _ports_out[o_awregion].name << " = 0;\n";
       out << "assign " << _ports_out[o_awuser].name << " = 0;\n";
-      // out << "assign " << _ports_out[o_wid].name << " = 0;\n";
       out << "assign " << _ports_out[o_wuser].name << " = 0;\n";
       out << "assign " << _ports_out[o_arid].name << " = 0;\n";
       out << "assign " << _ports_out[o_arlock].name << " = 0;\n";
@@ -542,12 +540,12 @@ end)";
       }
 
       out << R"(
-  wire   [BITSIZE_in4 - 1: $clog2(BITSIZE_in3 / 8)] addr;
-  wire   [(BITSIZE_in3 / 8) - 1: 0]                 wstrb;
-  wire   [BITSIZE_in3 - 1: 0]                       rdata;
-  wire                                              ready;
-  wire                                              dirty;
-  reg                                               state, state_next;
+  wire [BITSIZE_in4 - 1: $clog2(BITSIZE_in3 / 8)] addr;
+  wire [(BITSIZE_in3 / 8) - 1: 0] wstrb;
+  wire [BITSIZE_in3 - 1: 0] rdata;
+  wire ready;
+  wire dirty;
+  reg state, state_next;
 )";
       out << "localparam S_IDLE = 0, S_FLUSH = 1;\n";
       out << "initial begin\n";
@@ -556,7 +554,6 @@ end)";
       out << "assign " << _ports_out[o_aruser].name << " = 0;\n";
       out << "assign " << _ports_out[o_arregion].name << " = 0;\n";
       out << "assign " << _ports_out[o_wuser].name << " = 0;\n";
-      // out << "assign " << _ports_out[o_wid].name << " = 0;\n";
       out << "assign " << _ports_out[o_awuser].name << " = 0;\n";
       out << "assign " << _ports_out[o_awregion].name << " = 0;\n";
 
