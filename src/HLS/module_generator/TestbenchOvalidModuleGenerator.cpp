@@ -128,7 +128,6 @@ reg enable, enable_next;
 initial
 begin
   enable = 0;
-  enable_next = 0;
 end
 
 always @(posedge clock)
