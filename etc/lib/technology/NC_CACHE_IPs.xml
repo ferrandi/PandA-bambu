@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <technology>
   <library>
+    <name>STD_FU</name>
     <cell>
       <name>IOB_front_end</name>
       <circuit>
