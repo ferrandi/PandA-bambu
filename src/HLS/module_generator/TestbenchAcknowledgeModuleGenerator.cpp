@@ -146,7 +146,6 @@ reg enable, enable_next;
 initial
 begin
   enable = 0;
-  enable_next = 0;
   $display("BEAWARE: Output acknowledge interface will read at each clock cycle");
 end
 
