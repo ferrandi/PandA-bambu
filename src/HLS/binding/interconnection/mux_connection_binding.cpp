@@ -211,23 +211,23 @@ void mux_connection_binding::create_single_conn(const vertex& op, generic_objRef
                      (tree_var ? (" for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
                                                 tree_var)) :
                                  ""));
-      if(GetPointer<register_obj>(fu_obj) && !is_not_a_phi)
-      {
-            generic_objRef enable_obj = GetPointer<register_obj>(fu_obj)->get_wr_enable();
-            GetPointer<commandport_obj>(enable_obj)
+   if(GetPointer<register_obj>(fu_obj) && !is_not_a_phi)
+   {
+      generic_objRef enable_obj = GetPointer<register_obj>(fu_obj)->get_wr_enable();
+      GetPointer<commandport_obj>(enable_obj)
           ->add_activation(commandport_obj::transition(state_src, state_tgt,
                                                        commandport_obj::data_operation_pair(cur_phi_tree_var, op)));
-            GetPointer<commandport_obj>(enable_obj)->set_phi_write_enable();
-            PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+      GetPointer<commandport_obj>(enable_obj)->set_phi_write_enable();
+      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                     "       - write enable for " + fu_obj->get_string() + " from state " +
                         HLS->Rliv->get_name(state_src) + " to state " +
                         (state_tgt == NULL_VERTEX ? std::string("") : HLS->Rliv->get_name(state_tgt)));
-         }
-      else
-      {
-      THROW_ASSERT(!GetPointer<register_obj>(fu_obj), "unexpected condition");
-      }
    }
+   else
+   {
+      THROW_ASSERT(!GetPointer<register_obj>(fu_obj), "unexpected condition");
+   }
+}
 
 unsigned int mux_connection_binding::address_precision(unsigned int precision, const vertex& op,
                                                        const OpGraphConstRef data, const tree_managerRef TreeM)
@@ -661,35 +661,35 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                            " port " + std::to_string(port_num) + ":" + std::to_string(port_index) + " from state " +
                            HLS->Rliv->get_name(state_src) + " to state " + HLS->Rliv->get_name(state_tgt) + " for " +
                            HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
-               }
+      }
       else
       {
-               auto base_index = extract_parm_decl(tree_var, TreeM);
-               const generic_objRef fu_src_obj = input_ports[base_index];
-               THROW_ASSERT(fu_src_obj, "unexpected condition");
-               HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index,
+         auto base_index = extract_parm_decl(tree_var, TreeM);
+         const generic_objRef fu_src_obj = input_ports[base_index];
+         THROW_ASSERT(fu_src_obj, "unexpected condition");
+         HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index,
                                        data_transfer(tree_var, precision, state_src, state_tgt, op));
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                        "       - add data transfer from primary input " + fu_src_obj->get_string() + " to " +
                            fu_obj->get_string() + " port " + std::to_string(port_num) + ":" +
                            std::to_string(port_index) + " from state " + HLS->Rliv->get_name(state_src) + " to state " +
                            HLS->Rliv->get_name(state_tgt) + " for " +
-                              HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
-            }
+                           HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
+      }
    }
 
    generic_objRef reg_obj;
    if(!is_not_a_phi)
    {
       if(!is_param)
-            {
-               vertex def_op = HLS->Rliv->get_op_where_defined(tree_var);
+      {
+         vertex def_op = HLS->Rliv->get_op_where_defined(tree_var);
          const auto& def_op_ending_states = HLS->Rliv->get_state_where_end(def_op);
          if((GET_TYPE(data, def_op) & TYPE_PHI) == 0 &&
             def_op_ending_states.find(state_src) != def_op_ending_states.end())
-                  {
-                     const generic_objRef fu_src_obj = HLS->Rfu->get(def_op);
-                     HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index,
+         {
+            const generic_objRef fu_src_obj = HLS->Rfu->get(def_op);
+            HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index,
                                           data_transfer(tree_var, precision, state_src, state_tgt, op));
             PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                           "       - add data transfer from " + fu_src_obj->get_string() + " to " +
@@ -697,7 +697,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                               std::to_string(port_index) + " from state " + HLS->Rliv->get_name(state_src) +
                               " to state " + HLS->Rliv->get_name(state_tgt) + " for " +
                               HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
-                  }
+         }
          else
          {
             const StateInfoConstRef src_state_info =
@@ -708,64 +708,64 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                           "        step " + (tree_var ? "for variable " + BH->PrintVariable(tree_var) : "") + "=" +
                               STR(stepIn));
             if(HLS->storage_value_information->is_a_storage_value(state_src, tree_var, stepIn))
-                  {
+            {
                auto storage_value =
                    HLS->storage_value_information->get_storage_value_index(state_src, tree_var, stepIn);
-                     auto r_index = HLS->Rreg->get_register(storage_value);
+               auto r_index = HLS->Rreg->get_register(storage_value);
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                              "       - register: " + std::to_string(r_index) + " from " +
                                  HLS->Rliv->get_name(state_src) + " to state " + HLS->Rliv->get_name(state_tgt) +
                                  " for " +
                                  HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
-                     reg_obj = HLS->Rreg->get(r_index);
-                     if(reg_obj != fu_obj)
-                     {
-                        HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index,
+               reg_obj = HLS->Rreg->get(r_index);
+               if(reg_obj != fu_obj)
+               {
+                  HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index,
                                                 data_transfer(tree_var, precision, state_src, state_tgt, op));
-                        PRINT_DBG_MEX(
-                            DEBUG_LEVEL_PEDANTIC, debug_level,
+                  PRINT_DBG_MEX(
+                      DEBUG_LEVEL_PEDANTIC, debug_level,
                       "       - add data transfer from " + reg_obj->get_string() + " to " + fu_obj->get_string() +
                           " port " + std::to_string(port_num) + ":" + std::to_string(port_index) + " from state " +
                           HLS->Rliv->get_name(state_src) + " to state " + HLS->Rliv->get_name(state_tgt) + " for " +
-                                 HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
-                  }
+                          HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
                }
-               else
-               {
+            }
+            else
+            {
                THROW_ERROR("not expected from " + HLS->Rliv->get_name(state_src) + " to " +
                            HLS->Rliv->get_name(state_tgt) + " " +
                            HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var) +
                            " step=" + STR(stepIn));
-                  }
-               }
-            }
-      if(GetPointer<register_obj>(fu_obj) && (!reg_obj || reg_obj != fu_obj))
-            {
-               generic_objRef enable_obj = GetPointer<register_obj>(fu_obj)->get_wr_enable();
-               GetPointer<commandport_obj>(enable_obj)
-                   ->add_activation(
-                 commandport_obj::transition(state_src, state_tgt, commandport_obj::data_operation_pair(tree_var, op)));
-               GetPointer<commandport_obj>(enable_obj)->set_phi_write_enable();
-               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                       "       - write enable for " + fu_obj->get_string() + " from state " +
-                           HLS->Rliv->get_name(state_src) + " to state " + HLS->Rliv->get_name(state_tgt));
             }
          }
-         else
-         {
+      }
+      if(GetPointer<register_obj>(fu_obj) && (!reg_obj || reg_obj != fu_obj))
+      {
+         generic_objRef enable_obj = GetPointer<register_obj>(fu_obj)->get_wr_enable();
+         GetPointer<commandport_obj>(enable_obj)
+             ->add_activation(
+                 commandport_obj::transition(state_src, state_tgt, commandport_obj::data_operation_pair(tree_var, op)));
+         GetPointer<commandport_obj>(enable_obj)->set_phi_write_enable();
+         PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                       "       - write enable for " + fu_obj->get_string() + " from state " +
+                           HLS->Rliv->get_name(state_src) + " to state " + HLS->Rliv->get_name(state_tgt));
+      }
+   }
+   else
+   {
       if(!is_param)
-            {
+      {
          vertex def_op = HLS->Rliv->get_op_where_defined(tree_var);
          const auto& def_op_ending_states = HLS->Rliv->get_state_where_end(def_op);
          if((GET_TYPE(data, def_op) & TYPE_PHI) == 0)
-            {
+         {
             bool same_stage = true;
             if(HLS->STG->not_same_step(state_src, def_op, op))
-               {
+            {
                same_stage = false;
             }
             if(def_op_ending_states.find(state_src) != def_op_ending_states.end() && same_stage)
-                  {
+            {
                const generic_objRef fu_src_obj = HLS->Rfu->get(def_op);
                HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index,
                                              data_transfer(tree_var, precision, state_src, state_tgt, op));
@@ -774,7 +774,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                                  fu_obj->get_string() + " port " + std::to_string(port_num) + ":" +
                                  std::to_string(port_index) + " from state " + HLS->Rliv->get_name(state_src) +
                                  " to state " + HLS->Rliv->get_name(state_tgt) + " for " +
-                              HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
+                                 HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
             }
             else
             {
@@ -786,32 +786,32 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                {
                   auto storage_value =
                       HLS->storage_value_information->get_storage_value_index(state_src, tree_var, stepIn);
-                     auto r_index = HLS->Rreg->get_register(storage_value);
-                     PRINT_DBG_MEX(
-                         DEBUG_LEVEL_PEDANTIC, debug_level,
+                  auto r_index = HLS->Rreg->get_register(storage_value);
+                  PRINT_DBG_MEX(
+                      DEBUG_LEVEL_PEDANTIC, debug_level,
                       "       - register: " + std::to_string(r_index) + " from " + HLS->Rliv->get_name(state_src) +
                           " to state " + HLS->Rliv->get_name(state_tgt) + " for " +
                           HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
-                     reg_obj = HLS->Rreg->get(r_index);
-                     if(reg_obj != fu_obj)
-                     {
-                        HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index,
+                  reg_obj = HLS->Rreg->get(r_index);
+                  if(reg_obj != fu_obj)
+                  {
+                     HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index,
                                                    data_transfer(tree_var, precision, state_src, state_tgt, op));
-                        PRINT_DBG_MEX(
-                            DEBUG_LEVEL_PEDANTIC, debug_level,
+                     PRINT_DBG_MEX(
+                         DEBUG_LEVEL_PEDANTIC, debug_level,
                          "       - add data transfer from " + reg_obj->get_string() + " to " + fu_obj->get_string() +
                              " port " + std::to_string(port_num) + ":" + std::to_string(port_index) + " from state " +
                              HLS->Rliv->get_name(state_src) + " to state " + HLS->Rliv->get_name(state_tgt) + " for " +
                              HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
-                     }
-                  }
-                  else
-                  {
-                  THROW_UNREACHABLE("not expected from " + HLS->Rliv->get_name(state_src) + " to " +
-                                    HLS->Rliv->get_name(state_tgt) + " " +
-                                       HLSMgr->get_tree_manager()->get_tree_node_const(tree_var)->ToString());
                   }
                }
+               else
+               {
+                  THROW_UNREACHABLE("not expected from " + HLS->Rliv->get_name(state_src) + " to " +
+                                    HLS->Rliv->get_name(state_tgt) + " " +
+                                    HLSMgr->get_tree_manager()->get_tree_node_const(tree_var)->ToString());
+               }
+            }
          }
          else
          {
@@ -821,112 +821,112 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                !src_state_info->all_paths && def_op_ending_states.find(state_src) != def_op_ending_states.end() &&
                std::find(src_state_info->moved_exec_op.begin(), src_state_info->moved_exec_op.end(), op) ==
                    src_state_info->moved_exec_op.end())
-               {
+            {
                const auto gp =
                    GetPointer<const gimple_phi>(TreeM->get_tree_node_const(data->CGetOpNodeInfo(def_op)->GetNodeId()));
-                  bool phi_postponed = false;
-                  unsigned int tree_temp = 0;
-                  for(const auto& def_edge : gp->CGetDefEdgesList())
-                  {
-                     auto bbID = def_edge.second;
-                     tree_temp = def_edge.first->index;
+               bool phi_postponed = false;
+               unsigned int tree_temp = 0;
+               for(const auto& def_edge : gp->CGetDefEdgesList())
+               {
+                  auto bbID = def_edge.second;
+                  tree_temp = def_edge.first->index;
                   if(bbID != src_state_info->sourceBb)
-                     {
-                        continue;
-                     }
-                  else if(src_state_info->moved_op_def_set.find(tree_temp) != src_state_info->moved_op_def_set.end())
-                     {
-                        phi_postponed = true;
-                        break;
-                     }
-                  else if(src_state_info->moved_op_use_set.find(tree_var) != src_state_info->moved_op_use_set.end())
-                     {
-                        phi_postponed = true;
-                        break;
-                     }
-                     else
-                     {
-                        break;
-                     }
-                  }
-                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                "Is phi postponed? " + (phi_postponed ? std::string("YES") : std::string("NO")));
-                  if(phi_postponed)
                   {
-                     // std::cerr << "phi postponed 0" << std::endl;
-                     generic_objRef fu_src_obj;
+                     continue;
+                  }
+                  else if(src_state_info->moved_op_def_set.find(tree_temp) != src_state_info->moved_op_def_set.end())
+                  {
+                     phi_postponed = true;
+                     break;
+                  }
+                  else if(src_state_info->moved_op_use_set.find(tree_var) != src_state_info->moved_op_use_set.end())
+                  {
+                     phi_postponed = true;
+                     break;
+                  }
+                  else
+                  {
+                     break;
+                  }
+               }
+               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                             "Is phi postponed? " + (phi_postponed ? std::string("YES") : std::string("NO")));
+               if(phi_postponed)
+               {
+                  // std::cerr << "phi postponed 0" << std::endl;
+                  generic_objRef fu_src_obj;
                   if(src_state_info->moved_op_use_set.find(tree_var) != src_state_info->moved_op_use_set.end() &&
                      src_state_info->moved_op_def_set.find(tree_temp) == src_state_info->moved_op_def_set.end())
-                     {
-                        auto src_storage_value = HLS->storage_value_information->get_storage_value_index(
+                  {
+                     auto src_storage_value = HLS->storage_value_information->get_storage_value_index(
                          state_src, tree_temp, HLS->Rliv->GetStep(state_src, op, tree_temp, true));
-                        auto src_r_index = HLS->Rreg->get_register(src_storage_value);
-                        fu_src_obj = HLS->Rreg->get(src_r_index);
-                     }
-                     else
-                     {
-                        vertex src_def_op = HLS->Rliv->get_op_where_defined(tree_temp);
-                        fu_src_obj = HLS->Rfu->get(src_def_op);
-                     }
-                     HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index,
+                     auto src_r_index = HLS->Rreg->get_register(src_storage_value);
+                     fu_src_obj = HLS->Rreg->get(src_r_index);
+                  }
+                  else
+                  {
+                     vertex src_def_op = HLS->Rliv->get_op_where_defined(tree_temp);
+                     fu_src_obj = HLS->Rfu->get(src_def_op);
+                  }
+                  HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index,
                                                 data_transfer(tree_temp, precision, state_src, state_tgt, op));
-                     PRINT_DBG_MEX(
-                         DEBUG_LEVEL_PEDANTIC, debug_level,
+                  PRINT_DBG_MEX(
+                      DEBUG_LEVEL_PEDANTIC, debug_level,
                       "       - add data transfer from " + fu_src_obj->get_string() + " to " + fu_obj->get_string() +
                           " port " + std::to_string(port_num) + ":" + std::to_string(port_index) + " from state " +
                           HLS->Rliv->get_name(state_src) + " to state " + HLS->Rliv->get_name(state_tgt) + " for " +
                           HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_temp));
-                  }
-                  else
-                  {
+               }
+               else
+               {
                   auto stepIn = HLS->Rliv->GetStep(state_src, op, tree_var, true);
                   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                 "        step " + (tree_var ? "for variable " + BH->PrintVariable(tree_var) : "") +
                                     "=" + STR(stepIn));
                   THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(state_src, tree_var, stepIn),
-                         "it has to be a register");
+                               "it has to be a register");
                   auto storage_value =
                       HLS->storage_value_information->get_storage_value_index(state_src, tree_var, stepIn);
-                     auto r_index = HLS->Rreg->get_register(storage_value);
-                     PRINT_DBG_MEX(
-                         DEBUG_LEVEL_PEDANTIC, debug_level,
+                  auto r_index = HLS->Rreg->get_register(storage_value);
+                  PRINT_DBG_MEX(
+                      DEBUG_LEVEL_PEDANTIC, debug_level,
                       "       - register: " + std::to_string(r_index) + " from " + HLS->Rliv->get_name(state_src) +
                           " to state " + HLS->Rliv->get_name(state_tgt) + " for " +
                           HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
-                     reg_obj = HLS->Rreg->get(r_index);
-                     if(reg_obj != fu_obj)
-                     {
-                        HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index,
+                  reg_obj = HLS->Rreg->get(r_index);
+                  if(reg_obj != fu_obj)
+                  {
+                     HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index,
                                                    data_transfer(tree_var, precision, state_src, state_tgt, op));
-                        PRINT_DBG_MEX(
-                            DEBUG_LEVEL_PEDANTIC, debug_level,
+                     PRINT_DBG_MEX(
+                         DEBUG_LEVEL_PEDANTIC, debug_level,
                          "       - add data transfer from " + reg_obj->get_string() + " to " + fu_obj->get_string() +
                              " port " + std::to_string(port_num) + ":" + std::to_string(port_index) + " from state " +
                              HLS->Rliv->get_name(state_src) + " to state " + HLS->Rliv->get_name(state_tgt) + " for " +
                              HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
-                     }
                   }
                }
-               else
-               {
+            }
+            else
+            {
                auto stepIn = HLS->Rliv->GetStep(state_src, op, tree_var, true);
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                              "        step " + (tree_var ? "for variable " + BH->PrintVariable(tree_var) : "") + "=" +
                                  STR(stepIn));
                THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(state_src, tree_var, stepIn),
-                      "it has to be a register");
+                            "it has to be a register");
                auto storage_value =
                    HLS->storage_value_information->get_storage_value_index(state_src, tree_var, stepIn);
-                  auto r_index = HLS->Rreg->get_register(storage_value);
+               auto r_index = HLS->Rreg->get_register(storage_value);
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                              "       - register: " + std::to_string(r_index) + " from " +
                                  HLS->Rliv->get_name(state_src) + " to state " + HLS->Rliv->get_name(state_tgt) +
                                  " for " +
                                  HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
-                  reg_obj = HLS->Rreg->get(r_index);
-                  if(reg_obj != fu_obj)
-                  {
-                     HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index,
+               reg_obj = HLS->Rreg->get(r_index);
+               if(reg_obj != fu_obj)
+               {
+                  HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index,
                                                 data_transfer(tree_var, precision, state_src, state_tgt, op));
                   PRINT_DBG_MEX(
                       DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -984,8 +984,8 @@ void mux_connection_binding::connect_pipelined_registers(vertex state)
                             origin_reg, next_reg, 0, 0,
                             data_transfer(var.first, object_bitsize(TreeM, HLS_manager::io_binding_type(var.first, 0)),
                                           state, out_state, def_op));
-                     PRINT_DBG_MEX(
-                         DEBUG_LEVEL_PEDANTIC, debug_level,
+                        PRINT_DBG_MEX(
+                            DEBUG_LEVEL_PEDANTIC, debug_level,
                             "    * Add pipelined register data transfer from " + origin_reg->get_string() + " to " +
                                 next_reg->get_string() + " port " + std::to_string(0) + ":" + std::to_string(0) +
                                 " from state " + HLS->Rliv->get_name(state) + " to state " +
@@ -998,21 +998,21 @@ void mux_connection_binding::connect_pipelined_registers(vertex state)
                         PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                       "       - write enable for " + next_reg->get_string() + " from " +
                                           HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(out_state));
+                     }
                   }
                }
             }
          }
-      }
          if(is_parameter && var.second == 1)
          {
             BOOST_FOREACH(const auto& edge_i, boost::in_edges(state, *stg))
-      {
+            {
                auto in_state = boost::source(edge_i, *stg);
                const auto& in_state_out_vars = HLS->Rliv->get_live_out(in_state);
                if(in_state_out_vars.contains(std::make_pair(var.first, var.second)))
-         {
+               {
                   if(HLS->storage_value_information->is_a_storage_value(state, var.first, var.second))
-            {
+                  {
                      auto par_idx =
                          HLS->storage_value_information->get_storage_value_index(state, var.first, var.second);
                      auto par_reg_idx = HLS->Rreg->get_register(par_idx);
@@ -1024,8 +1024,8 @@ void mux_connection_binding::connect_pipelined_registers(vertex state)
                          fu_src_obj, par_reg, 0, 0,
                          data_transfer(var.first, object_bitsize(TreeM, HLS_manager::io_binding_type(var.first, 0)),
                                        in_state, state, NULL_VERTEX));
-               PRINT_DBG_MEX(
-                   DEBUG_LEVEL_PEDANTIC, debug_level,
+                     PRINT_DBG_MEX(
+                         DEBUG_LEVEL_PEDANTIC, debug_level,
                          "    * Add pipelined register data transfer from primary input " + fu_src_obj->get_string() +
                              " to " + par_reg->get_string() + " port 0:0 from state " + HLS->Rliv->get_name(in_state) +
                              " to state " + HLS->Rliv->get_name(state) + " for " +
@@ -1258,316 +1258,317 @@ void mux_connection_binding::create_connections()
       {
          /// phis are not considered
          if((GET_TYPE(data, *op) & TYPE_PHI) == 0)
-      {
-         unsigned int port_index = n_channels < 2 ? 0 : idx % n_channels;
+         {
+            unsigned int port_index = n_channels < 2 ? 0 : idx % n_channels;
 
-         HLS->Rconn->bind_command_port(*op, conn_binding::IN, commandport_obj::OPERATION, data);
+            HLS->Rconn->bind_command_port(*op, conn_binding::IN, commandport_obj::OPERATION, data);
 
-         /// adding activation's state of selector related to operation op
-         const auto tmp_ops_node_size =
-             GetPointer<functional_unit>(HLS->allocation_information->get_fu(fu))->get_operations().size();
+            /// adding activation's state of selector related to operation op
+            const auto tmp_ops_node_size =
+                GetPointer<functional_unit>(HLS->allocation_information->get_fu(fu))->get_operations().size();
             bool is_starting_operation = std::find(astg->CGetStateInfo(rstate)->starting_operations.begin(),
                                                    astg->CGetStateInfo(rstate)->starting_operations.end(),
                                                    *op) != astg->CGetStateInfo(rstate)->starting_operations.end();
 
             if(tmp_ops_node_size > 1U && (!(GET_TYPE(data, *op) & (TYPE_LOAD | TYPE_STORE)) || is_starting_operation))
-         {
-            if(!GetPointer<funit_obj>(HLS->Rfu->get(fu, idx)))
             {
-               THROW_ERROR("Functional unit " + HLS->allocation_information->get_string_name(fu) +
+               if(!GetPointer<funit_obj>(HLS->Rfu->get(fu, idx)))
+               {
+                  THROW_ERROR("Functional unit " + HLS->allocation_information->get_string_name(fu) +
                               " does not have an instance " + std::to_string(idx));
-            }
-            const auto selector_obj = GetPointer<funit_obj>(HLS->Rfu->get(fu, idx))
-                                          ->GetSelector_op(data->CGetOpNodeInfo(*op)->GetOperation());
-            if(!selector_obj)
-            {
-               THROW_ERROR("Functional unit " + HLS->allocation_information->get_string_name(fu) +
+               }
+               const auto selector_obj = GetPointer<funit_obj>(HLS->Rfu->get(fu, idx))
+                                             ->GetSelector_op(data->CGetOpNodeInfo(*op)->GetOperation());
+               if(!selector_obj)
+               {
+                  THROW_ERROR("Functional unit " + HLS->allocation_information->get_string_name(fu) +
                               " does not exist or it does not have selector " +
                               data->CGetOpNodeInfo(*op)->GetOperation() + "(" + std::to_string(idx) +
                               ") Operation: " + std::to_string(data->CGetOpNodeInfo(*op)->GetNodeId()));
-            }
-                  GetPointer<commandport_obj>(selector_obj)
+               }
+               GetPointer<commandport_obj>(selector_obj)
                    ->add_activation(
                        commandport_obj::transition(rstate, NULL_VERTEX, commandport_obj::data_operation_pair(0, *op)));
-                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                              "       - add activation for " + selector_obj->get_string() + " in state " +
                                  HLS->Rliv->get_name(rstate));
-         }
+            }
 
-         const generic_objRef fu_obj = HLS->Rfu->get(*op);
-         std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(HLS->functionId, *op);
+            const generic_objRef fu_obj = HLS->Rfu->get(*op);
+            std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(HLS->functionId, *op);
 
-         if(GET_TYPE(data, *op) & (TYPE_LOAD | TYPE_STORE))
-         {
-            auto node_id = data->CGetOpNodeInfo(*op)->GetNodeId();
-            const tree_nodeRef node = TreeM->get_tree_node_const(node_id);
-            auto* gm = GetPointer<gimple_assign>(node);
-            THROW_ASSERT(gm, "only gimple_assign's are allowed as memory operations");
-
-            if(HLS->allocation_information->is_direct_access_memory_unit(fu) ||
-               HLS->allocation_information->is_indirect_access_memory_unit(fu)) /// MEMORY REFERENCES
+            if(GET_TYPE(data, *op) & (TYPE_LOAD | TYPE_STORE))
             {
-               unsigned int alignment = 0;
-               tree_nodeRef var_node;
-               unsigned int size_var;
-               tree_nodeConstRef tn;
-               unsigned int var_node_idx;
-               unsigned long long Prec = 0;
-               const auto type = tree_helper::CGetType(gm->op0);
-               if(type && (GET_CONST_NODE(type)->get_kind() == integer_type_K))
-               {
-                  Prec = GetPointerS<const integer_type>(GET_CONST_NODE(type))->prec;
-               }
-               else if(type && (GET_CONST_NODE(type)->get_kind() == boolean_type_K))
-               {
-                  Prec = 8;
-               }
-               else if(type && (GET_CONST_NODE(type)->get_kind() == enumeral_type_K))
-               {
-                  Prec = GetPointerS<const enumeral_type>(GET_CONST_NODE(type))->prec;
-               }
-               unsigned int algn = 0;
-               if(type && (GET_CONST_NODE(type)->get_kind() == integer_type_K))
-               {
-                  algn = GetPointerS<const integer_type>(GET_CONST_NODE(type))->algn;
-               }
-               else if(type && (GET_CONST_NODE(type)->get_kind() == boolean_type_K))
-               {
-                  algn = 8;
-               }
-#if USE_ALIGNMENT_INFO
-               if(type && GetPointer<const type_node>(GET_CONST_NODE(type)))
-               {
-                  algn = alignment = GetPointerS<const type_node>(GET_CONST_NODE(type))->algn;
-               }
-#endif
-               if(GET_TYPE(data, *op) & TYPE_STORE)
-               {
-                  size_var = std::get<0>(var_read[0]);
-                  tn = tree_helper::CGetType(TreeM->CGetTreeReindex(size_var));
-                  var_node = GET_NODE(gm->op0);
-                  var_node_idx = GET_INDEX_NODE(gm->op0);
+               auto node_id = data->CGetOpNodeInfo(*op)->GetNodeId();
+               const tree_nodeRef node = TreeM->get_tree_node_const(node_id);
+               auto* gm = GetPointer<gimple_assign>(node);
+               THROW_ASSERT(gm, "only gimple_assign's are allowed as memory operations");
 
-                  if(size_var)
+               if(HLS->allocation_information->is_direct_access_memory_unit(fu) ||
+                  HLS->allocation_information->is_indirect_access_memory_unit(fu)) /// MEMORY REFERENCES
+               {
+                  unsigned int alignment = 0;
+                  tree_nodeRef var_node;
+                  unsigned int size_var;
+                  tree_nodeConstRef tn;
+                  unsigned int var_node_idx;
+                  unsigned long long Prec = 0;
+                  const auto type = tree_helper::CGetType(gm->op0);
+                  if(type && (GET_CONST_NODE(type)->get_kind() == integer_type_K))
                   {
-                     THROW_ASSERT(
+                     Prec = GetPointerS<const integer_type>(GET_CONST_NODE(type))->prec;
+                  }
+                  else if(type && (GET_CONST_NODE(type)->get_kind() == boolean_type_K))
+                  {
+                     Prec = 8;
+                  }
+                  else if(type && (GET_CONST_NODE(type)->get_kind() == enumeral_type_K))
+                  {
+                     Prec = GetPointerS<const enumeral_type>(GET_CONST_NODE(type))->prec;
+                  }
+                  unsigned int algn = 0;
+                  if(type && (GET_CONST_NODE(type)->get_kind() == integer_type_K))
+                  {
+                     algn = GetPointerS<const integer_type>(GET_CONST_NODE(type))->algn;
+                  }
+                  else if(type && (GET_CONST_NODE(type)->get_kind() == boolean_type_K))
+                  {
+                     algn = 8;
+                  }
+#if USE_ALIGNMENT_INFO
+                  if(type && GetPointer<const type_node>(GET_CONST_NODE(type)))
+                  {
+                     algn = alignment = GetPointerS<const type_node>(GET_CONST_NODE(type))->algn;
+                  }
+#endif
+                  if(GET_TYPE(data, *op) & TYPE_STORE)
+                  {
+                     size_var = std::get<0>(var_read[0]);
+                     tn = tree_helper::CGetType(TreeM->CGetTreeReindex(size_var));
+                     var_node = GET_NODE(gm->op0);
+                     var_node_idx = GET_INDEX_NODE(gm->op0);
+
+                     if(size_var)
+                     {
+                        THROW_ASSERT(
                             tree_helper::GetConstValue(GetPointerS<const type_node>(GET_CONST_NODE(tn))->size) >= 0,
                             "");
-                     const auto IR_var_bitsize = static_cast<unsigned int>(
-                         tree_helper::GetConstValue(GetPointerS<const type_node>(GET_CONST_NODE(tn))->size));
-                     unsigned int var_bitsize;
-                     if(Prec != algn && Prec % algn)
-                     {
-                        HLS_manager::check_bitwidth(Prec);
-                        var_bitsize = static_cast<unsigned int>(Prec);
-                     }
-                     else
-                     {
-                        HLS_manager::check_bitwidth(IR_var_bitsize);
-                        var_bitsize = IR_var_bitsize;
-                     }
-                     generic_objRef conv_port;
-                     auto varObj = var_read[0];
-                     if(tree_helper::is_int(TreeM, size_var))
-                     {
-                        auto key = std::make_tuple(var_bitsize, iu_conv, varObj);
-                        if(connCache.find(key) == connCache.end())
+                        const auto IR_var_bitsize = static_cast<unsigned int>(
+                            tree_helper::GetConstValue(GetPointerS<const type_node>(GET_CONST_NODE(tn))->size));
+                        unsigned int var_bitsize;
+                        if(Prec != algn && Prec % algn)
                         {
+                           HLS_manager::check_bitwidth(Prec);
+                           var_bitsize = static_cast<unsigned int>(Prec);
+                        }
+                        else
+                        {
+                           HLS_manager::check_bitwidth(IR_var_bitsize);
+                           var_bitsize = IR_var_bitsize;
+                        }
+                        generic_objRef conv_port;
+                        auto varObj = var_read[0];
+                        if(tree_helper::is_int(TreeM, size_var))
+                        {
+                           auto key = std::make_tuple(var_bitsize, iu_conv, varObj);
+                           if(connCache.find(key) == connCache.end())
+                           {
                               conv_port =
                                   generic_objRef(new iu_conv_conn_obj("iu_conv_conn_obj_" + std::to_string(id++)));
-                           if(isConstantObj(std::get<0>(varObj), TreeM))
-                           {
-                              connCache[key] = conv_port;
-                           }
-                           HLS->Rconn->add_sparse_logic(conv_port);
-                           GetPointer<iu_conv_conn_obj>(conv_port)->add_bitsize(var_bitsize);
+                              if(isConstantObj(std::get<0>(varObj), TreeM))
+                              {
+                                 connCache[key] = conv_port;
+                              }
+                              HLS->Rconn->add_sparse_logic(conv_port);
+                              GetPointer<iu_conv_conn_obj>(conv_port)->add_bitsize(var_bitsize);
                               determine_connection(*op, varObj, conv_port, 0, 0, data, var_bitsize, 0, rstate,
                                                    NULL_VERTEX, 0);
+                           }
+                           else
+                           {
+                              conv_port = connCache.find(key)->second;
+                           }
                         }
                         else
                         {
-                           conv_port = connCache.find(key)->second;
+                           auto key = std::make_tuple(var_bitsize, uu_conv, varObj);
+                           if(connCache.find(key) == connCache.end())
+                           {
+                              conv_port =
+                                  generic_objRef(new uu_conv_conn_obj("uu_conv_conn_obj_" + std::to_string(id++)));
+                              if(isConstantObj(std::get<0>(varObj), TreeM))
+                              {
+                                 connCache[key] = conv_port;
+                              }
+                              HLS->Rconn->add_sparse_logic(conv_port);
+                              GetPointer<uu_conv_conn_obj>(conv_port)->add_bitsize(var_bitsize);
+                              determine_connection(*op, varObj, conv_port, 0, 0, data, var_bitsize, 0, rstate,
+                                                   NULL_VERTEX, 0);
+                           }
+                           else
+                           {
+                              conv_port = connCache.find(key)->second;
+                           }
                         }
+                        create_single_conn(*op, conv_port, fu_obj, 0, port_index, size_var, var_bitsize, true, rstate,
+                                           NULL_VERTEX);
                      }
                      else
                      {
-                        auto key = std::make_tuple(var_bitsize, uu_conv, varObj);
-                        if(connCache.find(key) == connCache.end())
-                        {
-                              conv_port =
-                                  generic_objRef(new uu_conv_conn_obj("uu_conv_conn_obj_" + std::to_string(id++)));
-                           if(isConstantObj(std::get<0>(varObj), TreeM))
-                           {
-                              connCache[key] = conv_port;
-                           }
-                           HLS->Rconn->add_sparse_logic(conv_port);
-                           GetPointer<uu_conv_conn_obj>(conv_port)->add_bitsize(var_bitsize);
-                              determine_connection(*op, varObj, conv_port, 0, 0, data, var_bitsize, 0, rstate,
-                                                   NULL_VERTEX, 0);
-                        }
-                        else
-                        {
-                           conv_port = connCache.find(key)->second;
-                        }
-                     }
-                        create_single_conn(*op, conv_port, fu_obj, 0, port_index, size_var, var_bitsize, true, rstate,
-                                           NULL_VERTEX);
-                  }
-                  else
-                  {
-                     auto prec = object_bitsize(TreeM, var_read[0]);
-                     HLS_manager::check_bitwidth(prec);
+                        auto prec = object_bitsize(TreeM, var_read[0]);
+                        HLS_manager::check_bitwidth(prec);
                         determine_connection(*op, var_read[0], fu_obj, 0, port_index, data, static_cast<unsigned>(prec),
                                              0, rstate, NULL_VERTEX, 0);
-                  }
-               }
-               else
-               {
-                  size_var = HLSMgr->get_produced_value(HLS->functionId, *op);
-                  tn = tree_helper::CGetType(TreeM->CGetTreeReindex(size_var));
-                  var_node = GET_NODE(gm->op1);
-                  var_node_idx = GET_INDEX_NODE(gm->op1);
-               }
-#ifndef NDEBUG
-               if(var_node->get_kind() == ssa_name_K)
-               {
-                  THROW_ASSERT(GET_CONST_NODE(tree_helper::CGetType(var_node))->get_kind() == complex_type_K,
-                               "only complex objects are considered");
-               }
-#endif
-               auto is_dual = HLS->allocation_information->is_dual_port_memory(fu);
-               auto port_offset = [&](unsigned pi) -> unsigned int {
-                  if(is_dual)
-                  {
-                     return (GET_TYPE(data, *op) & TYPE_LOAD) ? pi * 2 - 1 : pi * 2;
+                     }
                   }
                   else
                   {
-                     return pi;
+                     size_var = HLSMgr->get_produced_value(HLS->functionId, *op);
+                     tn = tree_helper::CGetType(TreeM->CGetTreeReindex(size_var));
+                     var_node = GET_NODE(gm->op1);
+                     var_node_idx = GET_INDEX_NODE(gm->op1);
                   }
-               };
+#ifndef NDEBUG
+                  if(var_node->get_kind() == ssa_name_K)
+                  {
+                     THROW_ASSERT(GET_CONST_NODE(tree_helper::CGetType(var_node))->get_kind() == complex_type_K,
+                                  "only complex objects are considered");
+                  }
+#endif
+                  auto is_dual = HLS->allocation_information->is_dual_port_memory(fu);
+                  auto port_offset = [&](unsigned pi) -> unsigned int {
+                     if(is_dual)
+                     {
+                        return (GET_TYPE(data, *op) & TYPE_LOAD) ? pi * 2 - 1 : pi * 2;
+                     }
+                     else
+                     {
+                        return pi;
+                     }
+                  };
 
-               THROW_ASSERT(!gm->predicate || tree_helper::Size(gm->predicate) == 1, gm->predicate->ToString());
-               auto var = gm->predicate ? HLS_manager::io_binding_type(gm->predicate->index, 0) :
-                                          HLS_manager::io_binding_type(0, 1);
-                  determine_connection(*op, var, fu_obj, port_offset(3), port_index, data, 1, 0, rstate, NULL_VERTEX, 0);
+                  THROW_ASSERT(!gm->predicate || tree_helper::Size(gm->predicate) == 1, gm->predicate->ToString());
+                  auto var = gm->predicate ? HLS_manager::io_binding_type(gm->predicate->index, 0) :
+                                             HLS_manager::io_binding_type(0, 1);
+                  determine_connection(*op, var, fu_obj, port_offset(3), port_index, data, 1, 0, rstate, NULL_VERTEX,
+                                       0);
 
                   THROW_ASSERT(var_node->get_kind() == mem_ref_K,
                                "MEMORY REFERENCE/LOAD-STORE type not supported: " + var_node->get_kind_text() + " " +
                                    std::to_string(node_id));
 
-                  determine_connection(*op, HLS_manager::io_binding_type(var_node_idx, 0), fu_obj, port_offset(1), port_index, data,
-                                       bus_addr_bitsize, alignment, rstate, NULL_VERTEX, 0);
-               if(Prec != algn && Prec % algn)
-               {
-                  HLS_manager::check_bitwidth(Prec);
-                  determine_connection(
-                      *op, HLS_manager::io_binding_type(0, Prec), fu_obj, port_offset(2), port_index, data,
+                  determine_connection(*op, HLS_manager::io_binding_type(var_node_idx, 0), fu_obj, port_offset(1),
+                                       port_index, data, bus_addr_bitsize, alignment, rstate, NULL_VERTEX, 0);
+                  if(Prec != algn && Prec % algn)
+                  {
+                     HLS_manager::check_bitwidth(Prec);
+                     determine_connection(
+                         *op, HLS_manager::io_binding_type(0, Prec), fu_obj, port_offset(2), port_index, data,
                          static_cast<unsigned>(object_bitsize(TreeM, HLS_manager::io_binding_type(0, Prec))), 0, rstate,
                          NULL_VERTEX, 0);
+                  }
+                  else
+                  {
+                     const auto IR_var_bitsize = Prec != 0 ? Prec : tree_helper::Size(tn);
+                     HLS_manager::check_bitwidth(IR_var_bitsize);
+                     unsigned int var_bitsize;
+                     var_bitsize = static_cast<unsigned int>(IR_var_bitsize);
+                     determine_connection(
+                         *op, HLS_manager::io_binding_type(0, var_bitsize), fu_obj, port_offset(2), port_index, data,
+                         static_cast<unsigned>(object_bitsize(TreeM, HLS_manager::io_binding_type(0, var_bitsize))), 0,
+                         rstate, NULL_VERTEX, 0);
+                  }
                }
                else
                {
-                  const auto IR_var_bitsize = Prec != 0 ? Prec : tree_helper::Size(tn);
-                  HLS_manager::check_bitwidth(IR_var_bitsize);
-                  unsigned int var_bitsize;
-                  var_bitsize = static_cast<unsigned int>(IR_var_bitsize);
-                  determine_connection(
-                      *op, HLS_manager::io_binding_type(0, var_bitsize), fu_obj, port_offset(2), port_index, data,
-                         static_cast<unsigned>(object_bitsize(TreeM, HLS_manager::io_binding_type(0, var_bitsize))), 0,
-                         rstate, NULL_VERTEX, 0);
+                  THROW_ERROR("Unit " + HLS->allocation_information->get_fu_name(fu).first + " not supported");
+               }
+            }
+            else if(data->CGetOpNodeInfo(*op)->GetOperation() == MULTI_READ_COND)
+            {
+               for(unsigned int num = 0; num < var_read.size(); num++)
+               {
+                  auto prec = object_bitsize(TreeM, var_read[num]);
+                  HLS_manager::check_bitwidth(prec);
+                  determine_connection(*op, var_read[num], fu_obj, 0, num, data, static_cast<unsigned>(prec), 0, rstate,
+                                       NULL_VERTEX, 0);
                }
             }
             else
             {
-               THROW_ERROR("Unit " + HLS->allocation_information->get_fu_name(fu).first + " not supported");
-            }
-         }
-         else if(data->CGetOpNodeInfo(*op)->GetOperation() == MULTI_READ_COND)
-         {
-            for(unsigned int num = 0; num < var_read.size(); num++)
-            {
-               auto prec = object_bitsize(TreeM, var_read[num]);
-               HLS_manager::check_bitwidth(prec);
-                  determine_connection(*op, var_read[num], fu_obj, 0, num, data, static_cast<unsigned>(prec), 0, rstate,
-                                       NULL_VERTEX, 0);
-            }
-         }
-         else
-         {
-            tree_nodeConstRef first_valid;
-            if(HLS->Rfu->get_ports_are_swapped(*op))
-            {
-               THROW_ASSERT(var_read.size() == 2, "unexpected condition");
-               std::swap(var_read[0], var_read[1]);
-            }
-            for(unsigned int port_num = 0; port_num < var_read.size(); port_num++)
-            {
-               const auto tree_var = std::get<0>(var_read[port_num]);
-               const auto tree_var_node = tree_var == 0 ? nullptr : TreeM->CGetTreeReindex(tree_var);
-               const auto& node = data->CGetOpNodeInfo(*op)->node;
-               const auto form_par_type = tree_helper::GetFormalIth(node, port_num);
-               auto size_form_par = form_par_type ? tree_helper::Size(form_par_type) : 0;
-               const auto OperationType = data->CGetOpNodeInfo(*op)->GetOperation();
-               if(tree_var && !first_valid)
+               tree_nodeConstRef first_valid;
+               if(HLS->Rfu->get_ports_are_swapped(*op))
                {
-                  first_valid = tree_var_node;
+                  THROW_ASSERT(var_read.size() == 2, "unexpected condition");
+                  std::swap(var_read[0], var_read[1]);
                }
-               if((OperationType == "cond_expr" || OperationType == "vec_cond_expr") && port_num != 0 && tree_var)
+               for(unsigned int port_num = 0; port_num < var_read.size(); port_num++)
                {
-                  first_valid = tree_var_node;
-               }
+                  const auto tree_var = std::get<0>(var_read[port_num]);
+                  const auto tree_var_node = tree_var == 0 ? nullptr : TreeM->CGetTreeReindex(tree_var);
+                  const auto& node = data->CGetOpNodeInfo(*op)->node;
+                  const auto form_par_type = tree_helper::GetFormalIth(node, port_num);
+                  auto size_form_par = form_par_type ? tree_helper::Size(form_par_type) : 0;
+                  const auto OperationType = data->CGetOpNodeInfo(*op)->GetOperation();
+                  if(tree_var && !first_valid)
+                  {
+                     first_valid = tree_var_node;
+                  }
+                  if((OperationType == "cond_expr" || OperationType == "vec_cond_expr") && port_num != 0 && tree_var)
+                  {
+                     first_valid = tree_var_node;
+                  }
 
-               if(tree_var == 0)
-               {
-                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                  if(tree_var == 0)
+                  {
+                     PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                    "     - " + std::to_string(port_num) +
                                        ". Read: " + std::to_string(std::get<1>(var_read[port_num])));
-               }
-               else
-               {
-                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                  }
+                  else
+                  {
+                     PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                    "     - " + std::to_string(port_num) + ". Read: " + BH->PrintVariable(tree_var));
-                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                "          * " + GET_CONST_NODE(tree_var_node)->get_kind_text());
-                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                     PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                   "          * " + GET_CONST_NODE(tree_var_node)->get_kind_text());
+                     PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                    "          * bitsize " + std::to_string(object_bitsize(TreeM, var_read[port_num])));
-               }
-               if(tree_var && HLSMgr->Rmem->is_actual_parm_loaded(tree_var))
-               {
-                  THROW_ERROR("LOADING of actual parameter not yet implemented");
-               }
-               else if(form_par_type && tree_var &&
-                       ((tree_helper::IsSignedIntegerType(tree_var_node) &&
-                         (tree_helper::IsUnsignedIntegerType(form_par_type) ||
-                          tree_helper::IsBooleanType(form_par_type))) ||
-                        ((tree_helper::IsUnsignedIntegerType(tree_var_node) ||
-                          (tree_helper::IsBooleanType(form_par_type))) &&
-                         tree_helper::IsSignedIntegerType(form_par_type)) ||
-                        (tree_helper::IsRealType(tree_var_node) && tree_helper::IsRealType(form_par_type))))
-               {
-                  add_conversion(port_num, *op, form_par_type->index, size_form_par, port_index, fu_obj, data, TreeM,
+                  }
+                  if(tree_var && HLSMgr->Rmem->is_actual_parm_loaded(tree_var))
+                  {
+                     THROW_ERROR("LOADING of actual parameter not yet implemented");
+                  }
+                  else if(form_par_type && tree_var &&
+                          ((tree_helper::IsSignedIntegerType(tree_var_node) &&
+                            (tree_helper::IsUnsignedIntegerType(form_par_type) ||
+                             tree_helper::IsBooleanType(form_par_type))) ||
+                           ((tree_helper::IsUnsignedIntegerType(tree_var_node) ||
+                             (tree_helper::IsBooleanType(form_par_type))) &&
+                            tree_helper::IsSignedIntegerType(form_par_type)) ||
+                           (tree_helper::IsRealType(tree_var_node) && tree_helper::IsRealType(form_par_type))))
+                  {
+                     add_conversion(port_num, *op, form_par_type->index, size_form_par, port_index, fu_obj, data, TreeM,
                                     tree_var, 0, rstate, NULL_VERTEX, 0);
-               }
-               else if(first_valid && tree_var && first_valid->index != tree_var_node->index && !form_par_type &&
-                       OperationType != "rshift_expr" && OperationType != "lshift_expr" &&
-                       OperationType != "extract_bit_expr" && OperationType != "rrotate_expr" &&
-                       OperationType != "lrotate_expr" &&
-                       ((tree_helper::IsSignedIntegerType(tree_var_node) &&
-                         tree_helper::IsUnsignedIntegerType(first_valid)) ||
-                        (tree_helper::IsUnsignedIntegerType(tree_var_node) &&
-                         tree_helper::IsSignedIntegerType(first_valid))))
-               {
-                  // we only need type conversion and not size conversion, so we pass the same size for both
-                  size_form_par = tree_helper::Size(tree_var_node);
-                  add_conversion(port_num, *op, first_valid->index, size_form_par, port_index, fu_obj, data, TreeM,
+                  }
+                  else if(first_valid && tree_var && first_valid->index != tree_var_node->index && !form_par_type &&
+                          OperationType != "rshift_expr" && OperationType != "lshift_expr" &&
+                          OperationType != "extract_bit_expr" && OperationType != "rrotate_expr" &&
+                          OperationType != "lrotate_expr" &&
+                          ((tree_helper::IsSignedIntegerType(tree_var_node) &&
+                            tree_helper::IsUnsignedIntegerType(first_valid)) ||
+                           (tree_helper::IsUnsignedIntegerType(tree_var_node) &&
+                            tree_helper::IsSignedIntegerType(first_valid))))
+                  {
+                     // we only need type conversion and not size conversion, so we pass the same size for both
+                     size_form_par = tree_helper::Size(tree_var_node);
+                     add_conversion(port_num, *op, first_valid->index, size_form_par, port_index, fu_obj, data, TreeM,
                                     tree_var, 0, rstate, NULL_VERTEX, 0);
-               }
-               else
-               {
-                  auto prec = object_bitsize(TreeM, var_read[port_num]);
-                  HLS_manager::check_bitwidth(prec);
-                  determine_connection(*op, var_read[port_num], fu_obj, port_num, port_index, data,
+                  }
+                  else
+                  {
+                     auto prec = object_bitsize(TreeM, var_read[port_num]);
+                     HLS_manager::check_bitwidth(prec);
+                     determine_connection(*op, var_read[port_num], fu_obj, port_num, port_index, data,
                                           static_cast<unsigned>(prec), 0, rstate, NULL_VERTEX, 0);
                   }
                }
@@ -1577,16 +1578,16 @@ void mux_connection_binding::create_connections()
       const CustomOrderedSet<vertex>& ending_states = HLS->Rliv->get_state_where_end(*op);
       for(const auto estate : ending_states)
       {
-      if(GET_TYPE(data, *op) & TYPE_PHI)
-      {
+         if(GET_TYPE(data, *op) & TYPE_PHI)
+         {
             THROW_ASSERT(ending_states.size() == 1 || is_PC ||
                              astg->CGetStateInfo(*ending_states.begin())->is_duplicated ||
                              astg->CGetStateInfo(*ending_states.begin())->is_pipelined_state,
                          "phis cannot run in more than one state");
             PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "    * Ending Operation: " + GET_NAME(data, *op));
-         /// phi must be differently managed
-         auto var_written = HLSMgr->get_produced_value(HLS->functionId, *op);
-         CustomOrderedSet<unsigned int> source_already_analyzed;
+            /// phi must be differently managed
+            auto var_written = HLSMgr->get_produced_value(HLS->functionId, *op);
+            CustomOrderedSet<unsigned int> source_already_analyzed;
             const StateInfoConstRef state_info = is_PC ? StateInfoConstRef() : astg->CGetStateInfo(estate);
             const auto gp =
                 GetPointer<const gimple_phi>(TreeM->get_tree_node_const(data->CGetOpNodeInfo(*op)->GetNodeId()));
@@ -1628,12 +1629,12 @@ void mux_connection_binding::create_connections()
                {
                   phi_pipelined_state = true;
                   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "      pipelined state");
-                  }
+               }
                if(phi_pipelined_state && !HLS->Rliv->has_state_in(estate, *op, tree_temp))
-                  {
+               {
                   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "      pipelined state: edge not active");
-                     continue;
-                  }
+                  continue;
+               }
 
                cur_phi_tree_var = tree_temp;
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -1728,7 +1729,7 @@ void mux_connection_binding::create_connections()
                                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                                "       - write enable for " + tgt_reg_obj->get_string() + " from " +
                                                    HLS->Rliv->get_name(estate) + " to state " +
-                                                          HLS->Rliv->get_name(state_out));
+                                                   HLS->Rliv->get_name(state_out));
                               }
                            }
                            else if(tree_helper::is_int(TreeM, var_written))
@@ -1783,7 +1784,7 @@ void mux_connection_binding::create_connections()
                                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                                "       - write enable for " + tgt_reg_obj->get_string() + " from " +
                                                    HLS->Rliv->get_name(estate) + " to state " +
-                                                          HLS->Rliv->get_name(*s_out_it));
+                                                   HLS->Rliv->get_name(*s_out_it));
                               }
                            }
                            else if(tree_helper::is_real(TreeM, var_written))
@@ -1838,7 +1839,7 @@ void mux_connection_binding::create_connections()
                                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                                "       - write enable for " + tgt_reg_obj->get_string() + " from " +
                                                    HLS->Rliv->get_name(estate) + " to state " +
-                                                          HLS->Rliv->get_name(*s_out_it));
+                                                   HLS->Rliv->get_name(*s_out_it));
                               }
                            }
                            else
@@ -1882,9 +1883,9 @@ void mux_connection_binding::create_connections()
                                   "       - add data transfer from " + fu_src_obj->get_string() + " to " +
                                       tgt_reg_obj->get_string() + " port 0:0 from state " +
                                       HLS->Rliv->get_name(estate) + " to state " + HLS->Rliv->get_name(*s_out_it) +
-                                             " for " +
-                                             HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
-                                                 cur_phi_tree_var));
+                                      " for " +
+                                      HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
+                                          cur_phi_tree_var));
                               generic_objRef enable_obj = GetPointer<register_obj>(tgt_reg_obj)->get_wr_enable();
                               GetPointer<commandport_obj>(enable_obj)
                                   ->add_activation(commandport_obj::transition(
@@ -1892,7 +1893,7 @@ void mux_connection_binding::create_connections()
                               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                             "       - write enable for " + tgt_reg_obj->get_string() + " from " +
                                                 HLS->Rliv->get_name(estate) + " to state " +
-                                                       HLS->Rliv->get_name(*s_out_it));
+                                                HLS->Rliv->get_name(*s_out_it));
                            }
                         }
                      }
@@ -1909,14 +1910,14 @@ void mux_connection_binding::create_connections()
                         {
                            continue;
                         }
-                     if(in_bitsize != out_bitsize)
-                     {
-                        add_conversion(0, *op, tree_helper::CGetType(TreeM->CGetTreeNode(var_written))->index,
+                        if(in_bitsize != out_bitsize)
+                        {
+                           add_conversion(0, *op, tree_helper::CGetType(TreeM->CGetTreeNode(var_written))->index,
                                           out_bitsize, 0, tgt_reg_obj, data, TreeM, tree_temp, 0, stateIn, estate,
                                           def_edge.second);
-                     }
-                     else
-                     {
+                        }
+                        else
+                        {
                            determine_connection(*op, HLS_manager::io_binding_type(tree_temp, 0), tgt_reg_obj, 0, 0,
                                                 data, static_cast<unsigned>(in_bitsize), 0, stateIn, estate,
                                                 def_edge.second);
@@ -1928,22 +1929,22 @@ void mux_connection_binding::create_connections()
                cur_phi_tree_var = 0;
             }
          }
-      else
-      {
-         PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  * Ending Operation: " + GET_NAME(data, *op));
-         HLS->Rconn->bind_command_port(*op, conn_binding::IN, commandport_obj::OPERATION, data);
-
-         PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                       "     - FU: " + HLS->allocation_information->get_fu_name(HLS->Rfu->get_assign(*op)).first);
-         const generic_objRef fu_obj = HLS->Rfu->get(*op);
-         const auto var_written = HLSMgr->get_produced_value(HLS->functionId, *op);
-         if((GET_TYPE(data, *op) & TYPE_MULTIIF) != 0)
+         else
          {
-            PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - Write: (multi-way if value)");
-            auto node_id = data->CGetOpNodeInfo(*op)->GetNodeId();
-            std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(HLS->functionId, *op);
-            generic_objRef TargetPort =
-                HLS->Rconn->bind_selector_port(conn_binding::OUT, commandport_obj::MULTIIF, *op, data);
+            PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  * Ending Operation: " + GET_NAME(data, *op));
+            HLS->Rconn->bind_command_port(*op, conn_binding::IN, commandport_obj::OPERATION, data);
+
+            PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                          "     - FU: " + HLS->allocation_information->get_fu_name(HLS->Rfu->get_assign(*op)).first);
+            const generic_objRef fu_obj = HLS->Rfu->get(*op);
+            const auto var_written = HLSMgr->get_produced_value(HLS->functionId, *op);
+            if((GET_TYPE(data, *op) & TYPE_MULTIIF) != 0)
+            {
+               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - Write: (multi-way if value)");
+               auto node_id = data->CGetOpNodeInfo(*op)->GetNodeId();
+               std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(HLS->functionId, *op);
+               generic_objRef TargetPort =
+                   HLS->Rconn->bind_selector_port(conn_binding::OUT, commandport_obj::MULTIIF, *op, data);
 
                HLS->Rconn->add_data_transfer(fu_obj, TargetPort, 0, 0,
                                              data_transfer(node_id, var_read.size(), estate, NULL_VERTEX, *op));
@@ -1957,16 +1958,16 @@ void mux_connection_binding::create_connections()
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                              "       - add activation for " + TargetPort->get_string() + " in state " +
                                  HLS->Rliv->get_name(estate));
-         }
-         else if(var_written == 0)
-         {
-            PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - Write: (no value produced)");
-         }
-         else if((GET_TYPE(data, *op) & TYPE_IF) != 0)
-         {
-            PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - Write: (boolean value)");
-            generic_objRef TargetPort =
-                HLS->Rconn->bind_selector_port(conn_binding::OUT, commandport_obj::CONDITION, *op, data);
+            }
+            else if(var_written == 0)
+            {
+               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - Write: (no value produced)");
+            }
+            else if((GET_TYPE(data, *op) & TYPE_IF) != 0)
+            {
+               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - Write: (boolean value)");
+               generic_objRef TargetPort =
+                   HLS->Rconn->bind_selector_port(conn_binding::OUT, commandport_obj::CONDITION, *op, data);
 
                HLS->Rconn->add_data_transfer(fu_obj, TargetPort, 0, 0,
                                              data_transfer(var_written,
@@ -1983,11 +1984,11 @@ void mux_connection_binding::create_connections()
                              "       - add activation for " + TargetPort->get_string() + " in state " +
                                  HLS->Rliv->get_name(estate));
             }
-         else if((GET_TYPE(data, *op) & TYPE_SWITCH) != 0)
-         {
-            PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - Write: (switch value)");
-            generic_objRef TargetPort =
-                HLS->Rconn->bind_selector_port(conn_binding::OUT, commandport_obj::SWITCH, *op, data);
+            else if((GET_TYPE(data, *op) & TYPE_SWITCH) != 0)
+            {
+               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - Write: (switch value)");
+               generic_objRef TargetPort =
+                   HLS->Rconn->bind_selector_port(conn_binding::OUT, commandport_obj::SWITCH, *op, data);
 
                HLS->Rconn->add_data_transfer(fu_obj, TargetPort, 0, 0,
                                              data_transfer(var_written,
@@ -1997,7 +1998,7 @@ void mux_connection_binding::create_connections()
                    DEBUG_LEVEL_PEDANTIC, debug_level,
                    "       - add data transfer from " + fu_obj->get_string() + " to " + TargetPort->get_string() +
                        " in state " + HLS->Rliv->get_name(estate) + " for " +
-                              HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(var_written));
+                       HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(var_written));
                GetPointer<commandport_obj>(TargetPort)
                    ->add_activation(commandport_obj::transition(
                        estate, NULL_VERTEX, commandport_obj::data_operation_pair(var_written, *op)));
@@ -2005,9 +2006,9 @@ void mux_connection_binding::create_connections()
                              "       - add activation for " + TargetPort->get_string() + " in state " +
                                  HLS->Rliv->get_name(estate));
             }
-         else
-         {
-            PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - Write: " + BH->PrintVariable(var_written));
+            else
+            {
+               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - Write: " + BH->PrintVariable(var_written));
                if(HLS->Rliv->has_state_out(estate, *op, var_written))
                {
                   const CustomOrderedSet<vertex>& states_out = HLS->Rliv->get_state_out(estate, *op, var_written);
@@ -2227,7 +2228,7 @@ unsigned int mux_connection_binding::input_logic(const conn_binding::ConnectionS
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                           "       - add mux activation for " + sel_port->get_string() + " from state " +
                               HLS->Rliv->get_name(std::get<2>(*v)) + " to state " +
-                                     HLS->Rliv->get_name(std::get<3>(*v)));
+                              HLS->Rliv->get_name(std::get<3>(*v)));
          }
          /// stuff for the second input
          for(v = obj2var[second].begin(); v != obj2var[second].end(); ++v)
@@ -2250,7 +2251,7 @@ unsigned int mux_connection_binding::input_logic(const conn_binding::ConnectionS
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                           "       - FALSE input for " + sel_port->get_string() + " from state " +
                               HLS->Rliv->get_name(std::get<2>(*v)) + " to state " +
-                                     HLS->Rliv->get_name(std::get<3>(*v)));
+                              HLS->Rliv->get_name(std::get<3>(*v)));
          }
       } while(to_allocate.size() > 1);
 
