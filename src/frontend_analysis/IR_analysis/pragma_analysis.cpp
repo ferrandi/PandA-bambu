@@ -564,7 +564,7 @@ DesignFlowStep_Status PragmaAnalysis::Exec()
                      tree_node_schema[TOK(TOK_SCPE)] = STR(function);
 
                      // unsigned int scope, directive;
-                     if(!boost::algorithm::starts_with(function_name, STR_CST_pragma_function_generic))
+                     if(!starts_with(function_name, STR_CST_pragma_function_generic))
                      {
                         std::string scope = get_call_parameter(GET_INDEX_NODE(*it2), 0);
                         if(scope == STR_CST_pragma_keyword_omp)

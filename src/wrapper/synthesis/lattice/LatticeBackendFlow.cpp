@@ -232,7 +232,7 @@ void LatticeBackendFlow::WriteFlowConfiguration(std::ostream& script)
    if(setupscr.size() && setupscr != "0")
    {
       script << "#configuration" << std::endl;
-      if(boost::algorithm::starts_with(setupscr, "export"))
+      if(starts_with(setupscr, "export"))
       {
          script << setupscr + " >& /dev/null; ";
       }
