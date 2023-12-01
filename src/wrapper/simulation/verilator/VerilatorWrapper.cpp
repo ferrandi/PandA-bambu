@@ -50,12 +50,9 @@
 #include "fileIO.hpp"
 #include "file_IO_constants.hpp"
 #include "utility.hpp"
-
-#include <boost/algorithm/string.hpp>
 #include <cerrno>
 #include <filesystem>
 #include <fstream>
-#include <thread>
 #include <unistd.h>
 #include <utility>
 
@@ -82,8 +79,8 @@ void VerilatorWrapper::CheckExecution()
 {
 }
 
-void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename,
-                                      const std::list<std::string>& file_list)
+std::string VerilatorWrapper::GenerateScript(std::ostream& script, const std::string& top_filename,
+                                             const std::list<std::string>& file_list)
 {
    for(const auto& file : file_list)
    {
@@ -102,7 +99,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
           << "BEH_CC=\"${CC}\"" << std::endl
           << "obj_dir=\"${BEH_DIR}/verilator_obj\"" << std::endl
           << std::endl;
-   std::string beh_cflags = "-DVERILATOR -I$(dirname $(which verilator))/../share/verilator/include/vltstd";
+   std::string beh_cflags = "-DVERILATOR -isystem $(dirname $(which verilator))/../share/verilator/include/vltstd";
    const auto cflags = GenerateLibraryBuildScript(script, "${BEH_DIR}", beh_cflags);
    const auto vflags = [&]() {
       std::string flags;
@@ -134,15 +131,30 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
       script << " --x-assign fast --x-initial fast --noassert";
    }
 
-   const auto nThreads = Param->getOption<bool>(OPT_verilator_parallel) ? std::thread::hardware_concurrency() : 1;
-   if(nThreads > 1)
+   auto nThreadsVerilator = 1;
+   if(Param->isOption(OPT_verilator_parallel) && Param->getOption<int>(OPT_verilator_parallel) > 1)
    {
-      script << " --threads " << nThreads;
+      const auto thread_support =
+          system("bash -c \"if [ $(verilator --version | grep Verilator | sed -E 's/Verilator ([0-9]+).*/\1/') -ge 4 "
+                 "]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
+      THROW_WARNING("Installed version of Verilator does not support multi-threading.");
+      if(thread_support)
+      {
+         nThreadsVerilator = Param->getOption<int>(OPT_verilator_parallel);
+      }
+   }
+
+   if(nThreadsVerilator > 1)
+   {
+      script << " --threads " << nThreadsVerilator;
    }
    if(generate_vcd_output)
    {
       script << " --trace --trace-underscore"; // --trace-params
-      if(Param->getOption<bool>(OPT_verilator_l2_name))
+      auto is_verilator_l2_name =
+          system("bash -c \"if [[ \\\"x$(verilator --l2-name v 2>&1 | head -n1 | grep -i 'Invalid Option')\\\" = "
+                 "\\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
+      if(is_verilator_l2_name)
       {
          script << " --l2-name bambu_testbench";
       }
@@ -164,8 +176,10 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
           << std::endl
           << "ln -sf " + output_directory + " ${obj_dir}\n";
 
+   const auto nThreadsMake =
+       Param->isOption(OPT_verilator_parallel) ? Param->getOption<int>(OPT_verilator_parallel) : 1;
    script << "make -C ${obj_dir}"
-          << " -j " << std::thread::hardware_concurrency() << " OPT=\"-fstrict-aliasing\""
+          << " -j " << nThreadsMake << " OPT=\"-fstrict-aliasing\""
           << " -f Vbambu_testbench.mk Vbambu_testbench";
 #ifdef _WIN32
    /// VM_PARALLEL_BUILDS=1 removes the dependency from perl
@@ -173,7 +187,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
 #endif
    script << std::endl << std::endl;
 
-   script << "${obj_dir}/Vbambu_testbench 2>&1 | tee " << log_file << std::endl << std::endl;
+   return "${obj_dir}/Vbambu_testbench 2>&1 | tee " + log_file;
 }
 
 void VerilatorWrapper::Clean() const

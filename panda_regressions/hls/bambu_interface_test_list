@@ -58,6 +58,7 @@ bambu_interface_test/hls_stream.cpp --top-fname=sum3numbers --generate-tb=a="{1,
 bambu_interface_test/hls_stream_axis.cpp --top-fname=sum3numbers --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{0,0,0,0,0,0,0,0}"
 bambu_interface_test/ac_range.cpp --top-fname=check_range --generate-tb=a=-1,b=2,c=0
 bambu_interface_test/axi_small_write.c --top-fname=vector_copy_plus --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/axi_small_write.c --benchmark-name=axi_small_write
+bambu_interface_test/axi_small_write.c --top-fname=vector_copy_plus --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/axi_small_write.c --benchmark-name=axi_small_write_hr --reset-level=high
 bambu_interface_test/axi_small_write.c --top-fname=vector_copy_plus --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/axi_small_write.c -DBIG_BUS --benchmark-name=axi_small_write_64 -m64
 bambu_interface_test/axi_small_write.c --top-fname=vector_copy_plus --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/axi_small_write.c --benchmark-name=axi_small_write_delayed --mem-delay-read=20 --mem-delay-write=20
 bambu_interface_test/axi_different_write.c --top-fname=vector_copy_plus --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/axi_different_write.c --benchmark-name=axi_different_write
@@ -89,3 +90,4 @@ bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu
 bambu_interface_test/2mm.c --top-fname=mmult_tile --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DTILED --benchmark-name=2mm_tiled_cache_delayed --mem-delay-read=20 --mem-delay-write=20
 bambu_interface_test/test_open.c --benchmark-name=open  --top-fname=main --expose-globals --generate-interface=MINIMAL --file-input-data=BENCHMARKS_ROOT/bambu_interface_test/bin_test.dat --channels-type=MEM_ACC_11
 bambu_interface_test/test_open.c --benchmark-name=openn --top-fname=main --expose-globals --generate-interface=MINIMAL --file-input-data=BENCHMARKS_ROOT/bambu_interface_test/bin_test.dat --channels-type=MEM_ACC_NN
+bambu_interface_test/simple_c4_vector_8bits.cpp --top-fname=sum3numbers --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/simple_c4_vector_8bits.cpp -DCUSTOM_VERIFICATION --tb-memory-mapping=SHARED

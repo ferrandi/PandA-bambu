@@ -3,7 +3,10 @@
 EXTRA_DIST = \
    include/mdpi/mdpi_debug.h \
    include/mdpi/mdpi_driver.h \
+   include/mdpi/mdpi_ipc_atomic.h \
+   include/mdpi/mdpi_ipc_sig.h \
    include/mdpi/mdpi_ipc.h \
+   include/mdpi/mdpi_memmap.h \
    include/mdpi/mdpi_types.h \
    include/mdpi/mdpi_user.h \
    include/mdpi/mdpi.h \
@@ -22,7 +25,10 @@ mdpi__DATA = \
 mdpi_include_mdpi__DATA = \
    include/mdpi/mdpi_debug.h \
    include/mdpi/mdpi_driver.h \
+   include/mdpi/mdpi_ipc_atomic.h \
+   include/mdpi/mdpi_ipc_sig.h \
    include/mdpi/mdpi_ipc.h \
+   include/mdpi/mdpi_memmap.h \
    include/mdpi/mdpi_types.h \
    include/mdpi/mdpi_user.h \
    include/mdpi/mdpi.h

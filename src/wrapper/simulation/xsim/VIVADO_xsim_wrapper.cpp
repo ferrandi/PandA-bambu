@@ -115,8 +115,8 @@ static const std::string& create_project_file(const std::string& project_filenam
    return project_filename;
 }
 
-void VIVADO_xsim_wrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename,
-                                         const std::list<std::string>& file_list)
+std::string VIVADO_xsim_wrapper::GenerateScript(std::ostream& script, const std::string& top_filename,
+                                                const std::list<std::string>& file_list)
 {
    script << "#configuration" << std::endl;
    const auto setupscr =
@@ -129,7 +129,7 @@ void VIVADO_xsim_wrapper::GenerateScript(std::ostringstream& script, const std::
    log_file = "${BEH_DIR}/" + top_filename + "_xsim.log";
    const auto xilinx_root = Param->isOption(OPT_xilinx_root) ? Param->getOption<std::string>(OPT_xilinx_root) : "";
    std::string beh_cflags =
-       "-DXILINX_SIMULATOR " + (xilinx_root.size() ? ("-I" + xilinx_root + "/data/xsim/include") : "");
+       "-DXILINX_SIMULATOR " + (xilinx_root.size() ? ("-isystem " + xilinx_root + "/data/xsim/include") : "");
    const auto cflags = GenerateLibraryBuildScript(script, "${BEH_DIR}", beh_cflags);
    const auto vflags = [&]() {
       std::string flags;
@@ -157,18 +157,20 @@ void VIVADO_xsim_wrapper::GenerateScript(std::ostringstream& script, const std::
    }();
    const auto prj_file = create_project_file(XSIM_SUBDIR + suffix + "/" + top_filename + ".prj", file_list);
 
-   script << XSIM_XELAB " -sv_root ${BEH_DIR} -sv_lib libmdpi " << vflags << " -prj " << prj_file;
+   std::string sim_cmd =
+       "rm -rf xsim.* xelab.*; " XSIM_XELAB " -sv_root ${BEH_DIR} -sv_lib libmdpi " + vflags + " -prj " + prj_file;
    if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
    {
-      script << " --debug all --rangecheck -O2";
+      sim_cmd += " --debug all --rangecheck -O2";
    }
    else
    {
-      script << " --debug off -O3";
+      sim_cmd += " --debug off -O3";
    }
-   script << " -L work -L unifast_ver -L unisims_ver -L unimacro_ver -L secureip --snapshot " + top_filename +
-                 "tb_behav work.clocked_bambu_testbench -nolog -stat -R";
-   script << " 2>&1 | tee " << log_file << std::endl << std::endl;
+   sim_cmd += " -L work -L unifast_ver -L unisims_ver -L unimacro_ver -L secureip --snapshot " + top_filename +
+              "tb_behav work.clocked_bambu_testbench -nolog -stat -R";
+   sim_cmd += " 2>&1 | tee " + log_file;
+   return sim_cmd;
 }
 
 void VIVADO_xsim_wrapper::Clean() const

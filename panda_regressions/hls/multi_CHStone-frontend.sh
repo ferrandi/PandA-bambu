@@ -2,7 +2,7 @@
 
 script_dir="$(dirname $(readlink -e $0))"
 
-BATCH_ARGS=("--simulate" "-O0" "-fwhole-program" "--clock-period=15" "-D'printf(fmt, ...)='" "--channels-type=MEM_ACC_NN" "--experimental-setup=BAMBU")
+BATCH_ARGS=("--simulate" "-O0" "-fwhole-program" "--clock-period=15" "-D'printf(fmt, ...)='" "--channels-type=MEM_ACC_NN" "--experimental-setup=BAMBU --speculative-sdc-scheduling")
 OUT_SUFFIX="multi_CHStone-frontend"
 BENCHMARKS_ROOT="${script_dir}/../../examples/CHStone/CHStone"
 

@@ -1,9 +1,0 @@
-function_pointers/common/less.c function_pointers/common/bstest.c function_pointers/bsearch_glibc/bsearch.c --generate-tb=BENCHMARKS_ROOT/function_pointers/common/bstest.xml --benchmark-name=bsearch-glibc 
-function_pointers/common/less.c function_pointers/common/bstest.c function_pointers/bsearch_musl/bsearch.c --generate-tb=BENCHMARKS_ROOT/function_pointers/common/bstest.xml --benchmark-name=bsearch-musl 
-function_pointers/common/less.c function_pointers/common/bstest.c function_pointers/bsearch_newlib/bsearch.c --generate-tb=BENCHMARKS_ROOT/function_pointers/common/bstest.xml --benchmark-name=bsearch-newlib 
-function_pointers/common/less.c function_pointers/common/bstest.c function_pointers/bsearch_uclibc/bsearch.c --generate-tb=BENCHMARKS_ROOT/function_pointers/common/bstest.xml --benchmark-name=bsearch-uclibc 
-function_pointers/common/less.c function_pointers/common/bstest-specialized.c function_pointers/bsearch_glibc/bsearch-specialized.c --generate-tb=BENCHMARKS_ROOT/function_pointers/common/bstest.xml --benchmark-name=bsearch-glibc-spec
-function_pointers/common/less.c function_pointers/common/bstest-specialized.c function_pointers/bsearch_musl/bsearch-specialized.c --generate-tb=BENCHMARKS_ROOT/function_pointers/common/bstest.xml --benchmark-name=bsearch-musl-spec 
-function_pointers/common/less.c function_pointers/common/bstest-specialized.c function_pointers/bsearch_newlib/bsearch-specialized.c --generate-tb=BENCHMARKS_ROOT/function_pointers/common/bstest.xml --benchmark-name=bsearch-newlib-spec
-function_pointers/common/less.c function_pointers/common/bstest-specialized.c function_pointers/bsearch_uclibc/bsearch-specialized.c --generate-tb=BENCHMARKS_ROOT/function_pointers/common/bstest.xml --benchmark-name=bsearch-uclibc-spec
-

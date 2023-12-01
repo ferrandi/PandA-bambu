@@ -215,8 +215,6 @@ reg axi_arvalid, next_axi_arvalid;
 reg axi_rready, next_axi_rready;
 
 reg first_read, next_first_read;
-
-reg acc_done, next_acc_done;
 )";
       out << "reg [" + data_bitsize + "-1:0] acc_rdata, next_acc_rdata;\n"
           << "assign " << _ports_out[o_awlen].name << " = awlen;\n"
@@ -237,10 +235,10 @@ reg acc_done, next_acc_done;
           << "assign " << _ports_out[o_araddr].name << " = axi_araddr;\n"
           << "assign " << _ports_out[o_arvalid].name << " = axi_arvalid;\n"
           << "assign " << _ports_out[o_rready].name << " = axi_rready;\n"
+          << "assign done_port = (" << _ports_in[i_bvalid].name << " && axi_bready) || (" << _ports_in[i_rvalid].name
+          << " && " << _ports_in[i_rlast].name << " && axi_rready);\n"
+          << "assign out1 = done_port ? next_acc_rdata : 0;\n"
           << R"(
-assign done_port = acc_done;
-assign out1 = acc_done ? acc_rdata : 0;
-
 initial begin
   _present_state = S_IDLE;
   axi_awaddr = 0;
@@ -252,7 +250,6 @@ initial begin
   axi_araddr = 0;
   axi_arvalid = 0;
   axi_rready = 0;
-  acc_done = 0;
   acc_rdata = 0;
   awlen = 0;
   awburst = 0;
@@ -271,7 +268,6 @@ always @(*) begin
   next_axi_araddr = axi_araddr;
   next_axi_arvalid = 0;
   next_axi_rready = 0;
-  next_acc_done = acc_done;
   next_acc_rdata = acc_rdata;
   next_awsize = awsize;
   next_awburst = awburst;
@@ -296,7 +292,6 @@ always @(*) begin
       next_axi_araddr = 0;
       next_axi_arvalid = 0;
       next_axi_rready = 1;
-      next_acc_done = 0;
       next_acc_rdata = 0;
       next_awsize = 0;
       next_awburst = 0;
@@ -338,9 +333,6 @@ always @(*) begin
       out << "          next_axi_arvalid = 1;\n";
       out << "          _next_state = S_RD_BURST;\n";
       out << "      end else if (" << _ports_in[i_start].name << " && " << _ports_in[i_in1].name << ") begin\n";
-      out << "        if(" << _ports_in[i_in2].name << " == 0) begin\n";
-      out << "          next_acc_done = 1;\n";
-      out << "        end else begin\n";
       out << "          next_axi_awaddr = " << _ports_in[i_in4].name << ";\n";
       out << "          next_axi_awvalid = 1;\n";
       out << "          `ifdef _SIM_HAVE_CLOG2\n";
@@ -368,7 +360,6 @@ always @(*) begin
           next_axi_rready = 0;
 )";
       out << R"(               _next_state = S_WR_BURST;
-        end
       end else begin
         _next_state = S_IDLE;
       end
@@ -404,7 +395,6 @@ always @(*) begin
 
       out << "             end else begin\n";
       out << "               _next_state = S_IDLE;\n";
-      out << "               next_acc_done = 1;\n";
       out << "             end\n";
       out << R"(           end else if()" + _ports_in[i_rlast].name +
                  R"() begin
@@ -412,13 +402,11 @@ always @(*) begin
                  _ports_in[i_rdata].name + R"( & read_mask;
 )";
       out << "            next_axi_rready = 0;\n";
-      out << "            next_acc_done = 1;\n";
       out << "            _next_state = S_IDLE;\n";
       out << "          end else if (first_read) begin\n";
       out << "            next_acc_rdata = " << _ports_in[i_rdata].name << " & read_mask;\n";
       out << "               _next_state = S_RD_BURST;\n";
       out << R"(
-            next_acc_done = 0;
             next_first_read = 0;
           end
       end else begin
@@ -473,8 +461,7 @@ always @(*) begin
       IDLE */
 )";
       out << "      if (" << _ports_in[i_bvalid].name << ") begin\n";
-      out << R"(        next_acc_done = 1;
-        next_axi_wvalid = 0;
+      out << R"(        next_axi_wvalid = 0;
         next_axi_wdata = 0;
         next_wstrb = 0;
         next_axi_wlast = 0;
@@ -497,7 +484,6 @@ always @(posedge clock) begin
   axi_araddr <= next_axi_araddr;
   axi_arvalid <= next_axi_arvalid;
   axi_rready <= next_axi_rready;
-  acc_done <= next_acc_done;
   acc_rdata <= next_acc_rdata;
   awsize <= next_awsize;
   awburst <= next_awburst;
@@ -710,8 +696,8 @@ end)";
       out << "          .m_axi_arqos(" << _ports_out[o_arqos].name << "),\n";
       out << "          .m_axi_arvalid(" << _ports_out[o_arvalid].name << "),\n";
       out << "          .m_axi_rready(" << _ports_out[o_rready].name << "),\n";
-      out << "          .clk(clock),\n";
-      out << "          .reset(!reset) /* IOB reset is active high */\n";
+      out << "          .clock(clock),\n";
+      out << "          .reset(reset)\n";
       out << "       );\n";
       out << "`undef _CACHE_CNT\n";
    }

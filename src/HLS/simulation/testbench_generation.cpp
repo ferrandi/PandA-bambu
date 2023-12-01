@@ -260,6 +260,18 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
    {
       tb_mem =
           tb_top->add_module_from_technology_library("SystemMEM", "TestbenchMEMMinimal", LIBRARY_STD, tb_cir, TechM);
+      tb_mem->SetParameter("QUEUE_SIZE", STR(HLSMgr->get_parameter()->getOption<unsigned int>(OPT_tb_queue_size)));
+      const auto bp_port = dut->find_member(MOUT_BACK_PRESSURE_PORT_NAME, port_o_K, dut);
+      if(bp_port ==
+         nullptr) // if the the internal memory_ctrl does not use bp I have to set the correct size of the bp signal
+      {
+         const auto bp_port_tb = tb_mem->find_member(MOUT_BACK_PRESSURE_PORT_NAME, port_o_K, tb_mem);
+         const auto oe_port = dut->find_member(MOUT_OE_PORT_NAME, port_o_K, dut);
+         if(oe_port)
+         {
+            bp_port_tb->type_resize(STD_GET_SIZE(oe_port->get_typeRef()));
+         }
+      }
       if(interface_type == HLSFlowStep_Type::INTERFACE_CS_GENERATION)
       {
          tb_mem->SetParameter("PIPELINED", "0");
@@ -647,10 +659,10 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       }
 
       bambu_tb_dpi << R"(
-`ifdef __M32
-typedef int unsigned ptr_t;
-`else
+`ifdef __M64
 typedef longint unsigned ptr_t;
+`else
+typedef int unsigned ptr_t;
 `endif
 
 )";

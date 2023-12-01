@@ -457,10 +457,6 @@ void EucalyptusParameter::CheckParameters()
       {
          setOption(OPT_mentor_modelsim_bin, dir + "/bin");
       }
-      if(std::filesystem::exists(dir + "/bin/visualizer"))
-      {
-         setOption(OPT_mentor_visualizer, dir + "/bin/visualizer");
-      }
    };
    for(const auto& mentor_dir : mentor_dirs)
    {
@@ -475,10 +471,6 @@ void EucalyptusParameter::CheckParameters()
          }
          search_mentor(mentor_dir);
       }
-   }
-   if(isOption(OPT_visualizer) && getOption<bool>(OPT_visualizer) && !isOption(OPT_mentor_visualizer))
-   {
-      THROW_ERROR("Mentor Visualizer was not detected by Bambu. Please check --mentor-root option is correct.");
    }
 
    /// Search for NanoXPlore tools
@@ -588,20 +580,6 @@ void EucalyptusParameter::CheckParameters()
 
    /// Search for verilator
    setOption(OPT_verilator, system("which verilator > /dev/null 2>&1") == 0);
-   if(getOption<bool>(OPT_verilator))
-   {
-      setOption(OPT_verilator_l2_name,
-                system("bash -c \"if [[ \\\"x$(verilator --l2-name v 2>&1 | head -n1 | grep -i 'Invalid Option')\\\" = "
-                       "\\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0);
-      const auto thread_support =
-          system("bash -c \"if [ $(verilator --version | grep Verilator | sed -E 's/Verilator ([0-9]+).*/\1/') -ge 4 "
-                 "]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
-      if(getOption<bool>(OPT_verilator_parallel) && !thread_support)
-      {
-         THROW_WARNING("Installed version of Verilator does not support multi-threading.");
-         setOption(OPT_verilator_parallel, false);
-      }
-   }
 
    // /// Search for icarus
    // setOption(OPT_icarus, system("which iverilog > /dev/null 2>&1") == 0);
@@ -656,6 +634,7 @@ void EucalyptusParameter::CheckParameters()
       //    setOption(OPT_simulator, "ICARUS");
       // }
    }
+
    if(not isOption(OPT_device_string))
    {
       std::string device_string = getOption<std::string>("device_name") + getOption<std::string>("device_speed") +
@@ -680,7 +659,6 @@ void EucalyptusParameter::SetDefaults()
    setOption(OPT_mentor_root, "/opt/mentor");
    setOption(OPT_mentor_optimizer, true);
    setOption(OPT_nanoxplore_root, "/opt/NanoXplore");
-   setOption(OPT_verilator_parallel, false);
    setOption(OPT_xilinx_root, "/opt/Xilinx");
 
    /// target device

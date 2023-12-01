@@ -207,7 +207,7 @@ CWriterRef CWriter::CreateCWriter(const CBackendInformationConstRef c_backend_in
 void CWriter::declare_cast_types(unsigned int funId, CustomSet<std::string>& locally_declared_types)
 {
    const auto function_behavior = HLSMgr->CGetFunctionBehavior(funId);
-   const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
+   const auto BH = function_behavior->CGetBehavioralHelper();
    const auto inGraph = function_behavior->CGetOpGraph(FunctionBehavior::DFG);
    // I simply have to go over all the vertices and look for types used for type casting;
    VertexIterator v, vEnd;
@@ -217,10 +217,10 @@ void CWriter::declare_cast_types(unsigned int funId, CustomSet<std::string>& loc
       if(node)
       {
          TreeNodeConstSet types;
-         behavioral_helper->GetTypecast(node, types);
+         BH->GetTypecast(node, types);
          for(const auto& t : types)
          {
-            DeclareType(t, behavioral_helper, locally_declared_types);
+            DeclareType(t, BH, locally_declared_types);
          }
       }
    }
@@ -245,14 +245,14 @@ void CWriter::WriteFunctionBody(unsigned int function_id)
 {
    const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(function_id);
    const OpGraphConstRef op_graph = function_behavior->CGetOpGraph(FunctionBehavior::CFG);
-   const BehavioralHelperConstRef behavioral_helper = function_behavior->CGetBehavioralHelper();
-   var_pp_functorRef variableFunctor(new std_var_pp_functor(behavioral_helper));
+   const BehavioralHelperConstRef BH = function_behavior->CGetBehavioralHelper();
+   var_pp_functorRef variableFunctor(new std_var_pp_functor(BH));
    OpVertexSet vertices(op_graph);
    VertexIterator statement, statement_end;
    boost::tie(statement, statement_end);
    boost::tie(statement, statement_end) = boost::vertices(*op_graph);
    vertices.insert(statement, statement_end);
-   THROW_ASSERT(vertices.size() > 0, "Graph for function " + behavioral_helper->get_function_name() + " is empty");
+   THROW_ASSERT(vertices.size() > 0, "Graph for function " + BH->get_function_name() + " is empty");
    writeRoutineInstructions(function_id, vertices, variableFunctor);
 }
 
@@ -314,14 +314,14 @@ void CWriter::WriteGlobalDeclarations()
    CustomOrderedSet<unsigned int> functions = HLSMgr->get_functions_with_body();
    THROW_ASSERT(functions.size() > 0, "at least one function is expected");
    unsigned int first_fun = *functions.begin();
-   const auto behavioral_helper = HLSMgr->CGetFunctionBehavior(first_fun)->CGetBehavioralHelper();
+   const auto BH = HLSMgr->CGetFunctionBehavior(first_fun)->CGetBehavioralHelper();
 
    const auto& gblVariables = HLSMgr->GetGlobalVariables();
    // Write the declarations for the global variables
-   var_pp_functorRef variableFunctor(new std_var_pp_functor(behavioral_helper));
+   var_pp_functorRef variableFunctor(new std_var_pp_functor(BH));
    for(const auto& glbVar : gblVariables)
    {
-      DeclareVariable(glbVar, globallyDeclVars, globally_declared_types, behavioral_helper, variableFunctor);
+      DeclareVariable(glbVar, globallyDeclVars, globally_declared_types, BH, variableFunctor);
    }
    indented_output_stream->Append("\n");
    if(HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction())
@@ -334,26 +334,24 @@ void CWriter::WriteGlobalDeclarations()
 void CWriter::DeclareFunctionTypes(const tree_nodeConstRef& tn)
 {
    const auto FB = HLSMgr->CGetFunctionBehavior(tn->index);
-   const auto behavioral_helper = FB->CGetBehavioralHelper();
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Declaring function types for " + behavioral_helper->get_function_name());
+   const auto BH = FB->CGetBehavioralHelper();
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Declaring function types for " + BH->get_function_name());
 
    // In case the function parameters are of a non built_in type I have
    // to declare their type
 
-   for(const auto& parameter_type : behavioral_helper->GetParameterTypes())
+   for(const auto& parameter_type : BH->GetParameterTypes())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Parameter type " + STR(parameter_type));
-      DeclareType(parameter_type, behavioral_helper, globally_declared_types);
+      DeclareType(parameter_type, BH, globally_declared_types);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Parameter type " + STR(parameter_type));
    }
    const auto return_type = tree_helper::GetFunctionReturnType(tn);
    if(return_type)
    {
-      DeclareType(return_type, behavioral_helper, globally_declared_types);
+      DeclareType(return_type, BH, globally_declared_types);
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "<--Declared function types for " + behavioral_helper->get_function_name());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Declared function types for " + BH->get_function_name());
 }
 
 const CustomSet<unsigned int> CWriter::GetLocalVariables(const unsigned int function_id) const
@@ -375,8 +373,8 @@ const CustomSet<unsigned int> CWriter::GetLocalVariables(const unsigned int func
 void CWriter::WriteFunctionDeclaration(const unsigned int funId)
 {
    const auto FB = HLSMgr->CGetFunctionBehavior(funId);
-   const auto behavioral_helper = FB->CGetBehavioralHelper();
-   const auto funName = behavioral_helper->get_function_name();
+   const auto BH = FB->CGetBehavioralHelper();
+   const auto funName = BH->get_function_name();
    if(funName != "main")
    {
       instrWriter->declareFunction(funId);
@@ -389,10 +387,10 @@ void CWriter::StartFunctionBody(const unsigned int function_id)
    instrWriter->declareFunction(function_id);
    indented_output_stream->Append("\n{\n");
 
-   const auto behavioral_helper = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
+   const auto BH = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
    auto vars = GetLocalVariables(function_id);
 
-   for(const auto& funParam : behavioral_helper->GetParameters())
+   for(const auto& funParam : BH->GetParameters())
    {
       vars.erase(funParam->index);
    }
@@ -402,11 +400,11 @@ void CWriter::StartFunctionBody(const unsigned int function_id)
       vars.erase(gblVariable->index);
    }
 
-   var_pp_functorRef variableFunctor(new std_var_pp_functor(behavioral_helper));
+   var_pp_functorRef variableFunctor(new std_var_pp_functor(BH));
    CustomSet<unsigned int> already_declared_variables;
    CustomSet<std::string> locally_declared_types;
    declare_cast_types(function_id, locally_declared_types);
-   DeclareLocalVariables(vars, already_declared_variables, locally_declared_types, behavioral_helper, variableFunctor);
+   DeclareLocalVariables(vars, already_declared_variables, locally_declared_types, BH, variableFunctor);
 }
 
 void CWriter::EndFunctionBody(unsigned int funId)
@@ -1156,7 +1154,7 @@ void CWriter::writeRoutineInstructions(const unsigned int function_index, const 
 {
    bb_label_counter++;
    const auto function_behavior = HLSMgr->CGetFunctionBehavior(function_index);
-   const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
+   const auto BH = function_behavior->CGetBehavioralHelper();
    const auto cfgGraph = function_behavior->CGetOpGraph(FunctionBehavior::FCFG);
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->CWriter::writeRoutineInstructions - Start");
    if(instructions.empty())
@@ -1211,9 +1209,9 @@ void CWriter::writeRoutineInstructions(const unsigned int function_index, const 
          continue;
       }
       const auto bb_node_info = bb_fcfgGraph->CGetBBNodeInfo(*vi);
-      const unsigned int le = behavioral_helper->start_with_a_label(bb_node_info->block);
+      const unsigned int le = BH->start_with_a_label(bb_node_info->block);
       basic_blocks_labels[bb_node_info->block->number] =
-          (le ? behavioral_helper->get_label_name(le) :
+          (le ? BH->get_label_name(le) :
                 ("BB_LABEL_" + STR(bb_node_info->block->number)) +
                     (bb_label_counter == 1 ? "" : "_" + STR(bb_label_counter)));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -1278,11 +1276,11 @@ void CWriter::writeRoutineInstructions(const unsigned int function_index, const 
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--CWriter::writeRoutineInstructions - End");
 }
 
-void CWriter::DeclareType(const tree_nodeConstRef& varType, const BehavioralHelperConstRef& behavioral_helper,
+void CWriter::DeclareType(const tree_nodeConstRef& varType, const BehavioralHelperConstRef& BH,
                           CustomSet<std::string>& locally_declared_types)
 {
 #ifndef NDEBUG
-   const auto routine_name = behavioral_helper->get_function_name();
+   const auto routine_name = BH->get_function_name();
 #endif
 
    const auto without_transformation = Param->getOption<bool>(OPT_without_transformation);
@@ -1310,7 +1308,7 @@ void CWriter::DeclareType(const tree_nodeConstRef& varType, const BehavioralHelp
           tree_helper::GetTypesToBeDeclaredBefore(real_var_type, without_transformation);
       for(const auto& type_to_be_declared : types_to_be_declared_before)
       {
-         DeclareType(type_to_be_declared, behavioral_helper, locally_declared_types);
+         DeclareType(type_to_be_declared, BH, locally_declared_types);
       }
       if(tree_helper::HasToBeDeclared(TM, real_var_type))
       {
@@ -1318,21 +1316,21 @@ void CWriter::DeclareType(const tree_nodeConstRef& varType, const BehavioralHelp
          {
             indented_output_stream->Append("//declaration of type " + STR(varType) + "(" + STR(real_var_type) + ")\n");
          }
-         indented_output_stream->Append(behavioral_helper->print_type_declaration(real_var_type->index) + ";\n");
+         indented_output_stream->Append(BH->print_type_declaration(real_var_type->index) + ";\n");
       }
       const auto types_to_be_declared_after =
           tree_helper::GetTypesToBeDeclaredAfter(real_var_type, without_transformation);
       for(const auto& type_to_be_declared : types_to_be_declared_after)
       {
-         DeclareType(type_to_be_declared, behavioral_helper, locally_declared_types);
+         DeclareType(type_to_be_declared, BH, locally_declared_types);
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Declared type " + GET_CONST_NODE(varType)->ToString());
 }
 
 void CWriter::DeclareVariable(const tree_nodeConstRef& curVar, CustomSet<unsigned int>& already_declared_variables,
-                              CustomSet<std::string>& locally_declared_types,
-                              const BehavioralHelperConstRef& behavioral_helper, const var_pp_functorConstRef& varFunc)
+                              CustomSet<std::string>& locally_declared_types, const BehavioralHelperConstRef& BH,
+                              const var_pp_functorConstRef& varFunc)
 {
    if(already_declared_variables.count(curVar->index))
    {
@@ -1342,7 +1340,7 @@ void CWriter::DeclareVariable(const tree_nodeConstRef& curVar, CustomSet<unsigne
    already_declared_variables.insert(curVar->index);
 
    CustomUnorderedSet<unsigned int> initVars;
-   if(behavioral_helper->GetInit(curVar->index, initVars))
+   if(BH->GetInit(curVar->index, initVars))
    {
       for(const auto initVar : initVars)
       {
@@ -1350,14 +1348,14 @@ void CWriter::DeclareVariable(const tree_nodeConstRef& curVar, CustomSet<unsigne
                         "For variable " + STR(curVar) + " recursing on " + STR(initVar));
          if(!already_declared_variables.count(initVar) && !globallyDeclVars.count(initVar))
          {
-            DeclareVariable(TM->CGetTreeReindex(initVar), already_declared_variables, locally_declared_types,
-                            behavioral_helper, varFunc);
+            DeclareVariable(TM->CGetTreeReindex(initVar), already_declared_variables, locally_declared_types, BH,
+                            varFunc);
          }
       }
    }
    const auto variable_type = tree_helper::CGetType(curVar);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Type is " + STR(variable_type));
-   DeclareType(variable_type, behavioral_helper, locally_declared_types);
+   DeclareType(variable_type, BH, locally_declared_types);
    if(!tree_helper::IsSystemType(curVar) || tree_helper::IsInLibbambu(curVar))
    {
       if(verbose)
@@ -1372,7 +1370,7 @@ void CWriter::DeclareVariable(const tree_nodeConstRef& curVar, CustomSet<unsigne
       }
       else
       {
-         indented_output_stream->Append(behavioral_helper->PrintVarDeclaration(curVar->index, varFunc, true) + ";\n");
+         indented_output_stream->Append(BH->PrintVarDeclaration(curVar->index, varFunc, true) + ";\n");
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Declared variable " + STR(curVar));
@@ -1395,11 +1393,10 @@ void CWriter::writeInclude(const std::string& file_name)
 
 void CWriter::DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declared,
                                     CustomSet<unsigned int>& already_declared_variables,
-                                    CustomSet<std::string>& already_declared_types,
-                                    const BehavioralHelperConstRef behavioral_helper,
+                                    CustomSet<std::string>& already_declared_types, const BehavioralHelperConstRef BH,
                                     const var_pp_functorConstRef varFunc)
 {
-   const auto p = behavioral_helper->get_parameters();
+   const auto p = BH->get_parameters();
    const auto TreeMan = TM;
    const auto is_to_declare = [&p, &TreeMan](unsigned int obj) -> bool {
       if(std::find(p.cbegin(), p.cend(), obj) != p.cend())
@@ -1420,17 +1417,16 @@ void CWriter::DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declare
       return true;
    };
 
-   unsigned int funId = behavioral_helper->get_function_index();
+   unsigned int funId = BH->get_function_index();
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Declaring " + STR(to_be_declared.size()) + " local variables");
    for(const auto var : to_be_declared)
    {
       if(is_to_declare(var))
       {
-         DeclareVariable(TM->CGetTreeReindex(var), already_declared_variables, already_declared_types,
-                         behavioral_helper, varFunc);
+         DeclareVariable(TM->CGetTreeReindex(var), already_declared_variables, already_declared_types, BH, varFunc);
       }
    }
-   var_pp_functorRef variableFunctor(new std_var_pp_functor(behavioral_helper));
+   var_pp_functorRef variableFunctor(new std_var_pp_functor(BH));
    const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(funId);
    const OpGraphConstRef data = function_behavior->CGetOpGraph(FunctionBehavior::DFG);
    OpVertexSet vertices = OpVertexSet(data);
@@ -1439,7 +1435,7 @@ void CWriter::DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declare
    {
       vertices.insert(*v);
    }
-   THROW_ASSERT(vertices.size() > 0, "Graph for function " + behavioral_helper->get_function_name() + " is empty");
+   THROW_ASSERT(vertices.size() > 0, "Graph for function " + BH->get_function_name() + " is empty");
    compute_phi_nodes(function_behavior, vertices, variableFunctor);
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Declaring local variables");
 }

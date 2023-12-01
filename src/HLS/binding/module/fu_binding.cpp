@@ -339,10 +339,15 @@ void fu_binding::kill_proxy_memory_units(std::map<unsigned int, unsigned int>& m
       {
          var_call_sites_rel[kv].push_back(curr_gate);
          GetPointer<port_o>(port_proxy_in1)->set_is_memory(false);
-         for(const auto p_name : {"proxy_in2_", "proxy_in3_", "proxy_out1_", "proxy_sel_LOAD_", "proxy_sel_STORE_"})
+         for(const auto p_name :
+             {"proxy_in2_", "proxy_in2r_", "proxy_in2w_", "proxy_in3_", "proxy_in3r_", "proxy_in3w_", "proxy_out1_",
+              "proxy_sel_LOAD_", "proxy_sel_STORE_", "proxy_in4r_", "proxy_in4w_"})
          {
             const auto port = curr_gate->find_member(p_name + STR(kv), port_o_K, curr_gate);
-            GetPointerS<port_o>(port)->set_is_memory(false);
+            if(port)
+            {
+               GetPointerS<port_o>(port)->set_is_memory(false);
+            }
          }
       }
    }
@@ -429,21 +434,25 @@ void fu_binding::manage_killing_memory_proxies(
       const auto storage_port_out_sign = [&]() {
          if(storage_port_out->get_kind() == port_vector_o_K)
          {
-            return SM->add_sign_vector(storage_port_out->get_id() + "_" + STR(var),
+            return SM->add_sign_vector("S" + storage_port_out->get_id() + "_" + STR(var),
                                        GetPointerS<port_o>(storage_port_out)->get_ports_size(), circuit,
                                        storage_port_out->get_typeRef());
          }
-         return SM->add_sign(storage_port_out->get_id() + "_" + STR(var), circuit, storage_port_out->get_typeRef());
+         return SM->add_sign("S" + storage_port_out->get_id() + "_" + STR(var), circuit,
+                             storage_port_out->get_typeRef());
       }();
       SM->add_connection(storage_port_out_sign, storage_port_out);
 
       const auto proxy_ports = [&]() {
          std::vector<structural_objectRef> ports;
-         for(const auto& pname : {"proxy_in1", "proxy_in2", "proxy_in3", "proxy_sel_LOAD", "proxy_sel_STORE"})
+         for(const auto& pname : {"proxy_in1", "proxy_in2", "proxy_in2r", "proxy_in2w", "proxy_in3", "proxy_in3r",
+                                  "proxy_in3w", "proxy_sel_LOAD", "proxy_sel_STORE", "proxy_in4r", "proxy_in4w"})
          {
             const auto port = storage_fu->find_member(pname, port_o_K, storage_fu);
-            THROW_ASSERT(port, "missing port " + STR(pname));
-            ports.push_back(port);
+            if(port)
+            {
+               ports.push_back(port);
+            }
          }
          return ports;
       }();
@@ -1003,17 +1012,37 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             {
                proxy_memory_units_to_be_renamed_back.push_back(
                    std::make_pair(curr_gate, proxy_memory_units.find(i)->second));
+               std::string var_name = "_" + STR(proxy_memory_units.find(i)->second);
+
+               /// rename proxy ports
                structural_objectRef port_proxy_in1 = curr_gate->find_member("proxy_in1", port_o_K, curr_gate);
-               structural_objectRef port_proxy_in2 = curr_gate->find_member("proxy_in2", port_o_K, curr_gate);
-               structural_objectRef port_proxy_in3 = curr_gate->find_member("proxy_in3", port_o_K, curr_gate);
+               port_proxy_in1->set_id(port_proxy_in1->get_id() + var_name);
+               auto is_dual = allocation_information->is_dual_port_memory(i);
+               if(is_dual)
+               {
+                  structural_objectRef port_proxy_in2r = curr_gate->find_member("proxy_in2r", port_o_K, curr_gate);
+                  structural_objectRef port_proxy_in2w = curr_gate->find_member("proxy_in2w", port_o_K, curr_gate);
+                  structural_objectRef port_proxy_in3r = curr_gate->find_member("proxy_in3r", port_o_K, curr_gate);
+                  structural_objectRef port_proxy_in3w = curr_gate->find_member("proxy_in3w", port_o_K, curr_gate);
+                  structural_objectRef port_proxy_in4r = curr_gate->find_member("proxy_in4r", port_o_K, curr_gate);
+                  structural_objectRef port_proxy_in4w = curr_gate->find_member("proxy_in4w", port_o_K, curr_gate);
+                  port_proxy_in2r->set_id(port_proxy_in2r->get_id() + var_name);
+                  port_proxy_in2w->set_id(port_proxy_in2w->get_id() + var_name);
+                  port_proxy_in3r->set_id(port_proxy_in3r->get_id() + var_name);
+                  port_proxy_in3w->set_id(port_proxy_in3w->get_id() + var_name);
+                  port_proxy_in4r->set_id(port_proxy_in4r->get_id() + var_name);
+                  port_proxy_in4w->set_id(port_proxy_in4w->get_id() + var_name);
+               }
+               else
+               {
+                  structural_objectRef port_proxy_in2 = curr_gate->find_member("proxy_in2", port_o_K, curr_gate);
+                  structural_objectRef port_proxy_in3 = curr_gate->find_member("proxy_in3", port_o_K, curr_gate);
+                  port_proxy_in2->set_id(port_proxy_in2->get_id() + var_name);
+                  port_proxy_in3->set_id(port_proxy_in3->get_id() + var_name);
+               }
                structural_objectRef port_sel_LOAD = curr_gate->find_member("proxy_sel_LOAD", port_o_K, curr_gate);
                structural_objectRef port_sel_STORE = curr_gate->find_member("proxy_sel_STORE", port_o_K, curr_gate);
                structural_objectRef port_proxy_out1 = curr_gate->find_member("proxy_out1", port_o_K, curr_gate);
-               /// rename proxy ports
-               std::string var_name = "_" + STR(proxy_memory_units.find(i)->second);
-               port_proxy_in1->set_id(port_proxy_in1->get_id() + var_name);
-               port_proxy_in2->set_id(port_proxy_in2->get_id() + var_name);
-               port_proxy_in3->set_id(port_proxy_in3->get_id() + var_name);
                port_sel_LOAD->set_id(port_sel_LOAD->get_id() + var_name);
                port_sel_STORE->set_id(port_sel_STORE->get_id() + var_name);
                port_proxy_out1->set_id(port_proxy_out1->get_id() + var_name);
@@ -1180,10 +1209,14 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       THROW_ASSERT(curr_gate, "missing structural object");
       const auto var_name = "_" + STR(pmutbrb.second);
       for(const auto& pname :
-          {"proxy_in1", "proxy_in2", "proxy_in3", "proxy_sel_LOAD", "proxy_sel_STORE", "proxy_out1"})
+          {"proxy_in1", "proxy_in2", "proxy_in2r", "proxy_in2w", "proxy_in3", "proxy_in3r", "proxy_in3w", "proxy_in4r",
+           "proxy_in4w", "proxy_sel_LOAD", "proxy_sel_STORE", "proxy_out1"})
       {
          const auto port = curr_gate->find_member(pname + var_name, port_o_K, curr_gate);
-         port->set_id(pname);
+         if(port)
+         {
+            port->set_id(pname);
+         }
       }
    }
    HLS->Rfu->manage_killing_memory_proxies(mem_obj, reverse_memory_units, var_call_sites_rel, SM, HLS, unique_id);
@@ -2255,17 +2288,32 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Resized input ports");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Resizing variables");
+   auto is_dual = allocation_information->is_dual_port_memory(fu);
+
    for(auto l = required_variables.begin(); l != required_variables.end() && !is_multi_read_cond; ++l)
    {
-      auto bitsize_variable = l->second;
-      structural_objectRef port = fu_module->get_in_port(l->first + offset);
       unsigned long long n_elmts = 0;
       if(num_elements.find(l->first) != num_elements.end())
       {
          n_elmts = num_elements.find(l->first)->second;
       }
-      port_o::resize_std_port(bitsize_variable, n_elmts, debug_level, port);
+      auto bitsize_variable = l->second;
+      auto piIndexLimit = 1U;
+      if(is_dual && l->first)
+      {
+         piIndexLimit = 2U;
+      }
+      for(auto piOffset = 0U; piOffset < piIndexLimit; ++piOffset)
+      {
+         structural_objectRef port = fu_module->get_in_port(l->first + offset + piOffset);
+         port_o::resize_std_port(bitsize_variable, n_elmts, debug_level, port);
+      }
+      if(is_dual && l->first)
+      {
+         ++offset;
+      }
    }
+
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Resized variables");
    offset = 0;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Resizing output ports");
