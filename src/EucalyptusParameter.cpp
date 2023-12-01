@@ -580,20 +580,6 @@ void EucalyptusParameter::CheckParameters()
 
    /// Search for verilator
    setOption(OPT_verilator, system("which verilator > /dev/null 2>&1") == 0);
-   if(getOption<bool>(OPT_verilator))
-   {
-      setOption(OPT_verilator_l2_name,
-                system("bash -c \"if [[ \\\"x$(verilator --l2-name v 2>&1 | head -n1 | grep -i 'Invalid Option')\\\" = "
-                       "\\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0);
-      const auto thread_support =
-          system("bash -c \"if [ $(verilator --version | grep Verilator | sed -E 's/Verilator ([0-9]+).*/\1/') -ge 4 "
-                 "]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
-      if(isOption(OPT_verilator_parallel) && !thread_support)
-      {
-         THROW_WARNING("Installed version of Verilator does not support multi-threading.");
-         setOption(OPT_verilator_parallel, 1);
-      }
-   }
 
    // /// Search for icarus
    // setOption(OPT_icarus, system("which iverilog > /dev/null 2>&1") == 0);
