@@ -50,12 +50,9 @@
 #include "fileIO.hpp"
 #include "file_IO_constants.hpp"
 #include "utility.hpp"
-
-#include <boost/algorithm/string.hpp>
 #include <cerrno>
 #include <filesystem>
 #include <fstream>
-#include <thread>
 #include <unistd.h>
 #include <utility>
 
@@ -134,7 +131,7 @@ std::string VerilatorWrapper::GenerateScript(std::ostream& script, const std::st
       script << " --x-assign fast --x-initial fast --noassert";
    }
 
-   const auto nThreads = Param->getOption<bool>(OPT_verilator_parallel) ? std::thread::hardware_concurrency() : 1;
+   const auto nThreads = Param->isOption(OPT_verilator_parallel) ? Param->getOption<int>(OPT_verilator_parallel) : 1;
    if(nThreads > 1)
    {
       script << " --threads " << nThreads;

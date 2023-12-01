@@ -588,10 +588,10 @@ void EucalyptusParameter::CheckParameters()
       const auto thread_support =
           system("bash -c \"if [ $(verilator --version | grep Verilator | sed -E 's/Verilator ([0-9]+).*/\1/') -ge 4 "
                  "]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
-      if(getOption<bool>(OPT_verilator_parallel) && !thread_support)
+      if(isOption(OPT_verilator_parallel) && !thread_support)
       {
          THROW_WARNING("Installed version of Verilator does not support multi-threading.");
-         setOption(OPT_verilator_parallel, false);
+         setOption(OPT_verilator_parallel, 1);
       }
    }
 
@@ -648,6 +648,7 @@ void EucalyptusParameter::CheckParameters()
       //    setOption(OPT_simulator, "ICARUS");
       // }
    }
+
    if(not isOption(OPT_device_string))
    {
       std::string device_string = getOption<std::string>("device_name") + getOption<std::string>("device_speed") +
@@ -672,7 +673,6 @@ void EucalyptusParameter::SetDefaults()
    setOption(OPT_mentor_root, "/opt/mentor");
    setOption(OPT_mentor_optimizer, true);
    setOption(OPT_nanoxplore_root, "/opt/NanoXplore");
-   setOption(OPT_verilator_parallel, false);
    setOption(OPT_xilinx_root, "/opt/Xilinx");
 
    /// target device
