@@ -199,15 +199,15 @@ bool NaturalVersionOrder(const std::filesystem::path& _x, const std::filesystem:
    {
       if(splity.size() <= i)
       {
-         return false;
+         return true;
       }
       if(splitx.at(i).size() != splity.at(i).size())
       {
-         return splitx.at(i).size() < splity.at(i).size();
+         return splitx.at(i).size() > splity.at(i).size();
       }
-      return splitx.at(i) < splity.at(i);
+      return splitx.at(i) > splity.at(i);
    }
-   return false;
+   return true;
 }
 
 template <typename T>
