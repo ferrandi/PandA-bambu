@@ -380,12 +380,4 @@ clang11_CSROA.o : $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggreg
 	    $(I386_CLANG11_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang11_CSROA.o; \
 	fi;
 
-bambuS2S-11: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
-	case $(host_os) in \
-	  darwin*) \
-	    $(I386_CLANG11_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG11_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG11_LIBSD)  -o $@;;\
-	  *) \
-	    $(I386_CLANG11_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG11_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG11_LIBS)  -o $@;;\
-	esac;
-
 ######

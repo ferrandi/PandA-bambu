@@ -381,12 +381,4 @@ clang9_CSROA.o : $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggrega
 	    $(I386_CLANG9_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang9_CSROA.o; \
 	fi;
 
-bambuS2S-9: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
-	case $(host_os) in \
-	  darwin*) \
-	    $(I386_CLANG9_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DCLANG_SYSTEM_H="\"$(CLANG9_SYSTEM_H)\"" -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG9_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG9_LIBSD)  -o $@;;\
-	  *) \
-	    $(I386_CLANG9_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DCLANG_SYSTEM_H="\"$(CLANG9_SYSTEM_H)\"" -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG9_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG9_LIBS)  -o $@;;\
-	esac;
-
 ######

@@ -296,7 +296,6 @@ etc/clang_plugin/HardekopfLin_AA.cpp
 etc/clang_plugin/HardekopfLin_AA.hpp
 etc/clang_plugin/PtrIteratorSimplifyPass.hpp
 etc/clang_plugin/TreeHeightReduction.hpp
-etc/clang_plugin/bambuS2S.cpp
 etc/clang_plugin/dumpGimple.cpp
 etc/clang_plugin/gcc/COPYING3
 etc/clang_plugin/gcc/brig-builtins.def
