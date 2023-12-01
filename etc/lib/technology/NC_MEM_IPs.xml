@@ -12251,6 +12251,14 @@ endgenerate"/>
           <NP_functionality LIBRARY="BRAM_MEMORY_NN_CORE bram_write dout_a memory_addr_a din_value_aggregated_swapped be_swapped MEMORY_INIT_file BRAM_BITSIZE n_bytes n_byte_on_databus n_mem_elements max_n_reads max_n_writes memory_offset n_byte_on_databus_offset READ_ONLY_MEMORY HIGH_LATENCY" 
           IP_COMPONENT="BRAM_MEMORY_CORE_SMALL,TRUE_DUAL_PORT_BYTE_ENABLING_RAM"
           VERILOG_PROVIDED="
+wire [(n_byte_on_databus/2)*8-1:0] dina;
+wire [(n_byte_on_databus/2)*8-1:0] dinb;
+wire [n_byte_on_databus*8-1:0] din;
+
+assign dina = din_value_aggregated_swapped[memory_offset+:(n_byte_on_databus/2)*8];
+assign dinb = din_value_aggregated_swapped[2*BRAM_BITSIZE+memory_offset+:(n_byte_on_databus/2)*8];
+assign din = {dinb,dina};
+
 generate
 if(n_mem_elements == 1)
 begin
@@ -12272,7 +12280,7 @@ begin
   .HIGH_LATENCY(HIGH_LATENCY)) BRAM_MEMORY_instance_small (.clock(clock),
   .bram_write(bram_write),
   .memory_addr_a(memory_addr_a),
-  .din_value_aggregated({din_value_aggregated_swapped[2*BRAM_BITSIZE+memory_offset+:(n_byte_on_databus/2)*8],din_value_aggregated_swapped[memory_offset+:(n_byte_on_databus/2)*8]}),
+  .din_value_aggregated(din),
   .be({be_swapped[n_byte_on_databus+n_byte_on_databus_offset+:n_byte_on_databus/2],be_swapped[n_byte_on_databus_offset+:n_byte_on_databus/2]}),
   .dout_a(dout_a));
 end
@@ -12297,8 +12305,8 @@ begin
     .bram_write1(bram_write[1]),
     .memory_addr_a(memory_addr_a[BITSIZE_memory_addr_a-1:0]),
     .memory_addr_b(memory_addr_a[2*BITSIZE_memory_addr_a-1:BITSIZE_memory_addr_a]),
-    .din_value_aggregated_a(din_value_aggregated_swapped[memory_offset +:(n_byte_on_databus/2)*8]),
-    .din_value_aggregated_b(din_value_aggregated_swapped[2*BRAM_BITSIZE+memory_offset+:(n_byte_on_databus/2)*8]),
+    .din_value_aggregated_a(dina),
+    .din_value_aggregated_b(dinb),
     .be_a(be_swapped[n_byte_on_databus_offset+:n_byte_on_databus/2]),
     .be_b(be_swapped[n_byte_on_databus+n_byte_on_databus_offset+:n_byte_on_databus/2]),
     .dout_a(dout_a[BRAM_BITSIZE-1:0]),

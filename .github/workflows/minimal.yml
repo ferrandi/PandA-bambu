@@ -101,7 +101,7 @@ jobs:
       matrix:
         id: ["", "2", "3", "5", "6"]
     env:
-      args: -c=--simulator=VERILATOR
+      args: -c=--simulator=VERILATOR -c=--verilator-parallel=4
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -157,7 +157,7 @@ jobs:
         id: [""]
     env:
       script: ./panda_regressions/hls/bambu_interface_test${{matrix.id}}.sh
-      args: -c=--simulator=MODELSIM -c=--assert-debug
+      args: -c=--simulator=MODELSIM 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -241,25 +241,25 @@ jobs:
         include:
           - setup: gcc-4.9
             script: generic_gcc_regression_simple_eg_ext_pipelined.sh
-            args: -c=--compiler=I386_GCC49 -c=--reset-type=sync -c=--simulator=VERILATOR
+            args: -c=--compiler=I386_GCC49 -c=--reset-type=sync -c=--simulator=VERILATOR -c=--verilator-parallel=4
           - setup: clang-4.0
             script: generic_gcc_regression_simple_eg.sh
-            args: -c=--compiler=I386_CLANG4 -c=--simulator=MODELSIM -c=--assert-debug
+            args: -c=--compiler=I386_CLANG4 -c=--simulator=MODELSIM 
           - setup: clang-6.0
             script: generic_gcc_regression_simple_bambu.sh
-            args: -c=--compiler=I386_CLANG6 -c=--simulator=MODELSIM -c=--assert-debug
+            args: -c=--compiler=I386_CLANG6 -c=--simulator=MODELSIM 
           - setup: clang-7
             script: generic_gcc_regression_simple_bambu.sh
-            args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR
+            args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR -c=--verilator-parallel=4
           - setup: clang-11
             script: generic_gcc_regression_simple_bambu.sh
-            args: -c=--compiler=I386_CLANG11 -c=--simulator=VERILATOR
+            args: -c=--compiler=I386_CLANG11 -c=--simulator=VERILATOR -c=--verilator-parallel=4
           - setup: clang-13
             script: generic_gcc_regression_simple_eg_ext_pipelined.sh
-            args: -c=--compiler=I386_CLANG13 -c=--simulator=VERILATOR
+            args: -c=--compiler=I386_CLANG13 -c=--simulator=VERILATOR -c=--verilator-parallel=4
           - setup: clang-16
             script: generic_gcc_regression_simple_eg_ext_pipelined.sh
-            args: -c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR -c=-Wno-int-conversion
+            args: -c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR -c=-Wno-int-conversion -c=--verilator-parallel=4
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -313,7 +313,7 @@ jobs:
     env:
       setup: gcc-4.9
       script: generic_gcc_regression_simple_bambu_pretty_print.sh
-      args: -c=--compiler=I386_GCC49 -c=--simulator=VERILATOR
+      args: -c=--compiler=I386_GCC49 -c=--simulator=VERILATOR -c=--verilator-parallel=4
       outname: gcc-4.9_regression_simple-pretty_print
     steps:
       - name: Checkout repository
@@ -368,7 +368,7 @@ jobs:
     env:
       setup: gcc-7
       script: generic_gcc_regression_simple_bambu_vhdl.sh
-      args: -c=--compiler=I386_GCC7 -c=--simulator=MODELSIM -c=--assert-debug
+      args: -c=--compiler=I386_GCC7 -c=--simulator=MODELSIM 
       outname: gcc-7_regression_simple-vhdl
     steps:
       - name: Checkout repository
@@ -483,7 +483,7 @@ jobs:
     runs-on: [self-hosted, mentor]
     env:
       script: multi_softfloat-tests.sh
-      args: -c=--simulator=VERILATOR
+      args: -c=--simulator=VERILATOR -c=--verilator-parallel=4
       outname: multi_softfloat-tests
     steps:
       - name: Checkout repository
@@ -563,19 +563,19 @@ jobs:
       matrix:
         include:
           - setup: gcc-4.9
-            args: -c=--compiler=I386_GCC49 -c=--simulator=MODELSIM -c=--assert-debug
+            args: -c=--compiler=I386_GCC49 -c=--simulator=MODELSIM 
           - setup: clang-4.0
-            args: -c=--compiler=I386_CLANG4 -c=--simulator=VERILATOR
+            args: -c=--compiler=I386_CLANG4 -c=--simulator=VERILATOR -c=--verilator-parallel=4
           - setup: clang-6.0
-            args: -c=--compiler=I386_CLANG6 -c=--simulator=VERILATOR
+            args: -c=--compiler=I386_CLANG6 -c=--simulator=VERILATOR -c=--verilator-parallel=4
           - setup: clang-7
-            args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR
+            args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR -c=--verilator-parallel=4
           - setup: clang-11
-            args: -c=--compiler=I386_CLANG11 -c=--simulator=MODELSIM -c=--assert-debug
+            args: -c=--compiler=I386_CLANG11 -c=--simulator=MODELSIM 
           - setup: clang-13
-            args: -c=--compiler=I386_CLANG13 -c=--simulator=VERILATOR
+            args: -c=--compiler=I386_CLANG13 -c=--simulator=VERILATOR -c=--verilator-parallel=4
           - setup: clang-16
-            args: -c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR
+            args: -c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR -c=--verilator-parallel=4
     env:
       script: generic_libm-tests.sh
       args: -c=--speculative-sdc-scheduling
@@ -632,7 +632,7 @@ jobs:
     runs-on: [self-hosted, mentor]
     env:
       script: multi_CHStone-frontend.sh
-      args: -c=--simulator=MODELSIM -c=--assert-debug
+      args: -c=--simulator=MODELSIM 
       outname: multi_CHStone-frontend
     steps:
       - name: Checkout repository
@@ -761,7 +761,7 @@ jobs:
             script: generic_gcc-memarch3.sh
             args: -c=-wH
     env:
-      args: -c=--simulator=MODELSIM -c=--assert-debug -c=--compiler=${{matrix.compiler}} ${{matrix.args}}
+      args: -c=--simulator=MODELSIM  -c=--compiler=${{matrix.compiler}} ${{matrix.args}}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -820,7 +820,7 @@ jobs:
     env:
       outname: omp_simd_${{matrix.device}}
       script: ./examples/omp_simd/generic_omp_simd.sh
-      args: -c=--simulator=MODELSIM -c=--compiler=I386_GCC49 -c=--clock-period=10 -c=--device-name=${{matrix.device}} -c=--assert-debug
+      args: -c=--simulator=MODELSIM -c=--compiler=I386_GCC49 -c=--clock-period=10 -c=--device-name=${{matrix.device}} 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3

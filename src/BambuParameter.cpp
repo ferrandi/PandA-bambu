@@ -93,6 +93,7 @@
 #include <list>
 #include <regex>
 #include <string>
+#include <thread>
 #include <vector>
 
 /// Design Space Exploration
@@ -497,7 +498,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       // << "            ISIM - Xilinx iSim\n"
       // << "            ICARUS - Verilog Icarus simulator\n"
       << "            VERILATOR - Verilator simulator\n\n"
-      << "    --verilator-parallel\n"
+      << "    --verilator-parallel[=num_threads]\n"
       << "        Enable multi-threaded simulation when using verilator\n\n"
       << "    --max-sim-cycles=<cycles>\n"
       << "        Specify the maximum number of cycles a HDL simulation may run.\n"
@@ -2100,7 +2101,11 @@ int BambuParameter::Exec()
          }
          case OPT_VERILATOR_PARALLEL:
          {
-            setOption(OPT_verilator_parallel, true);
+            setOption(OPT_verilator_parallel, std::to_string(std::thread::hardware_concurrency()));
+            if(optarg)
+            {
+               setOption(OPT_verilator_parallel, std::string(optarg));
+            }
             break;
          }
          case OPT_XILINX_ROOT:
@@ -2802,23 +2807,6 @@ void BambuParameter::CheckParameters()
       }
    }
 
-   /// Search for verilator
-   setOption(OPT_verilator, system("which verilator > /dev/null 2>&1") == 0);
-   if(getOption<bool>(OPT_verilator))
-   {
-      setOption(OPT_verilator_l2_name,
-                system("bash -c \"if [[ \\\"x$(verilator --l2-name v 2>&1 | head -n1 | grep -i 'Invalid Option')\\\" = "
-                       "\\\"x\\\" ]]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0);
-      const auto thread_support =
-          system("bash -c \"if [ $(verilator --version | grep Verilator | sed -E 's/Verilator ([0-9]+).*/\1/') -ge 4 "
-                 "]; then exit 0; else exit 1; fi\" > /dev/null 2>&1") == 0;
-      if(getOption<bool>(OPT_verilator_parallel) && !thread_support)
-      {
-         THROW_WARNING("Installed version of Verilator does not support multi-threading.");
-         setOption(OPT_verilator_parallel, false);
-      }
-   }
-
    // /// Search for icarus
    // setOption(OPT_icarus, system("which iverilog > /dev/null 2>&1") == 0);
 
@@ -2844,6 +2832,12 @@ void BambuParameter::CheckParameters()
       // {
       //    setOption(OPT_simulator, "ICARUS");
       // }
+   }
+
+   if(getOption<std::string>(OPT_simulator) == "VERILATOR")
+   {
+      /// Search for verilator
+      setOption(OPT_verilator, system("which verilator > /dev/null 2>&1") == 0);
    }
 
 #if HAVE_TASTE
@@ -3770,7 +3764,6 @@ void BambuParameter::SetDefaults()
    setOption(OPT_mentor_root, "/opt/mentor");
    setOption(OPT_mentor_optimizer, true);
    setOption(OPT_nanoxplore_root, "/opt/NanoXplore");
-   setOption(OPT_verilator_parallel, false);
    setOption(OPT_xilinx_root, "/opt/Xilinx");
 
    /// -- Module Synthesis -- //
