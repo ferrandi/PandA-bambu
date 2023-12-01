@@ -120,8 +120,8 @@ enum class CompilerWrapper_CompilerTarget;
        fp_format_propagate)(fp_format_interface)(fp_rounding_mode)(fp_exception_mode)(parallel_backend)(               \
        interface_xml_filename)(lattice_root)(lattice_settings)(lattice_pmi_def)(lattice_pmi_tdpbe)(lattice_pmi_mul)(   \
        xilinx_root)(xilinx_settings)(xilinx_vivado_settings)(xilinx_glbl)(mentor_root)(mentor_modelsim_bin)(           \
-       mentor_optimizer)(verilator)(verilator_l2_name)(verilator_timescale_override)(verilator_parallel)(icarus)(      \
-       altera_root)(quartus_settings)(quartus_13_settings)(quartus_13_64bit)(nanoxplore_root)(nanoxplore_settings)(    \
+       mentor_optimizer)(verilator)(verilator_timescale_override)(verilator_parallel)(icarus)(altera_root)(            \
+       quartus_settings)(quartus_13_settings)(quartus_13_64bit)(nanoxplore_root)(nanoxplore_settings)(                 \
        nanoxplore_bypass)(shared_input_registers)(inline_functions)(constraints_functions)
 
 #define FRAMEWORK_OPTIONS                                                                                            \
