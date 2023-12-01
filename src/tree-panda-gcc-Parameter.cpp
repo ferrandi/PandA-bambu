@@ -41,26 +41,27 @@
  */
 #include "tree-panda-gcc-Parameter.hpp"
 
-#include "config_HAVE_I386_CLANG16_COMPILER.hpp"
-#include "config_PANDA_DATA_INSTALLDIR.hpp"
-#include "config_RELEASE.hpp"
-
 #include "compiler_wrapper.hpp"
 #include "cpu_time.hpp"
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
 #include "module_interface.hpp"
+#include "string_manipulation.hpp"
 #include "utility.hpp"
-
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/predicate.hpp>
 #include <climits>
 #include <cstring>
 #include <filesystem>
 #include <getopt.h>
 #include <iosfwd>
 #include <vector>
+
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+
+#include "config_HAVE_I386_CLANG16_COMPILER.hpp"
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
+#include "config_RELEASE.hpp"
 
 #define OPT_PRINT_FILE_NAME 256
 #define OPT_INCLUDE 257
@@ -151,7 +152,7 @@ int tree_panda_gcc_parameter::Exec()
             {
                ///
                std::string parameter(optarg);
-               if(boost::algorithm::starts_with(parameter, "td="))
+               if(starts_with(parameter, "td="))
                {
                   setOption(OPT_gcc_standard, parameter.substr(parameter.find('=') + 1));
                }

@@ -46,37 +46,39 @@
  */
 #include "structural_manager.hpp"
 
-#include "config_HAVE_TECHNOLOGY_BUILT.hpp" // for HAVE_TEC...
+#include "Parameter.hpp"
+#include "cg_node.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
+#include "graph.hpp"
+#include "graph_info.hpp"
+#include "library_manager.hpp"
+#include "refcount.hpp"
+#include "string_manipulation.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
+#include "typed_node_info.hpp"
+#include "xml_element.hpp"
+#include "xml_node.hpp"
 
-#include "Parameter.hpp"                        // for Parameter
-#include "cg_node.hpp"                          // for structur...
-#include "custom_map.hpp"                       // for map, _Rb...
-#include "custom_set.hpp"                       // for set, set...
-#include "dbgPrintHelper.hpp"                   // for DEBUG_LE...
-#include "exceptions.hpp"                       // for THROW_AS...
-#include "graph.hpp"                            // for graphs_c...
-#include "graph_info.hpp"                       // for GraphInf...
-#include "library_manager.hpp"                  // for attribute
-#include "refcount.hpp"                         // for GetPointer
-#include "string_manipulation.hpp"              // for GET_CLASS
-#include "technology_manager.hpp"               // for technolo...
-#include "technology_node.hpp"                  // for function...
-#include "typed_node_info.hpp"                  // for ENTRY, EXIT
-#include "xml_element.hpp"                      // for xml_element
-#include "xml_node.hpp"                         // for xml_node...
-#include <boost/algorithm/string/predicate.hpp> // for starts_with
-#include <boost/graph/adjacency_list.hpp>       // for target
-#include <boost/graph/filtered_graph.hpp>       // for edges
-#include <boost/graph/graph_traits.hpp>         // for graph_tr...
-#include <boost/graph/graphviz.hpp>             // for write_gr...
-#include <boost/iterator/iterator_facade.hpp>   // for operator!=
-#include <boost/smart_ptr/shared_ptr.hpp>       // for shared_ptr
-#include <iosfwd>                               // for ofstream
-#include <list>                                 // for _List_co...
-#include <memory>                               // for allocato...
-#include <ostream>                              // for operator<<
-#include <utility>                              // for swap, pair
-#include <vector>                               // for vector
+#include <iosfwd>
+#include <list>
+#include <memory>
+#include <ostream>
+#include <utility>
+#include <vector>
+
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/filtered_graph.hpp>
+#include <boost/graph/graph_traits.hpp>
+#include <boost/graph/graphviz.hpp>
+#include <boost/iterator/iterator_facade.hpp>
+#include <boost/smart_ptr/shared_ptr.hpp>
+
+#include "config_HAVE_TECHNOLOGY_BUILT.hpp"
 
 structural_manager::structural_manager(const ParameterConstRef _Param)
     : Param(_Param), debug_level(_Param->get_class_debug_level(GET_CLASS(*this)))
@@ -228,7 +230,7 @@ structural_objectRef structural_manager::add_port(const std::string& id, port_o:
                      std::vector<std::string> tokens = SplitString(equation, ";");
                      for(auto& token : tokens)
                      {
-                        if(boost::algorithm::starts_with(token, id))
+                        if(starts_with(token, id))
                         {
                            equation = token.substr(token.find('=') + 1, token.size());
                         }

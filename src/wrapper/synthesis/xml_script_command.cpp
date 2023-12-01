@@ -156,7 +156,7 @@ bool xml_script_node_t::evaluate_condition(const std::string* condition)
    }
 
    /// represent a variable that has not been substituted/defined
-   if(boost::algorithm::starts_with(trimmed, "${__"))
+   if(starts_with(trimmed, "${__"))
    {
       return false;
    }

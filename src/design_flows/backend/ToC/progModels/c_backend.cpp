@@ -43,9 +43,6 @@
  */
 #include "c_backend.hpp"
 
-#include "config_PACKAGE_NAME.hpp"
-#include "config_RELEASE.hpp"
-
 #include "Parameter.hpp"
 #include "application_frontend_flow_step.hpp"
 #include "application_manager.hpp"
@@ -64,6 +61,8 @@
 #include "frontend_flow_step_factory.hpp"
 #include "function_behavior.hpp"
 #include "graph.hpp"
+#include "hls_flow_step_factory.hpp"
+#include "hls_function_step.hpp"
 #include "hls_manager.hpp"
 #include "indented_output_stream.hpp"
 #include "op_graph.hpp"
@@ -77,14 +76,6 @@
 #include "utility.hpp"
 #include "var_pp_functor.hpp"
 
-#include "hls_flow_step_factory.hpp"
-#include "hls_function_step.hpp"
-
-#include <boost/config.hpp>
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/filtered_graph.hpp>
-#include <boost/graph/graph_utility.hpp>
-#include <boost/graph/topological_sort.hpp>
 #include <deque>
 #include <filesystem>
 #include <fstream>
@@ -95,6 +86,15 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#include <boost/config.hpp>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/filtered_graph.hpp>
+#include <boost/graph/graph_utility.hpp>
+#include <boost/graph/topological_sort.hpp>
+
+#include "config_PACKAGE_NAME.hpp"
+#include "config_RELEASE.hpp"
 
 CBackend::CBackend(const CBackendInformationConstRef _c_backend_information,
                    const DesignFlowManagerConstRef _design_flow_manager, const application_managerConstRef _AppM,
@@ -388,7 +388,7 @@ void CBackend::WriteGlobalDeclarations()
       if(parameters->isOption(OPT_pretty_print))
       {
          const auto f_name = BH->get_function_name();
-         if(boost::algorithm::starts_with(f_name, "__builtin_"))
+         if(starts_with(f_name, "__builtin_"))
          {
             indented_output_stream->Append("#define " + f_name + " _bambu_" + f_name + "\n");
          }

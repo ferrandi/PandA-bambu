@@ -114,7 +114,7 @@ int ToolManager::check_command(const std::string& _tool_, const std::string& set
    /// add setup script execution
    if(!setupscr.empty())
    {
-      if(boost::algorithm::starts_with(setupscr, "export"))
+      if(starts_with(setupscr, "export"))
       {
          command += setupscr + " >& /dev/null; ";
       }
@@ -160,7 +160,7 @@ void ToolManager::configure(const std::string& _tool_, const std::string& setups
    {
       if(!setupscr.empty())
       {
-         if(boost::algorithm::starts_with(setupscr, "export"))
+         if(starts_with(setupscr, "export"))
          {
             executable += setupscr + " >& /dev/null; ";
          }
@@ -186,7 +186,7 @@ void ToolManager::configure(const std::string& _tool_, const std::string& setups
       local = false;
       if(!setupscr.empty())
       {
-         if(boost::algorithm::starts_with(setupscr, "export"))
+         if(starts_with(setupscr, "export"))
          {
             executable += setupscr + "; ";
          }
