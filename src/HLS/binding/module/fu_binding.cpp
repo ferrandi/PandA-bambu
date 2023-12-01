@@ -377,7 +377,7 @@ void fu_binding::kill_proxy_function_units(std::map<unsigned int, std::string>& 
             continue;
          }
          std::string port_name = curr_port->get_id();
-         if(boost::algorithm::starts_with(port_name, PROXY_PREFIX))
+         if(starts_with(port_name, PROXY_PREFIX))
          {
             size_t found = port_name.rfind(fun_name);
             if(found != std::string::npos && found + fun_name.size() == port_name.size())
@@ -498,7 +498,7 @@ void fu_binding::manage_killing_function_proxies(
       {
          const auto curr_port = GetPointerS<module>(wrapped_fu_unit)->get_in_port(currentPort);
          const auto port_name = curr_port->get_id();
-         if(boost::algorithm::starts_with(port_name, PROXY_PREFIX))
+         if(starts_with(port_name, PROXY_PREFIX))
          {
             for(const auto& proxied_unit : proxies)
             {
@@ -515,7 +515,7 @@ void fu_binding::manage_killing_function_proxies(
       {
          const auto wrapped_port_proxy_out_i = GetPointerS<module>(wrapped_fu_unit)->get_out_port(currentPort);
          const auto port_name = wrapped_port_proxy_out_i->get_id();
-         if(boost::algorithm::starts_with(port_name, PROXY_PREFIX))
+         if(starts_with(port_name, PROXY_PREFIX))
          {
             structural_objectRef wrapped_port_proxy_out_i_sign;
             for(const auto& proxied_unit : proxies)
@@ -1063,7 +1063,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
                      continue;
                   }
                   std::string port_name = curr_port->get_id();
-                  if(boost::algorithm::starts_with(port_name, PROXY_PREFIX))
+                  if(starts_with(port_name, PROXY_PREFIX))
                   {
                      GetPointer<port_o>(curr_port)->set_id(port_name + fun_name);
                   }
@@ -1077,7 +1077,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
                      continue;
                   }
                   std::string port_name = curr_port->get_id();
-                  if(boost::algorithm::starts_with(port_name, PROXY_PREFIX))
+                  if(starts_with(port_name, PROXY_PREFIX))
                   {
                      GetPointer<port_o>(curr_port)->set_id(port_name + fun_name);
                   }
@@ -1233,7 +1233,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       {
          const auto curr_port = GetPointerS<module>(curr_gate)->get_in_port(currentPort);
          const auto port_name = curr_port->get_id();
-         if(boost::algorithm::starts_with(port_name, PROXY_PREFIX))
+         if(starts_with(port_name, PROXY_PREFIX))
          {
             const auto found = port_name.rfind(fun_name);
             if(found != std::string::npos)
@@ -1248,7 +1248,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       {
          const auto curr_port = GetPointerS<module>(curr_gate)->get_out_port(currentPort);
          const auto port_name = curr_port->get_id();
-         if(boost::algorithm::starts_with(port_name, PROXY_PREFIX))
+         if(starts_with(port_name, PROXY_PREFIX))
          {
             const auto found = port_name.rfind(fun_name);
             if(found != std::string::npos)

@@ -1562,13 +1562,13 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          info->real_output_nelem = info->base128_output_nelem = 0;
       }
    }
-   else if(boost::algorithm::starts_with(current_op, "float_expr_") ||
-           boost::algorithm::starts_with(current_op, "fix_trunc_expr_") || current_op == "dot_prod_expr" ||
-           current_op == "widen_sum_expr" || current_op == "widen_mult_hi_expr" || current_op == "widen_mult_lo_expr" ||
-           current_op == "vec_unpack_hi_expr" || current_op == "vec_unpack_lo_expr")
+   else if(starts_with(current_op, "float_expr_") || starts_with(current_op, "fix_trunc_expr_") ||
+           current_op == "dot_prod_expr" || current_op == "widen_sum_expr" || current_op == "widen_mult_hi_expr" ||
+           current_op == "widen_mult_lo_expr" || current_op == "vec_unpack_hi_expr" ||
+           current_op == "vec_unpack_lo_expr")
    {
       /// ad hoc correction for float_expr conversion
-      if(boost::algorithm::starts_with(current_op, "float_expr_") && max_size_in < 32)
+      if(starts_with(current_op, "float_expr_") && max_size_in < 32)
       {
          max_size_in = 32;
       }
@@ -1607,7 +1607,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          }
 
          /// ad hoc correction for fix_trunc_expr
-         if(boost::algorithm::starts_with(current_op, "fix_trunc_expr_") && info->output_prec < 32)
+         if(starts_with(current_op, "fix_trunc_expr_") && info->output_prec < 32)
          {
             info->output_prec = 32;
          }

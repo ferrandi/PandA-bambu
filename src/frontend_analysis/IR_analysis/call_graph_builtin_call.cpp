@@ -282,7 +282,7 @@ void CallGraphBuiltinCall::buildTypeToDeclaration()
          auto* funDecl = GetPointer<function_decl>(function);
          std::string type = tree_helper::print_type(TM, GET_INDEX_NODE(funDecl->type));
          if(funDecl->body && functionName != "__start_pragma__" && functionName != "__close_pragma__" &&
-            !boost::algorithm::starts_with(functionName, "__pragma__"))
+            !starts_with(functionName, "__pragma__"))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---FunctionTypeString " + type);
          }
