@@ -1,2 +1,6 @@
-gcc_regression_simple/20000422-1.c
+gcc_regression_simple/20000422-1.c --benchmark-name=20000422-1-xc7z020-VVD --device-name=xc7z020-1clg484-VVD
+gcc_regression_simple/20000422-1.c --benchmark-name=20000422-1-xc7z020 --device-name=xc7z020-1clg484
+gcc_regression_simple/20000422-1.c --benchmark-name=20000422-1-nx2h540tsc --device-name=nx2h540tsc
+gcc_regression_simple/20000422-1.c --benchmark-name=20000422-1-EP2C70F896C6-R --device-name=EP2C70F896C6-R
+gcc_regression_simple/20000422-1.c --benchmark-name=20000422-1-LFE335EA8FN484C --device-name=LFE335EA8FN484C
 gcc_regression_simple/20000722-1.c
