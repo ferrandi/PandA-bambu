@@ -85,7 +85,7 @@ class TreeNodeConstSet;
                widen_mult_hi_expr)(widen_mult_lo_expr)(vec_pack_trunc_expr)(vec_pack_sat_expr)(                      \
                vec_pack_fix_trunc_expr)(vec_extracteven_expr)(vec_extractodd_expr)(vec_interleavehigh_expr)(         \
                vec_interleavelow_expr)(extract_bit_expr)(sat_plus_expr)(sat_minus_expr)(extractvalue_expr)(          \
-               extractelement_expr)
+               extractelement_expr)(frem_expr)
 
 struct type_casting : public tree_node_visitor
 {

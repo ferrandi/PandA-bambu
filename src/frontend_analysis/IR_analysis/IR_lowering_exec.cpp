@@ -957,6 +957,7 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
             case preincrement_expr_K:
             case range_expr_K:
             case rdiv_expr_K:
+            case frem_expr_K:
             case round_div_expr_K:
             case round_mod_expr_K:
             case rrotate_expr_K:

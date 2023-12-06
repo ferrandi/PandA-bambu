@@ -541,7 +541,8 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
    case sat_plus_expr_K:           \
    case sat_minus_expr_K:          \
    case extractvalue_expr_K:       \
-   case extractelement_expr_K
+   case extractelement_expr_K:     \
+   case frem_expr_K
 
 /**
  * This macro collects all case labels for ternary_expr objects.
@@ -6194,5 +6195,11 @@ CREATE_TREE_NODE_CLASS(extractelement_expr, binary_expr);
  * insert a value into a vector.
  */
 CREATE_TREE_NODE_CLASS(insertelement_expr, ternary_expr);
+
+/**
+ * This struct specifies the frem node.
+ * Simple arithmetic.
+ */
+CREATE_TREE_NODE_CLASS(frem_expr, binary_expr);
 
 #endif
