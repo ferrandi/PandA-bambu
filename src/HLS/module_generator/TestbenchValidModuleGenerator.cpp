@@ -93,12 +93,12 @@ mem_utils #(BITSIZE_data) m_utils();
       add_port_parametric(in_suffix, port_o::OUT, 1U);
       add_port_parametric(in_suffix + "_vld", port_o::OUT, 0U);
       out << R"(
-reg [BITSIZE_data-1:0] val, val_next;
+reg [BITSIZE_data-1:0] val;
+wire [BITSIZE_data-1:0] val_next;
 
 initial
 begin
   val = 0;
-  val_next = 0;
 end
 
 always @(posedge clock)
@@ -114,10 +114,7 @@ begin
   end
 end
 
-always @(*) 
-begin
-  val_next = val;
-end
+assign val_next = val;
 )";
       out << "assign " << arg_name << in_suffix << "_vld = 1'b1;\n"
           << "assign " << arg_name << in_suffix << " = val;";
@@ -128,12 +125,12 @@ end
       add_port_parametric(out_suffix + "_vld", port_o::IN, 0U);
       out << R"(
 ptr_t addr, addr_next;
-reg enable, enable_next;
+reg enable;
+wire enable_next;
 
 initial
 begin
   enable = 0;
-  enable_next = 0;
 end
 
 always @(posedge clock)
@@ -150,10 +147,11 @@ begin
   end
 end
 
+assign enable_next = enable && !done_port;
+
 always @(*)
 begin
   addr_next = addr;
-  enable_next = enable && !done_port;
 end
 always @(negedge clock)
 begin

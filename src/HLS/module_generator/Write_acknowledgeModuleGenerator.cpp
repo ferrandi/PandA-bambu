@@ -81,7 +81,28 @@ void Write_acknowledgeModuleGenerator::InternalExec(std::ostream& out, structura
 {
    THROW_ASSERT(_ports_in.size() >= i_last, "");
    THROW_ASSERT(_ports_out.size() >= o_last, "");
-   out << "reg started, started0;\n\n";
+   bool registered = false;
+   if(registered)
+   {
+      out << "reg acked;\n";
+      out << "wire ack_next;\n";
+
+      out << "always @(posedge clock 1RESET_EDGE)\n";
+      out << "begin\n";
+      out << "  if (1RESET_VALUE)\n";
+      out << "  begin\n";
+      out << "    acked <= 0;\n";
+      out << "  end\n";
+      out << "  else\n";
+      out << "  begin\n";
+      out << "    acked <= ack_next;\n";
+      out << "  end\n";
+      out << "end\n\n";
+
+      out << "assign ack_next = " << _ports_in[i_ack].name << ";\n";
+   }
+   out << "reg started;\n";
+   out << "wire started_next;\n\n";
 
    out << "always @(posedge clock 1RESET_EDGE)\n";
    out << "begin\n";
@@ -91,16 +112,22 @@ void Write_acknowledgeModuleGenerator::InternalExec(std::ostream& out, structura
    out << "  end\n";
    out << "  else\n";
    out << "  begin\n";
-   out << "    started <= started0;\n";
+   out << "    started <= started_next;\n";
    out << "  end\n";
    out << "end\n\n";
 
-   out << "always @(*)\n";
-   out << "begin\n";
-   out << "  started0 = (" << _ports_in[i_start].name << " | started) & ~" << _ports_in[i_ack].name << ";\n";
-   out << "end\n\n";
-
    out << "assign " << _ports_out[o_out1].name << " = " << _ports_in[i_in2].name << ";\n";
-   out << "assign " << _ports_out[o_done].name << " = (" << _ports_in[i_start].name << " | started) & "
-       << _ports_in[i_ack].name << ";\n";
+
+   if(registered)
+   {
+      out << "assign started_next = (" << _ports_in[i_start].name << " | started) & ~(started & acked);\n";
+      out << "assign " << _ports_out[o_done].name << " = started & acked;\n";
+   }
+   else
+   {
+      out << "assign started_next = (" << _ports_in[i_start].name << " | started) & ~" << _ports_in[i_ack].name
+          << ";\n";
+      out << "assign " << _ports_out[o_done].name << " = (" << _ports_in[i_start].name << " | started) & "
+          << _ports_in[i_ack].name << ";\n";
+   }
 }

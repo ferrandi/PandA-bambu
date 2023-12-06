@@ -5,9 +5,6 @@ blowfish/bf.c --benchmark-name=bf-xc5vlx330t      --device-name=xc5vlx330t-2ff17
 blowfish/bf.c --benchmark-name=bf-xc6vlx240t      --device-name=xc6vlx240t-1ff1156
 blowfish/bf.c --benchmark-name=bf-xc7vx330t       --device-name=xc7vx330t-1ffg1157
 blowfish/bf.c --benchmark-name=bf-xc7z020-VVD     --device-name=xc7z020-1clg484-VVD
-blowfish/bf.c --benchmark-name=bf-xc7vx485t-VVD   --device-name=xc7vx485t-2ffg1761-VVD
-blowfish/bf.c --benchmark-name=bf-xc7vx690t-VVD   --device-name=xc7vx690t-3ffg1930-VVD
-blowfish/bf.c --benchmark-name=bf-xc7a100t-VVD    --device-name=xc7a100t-1csg324-VVD
 blowfish/bf.c --benchmark-name=bf-xc4vlx100       --device-name=xc4vlx100-10ff1513
 blowfish/bf.c --benchmark-name=bf-LFE335EA8FN484C --device-name=LFE335EA8FN484C
 blowfish/bf.c --benchmark-name=bf-5CSEMA5F31C6    --device-name=5CSEMA5F31C6

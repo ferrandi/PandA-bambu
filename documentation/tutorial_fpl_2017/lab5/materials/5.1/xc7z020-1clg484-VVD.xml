@@ -30,7 +30,7 @@
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
           <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="n_byte_on_databus">4</parameter>
-          <parameter name="n_mem_elements">4</parameter>
+          <parameter name="n_elements">4</parameter>
           <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -66,7 +66,7 @@
           <port_o id="dout_b" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="TRUE_DUAL_PORT_BYTE_ENABLING_RAM dout_a dout_b memory_addr_a memory_addr_b din_value_aggregated_a din_value_aggregated_b be_a be_b MEMORY_INIT_file BRAM_BITSIZE n_byte_on_databus n_mem_elements READ_ONLY_MEMORY HIGH_LATENCY" IP_COMPONENT="TRUE_DUAL_PORT_BYTE_ENABLING_RAM_NBE" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="TRUE_DUAL_PORT_BYTE_ENABLING_RAM dout_a dout_b memory_addr_a memory_addr_b din_value_aggregated_a din_value_aggregated_b be_a be_b MEMORY_INIT_file BRAM_BITSIZE n_byte_on_databus n_elements READ_ONLY_MEMORY HIGH_LATENCY" IP_COMPONENT="TRUE_DUAL_PORT_BYTE_ENABLING_RAM_NBE" VERILOG_PROVIDED="
 TRUE_DUAL_PORT_BYTE_ENABLING_RAM_NBE #(
   .BITSIZE_memory_addr_a(BITSIZE_memory_addr_a), 
   .BITSIZE_memory_addr_b(BITSIZE_memory_addr_b), 
@@ -79,7 +79,7 @@ TRUE_DUAL_PORT_BYTE_ENABLING_RAM_NBE #(
   .MEMORY_INIT_file(MEMORY_INIT_file), 
   .BRAM_BITSIZE(BRAM_BITSIZE), 
   .n_byte_on_databus(n_byte_on_databus), 
-  .n_mem_elements(n_mem_elements),
+  .n_elements(n_elements),
   .READ_ONLY_MEMORY(READ_ONLY_MEMORY),
   .HIGH_LATENCY(HIGH_LATENCY)
 ) TRUE_DUAL_PORT_BYTE_ENABLING_RAM_NBE_instance (
@@ -110,7 +110,7 @@ VHDL_PROVIDED=
   MEMORY_INIT_file=&gt;MEMORY_INIT_file, 
   BRAM_BITSIZE=&gt;BRAM_BITSIZE, 
   n_byte_on_databus=&gt;n_byte_on_databus, 
-  n_mem_elements=&gt;n_mem_elements,
+  n_elements=&gt;n_elements,
   READ_ONLY_MEMORY=&gt;READ_ONLY_MEMORY,
   HIGH_LATENCY=&gt;HIGH_LATENCY
 ) port map (
