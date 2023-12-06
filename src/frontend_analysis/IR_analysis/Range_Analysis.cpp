@@ -265,6 +265,7 @@ namespace
          case sat_minus_expr_K:
          case extractvalue_expr_K:
          case extractelement_expr_K:
+         case frem_expr_K:
          case CASE_UNARY_EXPRESSION:
          case CASE_TERNARY_EXPRESSION:
          case CASE_QUATERNARY_EXPRESSION:
@@ -379,6 +380,7 @@ namespace
          case sat_minus_expr_K:
          case extractvalue_expr_K:
          case extractelement_expr_K:
+         case frem_expr_K:
          case CASE_UNARY_EXPRESSION:
          case CASE_TERNARY_EXPRESSION:
          case CASE_QUATERNARY_EXPRESSION:
@@ -494,6 +496,7 @@ namespace
          case sat_minus_expr_K:
          case extractvalue_expr_K:
          case extractelement_expr_K:
+         case frem_expr_K:
          case CASE_UNARY_EXPRESSION:
          case CASE_TERNARY_EXPRESSION:
          case CASE_QUATERNARY_EXPRESSION:
@@ -804,6 +807,7 @@ namespace
                case preincrement_expr_K:
                case range_expr_K:
                case rdiv_expr_K:
+               case frem_expr_K:
                case round_div_expr_K:
                case round_mod_expr_K:
                case rrotate_expr_K:
@@ -1811,6 +1815,7 @@ RangeConstRef SymbRange::solveFuture(const VarNode* _bound, const VarNode* _sink
       case sat_minus_expr_K:
       case extractvalue_expr_K:
       case extractelement_expr_K:
+      case frem_expr_K:
       case CASE_UNARY_EXPRESSION:
       case CASE_TERNARY_EXPRESSION:
       case CASE_QUATERNARY_EXPRESSION:
@@ -1950,6 +1955,7 @@ void SymbRange::print(std::ostream& OS) const
       case sat_minus_expr_K:
       case extractvalue_expr_K:
       case extractelement_expr_K:
+      case frem_expr_K:
       case CASE_UNARY_EXPRESSION:
       case CASE_TERNARY_EXPRESSION:
       case CASE_QUATERNARY_EXPRESSION:
@@ -3270,6 +3276,7 @@ RangeRef BinaryOpNode::evaluate(kind opcode, bw_t bw, const RangeConstRef& op1, 
       case preincrement_expr_K:
       case range_expr_K:
       case rdiv_expr_K:
+      case frem_expr_K:
       case round_div_expr_K:
       case round_mod_expr_K:
       case rrotate_expr_K:

@@ -1928,6 +1928,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       case preincrement_expr_K:
       case range_expr_K:
       case rdiv_expr_K:
+      case frem_expr_K:
       case round_div_expr_K:
       case round_mod_expr_K:
       case set_le_expr_K:

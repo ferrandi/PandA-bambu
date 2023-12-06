@@ -609,6 +609,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       case aggr_init_expr_K:
       case CASE_FAKE_NODES:
       case rdiv_expr_K:
+      case frem_expr_K:
       case case_label_expr_K:
       case target_mem_ref_K:
       case binfo_K:
