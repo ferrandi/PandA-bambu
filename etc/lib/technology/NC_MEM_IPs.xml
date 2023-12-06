@@ -10751,7 +10751,7 @@ STD_LIVE_VALUE_TABLE_instance (
 parameter nbit_addr = BITSIZE_address_inr &gt; BITSIZE_address_inw ? BITSIZE_address_inr : BITSIZE_address_inw;
 wire [2*nbit_addr-1:0] address_in;
 generate
-if(PORTSIZE_address_inr == 2 &amp;&amp; PORTSIZE_address_inw == 1)
+if(PORTSIZE_address_inr == 2 &amp;&amp; PORTSIZE_address_inw == 2)
 begin
   assign address_in[0+:nbit_addr] = write_enable[0] ? address_inw[0+:BITSIZE_address_inw] : address_inr[0+:BITSIZE_address_inr];
   assign address_in[nbit_addr+:nbit_addr] = write_enable[1] ? address_inw[BITSIZE_address_inw+:BITSIZE_address_inw] : address_inr[BITSIZE_address_inr+:BITSIZE_address_inr];
