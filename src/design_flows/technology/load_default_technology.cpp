@@ -74,10 +74,10 @@ DesignFlowStep_Status LoadDefaultTechnology::Exec()
    {
       /// Load default resources
       const char* builtin_resources_data[] = {
-          "C_COMPLEX_IPs.data", "C_FP_IPs.data",       "C_HLS_IPs.data",       "C_IO_IPs.data",  "C_MEM_IPs.data",
-          "C_PC_IPs.data",      "CS_COMPONENT.data",   "C_PROFILING_IPs.data", "C_STD_IPs.data", "C_VEC_IPs.data",
-          "NC_HLS_IPs.data",    "NC_MEM_IPs.data",     "NC_PC_IPs.data",       "NC_SF_IPs.data", "NC_STD_IPs.data",
-          "NC_VEC_IPs.data",    "NC_wishbone_IPs.data"};
+          "C_COMPLEX_IPs.data", "C_FP_IPs.data",        "C_HLS_IPs.data",       "C_IO_IPs.data",  "C_MEM_IPs.data",
+          "C_PC_IPs.data",      "CS_COMPONENT.data",    "C_PROFILING_IPs.data", "C_STD_IPs.data", "C_VEC_IPs.data",
+          "NC_HLS_IPs.data",    "NC_MEM_IPs.data",      "NC_PC_IPs.data",       "NC_SF_IPs.data", "NC_STD_IPs.data",
+          "NC_VEC_IPs.data",    "NC_wishbone_IPs.data", "NC_CACHE_IPs.data"};
 
       for(i = 0; i < sizeof(builtin_resources_data) / sizeof(char*); ++i)
       {

@@ -307,6 +307,26 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                modified = true;
             }
          }
+         else if(be_type == frem_expr_K)
+         {
+            const auto expr_type = tree_helper::CGetType(be->op0);
+            THROW_ASSERT(GET_CONST_NODE(expr_type)->get_kind() == real_type_K, "unexpected case");
+            const auto bitsize = tree_helper::Size(expr_type);
+            const std::string fu_name = bitsize == 32 ? "fmodf" : "fmod";
+            const auto called_function = TreeM->GetFunction(fu_name);
+            THROW_ASSERT(called_function, "Add option -lm to the command line for frem/fmod");
+            THROW_ASSERT(TreeM->get_implementation_node(called_function->index) != 0, "inconsistent behavioral helper");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding call to " + fu_name);
+            const std::vector<tree_nodeRef> args = {be->op0, be->op1};
+            const auto ce = tree_man->CreateCallExpr(called_function, args, get_current_srcp());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced " + STR(current_statement));
+            TreeM->ReplaceTreeNode(current_statement, current_tree_node, ce);
+            CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index,
+                                                    GET_INDEX_CONST_NODE(current_statement),
+                                                    FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---      -> " + STR(current_statement));
+            modified = true;
+         }
          else if(be_type == mult_expr_K && use64bitMul)
          {
             const auto expr_type = tree_helper::CGetType(be->op0);

@@ -124,16 +124,14 @@ mem_utils #(BITSIZE_data)m_utils();
       add_port_parametric("_read", if_dir, 0U);
       out << R"(
 ptr_t raddr, raddr_next, raddr_last, raddr_last_next;
-reg [BITSIZE_data-1:0] val, val_next;
+reg [BITSIZE_data-1:0] val;
+wire [BITSIZE_data-1:0] val_next;
 
 initial
 begin
   val = 0;
-  val_next = 0;
   raddr = 0;
-  raddr_next = 0;
   raddr_last = 0;
-  raddr_last_next = 0;
 end
 
 always @(posedge clock)
@@ -170,11 +168,12 @@ begin
   end
 end
 
+assign val_next = val;
+
 always @(*)
 begin
   raddr_next = raddr;
   raddr_last_next = raddr_last;
-  val_next = val;
 end
 )";
       out << "assign " << arg_name << "_dout = val;\n"
@@ -187,16 +186,14 @@ end
       add_port_parametric("_write", if_ndir, 0U);
       out << R"(
 ptr_t waddr, waddr_next, waddr_last, waddr_last_next;
-reg enable, enable_next;
+reg enable;
+wire enable_next;
 
 initial
 begin
   waddr = 0;
-  waddr_next = 0;
   waddr_last = 0;
-  waddr_last_next = 0;
   enable = 0;
-  enable_next = 0;
 end
 
 always @(posedge clock)
@@ -228,11 +225,12 @@ begin
   end
 end
 
+assign enable_next = enable && !done_port;
+
 always @(*) 
 begin
   waddr_next = waddr;
   waddr_last_next = waddr_last;
-  enable_next = enable && !done_port;
 end
 always @(negedge clock)
 begin

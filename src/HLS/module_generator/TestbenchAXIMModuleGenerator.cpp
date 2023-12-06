@@ -150,7 +150,6 @@ void TestbenchAXIMModuleGenerator::InternalExec(std::ostream& out, structural_ob
    add_port_parametric_reg("awuser", port_o::IN, 1U);
    add_port_parametric_reg("awvalid", port_o::IN, 0U);
 
-   add_port_parametric_reg("wid", port_o::IN, 1U); // AXI3 spec only
    add_port_parametric_reg("wdata", port_o::IN, 1U);
    add_port_parametric_reg("wstrb", port_o::IN, 1U);
    add_port_parametric_reg("wlast", port_o::IN, 0U);

@@ -88,6 +88,4 @@ bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu
 bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG_BUFFER_WB --benchmark-name=2mm_cache_big_buffer_wb_delayed --mem-delay-read=20 --mem-delay-write=20
 bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DWRITE_BACK --benchmark-name=2mm_cache_write_back_delayed --mem-delay-read=20 --mem-delay-write=20
 bambu_interface_test/2mm.c --top-fname=mmult_tile --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DTILED --benchmark-name=2mm_tiled_cache_delayed --mem-delay-read=20 --mem-delay-write=20
-bambu_interface_test/test_open.c --benchmark-name=open  --top-fname=main --expose-globals --generate-interface=MINIMAL --file-input-data=BENCHMARKS_ROOT/bambu_interface_test/bin_test.dat --channels-type=MEM_ACC_11
-bambu_interface_test/test_open.c --benchmark-name=openn --top-fname=main --expose-globals --generate-interface=MINIMAL --file-input-data=BENCHMARKS_ROOT/bambu_interface_test/bin_test.dat --channels-type=MEM_ACC_NN
 bambu_interface_test/simple_c4_vector_8bits.cpp --top-fname=sum3numbers --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/simple_c4_vector_8bits.cpp -DCUSTOM_VERIFICATION --tb-memory-mapping=SHARED

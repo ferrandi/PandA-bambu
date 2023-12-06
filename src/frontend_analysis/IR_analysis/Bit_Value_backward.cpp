@@ -417,6 +417,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       case preincrement_expr_K:
       case range_expr_K:
       case rdiv_expr_K:
+      case frem_expr_K:
       case round_div_expr_K:
       case round_mod_expr_K:
       case rrotate_expr_K:
@@ -1337,6 +1338,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       case preincrement_expr_K:
       case range_expr_K:
       case rdiv_expr_K:
+      case frem_expr_K:
       case round_div_expr_K:
       case round_mod_expr_K:
       case set_le_expr_K:

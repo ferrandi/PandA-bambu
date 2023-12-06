@@ -410,6 +410,13 @@ void GimpleWriter::operator()(const binary_expr* obj, unsigned int& mask)
          obj->op1->visit(this);
          break;
       }
+      case frem_expr_K:
+      {
+         obj->op0->visit(this);
+         os << " frem ";
+         obj->op1->visit(this);
+         break;
+      }
       case extract_bit_expr_K:
       {
          obj->op0->visit(this);

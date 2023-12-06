@@ -93,15 +93,15 @@ mem_utils #(BITSIZE_data) m_utils();
       add_port_parametric(in_suffix, port_o::OUT, 1U);
       add_port_parametric(in_suffix + "_ack", port_o::IN, 0U);
       out << R"(
-reg ack_trigger, ack_trigger_next;
-reg [BITSIZE_data-1:0] val, val_next;
+reg ack_trigger; 
+wire ack_trigger_next;
+reg [BITSIZE_data-1:0] val;
+wire [BITSIZE_data-1:0] val_next;
 
 initial
 begin
   val = 0;
-  val_next = 0;
   ack_trigger = 0;
-  ack_trigger_next = 0;
 end
 
 always @(posedge clock)
@@ -128,12 +128,10 @@ begin
     end
   end
 end
-always @(*) 
-begin
-  val_next = val;
-  ack_trigger_next = )"
+
+assign val_next = val;
+assign ack_trigger_next = )"
           << arg_name << in_suffix << R"(_ack | ack_trigger;
-end
 )";
       out << "assign " << arg_name << in_suffix << " = val;\n";
    }
@@ -148,7 +146,6 @@ reg enable, enable_next;
 initial
 begin
   enable = 0;
-  enable_next = 0;
   $display("BEAWARE: Output acknowledge interface will read at each clock cycle");
 end
 

@@ -2296,10 +2296,6 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       const auto awvalid = CM->add_port("_m_axi_" + bundle_name + "_awvalid", port_o::OUT, interface_top, bool_type);
       GetPointerS<port_o>(awvalid)->set_port_interface(port_o::port_interface::M_AXI_AWVALID);
 
-      // BEAWARE: this is AXI3 spec, AXI4 does not have WID
-      // const auto wid = CM->add_port_vector("_m_axi_" + bundle_name + "_wid", port_o::OUT, 1, interface_top, idType);
-      // GetPointerS<port_o>(wid)->set_port_interface(port_o::port_interface::M_AXI_WID);
-
       const auto wdata = CM->add_port("_m_axi_" + bundle_name + "_wdata", port_o::OUT, interface_top, rwtypeOut);
       GetPointerS<port_o>(wdata)->set_port_interface(port_o::port_interface::M_AXI_WDATA);
 

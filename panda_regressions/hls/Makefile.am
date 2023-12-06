@@ -91,7 +91,6 @@ EXTRA_DIST= \
    %D%/bambu_interface_test/simpleif_c1_none.c \
    %D%/bambu_interface_test/simpleif_c1_none_test.xml \
    %D%/bambu_interface_test/simple_test.c \
-   %D%/bambu_interface_test/test_open.c \
    %D%/bambu_specific_test5/adders.c \
    %D%/bambu_specific_test5/function_call.c \
    %D%/bambu_specific_test5/if_clauses.c \
@@ -109,6 +108,7 @@ EXTRA_DIST= \
    %D%/bambu_specific_test6/insert_extract_element.ll \
    %D%/bambu_specific_test6_list \
    %D%/bambu_specific_test6/sat_op.ll \
+   %D%/bambu_specific_test6/frem_test.c \
    %D%/bambu_specific_test6.sh \
    %D%/bambu_specific_test/930608-1.c.gimplePSSA \
    %D%/bambu_specific_test/990829-1.c.gimplePSSA \
