@@ -3342,6 +3342,7 @@ static tree_nodeConstRef check_for_simple_pointer_arithmetic(const tree_nodeCons
       case insertvalue_expr_K:
       case extractelement_expr_K:
       case insertelement_expr_K:
+      case frem_expr_K:
       {
          return tree_nodeConstRef();
       }
@@ -3858,6 +3859,7 @@ tree_nodeConstRef tree_helper::GetBaseVariable(const tree_nodeConstRef& _node)
       case insertvalue_expr_K:
       case extractelement_expr_K:
       case insertelement_expr_K:
+      case frem_expr_K:
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:
       case CASE_GIMPLE_NODES:
@@ -4151,6 +4153,7 @@ bool tree_helper::IsPointerResolved(const tree_nodeConstRef& _node, CustomOrdere
       case insertvalue_expr_K:
       case extractelement_expr_K:
       case insertelement_expr_K:
+      case frem_expr_K:
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:
       case CASE_GIMPLE_NODES:
@@ -4876,6 +4879,7 @@ std::string tree_helper::op_symbol(const tree_node* op)
       case sat_minus_expr_K:
       case extractvalue_expr_K:
       case extractelement_expr_K:
+      case frem_expr_K:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
       case CASE_DECL_NODES:
@@ -6664,6 +6668,7 @@ bool tree_helper::is_packed_access(const tree_managerConstRef& TreeM, unsigned i
       case extract_bit_expr_K:
       case sat_plus_expr_K:
       case sat_minus_expr_K:
+      case frem_expr_K:
       {
          res = false;
          break;
@@ -7104,6 +7109,7 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
             case insertvalue_expr_K:
             case extractelement_expr_K:
             case insertelement_expr_K:
+            case frem_expr_K:
             case CASE_CPP_NODES:
             case CASE_FAKE_NODES:
             case CASE_GIMPLE_NODES:
@@ -7419,6 +7425,7 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
       case insertvalue_expr_K:
       case extractelement_expr_K:
       case insertelement_expr_K:
+      case frem_expr_K:
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:
       case CASE_GIMPLE_NODES:

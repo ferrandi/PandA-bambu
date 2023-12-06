@@ -500,6 +500,7 @@ std::string BehavioralHelper::PrintInit(const tree_nodeConstRef& _node, const va
       case sat_minus_expr_K:
       case extractvalue_expr_K:
       case extractelement_expr_K:
+      case frem_expr_K:
       default:
          THROW_ERROR("Currently not supported nodeID " + STR(node));
    }
@@ -1311,6 +1312,33 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          }
          break;
       }
+      case frem_expr_K:
+      {
+         const auto be = GetPointerS<const binary_expr>(node);
+         std::string left, right;
+         THROW_ASSERT(GetPointer<const real_type>(GET_CONST_NODE(be->type)), "unexpected case");
+         left = ("(" + PrintNode(be->op0, v, vppf) + ")");
+         right = ("(" + PrintNode(be->op1, v, vppf) + ")");
+
+         const auto rt = GetPointerS<const real_type>(GET_CONST_NODE(be->type));
+         if(rt->prec == 80)
+         {
+            res += "fmodl(" + left + "," + right + ")";
+         }
+         else if(rt->prec == 64)
+         {
+            res += "fmod(" + left + "," + right + ")";
+         }
+         else if(rt->prec == 32)
+         {
+            res += "fmodf(" + left + "," + right + ")";
+         }
+         else
+         {
+            THROW_ERROR("fmod on a real number with not supported precision");
+         }
+         break;
+      }
       case plus_expr_K:
       {
          const auto be = GetPointerS<const binary_expr>(node);
@@ -2103,6 +2131,7 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
                   case sat_minus_expr_K:
                   case extractvalue_expr_K:
                   case extractelement_expr_K:
+                  case frem_expr_K:
                   case CASE_CPP_NODES:
                   case CASE_CST_NODES:
                   case CASE_DECL_NODES:
@@ -5709,6 +5738,7 @@ unsigned int BehavioralHelper::get_intermediate_var(unsigned int obj) const
       case sat_minus_expr_K:
       case extractvalue_expr_K:
       case extractelement_expr_K:
+      case frem_expr_K:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
       case CASE_DECL_NODES:
@@ -6411,6 +6441,7 @@ bool BehavioralHelper::CanBeSpeculated(const unsigned int node_index) const
             case sat_minus_expr_K:
             case extractvalue_expr_K:
             case extractelement_expr_K:
+            case frem_expr_K:
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                               "<--Yes because it is a gimple_assign with " + GET_NODE(ga->op1)->get_kind_text() +

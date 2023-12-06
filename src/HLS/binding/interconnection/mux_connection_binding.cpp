@@ -634,6 +634,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          case insertvalue_expr_K:
          case extractelement_expr_K:
          case insertelement_expr_K:
+         case frem_expr_K:
          case CASE_TYPE_NODES:
          default:
             THROW_ERROR("determine_connection pattern not supported: " + tn->get_kind_text() + " @" + STR(tree_var));
