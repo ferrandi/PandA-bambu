@@ -77,7 +77,7 @@
        widen_sum_expr)(widen_mult_expr)(with_size_expr)(vec_lshift_expr)(vec_rshift_expr)(widen_mult_hi_expr)(         \
        widen_mult_lo_expr)(vec_pack_trunc_expr)(vec_pack_sat_expr)(vec_pack_fix_trunc_expr)(vec_extracteven_expr)(     \
        vec_extractodd_expr)(vec_interleavehigh_expr)(vec_interleavelow_expr)(extract_bit_expr)(sat_plus_expr)(         \
-       sat_minus_expr)(extractvalue_expr)(extractelement_expr)
+       sat_minus_expr)(extractvalue_expr)(extractelement_expr)(frem_expr)
 
 #define TERNARY_EXPRESSION_TREE_NODES                                                                              \
    (bit_field_ref)(bit_ior_concat_expr)(component_ref)(cond_expr)(vec_cond_expr)(vec_perm_expr)(dot_prod_expr)(    \

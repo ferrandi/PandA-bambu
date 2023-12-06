@@ -540,7 +540,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
    if(hwParam.size())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "Adding view-convert expressions to support hardware impelmented FU call arguments");
+                     "Adding view-convert expressions to support hardware implemented FU call arguments");
       for(const auto& ssa_uses : hwParam)
       {
          const auto ssa = ssa_uses.first;
@@ -580,7 +580,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
    if(hwReturn.size())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "Adding view-convert expressions to support hardware impelmented FU call return values");
+                     "Adding view-convert expressions to support hardware implemented FU call return values");
       for(const auto& ssa : hwReturn)
       {
          const auto call_stmt = ssa->CGetDefStmt();
@@ -2368,6 +2368,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                case tree_list_K:
                case tree_vec_K:
                case error_mark_K:
+               case frem_expr_K:
                case CASE_CPP_NODES:
                case CASE_CST_NODES:
                case CASE_DECL_NODES:

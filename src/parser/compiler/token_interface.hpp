@@ -602,6 +602,7 @@ enum class TreeVocabularyTokenTypes_TokenEnum
    TOK_INSERTVALUE_EXPR,
    TOK_EXTRACTELEMENT_EXPR,
    TOK_INSERTELEMENT_EXPR,
+   TOK_FREM_EXPR,
 
    /// RTL token
    TOK_RTL,

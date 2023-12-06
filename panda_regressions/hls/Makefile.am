@@ -108,6 +108,7 @@ EXTRA_DIST= \
    %D%/bambu_specific_test6/insert_extract_element.ll \
    %D%/bambu_specific_test6_list \
    %D%/bambu_specific_test6/sat_op.ll \
+   %D%/bambu_specific_test6/frem_test.c \
    %D%/bambu_specific_test6.sh \
    %D%/bambu_specific_test/930608-1.c.gimplePSSA \
    %D%/bambu_specific_test/990829-1.c.gimplePSSA \
