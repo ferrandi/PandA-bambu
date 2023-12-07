@@ -10402,7 +10402,7 @@ endgenerate
           <port_vector_o id="read_selector" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="STD_LIVE_VALUE_TABLE_SRAM write_enable address_inw address_inr read_selector n_elements READ_ONLY_MEMORY HIGH_LATENCY" IP_COMPONENT="STD_NR_BRAM" 
+          <NP_functionality LIBRARY="STD_LIVE_VALUE_TABLE_SRAM write_enable address_inw address_inr read_selector n_elements READ_ONLY_MEMORY HIGH_LATENCY" IP_COMPONENT="STD_NR_BRAM"
           VERILOG_PROVIDED="
 wire [PORTSIZE_address_inw*BITSIZE_read_selector-1:0] BankSelectorMask;
 reg [PORTSIZE_address_inw*BITSIZE_read_selector-1:0] WriteFeedBackData;
@@ -10764,9 +10764,6 @@ STD_LIVE_VALUE_TABLE_instance (
 `else
   localparam nbit_write = PORTSIZE_address_inw == 1 ? 1 : log2(PORTSIZE_address_inw);
 `endif
-wire [PORTSIZE_address_inr*PORTSIZE_address_inw*BITSIZE_dout_value-1:0] data_out;
-wire [PORTSIZE_address_inr*PORTSIZE_address_inw*BITSIZE_dout_value-1:0] data_out_swapped;
-
 
 reg [PORTSIZE_data_in*BITSIZE_data_in-1:0] WriteFeedBackData;
 wire [BITSIZE_dout_value*(PORTSIZE_address_inw*(PORTSIZE_address_inw-1))-1:0] ReadFeedBackData;
@@ -10774,18 +10771,59 @@ reg [BITSIZE_address_inw*(PORTSIZE_address_inw*(PORTSIZE_address_inw-1))-1:0] Re
 reg [BITSIZE_dout_value*PORTSIZE_dout_value-1:0] ReadData;
 wire [BITSIZE_dout_value*PORTSIZE_dout_value*PORTSIZE_address_inw-1:0] ReadDataOut;
 
+wire [PORTSIZE_write_enable-1:0] write_enable_mem;
+wire [PORTSIZE_address_inw*BITSIZE_address_inw-1:0] address_inw_mem;
+wire [PORTSIZE_address_inr*BITSIZE_address_inr-1:0] address_inr_mem;
+wire [PORTSIZE_data_in*BITSIZE_data_in-1:0] data_in_mem;
+wire [PORTSIZE_dout_value*BITSIZE_dout_value-1:0] dout_value_mem;
+reg [PORTSIZE_dout_value*BITSIZE_dout_value-1:0] dout_value_mem1;
+
+reg [PORTSIZE_write_enable-1:0] write_enable_mem1;
+reg [PORTSIZE_address_inw*BITSIZE_address_inw-1:0] address_inw_mem1;
+reg [PORTSIZE_data_in*BITSIZE_data_in-1:0] data_in_mem1;
+
 reg [PORTSIZE_write_enable-1:0] write_enable1;
 reg [PORTSIZE_address_inw*BITSIZE_address_inw-1:0] address_inw1;
+reg [PORTSIZE_address_inr*BITSIZE_address_inr-1:0] address_inr1;
 reg [PORTSIZE_data_in*BITSIZE_data_in-1:0] data_in1;
+
+assign dout_value = HIGH_LATENCY==0 ? dout_value_mem : dout_value_mem1;
+always @(posedge clock)
+  dout_value_mem1 &lt;= dout_value_mem;
+
+
+generate
+  if(HIGH_LATENCY==2)
+  begin
+    always @ (posedge clock)
+    begin
+       address_inr1 &lt;= address_inr;
+       address_inw1 &lt;= address_inw;
+       write_enable1 &lt;= write_enable;
+       data_in1 &lt;= data_in;
+    end
+    assign address_inr_mem = address_inr1;
+    assign address_inw_mem = address_inw1;
+    assign write_enable_mem = write_enable1;
+    assign data_in_mem = data_in1;
+  end
+  else
+  begin
+    assign address_inr_mem = address_inr;
+    assign address_inw_mem = address_inw;
+    assign write_enable_mem = write_enable;
+    assign data_in_mem = data_in;
+  end
+endgenerate
 
 always @(posedge clock)
 begin
-  write_enable1 &lt;= write_enable;
-  address_inw1 &lt;= address_inw;
-  data_in1 &lt;= data_in;
+  write_enable_mem1 &lt;= write_enable_mem;
+  address_inw_mem1 &lt;= address_inw_mem;
+  data_in_mem1 &lt;= data_in_mem;
 end
 
-assign dout_value = ReadData;
+assign dout_value_mem = ReadData;
 
 generate
 genvar ii1;
@@ -10797,18 +10835,18 @@ genvar ii1;
       .BITSIZE_address_inw(BITSIZE_address_inw),
       .BITSIZE_data_in(BITSIZE_data_in),
       .BITSIZE_data_out(BITSIZE_dout_value),
-      .PORTSIZE_data_out(PORTSIZE_address_inr-1),
+      .PORTSIZE_data_out(PORTSIZE_address_inw-1),
       .MEMORY_INIT_file(ii1 == 0 ? MEMORY_INIT_file : &quot;&quot;),
       .n_elements(n_elements),
       .forwarding(1),
       .READ_ONLY_MEMORY(READ_ONLY_MEMORY),
-      .HIGH_LATENCY(HIGH_LATENCY)
+      .HIGH_LATENCY(0)
     )
     STD_NR_BRAM_FB_instance (
       .clock(clock),
-      .write_enable(write_enable1[ii1]),
+      .write_enable(write_enable_mem1[ii1]),
       .address_inr(ReadFeedBackAddr[ii1*(BITSIZE_address_inw*(PORTSIZE_address_inw-1))+:(BITSIZE_address_inw*(PORTSIZE_address_inw-1))]),
-      .address_inw(address_inw1[ii1*BITSIZE_address_inw+:BITSIZE_address_inw]),
+      .address_inw(address_inw_mem1[ii1*BITSIZE_address_inw+:BITSIZE_address_inw]),
       .data_in(WriteFeedBackData[ii1*BITSIZE_data_in+:BITSIZE_data_in]),
       .data_out(ReadFeedBackData[ii1*BITSIZE_dout_value*(PORTSIZE_address_inw-1)+:BITSIZE_dout_value*(PORTSIZE_address_inw-1)]));
 
@@ -10823,13 +10861,13 @@ genvar ii1;
       .n_elements(n_elements),
       .forwarding(1),
       .READ_ONLY_MEMORY(READ_ONLY_MEMORY),
-      .HIGH_LATENCY(HIGH_LATENCY)
+      .HIGH_LATENCY(0)
     )
     STD_NR_BRAM_instance (
       .clock(clock),
-      .write_enable(write_enable1[ii1]),
-      .address_inr(address_inr),
-      .address_inw(address_inw1[ii1*BITSIZE_address_inw+:BITSIZE_address_inw]),
+      .write_enable(write_enable_mem1[ii1]),
+      .address_inr(address_inr_mem),
+      .address_inw(address_inw_mem1[ii1*BITSIZE_address_inw+:BITSIZE_address_inw]),
       .data_in(WriteFeedBackData[ii1*BITSIZE_data_in+:BITSIZE_data_in]),
       .data_out(ReadDataOut[ii1*BITSIZE_dout_value*(PORTSIZE_address_inr)+:BITSIZE_dout_value*(PORTSIZE_address_inr)]));
   end
@@ -10846,14 +10884,14 @@ begin
     end
   end
   for(i1=0;i1&lt;PORTSIZE_address_inw;i1=i1+1)
-    WriteFeedBackData[i1*BITSIZE_data_in+:BITSIZE_data_in] = data_in1[i1*BITSIZE_data_in+:BITSIZE_data_in];
+    WriteFeedBackData[i1*BITSIZE_data_in+:BITSIZE_data_in] = data_in_mem1[i1*BITSIZE_data_in+:BITSIZE_data_in];
   for(i1=0;i1&lt;PORTSIZE_address_inw;i1=i1+1)
   begin
     i3 = 0;
     for(i2=0;i2&lt;PORTSIZE_address_inw-1;i2=i2+1)
     begin
       i3=i3+(i2==i1);
-      ReadFeedBackAddr[(i1*(PORTSIZE_address_inw-1)+i2)*BITSIZE_address_inw+:BITSIZE_address_inw] = address_inw[i3*BITSIZE_address_inw+:BITSIZE_address_inw];
+      ReadFeedBackAddr[(i1*(PORTSIZE_address_inw-1)+i2)*BITSIZE_address_inw+:BITSIZE_address_inw] = address_inw_mem[i3*BITSIZE_address_inw+:BITSIZE_address_inw];
       WriteFeedBackData[i3*BITSIZE_data_in+:BITSIZE_data_in] = WriteFeedBackData[i3*BITSIZE_data_in+:BITSIZE_data_in]^ReadFeedBackData[(i1*(PORTSIZE_address_inw-1)+i2)*BITSIZE_data_in+:BITSIZE_data_in];
       i3=i3+1;
     end
