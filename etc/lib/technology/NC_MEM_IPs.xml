@@ -10402,7 +10402,7 @@ endgenerate
           <port_vector_o id="read_selector" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="STD_LIVE_VALUE_TABLE_SRAM write_enable address_inw address_inr read_selector n_elements READ_ONLY_MEMORY HIGH_LATENCY"
+          <NP_functionality LIBRARY="STD_LIVE_VALUE_TABLE_SRAM write_enable address_inw address_inr read_selector n_elements READ_ONLY_MEMORY HIGH_LATENCY" IP_COMPONENT="STD_NR_BRAM" 
           VERILOG_PROVIDED="
 wire [PORTSIZE_address_inw*BITSIZE_read_selector-1:0] BankSelectorMask;
 reg [PORTSIZE_address_inw*BITSIZE_read_selector-1:0] WriteFeedBackData;
@@ -10715,6 +10715,155 @@ STD_LIVE_VALUE_TABLE_instance (
       </circuit>
     </cell>
     <cell>
+      <name>STD_NRNW_BRAM_XOR</name>
+      <circuit>
+        <component_o id="STD_NRNW_BRAM_XOR">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="STD_NRNW_BRAM_XOR"/>
+          <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
+          <parameter name="n_elements">32</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
+          <parameter name="HIGH_LATENCY">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_vector_o id="write_enable" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <port_vector_o id="address_inr" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="address_inw" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="data_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="dout_value" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="STD_NRNW_BRAM_XOR write_enable address_inr address_inw data_in dout_value MEMORY_INIT_file n_elements READ_ONLY_MEMORY HIGH_LATENCY"
+          IP_COMPONENT="STD_NR_BRAM"
+          VERILOG_PROVIDED="
+`ifndef _SIM_HAVE_CLOG2
+  function integer log2;
+     input integer value;
+     integer temp_value;
+    begin
+      temp_value = value-1;
+      for (log2=0; temp_value&gt;0; log2=log2+1)
+        temp_value = temp_value&gt;&gt;1;
+    end
+  endfunction
+`endif
+`ifdef _SIM_HAVE_CLOG2
+  localparam nbit_write = PORTSIZE_address_inw == 1 ? 1 : $clog2(PORTSIZE_address_inw);
+`else
+  localparam nbit_write = PORTSIZE_address_inw == 1 ? 1 : log2(PORTSIZE_address_inw);
+`endif
+wire [PORTSIZE_address_inr*PORTSIZE_address_inw*BITSIZE_dout_value-1:0] data_out;
+wire [PORTSIZE_address_inr*PORTSIZE_address_inw*BITSIZE_dout_value-1:0] data_out_swapped;
+
+
+reg [PORTSIZE_data_in*BITSIZE_data_in-1:0] WriteFeedBackData;
+wire [BITSIZE_dout_value*(PORTSIZE_address_inw*(PORTSIZE_address_inw-1))-1:0] ReadFeedBackData;
+reg [BITSIZE_address_inw*(PORTSIZE_address_inw*(PORTSIZE_address_inw-1))-1:0] ReadFeedBackAddr;
+reg [BITSIZE_dout_value*PORTSIZE_dout_value-1:0] ReadData;
+wire [BITSIZE_dout_value*PORTSIZE_dout_value*PORTSIZE_address_inw-1:0] ReadDataOut;
+
+reg [PORTSIZE_write_enable-1:0] write_enable1;
+reg [PORTSIZE_address_inw*BITSIZE_address_inw-1:0] address_inw1;
+reg [PORTSIZE_data_in*BITSIZE_data_in-1:0] data_in1;
+
+always @(posedge clock)
+begin
+  write_enable1 &lt;= write_enable;
+  address_inw1 &lt;= address_inw;
+  data_in1 &lt;= data_in;
+end
+
+assign dout_value = ReadData;
+
+generate
+genvar ii1;
+  for (ii1=0; ii1&lt;PORTSIZE_address_inw; ii1=ii1+1)
+  begin : L1
+    STD_NR_BRAM #(
+      .PORTSIZE_address_inr(PORTSIZE_address_inw-1),
+      .BITSIZE_address_inr(BITSIZE_address_inr),
+      .BITSIZE_address_inw(BITSIZE_address_inw),
+      .BITSIZE_data_in(BITSIZE_data_in),
+      .BITSIZE_data_out(BITSIZE_dout_value),
+      .PORTSIZE_data_out(PORTSIZE_address_inr-1),
+      .MEMORY_INIT_file(ii1 == 0 ? MEMORY_INIT_file : &quot;&quot;),
+      .n_elements(n_elements),
+      .forwarding(1),
+      .READ_ONLY_MEMORY(READ_ONLY_MEMORY),
+      .HIGH_LATENCY(HIGH_LATENCY)
+    )
+    STD_NR_BRAM_FB_instance (
+      .clock(clock),
+      .write_enable(write_enable1[ii1]),
+      .address_inr(ReadFeedBackAddr[ii1*(BITSIZE_address_inw*(PORTSIZE_address_inw-1))+:(BITSIZE_address_inw*(PORTSIZE_address_inw-1))]),
+      .address_inw(address_inw1[ii1*BITSIZE_address_inw+:BITSIZE_address_inw]),
+      .data_in(WriteFeedBackData[ii1*BITSIZE_data_in+:BITSIZE_data_in]),
+      .data_out(ReadFeedBackData[ii1*BITSIZE_dout_value*(PORTSIZE_address_inw-1)+:BITSIZE_dout_value*(PORTSIZE_address_inw-1)]));
+
+    STD_NR_BRAM #(
+      .PORTSIZE_address_inr(PORTSIZE_address_inr),
+      .BITSIZE_address_inr(BITSIZE_address_inr),
+      .BITSIZE_address_inw(BITSIZE_address_inw),
+      .BITSIZE_data_in(BITSIZE_data_in),
+      .BITSIZE_data_out(BITSIZE_dout_value),
+      .PORTSIZE_data_out(PORTSIZE_address_inr),
+      .MEMORY_INIT_file(ii1 == 0 ? MEMORY_INIT_file : &quot;&quot;),
+      .n_elements(n_elements),
+      .forwarding(1),
+      .READ_ONLY_MEMORY(READ_ONLY_MEMORY),
+      .HIGH_LATENCY(HIGH_LATENCY)
+    )
+    STD_NR_BRAM_instance (
+      .clock(clock),
+      .write_enable(write_enable1[ii1]),
+      .address_inr(address_inr),
+      .address_inw(address_inw1[ii1*BITSIZE_address_inw+:BITSIZE_address_inw]),
+      .data_in(WriteFeedBackData[ii1*BITSIZE_data_in+:BITSIZE_data_in]),
+      .data_out(ReadDataOut[ii1*BITSIZE_dout_value*(PORTSIZE_address_inr)+:BITSIZE_dout_value*(PORTSIZE_address_inr)]));
+  end
+endgenerate
+integer i1,i2,i3;
+always @(*)
+begin
+  for(i1=0;i1&lt;PORTSIZE_address_inr;i1=i1+1)
+  begin
+    ReadData[i1*BITSIZE_dout_value+:BITSIZE_dout_value] = ReadDataOut[i1*BITSIZE_dout_value+:BITSIZE_dout_value];
+    for(i2=1;i2&lt;PORTSIZE_address_inw;i2=i2+1)
+    begin
+      ReadData[i1*BITSIZE_dout_value+:BITSIZE_dout_value] = ReadData[i1*BITSIZE_dout_value+:BITSIZE_dout_value]^ReadDataOut[(i2*PORTSIZE_address_inw+i1)*BITSIZE_dout_value+:BITSIZE_dout_value];
+    end
+  end
+  for(i1=0;i1&lt;PORTSIZE_address_inw;i1=i1+1)
+    WriteFeedBackData[i1*BITSIZE_data_in+:BITSIZE_data_in] = data_in1[i1*BITSIZE_data_in+:BITSIZE_data_in];
+  for(i1=0;i1&lt;PORTSIZE_address_inw;i1=i1+1)
+  begin
+    i3 = 0;
+    for(i2=0;i2&lt;PORTSIZE_address_inw-1;i2=i2+1)
+    begin
+      i3=i3+(i2==i1);
+      ReadFeedBackAddr[(i1*(PORTSIZE_address_inw-1)+i2)*BITSIZE_address_inw+:BITSIZE_address_inw] = address_inw[i3*BITSIZE_address_inw+:BITSIZE_address_inw];
+      WriteFeedBackData[i3*BITSIZE_data_in+:BITSIZE_data_in] = WriteFeedBackData[i3*BITSIZE_data_in+:BITSIZE_data_in]^ReadFeedBackData[(i1*(PORTSIZE_address_inw-1)+i2)*BITSIZE_data_in+:BITSIZE_data_in];
+      i3=i3+1;
+    end
+  end
+end
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
       <name>STD_NRNW_BRAM_GEN</name>
       <circuit>
         <component_o id="STD_NRNW_BRAM_GEN">
@@ -10746,12 +10895,12 @@ STD_LIVE_VALUE_TABLE_instance (
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="STD_NRNW_BRAM_GEN write_enable address_inr address_inw data_in dout_value MEMORY_INIT_file n_elements READ_ONLY_MEMORY HIGH_LATENCY"
-          IP_COMPONENT="STD_NRNW_BRAM,STD_DP_BRAM"
+          IP_COMPONENT="STD_NRNW_BRAM_XOR,STD_DP_BRAM"
           VERILOG_PROVIDED="
 parameter nbit_addr = BITSIZE_address_inr &gt; BITSIZE_address_inw ? BITSIZE_address_inr : BITSIZE_address_inw;
 wire [2*nbit_addr-1:0] address_in;
 generate
-if(PORTSIZE_address_inr == 2 &amp;&amp; PORTSIZE_address_inw == 2)
+if(PORTSIZE_address_inr == 2 &amp;&amp; PORTSIZE_address_inw == 1)
 begin
   assign address_in[0+:nbit_addr] = write_enable[0] ? address_inw[0+:BITSIZE_address_inw] : address_inr[0+:BITSIZE_address_inr];
   assign address_in[nbit_addr+:nbit_addr] = write_enable[1] ? address_inw[BITSIZE_address_inw+:BITSIZE_address_inw] : address_inr[BITSIZE_address_inr+:BITSIZE_address_inr];
@@ -10778,7 +10927,7 @@ begin
 end
 else
 begin
-  STD_NRNW_BRAM #(
+  STD_NRNW_BRAM_XOR #(
     .PORTSIZE_write_enable(PORTSIZE_write_enable),
     .BITSIZE_write_enable(BITSIZE_write_enable),
     .PORTSIZE_address_inr(PORTSIZE_address_inr),
