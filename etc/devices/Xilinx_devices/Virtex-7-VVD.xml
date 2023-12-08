@@ -163,9 +163,9 @@
       <cmd name="  set BRAMFIFO18_star 0"/>
       <cmd name="  set BRAM18 0"/>
       <cmd name="  set BRAMFIFO 0"/>
-      <cmd name="  regexp --  {\s*RAMS32\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMS32"/>
-      <cmd name="  regexp --  {\s*RAMD32\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMD32"/>
-      <cmd name="  regexp --  {\s*RAMD64E\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMD64E"/>
+      <cmd name="  set RAMS32 0"/>
+      <cmd name="  set RAMD32 0"/>
+      <cmd name="  set RAMD64E 0"/>
       <cmd name="  set DRAM 0"/>
       <cmd name="  set BIOB 0"/>
       <cmd name="  set DSPs 0"/>
