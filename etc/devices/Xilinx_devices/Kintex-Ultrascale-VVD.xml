@@ -19,6 +19,10 @@
       <cmd name="  set BRAMFIFO18_star 0"/>
       <cmd name="  set BRAM18 0"/>
       <cmd name="  set BRAMFIFO 0"/>
+      <cmd name="  set RAMS32 0"/>
+      <cmd name="  set RAMD32 0"/>
+      <cmd name="  set RAMD64E 0"/>
+      <cmd name="  set DRAM 0"/>
       <cmd name="  set BIOB 0"/>
       <cmd name="  set DSPs 0"/>
       <cmd name="  set TotPower 0"/>
@@ -36,6 +40,10 @@
       <cmd name="  regexp --  {\s*RAMB18/FIFO\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO18_star"/>
       <cmd name="  regexp --  {\s*RAMB18\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAM18"/>
       <cmd name="  set BRAMFIFO [expr {(2 *$BRAMFIFO36) + $BRAMFIFO18 + (2*$BRAMFIFO36_star) + $BRAMFIFO18_star + $BRAM18}]"/>
+      <cmd name="  regexp --  {\s*RAMS32\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMS32"/>
+      <cmd name="  regexp --  {\s*RAMD32\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMD32"/>
+      <cmd name="  regexp --  {\s*RAMD64E\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMD64E"/>
+      <cmd name="  set DRAM [expr {$RAMS32 + $RAMD32 + $RAMD64E}]"/>
       <cmd name="  regexp --  {\s*Bonded IOB\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BIOB"/>
       <cmd name="  regexp --  {\s*DSPs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore DSPs"/>
       <cmd name="  set power_rpt [report_power -return_string]"/>
@@ -88,6 +96,7 @@
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE_REGISTERS\\&quot; value=\\&quot;$CLBRegisters\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE_LUTS\\&quot; value=\\&quot;$CLBLUTs\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_BLOCK_RAMFIFO\\&quot; value=\\&quot;$BRAMFIFO\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_DRAM\\&quot; value=\\&quot;$DRAM\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_IOPIN\\&quot; value=\\&quot;$BIOB\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_DSPS\\&quot; value=\\&quot;$DSPs\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_POWER\\&quot; value=\\&quot;$TotPower\\&quot;/&gt;&quot;"/>
@@ -138,6 +147,10 @@
       <cmd name="  set BRAMFIFO18_star 0"/>
       <cmd name="  set BRAM18 0"/>
       <cmd name="  set BRAMFIFO 0"/>
+      <cmd name="  regexp --  {\s*RAMS32\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMS32"/>
+      <cmd name="  regexp --  {\s*RAMD32\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMD32"/>
+      <cmd name="  regexp --  {\s*RAMD64E\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMD64E"/>
+      <cmd name="  set DRAM 0"/>
       <cmd name="  set BIOB 0"/>
       <cmd name="  set DSPs 0"/>
       <cmd name="  set TotPower 0"/>
@@ -153,6 +166,10 @@
       <cmd name="  regexp --  {\s*RAMB18/FIFO\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO18_star"/>
       <cmd name="  regexp --  {\s*RAMB18\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAM18"/>
       <cmd name="  set BRAMFIFO [expr {(2 *$BRAMFIFO36) + $BRAMFIFO18 + (2*$BRAMFIFO36_star) + $BRAMFIFO18_star + $BRAM18}]"/>
+      <cmd name="  regexp --  {\s*RAMS32\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMS32"/>
+      <cmd name="  regexp --  {\s*RAMD32\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMD32"/>
+      <cmd name="  regexp --  {\s*RAMD64E\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMD64E"/>
+      <cmd name="  set DRAM [expr {$RAMS32 + $RAMD32 + $RAMD64E}]"/>
       <cmd name="  regexp --  {\s*Bonded IOB\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BIOB"/>
       <cmd name="  regexp --  {\s*DSPs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore DSPs"/>
       <cmd name="  set power_rpt [report_power -return_string]"/>
@@ -182,6 +199,7 @@
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE_REGISTERS\\&quot; value=\\&quot;$CLBRegisters\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE_LUTS\\&quot; value=\\&quot;$CLBLUTs\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_BLOCK_RAMFIFO\\&quot; value=\\&quot;$BRAMFIFO\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_DRAM\\&quot; value=\\&quot;$DRAM\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_IOPIN\\&quot; value=\\&quot;$BIOB\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_DSPS\\&quot; value=\\&quot;$DSPs\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_POWER\\&quot; value=\\&quot;$TotPower\\&quot;/&gt;&quot;"/>

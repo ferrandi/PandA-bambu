@@ -184,6 +184,16 @@ DesignFlowStep_Status SynthesisEvaluation::Exec()
          }
          HLSMgr->evaluations["BRAMS"] = brams;
       }
+      else if(objective == "DRAMS")
+      {
+         area_infoRef area_m = HLSMgr->get_backend_flow()->get_used_resources();
+         double drams = 0;
+         if(area_m)
+         {
+            drams = area_m->get_resource_value(area_info::DRAM);
+         }
+         HLSMgr->evaluations["DRAMS"] = drams;
+      }
       else if(objective == "CLOCK_SLACK")
       {
          /// get the timing information after the synthesis
