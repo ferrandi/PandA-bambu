@@ -3684,7 +3684,7 @@ bool AllocationInformation::can_be_asynchronous_ram(tree_managerConstRef TM, uns
    {
       threshold = 32 * threshold;
    }
-   else if(hls_d->has_parameter("max_distram_nn_size") && channel_number>1)
+   else if(hls_d->has_parameter("max_distram_nn_size") && channel_number > 1)
    {
       threshold = hls_d->get_parameter<unsigned int>("max_distram_nn_size");
    }
