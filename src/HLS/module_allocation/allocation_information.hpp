@@ -1024,7 +1024,7 @@ class AllocationInformation : public HLSFunctionIR
     */
    bool is_simple_pointer_plus_expr(const unsigned int fu_name) const;
 
-   static bool can_be_asynchronous_ram(tree_managerConstRef TM, unsigned int var, unsigned int threshold,
+   bool can_be_asynchronous_ram(tree_managerConstRef TM, unsigned int var, unsigned int threshold,
                                        bool is_read_only_variable, unsigned int channel_number);
 
    /**

@@ -469,6 +469,13 @@ void RTLCharacterization::xwrite_characterization(xml_element* nodeRoot)
             WRITE_XNVM2("value_type", "float64", attribute_el);
             attribute_el->add_child_text(STR(current_fu->area_m->get_resource_value(area_info::BRAM)));
          }
+         if(current_fu->area_m && current_fu->area_m->get_resource_value(area_info::DRAM) != 0)
+         {
+            attribute_el = cell_el->add_child_element("attribute");
+            WRITE_XNVM2("name", "DRAM", attribute_el);
+            WRITE_XNVM2("value_type", "float64", attribute_el);
+            attribute_el->add_child_text(STR(current_fu->area_m->get_resource_value(area_info::DRAM)));
+         }
 
          if(current_fu->fu_template_name != "" && current_fu->fu_template_parameters != "")
          {

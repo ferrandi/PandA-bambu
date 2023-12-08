@@ -673,6 +673,10 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
    {
       area_m->set_resource_value(area_info::BRAM, attributes["BRAM"]->get_content<double>());
    }
+   if(attributes.find("DRAM") != attributes.end())
+   {
+      area_m->set_resource_value(area_info::DRAM, attributes["DRAM"]->get_content<double>());
+   }
 }
 
 void functional_unit::xwrite(xml_element* rootnode, const technology_nodeRef tn, const ParameterConstRef Param)
@@ -724,6 +728,11 @@ void functional_unit::xwrite(xml_element* rootnode, const technology_nodeRef tn,
          {
             attributes["BRAM"] = attributeRef(
                 new attribute(attribute::FLOAT64, std::to_string(area_m->get_resource_value(area_info::BRAM))));
+         }
+         if(area_m->get_resource_value(area_info::DRAM) != 0.0)
+         {
+            attributes["DRAM"] = attributeRef(
+                new attribute(attribute::FLOAT64, std::to_string(area_m->get_resource_value(area_info::DRAM))));
          }
       }
    }
