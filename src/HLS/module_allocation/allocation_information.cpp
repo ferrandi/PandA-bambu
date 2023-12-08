@@ -396,7 +396,7 @@ double AllocationInformation::get_execution_time(const unsigned int fu_name, uns
       THROW_ASSERT(f_unit_alias, "Library miss component: " + component_name);
       auto* fu_alias = GetPointer<functional_unit>(f_unit_alias);
       /// FIXME: here we are passing fu_name and not the index of the alias function which does not exists; however
-      /// fu_name is used to identifiy if the operation is mapped on the DSP, so for non DSP operations works
+      /// fu_name is used to identify if the operation is mapped on the DSP, so for non DSP operations works
       technology_nodeRef op_alias_node = fu_alias->get_operation(operation_name);
       op_alias_node = op_alias_node ? op_alias_node : fu_alias->get_operations().front();
       return get_execution_time_dsp_modified(fu_name, op_alias_node);
@@ -3679,9 +3679,14 @@ bool AllocationInformation::can_be_asynchronous_ram(tree_managerConstRef TM, uns
    tree_nodeRef var_node = TM->get_tree_node_const(var);
    auto* vd = GetPointer<const var_decl>(var_node);
    auto var_bitsize = tree_helper::Size(var_node);
+   const auto hls_d = hls_manager->get_HLS_device();
    if(is_read_only_variable)
    {
       threshold = 32 * threshold;
+   }
+   else if(hls_d->has_parameter("max_distram_nn_size") && channel_number>1)
+   {
+      threshold = hls_d->get_parameter<unsigned int>("max_distram_nn_size");
    }
    if(vd)
    {
