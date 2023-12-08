@@ -122,6 +122,12 @@ Evaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relat
                                                 HLSFlowStepSpecializationConstRef(),
                                                 HLSFlowStep_Relationship::WHOLE_APPLICATION));
                   }
+                  else if(objective == "DRAMS")
+                  {
+                     ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION,
+                                                HLSFlowStepSpecializationConstRef(),
+                                                HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                  }
                   else if(objective == "CLOCK_SLACK")
                   {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION,
@@ -300,6 +306,11 @@ DesignFlowStep_Status Evaluation::Exec()
       {
          double brams = evaluation;
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---BRAMs                    : " + STR(brams));
+      }
+      else if(objective == "DRAMS")
+      {
+         double drams = evaluation;
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---DRAMs                    : " + STR(drams));
       }
       else if(objective == "CLOCK_SLACK")
       {
