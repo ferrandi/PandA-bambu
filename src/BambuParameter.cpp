@@ -2998,8 +2998,8 @@ void BambuParameter::CheckParameters()
          }
          const auto is_valid_evaluation_mode = [](const std::string& s) -> bool {
             return s == "AREA" || s == "AREAxTIME" || s == "TIME" || s == "TOTAL_TIME" || s == "CYCLES" ||
-                   s == "TOTAL_CYCLES" || s == "BRAMS" || s == "DRAMS" || s == "CLOCK_SLACK" || s == "DSPS" || s == "FREQUENCY" ||
-                   s == "PERIOD" || s == "REGISTERS";
+                   s == "TOTAL_CYCLES" || s == "BRAMS" || s == "DRAMS" || s == "CLOCK_SLACK" || s == "DSPS" ||
+                   s == "FREQUENCY" || s == "PERIOD" || s == "REGISTERS";
          };
          if(!all_of(objective_vector.begin(), objective_vector.end(), is_valid_evaluation_mode))
          {
