@@ -521,6 +521,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "            CYCLES          - n. of cycles for the average computation\n"
       << "            TOTAL_CYCLES    - n. of cycles for the whole computation\n"
       << "            BRAMS           - number of BRAMs\n"
+      << "            DRAMS           - number of DRAMs\n"
       << "            CLOCK_SLACK     - Slack between actual and required clock period\n"
       << "            DSPS            - number of DSPs\n"
       << "            FREQUENCY       - Maximum target frequency\n"
@@ -1299,6 +1300,7 @@ int BambuParameter::Exec()
                       "REGISTERS,"
                       "DSPS,"
                       "BRAMS,"
+                      "DRAMS,"
                       "PERIOD,"
                       "CLOCK_SLACK,"
                       "FREQUENCY,"
@@ -2983,8 +2985,8 @@ void BambuParameter::CheckParameters()
          }
          const auto is_valid_evaluation_mode = [](const std::string& s) -> bool {
             return s == "AREA" || s == "AREAxTIME" || s == "TIME" || s == "TOTAL_TIME" || s == "CYCLES" ||
-                   s == "TOTAL_CYCLES" || s == "BRAMS" || s == "CLOCK_SLACK" || s == "DSPS" || s == "FREQUENCY" ||
-                   s == "PERIOD" || s == "REGISTERS";
+                   s == "TOTAL_CYCLES" || s == "BRAMS" || s == "DRAMS" || s == "CLOCK_SLACK" || s == "DSPS" ||
+                   s == "FREQUENCY" || s == "PERIOD" || s == "REGISTERS";
          };
          if(!all_of(objective_vector.begin(), objective_vector.end(), is_valid_evaluation_mode))
          {
