@@ -44,8 +44,28 @@
  * Last modified by $Author$
  *
  */
+#include "compiler_wrapper.hpp"
 
-/// Autoheader include
+#include "Parameter.hpp"
+#include "compiler_constants.hpp"
+#include "compiler_xml.hpp"
+#include "cpu_stats.hpp"
+#include "cpu_time.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
+#include "fileIO.hpp"
+#include "file_IO_constants.hpp"
+#include "hls_step.hpp"
+#include "parse_tree.hpp"
+#include "polixml.hpp"
+#include "string_manipulation.hpp"
+#include "tree_manager.hpp"
+#include "tree_node.hpp"
+#include "tree_reindex.hpp"
+#include "utility.hpp"
+#include "xml_dom_parser.hpp"
+#include "xml_helper.hpp"
+
 #include "config_CLANG_PLUGIN_DIR.hpp"
 #include "config_EXTRA_CLANGPP_COMPILER_OPTION.hpp"
 #include "config_GCC_PLUGIN_DIR.hpp"
@@ -327,51 +347,13 @@
 #include "config_I386_LLVMVVD_LINK_EXE.hpp"
 #include "config_I386_LLVMVVD_OPT_EXE.hpp"
 #include "config_NPROFILE.hpp"
-/// Header include
-#include "compiler_wrapper.hpp"
 
-/// Behavior include
-
-/// Constants include
-#include "compiler_constants.hpp"
-#include "compiler_xml.hpp"
-#include "file_IO_constants.hpp"
-
-/// Frontend include
-#include "Parameter.hpp"
-
-/// HLS include
-#include "hls_step.hpp"
-
-/// STD include
 #include <cerrno>
-#include <string>
-#include <unistd.h>
-
-/// STL include
 #include <list>
 #include <random>
-
-/// Tree includes
-#include "parse_tree.hpp"
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
-#include "tree_reindex.hpp"
-
-/// Utility include
-#include "cpu_stats.hpp"
-#include "cpu_time.hpp"
-#include "dbgPrintHelper.hpp"
-#include "exceptions.hpp"
-#include "fileIO.hpp"
-#include "string_manipulation.hpp"
-#include "utility.hpp"
 #include <regex>
-
-/// XML includes used for writing and reading the configuration file
-#include "polixml.hpp"
-#include "xml_dom_parser.hpp"
-#include "xml_helper.hpp"
+#include <string>
+#include <unistd.h>
 
 static std::string __escape_define(const std::string& str)
 {
@@ -400,14 +382,12 @@ CompilerWrapper::CompilerWrapper(const ParameterConstRef _Param, const CompilerW
 // destructor
 CompilerWrapper::~CompilerWrapper() = default;
 
-void CompilerWrapper::CompileFile(const std::string& original_file_name, std::string& real_file_name,
-                                  const std::string& parameters_line, bool multiple_files,
+void CompilerWrapper::CompileFile(std::string& input_filename, const std::string& parameters_line, bool multiple_files,
                                   CompilerWrapper_CompilerMode cm, const std::string& costTable)
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Compiling " + original_file_name + "(transformed in " + real_file_name);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Compiling " + input_filename);
 
-   /// The gcc output
+   std::string real_filename = input_filename;
    const std::string gcc_output_file_name =
        Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
 
@@ -430,13 +410,6 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       command += " -D__BAMBU_DISCREPANCY__ ";
    }
 
-   /// Adding source code includes
-   if(original_file_name != "-" && original_file_name != real_file_name)
-   {
-      std::list<std::string> source_files;
-      source_files.push_back(original_file_name);
-      command += AddSourceCodeIncludes(source_files) + " ";
-   }
    command += " " + compiler.extra_options + " ";
 
    bool isWholeProgram =
@@ -446,28 +419,26 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
 
    if(cm == CompilerWrapper_CompilerMode::CM_EMPTY)
    {
-      if(original_file_name == "-")
+      if(input_filename == "-")
       {
          THROW_ERROR("Reading from standard input which does not contain any function definition");
       }
       static int empty_counter = 0;
-      const std::string temp_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + "/empty_" +
-                                         std::to_string(empty_counter++) + ".c";
-      CopyFile(original_file_name, temp_file_name);
-      const std::string append_command = R"(`echo -e "\nvoid __empty_function__(){}" >> )" + temp_file_name + "`";
-      int ret = PandaSystem(Param, append_command);
-      if(IsError(ret))
+      const auto temp_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + "/empty_" +
+                                  std::to_string(empty_counter++) + ".c";
+      CopyFile(input_filename, temp_file_name);
       {
-         THROW_ERROR("Error in appending empty function");
+         std::ofstream empty_file(temp_file_name, std::ios_base::app);
+         empty_file << "\nvoid __empty_function__(){}\n";
       }
-      real_file_name = temp_file_name;
+      real_filename = temp_file_name;
       if(compiler.is_clang)
       {
          command += " -c" +
                     load_plugin(compiler.empty_plugin_obj,
                                 Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)) +
                     " -mllvm -pandaGE-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
-                    " -mllvm -pandaGE-infile=" + real_file_name;
+                    " -mllvm -pandaGE-infile=" + real_filename;
       }
       else
       {
@@ -550,80 +521,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
             {
                command += " -mllvm -add-noalias";
             }
-            std::string extern_symbols;
-            std::vector<std::string> xml_files;
-            if(Param->isOption(OPT_xml_memory_allocation))
-            {
-               xml_files.push_back(Param->getOption<std::string>(OPT_xml_memory_allocation));
-            }
-            else
-            {
-               /// load xml memory allocation file
-               const auto output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
-               std::string leaf_name = std::filesystem::path(real_file_name).filename().string();
-               auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".memory_allocation.xml";
-               if((std::filesystem::exists(std::filesystem::path(XMLfilename))))
-               {
-                  xml_files.push_back(XMLfilename);
-               }
-            }
-            for(const auto& XMLfilename : xml_files)
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
-               XMLDomParser parser(XMLfilename);
-               parser.Exec();
-               if(parser)
-               {
-                  const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
-                  const xml_node::node_list list = node->get_children();
-                  for(const auto& l : list)
-                  {
-                     const xml_element* child = GetPointer<xml_element>(l);
-                     if(!child)
-                     {
-                        continue;
-                     }
-                     if(child->get_name() == "memory_allocation")
-                     {
-                        for(const auto& it : child->get_children())
-                        {
-                           const xml_element* mem_node = GetPointer<xml_element>(it);
-                           if(!mem_node)
-                           {
-                              continue;
-                           }
-                           if(mem_node->get_name() == "object")
-                           {
-                              std::string is_internal;
-                              if(!CE_XVM(is_internal, mem_node))
-                              {
-                                 THROW_ERROR("expected the is_internal attribute");
-                              }
-                              LOAD_XVM(is_internal, mem_node);
-                              if(is_internal == "T")
-                              {
-                              }
-                              else if(is_internal == "F")
-                              {
-                                 if(!CE_XVM(name, mem_node))
-                                 {
-                                    THROW_ERROR("expected the name attribute");
-                                 }
-                                 std::string name;
-                                 LOAD_XVM(name, mem_node);
-                                 extern_symbols = extern_symbols + name + ",";
-                              }
-                              else
-                              {
-                                 THROW_ERROR("unexpected value for is_internal attribute");
-                              }
-                           }
-                        }
-                     }
-                  }
-               }
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
-            }
+            const auto extern_symbols = readExternalSymbols(input_filename);
             if(!extern_symbols.empty())
             {
                command += " -mllvm -panda-ESL=" + extern_symbols;
@@ -665,7 +563,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
                     load_plugin(compiler.ssa_plugin_obj,
                                 Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)) +
                     " -mllvm -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
-                    " -mllvm -panda-infile=" + real_file_name + " -mllvm -panda-cost-table=\"" + costTable + "\"";
+                    " -mllvm -panda-infile=" + input_filename + " -mllvm -panda-cost-table=\"" + costTable + "\"";
          if(addTopFName)
          {
             command += " -mllvm -panda-topfname=" + fname;
@@ -681,7 +579,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    else if(cm == CompilerWrapper_CompilerMode::CM_LTO)
    {
       command += " -c -flto -o " + Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
-                 std::filesystem::path(real_file_name).stem().string() + ".o ";
+                 std::filesystem::path(input_filename).stem().string() + ".o ";
    }
    else
    {
@@ -714,20 +612,19 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       command += " -D\"" + std::string(STR_CST_panda_sizeof) + "(arg)=" + STR_CST_string_sizeof + "(#arg)\"";
    }
    command += " " + parameters_line;
-   if(original_file_name == "-" || original_file_name == "/dev/null")
+   if(input_filename == "-" || input_filename == "/dev/null")
    {
-      command += real_file_name;
+      command += real_filename;
    }
    else
    {
-      std::filesystem::path file_path(original_file_name);
-      std::string extension = file_path.extension().string();
+      const auto extension = std::filesystem::path(input_filename).extension().string();
       /// assembler files are not allowed so in some cases we pass a C file renamed with extension .S
       if(extension == ".S")
       {
          command += "-x c ";
       }
-      command += "\"" + real_file_name + "\"";
+      command += "\"" + real_filename + "\"";
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Invoke: " + command);
 #if !NPROFILE
@@ -774,10 +671,11 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
          CopyStdout(gcc_output_file_name);
       }
    }
+   input_filename = real_filename;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Compiled file");
 }
 
-void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string, std::string>& source_files,
+void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::vector<std::string>& source_files,
                                       const std::string& costTable)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Invoking front-end compiler");
@@ -820,9 +718,9 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
    {
       for(auto& source_file : source_files)
       {
-         if(already_processed_files.find(source_file.first) != already_processed_files.end())
+         if(already_processed_files.find(source_file) != already_processed_files.end())
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Already processed " + source_file.first);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Already processed " + source_file);
             continue;
          }
          std::string analyzing_compiling_parameters;
@@ -862,7 +760,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          {
             analyzing_compiling_parameters += Param->getOption<std::string>(OPT_gcc_includes) + " ";
          }
-         CompileFile(source_file.first, source_file.second, analyzing_compiling_parameters, source_files.size() > 1,
+         CompileFile(source_file, analyzing_compiling_parameters, source_files.size() > 1,
                      CompilerWrapper_CompilerMode::CM_ANALYZER, costTable);
       }
    }
@@ -874,20 +772,19 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
    const auto enable_LTO = (compiler.is_clang && source_files.size() > 1);
    for(auto& source_file : source_files)
    {
-      if(already_processed_files.find(source_file.first) != already_processed_files.end())
+      if(already_processed_files.find(source_file) != already_processed_files.end())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Already processed " + source_file.first);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Already processed " + source_file);
          continue;
       }
       else
       {
-         already_processed_files.insert(source_file.first);
+         already_processed_files.insert(source_file);
       }
-      std::string leaf_name =
-          source_file.second == "-" ? "stdin-" : std::filesystem::path(source_file.second).filename().string();
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Compiling file " + source_file.second);
+      std::string leaf_name = source_file == "-" ? "stdin-" : std::filesystem::path(source_file).filename().string();
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Compiling file " + source_file);
       /// create obj
-      CompileFile(source_file.first, source_file.second, frontend_compiler_parameters, source_files.size() > 1,
+      CompileFile(source_file, frontend_compiler_parameters, source_files.size() > 1,
                   enable_LTO ? CompilerWrapper_CompilerMode::CM_LTO : CompilerWrapper_CompilerMode::CM_STD, costTable);
       if(!Param->isOption(OPT_gcc_E) && !Param->isOption(OPT_gcc_S) && !enable_LTO)
       {
@@ -895,22 +792,21 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
                 std::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix))))
          {
             THROW_WARNING("Raw not created for file " + output_temporary_directory + "/" + leaf_name);
-            CompileFile(source_file.first, source_file.second, frontend_compiler_parameters, source_files.size() > 1,
+            CompileFile(source_file, frontend_compiler_parameters, source_files.size() > 1,
                         CompilerWrapper_CompilerMode::CM_EMPTY, costTable);
             /// Recomputing leaf_name since source_file.second should be modified in the previous call
-            leaf_name =
-                source_file.second == "-" ? "stdin-" : std::filesystem::path(source_file.second).filename().string();
-            if(not(std::filesystem::exists(
-                   std::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_empty_suffix))))
+            leaf_name = source_file == "-" ? "stdin-" : std::filesystem::path(source_file).filename().string();
+            if(!std::filesystem::exists(
+                   std::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_empty_suffix)))
             {
                THROW_ERROR(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_empty_suffix +
-                           " not found: impossible to create raw file for " + source_file.second);
+                           " not found: impossible to create raw file for " + source_file);
             }
             std::filesystem::rename(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_empty_suffix,
                                     output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Renaming " + source_file.second + STR_CST_gcc_empty_suffix + " in " +
-                               source_file.second + STR_CST_gcc_tree_suffix);
+                           "---Renaming " + source_file + STR_CST_gcc_empty_suffix + " in " + source_file +
+                               STR_CST_gcc_tree_suffix);
          }
          std::filesystem::path obj =
              std::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
@@ -936,8 +832,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
       std::string object_files;
       for(const auto& source_file : source_files)
       {
-         std::string leaf_name =
-             source_file.second == "-" ? "stdin-" : std::filesystem::path(source_file.second).stem().string();
+         std::string leaf_name = source_file == "-" ? "stdin-" : std::filesystem::path(source_file).stem().string();
          if((std::filesystem::exists(std::filesystem::path(output_temporary_directory + "/" + leaf_name + ".o"))))
          {
             object_files += std::filesystem::path(output_temporary_directory + "/" + leaf_name + ".o").string() + " ";
@@ -1004,80 +899,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             {
                command += " -add-noalias";
             }
-            std::string extern_symbols;
-            std::vector<std::string> xml_files;
-            if(Param->isOption(OPT_xml_memory_allocation))
-            {
-               xml_files.push_back(Param->getOption<std::string>(OPT_xml_memory_allocation));
-            }
-            else
-            {
-               for(const auto& entry : std::filesystem::directory_iterator{output_temporary_directory})
-               {
-                  const auto source_file = entry.path().filename().string();
-                  if(source_file.find(".memory_allocation.xml") != std::string::npos)
-                  {
-                     xml_files.push_back(source_file);
-                  }
-               }
-            }
-            for(const auto& XMLfilename : xml_files)
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
-               XMLDomParser parser(XMLfilename);
-               parser.Exec();
-               if(parser)
-               {
-                  const auto node = parser.get_document()->get_root_node(); // deleted by DomParser.
-                  const auto list = node->get_children();
-                  for(const auto& l : list)
-                  {
-                     const auto child = GetPointer<xml_element>(l);
-                     if(!child)
-                     {
-                        continue;
-                     }
-                     if(child->get_name() == "memory_allocation")
-                     {
-                        for(const auto& it : child->get_children())
-                        {
-                           const auto mem_node = GetPointer<xml_element>(it);
-                           if(!mem_node)
-                           {
-                              continue;
-                           }
-                           if(mem_node->get_name() == "object")
-                           {
-                              std::string is_internal;
-                              if(!CE_XVM(is_internal, mem_node))
-                              {
-                                 THROW_ERROR("expected the is_internal attribute");
-                              }
-                              LOAD_XVM(is_internal, mem_node);
-                              if(is_internal == "T")
-                              {
-                              }
-                              else if(is_internal == "F")
-                              {
-                                 if(!CE_XVM(name, mem_node))
-                                 {
-                                    THROW_ERROR("expected the name attribute");
-                                 }
-                                 std::string name;
-                                 LOAD_XVM(name, mem_node);
-                                 extern_symbols = extern_symbols + name + ",";
-                              }
-                              else
-                              {
-                                 THROW_ERROR("unexpected value for is_internal attribute");
-                              }
-                           }
-                        }
-                     }
-                  }
-               }
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
-            }
+            std::string extern_symbols = readExternalSymbols(source_files.front());
             if(!extern_symbols.empty())
             {
                command += " -panda-ESL=" + extern_symbols;
@@ -1177,20 +999,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
          THROW_ERROR("LTO compilation not yet implemented for the chosen front-end compiler");
       }
 
-      std::string real_file_names;
-      bool first_file = true;
-      for(const auto& fsname : source_files)
-      {
-         if(first_file)
-         {
-            real_file_names = fsname.second;
-            first_file = false;
-         }
-         else
-         {
-            real_file_names = real_file_names + "," + fsname.second;
-         }
-      }
+      const auto real_file_names = convert_vector_to_string(source_files, ",");
       if(compiler.is_clang)
       {
          auto plugin_prefix = add_plugin_prefix(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
@@ -1249,7 +1058,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
       {
          THROW_ERROR("LTO compilation not yet implemented for the chosen front-end compiler");
       }
-      std::string leaf_name = std::filesystem::path(source_files.begin()->second).filename().string();
+      const auto leaf_name = std::filesystem::path(source_files.front()).filename().string();
       const auto obj = std::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
       if(!std::filesystem::exists(obj))
       {
@@ -2536,46 +2345,6 @@ void CompilerWrapper::QueryCompilerConfig(const std::string& compiler_option) co
    CopyStdout(output_file_name);
 }
 
-size_t CompilerWrapper::GetSourceCodeLines(const ParameterConstRef Param)
-{
-#ifndef NDEBUG
-   const int debug_level = Param->get_class_debug_level("CompilerWrapper");
-#endif
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Getting source code lines number");
-   /// The output file
-   const std::string output_file_name =
-       Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_output_file;
-
-   std::string command = "cat ";
-   const auto source_files = Param->getOption<const CustomSet<std::string>>(OPT_input_file);
-   for(const auto& source_file : source_files)
-   {
-      std::filesystem::path absolute_path = std::filesystem::absolute(source_file);
-      command += absolute_path.parent_path().string() + "/*\\.h ";
-      command += source_file + " ";
-   }
-   command += std::string(" 2> /dev/null | wc -l");
-   int ret = PandaSystem(Param, command, true, output_file_name);
-   if(IsError(ret))
-   {
-      THROW_ERROR("Error during execution of computing word lines");
-   }
-
-   std::ifstream output_file(output_file_name.c_str());
-   if(output_file.is_open() && !output_file.eof())
-   {
-      std::string line;
-      getline(output_file, line);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Got " + line);
-      return std::stoul(line);
-   }
-   else
-   {
-      THROW_ERROR("Error in opening " + output_file_name);
-   }
-   return 0;
-}
-
 std::string CompilerWrapper::GetCompilerParameters(const std::string& extra_compiler_options,
                                                    bool no_frontend_compiler_parameters) const
 {
@@ -3852,6 +3621,80 @@ std::string CompilerWrapper::getCompilerVersion(int pc)
 #endif
    THROW_ERROR("");
    return "";
+}
+
+std::string CompilerWrapper::readExternalSymbols(const std::string& filename) const
+{
+   std::string extern_symbols;
+   const auto XMLfilename = [&]() -> std::string {
+      if(Param->isOption(OPT_xml_memory_allocation))
+      {
+         return Param->getOption<std::string>(OPT_xml_memory_allocation);
+      }
+      /// load xml memory allocation file
+      const auto output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
+      const auto leaf_name = std::filesystem::path(filename).filename().string();
+      const auto generate_xml = output_temporary_directory + "/" + leaf_name + ".memory_allocation.xml";
+      if((std::filesystem::exists(std::filesystem::path(generate_xml))))
+      {
+         return generate_xml;
+      }
+      return std::string("");
+   }();
+   if(XMLfilename.size())
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
+      XMLDomParser parser(XMLfilename);
+      parser.Exec();
+      if(parser)
+      {
+         const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
+         const xml_node::node_list list = node->get_children();
+         for(const auto& l : list)
+         {
+            if(const auto* child = GetPointer<xml_element>(l))
+            {
+               if(child->get_name() == "memory_allocation")
+               {
+                  for(const auto& it : child->get_children())
+                  {
+                     if(const auto* mem_node = GetPointer<xml_element>(it))
+                     {
+                        if(mem_node->get_name() == "object")
+                        {
+                           std::string is_internal;
+                           if(!CE_XVM(is_internal, mem_node))
+                           {
+                              THROW_ERROR("expected the is_internal attribute");
+                           }
+                           LOAD_XVM(is_internal, mem_node);
+                           if(is_internal == "T")
+                           {
+                           }
+                           else if(is_internal == "F")
+                           {
+                              if(!CE_XVM(name, mem_node))
+                              {
+                                 THROW_ERROR("expected the name attribute");
+                              }
+                              std::string name;
+                              LOAD_XVM(name, mem_node);
+                              extern_symbols += name + ",";
+                           }
+                           else
+                           {
+                              THROW_ERROR("unexpected value for is_internal attribute");
+                           }
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
+   }
+   return extern_symbols;
 }
 
 std::string CompilerWrapper::load_plugin(const std::string& plugin_obj, CompilerWrapper_CompilerTarget target)

@@ -102,7 +102,7 @@ DesignFlowStep_Status AadlParser::Exec()
    const AadlFlexLexerRef lexer(new AadlFlexLexer(parameters, sname.get(), nullptr));
    const AadlParserDataRef data(new AadlParserData(parameters));
    YYParse(data, lexer);
-   AppM->input_files.erase(file_name);
+   AppM->input_files.erase(std::find(AppM->input_files.begin(), AppM->input_files.end(), file_name));
    const auto aadl_information = GetPointer<HLS_manager>(AppM)->aadl_information;
    for(const auto& system : data->system_properties)
    {
@@ -112,7 +112,7 @@ DesignFlowStep_Status AadlParser::Exec()
          if(system.second.find("Source_Text") != system.second.end())
          {
             const auto input_file = GetFile(directory, system.second.find("Source_Text")->second);
-            AppM->input_files[input_file] = input_file;
+            AppM->input_files.push_back(input_file);
          }
          if(data->system_features.find(system.first) != data->system_features.end())
          {
@@ -144,7 +144,7 @@ DesignFlowStep_Status AadlParser::Exec()
       {
          const auto data_view_file = GetFile(directory, property.second.find("Taste::dataViewPath")->second);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added " + data_view_file + " to input files");
-         AppM->input_files[data_view_file] = data_view_file;
+         AppM->input_files.push_back(data_view_file);
       }
    }
    for(const auto& property : data->data_properties)
@@ -153,7 +153,7 @@ DesignFlowStep_Status AadlParser::Exec()
       {
          const auto data_view_file = GetFile(directory, property.second.find("Source_Text")->second);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added " + data_view_file + " to input files");
-         AppM->input_files[data_view_file] = data_view_file;
+         AppM->input_files.push_back(data_view_file);
       }
    }
    for(const auto& subprogram : data->subprogram_features)

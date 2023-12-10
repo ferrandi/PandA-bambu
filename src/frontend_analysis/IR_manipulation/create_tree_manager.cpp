@@ -93,13 +93,12 @@ void create_tree_manager::ComputeRelationships(DesignFlowStepSet& relationship,
 #if HAVE_FROM_AADL_ASN_BUILT
          if(parameters->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_AADL)
          {
-            const auto input_files = AppM->input_files;
-            for(const auto& input_file : input_files)
+            for(const auto& input_file : AppM->input_files)
             {
-               const auto file_format = parameters->GetFileFormat(input_file.first);
+               const auto file_format = parameters->GetFileFormat(input_file);
                if(file_format == Parameters_FileFormat::FF_AADL)
                {
-                  const auto signature = ParserFlowStep::ComputeSignature(ParserFlowStep_Type::AADL, input_file.first);
+                  const auto signature = ParserFlowStep::ComputeSignature(ParserFlowStep_Type::AADL, input_file);
                   vertex parser_step = design_flow_manager.lock()->GetDesignFlowStep(signature);
                   const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
                   const DesignFlowStepRef design_flow_step =
@@ -110,7 +109,7 @@ void create_tree_manager::ComputeRelationships(DesignFlowStepSet& relationship,
                }
                else if(file_format == Parameters_FileFormat::FF_ASN)
                {
-                  const auto signature = ParserFlowStep::ComputeSignature(ParserFlowStep_Type::ASN, input_file.first);
+                  const auto signature = ParserFlowStep::ComputeSignature(ParserFlowStep_Type::ASN, input_file);
                   vertex parser_step = design_flow_manager.lock()->GetDesignFlowStep(signature);
                   const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
                   const DesignFlowStepRef design_flow_step =
