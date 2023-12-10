@@ -581,9 +581,6 @@ void EucalyptusParameter::CheckParameters()
    /// Search for verilator
    setOption(OPT_verilator, system("which verilator > /dev/null 2>&1") == 0);
 
-   // /// Search for icarus
-   // setOption(OPT_icarus, system("which iverilog > /dev/null 2>&1") == 0);
-
    if(isOption(OPT_simulator))
    {
       if(getOption<std::string>(OPT_simulator) == "MODELSIM" && !isOption(OPT_mentor_modelsim_bin))
@@ -593,14 +590,6 @@ void EucalyptusParameter::CheckParameters()
       else if(getOption<std::string>(OPT_simulator) == "XSIM" && !isOption(OPT_xilinx_vivado_settings))
       {
          THROW_ERROR("Xilinx XSim was not detected by Bambu. Please check --xilinx-root option is correct.");
-      }
-      else if(getOption<std::string>(OPT_simulator) == "ISIM" && !isOption(OPT_xilinx_settings))
-      {
-         THROW_ERROR("Xilinx ISim was not detected by Bambu. Please check --xilinx-root option is correct.");
-      }
-      else if(getOption<std::string>(OPT_simulator) == "ICARUS" && !isOption(OPT_icarus))
-      {
-         THROW_ERROR("Icarus was not detected by Bambu. Please make sure it is installed in the system.");
       }
       else if(getOption<std::string>(OPT_simulator) == "VERILATOR" && !isOption(OPT_verilator))
       {
@@ -625,14 +614,6 @@ void EucalyptusParameter::CheckParameters()
       {
          THROW_ERROR("No valid simulator was found in the system.");
       }
-      // else if(isOption(OPT_xilinx_settings))
-      // {
-      //    setOption(OPT_simulator, "ISIM"); /// Mixed language simulator
-      // }
-      // else if(isOption(OPT_icarus))
-      // {
-      //    setOption(OPT_simulator, "ICARUS");
-      // }
    }
 
    if(not isOption(OPT_device_string))
