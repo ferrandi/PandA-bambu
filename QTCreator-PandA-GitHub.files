@@ -2469,10 +2469,6 @@ src/wrapper/flopoco/flopoco_wrapper.cpp
 src/wrapper/flopoco/flopoco_wrapper.hpp
 src/wrapper/simulation/SimulationTool.cpp
 src/wrapper/simulation/SimulationTool.hpp
-src/wrapper/simulation/icarus/IcarusWrapper.cpp
-src/wrapper/simulation/icarus/IcarusWrapper.hpp
-src/wrapper/simulation/isim/ISE_isim_wrapper.cpp
-src/wrapper/simulation/isim/ISE_isim_wrapper.hpp
 src/wrapper/simulation/modelsim/modelsimWrapper.cpp
 src/wrapper/simulation/modelsim/modelsimWrapper.hpp
 src/wrapper/simulation/verilator/VerilatorWrapper.cpp
