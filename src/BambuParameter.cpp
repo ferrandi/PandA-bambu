@@ -3615,6 +3615,16 @@ void BambuParameter::CheckParameters()
    {
       setOption(OPT_bitvalue_ipa, false);
    }
+   if(getOption<int>(OPT_gcc_openmp_simd) || getOption<bool>(OPT_parse_pragma))
+   {
+      const auto flist = getOption<const std::list<std::string>>(OPT_input_file);
+      std::string includes = isOption(OPT_gcc_includes) ? getOption<std::string>(OPT_gcc_includes) : "";
+      for(const auto& src : flist)
+      {
+         includes += " -iquote " + std::filesystem::path(src).parent_path().string();
+      }
+      setOption(OPT_gcc_includes, includes);
+   }
 
    if(starts_with(getOption<std::string>(OPT_device_string), "nx"))
    {
@@ -3782,7 +3792,6 @@ void BambuParameter::SetDefaults()
    setOption(OPT_gcc_c, true);
    setOption(OPT_gcc_config, false);
    setOption(OPT_gcc_costs, false);
-   setOption(OPT_gcc_openmp_simd, 0);
    setOption(OPT_gcc_optimization_set, CompilerWrapper_OptimizationSet::OBAMBU);
    setOption(OPT_gcc_include_sysdir, false);
 

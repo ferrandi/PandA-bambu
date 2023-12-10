@@ -194,28 +194,9 @@ static vertex get_remapped_vertex(vertex current_vertex, const CallGraphManagerC
 
 void mem_dominator_allocation::Initialize()
 {
-   std::vector<std::string> xml_files;
    if(parameters->isOption(OPT_xml_memory_allocation))
    {
-      xml_files.push_back(parameters->getOption<std::string>(OPT_xml_memory_allocation));
-   }
-   else
-   {
-      /// load xml memory allocation file
-      for(const auto& source_file : HLSMgr->input_files)
-      {
-         const auto output_temporary_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
-         const std::string leaf_name =
-             source_file.second == "-" ? "stdin-" : std::filesystem::path(source_file.second).filename().string();
-         const auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".memory_allocation.xml";
-         if((std::filesystem::exists(std::filesystem::path(XMLfilename))))
-         {
-            xml_files.push_back(XMLfilename);
-         }
-      }
-   }
-   for(const auto& XMLfilename : xml_files)
-   {
+      const auto XMLfilename = parameters->getOption<std::string>(OPT_xml_memory_allocation);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
       XMLDomParser parser(XMLfilename);
       parser.Exec();
