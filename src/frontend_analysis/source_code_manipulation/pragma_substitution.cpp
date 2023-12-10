@@ -94,18 +94,16 @@ PragmaSubstitution::ComputeFrontendRelationships(const DesignFlowStep::Relations
 
 DesignFlowStep_Status PragmaSubstitution::Exec()
 {
-   for(const auto& input_file : AppM->input_files)
+   for(auto& input_file : AppM->input_files)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "---Patching file " + input_file.first + "(" + input_file.second + ")");
-      if(not std::filesystem::exists(std::filesystem::path(input_file.second)))
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Patching file " + input_file);
+      if(!std::filesystem::exists(std::filesystem::path(input_file)))
       {
-         THROW_ERROR("File " + input_file.second + " does not exist");
+         THROW_ERROR("File " + input_file + " does not exist");
       }
 
-      const PragmaParserRef parser = PragmaParserRef(new PragmaParser(AppM->get_pragma_manager(), parameters));
-      const std::string new_file = parser->substitutePragmas(input_file.second);
-      AppM->input_files[input_file.first] = new_file;
+      PragmaParser parser(AppM->get_pragma_manager(), parameters);
+      input_file = parser.substitutePragmas(input_file);
    }
    return DesignFlowStep_Status::SUCCESS;
 }

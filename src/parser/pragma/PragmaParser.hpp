@@ -129,9 +129,6 @@ class PragmaParser
 
    std::string name_function;
 
-   /// Counter of examined files
-   static unsigned int file_counter;
-
  public:
    /**
     * Constructor

@@ -212,17 +212,14 @@ class CompilerWrapper
 
    /**
     * Invoke the frontend compiler to compile file(s)
-    * @param original_file_name is the original file passed through command line; this information is necessary to
-    * retrieve include directory
-    * @param real_rile_name stores the source code file which is actually compiled; the function can modified it in case
-    * of empty file
+    * @param original_file_name is the original file passed through command line (is modified in case of empty file
+    * compilation)
     * @param parameters_line are the parameters to be passed to the frontend compiler
     * @param multiple_files is the true in case multiple files are considered.
     * @param cm is the mode in which we compile
     */
-   void CompileFile(const std::string& original_file_name, std::string& real_file_name,
-                    const std::string& parameters_line, bool multiple_files, CompilerWrapper_CompilerMode cm,
-                    const std::string& costTable);
+   void CompileFile(std::string& input_filename, const std::string& parameters_line, bool multiple_files,
+                    CompilerWrapper_CompilerMode cm, const std::string& costTable);
 
    std::string GetAnalyzeCompiler() const;
 
@@ -267,6 +264,8 @@ class CompilerWrapper
     * @return the corresponding number
     */
    static size_t ConvertVersion(const std::string& version);
+
+   std::string readExternalSymbols(const std::string& filename) const;
 
    std::string clang_recipes(const CompilerWrapper_OptimizationSet optimization_level,
                              const CompilerWrapper_CompilerTarget compiler_target,
@@ -314,8 +313,7 @@ class CompilerWrapper
     * @param source_files are the source files to be compiled; key is the original source code file, value is the
     * transformed source code file
     */
-   void FillTreeManager(const tree_managerRef TM, std::map<std::string, std::string>& source_files,
-                        const std::string& costTable);
+   void FillTreeManager(const tree_managerRef TM, std::vector<std::string>& source_files, const std::string& costTable);
 
    /**
     * Return the list of the frontend compiler system includes
@@ -332,13 +330,6 @@ class CompilerWrapper
     * Function that print of stdout some useful information passing the given option
     */
    void QueryCompilerConfig(const std::string& compiler_option) const;
-
-   /**
-    * Return the total number of lines of the benchmark
-    * @param Param is the set of input parameters
-    * @return the total number of lines of the benchmark
-    */
-   static size_t GetSourceCodeLines(const ParameterConstRef Param);
 
    std::string GetCompilerParameters(const std::string& extra_compiler_options,
                                      bool no_frontend_compiler_parameters = false) const;

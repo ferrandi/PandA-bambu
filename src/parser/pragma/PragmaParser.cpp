@@ -43,29 +43,19 @@
  * Last modified by $Author$
  *
  */
-
-/// Header include
 #include "PragmaParser.hpp"
 
-/// Constants include
-#include "pragma_constants.hpp"
-
-/// Parameter include
 #include "Parameter.hpp"
-
-/// Pragma include
-#include "pragma_manager.hpp"
-
-/// Utility include
 #include "exceptions.hpp"
 #include "fileIO.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "pragma_constants.hpp"
+#include "pragma_manager.hpp"
+#include "string_manipulation.hpp"
+
 #include <filesystem>
 #include <fstream>
 
 unsigned int PragmaParser::number = 0;
-
-unsigned int PragmaParser::file_counter = 0;
 
 // constructor
 PragmaParser::PragmaParser(const pragma_managerRef _PM, const ParameterConstRef _Param)
@@ -81,25 +71,24 @@ PragmaParser::PragmaParser(const pragma_managerRef _PM, const ParameterConstRef 
 // destructor
 PragmaParser::~PragmaParser() = default;
 
-std::string PragmaParser::substitutePragmas(const std::string& OldFile)
+std::string PragmaParser::substitutePragmas(const std::string& input_filename)
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Substituting pragma in " + OldFile);
-   THROW_ASSERT(std::filesystem::exists(std::filesystem::path(OldFile)),
-                "Input file \"" + OldFile + "\" does not exist");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Substituting pragma in " + input_filename);
+   THROW_ASSERT(std::filesystem::exists(std::filesystem::path(input_filename)),
+                "Input file \"" + input_filename + "\" does not exist");
 
-   std::filesystem::path old_path(OldFile);
-   std::string FileName = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_pragma_prefix +
-                          std::to_string(file_counter) + "_" + old_path.filename().string();
-   std::ofstream fileOutput(FileName, std::ios::out);
+   const auto temp_path = Param->getOption<std::string>(OPT_output_temporary_directory) + "pragma";
+   std::filesystem::create_directories(temp_path);
+   const auto output_filename = temp_path + "/" + std::filesystem::path(input_filename).filename().string();
+   std::ofstream fileOutput(output_filename, std::ios::out);
 
-   file_counter++;
    level = 0;
    // unsigned line_number = 0;
 
    // Get a stream from the input file
-   std::ifstream instream(OldFile);
+   std::ifstream instream(input_filename);
    // Test if the file has been correctly opened
-   THROW_ASSERT(instream.is_open(), "INPUT FILE ERROR: Could not open input file: " + OldFile);
+   THROW_ASSERT(instream.is_open(), "INPUT FILE ERROR: Could not open input file: " + input_filename);
    while(!instream.eof())
    {
       std::string input_line;
@@ -196,8 +185,8 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
    }
 
    fileOutput.close();
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Substituted pragma in " + OldFile);
-   return FileName;
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Substituted pragma in " + input_filename);
+   return output_filename;
 }
 
 bool PragmaParser::analyze_pragma(std::string& Line)
@@ -311,9 +300,6 @@ bool PragmaParser::recognize_omp_pragma(std::string& line)
    }
    const std::string omp_pragma_directive = pragma_manager::omp_directive_keywords[omp_pragma_type];
    line += "\"" + omp_pragma_directive + "\"";
-#if 0
-   std::string::size_type notwhite = original_line.find(omp_pragma_directive);
-#endif
    original_line.erase(0, original_line.find(omp_pragma_directive) + omp_pragma_directive.size());
    if(not single_line_pragma)
    {

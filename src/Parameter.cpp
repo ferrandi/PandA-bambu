@@ -298,6 +298,8 @@ void Parameter::SetCommonDefaults()
    setOption(OPT_output_temporary_directory, temporary_directory + "/");
    setOption(OPT_print_dot, false);
 
+   setOption(OPT_gcc_openmp_simd, 0);
+
    setOption(OPT_no_clean, false);
    if(revision_hash == "")
    {
