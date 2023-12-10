@@ -58,6 +58,8 @@ New features introduced:
 - PandA-bambu reference paper has been published at DAC: F. Ferrandi, V. G. Castellana, S. Curzel, P. Fezzardi, M. Fiorito, M. Lattuada, M. Minutoli, C. Pilato, and A. Tumeo, “Invited: Bambu: an Open-Source Research Framework for the High-Level Synthesis of Complex Applications,” in 2021 58th ACM/IEEE Design Automation Conference (DAC), 2021, pp. 1327-1330. 
 - Added a Google Colab notebook with many examples to play with Bambu. [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ferrandi/PandA-bambu/blob/main/documentation/tutorial_date_2022/bambu.ipynb)
 
+Main contributions to this release come from Fabrizio Ferrandi, Michele Fiorito, Serena Curzel, Luca Pozzoni, Marco Siracusa, Riccardo Binetti.
+
 =========== PANDA 0.9.6 ===========
 Sat 11 January 2020, PandA release 0.9.6
 Seventh public release of PandA framework.
