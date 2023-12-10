@@ -19,7 +19,7 @@
       <precision value="0"/>
       <total value="overall"/>
    </column>
-   <column name="Area LUT pairs">
+   <column name="LUTs">
       <source_name value="AREA"/>
       <alignment value="c|"/>
       <text_format value="number"/>
