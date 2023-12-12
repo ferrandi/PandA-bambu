@@ -581,7 +581,7 @@ whole_program_function_and_variable_visibility (void)
 #endif
 unsigned int TopFnameIPA (void)
 {
-  gcc_assert (!flag_whole_program);
+  gcc_assert (flag_whole_program);
   gcc_assert(*TopFunctionName);
   //printf("TopFnameIPA %s\n", TopFunctionName);
   whole_program_function_and_variable_visibility();
