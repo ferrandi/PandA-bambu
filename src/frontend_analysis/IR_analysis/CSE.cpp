@@ -89,9 +89,6 @@
 #include "tree_reindex.hpp"
 
 #include "basic_block.hpp"
-
-/// wrapper/compiler include
-#include "compiler_wrapper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
 CSE::CSE(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id,
