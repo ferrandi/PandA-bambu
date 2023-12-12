@@ -102,14 +102,6 @@ enum class CompilerWrapper_CompilerTarget
    CT_I386_CLANGVVD = 1048576
 };
 
-enum class CompilerWrapper_CompilerMode
-{
-   CM_STD = 0,
-   CM_EMPTY,
-   CM_ANALYZER,
-   CM_LTO
-};
-
 /**
  * @class CompilerWrapper
  * Main class for wrapping the frontend compiler. It allows an XML configuration file to be specified where the
@@ -212,14 +204,14 @@ class CompilerWrapper
 
    /**
     * Invoke the frontend compiler to compile file(s)
-    * @param original_file_name is the original file passed through command line (is modified in case of empty file
-    * compilation)
+    * @param input_filename is the source file name (is modified in case of empty file compilation)
+    * @param output_filename is the output file name
     * @param parameters_line are the parameters to be passed to the frontend compiler
     * @param multiple_files is the true in case multiple files are considered.
     * @param cm is the mode in which we compile
     */
-   void CompileFile(std::string& input_filename, const std::string& parameters_line, bool multiple_files,
-                    CompilerWrapper_CompilerMode cm, const std::string& costTable);
+   void CompileFile(std::string& input_filename, const std::string& output_file, const std::string& parameters_line,
+                    bool multiple_files, int cm, const std::string& costTable);
 
    std::string GetAnalyzeCompiler() const;
 
