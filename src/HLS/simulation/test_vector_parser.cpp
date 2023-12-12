@@ -45,7 +45,6 @@
 #include "behavioral_helper.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
-#include "compiler_wrapper.hpp"
 #include "constants.hpp"
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"

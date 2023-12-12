@@ -63,7 +63,6 @@
 #include "c_backend_information.hpp"
 #include "c_backend_step_factory.hpp"
 #include "call_graph_manager.hpp"
-#include "compiler_wrapper.hpp"
 #include "ext_tree_node.hpp"
 #include "function_behavior.hpp"
 #include "hls_manager.hpp"

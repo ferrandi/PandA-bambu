@@ -50,7 +50,6 @@
 #include "application_frontend_flow_step.hpp"
 #include "application_manager.hpp"
 #include "behavioral_helper.hpp"
-#include "compiler_wrapper.hpp"
 #include "design_flow_manager.hpp"
 #include "ext_tree_node.hpp"
 #include "function_behavior.hpp"
