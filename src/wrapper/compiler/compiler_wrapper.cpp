@@ -415,10 +415,13 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
        Param->getOption<std::string>(OPT_gcc_optimizations).find("whole-program") != std::string::npos &&
        Param->getOption<std::string>(OPT_gcc_optimizations).find("no-whole-program") == std::string::npos;
    const auto fname = [&]() -> std::string {
-      const auto top_functions_names = Param->getOption<const std::list<std::string>>(OPT_top_functions_names);
-      if(top_functions_names.size() == 1)
+      if(Param->isOption(OPT_top_functions_names))
       {
-         return top_functions_names.front();
+         const auto top_functions_names = Param->getOption<const std::list<std::string>>(OPT_top_functions_names);
+         if(top_functions_names.size() == 1)
+         {
+            return top_functions_names.front();
+         }
       }
       return "";
    }();
