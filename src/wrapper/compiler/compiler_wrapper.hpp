@@ -211,7 +211,7 @@ class CompilerWrapper
     * @param cm is the mode in which we compile
     */
    void CompileFile(std::string& input_filename, const std::string& output_file, const std::string& parameters_line,
-                    bool multiple_files, int cm, const std::string& costTable);
+                    int cm, const std::string& costTable);
 
    std::string GetAnalyzeCompiler() const;
 
@@ -259,18 +259,13 @@ class CompilerWrapper
 
    std::string readExternalSymbols(const std::string& filename) const;
 
-   std::string clang_recipes(const CompilerWrapper_OptimizationSet optimization_level,
-                             const CompilerWrapper_CompilerTarget compiler_target,
-                             const std::string& expandMemOps_plugin_obj, const std::string& expandMemOps_plugin_name,
-                             const std::string& GepiCanon_plugin_obj, const std::string& GepiCanon_plugin_name,
-                             const std::string& CSROA_plugin_obj, const std::string& CSROA_plugin_name,
-                             const std::string& fname);
+   std::string clang_recipes(const CompilerWrapper_OptimizationSet optimization_level, const std::string& fname) const;
 
-   std::string load_plugin(const std::string& plugin_obj, CompilerWrapper_CompilerTarget target);
+   std::string load_plugin(const std::string& plugin_obj, CompilerWrapper_CompilerTarget target) const;
 
-   std::string load_plugin_opt(std::string plugin_obj, CompilerWrapper_CompilerTarget target);
+   std::string load_plugin_opt(std::string plugin_obj, CompilerWrapper_CompilerTarget target) const;
 
-   std::string add_plugin_prefix(CompilerWrapper_CompilerTarget target, std::string O_level = "");
+   std::string add_plugin_prefix(CompilerWrapper_CompilerTarget target, std::string O_level = "") const;
 
  public:
    /// The version of the frontend compiler
