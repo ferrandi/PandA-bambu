@@ -406,7 +406,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
    const BehavioralHelperConstRef BH = fun_behavior->CGetBehavioralHelper();
    if(Param->isOption(OPT_discrepancy_only))
    {
-      const auto discrepancy_functions = Param->getOption<const CustomSet<std::string>>(OPT_discrepancy_only);
+      const auto discrepancy_functions = Param->getOption<CustomSet<std::string>>(OPT_discrepancy_only);
       std::string fu_name = BH->get_function_name();
       if(!discrepancy_functions.empty() && discrepancy_functions.find(fu_name) == discrepancy_functions.end())
       {

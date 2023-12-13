@@ -49,7 +49,6 @@
 #include "Parameter.hpp"
 #include "compiler_constants.hpp"
 #include "compiler_xml.hpp"
-#include "constants.hpp"
 #include "cpu_stats.hpp"
 #include "cpu_time.hpp"
 #include "dbgPrintHelper.hpp"
@@ -417,7 +416,7 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
    const auto fname = [&]() -> std::string {
       if(Param->isOption(OPT_top_functions_names))
       {
-         const auto top_functions_names = Param->getOption<const std::list<std::string>>(OPT_top_functions_names);
+         const auto top_functions_names = Param->getOption<std::list<std::string>>(OPT_top_functions_names);
          if(top_functions_names.size() == 1)
          {
             return top_functions_names.front();
@@ -769,7 +768,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::vector<std:
       }
       if(Param->isOption(OPT_gcc_defines))
       {
-         const auto defines = Param->getOption<const std::list<std::string>>(OPT_gcc_defines);
+         const auto defines = Param->getOption<std::list<std::string>>(OPT_gcc_defines);
          for(const auto& define : defines)
          {
             analyzing_compiling_parameters += " -D" + __escape_define(define);
@@ -777,7 +776,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::vector<std:
       }
       if(Param->isOption(OPT_gcc_undefines))
       {
-         const auto undefines = Param->getOption<const std::list<std::string>>(OPT_gcc_undefines);
+         const auto undefines = Param->getOption<std::list<std::string>>(OPT_gcc_undefines);
          for(const auto& undefine : undefines)
          {
             analyzing_compiling_parameters += " -U" + __escape_define(undefine);
@@ -785,7 +784,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::vector<std:
       }
       if(Param->isOption(OPT_gcc_warnings))
       {
-         const auto warnings = Param->getOption<const std::list<std::string>>(OPT_gcc_warnings);
+         const auto warnings = Param->getOption<std::list<std::string>>(OPT_gcc_warnings);
          for(const auto& warning : warnings)
          {
             if(!warning.empty())
@@ -1054,7 +1053,7 @@ void CompilerWrapper::InitializeCompilerParameters()
    /// Adding defines
    if(Param->isOption(OPT_gcc_defines))
    {
-      const auto defines = Param->getOption<const CustomSet<std::string>>(OPT_gcc_defines);
+      const auto defines = Param->getOption<CustomSet<std::string>>(OPT_gcc_defines);
       for(const auto& define : defines)
       {
          frontend_compiler_parameters += "-D" + __escape_define(define) + " ";
@@ -1064,7 +1063,7 @@ void CompilerWrapper::InitializeCompilerParameters()
    /// Adding undefines
    if(Param->isOption(OPT_gcc_undefines))
    {
-      const auto undefines = Param->getOption<const CustomSet<std::string>>(OPT_gcc_undefines);
+      const auto undefines = Param->getOption<CustomSet<std::string>>(OPT_gcc_undefines);
       for(const auto& undefine : undefines)
       {
          frontend_compiler_parameters += "-U" + __escape_define(undefine) + " ";
@@ -1074,7 +1073,7 @@ void CompilerWrapper::InitializeCompilerParameters()
    /// Adding warnings
    if(Param->isOption(OPT_gcc_warnings))
    {
-      const auto warnings = Param->getOption<const CustomSet<std::string>>(OPT_gcc_warnings);
+      const auto warnings = Param->getOption<CustomSet<std::string>>(OPT_gcc_warnings);
       for(const auto& warning : warnings)
       {
          if(!warning.empty())
@@ -1097,7 +1096,7 @@ void CompilerWrapper::InitializeCompilerParameters()
    /// Adding libraries
    if(Param->isOption(OPT_gcc_libraries))
    {
-      const auto libraries = Param->getOption<const CustomSet<std::string>>(OPT_gcc_libraries);
+      const auto libraries = Param->getOption<CustomSet<std::string>>(OPT_gcc_libraries);
       for(const auto& library : libraries)
       {
          compiler_linking_parameters += "-l" + library + " ";
@@ -1107,7 +1106,7 @@ void CompilerWrapper::InitializeCompilerParameters()
    /// Adding library directories
    if(Param->isOption(OPT_gcc_library_directories))
    {
-      const auto library_directories = Param->getOption<const CustomSet<std::string>>(OPT_gcc_library_directories);
+      const auto library_directories = Param->getOption<CustomSet<std::string>>(OPT_gcc_library_directories);
       for(const auto& library_directory : library_directories)
       {
          compiler_linking_parameters += "-L" + library_directory + " ";
@@ -2291,7 +2290,7 @@ void CompilerWrapper::ReadParameters()
 {
    if(Param->isOption(OPT_gcc_optimizations))
    {
-      const auto parameters = Param->getOption<const CustomSet<std::string>>(OPT_gcc_optimizations);
+      const auto parameters = Param->getOption<CustomSet<std::string>>(OPT_gcc_optimizations);
       for(const auto& parameter : parameters)
       {
          THROW_ASSERT(parameter != "", "unexpected condition:" + Param->getOption<std::string>(OPT_gcc_optimizations));
@@ -2312,7 +2311,7 @@ void CompilerWrapper::ReadParameters()
    }
    if(Param->isOption(OPT_gcc_parameters))
    {
-      const auto parameters = Param->getOption<const CustomSet<std::string>>(OPT_gcc_parameters);
+      const auto parameters = Param->getOption<CustomSet<std::string>>(OPT_gcc_parameters);
       for(const auto& parameter : parameters)
       {
          const size_t equal_size = parameter.find('=');

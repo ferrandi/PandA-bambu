@@ -40,33 +40,21 @@
  * Last modified by $Author$
  *
  */
+#include "SpiderParameter.hpp"
 
-/// Autoheader include
+#include "constant_strings.hpp"
+#include "dbgPrintHelper.hpp"
+#include "fileIO.hpp"
+#include "string_manipulation.hpp"
+#include "translator.hpp"
+#include "utility.hpp"
+
 #include "config_HAVE_TECHNOLOGY_BUILT.hpp"
 #include "config_RELEASE.hpp"
 
-/// Constants include
-#include "constant_strings.hpp"
-#include "constants.hpp"
-
-/// Header include
-#include "SpiderParameter.hpp"
-
-/// Backend include
-#include "translator.hpp"
-
-/// STD include
 #include <getopt.h>
 #include <string>
-
-/// STL include
 #include <vector>
-
-/// Utility include
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
-#include "fileIO.hpp"
-#include "string_manipulation.hpp"
-#include "utility.hpp"
 
 /// PARAMETERS STUFF ***********************///
 #define INPUT_OPT_ACCURACY 256
@@ -338,7 +326,7 @@ void SpiderParameter::CheckParameters()
    if(!isOption(OPT_input_format))
    {
       Parameters_FileFormat input_format = Parameters_FileFormat::FF_UNKNOWN, temp = Parameters_FileFormat::FF_UNKNOWN;
-      const auto input_files = getOption<const CustomSet<std::string>>(OPT_input_file);
+      const auto input_files = getOption<CustomSet<std::string>>(OPT_input_file);
       for(auto input_file : input_files)
       {
          input_file = GetPath(input_file);
@@ -422,7 +410,7 @@ void SpiderParameter::CheckParameters()
       setOption(OPT_output_format, static_cast<int>(output_format));
    }
 #if HAVE_TECHNOLOGY_BUILT
-   for(const auto& input_file : getOption<const CustomSet<std::string>>(OPT_input_file))
+   for(const auto& input_file : getOption<CustomSet<std::string>>(OPT_input_file))
    {
       if(GetFileFormat(input_file, true) == Parameters_FileFormat::FF_XML_TEC)
       {

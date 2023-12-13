@@ -142,7 +142,7 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
 
    if(parameters->isOption(OPT_gcc_optimizations))
    {
-      const auto gcc_parameters = parameters->getOption<const CustomSet<std::string>>(OPT_gcc_optimizations);
+      const auto gcc_parameters = parameters->getOption<CustomSet<std::string>>(OPT_gcc_optimizations);
       if(gcc_parameters.find("tree-vectorize") != gcc_parameters.end())
       {
          boost::replace_all(compiler_flags, "-msse2", "");
@@ -167,7 +167,7 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
    // add source files to interface with python golden reference, if any
    if(parameters->isOption(OPT_no_parse_c_python))
    {
-      const auto no_parse_files = parameters->getOption<const CustomSet<std::string>>(OPT_no_parse_c_python);
+      const auto no_parse_files = parameters->getOption<CustomSet<std::string>>(OPT_no_parse_c_python);
       for(const auto& no_parse_file : no_parse_files)
       {
          file_sources.push_back(no_parse_file);

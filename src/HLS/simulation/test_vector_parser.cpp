@@ -45,7 +45,6 @@
 #include "behavioral_helper.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
-#include "constants.hpp"
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
 #include "design_flow_graph.hpp"
@@ -111,7 +110,7 @@ DesignFlowStep_Status TestVectorParser::Exec()
 
    if(parameters->isOption(OPT_testbench_input_file))
    {
-      const auto tb_files = parameters->getOption<const CustomSet<std::string>>(OPT_testbench_input_file);
+      const auto tb_files = parameters->getOption<CustomSet<std::string>>(OPT_testbench_input_file);
       if(ends_with(*tb_files.begin(), ".xml"))
       {
          THROW_ASSERT(tb_files.size() == 1, "XML testbench initialization must be in a single file.");

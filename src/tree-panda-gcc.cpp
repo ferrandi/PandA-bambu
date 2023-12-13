@@ -202,7 +202,7 @@ int main(int argc, char* argv_orig[])
          CompilerWrapperRef Wrap = CompilerWrapperRef(new CompilerWrapper(Param, compiler_target, optimization_set));
 
          auto input_files = [&]() {
-            const auto flist = Param->getOption<const std::list<std::string>>(OPT_input_file);
+            const auto flist = Param->getOption<std::list<std::string>>(OPT_input_file);
             return std::vector<std::string>(flist.begin(), flist.end());
          }();
 
@@ -231,7 +231,7 @@ int main(int argc, char* argv_orig[])
          START_TIME(tree_time);
          if(Param->isOption(OPT_obj_files))
          {
-            const auto object_files = Param->getOption<const CustomSet<std::string>>(OPT_obj_files);
+            const auto object_files = Param->getOption<CustomSet<std::string>>(OPT_obj_files);
             for(const auto& object_file : object_files)
             {
                if(!std::filesystem::exists(object_file))
@@ -244,7 +244,7 @@ int main(int argc, char* argv_orig[])
          }
          if(Param->isOption(OPT_archive_files))
          {
-            const auto archive_files = Param->getOption<const CustomSet<std::string>>(OPT_archive_files);
+            const auto archive_files = Param->getOption<CustomSet<std::string>>(OPT_archive_files);
             for(const auto& archive_file : archive_files)
             {
                if(!std::filesystem::exists(archive_file))

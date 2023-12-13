@@ -46,7 +46,6 @@
 #include "config_RELEASE.hpp"
 
 #include "compiler_wrapper.hpp"
-#include "constants.hpp"
 #include "cpu_time.hpp"
 #include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
