@@ -44,7 +44,12 @@
 #ifndef PARAMETER_HPP
 #define PARAMETER_HPP
 
-/// Autoheader include
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "exceptions.hpp"
+#include "refcount.hpp"
+#include "string_manipulation.hpp"
+
 #include "config_HAVE_BAMBU_RESULTS_XML.hpp"
 #include "config_HAVE_FROM_AADL_ASN_BUILT.hpp"
 #include "config_HAVE_FROM_C_BUILT.hpp"
@@ -54,17 +59,11 @@
 #include "config_HAVE_TO_C_BUILT.hpp"
 #include "config_RELEASE.hpp"
 
-/// Utility include
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-#include "exceptions.hpp"
-#include "refcount.hpp"
-#include "string_manipulation.hpp"
-
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
+
 #include <climits>
 #include <filesystem>
 #include <list>
@@ -689,10 +688,13 @@ class Parameter
 };
 
 template <>
-const CustomSet<std::string> Parameter::getOption(const enum enum_option name) const;
+CustomSet<std::string> Parameter::getOption(const enum enum_option name) const;
 
 template <>
-const std::list<std::string> Parameter::getOption(const enum enum_option name) const;
+std::list<std::string> Parameter::getOption(const enum enum_option name) const;
+
+template <>
+std::vector<std::string> Parameter::getOption(const enum enum_option name) const;
 
 #if HAVE_HOST_PROFILING_BUILT
 template <>

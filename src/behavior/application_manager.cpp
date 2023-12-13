@@ -93,7 +93,7 @@ application_manager::application_manager(const FunctionExpanderConstRef function
                  nullptr)
 #endif
 {
-   const auto in_files = _Param->getOption<const std::list<std::string>>(OPT_input_file);
+   const auto in_files = _Param->getOption<std::list<std::string>>(OPT_input_file);
    input_files.reserve(in_files.size());
    std::copy(in_files.begin(), in_files.end(), std::back_inserter(input_files));
 }

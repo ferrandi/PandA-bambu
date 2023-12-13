@@ -48,7 +48,6 @@
 #include "VIVADO_xsim_wrapper.hpp"
 #include "VerilatorWrapper.hpp"
 #include "compiler_wrapper.hpp"
-#include "constants.hpp"
 #include "custom_set.hpp"
 #include "fileIO.hpp"
 #include "modelsimWrapper.hpp"
@@ -364,7 +363,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, con
       }
       if(Param->isOption(OPT_gcc_optimizations))
       {
-         const auto gcc_parameters = Param->getOption<const CustomSet<std::string>>(OPT_gcc_optimizations);
+         const auto gcc_parameters = Param->getOption<CustomSet<std::string>>(OPT_gcc_optimizations);
          if(gcc_parameters.find("tree-vectorize") != gcc_parameters.end())
          {
             boost::replace_all(flags, "-msse2", "");
@@ -411,7 +410,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, con
       std::string files;
       if(Param->isOption(OPT_testbench_input_file))
       {
-         const auto tb_files = Param->getOption<const CustomSet<std::string>>(OPT_testbench_input_file);
+         const auto tb_files = Param->getOption<CustomSet<std::string>>(OPT_testbench_input_file);
          if(starts_with(*tb_files.begin(), "elf:"))
          {
             return files;

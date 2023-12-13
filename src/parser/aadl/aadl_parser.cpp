@@ -44,11 +44,11 @@
 #include "aadl_information.hpp"
 #include "aadl_parser_node.hpp"
 #include "application_manager.hpp"
-#include "constants.hpp"
 #include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
 #include "hls_manager.hpp"
 #include "string_manipulation.hpp"
+#include "utility.hpp"
 
 #define YYSTYPE AadlParserNode
 #include "aadl_lexer.hpp"
@@ -184,7 +184,7 @@ DesignFlowStep_Status AadlParser::Exec()
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed subprogram " + subprogram.first);
    }
-   if(parameters->getOption<const std::list<std::string>>(OPT_top_functions_names).size() > 1)
+   if(parameters->getOption<std::list<std::string>>(OPT_top_functions_names).size() > 1)
    {
       const_cast<Parameter*>(parameters.get())->setOption(OPT_disable_function_proxy, true);
    }

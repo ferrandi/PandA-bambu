@@ -51,13 +51,17 @@
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/lexical_cast.hpp>
 
-#include <cstdlib>
 #include <limits>
-#include <memory>
 #include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
+
+/// The character used to separate concatenated string
+#define STR_CST_string_separator std::string(1, 31)
+
+/// The character used to separate concatenated string
+#define STR_CST_string_separator_char static_cast<char>(31)
 
 /// INT representing infinite
 #define INFINITE_INT (std::numeric_limits<int>::max())
@@ -115,8 +119,7 @@ std::string convert_to_binary(G _value, unsigned long long precision)
 }
 
 template <typename _InputIt>
-constexpr std::string container_to_string(_InputIt first, _InputIt last, const std::string& separator,
-                                          bool trim_empty = true)
+std::string container_to_string(_InputIt first, _InputIt last, const std::string& separator, bool trim_empty = true)
 {
    std::string str;
    while(first != last)
@@ -136,7 +139,7 @@ constexpr std::string container_to_string(_InputIt first, _InputIt last, const s
 }
 
 template <typename _Container>
-constexpr std::string container_to_string(const _Container& _c, const std::string& separator, bool trim_empty = true)
+std::string container_to_string(const _Container& _c, const std::string& separator, bool trim_empty = true)
 {
    return container_to_string(_c.begin(), _c.end(), separator, trim_empty);
 }
