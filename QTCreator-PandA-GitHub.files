@@ -322,11 +322,7 @@ etc/clang_plugin/plugin_dumpGimpleSSA.cpp
 etc/clang_plugin/plugin_expandMemOps.cpp
 etc/clang_plugin/plugin_includes.hpp
 etc/clang_plugin/plugin_topfname.cpp
-etc/gcc_plugin/VRP_data.h
-etc/gcc_plugin/cfgexpand_4_5_2.c
 etc/gcc_plugin/dumpGimple.c
-etc/gcc_plugin/dumpVRP_common.h
-etc/gcc_plugin/dumpVrp.c
 etc/gcc_plugin/gcc-4.9/dbgcnt.h
 etc/gcc_plugin/gcc-4.9/expr.h
 etc/gcc_plugin/gcc-4.9/insn-config.h
@@ -340,14 +336,8 @@ etc/gcc_plugin/ggc_clike_extern.h
 etc/gcc_plugin/ggc_clike_static.h
 etc/gcc_plugin/ggc_cpplike_extern.h
 etc/gcc_plugin/ggc_cpplike_static.h
-etc/gcc_plugin/patched-tree-vrp.454.c
-etc/gcc_plugin/patched-tree-vrp.463.c
-etc/gcc_plugin/patched-tree-vrp.472.c
-etc/gcc_plugin/patched-tree-vrp.480.c
 etc/gcc_plugin/plugin_dumpGimpleEmpty.c
 etc/gcc_plugin/plugin_dumpGimpleSSA.c
-etc/gcc_plugin/plugin_dumpGimpleSSAVRP.c
-etc/gcc_plugin/plugin_dumpRTL.c
 etc/gcc_plugin/plugin_includes.h
 etc/gcc_plugin/plugin_topfname.c
 etc/libbambu/ac_math/include/ac_math.h
