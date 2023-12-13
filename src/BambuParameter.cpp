@@ -38,8 +38,13 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
+#include "BambuParameter.hpp"
 #include "allocation_constants.hpp"
+#include "cdfc_module_binding.hpp"
+#include "chaining.hpp"
 #include "clique_covering.hpp"
+#include "compiler_constants.hpp"
+#include "compiler_wrapper.hpp"
 #include "config_HAVE_COIN_OR.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FLOPOCO.hpp"
@@ -53,37 +58,31 @@
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 #include "config_PANDA_LIB_INSTALLDIR.hpp"
 #include "config_SKIP_WARNING_SECTIONS.hpp"
-#include "constants.hpp"
-#if HAVE_HOST_PROFILING_BUILT
-#include "host_profiling.hpp"
-#endif
-#include "cdfc_module_binding.hpp"
-#include "evaluation.hpp"
-#include "memory_allocation.hpp"
-#include "parametric_list_based.hpp"
-#if HAVE_ILP_BUILT
-#include "sdc_scheduling.hpp"
-#endif
-#if HAVE_ILP_BUILT
-#include "meilp_solver.hpp"
-#endif
-#include "BambuParameter.hpp"
-#include "chaining.hpp"
-#include "compiler_constants.hpp"
-#include "compiler_wrapper.hpp"
 #include "constant_strings.hpp"
 #include "cpu_time.hpp"
 #include "datapath_creator.hpp"
 #include "dbgPrintHelper.hpp"
+#include "evaluation.hpp"
 #include "fileIO.hpp"
 #include "generic_device.hpp"
 #include "language_writer.hpp"
+#include "memory_allocation.hpp"
+#include "parametric_list_based.hpp"
 #include "parse_technology.hpp"
 #include "string_manipulation.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 #include "tree_helper.hpp"
 #include "utility.hpp"
+
+#if HAVE_HOST_PROFILING_BUILT
+#include "host_profiling.hpp"
+#endif
+#if HAVE_ILP_BUILT
+#include "meilp_solver.hpp"
+#include "sdc_scheduling.hpp"
+#endif
+
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
@@ -2950,7 +2949,7 @@ void BambuParameter::CheckParameters()
                setOption(OPT_testbench_input_file, GetPath("test.xml"));
             }
             if(isOption(OPT_top_functions_names) &&
-               getOption<const std::list<std::string>>(OPT_top_functions_names).size() > 1)
+               getOption<std::list<std::string>>(OPT_top_functions_names).size() > 1)
             {
                THROW_ERROR("Simulation cannot be enabled with multiple top functions");
             }
@@ -3082,7 +3081,7 @@ void BambuParameter::CheckParameters()
       }
    }
    /// Disable proxy when there are multiple top functions
-   if(isOption(OPT_top_functions_names) && getOption<const std::list<std::string>>(OPT_top_functions_names).size() > 1)
+   if(isOption(OPT_top_functions_names) && getOption<std::list<std::string>>(OPT_top_functions_names).size() > 1)
    {
       if(isOption(OPT_disable_function_proxy))
       {
@@ -3226,7 +3225,7 @@ void BambuParameter::CheckParameters()
       add_experimental_setup_compiler_options(!flag_cpp);
       if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-TASTE")
       {
-         const auto source_files = getOption<const CustomSet<std::string>>(OPT_input_file);
+         const auto source_files = getOption<CustomSet<std::string>>(OPT_input_file);
          if(source_files.size() > 1 && isOption(OPT_input_format) &&
             getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C)
          {
@@ -3467,7 +3466,7 @@ void BambuParameter::CheckParameters()
 
    if(isOption(OPT_gcc_libraries))
    {
-      const auto libraries = getOption<const CustomSet<std::string>>(OPT_gcc_libraries);
+      const auto libraries = getOption<CustomSet<std::string>>(OPT_gcc_libraries);
       for(const auto& library : libraries)
       {
          add_bambu_library(library);
@@ -3609,7 +3608,7 @@ void BambuParameter::CheckParameters()
    }
    if(getOption<int>(OPT_gcc_openmp_simd) || getOption<bool>(OPT_parse_pragma))
    {
-      const auto flist = getOption<const std::list<std::string>>(OPT_input_file);
+      const auto flist = getOption<std::list<std::string>>(OPT_input_file);
       std::string includes = isOption(OPT_gcc_includes) ? getOption<std::string>(OPT_gcc_includes) : "";
       for(const auto& src : flist)
       {

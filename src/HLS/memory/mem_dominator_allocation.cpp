@@ -336,7 +336,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    const auto null_pointer_check = [&]() {
       if(parameters->isOption(OPT_gcc_optimizations))
       {
-         const auto gcc_parameters = parameters->getOption<const CustomSet<std::string>>(OPT_gcc_optimizations);
+         const auto gcc_parameters = parameters->getOption<CustomSet<std::string>>(OPT_gcc_optimizations);
          if(gcc_parameters.find("no-delete-null-pointer-checks") != gcc_parameters.end())
          {
             return false;

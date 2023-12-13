@@ -273,7 +273,7 @@ DesignFlowStep_Status create_tree_manager::Exec()
    /// parsing of archive files
    if(parameters->isOption(OPT_archive_files))
    {
-      const auto archive_files = parameters->getOption<const CustomSet<std::string>>(OPT_archive_files);
+      const auto archive_files = parameters->getOption<CustomSet<std::string>>(OPT_archive_files);
       for(const auto& archive_file : archive_files)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Reading " + archive_file);
@@ -332,7 +332,7 @@ DesignFlowStep_Status create_tree_manager::Exec()
                            " =============== Building internal representation from raw files ===============");
          }
       }
-      const auto raw_files = parameters->getOption<const CustomSet<std::string>>(OPT_input_file);
+      const auto raw_files = parameters->getOption<CustomSet<std::string>>(OPT_input_file);
       for(const auto& raw_file : raw_files)
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Parsing " + raw_file);

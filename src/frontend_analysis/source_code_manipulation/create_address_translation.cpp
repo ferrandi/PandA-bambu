@@ -37,40 +37,23 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "create_address_translation.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// behavior include
-#include "application_manager.hpp"
-
-/// constants includes
-#include "constants.hpp"
-#include "taste_constants.hpp"
-
-/// design_flows include
-#include "design_flow_manager.hpp"
-
-/// HLS include
-#include "hls_manager.hpp"
-
-/// intermediate_representation/aadl include
 #include "aadl_information.hpp"
+#include "application_manager.hpp"
 #include "asn_type.hpp"
-
-/// tree includes
+#include "dbgPrintHelper.hpp"
+#include "design_flow_manager.hpp"
+#include "hls_manager.hpp"
+#include "indented_output_stream.hpp"
+#include "string_manipulation.hpp"
+#include "taste_constants.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-
-/// utility include
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
-#include "indented_output_stream.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "utility.hpp"
 
 CreateAddressTranslation::CreateAddressTranslation(const application_managerRef _AppM,
                                                    const DesignFlowManagerConstRef _design_flow_manager,

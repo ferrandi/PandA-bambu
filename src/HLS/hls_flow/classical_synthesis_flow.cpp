@@ -83,7 +83,7 @@ ClassicalHLSSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::Relatio
          else
 #endif
              if(parameters->isOption(OPT_top_functions_names) and
-                parameters->getOption<const std::list<std::string>>(OPT_top_functions_names).size() == 1)
+                parameters->getOption<std::list<std::string>>(OPT_top_functions_names).size() == 1)
          {
             ret.insert(std::make_tuple(HLSFlowStep_Type::GENERATE_SYNTHESIS_SCRIPT, HLSFlowStepSpecializationConstRef(),
                                        HLSFlowStep_Relationship::WHOLE_APPLICATION));

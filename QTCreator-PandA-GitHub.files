@@ -1962,7 +1962,6 @@ src/constants/allocation_constants.hpp
 src/constants/bambu_results_xml.hpp
 src/constants/compiler_constants.hpp
 src/constants/compiler_xml.hpp
-src/constants/constants.hpp
 src/constants/constraints_xml.hpp
 src/constants/copyrights_strings.hpp
 src/constants/cost_latency_table.hpp

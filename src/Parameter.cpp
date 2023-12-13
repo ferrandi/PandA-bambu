@@ -40,7 +40,17 @@
  */
 #include "Parameter.hpp"
 
-/// Autoheader include
+#include "constant_strings.hpp"
+#include "dbgPrintHelper.hpp"
+#include "experimental_setup_xml.hpp"
+#include "fileIO.hpp"
+#include "polixml.hpp"
+#include "refcount.hpp"
+#include "string_manipulation.hpp"
+#include "utility.hpp"
+#include "xml_dom_parser.hpp"
+#include "xml_helper.hpp"
+
 #include "config_HAVE_FROM_C_BUILT.hpp"
 #include "config_HAVE_I386_CLANG10_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG11_COMPILER.hpp"
@@ -63,46 +73,26 @@
 #include "config_PACKAGE_BUGREPORT.hpp"
 #include "config_PACKAGE_STRING.hpp"
 
-#if HAVE_FROM_C_BUILT
-/// wrapper/compiler
-#include "compiler_wrapper.hpp"
-#endif
-
-/// Constants include
-#include "constant_strings.hpp"
-#include "constants.hpp"
 #if HAVE_HLS_BUILT
 #include "constraints_xml.hpp"
 #endif
-#include "experimental_setup_xml.hpp"
+
 #if HAVE_TO_DATAFILE_BUILT
 #include "latex_table_xml.hpp"
 #endif
+
 #if HAVE_TECHNOLOGY_BUILT
 #include "technology_xml.hpp"
 #endif
 
 #if HAVE_FROM_C_BUILT
+#include "compiler_wrapper.hpp"
 #include "token_interface.hpp"
 #endif
 
-/// STD include
 #include <cstdlib>
-#include <iosfwd>
-
-/// Utility include
-#include "dbgPrintHelper.hpp"
-#include "fileIO.hpp"
-#include "refcount.hpp"
-#include "string_manipulation.hpp"
-#include "xml_helper.hpp"
 #include <filesystem>
-
-/// XML include
-#include "polixml.hpp"
-#include "xml_dom_parser.hpp"
-
-#include "fileIO.hpp"
+#include <iosfwd>
 
 const std::string branch_name = {
 #include "branch_name.hpp"
@@ -1306,31 +1296,21 @@ void Parameter::PrintGccOptionsUsage(std::ostream& os) const
 #endif
 
 template <>
-const CustomSet<std::string> Parameter::getOption(const enum enum_option name) const
+CustomSet<std::string> Parameter::getOption(const enum enum_option name) const
 {
-   CustomSet<std::string> ret;
-   const auto to_be_splitted = getOption<std::string>(name);
-   std::vector<std::string> splitted = SplitString(to_be_splitted, STR_CST_string_separator);
-   size_t i_end = splitted.size();
-   for(size_t i = 0; i < i_end; i++)
-   {
-      ret.insert(splitted[i]);
-   }
-   return ret;
+   return string_to_container<CustomSet<std::string>>(getOption<std::string>(name), STR_CST_string_separator);
 }
 
 template <>
-const std::list<std::string> Parameter::getOption(const enum enum_option name) const
+std::list<std::string> Parameter::getOption(const enum enum_option name) const
 {
-   std::list<std::string> ret;
-   const auto to_be_splitted = getOption<std::string>(name);
-   std::vector<std::string> splitted = SplitString(to_be_splitted, STR_CST_string_separator);
-   size_t i_end = splitted.size();
-   for(size_t i = 0; i < i_end; i++)
-   {
-      ret.push_back(splitted[i]);
-   }
-   return ret;
+   return string_to_container<std::list<std::string>>(getOption<std::string>(name), STR_CST_string_separator);
+}
+
+template <>
+std::vector<std::string> Parameter::getOption(const enum enum_option name) const
+{
+   return string_to_container<std::vector<std::string>>(getOption<std::string>(name), STR_CST_string_separator);
 }
 
 const std::vector<std::string> Parameter::CGetArgv() const
