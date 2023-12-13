@@ -263,7 +263,7 @@ void create_tree_manager::createCostTable()
 
 DesignFlowStep_Status create_tree_manager::Exec()
 {
-   const tree_managerRef TreeM = AppM->get_tree_manager();
+   const auto TreeM = AppM->get_tree_manager();
 
    if(!parameters->isOption(OPT_input_file))
    {
@@ -274,38 +274,40 @@ DesignFlowStep_Status create_tree_manager::Exec()
    if(parameters->isOption(OPT_archive_files))
    {
       const auto archive_files = parameters->getOption<CustomSet<std::string>>(OPT_archive_files);
+      const auto output_temporary_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
+      const auto temp_path = output_temporary_directory + "archives";
+      std::filesystem::create_directories(temp_path);
+      std::string command = "cd " + temp_path + "\n";
       for(const auto& archive_file : archive_files)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Reading " + archive_file);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reading " + archive_file);
          if(!std::filesystem::exists(std::filesystem::path(archive_file)))
          {
             THROW_ERROR("File " + archive_file + " does not exist");
          }
-         const std::filesystem::path temp_path(parameters->getOption<std::string>(OPT_output_temporary_directory) +
-                                               unique_path("/temp-archive-dir-%%%%-%%%%-%%%%-%%%%").string());
-         const std::filesystem::path local_archive_file(GetPath(archive_file));
-         std::filesystem::create_directories(temp_path);
+         const auto local_archive_file = GetPath(archive_file);
 
-         const auto command = "cd " + temp_path.string() + "; ar x " + local_archive_file.string();
-         if(IsError(PandaSystem(parameters, command)))
+         command += " ar x " + local_archive_file + " &\n";
+      }
+      command += " wait";
+      if(IsError(PandaSystem(parameters, command)))
+      {
+         THROW_ERROR("ar returns an error during archive extraction ");
+      }
+      for(const auto& archive : std::filesystem::directory_iterator{temp_path})
+      {
+         const auto fileExtension = archive.path().extension().string();
+         if(fileExtension != ".o" && fileExtension != ".O")
          {
-            THROW_ERROR("ar returns an error during archive extraction ");
+            continue;
          }
-         for(const auto& entry : std::filesystem::directory_iterator{temp_path})
-         {
-            const auto fileExtension = entry.path().extension().string();
-            if(fileExtension != ".o" && fileExtension != ".O")
-            {
-               continue;
-            }
-            const auto TM_new = ParseTreeFile(parameters, entry.path().string());
-            TreeM->merge_tree_managers(TM_new);
-         }
-         if(!parameters->getOption<bool>(OPT_no_clean))
-         {
-            std::filesystem::remove_all(temp_path);
-         }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Read " + archive_file);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--Loading " + archive.path().string());
+         const auto TM_new = ParseTreeFile(parameters, archive.path().string());
+         TreeM->merge_tree_managers(TM_new);
+      }
+      if(!parameters->getOption<bool>(OPT_no_clean))
+      {
+         std::filesystem::remove_all(temp_path);
       }
    }
 
