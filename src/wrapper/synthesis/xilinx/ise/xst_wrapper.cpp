@@ -76,19 +76,16 @@ void xst_wrapper::GenerateProjectFile(const DesignParametersRef& dp)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Generating project file for xst");
    std::string HDL_files = dp->get_value(PARAM_HDL_files);
-   std::vector<std::string> files = convert_string_to_vector<std::string>(HDL_files, ";");
+   const auto files = string_to_container<std::vector<std::filesystem::path>>(HDL_files, ";");
 
    std::string top_name = dp->get_value(PARAM_top_id);
    std::string xst_tmpdir = dp->get_value(PARAM_xst_tmpdir);
    std::string project_filename = xst_tmpdir + "/" + top_name + ".prj";
-   std::ofstream prj_file(project_filename.c_str());
-   const size_t file_number = files.size();
-   for(unsigned int v = 0; v < file_number; v++)
+   std::ofstream prj_file(project_filename);
+   for(const auto& file : files)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding file " + files[v]);
-      std::filesystem::path file_path(files[v]);
-      std::string extension = file_path.extension().string();
-      std::string filename;
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding file " + file.string());
+      std::string extension = file.extension().string();
       std::string language;
       if(extension == ".vhd" || extension == ".vhdl" || extension == ".VHD" || extension == ".VHDL")
       {
@@ -102,10 +99,9 @@ void xst_wrapper::GenerateProjectFile(const DesignParametersRef& dp)
       {
          THROW_ERROR("Extension not recognized! " + extension);
       }
-      filename = file_path.string();
       prj_file << language << " "
                << "work"
-               << " " << filename << std::endl;
+               << " " << file << std::endl;
    }
    prj_file.close();
    dp->assign(PARAM_xst_prj_file, project_filename, false);

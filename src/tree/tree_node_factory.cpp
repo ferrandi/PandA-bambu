@@ -889,8 +889,8 @@ void tree_node_factory::operator()(const call_expr* obj, unsigned int& mask)
    SET_NODE_ID_OPT(TOK_FN, fn, call_expr);
    if(tree_node_schema.find(TOK(TOK_ARG)) != tree_node_schema.end())
    {
-      std::vector<unsigned int> args =
-          convert_string_to_vector<unsigned int>(tree_node_schema.find(TOK(TOK_ARG))->second, "_");
+      const auto args =
+          string_to_container<std::vector<unsigned int>>(tree_node_schema.find(TOK(TOK_ARG))->second, "_");
       for(const auto arg : args)
       {
          dynamic_cast<call_expr*>(curr_tree_node_ptr)->args.push_back(TM.GetTreeReindex(arg));
@@ -913,8 +913,8 @@ void tree_node_factory::operator()(const gimple_call* obj, unsigned int& mask)
    SET_NODE_ID(TOK_FN, fn, gimple_call);
    if(tree_node_schema.find(TOK(TOK_ARG)) != tree_node_schema.end())
    {
-      std::vector<unsigned int> args =
-          convert_string_to_vector<unsigned int>(tree_node_schema.find(TOK(TOK_ARG))->second, "_");
+      const auto args =
+          string_to_container<std::vector<unsigned int>>(tree_node_schema.find(TOK(TOK_ARG))->second, "_");
       for(const auto arg : args)
       {
          dynamic_cast<gimple_call*>(curr_tree_node_ptr)->args.push_back(TM.GetTreeReindex(arg));

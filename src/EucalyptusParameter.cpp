@@ -253,7 +253,8 @@ int EucalyptusParameter::Exec()
             if(long_options[option_index].name == std::string("target-device"))
             {
                std::string tmp_string = optarg;
-               std::vector<std::string> values = convert_string_to_vector<std::string>(tmp_string, std::string(","));
+               std::vector<std::string> values =
+                   string_to_container<std::vector<std::string>>(tmp_string, std::string(","));
                setOption("device_name", "");
                setOption("device_speed", "");
                setOption("device_package", "");

@@ -230,20 +230,8 @@ void BashBackendFlow::InitDesignParameters()
    auto device_name = device->get_parameter<std::string>("model");
    actual_parameters->parameter_values[PARAM_target_device] = device_name;
 
-   std::string HDL_files = actual_parameters->parameter_values[PARAM_HDL_files];
-   std::vector<std::string> file_list = convert_string_to_vector<std::string>(HDL_files, ";");
-   std::string sources_macro_list;
-   for(unsigned int v = 0; v < file_list.size(); v++)
-   {
-      if(v)
-      {
-         sources_macro_list += " ";
-      }
-      sources_macro_list += file_list[v];
-      std::filesystem::path file_path(file_list[v]);
-   }
-
-   actual_parameters->parameter_values[PARAM_bash_sources_macro_list] = sources_macro_list;
+   actual_parameters->parameter_values[PARAM_bash_sources_macro_list] =
+       boost::replace_all_copy(actual_parameters->parameter_values[PARAM_HDL_files], ";", " ");
 
    create_sdc(actual_parameters);
 
