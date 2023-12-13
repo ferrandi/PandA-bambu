@@ -576,7 +576,7 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
    reg_status->Append("unsigned int bit0 = from_outside & 1;\n");
    reg_status->Append("ret = ret | bit0 ;\n");
    /// We are running if we receive the start and we were not running or if we were running and we didn't receive done
-   reg_status->Append("unsigned int bit1 = (((bit0 != 0) && (current_value & 2 == 0)) || (((current_value & 2) != 0) "
+   reg_status->Append("unsigned int bit1 = (((bit0 != 0) && ((current_value & 2) == 0)) || (((current_value & 2) != 0) "
                       "&& (from_done == 0))) ? 2 : 0;\n");
    reg_status->Append("ret = ret | bit1;\n");
    /// We ended if (we ended in the past or we just ended) and we were not starting
