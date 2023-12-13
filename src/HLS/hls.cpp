@@ -277,10 +277,10 @@ static void computeResources(const structural_objectRef circ, const technology_m
    if(NPF and NPF->exist_NP_functionality(NP_functionality::IP_COMPONENT))
    {
       std::string ip_cores = NPF->get_NP_functionality(NP_functionality::IP_COMPONENT);
-      std::vector<std::string> ip_cores_list = convert_string_to_vector<std::string>(ip_cores, ",");
+      std::vector<std::string> ip_cores_list = string_to_container<std::vector<std::string>>(ip_cores, ",");
       for(const auto& ip_core : ip_cores_list)
       {
-         std::vector<std::string> ip_core_vec = convert_string_to_vector<std::string>(ip_core, ":");
+         std::vector<std::string> ip_core_vec = string_to_container<std::vector<std::string>>(ip_core, ":");
          if(ip_core_vec.size() < 1 or ip_core_vec.size() > 2)
          {
             THROW_ERROR("Malformed IP component definition \"" + ip_core + "\"");

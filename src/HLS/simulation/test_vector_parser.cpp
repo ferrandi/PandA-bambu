@@ -143,7 +143,7 @@ DesignFlowStep_Status TestVectorParser::Exec()
 std::vector<std::map<std::string, std::string>> TestVectorParser::ParseUserString(const std::string& input_string) const
 {
    std::vector<std::map<std::string, std::string>> test_vectors;
-   auto tb_strings = convert_string_to_vector<std::string>(input_string, STR_CST_string_separator);
+   auto tb_strings = string_to_container<std::vector<std::string>>(input_string, STR_CST_string_separator);
    for(auto& tb_string : tb_strings)
    {
       /// pre-processing to support arrays

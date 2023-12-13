@@ -75,7 +75,7 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 Evaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    auto objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
-   std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
+   const auto objective_vector = string_to_container<std::vector<std::string>>(objective_string, ",");
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
@@ -225,7 +225,7 @@ DesignFlowStep_Status Evaluation::Exec()
    bool printed_area = false;
    bool printed_frequency = false;
    auto objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
-   std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
+   const auto objective_vector = string_to_container<std::vector<std::string>>(objective_string, ",");
    const auto& evaluations = HLSMgr->evaluations;
    for(const auto& objective : objective_vector)
    {

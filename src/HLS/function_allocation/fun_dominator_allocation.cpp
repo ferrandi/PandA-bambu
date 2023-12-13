@@ -172,7 +172,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
    if(parameters->isOption(OPT_constraints_functions))
    {
       auto tmp_string = parameters->getOption<std::string>(OPT_constraints_functions);
-      const auto funcs_values = convert_string_to_vector<std::string>(tmp_string, ",");
+      const auto funcs_values = string_to_container<std::vector<std::string>>(tmp_string, ",");
       for(auto fun_resources : funcs_values)
       {
          if(!fun_resources.empty() && fun_resources.at(0) == '=')
