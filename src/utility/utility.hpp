@@ -145,18 +145,18 @@ template <typename _OutputIt>
 constexpr void string_to_container(_OutputIt first, const std::string& str, const std::string& separator,
                                    bool trim_empty = true)
 {
-   auto curr = std::prev(str.data());
-   auto last = std::string::npos;
+   auto curr = str.data();
+   std::string::size_type last = 0;
    do
    {
-      auto next = str.find(separator, ++last);
+      auto next = str.find(separator, last);
       auto _len = next != std::string::npos ? (next - last) : (str.size() - last);
       if(!trim_empty || _len)
       {
-         *first++ = boost::lexical_cast<typename _OutputIt::container_type::value_type>(++curr, _len);
+         *first++ = boost::lexical_cast<typename _OutputIt::container_type::value_type>(curr, _len);
       }
-      last += _len;
-      curr += _len;
+      last += _len + 1;
+      curr += _len + 1;
    } while(last < str.size());
 }
 
