@@ -103,6 +103,7 @@ DesignFlowStep_Status AadlParser::Exec()
    const AadlParserDataRef data(new AadlParserData(parameters));
    YYParse(data, lexer);
    AppM->input_files.erase(std::find(AppM->input_files.begin(), AppM->input_files.end(), file_name));
+   std::set<std::string> input_files;
    const auto aadl_information = GetPointer<HLS_manager>(AppM)->aadl_information;
    for(const auto& system : data->system_properties)
    {
@@ -112,7 +113,7 @@ DesignFlowStep_Status AadlParser::Exec()
          if(system.second.find("Source_Text") != system.second.end())
          {
             const auto input_file = GetFile(directory, system.second.find("Source_Text")->second);
-            AppM->input_files.push_back(input_file);
+            input_files.insert(input_file);
          }
          if(data->system_features.find(system.first) != data->system_features.end())
          {
@@ -144,7 +145,7 @@ DesignFlowStep_Status AadlParser::Exec()
       {
          const auto data_view_file = GetFile(directory, property.second.find("Taste::dataViewPath")->second);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added " + data_view_file + " to input files");
-         AppM->input_files.push_back(data_view_file);
+         input_files.insert(data_view_file);
       }
    }
    for(const auto& property : data->data_properties)
@@ -153,7 +154,7 @@ DesignFlowStep_Status AadlParser::Exec()
       {
          const auto data_view_file = GetFile(directory, property.second.find("Source_Text")->second);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added " + data_view_file + " to input files");
-         AppM->input_files.push_back(data_view_file);
+         input_files.insert(data_view_file);
       }
    }
    for(const auto& subprogram : data->subprogram_features)
@@ -184,8 +185,10 @@ DesignFlowStep_Status AadlParser::Exec()
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed subprogram " + subprogram.first);
    }
+   AppM->input_files.insert(AppM->input_files.end(), input_files.begin(), input_files.end());
    if(parameters->getOption<std::list<std::string>>(OPT_top_functions_names).size() > 1)
    {
+      // TODO: fix this abomination
       const_cast<Parameter*>(parameters.get())->setOption(OPT_disable_function_proxy, true);
    }
    return DesignFlowStep_Status::SUCCESS;
