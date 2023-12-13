@@ -243,19 +243,9 @@ static void add_evaluation_objective_string(std::string& obj_string, const std::
       obj_string = obj_to_add;
       return;
    }
-   std::vector<std::string> obj_vec = convert_string_to_vector<std::string>(obj_string, ",");
-   const std::vector<std::string> obj_vec_to_add = convert_string_to_vector<std::string>(obj_to_add, ",");
-
-   for(const auto& s : obj_vec_to_add)
-   {
-      if(!is_evaluation_objective_string(obj_vec, s))
-      {
-         obj_string += "," + s;
-         obj_vec.push_back(s);
-      }
-   }
-
-   return;
+   auto obj_vec = string_to_container<std::set<std::string>>(obj_string, ",");
+   string_to_container(std::inserter(obj_vec, obj_vec.end()), obj_to_add, ",");
+   obj_string = container_to_string(obj_vec, ",");
 }
 
 void BambuParameter::PrintHelp(std::ostream& os) const
@@ -1166,7 +1156,7 @@ int BambuParameter::Exec()
          }
          case INPUT_OPT_FILE_INPUT_DATA:
          {
-            const auto in_files = convert_string_to_vector<std::string>(optarg, ",");
+            const auto in_files = string_to_container<std::vector<std::string>>(optarg, ",");
             for(const auto& in_file : in_files)
             {
                std::filesystem::path file_path(GetPath(in_file));
@@ -1289,7 +1279,7 @@ int BambuParameter::Exec()
                setOption(OPT_evaluation_mode, Evaluation_Mode::EXACT);
             }
             auto objective_string = getOption<std::string>(OPT_evaluation_objectives);
-            std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
+            const auto objective_vector = string_to_container<std::vector<std::string>>(objective_string, ",");
             objective_string = "";
             for(const auto& objective : objective_vector)
             {
@@ -1363,7 +1353,7 @@ int BambuParameter::Exec()
                THROW_ERROR("Simulation is only supported with EXACT evaluation mode");
             }
             auto objective_string = getOption<std::string>(OPT_evaluation_objectives);
-            std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
+            const auto objective_vector = string_to_container<std::vector<std::string>>(objective_string, ",");
             /*
              * look among the objectives of the evaluation. if "CYCLES" is
              * already there, the simulation will be executed.
@@ -1382,8 +1372,7 @@ int BambuParameter::Exec()
          }
          case OPT_DEVICE_NAME:
          {
-            std::string tmp_string = optarg;
-            std::vector<std::string> values = convert_string_to_vector<std::string>(tmp_string, std::string(","));
+            auto values = string_to_container<std::vector<std::string>>(optarg, ",");
             setOption("device_name", "");
             setOption("device_speed", "");
             setOption("device_package", "");
@@ -1407,7 +1396,7 @@ int BambuParameter::Exec()
             }
             else
             {
-               THROW_ERROR("Malformed device: " + tmp_string);
+               THROW_ERROR("Malformed device: " + std::string(optarg));
             }
             break;
          }
@@ -2040,7 +2029,7 @@ int BambuParameter::Exec()
             {
                path = GetPath(path);
             }
-            setOption(OPT_no_parse_files, no_parse + convert_vector_to_string(paths, STR_CST_string_separator));
+            setOption(OPT_no_parse_files, no_parse + container_to_string(paths, STR_CST_string_separator));
             break;
          }
          case INPUT_OPT_C_PYTHON_NO_PARSE:
@@ -2470,6 +2459,8 @@ int BambuParameter::Exec()
 
 void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
 {
+   const auto default_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
+
    if(kill_printf)
    {
       std::string defines;
@@ -2493,25 +2484,26 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
       {
          if(optimizations != "")
          {
-            optimizations = optimizations + STR_CST_string_separator;
+            optimizations += STR_CST_string_separator;
          }
-         optimizations = optimizations + "whole-program";
-         setOption(OPT_gcc_optimizations, optimizations);
+         optimizations += "whole-program";
       }
       if(isOption(OPT_top_design_name))
       {
          if(optimizations != "")
          {
-            optimizations = optimizations + STR_CST_string_separator;
+            optimizations += STR_CST_string_separator;
          }
-         optimizations = optimizations + "no-ipa-cp" + STR_CST_string_separator + "no-ipa-cp-clone";
+         optimizations += "no-ipa-cp" + STR_CST_string_separator + "no-ipa-cp-clone";
+      }
+      if(optimizations.size())
+      {
          setOption(OPT_gcc_optimizations, optimizations);
       }
    }
    /// Set the default value for OPT_gcc_m32_mx32
    if(!isOption(OPT_gcc_m32_mx32))
    {
-      const auto default_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
       if(CompilerWrapper::hasCompilerM64(default_compiler))
       {
          setOption(OPT_gcc_m32_mx32, "-m64");
@@ -2924,7 +2916,7 @@ void BambuParameter::CheckParameters()
       THROW_ASSERT(isOption(OPT_evaluation_objectives), "missing evaluation objectives");
       auto objective_string = getOption<std::string>(OPT_evaluation_objectives);
       THROW_ASSERT(!objective_string.empty(), "");
-      std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
+      auto objective_vector = string_to_container<std::vector<std::string>>(objective_string, ",");
 
       if(getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::EXACT)
       {
@@ -2932,7 +2924,7 @@ void BambuParameter::CheckParameters()
          {
             add_evaluation_objective_string(objective_string, "AREA,TIME");
             setOption(OPT_evaluation_objectives, objective_string);
-            objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
+            objective_vector = string_to_container<std::vector<std::string>>(objective_string, ",");
          }
 
          if(is_evaluation_objective_string(objective_vector, "TIME") ||

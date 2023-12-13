@@ -42,11 +42,15 @@
 #ifndef UTILITY_HPP
 #define UTILITY_HPP
 
+#include "panda_types.hpp"
+#include "string_manipulation.hpp"
+
 #include "config_HAVE_ASSERTS.hpp"
 
 #include <boost/concept/usage.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/lexical_cast.hpp>
+
 #include <cstdlib>
 #include <limits>
 #include <memory>
@@ -54,9 +58,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-
-#include "panda_types.hpp"
-#include "string_manipulation.hpp"
 
 /// INT representing infinite
 #define INFINITE_INT (std::numeric_limits<int>::max())
@@ -113,42 +114,58 @@ std::string convert_to_binary(G _value, unsigned long long precision)
    return bin_value;
 }
 
-template <class G>
-std::string convert_vector_to_string(const std::vector<G>& vector_form, const std::string& separator,
-                                     bool trim_empty_elements = true)
+template <typename _InputIt>
+constexpr std::string container_to_string(_InputIt first, _InputIt last, const std::string& separator,
+                                          bool trim_empty = true)
 {
-   std::string string_form;
-   for(unsigned int i = 0; i < vector_form.size(); i++)
+   std::string str;
+   while(first != last)
    {
-      auto element_string = STR(vector_form[i]);
-      if(trim_empty_elements and element_string.size() == 0)
+      auto estr = boost::lexical_cast<std::string>(*first);
+      if(!trim_empty || estr.size())
       {
-         continue;
+         if(str.size())
+         {
+            str += separator;
+         }
+         str += estr;
       }
-      if(string_form.size())
-      {
-         string_form += separator;
-      }
-      string_form += element_string;
+      ++first;
    }
-   return string_form;
+   return str;
 }
 
-template <class G>
-std::vector<G> convert_string_to_vector(const std::string& string_form, const std::string& separator,
-                                        bool trim_empty_elements = true)
+template <typename _Container>
+constexpr std::string container_to_string(const _Container& _c, const std::string& separator, bool trim_empty = true)
 {
-   std::vector<G> vector_form;
-   std::vector<std::string> tmp_vector_form = SplitString(string_form, separator);
-   for(auto& i : tmp_vector_form)
+   return container_to_string(_c.begin(), _c.end(), separator, trim_empty);
+}
+
+template <typename _OutputIt>
+constexpr void string_to_container(_OutputIt first, const std::string& str, const std::string& separator,
+                                   bool trim_empty = true)
+{
+   auto curr = std::prev(str.data());
+   auto last = std::string::npos;
+   do
    {
-      if(trim_empty_elements && i.size() == 0)
+      auto next = str.find(separator, ++last);
+      auto _len = next != std::string::npos ? (next - last) : (str.size() - last);
+      if(!trim_empty || _len)
       {
-         continue;
+         *first++ = boost::lexical_cast<typename _OutputIt::container_type::value_type>(++curr, _len);
       }
-      vector_form.push_back(boost::lexical_cast<G>(i));
-   }
-   return vector_form;
+      last += _len;
+      curr += _len;
+   } while(last < str.size());
+}
+
+template <typename _Container>
+constexpr _Container string_to_container(const std::string& str, const std::string& separator, bool trim_empty = true)
+{
+   _Container _c;
+   string_to_container(std::inserter(_c, _c.end()), str, separator, trim_empty);
+   return _c;
 }
 
 /**

@@ -106,7 +106,7 @@ DesignFlowStep_Status SimulationEvaluation::Exec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Cleaned up simulation files");
    }
    auto objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
-   std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
+   const auto objective_vector = string_to_container<std::vector<std::string>>(objective_string, ",");
    for(const auto& objective : objective_vector)
    {
       if(objective == "CYCLES" || objective == "TIME" || objective == "TOTAL_CYCLES" || objective == "TOTAL_TIME" ||

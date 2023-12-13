@@ -146,8 +146,7 @@ using namespace __AC_NAMESPACE;
          const auto& DesignInterfaceArgsInclude = DesignInterfaceInclude.find(fname)->second;
          for(const auto& argInclude : DesignInterfaceArgsInclude)
          {
-            const auto incls = convert_string_to_vector<std::string>(argInclude.second, ";");
-            includes.insert(incls.begin(), incls.end());
+            string_to_container(std::inserter(includes, includes.end()), argInclude.second, ";");
          }
          top_fnames.insert(fname);
       }
