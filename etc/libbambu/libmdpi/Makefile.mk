@@ -109,7 +109,7 @@ PP_CFLAGS := -fno-strict-aliasing $(shell if basename "$(CC)" | grep -q clang; t
 PP_CFLAGS += $(shell if [ ! -z "$$(basename $(CC) | grep clang)" ]; then echo "-fbracket-depth=1024"; fi)
 
 DRIVER_LDFLAGS := $(shell echo "$(TB_CFLAGS)" | grep -oE '(-mx?[0-9]+)')
-DRIVER_LDFLAGS += $(shell echo "$(TB_CFLAGS)" | grep -oE '( -[Ll](\\.|[^ ])+)' | tr '\n' ' ')
+DRIVER_LDFLAGS += $(shell echo " $(TB_CFLAGS)" | grep -oE '( -(L|l|Wl)(\\.|[^ ])+)' | tr '\n' ' ')
 DRIVER_LDFLAGS += $(shell echo :$$LD_LIBRARY_PATH | sed 's/:$$//' | sed 's/:/ -L/g')
 DRIVER_LDFLAGS += -lpthread -lstdc++ -lm
 
