@@ -37,40 +37,23 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "create_address_translation.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// behavior include
-#include "application_manager.hpp"
-
-/// constants includes
-#include "constants.hpp"
-#include "taste_constants.hpp"
-
-/// design_flows include
-#include "design_flow_manager.hpp"
-
-/// HLS include
-#include "hls_manager.hpp"
-
-/// intermediate_representation/aadl include
 #include "aadl_information.hpp"
+#include "application_manager.hpp"
 #include "asn_type.hpp"
-
-/// tree includes
+#include "dbgPrintHelper.hpp"
+#include "design_flow_manager.hpp"
+#include "hls_manager.hpp"
+#include "indented_output_stream.hpp"
+#include "string_manipulation.hpp"
+#include "taste_constants.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-
-/// utility include
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
-#include "indented_output_stream.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "utility.hpp"
 
 CreateAddressTranslation::CreateAddressTranslation(const application_managerRef _AppM,
                                                    const DesignFlowManagerConstRef _design_flow_manager,
@@ -523,7 +506,7 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
 
       const auto endianess_check_file = tmp_directory + "/" + STR_CST_taste_endianess_check + top_function_name + ".c";
       endianess_check->WriteFile(endianess_check_file);
-      AppM->input_files[endianess_check_file] = endianess_check_file;
+      AppM->input_files.push_back(endianess_check_file);
       new_top_functions += STR_CST_string_separator + STR_CST_taste_endianess_check + top_function_name;
 
       if(bambu_address != 0)
@@ -539,9 +522,9 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
          address_translation->WriteFile(address_translation_file);
          memory_enabling->WriteFile(memory_enabling_file);
          data_size->WriteFile(data_size_file);
-         AppM->input_files[address_translation_file] = address_translation_file;
-         AppM->input_files[memory_enabling_file] = memory_enabling_file;
-         AppM->input_files[data_size_file] = data_size_file;
+         AppM->input_files.push_back(address_translation_file);
+         AppM->input_files.push_back(memory_enabling_file);
+         AppM->input_files.push_back(data_size_file);
          new_top_functions += STR_CST_string_separator + STR_CST_taste_address_translation + top_function_name +
                               STR_CST_string_separator + STR_CST_taste_memory_enabling + top_function_name +
                               STR_CST_string_separator + STR_CST_taste_data_size + top_function_name;
@@ -579,7 +562,7 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
       const auto output_multiplexer_file =
           tmp_directory + "/" + STR_CST_taste_output_multiplexer + top_function_name + ".c";
       output_multiplexer->WriteFile(output_multiplexer_file);
-      AppM->input_files[output_multiplexer_file] = output_multiplexer_file;
+      AppM->input_files.push_back(output_multiplexer_file);
       new_top_functions += STR_CST_string_separator + STR_CST_taste_output_multiplexer + top_function_name;
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed function " + top_function_name);
@@ -593,7 +576,7 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
    reg_status->Append("unsigned int bit0 = from_outside & 1;\n");
    reg_status->Append("ret = ret | bit0 ;\n");
    /// We are running if we receive the start and we were not running or if we were running and we didn't receive done
-   reg_status->Append("unsigned int bit1 = (((bit0 != 0) && (current_value & 2 == 0)) || (((current_value & 2) != 0) "
+   reg_status->Append("unsigned int bit1 = (((bit0 != 0) && ((current_value & 2) == 0)) || (((current_value & 2) != 0) "
                       "&& (from_done == 0))) ? 2 : 0;\n");
    reg_status->Append("ret = ret | bit1;\n");
    /// We ended if (we ended in the past or we just ended) and we were not starting
@@ -607,7 +590,7 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
    reg_status->Append("}\n");
    const auto reg_status_file = tmp_directory + "/" + STR_CST_taste_reg_status + ".c";
    reg_status->WriteFile(reg_status_file);
-   AppM->input_files[reg_status_file] = reg_status_file;
+   AppM->input_files.push_back(reg_status_file);
    new_top_functions += STR_CST_string_separator + STR_CST_taste_reg_status;
 
 #if 0
@@ -619,7 +602,7 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
    endianess_inversion->Append("}\n");
    const auto endianess_inversion_file = tmp_directory + "/" + STR_CST_taste_endianess_inversion + ".c";
    endianess_inversion->WriteFile(endianess_inversion_file);
-   AppM->input_files[endianess_inversion_file] = endianess_inversion_file;
+   AppM->input_files.push_back(endianess_inversion_file);
 #endif
    new_top_functions += STR_CST_string_separator + STR_CST_taste_endianess_inversion;
 

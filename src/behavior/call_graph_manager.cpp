@@ -510,7 +510,7 @@ void CallGraphManager::ComputeRootAndReachedFunctions()
    root_functions.clear();
    /// If top function option has been passed
    THROW_ASSERT(Param->isOption(OPT_top_functions_names), "Top function must be defined by the user");
-   const auto top_functions_names = Param->getOption<const std::list<std::string>>(OPT_top_functions_names);
+   const auto top_functions_names = Param->getOption<std::list<std::string>>(OPT_top_functions_names);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "---Top functions passed by user: " + Param->getOption<std::string>(OPT_top_functions_names));
    for(const auto& top_function_name : top_functions_names)

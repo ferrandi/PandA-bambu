@@ -64,7 +64,7 @@ LoadFileTechnology::~LoadFileTechnology() = default;
 
 DesignFlowStep_Status LoadFileTechnology::Exec()
 {
-   const auto tech_files = parameters->getOption<const CustomSet<std::string>>(OPT_technology_file);
+   const auto tech_files = parameters->getOption<CustomSet<std::string>>(OPT_technology_file);
    for(const auto& tech_file : tech_files)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "---Reading file " + tech_file);

@@ -1,3 +1,37 @@
+=========== PANDA 2023.10 ===========
+Eleventh public release of PandA framework.
+
+New features introduced:
+- Added support to Clang/LLVM 16
+- The synthesis of ac_types of any size is now supported by Clang/LLVM 16
+- C/C++ co-simulation support added for Mentor Questasim/Modelsim, Xilinx XSim, and Verilator
+- Memory mapped top interface support
+- C++17 is now required to build PandA Bambu
+- Dependencies from Boost libraries have been dropped, only headers are needed (CentOS based system now supported)
+- MachSuite benchmarks updated
+- Fixed issues with Bambu LibM implementation
+- Enhanced interface generation support
+- Changed default HLS division implementation to Newton-Raphson
+
+=========== PANDA 2023.01 ===========
+Tenth public release of PandA framework.
+
+New features introduced:
+- Support for LLVM 13
+- Support for Xilinx Alveo and Xilinx Kintex FPGA boards
+- Support for ac_channels and hls::stream interfaces
+- Various bugfixes and stability enhancement
+- Support for customizable caches added to AXI interfaces 
+
+=========== PANDA 0.9.8 ===========
+Ninth public release of PandA framework.
+
+New features introduced:
+- Added an LLVM based tree height reduction step.
+- Updated support to NanoXplore NXmap: NXmap3 support, NG-ULTRA nx2h540tsc device family support
+- Added support for AXI Master interface.
+- Improved regression test, benchmarking, and integration flow through GitHub Actions workflows
+
 =========== PANDA 0.9.7 ===========
 Sun 20 March 2022, PandA release 0.9.7
 Eighth public release of PandA framework.
@@ -26,9 +60,8 @@ New features introduced:
 
 Main contributions to this release come from Fabrizio Ferrandi, Michele Fiorito, Serena Curzel, Luca Pozzoni, Marco Siracusa, Riccardo Binetti.
 
-
 =========== PANDA 0.9.6 ===========
-Wed 1 January 2020, PandA release 0.9.6
+Sat 11 January 2020, PandA release 0.9.6
 Seventh public release of PandA framework.
 
 New features introduced:
@@ -95,7 +128,7 @@ New features introduced:
 - Fixed floating point division
 - Fixed make dist command under Github repository
 
-Main contributions to this release come from Fabrizio Ferrandi, Marco Lattuada, Pietro Fezzardi, Serena Curzel, Iris Cusini, Marco Siracusa, Marco Speziali and Davide Toschi.
+Main contributions to this release come from Fabrizio Ferrandi, Marco Lattuada, Pietro Fezzardi, Nicola Saporetti, Serena Curzel, Iris Cusini, Marco Siracusa, Marco Speziali and Davide Toschi.
 
 =========== PANDA 0.9.5 ===========
 Mon 14 Aug 2017, PandA release 0.9.5

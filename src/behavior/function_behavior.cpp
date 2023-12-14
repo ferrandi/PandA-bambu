@@ -198,7 +198,7 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       }
       else
       {
-         const auto funcs_values = convert_string_to_vector<std::string>(tmp_string, ",");
+         const auto funcs_values = string_to_container<std::vector<std::string>>(tmp_string, ",");
          for(auto fun_pipeline : funcs_values)
          {
             if(!fun_pipeline.empty() && fun_pipeline.at(0) == '=')

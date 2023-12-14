@@ -512,11 +512,10 @@ void InterfaceInfer::Initialize()
    else
    {
       /// load xml interface specification file
+      const auto output_temporary_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
       for(const auto& source_file : AppM->input_files)
       {
-         const auto output_temporary_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
-         const std::string leaf_name =
-             source_file.second == "-" ? "stdin-" : std::filesystem::path(source_file.second).filename().string();
+         const auto leaf_name = source_file == "-" ? "stdin-" : std::filesystem::path(source_file).filename().string();
          const auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".interface.xml";
          parseInterfaceXML(XMLfilename);
       }

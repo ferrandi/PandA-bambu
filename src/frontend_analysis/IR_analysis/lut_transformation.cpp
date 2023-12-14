@@ -738,8 +738,8 @@ static std::vector<bool> IntegerToBitArray(integer_cst_t n, size_t size)
    {
       bits.push_back((n & (integer_cst_t(1) << i)) ? true : false);
    }
-   THROW_ASSERT(bits == oldbits, "Bits for " + STR(n) + " was " + convert_vector_to_string(oldbits, "") + " now is " +
-                                     convert_vector_to_string(bits, ""));
+   THROW_ASSERT(bits == oldbits, "Bits for " + STR(n) + " was " + container_to_string(oldbits, "") + " now is " +
+                                     container_to_string(bits, ""));
    return bits;
 }
 

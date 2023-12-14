@@ -43,13 +43,12 @@
  *
  */
 #include "ModuleGeneratorManager.hpp"
+
 #include "ModuleGenerator.hpp"
 #include "Parameter.hpp"
 #include "area_info.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
-#include "compiler_wrapper.hpp"
-#include "config_BOOST_INCLUDE_DIR.hpp"
 #include "constant_strings.hpp"
 #include "fileIO.hpp"
 #include "function_behavior.hpp"
@@ -61,7 +60,7 @@
 #include "memory.hpp"
 #include "memory_cs.hpp"
 #include "op_graph.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "string_manipulation.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
@@ -70,6 +69,9 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+
+#include "config_BOOST_INCLUDE_DIR.hpp"
+
 #include <filesystem>
 #include <iosfwd>
 #include <string>

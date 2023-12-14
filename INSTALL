@@ -1,4 +1,3 @@
-
 Installation Instructions
 *************************
 
@@ -52,7 +51,8 @@ which prints its help message.
 
 Additional documentation about the configuration, the execution of the test 
 examples, and the creation of the basic documentation of the framework can be
-found at: http://panda.dei.polimi.it/?page_id=88
+found at: https://docs.bambuhls.eu/
+
 
 Testcases
 *********
@@ -63,7 +63,6 @@ bash scripts for their execution.
 These scripts automatically create subdirectories containing all the results 
 of the execution. You can start from them to build your own hardware 
 accelerators with bambu.
-
 
 
 Documentation
@@ -87,90 +86,91 @@ Ubuntu 20.04 64bit:
 - autoconf
 - autoconf-archive
 - automake
-- libtool
+- bison
+- clang-10
+- clang-11
+- clang-12
+- clang-6.0
+- clang-7
+- clang-8
+- clang-9
+- doxygen
+- flex
 - g++
-- gcc-7
 - g++-7
-- gcc-8
-- g++-8
-- gcc-7-plugin-dev
-- gcc-8-plugin-dev
-- gcc-7-multilib
 - g++-7-multilib
+- g++-8
 - g++-8-multilib
+- gcc-7
+- gcc-7-multilib
+- gcc-7-plugin-dev
+- gcc-8
+- gcc-8-plugin-dev
 - gfortran-7
 - gfortran-7-multilib
 - gfortran-8
 - gfortran-8-multilib
-- clang-6.0
-- libclang-6.0-dev
-- clang-7
-- libclang-7-dev
-- clang-8
-- libclang-8-dev
-- clang-9
-- libclang-9-dev
-- clang-10
-- libclang-10-dev
-- clang-11
-- libclang-11-dev
-- clang-12
-- libclang-12-dev
+- graphviz
 - libbdd-dev
 - libboost-all-dev
-- libmpc-dev
-- libmpfr-dev
-- libxml2-dev
-- liblzma-dev
-- libmpfi-dev
-- zlib1g-dev
-- libicu-dev
-- bison
-- doxygen
-- flex
-- graphviz
-- iverilog
-- verilator
-- pkg-config
-- libsuitesparse-dev
+- libclang-10-dev
+- libclang-11-dev
+- libclang-12-dev
+- libclang-6.0-dev
+- libclang-7-dev
+- libclang-8-dev
+- libclang-9-dev
 - libglpk-dev
+- libicu-dev
+- liblzma-dev
+- libmpc-dev
+- libmpfi-dev
+- libmpfr-dev
+- libsuitesparse-dev
+- libtool
+- libxml2-dev
 - make
-
+- pkg-config
+- verilator
+- zlib1g-dev
 
 In a single line:
-sudo apt-get install autoconf autoconf-archive automake libtool g++ gcc-7 g++-7 gcc-8 g++-8 gcc-7-plugin-dev  gcc-8-plugin-dev gcc-7-multilib gcc-8-multilib g++-7-multilib g++-8-multilib gfortran-7 gfortran-7-multilib gfortran-8 gfortran-8-multilib libclang-6.0-dev clang-6.0 libclang-6.0-dev clang-7 libclang-7-dev clang-8 libclang-8-dev clang-9 libclang-9-dev clang-10 libclang-10-dev clang-11 libclang-11-dev clang-12 libclang-12-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator make libsuitesparse-dev libglpk-dev
+sudo apt-get install autoconf autoconf-archive automake bison clang-10 clang-11 clang-12 clang-6.0 clang-7 clang-8 clang-9 doxygen flex g++ g++-7 g++-7-multilib g++-8 g++-8-multilib gcc-7 gcc-7-multilib gcc-7-plugin-dev gcc-8 gcc-8-plugin-dev gfortran-7 gfortran-7-multilib gfortran-8 gfortran-8-multilib graphviz libbdd-dev libboost-all-dev libclang-10-dev libclang-11-dev libclang-12-dev libclang-6.0-dev libclang-7-dev libclang-8-dev libclang-9-dev libglpk-dev libicu-dev liblzma-dev libmpc-dev libmpfi-dev libmpfr-dev libsuitesparse-dev libtool libxml2-dev make pkg-config verilator zlib1g-dev 
 
 
 Ubuntu 18.04 64bit:
 - autoconf
 - autoconf-archive
 - automake
-- libtool
+- bison
+- clang-4.0
+- clang-5.0
+- clang-6.0
+- clang-7
+- clang-8
+- clang-9
+- doxygen
+- flex
 - g++
-- gcc-4.8
-- g++-4.8
-- gcc-5
 - g++-5
-- gcc-6
-- g++-6
-- gcc-7
-- g++-7
-- gcc-8
-- g++-8
-- gcc-4.8-plugin-dev
-- gcc-5-plugin-dev
-- gcc-6-plugin-dev
-- gcc-7-plugin-dev
-- gcc-8-plugin-dev
-- gcc-4.8-multilib
-- gcc-5-multilib
-- gcc-6-multilib
-- gcc-7-multilib
-- g++-4.8-multilib
 - g++-5-multilib
+- g++-6
 - g++-6-multilib
+- g++-7
 - g++-7-multilib
+- g++-8
 - g++-8-multilib
+- gcc-5
+- gcc-5-multilib
+- gcc-5-plugin-dev
+- gcc-6
+- gcc-6-multilib
+- gcc-6-plugin-dev
+- gcc-7
+- gcc-7-multilib
+- gcc-7-plugin-dev
+- gcc-8
+- gcc-8-plugin-dev
 - gfortran-4.8
 - gfortran-4.8-multilib 
 - gfortran-5
@@ -181,253 +181,169 @@ Ubuntu 18.04 64bit:
 - gfortran-7-multilib
 - gfortran-8
 - gfortran-8-multilib
-- clang-4.0
-- libclang-4.0-dev
-- clang-5.0
-- libclang-5.0-dev
-- clang-6.0
-- libclang-6.0-dev
-- clang-7
-- libclang-7-dev
-- clang-8
-- libclang-8-dev
-- clang-9
-- libclang-9-dev
+- graphviz
 - libbdd-dev
 - libboost-all-dev
-- libmpc-dev
-- libmpfr-dev
-- libxml2-dev
-- liblzma-dev
-- libmpfi-dev
-- zlib1g-dev
-- libicu-dev
-- bison
-- doxygen
-- flex
-- graphviz
-- iverilog
-- verilator
-- pkg-config
-- libsuitesparse-dev
+- libclang-4.0-dev
+- libclang-5.0-dev
+- libclang-6.0-dev
+- libclang-7-dev
+- libclang-8-dev
+- libclang-9-dev
 - libglpk-dev
+- libicu-dev
+- liblzma-dev
+- libmpc-dev
+- libmpfi-dev
+- libmpfr-dev
+- libsuitesparse-dev
+- libtool
+- libxml2-dev
 - make
-
+- pkg-config
+- verilator
+- zlib1g-dev
 
 In a single line:
-sudo apt-get install autoconf autoconf-archive automake libtool g++ gcc-4.8 g++-4.8 gcc-5 g++-5 gcc-6 g++-6 gcc-7 g++-7 gcc-8 g++-8 gcc-4.8-plugin-dev gcc-5-plugin-dev gcc-6-plugin-dev gcc-7-plugin-dev  gcc-8-plugin-dev gcc-4.8-multilib gcc-5-multilib gcc-6-multilib gcc-7-multilib gcc-8-multilib g++-4.8-multilib g++-5-multilib g++-6-multilib g++-7-multilib g++-8-multilib gfortran-4.8 gfortran-4.8-multilib gfortran-5 gfortran-5-multilib gfortran-6 gfortran-6-multilib gfortran-7 gfortran-7-multilib gfortran-8 gfortran-8-multilib clang-4.0 libclang-4.0-dev libclang-6.0-dev clang-6.0 libclang-6.0-dev clang-7 libclang-7-dev clang-8 libclang-8-dev clang-9 libclang-9-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator make libsuitesparse-dev libglpk-dev
+sudo apt-get install autoconf autoconf-archive automake bison clang-4.0 clang-5.0 clang-6.0 clang-7 clang-8 clang-9 doxygen flex g++ g++-5 g++-5-multilib g++-6 g++-6-multilib g++-7 g++-7-multilib g++-8 g++-8-multilib gcc-5 gcc-5-multilib gcc-5-plugin-dev gcc-6 gcc-6-multilib gcc-6-plugin-dev gcc-7 gcc-7-multilib gcc-7-plugin-dev gcc-8 gcc-8-plugin-dev gfortran-4.8 gfortran-4.8-multilib  gfortran-5 gfortran-5-multilib gfortran-6  gfortran-6-multilib gfortran-7 gfortran-7-multilib gfortran-8 gfortran-8-multilib graphviz libbdd-dev libboost-all-dev libclang-4.0-dev libclang-5.0-dev libclang-6.0-dev libclang-7-dev libclang-8-dev libclang-9-dev libglpk-dev libicu-dev liblzma-dev libmpc-dev libmpfi-dev libmpfr-dev libsuitesparse-dev libtool libxml2-dev make pkg-config verilator zlib1g-dev 
 
 
 Ubuntu 17.04 64bit and Ubuntu 17.04 32bit:
 - autoconf
 - autoconf-archive
 - automake
-- libtool
+- bison
+- clang-4.0
+- doxygen
+- flex
 - g++
-- gcc-4.8
-- g++-4.8
-- gcc-4.9
 - g++-4.9
-- gcc-4.8-plugin-dev
-- gcc-4.9-plugin-dev
-- gcc-5-plugin-dev
-- gcc-6-plugin-dev
-- gcc-4.8-multilib
-- gcc-4.9-multilib
-- gcc-5-multilib
-- gcc-6-multilib
-- g++-4.8-multilib
 - g++-4.9-multilib
 - g++-5-multilib
 - g++-6-multilib
-- gfortran-4.8
-- gfortran-4.8-multilib 
+- gcc-4.9
+- gcc-4.9-multilib
+- gcc-4.9-plugin-dev
+- gcc-5-multilib
+- gcc-5-plugin-dev
+- gcc-6-multilib
+- gcc-6-plugin-dev
 - gfortran-4.9
 - gfortran-4.9-multilib
 - gfortran-5 
 - gfortran-5-multilib
 - gfortran-6 
 - gfortran-6-multilib
-- clang-4.0
-- libclang-4.0-dev
+- graphviz
 - libbdd-dev
 - libboost-all-dev
-- libmpc-dev
-- libmpfr-dev
-- libxml2-dev
-- liblzma-dev
-- libmpfi-dev
-- zlib1g-dev
-- libicu-dev
-- bison
-- doxygen
-- flex
-- graphviz
-- iverilog
-- verilator
-- pkg-config
-- libsuitesparse-dev
+- libclang-4.0-dev
 - libglpk-dev
+- libicu-dev
+- liblzma-dev
+- libmpc-dev
+- libmpfi-dev
+- libmpfr-dev
+- libsuitesparse-dev
+- libtool
+- libxml2-dev
 - make
-
+- pkg-config
+- verilator
+- zlib1g-dev
 
 In a single line:
-sudo apt install autoconf autoconf-archive automake libtool g++ gcc-4.8 g++-4.8 gcc-4.9 g++-4.9 gcc-5 g++-5 gcc-6 g++-6 gcc-4.8-plugin-dev gcc-4.9-plugin-dev gcc-5-plugin-dev gcc-6-plugin-dev gcc-4.8-multilib gcc-4.9-multilib gcc-5-multilib gcc-6-multilib g++-4.8-multilib g++-4.9-multilib g++-5-multilib g++-6-multilib gfortran-4.8 gfortran-4.8-multilib gfortran-4.9 gfortran-4.9-multilib gfortran-5 gfortran-5-multilib gfortran-6 gfortran-6-multilib clang-4.0 libclang-4.0-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator make libsuitesparse-dev libglpk-dev
+sudo apt install autoconf autoconf-archive automake bison clang-4.0 doxygen flex g++ g++-4.9 g++-4.9-multilib g++-5-multilib g++-6-multilib gcc-4.9 gcc-4.9-multilib gcc-4.9-plugin-dev gcc-5-multilib gcc-5-plugin-dev gcc-6-multilib gcc-6-plugin-dev gfortran-4.9 gfortran-4.9-multilib gfortran-5  gfortran-5-multilib gfortran-6  gfortran-6-multilib graphviz libbdd-dev libboost-all-dev libclang-4.0-dev libglpk-dev libicu-dev liblzma-dev libmpc-dev libmpfi-dev libmpfr-dev libsuitesparse-dev libtool libxml2-dev make pkg-config verilator zlib1g-dev 
 
 Ubuntu 16.10 64bit:
 - autoconf
 - autoconf-archive
 - automake
-- libtool
+- bison
+- clang-4.0
+- doxygen
+- flex
 - g++
-- gcc-4.8
-- g++-4.8
-- gcc-4.9
 - g++-4.9
-- gcc-4.8-plugin-dev
-- gcc-4.9-plugin-dev
-- gcc-5-plugin-dev
-- gcc-6-plugin-dev
-- gcc-4.8-multilib
-- gcc-4.9-multilib
-- gcc-5-multilib
-- gcc-6-multilib
-- g++-4.8-multilib
 - g++-4.9-multilib
 - g++-5-multilib
 - g++-6-multilib
-- gfortran-4.8
-- gfortran-4.8-multilib 
+- gcc-4.9
+- gcc-4.9-multilib
+- gcc-4.9-plugin-dev
+- gcc-5-multilib
+- gcc-5-plugin-dev
+- gcc-6-multilib
+- gcc-6-plugin-dev
 - gfortran-4.9
 - gfortran-4.9-multilib
 - gfortran-5 
 - gfortran-5-multilib
 - gfortran-6 
 - gfortran-6-multilib
-- clang-4.0
-- libclang-4.0-dev
+- graphviz
 - libbdd-dev
 - libboost-all-dev
-- libmpc-dev
-- libmpfr-dev
-- libxml2-dev
-- liblzma-dev
-- libmpfi-dev
-- zlib1g-dev
-- libicu-dev
-- bison
-- doxygen
-- flex
-- graphviz
-- iverilog
-- verilator
-- pkg-config
-- libsuitesparse-dev
+- libclang-4.0-dev
 - libglpk-dev
+- libicu-dev
+- liblzma-dev
+- libmpc-dev
+- libmpfi-dev
+- libmpfr-dev
+- libsuitesparse-dev
+- libtool
+- libxml2-dev
 - make
-
+- pkg-config
+- verilator
+- zlib1g-dev
 
 In a single line:
-sudo apt install autoconf autoconf-archive automake libtool g++ gcc-4.8 g++-4.8 gcc-4.9 g++-4.9 gcc-5 g++-5 gcc-6 g++-6 gcc-4.8-plugin-dev gcc-4.9-plugin-dev gcc-5-plugin-dev gcc-6-plugin-dev gcc-4.8-multilib gcc-4.9-multilib gcc-5-multilib gcc-6-multilib g++-4.8-multilib g++-4.9-multilib g++-5-multilib g++-6-multilib gfortran-4.8 gfortran-4.8-multilib gfortran-4.9 gfortran-4.9-multilib gfortran-5 gfortran-5-multilib gfortran-6 gfortran-6-multilib clang-4.0 libclang-4.0-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator make libsuitesparse-dev libglpk-dev
+sudo apt install autoconf autoconf-archive automake bison clang-4.0 doxygen flex g++ g++-4.9 g++-4.9-multilib g++-5-multilib g++-6-multilib gcc-4.9 gcc-4.9-multilib gcc-4.9-plugin-dev gcc-5-multilib gcc-5-plugin-dev gcc-6-multilib gcc-6-plugin-dev gfortran-4.9 gfortran-4.9-multilib gfortran-5  gfortran-5-multilib gfortran-6  gfortran-6-multilib graphviz libbdd-dev libboost-all-dev libclang-4.0-dev libglpk-dev libicu-dev liblzma-dev libmpc-dev libmpfi-dev libmpfr-dev libsuitesparse-dev libtool libxml2-dev make pkg-config verilator zlib1g-dev 
 
 Ubuntu 16.04 64bit:
 - autoconf
 - autoconf-archive
 - automake
-- libtool
+- bison
+- clang-4.0
+- doxygen
+- flex
 - g++
-- gcc-4.8
-- g++-4.8
-- gcc-4.9
 - g++-4.9
-- g++-5
-- gcc-4.8-plugin-dev
-- gcc-4.9-plugin-dev
-- gcc-5-plugin-dev
-- gcc-4.8-multilib
-- gcc-4.9-multilib
-- gcc-5-multilib
-- g++-4.8-multilib
 - g++-4.9-multilib
+- g++-5
 - g++-5-multilib
-- gfortran-4.8
-- gfortran-4.8-multilib 
+- gcc-4.9
+- gcc-4.9-multilib
+- gcc-4.9-plugin-dev
+- gcc-5-multilib
+- gcc-5-plugin-dev
 - gfortran-4.9
 - gfortran-4.9-multilib
 - gfortran-5 
 - gfortran-5-multilib
-- clang-4.0
-- libclang-4.0-dev
+- graphviz
 - libbdd-dev
 - libboost-all-dev
-- libmpc-dev
-- libmpfr-dev
-- libxml2-dev
-- liblzma-dev
-- libmpfi-dev
-- zlib1g-dev
-- libicu-dev
-- bison
-- doxygen
-- flex
-- graphviz
-- iverilog
-- verilator
-- pkg-config
-- libsuitesparse-dev
+- libclang-4.0-dev
 - libglpk-dev
-- make
-
-
-In a single line:
-sudo apt-get install autoconf autoconf-archive automake libtool g++ gcc-4.8 g++-4.8 gcc-4.9 g++-4.9 gcc-5 g++-5 gcc-4.8-plugin-dev gcc-4.9-plugin-dev gcc-5-plugin-dev  gcc-4.8-multilib gcc-4.9-multilib gcc-5-multilib g++-4.8-multilib g++-4.9-multilib g++-5-multilib gfortran-4.8 gfortran-4.8-multilib gfortran-4.9 gfortran-4.9-multilib gfortran-5 gfortran-5-multilib clang-4.0 libclang-4.0-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator make libsuitesparse-dev libglpk-dev
-
-
-Ubuntu 14.04 LTS 64bit and Ubuntu 14.04 LTS 32bit:
-- autoconf
-- autoconf-archive
-- automake
+- libicu-dev
+- liblzma-dev
+- libmpc-dev
+- libmpfi-dev
+- libmpfr-dev
+- libsuitesparse-dev
 - libtool
-- g++
-- gcc-4.6
-- g++-4.6
-- gcc-4.7
-- g++-4.7
-- gcc-4.8-plugin-dev
-- gcc-4.7-plugin-dev
-- gcc-4.6-plugin-dev
-- gcc-4.6-multilib
-- gcc-4.7-multilib
-- gcc-4.8-multilib
-- g++-4.8-multilib
-- gfortran-4.6
-- gfortran-4.6-multilib
-- gfortran-4.7
-- gfortran-4.7-multilib
-- gfortran-4.8
-- gfortran-4.8-multilib
-- libboost-all-dev
-- libmpc-dev
-- libmpfr-dev
 - libxml2-dev
-- liblzma-dev
-- libmpfi-dev
-- zlib1g-dev
-- libicu-dev
-- bison
-- doxygen
-- flex
-- graphviz
-- iverilog
-- verilator
-- pkg-config
-- libsuitesparse-dev
-- libglpk-dev
 - make
-
+- pkg-config
+- verilator
+- zlib1g-dev
 
 In a single line:
-sudo apt-get install autoconf autoconf-archive automake libtool g++ gcc-4.6 g++-4.6 gcc-4.6-plugin-dev gcc-4.6-plugin-dev gcc-4.7 g++-4.7 gcc-4.8-plugin-dev gcc-4.7-plugin-dev gcc-4.6-multilib gcc-4.7-multilib gcc-4.8-multilib g++-4.8-multilib gfortran-4.6 gfortran-4.6-multilib gfortran-4.7 gfortran-4.7-multilib gfortran-4.8 gfortran-4.8-multilib libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator libsuitesparse-dev libglpk-dev make
+sudo apt-get install autoconf autoconf-archive automake bison clang-4.0 doxygen flex g++ g++-4.9 g++-4.9-multilib g++-5 g++-5-multilib gcc-4.9 gcc-4.9-multilib gcc-4.9-plugin-dev gcc-5-multilib gcc-5-plugin-dev gfortran-4.9 gfortran-4.9-multilib gfortran-5  gfortran-5-multilib graphviz libbdd-dev libboost-all-dev libclang-4.0-dev libglpk-dev libicu-dev liblzma-dev libmpc-dev libmpfi-dev libmpfr-dev libsuitesparse-dev libtool libxml2-dev make pkg-config verilator zlib1g-dev 
 
 Debian packages
 ***************
@@ -437,81 +353,79 @@ The following packages have to be installed under Debian to compile PandA.
 Debian testing (bullseye) and unstable (sid):
 - autoconf
 - autoconf-archive
-- libtool
-- make
-- g++
-- gcc-8
-- g++-8
-- gcc-8-plugin-dev
-- gcc-8-multilib
-- gfortran
-- gfortran-multilib 
-- clang-6.0
-- libclang-6.0-dev
-- clang-7
-- libclang-7-dev
-- clang-8
-- libclang-8-dev
-- clang-9
-- libclang-9-dev
-- libbdd-dev
-- libboost-all-dev
-- libmpc-dev
-- libmpfr-dev
-- libxml2-dev
-- liblzma-dev
-- libmpfi-dev
-- zlib1g-dev
-- libicu-dev
 - bison
+- clang-6.0
+- clang-7
+- clang-8
+- clang-9
 - doxygen
 - flex
+- g++
+- g++-8
+- gcc-8
+- gcc-8-multilib
+- gcc-8-plugin-dev
+- gfortran
+- gfortran-multilib 
 - graphviz
-- iverilog
-- verilator
-- pkg-config
-- libsuitesparse-dev
+- libbdd-dev
+- libboost-all-dev
+- libclang-6.0-dev
+- libclang-7-dev
+- libclang-8-dev
+- libclang-9-dev
 - libglpk-dev
+- libicu-dev
+- liblzma-dev
+- libmpc-dev
+- libmpfi-dev
+- libmpfr-dev
+- libsuitesparse-dev
+- libtool
+- libxml2-dev
 - make
+- make
+- pkg-config
+- verilator
+- zlib1g-dev
 
 In a single line (as root user):
-apt install autoconf autoconf-archive libtool make g++ gcc-8-plugin-dev gcc-8-multilib gfortran gfortran-multilib clang-6.0 libclang-6.0-dev clang-7 libclang-7-dev clang-8 libclang-8-dev clang-9 libclang-9-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config libsuitesparse-dev libglpk-dev
+apt install autoconf autoconf-archive bison clang-6.0 clang-7 clang-8 clang-9 doxygen flex g++ g++-8 gcc-8 gcc-8-multilib gcc-8-plugin-dev gfortran gfortran-multilib  graphviz libbdd-dev libboost-all-dev libclang-6.0-dev libclang-7-dev libclang-8-dev libclang-9-dev libglpk-dev libicu-dev liblzma-dev libmpc-dev libmpfi-dev libmpfr-dev libsuitesparse-dev libtool libxml2-dev make make pkg-config verilator zlib1g-dev 
 
 Debian 9 (Stretch):
 - autoconf
 - autoconf-archive
-- libtool
-- make
-- gcc
-- g++
-- gcc-multilib
-- gcc-6-plugin-dev
-- gfortran
-- gfortran-multilib 
-- clang-4.0
-- libclang-4.0-dev
-- libbdd-dev
-- libcloog-ppl1
-- libboost-all-dev
-- libmpc-dev
-- libmpfr-dev
-- libxml2-dev
-- liblzma-dev
-- libmpfi-dev
-- zlib1g-dev
-- libicu-dev
 - bison
+- clang-4.0
 - doxygen
 - flex
+- g++
+- gcc
+- gcc-6-plugin-dev
+- gcc-multilib
+- gfortran
+- gfortran-multilib 
 - graphviz
-- iverilog
-- verilator
-- pkg-config
-- libsuitesparse-dev
+- libbdd-dev
+- libboost-all-dev
+- libclang-4.0-dev
+- libcloog-ppl1
 - libglpk-dev
+- libicu-dev
+- liblzma-dev
+- libmpc-dev
+- libmpfi-dev
+- libmpfr-dev
+- libsuitesparse-dev
+- libtool
+- libxml2-dev
+- make
+- pkg-config
+- verilator
+- zlib1g-dev
 
 In a single line (as root user):
-apt install autoconf autoconf-archive libtool make gcc g++ gcc-multilib gcc-6-plugin-dev gfortran gfortran-multilib libcloog-ppl1 clang-4.0 libclang-4.0-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config libsuitesparse-dev libglpk-dev
+apt install autoconf autoconf-archive bison clang-4.0 doxygen flex g++ gcc gcc-6-plugin-dev gcc-multilib gfortran gfortran-multilib  graphviz libbdd-dev libboost-all-dev libclang-4.0-dev libcloog-ppl1 libglpk-dev libicu-dev liblzma-dev libmpc-dev libmpfi-dev libmpfr-dev libsuitesparse-dev libtool libxml2-dev make pkg-config verilator zlib1g-dev 
 
 CentOS 6/Scientific Linux distributions
 *************
@@ -601,42 +515,42 @@ Fedora
 ***************
 
 The following packages have to be installed under Fedora 23 (64 bit) to compile PandA:
-sudo dnf install autoconf autoconf-archive libtool boost-devel mpfr-devel xml2 lzma-devel mpfi-devel zlib-devel bison flex doxygen graphviz iverilog verilator gcc gcc-c++ gcc-plugin-devel.x86_64 gcc-plugin-devel.i686 libxml2-devel glibc glibc-devel glibc.i686 glibc-devel.i686 libgcc.i686 make suitesparse-static libtool-ltdl-devel glpk-devel gawk
+sudo dnf install autoconf autoconf-archive libtool boost-devel mpfr-devel xml2 lzma-devel mpfi-devel zlib-devel bison flex doxygen graphviz verilator gcc gcc-c++ gcc-plugin-devel.x86_64 gcc-plugin-devel.i686 libxml2-devel glibc glibc-devel glibc.i686 glibc-devel.i686 libgcc.i686 make suitesparse-static libtool-ltdl-devel glpk-devel gawk
 
 The following packages have to be installed under Fedora 24 (64 bit) to compile PandA:
-sudo dnf install autoconf autoconf-archive libtool boost-devel mpfr-devel xml2 lzma-devel mpfi-devel zlib-devel bison flex doxygen graphviz iverilog verilator gcc gcc-c++ gcc-plugin-devel.x86_64 gcc-plugin-devel.i686 libxml2-devel glibc glibc-devel glibc.i686 glibc-devel.i686 libgcc.i686 make suitesparse-static libtool-ltdl-devel glpk-devel gawk which
+sudo dnf install autoconf autoconf-archive libtool boost-devel mpfr-devel xml2 lzma-devel mpfi-devel zlib-devel bison flex doxygen graphviz verilator gcc gcc-c++ gcc-plugin-devel.x86_64 gcc-plugin-devel.i686 libxml2-devel glibc glibc-devel glibc.i686 glibc-devel.i686 libgcc.i686 make suitesparse-static libtool-ltdl-devel glpk-devel gawk which
 
 The following packages have to be installed under Fedora 25 (64 bit) to compile PandA:
-sudo dnf install autoconf autoconf-archive libtool boost-devel mpfr-devel xml2 lzma-devel mpfi-devel zlib-devel bison flex doxygen graphviz iverilog verilator gcc gcc-c++ gcc-plugin-devel.x86_64 gcc-plugin-devel.i686 libxml2-devel glibc glibc-devel glibc.i686 glibc-devel.i686 libgcc.i686 make suitesparse-static libtool-ltdl-devel glpk-devel gawk
+sudo dnf install autoconf autoconf-archive libtool boost-devel mpfr-devel xml2 lzma-devel mpfi-devel zlib-devel bison flex doxygen graphviz verilator gcc gcc-c++ gcc-plugin-devel.x86_64 gcc-plugin-devel.i686 libxml2-devel glibc glibc-devel glibc.i686 glibc-devel.i686 libgcc.i686 make suitesparse-static libtool-ltdl-devel glpk-devel gawk
 
 The following packages have to be installed under Fedora 29 (64 bit) to compile PandA:
-sudo dnf install autoconf autoconf-archive libtool boost-devel mpfr-devel xml2 lzma-devel mpfi-devel zlib-devel bison flex doxygen graphviz iverilog verilator gcc gcc-c++ gcc-plugin-devel.x86_64 gcc-plugin-devel.i686 libxml2-devel glibc glibc-devel glibc.i686 glibc-devel.i686 libgcc.i686 make suitesparse-static libtool-ltdl-devel glpk-devel gawk clang clang-devel llvm llvm-devel
+sudo dnf install autoconf autoconf-archive libtool boost-devel mpfr-devel xml2 lzma-devel mpfi-devel zlib-devel bison flex doxygen graphviz verilator gcc gcc-c++ gcc-plugin-devel.x86_64 gcc-plugin-devel.i686 libxml2-devel glibc glibc-devel glibc.i686 glibc-devel.i686 libgcc.i686 make suitesparse-static libtool-ltdl-devel glpk-devel gawk clang clang-devel llvm llvm-devel
 
 ArchLinux
 *************
 
 The following packages have to be installed under ArchLinux to compile PandA:
 
-- base-devel 
-- multilib-devel 
-- boost 
-- iverilog 
-- gcc-multilib 
 - autoconf-archive 
-- verilator 
-- mpfi 
+- base-devel 
+- boost 
 - clang 
-- llvm 
 - gcc 
 - gcc-fortran 
+- gcc-multilib 
 - git 
-- tar 
-- suitesparse 
 - glpk 
+- iverilog 
+- llvm 
+- mpfi 
+- multilib-devel
 - readline
+- suitesparse 
+- tar
+- verilator
 
 In a single line:
-sudo pacman -S base-devel multilib-devel boost iverilog gcc-multilib autoconf-archive verilator mpfi clang llvm gcc gcc-fortran git tar suitesparse glpk readline
+sudo pacman -S base-devel multilib-devel boost gcc-multilib autoconf-archive verilator mpfi clang llvm gcc gcc-fortran git tar suitesparse glpk readline
 
 A working configure example is:
 ../configure --prefix=$HOME/panda --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast
@@ -646,7 +560,7 @@ Mac OSX
 To compile PandA on MacOSX you need to install MacPorts (version 2.5.4 or later).
 
 Here the list of commands required: 
-     $sudo port -N -q install git autoconf autoconf-archive automake bison flex boost libtool SuiteSparse glpk iverilog clang-6.0 gcc8 mpfi coreutils
+     $sudo port -N -q install git autoconf autoconf-archive automake bison flex boost libtool SuiteSparse glpk clang-6.0 gcc8 mpfi coreutils
      $sudo cp /opt/local/bin/greadlink /opt/local/bin/readlink
      $git clone https://github.com/ferrandi/PandA-bambu.git
      $cd PandA-bambu
@@ -709,7 +623,7 @@ For Lattice it checks this set of directories /usr/local/diamond/*
 For Mentor it checks this set of directories /opt/mentor and /opt/mentor/*
 For Xilinx ISE it checks these sets of directories /opt/Xilinx/* and /opt/Xilinx/*/ISE*
 For Xilinx VIVADO it checks this set of directories /opt/Xilinx/* and /opt/Xilinx/Vivado/*
-For BRAVE FPGA NanoXplore it checks this set of directories /opt/NanoXplore/NXmap/*
+For BRAVE FPGA NanoXplore it checks this set of directories /opt/NanoXplore/*
 Anyway, it is possible to specify a different position of the filesystem for the application to look into.
 This is the list of options that may be useful for this purpose:
   --altera-root=DIR  where the root where ALTERA tools are installed

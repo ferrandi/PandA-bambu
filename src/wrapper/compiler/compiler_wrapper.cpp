@@ -44,8 +44,28 @@
  * Last modified by $Author$
  *
  */
+#include "compiler_wrapper.hpp"
 
-/// Autoheader include
+#include "Parameter.hpp"
+#include "compiler_constants.hpp"
+#include "compiler_xml.hpp"
+#include "cpu_stats.hpp"
+#include "cpu_time.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
+#include "fileIO.hpp"
+#include "file_IO_constants.hpp"
+#include "hls_step.hpp"
+#include "parse_tree.hpp"
+#include "polixml.hpp"
+#include "string_manipulation.hpp"
+#include "tree_manager.hpp"
+#include "tree_node.hpp"
+#include "tree_reindex.hpp"
+#include "utility.hpp"
+#include "xml_dom_parser.hpp"
+#include "xml_helper.hpp"
+
 #include "config_CLANG_PLUGIN_DIR.hpp"
 #include "config_EXTRA_CLANGPP_COMPILER_OPTION.hpp"
 #include "config_GCC_PLUGIN_DIR.hpp"
@@ -327,51 +347,29 @@
 #include "config_I386_LLVMVVD_LINK_EXE.hpp"
 #include "config_I386_LLVMVVD_OPT_EXE.hpp"
 #include "config_NPROFILE.hpp"
-/// Header include
-#include "compiler_wrapper.hpp"
 
-/// Behavior include
-
-/// Constants include
-#include "compiler_constants.hpp"
-#include "compiler_xml.hpp"
-#include "file_IO_constants.hpp"
-
-/// Frontend include
-#include "Parameter.hpp"
-
-/// HLS include
-#include "hls_step.hpp"
-
-/// STD include
 #include <cerrno>
+#include <list>
+#include <random>
+#include <regex>
 #include <string>
 #include <unistd.h>
 
-/// STL include
-#include <list>
-#include <random>
-
-/// Tree includes
-#include "parse_tree.hpp"
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
-#include "tree_reindex.hpp"
-
-/// Utility include
-#include "cpu_stats.hpp"
-#include "cpu_time.hpp"
-#include "dbgPrintHelper.hpp"
-#include "exceptions.hpp"
-#include "fileIO.hpp"
-#include "string_manipulation.hpp"
-#include "utility.hpp"
-#include <regex>
-
-/// XML includes used for writing and reading the configuration file
-#include "polixml.hpp"
-#include "xml_dom_parser.hpp"
-#include "xml_helper.hpp"
+enum CompilerMode : int
+{
+   CM_EMPTY = 1 << 0,              // Empty file compilation
+   CM_ANALYZER_INTERFACE = 1 << 1, // Enable frontend code analyzer plugins
+   CM_ANALYZER_OPTIMIZE = 1 << 2,  // Enable frontend code optimizer plugins
+   CM_ANALYZER_ALL = 3 << 1,       // Enable all frontend plugins
+   CM_OPT_INTERNALIZE = 1 << 8,    // Enable symbol internalize plugin
+   CM_OPT_EXPANDMEMOPS = 1 << 9,   // Enable memory operation optimizer plugin
+   CM_OPT_DUMPGIMPLE = 1 << 10,    // Enable IR dump plugin
+   CM_OPT_ALL = (7 << 8),          // Enable backend HLS optimization plugins
+   CM_LTO_FLAG = 1 << 16,          // Enable LTO optimization flags
+   CM_COMPILER_STD = 1 << 24,      // Use default compiler
+   CM_COMPILER_OPT = 1 << 25,      // Use compiler optimizer
+   CM_COMPILER_LTO = 1 << 26,      // Use compiler linker
+};
 
 static std::string __escape_define(const std::string& str)
 {
@@ -400,109 +398,129 @@ CompilerWrapper::CompilerWrapper(const ParameterConstRef _Param, const CompilerW
 // destructor
 CompilerWrapper::~CompilerWrapper() = default;
 
-void CompilerWrapper::CompileFile(const std::string& original_file_name, std::string& real_file_name,
-                                  const std::string& parameters_line, bool multiple_files,
-                                  CompilerWrapper_CompilerMode cm, const std::string& costTable)
+void CompilerWrapper::CompileFile(std::string& input_filename, const std::string& output_filename,
+                                  const std::string& parameters_line, int cm, const std::string& costTable)
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Compiling " + original_file_name + "(transformed in " + real_file_name);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Compiling " + input_filename);
+   THROW_ASSERT(cm == CM_EMPTY || (cm & ~CM_EMPTY) == cm,
+                "Empty compilation must not require any other compilation mode.");
 
-   /// The gcc output
-   const std::string gcc_output_file_name =
-       Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
+   const auto compiler = GetCompiler();
+   const auto output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
+   const auto compiler_output_filename = output_temporary_directory + STR_CST_gcc_output;
 
-   const Compiler compiler = GetCompiler();
-   std::string command = compiler.gcc;
-   if(cm == CompilerWrapper_CompilerMode::CM_ANALYZER && !compiler.is_clang)
-   {
-      command = GetAnalyzeCompiler();
-   }
-   command += " -D__NO_INLINE__ "; /// needed to avoid problem with glibc inlines
-#ifdef _WIN32
-   if(compiler.is_clang)
-      command += " -isystem /mingw64/include -isystem /mingw64/x86_64-w64-mingw32/include -isystem "
-                 "/mingw64/include/c++/v1/"; /// needed by clang compiler
-#endif
-   if(((Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) ||
-       (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw))) &&
-      (cm == CompilerWrapper_CompilerMode::CM_STD || cm == CompilerWrapper_CompilerMode::CM_EMPTY))
-   {
-      command += " -D__BAMBU_DISCREPANCY__ ";
-   }
-
-   /// Adding source code includes
-   if(original_file_name != "-" && original_file_name != real_file_name)
-   {
-      std::list<std::string> source_files;
-      source_files.push_back(original_file_name);
-      command += AddSourceCodeIncludes(source_files) + " ";
-   }
-   command += " " + compiler.extra_options + " ";
-
-   bool isWholeProgram =
+   const auto isWholeProgram =
        Param->isOption(OPT_gcc_optimizations) &&
        Param->getOption<std::string>(OPT_gcc_optimizations).find("whole-program") != std::string::npos &&
        Param->getOption<std::string>(OPT_gcc_optimizations).find("no-whole-program") == std::string::npos;
+   const auto fname = [&]() -> std::string {
+      if(Param->isOption(OPT_top_functions_names))
+      {
+         const auto top_functions_names = Param->getOption<std::list<std::string>>(OPT_top_functions_names);
+         if(top_functions_names.size() == 1)
+         {
+            return top_functions_names.front();
+         }
+      }
+      return "";
+   }();
+   THROW_ASSERT(!isWholeProgram || fname == "main", "Unexpected -fwhole-program with non-main top function.");
 
-   if(cm == CompilerWrapper_CompilerMode::CM_EMPTY)
+   std::string real_filename = input_filename;
+   std::string command;
+   if(cm & CM_COMPILER_OPT)
    {
-      if(original_file_name == "-")
+      command = compiler.llvm_opt;
+   }
+   else if(cm & CM_COMPILER_LTO)
+   {
+      THROW_ASSERT(cm == CM_COMPILER_LTO, "Plugins must not be enabled when linker is required");
+      command = compiler.llvm_link;
+   }
+   else
+   {
+      cm |= CM_COMPILER_STD;
+      if((cm & CM_ANALYZER_ALL) && !compiler.is_clang)
+      {
+         THROW_ASSERT(!(cm & CM_OPT_ALL), "Optimization must not be performed with analyze compiler");
+         command = GetAnalyzeCompiler();
+      }
+      else
+      {
+         command = compiler.gcc;
+      }
+      command += " -c";
+      command += " -D__NO_INLINE__"; /// needed to avoid problem with glibc inlines
+      command += " " + compiler.extra_options;
+#ifdef _WIN32
+      if(compiler.is_clang || (cm & CM_ANALYZER_ALL))
+      {
+         command += " -isystem /mingw64/include -isystem /mingw64/x86_64-w64-mingw32/include -isystem "
+                    "/mingw64/include/c++/v1/"; /// needed by clang compiler
+      }
+#endif
+
+      if(!(Param->getOption<bool>(OPT_compute_size_of)))
+      {
+         command += " -D\"" STR_CST_panda_sizeof "(arg)=" STR_CST_string_sizeof "(#arg)\"";
+      }
+      if((Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) ||
+         (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw)))
+      {
+         command += " -D__BAMBU_DISCREPANCY__";
+      }
+   }
+
+   if(cm & CM_LTO_FLAG)
+   {
+      THROW_ASSERT(cm & CM_COMPILER_STD, "Unexpected compiler type");
+      if(compiler.is_clang)
+      {
+         command += " -flto";
+      }
+   }
+
+   if(cm & CM_EMPTY)
+   {
+      if(input_filename == "-")
       {
          THROW_ERROR("Reading from standard input which does not contain any function definition");
       }
       static int empty_counter = 0;
-      const std::string temp_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + "/empty_" +
-                                         std::to_string(empty_counter++) + ".c";
-      CopyFile(original_file_name, temp_file_name);
-      const std::string append_command = R"(`echo -e "\nvoid __empty_function__(){}" >> )" + temp_file_name + "`";
-      int ret = PandaSystem(Param, append_command);
-      if(IsError(ret))
+      real_filename = output_temporary_directory + "/empty_" + std::to_string(empty_counter++) + ".c";
+      CopyFile(input_filename, real_filename);
       {
-         THROW_ERROR("Error in appending empty function");
+         std::ofstream empty_file(real_filename, std::ios_base::app);
+         empty_file << "\nvoid __bambu_empty_function__(){}\n";
       }
-      real_file_name = temp_file_name;
       if(compiler.is_clang)
       {
-         command += " -c" +
-                    load_plugin(compiler.empty_plugin_obj,
-                                Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)) +
-                    " -mllvm -pandaGE-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
-                    " -mllvm -pandaGE-infile=" + real_file_name;
+         command += " " + load_plugin(compiler.empty_plugin_obj, compiler_target) +
+                    " -mllvm -pandaGE-outputdir=" + output_temporary_directory +
+                    " -mllvm -pandaGE-infile=" + real_filename;
       }
       else
       {
-         command += " -c -fplugin=" + compiler.empty_plugin_obj + " -fplugin-arg-" + compiler.empty_plugin_name +
-                    "-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory);
+         command += " -fplugin=" + compiler.empty_plugin_obj + " -fplugin-arg-" + compiler.empty_plugin_name +
+                    "-outputdir=" + output_temporary_directory;
       }
    }
-   else if(cm == CompilerWrapper_CompilerMode::CM_ANALYZER)
+
+   if(cm & CM_ANALYZER_INTERFACE)
    {
+      THROW_ASSERT((cm & ~CM_COMPILER_OPT) == cm, "Analyzer plugin requires compiler frontend to run");
       /// remove some extra option not compatible with clang
       boost::replace_all(command, "-mlong-double-64", "");
-      if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-         CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD)
+      if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD)
       {
          boost::replace_all(command, "-fhls", "");
          boost::replace_all(command, "-target fpga64-xilinx-linux-gnu", "");
       }
-      std::string fname;
-      bool addTopFName = false;
-      if(isWholeProgram && compiler.is_clang)
-      {
-         fname = "main";
-         addTopFName = true;
-      }
-      else if(Param->isOption(OPT_top_functions_names))
-      {
-         const auto top_functions_names = Param->getOption<const std::list<std::string>>(OPT_top_functions_names);
-         addTopFName = top_functions_names.size() == 1;
-         fname = top_functions_names.front();
-      }
-      command += " -c -fplugin=" + compiler.ASTAnalyzer_plugin_obj;
-      command += " -Xclang -add-plugin -Xclang " + compiler.ASTAnalyzer_plugin_name + " -Xclang -plugin-arg-" +
-                 compiler.ASTAnalyzer_plugin_name + " -Xclang -outputdir -Xclang -plugin-arg-" +
-                 compiler.ASTAnalyzer_plugin_name + " -Xclang " +
-                 Param->getOption<std::string>(OPT_output_temporary_directory);
+      command += " -fplugin=" + compiler.ASTAnalyzer_plugin_obj;
+      command += " -Xclang -add-plugin -Xclang " + compiler.ASTAnalyzer_plugin_name;
+      command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name +
+                 " -Xclang -outputdir -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang " +
+                 output_temporary_directory;
 
       if(Param->isOption(OPT_input_format) &&
          (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
@@ -511,224 +529,144 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
          command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name +
                     " -Xclang -cppflag -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang 1";
       }
-      if(addTopFName)
+      if(fname.size())
       {
          command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name +
                     " -Xclang -topfname -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang " + fname;
       }
    }
-   else if((Param->isOption(OPT_gcc_E) && Param->getOption<bool>(OPT_gcc_E)) ||
-           (Param->isOption(OPT_gcc_S) && Param->getOption<bool>(OPT_gcc_S)))
+   if(cm & CM_ANALYZER_INTERFACE)
    {
-   }
-   else if(cm == CompilerWrapper_CompilerMode::CM_STD)
-   {
-      std::string fname;
-      bool addTopFName = false;
-      if(isWholeProgram)
+      if(compiler.is_clang)
       {
-         fname = "main";
-         addTopFName = compiler.is_clang;
-      }
-      else if(Param->isOption(OPT_top_functions_names))
-      {
-         const auto top_functions_names = Param->getOption<const std::list<std::string>>(OPT_top_functions_names);
-         addTopFName = top_functions_names.size() == 1 && !Param->isOption(OPT_top_design_name);
-         fname = top_functions_names.front();
-      }
-      if(addTopFName)
-      {
-         if(compiler.is_clang)
+         if((cm & CM_COMPILER_STD) && Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
+                                          CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
          {
-            command +=
-                load_plugin(compiler.topfname_plugin_obj,
-                            Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)) +
-                " -mllvm -internalize-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
-                " -mllvm -panda-TFN=" + fname;
-            if(Param->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-               HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+            command += " -fplugin=" + compiler.ASTAnnotate_plugin_obj;
+            command += " -Xclang -add-plugin -Xclang " + compiler.ASTAnnotate_plugin_name;
+         }
+      }
+   }
+
+   const auto load_plugin = [&](const std::string& plugin_obj) {
+      if(cm & CM_COMPILER_STD)
+      {
+         command += this->load_plugin(plugin_obj, compiler_target);
+      }
+      else
+      {
+         command += this->load_plugin_opt(plugin_obj, compiler_target);
+      }
+   };
+   const auto append_arg = [&](const std::string& arg) {
+      if(cm & CM_COMPILER_STD)
+      {
+         command += " -mllvm " + arg;
+      }
+      else
+      {
+         command += " " + arg;
+      }
+   };
+   if((cm & CM_OPT_INTERNALIZE) && fname.size())
+   {
+      THROW_ASSERT(!(cm & CM_LTO_FLAG), "Internalizing symbols in partial object files is not expected");
+      if(compiler.is_clang)
+      {
+         load_plugin(compiler.topfname_plugin_obj);
+         append_arg("-internalize-outputdir=" + output_temporary_directory);
+         append_arg("-panda-TFN=" + fname);
+         if(Param->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+         {
+            append_arg("-add-noalias");
+         }
+         const auto extern_symbols = readExternalSymbols(input_filename);
+         if(!extern_symbols.empty())
+         {
+            append_arg("-panda-ESL=" + extern_symbols);
+         }
+         if(isWholeProgram || !Param->getOption<bool>(OPT_expose_globals))
+         {
+            append_arg("-panda-Internalize");
+         }
+         if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 &&
+            !compiler.CSROA_plugin_obj.empty() && !compiler.expandMemOps_plugin_obj.empty())
+         {
+            load_plugin(compiler.CSROA_plugin_obj);
+            append_arg("-panda-KN=" + fname);
+            if(Param->IsParameter("max-CSROA"))
             {
-               command += " -mllvm -add-noalias";
-            }
-            std::string extern_symbols;
-            std::vector<std::string> xml_files;
-            if(Param->isOption(OPT_xml_memory_allocation))
-            {
-               xml_files.push_back(Param->getOption<std::string>(OPT_xml_memory_allocation));
-            }
-            else
-            {
-               /// load xml memory allocation file
-               const auto output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
-               std::string leaf_name = std::filesystem::path(real_file_name).filename().string();
-               auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".memory_allocation.xml";
-               if((std::filesystem::exists(std::filesystem::path(XMLfilename))))
-               {
-                  xml_files.push_back(XMLfilename);
-               }
-            }
-            for(const auto& XMLfilename : xml_files)
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
-               XMLDomParser parser(XMLfilename);
-               parser.Exec();
-               if(parser)
-               {
-                  const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
-                  const xml_node::node_list list = node->get_children();
-                  for(const auto& l : list)
-                  {
-                     const xml_element* child = GetPointer<xml_element>(l);
-                     if(!child)
-                     {
-                        continue;
-                     }
-                     if(child->get_name() == "memory_allocation")
-                     {
-                        for(const auto& it : child->get_children())
-                        {
-                           const xml_element* mem_node = GetPointer<xml_element>(it);
-                           if(!mem_node)
-                           {
-                              continue;
-                           }
-                           if(mem_node->get_name() == "object")
-                           {
-                              std::string is_internal;
-                              if(!CE_XVM(is_internal, mem_node))
-                              {
-                                 THROW_ERROR("expected the is_internal attribute");
-                              }
-                              LOAD_XVM(is_internal, mem_node);
-                              if(is_internal == "T")
-                              {
-                              }
-                              else if(is_internal == "F")
-                              {
-                                 if(!CE_XVM(name, mem_node))
-                                 {
-                                    THROW_ERROR("expected the name attribute");
-                                 }
-                                 std::string name;
-                                 LOAD_XVM(name, mem_node);
-                                 extern_symbols = extern_symbols + name + ",";
-                              }
-                              else
-                              {
-                                 THROW_ERROR("unexpected value for is_internal attribute");
-                              }
-                           }
-                        }
-                     }
-                  }
-               }
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
-            }
-            if(!extern_symbols.empty())
-            {
-               command += " -mllvm -panda-ESL=" + extern_symbols;
-            }
-            if(isWholeProgram || !Param->getOption<bool>(OPT_expose_globals))
-            {
-               command += " -mllvm -panda-Internalize";
-            }
-            if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 &&
-               !compiler.CSROA_plugin_obj.empty() && !compiler.expandMemOps_plugin_obj.empty())
-            {
-               command += load_plugin(compiler.CSROA_plugin_obj,
-                                      Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)) +
-                          " -mllvm -panda-KN=" + fname;
-               if(Param->IsParameter("max-CSROA"))
-               {
-                  auto max_CSROA = Param->GetParameter<int>("max-CSROA");
-                  command += " -mllvm -csroa-max-transformations=" + STR(max_CSROA);
-               }
+               auto max_CSROA = Param->GetParameter<int>("max-CSROA");
+               append_arg("-csroa-max-transformations=" + STR(max_CSROA));
             }
          }
-         else if(!multiple_files)
-         { /// LTO not yet supported with GCC
+      }
+      else
+      {
+         if(!isWholeProgram)
+         {
+            /// LTO not yet supported with GCC
             command += " -fplugin=" + compiler.topfname_plugin_obj + " -fplugin-arg-" + compiler.topfname_plugin_name +
                        "-topfname=" + fname;
          }
       }
+   }
+   if(cm & CM_OPT_EXPANDMEMOPS)
+   {
       if(compiler.is_clang)
       {
-         if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-            CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
+         load_plugin(compiler.expandMemOps_plugin_obj);
+      }
+   }
+   if(cm & CM_OPT_DUMPGIMPLE)
+   {
+      if(compiler.is_clang)
+      {
+         load_plugin(compiler.ssa_plugin_obj);
+         append_arg("-panda-outputdir=" + output_temporary_directory);
+         append_arg("-panda-infile=" + input_filename);
+         append_arg("-panda-cost-table=\"" + costTable + "\"");
+         if(fname.size())
          {
-            command += " -c -fplugin=" + compiler.ASTAnnotate_plugin_obj;
-            command += " -Xclang -add-plugin -Xclang " + compiler.ASTAnnotate_plugin_name;
+            append_arg("-panda-topfname=" + fname);
          }
-         command += " -c" + load_plugin(compiler.expandMemOps_plugin_obj,
-                                        Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
-         command += " -c" +
-                    load_plugin(compiler.ssa_plugin_obj,
-                                Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)) +
-                    " -mllvm -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
-                    " -mllvm -panda-infile=" + real_file_name + " -mllvm -panda-cost-table=\"" + costTable + "\"";
-         if(addTopFName)
-         {
-            command += " -mllvm -panda-topfname=" + fname;
-         }
-         command += "  -emit-llvm";
+         // command += " -emit-llvm";
       }
       else
       {
-         command += " -c -fplugin=" + compiler.ssa_plugin_obj + " -fplugin-arg-" + compiler.ssa_plugin_name +
-                    "-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory);
-      }
-   }
-   else if(cm == CompilerWrapper_CompilerMode::CM_LTO)
-   {
-      command += " -c -flto -o " + Param->getOption<std::string>(OPT_output_temporary_directory) + "/" +
-                 std::filesystem::path(real_file_name).stem().string() + ".o ";
-   }
-   else
-   {
-      THROW_ERROR("compilation mode not yet implemented");
-   }
-
-   std::string temporary_file_run_o;
-   if(cm != CompilerWrapper_CompilerMode::CM_LTO)
-   {
-      if((Param->isOption(OPT_gcc_E) && Param->getOption<bool>(OPT_gcc_E)) ||
-         (Param->isOption(OPT_gcc_S) && Param->getOption<bool>(OPT_gcc_S)))
-      {
-         if(Param->isOption(OPT_output_file))
-         {
-            temporary_file_run_o = Param->getOption<std::string>(OPT_output_file);
-            command += " -o " + temporary_file_run_o;
-         }
-      }
-      else
-      {
-         temporary_file_run_o = std::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) +
-                                                      "/" + unique_path(std::string(STR_CST_gcc_obj_file)).string())
-                                    .string();
-         command += " -o " + temporary_file_run_o;
+         command += " -fplugin=" + compiler.ssa_plugin_obj + " -fplugin-arg-" + compiler.ssa_plugin_name +
+                    "-outputdir=" + output_temporary_directory;
       }
    }
 
-   if(!(Param->getOption<bool>(OPT_compute_size_of)))
-   {
-      command += " -D\"" + std::string(STR_CST_panda_sizeof) + "(arg)=" + STR_CST_string_sizeof + "(#arg)\"";
-   }
    command += " " + parameters_line;
-   if(original_file_name == "-" || original_file_name == "/dev/null")
+
+   const auto _output_filename = output_filename.size() ?
+                                     output_filename :
+                                     std::filesystem::path(output_temporary_directory + "/" +
+                                                           unique_path(std::string(STR_CST_gcc_obj_file)).string())
+                                         .string();
+   command += " -o " + _output_filename;
+
+   if(real_filename == "-" || real_filename == "/dev/null")
    {
-      command += real_file_name;
+      command += " " + real_filename;
    }
    else
    {
-      std::filesystem::path file_path(original_file_name);
-      std::string extension = file_path.extension().string();
-      /// assembler files are not allowed so in some cases we pass a C file renamed with extension .S
-      if(extension == ".S")
+      const auto srcs = string_to_container<std::vector<std::string>>(real_filename, STR_CST_string_separator);
+      for(const auto& src : srcs)
       {
-         command += "-x c ";
+         const auto extension = std::filesystem::path(src).extension().string();
+         /// assembler files are not allowed so in some cases we pass a C file renamed with extension .S
+         if(extension == ".S")
+         {
+            command += "-x c ";
+         }
+         command += " \"" + src + "\"";
       }
-      command += "\"" + real_file_name + "\"";
    }
+
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Invoke: " + command);
 #if !NPROFILE
    long int gcc_compilation_time = 0;
@@ -737,7 +675,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
       START_TIME(gcc_compilation_time);
    }
 #endif
-   int ret = PandaSystem(Param, command, false, gcc_output_file_name);
+   int ret = PandaSystem(Param, command, false, compiler_output_filename);
 #if !NPROFILE
    if(output_level >= OUTPUT_LEVEL_VERBOSE)
    {
@@ -746,18 +684,16 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    }
 #endif
 
-   if(!((Param->isOption(OPT_gcc_E) && Param->getOption<bool>(OPT_gcc_E)) ||
-        (Param->isOption(OPT_gcc_S) && Param->getOption<bool>(OPT_gcc_S)) ||
-        cm == CompilerWrapper_CompilerMode::CM_LTO))
+   if(output_filename.empty())
    {
-      std::remove(temporary_file_run_o.c_str());
+      std::remove(_output_filename.c_str());
    }
    if(IsError(ret))
    {
       PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in compilation");
-      if(std::filesystem::exists(std::filesystem::path(gcc_output_file_name)))
+      if(std::filesystem::exists(std::filesystem::path(compiler_output_filename)))
       {
-         CopyStdout(gcc_output_file_name);
+         CopyStdout(compiler_output_filename);
          THROW_ERROR_CODE(COMPILING_EC,
                           "Front-end compiler returns an error during compilation " + std::to_string(errno));
          THROW_ERROR("Front-end compiler returns an error during compilation " + std::to_string(errno));
@@ -771,28 +707,35 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
    {
       if(output_level >= OUTPUT_LEVEL_VERBOSE)
       {
-         CopyStdout(gcc_output_file_name);
+         CopyStdout(compiler_output_filename);
       }
    }
+   input_filename = real_filename;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Compiled file");
 }
 
-void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string, std::string>& source_files,
+void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::vector<std::string>& source_files,
                                       const std::string& costTable)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Invoking front-end compiler");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-   const auto output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
    if(source_files.size() == 0)
    {
       THROW_ERROR("No files specified for parsing");
    }
 
+   const auto compiler = GetCompiler();
+   const auto multi_source = source_files.size() > 1;
+   const auto enable_LTO = (compiler.is_clang && multi_source);
+   const auto compile_only = Param->isOption(OPT_gcc_S) && Param->getOption<bool>(OPT_gcc_S);
+   const auto preprocess_only = Param->isOption(OPT_gcc_E) && Param->getOption<bool>(OPT_gcc_E);
+   const auto optimization_set = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
+   const auto output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
+
    /// check for aligned option
-   const auto optimization_level = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
-   if(optimization_level == CompilerWrapper_OptimizationSet::O3 ||
-      optimization_level == CompilerWrapper_OptimizationSet::O4 ||
-      optimization_level == CompilerWrapper_OptimizationSet::O5)
+   if(optimization_set == CompilerWrapper_OptimizationSet::O3 ||
+      optimization_set == CompilerWrapper_OptimizationSet::O4 ||
+      optimization_set == CompilerWrapper_OptimizationSet::O5)
    {
       if((optimization_flags.find("tree-vectorize") == optimization_flags.end() ||
           optimization_flags.find("tree-vectorize")->second) ||
@@ -818,103 +761,156 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
    }
    else
    {
+      std::string analyzing_compiling_parameters;
+      if(Param->isOption(OPT_gcc_standard))
+      {
+         analyzing_compiling_parameters += " --std=" + Param->getOption<std::string>(OPT_gcc_standard);
+      }
+      if(Param->isOption(OPT_gcc_defines))
+      {
+         const auto defines = Param->getOption<std::list<std::string>>(OPT_gcc_defines);
+         for(const auto& define : defines)
+         {
+            analyzing_compiling_parameters += " -D" + __escape_define(define);
+         }
+      }
+      if(Param->isOption(OPT_gcc_undefines))
+      {
+         const auto undefines = Param->getOption<std::list<std::string>>(OPT_gcc_undefines);
+         for(const auto& undefine : undefines)
+         {
+            analyzing_compiling_parameters += " -U" + __escape_define(undefine);
+         }
+      }
+      if(Param->isOption(OPT_gcc_warnings))
+      {
+         const auto warnings = Param->getOption<std::list<std::string>>(OPT_gcc_warnings);
+         for(const auto& warning : warnings)
+         {
+            if(!warning.empty())
+            {
+               analyzing_compiling_parameters += " -W" + warning;
+            }
+         }
+      }
+      if(Param->isOption(OPT_gcc_includes))
+      {
+         analyzing_compiling_parameters += " " + Param->getOption<std::string>(OPT_gcc_includes);
+      }
       for(auto& source_file : source_files)
       {
-         if(already_processed_files.find(source_file.first) != already_processed_files.end())
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Already processed " + source_file.first);
-            continue;
-         }
-         std::string analyzing_compiling_parameters;
-         if(Param->isOption(OPT_gcc_standard))
-         {
-            auto standard = Param->getOption<std::string>(OPT_gcc_standard);
-            analyzing_compiling_parameters += "--std=" + standard + " ";
-         }
-         if(Param->isOption(OPT_gcc_defines))
-         {
-            const auto defines = Param->getOption<const CustomSet<std::string>>(OPT_gcc_defines);
-            for(const auto& define : defines)
-            {
-               analyzing_compiling_parameters += "-D" + __escape_define(define) + " ";
-            }
-         }
-         if(Param->isOption(OPT_gcc_undefines))
-         {
-            const auto undefines = Param->getOption<const CustomSet<std::string>>(OPT_gcc_undefines);
-            for(const auto& undefine : undefines)
-            {
-               analyzing_compiling_parameters += "-U" + __escape_define(undefine) + " ";
-            }
-         }
-         if(Param->isOption(OPT_gcc_warnings))
-         {
-            const auto warnings = Param->getOption<const CustomSet<std::string>>(OPT_gcc_warnings);
-            for(const auto& warning : warnings)
-            {
-               if(!warning.empty())
-               {
-                  analyzing_compiling_parameters += "-W" + warning + " ";
-               }
-            }
-         }
-         if(Param->isOption(OPT_gcc_includes))
-         {
-            analyzing_compiling_parameters += Param->getOption<std::string>(OPT_gcc_includes) + " ";
-         }
-         CompileFile(source_file.first, source_file.second, analyzing_compiling_parameters, source_files.size() > 1,
-                     CompilerWrapper_CompilerMode::CM_ANALYZER, costTable);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyze file " + source_file);
+         CompileFile(source_file, "", analyzing_compiling_parameters, CM_ANALYZER_INTERFACE, costTable);
       }
    }
 #else
-   THROW_WARNING("pragma analysis requires CLANG");
+   THROW_WARNING("Pragma analysis is not available without Clang/LLVM compiler");
 #endif
+
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting compilation of single files");
-   const auto compiler = GetCompiler();
-   const auto enable_LTO = (compiler.is_clang && source_files.size() > 1);
-   for(auto& source_file : source_files)
-   {
-      if(already_processed_files.find(source_file.first) != already_processed_files.end())
+   const auto compiler_mode = [&]() -> int {
+      int flags = CM_COMPILER_STD;
+      if(preprocess_only || compile_only)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Already processed " + source_file.first);
-         continue;
+         return flags;
+      }
+      if(compiler.is_clang)
+      {
+         flags |= CM_ANALYZER_OPTIMIZE;
+      }
+      if(multi_source)
+      {
+         flags |= CM_LTO_FLAG;
+         if(!enable_LTO)
+         {
+            flags |= CM_OPT_DUMPGIMPLE;
+         }
       }
       else
       {
-         already_processed_files.insert(source_file.first);
+         flags |= CM_OPT_ALL;
       }
-      std::string leaf_name =
-          source_file.second == "-" ? "stdin-" : std::filesystem::path(source_file.second).filename().string();
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Compiling file " + source_file.second);
-      /// create obj
-      CompileFile(source_file.first, source_file.second, frontend_compiler_parameters, source_files.size() > 1,
-                  enable_LTO ? CompilerWrapper_CompilerMode::CM_LTO : CompilerWrapper_CompilerMode::CM_STD, costTable);
-      if(!Param->isOption(OPT_gcc_E) && !Param->isOption(OPT_gcc_S) && !enable_LTO)
+      return flags;
+   }();
+   std::list<std::string> obj_files;
+   THROW_ASSERT(!multi_source || !(compile_only || preprocess_only), "");
+   for(auto& source_file : source_files)
+   {
+      const auto leaf_name = source_file == "-" ? "stdin-" : std::filesystem::path(source_file).filename().string();
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Compiling file " + source_file);
+      const auto obj_file = ((compile_only || preprocess_only) && Param->isOption(OPT_output_file)) ?
+                                Param->getOption<std::string>(OPT_output_file) :
+                                unique_path(output_temporary_directory + "/" + leaf_name + ".%%%%%%.o").string();
+      CompileFile(source_file, obj_file, frontend_compiler_parameters, compiler_mode, costTable);
+      if(enable_LTO)
       {
-         if(!(std::filesystem::exists(
-                std::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix))))
+         obj_files.push_back(obj_file);
+      }
+      else if(!(compile_only || preprocess_only))
+      {
+         auto gimple_file = output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix;
+         if(!std::filesystem::exists(gimple_file))
          {
-            THROW_WARNING("Raw not created for file " + output_temporary_directory + "/" + leaf_name);
-            CompileFile(source_file.first, source_file.second, frontend_compiler_parameters, source_files.size() > 1,
-                        CompilerWrapper_CompilerMode::CM_EMPTY, costTable);
-            /// Recomputing leaf_name since source_file.second should be modified in the previous call
-            leaf_name =
-                source_file.second == "-" ? "stdin-" : std::filesystem::path(source_file.second).filename().string();
-            if(not(std::filesystem::exists(
-                   std::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_empty_suffix))))
-            {
-               THROW_ERROR(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_empty_suffix +
-                           " not found: impossible to create raw file for " + source_file.second);
-            }
-            std::filesystem::rename(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_empty_suffix,
-                                    output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Renaming " + source_file.second + STR_CST_gcc_empty_suffix + " in " +
-                               source_file.second + STR_CST_gcc_tree_suffix);
+            CompileFile(source_file, "", frontend_compiler_parameters, CM_EMPTY, costTable);
+            // source_file has been changed by previous call to CompileFile
+            gimple_file = output_temporary_directory + "/" + std::filesystem::path(source_file).filename().string() +
+                          STR_CST_gcc_tree_suffix;
          }
-         std::filesystem::path obj =
-             std::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
-         tree_managerRef TreeM = ParseTreeFile(Param, obj.string());
+         obj_files.push_back(gimple_file);
+      }
+   }
+
+   if(enable_LTO)
+   {
+      const auto leaf_name = std::filesystem::path(source_files.front()).filename().string();
+      const auto ext_symbols_filename = output_temporary_directory + "external-symbols.txt";
+      std::string lto_source = container_to_string(obj_files, STR_CST_string_separator);
+      std::string lto_obj = output_temporary_directory + "/" + leaf_name + ".lto.bc";
+      CompileFile(lto_source, lto_obj, "", CM_COMPILER_LTO, "");
+
+      lto_source = lto_obj;
+      lto_obj = output_temporary_directory + "/" + leaf_name + ".lto-opt.bc";
+      std::string opt_command = add_plugin_prefix(compiler_target, "1");
+
+      CompileFile(lto_source, lto_obj, opt_command, CM_COMPILER_OPT | CM_OPT_INTERNALIZE, costTable);
+
+      lto_source = lto_obj;
+      lto_obj = output_temporary_directory + "/" + leaf_name + ".lto-dump.bc";
+      THROW_ASSERT(std::filesystem::exists(ext_symbols_filename), "File not found: " + ext_symbols_filename);
+      const auto plugin_prefix = add_plugin_prefix(compiler_target);
+      opt_command = " -panda-infile=" + container_to_string(source_files, ",") +
+                    " --internalize-public-api-file=" + ext_symbols_filename + " " + plugin_prefix + "internalize " +
+                    clang_recipes(optimization_set, "") + plugin_prefix + compiler.ssa_plugin_name;
+      CompileFile(lto_source, lto_obj, opt_command, CM_COMPILER_OPT | CM_OPT_DUMPGIMPLE, costTable);
+
+      const auto gimple_obj = output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix;
+      if(!std::filesystem::exists(gimple_obj))
+      {
+         THROW_ERROR("Object file not found: " + gimple_obj);
+      }
+      tree_managerRef TreeM = ParseTreeFile(Param, gimple_obj);
+#if !NPROFILE
+      long int merge_time = 0;
+      START_TIME(merge_time);
+#endif
+      TM->merge_tree_managers(TreeM);
+#if !NPROFILE
+      STOP_TIME(merge_time);
+      if(output_level >= OUTPUT_LEVEL_VERBOSE)
+      {
+         dump_exec_time("Tree merging time", merge_time);
+      }
+#endif
+   }
+   else if(!Param->isOption(OPT_gcc_E) && !Param->isOption(OPT_gcc_S))
+   {
+      for(const auto& obj_file : obj_files)
+      {
+         if(!std::filesystem::exists(obj_file))
+         {
+            THROW_ERROR("Object file not found: " + obj_file);
+         }
+         tree_managerRef TreeM = ParseTreeFile(Param, obj_file);
 
 #if !NPROFILE
          long int merge_time = 0;
@@ -928,346 +924,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::st
             dump_exec_time("Tree merging time", merge_time);
          }
 #endif
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
-   }
-   if(enable_LTO)
-   {
-      std::string object_files;
-      for(const auto& source_file : source_files)
-      {
-         std::string leaf_name =
-             source_file.second == "-" ? "stdin-" : std::filesystem::path(source_file.second).stem().string();
-         if((std::filesystem::exists(std::filesystem::path(output_temporary_directory + "/" + leaf_name + ".o"))))
-         {
-            object_files += std::filesystem::path(output_temporary_directory + "/" + leaf_name + ".o").string() + " ";
-         }
-      }
-      auto temporary_file_o_bc = std::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) +
-                                                       "/" + unique_path(std::string(STR_CST_llvm_obj_file)).string())
-                                     .string();
-      auto command = compiler.llvm_link + " " + object_files + " -o " + temporary_file_o_bc;
-      const auto llvm_link_output_file_name =
-          Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
-      auto ret = PandaSystem(Param, command, false, llvm_link_output_file_name);
-      if(IsError(ret))
-      {
-         PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in llvm-link");
-         if(std::filesystem::exists(std::filesystem::path(llvm_link_output_file_name)))
-         {
-            CopyStdout(llvm_link_output_file_name);
-            THROW_ERROR_CODE(COMPILING_EC, "llvm-link returns an error during compilation " + std::to_string(errno));
-            THROW_ERROR("llvm-link returns an error during compilation " + std::to_string(errno));
-         }
-         else
-         {
-            THROW_ERROR("Error in llvm-link invocation");
-         }
-      }
-      const auto isWholeProgram =
-          Param->isOption(OPT_gcc_optimizations) &&
-          Param->getOption<std::string>(OPT_gcc_optimizations).find("whole-program") != std::string::npos &&
-          Param->getOption<std::string>(OPT_gcc_optimizations).find("no-whole-program") == std::string::npos;
-      std::string fname;
-      bool addTFNPlugin = false;
-      if(isWholeProgram && compiler.is_clang)
-      {
-         fname = "main";
-         addTFNPlugin = true;
-      }
-      else if(Param->isOption(OPT_top_functions_names))
-      {
-         const auto top_functions_names = Param->getOption<const std::list<std::string>>(OPT_top_functions_names);
-         addTFNPlugin = top_functions_names.size() == 1 && !Param->isOption(OPT_top_design_name);
-         fname = top_functions_names.front();
-         if(fname == "main" && !compiler.is_clang)
-         {
-            addTFNPlugin = false;
-         }
-      }
-
-      if(addTFNPlugin)
-      {
-         if(compiler.is_clang)
-         {
-            auto plugin_prefix =
-                add_plugin_prefix(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
-            command = compiler.llvm_opt;
-#ifndef _WIN32
-            command += load_plugin_opt(compiler.topfname_plugin_obj,
-                                       Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
-#endif
-            command += " -internalize-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory);
-            command += " -panda-TFN=" + fname;
-            if(Param->getOption<HLSFlowStep_Type>(OPT_interface_type) ==
-               HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
-            {
-               command += " -add-noalias";
-            }
-            std::string extern_symbols;
-            std::vector<std::string> xml_files;
-            if(Param->isOption(OPT_xml_memory_allocation))
-            {
-               xml_files.push_back(Param->getOption<std::string>(OPT_xml_memory_allocation));
-            }
-            else
-            {
-               for(const auto& entry : std::filesystem::directory_iterator{output_temporary_directory})
-               {
-                  const auto source_file = entry.path().filename().string();
-                  if(source_file.find(".memory_allocation.xml") != std::string::npos)
-                  {
-                     xml_files.push_back(source_file);
-                  }
-               }
-            }
-            for(const auto& XMLfilename : xml_files)
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
-               XMLDomParser parser(XMLfilename);
-               parser.Exec();
-               if(parser)
-               {
-                  const auto node = parser.get_document()->get_root_node(); // deleted by DomParser.
-                  const auto list = node->get_children();
-                  for(const auto& l : list)
-                  {
-                     const auto child = GetPointer<xml_element>(l);
-                     if(!child)
-                     {
-                        continue;
-                     }
-                     if(child->get_name() == "memory_allocation")
-                     {
-                        for(const auto& it : child->get_children())
-                        {
-                           const auto mem_node = GetPointer<xml_element>(it);
-                           if(!mem_node)
-                           {
-                              continue;
-                           }
-                           if(mem_node->get_name() == "object")
-                           {
-                              std::string is_internal;
-                              if(!CE_XVM(is_internal, mem_node))
-                              {
-                                 THROW_ERROR("expected the is_internal attribute");
-                              }
-                              LOAD_XVM(is_internal, mem_node);
-                              if(is_internal == "T")
-                              {
-                              }
-                              else if(is_internal == "F")
-                              {
-                                 if(!CE_XVM(name, mem_node))
-                                 {
-                                    THROW_ERROR("expected the name attribute");
-                                 }
-                                 std::string name;
-                                 LOAD_XVM(name, mem_node);
-                                 extern_symbols = extern_symbols + name + ",";
-                              }
-                              else
-                              {
-                                 THROW_ERROR("unexpected value for is_internal attribute");
-                              }
-                           }
-                        }
-                     }
-                  }
-               }
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
-            }
-            if(!extern_symbols.empty())
-            {
-               command += " -panda-ESL=" + extern_symbols;
-            }
-
-            if(isWholeProgram || !Param->getOption<bool>(OPT_expose_globals))
-            {
-               command += " -panda-Internalize";
-            }
-            command += plugin_prefix + compiler.topfname_plugin_name;
-            command += " " + temporary_file_o_bc;
-            temporary_file_o_bc = std::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) +
-                                                        "/" + unique_path(std::string(STR_CST_llvm_obj_file)).string())
-                                      .string();
-            command += " -o " + temporary_file_o_bc;
-            const auto tfn_output_file_name =
-                Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
-            ret = PandaSystem(Param, command, false, tfn_output_file_name);
-            if(IsError(ret))
-            {
-               PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in opt");
-               if(std::filesystem::exists(std::filesystem::path(tfn_output_file_name)))
-               {
-                  CopyStdout(tfn_output_file_name);
-                  THROW_ERROR_CODE(COMPILING_EC, "opt returns an error during compilation " + std::to_string(errno));
-                  THROW_ERROR("opt returns an error during compilation " + std::to_string(errno));
-               }
-               else
-               {
-                  THROW_ERROR("Error in opt invocation");
-               }
-            }
-
-            command = compiler.llvm_opt;
-            command += " " + temporary_file_o_bc;
-            command +=
-                " --internalize-public-api-file=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
-                "external-symbols.txt " + plugin_prefix + "internalize ";
-            temporary_file_o_bc = std::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) +
-                                                        "/" + unique_path(std::string(STR_CST_llvm_obj_file)).string())
-                                      .string();
-            command += " -o " + temporary_file_o_bc;
-            const auto int_output_file_name =
-                Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
-            ret = PandaSystem(Param, command, false, int_output_file_name);
-            if(IsError(ret))
-            {
-               PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in opt");
-               if(std::filesystem::exists(std::filesystem::path(int_output_file_name)))
-               {
-                  CopyStdout(int_output_file_name);
-                  THROW_ERROR_CODE(COMPILING_EC, "opt returns an error during compilation " + std::to_string(errno));
-                  THROW_ERROR("opt returns an error during compilation " + std::to_string(errno));
-               }
-               else
-               {
-                  THROW_ERROR("Error in opt invocation");
-               }
-            }
-         }
-         else
-         {
-            THROW_ERROR("LTO compilation not yet implemented for the chosen front-end compiler");
-         }
-      }
-      if(compiler.is_clang)
-      {
-         const auto recipe = clang_recipes(
-             optimization_level, Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler),
-             compiler.expandMemOps_plugin_obj, compiler.expandMemOps_plugin_name, compiler.GepiCanon_plugin_obj,
-             compiler.GepiCanon_plugin_name, compiler.CSROA_plugin_obj, compiler.CSROA_plugin_name, fname);
-         command = compiler.llvm_opt + recipe + temporary_file_o_bc;
-         temporary_file_o_bc = std::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) +
-                                                     "/" + unique_path(std::string(STR_CST_llvm_obj_file)).string())
-                                   .string();
-         command += " -o " + temporary_file_o_bc;
-         const auto o2_output_file_name =
-             Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
-         ret = PandaSystem(Param, command, false, o2_output_file_name);
-         if(IsError(ret))
-         {
-            PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in opt");
-            if(std::filesystem::exists(std::filesystem::path(o2_output_file_name)))
-            {
-               CopyStdout(o2_output_file_name);
-               THROW_ERROR_CODE(COMPILING_EC, "opt returns an error during compilation " + std::to_string(errno));
-               THROW_ERROR("opt returns an error during compilation " + std::to_string(errno));
-            }
-            else
-            {
-               THROW_ERROR("Error in opt invocation");
-            }
-         }
-      }
-      else
-      {
-         THROW_ERROR("LTO compilation not yet implemented for the chosen front-end compiler");
-      }
-
-      std::string real_file_names;
-      bool first_file = true;
-      for(const auto& fsname : source_files)
-      {
-         if(first_file)
-         {
-            real_file_names = fsname.second;
-            first_file = false;
-         }
-         else
-         {
-            real_file_names = real_file_names + "," + fsname.second;
-         }
-      }
-      if(compiler.is_clang)
-      {
-         auto plugin_prefix = add_plugin_prefix(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
-         command = compiler.llvm_opt;
-#ifndef _WIN32
-         command += load_plugin_opt(compiler.ssa_plugin_obj,
-                                    Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
-         command += load_plugin_opt(compiler.expandMemOps_plugin_obj,
-                                    Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
-#endif
-         command += " -panda-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) +
-                    " -panda-infile=" + real_file_names + " -panda-cost-table=\"" + costTable + "\"";
-         if(addTFNPlugin)
-         {
-            command += " -panda-topfname=" + fname;
-         }
-         command += plugin_prefix + "vectorize-loops=false" + plugin_prefix + "vectorize-slp=false" + plugin_prefix +
-                    "domfrontier " + plugin_prefix + "domtree " + plugin_prefix + "memdep " + plugin_prefix +
-                    "memoryssa " + plugin_prefix + "lazy-value-info " + plugin_prefix + "aa ";
-         command += (Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                         CompilerWrapper_CompilerTarget::CT_I386_CLANG13 ||
-                     Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                         CompilerWrapper_CompilerTarget::CT_I386_CLANG16) ?
-                        "" :
-                        plugin_prefix + "assumption-cache-tracker ";
-
-         command += plugin_prefix + "targetlibinfo " + plugin_prefix + "loops " + plugin_prefix + "simplifycfg " +
-                    plugin_prefix + "mem2reg  " + plugin_prefix + "globalopt " + plugin_prefix + "break-crit-edges " +
-                    plugin_prefix + "dse " + plugin_prefix + "adce " + plugin_prefix + "loop-load-elim";
-         command += " " + temporary_file_o_bc;
-         temporary_file_o_bc = std::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) +
-                                                     "/" + unique_path(std::string(STR_CST_llvm_obj_file)).string())
-                                   .string();
-         command += " -o " + temporary_file_o_bc;
-         command += add_plugin_prefix(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler)) +
-                    compiler.ssa_plugin_name;
-         const auto gimpledump_output_file_name =
-             Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
-         ret = PandaSystem(Param, command, false, gimpledump_output_file_name);
-         if(IsError(ret))
-         {
-            PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in opt");
-            if(std::filesystem::exists(std::filesystem::path(gimpledump_output_file_name)))
-            {
-               CopyStdout(gimpledump_output_file_name);
-               THROW_ERROR_CODE(COMPILING_EC, "opt returns an error during compilation " + std::to_string(errno));
-               THROW_ERROR("opt returns an error during compilation " + std::to_string(errno));
-            }
-            else
-            {
-               THROW_ERROR("Error in opt invocation");
-            }
-         }
-      }
-      else
-      {
-         THROW_ERROR("LTO compilation not yet implemented for the chosen front-end compiler");
-      }
-      std::string leaf_name = std::filesystem::path(source_files.begin()->second).filename().string();
-      const auto obj = std::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
-      if(!std::filesystem::exists(obj))
-      {
-         THROW_ERROR(obj.string() + " not found: impossible to create raw file for " + real_file_names);
-      }
-      tree_managerRef TreeM = ParseTreeFile(Param, obj.string());
-#if !NPROFILE
-      long int merge_time = 0;
-      START_TIME(merge_time);
-#endif
-      TM->merge_tree_managers(TreeM);
-#if !NPROFILE
-      STOP_TIME(merge_time);
-      if(output_level >= OUTPUT_LEVEL_VERBOSE)
-      {
-         dump_exec_time("Tree merging time", merge_time);
-      }
-#endif
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Ended compilation of single files");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -1396,7 +1053,7 @@ void CompilerWrapper::InitializeCompilerParameters()
    /// Adding defines
    if(Param->isOption(OPT_gcc_defines))
    {
-      const auto defines = Param->getOption<const CustomSet<std::string>>(OPT_gcc_defines);
+      const auto defines = Param->getOption<CustomSet<std::string>>(OPT_gcc_defines);
       for(const auto& define : defines)
       {
          frontend_compiler_parameters += "-D" + __escape_define(define) + " ";
@@ -1406,7 +1063,7 @@ void CompilerWrapper::InitializeCompilerParameters()
    /// Adding undefines
    if(Param->isOption(OPT_gcc_undefines))
    {
-      const auto undefines = Param->getOption<const CustomSet<std::string>>(OPT_gcc_undefines);
+      const auto undefines = Param->getOption<CustomSet<std::string>>(OPT_gcc_undefines);
       for(const auto& undefine : undefines)
       {
          frontend_compiler_parameters += "-U" + __escape_define(undefine) + " ";
@@ -1416,7 +1073,7 @@ void CompilerWrapper::InitializeCompilerParameters()
    /// Adding warnings
    if(Param->isOption(OPT_gcc_warnings))
    {
-      const auto warnings = Param->getOption<const CustomSet<std::string>>(OPT_gcc_warnings);
+      const auto warnings = Param->getOption<CustomSet<std::string>>(OPT_gcc_warnings);
       for(const auto& warning : warnings)
       {
          if(!warning.empty())
@@ -1439,7 +1096,7 @@ void CompilerWrapper::InitializeCompilerParameters()
    /// Adding libraries
    if(Param->isOption(OPT_gcc_libraries))
    {
-      const auto libraries = Param->getOption<const CustomSet<std::string>>(OPT_gcc_libraries);
+      const auto libraries = Param->getOption<CustomSet<std::string>>(OPT_gcc_libraries);
       for(const auto& library : libraries)
       {
          compiler_linking_parameters += "-l" + library + " ";
@@ -1449,7 +1106,7 @@ void CompilerWrapper::InitializeCompilerParameters()
    /// Adding library directories
    if(Param->isOption(OPT_gcc_library_directories))
    {
-      const auto library_directories = Param->getOption<const CustomSet<std::string>>(OPT_gcc_library_directories);
+      const auto library_directories = Param->getOption<CustomSet<std::string>>(OPT_gcc_library_directories);
       for(const auto& library_directory : library_directories)
       {
          compiler_linking_parameters += "-L" + library_directory + " ";
@@ -1624,11 +1281,11 @@ void CompilerWrapper::SetBambuDefault()
 void CompilerWrapper::SetCompilerDefault()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Setting front-end compiler defaults");
-   const auto optimization_level = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
+   const auto optimization_set = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
    optimization_flags["stack-protector"] =
        false; // In Ubuntu 6.10 and later versions this option is enabled by default for C, C++, ObjC, ObjC++
 
-   switch(optimization_level)
+   switch(optimization_set)
    {
       case(CompilerWrapper_OptimizationSet::Os):
       case(CompilerWrapper_OptimizationSet::Og):
@@ -1640,7 +1297,7 @@ void CompilerWrapper::SetCompilerDefault()
       case(CompilerWrapper_OptimizationSet::Ofast):
       case(CompilerWrapper_OptimizationSet::Oz):
       {
-         frontend_compiler_parameters += (" -O" + WriteOptimizationLevel(optimization_level) + " ");
+         frontend_compiler_parameters += (" -O" + WriteOptimizationLevel(optimization_set) + " ");
          break;
       }
       case CompilerWrapper_OptimizationSet::OSF:
@@ -1797,7 +1454,7 @@ void CompilerWrapper::SetCompilerDefault()
       }
       case(CompilerWrapper_OptimizationSet::OBAMBU):
       {
-         THROW_UNREACHABLE("Unepected optimization level: " + WriteOptimizationLevel(optimization_level));
+         THROW_UNREACHABLE("Unepected optimization level: " + WriteOptimizationLevel(optimization_set));
          break;
       }
       default:
@@ -2476,12 +2133,14 @@ void CompilerWrapper::GetSystemIncludes(std::vector<std::string>& includes) cons
    const std::string cpp = GetCompiler().cpp;
 
    std::string command =
-       cpp +
-       " -v  < /dev/null 2>&1 | grep -v -E \"(#|Configured with|Using built-in|Target|Thread model|gcc version|End of "
-       "search list|ignoring nonexistent directory|cc1 -E -quiet|cc1.exe -E "
-       "-quiet|COMPILER_PATH|LIBRARY_PATH|COLLECT_GCC|OFFLOAD_TARGET_NAMES|OFFLOAD_TARGET_DEFAULT|ignoring duplicate "
-       "directory|ignoring nonexistent directory|InstalledDir|clang version|Found candidate|Selected GCC "
-       "installation|Candidate multilib|Selected multilib|-cc1)\" | tr '\\n' ' ' | tr '\\r' ' '  | sed 's/\\\\/\\//g'";
+       cpp + " -v  < /dev/null 2>&1 | grep -v -E \"(#|Configured with|Using built-in|Target|Thread model|gcc "
+             "version|End of "
+             "search list|ignoring nonexistent directory|cc1 -E -quiet|cc1.exe -E "
+             "-quiet|COMPILER_PATH|LIBRARY_PATH|COLLECT_GCC|OFFLOAD_TARGET_NAMES|OFFLOAD_TARGET_DEFAULT|ignoring "
+             "duplicate "
+             "directory|ignoring nonexistent directory|InstalledDir|clang version|Found candidate|Selected GCC "
+             "installation|Candidate multilib|Selected multilib|-cc1)\" | tr '\\n' ' ' | tr '\\r' ' '  | sed "
+             "'s/\\\\/\\//g'";
    int ret = PandaSystem(Param, command, false, STR_CST_gcc_include);
    PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "");
    if(IsError(ret))
@@ -2534,46 +2193,6 @@ void CompilerWrapper::QueryCompilerConfig(const std::string& compiler_option) co
       THROW_ERROR("Error in retrieving gcc configuration");
    }
    CopyStdout(output_file_name);
-}
-
-size_t CompilerWrapper::GetSourceCodeLines(const ParameterConstRef Param)
-{
-#ifndef NDEBUG
-   const int debug_level = Param->get_class_debug_level("CompilerWrapper");
-#endif
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Getting source code lines number");
-   /// The output file
-   const std::string output_file_name =
-       Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_output_file;
-
-   std::string command = "cat ";
-   const auto source_files = Param->getOption<const CustomSet<std::string>>(OPT_input_file);
-   for(const auto& source_file : source_files)
-   {
-      std::filesystem::path absolute_path = std::filesystem::absolute(source_file);
-      command += absolute_path.parent_path().string() + "/*\\.h ";
-      command += source_file + " ";
-   }
-   command += std::string(" 2> /dev/null | wc -l");
-   int ret = PandaSystem(Param, command, true, output_file_name);
-   if(IsError(ret))
-   {
-      THROW_ERROR("Error during execution of computing word lines");
-   }
-
-   std::ifstream output_file(output_file_name.c_str());
-   if(output_file.is_open() && !output_file.eof())
-   {
-      std::string line;
-      getline(output_file, line);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Got " + line);
-      return std::stoul(line);
-   }
-   else
-   {
-      THROW_ERROR("Error in opening " + output_file_name);
-   }
-   return 0;
 }
 
 std::string CompilerWrapper::GetCompilerParameters(const std::string& extra_compiler_options,
@@ -2647,12 +2266,13 @@ void CompilerWrapper::CreateExecutable(const std::list<std::string>& file_names,
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Compilation command is " + command);
-   const auto gcc_output_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
+   const auto compiler_output_filename =
+       Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
 
-   int ret = PandaSystem(Param, command, false, gcc_output_file_name);
+   int ret = PandaSystem(Param, command, false, compiler_output_filename);
    if(IsError(ret))
    {
-      CopyStdout(gcc_output_file_name);
+      CopyStdout(compiler_output_filename);
       THROW_ERROR_CODE(COMPILING_EC, "Front-end compiler returns an error during compilation " + std::to_string(errno) +
                                          " - Command is " + command);
    }
@@ -2660,7 +2280,7 @@ void CompilerWrapper::CreateExecutable(const std::list<std::string>& file_names,
    {
       if(output_level >= OUTPUT_LEVEL_VERBOSE)
       {
-         CopyStdout(gcc_output_file_name);
+         CopyStdout(compiler_output_filename);
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -2670,7 +2290,7 @@ void CompilerWrapper::ReadParameters()
 {
    if(Param->isOption(OPT_gcc_optimizations))
    {
-      const auto parameters = Param->getOption<const CustomSet<std::string>>(OPT_gcc_optimizations);
+      const auto parameters = Param->getOption<CustomSet<std::string>>(OPT_gcc_optimizations);
       for(const auto& parameter : parameters)
       {
          THROW_ASSERT(parameter != "", "unexpected condition:" + Param->getOption<std::string>(OPT_gcc_optimizations));
@@ -2691,7 +2311,7 @@ void CompilerWrapper::ReadParameters()
    }
    if(Param->isOption(OPT_gcc_parameters))
    {
-      const auto parameters = Param->getOption<const CustomSet<std::string>>(OPT_gcc_parameters);
+      const auto parameters = Param->getOption<CustomSet<std::string>>(OPT_gcc_parameters);
       for(const auto& parameter : parameters)
       {
          const size_t equal_size = parameter.find('=');
@@ -2706,9 +2326,9 @@ void CompilerWrapper::ReadParameters()
    }
 }
 
-std::string CompilerWrapper::WriteOptimizationLevel(const CompilerWrapper_OptimizationSet optimization_level)
+std::string CompilerWrapper::WriteOptimizationLevel(const CompilerWrapper_OptimizationSet optimization_set)
 {
-   switch(optimization_level)
+   switch(optimization_set)
    {
       case(CompilerWrapper_OptimizationSet::O0):
          return "0";
@@ -3126,39 +2746,32 @@ size_t CompilerWrapper::ConvertVersion(const std::string& version)
    return ret_value;
 }
 
-std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet optimization_level,
-                                           const CompilerWrapper_CompilerTarget compiler,
-                                           const std::string&
-#ifndef _WIN32
-                                               expandMemOps_plugin_obj
-#endif
-                                           ,
-                                           const std::string& expandMemOps_plugin_name,
-                                           const std::string&
-#ifndef _WIN32
-                                               GepiCanon_plugin_obj
-#endif
-                                           ,
-                                           const std::string& GepiCanon_plugin_name,
-                                           const std::string&
-#ifndef _WIN32
-                                               CSROA_plugin_obj
-#endif
-                                           ,
-                                           const std::string& CSROA_plugin_name, const std::string& fname)
+std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet optimization_set,
+                                           const std::string& fname) const
 {
-   auto plugin_prefix = add_plugin_prefix(compiler);
-   std::string recipe = "";
+   const auto& compiler = GetCompiler();
+   auto plugin_prefix = add_plugin_prefix(compiler_target);
+   const auto& expandMemOps_plugin_name = compiler.expandMemOps_plugin_name;
+   const auto& GepiCanon_plugin_name = compiler.GepiCanon_plugin_name;
+   const auto& CSROA_plugin_name = compiler.CSROA_plugin_name;
 #ifndef _WIN32
-   recipe +=
-       load_plugin_opt(expandMemOps_plugin_obj, Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
+   const auto& expandMemOps_plugin_obj = compiler.expandMemOps_plugin_obj;
+   const auto& GepiCanon_plugin_obj = compiler.GepiCanon_plugin_obj;
+   const auto& CSROA_plugin_obj = compiler.CSROA_plugin_obj;
 #endif
+
+   const auto opt_level = WriteOptimizationLevel(optimization_set == CompilerWrapper_OptimizationSet::O0 ?
+                                                     CompilerWrapper_OptimizationSet::O1 :
+                                                     optimization_set);
+
+   std::string recipe;
 #ifndef _WIN32
+   recipe += load_plugin_opt(expandMemOps_plugin_obj, compiler_target);
+
    if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 &&
       !GepiCanon_plugin_obj.empty())
    {
-      recipe +=
-          load_plugin_opt(GepiCanon_plugin_obj, Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
+      recipe += load_plugin_opt(GepiCanon_plugin_obj, compiler_target);
    }
 #endif
 
@@ -3169,8 +2782,7 @@ std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet
    )
    {
 #ifndef _WIN32
-      recipe +=
-          load_plugin_opt(CSROA_plugin_obj, Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
+      recipe += load_plugin_opt(CSROA_plugin_obj, compiler_target);
 #endif
       recipe += " -panda-KN=" + fname;
       if(Param->IsParameter("max-CSROA"))
@@ -3179,10 +2791,11 @@ std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet
          recipe += " -csroa-max-transformations=" + STR(max_CSROA);
       }
    }
-   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG4)
+
+   if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG4)
    {
-      if(optimization_level == CompilerWrapper_OptimizationSet::O2 ||
-         optimization_level == CompilerWrapper_OptimizationSet::O3)
+      if(optimization_set == CompilerWrapper_OptimizationSet::O2 ||
+         optimization_set == CompilerWrapper_OptimizationSet::O3)
       {
          std::string complex_recipe;
          complex_recipe += " -tti -targetlibinfo -tbaa -scoped-noalias -assumption-cache-tracker -profile-summary-info "
@@ -3200,7 +2813,8 @@ std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet
                 "-loops -loop-simplify -lcssa-verification -lcssa -basicaa -aa -scalar-evolution -loop-unroll " +
                 ("-" + CSROA_plugin_name + "FV ") +
                 "-ipsccp -globaldce -domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops "
-                "-loop-simplify -lcssa-verification -lcssa -basicaa -aa -scalar-evolution -loop-unroll -simplifycfg ";
+                "-loop-simplify -lcssa-verification -lcssa -basicaa -aa -scalar-evolution -loop-unroll "
+                "-simplifycfg ";
          }
          if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1
 #ifndef _WIN32
@@ -3216,15 +2830,18 @@ std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet
              "-ipsccp -globalopt -dse -loop-unroll -instcombine -libcalls-shrinkwrap -tailcallelim -simplifycfg "
              "-reassociate -domtree -loops -loop-simplify -lcssa-verification -lcssa -basicaa -aa -scalar-evolution "
              "-loop-rotate -licm -loop-unswitch -simplifycfg -domtree -basicaa -aa  -dse -loop-unroll -instcombine "
-             "-loops -loop-simplify -lcssa-verification -lcssa -scalar-evolution -indvars -loop-idiom -loop-deletion "
+             "-loops -loop-simplify -lcssa-verification -lcssa -scalar-evolution -indvars -loop-idiom "
+             "-loop-deletion "
              "-loop-unroll -mldst-motion -aa -memdep -lazy-branch-prob -lazy-block-freq -opt-remark-emitter -gvn "
              "-basicaa -aa -memdep -memcpyopt -sccp -domtree -demanded-bits -bdce -basicaa -aa  -dse -loop-unroll "
-             "-instcombine -lazy-value-info -jump-threading -correlated-propagation -domtree -basicaa -aa -memdep -dse "
+             "-instcombine -lazy-value-info -jump-threading -correlated-propagation -domtree -basicaa -aa -memdep "
+             "-dse "
              "-loops -loop-simplify -lcssa-verification -lcssa -aa -scalar-evolution -licm -postdomtree -adce "
              "-simplifycfg -domtree -basicaa -aa  -loop-unroll -instcombine -barrier -elim-avail-extern -basiccg "
              "-rpo-functionattrs -globals-aa -float2int -domtree -loops -loop-simplify -lcssa-verification -lcssa "
              "-basicaa -aa -scalar-evolution -loop-rotate -loop-accesses -lazy-branch-prob -lazy-block-freq "
-             "-opt-remark-emitter -loop-distribute -loop-simplify -lcssa-verification -lcssa -branch-prob -block-freq "
+             "-opt-remark-emitter -loop-distribute -loop-simplify -lcssa-verification -lcssa -branch-prob "
+             "-block-freq "
              "-scalar-evolution -basicaa -aa -loop-accesses -demanded-bits -lazy-branch-prob -lazy-block-freq "
              "-opt-remark-emitter -disable-slp-vectorization -disable-loop-vectorization -scalarizer-loop-simplify "
              "-scalar-evolution -aa -loop-accesses -loop-load-elim -basicaa -aa  -dse -loop-unroll -instcombine "
@@ -3240,7 +2857,8 @@ std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet
          }
          complex_recipe +=
              "-domtree -basicaa -aa -memdep -dse -aa -memoryssa -early-cse-memssa -constprop -ipsccp -globaldce "
-             "-domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops -loop-simplify -lcssa-verification "
+             "-domtree -mem2reg -deadargelim -basiccg -argpromotion -domtree -loops -loop-simplify "
+             "-lcssa-verification "
              "-lcssa -basicaa -aa -scalar-evolution -loop-unroll  -dse -loop-unroll -instcombine -loop-simplify "
              "-lcssa-verification -lcssa -scalar-evolution -licm -alignment-from-assumptions -strip-dead-prototypes "
              "-globaldce -constmerge -domtree -loops -branch-prob -block-freq -loop-simplify -lcssa-verification "
@@ -3249,88 +2867,63 @@ std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet
       }
       else
       {
-         const auto opt_level = optimization_level == CompilerWrapper_OptimizationSet::O0 ?
-                                    "1" :
-                                    WriteOptimizationLevel(optimization_level);
          recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer";
          recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
       }
    }
-   else if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG5)
+   else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG5)
    {
-      const auto opt_level =
-          optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer";
       recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
-   else if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG6)
+   else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG6)
    {
-      const auto opt_level =
-          optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer";
       recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
-   else if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG7)
+   else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG7)
    {
-      const auto opt_level =
-          optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer";
       recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
-   else if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG8)
+   else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG8)
    {
-      const auto opt_level =
-          optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer";
       recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
-   else if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG9)
+   else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG9)
    {
-      const auto opt_level =
-          optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " -disable-slp-vectorization -scalarizer";
       recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
-   else if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG10)
+   else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG10)
    {
-      const auto opt_level =
-          optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " -disable-slp-vectorization -scalarizer";
       recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
-   else if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG11)
+   else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG11)
    {
-      const auto opt_level =
-          optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer";
       recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
-   else if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG12)
+   else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG12)
    {
-      const auto opt_level =
-          optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer";
       recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
-   else if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG13)
+   else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG13)
    {
-      const auto opt_level =
-          optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false -scalarizer";
       recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
-   else if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
+   else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
    {
-      const auto opt_level =
-          optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += add_plugin_prefix(compiler, opt_level) +
+      recipe += add_plugin_prefix(compiler_target, opt_level) +
                 " --disable-vector-combine -vectorize-loops=false -vectorize-slp=false " + plugin_prefix + "scalarizer";
       recipe += plugin_prefix + expandMemOps_plugin_name + plugin_prefix + "simplifycfg ";
    }
-   else if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD)
+   else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD)
    {
-      const auto opt_level =
-          optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " --disable-vector-combine -scalarizer";
       recipe += " -" + expandMemOps_plugin_name + " -simplifycfg ";
    }
@@ -3338,7 +2931,7 @@ std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet
    {
       THROW_ERROR("Clang compiler not yet supported");
    }
-   return " " + recipe + " ";
+   return " " + recipe;
 }
 
 void CompilerWrapper::CheckCompilerCompatibleVersion(const std::string& compiler_version,
@@ -3854,7 +3447,81 @@ std::string CompilerWrapper::getCompilerVersion(int pc)
    return "";
 }
 
-std::string CompilerWrapper::load_plugin(const std::string& plugin_obj, CompilerWrapper_CompilerTarget target)
+std::string CompilerWrapper::readExternalSymbols(const std::string& filename) const
+{
+   std::string extern_symbols;
+   const auto XMLfilename = [&]() -> std::string {
+      if(Param->isOption(OPT_xml_memory_allocation))
+      {
+         return Param->getOption<std::string>(OPT_xml_memory_allocation);
+      }
+      /// load xml memory allocation file
+      const auto output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
+      const auto leaf_name = std::filesystem::path(filename).filename().string();
+      const auto generate_xml = output_temporary_directory + "/" + leaf_name + ".memory_allocation.xml";
+      if((std::filesystem::exists(std::filesystem::path(generate_xml))))
+      {
+         return generate_xml;
+      }
+      return std::string("");
+   }();
+   if(XMLfilename.size())
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
+      XMLDomParser parser(XMLfilename);
+      parser.Exec();
+      if(parser)
+      {
+         const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
+         const xml_node::node_list list = node->get_children();
+         for(const auto& l : list)
+         {
+            if(const auto* child = GetPointer<xml_element>(l))
+            {
+               if(child->get_name() == "memory_allocation")
+               {
+                  for(const auto& it : child->get_children())
+                  {
+                     if(const auto* mem_node = GetPointer<xml_element>(it))
+                     {
+                        if(mem_node->get_name() == "object")
+                        {
+                           std::string is_internal;
+                           if(!CE_XVM(is_internal, mem_node))
+                           {
+                              THROW_ERROR("expected the is_internal attribute");
+                           }
+                           LOAD_XVM(is_internal, mem_node);
+                           if(is_internal == "T")
+                           {
+                           }
+                           else if(is_internal == "F")
+                           {
+                              if(!CE_XVM(name, mem_node))
+                              {
+                                 THROW_ERROR("expected the name attribute");
+                              }
+                              std::string name;
+                              LOAD_XVM(name, mem_node);
+                              extern_symbols += name + ",";
+                           }
+                           else
+                           {
+                              THROW_ERROR("unexpected value for is_internal attribute");
+                           }
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
+   }
+   return extern_symbols;
+}
+
+std::string CompilerWrapper::load_plugin(const std::string& plugin_obj, CompilerWrapper_CompilerTarget target) const
 {
    if(target == CompilerWrapper_CompilerTarget::CT_I386_CLANG13 ||
       target == CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
@@ -3864,7 +3531,7 @@ std::string CompilerWrapper::load_plugin(const std::string& plugin_obj, Compiler
    return " -fplugin=" + plugin_obj;
 }
 
-std::string CompilerWrapper::load_plugin_opt(std::string plugin_obj, CompilerWrapper_CompilerTarget target)
+std::string CompilerWrapper::load_plugin_opt(std::string plugin_obj, CompilerWrapper_CompilerTarget target) const
 {
    boost::replace_all(plugin_obj, ".so", "_opt.so");
    auto flags = " -load=" + plugin_obj;
@@ -3876,10 +3543,10 @@ std::string CompilerWrapper::load_plugin_opt(std::string plugin_obj, CompilerWra
    return flags;
 }
 
-std::string CompilerWrapper::add_plugin_prefix(CompilerWrapper_CompilerTarget target, std::string O_level)
+std::string CompilerWrapper::add_plugin_prefix(CompilerWrapper_CompilerTarget target, std::string O_level) const
 {
    std::string flags;
-   if(O_level != "")
+   if(O_level.size())
    {
       if(target == CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
       {

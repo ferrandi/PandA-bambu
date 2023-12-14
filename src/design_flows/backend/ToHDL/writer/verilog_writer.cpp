@@ -1084,10 +1084,10 @@ void verilog_writer::write_module_parametrization(const structural_objectRef& ci
    {
       std::string memory_str = mod->GetParameter(MEMORY_PARAMETER);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing memory parameters " + memory_str);
-      std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
+      std::vector<std::string> mem_tag = string_to_container<std::vector<std::string>>(memory_str, ";");
       for(const auto& i : mem_tag)
       {
-         std::vector<std::string> mem_add = convert_string_to_vector<std::string>(i, "=");
+         std::vector<std::string> mem_add = string_to_container<std::vector<std::string>>(i, "=");
          THROW_ASSERT(mem_add.size() == 2, "malformed address");
          if(first_it)
          {
@@ -1207,7 +1207,7 @@ void verilog_writer::write_module_parametrization(const structural_objectRef& ci
 
 void verilog_writer::write_state_declaration(const structural_objectRef& cir,
                                              const std::list<std::string>& list_of_states, const std::string&,
-                                             const std::string& reset_state, bool one_hot)
+                                             const std::string&, bool one_hot)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Starting state declaration...");
 
@@ -1304,13 +1304,11 @@ void verilog_writer::write_state_declaration(const structural_objectRef& cir,
    {
       if(one_hot)
       {
-         indented_output_stream->Append("reg [" + STR(max_value) + ":0] _present_state=" + reset_state +
-                                        ", _next_state;\n");
+         indented_output_stream->Append("reg [" + STR(max_value) + ":0] _present_state" + ", _next_state;\n");
       }
       else
       {
-         indented_output_stream->Append("reg [" + STR(bitsnumber - 1) + ":0] _present_state=" + reset_state +
-                                        ", _next_state;\n");
+         indented_output_stream->Append("reg [" + STR(bitsnumber - 1) + ":0] _present_state" + ", _next_state;\n");
       }
    }
    THROW_ASSERT(mod, "Expected a component object");
@@ -2111,10 +2109,10 @@ void verilog_writer::write_module_parametrization_decl(const structural_objectRe
       /// FIXME: this is workaround due to the fact that the default value of MEMORY_PARAMETER is ""
       std::string memory_str = mod->GetParameter(MEMORY_PARAMETER);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "MEMORY_PARAMETER is " + memory_str);
-      std::vector<std::string> mem_tag = convert_string_to_vector<std::string>(memory_str, ";");
+      std::vector<std::string> mem_tag = string_to_container<std::vector<std::string>>(memory_str, ";");
       for(const auto& i : mem_tag)
       {
-         std::vector<std::string> mem_add = convert_string_to_vector<std::string>(i, "=");
+         std::vector<std::string> mem_add = string_to_container<std::vector<std::string>>(i, "=");
          THROW_ASSERT(mem_add.size() == 2, "malformed address");
          if(first_it)
          {

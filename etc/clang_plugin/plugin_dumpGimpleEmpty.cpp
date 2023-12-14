@@ -77,7 +77,7 @@ namespace llvm
                                       cl::desc("Specify the directory where the gimple raw file will be written"),
                                       cl::value_desc("directory path"));
    cl::opt<std::string> InFileGE("pandaGE-infile", cl::desc("Specify the name of the compiled source file"),
-                                 cl::value_desc("filename path"));
+                                 cl::value_desc("filename path"), cl::OneOrMore);
    struct CLANG_VERSION_SYMBOL(_plugin_dumpGimpleEmpty)
        : public ModulePass
 #if __clang_major__ >= 13
@@ -124,8 +124,7 @@ namespace llvm
       {
          if(outdir_nameGE.empty())
             return false;
-         if(InFileGE.empty())
-            llvm::report_fatal_error("-pandaGE-infile parameter not specified");
+
          DumpGimpleRaw gimpleRawWriter(outdir_nameGE, InFileGE, true, nullptr, false);
          const std::string empty;
          auto res = gimpleRawWriter.exec(M, empty, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC,

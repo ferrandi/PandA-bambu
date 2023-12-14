@@ -9553,7 +9553,7 @@ reg [BITSIZE_data_in-1:0] data_in_mem1;
 
 integer index;
 
-reg [BITSIZE_data_out-1:0] memory [0:n_elements-1]/* synthesis syn_ramstyle =  &quot;rw_check&quot; */;
+reg [BITSIZE_data_out-1:0] memory [0:n_elements-1]/* synthesis syn_ramstyle =  &quot;no_rw_check&quot; */;
 
 initial
 begin
@@ -10083,7 +10083,7 @@ endgenerate"/>
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
           </port_vector_o>
           <NP_functionality LIBRARY="STD_NR_BRAM_BYTE address_inr address_inw data_out MEMORY_INIT_file n_elements forwarding byte_offset BRAM_BITSIZE READ_ONLY_MEMORY HIGH_LATENCY"
-          IP_COMPONENT="STD_SP_BRAM_BYTE"
+          IP_COMPONENT="STD_SP_BRAM_BYTE,STD_SP_BRAMFW_BYTE"
           VERILOG_PROVIDED="
 generate
 genvar i1;
@@ -10938,7 +10938,30 @@ end
 parameter nbit_addr = BITSIZE_address_inr &gt; BITSIZE_address_inw ? BITSIZE_address_inr : BITSIZE_address_inw;
 wire [2*nbit_addr-1:0] address_in;
 generate
-if(PORTSIZE_address_inr == 2 &amp;&amp; PORTSIZE_address_inw == 2)
+if(PORTSIZE_address_inw == 1)
+begin
+  STD_NR_BRAM #(
+      .PORTSIZE_address_inr(PORTSIZE_address_inr),
+      .BITSIZE_address_inr(BITSIZE_address_inr),
+      .BITSIZE_address_inw(BITSIZE_address_inw),
+      .BITSIZE_data_in(BITSIZE_data_in),
+      .BITSIZE_data_out(BITSIZE_dout_value),
+      .PORTSIZE_data_out(PORTSIZE_dout_value),
+      .MEMORY_INIT_file(MEMORY_INIT_file),
+      .n_elements(n_elements),
+      .forwarding(0),
+      .READ_ONLY_MEMORY(READ_ONLY_MEMORY),
+      .HIGH_LATENCY(HIGH_LATENCY)
+    )
+    STD_NR_BRAM_FB_instance (
+      .clock(clock),
+      .write_enable(write_enable[0]),
+      .address_inr(address_inr),
+      .address_inw(address_inw[0+:BITSIZE_address_inw]),
+      .data_in(data_in[0+:BITSIZE_data_in]),
+      .data_out(dout_value));
+end
+else if(PORTSIZE_address_inr == 2 &amp;&amp; PORTSIZE_address_inw == 2)
 begin
   assign address_in[0+:nbit_addr] = write_enable[0] ? address_inw[0+:BITSIZE_address_inw] : address_inr[0+:BITSIZE_address_inr];
   assign address_in[nbit_addr+:nbit_addr] = write_enable[1] ? address_inw[BITSIZE_address_inw+:BITSIZE_address_inw] : address_inr[BITSIZE_address_inr+:BITSIZE_address_inr];
@@ -15926,7 +15949,7 @@ parameter nbit_addr_w = BITSIZE_in2w &gt; BITSIZE_proxy_in2w ? BITSIZE_in2w : BI
   localparam nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
   localparam nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : log2(n_byte_on_databus);
 `endif
-parameter max_n_writes = PORTSIZE_sel_STORE;
+parameter max_n_writes = READ_ONLY_MEMORY ? 1 : PORTSIZE_sel_STORE;
 parameter max_n_reads = PORTSIZE_sel_LOAD;
 
 wire [nbit_read_addr*max_n_reads-1:0] memory_addr_a_r;

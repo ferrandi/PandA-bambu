@@ -657,11 +657,12 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
 
    if(src->ExistsParameter(MEMORY_PARAMETER))
    {
-      std::vector<std::string> current_src_parameters =
-          convert_string_to_vector<std::string>(src->GetParameter(MEMORY_PARAMETER), ";");
+      const auto current_src_parameters =
+          string_to_container<std::vector<std::string>>(src->GetParameter(MEMORY_PARAMETER), ";");
       for(const auto& current_src_parameter : current_src_parameters)
       {
-         std::vector<std::string> current_parameter = convert_string_to_vector<std::string>(current_src_parameter, "=");
+         std::vector<std::string> current_parameter =
+             string_to_container<std::vector<std::string>>(current_src_parameter, "=");
          res_parameters[current_parameter[0]] = current_parameter[1];
       }
    }
@@ -676,10 +677,10 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
          if(subModule->ExistsParameter(MEMORY_PARAMETER))
          {
             const auto current_src_parameters =
-                convert_string_to_vector<std::string>(subModule->GetParameter(MEMORY_PARAMETER), ";");
+                string_to_container<std::vector<std::string>>(subModule->GetParameter(MEMORY_PARAMETER), ";");
             for(const auto& current_src_parameter : current_src_parameters)
             {
-               const auto current_parameter = convert_string_to_vector<std::string>(current_src_parameter, "=");
+               const auto current_parameter = string_to_container<std::vector<std::string>>(current_src_parameter, "=");
                res_parameters[current_parameter[0]] = current_parameter[1];
             }
          }
@@ -691,10 +692,10 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
       tgt->get_circ()->AddParameter(MEMORY_PARAMETER, "");
    }
    const auto current_tgt_parameters =
-       convert_string_to_vector<std::string>(tgt->get_circ()->GetParameter(MEMORY_PARAMETER), ";");
+       string_to_container<std::vector<std::string>>(tgt->get_circ()->GetParameter(MEMORY_PARAMETER), ";");
    for(const auto& current_tgt_parameter : current_tgt_parameters)
    {
-      const auto current_parameter = convert_string_to_vector<std::string>(current_tgt_parameter, "=");
+      const auto current_parameter = string_to_container<std::vector<std::string>>(current_tgt_parameter, "=");
       if(res_parameters.find(current_parameter[0]) != res_parameters.end() &&
          res_parameters[current_parameter[0]] != current_parameter[1])
       {
@@ -728,10 +729,10 @@ void memory::add_memory_parameter(const structural_managerRef SM, const std::str
       SM->get_circ()->AddParameter(MEMORY_PARAMETER, "");
    }
    auto memory_parameters = SM->get_circ()->GetParameter(MEMORY_PARAMETER) + ";";
-   const auto current_parameters = convert_string_to_vector<std::string>(memory_parameters, ";");
+   const auto current_parameters = string_to_container<std::vector<std::string>>(memory_parameters, ";");
    for(const auto& l : current_parameters)
    {
-      const auto current_parameter = convert_string_to_vector<std::string>(l, "=");
+      const auto current_parameter = string_to_container<std::vector<std::string>>(l, "=");
       THROW_ASSERT(current_parameter.size() == 2, "expected two elements");
       if(current_parameter[0] == name)
       {

@@ -322,11 +322,7 @@ etc/clang_plugin/plugin_dumpGimpleSSA.cpp
 etc/clang_plugin/plugin_expandMemOps.cpp
 etc/clang_plugin/plugin_includes.hpp
 etc/clang_plugin/plugin_topfname.cpp
-etc/gcc_plugin/VRP_data.h
-etc/gcc_plugin/cfgexpand_4_5_2.c
 etc/gcc_plugin/dumpGimple.c
-etc/gcc_plugin/dumpVRP_common.h
-etc/gcc_plugin/dumpVrp.c
 etc/gcc_plugin/gcc-4.9/dbgcnt.h
 etc/gcc_plugin/gcc-4.9/expr.h
 etc/gcc_plugin/gcc-4.9/insn-config.h
@@ -340,14 +336,8 @@ etc/gcc_plugin/ggc_clike_extern.h
 etc/gcc_plugin/ggc_clike_static.h
 etc/gcc_plugin/ggc_cpplike_extern.h
 etc/gcc_plugin/ggc_cpplike_static.h
-etc/gcc_plugin/patched-tree-vrp.454.c
-etc/gcc_plugin/patched-tree-vrp.463.c
-etc/gcc_plugin/patched-tree-vrp.472.c
-etc/gcc_plugin/patched-tree-vrp.480.c
 etc/gcc_plugin/plugin_dumpGimpleEmpty.c
 etc/gcc_plugin/plugin_dumpGimpleSSA.c
-etc/gcc_plugin/plugin_dumpGimpleSSAVRP.c
-etc/gcc_plugin/plugin_dumpRTL.c
 etc/gcc_plugin/plugin_includes.h
 etc/gcc_plugin/plugin_topfname.c
 etc/libbambu/ac_math/include/ac_math.h
@@ -2035,7 +2025,6 @@ src/constants/allocation_constants.hpp
 src/constants/bambu_results_xml.hpp
 src/constants/compiler_constants.hpp
 src/constants/compiler_xml.hpp
-src/constants/constants.hpp
 src/constants/constraints_xml.hpp
 src/constants/copyrights_strings.hpp
 src/constants/cost_latency_table.hpp
@@ -2532,10 +2521,6 @@ src/wrapper/flopoco/flopoco_wrapper.cpp
 src/wrapper/flopoco/flopoco_wrapper.hpp
 src/wrapper/simulation/SimulationTool.cpp
 src/wrapper/simulation/SimulationTool.hpp
-src/wrapper/simulation/icarus/IcarusWrapper.cpp
-src/wrapper/simulation/icarus/IcarusWrapper.hpp
-src/wrapper/simulation/isim/ISE_isim_wrapper.cpp
-src/wrapper/simulation/isim/ISE_isim_wrapper.hpp
 src/wrapper/simulation/modelsim/modelsimWrapper.cpp
 src/wrapper/simulation/modelsim/modelsimWrapper.hpp
 src/wrapper/simulation/verilator/VerilatorWrapper.cpp

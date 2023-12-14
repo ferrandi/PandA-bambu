@@ -48,7 +48,6 @@
 #include "VIVADO_xsim_wrapper.hpp"
 #include "VerilatorWrapper.hpp"
 #include "compiler_wrapper.hpp"
-#include "constants.hpp"
 #include "custom_set.hpp"
 #include "fileIO.hpp"
 #include "modelsimWrapper.hpp"
@@ -180,7 +179,7 @@ void SimulationTool::DetermineCycles(unsigned long long int& accum_cycles, unsig
    {
       THROW_ERROR("Result file was empty");
    }
-   const auto sim_times = convert_string_to_vector<std::string>(values, ",");
+   const auto sim_times = string_to_container<std::vector<std::string>>(values, ",");
    for(const auto& start_end : sim_times)
    {
       if(start_end.back() == 'X')
@@ -226,7 +225,7 @@ void SimulationTool::DetermineCycles(unsigned long long int& accum_cycles, unsig
 
       PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "File \"" + profiling_result_file + "\" opened");
       std::getline(profiling_res_file, values);
-      const auto profile_times = convert_string_to_vector<std::string>(values, ",");
+      const auto profile_times = string_to_container<std::vector<std::string>>(values, ",");
       for(const auto& start_end : profile_times)
       {
          const auto times = SplitString(start_end, "|");
@@ -364,7 +363,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, con
       }
       if(Param->isOption(OPT_gcc_optimizations))
       {
-         const auto gcc_parameters = Param->getOption<const CustomSet<std::string>>(OPT_gcc_optimizations);
+         const auto gcc_parameters = Param->getOption<CustomSet<std::string>>(OPT_gcc_optimizations);
          if(gcc_parameters.find("tree-vectorize") != gcc_parameters.end())
          {
             boost::replace_all(flags, "-msse2", "");
@@ -411,7 +410,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, con
       std::string files;
       if(Param->isOption(OPT_testbench_input_file))
       {
-         const auto tb_files = Param->getOption<const CustomSet<std::string>>(OPT_testbench_input_file);
+         const auto tb_files = Param->getOption<CustomSet<std::string>>(OPT_testbench_input_file);
          if(starts_with(*tb_files.begin(), "elf:"))
          {
             return files;

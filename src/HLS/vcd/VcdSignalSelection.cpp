@@ -969,7 +969,7 @@ DesignFlowStep_Status VcdSignalSelection::Exec()
        */
       if(parameters->isOption(OPT_discrepancy_only))
       {
-         const auto discrepancy_functions = parameters->getOption<const CustomSet<std::string>>(OPT_discrepancy_only);
+         const auto discrepancy_functions = parameters->getOption<CustomSet<std::string>>(OPT_discrepancy_only);
          std::string fu_name = BH->get_function_name();
          if(not discrepancy_functions.empty() and discrepancy_functions.find(fu_name) == discrepancy_functions.end())
          {
