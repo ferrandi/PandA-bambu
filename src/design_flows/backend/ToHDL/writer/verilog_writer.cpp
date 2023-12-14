@@ -1304,12 +1304,12 @@ void verilog_writer::write_state_declaration(const structural_objectRef& cir,
    {
       if(one_hot)
       {
-         indented_output_stream->Append("reg [" + STR(max_value) + ":0] _present_state=" + reset_state +
+         indented_output_stream->Append("reg [" + STR(max_value) + ":0] _present_state" +
                                         ", _next_state;\n");
       }
       else
       {
-         indented_output_stream->Append("reg [" + STR(bitsnumber - 1) + ":0] _present_state=" + reset_state +
+         indented_output_stream->Append("reg [" + STR(bitsnumber - 1) + ":0] _present_state" +
                                         ", _next_state;\n");
       }
    }
