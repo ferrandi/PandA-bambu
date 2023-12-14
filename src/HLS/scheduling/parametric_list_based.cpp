@@ -2420,7 +2420,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
             if(parameters->IsParameter("LP-BB-list"))
             {
                auto LP_BB_list = parameters->GetParameter<std::string>("LP-BB-list");
-               auto lbs = convert_string_to_vector<int>(LP_BB_list, ",");
+               auto lbs = string_to_container<std::vector<int>>(LP_BB_list, ",");
                auto bb = loop->GetHeader();
                auto BBI = bbg->CGetBBNodeInfo(bb);
                // std::set<unsigned> lbs = {55 /*, 67, 72, 78, 88, 91*/};
