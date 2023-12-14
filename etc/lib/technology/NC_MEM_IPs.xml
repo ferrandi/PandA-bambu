@@ -9553,7 +9553,7 @@ reg [BITSIZE_data_in-1:0] data_in_mem1;
 
 integer index;
 
-reg [BITSIZE_data_out-1:0] memory [0:n_elements-1]/* synthesis syn_ramstyle =  &quot;rw_check&quot; */;
+reg [BITSIZE_data_out-1:0] memory [0:n_elements-1]/* synthesis syn_ramstyle =  &quot;no_rw_check&quot; */;
 
 initial
 begin
@@ -10083,7 +10083,7 @@ endgenerate"/>
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
           </port_vector_o>
           <NP_functionality LIBRARY="STD_NR_BRAM_BYTE address_inr address_inw data_out MEMORY_INIT_file n_elements forwarding byte_offset BRAM_BITSIZE READ_ONLY_MEMORY HIGH_LATENCY"
-          IP_COMPONENT="STD_SP_BRAM_BYTE"
+          IP_COMPONENT="STD_SP_BRAM_BYTE,STD_SP_BRAMFW_BYTE"
           VERILOG_PROVIDED="
 generate
 genvar i1;
