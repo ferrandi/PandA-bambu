@@ -36,16 +36,17 @@
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  *
  */
-
 #include "FixStructsPassedByValue.hpp"
+
 #include "Parameter.hpp"
 #include "application_manager.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
+#include "hls_manager.hpp"
 #include "op_graph.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "string_manipulation.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
@@ -62,31 +63,22 @@ FixStructsPassedByValue::FixStructsPassedByValue(const ParameterConstRef params,
 
 FixStructsPassedByValue::~FixStructsPassedByValue() = default;
 
-static bool cannot_have_struct_parameters(const function_decl* const fd, const function_type* const ft,
-                                          const tree_managerConstRef
-#if HAVE_ASSERTS
-                                              TM
-#endif
-                                          ,
-                                          const std::string&
-#if HAVE_ASSERTS
-                                              fu_name
-#endif
-)
+static bool cannot_have_struct_parameters(const function_decl* const fd, const function_type* const ft)
 {
    auto p_type_head = ft->prms;
-   if(p_type_head and GetPointer<const void_type>(GET_CONST_NODE(p_type_head)))
+   if(p_type_head && GetPointer<const void_type>(GET_CONST_NODE(p_type_head)))
    {
       // if the function_type takes void argument there's nothing to do
-      THROW_ASSERT(fd->list_of_args.empty(), "function " + fu_name + " has void parameter type but has a parm_decl " +
+      THROW_ASSERT(fd->list_of_args.empty(), "function " + tree_helper::GetMangledFunctionName(fd) +
+                                                 " has void parameter type but has a parm_decl " +
                                                  STR(GET_NODE(fd->list_of_args.front())));
       return true;
    }
-   if(p_type_head and fd->list_of_args.empty())
+   if(p_type_head && fd->list_of_args.empty())
    {
       while(p_type_head)
       {
-         const auto* const p = GetPointer<const tree_list>(GET_CONST_NODE(p_type_head));
+         const auto* p = GetPointerS<const tree_list>(GET_CONST_NODE(p_type_head));
          p_type_head = p->chan;
          /*
           * from what I figured out from gcc, if the function_decl has no
@@ -102,12 +94,9 @@ static bool cannot_have_struct_parameters(const function_decl* const fd, const f
           * hence we can safely 'continue' without worries.
           * if the assertion fails some of these assumptions are wrong
           */
-         THROW_ASSERT(not tree_helper::is_a_struct(TM, p->valu->index) and
-                          not tree_helper::is_an_union(TM, p->valu->index),
-                      "function " + fu_name +
-                          " has no parm_decl but in its "
-                          "function_type it takes a struct type " +
-                          STR(GET_NODE(p->valu)));
+         THROW_ASSERT(!tree_helper::IsStructType(p->valu) && !tree_helper::IsUnionType(p->valu),
+                      "function " + tree_helper::GetMangledFunctionName(fd) +
+                          " has no parm_decl but in its function_type it takes a struct type " + STR(p->valu));
       }
       return true;
    }
@@ -154,17 +143,19 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
    THROW_ASSERT(fd && fd->body, "Node " + STR(tn) + "is not a function_decl or has no body");
    const auto sl = GetPointer<const statement_list>(GET_CONST_NODE(fd->body));
    THROW_ASSERT(sl, "Body is not a statement_list");
-   const auto fu_name = tree_helper::name_function(TM, function_id);
-   const auto fu_type = GetPointer<const function_type>(GET_CONST_NODE(tree_helper::CGetType(tn)));
-   THROW_ASSERT(!fu_type->varargs_flag, "function " + fu_name + " is varargs");
+   const auto fname = function_behavior->GetBehavioralHelper()->GetMangledFunctionName();
+   const auto ftype = GetPointer<const function_type>(GET_CONST_NODE(tree_helper::CGetType(tn)));
+   THROW_ASSERT(!ftype->varargs_flag, "function " + fname + " is varargs");
+   const auto HLSMgr = GetPointer<HLS_manager>(AppM);
+   const auto func_arch = HLSMgr ? HLSMgr->module_arch->GetArchitecture(fname) : nullptr;
    // fix declaration
-   if(!cannot_have_struct_parameters(fd, fu_type, TM, fu_name))
+   if(!cannot_have_struct_parameters(fd, ftype))
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fixing declaration of function " + fu_name);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fixing declaration of function " + fname);
       THROW_ASSERT(tn->get_kind() != tree_reindex_K, "function declaration " + STR(tn) + " is a tree_reindex");
       unsigned int param_n = 0;
       auto p_decl_it = fd->list_of_args.begin();
-      auto p_type_head = fu_type->prms;
+      auto p_type_head = ftype->prms;
       const auto has_param_types = static_cast<bool>(p_type_head);
       for(; p_decl_it != fd->list_of_args.cend(); p_decl_it++, param_n++)
       {
@@ -173,14 +164,14 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "-->Analyzing parameter " + STR(p_decl) + " with type " + STR(p_type));
          THROW_ASSERT(has_param_types == static_cast<bool>(p_type_head),
-                      "function " + fu_name + " has " + STR(fd->list_of_args.size()) + " parameters, but argument " +
+                      "function " + fname + " has " + STR(fd->list_of_args.size()) + " parameters, but argument " +
                           STR(param_n) + " (" + STR(p_decl) +
                           ") has not a corresponding underlying type in function_type");
 
          if(tree_helper::IsUnionType(p_type) || tree_helper::IsStructType(p_type))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "function " + fu_name + " has a struct parameter: " + STR(p_decl) + " with type " +
+                           "function " + fname + " has a struct parameter: " + STR(p_decl) + " with type " +
                                STR(p_type));
             // initialize some general stuff useful later
             const auto pd = GetPointerS<const parm_decl>(GET_CONST_NODE(p_decl));
@@ -250,6 +241,18 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                const auto ptr_p_identifier = tree_man->create_identifier_node(ptr_p_name);
                const auto ptr_p_decl = tree_man->create_parm_decl(ptr_p_identifier, ptr_type, pd->scpe, ptr_type,
                                                                   tree_nodeRef(), tree_nodeRef(), srcp, 1, false, true);
+               if(func_arch)
+               {
+                  const auto parm_it = func_arch->parms.find(original_param_name);
+                  if(parm_it != func_arch->parms.end())
+                  {
+                     func_arch->parms[ptr_p_name] = parm_it->second;
+                     func_arch->parms.erase(parm_it);
+
+                     // NOTE: should also update HLS_manager::design_interface_io, but passed-by-value parameters cannot
+                     // have associated I/O operations
+                  }
+               }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---Changing parm_decl from " + STR(p_decl) + " to " + STR(GET_NODE(ptr_p_decl)));
                *p_decl_it = ptr_p_decl;
@@ -264,16 +267,16 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
              */
             unsigned int bb_index = BB_ENTRY;
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Selecting first basic block of " + fu_name);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Selecting first basic block of " + fname);
                const auto entry_block = sl->list_of_bloc.at(BB_ENTRY);
                const auto succ_blocks = entry_block->list_of_succ;
-               THROW_ASSERT(succ_blocks.size() == 1, "entry basic block of function " + fu_name + " has " +
+               THROW_ASSERT(succ_blocks.size() == 1, "entry basic block of function " + fname + " has " +
                                                          STR(succ_blocks.size()) + " successors");
                bb_index = *(succ_blocks.begin());
                THROW_ASSERT(bb_index != BB_ENTRY and bb_index != BB_EXIT,
-                            "first basic block of function " + fu_name + " not found");
+                            "first basic block of function " + fname + " not found");
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "<--Selected first basic block of " + fu_name + ": " + STR(bb_index));
+                              "<--Selected first basic block of " + fname + ": " + STR(bb_index));
             }
             const auto first_block = sl->list_of_bloc.at(bb_index);
 
@@ -319,7 +322,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "<--Analyzed parameter " + STR(p_decl) + " with type " + STR(p_type));
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Fixed declaration of function " + fu_name);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Fixed declaration of function " + fname);
    }
    // fix calls to other functions that accept structs passed by value as parameters
    {
@@ -431,9 +434,9 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                THROW_ASSERT(called_fu_decl_node->get_kind() == function_decl_K,
                             "node  " + STR(called_fu_decl_node) + " is not function_decl but " +
                                 called_fu_decl_node->get_kind_text());
-               const auto called_fu_name = tree_helper::name_function(TM, called_fu_decl_node->index);
                const auto called_fd = GetPointer<const function_decl>(called_fu_decl_node);
-               const auto called_fu_type =
+               const auto called_fname = tree_helper::GetMangledFunctionName(called_fd);
+               const auto called_ftype =
                    GetPointer<const function_type>(GET_CONST_NODE(tree_helper::CGetType(called_fu_decl_node)));
                /*
                 * if there is a call to a function without body we don't turn
@@ -444,27 +447,27 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                if(!fd->body)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "<--Function " + called_fu_name + " is varargs but has no body");
+                                 "<--Function " + called_fname + " is varargs but has no body");
                   continue;
                }
-               if(cannot_have_struct_parameters(called_fd, called_fu_type, TM, called_fu_name))
+               if(cannot_have_struct_parameters(called_fd, called_ftype))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Cannot have struct parameters");
                   continue;
                }
-               auto p_type_head = called_fu_type->prms;
+               auto p_type_head = called_ftype->prms;
                const auto has_param_types = static_cast<bool>(p_type_head);
                unsigned int param_n = 0;
                auto p_decl_it = called_fd->list_of_args.begin();
                for(; p_decl_it != called_fd->list_of_args.cend(); p_decl_it++, param_n++)
                {
-                  const auto p_decl = GET_CONST_NODE(*p_decl_it);
+                  const auto& p_decl = *p_decl_it;
                   const auto p_type = tree_helper::CGetType(p_decl);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "-->Analyzing parameter " + STR(p_decl) + " with type " + STR(p_type));
 
                   THROW_ASSERT(static_cast<bool>(has_param_types) == static_cast<bool>(p_type_head),
-                               "function " + called_fu_name + " has " + STR(called_fd->list_of_args.size()) +
+                               "function " + called_fname + " has " + STR(called_fd->list_of_args.size()) +
                                    " parameters, but argument " + STR(param_n) + " (" + STR(p_decl) +
                                    ") has not a corresponding underlying type in function_type");
                   if(has_param_types)
@@ -475,12 +478,12 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                   if(tree_helper::IsUnionType(p_type) || tree_helper::IsStructType(p_type))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "function " + called_fu_name + " has a struct parameter: " + STR(p_decl) +
+                                    "function " + called_fname + " has a struct parameter: " + STR(p_decl) +
                                         " with type " + STR(p_type));
-                     if(called_fu_type->varargs_flag)
+                     if(called_ftype->varargs_flag)
                      {
                         THROW_ERROR("op: " + STR(stmt) + " id: " + STR(call_tree_node_id) + " calls function " +
-                                    called_fu_name + ": varargs function taking structs argument not supported");
+                                    called_fname + ": varargs function taking structs argument not supported");
                      }
                      const auto& actual_argument_node = arguments->at(param_n);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -489,7 +492,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                      THROW_ASSERT(tree_helper::IsUnionType(actual_argument_node) ||
                                       tree_helper::IsStructType(actual_argument_node),
                                   "op: " + STR(stmt) + " id: " + STR(call_tree_node_id) + " passes argument " +
-                                      STR(actual_argument_node) + " to a call to function " + called_fu_name +
+                                      STR(actual_argument_node) + " to a call to function " + called_fname +
                                       " which has a struct/union parameter: " + STR(p_decl) + " but " +
                                       STR(actual_argument_node) + " is a " +
                                       STR(tree_helper::CGetType(actual_argument_node)));
