@@ -293,13 +293,24 @@ void memory_allocation::finalize_memory_allocation()
          const auto pname = behavioral_helper->PrintVariable(function_parameter);
          if(func_arch)
          {
-            THROW_ASSERT(func_arch->parms.find(pname) != func_arch->parms.end(), "");
-            const auto& parm_attrs = func_arch->parms.at(pname);
-            const auto& iface_attrs = func_arch->ifaces.at(parm_attrs.at(FunctionArchitecture::parm_bundle));
-            const auto iface_mode = iface_attrs.at(FunctionArchitecture::iface_mode);
-            if(iface_mode != "default")
+            auto parm_arch = func_arch->parms.find(pname);
+            if(parm_arch != func_arch->parms.end())
             {
-               continue;
+               const auto& parm_attrs = parm_arch->second;
+               const auto& iface_attrs = func_arch->ifaces.at(parm_attrs.at(FunctionArchitecture::parm_bundle));
+               const auto iface_mode = iface_attrs.at(FunctionArchitecture::iface_mode);
+               if(iface_mode != "default")
+               {
+                  continue;
+               }
+            }
+            else
+            {
+               // NOTE: Struct fileds may be promoted to separate function arguments disrupting the source-IR
+               // correspondence (which is fine and can be ignored since it will happen only on non-interfaced
+               // functions)
+               THROW_ASSERT(func_arch->parms.size() != function_parameters.size(),
+                            "Parameter " + pname + " not found in function " + fname);
             }
          }
          if(HLSMgr->Rmem->is_parm_decl_copied(function_parameter) &&
