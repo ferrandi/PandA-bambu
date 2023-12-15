@@ -78,28 +78,36 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
    auto fdecl = tree_helper::PrintType(TM, TM->CGetTreeReindex(function_id), false, true, false, nullptr,
                                        var_pp_functorConstRef(new std_var_pp_functor(BH)));
 
+   const auto HLSMgr = GetPointer<const HLS_manager>(AppM);
    const auto fname = BH->GetMangledFunctionName();
-   const auto HLSMgr = GetPointerS<const HLS_manager>(AppM);
-   if(HLSMgr && HLSMgr->design_interface_typename_orig_signature.find(fname) !=
-                    HLSMgr->design_interface_typename_orig_signature.end())
+   const auto func_arch = HLSMgr->module_arch->GetArchitecture(fname);
+   THROW_ASSERT(func_arch, "Expected interface architecture for function " + fname);
+   const auto parm_original_typename = [&]() -> std::vector<std::string> {
+      std::vector<std::string> parm_ot(func_arch->parms.size(), "");
+      for(auto& [parm, attrs] : func_arch->parms)
+      {
+         const auto idx = std::strtoul(attrs.at(FunctionArchitecture::parm_index).c_str(), nullptr, 10);
+         parm_ot[idx] = attrs.at(FunctionArchitecture::parm_original_typename);
+      }
+      return parm_ot;
+   }();
+   if(HLSMgr && parm_original_typename.size())
    {
       const std::regex param_match("[^,(]+\\s(\\w+)\\s*([,)]\\s?)");
-      THROW_ASSERT(HLSMgr->design_interface_typename_orig_signature.count(fname), "");
-      const auto& typenameArgs = HLSMgr->design_interface_typename_orig_signature.at(fname);
       auto param_idx = 0U;
       auto it = fdecl.cbegin();
       std::string if_fdecl;
       std::smatch match;
       while(std::regex_search(it, fdecl.cend(), match, param_match))
       {
-         THROW_ASSERT(param_idx < typenameArgs.size(), "Too many parameters matched.");
+         THROW_ASSERT(param_idx < parm_original_typename.size(), "Too many parameters matched.");
          it += match.position() + match.length();
          if_fdecl += match.prefix();
-         if_fdecl += typenameArgs.at(param_idx++) + " ";
+         if_fdecl += parm_original_typename.at(param_idx++) + " ";
          if_fdecl += match[1];
          if_fdecl += match[2];
       }
-      THROW_ASSERT(param_idx == typenameArgs.size(), "Expected to match all parameter declarations.");
+      THROW_ASSERT(param_idx == parm_original_typename.size(), "Expected to match all parameter declarations.");
       if(param_idx)
       {
          fdecl = if_fdecl;

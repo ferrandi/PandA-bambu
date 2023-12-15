@@ -313,7 +313,6 @@ etc/clang_plugin/gcc/sanitizer.def
 etc/clang_plugin/gcc/sync-builtins.def
 etc/clang_plugin/gcc/tree.def
 etc/clang_plugin/plugin_ASTAnalyzer.cpp
-etc/clang_plugin/plugin_ASTAnnotate.cpp
 etc/clang_plugin/plugin_CSROA.cpp
 etc/clang_plugin/plugin_GepiCanon.cpp
 etc/clang_plugin/plugin_dumpGimpleEmpty.cpp

@@ -4,10 +4,10 @@
 #include <cstdlib>
 #include <iterator>
 
-#pragma HLS_interface a bus
-#pragma HLS_interface b bus
-#pragma HLS_interface c bus
-#pragma HLS_interface d bus
+#pragma HLS interface port = a mode = bus
+#pragma HLS interface port = b mode = bus
+#pragma HLS interface port = c mode = bus
+#pragma HLS interface port = d mode = bus
 extern "C" void __attribute__((noinline)) sum3numbers(vector_t& a, vector_t& b, vector_t& c, vector_t& d)
 {
    unsigned i;

@@ -178,7 +178,6 @@
 #include "config_I386_CLANG13_TOPFNAME_PLUGIN.hpp"
 #include "config_I386_CLANG13_VERSION.hpp"
 #include "config_I386_CLANG16_ASTANALYZER_PLUGIN.hpp"
-#include "config_I386_CLANG16_ASTANNOTATE_PLUGIN.hpp"
 #include "config_I386_CLANG16_CSROA_PLUGIN.hpp"
 #include "config_I386_CLANG16_EMPTY_PLUGIN.hpp"
 #include "config_I386_CLANG16_EXE.hpp"
@@ -430,6 +429,7 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
    std::string command;
    if(cm & CM_COMPILER_OPT)
    {
+      THROW_ASSERT(!(cm & CM_ANALYZER_ALL), "Analyzer plugin requires compiler frontend to run");
       command = compiler.llvm_opt;
    }
    else if(cm & CM_COMPILER_LTO)
@@ -506,9 +506,8 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       }
    }
 
-   if(cm & CM_ANALYZER_INTERFACE)
+   if(cm & CM_ANALYZER_ALL)
    {
-      THROW_ASSERT((cm & ~CM_COMPILER_OPT) == cm, "Analyzer plugin requires compiler frontend to run");
       /// remove some extra option not compatible with clang
       boost::replace_all(command, "-mlong-double-64", "");
       if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD)
@@ -518,33 +517,31 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       }
       command += " -fplugin=" + compiler.ASTAnalyzer_plugin_obj;
       command += " -Xclang -add-plugin -Xclang " + compiler.ASTAnalyzer_plugin_name;
-      command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name +
-                 " -Xclang -outputdir -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang " +
-                 output_temporary_directory;
 
-      if(Param->isOption(OPT_input_format) &&
-         (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
-          Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP))
+      if(cm & CM_ANALYZER_INTERFACE)
       {
-         command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name +
-                    " -Xclang -cppflag -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang 1";
-      }
-      if(fname.size())
-      {
-         command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name +
-                    " -Xclang -topfname -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang " + fname;
-      }
-   }
-   if(cm & CM_ANALYZER_INTERFACE)
-   {
-      if(compiler.is_clang)
-      {
-         if((cm & CM_COMPILER_STD) && Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) ==
-                                          CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
+         command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang -action";
+         command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang analyze";
+         command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang -outputdir";
+         command +=
+             " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang " + output_temporary_directory;
+
+         if(Param->isOption(OPT_input_format) &&
+            (Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP ||
+             Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_LLVM_CPP))
          {
-            command += " -fplugin=" + compiler.ASTAnnotate_plugin_obj;
-            command += " -Xclang -add-plugin -Xclang " + compiler.ASTAnnotate_plugin_name;
+            command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang -cppflag";
          }
+         if(fname.size())
+         {
+            command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang -topfname";
+            command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang " + fname;
+         }
+      }
+      if(cm & CM_ANALYZER_OPTIMIZE)
+      {
+         command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang -action";
+         command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang optimize";
       }
    }
 
@@ -759,7 +756,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::vector<std:
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Pragma analysis disabled");
    }
-   else
+   else if(!compiler.is_clang)
    {
       std::string analyzing_compiling_parameters;
       if(Param->isOption(OPT_gcc_standard))
@@ -816,7 +813,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::vector<std:
       }
       if(compiler.is_clang)
       {
-         flags |= CM_ANALYZER_OPTIMIZE;
+         flags |= CM_ANALYZER_ALL;
       }
       if(multi_source)
       {
@@ -1539,8 +1536,6 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
 #if HAVE_I386_CLANG16_COMPILER
       compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG16_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG16_ASTANALYZER_PLUGIN;
-      compiler.ASTAnnotate_plugin_obj = clang_plugin_dir + I386_CLANG16_ASTANNOTATE_PLUGIN + plugin_ext;
-      compiler.ASTAnnotate_plugin_name = I386_CLANG16_ASTANNOTATE_PLUGIN;
 #elif HAVE_I386_CLANG13_COMPILER
       compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG13_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG13_ASTANALYZER_PLUGIN;
@@ -2045,8 +2040,6 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.topfname_plugin_name = I386_CLANG16_TOPFNAME_PLUGIN;
       compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG16_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG16_ASTANALYZER_PLUGIN;
-      compiler.ASTAnnotate_plugin_obj = clang_plugin_dir + I386_CLANG16_ASTANNOTATE_PLUGIN + plugin_ext;
-      compiler.ASTAnnotate_plugin_name = I386_CLANG16_ASTANNOTATE_PLUGIN;
       compiler.llvm_link = relocate_compiler_path(I386_LLVM16_LINK_EXE);
       compiler.llvm_opt = relocate_compiler_path(I386_LLVM16_OPT_EXE);
    }

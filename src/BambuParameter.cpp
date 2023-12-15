@@ -215,8 +215,8 @@
 #define OPT_FP_FORMAT_PROPAGATE (1 + OPT_FP_FORMAT)
 #define OPT_FP_FORMAT_INTERFACE (1 + OPT_FP_FORMAT_PROPAGATE)
 #define OPT_PARALLEL_BACKEND (1 + OPT_FP_FORMAT_INTERFACE)
-#define OPT_INTERFACE_XML_FILENAME (1 + OPT_PARALLEL_BACKEND)
-#define OPT_LATTICE_ROOT (1 + OPT_INTERFACE_XML_FILENAME)
+#define OPT_ARCHITECTURE_XML (1 + OPT_PARALLEL_BACKEND)
+#define OPT_LATTICE_ROOT (1 + OPT_ARCHITECTURE_XML)
 #define OPT_XILINX_ROOT (1 + OPT_LATTICE_ROOT)
 #define OPT_MENTOR_ROOT (1 + OPT_XILINX_ROOT)
 #define OPT_MENTOR_OPTIMIZER (1 + OPT_MENTOR_ROOT)
@@ -313,8 +313,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "            INFER    -  top function is built with an hardware interface inferred from\n"
       << "                        the pragmas or from the top function signature\n"
       << "            WB4      -  WishBone 4 interface\n\n"
-      << "    --interface-xml-filename=<filename>\n"
-      << "        User defined interface file.\n\n"
+      << "    --architecture-xml=<filename>\n"
+      << "        User-defined module architecture file.\n\n"
       << "    --memory-mapped-top\n"
       << "        Generate a memory mapped interface for the top level function.\n"
       << "        The start signal and each one of function parameter are mapped to a memory address\n\n"
@@ -1032,7 +1032,7 @@ int BambuParameter::Exec()
       {"pretty-print", required_argument, nullptr, OPT_PRETTY_PRINT},
       {"pragma-parse", no_argument, nullptr, OPT_PRAGMA_PARSE},
       {"generate-interface", required_argument, nullptr, 0},
-      {"interface-xml-filename", required_argument, nullptr, OPT_INTERFACE_XML_FILENAME},
+      {"architecture-xml", required_argument, nullptr, OPT_ARCHITECTURE_XML},
       {"additional-top", required_argument, nullptr, OPT_ADDITIONAL_TOP},
       {"data-bus-bitsize", required_argument, nullptr, 0},
       {"addr-bus-bitsize", required_argument, nullptr, 0},
@@ -2062,14 +2062,14 @@ int BambuParameter::Exec()
             setOption(OPT_evaluation_mode, Evaluation_Mode::DRY_RUN);
             break;
          }
-         case OPT_INTERFACE_XML_FILENAME:
+         case OPT_ARCHITECTURE_XML:
          {
             auto XMLfilename = GetPath(optarg);
             if(!std::filesystem::exists(std::filesystem::path(XMLfilename)))
             {
-               THROW_ERROR("The file " + XMLfilename + " passed to --interface-xml-filename option does not exist");
+               THROW_ERROR("The file " + XMLfilename + " passed to --architecture-xml option does not exist");
             }
-            setOption(OPT_interface_xml_filename, XMLfilename);
+            setOption(OPT_architecture_xml, XMLfilename);
             break;
          }
          case OPT_ALTERA_ROOT:

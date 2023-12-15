@@ -37,36 +37,22 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "hdl_var_decl_fix.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// behavior includes
 #include "application_manager.hpp"
+#include "behavioral_helper.hpp"
 #include "function_behavior.hpp"
-
-/// boost include
-#include <boost/algorithm/string.hpp>
-
-/// design_flows/backend/ToHDL include
-#include "language_writer.hpp"
-
-/// HLS includes
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
-
-/// tree includes
-#include "behavioral_helper.hpp"
+#include "language_writer.hpp"
+#include "string_manipulation.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-/// utility include
-#include "string_manipulation.hpp" // for GET_CLASS
+#include <boost/algorithm/string.hpp>
 
 HDLVarDeclFix::HDLVarDeclFix(const application_managerRef _AppM, unsigned int _function_id,
                              const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
@@ -109,109 +95,45 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
    const tree_nodeRef curr_tn = TM->GetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(curr_tn);
    const auto fname = tree_helper::GetMangledFunctionName(fd);
-   auto HLSMgr = GetPointer<HLS_manager>(AppM);
+   const auto HLSMgr = GetPointer<HLS_manager>(AppM);
 
-   /* Check if there is at least one interface type */
-   bool type_found = false;
-   if(HLSMgr)
+   for(const auto& arg : fd->list_of_args)
    {
-      for(auto& fun : HLSMgr->design_attributes)
+      auto a = GetPointer<parm_decl>(GET_NODE(arg));
+      auto argName = GET_NODE(a->name);
+      THROW_ASSERT(GetPointer<identifier_node>(argName), "unexpected condition");
+      const std::string parm_name = GetPointer<identifier_node>(argName)->strg;
+      recursive_examinate(arg, already_examinated_decls, already_examinated_names, already_examinated_type_names,
+                          already_visited_ae);
+      if(HLSMgr)
       {
-         for(auto& par : fun.second)
-         {
-            if(par.second.find(attr_interface_type) != par.second.end())
-            {
-               type_found = true;
-            }
-         }
-      }
-   }
-
-   if(HLSMgr && type_found)
-   {
-      for(const auto& arg : fd->list_of_args)
-      {
-         auto a = GetPointer<parm_decl>(GET_NODE(arg));
-         auto argName = GET_NODE(a->name);
-         THROW_ASSERT(GetPointer<identifier_node>(argName), "unexpected condition");
-         const std::string argName_string = GetPointer<identifier_node>(argName)->strg;
-         recursive_examinate(arg, already_examinated_decls, already_examinated_names, already_examinated_type_names,
-                             already_visited_ae);
          argName = GET_NODE(a->name);
          THROW_ASSERT(GetPointer<identifier_node>(argName), "unexpected condition");
-         const std::string argName_string_new = GetPointer<identifier_node>(argName)->strg;
-         if(argName_string != argName_string_new)
+         const std::string parm_name_new = GetPointer<identifier_node>(argName)->strg;
+         if(parm_name != parm_name_new)
          {
-            auto di_it =
-                HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.find(attr_interface_type);
-            auto di_value = di_it->second;
-            HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.erase(di_it);
-            HLSMgr->design_attributes.find(fname)->second[argName_string_new][attr_interface_type] = di_value;
-            if(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end() &&
-               HLSMgr->design_attributes.at(fname).find(argName_string) != HLSMgr->design_attributes.at(fname).end() &&
-               HLSMgr->design_attributes.at(fname).at(argName_string).find(attr_interface_type) !=
-                   HLSMgr->design_attributes.at(fname).at(argName_string).end())
+            const auto func_arch = HLSMgr->module_arch->GetArchitecture(fname);
+            THROW_ASSERT(func_arch, "Expected interface architecture for function " + fname);
+            const auto parm_it = func_arch->parms.find(parm_name);
+            if(parm_it != func_arch->parms.end())
             {
-               auto dia_it = HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.find(attr_size);
-               auto dia_value = dia_it->second;
-               HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.erase(dia_it);
-               HLSMgr->design_attributes.find(fname)->second[argName_string_new][attr_size] = dia_value;
-            }
-            if(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end() &&
-               HLSMgr->design_attributes.at(fname).find(argName_string) != HLSMgr->design_attributes.at(fname).end() &&
-               HLSMgr->design_attributes.at(fname).at(argName_string).find(attr_offset) !=
-                   HLSMgr->design_attributes.at(fname).at(argName_string).end())
-            {
-               auto dia_it =
-                   HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.find(attr_offset);
-               auto dia_value = dia_it->second;
-               HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.erase(dia_it);
-               HLSMgr->design_attributes.find(fname)->second[argName_string_new][attr_offset] = dia_value;
-            }
-            if(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end() &&
-               HLSMgr->design_attributes.at(fname).find(argName_string) != HLSMgr->design_attributes.at(fname).end() &&
-               HLSMgr->design_attributes.at(fname).at(argName_string).find(attr_bundle_name) !=
-                   HLSMgr->design_attributes.at(fname).at(argName_string).end())
-            {
-               auto dia_it =
-                   HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.find(attr_bundle_name);
-               auto dia_value = dia_it->second;
-               HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.erase(dia_it);
-               HLSMgr->design_attributes.find(fname)->second[argName_string_new][attr_bundle_name] = dia_value;
-            }
-            auto dit_it =
-                HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.find(attr_typename);
-            auto dit_value = dit_it->second;
-            HLSMgr->design_attributes.find(fname)->second.find(argName_string)->second.erase(dit_it);
-            HLSMgr->design_attributes.find(fname)->second[argName_string_new][attr_typename] = dit_value;
+               func_arch->parms[parm_name_new] = parm_it->second;
+               func_arch->parms.erase(parm_it);
 
-            auto diti_it = HLSMgr->design_interface_typenameinclude.find(fname)->second.find(argName_string);
-            auto diti_value = diti_it->second;
-            HLSMgr->design_interface_typenameinclude.find(fname)->second.erase(diti_it);
-            HLSMgr->design_interface_typenameinclude.find(fname)->second[argName_string_new] = diti_value;
-
-            if(HLSMgr->design_interface_io.find(fname) != HLSMgr->design_interface_io.end())
-            {
-               for(auto& bb2parLoads : HLSMgr->design_interface_io.find(fname)->second)
+               if(HLSMgr->design_interface_io.find(fname) != HLSMgr->design_interface_io.end())
                {
-                  if(bb2parLoads.second.find(argName_string) != bb2parLoads.second.end())
+                  for(auto& [bbi, ioOps] : HLSMgr->design_interface_io.find(fname)->second)
                   {
-                     auto l_it = bb2parLoads.second.find(argName_string);
-                     auto l_value = l_it->second;
-                     bb2parLoads.second.erase(l_it);
-                     bb2parLoads.second[argName_string_new] = l_value;
+                     const auto it = ioOps.find(parm_name);
+                     if(it != ioOps.end())
+                     {
+                        ioOps[parm_name_new] = it->second;
+                        ioOps.erase(it);
+                     }
                   }
                }
             }
          }
-      }
-   }
-   else
-   {
-      for(const auto& arg : fd->list_of_args)
-      {
-         recursive_examinate(arg, already_examinated_decls, already_examinated_names, already_examinated_type_names,
-                             already_visited_ae);
       }
    }
 

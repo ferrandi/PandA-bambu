@@ -1,15 +1,16 @@
 #ifndef DEBUG_PRINT_HPP
 #define DEBUG_PRINT_HPP
 
+#undef LLVM_DEBUG
+
 #ifndef NDEBUG
-#define PRINT_DBG(stuff) llvm::errs() << stuff
-#define PRINT_DBG_VAR(stuff, var)  \
-   PRINT_DBG(stuff);               \
-   var->print(llvm::errs(), true); \
-   PRINT_DBG("\n")
+#define LLVM_DEBUG(X) \
+   do                 \
+   {                  \
+      X;              \
+   } while(false)
 #else
-#define PRINT_DBG(stuff)
-#define PRINT_DBG_VAR(stuff, var)
+#define LLVM_DEBUG(X)
 #endif
 
 #endif // DEBUG_PRINT_HPP
