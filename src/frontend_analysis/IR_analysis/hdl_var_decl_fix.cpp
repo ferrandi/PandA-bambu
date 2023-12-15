@@ -110,10 +110,9 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
          argName = GET_NODE(a->name);
          THROW_ASSERT(GetPointer<identifier_node>(argName), "unexpected condition");
          const std::string parm_name_new = GetPointer<identifier_node>(argName)->strg;
-         if(parm_name != parm_name_new)
+         const auto func_arch = HLSMgr->module_arch->GetArchitecture(fname);
+         if(func_arch && parm_name != parm_name_new)
          {
-            const auto func_arch = HLSMgr->module_arch->GetArchitecture(fname);
-            THROW_ASSERT(func_arch, "Expected interface architecture for function " + fname);
             const auto parm_it = func_arch->parms.find(parm_name);
             if(parm_it != func_arch->parms.end())
             {
