@@ -702,53 +702,52 @@ class UnrollHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
          return true;
       }
 
+      auto* Info = new(PP.getPreprocessorAllocator()) PragmaLoopHintInfo;
+      Info->PragmaName = UnrollTok;
+      Info->Option.startToken();
       if(disable_unroll)
       {
+         Info->Option.setKind(tok::identifier);
+         PP.CreateString("disable", Info->Option, UnrollTok.getEndLoc().getLocWithOffset(1));
       }
-      else
+      else if(UnrollFactor.isNot(tok::unknown))
       {
-         auto* Info = new(PP.getPreprocessorAllocator()) PragmaLoopHintInfo;
-         Info->PragmaName = UnrollTok;
-         Info->Option.startToken();
-         if(UnrollFactor.isNot(tok::unknown))
+         SmallVector<Token, 2> ValueList;
+
+         Token EOFTok;
+         EOFTok.startToken();
+         EOFTok.setKind(tok::eof);
+         EOFTok.setLocation(Tok.getLocation());
+
+         ValueList.push_back(UnrollFactor);
+         ValueList.push_back(EOFTok);
+#if __clang_major__ >= 9
+         for(auto& T : ValueList)
          {
-            SmallVector<Token, 2> ValueList;
-
-            Token EOFTok;
-            EOFTok.startToken();
-            EOFTok.setKind(tok::eof);
-            EOFTok.setLocation(Tok.getLocation());
-
-            ValueList.push_back(UnrollFactor);
-            ValueList.push_back(EOFTok);
-#if __clang_major__ >= 9
-            for(auto& T : ValueList)
-            {
-               T.setFlag(Token::IsReinjected);
-            }
-#endif
-            Info->Toks =
-#if __clang_major__ > 13
-                ArrayRef(ValueList).copy(PP.getPreprocessorAllocator());
-#else
-                makeArrayRef(ValueList).copy(PP.getPreprocessorAllocator());
-#endif
+            T.setFlag(Token::IsReinjected);
          }
-
-         auto TokenArray = make_unique<Token[]>(1);
-         TokenArray[0].startToken();
-         TokenArray[0].setKind(tok::annot_pragma_loop_hint);
-         TokenArray[0].setLocation(Info->PragmaName.getLocation());
-         TokenArray[0].setAnnotationEndLoc(Info->PragmaName.getLocation());
-         TokenArray[0].setAnnotationValue(static_cast<void*>(Info));
-         PP.EnterTokenStream(std::move(TokenArray), 1,
-                             /*DisableMacroExpansion=*/false
-#if __clang_major__ >= 9
-                             ,
-                             /*IsReinject=*/false
 #endif
-         );
+         Info->Toks =
+#if __clang_major__ > 13
+             ArrayRef(ValueList).copy(PP.getPreprocessorAllocator());
+#else
+             makeArrayRef(ValueList).copy(PP.getPreprocessorAllocator());
+#endif
       }
+      auto TokenArray = make_unique<Token[]>(1);
+      TokenArray[0].startToken();
+      TokenArray[0].setKind(tok::annot_pragma_loop_hint);
+      TokenArray[0].setLocation(Info->PragmaName.getLocation());
+      TokenArray[0].setAnnotationEndLoc(Info->PragmaName.getLocation());
+      TokenArray[0].setAnnotationValue(static_cast<void*>(Info));
+      PP.EnterTokenStream(std::move(TokenArray), 1,
+                          /*DisableMacroExpansion=*/false
+#if __clang_major__ >= 9
+                          ,
+                          /*IsReinject=*/false
+#endif
+      );
+
       return true;
    }
 
