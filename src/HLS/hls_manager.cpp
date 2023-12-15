@@ -67,6 +67,26 @@
 #endif
 #define MAX_BITWIDTH_SIZE 4096
 
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic ignored "-Wswitch-enum"
+#else
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wswitch-enum"
+#endif
+
+#define PUGIXML_HEADER_ONLY
+#include <pugixml.hpp>
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#else
+#pragma GCC diagnostic pop
+#endif
+
 HLS_manager::HLS_manager(const ParameterConstRef _Param, const HLS_deviceRef _HLS_D)
     : application_manager(FunctionExpanderConstRef(new FunctionExpander()), false, _Param),
       HLS_D(_HLS_D),
@@ -130,18 +150,6 @@ hlsRef HLS_manager::create_HLS(const HLS_managerRef HLSMgr, unsigned int functio
       }
       HLSMgr->hlsMap[functionId] =
           hlsRef(new hls(HLSMgr->get_parameter(), functionId, Operations, HLSMgr->get_HLS_device(), HLS_C));
-      if(HLSMgr->design_interface_constraints.find(functionId) != HLSMgr->design_interface_constraints.end())
-      {
-         const auto& function_design_interface_constraints =
-             HLSMgr->design_interface_constraints.find(functionId)->second;
-         for(const auto& lib_resmap : function_design_interface_constraints)
-         {
-            for(const auto& res_num : lib_resmap.second)
-            {
-               HLS_C->set_number_fu(res_num.first, lib_resmap.first, res_num.second);
-            }
-         }
-      }
    }
    else
    {
@@ -321,4 +329,76 @@ void HLS_manager::check_bitwidth(unsigned long long prec)
       THROW_ERROR("The maximum bit-width size for connection is " + STR(MAX_BITWIDTH_SIZE) +
                   " Requested size: " + STR(prec));
    }
+}
+
+#define __TO_ENUM_HELPER(r, data, elem) {BOOST_PP_STRINGIZE(elem), data::elem},
+#define TO_ENUM(enum_type, elem_list)                                       \
+   static const std::unordered_map<std::string, enum enum_type> to_enum = { \
+       BOOST_PP_SEQ_FOR_EACH(__TO_ENUM_HELPER, enum_type, elem_list)}
+
+enum FunctionArchitecture::func_attr FunctionArchitecture::to_func_attr(const std::string& attr)
+{
+   TO_ENUM(func_attr, FUNC_ARCH_ATTR_ENUM);
+   return to_enum.at(attr);
+}
+
+enum FunctionArchitecture::parm_attr FunctionArchitecture::to_parm_attr(const std::string& attr)
+{
+   TO_ENUM(parm_attr, FUNC_ARCH_PARM_ATTR_ENUM);
+   return to_enum.at(attr);
+}
+
+enum FunctionArchitecture::iface_attr FunctionArchitecture::to_iface_attr(const std::string& attr)
+{
+   TO_ENUM(iface_attr, FUNC_ARCH_IFACE_ATTR_ENUM);
+   return to_enum.at(attr);
+}
+
+ModuleArchitecture::ModuleArchitecture(const std::string& filename)
+{
+   pugi::xml_document doc;
+   pugi::xml_node n;
+   auto result = doc.load_file(filename.c_str());
+   if(result.status != pugi::xml_parse_status::status_ok)
+   {
+      THROW_ERROR("Unable to parse XML file: " + filename);
+   }
+   if((n = doc.child("module")))
+   {
+      for(auto& f : n)
+      {
+         THROW_ASSERT(!f.attribute("symbol").empty(), "Function symbol attribute missing from XML.");
+         auto& fa = _funcArchs[f.attribute("symbol").value()] =
+             refcount<FunctionArchitecture>(new FunctionArchitecture());
+         for(auto& a : f.attributes())
+         {
+            fa->attrs.emplace(FunctionArchitecture::to_func_attr("func_" + std::string(a.name())), a.value());
+         }
+         for(auto& p : f.child("parameters"))
+         {
+            THROW_ASSERT(!p.attribute("port").empty(), "Parameter name attribute missing from XML.");
+            auto& parm_attrs = fa->parms[p.attribute("port").value()];
+            for(auto& a : p.attributes())
+            {
+               parm_attrs.emplace(FunctionArchitecture::to_parm_attr("parm_" + std::string(a.name())), a.value());
+            }
+         }
+         for(auto& i : f.child("bundles"))
+         {
+            THROW_ASSERT(!i.attribute("name").empty(), "Interface name attribute missing from XML.");
+            auto& iface_attr = fa->ifaces[i.attribute("name").value()];
+            for(auto& a : i.attributes())
+            {
+               iface_attr.emplace(FunctionArchitecture::to_iface_attr("iface_" + std::string(a.name())), a.value());
+            }
+         }
+      }
+   }
+}
+
+ModuleArchitecture::~ModuleArchitecture() = default;
+
+FunctionArchitectureRef& ModuleArchitecture::GetArchitecture(const std::string& funcSymbol)
+{
+   return _funcArchs[funcSymbol];
 }

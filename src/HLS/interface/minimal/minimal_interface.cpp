@@ -173,20 +173,9 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
    }
 
    CustomOrderedSet<structural_objectRef> portsToSkip;
-   CustomOrderedSet<structural_objectRef> portsToConstant;
-   /* Check if there is at least one interface type */
-   bool type_found = false;
-   for(auto& fun : HLSMgr->design_attributes)
-   {
-      for(auto par : fun.second)
-      {
-         if(par.second.count(attr_interface_type))
-         {
-            type_found = true;
-         }
-      }
-   }
    /// list of ports that have to be connected to constant 0
+   CustomOrderedSet<structural_objectRef> portsToConstant;
+
    if(with_slave)
    {
       portsToConstant.insert(wrappedObj->find_member("Sin_DataRdy", port_o_K, wrappedObj));
@@ -205,65 +194,28 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
    std::map<structural_objectRef, structural_objectRef> portsToSigConnect;
 
    CustomOrderedSet<std::string> param_renamed;
-   if(type_found)
+   if(parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
    {
-      const auto TM = HLSMgr->get_tree_manager();
-      const auto fnode = TM->CGetTreeNode(funId);
-      const auto fd = GetPointerS<const function_decl>(fnode);
-      const auto fname = tree_helper::GetMangledFunctionName(fd);
-      /* Check if there is at least one interface type for the specific function fname */
-      bool fun_type_found = false;
-      if(HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end())
+      const auto fname = FB->CGetBehavioralHelper()->GetMangledFunctionName();
+      const auto func_arch = HLSMgr->module_arch->GetArchitecture(fname);
+      THROW_ASSERT(func_arch, "Expected interface architecture for function " + fname);
+      for(const auto& [parm_name, attrs] : func_arch->parms)
       {
-         for(auto& par : HLSMgr->design_attributes.at(fname))
+         const auto& bundle_name = attrs.at(FunctionArchitecture::parm_bundle);
+         THROW_ASSERT(func_arch->ifaces.find(bundle_name) != func_arch->ifaces.end(),
+                      "unexpected condition:" + bundle_name);
+         const auto& iface_attrs = func_arch->ifaces.at(bundle_name);
+         const auto& iface_mode = iface_attrs.at(FunctionArchitecture::iface_mode);
+         if(iface_mode != "default")
          {
-            if(par.second.find(attr_interface_type) != par.second.end())
+            const auto parm_port = wrappedObj->find_member(parm_name, port_o_K, wrappedObj);
+            THROW_ASSERT(parm_port, "unexpected condition");
+            const auto forward_port = iface_mode == "m_axi" && attrs.at(FunctionArchitecture::parm_offset) == "direct";
+            if(!forward_port)
             {
-               fun_type_found = true;
+               portsToConstant.insert(parm_port);
             }
-         }
-
-         if(fun_type_found)
-         {
-            for(const auto& arg : fd->list_of_args)
-            {
-               const auto a = GetPointerS<const parm_decl>(GET_CONST_NODE(arg));
-               const auto argName = GET_CONST_NODE(a->name);
-               THROW_ASSERT(GetPointer<const identifier_node>(argName), "unexpected condition");
-               const auto& argName_string = GetPointerS<const identifier_node>(argName)->strg;
-               THROW_ASSERT(HLSMgr->design_attributes.at(fname).find(argName_string) !=
-                                    HLSMgr->design_attributes.at(fname).end() &&
-                                HLSMgr->design_attributes.at(fname).at(argName_string).find(attr_interface_type) !=
-                                    HLSMgr->design_attributes.at(fname).at(argName_string).end(),
-                            "unexpected condition:" + argName_string);
-               const auto interfaceType =
-                   HLSMgr->design_attributes.at(fname).at(argName_string).at(attr_interface_type);
-               if(interfaceType != "default")
-               {
-                  if(tree_helper::IsPointerType(a->type))
-                  {
-                     const auto p = wrappedObj->find_member(argName_string, port_o_K, wrappedObj);
-                     THROW_ASSERT(p, "unexpected condition");
-                     const auto is_direct =
-                         interfaceType == "m_axi" &&
-                         HLSMgr->design_attributes.find(fname) != HLSMgr->design_attributes.end() &&
-                         HLSMgr->design_attributes.at(fname).find(argName_string) !=
-                             HLSMgr->design_attributes.at(fname).end() &&
-                         HLSMgr->design_attributes.at(fname).at(argName_string).find(attr_offset) !=
-                             HLSMgr->design_attributes.at(fname).at(argName_string).end() &&
-                         HLSMgr->design_attributes.at(fname).at(argName_string).at(attr_offset) == "direct";
-                     if(!is_direct)
-                     {
-                        portsToConstant.insert(p);
-                     }
-                     param_renamed.insert(argName_string);
-                  }
-                  else
-                  {
-                     THROW_ERROR("unexpected parameter type for " + argName_string + "(" + interfaceType + ")");
-                  }
-               }
-            }
+            param_renamed.insert(parm_name);
          }
       }
    }

@@ -70,10 +70,8 @@ void TestbenchValidModuleGenerator::InternalExec(std::ostream& out, structural_o
    const auto arg_name = mod_cir->get_id().substr(sizeof("if_valid_") - 1U, std::string::npos);
 
    const auto top_fname = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->GetMangledFunctionName();
-   THROW_ASSERT(HLSMgr->design_attributes.count(top_fname) && HLSMgr->design_attributes.at(top_fname).count(arg_name),
-                "Parameter " + arg_name + " not found in function " + top_fname);
-   const auto DesignAttributes = HLSMgr->design_attributes.at(top_fname).at(arg_name);
-   const auto if_dir = port_o::to_port_direction(DesignAttributes.at(attr_interface_dir));
+   const auto& iface_attrs = HLSMgr->module_arch->GetArchitecture(top_fname)->ifaces.at(arg_name);
+   const auto if_dir = port_o::to_port_direction(iface_attrs.at(FunctionArchitecture::iface_direction));
    const std::string in_suffix = if_dir == port_o::IO ? "_i" : "";
    const std::string out_suffix = if_dir == port_o::IO ? "_o" : "";
    std::string np_library = mod_cir->get_id() + " index";

@@ -37,10 +37,6 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-
-// #undef NDEBUG
-#include "debug_print.hpp"
-
 #include "plugin_includes.hpp"
 
 #if HAVE_LIBBDD
@@ -106,6 +102,8 @@
 #include <iomanip>
 
 #define ANDERSEN_AA 1
+
+#define DEBUG_TYPE "dump-gimple"
 
 static std::string create_file_name_string(const std::string& outdir_name, const std::string& original_filename)
 {
@@ -1542,9 +1540,11 @@ namespace llvm
 #endif
          {
 #if __clang_major__ < 16
-            PRINT_DBG("MISALIGNED_INDIRECT_REF " << written_obj_size << " " << store.getAlignment() << "\n");
+            LLVM_DEBUG(llvm::dbgs() << "MISALIGNED_INDIRECT_REF " << written_obj_size << " " << store.getAlignment()
+                                    << "\n");
 #else
-            PRINT_DBG("MISALIGNED_INDIRECT_REF " << written_obj_size << " " << store.getAlign().value() << "\n");
+            LLVM_DEBUG(llvm::dbgs() << "MISALIGNED_INDIRECT_REF " << written_obj_size << " " << store.getAlign().value()
+                                    << "\n");
 #endif
             return build1(GT(MISALIGNED_INDIRECT_REF), type, addr);
          }
@@ -4398,7 +4398,7 @@ namespace llvm
 
    void DumpGimpleRaw::queue_and_serialize_index(const char* field, const void* t)
    {
-      PRINT_DBG("field:" << field << "\n");
+      LLVM_DEBUG(llvm::dbgs() << "field:" << field << "\n");
       unsigned int index;
       if(t == nullptr)
       {
@@ -4477,20 +4477,20 @@ namespace llvm
       {
          llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g));
          llvm::Function* currentFunction = inst->getFunction();
-         PRINT_DBG("@" << code_name << " @" << index << "\n");
+         LLVM_DEBUG(llvm::dbgs() << "@" << code_name << " @" << index << "\n");
          auto& MSSA = GetMSSA(*currentFunction).getMSSA();
          if(MSSA.getMemoryAccess(inst))
          {
-            PRINT_DBG(*inst << " | " << *MSSA.getMemoryAccess(inst) << "\n");
+            LLVM_DEBUG(llvm::dbgs() << *inst << " | " << *MSSA.getMemoryAccess(inst) << "\n");
          }
          else
          {
-            PRINT_DBG_VAR("", inst);
+            LLVM_DEBUG(llvm::dbgs() << *inst << "\n");
          }
       }
       else
       {
-         PRINT_DBG("@" << code_name << "\n");
+         LLVM_DEBUG(llvm::dbgs() << "@" << code_name << "\n");
       }
 #endif
       /* Print the node index.  */
@@ -4848,10 +4848,10 @@ namespace llvm
          const char* field;
          serialize_new_line();
          serialize_int("bloc", getBB_index(&BB));
-         PRINT_DBG("BB" << getBB_index(&BB) << "\n");
+         LLVM_DEBUG(llvm::dbgs() << "BB" << getBB_index(&BB) << "\n");
          if(MSSA.getMemoryAccess(&BB))
          {
-            PRINT_DBG("|!!!!!!!!!!!!!!!!!! " << *MSSA.getMemoryAccess(&BB) << "\n");
+            LLVM_DEBUG(llvm::dbgs() << "|!!!!!!!!!!!!!!!!!! " << *MSSA.getMemoryAccess(&BB) << "\n");
          }
          if(!LI.empty() && LI.getLoopFor(&BB) && LI.getLoopFor(&BB)->getHeader() == &BB &&
             LI.getLoopFor(&BB)->isAnnotatedParallel())
@@ -5044,7 +5044,7 @@ namespace llvm
 
       tree_codes code = TREE_CODE(t);
       const char* code_name = GET_TREE_CODE_NAME(code);
-      PRINT_DBG("|" << code_name << "\n");
+      LLVM_DEBUG(llvm::dbgs() << "|" << code_name << "\n");
       snprintf(buffer, LOCAL_BUFFER_LEN, "%-16s ", code_name);
       stream << buffer;
       column = 25;
@@ -5916,31 +5916,31 @@ namespace llvm
    {
       if(!SI->isSimple())
       {
-         PRINT_DBG("Store is not simple! Can not evaluate.\n");
+         LLVM_DEBUG(llvm::dbgs() << "Store is not simple! Can not evaluate.\n");
          return false; // no volatile/atomic accesses.
       }
 
       if(!dyn_cast<llvm::Constant>(SI->getOperand(1)))
       {
-         PRINT_DBG("Ptr is not constant.\n");
+         LLVM_DEBUG(llvm::dbgs() << "Ptr is not constant.\n");
          return false;
       }
       Ptr = dyn_cast<llvm::Constant>(SI->getOperand(1));
       if(auto* FoldedPtr = llvm::ConstantFoldConstant(Ptr, DL, &TLI))
       {
-         PRINT_DBG("Folding constant ptr expression: " << *Ptr);
+         LLVM_DEBUG(llvm::dbgs() << "Folding constant ptr expression: " << *Ptr);
          Ptr = FoldedPtr;
-         PRINT_DBG("; To: " << *Ptr << "\n");
+         LLVM_DEBUG(llvm::dbgs() << "; To: " << *Ptr << "\n");
       }
       if(!isSimpleEnoughPointerToCommitLocal(Ptr, DL))
       {
          // If this is too complex for us to commit, reject it.
-         PRINT_DBG("Pointer is too complex for us to evaluate store.");
+         LLVM_DEBUG(llvm::dbgs() << "Pointer is too complex for us to evaluate store.");
          return false;
       }
       if(!dyn_cast<llvm::Constant>(SI->getOperand(0)))
       {
-         PRINT_DBG("Value stored is not constant.\n");
+         LLVM_DEBUG(llvm::dbgs() << "Value stored is not constant.\n");
          return false;
       }
       Val = dyn_cast<llvm::Constant>(SI->getOperand(0));
@@ -5948,7 +5948,7 @@ namespace llvm
       {
          if(CE->getOpcode() == llvm::Instruction::BitCast)
          {
-            PRINT_DBG("Attempting to resolve bitcast on constant ptr.\n");
+            LLVM_DEBUG(llvm::dbgs() << "Attempting to resolve bitcast on constant ptr.\n");
             // If we're evaluating a store through a bitcast, then we need
             // to pull the bitcast off the pointer type and push it onto the
             // stored value.
@@ -5959,7 +5959,7 @@ namespace llvm
 #else
             if(Ptr->getType()->isOpaquePointerTy())
             {
-               PRINT_DBG("Opaque BitCast.\n");
+               LLVM_DEBUG(llvm::dbgs() << "Opaque BitCast.\n");
                return false;
             }
             llvm::Type* NewTy = Ptr->getType()->getNonOpaquePointerElementType();
@@ -5991,12 +5991,12 @@ namespace llvm
                }
                else
                {
-                  PRINT_DBG("Failed to bitcast constant ptr, can not evaluate.\n");
+                  LLVM_DEBUG(llvm::dbgs() << "Failed to bitcast constant ptr, can not evaluate.\n");
                   return false;
                }
             }
             Val = NewVal;
-            PRINT_DBG("Evaluated bitcast: " << *Val << "\n");
+            LLVM_DEBUG(llvm::dbgs() << "Evaluated bitcast: " << *Val << "\n");
          }
       }
       if(firstPart)
@@ -6145,7 +6145,7 @@ namespace llvm
                            {
                               llvm::GlobalVariable* GVi = nullptr;
                               llvm::DenseMap<llvm::Constant*, llvm::Constant*> MutatedMemory;
-                              PRINT_DBG("Found a global var that is an invariant: " << *GV << "\n");
+                              LLVM_DEBUG(llvm::dbgs() << "Found a global var that is an invariant: " << *GV << "\n");
                               for(llvm::BasicBlock::iterator CurInst = BI->begin(); CurInst != II;)
                               {
                                  llvm::Constant* Val = nullptr;
@@ -6247,7 +6247,7 @@ namespace llvm
                         }
                         else
                         {
-                           PRINT_DBG("Found a global var, but can not treat it as an invariant.\n");
+                           LLVM_DEBUG(llvm::dbgs() << "Found a global var, but can not treat it as an invariant.\n");
                         }
                      }
                   }
@@ -6408,35 +6408,35 @@ namespace llvm
 
       if(!earlyAnalysis)
       {
-         PRINT_DBG("Building metadata\n");
+         LLVM_DEBUG(llvm::dbgs() << "Building metadata\n");
          buildMetaDataMap(M);
-         PRINT_DBG("Metadata built\n");
+         LLVM_DEBUG(llvm::dbgs() << "Metadata built\n");
 
-         PRINT_DBG("Rebuilding Constants\n");
+         LLVM_DEBUG(llvm::dbgs() << "Rebuilding Constants\n");
          res |= RebuildConstants(M);
 
-         PRINT_DBG("Lowering Intrinsics\n");
+         LLVM_DEBUG(llvm::dbgs() << "Lowering Intrinsics\n");
          res |= lowerIntrinsics(M);
-         PRINT_DBG("done\n");
+         LLVM_DEBUG(llvm::dbgs() << "done\n");
 #if __clang_major__ < 16
 #if HAVE_LIBBDD
          if(!onlyGlobals)
          {
             if(TopFunctionName != "")
             {
-               PRINT_DBG("Performing alias analysis\n");
+               LLVM_DEBUG(llvm::dbgs() << "Performing alias analysis\n");
 #if ANDERSEN_AA
                PtoSets_AA = new Andersen_AA(TopFunctionName);
 #else
                PtoSets_AA = new Staged_Flow_Sensitive_AA(TopFunctionName);
 #endif
                PtoSets_AA->computePointToSet(M);
-               PRINT_DBG("Performed alias analysis\n");
+               LLVM_DEBUG(llvm::dbgs() << "Performed alias analysis\n");
             }
          }
 #endif
 #endif
-         PRINT_DBG("done\n");
+         LLVM_DEBUG(llvm::dbgs() << "done\n");
       }
 
       if(!earlyAnalysis)
@@ -6454,8 +6454,8 @@ namespace llvm
 
          for(const auto& globalVar : M.getGlobalList())
          {
-            PRINT_DBG("Found global name: " << globalVar.getName() << "|" << ValueTyNames[globalVar.getValueID()]
-                                            << "\n");
+            LLVM_DEBUG(llvm::dbgs() << "Found global name: " << globalVar.getName() << "|"
+                                    << ValueTyNames[globalVar.getValueID()] << "\n");
             SerializeGimpleGlobalTreeNode(assignCodeAuto(&globalVar));
          }
          if(!onlyGlobals)
@@ -6464,12 +6464,13 @@ namespace llvm
             {
                if(fun.isIntrinsic())
                {
-                  PRINT_DBG("Function intrinsic skipped: " << getName(&fun) << "|" << ValueTyNames[fun.getValueID()]
-                                                           << "\n");
+                  LLVM_DEBUG(llvm::dbgs() << "Function intrinsic skipped: " << getName(&fun) << "|"
+                                          << ValueTyNames[fun.getValueID()] << "\n");
                }
                else
                {
-                  PRINT_DBG("Found function: " << getName(&fun) << "|" << ValueTyNames[fun.getValueID()] << "\n");
+                  LLVM_DEBUG(llvm::dbgs()
+                             << "Found function: " << getName(&fun) << "|" << ValueTyNames[fun.getValueID()] << "\n");
                   SerializeGimpleGlobalTreeNode(assignCodeAuto(&fun));
                }
             }

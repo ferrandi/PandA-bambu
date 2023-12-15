@@ -38,8 +38,6 @@
  *
  */
 // #undef NDEBUG
-#include "debug_print.hpp"
-
 #include "plugin_includes.hpp"
 
 #include <llvm-c/Transforms/Scalar.h>
@@ -125,7 +123,11 @@
 #include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
 #endif
 
-#include <boost/tokenizer.hpp>
+#define PUGIXML_NO_EXCEPTIONS
+#define PUGIXML_HEADER_ONLY
+
+#include <pugixml.hpp>
+
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -137,6 +139,8 @@
 #define CLANG_VERSION_SYMBOL_DUMP_SSA CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)
 #define CLANG_VERSION_STRING_DUMP_SSA CLANG_VERSION_STRING(_plugin_dumpGimpleSSA)
 #endif
+
+#define DEBUG_TYPE "dump-gimple-ssa"
 
 namespace llvm
 {
@@ -180,21 +184,6 @@ namespace llvm
       }
 #endif
 
-      std::string create_file_basename_string(const std::string& on, const std::string& original_filename) const
-      {
-         std::size_t found = original_filename.find_last_of("/\\");
-         std::string dump_base_name;
-         if(found == std::string::npos)
-         {
-            dump_base_name = original_filename;
-         }
-         else
-         {
-            dump_base_name = original_filename.substr(found + 1);
-         }
-         return on + "/" + dump_base_name;
-      }
-
       bool exec(Module& M, llvm::function_ref<llvm::TargetLibraryInfo&(llvm::Function&)> GetTLI,
                 llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> GetTTI,
                 llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,
@@ -208,42 +197,37 @@ namespace llvm
                 const std::string& costTable)
       {
          /// load parameter names
-         boost::char_separator<char> sep(",");
-         boost::tokenizer<boost::char_separator<char>> FileTokenizer(InFile, sep);
          std::map<std::string, std::vector<std::string>> Fun2Params;
-         for(const auto& file_string : FileTokenizer)
+         const auto first_filename =
+             InFile.find(",") != std::string::npos ? InFile.substr(0, InFile.find(",")) : InFile;
+
+         pugi::xml_document doc;
+         const auto arch_filename = outdir_name + "/architecture.xml";
+         if(doc.load_file(arch_filename.c_str()))
          {
-            const std::string parms_file_name = create_file_basename_string(outdir_name, file_string) + ".params.txt";
-            std::ifstream infile(parms_file_name);
-            if(infile)
+            for(auto& f : doc.child("module"))
             {
-               std::string item;
-               while(std::getline(infile, item, '\n'))
+               const auto func_symbol = std::string(f.attribute("symbol").value());
+               auto& func_parms = Fun2Params[func_symbol];
+               for(auto& p : f.child("parameters"))
                {
-                  bool is_first = true;
-                  std::stringstream ss_inner(item);
-                  std::string item_inner;
-                  std::string funName;
-                  while(std::getline(ss_inner, item_inner, ' '))
+                  const auto parm_index = p.attribute("index").value();
+                  const auto parm_name = std::string(p.attribute("port").value());
+                  size_t idx = std::strtoul(parm_index, nullptr, 10);
+                  if(func_parms.size() <= idx)
                   {
-                     if(is_first)
-                     {
-                        funName = item_inner;
-                        is_first = false;
-                     }
-                     else
-                     {
-                        Fun2Params[funName].push_back(item_inner);
-                     }
+                     func_parms.resize(idx + 1);
                   }
+                  func_parms[idx] = parm_name;
                }
             }
          }
-         DumpGimpleRaw gimpleRawWriter(outdir_name, *(FileTokenizer.begin()), false, &Fun2Params, earlyAnalysis);
+
+         DumpGimpleRaw gimpleRawWriter(outdir_name, first_filename, false, &Fun2Params, earlyAnalysis);
 
          if(!TopFunctionName.empty())
          {
-            PRINT_DBG("Top function name: " << TopFunctionName << "\n");
+            LLVM_DEBUG(llvm::dbgs() << "Top function name: " << TopFunctionName << "\n");
          }
 
          auto res = gimpleRawWriter.exec(M, TopFunctionName, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC,

@@ -103,14 +103,12 @@ void ReadWrite_arrayModuleGenerator::InternalExec(std::ostream& out, structural_
    }();
    THROW_ASSERT(fname.find(STR_CST_interface_parameter_keyword) != std::string::npos,
                 "Unexpected array interface module name");
-   const auto arg_name = fname.substr(0, fname.find(STR_CST_interface_parameter_keyword));
    const auto top_id = *HLSMgr->CGetCallGraphManager()->GetRootFunctions().begin();
    const auto top_fname = HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetMangledFunctionName();
-   THROW_ASSERT(HLSMgr->design_attributes.count(top_fname) && HLSMgr->design_attributes.at(top_fname).count(arg_name),
-                "Parameter " + arg_name + " not found in function " + top_fname);
-   const auto DesignAttributes = HLSMgr->design_attributes.at(top_fname).at(arg_name);
-   THROW_ASSERT(DesignAttributes.count(attr_size), "");
-   const auto arraySize = std::stoull(DesignAttributes.at(attr_size));
+   const auto arg_name = fname.substr(0, fname.find(STR_CST_interface_parameter_keyword));
+   const auto& parm_attrs = HLSMgr->module_arch->GetArchitecture(top_fname)->parms.at(arg_name);
+   THROW_ASSERT(parm_attrs.find(FunctionArchitecture::parm_elem_count) != parm_attrs.end(), "");
+   const auto arraySize = std::stoull(parm_attrs.at(FunctionArchitecture::parm_elem_count));
 
    const auto isAlignedPowerOfTwo = _ports_in[i_in4].alignment == ceil_pow2(_ports_in[i_in4].alignment);
    const auto addressMaxValue = _ports_in[i_in4].alignment * arraySize - 1U;

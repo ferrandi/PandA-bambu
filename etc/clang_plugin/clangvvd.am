@@ -243,10 +243,10 @@ clangvvd_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGi
 clangvvd_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) $(WFLAGS) -I.'; \
+	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) $(WFLAGS) -I. -I$(top_srcdir)/ext/pugixml/src'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) $(WFLAGS) -I.';; \
+	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) $(WFLAGS) -I. -I$(top_srcdir)/ext/pugixml/src';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clangvvd_plugin_dumpGimpleSSA.o;\
@@ -256,10 +256,10 @@ clangvvd_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimp
 clangvvd_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) $(WFLAGS) -I. -DCPP_LANGUAGE'; \
+	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) $(WFLAGS) -I. -I$(top_srcdir)/ext/pugixml/src -DCPP_LANGUAGE'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) $(WFLAGS) -I. -DCPP_LANGUAGE';; \
+	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) $(WFLAGS) -I. -I$(top_srcdir)/ext/pugixml/src -DCPP_LANGUAGE';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clangvvd_plugin_dumpGimpleSSACpp.o;\
@@ -321,10 +321,10 @@ clangvvd_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp 
 clangvvd_plugin_ASTAnalyzer.o : $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) $(WFLAGS) -I.'; \
+	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) $(WFLAGS) -I. -I$(top_srcdir)/ext/pugixml/src'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) $(WFLAGS) -I.';; \
+	    compile_options='  -fPIC $(I386_LLVMVVD_CXXFLAGS) $(WFLAGS) -I. -I$(top_srcdir)/ext/pugixml/src';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANGVVD_PLUGIN_COMPILER) -DVVD -DNDEBUG $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clangvvd_plugin_ASTAnalyzer.o;\

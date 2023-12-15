@@ -136,18 +136,18 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_
    const auto addr_bitsize = STR(_ports_out[o_awaddr].type_size);
    const auto data_bitsize = STR(_ports_out[o_wdata].type_size);
 
-   unsigned long long way_size = 0;
+   unsigned long long line_count = 0;
 
    /* Get cache info */
    const std::string c_size_str = "WAY_LINES";
    const auto params = mod->GetParameters();
    if(params.find(c_size_str) != params.end())
    {
-      way_size = std::stoull(params.at(c_size_str));
+      line_count = std::stoull(params.at(c_size_str));
    }
 
    /* No cache, build the AXI controller */
-   if(way_size == 0)
+   if(line_count == 0)
    {
       out << R"(
 `ifndef _SIM_HAVE_CLOG2
@@ -502,7 +502,7 @@ end)";
    }
    else /* Connect to IOB cache, no need for AXI controller */
    {
-      auto line_off_w = ceil_log2(way_size);
+      auto line_off_w = ceil_log2(line_count);
       unsigned long long word_off_w = 1;
       std::string be_data_w = data_bitsize;
       std::string n_ways = "1";

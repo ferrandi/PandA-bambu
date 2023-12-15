@@ -75,11 +75,9 @@ void TestbenchArrayModuleGenerator::InternalExec(std::ostream& out, structural_o
 
    const auto top_bh = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
    const auto top_fname = top_bh->GetMangledFunctionName();
-   THROW_ASSERT(HLSMgr->design_attributes.count(top_fname) && HLSMgr->design_attributes.at(top_fname).count(arg_name),
-                "Parameter " + arg_name + " not found in function " + top_fname);
-   const auto DesignAttributes = HLSMgr->design_attributes.at(top_fname).at(arg_name);
-   const auto if_dir = port_o::to_port_direction(DesignAttributes.at(attr_interface_dir));
-   const auto if_alignment = DesignAttributes.find(attr_interface_alignment);
+   const auto& iface_attrs = HLSMgr->module_arch->GetArchitecture(top_fname)->ifaces.at(arg_name);
+   const auto if_dir = port_o::to_port_direction(iface_attrs.at(FunctionArchitecture::iface_direction));
+   const auto if_alignment = iface_attrs.at(FunctionArchitecture::iface_alignment);
    const auto n_channels = HLSMgr->get_parameter()->getOption<unsigned int>(OPT_channels_number);
 
    std::string np_library = mod_cir->get_id() + " index WRITE_DELAY READ_DELAY";
@@ -123,17 +121,8 @@ function automatic integer log2;
   `endif
 endfunction
 
-localparam )";
-
-   if(if_alignment == DesignAttributes.end())
-   {
-      out << "ALIGNMENT=log2(BITSIZE_data) > 3 ? (1<<(log2(BITSIZE_data)-3)) : 1";
-   }
-   else
-   {
-      out << "ALIGNMENT=" << if_alignment->second;
-   }
-   out << R"(,
+localparam ALIGNMENT=)"
+       << if_alignment << R"(,
   BITSIZE_item=BITSIZE_dq+BITSIZE_address+BITSIZE_ce+BITSIZE_we,
   BITSIZE_chunk=BITSIZE_item*CHANNELS_NUMBER,
   OFFSET_ce=0,

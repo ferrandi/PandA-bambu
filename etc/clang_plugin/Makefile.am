@@ -16,7 +16,6 @@ EXTRA_DIST = \
 	$(top_srcdir)/etc/clang_plugin/gcc/chkp-builtins.def \
 	$(top_srcdir)/etc/clang_plugin/gcc/COPYING3 \
 	$(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp \
-	$(top_srcdir)/etc/clang_plugin/plugin_ASTAnnotate.cpp \
 	$(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp \
 	$(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp \
 	$(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp \

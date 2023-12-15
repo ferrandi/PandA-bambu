@@ -281,8 +281,8 @@ void memory_allocation::finalize_memory_allocation()
       const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
       const auto is_interfaced = HLSMgr->hasToBeInterfaced(behavioral_helper->get_function_index());
       const auto fname = behavioral_helper->GetMangledFunctionName();
-      const auto design_attributes = HLSMgr->design_attributes.find(fname);
-      const auto has_attributes = design_attributes != HLSMgr->design_attributes.end();
+      const auto func_arch = HLSMgr->module_arch->GetArchitecture(fname);
+      THROW_ASSERT(func_arch, "Expected interface architecture for function " + fname);
       if(function_behavior->get_has_globals() && parameters->isOption(OPT_expose_globals) &&
          parameters->getOption<bool>(OPT_expose_globals))
       {
@@ -291,16 +291,14 @@ void memory_allocation::finalize_memory_allocation()
       const auto& function_parameters = behavioral_helper->get_parameters();
       for(const auto function_parameter : function_parameters)
       {
-         if(has_attributes)
+         const auto pname = behavioral_helper->PrintVariable(function_parameter);
+         THROW_ASSERT(func_arch->parms.find(pname) != func_arch->parms.end(), "");
+         const auto& parm_attrs = func_arch->parms.at(pname);
+         const auto& iface_attrs = func_arch->ifaces.at(parm_attrs.at(FunctionArchitecture::parm_bundle));
+         const auto iface_mode = iface_attrs.at(FunctionArchitecture::iface_mode);
+         if(iface_mode != "default")
          {
-            const auto pname = behavioral_helper->PrintVariable(function_parameter);
-            THROW_ASSERT(design_attributes->second.count(pname), "");
-            THROW_ASSERT(design_attributes->second.at(pname).count(attr_interface_type), "");
-            const auto parameter_interface = design_attributes->second.at(pname).at(attr_interface_type);
-            if(parameter_interface != "default")
-            {
-               continue;
-            }
+            continue;
          }
          if(HLSMgr->Rmem->is_parm_decl_copied(function_parameter) &&
             !HLSMgr->Rmem->is_parm_decl_stored(function_parameter))
