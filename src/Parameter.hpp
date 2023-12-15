@@ -44,7 +44,12 @@
 #ifndef PARAMETER_HPP
 #define PARAMETER_HPP
 
-/// Autoheader include
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "exceptions.hpp"
+#include "refcount.hpp"
+#include "string_manipulation.hpp"
+
 #include "config_HAVE_BAMBU_RESULTS_XML.hpp"
 #include "config_HAVE_FROM_AADL_ASN_BUILT.hpp"
 #include "config_HAVE_FROM_C_BUILT.hpp"
@@ -54,17 +59,11 @@
 #include "config_HAVE_TO_C_BUILT.hpp"
 #include "config_RELEASE.hpp"
 
-/// Utility include
-#include "custom_map.hpp"
-#include "custom_set.hpp"
-#include "exceptions.hpp"
-#include "refcount.hpp"
-#include "string_manipulation.hpp"
-
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
+
 #include <climits>
 #include <filesystem>
 #include <list>
@@ -120,9 +119,9 @@ enum class CompilerWrapper_CompilerTarget;
        fp_format_propagate)(fp_format_interface)(fp_rounding_mode)(fp_exception_mode)(parallel_backend)(               \
        interface_xml_filename)(lattice_root)(lattice_settings)(lattice_pmi_def)(lattice_pmi_tdpbe)(lattice_pmi_mul)(   \
        xilinx_root)(xilinx_settings)(xilinx_vivado_settings)(xilinx_glbl)(mentor_root)(mentor_modelsim_bin)(           \
-       mentor_optimizer)(verilator)(verilator_timescale_override)(verilator_parallel)(icarus)(altera_root)(            \
-       quartus_settings)(quartus_13_settings)(quartus_13_64bit)(nanoxplore_root)(nanoxplore_settings)(                 \
-       nanoxplore_bypass)(shared_input_registers)(inline_functions)(constraints_functions)
+       mentor_optimizer)(verilator)(verilator_timescale_override)(verilator_parallel)(altera_root)(quartus_settings)(  \
+       quartus_13_settings)(quartus_13_64bit)(nanoxplore_root)(nanoxplore_settings)(nanoxplore_bypass)(                \
+       shared_input_registers)(inline_functions)(constraints_functions)
 
 #define FRAMEWORK_OPTIONS                                                                                            \
    (benchmark_name)(cat_args)(find_max_transformations)(max_transformations)(compatible_compilers)(compute_size_of)( \
@@ -689,10 +688,13 @@ class Parameter
 };
 
 template <>
-const CustomSet<std::string> Parameter::getOption(const enum enum_option name) const;
+CustomSet<std::string> Parameter::getOption(const enum enum_option name) const;
 
 template <>
-const std::list<std::string> Parameter::getOption(const enum enum_option name) const;
+std::list<std::string> Parameter::getOption(const enum enum_option name) const;
+
+template <>
+std::vector<std::string> Parameter::getOption(const enum enum_option name) const;
 
 #if HAVE_HOST_PROFILING_BUILT
 template <>

@@ -63,27 +63,22 @@ void read_technology_File(const std::string& fn, const technology_managerRef& TM
          const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
          TM->xload(node);
 
-         std::vector<std::string> input_libraries;
+         std::set<std::string> input_libraries;
          if(Param->isOption(OPT_input_libraries))
          {
             auto input_libs = Param->getOption<std::string>(OPT_input_libraries);
-            input_libraries = convert_string_to_vector<std::string>(input_libs, ";");
+            string_to_container(std::inserter(input_libraries, input_libraries.end()), input_libs, ";");
          }
-         const std::vector<std::string>& libraries = TM->get_library_list();
-         for(const auto& librarie : libraries)
+         for(const auto& library : TM->get_library_list())
          {
-            if(WORK_LIBRARY == librarie or DESIGN == librarie or PROXY_LIBRARY == librarie)
+            if(WORK_LIBRARY == library || DESIGN == library || PROXY_LIBRARY == library)
             {
                continue;
             }
-            if(std::find(input_libraries.begin(), input_libraries.end(), librarie) == input_libraries.end())
-            {
-               input_libraries.push_back(librarie);
-            }
+            input_libraries.insert(library);
          }
          /// FIXME: setting parameters
-         const_cast<Parameter*>(Param.get())
-             ->setOption(OPT_input_libraries, convert_vector_to_string<std::string>(input_libraries, ";"));
+         const_cast<Parameter*>(Param.get())->setOption(OPT_input_libraries, container_to_string(input_libraries, ";"));
       }
    }
    catch(const char* msg)

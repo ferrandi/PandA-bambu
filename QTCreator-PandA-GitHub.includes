@@ -168,8 +168,6 @@ src/wrapper
 src/wrapper/compiler
 src/wrapper/flopoco
 src/wrapper/simulation
-src/wrapper/simulation/icarus
-src/wrapper/simulation/isim
 src/wrapper/simulation/modelsim
 src/wrapper/simulation/verilator
 src/wrapper/simulation/xsim

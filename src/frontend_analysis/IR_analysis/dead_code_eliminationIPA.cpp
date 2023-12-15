@@ -277,7 +277,7 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
       return uai;
    }();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "Unused parameter indexes: " + convert_vector_to_string(unused_arg_index, ", ", false));
+                  "Unused parameter indexes: " + container_to_string(unused_arg_index, ", ", false));
    const auto arg_eraser = [&](std::vector<tree_nodeRef>& arg_list, const tree_nodeRef& call_stmt) {
       for(const auto& uai : unused_arg_index)
       {

@@ -120,7 +120,7 @@ class application_manager
 #endif
 
    /// The original input file and the actual source code file to be elaborated
-   std::map<std::string, std::string> input_files;
+   std::vector<std::string> input_files;
 
    /**
     * Constructor

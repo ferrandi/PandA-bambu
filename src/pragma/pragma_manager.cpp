@@ -114,7 +114,7 @@ pragma_manager::pragma_manager(const application_managerRef _application_manager
 {
    if(param->isOption(OPT_blackbox))
    {
-      const auto black_box_functions = param->getOption<const CustomSet<std::string>>(OPT_blackbox);
+      const auto black_box_functions = param->getOption<CustomSet<std::string>>(OPT_blackbox);
       for(const auto& black_box_function : black_box_functions)
       {
          PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, param->getOption<int>(OPT_output_level),

@@ -120,7 +120,7 @@ DesignFlowStep_Status call_graph_computation::Exec()
    CustomOrderedSet<unsigned int> functions;
    THROW_ASSERT(parameters->isOption(OPT_top_functions_names), "Top function must be defined by the user");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Top functions passed by user");
-   const auto top_functions_names = parameters->getOption<const std::list<std::string>>(OPT_top_functions_names);
+   const auto top_functions_names = parameters->getOption<std::list<std::string>>(OPT_top_functions_names);
    for(const auto& top_function_name : top_functions_names)
    {
       const auto top_function = TM->GetFunction(top_function_name);

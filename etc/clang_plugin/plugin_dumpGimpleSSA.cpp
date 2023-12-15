@@ -144,9 +144,9 @@ namespace llvm
                                         cl::value_desc("name of the top function"));
    cl::opt<std::string> outdir_name("panda-outputdir",
                                     cl::desc("Specify the directory where the gimple raw file will be written"),
-                                    cl::value_desc("directory path"));
+                                    cl::value_desc("directory path"), cl::Required);
    cl::opt<std::string> InFile("panda-infile", cl::desc("Specify the name of the compiled source file"),
-                               cl::value_desc("filename path"));
+                               cl::value_desc("filename path"), cl::OneOrMore);
    cl::opt<std::string> CostTable("panda-cost-table", cl::desc("Specify the cost per operation"),
                                   cl::value_desc("cost table"));
 
@@ -207,15 +207,6 @@ namespace llvm
 #endif
                 const std::string& costTable)
       {
-         if(outdir_name.empty())
-         {
-            llvm::report_fatal_error("-panda-outdir parameter not specified");
-         }
-         if(InFile.empty())
-         {
-            llvm::report_fatal_error("-panda-infile parameter not specified");
-         }
-
          /// load parameter names
          boost::char_separator<char> sep(",");
          boost::tokenizer<boost::char_separator<char>> FileTokenizer(InFile, sep);

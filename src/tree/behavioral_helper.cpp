@@ -40,57 +40,41 @@
  * $Date$
  * Last modified by $Author$
  */
-
-/// Autoheader include
-#include "config_HAVE_ASSERTS.hpp"           // for HAVE_ASSERTS
-#include "config_HAVE_FROM_PRAGMA_BUILT.hpp" // for HAVE_FROM_PRAGMA_BUILT
-#include "config_RELEASE.hpp"                // for RELEASE
-
-/// Header include
 #include "behavioral_helper.hpp"
 
-#include <boost/algorithm/string/replace.hpp> // for replace_all
-#include <cstddef>                            // for size_t
-
-#include "custom_map.hpp" // for unordered_map, unor...
-#include <string>         // for operator+, string
-#include <vector>         // for vector, allocator
-
-/// Behavior include
+#include "Parameter.hpp"
 #include "application_manager.hpp"
 #include "cdfg_edge_info.hpp"
+#include "compiler_constants.hpp"
+#include "custom_map.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
+#include "ext_tree_node.hpp"
 #include "function_behavior.hpp"
 #include "op_graph.hpp"
-
-/// Constant include
-#if HAVE_FROM_PRAGMA_BUILT
-#include "pragma_constants.hpp"
-#endif
-#include "compiler_constants.hpp"
-
-/// Parameter include
-#include "Parameter.hpp"
-
-/// parser/compiler include
+#include "string_manipulation.hpp"
 #include "token_interface.hpp"
-
-/// Tree include
-#include "ext_tree_node.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_reindex.hpp"
-
-/// Utility include
-#include "exceptions.hpp"
-#include "string_manipulation.hpp" // for STR
+#include "type_casting.hpp"
 #include "var_pp_functor.hpp"
 
-#include "type_casting.hpp"
+#if HAVE_FROM_PRAGMA_BUILT
+#include "pragma_constants.hpp"
+#endif
 
-/// wrapper/compiler include
-#include "compiler_wrapper.hpp"
+#include "config_HAVE_ASSERTS.hpp"
+#include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
+#include "config_RELEASE.hpp"
+
+#include <boost/algorithm/string/replace.hpp>
+
+#include <cstddef>
+#include <string>
+#include <vector>
 
 std::map<std::string, unsigned int> BehavioralHelper::used_name;
 

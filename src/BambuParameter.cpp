@@ -38,8 +38,13 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
+#include "BambuParameter.hpp"
 #include "allocation_constants.hpp"
+#include "cdfc_module_binding.hpp"
+#include "chaining.hpp"
 #include "clique_covering.hpp"
+#include "compiler_constants.hpp"
+#include "compiler_wrapper.hpp"
 #include "config_HAVE_COIN_OR.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FLOPOCO.hpp"
@@ -53,37 +58,31 @@
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 #include "config_PANDA_LIB_INSTALLDIR.hpp"
 #include "config_SKIP_WARNING_SECTIONS.hpp"
-#include "constants.hpp"
-#if HAVE_HOST_PROFILING_BUILT
-#include "host_profiling.hpp"
-#endif
-#include "cdfc_module_binding.hpp"
-#include "evaluation.hpp"
-#include "memory_allocation.hpp"
-#include "parametric_list_based.hpp"
-#if HAVE_ILP_BUILT
-#include "sdc_scheduling.hpp"
-#endif
-#if HAVE_ILP_BUILT
-#include "meilp_solver.hpp"
-#endif
-#include "BambuParameter.hpp"
-#include "chaining.hpp"
-#include "compiler_constants.hpp"
-#include "compiler_wrapper.hpp"
 #include "constant_strings.hpp"
 #include "cpu_time.hpp"
 #include "datapath_creator.hpp"
 #include "dbgPrintHelper.hpp"
+#include "evaluation.hpp"
 #include "fileIO.hpp"
 #include "generic_device.hpp"
 #include "language_writer.hpp"
+#include "memory_allocation.hpp"
+#include "parametric_list_based.hpp"
 #include "parse_technology.hpp"
 #include "string_manipulation.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 #include "tree_helper.hpp"
 #include "utility.hpp"
+
+#if HAVE_HOST_PROFILING_BUILT
+#include "host_profiling.hpp"
+#endif
+#if HAVE_ILP_BUILT
+#include "meilp_solver.hpp"
+#include "sdc_scheduling.hpp"
+#endif
+
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
@@ -241,19 +240,9 @@ static void add_evaluation_objective_string(std::string& obj_string, const std::
       obj_string = obj_to_add;
       return;
    }
-   std::vector<std::string> obj_vec = convert_string_to_vector<std::string>(obj_string, ",");
-   const std::vector<std::string> obj_vec_to_add = convert_string_to_vector<std::string>(obj_to_add, ",");
-
-   for(const auto& s : obj_vec_to_add)
-   {
-      if(!is_evaluation_objective_string(obj_vec, s))
-      {
-         obj_string += "," + s;
-         obj_vec.push_back(s);
-      }
-   }
-
-   return;
+   auto obj_vec = string_to_container<std::set<std::string>>(obj_string, ",");
+   string_to_container(std::inserter(obj_vec, obj_vec.end()), obj_to_add, ",");
+   obj_string = container_to_string(obj_vec, ",");
 }
 
 void BambuParameter::PrintHelp(std::ostream& os) const
@@ -1158,7 +1147,7 @@ int BambuParameter::Exec()
          }
          case INPUT_OPT_FILE_INPUT_DATA:
          {
-            const auto in_files = convert_string_to_vector<std::string>(optarg, ",");
+            const auto in_files = string_to_container<std::vector<std::string>>(optarg, ",");
             for(const auto& in_file : in_files)
             {
                std::filesystem::path file_path(GetPath(in_file));
@@ -1276,7 +1265,7 @@ int BambuParameter::Exec()
                setOption(OPT_evaluation_mode, Evaluation_Mode::EXACT);
             }
             auto objective_string = getOption<std::string>(OPT_evaluation_objectives);
-            std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
+            const auto objective_vector = string_to_container<std::vector<std::string>>(objective_string, ",");
             objective_string = "";
             for(const auto& objective : objective_vector)
             {
@@ -1350,7 +1339,7 @@ int BambuParameter::Exec()
                THROW_ERROR("Simulation is only supported with EXACT evaluation mode");
             }
             auto objective_string = getOption<std::string>(OPT_evaluation_objectives);
-            std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
+            const auto objective_vector = string_to_container<std::vector<std::string>>(objective_string, ",");
             /*
              * look among the objectives of the evaluation. if "CYCLES" is
              * already there, the simulation will be executed.
@@ -1369,8 +1358,7 @@ int BambuParameter::Exec()
          }
          case OPT_DEVICE_NAME:
          {
-            std::string tmp_string = optarg;
-            std::vector<std::string> values = convert_string_to_vector<std::string>(tmp_string, std::string(","));
+            auto values = string_to_container<std::vector<std::string>>(optarg, ",");
             setOption("device_name", "");
             setOption("device_speed", "");
             setOption("device_package", "");
@@ -1394,7 +1382,7 @@ int BambuParameter::Exec()
             }
             else
             {
-               THROW_ERROR("Malformed device: " + tmp_string);
+               THROW_ERROR("Malformed device: " + std::string(optarg));
             }
             break;
          }
@@ -2027,7 +2015,7 @@ int BambuParameter::Exec()
             {
                path = GetPath(path);
             }
-            setOption(OPT_no_parse_files, no_parse + convert_vector_to_string(paths, STR_CST_string_separator));
+            setOption(OPT_no_parse_files, no_parse + container_to_string(paths, STR_CST_string_separator));
             break;
          }
          case INPUT_OPT_C_PYTHON_NO_PARSE:
@@ -2457,6 +2445,8 @@ int BambuParameter::Exec()
 
 void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
 {
+   const auto default_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
+
    if(kill_printf)
    {
       std::string defines;
@@ -2480,25 +2470,26 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
       {
          if(optimizations != "")
          {
-            optimizations = optimizations + STR_CST_string_separator;
+            optimizations += STR_CST_string_separator;
          }
-         optimizations = optimizations + "whole-program";
-         setOption(OPT_gcc_optimizations, optimizations);
+         optimizations += "whole-program";
       }
       if(isOption(OPT_top_design_name))
       {
          if(optimizations != "")
          {
-            optimizations = optimizations + STR_CST_string_separator;
+            optimizations += STR_CST_string_separator;
          }
-         optimizations = optimizations + "no-ipa-cp" + STR_CST_string_separator + "no-ipa-cp-clone";
+         optimizations += "no-ipa-cp" + STR_CST_string_separator + "no-ipa-cp-clone";
+      }
+      if(optimizations.size())
+      {
          setOption(OPT_gcc_optimizations, optimizations);
       }
    }
    /// Set the default value for OPT_gcc_m32_mx32
    if(!isOption(OPT_gcc_m32_mx32))
    {
-      const auto default_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
       if(CompilerWrapper::hasCompilerM64(default_compiler))
       {
          setOption(OPT_gcc_m32_mx32, "-m64");
@@ -2809,9 +2800,6 @@ void BambuParameter::CheckParameters()
       }
    }
 
-   // /// Search for icarus
-   // setOption(OPT_icarus, system("which iverilog > /dev/null 2>&1") == 0);
-
    if(!isOption(OPT_simulator))
    {
       if(isOption(OPT_mentor_modelsim_bin))
@@ -2826,14 +2814,6 @@ void BambuParameter::CheckParameters()
       {
          setOption(OPT_simulator, "VERILATOR");
       }
-      // else if(isOption(OPT_xilinx_settings))
-      // {
-      //    setOption(OPT_simulator, "ISIM"); /// Mixed language simulator
-      // }
-      // else if(getOption<bool>(OPT_icarus))
-      // {
-      //    setOption(OPT_simulator, "ICARUS");
-      // }
    }
 
    if(getOption<std::string>(OPT_simulator) == "VERILATOR")
@@ -2922,7 +2902,7 @@ void BambuParameter::CheckParameters()
       THROW_ASSERT(isOption(OPT_evaluation_objectives), "missing evaluation objectives");
       auto objective_string = getOption<std::string>(OPT_evaluation_objectives);
       THROW_ASSERT(!objective_string.empty(), "");
-      std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
+      auto objective_vector = string_to_container<std::vector<std::string>>(objective_string, ",");
 
       if(getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::EXACT)
       {
@@ -2930,7 +2910,7 @@ void BambuParameter::CheckParameters()
          {
             add_evaluation_objective_string(objective_string, "AREA,TIME");
             setOption(OPT_evaluation_objectives, objective_string);
-            objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
+            objective_vector = string_to_container<std::vector<std::string>>(objective_string, ",");
          }
 
          if(is_evaluation_objective_string(objective_vector, "TIME") ||
@@ -2950,22 +2930,13 @@ void BambuParameter::CheckParameters()
             {
                THROW_ERROR("Verilator was not detected by Bambu. Please make sure it is installed in the system.");
             }
-            // else if(getOption<std::string>(OPT_simulator) == "ISIM" && !isOption(OPT_xilinx_settings))
-            // {
-            //    THROW_ERROR("Xilinx ISim was not detected by Bambu. Please check --xilinx-root option is
-            //    correct.");
-            // }
-            // else if(getOption<std::string>(OPT_simulator) == "ICARUS" && !isOption(OPT_icarus))
-            // {
-            //    THROW_ERROR("Icarus was not detected by Bambu. Please make sure it is installed in the system.");
-            // }
             if(!getOption<bool>(OPT_generate_testbench))
             {
                setOption(OPT_generate_testbench, true);
                setOption(OPT_testbench_input_file, GetPath("test.xml"));
             }
             if(isOption(OPT_top_functions_names) &&
-               getOption<const std::list<std::string>>(OPT_top_functions_names).size() > 1)
+               getOption<std::list<std::string>>(OPT_top_functions_names).size() > 1)
             {
                THROW_ERROR("Simulation cannot be enabled with multiple top functions");
             }
@@ -3097,7 +3068,7 @@ void BambuParameter::CheckParameters()
       }
    }
    /// Disable proxy when there are multiple top functions
-   if(isOption(OPT_top_functions_names) && getOption<const std::list<std::string>>(OPT_top_functions_names).size() > 1)
+   if(isOption(OPT_top_functions_names) && getOption<std::list<std::string>>(OPT_top_functions_names).size() > 1)
    {
       if(isOption(OPT_disable_function_proxy))
       {
@@ -3241,7 +3212,7 @@ void BambuParameter::CheckParameters()
       add_experimental_setup_compiler_options(!flag_cpp);
       if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-TASTE")
       {
-         const auto source_files = getOption<const CustomSet<std::string>>(OPT_input_file);
+         const auto source_files = getOption<CustomSet<std::string>>(OPT_input_file);
          if(source_files.size() > 1 && isOption(OPT_input_format) &&
             getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C)
          {
@@ -3482,7 +3453,7 @@ void BambuParameter::CheckParameters()
 
    if(isOption(OPT_gcc_libraries))
    {
-      const auto libraries = getOption<const CustomSet<std::string>>(OPT_gcc_libraries);
+      const auto libraries = getOption<CustomSet<std::string>>(OPT_gcc_libraries);
       for(const auto& library : libraries)
       {
          add_bambu_library(library);
@@ -3621,6 +3592,16 @@ void BambuParameter::CheckParameters()
    if(getOption<int>(OPT_gcc_openmp_simd))
    {
       setOption(OPT_bitvalue_ipa, false);
+   }
+   if(getOption<int>(OPT_gcc_openmp_simd) || getOption<bool>(OPT_parse_pragma))
+   {
+      const auto flist = getOption<std::list<std::string>>(OPT_input_file);
+      std::string includes = isOption(OPT_gcc_includes) ? getOption<std::string>(OPT_gcc_includes) : "";
+      for(const auto& src : flist)
+      {
+         includes += " -iquote " + std::filesystem::path(src).parent_path().string();
+      }
+      setOption(OPT_gcc_includes, includes);
    }
 
    if(starts_with(getOption<std::string>(OPT_device_string), "nx"))
@@ -3787,7 +3768,6 @@ void BambuParameter::SetDefaults()
    setOption(OPT_gcc_c, true);
    setOption(OPT_gcc_config, false);
    setOption(OPT_gcc_costs, false);
-   setOption(OPT_gcc_openmp_simd, 0);
    setOption(OPT_gcc_optimization_set, CompilerWrapper_OptimizationSet::OBAMBU);
    setOption(OPT_gcc_include_sysdir, false);
 

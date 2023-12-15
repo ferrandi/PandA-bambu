@@ -286,7 +286,7 @@ void LatticeBackendFlow::InitDesignParameters()
    actual_parameters->parameter_values[PARAM_target_family] = device_family;
 
    std::string HDL_files = actual_parameters->parameter_values[PARAM_HDL_files];
-   std::vector<std::string> file_list = convert_string_to_vector<std::string>(HDL_files, ";");
+   const auto file_list = string_to_container<std::vector<std::filesystem::path>>(HDL_files, ";");
    std::string sources_macro_list;
    bool has_vhdl_library = Param->isOption(OPT_VHDL_library);
    std::string vhdl_library;
@@ -294,24 +294,23 @@ void LatticeBackendFlow::InitDesignParameters()
    {
       vhdl_library = Param->getOption<std::string>(OPT_VHDL_library);
    }
-   for(auto& v : file_list)
+   for(const auto& file : file_list)
    {
-      std::filesystem::path file_path(v);
-      std::string extension = file_path.extension().string();
+      const auto extension = file.extension().string();
       if(extension == ".vhd" || extension == ".vhdl" || extension == ".VHD" || extension == ".VHDL")
       {
          if(has_vhdl_library)
          {
-            sources_macro_list += "prj_src add -format VHDL -work " + vhdl_library + " " + v + "\n";
+            sources_macro_list += "prj_src add -format VHDL -work " + vhdl_library + " " + file.string() + "\n";
          }
          else
          {
-            sources_macro_list += "prj_src add -format VHDL " + v + "\n";
+            sources_macro_list += "prj_src add -format VHDL " + file.string() + "\n";
          }
       }
       else if(extension == ".v" || extension == ".V" || extension == ".sv" || extension == ".SV")
       {
-         sources_macro_list += "prj_src add -format VERILOG " + v + "\n";
+         sources_macro_list += "prj_src add -format VERILOG " + file.string() + "\n";
       }
       else
       {

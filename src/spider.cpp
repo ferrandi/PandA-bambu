@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
                case(Parameters_FileFormat::FF_TEX):
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Input: XML - Output: TEX");
-                  const auto input_files = parameters->getOption<const CustomSet<std::string>>(OPT_input_file);
+                  const auto input_files = parameters->getOption<CustomSet<std::string>>(OPT_input_file);
                   std::map<std::string, CustomMap<std::string, std::string>> results;
                   const DataXmlParserConstRef data_xml_parser(new DataXmlParser(parameters));
                   data_xml_parser->Parse(input_files, results);
@@ -174,7 +174,7 @@ int main(int argc, char* argv[])
          }
          case(Parameters_FileFormat::FF_XML_BAMBU_RESULTS):
          {
-            const auto input_files = parameters->getOption<const CustomSet<std::string>>(OPT_input_file);
+            const auto input_files = parameters->getOption<CustomSet<std::string>>(OPT_input_file);
             std::map<std::string, CustomMap<std::string, std::string>> results;
             const DataXmlParserConstRef data_xml_parser(new DataXmlParser(parameters));
             data_xml_parser->Parse(input_files, results);

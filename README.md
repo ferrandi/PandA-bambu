@@ -65,9 +65,9 @@ If you use Bambu in your research, please cite:
 Installation instructions for many different operation systems are available at 
 https://panda.dei.polimi.it/?page_id=88 or in the [*INSTALL*](INSTALL) file in this repository.
 
-You may also download pre-compiled AppImage distributions and VMs at https://panda.dei.polimi.it/?page_id=81 or you can generate them yourself following the instructions under *etc/Appimage* and *etc/VMs*.
+You may also download pre-compiled AppImage distributions at https://release.bambuhls.eu/ or you can generate them yourself following the instructions at https://docs.bambuhls.eu/da/df6/install_docker.html.
 
-Dockerfiles are also available under *etc/containers* along with a VS Code devcontainer configuration which may be useful for development purposes. Pre-built docker images can be downloaded at [Docker Hub](https://hub.docker.com/u/bambuhls).
+Dockerfiles are also available under *etc/containers* and pre-built docker images can be downloaded at [Docker Hub](https://hub.docker.com/u/bambuhls).
 
 A Google Colab notebook with many examples to play with Bambu is available. [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ferrandi/PandA-bambu/blob/main/documentation/tutorial_date_2022/bambu.ipynb)
 

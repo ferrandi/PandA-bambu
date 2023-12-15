@@ -88,6 +88,6 @@ DesignFlowStep_Status AsnParser::Exec()
    const AsnFlexLexerRef lexer(new AsnFlexLexer(parameters, sname.get(), nullptr));
    const AsnParserDataRef data(new AsnParserData(GetPointer<HLS_manager>(AppM)->aadl_information, parameters));
    YYParse(data, lexer);
-   AppM->input_files.erase(file_name);
+   AppM->input_files.erase(std::find(AppM->input_files.begin(), AppM->input_files.end(), file_name));
    return DesignFlowStep_Status::SUCCESS;
 }

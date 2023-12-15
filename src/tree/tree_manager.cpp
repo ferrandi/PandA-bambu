@@ -2861,7 +2861,7 @@ bool tree_manager::is_top_function(const function_decl* fd) const
          {
             if(Param->isOption(OPT_top_functions_names))
             {
-               const auto top_functions_names = Param->getOption<const std::list<std::string>>(OPT_top_functions_names);
+               const auto top_functions_names = Param->getOption<std::list<std::string>>(OPT_top_functions_names);
                for(const auto& top_function_name : top_functions_names)
                {
                   if(simple_name == top_function_name)

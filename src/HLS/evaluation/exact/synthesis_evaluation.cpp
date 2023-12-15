@@ -114,7 +114,7 @@ DesignFlowStep_Status SynthesisEvaluation::Exec()
 {
    HLSMgr->get_backend_flow()->ExecuteSynthesis();
    auto objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
-   std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
+   const auto objective_vector = string_to_container<std::vector<std::string>>(objective_string, ",");
    bool printed_area = false;
    for(const auto& objective : objective_vector)
    {

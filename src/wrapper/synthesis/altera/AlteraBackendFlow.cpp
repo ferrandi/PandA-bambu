@@ -348,7 +348,7 @@ void AlteraBackendFlow::InitDesignParameters()
    actual_parameters->parameter_values[PARAM_target_family] = device_family;
 
    std::string HDL_files = actual_parameters->parameter_values[PARAM_HDL_files];
-   std::vector<std::string> file_list = convert_string_to_vector<std::string>(HDL_files, ";");
+   const auto file_list = string_to_container<std::vector<std::string>>(HDL_files, ";");
    std::string sources_macro_list;
    bool has_vhdl_library = Param->isOption(OPT_VHDL_library);
    std::string vhdl_library;
