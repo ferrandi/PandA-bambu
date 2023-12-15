@@ -75,42 +75,45 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
    const auto TM = AppM->get_tree_manager();
    const auto FB = AppM->CGetFunctionBehavior(function_id);
    const auto BH = FB->CGetBehavioralHelper();
+   const auto fname = BH->GetMangledFunctionName();
    auto fdecl = tree_helper::PrintType(TM, TM->CGetTreeReindex(function_id), false, true, false, nullptr,
                                        var_pp_functorConstRef(new std_var_pp_functor(BH)));
 
    const auto HLSMgr = GetPointer<const HLS_manager>(AppM);
-   const auto fname = BH->GetMangledFunctionName();
-   const auto func_arch = HLSMgr->module_arch->GetArchitecture(fname);
-   THROW_ASSERT(func_arch, "Expected interface architecture for function " + fname);
-   const auto parm_original_typename = [&]() -> std::vector<std::string> {
-      std::vector<std::string> parm_ot(func_arch->parms.size(), "");
-      for(auto& [parm, attrs] : func_arch->parms)
-      {
-         const auto idx = std::strtoul(attrs.at(FunctionArchitecture::parm_index).c_str(), nullptr, 10);
-         parm_ot[idx] = attrs.at(FunctionArchitecture::parm_original_typename);
-      }
-      return parm_ot;
-   }();
-   if(HLSMgr && parm_original_typename.size())
+   if(HLSMgr)
    {
-      const std::regex param_match("[^,(]+\\s(\\w+)\\s*([,)]\\s?)");
-      auto param_idx = 0U;
-      auto it = fdecl.cbegin();
-      std::string if_fdecl;
-      std::smatch match;
-      while(std::regex_search(it, fdecl.cend(), match, param_match))
+      const auto func_arch = HLSMgr->module_arch->GetArchitecture(fname);
+      if(func_arch)
       {
-         THROW_ASSERT(param_idx < parm_original_typename.size(), "Too many parameters matched.");
-         it += match.position() + match.length();
-         if_fdecl += match.prefix();
-         if_fdecl += parm_original_typename.at(param_idx++) + " ";
-         if_fdecl += match[1];
-         if_fdecl += match[2];
-      }
-      THROW_ASSERT(param_idx == parm_original_typename.size(), "Expected to match all parameter declarations.");
-      if(param_idx)
-      {
-         fdecl = if_fdecl;
+         THROW_ASSERT(func_arch, "Expected interface architecture for function " + fname);
+         const auto parm_original_typename = [&]() -> std::vector<std::string> {
+            std::vector<std::string> parm_ot(func_arch->parms.size(), "");
+            for(auto& [parm, attrs] : func_arch->parms)
+            {
+               const auto idx = std::strtoul(attrs.at(FunctionArchitecture::parm_index).c_str(), nullptr, 10);
+               parm_ot[idx] = attrs.at(FunctionArchitecture::parm_original_typename);
+            }
+            return parm_ot;
+         }();
+         const std::regex param_match("[^,(]+\\s(\\w+)\\s*([,)]\\s?)");
+         auto param_idx = 0U;
+         auto it = fdecl.cbegin();
+         std::string if_fdecl;
+         std::smatch match;
+         while(std::regex_search(it, fdecl.cend(), match, param_match))
+         {
+            THROW_ASSERT(param_idx < parm_original_typename.size(), "Too many parameters matched.");
+            it += match.position() + match.length();
+            if_fdecl += match.prefix();
+            if_fdecl += parm_original_typename.at(param_idx++) + " ";
+            if_fdecl += match[1];
+            if_fdecl += match[2];
+         }
+         THROW_ASSERT(param_idx == parm_original_typename.size(), "Expected to match all parameter declarations.");
+         if(param_idx)
+         {
+            fdecl = if_fdecl;
+         }
       }
    }
    if(fname == "main")
