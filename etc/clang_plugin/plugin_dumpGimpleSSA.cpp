@@ -220,6 +220,9 @@ namespace llvm
                   }
                   func_parms[idx] = parm_name;
                }
+#if __clang_major__ >= 6
+               LLVM_DEBUG(dbgs() << "FUNC: " << func_symbol << "(" << llvm::join(func_parms, ", ") << ")\n");
+#endif
             }
          }
 
