@@ -359,7 +359,11 @@ ModuleArchitecture::ModuleArchitecture(const std::string& filename)
    pugi::xml_document doc;
    pugi::xml_node n;
    auto result = doc.load_file(filename.c_str());
-   if(result.status != pugi::xml_parse_status::status_ok)
+   if(result.status == pugi::xml_parse_status::status_file_not_found)
+   {
+      THROW_WARNING("Missing XML module architecture file.");
+   }
+   else if(result.status != pugi::xml_parse_status::status_ok)
    {
       THROW_ERROR("Unable to parse XML file: " + filename);
    }
