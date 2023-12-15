@@ -41,31 +41,32 @@
  * Last modified by $Author$
  *
  */
-
 #include "create_tree_manager.hpp"
+
+#include "Parameter.hpp"
 #include "application_manager.hpp"
+#include "compiler_wrapper.hpp"
 #include "config_HAVE_FROM_AADL_ASN_BUILT.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
+#include "cost_latency_table.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-#include "parse_tree.hpp"
-#include "tree_manager.hpp"
-#if HAVE_FROM_AADL_ASN_BUILT
-#include "parser_flow_step.hpp"
-#endif
-#include "Parameter.hpp"
-#include "compiler_wrapper.hpp"
-#include "cost_latency_table.hpp"
 #include "fileIO.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "parse_tree.hpp"
 #include "string_manipulation.hpp"
 #include "technology_flow_step.hpp"
 #include "technology_flow_step_factory.hpp"
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 #include "time_info.hpp"
+#include "tree_manager.hpp"
+#include "tree_reindex.hpp"
+
+#if HAVE_FROM_AADL_ASN_BUILT
+#include "parser_flow_step.hpp"
+#endif
 
 create_tree_manager::create_tree_manager(const ParameterConstRef _parameters, const application_managerRef _AppM,
                                          const DesignFlowManagerConstRef _design_flow_manager)
@@ -263,7 +264,7 @@ void create_tree_manager::createCostTable()
 
 DesignFlowStep_Status create_tree_manager::Exec()
 {
-   const auto TreeM = AppM->get_tree_manager();
+   const auto TM = AppM->get_tree_manager();
 
    if(!parameters->isOption(OPT_input_file))
    {
@@ -303,7 +304,7 @@ DesignFlowStep_Status create_tree_manager::Exec()
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--Loading " + archive.path().string());
          const auto TM_new = ParseTreeFile(parameters, archive.path().string());
-         TreeM->merge_tree_managers(TM_new);
+         TM->merge_tree_managers(TM_new);
       }
       if(!parameters->getOption<bool>(OPT_no_clean))
       {
@@ -342,9 +343,9 @@ DesignFlowStep_Status create_tree_manager::Exec()
          {
             THROW_ERROR("File " + raw_file + " does not exist");
          }
-         tree_managerRef TreeM_tmp = ParseTreeFile(parameters, raw_file);
+         tree_managerRef TM_tmp = ParseTreeFile(parameters, raw_file);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Merging " + raw_file);
-         TreeM->merge_tree_managers(TreeM_tmp);
+         TM->merge_tree_managers(TM_tmp);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Merged " + raw_file);
       }
    }
@@ -358,7 +359,7 @@ DesignFlowStep_Status create_tree_manager::Exec()
       }
 #endif
       createCostTable();
-      compiler_wrapper->FillTreeManager(TreeM, AppM->input_files, getCostTable());
+      compiler_wrapper->FillTreeManager(TM, AppM->input_files, getCostTable());
 
 #if !RELEASE
       if(parameters->isOption(OPT_gcc_write_xml))
@@ -373,8 +374,43 @@ DesignFlowStep_Status create_tree_manager::Exec()
              parameters->getOption<std::string>(OPT_output_temporary_directory) + "after_raw_merge.raw";
          std::ofstream raw_file(raw_file_name.c_str());
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Tree-Manager dumped for debug purpose");
-         raw_file << TreeM;
+         raw_file << TM;
          raw_file.close();
+      }
+   }
+
+   const auto HLSMgr = GetPointer<HLS_manager>(AppM);
+   THROW_ASSERT(HLSMgr, "");
+   const auto arch_filename =
+       parameters->isOption(OPT_architecture_xml) ?
+           parameters->getOption<std::string>(OPT_architecture_xml) :
+           (parameters->getOption<std::string>(OPT_output_temporary_directory) + "/architecture.xml");
+   HLSMgr->module_arch = refcount<ModuleArchitecture>(new ModuleArchitecture(arch_filename));
+
+   for(auto& [symbol, arch] : *HLSMgr->module_arch)
+   {
+      const auto fnode = TM->GetFunction(symbol);
+      if(!fnode)
+      {
+         THROW_WARNING("Function specified in architecture XML is missing in the IR: " + symbol);
+         continue;
+      }
+      const auto fd = GetPointer<function_decl>(GET_NODE(fnode));
+      for(auto& [attr, val] : arch->attrs)
+      {
+         if(attr == FunctionArchitecture::func_pipeline_mode)
+         {
+            fd->set_pipelining(true);
+            if(val == "simple")
+            {
+               fd->set_simple_pipeline(true);
+            }
+         }
+         else if(attr == FunctionArchitecture::func_pipeline_ii)
+         {
+            const auto pipeline_ii = std::stoi(val);
+            fd->set_initiation_time(pipeline_ii);
+         }
       }
    }
 

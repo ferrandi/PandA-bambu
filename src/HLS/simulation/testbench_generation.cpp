@@ -417,45 +417,24 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
    {
       // Add interface components relative to each top function parameter
       const auto is_interface_inferred = interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
-      const auto DesignAttributes = HLSMgr->design_attributes.find(top_bh->GetMangledFunctionName());
-      THROW_ASSERT(!is_interface_inferred || DesignAttributes != HLSMgr->design_attributes.end(),
-                   "Original signature not found for function: " + top_bh->GetMangledFunctionName() + " (" +
-                       top_bh->get_function_name() + ")");
+      const auto func_arch = HLSMgr->module_arch->GetArchitecture(top_bh->GetMangledFunctionName());
       size_t idx = 0;
       for(const auto& arg : top_bh->GetParameters())
       {
          const auto arg_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
+         const auto& parm_attrs = func_arch->parms.at(arg_name);
+         const auto& bundle_name = parm_attrs.at(FunctionArchitecture::parm_bundle);
+         const auto& iface_attrs = func_arch->ifaces.at(bundle_name);
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Parameter " + arg_name);
-         THROW_ASSERT(!is_interface_inferred || DesignAttributes->second.count(arg_name),
-                      "Interface attributes missing for parameter " + arg_name);
          if(is_interface_inferred && tree_helper::IsPointerType(arg) &&
-            !DesignAttributes->second.at(arg_name).count(attr_interface_dir))
+            iface_attrs.find(FunctionArchitecture::iface_direction) == iface_attrs.end())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--Unused parameter");
             ++idx;
             continue;
          }
          const auto arg_port = dut->find_member(arg_name, port_o_K, dut);
-         const auto arg_interface = [&]() -> std::string {
-            if(is_interface_inferred)
-            {
-               THROW_ASSERT(DesignAttributes->second.at(arg_name).count(attr_interface_type),
-                            "Not matched parameter name: " + arg_name);
-               return DesignAttributes->second.at(arg_name).at(attr_interface_type);
-            }
-            return "default";
-         }();
-         const auto bundle_name = [&]() {
-            if(is_interface_inferred)
-            {
-               const auto attr_it = DesignAttributes->second.at(arg_name).find(attr_bundle_name);
-               if(attr_it != DesignAttributes->second.at(arg_name).end())
-               {
-                  return attr_it->second;
-               }
-            }
-            return arg_name;
-         }();
+         const auto arg_interface = iface_attrs.at(FunctionArchitecture::iface_mode);
 
          if(arg_interface == "default")
          {
@@ -498,7 +477,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
                            "---Interface: " + arg_interface + " " +
-                               DesignAttributes->second.at(arg_name).at(attr_interface_dir) +
+                               iface_attrs.at(FunctionArchitecture::iface_direction) +
                                (bundle_name != arg_name ? (" (bundle: " + bundle_name + ")") : ""));
             const auto if_port_name = "if_" + arg_interface + "_" + bundle_name;
             const auto if_port_bundle = tb_cir->find_member(if_port_name + "_fu", component_o_K, tb_cir);

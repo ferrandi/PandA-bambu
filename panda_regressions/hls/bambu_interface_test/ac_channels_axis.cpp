@@ -1,10 +1,10 @@
 #include "ac_channel.h"
 #include "ap_int.h"
 
-#pragma HLS_interface a axis
-#pragma HLS_interface b axis
-#pragma HLS_interface c axis
-#pragma HLS_interface d axis
+#pragma HLS interface port = a mode = axis
+#pragma HLS interface port = b mode = axis
+#pragma HLS interface port = c mode = axis
+#pragma HLS interface port = d mode = axis
 void sum3numbers(ac_channel<ap_uint<16>>& a, ac_channel<ap_uint<16>>& b, ac_channel<ap_uint<16>>& c,
                  ac_channel<ap_uint<16>>& d)
 {

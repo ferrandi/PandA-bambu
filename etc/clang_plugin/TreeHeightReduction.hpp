@@ -41,7 +41,6 @@
 // The author of the original code is masakazu.ueno
 // The porting has been done by Fabrizio Ferrandi. The main change is related to the operations latencies.
 
-//#undef NDEBUG
 #include "llvm/ADT/DepthFirstIterator.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Twine.h"
@@ -54,6 +53,7 @@
 #include "llvm/IR/User.h"
 #include "llvm/IR/Value.h"
 #include "llvm/Support/raw_ostream.h"
+
 #include <cstdlib>
 #include <map>
 #include <queue>
@@ -1224,3 +1224,5 @@ namespace llvm
    };
 
 } // namespace llvm
+
+#undef DEBUG_TYPE

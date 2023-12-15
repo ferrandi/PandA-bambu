@@ -1720,7 +1720,7 @@ void port_o::xload(const xml_element* Enode, structural_objectRef _owner, struct
 port_o::port_direction port_o::to_port_direction(const std::string& val)
 {
    unsigned int i;
-   for(i = 0; i < UNKNOWN; i++)
+   for(i = 0; i < port_direction::UNKNOWN; i++)
    {
       if(val == GetString(static_cast<port_direction>(i)))
       {
@@ -1733,7 +1733,7 @@ port_o::port_direction port_o::to_port_direction(const std::string& val)
 port_o::port_interface port_o::to_port_interface(const std::string& val)
 {
    unsigned int i;
-   for(i = 0; i < UNKNOWN; i++)
+   for(i = 0; i <= port_interface::PI_DEFAULT; i++)
    {
       if(val == GetString(static_cast<port_interface>(i)))
       {
@@ -5246,27 +5246,19 @@ void port_o::fix_port_properties(structural_objectRef port_i, structural_objectR
    }
 }
 
-#define __TO_STRING_HELPER(r, data, elem)                                           \
-   name = #elem;                                                                    \
-   name = name.substr(19);                                                          \
-   name = name.substr(name.front() == ' ', name.find(')') - (name.front() == ' ')); \
-   out[data::elem] = name;
-#define TO_STRING(enum_type, elem_list)                                      \
-   static std::unordered_map<enum enum_type, std::string> to_string = []() { \
-      std::unordered_map<enum enum_type, std::string> out;                   \
-      std::string name;                                                      \
-      BOOST_PP_SEQ_FOR_EACH(__TO_STRING_HELPER, enum_type, elem_list);       \
-      return out;                                                            \
-   }()
+#define __TO_STRING_HELPER(r, data, elem) {data::elem, BOOST_PP_STRINGIZE(elem)},
+#define TO_STRING(enum_type, elem_list)                                       \
+   static const std::unordered_map<enum enum_type, std::string> to_string = { \
+       BOOST_PP_SEQ_FOR_EACH(__TO_STRING_HELPER, enum_type, elem_list)}
 
 std::string port_o::GetString(enum port_o::port_interface v)
 {
    TO_STRING(port_interface, PORT_INTERFACE_ENUM);
-   return to_string[v];
+   return to_string.at(v);
 }
 
 std::string port_o::GetString(enum port_o::port_direction v)
 {
    TO_STRING(port_direction, PORT_DIRECTION_ENUM);
-   return to_string[v];
+   return to_string.at(v);
 }

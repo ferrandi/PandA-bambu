@@ -1,4 +1,4 @@
-#pragma HLS_interface data m_axi direct
+#pragma HLS interface port = data mode = m_axi offset = direct
 
 short int read(short int* data)
 {
