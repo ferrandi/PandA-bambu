@@ -95,9 +95,13 @@ class FunctionArchitecture
    };
    static enum iface_attr to_iface_attr(const std::string& attr);
 
-   std::map<enum func_attr, std::string> attrs;
-   std::map<std::string, std::map<enum parm_attr, std::string>> parms;
-   std::map<std::string, std::map<enum iface_attr, std::string>> ifaces;
+   using func_attrs = std::map<enum func_attr, std::string>;
+   using parm_attrs = std::map<enum parm_attr, std::string>;
+   using iface_attrs = std::map<enum iface_attr, std::string>;
+
+   func_attrs attrs;
+   std::map<std::string, parm_attrs> parms;
+   std::map<std::string, iface_attrs> ifaces;
 };
 
 REF_FORWARD_DECL(ModuleArchitecture);
