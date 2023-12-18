@@ -40,31 +40,22 @@
  * Last modified by $Author$
  *
  */
-
-// include class header
 #include "dead_code_eliminationIPA.hpp"
 
-// include from src/
 #include "Parameter.hpp"
-
-// include from src/behavior/
+#include "application_manager.hpp"
+#include "behavioral_helper.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
-
-// include from src/design_flow/
-#include "application_manager.hpp"
-#include "design_flow_graph.hpp"
-#include "design_flow_manager.hpp"
-
-// include from src/frontend_analysis/
-#include "function_frontend_flow_step.hpp"
-
-#include "behavioral_helper.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "dbgPrintHelper.hpp"
+#include "design_flow_graph.hpp"
+#include "design_flow_manager.hpp"
+#include "function_behavior.hpp"
+#include "function_frontend_flow_step.hpp"
+#include "hls_manager.hpp"
+#include "string_manipulation.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
@@ -74,7 +65,6 @@
 #include "utility.hpp"
 #include "var_pp_functor.hpp"
 
-/// STD include
 #include <string>
 #include <utility>
 
@@ -128,28 +118,24 @@ void dead_code_eliminationIPA::ComputeRelationships(DesignFlowStepSet& relations
       {
          for(const auto i : fun_id_to_restart)
          {
-            const std::string step_signature =
-                FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, i);
-            vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);
+            const auto step_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, i);
+            const auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);
             THROW_ASSERT(frontend_step != NULL_VERTEX, "step " + step_signature + " is not present");
-            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const DesignFlowStepRef design_flow_step =
-                design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+            const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+            const auto design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
             relationships.insert(design_flow_step);
          }
       }
+      fun_id_to_restart.clear();
       for(const auto i : fun_id_to_restartParm)
       {
-         const std::string step_signature =
-             FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::PARM2SSA, i);
-         vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);
+         const auto step_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::PARM2SSA, i);
+         const auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);
          THROW_ASSERT(frontend_step != NULL_VERTEX, "step " + step_signature + " is not present");
-         const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const DesignFlowStepRef design_flow_step =
-             design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+         const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const auto design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
          relationships.insert(design_flow_step);
       }
-      fun_id_to_restart.clear();
       fun_id_to_restartParm.clear();
    }
    ApplicationFrontendFlowStep::ComputeRelationships(relationships, relationship_type);
@@ -197,91 +183,34 @@ DesignFlowStep_Status dead_code_eliminationIPA::Exec()
 bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function_decl* fd, unsigned int function_id,
                                              const CustomOrderedSet<unsigned int>& rFunctions)
 {
-   const auto& args = fd->list_of_args;
-   std::vector<tree_nodeConstRef> real_parm(args.size(), nullptr);
-   bool binding_completed = false;
-
-   const auto parm_bind = [&](const tree_nodeRef& stmt) -> void {
-      const auto ssa_uses = tree_helper::ComputeSsaUses(stmt);
-      for(const auto& use : ssa_uses)
-      {
-         const auto SSA = GetPointer<const ssa_name>(GET_CONST_NODE(use.first));
-         // If ssa_name references a parm_decl and is defined by a gimple_nop, it represents the formal function
-         // parameter inside the function body
-         if(SSA->var != nullptr && GET_CONST_NODE(SSA->var)->get_kind() == parm_decl_K &&
-            GET_CONST_NODE(SSA->CGetDefStmt())->get_kind() == gimple_nop_K)
-         {
-            auto argIt = std::find_if(args.begin(), args.end(), [&](const tree_nodeRef& arg) {
-               return GET_INDEX_CONST_NODE(arg) == GET_INDEX_CONST_NODE(SSA->var);
-            });
-            THROW_ASSERT(argIt != args.end(), "parm_decl associated with ssa_name not found in function parameters");
-            size_t arg_pos = static_cast<size_t>(argIt - args.begin());
-            if(real_parm[arg_pos] != nullptr)
-            {
-               THROW_ASSERT(SSA->index == GET_INDEX_CONST_NODE(real_parm[arg_pos]), "");
-               continue;
-            }
-            THROW_ASSERT(arg_pos < args.size(), "Computed parameter position outside actual parameters number");
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Parameter " + STR(arg_pos) + "(" + GET_CONST_NODE(*argIt)->ToString() +
-                               ") is binded to ssa variable " + SSA->ToString());
-            real_parm[arg_pos] = use.first;
-            binding_completed = std::find(real_parm.begin(), real_parm.end(), nullptr) == real_parm.end();
-         }
-      }
-   };
-
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Signature parameter lookup started...");
-   const auto sl = GetPointer<const statement_list>(GET_CONST_NODE(fd->body));
-   for(const auto& bb : sl->list_of_bloc)
+   const auto& parms = fd->list_of_args;
+   std::vector<unsigned int> unused_parm_indices;
    {
-      for(const auto& phi : bb.second->CGetPhiList())
+      auto idx = static_cast<unsigned int>(parms.size() - 1);
+      for(auto it = parms.rbegin(); it != parms.rend(); ++it, --idx)
       {
-         parm_bind(phi);
-         if(binding_completed)
+         const auto ssa = AppM->getSSAFromParm(function_id, GET_INDEX_CONST_NODE(*it));
+         if(GetPointer<const ssa_name>(TM->CGetTreeNode(ssa))->CGetUseStmts().empty())
          {
-            break;
-         }
-      }
-      if(binding_completed)
-      {
-         break;
-      }
-
-      for(const auto& stmt : bb.second->CGetStmtList())
-      {
-         parm_bind(stmt);
-         if(binding_completed)
-         {
-            break;
+            unused_parm_indices.push_back(idx);
          }
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Signature parameter lookup completed");
-   if(binding_completed)
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+   if(unused_parm_indices.empty())
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No unused parameter found");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "No unused parameter found");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       return false;
    }
 
-   const auto unused_arg_index = [&]() {
-      std::vector<unsigned int> uai;
-      for(auto i = static_cast<unsigned int>(real_parm.size()); i > 0;)
-      {
-         const auto index = --i;
-         if(real_parm.at(index) == nullptr)
-         {
-            uai.push_back(index);
-         }
-      }
-      return uai;
-   }();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "Unused parameter indexes: " + container_to_string(unused_arg_index, ", ", false));
+                  "Unused parameter indices: " +
+                      container_to_string(unused_parm_indices.rbegin(), unused_parm_indices.rend(), ", ", false));
    const auto arg_eraser = [&](std::vector<tree_nodeRef>& arg_list, const tree_nodeRef& call_stmt) {
-      for(const auto& uai : unused_arg_index)
+      for(const auto& idx : unused_parm_indices)
       {
-         const auto arg_it = arg_list.begin() + uai;
+         const auto arg_it = std::next(arg_list.begin(), idx);
          auto ssa = GetPointer<ssa_name>(GET_NODE(*arg_it));
          if(ssa)
          {
@@ -337,12 +266,12 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
          {
             auto call_rdx = TM->GetTreeReindex(call_id);
             auto call_stmt = GET_NODE(call_rdx);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Before erase: " + call_stmt->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Before: " + call_stmt->ToString());
             tree_nodeRef fn;
             if(call_stmt->get_kind() == gimple_call_K)
             {
                auto gc = GetPointerS<gimple_call>(call_stmt);
-               THROW_ASSERT(gc->args.size() == args.size(), "");
+               THROW_ASSERT(gc->args.size() == parms.size(), "");
                fn = gc->fn;
                arg_eraser(gc->args, call_rdx);
             }
@@ -352,7 +281,7 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
                auto ce = GetPointer<call_expr>(GET_NODE(ga->op1));
                fn = ce->fn;
                THROW_ASSERT(ce, "Unexpected call expression: " + GET_NODE(ga->op1)->get_kind_text());
-               THROW_ASSERT(ce->args.size() == args.size(), "");
+               THROW_ASSERT(ce->args.size() == parms.size(), "");
                arg_eraser(ce->args, call_rdx);
             }
             else
@@ -364,7 +293,7 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
             {
                ae->type = ftype_ptr;
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---After erase: " + call_stmt->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---After : " + call_stmt->ToString());
          }
          THROW_ASSERT(fei->indirect_call_points.empty(), "");
          THROW_ASSERT(fei->function_addresses.empty(), "");
@@ -374,19 +303,49 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
    fun_id_to_restart.insert(function_id);
    fun_id_to_restartParm.insert(function_id);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Erasing parameters from function signature");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Erasing unused parameters from function signature");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "---Before erase: " +
+                  "---Before: " +
                       tree_helper::print_type(TM, function_id, false, true, false, 0U,
                                               var_pp_functorConstRef(new std_var_pp_functor(
                                                   AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()))));
+   const auto fname = tree_helper::GetMangledFunctionName(fd);
+   const auto HLSMgr = GetPointer<HLS_manager>(AppM);
+   if(HLSMgr)
+   {
+      const auto func_arch = HLSMgr ? HLSMgr->module_arch->GetArchitecture(fname) : nullptr;
+      if(func_arch)
+      {
+         std::vector<FunctionArchitecture::parm_attrs*> parm_attrs;
+         std::transform(func_arch->parms.begin(), func_arch->parms.end(), std::back_inserter(parm_attrs),
+                        [](auto& it) { return &it.second; });
+         std::sort(parm_attrs.begin(), parm_attrs.end(), [](auto a, auto b) {
+            return std::stoul(a->at(FunctionArchitecture::parm_index)) <
+                   std::stoul(b->at(FunctionArchitecture::parm_index));
+         });
+         for(auto idx : unused_parm_indices)
+         {
+            const auto it = std::next(parm_attrs.begin(), idx);
+            THROW_ASSERT((*it)->at(FunctionArchitecture::parm_index) == std::to_string(idx), "unexpected index");
+            func_arch->parms.erase((**it).at(FunctionArchitecture::parm_port));
+            parm_attrs.erase(it);
+         }
+         size_t idx = 0;
+         for(auto parm_attr : parm_attrs)
+         {
+            parm_attr->at(FunctionArchitecture::parm_index) = std::to_string(idx++);
+         }
+      }
+   }
    fd->list_of_args = loa;
    fd->type = ftype;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "---After erase: " +
+                  "---After : " +
                       tree_helper::print_type(TM, function_id, false, true, false, 0U,
                                               var_pp_functorConstRef(new std_var_pp_functor(
                                                   AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()))));
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Function signature optimization completed");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    return true;
 }
