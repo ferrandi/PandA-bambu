@@ -213,8 +213,7 @@ void HLSCWriter::WriteParamDecl(const BehavioralHelperConstRef BH)
 void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
                                           const std::map<std::string, std::string>& curr_test_vector)
 {
-   const auto fnode = TM->CGetTreeReindex(BH->get_function_index());
-   const auto fname = tree_helper::GetMangledFunctionName(GetPointerS<const function_decl>(GET_CONST_NODE(fnode)));
+   const auto fname = BH->GetMangledFunctionName();
    const auto& parm_attrs = HLSMgr->module_arch->GetArchitecture(fname)->parms;
    const auto params = BH->GetParameters();
    for(auto par_idx = 0U; par_idx < params.size(); ++par_idx)
@@ -430,7 +429,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
       unsigned long long max = 0ULL;
       for(const auto& [name, attrs] : ifaces)
       {
-         max = std::max(max, std::strtoull(attrs.at(FunctionArchitecture::iface_alignment).c_str(), nullptr, 10));
+         max = std::max(max, std::stoull(attrs.at(FunctionArchitecture::iface_alignment)));
       }
       return max;
    }();
@@ -694,15 +693,13 @@ void HLSCWriter::WriteMainTestbench()
             arg_interface = iface_attrs.at(FunctionArchitecture::iface_mode);
             if(iface_attrs.find(FunctionArchitecture::iface_cache_bus_size) != iface_attrs.end())
             {
-               const auto bus_size =
-                   std::strtoull(iface_attrs.at(FunctionArchitecture::iface_cache_bus_size).c_str(), nullptr, 10);
-               const auto line_size =
-                   std::strtoull(iface_attrs.at(FunctionArchitecture::iface_cache_line_size).c_str(), nullptr, 10);
+               const auto bus_size = std::stoull(iface_attrs.at(FunctionArchitecture::iface_cache_bus_size));
+               const auto line_size = std::stoull(iface_attrs.at(FunctionArchitecture::iface_cache_line_size));
                arg_align = line_size * bus_size / 8ULL;
             }
             else
             {
-               arg_align = std::strtoull(iface_attrs.at(FunctionArchitecture::iface_alignment).c_str(), nullptr, 10);
+               arg_align = std::stoull(iface_attrs.at(FunctionArchitecture::iface_alignment));
             }
          }
          else
