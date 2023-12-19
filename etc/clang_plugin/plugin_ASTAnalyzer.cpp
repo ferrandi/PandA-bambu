@@ -1465,20 +1465,11 @@ class HLSASTConsumer : public ASTConsumer
       }
       if(FD->hasBody())
       {
-         //          const auto body_end =
-         // #if __clang_major__ >= 7
-         //              FD->getBody()->getEndLoc();
-         // #else
-         //              FD->getBody()->getLocEnd();
-         // #endif
-         //          if(body_end == fd_end)
-         //          {
          LLVM_DEBUG(dbgs() << "Finalize " << MangledName(FD) << "\n");
          for(auto& pa : _analyzers)
          {
             pa.second->finalize(FD);
          }
-         //          }
       }
    }
 
