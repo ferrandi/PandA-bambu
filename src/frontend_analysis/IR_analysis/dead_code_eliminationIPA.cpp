@@ -155,23 +155,27 @@ DesignFlowStep_Status dead_code_eliminationIPA::Exec()
    fun_id_to_restart.clear();
    fun_id_to_restartParm.clear();
    const auto TM = AppM->get_tree_manager();
-   const auto CGMan = AppM->CGetCallGraphManager();
-   const auto reached_body_fun_ids = CGMan->GetReachedBodyFunctions();
-   for(const auto fu_id : reached_body_fun_ids)
+   const auto CGM = AppM->CGetCallGraphManager();
+   auto interface_functions = CGM->GetRootFunctions();
    {
-      const auto is_root = AppM->CGetCallGraphManager()->GetRootFunctions().count(fu_id) ||
-                           AppM->CGetCallGraphManager()->GetAddressedFunctions().count(fu_id);
+      const auto addr_funcs = CGM->GetAddressedFunctions();
+      interface_functions.insert(addr_funcs.begin(), addr_funcs.end());
+   }
+   const auto reached_body_fun_ids = CGM->GetReachedBodyFunctions();
+   for(const auto f_id : reached_body_fun_ids)
+   {
+      const auto is_root = interface_functions.find(f_id) != interface_functions.end();
       if(!is_root)
       {
-         const auto fu_name = AppM->CGetFunctionBehavior(fu_id)->CGetBehavioralHelper()->get_function_name();
+         const auto fu_name = AppM->CGetFunctionBehavior(f_id)->CGetBehavioralHelper()->get_function_name();
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                        "-->Analyzing function \"" + fu_name + "\": id = " + STR(fu_id));
-         const auto fu_node = TM->GetTreeNode(fu_id);
+                        "-->Analyzing function \"" + fu_name + "\": id = " + STR(f_id));
+         const auto fu_node = TM->GetTreeNode(f_id);
          auto fd = GetPointerS<function_decl>(fu_node);
          THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
          if(!fd->list_of_args.empty())
          {
-            signature_opt(TM, fd, fu_id, reached_body_fun_ids);
+            signature_opt(TM, fd, f_id, reached_body_fun_ids);
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed function ");
       }
@@ -310,34 +314,6 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
                       tree_helper::print_type(TM, function_id, false, true, false, 0U,
                                               var_pp_functorConstRef(new std_var_pp_functor(
                                                   AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()))));
-   const auto fname = tree_helper::GetMangledFunctionName(fd);
-   const auto HLSMgr = GetPointer<HLS_manager>(AppM);
-   if(HLSMgr)
-   {
-      const auto func_arch = HLSMgr ? HLSMgr->module_arch->GetArchitecture(fname) : nullptr;
-      if(func_arch)
-      {
-         std::vector<FunctionArchitecture::parm_attrs*> parm_attrs;
-         std::transform(func_arch->parms.begin(), func_arch->parms.end(), std::back_inserter(parm_attrs),
-                        [](auto& it) { return &it.second; });
-         std::sort(parm_attrs.begin(), parm_attrs.end(), [](auto a, auto b) {
-            return std::stoul(a->at(FunctionArchitecture::parm_index)) <
-                   std::stoul(b->at(FunctionArchitecture::parm_index));
-         });
-         for(auto idx : unused_parm_indices)
-         {
-            const auto it = std::next(parm_attrs.begin(), idx);
-            THROW_ASSERT((*it)->at(FunctionArchitecture::parm_index) == std::to_string(idx), "unexpected index");
-            func_arch->parms.erase((**it).at(FunctionArchitecture::parm_port));
-            parm_attrs.erase(it);
-         }
-         size_t idx = 0;
-         for(auto parm_attr : parm_attrs)
-         {
-            parm_attr->at(FunctionArchitecture::parm_index) = std::to_string(idx++);
-         }
-      }
-   }
    fd->list_of_args = loa;
    fd->type = ftype;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
