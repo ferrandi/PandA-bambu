@@ -658,6 +658,19 @@ DesignFlowStep_Status InterfaceInfer::Exec()
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--Analyzed function " + fname);
    }
 
+   // Remove interface information for non interfaced functions to avoid issues with aggressive IR optimizations
+   // (signature modification, SROA, ...)
+   for(auto f_id : AppM->CGetCallGraphManager()->GetReachedBodyFunctions())
+   {
+      if(top_functions.find(f_id) == top_functions.end())
+      {
+         const auto fnode = TM->CGetTreeReindex(f_id);
+         const auto fd = GetPointer<const function_decl>(GET_CONST_NODE(fnode));
+         const auto fname = tree_helper::GetMangledFunctionName(fd);
+         HLSMgr->module_arch->GetArchitecture(fname).reset();
+      }
+   }
+
    already_executed = true;
    if(modified.size())
    {
