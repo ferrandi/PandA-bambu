@@ -107,6 +107,7 @@ program_tests_LDFLAGS = $(BOOST_LDFLAGS)
 program_tests_SOURCES = \
      main_tests.cpp \
      frontend_analysis/IR_analysis/Range.cpp \
-     utility/APInt.cpp
+     utility/APInt.cpp \
+     utility/NaturalVersionOrder.cpp
 
 TESTS = program_tests
