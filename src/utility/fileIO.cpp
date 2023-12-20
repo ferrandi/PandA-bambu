@@ -50,6 +50,7 @@
 
 #include <cstdlib>
 #include <random>
+#include <regex>
 
 fileIO_istreamRef fileIO_istream_open(const std::string& name)
 {
@@ -193,21 +194,47 @@ int PandaSystem(const ParameterConstRef Param, const std::string& system_command
 
 bool NaturalVersionOrder(const std::filesystem::path& _x, const std::filesystem::path& _y)
 {
-   const auto splitx = SplitString(_x.string(), ".");
-   const auto splity = SplitString(_y.string(), ".");
-   for(size_t i = 0U; i < splitx.size(); ++i)
+   const std::regex version_number("\\d+(\\.\\d+)*");
+   const auto x = _x.string(), y = _y.string();
+   std::cmatch mx, my;
+   if(std::regex_search(x.c_str(), mx, version_number))
    {
-      if(splity.size() <= i)
+      if(std::regex_search(y.c_str(), my, version_number))
       {
+         const char *px = mx[0].first, *lx;
+         const char *py = my[0].first, *ly;
+         do
+         {
+            lx = std::find(px, mx[0].second, '.');
+            ly = std::find(py, my[0].second, '.');
+            if(py == ly)
+            {
+               return false;
+            }
+            auto dx = std::distance(px, lx), dy = std::distance(py, ly);
+            if(dx != dy)
+            {
+               return dx < dy;
+            }
+            do
+            {
+               if(*px != *py)
+               {
+                  return *px < *py;
+               }
+               ++py;
+            } while(++px != lx);
+            ++py;
+         } while(++px != mx[0].second);
          return true;
       }
-      if(splitx.at(i).size() != splity.at(i).size())
-      {
-         return splitx.at(i).size() > splity.at(i).size();
-      }
-      return splitx.at(i) > splity.at(i);
+      return false;
    }
-   return true;
+   else if(std::regex_search(_y.string().c_str(), my, version_number))
+   {
+      return true;
+   }
+   return _x < _y;
 }
 
 template <typename T>
