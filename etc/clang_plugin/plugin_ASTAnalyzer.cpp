@@ -619,10 +619,12 @@ class InlineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             FD->addAttr(
                 AlwaysInlineAttr::CreateImplicit(FD->getASTContext(), AlwaysInlineAttr::Spelling::Keyword_forceinline));
 #endif
+            FD->dropAttr<NoInlineAttr>();
          }
          else if(iequals(attr.first.id, "off"))
          {
             FD->addAttr(NoInlineAttr::CreateImplicit(FD->getASTContext()));
+            FD->dropAttr<AlwaysInlineAttr>();
          }
          else
          {
@@ -810,12 +812,14 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
                   {
                      LLVM_DEBUG(dbgs() << " -> " << MangledName(calleeDecl) << "\n");
                      GetFuncAttr(calleeDecl).attrs[key_loc_t("dataflow", SourceLocation())] = "module";
+                     GetFuncAttr(calleeDecl).attrs[key_loc_t("inline", SourceLocation())] = "off";
                      hasModule = true;
 
                      // Try to avoid inlining on dataflow module
                      if(!calleeDecl->hasAttr<NoInlineAttr>())
                      {
                         calleeDecl->addAttr(NoInlineAttr::CreateImplicit(calleeDecl->getASTContext()));
+                        calleeDecl->dropAttr<AlwaysInlineAttr>();
                      }
                   }
                }
@@ -1347,7 +1351,9 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          if(!FD->hasAttr<NoInlineAttr>())
          {
             FD->addAttr(NoInlineAttr::CreateImplicit(FD->getASTContext()));
+            FD->dropAttr<AlwaysInlineAttr>();
          }
+         GetFuncAttr(FD).attrs.emplace(key_loc_t("inline", p.loc), "off");
       }
    }
 
