@@ -82,7 +82,7 @@ class CallGraphManager
    const tree_managerConstRef tree_manager;
 
    /// put into relation function F_i and the list of functions called by F_i
-   std::map<unsigned int, CustomOrderedSet<unsigned int>> called_by;
+   std::map<unsigned int, CustomSet<unsigned int>> called_by;
 
    /// put into relation function F_i and the vertex in the call graph representing it
    std::map<unsigned int, vertex> functionID_vertex_map;
@@ -91,16 +91,16 @@ class CallGraphManager
    const bool allow_recursive_functions;
 
    /// Root functions
-   CustomOrderedSet<unsigned int> root_functions;
+   CustomSet<unsigned int> root_functions;
 
    /// source code functions directly or indirectly called by the root functions
-   CustomOrderedSet<unsigned int> reached_body_functions;
+   CustomSet<unsigned int> reached_body_functions;
 
    /// library functions directly or indirectly called by the root functions
-   CustomOrderedSet<unsigned int> reached_library_functions;
+   CustomSet<unsigned int> reached_library_functions;
 
    /// set of functions whose address is taken
-   CustomOrderedSet<unsigned int> addressed_functions;
+   CustomSet<unsigned int> addressed_functions;
 
    /// set of input parameters
    const ParameterConstRef Param;
@@ -172,31 +172,31 @@ class CallGraphManager
    /**
     * Return an acyclic version of the call graph
     */
-   const CallGraphConstRef CGetAcyclicCallGraph() const;
+   CallGraphConstRef CGetAcyclicCallGraph() const;
 
    /**
     * Return the call graph
     */
-   const CallGraphConstRef CGetCallGraph() const;
+   CallGraphConstRef CGetCallGraph() const;
 
    /**
     * Return a subset of the call graph
     * @param vertices is the subset of vertices to be considered
     */
-   const CallGraphConstRef CGetCallSubGraph(const CustomUnorderedSet<vertex>& vertices) const;
+   CallGraphConstRef CGetCallSubGraph(const CustomUnorderedSet<vertex>& vertices) const;
 
    /**
     * Returns the set of functions called by a function
     * @param index is the index of the caller function
     */
-   const CustomOrderedSet<unsigned int> get_called_by(unsigned int index) const;
+   CustomSet<unsigned int> get_called_by(unsigned int index) const;
 
    /**
     * Returns the set of functions called by an operation vertex
     * @param cfg is the pointer to the graph which the operation belongs to
     * @param caller is the caller vertex
     */
-   const CustomUnorderedSet<unsigned int> get_called_by(const OpGraphConstRef cfg, const vertex& caller) const;
+   CustomSet<unsigned int> get_called_by(const OpGraphConstRef cfg, const vertex& caller) const;
 
    /**
     * Given a vertex of the call graph, this returns the index of the corresponding function
@@ -213,16 +213,23 @@ class CallGraphManager
    vertex GetVertex(const unsigned int index) const;
 
    /**
+    * @brief Set the root functions
+    *
+    * @param root_functions Set of root function ids
+    */
+   void SetRootFunctions(const CustomSet<unsigned int>& root_functions);
+
+   /**
     * Returns the root functions (i.e., the functions that are not called by any other ones
     * @return the set of top function
     */
-   const CustomOrderedSet<unsigned int> GetRootFunctions() const;
+   CustomSet<unsigned int> GetRootFunctions() const;
 
    /**
     * Returns the source code functions called by the root functions
     * @return the set of top function
     */
-   const CustomOrderedSet<unsigned int>& GetReachedBodyFunctions() const;
+   const CustomSet<unsigned int>& GetReachedBodyFunctions() const;
 
    /**
     * compute the list of reached function starting from a given function
@@ -230,13 +237,13 @@ class CallGraphManager
     * @param with_body consider only functions with body IR
     * @return the set of top function
     */
-   CustomOrderedSet<unsigned int> GetReachedFunctionsFrom(unsigned int from_f, bool with_body = true) const;
+   CustomSet<unsigned int> GetReachedFunctionsFrom(unsigned int from_f, bool with_body = true) const;
 
    /**
     * Returns the library functions called by the root functions
     * @return the set of library function (without implementation)
     */
-   CustomOrderedSet<unsigned int> GetReachedLibraryFunctions() const;
+   CustomSet<unsigned int> GetReachedLibraryFunctions() const;
 
    /**
     * return true in case the vertex has been already created
@@ -293,7 +300,7 @@ class CallGraphManager
    /**
     * Returns a set containing all the reachable addressed_functions
     */
-   CustomOrderedSet<unsigned int> GetAddressedFunctions() const;
+   CustomSet<unsigned int> GetAddressedFunctions() const;
 
    /**
     * Recursive analysis of the tree nodes looking for call expressions.
@@ -312,46 +319,8 @@ class CallGraphManager
                                      unsigned int caller_id, unsigned int called_id, unsigned int call_id,
                                      enum FunctionEdgeInfo::CallType call_type, int DL);
 };
+
 using CallGraphManagerRef = refcount<CallGraphManager>;
 using CallGraphManagerConstRef = refcount<const CallGraphManager>;
 
-/**
- * Visitor to identify the list of called functions
- */
-struct CalledFunctionsVisitor : public boost::default_dfs_visitor
-{
- private:
-   /// True if recursive calls are allowed
-   const bool allow_recursive_functions;
-
-   /// The call graph manager
-   const CallGraphManager* call_graph_manager;
-
-   /// The list of encountered body functions
-   CustomOrderedSet<unsigned int>& body_functions;
-
-   /// The list of encountered library functions
-   CustomOrderedSet<unsigned int>& library_functions;
-
- public:
-   /**
-    * Constructor
-    * @param allow_recursive_functions tells if recursive functions are allowed
-    * @param call_graph_manager is the call graph manager
-    * @param body_functions is where results will be stored
-    * @param library_functions is where results will be stored
-    */
-   CalledFunctionsVisitor(const bool allow_recursive_functions, const CallGraphManager* call_graph_manager,
-                          CustomOrderedSet<unsigned int>& body_functions,
-                          CustomOrderedSet<unsigned int>& library_functions);
-
-   void back_edge(const EdgeDescriptor& edge, const CallGraph& g);
-
-   /**
-    * Function called when a vertex has been finished
-    * @param u is the vertex
-    * @param call_graph is the call graph
-    */
-   void finish_vertex(const vertex& u, const CallGraph& g);
-};
 #endif

@@ -376,7 +376,7 @@ struct OpNodeInfo : public TypedNodeInfo
    tree_nodeRef node;
 
    /// Store the index of called functions
-   CustomUnorderedSet<unsigned int> called;
+   CustomSet<unsigned int> called;
 
    /// Store the index of the basic block which this operation vertex belongs to
    unsigned int bb_index;
