@@ -51,7 +51,6 @@
 #include <deque>
 #include <fstream>
 #include <initializer_list>
-#include <initializer_list>
 #if !defined(__BAMBU__) || defined(__BAMBU_SIM__)
 #include <iostream>
 #endif
@@ -136,10 +135,12 @@ class ac_channel
 
    // constructors
    ac_channel();
+#if !defined(__BAMBU__) || defined(__BAMBU_SIM__)
    ac_channel(int init);
    ac_channel(int init, T val);
    ac_channel(std::initializer_list<T> val);
    ac_channel(const char* bin_file);
+#endif
 
    __FORCE_INLINE T read()
    {
@@ -818,12 +819,10 @@ class ac_channel
    fifo chan;
 
  private:
-#if defined(__BAMBU__) && !defined(__BAMBU_SIM__)
    // Prevent the compiler from autogenerating these.
    //  (This enforces that channels are always passed by reference.)
    ac_channel(const ac_channel<T>&) = delete;
    ac_channel& operator=(const ac_channel<T>&) = delete;
-#endif
 };
 
 template <class T>
@@ -831,6 +830,7 @@ ac_channel<T>::ac_channel() : chan()
 {
 }
 
+#if !defined(__BAMBU__) || defined(__BAMBU_SIM__)
 template <class T>
 ac_channel<T>::ac_channel(int init) : chan(init)
 {
@@ -885,6 +885,7 @@ __FORCE_INLINE std::ostream& operator<<(std::ostream& os, ac_channel<T>& a)
    }
    return os;
 }
+#endif
 
 // This general case is meant to cover non channel (or array of them) args
 //   Its result will be ignored
