@@ -396,15 +396,14 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
          }
          else
          {
-            InEdgeIterator ie, ie_end;
-            for(boost::tie(ie, ie_end) = boost::in_edges(function_v, *CG); ie != ie_end; ++ie)
+            BOOST_FOREACH(EdgeDescriptor ie, boost::in_edges(function_v, *CG))
             {
-               const auto caller_id = CGM->get_function(ie->m_source);
+               const auto caller_id = CGM->get_function(ie.m_source);
                caller_bb.insert(std::make_pair(caller_id, AppM->CGetFunctionBehavior(caller_id)->GetBBVersion()));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "Analysing call points from " +
-                                  tree_helper::print_function_name(
-                                      TM, GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
+                                  tree_helper::GetMangledFunctionName(
+                                      GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
                const auto caller_node = TM->CGetTreeNode(caller_id);
                THROW_ASSERT(caller_node->get_kind() == function_decl_K, "");
@@ -421,7 +420,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                      continue;
                   }
                }
-               const auto caller_info = CG->CGetFunctionEdgeInfo(*ie);
+               const auto caller_info = CG->CGetFunctionEdgeInfo(ie);
                bool all_inlined = true;
                for(const auto& call_id : caller_info->direct_call_points)
                {
@@ -444,8 +443,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                         const auto is_unique_bb_call = [&]() -> bool {
                            THROW_ASSERT(caller_sl->list_of_bloc.count(call_gn->bb_index),
                                         "BB" + STR(call_gn->bb_index) + " not found in function " +
-                                            tree_helper::print_function_name(TM, caller_fd) + " (" + STR(call_id) +
-                                            ")");
+                                            tree_helper::GetMangledFunctionName(caller_fd) + " (" + STR(call_id) + ")");
                            const auto bb = caller_sl->list_of_bloc.at(call_gn->bb_index);
                            for(const auto& tn : bb->CGetStmtList())
                            {
@@ -474,7 +472,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                           "---BB" + STR(call_gn->bb_index) + " from function " +
-                                              tree_helper::print_function_name(TM, caller_fd) +
+                                              tree_helper::GetMangledFunctionName(caller_fd) +
                                               " has multiple call points, skipping...");
                         }
                      }
@@ -502,8 +500,8 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "Analysed call points from " +
-                                  tree_helper::print_function_name(
-                                      TM, GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
+                                  tree_helper::GetMangledFunctionName(
+                                      GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
             }
          }
       }
