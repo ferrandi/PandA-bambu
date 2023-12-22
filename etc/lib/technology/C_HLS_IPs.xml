@@ -1290,7 +1290,8 @@ assign out1 = (in1 &lt;&lt; (PRECISION-(in3[marg_bitsize-1:0])))|(in2 &gt;&gt; (
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="generate
+          <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="
+generate
   if(PIPE_PARAMETER==1)
   begin
     reg signed [BITSIZE_out1-1:0] out1_reg;
@@ -1414,10 +1415,11 @@ begin
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="generate
+          <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="
+generate
   if(PIPE_PARAMETER==1)
   begin
-    reg signed [BITSIZE_out1-1:0] out1_reg;
+    reg [BITSIZE_out1-1:0] out1_reg;
     assign out1 = out1_reg;
     always @(posedge clock)
     begin
