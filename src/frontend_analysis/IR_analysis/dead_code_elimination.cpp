@@ -243,6 +243,8 @@ void dead_code_elimination::kill_uses(const tree_managerRef& TM, const tree_node
 
 tree_nodeRef dead_code_elimination::kill_vdef(const tree_managerRef& TM, const tree_nodeRef& vdef)
 {
+   const auto v_ssa = GetPointerS<ssa_name>(GET_NODE(vdef));
+   const auto function_id = GET_INDEX_CONST_NODE(GetPointerS<gimple_node>(GET_NODE(v_ssa->CGetDefStmt()))->scpe);
    const auto gimple_nop_id = TM->new_tree_node_id();
    {
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
@@ -252,7 +254,7 @@ tree_nodeRef dead_code_elimination::kill_vdef(const tree_managerRef& TM, const t
    }
    const auto nop_stmt = TM->GetTreeReindex(gimple_nop_id);
    GetPointerS<gimple_node>(GET_NODE(nop_stmt))->vdef = vdef;
-   GetPointerS<ssa_name>(GET_NODE(vdef))->SetDefStmt(nop_stmt);
+   v_ssa->SetDefStmt(nop_stmt);
    return nop_stmt;
 }
 
