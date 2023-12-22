@@ -36,36 +36,29 @@
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Pietro Fezzardi <pietro.fezzardi@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
  *
  */
-
-/// Header include
 #include "call_graph_computation.hpp"
 
-/// Behavior include
+#include "Parameter.hpp"
 #include "application_manager.hpp"
+#include "behavioral_helper.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
-
-/// Parameter include
-#include "Parameter.hpp"
-
-/// Tree include
-#include "behavioral_helper.hpp"
+#include "dbgPrintHelper.hpp"
 #include "ext_tree_node.hpp"
+#include "function_behavior.hpp"
+#include "hls_manager.hpp"
+#include "string_manipulation.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-
-/// Utility include
-#include "dbgPrintHelper.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
 
 call_graph_computation::call_graph_computation(const ParameterConstRef _parameters, const application_managerRef _AppM,
                                                const DesignFlowManagerConstRef _design_flow_manager)
@@ -114,26 +107,29 @@ DesignFlowStep_Status call_graph_computation::Exec()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Creating call graph data structure");
    const auto TM = AppM->get_tree_manager();
+   const auto CGM = AppM->GetCallGraphManager();
    already_visited.clear();
 
    /// Root functions
-   CustomOrderedSet<unsigned int> functions;
+   CustomSet<unsigned int> functions;
    THROW_ASSERT(parameters->isOption(OPT_top_functions_names), "Top function must be defined by the user");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Top functions passed by user");
-   const auto top_functions_names = parameters->getOption<std::list<std::string>>(OPT_top_functions_names);
-   for(const auto& top_function_name : top_functions_names)
+   auto function_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
+   for(const auto& symbol : function_symbols)
    {
-      const auto top_function = TM->GetFunction(top_function_name);
-      if(!top_function)
+      const auto fnode = TM->GetFunction(symbol);
+      if(fnode)
       {
-         THROW_ERROR("Function " + top_function_name + " not found");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "---Root function " + STR(GET_INDEX_CONST_NODE(fnode) + " - " + symbol));
+         functions.insert(GET_INDEX_CONST_NODE(fnode));
       }
       else
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Root function " + STR(top_function->index));
-         functions.insert(top_function->index);
+         THROW_ERROR("Function " + symbol + " not found in IR");
       }
    }
+   CGM->SetRootFunctions(functions);
 
    // iterate on functions and add them to the call graph
    for(const auto f_id : functions)
@@ -155,12 +151,12 @@ DesignFlowStep_Status call_graph_computation::Exec()
       }
 
       // add the function to the call graph if necessary
-      if(!AppM->GetCallGraphManager()->IsVertex(f_id))
+      if(!CGM->IsVertex(f_id))
       {
          const auto has_body = TM->get_implementation_node(f_id) != 0;
          const auto helper = BehavioralHelperRef(new BehavioralHelper(AppM, f_id, has_body, parameters));
          const auto FB = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
-         AppM->GetCallGraphManager()->AddFunction(f_id, FB);
+         CGM->AddFunction(f_id, FB);
          CallGraphManager::expandCallGraphFromFunction(already_visited, AppM, f_id, debug_level);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                         "---Added function " + STR(f_id) + " " + fu_name + " to call graph");
@@ -174,7 +170,7 @@ DesignFlowStep_Status call_graph_computation::Exec()
 
    if(debug_level >= DEBUG_LEVEL_PEDANTIC || parameters->getOption<bool>(OPT_print_dot))
    {
-      AppM->GetCallGraphManager()->CGetCallGraph()->WriteDot("call_graph.dot");
+      CGM->CGetCallGraph()->WriteDot("call_graph.dot");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Created call graph");
    return DesignFlowStep_Status::SUCCESS;

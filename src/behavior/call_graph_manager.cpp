@@ -78,6 +78,76 @@
  */
 #define ADD_CALL_POINT(g, e, newstmt) get_edge_info<function_graph_edge_info>(e, *(g))->call_points.insert(newstmt)
 
+/**
+ * Visitor to identify the list of called functions
+ */
+struct CalledFunctionsVisitor : public boost::default_dfs_visitor
+{
+ private:
+   /// True if recursive calls are allowed
+   const bool allow_recursive_functions;
+
+   /// The call graph manager
+   const CallGraphManager* call_graph_manager;
+
+   /// The list of encountered body functions
+   CustomOrderedSet<unsigned int>& body_functions;
+
+   /// The list of encountered library functions
+   CustomOrderedSet<unsigned int>& library_functions;
+
+ public:
+   /**
+    * Constructor
+    * @param allow_recursive_functions tells if recursive functions are allowed
+    * @param call_graph_manager is the call graph manager
+    * @param body_functions is where results will be stored
+    * @param library_functions is where results will be stored
+    */
+   CalledFunctionsVisitor(const bool _allow_recursive_functions, const CallGraphManager* _call_graph_manager,
+                          CustomOrderedSet<unsigned int>& _body_functions,
+                          CustomOrderedSet<unsigned int>& _library_functions)
+       : allow_recursive_functions(_allow_recursive_functions),
+         call_graph_manager(_call_graph_manager),
+         body_functions(_body_functions),
+         library_functions(_library_functions)
+   {
+   }
+
+   void back_edge(const EdgeDescriptor& e, const CallGraph& g)
+   {
+      if(!allow_recursive_functions)
+      {
+         const auto& behaviors = g.CGetCallGraphInfo()->behaviors;
+         const auto source = boost::source(e, g);
+         const auto target = boost::target(e, g);
+         THROW_ERROR(
+             "Recursive functions not yet supported: " +
+             behaviors.at(call_graph_manager->get_function(source))->CGetBehavioralHelper()->get_function_name() +
+             "-->" +
+             behaviors.at(call_graph_manager->get_function(target))->CGetBehavioralHelper()->get_function_name());
+      }
+   }
+
+   /**
+    * Function called when a vertex has been finished
+    * @param u is the vertex
+    * @param call_graph is the call graph
+    */
+   void finish_vertex(const vertex& u, const CallGraph& g)
+   {
+      const auto function_id = Cget_node_info<FunctionInfo, graph>(u, g)->nodeID;
+      if(g.CGetCallGraphInfo()->behaviors.at(function_id)->CGetBehavioralHelper()->has_implementation())
+      {
+         body_functions.insert(function_id);
+      }
+      else
+      {
+         library_functions.insert(function_id);
+      }
+   }
+};
+
 CallGraphManager::CallGraphManager(const FunctionExpanderConstRef _function_expander,
                                    const bool _allow_recursive_functions, const tree_managerConstRef _tree_manager,
                                    const ParameterConstRef _Param)
@@ -438,26 +508,26 @@ bool CallGraphManager::ExistsAddressedFunction() const
    return false;
 }
 
-CustomOrderedSet<unsigned int> CallGraphManager::GetAddressedFunctions() const
+CustomSet<unsigned int> CallGraphManager::GetAddressedFunctions() const
 {
-   CustomOrderedSet<unsigned int> reachable_addressed_fun_ids;
+   CustomSet<unsigned int> reachable_addressed_fun_ids;
    std::set_intersection(reached_body_functions.cbegin(), reached_body_functions.cend(), addressed_functions.cbegin(),
                          addressed_functions.cend(),
                          std::inserter(reachable_addressed_fun_ids, reachable_addressed_fun_ids.begin()));
    return reachable_addressed_fun_ids;
 }
 
-const CallGraphConstRef CallGraphManager::CGetAcyclicCallGraph() const
+CallGraphConstRef CallGraphManager::CGetAcyclicCallGraph() const
 {
    return CallGraphRef(new CallGraph(call_graphs_collection, STD_SELECTOR));
 }
 
-const CallGraphConstRef CallGraphManager::CGetCallGraph() const
+CallGraphConstRef CallGraphManager::CGetCallGraph() const
 {
    return call_graph;
 }
 
-const CallGraphConstRef CallGraphManager::CGetCallSubGraph(const CustomUnorderedSet<vertex>& vertices) const
+CallGraphConstRef CallGraphManager::CGetCallSubGraph(const CustomUnorderedSet<vertex>& vertices) const
 {
    return CallGraphConstRef(new CallGraph(call_graphs_collection, STD_SELECTOR | FEEDBACK_SELECTOR, vertices));
 }
@@ -487,7 +557,7 @@ unsigned int CallGraphManager::get_function(vertex node) const
    return 0;
 }
 
-const CustomOrderedSet<unsigned int> CallGraphManager::get_called_by(unsigned int index) const
+CustomSet<unsigned int> CallGraphManager::get_called_by(unsigned int index) const
 {
    if(called_by.find(index) != called_by.end())
    {
@@ -499,44 +569,36 @@ const CustomOrderedSet<unsigned int> CallGraphManager::get_called_by(unsigned in
    }
 }
 
-const CustomUnorderedSet<unsigned int> CallGraphManager::get_called_by(const OpGraphConstRef cfg,
-                                                                       const vertex& caller) const
+CustomSet<unsigned int> CallGraphManager::get_called_by(const OpGraphConstRef cfg, const vertex& caller) const
 {
    return cfg->CGetOpNodeInfo(caller)->called;
 }
 
 void CallGraphManager::ComputeRootAndReachedFunctions()
 {
-   root_functions.clear();
-   /// If top function option has been passed
-   THROW_ASSERT(Param->isOption(OPT_top_functions_names), "Top function must be defined by the user");
-   const auto top_functions_names = Param->getOption<std::list<std::string>>(OPT_top_functions_names);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "---Top functions passed by user: " + Param->getOption<std::string>(OPT_top_functions_names));
-   for(const auto& top_function_name : top_functions_names)
-   {
-      const auto top_function = tree_manager->GetFunction(top_function_name);
-      if(!top_function)
-      {
-         THROW_ERROR("Function " + top_function_name + " not found");
-      }
-      else
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Root function (" + STR(top_function->index) + ") " +
-                            tree_helper::print_function_name(
-                                tree_manager, GetPointer<const function_decl>(GET_CONST_NODE(top_function))));
-         root_functions.insert(top_function->index);
-      }
-   }
    reached_body_functions.clear();
    reached_library_functions.clear();
    CalledFunctionsVisitor vis(allow_recursive_functions, this, reached_body_functions, reached_library_functions);
-   std::vector<boost::default_color_type> color_vec(boost::num_vertices(*call_graph));
    for(const auto root_fun_id : root_functions)
    {
       if(IsVertex(root_fun_id))
       {
+         std::vector<boost::default_color_type> color_vec(boost::num_vertices(*call_graph));
+         {
+            // Prevent top functions traversing
+            const auto index_map = boost::get(boost::vertex_index, *call_graph);
+            for(const auto top_id : root_functions)
+            {
+               if(top_id != root_fun_id)
+               {
+                  const auto v_it = functionID_vertex_map.find(top_id);
+                  if(v_it != functionID_vertex_map.end())
+                  {
+                     color_vec.at(index_map[v_it->second]) = boost::black_color;
+                  }
+               }
+            }
+         }
          const auto top_vertex = GetVertex(root_fun_id);
          boost::depth_first_visit(*call_graph, top_vertex, vis,
                                   boost::make_iterator_property_map(color_vec.begin(),
@@ -546,7 +608,12 @@ void CallGraphManager::ComputeRootAndReachedFunctions()
    }
 }
 
-const CustomOrderedSet<unsigned int> CallGraphManager::GetRootFunctions() const
+void CallGraphManager::SetRootFunctions(const CustomSet<unsigned int>& _root_functions)
+{
+   root_functions = _root_functions;
+}
+
+CustomSet<unsigned int> CallGraphManager::GetRootFunctions() const
 {
    THROW_ASSERT(boost::num_vertices(*call_graph) == 0 || root_functions.size(),
                 "Root functions have not yet been computed");
@@ -563,9 +630,24 @@ CustomOrderedSet<unsigned int> CallGraphManager::GetReachedFunctionsFrom(unsigne
    CustomOrderedSet<unsigned int> dummy;
    CustomOrderedSet<unsigned int> f_list;
 
+   const auto top_vertex = GetVertex(from);
    CalledFunctionsVisitor vis(allow_recursive_functions, this, f_list, with_body ? dummy : f_list);
    std::vector<boost::default_color_type> color_vec(boost::num_vertices(*call_graph));
-   const auto top_vertex = GetVertex(from);
+   {
+      // Prevent top functions traversing
+      const auto index_map = boost::get(boost::vertex_index, *call_graph);
+      for(const auto top_id : root_functions)
+      {
+         if(top_id != from)
+         {
+            const auto v_it = functionID_vertex_map.find(top_id);
+            if(v_it != functionID_vertex_map.end())
+            {
+               color_vec.at(index_map[v_it->second]) = boost::black_color;
+            }
+         }
+      }
+   }
    boost::depth_first_visit(*call_graph, top_vertex, vis,
                             boost::make_iterator_property_map(color_vec.begin(),
                                                               boost::get(boost::vertex_index_t(), *call_graph),
@@ -953,42 +1035,4 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
          THROW_UNREACHABLE("");
    };
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, DL, "<--Completed the recursive analysis of node " + STR(ind));
-}
-
-CalledFunctionsVisitor::CalledFunctionsVisitor(const bool _allow_recursive_functions,
-                                               const CallGraphManager* _call_graph_manager,
-                                               CustomOrderedSet<unsigned int>& _body_functions,
-                                               CustomOrderedSet<unsigned int>& _library_functions)
-    : allow_recursive_functions(_allow_recursive_functions),
-      call_graph_manager(_call_graph_manager),
-      body_functions(_body_functions),
-      library_functions(_library_functions)
-{
-}
-
-void CalledFunctionsVisitor::back_edge(const EdgeDescriptor& e, const CallGraph& g)
-{
-   if(!allow_recursive_functions)
-   {
-      const auto& behaviors = g.CGetCallGraphInfo()->behaviors;
-      const auto source = boost::source(e, g);
-      const auto target = boost::target(e, g);
-      THROW_ERROR("Recursive functions not yet supported: " +
-                  behaviors.at(call_graph_manager->get_function(source))->CGetBehavioralHelper()->get_function_name() +
-                  "-->" +
-                  behaviors.at(call_graph_manager->get_function(target))->CGetBehavioralHelper()->get_function_name());
-   }
-}
-
-void CalledFunctionsVisitor::finish_vertex(const vertex& u, const CallGraph& g)
-{
-   const auto function_id = Cget_node_info<FunctionInfo, graph>(u, g)->nodeID;
-   if(g.CGetCallGraphInfo()->behaviors.at(function_id)->CGetBehavioralHelper()->has_implementation())
-   {
-      body_functions.insert(function_id);
-   }
-   else
-   {
-      library_functions.insert(function_id);
-   }
 }
