@@ -247,6 +247,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                   if(parm_it != func_arch->parms.end())
                   {
                      func_arch->parms[ptr_p_name] = parm_it->second;
+                     func_arch->parms[ptr_p_name].at(FunctionArchitecture::parm_port) = ptr_p_name;
                      func_arch->parms.erase(parm_it);
 
                      // NOTE: should also update HLS_manager::design_interface_io, but passed-by-value parameters cannot
