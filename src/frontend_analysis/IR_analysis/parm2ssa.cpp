@@ -128,7 +128,7 @@ DesignFlowStep_Status parm2ssa::InternalExec()
    const auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
    const std::string srcp_default = fd->include_name + ":" + STR(fd->line_number) + ":" + STR(fd->column_number);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Analyzing function " + STR(function_id) + ": " + tree_helper::print_function_name(TM, fd));
+                  "-->Analyzing function " + STR(function_id) + ": " + tree_helper::GetMangledFunctionName(fd));
 
    for(const auto& arg : fd->list_of_args)
    {
@@ -159,7 +159,7 @@ DesignFlowStep_Status parm2ssa::InternalExec()
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "<--Analyzed function " + STR(function_id) + ": " + tree_helper::print_function_name(TM, fd));
+                  "<--Analyzed function " + STR(function_id) + ": " + tree_helper::GetMangledFunctionName(fd));
    const auto afterParm2SSA = AppM->getACopyParm2SSA(function_id);
    const auto modified = afterParm2SSA != beforeParm2SSA;
    if(modified)

@@ -528,7 +528,7 @@ bool BitLatticeManipulator::mix()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, bl_debug_level,
                            "Changes in " +
                                STR(tn->get_kind() == function_decl_K ?
-                                       (tree_helper::print_function_name(TM, GetPointerS<const function_decl>(tn)) +
+                                       (tree_helper::GetMangledFunctionName(GetPointerS<const function_decl>(tn)) +
                                         " return value") :
                                        STR(tn)) +
                                " Cur is " + bitstring_to_string(cur_lattice) + " Best is " +

@@ -41,9 +41,22 @@
  *
  */
 #include "phi_opt.hpp"
+
 #include "Parameter.hpp"
 #include "application_manager.hpp"
+#include "behavioral_helper.hpp"
+#include "dbgPrintHelper.hpp"
+#include "ext_tree_node.hpp"
 #include "function_behavior.hpp"
+#include "string_manipulation.hpp"
+#include "token_interface.hpp"
+#include "tree_basic_block.hpp"
+#include "tree_helper.hpp"
+#include "tree_manager.hpp"
+#include "tree_manipulation.hpp"
+#include "tree_node.hpp"
+#include "tree_reindex.hpp"
+
 #if HAVE_ILP_BUILT
 #include "allocation_information.hpp"
 #include "hls.hpp"
@@ -52,17 +65,9 @@
 #include "hls_step.hpp"
 #include "schedule.hpp"
 #endif
-#include "dbgPrintHelper.hpp"
-#include "ext_tree_node.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
-#include "token_interface.hpp"
-#include "tree_basic_block.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#include "tree_manipulation.hpp"
-#include "tree_node.hpp"
-#include "tree_reindex.hpp"
+
 #include <boost/range/adaptor/reversed.hpp>
+
 #include <fstream>
 
 PhiOpt::PhiOpt(const application_managerRef _AppM, unsigned int _function_id,
@@ -1537,10 +1542,9 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
           sl->list_of_bloc.at(succ_bbi)->CGetStmtList().empty() && loop_bb != curr_block->list_of_pred.end();
       if(infinite_empty_loop)
       {
-         INDENT_OUT_MEX(
-             OUTPUT_LEVEL_MINIMUM, output_level,
-             "Infinite empty loop is present in the code in function " +
-                 tree_helper::print_function_name(TM, GetPointerS<const function_decl>(TM->CGetTreeNode(function_id))));
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                        "Infinite empty loop is present in the code in function " +
+                            function_behavior->CGetBehavioralHelper()->GetMangledFunctionName());
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Infinite empty loop");
          return PhiOpt_PatternType::UNCHANGED;
       }
