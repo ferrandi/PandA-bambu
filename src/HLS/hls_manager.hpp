@@ -128,6 +128,8 @@ class ModuleArchitecture
    }
 
    FunctionArchitectureRef& GetArchitecture(const std::string& funcSymbol);
+
+   void RemoveArchitecture(const std::string& funcSymbol);
 };
 
 class HLS_manager : public application_manager

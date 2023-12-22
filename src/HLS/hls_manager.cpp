@@ -406,3 +406,8 @@ FunctionArchitectureRef& ModuleArchitecture::GetArchitecture(const std::string& 
 {
    return _funcArchs[funcSymbol];
 }
+
+void ModuleArchitecture::RemoveArchitecture(const std::string& funcSymbol)
+{
+   _funcArchs.erase(funcSymbol);
+}
