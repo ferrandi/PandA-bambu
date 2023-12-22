@@ -63,33 +63,6 @@
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
 #include <llvm/Transforms/Scalar.h>
 #include <llvm/Transforms/Scalar/GVN.h>
-#if __clang_major__ >= 13
-#include <llvm/Passes/PassBuilder.h>
-#include <llvm/Transforms/IPO/DeadArgumentElimination.h>
-#include <llvm/Transforms/IPO/ForceFunctionAttrs.h>
-#include <llvm/Transforms/IPO/FunctionAttrs.h>
-#include <llvm/Transforms/IPO/GlobalDCE.h>
-#include <llvm/Transforms/IPO/GlobalSplit.h>
-#include <llvm/Transforms/IPO/InferFunctionAttrs.h>
-#include <llvm/Transforms/IPO/Inliner.h>
-#include <llvm/Transforms/IPO/MergeFunctions.h>
-#include <llvm/Transforms/Scalar/DeadStoreElimination.h>
-#include <llvm/Transforms/Scalar/IndVarSimplify.h>
-#include <llvm/Transforms/Scalar/JumpThreading.h>
-#include <llvm/Transforms/Scalar/LICM.h>
-#include <llvm/Transforms/Scalar/LoopDeletion.h>
-#include <llvm/Transforms/Scalar/LoopFlatten.h>
-#include <llvm/Transforms/Scalar/LoopFuse.h>
-#include <llvm/Transforms/Scalar/LoopRotation.h>
-#include <llvm/Transforms/Scalar/MemCpyOptimizer.h>
-#include <llvm/Transforms/Scalar/MergedLoadStoreMotion.h>
-#include <llvm/Transforms/Scalar/NewGVN.h>
-#include <llvm/Transforms/Scalar/SimplifyCFG.h>
-#include <llvm/Transforms/Scalar/TailRecursionElimination.h>
-#if __clang_major__ >= 16
-#include <llvm/Transforms/Scalar/SROA.h>
-#endif
-#endif
 #include <llvm/Transforms/Utils/LoopUtils.h>
 #include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
 
@@ -103,24 +76,45 @@
 #endif
 #if __clang_major__ >= 7
 #include <llvm/Transforms/InstCombine/InstCombine.h>
-#endif
-#if __clang_major__ >= 7 && !defined(VVD)
+#ifndef VVD
 #include <llvm/Transforms/Utils.h>
+#endif
 #endif
 #if __clang_major__ >= 13
 #include <llvm/Analysis/CGSCCPassManager.h>
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/PassPlugin.h>
 #include <llvm/Transforms/IPO/ArgumentPromotion.h>
+#include <llvm/Transforms/IPO/DeadArgumentElimination.h>
+#include <llvm/Transforms/IPO/ForceFunctionAttrs.h>
+#include <llvm/Transforms/IPO/FunctionAttrs.h>
+#include <llvm/Transforms/IPO/GlobalDCE.h>
 #include <llvm/Transforms/IPO/GlobalOpt.h>
+#include <llvm/Transforms/IPO/GlobalSplit.h>
+#include <llvm/Transforms/IPO/InferFunctionAttrs.h>
+#include <llvm/Transforms/IPO/Inliner.h>
+#include <llvm/Transforms/IPO/MergeFunctions.h>
 #include <llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm/Transforms/Scalar/DeadStoreElimination.h>
+#include <llvm/Transforms/Scalar/IndVarSimplify.h>
+#include <llvm/Transforms/Scalar/JumpThreading.h>
+#include <llvm/Transforms/Scalar/LICM.h>
+#include <llvm/Transforms/Scalar/LoopDeletion.h>
+#include <llvm/Transforms/Scalar/LoopFlatten.h>
+#include <llvm/Transforms/Scalar/LoopFuse.h>
+#include <llvm/Transforms/Scalar/LoopRotation.h>
+#include <llvm/Transforms/Scalar/MemCpyOptimizer.h>
+#include <llvm/Transforms/Scalar/MergedLoadStoreMotion.h>
+#include <llvm/Transforms/Scalar/NewGVN.h>
+#include <llvm/Transforms/Scalar/SimplifyCFG.h>
+#include <llvm/Transforms/Scalar/TailRecursionElimination.h>
+#include <llvm/Transforms/Utils/Mem2Reg.h>
 #if __clang_major__ >= 16
 #include <llvm/Transforms/Scalar/LowerAtomicPass.h>
+#include <llvm/Transforms/Scalar/SROA.h>
 #else
 #include <llvm/Transforms/Scalar/LowerAtomic.h>
 #endif
-#include <llvm/Transforms/Utils/Mem2Reg.h>
-#include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
 #endif
 
 #define PUGIXML_NO_EXCEPTIONS
