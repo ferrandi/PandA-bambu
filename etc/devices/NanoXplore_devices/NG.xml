@@ -121,8 +121,12 @@
       <cmd name="    table_lines = first_table_after('Ports used in current design.', log_lines)" condition="${__connect_iob__}"/>
       <cmd name="    rows = parse_ascii_table(table_lines)"/>
       <cmd name="    pin_table = dict(zip(rows[1], rows[2]))"/>
-      <cmd name="    lines = log_lines[log_lines.index(next(iter(filter(lambda x: 'Reporting routed project' in x, log_lines)), None)):]"/>
-      <cmd name="    table_lines = first_table_after('Reporting instances', lines)"/>
+      <cmd name="    if nx_suite_version &lt; 4:"/>
+      <cmd name="        lines = log_lines[log_lines.index(next(iter(filter(lambda x: 'Reporting routed project' in x, log_lines)), None)):]"/>
+      <cmd name="        table_lines = first_table_after('Reporting instances', lines)"/>
+      <cmd name="    else:"/>
+      <cmd name="        table_lines = first_table_after('Reporting instances at state \'Routed\'', log_lines)"/>
+      <cmd name="        lines = log_lines[log_lines.index(next(iter(filter(lambda x: 'Reporting instances at state \'Routed\'' in x, log_lines)), None)):]"/>
       <cmd name="    rows = parse_ascii_table(table_lines)"/>
       <cmd name="    res_table = dict(zip([' '.join([a,b,c]).strip() for a,b,c in zip(rows[0],rows[1],rows[2])], rows[3]))"/>
       <cmd name="    fe_num = '0'"/>
@@ -132,7 +136,7 @@
       <cmd name="        fe_table = dict(zip(rows[2], rows[3]))"/>
       <cmd name="        fe_num = first_num(fe_table['Count'])"/>
       <cmd name="    else:"/>
-      <cmd name="        fe_num = first_num(next(iter(filter(lambda x: 'Estimated FE occupancy is' in x, lines))))"/>
+      <cmd name="        fe_num = first_num(next(iter(filter(lambda x: 'FE occupancy is' in x, lines))))"/>
       <cmd name="    table_lines = first_table_after('The following table lists the number of registers for each instance type', lines)"/>
       <cmd name="    rows = parse_ascii_table(table_lines)"/>
       <cmd name="    reg_table = dict(zip(rows[2], rows[3]))"/>
@@ -192,8 +196,10 @@
       <cmd name="design_slack_ns = get_timing(lines)"/>
       <cmd name="if nx_suite_version == 2:"/>
       <cmd name="    fr = open(os.path.join(outdir, 'logs/general.log'), &quot;r&quot;)"/>
-      <cmd name="else:"/>
+      <cmd name="elif nx_suite_version == 3:"/>
       <cmd name="    fr = open(os.path.join(outdir, 'progress.rpt'), &quot;r&quot;)"/>
+      <cmd name="else:"/>
+      <cmd name="    fr = open(os.path.join(outdir, 'general.log'), &quot;r&quot;)"/>
       <cmd name="lines = fr.readlines()"/>
       <cmd name="fr.close()"/>
       <cmd name="FunctionalElements, LUTs, TotalRegisters, TotalMemBlocks, TotalIOPins, TotalDSPs = get_res(lines) "/>
