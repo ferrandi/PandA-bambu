@@ -109,13 +109,13 @@ FunctionCallOpt::FunctionCallOpt(const ParameterConstRef Param, const applicatio
    debug_level = Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
    if(never_inline.empty())
    {
+      const auto TM = AppM->get_tree_manager();
       if(Param->IsParameter(PARAMETER_INLINE_MAX_COST))
       {
          inline_max_cost = Param->GetParameter<size_t>(PARAMETER_INLINE_MAX_COST);
       }
       if(Param->isOption(OPT_inline_functions))
       {
-         const auto TM = AppM->get_tree_manager();
          const auto fnames = SplitString(Param->getOption<std::string>(OPT_inline_functions), ",");
          for(const auto& fname_cond : fnames)
          {
@@ -133,6 +133,37 @@ FunctionCallOpt::FunctionCallOpt(const ParameterConstRef Param, const applicatio
             else
             {
                INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Required inline function not found: " + fname);
+            }
+         }
+      }
+      const auto HLSMgr = GetPointer<HLS_manager>(AppM);
+      for(const auto& [symbol, arch] : *HLSMgr->module_arch)
+      {
+         const auto inline_attr = arch->attrs.find(FunctionArchitecture::func_inline);
+         if(inline_attr != arch->attrs.end())
+         {
+            const auto fnode = TM->GetFunction(symbol);
+            if(fnode)
+            {
+               if(inline_attr->second == "self")
+               {
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Required always inline for function " + symbol);
+                  always_inline.insert(GET_INDEX_CONST_NODE(fnode));
+               }
+               else if(inline_attr->second == "off")
+               {
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Required never inline for function " + symbol);
+                  never_inline.insert(GET_INDEX_CONST_NODE(fnode));
+               }
+               else if(inline_attr->second == "recursive")
+               {
+                  THROW_WARNING("Recursive inline not yet supported.");
+               }
+            }
+            else
+            {
+               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                              "Required inline (" + inline_attr->second + ") function not found: " + symbol);
             }
          }
       }
