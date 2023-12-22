@@ -188,18 +188,18 @@
       <cmd name="#print 'Warnings: ', getWarningCount()"/>
 
       <cmd name="if nx_suite_version == 2:"/>
-      <cmd name="    fr = open(os.path.join(outdir, 'logs/Timing_Constraints_Report.timing'), &quot;r&quot;)"/>
+      <cmd name="    fr = open(os.path.join(outdir, 'logs/Timing_Constraints_Report.timing'), &quot;r&quot;, encoding=&quot;utf-8&quot;)"/>
       <cmd name="else:"/>
-      <cmd name="    fr = open(glob.glob(outdir + '/Timing_Constraints_Report_Routed_*.timing')[0], &quot;r&quot;)"/>
+      <cmd name="    fr = open(glob.glob(outdir + '/Timing_Constraints_Report_Routed_*.timing')[0], &quot;r&quot;, encoding=&quot;utf-8&quot;)"/>
       <cmd name="lines = fr.readlines()"/>
       <cmd name="fr.close()"/>
       <cmd name="design_slack_ns = get_timing(lines)"/>
       <cmd name="if nx_suite_version == 2:"/>
-      <cmd name="    fr = open(os.path.join(outdir, 'logs/general.log'), &quot;r&quot;)"/>
+      <cmd name="    fr = open(os.path.join(outdir, 'logs/general.log'), &quot;r&quot;, encoding=&quot;utf-8&quot;)"/>
       <cmd name="elif nx_suite_version == 3:"/>
-      <cmd name="    fr = open(os.path.join(outdir, 'progress.rpt'), &quot;r&quot;)"/>
+      <cmd name="    fr = open(os.path.join(outdir, 'progress.rpt'), &quot;r&quot;, encoding=&quot;utf-8&quot;)"/>
       <cmd name="else:"/>
-      <cmd name="    fr = open(os.path.join(outdir, 'general.log'), &quot;r&quot;)"/>
+      <cmd name="    fr = open(os.path.join(outdir, 'general.log'), &quot;r&quot;, encoding=&quot;utf-8&quot;)"/>
       <cmd name="lines = fr.readlines()"/>
       <cmd name="fr.close()"/>
       <cmd name="FunctionalElements, LUTs, TotalRegisters, TotalMemBlocks, TotalIOPins, TotalDSPs = get_res(lines) "/>
