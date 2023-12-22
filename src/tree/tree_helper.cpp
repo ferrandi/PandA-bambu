@@ -150,11 +150,6 @@ static std::string sign_reduce_bitstring(std::string bitstring, bool bitstring_i
    return bitstring;
 }
 
-unsigned long long tree_helper::size(const tree_managerConstRef& tm, unsigned int index)
-{
-   return Size(tm->CGetTreeReindex(index));
-}
-
 unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
 {
    const auto t = _t->get_kind() == tree_reindex_K ? GET_CONST_NODE(_t) : _t;
@@ -366,18 +361,6 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
    return 0ull;
 }
 
-std::string tree_helper::name_type(const tree_managerConstRef& tm, int unsigned index)
-{
-   const auto t = tm->CGetTreeReindex(index);
-   return GetTypeName(t);
-}
-
-std::string tree_helper::name_tmpl(const tree_managerConstRef& tm, const unsigned int index)
-{
-   const auto t = tm->CGetTreeReindex(index);
-   return GetTemplateTypeName(t);
-}
-
 std::string tree_helper::GetTemplateTypeName(const tree_nodeConstRef& type)
 {
    if(type->get_kind() == tree_reindex_K)
@@ -404,12 +387,6 @@ std::string tree_helper::GetTemplateTypeName(const tree_nodeConstRef& type)
       }
    }
    return "";
-}
-
-std::string tree_helper::record_name(const tree_managerConstRef& tm, const unsigned int index)
-{
-   const auto t = tm->CGetTreeReindex(index);
-   return GetRecordTypeName(t);
 }
 
 std::string tree_helper::GetRecordTypeName(const tree_nodeConstRef& type)
@@ -2787,7 +2764,7 @@ bool tree_helper::is_module(const tree_managerConstRef& TM, const unsigned int i
 bool tree_helper::is_builtin_channel(const tree_managerConstRef& TM, const unsigned int index)
 {
    THROW_ASSERT(GetPointer<const record_type>(TM->CGetTreeNode(index)), "a record type is expected");
-   std::string rec_name = record_name(TM, index);
+   std::string rec_name = GetRecordTypeName(TM->CGetTreeReindex(index));
    return rec_name == "sc_fifo" || rec_name == "tlm_fifo" || rec_name == "sc_mutex" || rec_name == "sc_semaphore";
 }
 
@@ -4986,10 +4963,10 @@ void tree_helper::get_array_dim_and_bitsize(const tree_managerConstRef& TM, cons
    }
    else
    {
-      auto type_id = get_type_index(TM, GET_INDEX_CONST_NODE(at->elts));
-      elts_bitsize = size(TM, type_id);
-      const auto fd = GetPointer<field_decl>(TM->get_tree_node_const(type_id));
-      if(!fd or !fd->is_bitfield())
+      const auto etype = CGetType(at->elts);
+      elts_bitsize = Size(etype);
+      const auto fd = GetPointer<const field_decl>(GET_CONST_NODE(etype));
+      if(!fd || !fd->is_bitfield())
       {
          elts_bitsize = std::max(8ull, elts_bitsize);
       }
