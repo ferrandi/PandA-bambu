@@ -645,6 +645,23 @@ class InlineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
       }
    }
 
+   void finalize(FunctionDecl* FD) override
+   {
+      std::string inline_attr;
+      if(FD->hasAttr<NoInlineAttr>())
+      {
+         inline_attr = "off";
+      }
+      else if(FD->hasAttr<AlwaysInlineAttr>())
+      {
+         inline_attr = "self";
+      }
+      if(inline_attr.size())
+      {
+         GetFuncAttr(FD).attrs.emplace(key_loc_t("inline", FD->getLocation()), inline_attr);
+      }
+   }
+
    static const char* PragmaKeyword;
 };
 const char* InlineHLSPragmaHandler::PragmaKeyword = "inline";
@@ -1343,6 +1360,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
       if(_parseAction & ParseAction_Analyze)
       {
          AnalyzeParameterInterface(FD, p);
+         GetFuncAttr(FD).attrs.emplace(key_loc_t("inline", p.loc), "off");
       }
 
       if(_parseAction & ParseAction_Optimize)
@@ -1353,7 +1371,6 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
             FD->addAttr(NoInlineAttr::CreateImplicit(FD->getASTContext()));
             FD->dropAttr<AlwaysInlineAttr>();
          }
-         GetFuncAttr(FD).attrs.emplace(key_loc_t("inline", p.loc), "off");
       }
    }
 
