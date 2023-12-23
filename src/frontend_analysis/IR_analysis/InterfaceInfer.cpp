@@ -269,19 +269,24 @@ bool InterfaceInfer::HasToBeExecuted() const
 
 DesignFlowStep_Status InterfaceInfer::Exec()
 {
-   const auto top_functions = AppM->CGetCallGraphManager()->GetRootFunctions();
+   const auto TM = AppM->get_tree_manager();
    const auto HLSMgr = GetPointer<HLS_manager>(AppM);
    THROW_ASSERT(HLSMgr, "");
-   const auto TM = AppM->get_tree_manager();
+   const auto CGM = AppM->CGetCallGraphManager();
+   const auto CG = CGM->CGetCallGraph();
+   auto top_functions = CGM->GetRootFunctions();
    std::set<unsigned int> modified;
    const auto add_to_modified = [&](const tree_nodeRef& tn) {
       modified.insert(GET_INDEX_CONST_NODE(GetPointer<gimple_node>(GET_CONST_NODE(tn))->scpe));
    };
+
    for(const auto& top_id : top_functions)
    {
       const auto fnode = TM->CGetTreeReindex(top_id);
       const auto fd = GetPointer<const function_decl>(GET_CONST_NODE(fnode));
       const auto fname = tree_helper::GetMangledFunctionName(fd);
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Analyzing function " + fname);
+
       /* Check if there is a typename corresponding to fname */
       auto& func_arch = HLSMgr->module_arch->GetArchitecture(fname);
       if(!func_arch)
@@ -347,7 +352,6 @@ DesignFlowStep_Status InterfaceInfer::Exec()
 
       const tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
 
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Analyzing function " + fname);
       std::map<std::string, TreeNodeSet> bundle_vdefs;
       for(const auto& arg : fd->list_of_args)
       {
@@ -365,7 +369,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
          parm_attrs.emplace(FunctionArchitecture::parm_offset, "off");
          THROW_ASSERT(func_arch->ifaces.find(parm_attrs.at(FunctionArchitecture::parm_bundle)) !=
                           func_arch->ifaces.end(),
-                      "Missing parameter bundle");
+                      "Missing parameter bundle: " + parm_attrs.at(FunctionArchitecture::parm_bundle));
          auto& iface_attrs = func_arch->ifaces.at(parm_attrs.at(FunctionArchitecture::parm_bundle));
          iface_attrs[FunctionArchitecture::iface_direction] = port_o::GetString(port_o::IN);
          iface_attrs[FunctionArchitecture::iface_bitwidth] = STR(tree_helper::Size(arg_type));
