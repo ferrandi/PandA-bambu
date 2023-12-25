@@ -180,7 +180,11 @@ std::string VerilatorWrapper::GenerateScript(std::ostream& script, const std::st
        Param->isOption(OPT_verilator_parallel) ? Param->getOption<int>(OPT_verilator_parallel) : 1;
    script << "make -C ${obj_dir}"
           << " -j " << nThreadsMake << " OPT=\"-fstrict-aliasing\""
-          << " -f Vbambu_testbench.mk Vbambu_testbench";
+          << " -f Vbambu_testbench.mk Vbambu_testbench \\\n"
+          << "  CC=${CC} \\\n"
+          << "  CXX=${CC} \\\n"
+          << "  LINK=${CC} \\\n"
+          << "  AR=$(dirname ${CC})/ar";
 #ifdef _WIN32
    /// VM_PARALLEL_BUILDS=1 removes the dependency from perl
    script << " VM_PARALLEL_BUILDS=1 CFG_CXXFLAGS_NO_UNUSED=\"\"";
