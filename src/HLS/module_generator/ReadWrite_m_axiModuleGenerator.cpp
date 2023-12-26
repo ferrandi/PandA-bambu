@@ -201,7 +201,7 @@ reg [2:0] _present_state, _next_state;
       out << "reg [1:0] arburst, next_arburst;\n";
       out << "reg [7:0] arlen, next_arlen;\n";
       auto log_data_size = std::stoull(data_bitsize) / 8;
-      out << "reg [(" + STR(log_data_size) + ")-1:0] misalignment;\n";
+      out << "reg [(" + STR(log_data_size) + ")-1:0] misalignment, next_misalignment;\n";
       out << "reg [(" + data_bitsize + ")-1:0] read_mask, next_read_mask;\n";
 
       out << R"(
@@ -277,11 +277,12 @@ always @(*) begin
   next_read_mask = read_mask;
   next_awready = awready;
   next_wstrb = wstrb;
+  next_misalignment = misalignment;
 )";
       out << R"(
    case (_present_state)
     S_IDLE: begin 
-      misalignment = 0;
+      next_misalignment = 0;
       next_axi_awaddr = 0;
       next_axi_awvalid = 0;
       next_axi_wdata = 0;
@@ -317,11 +318,11 @@ always @(*) begin
 
       out << "          next_first_read = 1;\n";
       out << "          next_axi_araddr = " << _ports_in[i_in4].name << ";\n";
-      out << "          misalignment = " << _ports_in[i_in4].name << " & ((1 << next_arsize) - 1);\n";
-      out << "          if(misalignment > 0) begin\n";
+      out << "          next_misalignment = " << _ports_in[i_in4].name << " & ((1 << next_arsize) - 1);\n";
+      out << "          if(next_misalignment > 0) begin\n";
       out << "            next_arlen = 'b1;\n";
       out << "            next_arburst = 'b1;\n";
-      out << "            next_read_mask = -(1 << (misalignment << 3));\n";
+      out << "            next_read_mask = -(1 << (next_misalignment << 3));\n";
       out << "          end else begin\n";
       out << "            next_arlen = 0;\n";
       out << "            next_arburst = 0;\n";
@@ -339,15 +340,15 @@ always @(*) begin
       out << "            next_awsize = `CLOG2(in2 >> 3);\n";
       out << "          `endif\n";
       /* Compute the misalignment, assert all the bits to the left of the misaligned one */
-      out << "          misalignment = " << _ports_in[i_in4].name << " & ((1 << next_awsize) - 1);\n";
+      out << "          next_misalignment = " << _ports_in[i_in4].name << " & ((1 << next_awsize) - 1);\n";
       for(unsigned i = 0; i < _ports_out[o_wstrb].type_size; i++)
       {
-         out << "          next_wstrb[" << STR(i) << "] = " << STR(i) << " >= misalignment && (in2 >> 3 > " << STR(i)
-             << ");\n";
+         out << "          next_wstrb[" << STR(i) << "] = " << STR(i) << " >= next_misalignment && (in2 >> 3 > "
+             << STR(i) << ");\n";
       }
-      out << "          next_axi_wdata = " << _ports_in[i_in3].name << " << (misalignment << 3);\n";
+      out << "          next_axi_wdata = " << _ports_in[i_in3].name << " << (next_misalignment << 3);\n";
       out << R"(          next_axi_wvalid = 1;
-          next_axi_wlast = !(misalignment > 0);
+          next_axi_wlast = !(next_misalignment > 0);
           if(next_axi_wlast) begin
             next_awburst = 2'b00;
             next_awlen = 8'b00000000;
@@ -383,8 +384,8 @@ always @(*) begin
       out << "      if(" << _ports_in[i_rvalid].name << " && axi_rready) begin\n";
       out << R"(          if(!first_read) begin
             if(~read_mask != 0)
-              next_acc_rdata = acc_rdata >> (misalignment << 3) | (()" +
-                 _ports_in[i_rdata].name + R"( & (~read_mask & ((1 << in2) - 1))) << (misalignment << 3));
+              next_acc_rdata = acc_rdata >> (next_misalignment << 3) | (()" +
+                 _ports_in[i_rdata].name + R"( & (~read_mask & ((1 << in2) - 1))) << (next_misalignment << 3));
             next_axi_rready = 0;
 )";
       out << "             if(!" << _ports_in[i_rlast].name << ") begin\n";
@@ -472,7 +473,7 @@ end
 
 always @(posedge clock) begin
   _present_state <= _next_state;
-
+  misalignment <= next_misalignment; 
   axi_awaddr <= next_axi_awaddr;
   axi_awvalid <= next_axi_awvalid;
   axi_wdata <= next_axi_wdata;
