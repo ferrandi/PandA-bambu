@@ -43,22 +43,16 @@
 #include "chaining.hpp"
 
 #include "Parameter.hpp"
+#include "chaining_information.hpp"
+#include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "hls.hpp"
 
-#include "polixml.hpp"
-#include "xml_helper.hpp"
-
-/// STD include
-#include "custom_set.hpp"
 #include <boost/graph/incremental_components.hpp>
 #include <boost/graph/properties.hpp>
 #include <boost/pending/disjoint_sets.hpp>
 #include <boost/property_map/property_map.hpp>
-
-/// HLS/chaining
-#include "chaining_information.hpp"
 
 chaining::chaining(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
                    const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)

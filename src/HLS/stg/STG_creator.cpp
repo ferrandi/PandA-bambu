@@ -45,13 +45,6 @@
  */
 #include "STG_creator.hpp"
 
-#include "polixml.hpp"
-#include "xml_helper.hpp"
-
-#include "Parameter.hpp"
-#include "refcount.hpp"
-#include "utility.hpp"
-
 STG_creator::STG_creator(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned _funId,
                          const DesignFlowManagerConstRef _design_flow_manager,
                          const HLSFlowStep_Type _hls_flow_step_type)

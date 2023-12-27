@@ -45,7 +45,6 @@
 #include "function_behavior.hpp"
 
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-#include "config_HAVE_POLIXML_BUILT.hpp"
 
 #include "Dominance.hpp"                      // for dominance
 #include "Parameter.hpp"                      // for ParameterConstRef

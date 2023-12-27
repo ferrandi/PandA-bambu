@@ -45,34 +45,23 @@
  */
 #include "module_interface.hpp"
 
+#include "Parameter.hpp"
+#include "add_library.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
+#include "constant_strings.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
-#include "omp_functions.hpp"
-
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "memory.hpp"
 #include "memory_symbol.hpp"
-
+#include "omp_functions.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 
-#include "polixml.hpp"
-#include "xml_helper.hpp"
-
-#include "Parameter.hpp"
-#include "constant_strings.hpp"
-
-/// HLS/module_allocation includes
-#include "add_library.hpp"
-
-/// STL includes
-#include "custom_set.hpp"
 #include <tuple>
-
-/// utility include
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 
 module_interface::module_interface(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                                    unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager,

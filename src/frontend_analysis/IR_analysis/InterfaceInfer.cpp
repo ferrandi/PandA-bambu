@@ -51,7 +51,7 @@
 #include "compiler_wrapper.hpp"
 #include "constant_strings.hpp"
 #include "copyrights_strings.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "function_behavior.hpp"
@@ -61,8 +61,7 @@
 #include "language_writer.hpp"
 #include "library_manager.hpp"
 #include "math_function.hpp"
-#include "polixml.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "string_manipulation.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_flow_step.hpp"
@@ -78,8 +77,6 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 #include "var_pp_functor.hpp"
-#include "xml_dom_parser.hpp"
-#include "xml_helper.hpp"
 
 #include <regex>
 

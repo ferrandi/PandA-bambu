@@ -43,22 +43,15 @@
  */
 #include "fu_binding_creator.hpp"
 
+#include "Parameter.hpp"
+#include "allocation.hpp"
+#include "cdfc_module_binding.hpp"
+#include "exceptions.hpp"
 #include "fu_binding.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "parallel_memory_fu_binding.hpp"
-
-/// implemented algorithms
-#include "cdfc_module_binding.hpp"
 #include "unique_binding.hpp"
-
-#include "Parameter.hpp"
-#include "exceptions.hpp"
-#include "polixml.hpp"
-#include "xml_helper.hpp"
-
-/// HLS/module_allocation include
-#include "allocation.hpp"
 
 fu_binding_creator::fu_binding_creator(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
                                        unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager,
