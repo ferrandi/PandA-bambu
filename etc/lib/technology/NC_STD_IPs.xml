@@ -3868,7 +3868,7 @@ always @ (sel or in1)
           <NP_functionality LIBRARY="flipflop_AR in1 out1" VERILOG_PROVIDED="
 reg reg_out1 1INIT_ZERO_VALUE;
 assign out1 = reg_out1;
-always @(posedge clock 1RESET_EDGE)
+always @(posedge clock 1RESET_EDGE_FORCE)
   if (1RESET_VALUE)
     reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
   else
@@ -3995,7 +3995,7 @@ begin
           <NP_functionality LIBRARY="register_AR in1 out1" VERILOG_PROVIDED="
 reg [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
 assign out1 = reg_out1;
-always @(posedge clock 1RESET_EDGE)
+always @(posedge clock 1RESET_EDGE_FORCE)
   if (1RESET_VALUE)
     reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
   else
@@ -4039,7 +4039,7 @@ begin
           <NP_functionality LIBRARY="register_AR_NORETIME in1 out1" VERILOG_PROVIDED="
 (* dont_retime *)(* keep = &quot;true&quot; *)(* syn_keep=1 *)(* DONT_TOUCH = &quot;true&quot; *) reg [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
 assign out1 = reg_out1;
-always @(posedge clock 1RESET_EDGE)
+always @(posedge clock 1RESET_EDGE_FORCE)
   if (1RESET_VALUE)
     reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
   else
@@ -4089,7 +4089,7 @@ begin
           <NP_functionality LIBRARY="register_AR_NORETIME_INT in1 out1" VERILOG_PROVIDED="
 (* dont_retime *)(* keep = &quot;true&quot; *)(* syn_keep=1 *)(* DONT_TOUCH = &quot;true&quot; *) reg signed [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
 assign out1 = reg_out1;
-always @(posedge clock)
+always @(posedge clock 1RESET_EDGE_FORCE)
   if (1RESET_VALUE)
     reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
   else
@@ -4139,7 +4139,7 @@ begin
           <NP_functionality LIBRARY="register_AR_NORETIME_UINT in1 out1" VERILOG_PROVIDED="
 (* dont_retime *)(* keep = &quot;true&quot; *)(* syn_keep=1 *)(* DONT_TOUCH = &quot;true&quot; *) reg [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
 assign out1 = reg_out1;
-always @(posedge clock)
+always @(posedge clock 1RESET_EDGE_FORCE)
   if (1RESET_VALUE)
     reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
   else
@@ -4189,7 +4189,7 @@ begin
           <NP_functionality LIBRARY="register_AR_NORETIME_REAL in1 out1" VERILOG_PROVIDED="
 (* dont_retime *)(* keep = &quot;true&quot; *)(* syn_keep=1 *)(* DONT_TOUCH = &quot;true&quot; *) reg [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
 assign out1 = reg_out1;
-always @(posedge clock)
+always @(posedge clock 1RESET_EDGE_FORCE)
   if (1RESET_VALUE)
     reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
   else
@@ -4242,7 +4242,7 @@ begin
           <NP_functionality LIBRARY="register_SARSE in1 out1" VERILOG_PROVIDED="
 reg [BITSIZE_out1-1:0] reg_out1 1INIT_ZERO_VALUE;
 assign out1 = reg_out1;
-always @(posedge clock 1RESET_EDGE)
+always @(posedge clock 1RESET_EDGE_FORCE)
   if (1RESET_VALUE)
     reg_out1 &lt;= {BITSIZE_out1{1&apos;b0}};
   else if (wenable)
