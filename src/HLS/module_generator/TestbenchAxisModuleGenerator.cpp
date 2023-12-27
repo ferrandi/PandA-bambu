@@ -75,12 +75,10 @@ void TestbenchAxisModuleGenerator::InternalExec(std::ostream& out, structural_ob
    const auto top_fname = top_bh->GetMangledFunctionName();
    const auto top_fnode = HLSMgr->get_tree_manager()->CGetTreeReindex(function_id);
    const auto return_type = tree_helper::GetFunctionReturnType(top_fnode);
-   THROW_ASSERT(HLSMgr->design_attributes.count(top_fname) && HLSMgr->design_attributes.at(top_fname).count(arg_name),
-                "Parameter " + arg_name + " not found in function " + top_fname);
-   const auto DesignAttributes = HLSMgr->design_attributes.at(top_fname).at(arg_name);
-   const auto if_dir = port_o::to_port_direction(DesignAttributes.at(attr_interface_dir));
+   const auto& iface_attrs = HLSMgr->module_arch->GetArchitecture(top_fname)->ifaces.at(arg_name);
+   const auto if_dir = port_o::to_port_direction(iface_attrs.at(FunctionArchitecture::iface_direction));
+   const auto if_alignment = iface_attrs.at(FunctionArchitecture::iface_alignment);
    const auto if_ndir = if_dir == port_o::IN ? port_o::OUT : port_o::IN;
-   const auto if_alignment = DesignAttributes.find(attr_interface_alignment);
    const auto port_prefix = (if_dir == port_o::IN ? "s_axis_" : "m_axis_") + arg_name;
    std::string np_library = mod_cir->get_id() + " index";
    const auto add_port_parametric = [&](const std::string& suffix, port_o::port_direction dir, unsigned port_size) {
@@ -107,16 +105,8 @@ function automatic integer log2;
 endfunction
 
 localparam BITSIZE_data=BITSIZE_)"
-       << port_prefix << "_TDATA,\n  ";
-   if(if_alignment == DesignAttributes.end())
-   {
-      out << "ALIGNMENT=log2(BITSIZE_data) > 3 ? (1<<(log2(BITSIZE_data)-3)) : 1";
-   }
-   else
-   {
-      out << "ALIGNMENT=" << if_alignment->second;
-   }
-   out << R"(;
+       << port_prefix << "_TDATA,\n  "
+       << "ALIGNMENT=" << if_alignment << R"(;
 
 arg_utils a_utils();
 mem_utils #(BITSIZE_data) m_utils();

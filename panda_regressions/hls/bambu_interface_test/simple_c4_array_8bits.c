@@ -1,4 +1,4 @@
-#pragma HLS_interface d array 8
+#pragma HLS interface port=d mode=array elem_count=8
 void sum3numbers(char a[8], char b[8], char c[8], char d[8])
 {
    unsigned i;

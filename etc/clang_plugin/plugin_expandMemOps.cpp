@@ -37,9 +37,6 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-// #undef NDEBUG
-#include "debug_print.hpp"
-
 #include "ExpandMemOpsPass.hpp"
 
 #include <llvm/IR/DerivedTypes.h>
@@ -76,9 +73,13 @@
 #include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
 #endif
 
+#include "debug_print.hpp"
+
 #include <cxxabi.h>
 
 #define PEEL_THRESHOLD 16
+
+#define DEBUG_TYPE "expand-mem-ops"
 
 char llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::ID = 0;
 
@@ -156,8 +157,8 @@ llvm::Type* llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::getMemcpyLoopLower
    {
       if(src_align == dst_align && dst_align == Length->getZExtValue() && dst_align <= 8)
       {
-         PRINT_DBG("memcpy can be optimized\n");
-         PRINT_DBG("Align=" << src_align << "\n");
+         LLVM_DEBUG(llvm::dbgs() << "memcpy can be optimized\n");
+         LLVM_DEBUG(llvm::dbgs() << "Align=" << src_align << "\n");
          return llvm::Type::getIntNTy(Context, src_align * 8);
       }
       unsigned localsrc_align = src_align;
@@ -169,8 +170,8 @@ llvm::Type* llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::getMemcpyLoopLower
          if(dstCheck && localsrc_align == localDstAlign)
          {
             Optimize = true;
-            PRINT_DBG("memcpy can be optimized\n");
-            PRINT_DBG("Align=" << src_align << "\n");
+            LLVM_DEBUG(llvm::dbgs() << "memcpy can be optimized\n");
+            LLVM_DEBUG(llvm::dbgs() << "Align=" << src_align << "\n");
             return llvm::Type::getIntNTy(Context, src_align * 8);
          }
       }
@@ -192,8 +193,8 @@ void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::createMemCpyLoopKnownSize
     llvm::Instruction* InsertBefore, llvm::Value* src_addr, llvm::Value* dst_addr, llvm::ConstantInt* CopyLen,
     unsigned src_align, unsigned dst_align, bool src_volatile, bool dst_volatile, const llvm::DataLayout* DL)
 {
-   PRINT_DBG("src: align: " << src_align << ", volatile: " << src_volatile << "\n");
-   PRINT_DBG("dst: align: " << dst_align << ", volatile: " << dst_volatile << "\n");
+   LLVM_DEBUG(llvm::dbgs() << "src: align: " << src_align << ", volatile: " << src_volatile << "\n");
+   LLVM_DEBUG(llvm::dbgs() << "dst: align: " << dst_align << ", volatile: " << dst_volatile << "\n");
    // No need to expand zero length copies.
    if(CopyLen->isZero())
    {
@@ -219,7 +220,8 @@ void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::createMemCpyLoopKnownSize
    auto BytesCopied = LoopEndCount * LoopOpSize;
    const auto RemainingBytes = CopyLen->getZExtValue() - BytesCopied;
 
-   PRINT_DBG("  size: " << LoopOpSize << ", count: " << LoopEndCount << ", left: " << RemainingBytes << "\n");
+   LLVM_DEBUG(llvm::dbgs() << "  size: " << LoopOpSize << ", count: " << LoopEndCount << ", left: " << RemainingBytes
+                           << "\n");
 
    bool do_unrolling;
 #if __clang_major__ == 7
@@ -390,13 +392,13 @@ void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::expandMemSetAsLoopLocal(l
    }
    if(AlignCanBeUsed)
    {
-      PRINT_DBG("memset can be optimized\n");
-      PRINT_DBG("Align=" << Align << "\n");
+      LLVM_DEBUG(llvm::dbgs() << "memset can be optimized\n");
+      LLVM_DEBUG(llvm::dbgs() << "Align=" << Align << "\n");
       SetValue = llvm::ConstantInt::get(llvm::Type::getIntNTy(F->getContext(), Align * 8), 0);
    }
    else
    {
-      PRINT_DBG("memset cannot be optimized\n");
+      LLVM_DEBUG(llvm::dbgs() << "memset cannot be optimized\n");
    }
    llvm::IRBuilder<> Builder(OrigBB->getTerminator());
 
@@ -467,7 +469,7 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::exec(
       return false;
    }
 #endif
-   PRINT_DBG("Running mem ops expansion on " << M.getFunctionList().size() << " functions\n");
+   LLVM_DEBUG(llvm::dbgs() << "Running mem ops expansion on " << M.getFunctionList().size() << " functions\n");
 
    auto DL = &M.getDataLayout();
    auto res = false;
@@ -475,7 +477,7 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::exec(
    while(currFuncIterator != M.getFunctionList().end())
    {
       auto& F = *currFuncIterator;
-      PRINT_DBG("  Function " << F.getName().str() << "\n");
+      LLVM_DEBUG(llvm::dbgs() << "  Function " << F.getName().str() << "\n");
       llvm::SmallVector<llvm::MemIntrinsic*, 4> MemCalls;
       for(auto& BI : F)
       {
@@ -483,27 +485,27 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::exec(
          {
             if(auto InstrCall = dyn_cast<llvm::MemIntrinsic>(&I))
             {
-               PRINT_DBG("    Found mem intrinsic: ");
+               LLVM_DEBUG(llvm::dbgs() << "    Found mem intrinsic: ");
 #ifndef NDEBUG
                InstrCall->print(llvm::errs(), true);
 #endif
-               PRINT_DBG("\n");
+               LLVM_DEBUG(llvm::dbgs() << "\n");
                MemCalls.push_back(InstrCall);
 #ifndef NDEBUG
                if(auto* Memcpy = dyn_cast<llvm::MemCpyInst>(InstrCall))
                {
                   if(dyn_cast<llvm::ConstantInt>(Memcpy->getLength()))
                   {
-                     PRINT_DBG("    Found a memcpy with a constant number of iterations\n");
+                     LLVM_DEBUG(llvm::dbgs() << "    Found a memcpy with a constant number of iterations\n");
                   }
                   else
                   {
-                     PRINT_DBG("    Found a memcpy with an unknown number of iterations\n");
+                     LLVM_DEBUG(llvm::dbgs() << "    Found a memcpy with an unknown number of iterations\n");
                   }
                }
                else if(dyn_cast<llvm::MemSetInst>(InstrCall))
                {
-                  PRINT_DBG("    Found a memset intrinsic\n");
+                  LLVM_DEBUG(llvm::dbgs() << "    Found a memset intrinsic\n");
                }
 #endif
             }
@@ -519,7 +521,7 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::exec(
             auto CI = dyn_cast<llvm::ConstantInt>(Memcpy->getLength());
             if(__clang_major__ < 16 && CI)
             {
-               PRINT_DBG("Expanding memcpy constant\n");
+               LLVM_DEBUG(llvm::dbgs() << "Expanding memcpy constant\n");
                createMemCpyLoopKnownSizeLocal(Memcpy, Memcpy->getRawSource(), Memcpy->getRawDest(), CI,
 #if __clang_major__ <= 6
                                               Memcpy->getAlignment(), Memcpy->getAlignment(),
@@ -536,7 +538,7 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::exec(
 #if __clang_major__ != 4
             else
             {
-               PRINT_DBG("Expanding memcpy as loop\n");
+               LLVM_DEBUG(llvm::dbgs() << "Expanding memcpy as loop\n");
                const auto& TTI = GetTTI(F);
 #if __clang_major__ >= 16
                auto& SE = GetSE(F);
@@ -554,7 +556,7 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::exec(
          }
          else if(auto Memmove = dyn_cast<llvm::MemMoveInst>(MemCall))
          {
-            PRINT_DBG("Expanding memmove\n");
+            LLVM_DEBUG(llvm::dbgs() << "Expanding memmove\n");
 #if __clang_major__ != 4
             llvm::expandMemMoveAsLoop(Memmove);
             do_erase = true;
@@ -563,7 +565,7 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::exec(
          }
          else if(auto Memset = dyn_cast<llvm::MemSetInst>(MemCall))
          {
-            PRINT_DBG("Expanding memset\n");
+            LLVM_DEBUG(llvm::dbgs() << "Expanding memset\n");
 #if __clang_major__ >= 16
             expandMemSetAsLoop(Memset);
 #else
@@ -618,7 +620,7 @@ void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::getAnalysisUsage(Analysis
 llvm::PreservedAnalyses llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::run(llvm::Module& M,
                                                                               llvm::ModuleAnalysisManager& MAM)
 {
-   PRINT_DBG("Running mem ops expansion\n");
+   LLVM_DEBUG(llvm::dbgs() << "Running mem ops expansion\n");
    auto& FAM = MAM.getResult<FunctionAnalysisManagerModuleProxy>(M).getManager();
    auto GetTTI = [&](llvm::Function& F) -> llvm::TargetTransformInfo& {
       return FAM.getResult<llvm::TargetIRAnalysis>(F);

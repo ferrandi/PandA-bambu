@@ -43,7 +43,7 @@
 #ifndef __clang_major__
 #define __clang_major__ 7
 #endif
-/// Autoheader include
+
 #include "clang_version_symbol.hpp"
 #include "config_HAVE_LIBBDD.hpp"
 
@@ -51,9 +51,11 @@
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/DenseMapInfo.h"
 #include "llvm/ADT/Hashing.h"
-#include "llvm/Analysis/AssumptionCache.h"
-#include "llvm/Analysis/LazyValueInfo.h"
-#include "llvm/Analysis/LoopInfo.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/GlobalObject.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/Support/raw_ostream.h"
 #if __clang_major__ > 4
 #include "llvm/Analysis/MemorySSA.h"
 #else
@@ -62,17 +64,8 @@
 #if __clang_major__ > 5
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
 #endif
-#include "llvm/Analysis/TargetLibraryInfo.h"
-#include "llvm/Analysis/TargetTransformInfo.h"
-#include "llvm/IR/Dominators.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/GlobalObject.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/Support/raw_ostream.h"
-#if __clang_major__ != 4
-#include "llvm/Transforms/Utils/PredicateInfo.h"
-#endif
-#include "llvm/ADT/STLExtras.h"
+
+#include "debug_print.hpp"
 
 #include <deque>
 #include <list>
@@ -86,27 +79,29 @@
 
 namespace llvm
 {
-   class Module;
-   class Type;
-   class DataLayout;
-   class Constant;
-   class ModulePass;
-   class GEPOperator;
-   class User;
-   class Value;
+   class AllocaInst;
+   class Argument;
+   class AssumptionCache;
    class BasicBlock;
-   class MemoryUseOrDef;
-   class MemoryPhi;
-   class MemorySSA;
+   class Constant;
+   class DataLayout;
+   class DominatorTree;
+   class GEPOperator;
+   class LazyValueInfo;
+   class LoopInfo;
    class MemoryAccess;
    class MemoryLocation;
-   class AllocaInst;
-   class TargetLibraryInfo;
-#if __clang_major__ != 4
-   class PredicateInfo;
-#endif
+   class MemoryPhi;
+   class MemorySSA;
+   class MemoryUseOrDef;
    class Metadata;
-   class Argument;
+   class Module;
+   class ModulePass;
+   class TargetLibraryInfo;
+   class TargetTransformInfo;
+   class Type;
+   class User;
+   class Value;
 } // namespace llvm
 
 namespace RangeAnalysis
@@ -115,10 +110,11 @@ namespace RangeAnalysis
 }
 class Andersen_AA;
 
+using MemorySSAAnalysisResult =
 #if __clang_major__ >= 13
-using MemorySSAAnalysisResult = llvm::MemorySSAAnalysis::Result;
+    llvm::MemorySSAAnalysis::Result;
 #else
-using MemorySSAAnalysisResult = llvm::MemorySSAWrapperPass;
+    llvm::MemorySSAWrapperPass;
 #endif
 
 namespace llvm

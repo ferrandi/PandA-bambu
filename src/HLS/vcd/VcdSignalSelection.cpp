@@ -865,7 +865,7 @@ void VcdSignalSelection::SelectInternalSignals(
             else if(alloc_info->is_proxy_wrapped_unit(fu_type_id))
             {
                const auto fu_unit_name = fu_bind->get_fu_name(*op_vi);
-               if(boost::algorithm::starts_with(fu_unit_name, WRAPPED_PROXY_PREFIX))
+               if(starts_with(fu_unit_name, WRAPPED_PROXY_PREFIX))
                {
                   to_select += alloc_info->get_fu_name(fu_type_id).first.substr(sizeof(WRAPPED_PROXY_PREFIX) - 1);
                }

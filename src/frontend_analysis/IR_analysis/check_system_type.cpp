@@ -948,7 +948,7 @@ void CheckSystemType::build_include_structures(ParameterConstRef parameters)
          {
             std::string mingw_prefix = getenv("MINGW_INST_DIR");
             temp = tok_iter;
-            if(boost::algorithm::starts_with(temp, "z:/mingw"))
+            if(starts_with(temp, "z:/mingw"))
             {
                temp =
                    temp.replace(0, 8, FILENAME_NORM(mingw_prefix)); /// replace z:/mingw at the beginning of the string
@@ -1005,7 +1005,7 @@ std::string CheckSystemType::getRealInclName(const std::string& include)
          {
             return inclNameToPath.find(trimmed)->second;
          }
-         else if(LIBBAMBU_SRCDIR == i && boost::algorithm::starts_with(trimmed, "libm/"))
+         else if(LIBBAMBU_SRCDIR == i && starts_with(trimmed, "libm/"))
          {
             return FILENAME_NORM("math.h");
          }

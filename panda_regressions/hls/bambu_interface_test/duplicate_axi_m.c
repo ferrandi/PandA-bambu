@@ -15,8 +15,8 @@ void __attribute__((noinline)) kernel_0(NUM_TYPE arg1[N], NUM_TYPE arg2[N], NUM_
    }
 }
 
-#pragma HLS_interface arg0 m_axi direct
-#pragma HLS_interface arg1 m_axi direct
+#pragma HLS interface port = arg0 mode = m_axi offset = direct
+#pragma HLS interface port = arg1 mode = m_axi offset = direct
 void main_module(NUM_TYPE* arg0, NUM_TYPE* arg1)
 {
    kernel_0(arg0, arg1, arg1);

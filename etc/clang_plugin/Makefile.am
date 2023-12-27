@@ -16,14 +16,12 @@ EXTRA_DIST = \
 	$(top_srcdir)/etc/clang_plugin/gcc/chkp-builtins.def \
 	$(top_srcdir)/etc/clang_plugin/gcc/COPYING3 \
 	$(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp \
-	$(top_srcdir)/etc/clang_plugin/plugin_ASTAnnotate.cpp \
 	$(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp \
 	$(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp \
 	$(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp \
 	$(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp \
 	$(top_srcdir)/etc/clang_plugin/plugin_includes.hpp \
 	$(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp \
-	$(top_srcdir)/etc/clang_plugin/bambuS2S.cpp \
 	$(top_srcdir)/etc/clang_plugin/clang_version_symbol.hpp \
 	$(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp \
 	$(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.hpp \
@@ -41,28 +39,8 @@ EXTRA_DIST = \
 
 LD_LIBRARY_PATH=
 PANDA_PLUGIN_VERSION=0.12
-#if ENABLE_WERROR
-#WFLAGS=-Wall \
-#   -Werror \
-#   -Wextra \
-#   -Wconversion \
-#   -Wno-deprecated \
-#   -Winit-self \
-#   -Wsign-conversion \
-#   -Wredundant-decls \
-#   -Wvla -Wshadow \
-#   -Wmissing-include-dirs \
-#   -Winit-self \
-#   -Wpointer-arith \
-#   -Wcast-qual \
-#   -Wcast-align \
-#   -Wswitch-enum \
-#   -Wswitch-default \
-#   -Wno-unused-function \
-#   -fdiagnostics-show-option
-#else
+
 WFLAGS=$(all_includes) -I$(top_srcdir)/etc/clang_plugin/
-#endif
 
 check:all
 
@@ -105,11 +83,10 @@ include $(top_srcdir)/etc/clang_plugin/clang13.am
 include $(top_srcdir)/etc/clang_plugin/clang16.am
 
 clean :
-	rm -rf *.o *.so *.h bambuS2S-*
+	rm -rf *.o *.so *.h
 
 install: all
 	if test "`ls *so`" != ""; then mkdir -p $(DESTDIR)$(CLANG_PLUGIN_DIR); cp -v *.so $(DESTDIR)$(CLANG_PLUGIN_DIR); fi
-	if test "`ls bambuS2S-*`" != ""; then mkdir -p $(DESTDIR)$(bindir); cp -v  bambuS2S-* $(DESTDIR)$(bindir); fi
 
 #do not touch the following line
 

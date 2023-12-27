@@ -10,86 +10,86 @@
 #define m_tile_rank 2
 #endif
 
-#pragma HLS_interface a m_axi direct bundle = gmem0
-#pragma HLS_interface b m_axi direct bundle = gmem1
-#pragma HLS_interface output m_axi direct bundle = gmem2
+#pragma HLS interface port = a mode = m_axi offset = direct bundle = gmem0
+#pragma HLS interface port = b mode = m_axi offset = direct bundle = gmem1
+#pragma HLS interface port = output mode = m_axi offset = direct bundle = gmem2
 
 #if defined(BIG_BUFFER)
-#pragma HLS_cache bundle = gmem0 way_size = 16 line_size = 16 bus_size = 32 n_ways = 1 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem0 line_count = 16 line_size = 16 bus_size = 32 ways = 1 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
-#pragma HLS_cache bundle = gmem1 way_size = 16 line_size = 16 bus_size = 32 n_ways = 1 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem1 line_count = 16 line_size = 16 bus_size = 32 ways = 1 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
-#pragma HLS_cache bundle = gmem2 way_size = 16 line_size = 16 bus_size = 32 n_ways = 1 buffer_size = 16 rep_policy = \
+#pragma HLS cache bundle = gmem2 line_count = 16 line_size = 16 bus_size = 32 ways = 1 num_write_outstanding = 16 rep_policy = \
     lru write_policy = wt
 #elif defined(BIG_BUS)
-#pragma HLS_cache bundle = gmem0 way_size = 16 line_size = 16 bus_size = 128 n_ways = 1 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem0 line_count = 16 line_size = 16 bus_size = 128 ways = 1 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
-#pragma HLS_cache bundle = gmem1 way_size = 16 line_size = 16 bus_size = 64 n_ways = 1 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem1 line_count = 16 line_size = 16 bus_size = 64 ways = 1 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
-#pragma HLS_cache bundle = gmem2 way_size = 8 line_size = 16 bus_size = 256 n_ways = 2 buffer_size = 4 rep_policy = \
+#pragma HLS cache bundle = gmem2 line_count = 8 line_size = 16 bus_size = 256 ways = 2 num_write_outstanding = 4 rep_policy = \
     lru write_policy = wb
 #elif defined(BIG)
-#pragma HLS_cache bundle = gmem0 way_size = 32 line_size = 32 bus_size = 32 n_ways = 1 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem0 line_count = 32 line_size = 32 bus_size = 32 ways = 1 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
-#pragma HLS_cache bundle = gmem1 way_size = 16 line_size = 64 bus_size = 32 n_ways = 1 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem1 line_count = 16 line_size = 64 bus_size = 32 ways = 1 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
-#pragma HLS_cache bundle = gmem2 way_size = 16 line_size = 32 bus_size = 32 n_ways = 2 buffer_size = 8 rep_policy = \
+#pragma HLS cache bundle = gmem2 line_count = 16 line_size = 32 bus_size = 32 ways = 2 num_write_outstanding = 8 rep_policy = \
     tree write_policy = wt
 #elif defined(BIG_LINE)
-#pragma HLS_cache bundle = gmem0 way_size = 2 line_size = 128 bus_size = 32 n_ways = 1 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem0 line_count = 2 line_size = 128 bus_size = 32 ways = 1 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
-#pragma HLS_cache bundle = gmem1 way_size = 2 line_size = 64 bus_size = 32 n_ways = 2 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem1 line_count = 2 line_size = 64 bus_size = 32 ways = 2 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
-#pragma HLS_cache bundle = gmem2 way_size = 4 line_size = 64 bus_size = 32 n_ways = 1 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem2 line_count = 4 line_size = 64 bus_size = 32 ways = 1 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
 #elif defined(FULLY_ASS)
-#pragma HLS_cache bundle = gmem0 way_size = 1 line_size = 32 bus_size = 32 n_ways = 8 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem0 line_count = 1 line_size = 32 bus_size = 32 ways = 8 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
-#pragma HLS_cache bundle = gmem1 way_size = 1 line_size = 8 bus_size = 32 n_ways = 32 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem1 line_count = 1 line_size = 8 bus_size = 32 ways = 32 num_write_outstanding = 2 rep_policy = \
     tree write_policy = wt
-#pragma HLS_cache bundle = gmem2 way_size = 1 line_size = 16 bus_size = 32 n_ways = 16 buffer_size = 4 rep_policy = \
+#pragma HLS cache bundle = gmem2 line_count = 1 line_size = 16 bus_size = 32 ways = 16 num_write_outstanding = 4 rep_policy = \
     tree write_policy = wb
 #elif defined(SET_ASS)
-#pragma HLS_cache bundle = gmem0 way_size = 8 line_size = 16 bus_size = 32 n_ways = 2 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem0 line_count = 8 line_size = 16 bus_size = 32 ways = 2 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
-#pragma HLS_cache bundle = gmem1 way_size = 4 line_size = 16 bus_size = 32 n_ways = 4 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem1 line_count = 4 line_size = 16 bus_size = 32 ways = 4 num_write_outstanding = 2 rep_policy = \
     tree write_policy = wt
-#pragma HLS_cache bundle = gmem2 way_size = 2 line_size = 16 bus_size = 32 n_ways = 8 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem2 line_count = 2 line_size = 16 bus_size = 32 ways = 8 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
 #elif defined(SIMPLE)
-#pragma HLS_cache bundle = gmem0 way_size = 16 line_size = 16 bus_size = 32 n_ways = 1 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem0 line_count = 16 line_size = 16 bus_size = 32 ways = 1 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
-#pragma HLS_cache bundle = gmem1 way_size = 16 line_size = 16 bus_size = 32 n_ways = 1 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem1 line_count = 16 line_size = 16 bus_size = 32 ways = 1 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
-#pragma HLS_cache bundle = gmem2 way_size = 16 line_size = 16 bus_size = 32 n_ways = 1 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem2 line_count = 16 line_size = 16 bus_size = 32 ways = 1 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
 #elif defined(SMALL_LINE)
-#pragma HLS_cache bundle = gmem0 way_size = 32 line_size = 8 bus_size = 32 n_ways = 1 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem0 line_count = 32 line_size = 8 bus_size = 32 ways = 1 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
-#pragma HLS_cache bundle = gmem1 way_size = 32 line_size = 4 bus_size = 32 n_ways = 2 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem1 line_count = 32 line_size = 4 bus_size = 32 ways = 2 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
-#pragma HLS_cache bundle = gmem2 way_size = 16 line_size = 8 bus_size = 32 n_ways = 2 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem2 line_count = 16 line_size = 8 bus_size = 32 ways = 2 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wb
 #elif defined(BIG_BUFFER_WB)
-#pragma HLS_cache bundle = gmem0 way_size = 16 line_size = 16 bus_size = 32 n_ways = 1 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem0 line_count = 16 line_size = 16 bus_size = 32 ways = 1 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
-#pragma HLS_cache bundle = gmem1 way_size = 16 line_size = 16 bus_size = 32 n_ways = 1 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem1 line_count = 16 line_size = 16 bus_size = 32 ways = 1 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
-#pragma HLS_cache bundle = gmem2 way_size = 16 line_size = 16 bus_size = 32 n_ways = 1 buffer_size = 16 rep_policy = \
+#pragma HLS cache bundle = gmem2 line_count = 16 line_size = 16 bus_size = 32 ways = 1 num_write_outstanding = 16 rep_policy = \
     lru write_policy = wb
 #elif defined(WRITE_BACK)
-#pragma HLS_cache bundle = gmem0 way_size = 16 line_size = 16 bus_size = 32 n_ways = 1 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem0 line_count = 16 line_size = 16 bus_size = 32 ways = 1 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
-#pragma HLS_cache bundle = gmem1 way_size = 16 line_size = 16 bus_size = 32 n_ways = 1 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem1 line_count = 16 line_size = 16 bus_size = 32 ways = 1 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
-#pragma HLS_cache bundle = gmem2 way_size = 16 line_size = 16 bus_size = 32 n_ways = 1 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem2 line_count = 16 line_size = 16 bus_size = 32 ways = 1 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wb
 #elif defined(TILED)
-#pragma HLS_cache bundle = gmem0 way_size = 16 line_size = 16 bus_size = 32 n_ways = 1 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem0 line_count = 16 line_size = 16 bus_size = 32 ways = 1 num_write_outstanding = 2 rep_policy = \
     lru write_policy = wt
-#pragma HLS_cache bundle = gmem1 way_size = 32 line_size = 16 bus_size = 32 n_ways = 1 buffer_size = 2 rep_policy = \
+#pragma HLS cache bundle = gmem1 line_count = 32 line_size = 16 bus_size = 32 ways = 1 num_write_outstanding = 2 rep_policy = \
     tree write_policy = wt
-#pragma HLS_cache bundle = gmem2 way_size = 16 line_size = 16 bus_size = 32 n_ways = 1 buffer_size = 4 rep_policy = \
+#pragma HLS cache bundle = gmem2 line_count = 16 line_size = 16 bus_size = 32 ways = 1 num_write_outstanding = 4 rep_policy = \
     tree write_policy = wb
 #endif
 

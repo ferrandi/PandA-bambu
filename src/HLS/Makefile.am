@@ -928,6 +928,7 @@ SUBDIRS = simulation
 noinst_LTLIBRARIES += lib_HLS.la
 
 lib_HLS_la_CPPFLAGS = \
+   -I$(top_srcdir)/ext/pugixml/src \
    -I$(top_srcdir)/src \
    -I$(top_srcdir)/src/behavior \
    -I$(top_srcdir)/src/design_flows/  \
@@ -1202,27 +1203,26 @@ lib_module_generator_la_SOURCES = \
 #Documentation stuff
 DOX_TAGFILES = \
    src \
-   src/graph \
    src/HLS \
-   src/behavior \
-   src/circuit \
-   src/technology \
-   src/parser/HLS_constraintsIO \
-   src/HLS/controller \
-   src/HLS/scheduling \
-   src/HLS/module_allocation \
    src/HLS/binding \
+   src/HLS/binding/interconnection \
+   src/HLS/binding/module \
    src/HLS/binding/register \
    src/HLS/binding/storage_value_insertion \
-   src/HLS/binding/module \
-   src/HLS/binding/interconnection \
+   src/HLS/chaining \
+   src/HLS/controller \
    src/HLS/controller \
    src/HLS/datapath \
-   src/HLS/hls_flow \
    src/HLS/evaluation \
+   src/HLS/function_allocation \
+   src/HLS/hls_flow \
+   src/HLS/module_allocation \
+   src/HLS/scheduling \
    src/HLS/target \
-   /src/HLS/chaining \
-   src/HLS/function_allocation 
+   src/behavior \
+   src/circuit \
+   src/graph \
+   src/technology
 
 PRJ_DOC += HLS.doc HLS_constraints.doc
 EXTRA_DIST = $(PRJ_DOC)
