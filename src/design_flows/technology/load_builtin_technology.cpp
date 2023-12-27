@@ -38,26 +38,13 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-
-/// Header include
 #include "load_builtin_technology.hpp"
 
-/// circuit include
+#include "fileIO.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
-
-/// parser/polixml include
-#include "xml_dom_parser.hpp"
-
-/// polixml include
-#include "xml_document.hpp"
-
-/// technology includes
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
-
-/// utility include
-#include "fileIO.hpp"
 
 LoadBuiltinTechnology::LoadBuiltinTechnology(const technology_managerRef _TM, const generic_deviceRef _target,
                                              const DesignFlowManagerConstRef _design_flow_manager,

@@ -44,18 +44,11 @@
  */
 #include "liveness_computer.hpp"
 
-#include "memory.hpp"
-
-#include "hls.hpp"
-#include "polixml.hpp"
-#include "tree_helper.hpp"
-#include "xml_helper.hpp"
-
-///. include
 #include "Parameter.hpp"
-
-/// Behavior include
+#include "hls.hpp"
 #include "hls_manager.hpp"
+#include "memory.hpp"
+#include "tree_helper.hpp"
 
 liveness_computer::liveness_computer(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
                                      const DesignFlowManagerConstRef _design_flow_manager,

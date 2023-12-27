@@ -43,38 +43,28 @@
  */
 #include "memory_allocation.hpp"
 
-#include "generic_device.hpp"
-#include "hls_device.hpp"
-#include "hls_manager.hpp"
-#include "memory.hpp"
-
+#include "Parameter.hpp"
 #include "application_manager.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
-#include "op_graph.hpp"
-
-#include "polixml.hpp"
-#include "xml_helper.hpp"
-
-#include "Parameter.hpp"
-
-#include "math_function.hpp"
-
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-
-/// tree includes
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp"
 #include "ext_tree_node.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "function_behavior.hpp"
+#include "generic_device.hpp"
+#include "hls_device.hpp"
+#include "hls_manager.hpp"
+#include "math_function.hpp"
+#include "memory.hpp"
+#include "op_graph.hpp"
+#include "string_manipulation.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-/// STD include
 #include <algorithm>
 #include <string>
 #include <tuple>

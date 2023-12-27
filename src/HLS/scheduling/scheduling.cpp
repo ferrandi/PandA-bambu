@@ -45,28 +45,19 @@
  */
 #include "scheduling.hpp"
 
-#include "hls.hpp"
-#include "hls_manager.hpp"
-
 #include "Parameter.hpp"
-
 #include "allocation.hpp"
-#include "fu_binding.hpp"
-#include "hls_constraints.hpp"
-#include "parallel_memory_fu_binding.hpp"
-#include "refcount.hpp"
-
-/// implemented algorithms
-#include "parametric_list_based.hpp"
-
-#include "polixml.hpp"
-
-#include "dbgPrintHelper.hpp"
-#include "op_graph.hpp"
-#include "utility.hpp"
-
-/// HLS/module_allocation
 #include "allocation_information.hpp"
+#include "dbgPrintHelper.hpp"
+#include "fu_binding.hpp"
+#include "hls.hpp"
+#include "hls_constraints.hpp"
+#include "hls_manager.hpp"
+#include "op_graph.hpp"
+#include "parallel_memory_fu_binding.hpp"
+#include "parametric_list_based.hpp"
+#include "refcount.hpp"
+#include "utility.hpp"
 
 Scheduling::Scheduling(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
                        const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type,
