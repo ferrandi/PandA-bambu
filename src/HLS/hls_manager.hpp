@@ -117,6 +117,16 @@ class ModuleArchitecture
    ModuleArchitecture(const std::string& filename);
    ~ModuleArchitecture();
 
+   FunctionArchitectures::const_iterator cbegin() const
+   {
+      return _funcArchs.cbegin();
+   }
+
+   FunctionArchitectures::const_iterator cend() const
+   {
+      return _funcArchs.cend();
+   }
+
    FunctionArchitectures::const_iterator begin() const
    {
       return _funcArchs.begin();
@@ -127,7 +137,9 @@ class ModuleArchitecture
       return _funcArchs.end();
    }
 
-   FunctionArchitectureRef& GetArchitecture(const std::string& funcSymbol);
+   void AddArchitecture(const std::string& symbol, FunctionArchitectureRef arch);
+
+   FunctionArchitectureRef GetArchitecture(const std::string& funcSymbol) const;
 
    void RemoveArchitecture(const std::string& funcSymbol);
 };

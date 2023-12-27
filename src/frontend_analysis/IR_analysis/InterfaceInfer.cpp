@@ -269,9 +269,9 @@ bool InterfaceInfer::HasToBeExecuted() const
 
 DesignFlowStep_Status InterfaceInfer::Exec()
 {
-   const auto TM = AppM->get_tree_manager();
    const auto HLSMgr = GetPointer<HLS_manager>(AppM);
    THROW_ASSERT(HLSMgr, "");
+   const auto TM = AppM->get_tree_manager();
    const auto CGM = AppM->CGetCallGraphManager();
    const auto CG = CGM->CGetCallGraph();
    auto top_functions = CGM->GetRootFunctions();
@@ -288,7 +288,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Analyzing function " + fname);
 
       /* Check if there is a typename corresponding to fname */
-      auto& func_arch = HLSMgr->module_arch->GetArchitecture(fname);
+      auto func_arch = HLSMgr->module_arch->GetArchitecture(fname);
       if(!func_arch)
       {
          func_arch = refcount<FunctionArchitecture>(new FunctionArchitecture());
@@ -347,6 +347,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             ++parm_index;
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+         HLSMgr->module_arch->AddArchitecture(fname, func_arch);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
 
@@ -666,14 +667,14 @@ DesignFlowStep_Status InterfaceInfer::Exec()
 
    // Remove interface information for non interfaced functions to avoid issues with aggressive IR optimizations
    // (signature modification, SROA, ...)
-   for(auto f_id : CGM->GetReachedBodyFunctions())
+   for(auto it = HLSMgr->module_arch->cbegin(); it != HLSMgr->module_arch->cend(); ++it)
    {
-      if(top_functions.find(f_id) == top_functions.end())
+      const auto fnode = TM->GetFunction(it->first);
+      if(!fnode || top_functions.find(GET_INDEX_CONST_NODE(fnode)) == top_functions.end())
       {
-         const auto fnode = TM->CGetTreeReindex(f_id);
-         const auto fd = GetPointer<const function_decl>(GET_CONST_NODE(fnode));
-         const auto fname = tree_helper::GetMangledFunctionName(fd);
-         HLSMgr->module_arch->RemoveArchitecture(fname);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "Erase function architecture for function " + it->first);
+         HLSMgr->module_arch->RemoveArchitecture(it->first);
       }
    }
 
@@ -728,6 +729,7 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
             if(arg_id != info.arg_id)
             {
                const auto func_arch = GetPointer<HLS_manager>(AppM)->module_arch->GetArchitecture(info.interface_fname);
+               THROW_ASSERT(func_arch, "Expected initialized architecture for function " + info.interface_fname);
                const auto bundle_id = func_arch->parms.at(arg_id).at(FunctionArchitecture::parm_bundle);
                const auto info_bundle_id = func_arch->parms.at(info.arg_id).at(FunctionArchitecture::parm_bundle);
                if(bundle_id != info_bundle_id)
