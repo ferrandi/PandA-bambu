@@ -44,46 +44,31 @@
  * Last modified by $Author$
  *
  */
-/// Header include
 #include "hls.hpp"
 
-#include "hls_device.hpp"
-#include "technology_manager.hpp"
-#include "technology_node.hpp"
-
-#include "hls_constraints.hpp"
-
+#include "BambuParameter.hpp"
+#include "allocation_information.hpp"
+#include "chaining_information.hpp"
 #include "conn_binding.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
 #include "fu_binding.hpp"
+#include "hls_constraints.hpp"
+#include "hls_device.hpp"
+#include "op_graph.hpp"
+#include "polixml.hpp"
 #include "reg_binding.hpp"
 #include "schedule.hpp"
-
 #include "standard_hls.hpp"
-#include "virtual_hls.hpp"
-
+#include "storage_value_information.hpp"
 #include "structural_manager.hpp"
-
-#include "BambuParameter.hpp"
-
-#include "exceptions.hpp"
-#include "polixml.hpp"
+#include "technology_manager.hpp"
+#include "technology_node.hpp"
 #include "utility.hpp"
+#include "virtual_hls.hpp"
 #include "xml_helper.hpp"
 
 #include <utility>
-
-#include "op_graph.hpp"
-
-/// HLS/binding/storage_value_insertion includes
-#include "storage_value_information.hpp"
-
-/// HLS/chaining_information
-#include "chaining_information.hpp"
-
-/// HLS/module_allocation
-#include "allocation_information.hpp"
-
-#include "dbgPrintHelper.hpp"
 
 static void computeResources(const structural_objectRef circ, const technology_managerRef TM,
                              std::map<std::string, unsigned int>& resources);

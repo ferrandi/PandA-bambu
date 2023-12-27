@@ -52,11 +52,9 @@
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "liveness.hpp"
-#include "polixml.hpp"
 #include "refcount.hpp"
 #include "storage_value_insertion.hpp"
 #include "utility.hpp"
-#include "xml_helper.hpp"
 
 #include <boost/version.hpp>
 #include <iosfwd>
