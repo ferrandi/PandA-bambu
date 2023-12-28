@@ -398,10 +398,10 @@ DesignFlowStep_Status create_tree_manager::Exec()
       const auto fd = GetPointer<function_decl>(GET_NODE(fnode));
       for(auto& [attr, val] : arch->attrs)
       {
-         if(attr == FunctionArchitecture::func_pipeline_mode)
+         if(attr == FunctionArchitecture::func_pipeline_style)
          {
             fd->set_pipelining(true);
-            if(val == "simple")
+            if(val == "frp")
             {
                fd->set_simple_pipeline(true);
             }
