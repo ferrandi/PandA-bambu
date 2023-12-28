@@ -1,7 +1,7 @@
 int __attribute__((noinline)) pipelined_function(int a, int b, int c)
 {
 
-   #pragma HLS_simple_pipeline
+   #pragma HLS pipeline
    
    return (a - b) * c;
    
