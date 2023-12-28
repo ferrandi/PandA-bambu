@@ -560,10 +560,6 @@ class PipelineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
             {
                ReportError(attr.first.loc, "Pipelining initiation interval must be a positive integer value");
             }
-            else if(std::stoi(attr.second) > 1)
-            {
-               ReportError(attr.first.loc, "Pipelining initiation interval greater than one not yet supported");
-            }
          }
          else
          {
