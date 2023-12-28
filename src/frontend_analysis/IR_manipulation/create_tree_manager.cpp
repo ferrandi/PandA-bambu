@@ -401,14 +401,10 @@ DesignFlowStep_Status create_tree_manager::Exec()
          if(attr == FunctionArchitecture::func_pipeline_mode)
          {
             fd->set_pipelining(true);
-            if(val == "simple")
-            {
-               fd->set_simple_pipeline(true);
-            }
          }
          else if(attr == FunctionArchitecture::func_pipeline_ii)
          {
-            const auto pipeline_ii = std::stoi(val);
+            const auto pipeline_ii = static_cast<unsigned>(std::stoul(val));
             fd->set_initiation_time(pipeline_ii);
          }
       }
