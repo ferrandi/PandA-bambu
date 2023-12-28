@@ -547,14 +547,7 @@ class PipelineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
       auto& func_attr = GetFuncAttr(FD).attrs;
       for(const auto& attr : p.attrs)
       {
-         if(iequals(attr.first.id, "mode"))
-         {
-            if(!iequals(attr.second, "simple") && !iequals(attr.second, "stallable"))
-            {
-               ReportError(attr.first.loc, "Invalid pipeline mode");
-            }
-         }
-         else if(iequals(attr.first.id, "ii"))
+         if(iequals(attr.first.id, "ii"))
          {
             if(std::stoull(attr.second) <= 0)
             {
@@ -576,6 +569,10 @@ class PipelineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
       if(func_attr.find(key_loc_t("pipeline_mode", SourceLocation())) == func_attr.end())
       {
          func_attr.emplace(key_loc_t("pipeline_mode", p.loc), "simple");
+      }
+      if(func_attr.find(key_loc_t("pipeline_ii", SourceLocation())) == func_attr.end())
+      {
+         func_attr.emplace(key_loc_t("pipeline_ii", p.loc), "1");
       }
    }
 
@@ -817,22 +814,9 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
                ReportError(FD->getLocation(), "Dataflow function has no valid submodule");
             }
          }
-<<<<<<< HEAD
-         file_loc_attr[filename][loc]["is_pipelined"] = "yes";
-         file_loc_attr[filename][loc]["initiation_time"] = "1";
-=======
->>>>>>> dev/panda
       }
    }
 
-<<<<<<< HEAD
-   class HLS_pipeline_PragmaHandler : public PragmaHandler
-   {
-    public:
-      HLS_pipeline_PragmaHandler() : PragmaHandler("HLS_pipeline")
-      {
-      }
-=======
    static const char* PragmaKeyword;
 };
 const char* DataflowHLSPragmaHandler::PragmaKeyword = "dataflow";
@@ -845,7 +829,6 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
    {
    }
    ~CacheHLSPragmaHandler() = default;
->>>>>>> dev/panda
 
    void operator()(FunctionDecl* FD, const pragma_line_t& p) override
    {
@@ -868,30 +851,6 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             auto bus_size = std::stoi(attr.second);
             if(bus_size < 32 || bus_size > 1024 || (bus_size & (bus_size - 1)) != 0)
             {
-<<<<<<< HEAD
-               auto tokString = PP.getSpelling(Tok);
-               if(index == 0)
-               {
-                  time = tokString;
-                  if(Tok.isNot(tok::numeric_constant))
-                  {
-                     DiagnosticsEngine& D = PP.getDiagnostics();
-                     unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_pipeline malformed");
-                     D.Report(PragmaTok.getLocation(), ID);
-                  }
-               }
-               else
-               {
-                  DiagnosticsEngine& D = PP.getDiagnostics();
-                  unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_pipeline malformed");
-                  D.Report(PragmaTok.getLocation(), ID);
-               }
-               ++index;
-            }
-         }
-         file_loc_attr[filename][loc]["is_pipelined"] = "yes";
-         file_loc_attr[filename][loc]["initiation_time"] = time;
-=======
                ReportError(attr.first.loc, "Invalid cache bus size");
             }
          }
@@ -948,7 +907,6 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             ReportDuplicate(attr.first.loc, it_new.first->first.loc,
                             "Duplicate definition of attribute '" + attr.first.id + "'");
          }
->>>>>>> dev/panda
       }
       if(iface.find(key_loc_t("cache_line_count", SourceLocation())) == iface.end())
       {
@@ -1694,25 +1652,7 @@ namespace clang
             pragmaConsumer->addPragmaHandler(CI.getPreprocessor());
             return pragmaConsumer;
          }
-<<<<<<< HEAD
-         clang::Preprocessor& PP = CI.getPreprocessor();
-         PP.AddPragmaHandler(new HLS_interface_PragmaHandler());
-         PP.AddPragmaHandler(new HLS_simple_pipeline_PragmaHandler());
-         PP.AddPragmaHandler(new HLS_pipeline_PragmaHandler());
-         PP.AddPragmaHandler(new HLS_cache_PragmaHandler());
-         auto pp = clang::PrintingPolicy(clang::LangOptions());
-         if(cppflag)
-         {
-            pp.adjustForCPlusPlus();
-         }
-#if __clang_major__ > 9
-         return std::make_unique<FunctionArgConsumer>(CI, topfname, outdir_name, InFile.data(), pp);
-#else
-         return llvm::make_unique<FunctionArgConsumer>(CI, topfname, outdir_name, InFile, pp);
-#endif
-=======
          return make_unique<EmptyASTConsumer>();
->>>>>>> dev/panda
       }
 
       bool ParseArgs(const CompilerInstance& CI, const std::vector<std::string>& args) override
