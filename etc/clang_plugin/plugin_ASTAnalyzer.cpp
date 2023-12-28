@@ -547,11 +547,22 @@ class PipelineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
       auto& func_attr = GetFuncAttr(FD).attrs;
       for(const auto& attr : p.attrs)
       {
-         if(iequals(attr.first.id, "ii"))
+         if(iequals(attr.first.id, "style"))
          {
-            if(std::stoull(attr.second) <= 0)
+            if(!iequals(attr.second, "frp"))
             {
-               ReportError(attr.first.loc, "Pipeline initiation interval must be a positive integer value");
+               ReportError(attr.first.loc, "Not supported function pipelining style");
+            }
+         }
+         else if(iequals(attr.first.id, "II"))
+         {
+            if(std::stoi(attr.second) <= 0)
+            {
+               ReportError(attr.first.loc, "Pipelining initiation interval must be a positive integer value");
+            }
+            else if(std::stoi(attr.second) > 1)
+            {
+               ReportError(attr.first.loc, "Pipelining initiation interval greater than one not yet supported");
             }
          }
          else
@@ -559,16 +570,16 @@ class PipelineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
             ReportError(attr.first.loc, "Unexpected attribute");
             continue;
          }
-         auto it_new = func_attr.emplace(key_loc_t("pipeline_" + attr.first.id, attr.first.loc), attr.second);
+         auto it_new = func_attr.emplace(key_loc_t("pipeline_" + to_lower(attr.first.id), attr.first.loc), attr.second);
          if(!it_new.second)
          {
             ReportDuplicate(attr.first.loc, it_new.first->first.loc,
                             "Duplicate definition of attribute '" + attr.first.id + "'");
          }
       }
-      if(func_attr.find(key_loc_t("pipeline_mode", SourceLocation())) == func_attr.end())
+      if(func_attr.find(key_loc_t("pipeline_style", SourceLocation())) == func_attr.end())
       {
-         func_attr.emplace(key_loc_t("pipeline_mode", p.loc), "simple");
+         func_attr.emplace(key_loc_t("pipeline_style", p.loc), "frp");
       }
       if(func_attr.find(key_loc_t("pipeline_ii", SourceLocation())) == func_attr.end())
       {

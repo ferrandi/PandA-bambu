@@ -72,6 +72,7 @@ void system_verilog_writer::write_NP_functionalities(const structural_objectRef&
    /// manage reset by preprocessing the behavioral description
    if(!parameters->getOption<bool>(OPT_reset_level))
    {
+      boost::replace_all(beh_desc, "1RESET_EDGE_FORCE", "or negedge " + std::string(RESET_PORT_NAME));
       if(parameters->getOption<std::string>(OPT_reset_type) == "async")
       {
          boost::replace_all(beh_desc, "1RESET_EDGE", "or negedge " + std::string(RESET_PORT_NAME));
@@ -84,6 +85,7 @@ void system_verilog_writer::write_NP_functionalities(const structural_objectRef&
    }
    else
    {
+      boost::replace_all(beh_desc, "1RESET_EDGE_FORCE", "or posedge " + std::string(RESET_PORT_NAME));
       if(parameters->getOption<std::string>(OPT_reset_type) == "async")
       {
          boost::replace_all(beh_desc, "1RESET_EDGE", "or posedge " + std::string(RESET_PORT_NAME));
