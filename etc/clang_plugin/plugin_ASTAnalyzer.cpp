@@ -565,6 +565,15 @@ class PipelineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
                ReportError(attr.first.loc, "Pipelining initiation interval greater than one not yet supported");
             }
          }
+         else if(iequals(attr.first.id, "off"))
+         {
+            if(attr.second.size())
+            {
+               ReportError(attr.first.loc, "Unexpected argument value");
+            }
+            func_attr[key_loc_t("pipeline_style", attr.first.loc)] = "off";
+            continue;
+         }
          else
          {
             ReportError(attr.first.loc, "Unexpected attribute");
@@ -577,14 +586,8 @@ class PipelineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
                             "Duplicate definition of attribute '" + attr.first.id + "'");
          }
       }
-      if(func_attr.find(key_loc_t("pipeline_style", SourceLocation())) == func_attr.end())
-      {
-         func_attr.emplace(key_loc_t("pipeline_style", p.loc), "frp");
-      }
-      if(func_attr.find(key_loc_t("pipeline_ii", SourceLocation())) == func_attr.end())
-      {
-         func_attr.emplace(key_loc_t("pipeline_ii", p.loc), "1");
-      }
+      func_attr.emplace(key_loc_t("pipeline_ii", p.loc), "1");
+      func_attr.emplace(key_loc_t("pipeline_style", p.loc), "frp");
    }
 
    static const char* PragmaKeyword;
