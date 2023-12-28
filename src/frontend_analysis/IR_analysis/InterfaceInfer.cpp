@@ -664,14 +664,18 @@ DesignFlowStep_Status InterfaceInfer::Exec()
 
    // Remove interface information for non interfaced functions to avoid issues with aggressive IR optimizations
    // (signature modification, SROA, ...)
-   for(auto it = HLSMgr->module_arch->cbegin(); it != HLSMgr->module_arch->cend(); ++it)
+   for(auto it = HLSMgr->module_arch->cbegin(); it != HLSMgr->module_arch->cend();)
    {
       const auto fnode = TM->GetFunction(it->first);
       if(!fnode || top_functions.find(GET_INDEX_CONST_NODE(fnode)) == top_functions.end())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "Erase function architecture for function " + it->first);
-         HLSMgr->module_arch->RemoveArchitecture(it->first);
+         it = HLSMgr->module_arch->erase(it);
+      }
+      else
+      {
+         ++it;
       }
    }
 

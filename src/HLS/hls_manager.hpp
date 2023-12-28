@@ -137,6 +137,11 @@ class ModuleArchitecture
       return _funcArchs.end();
    }
 
+   FunctionArchitectures::iterator erase(FunctionArchitectures::const_iterator it)
+   {
+      return _funcArchs.erase(it);
+   }
+
    void AddArchitecture(const std::string& symbol, FunctionArchitectureRef arch);
 
    FunctionArchitectureRef GetArchitecture(const std::string& funcSymbol) const;
