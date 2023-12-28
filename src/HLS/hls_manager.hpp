@@ -63,7 +63,7 @@ REF_FORWARD_DECL(SimulationInformation);
 REF_FORWARD_DECL(BackendFlow);
 
 #define ENUM_ID(r, data, elem) elem,
-#define FUNC_ARCH_ATTR_ENUM (func_symbol)(func_name)(func_inline)(func_dataflow)(func_pipeline_mode)(func_pipeline_ii)
+#define FUNC_ARCH_ATTR_ENUM (func_symbol)(func_name)(func_inline)(func_dataflow)(func_pipeline_style)(func_pipeline_ii)
 #define FUNC_ARCH_PARM_ATTR_ENUM                                                                            \
    (parm_port)(parm_index)(parm_bundle)(parm_offset)(parm_includes)(parm_typename)(parm_original_typename)( \
        parm_elem_count)(parm_size_in_bytes)
