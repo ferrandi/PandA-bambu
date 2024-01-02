@@ -1052,13 +1052,15 @@ void mux_connection_binding::add_conversion(unsigned int num, vertex op, unsigne
                                             vertex state_src, vertex state_tgt, unsigned src_phi_bb_index)
 {
    const HLS_manager::io_binding_type& varObj = HLS_manager::io_binding_type(tree_var, 0);
-   auto size_tree_var = tree_helper::size(TreeM, tree_var);
-   auto inIP = tree_helper::is_int(TreeM, tree_var);
-   auto inUP = tree_helper::is_unsigned(TreeM, tree_var) or tree_helper::is_bool(TreeM, tree_var) or
-               tree_helper::is_a_pointer(TreeM, tree_var);
-   auto outIP = tree_helper::is_int(TreeM, form_par_type);
-   auto outUP = tree_helper::is_unsigned(TreeM, form_par_type) or tree_helper::is_bool(TreeM, form_par_type) or
-                tree_helper::is_a_pointer(TreeM, form_par_type);
+   const auto var = TreeM->CGetTreeReindex(tree_var);
+   const auto parm = TreeM->CGetTreeReindex(form_par_type);
+   const auto size_tree_var = tree_helper::Size(var);
+   const auto inIP = tree_helper::IsSignedIntegerType(var);
+   const auto inUP =
+       tree_helper::IsUnsignedIntegerType(var) || tree_helper::IsBooleanType(var) || tree_helper::IsPointerType(var);
+   const auto outIP = tree_helper::IsSignedIntegerType(parm);
+   const auto outUP =
+       tree_helper::IsUnsignedIntegerType(parm) || tree_helper::IsBooleanType(parm) || tree_helper::IsPointerType(parm);
    THROW_ASSERT(((inIP || inUP) && (outIP || outUP)) || (!inIP && !inUP && !outIP && !outUP), "unexpected conversion");
    if(((inIP || inUP) && (outIP || outUP)) && (form_par_bitsize != size_tree_var))
    {

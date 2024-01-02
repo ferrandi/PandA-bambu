@@ -51,7 +51,7 @@
 #include "compiler_wrapper.hpp"
 #include "constant_strings.hpp"
 #include "copyrights_strings.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "function_behavior.hpp"
@@ -61,8 +61,7 @@
 #include "language_writer.hpp"
 #include "library_manager.hpp"
 #include "math_function.hpp"
-#include "polixml.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "string_manipulation.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_flow_step.hpp"
@@ -78,8 +77,6 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 #include "var_pp_functor.hpp"
-#include "xml_dom_parser.hpp"
-#include "xml_helper.hpp"
 
 #include <regex>
 
@@ -269,21 +266,26 @@ bool InterfaceInfer::HasToBeExecuted() const
 
 DesignFlowStep_Status InterfaceInfer::Exec()
 {
-   const auto top_functions = AppM->CGetCallGraphManager()->GetRootFunctions();
    const auto HLSMgr = GetPointer<HLS_manager>(AppM);
    THROW_ASSERT(HLSMgr, "");
    const auto TM = AppM->get_tree_manager();
+   const auto CGM = AppM->CGetCallGraphManager();
+   const auto CG = CGM->CGetCallGraph();
+   auto top_functions = CGM->GetRootFunctions();
    std::set<unsigned int> modified;
    const auto add_to_modified = [&](const tree_nodeRef& tn) {
       modified.insert(GET_INDEX_CONST_NODE(GetPointer<gimple_node>(GET_CONST_NODE(tn))->scpe));
    };
+
    for(const auto& top_id : top_functions)
    {
       const auto fnode = TM->CGetTreeReindex(top_id);
       const auto fd = GetPointer<const function_decl>(GET_CONST_NODE(fnode));
       const auto fname = tree_helper::GetMangledFunctionName(fd);
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Analyzing function " + fname);
+
       /* Check if there is a typename corresponding to fname */
-      auto& func_arch = HLSMgr->module_arch->GetArchitecture(fname);
+      auto func_arch = HLSMgr->module_arch->GetArchitecture(fname);
       if(!func_arch)
       {
          func_arch = refcount<FunctionArchitecture>(new FunctionArchitecture());
@@ -342,12 +344,12 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             ++parm_index;
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+         HLSMgr->module_arch->AddArchitecture(fname, func_arch);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
 
       const tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
 
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Analyzing function " + fname);
       std::map<std::string, TreeNodeSet> bundle_vdefs;
       for(const auto& arg : fd->list_of_args)
       {
@@ -365,7 +367,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
          parm_attrs.emplace(FunctionArchitecture::parm_offset, "off");
          THROW_ASSERT(func_arch->ifaces.find(parm_attrs.at(FunctionArchitecture::parm_bundle)) !=
                           func_arch->ifaces.end(),
-                      "Missing parameter bundle");
+                      "Missing parameter bundle: " + parm_attrs.at(FunctionArchitecture::parm_bundle));
          auto& iface_attrs = func_arch->ifaces.at(parm_attrs.at(FunctionArchitecture::parm_bundle));
          iface_attrs[FunctionArchitecture::iface_direction] = port_o::GetString(port_o::IN);
          iface_attrs[FunctionArchitecture::iface_bitwidth] = STR(tree_helper::Size(arg_type));
@@ -543,7 +545,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                iface_attrs[FunctionArchitecture::iface_alignment] = STR(info.alignment);
                interface_type = info.name;
 
-               THROW_ASSERT(info.bitwidth, "");
+               THROW_ASSERT(info.bitwidth, "Expected non-zero bitwidth");
 
                std::set<std::string> operationsR, operationsW;
                const auto interface_datatype = tree_man->GetCustomIntegerType(info.bitwidth, true);
@@ -564,13 +566,14 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                };
                for(const auto& stmt : readStmt)
                {
-                  setReadInterface(stmt, arg_name, operationsR, commonRWSignature, interface_datatype, tree_man, TM);
+                  setReadInterface(stmt, bundle_name, operationsR, commonRWSignature, interface_datatype, tree_man, TM);
                   add_to_modified(stmt);
                   store_vdef(stmt);
                }
                for(const auto& stmt : writeStmt)
                {
-                  setWriteInterface(stmt, arg_name, operationsW, commonRWSignature, interface_datatype, tree_man, TM);
+                  setWriteInterface(stmt, bundle_name, operationsW, commonRWSignature, interface_datatype, tree_man,
+                                    TM);
                   add_to_modified(stmt);
                   store_vdef(stmt);
                }
@@ -586,6 +589,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             }
          }
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Interface specification:");
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Parameter : " + arg_name);
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Protocol  : " + interface_type);
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                         "---Direction : " + iface_attrs.at(FunctionArchitecture::iface_direction));
@@ -660,14 +664,18 @@ DesignFlowStep_Status InterfaceInfer::Exec()
 
    // Remove interface information for non interfaced functions to avoid issues with aggressive IR optimizations
    // (signature modification, SROA, ...)
-   for(auto f_id : AppM->CGetCallGraphManager()->GetReachedBodyFunctions())
+   for(auto it = HLSMgr->module_arch->cbegin(); it != HLSMgr->module_arch->cend();)
    {
-      if(top_functions.find(f_id) == top_functions.end())
+      const auto fnode = TM->GetFunction(it->first);
+      if(!fnode || top_functions.find(GET_INDEX_CONST_NODE(fnode)) == top_functions.end())
       {
-         const auto fnode = TM->CGetTreeReindex(f_id);
-         const auto fd = GetPointer<const function_decl>(GET_CONST_NODE(fnode));
-         const auto fname = tree_helper::GetMangledFunctionName(fd);
-         HLSMgr->module_arch->GetArchitecture(fname).reset();
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "Erase function architecture for function " + it->first);
+         it = HLSMgr->module_arch->erase(it);
+      }
+      else
+      {
+         ++it;
       }
    }
 
@@ -722,6 +730,7 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
             if(arg_id != info.arg_id)
             {
                const auto func_arch = GetPointer<HLS_manager>(AppM)->module_arch->GetArchitecture(info.interface_fname);
+               THROW_ASSERT(func_arch, "Expected initialized architecture for function " + info.interface_fname);
                const auto bundle_id = func_arch->parms.at(arg_id).at(FunctionArchitecture::parm_bundle);
                const auto info_bundle_id = func_arch->parms.at(info.arg_id).at(FunctionArchitecture::parm_bundle);
                if(bundle_id != info_bundle_id)
@@ -1439,13 +1448,15 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
 }
 
 void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& operations, const interface_info& info,
-                                                 bool IO_port) const
+                                                 FunctionArchitectureRef func_arch, bool IO_port) const
 {
    if(operations.empty())
    {
       return;
    }
-   const std::string ResourceName = ENCODE_FDNAME(info.arg_id, "_Read_", info.name);
+   const auto& parm_attrs = func_arch->parms.at(info.arg_id);
+   const auto& bundle_name = parm_attrs.at(FunctionArchitecture::parm_bundle);
+   const std::string ResourceName = ENCODE_FDNAME(bundle_name, "_Read_", info.name);
    const auto HLSMgr = GetPointer<HLS_manager>(AppM);
    const auto HLS_D = HLSMgr->get_HLS_device();
    const auto TechMan = HLS_D->get_technology_manager();
@@ -1579,13 +1590,15 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
 }
 
 void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& operations, const interface_info& info,
-                                                  bool IO_port) const
+                                                  FunctionArchitectureRef func_arch, bool IO_port) const
 {
    if(operations.empty())
    {
       return;
    }
-   const std::string ResourceName = ENCODE_FDNAME(info.arg_id, "_Write_", info.name);
+   const auto& parm_attrs = func_arch->parms.at(info.arg_id);
+   const auto& bundle_name = parm_attrs.at(FunctionArchitecture::parm_bundle);
+   const std::string ResourceName = ENCODE_FDNAME(bundle_name, "_Write_", info.name);
    const auto HLSMgr = GetPointer<HLS_manager>(AppM);
    const auto HLS_D = HLSMgr->get_HLS_device();
    const auto TechMan = HLS_D->get_technology_manager();
@@ -2283,8 +2296,8 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
    {
       THROW_ASSERT(!operationsR.empty() || !operationsW.empty(), "unexpected condition");
       const auto IO_P = !operationsR.empty() && !operationsW.empty();
-      create_resource_Read_simple(operationsR, info, IO_P);
-      create_resource_Write_simple(operationsW, info, IO_P);
+      create_resource_Read_simple(operationsR, info, func_arch, IO_P);
+      create_resource_Write_simple(operationsW, info, func_arch, IO_P);
    }
    else if(info.name == "array")
    {

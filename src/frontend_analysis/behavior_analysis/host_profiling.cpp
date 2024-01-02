@@ -38,43 +38,25 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_POLIXML_BUILT.hpp"
-
-/// Header include
 #include "host_profiling.hpp"
 
-/// Behavior include
+#include "Parameter.hpp"
 #include "application_manager.hpp"
+#include "basic_block.hpp"
 #include "behavioral_helper.hpp"
+#include "custom_map.hpp"
+#include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
+#include "graph.hpp"
+#include "hash_helper.hpp"
 #include "loop.hpp"
 #include "loops.hpp"
 #include "profiling_information.hpp"
+#include "string_manipulation.hpp"
 
-/// Constants include
-#include "host_profiling_xml.hpp"
-
-/// Frontend include
-#include "Parameter.hpp"
-
-/// Graph include
-#include "basic_block.hpp"
-#include "graph.hpp"
-
-/// STD include
 #include <cerrno>
-#include <unistd.h>
-
-/// STL include
-#include "custom_map.hpp"
-
-/// Utility include
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
-#include "hash_helper.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
 #include <filesystem>
+#include <unistd.h>
 
 HostProfiling_Method operator&(const HostProfiling_Method first, const HostProfiling_Method second)
 {

@@ -48,10 +48,7 @@
 #include "constant_strings.hpp"
 #include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
-#include "polixml.hpp"
 #include "utility.hpp"
-#include "xml_dom_parser.hpp"
-#include "xml_helper.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include <filesystem>

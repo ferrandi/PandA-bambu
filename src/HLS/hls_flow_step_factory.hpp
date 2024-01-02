@@ -41,10 +41,9 @@
 #ifndef HLS_FLOW_STEP_FACTORY_HPP
 #define HLS_FLOW_STEP_FACTORY_HPP
 
-/// Superclass include
+#include "custom_set.hpp"
 #include "design_flow_step_factory.hpp"
 
-/// STL include
 #include <vector>
 
 REF_FORWARD_DECL(DesignFlowStep);

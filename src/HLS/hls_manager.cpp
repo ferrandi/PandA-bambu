@@ -339,18 +339,21 @@ void HLS_manager::check_bitwidth(unsigned long long prec)
 enum FunctionArchitecture::func_attr FunctionArchitecture::to_func_attr(const std::string& attr)
 {
    TO_ENUM(func_attr, FUNC_ARCH_ATTR_ENUM);
+   THROW_ASSERT(to_enum.find(attr) != to_enum.end(), "");
    return to_enum.at(attr);
 }
 
 enum FunctionArchitecture::parm_attr FunctionArchitecture::to_parm_attr(const std::string& attr)
 {
    TO_ENUM(parm_attr, FUNC_ARCH_PARM_ATTR_ENUM);
+   THROW_ASSERT(to_enum.find(attr) != to_enum.end(), "");
    return to_enum.at(attr);
 }
 
 enum FunctionArchitecture::iface_attr FunctionArchitecture::to_iface_attr(const std::string& attr)
 {
    TO_ENUM(iface_attr, FUNC_ARCH_IFACE_ATTR_ENUM);
+   THROW_ASSERT(to_enum.find(attr) != to_enum.end(), "");
    return to_enum.at(attr);
 }
 
@@ -402,7 +405,22 @@ ModuleArchitecture::ModuleArchitecture(const std::string& filename)
 
 ModuleArchitecture::~ModuleArchitecture() = default;
 
-FunctionArchitectureRef& ModuleArchitecture::GetArchitecture(const std::string& funcSymbol)
+FunctionArchitectureRef ModuleArchitecture::GetArchitecture(const std::string& funcSymbol) const
 {
-   return _funcArchs[funcSymbol];
+   auto it = _funcArchs.find(funcSymbol);
+   if(it != _funcArchs.end())
+   {
+      return it->second;
+   }
+   return nullptr;
+}
+
+void ModuleArchitecture::AddArchitecture(const std::string& symbol, FunctionArchitectureRef arch)
+{
+   _funcArchs[symbol] = arch;
+}
+
+void ModuleArchitecture::RemoveArchitecture(const std::string& funcSymbol)
+{
+   _funcArchs.erase(funcSymbol);
 }

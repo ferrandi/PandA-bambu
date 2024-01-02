@@ -561,6 +561,15 @@ class PipelineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
                ReportError(attr.first.loc, "Pipelining initiation interval must be a positive integer value");
             }
          }
+         else if(iequals(attr.first.id, "off"))
+         {
+            if(attr.second.size())
+            {
+               ReportError(attr.first.loc, "Unexpected argument value");
+            }
+            func_attr[key_loc_t("pipeline_style", attr.first.loc)] = "off";
+            continue;
+         }
          else
          {
             ReportError(attr.first.loc, "Unexpected attribute");
@@ -573,14 +582,8 @@ class PipelineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
                             "Duplicate definition of attribute '" + attr.first.id + "'");
          }
       }
-      if(func_attr.find(key_loc_t("pipeline_style", SourceLocation())) == func_attr.end())
-      {
-         func_attr.emplace(key_loc_t("pipeline_style", p.loc), "frp");
-      }
-      if(func_attr.find(key_loc_t("pipeline_ii", SourceLocation())) == func_attr.end())
-      {
-         func_attr.emplace(key_loc_t("pipeline_ii", p.loc), "1");
-      }
+      func_attr.emplace(key_loc_t("pipeline_ii", p.loc), "1");
+      func_attr.emplace(key_loc_t("pipeline_style", p.loc), "frp");
    }
 
    static const char* PragmaKeyword;
@@ -615,10 +618,12 @@ class InlineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             FD->addAttr(
                 AlwaysInlineAttr::CreateImplicit(FD->getASTContext(), AlwaysInlineAttr::Spelling::Keyword_forceinline));
 #endif
+            FD->dropAttr<NoInlineAttr>();
          }
          else if(iequals(attr.first.id, "off"))
          {
             FD->addAttr(NoInlineAttr::CreateImplicit(FD->getASTContext()));
+            FD->dropAttr<AlwaysInlineAttr>();
          }
          else
          {
@@ -636,6 +641,23 @@ class InlineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
              AlwaysInlineAttr::CreateImplicit(FD->getASTContext(), AlwaysInlineAttr::Spelling::Keyword_forceinline));
 #endif
          attrs.emplace(key_loc_t("inline", p.loc), "self");
+      }
+   }
+
+   void finalize(FunctionDecl* FD) override
+   {
+      std::string inline_attr;
+      if(FD->hasAttr<NoInlineAttr>())
+      {
+         inline_attr = "off";
+      }
+      else if(FD->hasAttr<AlwaysInlineAttr>())
+      {
+         inline_attr = "self";
+      }
+      if(inline_attr.size())
+      {
+         GetFuncAttr(FD).attrs.emplace(key_loc_t("inline", FD->getLocation()), inline_attr);
       }
    }
 
@@ -806,12 +828,14 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
                   {
                      LLVM_DEBUG(dbgs() << " -> " << MangledName(calleeDecl) << "\n");
                      GetFuncAttr(calleeDecl).attrs[key_loc_t("dataflow", SourceLocation())] = "module";
+                     GetFuncAttr(calleeDecl).attrs[key_loc_t("inline", SourceLocation())] = "off";
                      hasModule = true;
 
                      // Try to avoid inlining on dataflow module
                      if(!calleeDecl->hasAttr<NoInlineAttr>())
                      {
                         calleeDecl->addAttr(NoInlineAttr::CreateImplicit(calleeDecl->getASTContext()));
+                        calleeDecl->dropAttr<AlwaysInlineAttr>();
                      }
                   }
                }
@@ -1335,6 +1359,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
       if(_parseAction & ParseAction_Analyze)
       {
          AnalyzeParameterInterface(FD, p);
+         GetFuncAttr(FD).attrs.emplace(key_loc_t("inline", p.loc), "off");
       }
 
       if(_parseAction & ParseAction_Optimize)
@@ -1343,6 +1368,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          if(!FD->hasAttr<NoInlineAttr>())
          {
             FD->addAttr(NoInlineAttr::CreateImplicit(FD->getASTContext()));
+            FD->dropAttr<AlwaysInlineAttr>();
          }
       }
    }

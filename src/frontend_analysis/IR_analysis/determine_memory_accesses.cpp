@@ -807,7 +807,7 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
             {
                THROW_ERROR("In function " + function_name +
                            " a different number of formal and actual parameters is found when function " +
-                           tree_helper::print_function_name(TM, fd) + " is called: " + STR(fd->list_of_args.size()) +
+                           tree_helper::GetMangledFunctionName(fd) + " is called: " + STR(fd->list_of_args.size()) +
                            " - " + STR(args.size()) +
                            "\n Check the C source code since an actual parameter is passed to a function that does "
                            "have the associated formal parameter");
@@ -1051,7 +1051,7 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
             {
                THROW_ERROR("In function " + function_name +
                            " a different number of formal and actual parameters is found when function " +
-                           tree_helper::print_function_name(TM, fd) + " is called: " + STR(fd->list_of_args.size()) +
+                           tree_helper::GetMangledFunctionName(fd) + " is called: " + STR(fd->list_of_args.size()) +
                            " - " + STR(ce->args.size()) +
                            "\n Check the C source code since an actual parameter is passed to a function that does "
                            "have the associated formal parameter");

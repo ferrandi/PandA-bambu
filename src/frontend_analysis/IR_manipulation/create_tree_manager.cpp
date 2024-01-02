@@ -400,7 +400,18 @@ DesignFlowStep_Status create_tree_manager::Exec()
       {
          if(attr == FunctionArchitecture::func_pipeline_style)
          {
-            fd->set_pipelining(true);
+            if(val == "off")
+            {
+               fd->set_pipelining(false);
+            }
+            else
+            {
+               fd->set_pipelining(true);
+               if(val == "frp")
+               {
+                  /// TO BE FIXED once the other pipeline styles are implemented
+               }
+            }
          }
          else if(attr == FunctionArchitecture::func_pipeline_ii)
          {

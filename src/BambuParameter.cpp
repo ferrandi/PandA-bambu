@@ -2698,7 +2698,6 @@ void BambuParameter::CheckParameters()
          search_xmap(nanox_dir);
          for(const auto& ver_dir : sorted_dirs(nanox_dir))
          {
-            std::cout << "nx: " << ver_dir << "\n";
             search_xmap(ver_dir.string());
          }
       }

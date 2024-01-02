@@ -46,22 +46,16 @@
 #ifndef TREE_HELPER_HPP
 #define TREE_HELPER_HPP
 
-#include "custom_set.hpp" // for set
-#include "custom_set.hpp" // for unordered_set
-#include <cstddef>        // for size_t
-#include <list>           // for list
-#include <string>         // for string
-#include <tuple>          // for tuple
-#include <vector>         // for vector
-
-/// Utility include
+#include "custom_set.hpp"
 #include "panda_types.hpp"
 #include "refcount.hpp"
 
-/**
- * @name Forward declarations.
- */
-//@{
+#include <cstddef>
+#include <list>
+#include <string>
+#include <tuple>
+#include <vector>
+
 struct binfo;
 struct integer_cst;
 struct function_decl;
@@ -77,8 +71,6 @@ CONSTREF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(bloc);
 CONSTREF_FORWARD_DECL(var_pp_functor);
-
-//@}
 
 /**
  * This class collects some utility functions used to extract information from tree-based data structures.
@@ -120,40 +112,10 @@ class tree_helper
 
    /**
     * Return the size of a tree object
-    * @param tm is the tree manager
-    * @param index is the treenode
-    */
-   static
-       /// FIXME: to be remove after substitution with IsBooleanType
-       unsigned long long
-       size(const tree_managerConstRef& tm, const unsigned int index);
-
-   /**
-    * Return the size of a tree object
     * @param tn is the tree object
     * @return the size of the object
     */
    static unsigned long long Size(const tree_nodeConstRef& tn);
-
-   /**
-    * Return the type name of a signal or a port
-    * @param tm is the tree manager
-    * @param index is the treenode_index
-    */
-   static
-       /// FIXME: to be remove after substitution with GetTypeName
-       std::string
-       name_type(const tree_managerConstRef& tm, const unsigned int index);
-
-   /**
-    * Return the name of template without parameters. Ex: sc_signal<T> --> sc_signal
-    * @param tm is the tree manager
-    * @param index is the treenode_index of the class template (is the index of a record_type)
-    */
-   static
-       /// FIXME: to be remove after substitution with GetTemplateTypeName
-       std::string
-       name_tmpl(const tree_managerConstRef& tm, const unsigned int index);
 
    /**
     * Return the name of template without parameters. Ex: sc_signal<T> --> sc_signal
@@ -161,16 +123,6 @@ class tree_helper
     * @return name of template without parameters
     */
    static std::string GetTemplateTypeName(const tree_nodeConstRef& type);
-
-   /**
-    * Return the name of the class.
-    * @param tm is the tree manager
-    * @param index is the treenode_index of the class (is the index of a record_type)
-    */
-   static
-       /// FIXME: to be remove after substitution with GetRecordTypeName
-       std::string
-       record_name(const tree_managerConstRef& tm, unsigned int index);
 
    /**
     * Return the name of the class.

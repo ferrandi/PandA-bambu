@@ -39,32 +39,20 @@
  */
 #include "controller_creator_base_step.hpp"
 
-/// implemented controllers
+#include "BambuParameter.hpp"
+#include "behavioral_helper.hpp"
+#include "commandport_obj.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
 #include "fsm_controller.hpp"
-
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
-
-#include "BambuParameter.hpp"
-
-#include "dbgPrintHelper.hpp"
-#include "utility.hpp"
-
-#include "behavioral_helper.hpp"
-#include "function_behavior.hpp"
-
-#include "commandport_obj.hpp"
 #include "multi_unbounded_obj.hpp"
-
-#include "exceptions.hpp"
-
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
-
 #include "technology_manager.hpp"
-
-#include "polixml.hpp"
-#include "xml_helper.hpp"
+#include "utility.hpp"
 
 ControllerCreatorBaseStep::ControllerCreatorBaseStep(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
                                                      unsigned int _funId,

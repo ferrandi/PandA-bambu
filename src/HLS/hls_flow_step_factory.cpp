@@ -37,133 +37,91 @@
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
  */
+#include "hls_flow_step_factory.hpp"
 
-/// Autoheader include
-#include "config_HAVE_ILP_BUILT.hpp"
-
-///. include
+#include "BB_based_stg.hpp"
+#include "CTestbenchExecution.hpp"
+#include "CallGraphUnfolding.hpp"
+#include "FSM_NI_SSA_liveness.hpp"
 #include "Parameter.hpp"
-
-/// Header include
 #include "TopEntityMemoryMapped.hpp"
+#include "WB4Intercon_interface.hpp"
+#include "WB4_interface.hpp"
+#include "add_library.hpp"
+#include "allocation.hpp"
 #include "call_graph_manager.hpp"
+#include "cdfc_module_binding.hpp"
+#include "chordal_coloring_register.hpp"
 #include "classic_datapath.hpp"
+#include "classical_synthesis_flow.hpp"
+#include "compatibility_based_register.hpp"
 #include "control_flow_checker.hpp"
 #include "controller_cs.hpp"
+#include "cs_interface.hpp"
+#include "custom_set.hpp"
 #include "datapath_cs.hpp"
 #include "datapath_parallel_cs.hpp"
+#include "dbgPrintHelper.hpp"
 #include "design_flow_step.hpp"
+#include "dominator_allocation.hpp"
+#include "dry_run_evaluation.hpp"
+#include "easy_module_binding.hpp"
+#include "evaluation.hpp"
 #include "fsm_controller.hpp"
-#include "hls_flow_step_factory.hpp"
-#include "pipeline_controller.hpp"
-#include "top_entity.hpp"
-#include "top_entity_cs.hpp"
-#include "top_entity_parallel_cs.hpp"
-
-/// HLS backend include
+#include "fun_dominator_allocation.hpp"
 #include "generate_hdl.hpp"
 #include "generate_simulation_scripts.hpp"
 #include "generate_synthesis_scripts.hpp"
+#include "hls_function_bit_value.hpp"
+#include "hls_synthesis_flow.hpp"
+#include "initialize_hls.hpp"
+#include "mem_dominator_allocation.hpp"
+#include "mem_dominator_allocation_cs.hpp"
+#include "memory.hpp"
+#include "minimal_interface.hpp"
+#include "mux_connection_binding.hpp"
+#include "parametric_list_based.hpp"
+#include "pipeline_controller.hpp"
+#include "port_swapping.hpp"
+#include "sched_based_chaining_computation.hpp"
+#include "scheduling_base_step.hpp"
+#include "simulation_evaluation.hpp"
+#include "standard_hls.hpp"
+#include "string_manipulation.hpp"
+#include "synthesis_evaluation.hpp"
+#include "test_vector_parser.hpp"
+#include "testbench_generation.hpp"
+#include "top_entity.hpp"
+#include "top_entity_cs.hpp"
+#include "top_entity_parallel_cs.hpp"
+#include "tree_manager.hpp"
+#include "unique_binding.hpp"
+#include "unique_binding_register.hpp"
+#include "values_scheme.hpp"
+#include "vertex_coloring_register.hpp"
+#include "virtual_hls.hpp"
+#include "weighted_clique_register.hpp"
+#include "write_hls_summary.hpp"
+
 #if HAVE_TASTE
 #include "generate_taste_hdl_architecture.hpp"
 #include "generate_taste_synthesis_script.hpp"
+#include "taste_interface_generation.hpp"
 #endif
-#include "cdfc_module_binding.hpp"
-#include "chordal_coloring_register.hpp"
-#include "compatibility_based_register.hpp"
-#include "easy_module_binding.hpp"
-#include "mux_connection_binding.hpp"
-#include "port_swapping.hpp"
-#include "unique_binding.hpp"
-#include "unique_binding_register.hpp"
-#include "vertex_coloring_register.hpp"
-#include "weighted_clique_register.hpp"
 
-/// HLS/binding/storage_value_insertion includes
-#include "values_scheme.hpp"
-
-/// HLS/chaining
-#include "sched_based_chaining_computation.hpp"
-
-/// HLS/evaluation
-#include "dry_run_evaluation.hpp"
-#include "evaluation.hpp"
-
-/// HLS/evaluation/exact includes
-#include "simulation_evaluation.hpp"
-#include "synthesis_evaluation.hpp"
-
-/// HLS/function_allocation
-#include "fun_dominator_allocation.hpp"
 #if HAVE_FROM_PRAGMA_BUILT
+#include "omp_allocation.hpp"
+#include "omp_body_loop_synthesis_flow.hpp"
+#include "omp_for_wrapper_cs_synthesis_flow.hpp"
 #include "omp_function_allocation.hpp"
 #include "omp_function_allocation_CS.hpp"
 #endif
 
-/// HLS/hls_flow includes
-#include "classical_synthesis_flow.hpp"
-#include "dominator_allocation.hpp"
-#include "initialize_hls.hpp"
-#if HAVE_FROM_PRAGMA_BUILT
-#include "omp_body_loop_synthesis_flow.hpp"
-#endif
-#if HAVE_FROM_PRAGMA_BUILT
-#include "omp_for_wrapper_cs_synthesis_flow.hpp"
-#endif
-#include "standard_hls.hpp"
-#include "virtual_hls.hpp"
-#include "write_hls_summary.hpp"
-
-/// HLS/hls_flow/synthesis includes
-#include "hls_synthesis_flow.hpp"
-
-#if HAVE_TASTE
-/// HLS/interface
-#include "taste_interface_generation.hpp"
-#endif
-
-#include "cs_interface.hpp"
-#include "minimal_interface.hpp"
-
-/// HLS/interface/WB4 includes
-#include "WB4Intercon_interface.hpp"
-#include "WB4_interface.hpp"
-
-/// HLS/liveness includes
-#include "FSM_NI_SSA_liveness.hpp"
-
-/// HLS/memory includes
-#include "memory.hpp"
-
-/// HLS/memory
-#include "mem_dominator_allocation.hpp"
-#include "mem_dominator_allocation_cs.hpp"
-
-/// HLS/module_allocation includes
-#include "add_library.hpp"
-#include "allocation.hpp"
-#include "hls_function_bit_value.hpp"
-#if HAVE_FROM_PRAGMA_BUILT
-#include "omp_allocation.hpp"
-#endif
-
-/// HLS/scheduling include
-#include "parametric_list_based.hpp"
-#include "scheduling_base_step.hpp"
 #if HAVE_ILP_BUILT
 #include "sdc_scheduling.hpp"
 #endif
 #include "sdc_scheduling2.hpp"
 
-/// HLS/simulation includes
-#include "CTestbenchExecution.hpp"
-#include "test_vector_parser.hpp"
-#include "testbench_generation.hpp"
-
-/// HLS/stg
-#include "BB_based_stg.hpp"
-
-#include "CallGraphUnfolding.hpp"
 #if HAVE_VCD_BUILT
 #include "HWDiscrepancyAnalysis.hpp"
 #include "HWPathComputation.hpp"
@@ -171,23 +129,10 @@
 #include "vcd_utility.hpp"
 #endif
 
-/// polixml
-#include "xml_element.hpp"
+#include "config_HAVE_ILP_BUILT.hpp"
 
-/// STD include
 #include <string>
-
-/// STL includes
-#include "custom_set.hpp"
 #include <utility>
-
-/// tree include
-#include "tree_manager.hpp"
-
-/// utility include
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
-#include "string_manipulation.hpp" // for GET_CLASS
-#include "xml_helper.hpp"
 
 HLSFlowStepFactory::HLSFlowStepFactory(const DesignFlowManagerConstRef _design_flow_manager,
                                        const HLS_managerRef _HLS_mgr, const ParameterConstRef _parameters)

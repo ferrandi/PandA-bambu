@@ -114,15 +114,21 @@ void dead_code_eliminationIPA::ComputeRelationships(DesignFlowStepSet& relations
 {
    if(relationship_type == INVALIDATION_RELATIONSHIP)
    {
+      const auto DFM = design_flow_manager.lock();
+      const auto DFG = DFM->CGetDesignFlowGraph();
+      std::vector<FrontendFlowStepType> step_types = {FrontendFlowStepType::DEAD_CODE_ELIMINATION};
       if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
       {
-         for(const auto i : fun_id_to_restart)
+         step_types.push_back(FrontendFlowStepType::BIT_VALUE);
+      }
+      for(const auto i : fun_id_to_restart)
+      {
+         for(auto step_type : step_types)
          {
-            const auto step_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, i);
-            const auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);
+            const auto step_signature = FunctionFrontendFlowStep::ComputeSignature(step_type, i);
+            const auto frontend_step = DFM->GetDesignFlowStep(step_signature);
             THROW_ASSERT(frontend_step != NULL_VERTEX, "step " + step_signature + " is not present");
-            const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-            const auto design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+            const auto design_flow_step = DFG->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
             relationships.insert(design_flow_step);
          }
       }
@@ -130,10 +136,9 @@ void dead_code_eliminationIPA::ComputeRelationships(DesignFlowStepSet& relations
       for(const auto i : fun_id_to_restartParm)
       {
          const auto step_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::PARM2SSA, i);
-         const auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);
+         const auto frontend_step = DFM->GetDesignFlowStep(step_signature);
          THROW_ASSERT(frontend_step != NULL_VERTEX, "step " + step_signature + " is not present");
-         const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const auto design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+         const auto design_flow_step = DFG->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
          relationships.insert(design_flow_step);
       }
       fun_id_to_restartParm.clear();
@@ -179,6 +184,16 @@ DesignFlowStep_Status dead_code_eliminationIPA::Exec()
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed function ");
       }
+   }
+   for(auto& f_id : fun_id_to_restart)
+   {
+      const auto FB = AppM->GetFunctionBehavior(f_id);
+      FB->UpdateBBVersion();
+   }
+   for(auto& f_id : fun_id_to_restartParm)
+   {
+      const auto FB = AppM->GetFunctionBehavior(f_id);
+      FB->UpdateBBVersion();
    }
    return fun_id_to_restart.empty() && fun_id_to_restartParm.empty() ? DesignFlowStep_Status::UNCHANGED :
                                                                        DesignFlowStep_Status::SUCCESS;
@@ -245,7 +260,6 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
    const auto CG = CGM->CGetCallGraph();
    const auto function_v = CGM->GetVertex(function_id);
 
-   InEdgeIterator ie, ie_end;
    tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
    std::vector<tree_nodeRef> loa = fd->list_of_args;
    std::vector<tree_nodeConstRef> argsT;
@@ -256,16 +270,16 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
    const auto ftype_ptr = tree_man->GetPointerType(ftype);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Erasing unused arguments from call points");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-   for(boost::tie(ie, ie_end) = boost::in_edges(function_v, *CG); ie != ie_end; ie++)
+   BOOST_FOREACH(EdgeDescriptor ie, boost::in_edges(function_v, *CG))
    {
-      const auto caller_id = CGM->get_function(ie->m_source);
+      const auto caller_id = CGM->get_function(ie.m_source);
       if(rFunctions.find(caller_id) != rFunctions.end())
       {
-         const auto fei = CG->CGetFunctionEdgeInfo(*ie);
+         const auto fei = CG->CGetFunctionEdgeInfo(ie);
          INDENT_DBG_MEX(
              DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
              "Analysing call points from " +
-                 tree_helper::print_function_name(TM, GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
+                 tree_helper::GetMangledFunctionName(GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
          for(const auto& call_id : fei->direct_call_points)
          {
             auto call_rdx = TM->GetTreeReindex(call_id);
