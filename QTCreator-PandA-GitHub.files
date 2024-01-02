@@ -296,7 +296,6 @@ etc/clang_plugin/HardekopfLin_AA.cpp
 etc/clang_plugin/HardekopfLin_AA.hpp
 etc/clang_plugin/PtrIteratorSimplifyPass.hpp
 etc/clang_plugin/TreeHeightReduction.hpp
-etc/clang_plugin/bambuS2S.cpp
 etc/clang_plugin/dumpGimple.cpp
 etc/clang_plugin/gcc/COPYING3
 etc/clang_plugin/gcc/brig-builtins.def
@@ -314,7 +313,6 @@ etc/clang_plugin/gcc/sanitizer.def
 etc/clang_plugin/gcc/sync-builtins.def
 etc/clang_plugin/gcc/tree.def
 etc/clang_plugin/plugin_ASTAnalyzer.cpp
-etc/clang_plugin/plugin_ASTAnnotate.cpp
 etc/clang_plugin/plugin_CSROA.cpp
 etc/clang_plugin/plugin_GepiCanon.cpp
 etc/clang_plugin/plugin_dumpGimpleEmpty.cpp

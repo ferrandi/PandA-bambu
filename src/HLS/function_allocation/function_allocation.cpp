@@ -41,15 +41,11 @@
  *
  */
 #include "function_allocation.hpp"
-#include "fun_dominator_allocation.hpp"
-#include "hls_manager.hpp"
 
 #include "Parameter.hpp"
-#include "polixml.hpp"
-#include "xml_helper.hpp"
-
-/// HLS/function_allocation include
+#include "fun_dominator_allocation.hpp"
 #include "functions.hpp"
+#include "hls_manager.hpp"
 
 function_allocation::function_allocation(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr,
                                          const DesignFlowManagerConstRef _design_flow_manager,

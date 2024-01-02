@@ -139,16 +139,16 @@ using namespace __AC_NAMESPACE;
       const auto fnode = TM->CGetTreeNode(function_id);
       const auto fd = GetPointerS<const function_decl>(fnode);
       const auto fname = tree_helper::GetMangledFunctionName(fd);
-      auto& DesignInterfaceInclude = HLSMgr->design_interface_typenameinclude;
-      if(DesignInterfaceInclude.find(fname) != DesignInterfaceInclude.end())
+      const auto& parms = HLSMgr->module_arch->GetArchitecture(fname)->parms;
+      for(const auto& [parm, attrs] : parms)
       {
-         const auto& DesignInterfaceArgsInclude = DesignInterfaceInclude.find(fname)->second;
-         for(const auto& argInclude : DesignInterfaceArgsInclude)
+         const auto attr_it = attrs.find(FunctionArchitecture::parm_includes);
+         if(attr_it != attrs.end())
          {
-            string_to_container(std::inserter(includes, includes.end()), argInclude.second, ";");
+            string_to_container(std::inserter(includes, includes.end()), attr_it->second, ";");
          }
-         top_fnames.insert(fname);
       }
+      top_fnames.insert(fname);
    }
    if(includes.size())
    {
@@ -213,18 +213,8 @@ void HLSCWriter::WriteParamDecl(const BehavioralHelperConstRef BH)
 void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
                                           const std::map<std::string, std::string>& curr_test_vector)
 {
-   const auto fnode = TM->CGetTreeReindex(BH->get_function_index());
-   const auto fname = tree_helper::GetMangledFunctionName(GetPointerS<const function_decl>(GET_CONST_NODE(fnode)));
-   const auto& DesignAttributes = HLSMgr->design_attributes;
-   const auto function_if = [&]() -> const std::map<std::string, std::map<interface_attributes, std::string>>* {
-      const auto it = DesignAttributes.find(fname);
-      if(it != DesignAttributes.end())
-      {
-         return &it->second;
-      }
-      return nullptr;
-   }();
-   const auto arg_signature_typename = HLSMgr->design_interface_typename_orig_signature.find(fname);
+   const auto fname = BH->GetMangledFunctionName();
+   const auto& parm_attrs = HLSMgr->module_arch->GetArchitecture(fname)->parms;
    const auto params = BH->GetParameters();
    for(auto par_idx = 0U; par_idx < params.size(); ++par_idx)
    {
@@ -232,9 +222,9 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
       const auto parm_type = tree_helper::CGetType(par);
       const auto param = BH->PrintVariable(GET_INDEX_CONST_NODE(par));
       const auto has_file_init = [&]() {
-         if(function_if)
+         if(parm_attrs.size()) // FIX: this is probably always true
          {
-            const auto& type_name = function_if->at(param).at(attr_typename);
+            const auto& type_name = parm_attrs.at(param).at(FunctionArchitecture::parm_typename);
             return std::regex_search(type_name.c_str(), wrapper_def);
          }
          return false;
@@ -256,9 +246,9 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
          std::string var_ptdtype;
          std::string temp_var_decl;
          bool is_a_true_pointer = true;
-         if(!is_binary_init && arg_signature_typename != HLSMgr->design_interface_typename_orig_signature.end())
+         if(!is_binary_init && parm_attrs.size())
          {
-            var_ptdtype = arg_signature_typename->second.at(par_idx);
+            var_ptdtype = parm_attrs.at(param).at(FunctionArchitecture::parm_original_typename);
             static const std::regex voidP = std::regex(R"(\bvoid\b)");
             while(std::regex_search(var_ptdtype, voidP))
             {
@@ -387,10 +377,10 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef BH)
 
    indented_output_stream->Append(function_name + "(");
    bool is_first_argument = true;
-   unsigned par_index = 0;
-   const auto& DesignInterfaceTypenameOrig = HLSMgr->design_interface_typename_orig_signature;
+   const auto& parms = HLSMgr->module_arch->GetArchitecture(top_fname_mngl)->parms;
    for(const auto& par : BH->GetParameters())
    {
+      const auto param = BH->PrintVariable(GET_INDEX_CONST_NODE(par));
       if(!is_first_argument)
       {
          indented_output_stream->Append(", ");
@@ -401,37 +391,26 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef BH)
       }
       if(tree_helper::IsPointerType(par))
       {
-         if(DesignInterfaceTypenameOrig.find(top_fname_mngl) != DesignInterfaceTypenameOrig.end())
+         auto arg_typename = parms.at(param).at(FunctionArchitecture::parm_original_typename);
+         if(arg_typename.find("(*)") != std::string::npos)
          {
-            auto arg_typename = DesignInterfaceTypenameOrig.find(top_fname_mngl)->second.at(par_index);
-            if(arg_typename.find("(*)") != std::string::npos)
-            {
-               arg_typename = arg_typename.substr(0, arg_typename.find("(*)")) + "*";
-            }
-            if(arg_typename.back() != '*')
-            {
-               indented_output_stream->Append("*(");
-               indented_output_stream->Append(
-                   arg_typename.substr(0, arg_typename.size() - (arg_typename.back() == '&')) + "*");
-               indented_output_stream->Append(") ");
-            }
-            else
-            {
-               indented_output_stream->Append("(");
-               indented_output_stream->Append(arg_typename);
-               indented_output_stream->Append(") ");
-            }
+            arg_typename = arg_typename.substr(0, arg_typename.find("(*)")) + "*";
+         }
+         if(arg_typename.back() != '*')
+         {
+            indented_output_stream->Append("*(");
+            indented_output_stream->Append(arg_typename.substr(0, arg_typename.size() - (arg_typename.back() == '&')) +
+                                           "*");
+            indented_output_stream->Append(") ");
          }
          else
          {
-            const auto parm_type = tree_helper::CGetType(par);
-            const auto type_name = tree_helper::PrintType(TM, parm_type);
-            indented_output_stream->Append("(" + type_name + ")");
+            indented_output_stream->Append("(");
+            indented_output_stream->Append(arg_typename);
+            indented_output_stream->Append(") ");
          }
       }
-      const auto param = BH->PrintVariable(GET_INDEX_CONST_NODE(par));
       indented_output_stream->Append(param);
-      ++par_index;
    }
    indented_output_stream->Append(");\n");
 }
@@ -445,20 +424,12 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
 
    const auto align_bus = std::max(8ULL, HLSMgr->Rmem->get_bus_data_bitsize() / 8ULL);
    const auto align_infer = [&]() {
-      const auto top_fname_mngl = BH->GetMangledFunctionName();
-      const auto arg_attributes = HLSMgr->design_attributes.find(top_fname_mngl);
+      const auto funcSymbol = BH->GetMangledFunctionName();
+      const auto& ifaces = HLSMgr->module_arch->GetArchitecture(funcSymbol)->ifaces;
       unsigned long long max = 0ULL;
-
-      if(arg_attributes != HLSMgr->design_attributes.end())
+      for(const auto& [name, attrs] : ifaces)
       {
-         for(auto& parameter : arg_attributes->second)
-         {
-            const auto if_align = parameter.second.find(attr_interface_alignment);
-            if(if_align != parameter.second.end())
-            {
-               max = std::max(max, boost::lexical_cast<unsigned long long>(if_align->second));
-            }
-         }
+         max = std::max(max, std::stoull(attrs.at(FunctionArchitecture::iface_alignment)));
       }
       return max;
    }();
@@ -609,13 +580,8 @@ void HLSCWriter::WriteMainTestbench()
    const auto top_fname_mngl = top_bh->GetMangledFunctionName();
    const auto interface_type = Param->getOption<HLSFlowStep_Type>(OPT_interface_type);
    const auto is_interface_inferred = interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
-   const auto arg_signature_typename = HLSMgr->design_interface_typename_orig_signature.find(top_fname_mngl);
-   const auto arg_attributes = HLSMgr->design_attributes.find(top_fname_mngl);
-   THROW_ASSERT(!is_interface_inferred ||
-                    arg_signature_typename != HLSMgr->design_interface_typename_orig_signature.end(),
-                "Original signature not found for function: " + top_fname_mngl + " (" + top_fname + ")");
-   THROW_ASSERT(!is_interface_inferred || arg_attributes != HLSMgr->design_attributes.end(),
-                "Design attributes not found for function: " + top_fname_mngl + " (" + top_fname + ")");
+   const auto& func_arch = HLSMgr->module_arch->GetArchitecture(top_fname_mngl);
+   THROW_ASSERT(func_arch, "Expected interface architecture for function " + top_fname_mngl);
 
    const auto return_type = tree_helper::GetFunctionReturnType(top_fnode);
    const auto top_params = top_bh->GetParameters();
@@ -660,9 +626,9 @@ void HLSCWriter::WriteMainTestbench()
          size_t param_idx = 0;
          for(const auto& param : top_bh->GetParameters())
          {
-            const auto param_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(param));
+            const auto parm_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(param));
             std::cmatch what;
-            if(std::regex_search(param_size_str.c_str(), what, std::regex("\\b" + param_name + ":(\\d+)")))
+            if(std::regex_search(param_size_str.c_str(), what, std::regex("\\b" + parm_name + ":(\\d+)")))
             {
                idx_size[param_idx] = what[1u].str();
             }
@@ -711,41 +677,29 @@ void HLSCWriter::WriteMainTestbench()
    {
       for(const auto& arg : top_params)
       {
-         std::string arg_typename, arg_interface, arg_size;
+         std::string arg_interface, arg_size;
          unsigned long long arg_align = 1;
          const auto arg_type = tree_helper::CGetType(arg);
-         if(arg_signature_typename != HLSMgr->design_interface_typename_orig_signature.end())
-         {
-            THROW_ASSERT(arg_signature_typename->second.size() > param_idx,
-                         "Original signature missing for parameter " + STR(param_idx));
-            arg_typename = arg_signature_typename->second.at(param_idx);
-         }
-         else
-         {
-            arg_typename = tree_helper::PrintType(TM, arg, false, true);
-         }
+         const auto parm_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
+         THROW_ASSERT(func_arch->parms.find(parm_name) != func_arch->parms.end(),
+                      "Attributes missing for parameter " + parm_name + " in function " + top_fname);
+         const auto& parm_attrs = func_arch->parms.at(parm_name);
+         auto arg_typename = parm_attrs.at(FunctionArchitecture::parm_original_typename);
          if(is_interface_inferred)
          {
-            const auto param_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
-            THROW_ASSERT(arg_attributes->second.count(param_name),
-                         "Attributes missing for parameter " + param_name + " in function " + top_fname);
-            const auto& param_attributes = arg_attributes->second.at(param_name);
-            THROW_ASSERT(param_attributes.count(attr_interface_type),
-                         "Attribute 'interface type' is missing for parameter " + param_name);
-            arg_interface = param_attributes.at(attr_interface_type);
-            if(param_attributes.find(attr_bus_size) != param_attributes.end())
+            const auto& bundle_name = parm_attrs.at(FunctionArchitecture::parm_bundle);
+
+            const auto& iface_attrs = func_arch->ifaces.at(bundle_name);
+            arg_interface = iface_attrs.at(FunctionArchitecture::iface_mode);
+            if(iface_attrs.find(FunctionArchitecture::iface_cache_bus_size) != iface_attrs.end())
             {
-               THROW_ASSERT(param_attributes.find(attr_line_size) != param_attributes.end(),
-                            "Expected line size attribute for parameter '" + param_name + "'");
-               const auto bus_size = boost::lexical_cast<unsigned long long>(param_attributes.at(attr_bus_size));
-               const auto line_size = boost::lexical_cast<unsigned long long>(param_attributes.at(attr_line_size));
+               const auto bus_size = std::stoull(iface_attrs.at(FunctionArchitecture::iface_cache_bus_size));
+               const auto line_size = std::stoull(iface_attrs.at(FunctionArchitecture::iface_cache_line_size));
                arg_align = line_size * bus_size / 8ULL;
             }
             else
             {
-               THROW_ASSERT(param_attributes.find(attr_interface_alignment) != param_attributes.end(),
-                            "Expected alignment attribute for parameter '" + param_name + "'");
-               arg_align = boost::lexical_cast<unsigned long long>(param_attributes.at(attr_interface_alignment));
+               arg_align = std::stoull(iface_attrs.at(FunctionArchitecture::iface_alignment));
             }
          }
          else
@@ -791,13 +745,10 @@ void HLSCWriter::WriteMainTestbench()
             {
                if(is_interface_inferred)
                {
-                  const auto param_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
-                  THROW_ASSERT(arg_attributes->second.count(param_name),
-                               "Attributes missing for parameter " + param_name + " in function " + top_fname);
-                  THROW_ASSERT(arg_attributes->second.at(param_name).count(attr_size_in_bytes),
-                               "Attributes attr_size_in_bytes missing for parameter " + param_name + " in function " +
+                  THROW_ASSERT(parm_attrs.find(FunctionArchitecture::parm_size_in_bytes) != parm_attrs.end(),
+                               "Attributes parm_size_in_bytes missing for parameter " + parm_name + " in function " +
                                    top_fname);
-                  auto size_in_bytes = arg_attributes->second.at(param_name).at(attr_size_in_bytes);
+                  auto size_in_bytes = parm_attrs.at(FunctionArchitecture::parm_size_in_bytes);
                   args_init += "__m_param_alloc(" + STR(param_idx) + ", " + STR(size_in_bytes) + ");\n";
                }
                else

@@ -92,14 +92,6 @@ class dead_code_elimination : public FunctionFrontendFlowStep
    void kill_uses(const tree_managerRef& TM, const tree_nodeRef& op0) const;
 
    /**
-    * Replace virtual ssa definition with gimple nop
-    * @param TM tree manager instance
-    * @param vdef virtual ssa
-    * @return tree_nodeRef generated gimple nop statement
-    */
-   tree_nodeRef kill_vdef(const tree_managerRef& TM, const tree_nodeRef& vdef);
-
-   /**
     *
     * @param gc
     * @param TM
@@ -141,6 +133,14 @@ class dead_code_elimination : public FunctionFrontendFlowStep
     * @return true if the step has to be executed
     */
    bool HasToBeExecuted() const override;
+
+   /**
+    * Replace virtual ssa definition with gimple nop
+    * @param TM tree manager instance
+    * @param vdef virtual ssa
+    * @return tree_nodeRef generated gimple nop statement
+    */
+   static tree_nodeRef kill_vdef(const tree_managerRef& TM, const tree_nodeRef& vdef);
 
    static void fix_sdc_motion(DesignFlowManagerConstRef design_flow_manager, unsigned int function_id,
                               tree_nodeRef removedStmt);

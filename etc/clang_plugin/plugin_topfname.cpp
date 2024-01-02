@@ -38,9 +38,6 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-// #undef NDEBUG
-#include "debug_print.hpp"
-
 #include "plugin_includes.hpp"
 
 #include <llvm/ADT/StringSet.h>
@@ -67,6 +64,8 @@
 #include <set>
 #include <sstream>
 #include <string>
+
+#define DEBUG_TYPE "top-fname"
 
 // Helper to load an API list to preserve and expose it as a functor for internalization.
 class PreserveSymbolList
@@ -175,7 +174,7 @@ namespace llvm
          bool hasTopFun = false;
          if(TopFunctionName_TFP.empty())
          {
-            PRINT_DBG("No top function specified\n");
+            LLVM_DEBUG(llvm::dbgs() << "No top function specified\n");
             return false;
          }
          std::list<std::string> symbolList;
@@ -197,15 +196,15 @@ namespace llvm
             {
                std::string funName = fun.getName().data();
                auto demangled = getDemangled(funName);
-               PRINT_DBG("Checking function: " + funName + " | " + demangled + "\n");
+               LLVM_DEBUG(llvm::dbgs() << "Checking function: " + funName + " | " + demangled + "\n");
                if(is_builtin_fn(funName) || is_builtin_fn(demangled))
                {
-                  PRINT_DBG("  builtin\n");
+                  LLVM_DEBUG(llvm::dbgs() << "  builtin\n");
                   symbolList.push_back(funName);
                }
                if(!fun.hasInternalLinkage() && (funName == TopFunctionName_TFP || demangled == TopFunctionName_TFP))
                {
-                  PRINT_DBG("  top function\n");
+                  LLVM_DEBUG(llvm::dbgs() << "  top function\n");
                   symbolList.push_back(funName);
                   hasTopFun = true;
                   /// in case add noalias
@@ -226,7 +225,7 @@ namespace llvm
          {
             return changed;
          }
-         PRINT_DBG("Top function name: " << TopFunctionName_TFP << "\n");
+         LLVM_DEBUG(llvm::dbgs() << "Top function name: " << TopFunctionName_TFP << "\n");
          symbolList.push_back("signgam");
 
          if(!Internalize_TFP)

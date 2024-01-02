@@ -244,10 +244,10 @@ clang5_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimp
 clang5_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.'; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I. -I$(top_srcdir)/ext/pugixml/src'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.';; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I. -I$(top_srcdir)/ext/pugixml/src';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clang5_plugin_dumpGimpleSSA.o;\
@@ -257,10 +257,10 @@ clang5_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimple
 clang5_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I. -DCPP_LANGUAGE'; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I. -I$(top_srcdir)/ext/pugixml/src -DCPP_LANGUAGE'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I. -DCPP_LANGUAGE';; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I. -I$(top_srcdir)/ext/pugixml/src -DCPP_LANGUAGE';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clang5_plugin_dumpGimpleSSACpp.o;\
@@ -322,10 +322,10 @@ clang5_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(
 clang5_plugin_ASTAnalyzer.o : $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.'; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I. -I$(top_srcdir)/ext/pugixml/src'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.';; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I. -I$(top_srcdir)/ext/pugixml/src';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang5_plugin_ASTAnalyzer.o;\
@@ -380,14 +380,5 @@ clang5_CSROA.o : $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggrega
 	if test -n "$$compile_options"; then \
 	    $(I386_CLANG5_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang5_CSROA.o; \
 	fi;
-
-
-bambuS2S-5: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
-	case $(host_os) in \
-	  darwin*) \
-	    $(I386_CLANG5_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DCLANG_SYSTEM_H="\"$(CLANG5_SYSTEM_H)\"" -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG5_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG5_LIBSD)  -o $@;;\
-	  *) \
-	    $(I386_CLANG5_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DCLANG_SYSTEM_H="\"$(CLANG5_SYSTEM_H)\"" -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG5_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG5_LIBS)  -o $@;;\
-	esac;
 
 ######

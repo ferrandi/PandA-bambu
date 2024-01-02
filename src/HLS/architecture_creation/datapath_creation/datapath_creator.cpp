@@ -43,17 +43,11 @@
  */
 #include "datapath_creator.hpp"
 
+#include "Parameter.hpp"
+#include "dbgPrintHelper.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
-
-#include "polixml.hpp"
-#include "xml_helper.hpp"
-
-#include "dbgPrintHelper.hpp"
 #include "utility.hpp"
-
-///. includes
-#include "Parameter.hpp"
 
 datapath_creator::datapath_creator(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
                                    const DesignFlowManagerConstRef _design_flow_manager,

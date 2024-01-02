@@ -1,6 +1,6 @@
-#pragma HLS_interface a m_axi direct
-#pragma HLS_interface n_ptr m_axi direct
-#pragma HLS_interface res m_axi direct
+#pragma HLS interface port = a mode = m_axi offset = direct
+#pragma HLS interface port = n_ptr mode = m_axi offset = direct
+#pragma HLS interface port = res mode = m_axi offset = direct
 
 void maxNumbers(int* a, unsigned int* n_ptr, int* res)
 

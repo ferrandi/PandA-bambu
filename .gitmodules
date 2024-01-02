@@ -8,3 +8,6 @@
 	path = examples/PolyBench/PolyBenchC
 	url = https://github.com/ferrandi/PolyBenchC.git
 	branch = dev/panda-hls
+[submodule "pugixml"]
+	path = ext/pugixml
+	url = https://github.com/zeux/pugixml.git

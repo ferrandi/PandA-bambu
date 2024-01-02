@@ -177,7 +177,7 @@ void TestbenchAXIMModuleGenerator::InternalExec(std::ostream& out, structural_ob
    if(HLSMgr->get_parameter()->getOption<unsigned int>(OPT_mem_delay_write) == 1)
    {
       PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 4,
-                    "Warning: AXI does not support mem-delay-write==1, as it requires at least a cycle of latence -> "
+                    "Warning: AXI does not support mem-delay-write==1, as it requires at least a cycle of latency -> "
                     "mem-delay-write changed to 2.\n");
    }
    out << internal_port_assign << "\n"

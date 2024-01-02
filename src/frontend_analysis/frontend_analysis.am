@@ -85,7 +85,7 @@ endif
 noinst_LTLIBRARIES += lib_IR_analysis.la
 
 lib_IR_analysis_la_CPPFLAGS = \
-   -I$(top_srcdir)/src\
+   -I$(top_srcdir)/src \
    -I$(top_srcdir)/src/algorithms/dominance \
    -I$(top_srcdir)/src/algorithms/loops_detection \
    -I$(top_srcdir)/src/algorithms/graph_helpers \

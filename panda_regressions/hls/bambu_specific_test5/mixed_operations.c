@@ -1,8 +1,7 @@
 int mixed_operations(int a, int b, int c, int d, int e, int f, int g, int h, int i, int j, int k, int l, int m)
 {
+#pragma HLS pipeline
 
-   #pragma HLS_simple_pipeline
-   
    int aa = a * b;
    int ab = aa + c;
    int ac = ab * d;
@@ -14,6 +13,6 @@ int mixed_operations(int a, int b, int c, int d, int e, int f, int g, int h, int
    int ai = ah * j;
    int aj = ai + k;
    int ak = aj * (l + m);
-   
+
    return ak;
 }

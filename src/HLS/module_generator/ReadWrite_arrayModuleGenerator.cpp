@@ -103,14 +103,21 @@ void ReadWrite_arrayModuleGenerator::InternalExec(std::ostream& out, structural_
    }();
    THROW_ASSERT(fname.find(STR_CST_interface_parameter_keyword) != std::string::npos,
                 "Unexpected array interface module name");
-   const auto arg_name = fname.substr(0, fname.find(STR_CST_interface_parameter_keyword));
    const auto top_id = *HLSMgr->CGetCallGraphManager()->GetRootFunctions().begin();
    const auto top_fname = HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetMangledFunctionName();
-   THROW_ASSERT(HLSMgr->design_attributes.count(top_fname) && HLSMgr->design_attributes.at(top_fname).count(arg_name),
-                "Parameter " + arg_name + " not found in function " + top_fname);
-   const auto DesignAttributes = HLSMgr->design_attributes.at(top_fname).at(arg_name);
-   THROW_ASSERT(DesignAttributes.count(attr_size), "");
-   const auto arraySize = std::stoull(DesignAttributes.at(attr_size));
+   const auto bundle_name = fname.substr(0, fname.find(STR_CST_interface_parameter_keyword));
+   const auto func_arch = HLSMgr->module_arch->GetArchitecture(top_fname);
+   THROW_ASSERT(func_arch, "Expected function architecture for function " + top_fname);
+   const auto arraySize =
+       std::accumulate(func_arch->parms.begin(), func_arch->parms.end(), 0ULL, [&](auto& a, auto& it) {
+          const auto& parm_attrs = it.second;
+          if(parm_attrs.at(FunctionArchitecture::parm_bundle) == bundle_name)
+          {
+             THROW_ASSERT(parm_attrs.find(FunctionArchitecture::parm_elem_count) != parm_attrs.end(), "");
+             return a + std::stoull(parm_attrs.at(FunctionArchitecture::parm_elem_count));
+          }
+          return a;
+       });
 
    const auto isAlignedPowerOfTwo = _ports_in[i_in4].alignment == ceil_pow2(_ports_in[i_in4].alignment);
    const auto addressMaxValue = _ports_in[i_in4].alignment * arraySize - 1U;

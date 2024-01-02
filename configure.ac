@@ -1383,7 +1383,6 @@ AM_CONDITIONAL(BUILD_I386_CLANG16_GEPICANON_PLUGIN, test "x$build_I386_CLANG16_G
 AM_CONDITIONAL(BUILD_I386_CLANG16_CSROA_PLUGIN, test "x$build_I386_CLANG16_CSROA_PLUGIN" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANG16_TOPFNAME_PLUGIN, test "x$build_I386_CLANG16_TOPFNAME_PLUGIN" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANG16_ASTANALYZER_PLUGIN, test "x$build_I386_CLANG16_ASTANALYZER_PLUGIN" = xyes)
-AM_CONDITIONAL(BUILD_I386_CLANG16_ASTANNOTATE_PLUGIN, test "x$build_I386_CLANG16_ASTANNOTATE_PLUGIN" = xyes)
 
 AM_CONDITIONAL(BUILD_I386_CLANGVVD, test "x$build_I386_CLANGVVD" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANGVVD_EMPTY_PLUGIN, test "x$build_I386_CLANGVVD_EMPTY_PLUGIN" = xyes)
@@ -1467,10 +1466,10 @@ AC_CONFIG_FILES(ext/Makefile)
 
 ############### Final check for static linking #############################################
 if test "x$panda_ALLSTATIC" = xyes ;then
-  AM_LDFLAGS="-lstdc++fs -all-static -pthread";
+  AM_LDFLAGS="-all-static -pthread";
   LDFLAGS+="-all-static -pthread -static";
 else
-  AM_LDFLAGS="-lstdc++fs -pthread";
+  AM_LDFLAGS="-pthread";
 fi
 AC_SUBST(AM_LDFLAGS)
 
@@ -1481,7 +1480,7 @@ AC_LINK_IFELSE(
         #include <filesystem>
         int main() {
             std::error_code ec;
-            std::filesystem::create_directory("/dev/null", &ec);
+            std::filesystem::create_directory("/dev/null", ec);
         }
     ])],
     [ac_cv_fs_stdlib=no],

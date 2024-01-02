@@ -213,8 +213,8 @@
 #define OPT_FP_FORMAT_PROPAGATE (1 + OPT_FP_FORMAT)
 #define OPT_FP_FORMAT_INTERFACE (1 + OPT_FP_FORMAT_PROPAGATE)
 #define OPT_PARALLEL_BACKEND (1 + OPT_FP_FORMAT_INTERFACE)
-#define OPT_INTERFACE_XML_FILENAME (1 + OPT_PARALLEL_BACKEND)
-#define OPT_LATTICE_ROOT (1 + OPT_INTERFACE_XML_FILENAME)
+#define OPT_ARCHITECTURE_XML (1 + OPT_PARALLEL_BACKEND)
+#define OPT_LATTICE_ROOT (1 + OPT_ARCHITECTURE_XML)
 #define OPT_XILINX_ROOT (1 + OPT_LATTICE_ROOT)
 #define OPT_MENTOR_ROOT (1 + OPT_XILINX_ROOT)
 #define OPT_MENTOR_OPTIMIZER (1 + OPT_MENTOR_ROOT)
@@ -311,8 +311,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "            INFER    -  top function is built with an hardware interface inferred from\n"
       << "                        the pragmas or from the top function signature\n"
       << "            WB4      -  WishBone 4 interface\n\n"
-      << "    --interface-xml-filename=<filename>\n"
-      << "        User defined interface file.\n\n"
+      << "    --architecture-xml=<filename>\n"
+      << "        User-defined module architecture file.\n\n"
       << "    --memory-mapped-top\n"
       << "        Generate a memory mapped interface for the top level function.\n"
       << "        The start signal and each one of function parameter are mapped to a memory address\n\n"
@@ -1024,7 +1024,7 @@ int BambuParameter::Exec()
       {"pretty-print", required_argument, nullptr, OPT_PRETTY_PRINT},
       {"pragma-parse", no_argument, nullptr, OPT_PRAGMA_PARSE},
       {"generate-interface", required_argument, nullptr, 0},
-      {"interface-xml-filename", required_argument, nullptr, OPT_INTERFACE_XML_FILENAME},
+      {"architecture-xml", required_argument, nullptr, OPT_ARCHITECTURE_XML},
       {"additional-top", required_argument, nullptr, OPT_ADDITIONAL_TOP},
       {"data-bus-bitsize", required_argument, nullptr, 0},
       {"addr-bus-bitsize", required_argument, nullptr, 0},
@@ -2049,14 +2049,14 @@ int BambuParameter::Exec()
             setOption(OPT_evaluation_mode, Evaluation_Mode::DRY_RUN);
             break;
          }
-         case OPT_INTERFACE_XML_FILENAME:
+         case OPT_ARCHITECTURE_XML:
          {
             auto XMLfilename = GetPath(optarg);
             if(!std::filesystem::exists(std::filesystem::path(XMLfilename)))
             {
-               THROW_ERROR("The file " + XMLfilename + " passed to --interface-xml-filename option does not exist");
+               THROW_ERROR("The file " + XMLfilename + " passed to --architecture-xml option does not exist");
             }
-            setOption(OPT_interface_xml_filename, XMLfilename);
+            setOption(OPT_architecture_xml, XMLfilename);
             break;
          }
          case OPT_ALTERA_ROOT:
@@ -2548,8 +2548,8 @@ void BambuParameter::CheckParameters()
 
    const auto sorted_dirs = [](const std::string& parent_dir) {
       std::vector<std::filesystem::path> sorted_paths;
-      std::copy(std::filesystem::directory_iterator(parent_dir), std::filesystem::directory_iterator(),
-                std::back_inserter(sorted_paths));
+      std::copy_if(std::filesystem::directory_iterator(parent_dir), std::filesystem::directory_iterator(),
+                   std::back_inserter(sorted_paths), [](const auto& it) { return std::filesystem::is_directory(it); });
       std::sort(sorted_paths.begin(), sorted_paths.end(), NaturalVersionOrder);
       return sorted_paths;
    };
@@ -2587,10 +2587,7 @@ void BambuParameter::CheckParameters()
       {
          for(const auto& ver_dir : sorted_dirs(altera_dir))
          {
-            if(std::filesystem::is_directory(ver_dir))
-            {
-               search_quartus(ver_dir.string());
-            }
+            search_quartus(ver_dir.string());
          }
          search_quartus(altera_dir);
       }
@@ -2630,10 +2627,7 @@ void BambuParameter::CheckParameters()
       {
          for(const auto& ver_dir : sorted_dirs(lattice_dir))
          {
-            if(std::filesystem::is_directory(ver_dir))
-            {
-               search_lattice(ver_dir.string());
-            }
+            search_lattice(ver_dir.string());
          }
          search_lattice(lattice_dir);
       }
@@ -2682,16 +2676,13 @@ void BambuParameter::CheckParameters()
       {
          for(const auto& ver_dir : sorted_dirs(mentor_dir))
          {
-            if(std::filesystem::is_directory(ver_dir))
-            {
-               search_mentor(ver_dir.string());
-            }
+            search_mentor(ver_dir.string());
          }
          search_mentor(mentor_dir);
       }
    }
 
-   /// Search for NanoXPlore tools
+   /// Search for NanoXplore tools
    const auto nanox_dirs = SplitString(getOption<std::string>(OPT_nanoxplore_root), ":");
    removeOption(OPT_nanoxplore_root);
    const auto search_xmap = [&](const std::string& dir) {
@@ -2704,14 +2695,11 @@ void BambuParameter::CheckParameters()
    {
       if(std::filesystem::is_directory(nanox_dir))
       {
+         search_xmap(nanox_dir);
          for(const auto& ver_dir : sorted_dirs(nanox_dir))
          {
-            if(std::filesystem::is_directory(ver_dir))
-            {
-               search_xmap(ver_dir.string());
-            }
+            search_xmap(ver_dir.string());
          }
-         search_xmap(nanox_dir);
       }
    }
 
@@ -2763,15 +2751,12 @@ void BambuParameter::CheckParameters()
       {
          for(const auto& ver_dir : sorted_dirs(xilinx_dir))
          {
-            if(std::filesystem::is_directory(ver_dir))
+            for(const auto& ise_dir : std::filesystem::directory_iterator(ver_dir))
             {
-               for(const auto& ise_dir : std::filesystem::directory_iterator(ver_dir))
+               const auto ise_path = ise_dir.path().string();
+               if(std::filesystem::is_directory(ise_dir) && ise_path.find("ISE") > ise_path.find_last_of('/'))
                {
-                  const auto ise_path = ise_dir.path().string();
-                  if(std::filesystem::is_directory(ise_dir) && ise_path.find("ISE") > ise_path.find_last_of('/'))
-                  {
-                     search_xilinx(ise_path);
-                  }
+                  search_xilinx(ise_path);
                }
             }
          }
@@ -2789,10 +2774,7 @@ void BambuParameter::CheckParameters()
             {
                for(const auto& ver_dir : sorted_dirs(vivado_path))
                {
-                  if(std::filesystem::is_directory(ver_dir))
-                  {
-                     search_xilinx_vivado(ver_dir.string());
-                  }
+                  search_xilinx_vivado(ver_dir.string());
                }
             }
          }

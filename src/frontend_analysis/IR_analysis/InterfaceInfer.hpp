@@ -41,25 +41,21 @@
 #define INTERFACE_INFER_HPP
 
 #include "application_frontend_flow_step.hpp"
-
-/// utility includes
+#include "custom_set.hpp"
 #include "refcount.hpp"
 
-/// Included for interface_attributes enum
-#include "hls_manager.hpp"
+#include <list>
+#include <set>
 
 REF_FORWARD_DECL(tree_node);
 CONSTREF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(tree_manipulation);
 REF_FORWARD_DECL(tree_manager);
+REF_FORWARD_DECL(FunctionArchitecture);
 struct statement_list;
 struct function_decl;
 struct gimple_assign;
 struct gimple_node;
-
-#include "custom_set.hpp"
-#include <list>
-#include <set>
 
 class InterfaceInfer : public ApplicationFrontendFlowStep
 {
@@ -95,22 +91,20 @@ class InterfaceInfer : public ApplicationFrontendFlowStep
                           bool commonRWSignature, tree_nodeConstRef interface_datatype,
                           const tree_manipulationRef tree_man, const tree_managerRef TM);
 
-   void create_resource_Read_simple(const std::set<std::string>& operations, const std::string& arg_name,
-                                    const interface_info& info, bool IO_port) const;
+   void create_resource_Read_simple(const std::set<std::string>& operations, const interface_info& info,
+                                    FunctionArchitectureRef func_arch, bool IO_port) const;
 
-   void create_resource_Write_simple(const std::set<std::string>& operations, const std::string& arg_name,
-                                     const interface_info& info, bool IO_port) const;
+   void create_resource_Write_simple(const std::set<std::string>& operations, const interface_info& info,
+                                     FunctionArchitectureRef func_arch, bool IO_port) const;
 
    void create_resource_array(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
-                              const std::string& bundle_name, const interface_info& info,
-                              unsigned long long arraySize) const;
+                              const interface_info& info, FunctionArchitectureRef func_arch) const;
 
    void create_resource_m_axi(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
-                              const std::string& arg_name, const std::string& bundle_name, const interface_info& info,
-                              m_axi_type mat, const std::map<interface_attributes, std::string>& bundle_attr_map) const;
+                              const interface_info& info, FunctionArchitectureRef func_arch) const;
 
    void create_resource(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
-                        const std::string& arg_name, const interface_info& info, const std::string& fname) const;
+                        const interface_info& info, FunctionArchitectureRef func_arch) const;
 
  public:
    /**
@@ -128,8 +122,6 @@ class InterfaceInfer : public ApplicationFrontendFlowStep
    ~InterfaceInfer() override;
 
    bool HasToBeExecuted() const override;
-
-   void Initialize() override;
 
    /**
     * Execute this step

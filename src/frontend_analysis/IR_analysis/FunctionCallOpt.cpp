@@ -107,37 +107,6 @@ FunctionCallOpt::FunctionCallOpt(const ParameterConstRef Param, const applicatio
     : FunctionFrontendFlowStep(_AppM, _function_id, FUNCTION_CALL_OPT, _design_flow_manager, Param), caller_bb()
 {
    debug_level = Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
-   if(never_inline.empty())
-   {
-      if(Param->IsParameter(PARAMETER_INLINE_MAX_COST))
-      {
-         inline_max_cost = Param->GetParameter<size_t>(PARAMETER_INLINE_MAX_COST);
-      }
-      if(Param->isOption(OPT_inline_functions))
-      {
-         const auto TM = AppM->get_tree_manager();
-         const auto fnames = SplitString(Param->getOption<std::string>(OPT_inline_functions), ",");
-         for(const auto& fname_cond : fnames)
-         {
-            const auto toks = SplitString(fname_cond, "=");
-            const auto& fname = toks.at(0);
-            const auto fnode = TM->GetFunction(fname);
-            if(fnode)
-            {
-               auto& inline_set = (!(toks.size() > 1) || toks.at(1) == "1") ? always_inline : never_inline;
-               inline_set.insert(fnode->index);
-               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                              "Required " + STR((!(toks.size() > 1) || toks.at(1) == "1") ? "always" : "never") +
-                                  " inline for function " + fname);
-            }
-            else
-            {
-               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Required inline function not found: " + fname);
-            }
-         }
-      }
-      never_inline.insert(0);
-   }
 }
 
 FunctionCallOpt::~FunctionCallOpt() = default;
@@ -195,6 +164,69 @@ bool FunctionCallOpt::HasToBeExecuted() const
 
 void FunctionCallOpt::Initialize()
 {
+   if(never_inline.empty())
+   {
+      const auto TM = AppM->get_tree_manager();
+      if(parameters->IsParameter(PARAMETER_INLINE_MAX_COST))
+      {
+         inline_max_cost = parameters->GetParameter<size_t>(PARAMETER_INLINE_MAX_COST);
+      }
+      if(parameters->isOption(OPT_inline_functions))
+      {
+         const auto fnames = SplitString(parameters->getOption<std::string>(OPT_inline_functions), ",");
+         for(const auto& fname_cond : fnames)
+         {
+            const auto toks = SplitString(fname_cond, "=");
+            const auto& fname = toks.at(0);
+            const auto fnode = TM->GetFunction(fname);
+            if(fnode)
+            {
+               auto& inline_set = (!(toks.size() > 1) || toks.at(1) == "1") ? always_inline : never_inline;
+               inline_set.insert(fnode->index);
+               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                              "Required " + STR((!(toks.size() > 1) || toks.at(1) == "1") ? "always" : "never") +
+                                  " inline for function " + fname);
+            }
+            else
+            {
+               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Required inline function not found: " + fname);
+            }
+         }
+      }
+      const auto HLSMgr = GetPointer<HLS_manager>(AppM);
+      for(const auto& [symbol, arch] : *HLSMgr->module_arch)
+      {
+         THROW_ASSERT(arch, "Expected initialized architecture for function " + symbol);
+         const auto inline_attr = arch->attrs.find(FunctionArchitecture::func_inline);
+         if(inline_attr != arch->attrs.end())
+         {
+            const auto fnode = TM->GetFunction(symbol);
+            if(fnode)
+            {
+               if(inline_attr->second == "self")
+               {
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Required always inline for function " + symbol);
+                  always_inline.insert(GET_INDEX_CONST_NODE(fnode));
+               }
+               else if(inline_attr->second == "off")
+               {
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Required never inline for function " + symbol);
+                  never_inline.insert(GET_INDEX_CONST_NODE(fnode));
+               }
+               else if(inline_attr->second == "recursive")
+               {
+                  THROW_WARNING("Recursive inline not yet supported.");
+               }
+            }
+            else
+            {
+               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                              "Required inline (" + inline_attr->second + ") function not found: " + symbol);
+            }
+         }
+      }
+      never_inline.insert(0);
+   }
    caller_bb.clear();
 }
 
@@ -396,15 +428,14 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
          }
          else
          {
-            InEdgeIterator ie, ie_end;
-            for(boost::tie(ie, ie_end) = boost::in_edges(function_v, *CG); ie != ie_end; ++ie)
+            BOOST_FOREACH(EdgeDescriptor ie, boost::in_edges(function_v, *CG))
             {
-               const auto caller_id = CGM->get_function(ie->m_source);
+               const auto caller_id = CGM->get_function(ie.m_source);
                caller_bb.insert(std::make_pair(caller_id, AppM->CGetFunctionBehavior(caller_id)->GetBBVersion()));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "Analysing call points from " +
-                                  tree_helper::print_function_name(
-                                      TM, GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
+                                  tree_helper::GetMangledFunctionName(
+                                      GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
                const auto caller_node = TM->CGetTreeNode(caller_id);
                THROW_ASSERT(caller_node->get_kind() == function_decl_K, "");
@@ -421,7 +452,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                      continue;
                   }
                }
-               const auto caller_info = CG->CGetFunctionEdgeInfo(*ie);
+               const auto caller_info = CG->CGetFunctionEdgeInfo(ie);
                bool all_inlined = true;
                for(const auto& call_id : caller_info->direct_call_points)
                {
@@ -444,8 +475,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                         const auto is_unique_bb_call = [&]() -> bool {
                            THROW_ASSERT(caller_sl->list_of_bloc.count(call_gn->bb_index),
                                         "BB" + STR(call_gn->bb_index) + " not found in function " +
-                                            tree_helper::print_function_name(TM, caller_fd) + " (" + STR(call_id) +
-                                            ")");
+                                            tree_helper::GetMangledFunctionName(caller_fd) + " (" + STR(call_id) + ")");
                            const auto bb = caller_sl->list_of_bloc.at(call_gn->bb_index);
                            for(const auto& tn : bb->CGetStmtList())
                            {
@@ -474,7 +504,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                           "---BB" + STR(call_gn->bb_index) + " from function " +
-                                              tree_helper::print_function_name(TM, caller_fd) +
+                                              tree_helper::GetMangledFunctionName(caller_fd) +
                                               " has multiple call points, skipping...");
                         }
                      }
@@ -502,8 +532,8 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "Analysed call points from " +
-                                  tree_helper::print_function_name(
-                                      TM, GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
+                                  tree_helper::GetMangledFunctionName(
+                                      GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
             }
          }
       }

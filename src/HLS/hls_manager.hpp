@@ -44,14 +44,15 @@
 #ifndef HLS_MANAGER_HPP
 #define HLS_MANAGER_HPP
 
-/// Superclass include
 #include "application_manager.hpp"
+#include "custom_map.hpp"
 
-/// Autoheader include
 #include "config_HAVE_TASTE.hpp"
 
-/// utility include
-#include "custom_map.hpp"
+#include <boost/preprocessor/seq/for_each.hpp>
+
+#include <map>
+#include <string>
 
 REF_FORWARD_DECL(AadlInformation);
 REF_FORWARD_DECL(hls);
@@ -62,25 +63,93 @@ REF_FORWARD_DECL(memory);
 REF_FORWARD_DECL(SimulationInformation);
 REF_FORWARD_DECL(BackendFlow);
 
-enum interface_attributes
+#define ENUM_ID(r, data, elem) elem,
+#define FUNC_ARCH_ATTR_ENUM (func_symbol)(func_name)(func_inline)(func_dataflow)(func_pipeline_style)(func_pipeline_ii)
+#define FUNC_ARCH_PARM_ATTR_ENUM                                                                            \
+   (parm_port)(parm_index)(parm_bundle)(parm_offset)(parm_includes)(parm_typename)(parm_original_typename)( \
+       parm_elem_count)(parm_size_in_bytes)
+#define FUNC_ARCH_IFACE_ATTR_ENUM                                                                                 \
+   (iface_name)(iface_mode)(iface_direction)(iface_bitwidth)(iface_alignment)(iface_cache_ways)(                  \
+       iface_cache_line_count)(iface_cache_line_size)(iface_cache_num_write_outstanding)(iface_cache_rep_policy)( \
+       iface_cache_bus_size)(iface_cache_write_policy)
+
+REF_FORWARD_DECL(FunctionArchitecture);
+
+class FunctionArchitecture
 {
-   attr_interface_type,
-   attr_interface_dir,
-   attr_interface_bitwidth,
-   attr_interface_alignment,
-   attr_size,
-   attr_size_in_bytes,
-   attr_offset,
-   attr_bundle_name,
-   attr_way_lines,
-   attr_line_size,
-   attr_bus_size,
-   attr_n_ways,
-   attr_buf_size,
-   attr_rep_pol,
-   attr_wr_pol,
-   attr_typename
+ public:
+   enum func_attr
+   {
+      BOOST_PP_SEQ_FOR_EACH(ENUM_ID, BOOST_PP_EMPTY, FUNC_ARCH_ATTR_ENUM)
+   };
+   static enum func_attr to_func_attr(const std::string& attr);
+
+   enum parm_attr
+   {
+      BOOST_PP_SEQ_FOR_EACH(ENUM_ID, BOOST_PP_EMPTY, FUNC_ARCH_PARM_ATTR_ENUM)
+   };
+   static enum parm_attr to_parm_attr(const std::string& attr);
+
+   enum iface_attr
+   {
+      BOOST_PP_SEQ_FOR_EACH(ENUM_ID, BOOST_PP_EMPTY, FUNC_ARCH_IFACE_ATTR_ENUM)
+   };
+   static enum iface_attr to_iface_attr(const std::string& attr);
+
+   using func_attrs = std::map<enum func_attr, std::string>;
+   using parm_attrs = std::map<enum parm_attr, std::string>;
+   using iface_attrs = std::map<enum iface_attr, std::string>;
+
+   func_attrs attrs;
+   std::map<std::string, parm_attrs> parms;
+   std::map<std::string, iface_attrs> ifaces;
 };
+
+REF_FORWARD_DECL(ModuleArchitecture);
+class ModuleArchitecture
+{
+ public:
+   using FunctionArchitectures = std::map<std::string, FunctionArchitectureRef>;
+
+ private:
+   FunctionArchitectures _funcArchs;
+
+ public:
+   ModuleArchitecture(const std::string& filename);
+   ~ModuleArchitecture();
+
+   FunctionArchitectures::const_iterator cbegin() const
+   {
+      return _funcArchs.cbegin();
+   }
+
+   FunctionArchitectures::const_iterator cend() const
+   {
+      return _funcArchs.cend();
+   }
+
+   FunctionArchitectures::const_iterator begin() const
+   {
+      return _funcArchs.begin();
+   }
+
+   FunctionArchitectures::const_iterator end() const
+   {
+      return _funcArchs.end();
+   }
+
+   FunctionArchitectures::iterator erase(FunctionArchitectures::const_iterator it)
+   {
+      return _funcArchs.erase(it);
+   }
+
+   void AddArchitecture(const std::string& symbol, FunctionArchitectureRef arch);
+
+   FunctionArchitectureRef GetArchitecture(const std::string& funcSymbol) const;
+
+   void RemoveArchitecture(const std::string& funcSymbol);
+};
+
 class HLS_manager : public application_manager
 {
  public:
@@ -130,24 +199,12 @@ class HLS_manager : public application_manager
    /// The information collected from aadl files
    const AadlInformationRef aadl_information;
 #endif
-   /** store the design interface attributes coming from an xml file:
-    * function_name->parameter_name->attribute_name->value
-    */
-   std::map<std::string, std::map<std::string, std::map<interface_attributes, std::string>>> design_attributes;
-   /// store the design interface signature coming from an xml file: function_name->typename_signature
-   std::map<std::string, std::vector<std::string>> design_interface_typename_signature;
-   /// store the design interface original signature coming from an xml file: function_name->typename_signature
-   std::map<std::string, std::vector<std::string>> design_interface_typename_orig_signature;
-   /// store the design interface typename includes coming from an xml file:
-   /// function_name->parameter_name->interface_typenameinclude
-   std::map<std::string, std::map<std::string, std::string>> design_interface_typenameinclude;
+
+   ModuleArchitectureRef module_arch;
+
    /// store the design interface read/write references of parameters:
    /// function_name->bb_index->parameter_name->list_of_loads
    std::map<std::string, std::map<unsigned, std::map<std::string, std::list<unsigned>>>> design_interface_io;
-
-   /// store the constraints on resources added to manage the I/O interfaces:
-   /// function_id->library_name->resource_function_name->number of resources
-   std::map<unsigned, std::map<std::string, std::map<std::string, unsigned int>>> design_interface_constraints;
 
    /// global resource constraints
    std::map<std::pair<std::string, std::string>, std::pair<unsigned, unsigned>> global_resource_constraints;

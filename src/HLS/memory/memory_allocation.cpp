@@ -43,38 +43,28 @@
  */
 #include "memory_allocation.hpp"
 
-#include "generic_device.hpp"
-#include "hls_device.hpp"
-#include "hls_manager.hpp"
-#include "memory.hpp"
-
+#include "Parameter.hpp"
 #include "application_manager.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
-#include "op_graph.hpp"
-
-#include "polixml.hpp"
-#include "xml_helper.hpp"
-
-#include "Parameter.hpp"
-
-#include "math_function.hpp"
-
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-
-/// tree includes
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp"
 #include "ext_tree_node.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "function_behavior.hpp"
+#include "generic_device.hpp"
+#include "hls_device.hpp"
+#include "hls_manager.hpp"
+#include "math_function.hpp"
+#include "memory.hpp"
+#include "op_graph.hpp"
+#include "string_manipulation.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-/// STD include
 #include <algorithm>
 #include <string>
 #include <tuple>
@@ -281,8 +271,7 @@ void memory_allocation::finalize_memory_allocation()
       const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
       const auto is_interfaced = HLSMgr->hasToBeInterfaced(behavioral_helper->get_function_index());
       const auto fname = behavioral_helper->GetMangledFunctionName();
-      const auto design_attributes = HLSMgr->design_attributes.find(fname);
-      const auto has_attributes = design_attributes != HLSMgr->design_attributes.end();
+      const auto func_arch = HLSMgr->module_arch->GetArchitecture(fname);
       if(function_behavior->get_has_globals() && parameters->isOption(OPT_expose_globals) &&
          parameters->getOption<bool>(OPT_expose_globals))
       {
@@ -291,15 +280,27 @@ void memory_allocation::finalize_memory_allocation()
       const auto& function_parameters = behavioral_helper->get_parameters();
       for(const auto function_parameter : function_parameters)
       {
-         if(has_attributes)
+         const auto pname = behavioral_helper->PrintVariable(function_parameter);
+         if(func_arch)
          {
-            const auto pname = behavioral_helper->PrintVariable(function_parameter);
-            THROW_ASSERT(design_attributes->second.count(pname), "");
-            THROW_ASSERT(design_attributes->second.at(pname).count(attr_interface_type), "");
-            const auto parameter_interface = design_attributes->second.at(pname).at(attr_interface_type);
-            if(parameter_interface != "default")
+            auto parm_arch = func_arch->parms.find(pname);
+            if(parm_arch != func_arch->parms.end())
             {
-               continue;
+               const auto& parm_attrs = parm_arch->second;
+               const auto& iface_attrs = func_arch->ifaces.at(parm_attrs.at(FunctionArchitecture::parm_bundle));
+               const auto iface_mode = iface_attrs.at(FunctionArchitecture::iface_mode);
+               if(iface_mode != "default")
+               {
+                  continue;
+               }
+            }
+            else
+            {
+               // NOTE: Struct fileds may be promoted to separate function arguments disrupting the source-IR
+               // correspondence (which is fine and can be ignored since it will happen only on non-interfaced
+               // functions)
+               THROW_ASSERT(func_arch->parms.size() != function_parameters.size(),
+                            "Parameter " + pname + " not found in function " + fname);
             }
          }
          if(HLSMgr->Rmem->is_parm_decl_copied(function_parameter) &&

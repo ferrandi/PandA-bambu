@@ -39,14 +39,13 @@
  *
  */
 // #undef NDEBUG
-#include "debug_print.hpp"
-
 #include "plugin_includes.hpp"
 
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTConsumer.h>
 #include <clang/AST/ASTContext.h>
 #include <clang/AST/DeclCXX.h>
+#include <clang/AST/GlobalDecl.h>
 #include <clang/AST/Mangle.h>
 #include <clang/AST/RecordLayout.h>
 #include <clang/AST/RecursiveASTVisitor.h>
@@ -55,1274 +54,1707 @@
 #include <clang/Frontend/FrontendPluginRegistry.h>
 #include <clang/Lex/LexDiagnostic.h>
 #include <clang/Lex/Preprocessor.h>
+#include <clang/Lex/Token.h>
 #include <clang/Sema/Sema.h>
 #include <llvm/Support/raw_ostream.h>
 
+#define PUGIXML_NO_EXCEPTIONS
+#define PUGIXML_HEADER_ONLY
+
+#include <pugixml.hpp>
+
+#include <fstream>
+#include <list>
+#include <map>
+#include <memory>
 #include <regex>
 #include <string>
 
 #define REWRITE_REGEX
 
-static std::map<std::string, std::map<clang::SourceLocation, std::map<std::string, std::string>>> file_loc_attr;
+#if __clang_major__ > 9
+#define make_unique std::make_unique
+#else
+#define make_unique llvm::make_unique
+#endif
 
-/* Maps an interface name to its attributes, and the attribute names to their value */
-static std::map<clang::SourceLocation, std::map<std::string, std::map<std::string, std::string>>> attr_map;
+using namespace llvm;
+using namespace clang;
 
-namespace clang
+static inline __attribute__((always_inline)) bool iequals(const char* a, const char* b)
 {
-   class FunctionArgConsumer : public clang::ASTConsumer
+   return strcasecmp(a, b) == 0;
+}
+
+static inline __attribute__((always_inline)) bool iequals(const std::string& a, const char* b)
+{
+   return iequals(a.c_str(), b);
+}
+
+// static inline __attribute__((always_inline)) bool iequals(const std::string& a, const std::string& b)
+// {
+//    return iequals(a.c_str(), b.c_str());
+// }
+
+static inline __attribute__((always_inline)) std::string to_lower(const std::string& str)
+{
+   std::string s;
+   s.reserve(str.size());
+   std::transform(str.begin(), str.end(), std::back_inserter(s), [](unsigned char c) { return std::tolower(c); });
+   return s;
+}
+
+struct key_loc_t
+{
+   std::string id;
+   SourceLocation loc;
+
+   key_loc_t(const std::string& _id, const SourceLocation& _loc) : id(_id), loc(_loc)
    {
-      CompilerInstance& CI;
-      std::string topfname;
-      std::string outdir_name;
-      std::string InFile;
-      clang::PrintingPolicy pp;
+   }
+};
 
-      std::map<std::string, std::map<std::string, std::string>> fun_attr;
-      std::map<std::string, std::map<std::string, std::map<std::string, std::string>>> fun_arg_attr;
+struct key_loc_cmp
+{
+   bool operator()(const key_loc_t& a, const key_loc_t& b) const
+   {
+      return strcasecmp(a.id.c_str(), b.id.c_str()) < 0;
+   }
+};
+typedef std::map<key_loc_t, std::string, key_loc_cmp> attr_map_t;
 
-      std::map<std::string, std::vector<std::string>> Fun2Params;
-      std::map<std::string, std::string> Fun2Demangled;
-      std::map<std::string, clang::SourceLocation> prevLoc;
+pugi::xml_node& operator<<(pugi::xml_node& _n, const attr_map_t& _m)
+{
+   for(auto& p : _m)
+   {
+      _n.append_attribute(p.first.id.c_str()).set_value(p.second.c_str());
+   }
+   return _n;
+}
 
-      std::string create_file_basename_string(const std::string& on, const std::string& original_filename)
+const pugi::xml_node& operator>>(const pugi::xml_node& _n, attr_map_t& _m)
+{
+   for(auto& attr : _n.attributes())
+   {
+      _m.emplace(key_loc_t(attr.name(), SourceLocation()), attr.value());
+   }
+   return _n;
+}
+
+static void attr_map_set_union(attr_map_t& a, const attr_map_t& b)
+{
+   key_loc_cmp comp{};
+   auto first1 = a.begin(), last1 = a.end();
+   auto first2 = b.begin(), last2 = b.end();
+   auto d_first = std::inserter(a, a.end());
+   for(; first1 != last1; ++d_first)
+   {
+      if(first2 == last2)
+         return;
+
+      if(comp(first2->first, first1->first))
+         *d_first = *first2++;
+      else
       {
-         const auto found = original_filename.find_last_of("/\\");
-         std::string dump_base_name;
-         if(found == std::string::npos)
-         {
-            dump_base_name = original_filename;
-         }
-         else
-         {
-            dump_base_name = original_filename.substr(found + 1);
-         }
-         return on + "/" + dump_base_name;
+         *d_first = *first1;
+         if(!comp(first1->first, first2->first))
+            ++first2;
+         ++first1;
       }
+   }
+   std::copy(first2, last2, d_first);
+}
 
-      std::string convert_unescaped(std::string ioString) const
+typedef std::map<std::string, attr_map_t> key_attr_map_t;
+
+static void key_attr_map_set_union(std::map<std::string, attr_map_t>& a, const std::map<std::string, attr_map_t>& b)
+{
+   auto first1 = a.begin(), last1 = a.end();
+   auto first2 = b.begin(), last2 = b.end();
+   auto d_first = std::inserter(a, a.end());
+   for(; first1 != last1; ++d_first)
+   {
+      if(first2 == last2)
+         return;
+
+      if(first2->first < first1->first)
+         *d_first = *first2++;
+      else
       {
-         std::string::size_type lPos = 0;
-         while((lPos = ioString.find_first_of("&<>'\"", lPos)) != std::string::npos)
+         // *d_first = *first1;
+         if(!(first1->first < first2->first))
          {
-            switch(ioString[lPos])
-            {
-               case '&':
-                  ioString.replace(lPos++, 1, "&amp;");
-                  break;
-               case '<':
-                  ioString.replace(lPos++, 1, "&lt;");
-                  break;
-               case '>':
-                  ioString.replace(lPos++, 1, "&gt;");
-                  break;
-               case '\'':
-                  ioString.replace(lPos++, 1, "&apos;");
-                  break;
-               case '"':
-                  ioString.replace(lPos++, 1, "&quot;");
-                  break;
-               default:
-               {
-                  // Do nothing
-               }
-            }
+            attr_map_set_union(first1->second, first2->second);
+            ++first2;
          }
-         return ioString;
+         ++first1;
       }
+   }
+   std::copy(first2, last2, d_first);
+}
 
-      void writeXML_interfaceFile(const std::string& filename, const std::string& TopFunctionName) const
+struct __interface_attr
+{
+   std::map<std::string, attr_map_t> bundles;
+   std::map<std::string, attr_map_t> parameters;
+
+   __interface_attr& operator=(const __interface_attr& other)
+   {
+      key_attr_map_set_union(bundles, other.bundles);
+      key_attr_map_set_union(parameters, other.parameters);
+      return *this;
+   }
+};
+typedef __interface_attr interface_attr_t;
+
+pugi::xml_node& operator<<(pugi::xml_node& _n, const interface_attr_t& _m)
+{
+   auto ifaces = _n.append_child("bundles");
+   for(auto& p : _m.bundles)
+   {
+      auto iface = ifaces.append_child("bundle");
+      iface << p.second;
+   }
+   auto parms = _n.append_child("parameters");
+   for(auto& p : _m.parameters)
+   {
+      auto parm = parms.append_child("parameter");
+      parm << p.second;
+   }
+   return _n;
+}
+
+const pugi::xml_node& operator>>(const pugi::xml_node& _n, interface_attr_t& _m)
+{
+   pugi::xml_node c;
+   if((c = _n.child("bundles")))
+   {
+      for(auto& i : c)
       {
-         std::error_code EC;
-#if __clang_major__ >= 7 && !defined(VVD)
-         llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::FA_Read | llvm::sys::fs::FA_Write);
+         std::string bundleName = i.attribute("name").value();
+         i >> _m.bundles[bundleName];
+      }
+   }
+   if((c = _n.child("parameters")))
+   {
+      for(auto& p : c)
+      {
+         std::string parmPort = p.attribute("port").value();
+         p >> _m.parameters[parmPort];
+      }
+   }
+   return _n;
+}
+
+struct __func_attr
+{
+   attr_map_t attrs;
+   interface_attr_t ifaces;
+
+   __func_attr& operator=(const __func_attr& other)
+   {
+      attr_map_set_union(attrs, other.attrs);
+      ifaces = other.ifaces;
+      return *this;
+   }
+};
+typedef __func_attr func_attr_t;
+
+pugi::xml_node& operator<<(pugi::xml_node& _n, const func_attr_t& _m)
+{
+   return _n << _m.attrs << _m.ifaces;
+}
+
+const pugi::xml_node& operator>>(const pugi::xml_node& _n, func_attr_t& _m)
+{
+   _n >> _m.attrs;
+   _n >> _m.ifaces;
+   return _n;
+}
+
+struct pragma_line_t
+{
+ public:
+   // Preprocessor reference
+   Preprocessor* PP;
+   // Pragma begin location
+   SourceLocation pragmaLoc;
+   // Pragma class identifier
+   std::string id;
+   // Pragma class identifier location
+   SourceLocation loc;
+   // Pragma attributes
+   attr_map_t attrs;
+
+   pragma_line_t(Preprocessor* _PP, const SourceLocation& _pragmaLoc, const std::string& _id,
+                 const SourceLocation& _loc)
+       : PP(_PP), pragmaLoc(_pragmaLoc), id(_id), loc(_loc)
+   {
+   }
+};
+
+enum ParseAction
+{
+   ParseAction_None = 0,
+   ParseAction_Analyze = 1,
+   ParseAction_Optimize = 2,
+};
+
+#define DEBUG_TYPE "hls-pragmas"
+
+static void Report(DiagnosticsEngine& D, const SourceLocation& loc, DiagnosticsEngine::Level level, StringRef msg)
+{
+   D.Report(loc, D.getCustomDiagID(level, "%0")).AddString(msg);
+}
+
+static void ReportDuplicate(DiagnosticsEngine& D, const SourceLocation& loc, const SourceLocation& prev, StringRef msg)
+{
+   Report(D, loc, DiagnosticsEngine::Error, "");
+   Report(D, prev, DiagnosticsEngine::Remark, "Previously defined here");
+}
+
+static std::string MangledName(MangleContext* MC, NamedDecl* D)
+{
+   if(!MC->shouldMangleDeclName(D))
+   {
+      return D->getDeclName().getAsString();
+   }
+   std::string fsym;
+   raw_string_ostream ss(fsym);
+   if(auto CD = dyn_cast<CXXConstructorDecl>(D))
+   {
+#if __clang_major__ > 10
+      MC->mangleName(GlobalDecl(CD, CXXCtorType::Ctor_Complete), ss);
 #else
-         llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
+      MC->mangleCXXCtor(CD, CXXCtorType::Ctor_Complete, ss);
 #endif
-         stream << "<?xml version=\"1.0\"?>\n";
-         stream << "<module>\n";
-         for(const auto& function_attribute : fun_arg_attr)
-         {
-            const auto& fname = function_attribute.first;
-            const auto& arg_attr = function_attribute.second;
-            if(!TopFunctionName.empty() && Fun2Demangled.at(fname) != TopFunctionName && fname != TopFunctionName)
-            {
-               continue;
-            }
-            stream << "  <function id=\"" << fname << "\">\n";
-            assert(Fun2Params.count(fname));
-            for(const auto& aname : Fun2Params.at(fname))
-            {
-               stream << "    <arg id=\"" << aname << "\"";
-               assert(arg_attr.count(aname));
-               for(const auto& attr_val : arg_attr.at(aname))
-               {
-                  stream << " " << attr_val.first << "=\"" << convert_unescaped(attr_val.second) << "\"";
-               }
-               stream << "/>\n";
-            }
-            stream << "  </function>\n";
-         }
-         stream << "</module>\n";
-      }
-
-      void writeXML_pipelineFile(const std::string& filename, const std::string& TopFunctionName) const
-      {
-         std::error_code EC;
-#if __clang_major__ >= 7 && !defined(VVD)
-         llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::FA_Read | llvm::sys::fs::FA_Write);
+   }
+   else if(auto CD = dyn_cast<CXXDestructorDecl>(D))
+   {
+#if __clang_major__ > 10
+      MC->mangleName(GlobalDecl(CD, CXXDtorType::Dtor_Complete), ss);
 #else
-         llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
+      MC->mangleCXXDtor(CD, CXXDtorType::Dtor_Complete, ss);
 #endif
-         stream << "<?xml version=\"1.0\"?>\n";
-         stream << "<module>\n";
-         for(const auto& function_attributes : fun_attr)
-         {
-            const auto& fname = function_attributes.first;
-            const auto& fattr = function_attributes.second;
-            stream << "  <function id=\"" << fname << "\"";
-            for(const auto& attr_val : fattr)
-            {
-               stream << " " << attr_val.first << "=\"" << attr_val.second << "\"";
-            }
-            stream << "/>\n";
-         }
-         stream << "</module>\n";
-      }
+   }
+   else if(MC->shouldMangleCXXName(D))
+   {
+      MC->mangleCXXName(D, ss);
+   }
+   else
+   {
+      MC->mangleName(D, ss);
+   }
+   ss.flush();
+   return fsym;
+}
 
-      void writeFun2Params(const std::string& filename) const
-      {
-         std::error_code EC;
-#if __clang_major__ >= 7 && !defined(VVD)
-         llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::FA_Read | llvm::sys::fs::FA_Write);
+static func_attr_t& GetFuncAttr(std::map<std::string, func_attr_t>& funcAttrs, MangleContext* MC, FunctionDecl* FD)
+{
+   const auto funcSymbol = MangledName(MC, FD);
+   auto funcIt = funcAttrs.find(funcSymbol);
+   if(funcIt == funcAttrs.end())
+   {
+      funcIt = funcAttrs.emplace(funcSymbol, func_attr_t()).first;
+      funcIt->second.attrs.emplace(key_loc_t("symbol", FD->getLocation()), funcSymbol);
+      funcIt->second.attrs.emplace(key_loc_t("name", FD->getLocation()), FD->getNameInfo().getName().getAsString());
+   }
+   return funcIt->second;
+}
+
+class HLSPragmaParser
+{
+ public:
+   HLSPragmaParser() = default;
+
+   virtual ~HLSPragmaParser() = default;
+
+   /**
+    * @brief Check pragma id matching and handle pragma
+    * @return bool true on pragma id match, false else
+    */
+   virtual bool HandlePragma(Preprocessor& PP,
+#if __clang_major__ >= 9
+                             PragmaIntroducer
 #else
-         llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
+                             PragmaIntroducerKind
 #endif
-         for(const auto& fun2parms_el : Fun2Params)
-         {
-            stream << fun2parms_el.first;
-            for(const auto& par : fun2parms_el.second)
-            {
-               stream << " " << par;
-            }
-            stream << "\n";
-         }
-      }
+                                 Introducer,
+                             Token& PragmaTok, Token& Tok)
+   {
+      return false;
+   }
+};
 
-      const NamedDecl* getBaseTypeDecl(const QualType& qt) const
+class HLSPragmaHandler : public PragmaHandler
+{
+ public:
+   using HLSPragmaParserSet = std::map<std::string, std::shared_ptr<HLSPragmaParser>>;
+
+ private:
+   const HLSPragmaParserSet& _parsers;
+   std::list<pragma_line_t>& _pragmas;
+
+   inline void Report(Preprocessor& PP, const SourceLocation& loc, DiagnosticsEngine::Level level, StringRef msg) const
+   {
+      ::Report(PP.getDiagnostics(), loc, level, msg);
+   }
+
+ public:
+   HLSPragmaHandler(StringRef name, const HLSPragmaParserSet& parsers, std::list<pragma_line_t>& pragmas)
+       : PragmaHandler(name), _parsers(parsers), _pragmas(pragmas)
+   {
+   }
+
+   void HandlePragma(Preprocessor& PP,
+#if __clang_major__ >= 9
+                     PragmaIntroducer
+#else
+                     PragmaIntroducerKind
+#endif
+                         Introducer,
+                     Token& pragmaTok) override
+   {
+      auto pragmaLoc = pragmaTok.getLocation();
+      Token Tok{};
+
+      PP.Lex(Tok);
+      const auto pragma_class = PP.getSpelling(Tok);
+      const auto parser_it = _parsers.find(pragma_class);
+      if(parser_it != _parsers.end())
       {
-         const Type* ty = qt.getTypePtr();
-         NamedDecl* ND = nullptr;
-
-         if(ty->isPointerType() || ty->isReferenceType())
-         {
-            return getBaseTypeDecl(ty->getPointeeType());
-         }
-         if(isa<ElaboratedType>(ty))
-         {
-            return getBaseTypeDecl(ty->getAs<ElaboratedType>()->getNamedType());
-         }
-         if(isa<TypedefType>(ty) || ty->getTypeClass() == Type::Typedef)
-         {
-            return getBaseTypeDecl(ty->getAs<TypedefType>()->getDecl()->getUnderlyingType());
-         }
-         if(ty->isRecordType())
-         {
-            ND = ty->getAs<RecordType>()->getDecl();
-         }
-         else if(ty->isEnumeralType())
-         {
-            ND = ty->getAs<EnumType>()->getDecl();
-         }
-         else if(ty->isArrayType())
-         {
-            return getBaseTypeDecl(ty->castAsArrayTypeUnsafe()->getElementType());
-         }
-         return ND;
-      }
-
-      QualType RemoveTypedef(QualType t) const
-      {
-         if(t->getTypeClass() == Type::Typedef)
-         {
-            return RemoveTypedef(t->getAs<TypedefType>()->getDecl()->getUnderlyingType());
-         }
-         else if(t->getTypeClass() == Type::Elaborated && !t->isClassType())
-         {
-            return RemoveTypedef(t->getAs<ElaboratedType>()->getNamedType());
-         }
-         else if(t->getTypeClass() == Type::TemplateSpecialization)
-         {
-            return t;
-         }
-         else
-         {
-            return t;
-         }
-      }
-
-      std::string GetTypeNameCanonical(const QualType& t, const PrintingPolicy& pp) const
-      {
-         auto typeName = t->getCanonicalTypeInternal().getAsString(pp);
-         const auto key = std::string("class ");
-         const auto constkey = std::string("const class ");
-         if(typeName.find(key) == 0)
-         {
-            typeName = typeName.substr(key.size());
-         }
-         else if(typeName.find(constkey) == 0)
-         {
-            typeName = typeName.substr(constkey.size());
-         }
-         return typeName;
-      }
-
-      std::string getMangledName(const FunctionDecl* decl)
-      {
-         const auto mangleContext = decl->getASTContext().createMangleContext();
-
-         if(!mangleContext->shouldMangleDeclName(decl))
-         {
-            delete mangleContext;
-            return decl->getNameInfo().getName().getAsString();
-         }
-         std::string mangledName;
-         if(llvm::isa<CXXConstructorDecl>(decl) || llvm::isa<CXXDestructorDecl>(decl))
-         {
-            delete mangleContext;
-            return decl->getNameInfo().getName().getAsString();
-            ;
-         }
-         llvm::raw_string_ostream ostream(mangledName);
-         if(mangleContext->shouldMangleCXXName(decl))
-         {
-            mangleContext->mangleCXXName(decl, ostream);
-            ostream.flush();
-            delete mangleContext;
-            return mangledName;
-         }
-         mangleContext->mangleName(decl, ostream);
-         ostream.flush();
-         delete mangleContext;
-         return mangledName;
-      }
-
-      void AnalyzeFunctionDecl(const FunctionDecl* FD)
-      {
-         const auto print_error = [&](const std::string& msg) {
-            auto& D = CI.getDiagnostics();
-            D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "%0")).AddString(msg);
-         };
-
-         if(!FD->hasBody())
+         if(parser_it->second->HandlePragma(PP, Introducer, pragmaTok, Tok))
          {
             return;
          }
-
-         auto& SM = FD->getASTContext().getSourceManager();
-         std::map<std::string, std::string> interface_PragmaMap;
-         std::map<std::string, std::string> interface_PragmaMapArraySize;
-         std::map<std::string, std::string> interface_PragmaMapAttribute2;
-         std::map<std::string, std::string> interface_PragmaMapAttribute3;
-         const auto locEnd = FD->getSourceRange().getEnd();
-         const auto filename = SM.getPresumedLoc(locEnd, false).getFilename();
-         const auto fname = getMangledName(FD);
-
-         const auto prev = [&]() -> SourceLocation {
-            const auto prev_it = prevLoc.find(filename);
-            if(prev_it != prevLoc.end())
-            {
-               return prev_it->second;
-            }
-            return SourceLocation();
-         }();
-
-         for(const auto& location_argument : attr_map)
+         pragma_line_t p(&PP, pragmaLoc, PP.getSpelling(Tok), Tok.getLocation());
+         for(PP.Lex(Tok); Tok.isNot(tok::eod);)
          {
-            const auto& loc = location_argument.first;
-            if((prev.isInvalid() || prev < loc) && (loc < locEnd))
+            if(tok::isAnyIdentifier(Tok.getKind()))
             {
-               fun_arg_attr[fname].insert(attr_map[loc].begin(), attr_map[loc].end());
-            }
-         }
+               auto& attr_val = p.attrs[key_loc_t(PP.getSpelling(Tok), Tok.getLocation())];
+               attr_val = "";
 
-         const auto loc_attr = file_loc_attr.find(filename);
-         if(loc_attr != file_loc_attr.end())
-         {
-            const auto prev = [&]() -> SourceLocation {
-               const auto prev_it = prevLoc.find(filename);
-               if(prev_it != prevLoc.end())
+               PP.Lex(Tok);
+               if(Tok.is(tok::equal))
                {
-                  return prev_it->second;
+                  PP.Lex(Tok);
+                  if(tok::isAnyIdentifier(Tok.getKind()) || tok::isLiteral(Tok.getKind()) || Tok.is(tok::kw_true) ||
+                     Tok.is(tok::kw_false))
+                  {
+                     attr_val = PP.getSpelling(Tok);
+                     PP.Lex(Tok);
+                     continue;
+                  }
                }
-               return SourceLocation();
-            }();
-
-            for(const auto& location_attribute : loc_attr->second)
-            {
-               const auto& loc = location_attribute.first;
-               const auto& fattr = location_attribute.second;
-               if((prev.isInvalid() || prev < loc) && (loc < locEnd))
+               else if(tok::isAnyIdentifier(Tok.getKind()))
                {
-                  fun_attr[fname].insert(fattr.begin(), fattr.end());
-               }
-            }
-         }
-
-         if(!FD->isVariadic())
-         {
-            Fun2Demangled[fname] = FD->getNameInfo().getName().getAsString();
-            PRINT_DBG("function: " << fname << "\n");
-
-            auto par_index = 0u;
-            for(const auto par : FD->parameters())
-            {
-               if(const auto PVD = dyn_cast<ParmVarDecl>(par))
-               {
-                  const auto pname = [&]() {
-                     const auto name = PVD->getNameAsString();
-                     if(name.empty())
-                     {
-                        return "P" + std::to_string(par_index);
-                     }
-                     return name;
-                  }();
-                  PRINT_DBG("  arg: " << pname << "\n");
-
-                  auto& attr_val = fun_arg_attr[fname][pname];
-                  const auto argType = PVD->getType();
-                  std::string interface = "default";
-                  std::string ParamTypeName;
-                  std::string ParamTypeNameOrig;
-                  std::string ParamTypeInclude;
-                  const auto getIncludes = [&](const clang::QualType& type) {
-                     std::string includes;
-                     if(const auto BTD = getBaseTypeDecl(type))
-                     {
-                        const auto include_file =
-                            SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
-                        includes = include_file;
-                     }
-                     const auto tmpl_decl =
-                         llvm::dyn_cast_or_null<ClassTemplateSpecializationDecl>(type->getAsTagDecl());
-                     if(tmpl_decl)
-                     {
-                        const auto& args = tmpl_decl->getTemplateArgs();
-                        for(auto i = 0U; i < args.size(); ++i)
-                        {
-                           const auto& argT = args[i];
-                           if(argT.getKind() == TemplateArgument::ArgKind::Type)
-                           {
-                              if(const auto BTD = getBaseTypeDecl(argT.getAsType()))
-                              {
-                                 const auto include_file =
-                                     SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
-                                 includes += std::string(";") + include_file;
-                              }
-                           }
-                        }
-                     }
-                     return includes;
-                  };
-                  const auto manageArray = [&](const ConstantArrayType* CA, bool setInterfaceType) {
-                     auto OrigTotArraySize = CA->getSize();
-                     std::string Dimensions;
-                     if(!setInterfaceType)
-                     {
-#if __clang_major__ >= 13
-                        Dimensions = "[" + llvm::toString(OrigTotArraySize, 10, false) + "]";
-#else
-                        Dimensions = "[" + OrigTotArraySize.toString(10, false) + "]";
-#endif
-                     }
-                     while(CA->getElementType()->isConstantArrayType())
-                     {
-                        CA = cast<ConstantArrayType>(CA->getElementType());
-                        const auto n_el = CA->getSize();
-#if __clang_major__ >= 13
-                        Dimensions = Dimensions + "[" + llvm::toString(n_el, 10, false) + "]";
-#else
-                        Dimensions = Dimensions + "[" + n_el.toString(10, false) + "]";
-#endif
-                        OrigTotArraySize *= n_el;
-                     }
-                     if(setInterfaceType)
-                     {
-                        interface = "array";
-#if __clang_major__ >= 13
-                        const auto array_size = llvm::toString(OrigTotArraySize, 10, false);
-#else
-                        const auto array_size = OrigTotArraySize.toString(10, false);
-#endif
-                        assert(array_size != "0");
-                        attr_val["size"] = array_size;
-                     }
-                     const auto paramTypeRemTD = RemoveTypedef(CA->getElementType());
-                     ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + " *";
-                     ParamTypeNameOrig = GetTypeNameCanonical(CA->getElementType(), pp) +
-                                         (Dimensions == "" ? " *" : " (*)" + Dimensions);
-                     ParamTypeInclude = getIncludes(paramTypeRemTD);
-                  };
-                  const auto getSizeInBytes = [&](QualType T) -> int64_t {
-                     if(T->isIncompleteType() || T->isTemplateTypeParmType() || isa<TemplateSpecializationType>(T))
-                     {
-                        return 1;
-                     }
-                     return FD->getASTContext()
-                         .getTypeInfoDataSizeInChars(T)
-                         .
-#if __clang_major__ <= 11
-                         first
-#else
-                         Width
-#endif
-                         .getQuantity();
-                  };
-
-                  if(isa<DecayedType>(argType))
-                  {
-                     const auto DT = cast<DecayedType>(argType)->getOriginalType().IgnoreParens();
-                     attr_val["SizeInBytes"] = std::to_string(getSizeInBytes(DT));
-                     if(isa<ConstantArrayType>(DT))
-                     {
-                        manageArray(cast<ConstantArrayType>(DT), true);
-                     }
-                     else
-                     {
-                        const auto paramTypeRemTD = RemoveTypedef(argType);
-                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
-                        ParamTypeNameOrig = GetTypeNameCanonical(argType, pp);
-                        ParamTypeInclude = getIncludes(argType);
-                     }
-                     if(attr_val.find("interface_type") != attr_val.end())
-                     {
-                        interface = attr_val.at("interface_type");
-                        if(interface != "handshake" && interface != "fifo" &&
-                           interface.find("array") == std::string::npos && interface != "bus" && interface != "m_axi" &&
-                           interface != "axis")
-                        {
-                           print_error("#pragma HLS_interface non-consistent with parameter of constant "
-                                       "array type, where user defined interface is: " +
-                                       interface);
-                        }
-                        else if(interface == "array" && attr_val.find("size") == attr_val.end())
-                        {
-                           print_error("#pragma HLS_interface inconsistent internal data structure: " + interface);
-                        }
-                     }
-                  }
-                  else if(argType->isPointerType() || argType->isReferenceType())
-                  {
-                     const auto ptdType = argType->getPointeeType().IgnoreParens();
-                     attr_val["SizeInBytes"] = std::to_string(getSizeInBytes(ptdType));
-                     if(isa<ConstantArrayType>(ptdType))
-                     {
-                        manageArray(cast<ConstantArrayType>(ptdType), false);
-                     }
-                     else
-                     {
-                        const auto suffix = argType->isPointerType() ? "*" : "&";
-                        const auto paramTypeRemTD = RemoveTypedef(ptdType);
-                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp) + suffix;
-                        ParamTypeNameOrig = GetTypeNameCanonical(argType, pp);
-                        ParamTypeInclude = getIncludes(ptdType);
-                     }
-                     const auto is_channel_if = ParamTypeName.find("ac_channel<") == 0 ||
-                                                ParamTypeName.find("stream<") == 0 ||
-                                                ParamTypeName.find("hls::stream<") == 0;
-                     interface = is_channel_if ? "fifo" : "ptrdefault";
-                     if(attr_val.find("interface_type") != attr_val.end())
-                     {
-                        interface = attr_val.at("interface_type");
-                        if((interface != "ptrdefault" && interface != "none" && interface != "none_registered" &&
-                            interface != "handshake" && interface != "valid" && interface != "ovalid" &&
-                            interface != "acknowledge" && interface != "fifo" && interface != "bus" &&
-                            interface != "m_axi" && interface != "axis") ||
-                           (is_channel_if && interface != "fifo" && interface != "axis"))
-                        {
-                           print_error("#pragma HLS_interface non-consistent with parameter of pointer "
-                                       "type, where user defined interface is: " +
-                                       interface);
-                        }
-                     }
-                  }
-                  else
-                  {
-                     const auto paramTypeRemTD = RemoveTypedef(argType);
-                     attr_val["SizeInBytes"] = std::to_string(getSizeInBytes(paramTypeRemTD));
-                     ParamTypeName = GetTypeNameCanonical(paramTypeRemTD, pp);
-                     ParamTypeNameOrig = GetTypeNameCanonical(argType, pp);
-                     ParamTypeInclude = getIncludes(argType);
-                     if(!argType->isBuiltinType() && !argType->isEnumeralType())
-                     {
-                        interface = "none";
-                     }
-                     if(attr_val.find("interface_type") != attr_val.end())
-                     {
-                        interface = attr_val.at("interface_type");
-                        if(interface != "default" && interface != "none" && interface != "none_registered" &&
-                           interface != "handshake" && interface != "valid" && interface != "ovalid" &&
-                           interface != "acknowledge")
-                        {
-                           print_error("#pragma HLS_interface non-consistent with parameter of builtin "
-                                       "type, where user defined interface is: " +
-                                       interface);
-                        }
-                        if((argType->isBuiltinType() || argType->isEnumeralType()) && interface == "none")
-                        {
-                           interface = "default";
-                        }
-                     }
-                  }
-                  Fun2Params[fname].push_back(pname);
-
-                  const auto remove_spaces = [](std::string& str) {
-                  // The default CentOS 7 system compiler is gcc 4.8.5, which ships an
-                  // incomplete version of <regex> in libstdc++. As such, the following
-                  // line of code will not compile with the system compiler or any other
-                  // compiler that relies on the default system libstdc++. When using
-                  // toolchains built with /opt/rh/devtoolset-9/ (gcc 9.3.1) or that can
-                  // provide their own c++ libs, this is no longer an issue.
-#ifndef REWRITE_REGEX
-                     str = std::regex_replace(str, std::regex(" ([<>&*])|([<>&*]) | $|^ "), "$1$2");
-#else
-                     const char anchors[] = "[<>&*]";
-                     const char remove = ' ';
-
-                     size_t num_deleted = 0;
-                     for(int i = str.size() - 1; i > 0; i--)
-                     {
-                        char curr = str[i];
-                        char prev = str[i - 1];
-
-                        char curr_in_anchors = 0;
-                        char prev_in_anchors = 0;
-                        for(size_t j = 0; j < sizeof(anchors) - 1; j++)
-                        {
-                           curr_in_anchors |= (curr == anchors[j]);
-                           prev_in_anchors |= (prev == anchors[j]);
-                        }
-
-                        // "delete" the curr/prev char by shifting it to the end
-                        if(curr == remove && (i == str.size() - 1 || prev_in_anchors))
-                        {
-                           for(size_t k = i; k < str.size() - 1; k++)
-                           {
-                              str[k] = str[k + 1];
-                           }
-                           str[str.size() - 1] = curr;
-                           num_deleted++;
-                        }
-                        else if(prev == remove && (i == 1 || curr_in_anchors))
-                        {
-                           for(size_t k = i - 1; k < str.size() - 1; k++)
-                           {
-                              str[k] = str[k + 1];
-                           }
-                           str[str.size() - 1] = prev;
-                           num_deleted++;
-                        }
-                     }
-
-                     str.erase(str.end() - num_deleted, str.end());
-#endif
-                  };
-
-                  remove_spaces(ParamTypeName);
-                  remove_spaces(ParamTypeNameOrig);
-                  if(ParamTypeNameOrig == "size_t")
-                  {
-                     ParamTypeInclude = "stddef.h";
-                  }
-                  remove_spaces(ParamTypeInclude);
-
-                  attr_val["interface_type"] = interface;
-                  attr_val["interface_typename"] = ParamTypeName;
-                  attr_val["interface_typename_orig"] = ParamTypeNameOrig;
-                  attr_val["interface_typename_include"] = ParamTypeInclude;
-                  PRINT_DBG("    interface_type            : " << interface << "\n");
-                  PRINT_DBG("    interface_typename        : " << ParamTypeName << "\n");
-                  PRINT_DBG("    interface_typename_orig   : " << ParamTypeNameOrig << "\n");
-                  PRINT_DBG("    interface_typename_include: " << ParamTypeInclude << "\n");
-               }
-               ++par_index;
-            }
-         }
-      }
-
-    public:
-      FunctionArgConsumer(CompilerInstance& Instance, const std::string& _topfname, const std::string& _outdir_name,
-                          std::string _InFile, const clang::PrintingPolicy& _pp)
-          : CI(Instance), topfname(_topfname), outdir_name(_outdir_name), InFile(_InFile), pp(_pp)
-      {
-      }
-
-      bool HandleTopLevelDecl(DeclGroupRef DG) override
-      {
-         std::deque<Decl*> declQueue(DG.begin(), DG.end());
-         while(declQueue.size())
-         {
-            auto decl = declQueue.front();
-            declQueue.pop_front();
-            if(auto FD = dyn_cast<FunctionDecl>(decl))
-            {
-               AnalyzeFunctionDecl(FD);
-               const auto endLoc = FD->getSourceRange().getEnd();
-               const auto& SM = FD->getASTContext().getSourceManager();
-               const auto filename = SM.getPresumedLoc(endLoc, false).getFilename();
-               prevLoc[filename] = endLoc;
-            }
-            else if(isa<LinkageSpecDecl>(decl) || isa<NamespaceDecl>(decl))
-            {
-               auto declContext = cast<DeclContext>(decl);
-               if(declContext->isStdNamespace())
                   continue;
-               declQueue.insert(declQueue.end(), declContext->decls_begin(), declContext->decls_end());
+               }
             }
+            return Report(PP, Tok.getLocation(), DiagnosticsEngine::Error, "Unexpected token");
          }
-         return true;
+         LLVM_DEBUG(dbgs() << "Parsed pragma " << p.id << " (" << p.attrs.size() << ") "
+                           << p.loc.printToString(PP.getSourceManager()) << "\n");
+         _pragmas.push_back(std::move(p));
+         return;
       }
+      Report(PP, Tok.getLocation(), DiagnosticsEngine::Warning, "Unknown HLS pragma");
+   }
+};
 
-      void HandleTranslationUnit(ASTContext&) override
-      {
-         const auto baseFilename = create_file_basename_string(outdir_name, InFile);
-         const auto interface_fun2parms_filename = baseFilename + ".params.txt";
-         const auto interface_XML_filename = baseFilename + ".interface.xml";
-         const auto pipeline_XML_filename = baseFilename + ".pipeline.xml";
-         writeFun2Params(interface_fun2parms_filename);
-         writeXML_interfaceFile(interface_XML_filename, topfname);
-         writeXML_pipelineFile(pipeline_XML_filename, topfname);
-      }
+class HLSPragmaAnalyzer
+{
+   DiagnosticsEngine& _D;
+   MangleContext* _MC;
+
+ protected:
+   PrintingPolicy _PP;
+   std::map<std::string, func_attr_t>& _func_attributes;
+
+   inline void Report(const SourceLocation& loc, DiagnosticsEngine::Level level, StringRef msg) const
+   {
+      ::Report(_D, loc, level, msg);
+   }
+
+   inline void ReportError(const SourceLocation& loc, StringRef msg) const
+   {
+      ::Report(_D, loc, DiagnosticsEngine::Level::Error, msg);
+   }
+
+   inline void ReportDuplicate(const SourceLocation& loc, const SourceLocation& prev, StringRef msg) const
+   {
+      ::ReportDuplicate(_D, loc, prev, msg);
+   }
+
+   inline std::string MangledName(NamedDecl* FD) const
+   {
+      return ::MangledName(_MC, FD);
+   }
+
+   inline void ForwardAttr(func_attr_t& func_attr, attr_map_t::const_reference attr, const std::string& prefix) const
+   {
+      func_attr.attrs.emplace(key_loc_t(to_lower(prefix + attr.first.id), attr.first.loc), attr.second);
+   }
+
+   inline func_attr_t& GetFuncAttr(FunctionDecl* FD)
+   {
+      return ::GetFuncAttr(_func_attributes, _MC, FD);
+   }
+
+ public:
+   HLSPragmaAnalyzer(ASTContext& ctx, PrintingPolicy& pp, std::map<std::string, func_attr_t>& func_attributes)
+       : _D(ctx.getDiagnostics()), _MC(ctx.createMangleContext()), _PP(pp), _func_attributes(func_attributes)
+   {
+   }
+
+   virtual ~HLSPragmaAnalyzer()
+   {
+      delete _MC;
    };
 
-   class HLS_interface_PragmaHandler : public PragmaHandler
+   /**
+    * @brief Analyze pragma associated with given function declaration
+    *
+    * @param FD Function declaration
+    * @param p Parsed pragma line
+    */
+   virtual void operator()(FunctionDecl* FD, const pragma_line_t& p)
    {
-    public:
-      HLS_interface_PragmaHandler() : PragmaHandler("HLS_interface")
-      {
-      }
+   }
 
-      void HandlePragma(Preprocessor& PP,
-#if __clang_major__ >= 9
-                        PragmaIntroducer
-#else
-                        PragmaIntroducerKind
-#endif
-                        /*Introducer*/,
-                        Token& PragmaTok) override
+   /**
+    * @brief Called for each function declaration after all associated pragmas have been analyzed
+    *
+    * @param FD Function declaration
+    */
+   virtual void finalize(FunctionDecl* FD)
+   {
+   }
+};
+
+class PipelineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
+{
+ public:
+   PipelineHLSPragmaHandler(ASTContext& ctx, PrintingPolicy& pp, std::map<std::string, func_attr_t>& func_attributes)
+       : HLSPragmaAnalyzer(ctx, pp, func_attributes), HLSPragmaParser()
+   {
+   }
+   ~PipelineHLSPragmaHandler() = default;
+
+   void operator()(FunctionDecl* FD, const pragma_line_t& p) override
+   {
+      auto& func_attr = GetFuncAttr(FD).attrs;
+      for(const auto& attr : p.attrs)
       {
-         Token Tok{};
-         const auto print_error = [&](const std::string& msg) {
-            auto& D = PP.getDiagnostics();
-            D.Report(Tok.getLocation(), D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface %0"))
-                .AddString(msg);
-         };
-         std::string pname;
-         std::string interface;
-         const auto loc = PragmaTok.getLocation();
-         const auto end_parse = [&]() {
-            PP.Lex(Tok);
-            if(Tok.isNot(tok::eod))
+         if(iequals(attr.first.id, "style"))
+         {
+            if(!iequals(attr.second, "frp"))
             {
-               print_error("malformed pragma, expecting end)");
+               ReportError(attr.first.loc, "Not supported function pipelining style");
             }
-         };
-         const auto bundle_parse = [&]() {
+         }
+         else if(iequals(attr.first.id, "II"))
+         {
+            if(std::stoi(attr.second) <= 0)
+            {
+               ReportError(attr.first.loc, "Pipelining initiation interval must be a positive integer value");
+            }
+         }
+         else if(iequals(attr.first.id, "off"))
+         {
+            if(attr.second.size())
+            {
+               ReportError(attr.first.loc, "Unexpected argument value");
+            }
+            func_attr[key_loc_t("pipeline_style", attr.first.loc)] = "off";
+            continue;
+         }
+         else
+         {
+            ReportError(attr.first.loc, "Unexpected attribute");
+            continue;
+         }
+         auto it_new = func_attr.emplace(key_loc_t("pipeline_" + to_lower(attr.first.id), attr.first.loc), attr.second);
+         if(!it_new.second)
+         {
+            ReportDuplicate(attr.first.loc, it_new.first->first.loc,
+                            "Duplicate definition of attribute '" + attr.first.id + "'");
+         }
+      }
+      func_attr.emplace(key_loc_t("pipeline_ii", p.loc), "1");
+      func_attr.emplace(key_loc_t("pipeline_style", p.loc), "frp");
+   }
+
+   static const char* PragmaKeyword;
+};
+const char* PipelineHLSPragmaHandler::PragmaKeyword = "pipeline";
+
+class InlineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
+{
+ public:
+   InlineHLSPragmaHandler(ASTContext& ctx, PrintingPolicy& pp, std::map<std::string, func_attr_t>& func_attributes)
+       : HLSPragmaAnalyzer(ctx, pp, func_attributes), HLSPragmaParser()
+   {
+   }
+   ~InlineHLSPragmaHandler() = default;
+
+   void operator()(FunctionDecl* FD, const pragma_line_t& p) override
+   {
+      auto& attrs = GetFuncAttr(FD).attrs;
+      if(p.attrs.size() > 1)
+      {
+         ReportError(p.loc, "Unexpected attributes");
+         return;
+      }
+      else if(p.attrs.size() == 1)
+      {
+         const auto& attr = *p.attrs.begin();
+         if(iequals(attr.first.id, "recursive"))
+         {
+#if __clang_major__ >= 10
+            FD->addAttr(AlwaysInlineAttr::CreateImplicit(FD->getASTContext()));
+#else
+            FD->addAttr(
+                AlwaysInlineAttr::CreateImplicit(FD->getASTContext(), AlwaysInlineAttr::Spelling::Keyword_forceinline));
+#endif
+            FD->dropAttr<NoInlineAttr>();
+         }
+         else if(iequals(attr.first.id, "off"))
+         {
+            FD->addAttr(NoInlineAttr::CreateImplicit(FD->getASTContext()));
+            FD->dropAttr<AlwaysInlineAttr>();
+         }
+         else
+         {
+            ReportError(attr.first.loc, "Unknown inline mode");
+            return;
+         }
+         attrs.emplace(key_loc_t("inline", attr.first.loc), to_lower(attr.first.id));
+      }
+      else
+      {
+#if __clang_major__ >= 10
+         FD->addAttr(AlwaysInlineAttr::CreateImplicit(FD->getASTContext()));
+#else
+         FD->addAttr(
+             AlwaysInlineAttr::CreateImplicit(FD->getASTContext(), AlwaysInlineAttr::Spelling::Keyword_forceinline));
+#endif
+         attrs.emplace(key_loc_t("inline", p.loc), "self");
+      }
+   }
+
+   void finalize(FunctionDecl* FD) override
+   {
+      std::string inline_attr;
+      if(FD->hasAttr<NoInlineAttr>())
+      {
+         inline_attr = "off";
+      }
+      else if(FD->hasAttr<AlwaysInlineAttr>())
+      {
+         inline_attr = "self";
+      }
+      if(inline_attr.size())
+      {
+         GetFuncAttr(FD).attrs.emplace(key_loc_t("inline", FD->getLocation()), inline_attr);
+      }
+   }
+
+   static const char* PragmaKeyword;
+};
+const char* InlineHLSPragmaHandler::PragmaKeyword = "inline";
+
+#if __clang_major__ < 16
+namespace
+{
+   struct PragmaLoopHintInfo
+   {
+      Token PragmaName;
+      Token Option;
+      ArrayRef<Token> Toks;
+   };
+} // end anonymous namespace
+#endif
+
+class UnrollHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
+{
+   bool HandlePragma(Preprocessor& PP,
+#if __clang_major__ >= 9
+                     PragmaIntroducer
+#else
+                     PragmaIntroducerKind
+#endif
+                         Introducer,
+                     Token& PragmaTok, Token& UnrollTok) override
+   {
+      Token Tok;
+      bool disable_unroll = false;
+      Token UnrollFactor;
+      UnrollFactor.startToken();
+
+      for(PP.Lex(Tok); Tok.isNot(tok::eod);)
+      {
+         const auto id = PP.getSpelling(Tok);
+         if(iequals(id, "factor"))
+         {
             PP.Lex(Tok);
             if(Tok.is(tok::equal))
             {
                PP.Lex(Tok);
-            }
-            if(Tok.is(tok::eod))
-            {
-               print_error("malformed bundle");
-            }
-            const auto bundle = PP.getSpelling(Tok);
-            attr_map[loc][pname]["bundle_name"] = bundle;
-         };
-
-         const auto array_parse = [&]() {
-            PP.Lex(Tok);
-            if(Tok.isNot(tok::numeric_constant))
-            {
-               print_error("array malformed");
-            }
-            const auto asize = PP.getSpelling(Tok);
-            attr_map[loc][pname]["size"] = asize;
-
-            PP.Lex(Tok);
-            if(Tok.is(tok::identifier) && PP.getSpelling(Tok) == "bundle")
-            {
-               bundle_parse();
-               end_parse();
-            }
-            else if(Tok.isNot(tok::eod))
-            {
-               print_error("array malformed");
-            }
-         };
-         const auto axi_parse = [&]() {
-            PP.Lex(Tok);
-            if(Tok.isNot(tok::identifier))
-            {
-               print_error("axi malformed");
-            }
-            const auto tmp = PP.getSpelling(Tok);
-            if(tmp == "direct" || tmp == "axi_slave")
-            {
-               attr_map[loc][pname]["offset"] = tmp;
-            }
-
-            PP.Lex(Tok);
-            if(Tok.is(tok::identifier) && PP.getSpelling(Tok) == "bundle")
-            {
-               bundle_parse();
-               end_parse();
-            }
-            else if(Tok.isNot(tok::eod))
-            {
-               print_error("axi malformed bundle");
-            }
-         };
-         const std::map<std::string, std::function<void()>> interface_parser = {
-             {"none", end_parse},      {"none_registered", end_parse},
-             {"bus", end_parse},       {"fifo", end_parse},
-             {"handshake", end_parse}, {"valid", end_parse},
-             {"ovalid", end_parse},    {"acknowledge", end_parse},
-             {"array", array_parse},   {"m_axi", axi_parse},
-             {"axis", end_parse}};
-
-         PP.Lex(Tok);
-         if(Tok.isNot(tok::identifier))
-         {
-            print_error("malformed");
-         }
-         pname = PP.getSpelling(Tok);
-         PP.Lex(Tok);
-         if(Tok.isNot(tok::identifier))
-         {
-            print_error("missing interface type");
-         }
-         interface = PP.getSpelling(Tok);
-         const auto parser = interface_parser.find(interface);
-         if(parser != interface_parser.end())
-         {
-            attr_map[loc][pname]["interface_type"] = interface;
-            parser->second();
-         }
-         else
-         {
-            print_error("interface type not supported");
-         }
-      }
-   };
-
-   class HLS_cache_PragmaHandler : public PragmaHandler
-   {
-    public:
-      HLS_cache_PragmaHandler() : PragmaHandler("HLS_cache")
-      {
-      }
-      void HandlePragma(Preprocessor& PP,
-#if __clang_major__ >= 9
-                        PragmaIntroducer
-#else
-                        PragmaIntroducerKind
-#endif
-                        /*Introducer*/,
-                        Token& PragmaTok) override
-      {
-         Token Tok{};
-         std::string bundle = "";
-         std::string way_lines = "";
-         std::string line_size = "";
-         std::string bus_size = "";
-         std::string ways = "";
-         std::string buffer_size = "";
-         std::string rep_policy = "";
-         std::string write_policy = "";
-         const auto print_error = [&](const std::string& msg) {
-            auto& D = PP.getDiagnostics();
-            D.Report(Tok.getLocation(), D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_cache %0"))
-                .AddString(msg);
-         };
-         const auto bundle_parse = [&]() {
-            PP.Lex(Tok);
-            if(Tok.isNot(tok::equal))
-            {
-               print_error("malformed pragma, expected '='");
-            }
-            else
-            {
-               PP.Lex(Tok);
-               if(Tok.is(tok::eod))
+               if(Tok.is(tok::numeric_constant))
                {
-                  print_error("malformed pragma, expected bundle name but reached end");
-               }
-               else
-               {
-                  bundle = PP.getSpelling(Tok);
-               }
-            }
-         };
-         const auto way_size_parse = [&]() {
-            PP.Lex(Tok);
-            if(Tok.isNot(tok::equal))
-            {
-               print_error("malformed pragma, expected '='");
-            }
-            else
-            {
-               PP.Lex(Tok);
-               if(Tok.is(tok::eod))
-               {
-                  print_error("malformed pragma, expected way size but reached end");
-               }
-               else if(Tok.isNot(tok::numeric_constant))
-               {
-                  print_error("malformed pragma, expected number");
-               }
-               else
-               {
-                  way_lines = PP.getSpelling(Tok);
-               }
-            }
-         };
-         const auto line_size_parse = [&]() {
-            PP.Lex(Tok);
-            if(Tok.isNot(tok::equal))
-            {
-               print_error("malformed pragma, expected '='");
-            }
-            else
-            {
-               PP.Lex(Tok);
-               if(Tok.is(tok::eod))
-               {
-                  print_error("malformed pragma, expected line size but reached end");
-               }
-               else if(Tok.isNot(tok::numeric_constant))
-               {
-                  print_error("malformed pragma, expected number");
-               }
-               else
-               {
-                  line_size = PP.getSpelling(Tok);
-               }
-            }
-         };
-         const auto bus_size_parse = [&]() {
-            PP.Lex(Tok);
-            if(Tok.isNot(tok::equal))
-            {
-               print_error("malformed pragma, expected '='");
-            }
-            else
-            {
-               PP.Lex(Tok);
-               if(Tok.is(tok::eod))
-               {
-                  print_error("malformed pragma, expected bus size but reached end");
-               }
-               else if(Tok.isNot(tok::numeric_constant))
-               {
-                  print_error("malformed pragma, expected number");
-               }
-               else
-               {
-                  bus_size = PP.getSpelling(Tok);
-                  /* Check admissible bus sizes */
-                  if(bus_size != "32" && bus_size != "64" && bus_size != "128" && bus_size != "256" &&
-                     bus_size != "512" && bus_size != "1024")
-                  {
-                     print_error("malformed pragma, invalid bus size. Size must be a power of 2 from a minimum of 32 "
-                                 "to a maximum of 1024");
-                  }
-               }
-            }
-         };
-         const auto n_ways_parse = [&]() {
-            PP.Lex(Tok);
-            if(Tok.isNot(tok::equal))
-            {
-               print_error("malformed pragma, expected '='");
-            }
-            else
-            {
-               PP.Lex(Tok);
-               if(Tok.is(tok::eod))
-               {
-                  print_error("malformed pragma, expected number of ways but reached end");
-               }
-               else if(Tok.isNot(tok::numeric_constant))
-               {
-                  print_error("malformed pragma, expected number");
-               }
-               else
-               {
-                  ways = PP.getSpelling(Tok);
-               }
-            }
-         };
-         const auto buffer_size_parse = [&]() {
-            PP.Lex(Tok);
-            if(Tok.isNot(tok::equal))
-            {
-               print_error("malformed pragma, expected '='");
-            }
-            else
-            {
-               PP.Lex(Tok);
-               if(Tok.is(tok::eod))
-               {
-                  print_error("malformed pragma, expected buffer size but reached end");
-               }
-               else if(Tok.isNot(tok::numeric_constant))
-               {
-                  print_error("malformed pragma, expected number");
-               }
-               else
-               {
-                  buffer_size = PP.getSpelling(Tok);
-               }
-            }
-         };
-         const auto replacement_policy_parse = [&]() {
-            PP.Lex(Tok);
-            if(Tok.isNot(tok::equal))
-            {
-               print_error("malformed pragma, expected '='");
-            }
-            else
-            {
-               PP.Lex(Tok);
-               if(Tok.is(tok::eod))
-               {
-                  print_error("malformed pragma, expected replacement policy but reached end");
-               }
-               else
-               {
-                  if(PP.getSpelling(Tok) != "lru" && PP.getSpelling(Tok) != "mru" && PP.getSpelling(Tok) != "tree")
-                  {
-                     print_error(
-                         "malformed pragma, unknown replacement policy. Valid options are: \"lru\" (least recently "
-                         "used), \"mru\" (pseudo least recently used, approximation based on the most recently used), "
-                         "\"tree\" (pseudo least recently used, approximation based on binary tree structure)");
-                  }
-                  else if(PP.getSpelling(Tok) == "mru")
-                  {
-                     print_error("mru policy is currently not supported");
-                  }
-                  else
-                  {
-                     rep_policy = PP.getSpelling(Tok);
-                  }
-               }
-            }
-         };
-         const auto write_policy_parse = [&]() {
-            PP.Lex(Tok);
-            if(Tok.isNot(tok::equal))
-            {
-               print_error("malformed pragma, expected '='");
-            }
-            else
-            {
-               PP.Lex(Tok);
-               if(Tok.is(tok::eod))
-               {
-                  print_error("malformed pragma, expected write policy but reached end");
-               }
-               else
-               {
-                  if(PP.getSpelling(Tok) != "wb" && PP.getSpelling(Tok) != "wt")
-                  {
-                     print_error("malformed pragma, unknown write policy. Valid options are: \"wb\" (write back), "
-                                 "\"wt\" (write through)");
-                  }
-                  else
-                  {
-                     write_policy = PP.getSpelling(Tok);
-                  }
-               }
-            }
-         };
-
-         const auto cache_parse = [&]() {
-            PP.Lex(Tok);
-            while(Tok.isNot(tok::eod))
-            {
-               if(Tok.is(tok::identifier) && PP.getSpelling(Tok) == "bundle")
-               {
-                  bundle_parse();
-               }
-               else if(Tok.is(tok::identifier) && PP.getSpelling(Tok) == "way_size")
-               {
-                  way_size_parse();
-               }
-               else if(Tok.is(tok::identifier) && PP.getSpelling(Tok) == "line_size")
-               {
-                  line_size_parse();
-               }
-               else if(Tok.is(tok::identifier) && PP.getSpelling(Tok) == "bus_size")
-               {
-                  bus_size_parse();
-               }
-               else if(Tok.is(tok::identifier) && PP.getSpelling(Tok) == "n_ways")
-               {
-                  n_ways_parse();
-               }
-               else if(Tok.is(tok::identifier) && PP.getSpelling(Tok) == "buffer_size")
-               {
-                  buffer_size_parse();
-               }
-               else if(Tok.is(tok::identifier) && PP.getSpelling(Tok) == "rep_policy")
-               {
-                  replacement_policy_parse();
-               }
-               else if(Tok.is(tok::identifier) && PP.getSpelling(Tok) == "write_policy")
-               {
-                  write_policy_parse();
-               }
-               else
-               {
-                  print_error(
-                      "Expected one of the following parameters: bundle, way_size, line_size, bus_size, n_ways, "
-                      "buffer_size, rep_policy, write_policy");
-               }
-               if(Tok.isNot(tok::eod))
+                  UnrollFactor = Tok;
                   PP.Lex(Tok);
+                  continue;
+               }
             }
-
-            if(bundle == "" || way_lines == "" || line_size == "")
+         }
+         else if(iequals(id, "off"))
+         {
+            PP.Lex(Tok);
+            if(Tok.is(tok::equal))
             {
-               print_error("Unexpected null value. Parameters bundle, way_size and line_size are mandatory.");
-            }
-            else
-            {
-               /* Set the cache_size attribute for all signals associated to the bundle */
-               for(auto& l : attr_map)
+               PP.Lex(Tok);
+               if(Tok.is(tok::kw_true))
                {
-                  for(auto& p : l.second)
+                  disable_unroll = true;
+                  PP.Lex(Tok);
+                  continue;
+               }
+            }
+         }
+         ReportError(Tok.getLocation(), "Unexpected token");
+         return true;
+      }
+
+      auto* Info = new(PP.getPreprocessorAllocator()) PragmaLoopHintInfo;
+      Info->PragmaName = UnrollTok;
+      Info->Option.startToken();
+      if(disable_unroll)
+      {
+         Info->Option.setKind(tok::identifier);
+         PP.CreateString("disable", Info->Option, UnrollTok.getEndLoc().getLocWithOffset(1));
+      }
+      else if(UnrollFactor.isNot(tok::unknown))
+      {
+         SmallVector<Token, 2> ValueList;
+
+         Token EOFTok;
+         EOFTok.startToken();
+         EOFTok.setKind(tok::eof);
+         EOFTok.setLocation(Tok.getLocation());
+
+         ValueList.push_back(UnrollFactor);
+         ValueList.push_back(EOFTok);
+#if __clang_major__ >= 9
+         for(auto& T : ValueList)
+         {
+            T.setFlag(Token::IsReinjected);
+         }
+#endif
+         Info->Toks =
+#if __clang_major__ > 13
+             ArrayRef(ValueList).copy(PP.getPreprocessorAllocator());
+#else
+             makeArrayRef(ValueList).copy(PP.getPreprocessorAllocator());
+#endif
+      }
+      auto TokenArray = make_unique<Token[]>(1);
+      TokenArray[0].startToken();
+      TokenArray[0].setKind(tok::annot_pragma_loop_hint);
+      TokenArray[0].setLocation(Info->PragmaName.getLocation());
+      TokenArray[0].setAnnotationEndLoc(Info->PragmaName.getLocation());
+      TokenArray[0].setAnnotationValue(static_cast<void*>(Info));
+      PP.EnterTokenStream(std::move(TokenArray), 1,
+                          /*DisableMacroExpansion=*/false
+#if __clang_major__ >= 9
+                          ,
+                          /*IsReinject=*/false
+#endif
+      );
+
+      return true;
+   }
+
+ public:
+   UnrollHLSPragmaHandler(ASTContext& ctx, PrintingPolicy& pp, std::map<std::string, func_attr_t>& func_attributes)
+       : HLSPragmaAnalyzer(ctx, pp, func_attributes), HLSPragmaParser()
+   {
+   }
+
+   ~UnrollHLSPragmaHandler() = default;
+
+   static const char* PragmaKeyword;
+};
+const char* UnrollHLSPragmaHandler::PragmaKeyword = "unroll";
+
+class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
+{
+ public:
+   DataflowHLSPragmaHandler(ASTContext& ctx, PrintingPolicy& pp, std::map<std::string, func_attr_t>& func_attributes)
+       : HLSPragmaAnalyzer(ctx, pp, func_attributes), HLSPragmaParser()
+   {
+   }
+   ~DataflowHLSPragmaHandler() = default;
+
+   void operator()(FunctionDecl* FD, const pragma_line_t& p) override
+   {
+      for(auto& attr : p.attrs)
+      {
+         ReportError(attr.first.loc, "Unexpected attribute");
+      }
+      GetFuncAttr(FD).attrs.emplace(key_loc_t(p.id, p.loc), "top");
+   }
+
+   void finalize(FunctionDecl* FD) override
+   {
+      const auto functionSym = MangledName(FD);
+      if(_func_attributes.find(functionSym) != _func_attributes.end())
+      {
+         auto& attrs = _func_attributes.find(functionSym)->second.attrs;
+         if(attrs.find(key_loc_t("dataflow", SourceLocation())) != attrs.end() &&
+            attrs.find(key_loc_t("dataflow", SourceLocation()))->second == "top")
+         {
+            bool hasModule = false;
+            LLVM_DEBUG(dbgs() << "DATAFLOW: " << functionSym << "\n");
+            for(auto* stmt : FD->getBody()->children())
+            {
+               auto callExpr = dyn_cast<CallExpr>(stmt);
+               if(callExpr)
+               {
+                  const auto calleeDecl = dyn_cast<FunctionDecl>(callExpr->getCalleeDecl());
+                  if(calleeDecl)
                   {
-                     if(p.second.find("bundle_name") != p.second.end() && p.second.at("bundle_name") == bundle)
+                     LLVM_DEBUG(dbgs() << " -> " << MangledName(calleeDecl) << "\n");
+                     GetFuncAttr(calleeDecl).attrs[key_loc_t("dataflow", SourceLocation())] = "module";
+                     GetFuncAttr(calleeDecl).attrs[key_loc_t("inline", SourceLocation())] = "off";
+                     hasModule = true;
+
+                     // Try to avoid inlining on dataflow module
+                     if(!calleeDecl->hasAttr<NoInlineAttr>())
                      {
-                        p.second["way_size"] = way_lines;
-                        p.second["line_size"] = line_size;
-                        if(bus_size != "")
-                        {
-                           p.second["bus_size"] = bus_size;
-                        }
-                        if(ways != "")
-                        {
-                           p.second["n_ways"] = ways;
-                        }
-                        if(buffer_size != "")
-                        {
-                           p.second["buffer_size"] = buffer_size;
-                        }
-                        if(rep_policy != "")
-                        {
-                           p.second["rep_pol"] = rep_policy;
-                        }
-                        if(write_policy != "")
-                        {
-                           p.second["write_pol"] = write_policy;
-                        }
+                        calleeDecl->addAttr(NoInlineAttr::CreateImplicit(calleeDecl->getASTContext()));
+                        calleeDecl->dropAttr<AlwaysInlineAttr>();
                      }
                   }
                }
             }
-         };
-         cache_parse();
-      }
-   };
-
-   class HLS_simple_pipeline_PragmaHandler : public PragmaHandler
-   {
-    public:
-      HLS_simple_pipeline_PragmaHandler() : PragmaHandler("HLS_simple_pipeline")
-      {
-      }
-
-      void HandlePragma(Preprocessor& PP,
-#if __clang_major__ >= 9
-                        PragmaIntroducer
-#else
-                        PragmaIntroducerKind
-#endif
-                        /*Introducer*/,
-                        Token& PragmaTok) override
-      {
-         Token Tok{};
-         auto loc = PragmaTok.getLocation();
-         auto& SM = PP.getSourceManager();
-         auto filename = SM.getPresumedLoc(loc, false).getFilename();
-
-         while(Tok.isNot(tok::eod))
-         {
-            PP.Lex(Tok);
-            if(Tok.isNot(tok::eod))
+            if(!hasModule)
             {
-               DiagnosticsEngine& D = PP.getDiagnostics();
-               unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_simple_pipeline malformed");
-               D.Report(PragmaTok.getLocation(), ID);
+               ReportError(FD->getLocation(), "Dataflow function has no valid submodule");
             }
          }
-         file_loc_attr[filename][loc]["is_pipelined"] = "yes";
-         file_loc_attr[filename][loc]["initiation_time"] = "1";
       }
-   };
+   }
 
-   class HLS_pipeline_PragmaHandler : public PragmaHandler
+   static const char* PragmaKeyword;
+};
+const char* DataflowHLSPragmaHandler::PragmaKeyword = "dataflow";
+
+class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
+{
+ public:
+   CacheHLSPragmaHandler(ASTContext& ctx, PrintingPolicy& pp, std::map<std::string, func_attr_t>& func_attributes)
+       : HLSPragmaAnalyzer(ctx, pp, func_attributes), HLSPragmaParser()
    {
-    public:
-      HLS_pipeline_PragmaHandler() : PragmaHandler("HLS_pipeline")
-      {
-      }
+   }
+   ~CacheHLSPragmaHandler() = default;
 
-      void HandlePragma(Preprocessor& PP,
-#if __clang_major__ >= 9
-                        PragmaIntroducer
-#else
-                        PragmaIntroducerKind
-#endif
-                        /*Introducer*/,
-                        Token& PragmaTok) override
+   void operator()(FunctionDecl* FD, const pragma_line_t& p) override
+   {
+      auto bundleName = p.attrs.find(key_loc_t("bundle", SourceLocation()));
+      if(bundleName == p.attrs.end())
       {
-         Token Tok{};
-         auto loc = PragmaTok.getLocation();
-         auto& SM = PP.getSourceManager();
-         auto filename = SM.getPresumedLoc(loc, false).getFilename();
-         std::string time;
-         int index = 0;
-         while(Tok.isNot(tok::eod))
+         ReportError(p.loc, "Missing bundle name");
+         return;
+      }
+      auto& iface = GetFuncAttr(FD).ifaces.bundles[bundleName->second];
+      for(const auto& attr : p.attrs)
+      {
+         if(iequals(attr.first.id, "bundle"))
          {
-            PP.Lex(Tok);
-            if(Tok.isNot(tok::eod))
+            iface.emplace(key_loc_t("name", attr.first.loc), attr.second);
+            continue;
+         }
+         else if(iequals(attr.first.id, "bus_size"))
+         {
+            auto bus_size = std::stoi(attr.second);
+            if(bus_size < 32 || bus_size > 1024 || (bus_size & (bus_size - 1)) != 0)
             {
-               auto tokString = PP.getSpelling(Tok);
-               if(index == 0)
-               {
-                  time = tokString;
-                  if(Tok.isNot(tok::numeric_constant))
-                  {
-                     DiagnosticsEngine& D = PP.getDiagnostics();
-                     unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_pipeline malformed");
-                     D.Report(PragmaTok.getLocation(), ID);
-                  }
-               }
-               else
-               {
-                  DiagnosticsEngine& D = PP.getDiagnostics();
-                  unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_pipeline malformed");
-                  D.Report(PragmaTok.getLocation(), ID);
-               }
-               ++index;
+               ReportError(attr.first.loc, "Invalid cache bus size");
             }
          }
-         file_loc_attr[filename][loc]["is_pipelined"] = "yes";
-         file_loc_attr[filename][loc]["initiation_time"] = time;
+         else if(iequals(attr.first.id, "ways"))
+         {
+            if(std::stoi(attr.second) <= 0)
+            {
+               ReportError(attr.first.loc, "Invalid cache way count");
+            }
+         }
+         else if(iequals(attr.first.id, "line_count"))
+         {
+            if(std::stoi(attr.second) <= 0)
+            {
+               ReportError(attr.first.loc, "Invalid cache line count");
+            }
+         }
+         else if(iequals(attr.first.id, "line_size"))
+         {
+            if(std::stoi(attr.second) <= 0)
+            {
+               ReportError(attr.first.loc, "Invalid cache line size");
+            }
+         }
+         else if(iequals(attr.first.id, "num_write_outstanding"))
+         {
+            if(std::stoi(attr.second) <= 0)
+            {
+               ReportError(attr.first.loc, "Invalid number of outstanding write operations");
+            }
+         }
+         else if(iequals(attr.first.id, "rep_policy"))
+         {
+            if(attr.second != "lru" && attr.second != "tree")
+            {
+               ReportError(attr.first.loc, "Invalid cache replacement policy");
+            }
+         }
+         else if(iequals(attr.first.id, "write_policy"))
+         {
+            if(attr.second != "wb" && attr.second != "wt")
+            {
+               ReportError(attr.first.loc, "Invalid cache write policy");
+            }
+         }
+         else
+         {
+            ReportError(attr.first.loc, "Unexpected attribute");
+            continue;
+         }
+         auto it_new = iface.emplace(key_loc_t("cache_" + attr.first.id, attr.first.loc), attr.second);
+         if(!it_new.second)
+         {
+            ReportDuplicate(attr.first.loc, it_new.first->first.loc,
+                            "Duplicate definition of attribute '" + attr.first.id + "'");
+         }
       }
-   };
+      if(iface.find(key_loc_t("cache_line_count", SourceLocation())) == iface.end())
+      {
+         ReportError(p.loc, "Missing cache line count attribute");
+      }
+      if(iface.find(key_loc_t("cache_line_size", SourceLocation())) == iface.end())
+      {
+         ReportError(p.loc, "Missing cache line size attribute");
+      }
+   }
 
+   static const char* PragmaKeyword;
+};
+const char* CacheHLSPragmaHandler::PragmaKeyword = "cache";
+
+class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
+{
+   ASTContext& _ASTContext;
+   SourceManager& _SM;
+   int _parseAction;
+
+   const NamedDecl* getBaseTypeDecl(const QualType& qt) const
+   {
+      const clang::Type* ty = qt.getTypePtr();
+      NamedDecl* ND = nullptr;
+
+      if(ty->isPointerType() || ty->isReferenceType())
+      {
+         return getBaseTypeDecl(ty->getPointeeType());
+      }
+      if(isa<ElaboratedType>(ty))
+      {
+         return getBaseTypeDecl(ty->getAs<ElaboratedType>()->getNamedType());
+      }
+      if(isa<TypedefType>(ty) || ty->getTypeClass() == clang::Type::Typedef)
+      {
+         return getBaseTypeDecl(ty->getAs<TypedefType>()->getDecl()->getUnderlyingType());
+      }
+      if(ty->isRecordType())
+      {
+         ND = ty->getAs<RecordType>()->getDecl();
+      }
+      else if(ty->isEnumeralType())
+      {
+         ND = ty->getAs<EnumType>()->getDecl();
+      }
+      else if(ty->isArrayType())
+      {
+         return getBaseTypeDecl(ty->castAsArrayTypeUnsafe()->getElementType());
+      }
+      return ND;
+   }
+
+   QualType RemoveTypedef(QualType t) const
+   {
+      if(t->getTypeClass() == clang::Type::Typedef)
+      {
+         return RemoveTypedef(t->getAs<TypedefType>()->getDecl()->getUnderlyingType());
+      }
+      else if(t->getTypeClass() == clang::Type::Elaborated && !t->isClassType())
+      {
+         return RemoveTypedef(t->getAs<ElaboratedType>()->getNamedType());
+      }
+      else if(t->getTypeClass() == clang::Type::TemplateSpecialization)
+      {
+         return t;
+      }
+      else
+      {
+         return t;
+      }
+   }
+
+   std::string GetTypeNameCanonical(const QualType& t, const PrintingPolicy& pp) const
+   {
+      auto typeName = t->getCanonicalTypeInternal().getAsString(pp);
+      const auto key = std::string("class ");
+      const auto constkey = std::string("const class ");
+      if(typeName.find(key) == 0)
+      {
+         typeName = typeName.substr(key.size());
+      }
+      else if(typeName.find(constkey) == 0)
+      {
+         typeName = typeName.substr(constkey.size());
+      }
+      return typeName;
+   }
+
+   std::string getIncludePaths(const QualType& type)
+   {
+      std::string includes;
+      if(const auto BTD = getBaseTypeDecl(type))
+      {
+         const auto include_file = _SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
+         includes = include_file;
+      }
+      const auto tmpl_decl = dyn_cast_or_null<ClassTemplateSpecializationDecl>(type->getAsTagDecl());
+      if(tmpl_decl)
+      {
+         const auto& args = tmpl_decl->getTemplateArgs();
+         for(auto i = 0U; i < args.size(); ++i)
+         {
+            const auto& argT = args[i];
+            if(argT.getKind() == TemplateArgument::ArgKind::Type)
+            {
+               if(const auto BTD = getBaseTypeDecl(argT.getAsType()))
+               {
+                  const auto include_file = _SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
+                  includes += std::string(";") + include_file;
+               }
+            }
+         }
+      }
+      return includes;
+   }
+
+   int64_t getSizeInBytes(QualType T)
+   {
+      if(T->isIncompleteType() || T->isTemplateTypeParmType() || isa<TemplateSpecializationType>(T))
+      {
+         return 1;
+      }
+      return _ASTContext.getTypeInfoDataSizeInChars(T)
+          .
+#if __clang_major__ <= 11
+          first
+#else
+          Width
+#endif
+          .getQuantity();
+   }
+
+   void AnalyzeParameterInterface(FunctionDecl* FD, const pragma_line_t& p)
+   {
+      if(FD->isVariadic())
+      {
+         ReportError(p.loc, "HLS pragma not supported on variadic function declarations");
+      }
+      auto portName = p.attrs.find(key_loc_t("port", SourceLocation()));
+      if(portName == p.attrs.end())
+      {
+         ReportError(p.loc, "Missing interface port attribute");
+         return;
+      }
+      ParmVarDecl* parmDecl = nullptr;
+      size_t parmIndex = 0;
+      for(auto par : FD->parameters())
+      {
+         if((parmDecl = dyn_cast<ParmVarDecl>(par)))
+         {
+            const auto parName =
+                parmDecl->getNameAsString().empty() ? ("P" + std::to_string(parmIndex)) : parmDecl->getNameAsString();
+            if(parName == portName->second)
+            {
+               break;
+            }
+         }
+         ++parmIndex;
+      }
+      if(!parmDecl)
+      {
+         ReportError(portName->first.loc, "Unkown port name");
+         return;
+      }
+      LLVM_DEBUG(dbgs() << "PORT: " << portName->second << "\n");
+      const auto ifaceModeReq = p.attrs.find(key_loc_t("mode", SourceLocation()));
+      if(ifaceModeReq == p.attrs.end())
+      {
+         ReportError(p.loc, "Missing interface mode attribute");
+         return;
+      }
+      const auto ifaceBundle = p.attrs.find(key_loc_t("bundle", SourceLocation())) != p.attrs.end() ?
+                                   p.attrs.find(key_loc_t("bundle", SourceLocation()))->second :
+                                   portName->second;
+      auto& func_attrs = GetFuncAttr(FD);
+
+      auto& parm_attrs = func_attrs.ifaces.parameters[portName->second];
+      parm_attrs.insert(*portName);
+      parm_attrs[key_loc_t("index", SourceLocation())] = std::to_string(parmIndex);
+      parm_attrs[key_loc_t("bundle", SourceLocation())] = ifaceBundle;
+
+      auto& bundle_attrs = func_attrs.ifaces.bundles[ifaceBundle];
+      bundle_attrs[key_loc_t("name", SourceLocation())] = ifaceBundle;
+      for(auto& attr : p.attrs)
+      {
+         if(iequals(attr.first.id, "register") || iequals(attr.first.id, "register_mode") ||
+            iequals(attr.first.id, "num_write_outstanding"))
+         {
+            auto it_res = bundle_attrs.emplace(key_loc_t(to_lower(attr.first.id), attr.first.loc), attr.second);
+            if(!it_res.second && it_res.first->second != attr.second)
+            {
+               ReportDuplicate(attr.first.loc, it_res.first->first.loc,
+                               "Mismatching duplicate interface attribute definition");
+            }
+         }
+         else if(iequals(attr.first.id, "offset") || iequals(attr.first.id, "elem_count"))
+         {
+            parm_attrs.emplace(key_loc_t(to_lower(attr.first.id), attr.first.loc), attr.second);
+         }
+      }
+
+      const auto argType = parmDecl->getType();
+      auto& ifaceMode = bundle_attrs.insert(*ifaceModeReq).first->second;
+      auto& parmTypename = parm_attrs[key_loc_t("typename", SourceLocation())];
+      auto& parmSizeInBytes = parm_attrs[key_loc_t("size_in_bytes", SourceLocation())];
+      auto& parmOriginalTypename = parm_attrs[key_loc_t("original_typename", SourceLocation())];
+      auto& parmIncludePaths = parm_attrs[key_loc_t("includes", SourceLocation())];
+
+      const auto manageArray = [&](const ConstantArrayType* CA, bool setInterfaceType) {
+         auto OrigTotArraySize = CA->getSize();
+         std::string Dimensions;
+         if(!setInterfaceType)
+         {
+#if __clang_major__ >= 13
+            Dimensions = "[" + toString(OrigTotArraySize, 10, false) + "]";
+#else
+            Dimensions = "[" + OrigTotArraySize.toString(10, false) + "]";
+#endif
+         }
+         while(CA->getElementType()->isConstantArrayType())
+         {
+            CA = cast<ConstantArrayType>(CA->getElementType());
+            const auto n_el = CA->getSize();
+#if __clang_major__ >= 13
+            Dimensions = Dimensions + "[" + toString(n_el, 10, false) + "]";
+#else
+            Dimensions = Dimensions + "[" + n_el.toString(10, false) + "]";
+#endif
+            OrigTotArraySize *= n_el;
+         }
+         if(setInterfaceType)
+         {
+            ifaceMode = "array";
+            auto& array_size = parm_attrs[key_loc_t("elem_count", SourceLocation())];
+#if __clang_major__ >= 13
+            array_size = toString(OrigTotArraySize, 10, false);
+#else
+            array_size = OrigTotArraySize.toString(10, false);
+#endif
+            assert(array_size != "0");
+         }
+         const auto paramTypeRemTD = RemoveTypedef(CA->getElementType());
+         parmTypename = GetTypeNameCanonical(paramTypeRemTD, _PP) + " *";
+         parmOriginalTypename =
+             GetTypeNameCanonical(CA->getElementType(), _PP) + (Dimensions == "" ? " *" : " (*)" + Dimensions);
+         parmIncludePaths = getIncludePaths(paramTypeRemTD);
+      };
+
+      if(isa<DecayedType>(argType))
+      {
+         const auto DT = cast<DecayedType>(argType)->getOriginalType().IgnoreParens();
+         parmSizeInBytes = std::to_string(getSizeInBytes(DT));
+         if(isa<ConstantArrayType>(DT))
+         {
+            manageArray(cast<ConstantArrayType>(DT), true);
+         }
+         else
+         {
+            const auto paramTypeRemTD = RemoveTypedef(argType);
+            parmTypename = GetTypeNameCanonical(paramTypeRemTD, _PP);
+            parmOriginalTypename = GetTypeNameCanonical(argType, _PP);
+            parmIncludePaths = getIncludePaths(argType);
+         }
+         if(ifaceMode != "default")
+         {
+            if(ifaceMode != "handshake" && ifaceMode != "fifo" && ifaceMode.find("array") == std::string::npos &&
+               ifaceMode != "bus" && ifaceMode != "m_axi" && ifaceMode != "axis")
+            {
+               ReportError(ifaceModeReq->first.loc, "Invalid HLS interface mode");
+            }
+            else if(ifaceMode == "array" &&
+                    parm_attrs.find(key_loc_t("elem_count", SourceLocation())) == parm_attrs.end())
+            {
+               ReportError(ifaceModeReq->first.loc, "HLS interface array element count");
+            }
+         }
+      }
+      else if(argType->isPointerType() || argType->isReferenceType())
+      {
+         const auto ptdType = argType->getPointeeType().IgnoreParens();
+         parmSizeInBytes = std::to_string(getSizeInBytes(ptdType));
+         if(isa<ConstantArrayType>(ptdType))
+         {
+            manageArray(cast<ConstantArrayType>(ptdType), false);
+         }
+         else
+         {
+            const auto suffix = argType->isPointerType() ? "*" : "&";
+            const auto paramTypeRemTD = RemoveTypedef(ptdType);
+            parmTypename = GetTypeNameCanonical(paramTypeRemTD, _PP) + suffix;
+            parmOriginalTypename = GetTypeNameCanonical(argType, _PP);
+            parmIncludePaths = getIncludePaths(ptdType);
+         }
+         const auto is_channel_if = parmTypename.find("ac_channel<") == 0 || parmTypename.find("stream<") == 0 ||
+                                    parmTypename.find("hls::stream<") == 0;
+         if(ifaceMode != "default")
+         {
+            if((ifaceMode != "ptrdefault" && ifaceMode != "none" && ifaceMode != "none_registered" &&
+                ifaceMode != "handshake" && ifaceMode != "valid" && ifaceMode != "ovalid" &&
+                ifaceMode != "acknowledge" && ifaceMode != "fifo" && ifaceMode != "bus" && ifaceMode != "m_axi" &&
+                ifaceMode != "axis") ||
+               (is_channel_if && ifaceMode != "fifo" && ifaceMode != "axis"))
+            {
+               ReportError(ifaceModeReq->first.loc, "Invalid HLS interface mode");
+            }
+         }
+         else
+         {
+            ifaceMode = is_channel_if ? "fifo" : "ptrdefault";
+         }
+      }
+      else
+      {
+         const auto paramTypeRemTD = RemoveTypedef(argType);
+         parmSizeInBytes = std::to_string(getSizeInBytes(paramTypeRemTD));
+         parmTypename = GetTypeNameCanonical(paramTypeRemTD, _PP);
+         parmOriginalTypename = GetTypeNameCanonical(argType, _PP);
+         parmIncludePaths = getIncludePaths(argType);
+         if(ifaceMode != "default")
+         {
+            if(ifaceMode != "default" && ifaceMode != "none" && ifaceMode != "none_registered" &&
+               ifaceMode != "handshake" && ifaceMode != "valid" && ifaceMode != "ovalid" && ifaceMode != "acknowledge")
+            {
+               ReportError(ifaceModeReq->first.loc, "Invalid HLS interface mode");
+            }
+            if((argType->isBuiltinType() || argType->isEnumeralType()) && ifaceMode == "none")
+            {
+               ifaceMode = "default";
+            }
+         }
+         else if(!argType->isBuiltinType() && !argType->isEnumeralType())
+         {
+            ifaceMode = "none";
+         }
+      }
+
+      const auto remove_spaces = [](std::string& str) {
+      // The default CentOS 7 system compiler is gcc 4.8.5, which ships an
+      // incomplete version of <regex> in libstdc++. As such, the following
+      // line of code will not compile with the system compiler or any other
+      // compiler that relies on the default system libstdc++. When using
+      // toolchains built with /opt/rh/devtoolset-9/ (gcc 9.3.1) or that can
+      // provide their own c++ libs, this is no longer an issue.
+#ifndef REWRITE_REGEX
+         str = std::regex_replace(str, std::regex(" ([<>&*])|([<>&*]) | $|^ "), "$1$2");
+#else
+         const char anchors[] = "[<>&*]";
+         const char remove = ' ';
+
+         size_t num_deleted = 0;
+         for(int i = str.size() - 1; i > 0; i--)
+         {
+            char curr = str[i];
+            char prev = str[i - 1];
+
+            char curr_in_anchors = 0;
+            char prev_in_anchors = 0;
+            for(size_t j = 0; j < sizeof(anchors) - 1; j++)
+            {
+               curr_in_anchors |= (curr == anchors[j]);
+               prev_in_anchors |= (prev == anchors[j]);
+            }
+
+            // "delete" the curr/prev char by shifting it to the end
+            if(curr == remove && (i == str.size() - 1 || prev_in_anchors))
+            {
+               for(size_t k = i; k < str.size() - 1; k++)
+               {
+                  str[k] = str[k + 1];
+               }
+               str[str.size() - 1] = curr;
+               num_deleted++;
+            }
+            else if(prev == remove && (i == 1 || curr_in_anchors))
+            {
+               for(size_t k = i - 1; k < str.size() - 1; k++)
+               {
+                  str[k] = str[k + 1];
+               }
+               str[str.size() - 1] = prev;
+               num_deleted++;
+            }
+         }
+
+         str.erase(str.end() - num_deleted, str.end());
+#endif
+      };
+
+      remove_spaces(parmTypename);
+      remove_spaces(parmOriginalTypename);
+      if(parmOriginalTypename == "size_t")
+      {
+         parmIncludePaths = "stddef.h";
+      }
+      remove_spaces(parmIncludePaths);
+
+      LLVM_DEBUG(dbgs() << " MODE: " << ifaceMode << "\n");
+      LLVM_DEBUG(dbgs() << " TYPE: " << parmTypename << "\n");
+      LLVM_DEBUG(dbgs() << " ORIG: " << parmOriginalTypename << "\n");
+      LLVM_DEBUG(dbgs() << " INCL: " << parmIncludePaths << "\n");
+   }
+
+ public:
+   InterfaceHLSPragmaHandler(ASTContext& ctx, PrintingPolicy& pp, int ParseAction,
+                             std::map<std::string, func_attr_t>& func_attributes)
+       : HLSPragmaAnalyzer(ctx, pp, func_attributes),
+         HLSPragmaParser(),
+         _ASTContext(ctx),
+         _SM(ctx.getSourceManager()),
+         _parseAction(ParseAction)
+   {
+   }
+
+   ~InterfaceHLSPragmaHandler() = default;
+
+   void operator()(FunctionDecl* FD, const pragma_line_t& p) override
+   {
+      if(_parseAction & ParseAction_Analyze)
+      {
+         AnalyzeParameterInterface(FD, p);
+         GetFuncAttr(FD).attrs.emplace(key_loc_t("inline", p.loc), "off");
+      }
+
+      if(_parseAction & ParseAction_Optimize)
+      {
+         // Try to avoid inlining on interfaced functions
+         if(!FD->hasAttr<NoInlineAttr>())
+         {
+            FD->addAttr(NoInlineAttr::CreateImplicit(FD->getASTContext()));
+            FD->dropAttr<AlwaysInlineAttr>();
+         }
+      }
+   }
+
+   void finalize(FunctionDecl* FD) override
+   {
+      if(_parseAction & ParseAction_Analyze)
+      {
+         const auto& func_ifaces = GetFuncAttr(FD).ifaces;
+         size_t idx = 0;
+         for(auto par : FD->parameters())
+         {
+            ParmVarDecl* pdecl;
+            if((pdecl = dyn_cast<ParmVarDecl>(par)))
+            {
+               const auto parName =
+                   pdecl->getNameAsString().empty() ? ("P" + std::to_string(idx)) : pdecl->getNameAsString();
+
+               if(func_ifaces.parameters.find(parName) == func_ifaces.parameters.end())
+               {
+                  pragma_line_t default_iface(nullptr, SourceLocation(), "interface", SourceLocation());
+                  default_iface.attrs[key_loc_t("port", SourceLocation())] = parName;
+                  default_iface.attrs[key_loc_t("mode", SourceLocation())] = "default";
+                  AnalyzeParameterInterface(FD, default_iface);
+               }
+            }
+            ++idx;
+         }
+      }
+   }
+   static const char* PragmaKeyword;
+};
+const char* InterfaceHLSPragmaHandler::PragmaKeyword = "interface";
+
+class HLSASTConsumer : public ASTConsumer
+{
+   DiagnosticsEngine& _D;
+   SourceManager& _SM;
+   MangleContext* _MC;
+   PrintingPolicy _PP;
+   const std::string _archXML;
+   const int _parseAction;
+
+   std::list<pragma_line_t> _pragmas;
+
+   std::map<std::string, func_attr_t> _func_attributes;
+
+   HLSPragmaHandler::HLSPragmaParserSet _parsers;
+
+   std::map<std::string, std::shared_ptr<HLSPragmaAnalyzer>> _analyzers;
+
+   inline void Report(const SourceLocation& loc, DiagnosticsEngine::Level level, StringRef msg) const
+   {
+      ::Report(_D, loc, level, msg);
+   }
+   inline void ReportError(const SourceLocation& loc, StringRef msg) const
+   {
+      ::Report(_D, loc, DiagnosticsEngine::Error, msg);
+   }
+
+   inline std::string MangledName(NamedDecl* FD) const
+   {
+      return ::MangledName(_MC, FD);
+   }
+
+   inline func_attr_t& GetFuncAttr(FunctionDecl* FD)
+   {
+      return ::GetFuncAttr(_func_attributes, _MC, FD);
+   }
+
+   bool isBefore(const SourceLocation& loc_a, const SourceLocation& loc_b) const
+   {
+      if(_SM.getFilename(loc_a) == _SM.getFilename(loc_b))
+      {
+         return loc_a < loc_b;
+      }
+      return false;
+   }
+
+   void AnalyzePragma(FunctionDecl* FD, const pragma_line_t& p) const
+   {
+      auto analyzer_it = _analyzers.find(p.id);
+      if(analyzer_it != _analyzers.end())
+      {
+         analyzer_it->second->operator()(FD, p);
+      }
+      else
+      {
+         Report(p.loc, DiagnosticsEngine::Level::Warning, "Unknown HLS pragma class");
+      }
+   }
+
+   void AnalyzeFunctionDecl(FunctionDecl* FD)
+   {
+      const auto fd_end = FD->getSourceRange().getEnd();
+      if(_SM.isInSystemHeader(fd_end) || FD->isImplicit() || FD->isInStdNamespace())
+      {
+         return;
+      }
+      LLVM_DEBUG({
+         dbgs() << "Parse " << std::string(FD->Decl::getDeclKindName()) << ": " << FD->getDeclName().getAsString()
+                << " - " << MangledName(FD) << "\n";
+      });
+      if(FD->isTemplateInstantiation())
+      {
+         const auto patternDecl = FD->getTemplateInstantiationPattern();
+         assert(patternDecl && "Expected template pattern declaration");
+         LLVM_DEBUG(dbgs() << "Import attributes from template pattern " << MangledName(patternDecl) << "\n");
+         GetFuncAttr(FD) = GetFuncAttr(patternDecl);
+      }
+      while(_pragmas.size() && isBefore(_pragmas.front().loc, fd_end))
+      {
+         const pragma_line_t pragma_line = _pragmas.front();
+         _pragmas.pop_front();
+         LLVM_DEBUG({
+            dbgs() << "  " << pragma_line.loc.printToString(_SM) << " " << pragma_line.id;
+            for(auto& attr : pragma_line.attrs)
+            {
+               dbgs() << " " << attr.first.id << (attr.second.size() ? ("=" + attr.second) : "");
+            }
+            dbgs() << "\n";
+         });
+         AnalyzePragma(FD, pragma_line);
+      }
+      if(FD->hasBody())
+      {
+         LLVM_DEBUG(dbgs() << "Finalize " << MangledName(FD) << "\n");
+         for(auto& pa : _analyzers)
+         {
+            pa.second->finalize(FD);
+         }
+      }
+   }
+
+   void UpdateXML(const std::string& filename)
+   {
+      pugi::xml_document doc;
+      if(std::ifstream(filename.c_str()).good())
+      {
+         pugi::xml_document e;
+         pugi::xml_node n;
+         auto result = e.load_file(filename.c_str());
+         if(!result)
+         {
+            ReportError(SourceLocation(), "Error parsing architecutre XML file: " + std::string(result.description()));
+            return;
+         }
+         if((n = e.child("module")))
+         {
+            for(auto& f : n)
+            {
+               func_attr_t func;
+               std::string funcSymbol = f.attribute("symbol").value();
+               if(funcSymbol.empty())
+               {
+                  ReportError(SourceLocation(), "Invalid architecture XML file: '" + filename + "'");
+                  continue;
+               }
+               f >> func;
+               _func_attributes[funcSymbol] = func;
+            }
+         }
+      }
+
+      auto funcs = doc.append_child("module");
+      for(auto& id_func : _func_attributes)
+      {
+         auto func = funcs.append_child("function");
+         func << id_func.second;
+      }
+
+      doc.save_file(filename.c_str(), "  ", pugi::format_indent | pugi::format_no_empty_element_tags);
+   }
+
+ public:
+   HLSASTConsumer(ASTContext& ctx, PrintingPolicy& pp, const std::string outdir, int _pa)
+       : _D(ctx.getDiagnostics()),
+         _SM(ctx.getSourceManager()),
+         _MC(ctx.createMangleContext()),
+         _PP(pp),
+         _archXML(outdir + "/architecture.xml"),
+         _parseAction(_pa)
+   {
+#define ADD_HANDLER(Name, ...)                                                                 \
+   do                                                                                          \
+   {                                                                                           \
+      const auto _handler = std::make_shared<Name>(__VA_ARGS__);                               \
+      _parsers[Name::PragmaKeyword] = std::static_pointer_cast<HLSPragmaParser>(_handler);     \
+      _analyzers[Name::PragmaKeyword] = std::static_pointer_cast<HLSPragmaAnalyzer>(_handler); \
+   } while(false)
+
+      ADD_HANDLER(InterfaceHLSPragmaHandler, ctx, _PP, _pa, _func_attributes);
+      ADD_HANDLER(DataflowHLSPragmaHandler, ctx, _PP, _func_attributes);
+
+      if(_pa & ParseAction_Analyze)
+      {
+         ADD_HANDLER(PipelineHLSPragmaHandler, ctx, _PP, _func_attributes);
+         ADD_HANDLER(CacheHLSPragmaHandler, ctx, _PP, _func_attributes);
+      }
+
+      if(_pa & ParseAction_Optimize)
+      {
+         ADD_HANDLER(InlineHLSPragmaHandler, ctx, _PP, _func_attributes);
+         ADD_HANDLER(UnrollHLSPragmaHandler, ctx, _PP, _func_attributes);
+      }
+
+#undef ADD_HANDLER
+
+      LLVM_DEBUG(dbgs() << "Supported pragmas:\n");
+#ifndef NDEBUG
+      for(auto& it : _analyzers)
+      {
+         LLVM_DEBUG(dbgs() << " - " << it.first << "\n");
+      }
+#endif
+   }
+
+   ~HLSASTConsumer()
+   {
+      delete _MC;
+   }
+
+   void addPragmaHandler(Preprocessor& PP)
+   {
+      PP.AddPragmaHandler(new HLSPragmaHandler("HLS", _parsers, _pragmas));
+      PP.AddPragmaHandler(new HLSPragmaHandler("hls", _parsers, _pragmas));
+      PP.AddPragmaHandler(new HLSPragmaHandler("bambu", _parsers, _pragmas));
+   }
+
+   bool HandleTopLevelDecl(DeclGroupRef DG) override
+   {
+      std::deque<Decl*> declQueue(DG.begin(), DG.end());
+      while(declQueue.size())
+      {
+         auto decl = declQueue.front();
+         declQueue.pop_front();
+         if(auto FD = dyn_cast<FunctionDecl>(decl))
+         {
+            AnalyzeFunctionDecl(FD);
+         }
+         else if(isa<LinkageSpecDecl>(decl) || isa<NamespaceDecl>(decl))
+         {
+            auto declContext = cast<DeclContext>(decl);
+            if(declContext->isStdNamespace())
+               continue;
+            declQueue.insert(declQueue.end(), declContext->decls_begin(), declContext->decls_end());
+         }
+      }
+      return true;
+   }
+
+   void HandleInlineFunctionDefinition(FunctionDecl* FD) override
+   {
+      AnalyzeFunctionDecl(FD);
+   }
+
+   // void HandleTagDeclDefinition(TagDecl* FD) override
+   // {
+   //    for(auto d : FD->decls())
+   //    {
+   //       if(auto fd = dyn_cast<FunctionDecl>(d))
+   //       {
+   //          AnalyzeFunctionDecl(fd);
+   //       }
+   //    }
+   // }
+
+   // void HandleCXXImplicitFunctionInstantiation(FunctionDecl* FD) override
+   // {
+   //    AnalyzeFunctionDecl(FD);
+   // }
+
+   void HandleTranslationUnit(ASTContext&) override
+   {
+      while(_pragmas.size())
+      {
+         const pragma_line_t p = _pragmas.front();
+         _pragmas.pop_front();
+         ReportError(p.loc, "Unassociated HLS pragma");
+      }
+
+      if(_parseAction & ParseAction_Analyze)
+      {
+         UpdateXML(_archXML);
+      }
+   }
+};
+
+class EmptyASTConsumer : public ASTConsumer
+{
+ public:
+   EmptyASTConsumer() = default;
+};
+
+namespace clang
+{
    class CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer) : public PluginASTAction
    {
-      std::string topfname;
-      std::string outdir_name;
-      bool cppflag;
+      int _action;
+      std::string _outdir;
+      bool _cppflag;
 
     protected:
-      std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance& CI, llvm::StringRef InFile) override
+      std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance& CI, StringRef InFile) override
       {
-         DiagnosticsEngine& D = CI.getDiagnostics();
-         if(outdir_name.empty())
+         if(_action)
          {
-            D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "outputdir argument not specified"));
+            auto pp = PrintingPolicy(LangOptions());
+            if(_cppflag)
+            {
+               pp.adjustForCPlusPlus();
+            }
+            auto pragmaConsumer = make_unique<HLSASTConsumer>(CI.getASTContext(), pp, _outdir, _action);
+            pragmaConsumer->addPragmaHandler(CI.getPreprocessor());
+            return pragmaConsumer;
          }
-         clang::Preprocessor& PP = CI.getPreprocessor();
-         PP.AddPragmaHandler(new HLS_interface_PragmaHandler());
-         PP.AddPragmaHandler(new HLS_simple_pipeline_PragmaHandler());
-         PP.AddPragmaHandler(new HLS_pipeline_PragmaHandler());
-         PP.AddPragmaHandler(new HLS_cache_PragmaHandler());
-         auto pp = clang::PrintingPolicy(clang::LangOptions());
-         if(cppflag)
-         {
-            pp.adjustForCPlusPlus();
-         }
-#if __clang_major__ > 9
-         return std::make_unique<FunctionArgConsumer>(CI, topfname, outdir_name, InFile.data(), pp);
-#else
-         return llvm::make_unique<FunctionArgConsumer>(CI, topfname, outdir_name, InFile, pp);
-#endif
+         return make_unique<EmptyASTConsumer>();
       }
 
       bool ParseArgs(const CompilerInstance& CI, const std::vector<std::string>& args) override
       {
          DiagnosticsEngine& D = CI.getDiagnostics();
-         for(size_t i = 0, e = args.size(); i != e; ++i)
+         for(size_t i = 0, e = args.size(); i != e;)
          {
-            if(args.at(i) == "-topfname")
+            auto& arg = args.at(i++);
+            if(arg == "-action")
             {
-               if(i + 1 >= e)
-               {
-                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "missing topfname argument"));
-                  return false;
-               }
-               ++i;
-               topfname = args.at(i);
-            }
-            else if(args.at(i) == "-outputdir")
-            {
-               if(i + 1 >= e)
+               if(i >= e)
                {
                   D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "missing outputdir argument"));
                   return false;
                }
-               ++i;
-               outdir_name = args.at(i);
-            }
-            else if(args.at(i) == "-cppflag")
-            {
-               if(i + 1 >= e)
+               const auto& action = args.at(i++);
+               if(action == "analyze")
                {
-                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "missing cppflag argument"));
+                  _action |= ParseAction_Analyze;
+               }
+               else if(action == "optimize")
+               {
+                  _action |= ParseAction_Optimize;
+               }
+            }
+            else if(arg == "-outputdir")
+            {
+               if(i >= e)
+               {
+                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "missing outputdir argument"));
                   return false;
                }
-               ++i;
-               cppflag = std::atoi(args.at(i).data()) == 1;
+               _outdir = args.at(i++);
+            }
+            else if(arg == "-cppflag")
+            {
+               _cppflag = true;
+            }
+            else if(arg == "-help")
+            {
+               PrintHelp(errs());
+               return true;
             }
          }
-         if(!args.empty() && args.at(0) == "-help")
-         {
-            PrintHelp(llvm::errs());
-         }
 
-         if(outdir_name.empty())
+         if(_outdir.empty() && (_action & ParseAction_Analyze))
          {
-            D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "outputdir not specified"));
+            D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "Output directory not specified"));
          }
          return true;
       }
 
-      void PrintHelp(llvm::raw_ostream& ros)
+      void PrintHelp(raw_ostream& ros)
       {
-         ros << "Help for " CLANG_VERSION_STRING(_plugin_ASTAnalyzer) " plugin\n";
-         ros << "-outputdir <directory>\n";
-         ros << "  Directory where the raw file will be written\n";
-         ros << "-cppflag <type>\n";
-         ros << "  1 if input source file is C++, 0 else\n";
-         ros << "-topfname <function name>\n";
-         ros << "  Function from which the Point-To analysis has to start\n";
+         ros << "Help for " CLANG_VERSION_STRING(_plugin_ASTAnalyzer) " plugin:\n";
+         ros << " -outputdir <directory>\n";
+         ros << "   Directory where the architecture.xml file will be written\n";
+         ros << " -cppflag\n";
+         ros << "   Input source file is C++\n";
       }
 
       PluginASTAction::ActionType getActionType() override
       {
-         return AddAfterMainAction;
+         return AddBeforeMainAction;
       }
 
     public:
-      CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)() : cppflag(false)
+      CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)
+      () : _action(ParseAction_None), _outdir(""), _cppflag(false)
       {
       }
       CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)(const CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer) & step) = delete;
@@ -1333,13 +1765,13 @@ namespace clang
 
    void initializeplugin_ASTAnalyzer()
    {
-      static clang::FrontendPluginRegistry::Add<clang::CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)> X(
+      static FrontendPluginRegistry::Add<CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)> X(
           CLANG_VERSION_STRING(_plugin_ASTAnalyzer), "Analyze Clang AST to retrieve information useful for PandA");
    }
 #endif
 } // namespace clang
 
 #ifndef _WIN32
-static clang::FrontendPluginRegistry::Add<clang::CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)>
+static FrontendPluginRegistry::Add<CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer)>
     X(CLANG_VERSION_STRING(_plugin_ASTAnalyzer), "Analyze Clang AST to retrieve information useful for PandA");
 #endif
