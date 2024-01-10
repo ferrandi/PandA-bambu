@@ -1467,17 +1467,15 @@ DesignFlowStep_Status allocation::InternalExec()
    {
       support_ops.insert(HLS->operations.begin(), HLS->operations.end());
    }
-   const OpGraphConstRef g =
-       op_graph_size != HLS->operations.size() ? FB->CGetOpGraph(FunctionBehavior::CFG, support_ops) : cfg;
+   const auto g = op_graph_size != HLS->operations.size() ? FB->CGetOpGraph(FunctionBehavior::CFG, support_ops) : cfg;
    CustomUnorderedMap<std::string, OpVertexSet> vertex_to_analyse_partition;
-   graph::vertex_iterator v, v_end;
    std::map<std::string, technology_nodeRef> new_fu;
    bool gimple_return_allocated_p = false;
    unsigned int gimple_return_current_id = 0;
-   for(boost::tie(v, v_end) = boost::vertices(*g); v != v_end; ++v)
+   BOOST_FOREACH(vertex v, boost::vertices(*g))
    {
-      std::string current_op = tree_helper::NormalizeTypename(g->CGetOpNodeInfo(*v)->GetOperation());
-      const auto node_id = g->CGetOpNodeInfo(*v)->GetNodeId();
+      std::string current_op = tree_helper::NormalizeTypename(g->CGetOpNodeInfo(v)->GetOperation());
+      const auto node_id = g->CGetOpNodeInfo(v)->GetNodeId();
       const auto node_operation = [&]() -> std::string {
          if(node_id == ENTRY_ID)
          {
@@ -1490,18 +1488,18 @@ DesignFlowStep_Status allocation::InternalExec()
          return GetPointer<const gimple_node>(TM->CGetTreeNode(node_id))->operation;
       }();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Processing operation: " + current_op + " - " + GET_NAME(g, *v) +
+                     "-->Processing operation: " + current_op + " - " + GET_NAME(g, v) +
                          (node_id && node_id != ENTRY_ID && node_id != EXIT_ID ?
                               " - " + TM->CGetTreeNode(node_id)->ToString() :
                               ""));
       technology_nodeRef current_fu;
-      if(GET_TYPE(g, *v) & (TYPE_STORE | TYPE_LOAD))
+      if(GET_TYPE(g, v) & (TYPE_STORE | TYPE_LOAD))
       {
          const auto curr_tn = TM->CGetTreeNode(node_id);
          const auto me = GetPointer<const gimple_assign>(curr_tn);
          THROW_ASSERT(me, "only gimple_assign's are allowed as memory operations");
          tree_nodeConstRef var;
-         if(GET_TYPE(g, *v) & TYPE_STORE)
+         if(GET_TYPE(g, v) & TYPE_STORE)
          {
             var = tree_helper::GetBaseVariable(me->op0);
          }
@@ -1518,7 +1516,7 @@ DesignFlowStep_Status allocation::InternalExec()
             {
                vertex_to_analyse_partition.insert(std::make_pair(current_op, OpVertexSet(g)));
             }
-            vertex_to_analyse_partition.at(current_op).insert(*v);
+            vertex_to_analyse_partition.at(current_op).insert(v);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "<--Operation " + current_op + " queued for allocation");
             continue;
@@ -1531,7 +1529,7 @@ DesignFlowStep_Status allocation::InternalExec()
              allocation_information->vars_to_memory_units[var->index]);
          current_fu = allocation_information->list_of_FU[allocation_information->vars_to_memory_units[var->index]];
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Operation " + current_op + " named " + GET_NAME(g, *v) + " mapped onto " +
+                        "---Operation " + current_op + " named " + GET_NAME(g, v) + " mapped onto " +
                             current_fu->get_name() + ", found in library " + TechM->get_library(current_op) +
                             " in position " + STR(allocation_information->vars_to_memory_units[var->index]));
       }
@@ -1558,7 +1556,7 @@ DesignFlowStep_Status allocation::InternalExec()
          allocation_information->node_id_to_fus[std::make_pair(node_id, node_operation)].insert(
              gimple_return_current_id);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Operation " + current_op + " named " + GET_NAME(g, *v) + " mapped onto " +
+                        "---Operation " + current_op + " named " + GET_NAME(g, v) + " mapped onto " +
                             current_fu->get_name() + ", found in library " + TechM->get_library(current_op) +
                             " in position " + STR(gimple_return_current_id));
       }
@@ -1573,7 +1571,7 @@ DesignFlowStep_Status allocation::InternalExec()
          const auto current_size = allocation_information->get_number_fu_types();
          if(current_op == ASSIGN)
          {
-            const auto& modify_node = g->CGetOpNodeInfo(*v)->node;
+            const auto& modify_node = g->CGetOpNodeInfo(v)->node;
             const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
             const auto left_type = tree_helper::CGetType(gms->op0);
             if(tree_helper::IsComplexType(left_type))
@@ -1611,7 +1609,7 @@ DesignFlowStep_Status allocation::InternalExec()
          }
          else if(current_op == ASSERT_EXPR)
          {
-            const auto& modify_node = g->CGetOpNodeInfo(*v)->node;
+            const auto& modify_node = g->CGetOpNodeInfo(v)->node;
             const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
             const auto left_type = tree_helper::CGetType(gms->op0);
             if(tree_helper::IsSignedIntegerType(left_type))
@@ -1629,7 +1627,7 @@ DesignFlowStep_Status allocation::InternalExec()
          }
          else if(current_op == EXTRACT_BIT_EXPR)
          {
-            const auto& modify_node = g->CGetOpNodeInfo(*v)->node;
+            const auto& modify_node = g->CGetOpNodeInfo(v)->node;
             const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
             const auto ebe = GetPointerS<const extract_bit_expr>(GET_CONST_NODE(gms->op1));
             const auto intOP0 = tree_helper::IsSignedIntegerType(ebe->op0);
@@ -1652,7 +1650,7 @@ DesignFlowStep_Status allocation::InternalExec()
          }
          else if(current_op == NOP_EXPR)
          {
-            const auto modify_node = g->CGetOpNodeInfo(*v)->node;
+            const auto modify_node = g->CGetOpNodeInfo(v)->node;
             const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
             const auto ne = GetPointerS<const nop_expr>(GET_CONST_NODE(gms->op1));
             const auto left_type = tree_helper::CGetType(gms->op0);
@@ -1759,7 +1757,7 @@ DesignFlowStep_Status allocation::InternalExec()
          }
          else if(current_op == CONVERT_EXPR)
          {
-            const auto modify_node = g->CGetOpNodeInfo(*v)->node;
+            const auto modify_node = g->CGetOpNodeInfo(v)->node;
             const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
             const auto ce = GetPointerS<const convert_expr>(GET_CONST_NODE(gms->op1));
             const auto left_type = tree_helper::CGetType(gms->op0);
@@ -1842,7 +1840,7 @@ DesignFlowStep_Status allocation::InternalExec()
          }
          else if(current_op == VIEW_CONVERT_EXPR)
          {
-            const auto& modify_node = g->CGetOpNodeInfo(*v)->node;
+            const auto& modify_node = g->CGetOpNodeInfo(v)->node;
             const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
             const auto vce = GetPointerS<const view_convert_expr>(GET_CONST_NODE(gms->op1));
             const auto right_type = tree_helper::CGetType(vce->op);
@@ -1878,7 +1876,7 @@ DesignFlowStep_Status allocation::InternalExec()
              current_id);
          allocation_information->id_to_fu_names[current_id] =
              std::make_pair(current_fu->get_name(), TechM->get_library(current_op));
-         unsigned int out_var = HLSMgr->get_produced_value(HLS->functionId, *v);
+         unsigned int out_var = HLSMgr->get_produced_value(HLS->functionId, v);
          if(out_var)
          {
             const auto type = tree_helper::CGetType(TM->CGetTreeReindex(out_var));
@@ -1902,15 +1900,12 @@ DesignFlowStep_Status allocation::InternalExec()
                            ", found in library " + TechM->get_library(current_op));
       }
       // Constrained FUs
-      else if(binding_constraints.find(GET_NAME(g, *v)) != binding_constraints.end())
+      else if(binding_constraints.find(GET_NAME(g, v)) != binding_constraints.end())
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  . Current node is under constraints");
-         const std::pair<std::string, std::pair<std::string, unsigned int>>& defined_binding =
-             binding_constraints.find(GET_NAME(g, *v))->second;
-         std::string fu_name = defined_binding.first;
-         std::string fu_library = defined_binding.second.first;
-         unsigned int fu_index = defined_binding.second.second;
-         std::string key = ENCODE_FU_LIB(fu_name, fu_library);
+         const auto& [fu_name, constraint] = binding_constraints.at(GET_NAME(g, v));
+         const auto& [fu_library, fu_index] = constraint;
+         const auto key = ENCODE_FU_LIB(fu_name, fu_library);
          if(fu_name_to_id.find(key) != fu_name_to_id.end())
          {
             if(fu_name_to_id[key].find(fu_index) != fu_name_to_id[key].end())
@@ -1935,7 +1930,7 @@ DesignFlowStep_Status allocation::InternalExec()
                {
                   tech_vec[key]--;
                }
-               unsigned int out_var = HLSMgr->get_produced_value(HLS->functionId, *v);
+               const auto out_var = HLSMgr->get_produced_value(HLS->functionId, v);
                if(out_var)
                {
                   const auto type = tree_helper::CGetType(TM->CGetTreeReindex(out_var));
@@ -1958,7 +1953,7 @@ DesignFlowStep_Status allocation::InternalExec()
          }
          else
          {
-            unsigned int current_size = allocation_information->get_number_fu_types();
+            const auto current_size = allocation_information->get_number_fu_types();
             fu_name_to_id[key][fu_index] = current_size;
             current_fu = TechM->get_fu(fu_name, fu_library);
             THROW_ASSERT(current_fu, std::string("Not found") + fu_name + " in library " + fu_library);
@@ -1972,7 +1967,7 @@ DesignFlowStep_Status allocation::InternalExec()
             {
                tech_vec[key]--;
             }
-            unsigned int out_var = HLSMgr->get_produced_value(HLS->functionId, *v);
+            unsigned int out_var = HLSMgr->get_produced_value(HLS->functionId, v);
             if(out_var)
             {
                const auto type = tree_helper::CGetType(TM->CGetTreeReindex(out_var));
@@ -1999,7 +1994,7 @@ DesignFlowStep_Status allocation::InternalExec()
          {
             vertex_to_analyse_partition.insert(std::pair<std::string, OpVertexSet>(current_op, OpVertexSet(g)));
          }
-         vertex_to_analyse_partition.at(current_op).insert(*v);
+         vertex_to_analyse_partition.at(current_op).insert(v);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Operation " + current_op + " queued for allocation");
       }
@@ -2018,7 +2013,7 @@ DesignFlowStep_Status allocation::InternalExec()
    for(const auto& lib_name : TechM->get_library_list())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering library " + lib_name);
-      const library_managerRef library = TechM->get_library_manager(lib_name);
+      const auto library = TechM->get_library_manager(lib_name);
       /// skip library of internal components
       if(lib_name == "STD_COMMON")
       {
@@ -2070,11 +2065,10 @@ DesignFlowStep_Status allocation::InternalExec()
             continue; // forced to use 0 FUs of current ones
          }
 
-         unsigned int tech_constrain_value =
+         const auto tech_constrain_value =
              tech_constrain_it == tech_vec.end() ? INFINITE_UINT : tech_constrain_it->second;
 
-         bambu_provided_resource = "";
-         structural_managerRef structManager_obj = GetPointer<functional_unit>(current_fu)->CM;
+         const auto structManager_obj = GetPointer<functional_unit>(current_fu)->CM;
 
          /// check for generated module and bambu/flopoco resources
          if(check_generated_bambu_flopoco(skip_softfloat_resources, structManager_obj, bambu_provided_resource,
@@ -2088,12 +2082,12 @@ DesignFlowStep_Status allocation::InternalExec()
 
          unsigned int current_id = current_fu_id;
 
-         bool lib_is_proxy_or_work =
+         const auto lib_is_proxy_or_work =
              lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY || lib_name == INTERFACE_LIBRARY;
          for(const auto& ops : GetPointer<functional_unit>(current_fu)->get_operations())
          {
-            auto* curr_op = GetPointer<operation>(ops);
-            std::string curr_op_name = curr_op->get_name();
+            const auto curr_op = GetPointer<operation>(ops);
+            const auto& curr_op_name = curr_op->get_name();
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering operation: " + curr_op_name);
             if(vertex_to_analyse_partition.find(curr_op_name) == vertex_to_analyse_partition.end())
             {
@@ -2290,16 +2284,14 @@ DesignFlowStep_Status allocation::InternalExec()
                   max_prec = 0U;
                }
 
-               std::map<technology_nodeRef,
-                        std::map<unsigned long long, std::map<HLS_manager::io_binding_type, unsigned int>>>::iterator
-                   techMap;
+               decltype(fu_list)::iterator techMap;
                std::string functionalUnitName = "";
                auto specializedId = current_id;
                const auto libraryManager = TechM->get_library_manager(library_name);
                if(has_to_be_generated)
                {
                   functionalUnitName = specialized_fuName;
-                  techMap = fu_list.find(new_fu.find(functionalUnitName)->second);
+                  techMap = fu_list.find(new_fu.at(functionalUnitName));
                   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Specialized unit: " + functionalUnitName);
                   if(techMap != fu_list.end() && techMap->second.find(max_prec) != techMap->second.end() &&
                      techMap->second.find(max_prec)->second.find(constant_id) !=
