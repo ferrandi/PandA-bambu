@@ -94,10 +94,10 @@ struct CalledFunctionsVisitor : public boost::default_dfs_visitor
    const CallGraphManager* call_graph_manager;
 
    /// The list of encountered body functions
-   CustomOrderedSet<unsigned int>& body_functions;
+   CustomSet<unsigned int>& body_functions;
 
    /// The list of encountered library functions
-   CustomOrderedSet<unsigned int>& library_functions;
+   CustomSet<unsigned int>& library_functions;
 
  public:
    /**
@@ -108,8 +108,7 @@ struct CalledFunctionsVisitor : public boost::default_dfs_visitor
     * @param library_functions is where results will be stored
     */
    CalledFunctionsVisitor(const bool _allow_recursive_functions, const CallGraphManager* _call_graph_manager,
-                          CustomOrderedSet<unsigned int>& _body_functions,
-                          CustomOrderedSet<unsigned int>& _library_functions)
+                          CustomSet<unsigned int>& _body_functions, CustomSet<unsigned int>& _library_functions)
        : allow_recursive_functions(_allow_recursive_functions),
          call_graph_manager(_call_graph_manager),
          body_functions(_body_functions),
@@ -139,14 +138,14 @@ struct CalledFunctionsVisitor : public boost::default_dfs_visitor
     */
    void finish_vertex(const vertex& u, const CallGraph& g)
    {
-      const auto function_id = Cget_node_info<FunctionInfo, graph>(u, g)->nodeID;
-      if(g.CGetCallGraphInfo()->behaviors.at(function_id)->CGetBehavioralHelper()->has_implementation())
+      const auto f_id = Cget_node_info<FunctionInfo, graph>(u, g)->nodeID;
+      if(g.CGetCallGraphInfo()->behaviors.at(f_id)->CGetBehavioralHelper()->has_implementation())
       {
-         body_functions.insert(function_id);
+         body_functions.insert(f_id);
       }
       else
       {
-         library_functions.insert(function_id);
+         library_functions.insert(f_id);
       }
    }
 };
@@ -549,15 +548,7 @@ bool CallGraphManager::IsVertex(unsigned int functionID) const
 
 unsigned int CallGraphManager::get_function(vertex node) const
 {
-   const auto end = functionID_vertex_map.cend();
-   for(auto i = functionID_vertex_map.cbegin(); i != end; i++)
-   {
-      if(i->second == node)
-      {
-         return i->first;
-      }
-   }
-   return 0;
+   return Cget_node_info<FunctionInfo, graph>(node, *call_graph)->nodeID;
 }
 
 CustomSet<unsigned int> CallGraphManager::get_called_by(unsigned int index) const
