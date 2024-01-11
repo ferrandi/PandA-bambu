@@ -1139,21 +1139,9 @@ int BambuParameter::Exec()
          /// general options
          case OPT_TOP_FNAME:
          {
-            // set name of the function to be take into account as top function
-            std::string top_function_names;
-            std::vector<std::string> splitted;
-            std::string to_be_splitted = std::string(optarg);
-            boost::split(splitted, to_be_splitted, boost::is_any_of(","));
-            for(const auto& counter : splitted)
-            {
-               if(top_function_names != "")
-               {
-                  top_function_names += STR_CST_string_separator;
-               }
-               top_function_names += counter;
-            }
-            setOption(OPT_top_functions_names, top_function_names);
-            if(splitted.size() == 1)
+            const auto top_fname = string_to_container<std::vector<std::string>>(std::string(optarg), ",");
+            setOption(OPT_top_functions_names, container_to_string(top_fname, STR_CST_string_separator));
+            if(top_fname.size() == 1)
             {
                setOption(OPT_top_file, optarg);
             }
@@ -2520,7 +2508,7 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
       defines += "printf(fmt, ...)=";
       setOption(OPT_gcc_defines, defines);
    }
-   if(isOption(OPT_top_functions_names) && getOption<std::string>(OPT_top_functions_names) == "main")
+   if(getOption<std::string>(OPT_top_functions_names) == "main")
    {
       std::string optimizations;
       if(isOption(OPT_gcc_optimizations))
@@ -2591,15 +2579,14 @@ void BambuParameter::CheckParameters()
       setOption(OPT_top_functions_names, "main");
       THROW_WARNING("Top function name was not specified: main will be set as top");
    }
-   if(isOption(OPT_top_functions_names) && getOption<std::string>(OPT_top_functions_names) == "main")
+   if(getOption<std::string>(OPT_top_functions_names) == "main")
    {
       THROW_WARNING("Using 'main' as top function name is strongly discouraged.");
       THROW_WARNING("   Please note that C simulation output may be truncated down to 8-bits.");
    }
    if((isOption(OPT_input_format) &&
        getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_RAW) ||
-      (isOption(OPT_top_functions_names) && getOption<std::string>(OPT_top_functions_names) == "main") ||
-      isOption(OPT_testbench_param_size))
+      getOption<std::string>(OPT_top_functions_names) == "main" || isOption(OPT_testbench_param_size))
    {
       std::string gcc_defines = "CUSTOM_VERIFICATION";
       if(isOption(OPT_gcc_defines))
@@ -2977,8 +2964,7 @@ void BambuParameter::CheckParameters()
                setOption(OPT_generate_testbench, true);
                setOption(OPT_testbench_input_file, GetPath("test.xml"));
             }
-            if(isOption(OPT_top_functions_names) &&
-               getOption<std::list<std::string>>(OPT_top_functions_names).size() > 1)
+            if(getOption<std::list<std::string>>(OPT_top_functions_names).size() > 1)
             {
                THROW_ERROR("Simulation cannot be enabled with multiple top functions");
             }
@@ -3115,7 +3101,8 @@ void BambuParameter::CheckParameters()
       }
    }
    /// Disable proxy when there are multiple top functions
-   if(isOption(OPT_top_functions_names) && getOption<std::list<std::string>>(OPT_top_functions_names).size() > 1)
+   // TODO: check this, function proxies should work properly even with multiple top functions
+   if(getOption<std::list<std::string>>(OPT_top_functions_names).size() > 1)
    {
       if(isOption(OPT_disable_function_proxy))
       {

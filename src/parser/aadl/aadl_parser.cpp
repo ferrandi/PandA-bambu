@@ -123,9 +123,7 @@ DesignFlowStep_Status AadlParser::Exec()
                if(feature.second.find("Taste::InterfaceName") != feature.second.end())
                {
                   const auto top_functions =
-                      parameters->isOption(OPT_top_functions_names) ?
-                          parameters->getOption<std::string>(OPT_top_functions_names) + STR_CST_string_separator :
-                          "";
+                      parameters->getOption<std::string>(OPT_top_functions_names) + STR_CST_string_separator;
                   const auto function_name = feature.second.find("Taste::InterfaceName")->second;
                   const auto without_quota_function_name =
                       function_name.at(0) == '"' ? function_name.substr(1, function_name.size() - 2) : function_name;
