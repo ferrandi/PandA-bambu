@@ -126,7 +126,8 @@
 #define OPT_DSP_ALLOCATION_COEFFICIENT (1 + OPT_DSE)
 #define OPT_DSP_MARGIN_COMBINATIONAL (1 + OPT_DSP_ALLOCATION_COEFFICIENT)
 #define OPT_DSP_MARGIN_PIPELINED (1 + OPT_DSP_MARGIN_COMBINATIONAL)
-#define OPT_DUMP_CONSTRAINTS (1 + OPT_DSP_MARGIN_PIPELINED)
+#define OPT_DSP_FRACTURING (1 + OPT_DSP_MARGIN_PIPELINED)
+#define OPT_DUMP_CONSTRAINTS (1 + OPT_DSP_FRACTURING)
 #define OPT_DISCREPANCY (1 + OPT_DUMP_CONSTRAINTS)
 #define OPT_DISCREPANCY_FORCE (1 + OPT_DISCREPANCY)
 #define OPT_DISCREPANCY_HW (1 + OPT_DISCREPANCY_FORCE)
@@ -691,6 +692,12 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --DSP-margin-pipelined=value\n"
       << "        Timing of pipelined DSP-based modules is multiplied by value.\n"
       << "        (default = 1.0).\n\n"
+      << "    --DSP-fracturing=[16,32]\n"
+      << "        Restructure multiplication by fracturing the computation.\n"
+      << "        16 => All multiplications will be decomposed into multiplications with input size not larger than "
+         "16.\n"
+      << "        32 => All multiplications will be decomposed into multiplications with input size not larger than "
+         "32.\n\n"
       << "    --mux-margins=n\n"
       << "        Scheduling reserves a margin corresponding to the delay of n 32 bit\n"
       << "        multiplexers.\n\n"
@@ -1018,6 +1025,7 @@ int BambuParameter::Exec()
       {"DSP-allocation-coefficient", required_argument, nullptr, OPT_DSP_ALLOCATION_COEFFICIENT},
       {"DSP-margin-combinational", required_argument, nullptr, OPT_DSP_MARGIN_COMBINATIONAL},
       {"DSP-margin-pipelined", required_argument, nullptr, OPT_DSP_MARGIN_PIPELINED},
+      {"DSP-fracturing", optional_argument, nullptr, OPT_DSP_FRACTURING},
       {"mux-margins", required_argument, nullptr, OPT_SCHEDULING_MUX_MARGINS},
       {"use-ALUs", no_argument, nullptr, OPT_USE_ALUS},
       {"timing-model", required_argument, nullptr, OPT_TIMING_MODEL},
@@ -1725,6 +1733,15 @@ int BambuParameter::Exec()
          case OPT_DSP_MARGIN_PIPELINED:
          {
             setOption(OPT_DSP_margin_pipelined, optarg);
+            break;
+         }
+         case OPT_DSP_FRACTURING:
+         {
+            setOption(OPT_DSP_fracturing, 16);
+            if(optarg && std::string(optarg) == "32")
+            {
+               setOption(OPT_DSP_fracturing, "32");
+            }
             break;
          }
          /// output options
