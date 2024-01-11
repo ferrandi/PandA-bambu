@@ -91,7 +91,7 @@ DesignFlowStep_Status minimal_interface::InternalExec()
    const auto FB = HLSMgr->CGetFunctionBehavior(funId);
    const auto BH = FB->CGetBehavioralHelper();
    const auto top_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   bool is_top = top_functions.find(BH->get_function_index()) != top_functions.end();
+   const auto is_top = top_functions.find(BH->get_function_index()) != top_functions.end();
    const auto wrappedObj = SM->get_circ();
    const auto module_name = is_top ? BH->get_function_name() : wrappedObj->get_id() + "_minimal_interface";
 
@@ -203,13 +203,13 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       {
          const auto& bundle_name = attrs.at(FunctionArchitecture::parm_bundle);
          THROW_ASSERT(func_arch->ifaces.find(bundle_name) != func_arch->ifaces.end(),
-                      "unexpected condition:" + bundle_name);
+                      "Expected bundle " + bundle_name + " in function " + fname);
          const auto& iface_attrs = func_arch->ifaces.at(bundle_name);
          const auto& iface_mode = iface_attrs.at(FunctionArchitecture::iface_mode);
          if(iface_mode != "default")
          {
             const auto parm_port = wrappedObj->find_member(parm_name, port_o_K, wrappedObj);
-            THROW_ASSERT(parm_port, "unexpected condition");
+            THROW_ASSERT(parm_port, "Expected parameter port " + parm_name + " in function " + fname);
             const auto forward_port = iface_mode == "m_axi" && attrs.at(FunctionArchitecture::parm_offset) == "direct";
             if(!forward_port)
             {
