@@ -11,5 +11,9 @@ bambu_specific_test/memset-chk.c -O1 --configuration-name=O1
 bambu_specific_test/memset-chk.c -O2 --configuration-name=O2
 bambu_specific_test/pr35472.c.gimplePSSA --use-raw -O3
 bambu_specific_test/pta-field-1.c.gimplePSSA --use-raw -O1
-bambu_specific_test/soft_mul.c --top-fname=soft_mul --device-name=nx1h140tsp --generate-tb=a=4,b=5
+bambu_specific_test/soft_mul.c --top-fname=soft_mul --device-name=nx1h140tsp --generate-tb=a=0x5555555555555555,b=0xAAAAAAAAAAAAAAAA --benchmark-name=soft_mul_NF
+bambu_specific_test/soft_umul.c --top-fname=soft_umul --device-name=nx1h140tsp --generate-tb=a=0x5555555555555555,b=0xAAAAAAAAAAAAAAAA --benchmark-name=soft_umul_NF
+bambu_specific_test/soft_mul.c --top-fname=soft_mul --generate-tb=a=0x5555555555555555,b=0xAAAAAAAAAAAAAAAA --DSP-fracturing=16 --benchmark-name=soft_mul_F
+bambu_specific_test/soft_umul.c --top-fname=soft_umul --generate-tb=a=0x5555555555555555,b=0xAAAAAAAAAAAAAAAA --DSP-fracturing=16  --benchmark-name=soft_umul_F
+
 bambu_specific_test/unsafe-fp-assoc-1.c.gimplePSSA --use-raw --pretty-print=output.c

@@ -572,6 +572,8 @@ etc/libbambu/memcpy.c
 etc/libbambu/memmgr.c
 etc/libbambu/memmove.c
 etc/libbambu/memset.c
+etc/libbambu/mul32.c
+etc/libbambu/mul64.c
 etc/libbambu/pthread/pthread.c
 etc/libbambu/puts.c
 etc/libbambu/read.c
@@ -2419,6 +2421,7 @@ src/utility/dbgPrintHelper.hpp
 src/utility/exceptions.cpp
 src/utility/exceptions.hpp
 src/utility/Factory.hpp
+src/utility/fileIO.cpp
 src/utility/fileIO.hpp
 src/utility/gzstream.hpp
 src/utility/hash_helper.hpp

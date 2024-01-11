@@ -122,6 +122,7 @@ EXTRA_DIST= \
    %D%/bambu_specific_test/return_vector.c \
    %D%/bambu_specific_test.sh \
    %D%/bambu_specific_test/soft_mul.c \
+   %D%/bambu_specific_test/soft_umul.c \
    %D%/bambu_specific_test/unsafe-fp-assoc-1.c.gimplePSSA \
    %D%/chstone_memarch_list1 \
    %D%/chstone_memarch_list2 \

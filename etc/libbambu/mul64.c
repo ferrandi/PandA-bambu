@@ -4,12 +4,30 @@
  *
  */
 /* Public domain.  */
-#include <stdlib.h>
 
 typedef unsigned int __USItype __attribute__((mode(SI)));
-typedef unsigned int __UDItype __attribute__((mode(DI)));
+typedef unsigned long long int __UDItype __attribute__((mode(DI)));
 typedef int __SItype __attribute__((mode(SI)));
-typedef int __DItype __attribute__((mode(DI)));
+typedef long long int __DItype __attribute__((mode(DI)));
+
+static __UDItype __umul3264(__USItype u, __USItype v)
+{
+   __USItype u0v0, u1v0, u0v1, u1v1, u0, u1, v0, v1;
+   __UDItype t1, t2;
+
+   u0 = u & 0xFFFF;
+   u1 = u >> 16;
+   v0 = v & 0xFFFF;
+   v1 = v >> 16;
+   u0v0 = u0 * v0;
+   u1v0 = u1 * v0;
+   u0v1 = u0 * v1;
+   u1v1 = u1 * v1;
+
+   t1 = (((__UDItype)u1v0) << 16) + u0v0;
+   t2 = (((__UDItype)u1v1) << 16) + u0v1;
+   return t1 + (t2 << 16);
+}
 
 __UDItype __umul64(__UDItype u, __UDItype v)
 {
@@ -21,7 +39,7 @@ __UDItype __umul64(__UDItype u, __UDItype v)
    u0 = u;
    v1 = v >> 32;
    v0 = v;
-   t = (__UDItype)u0 * v0;
+   t = __umul3264(u0, v0);
    w0 = t;
    k = t >> 32;
    tlast = u1 * v0 + k;
@@ -32,7 +50,8 @@ __UDItype __umul64(__UDItype u, __UDItype v)
 
 __DItype __mul64(__DItype _u, __DItype _v)
 {
-   __UDItype u, v, t;
+   __UDItype t;
+   __UDItype u, v;
    __USItype u0, u1, v0, v1, k;
    __USItype w0, w1;
    __USItype tlast;
@@ -42,7 +61,7 @@ __DItype __mul64(__DItype _u, __DItype _v)
    u0 = u;
    v1 = v >> 32;
    v0 = v;
-   t = (__UDItype)u0 * v0;
+   t = __umul3264(u0, v0);
    w0 = t;
    k = t >> 32;
    tlast = u1 * v0 + k;

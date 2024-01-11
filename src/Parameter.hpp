@@ -95,7 +95,7 @@ enum class CompilerWrapper_CompilerTarget;
 
 #define BAMBU_OPTIONS                                                                                                  \
    (chaining)(chaining_algorithm)(constraints_file)(context_switch)(controller_architecture)(datapath_architecture)(   \
-       distram_threshold)(DSP_allocation_coefficient)(DSP_margin_combinational)(DSP_margin_pipelined)(                 \
+       distram_threshold)(DSP_allocation_coefficient)(DSP_margin_combinational)(DSP_margin_pipelined)(DSP_fracturing)( \
        estimate_logic_and_connections)(evaluation)(evaluation_mode)(evaluation_objectives)(experimental_setup)(        \
        export_core)(export_core_mode)(fsm_encoding)(fu_binding_algorithm)(generate_testbench)(generate_vcd)(hls_flow)( \
        hls_div)(hls_fpdiv)(interface)(interface_type)(additional_top)(data_bus_bitsize)(addr_bus_bitsize)(             \
