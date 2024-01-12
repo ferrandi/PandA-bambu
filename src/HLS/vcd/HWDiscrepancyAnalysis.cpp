@@ -35,8 +35,6 @@
  */
 #include "HWDiscrepancyAnalysis.hpp"
 
-#include "config_HAVE_ASSERTS.hpp"
-
 #include "Discrepancy.hpp"
 #include "Parameter.hpp"
 #include "basic_block.hpp"
@@ -58,6 +56,10 @@
 #include "structural_manager.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
+#include "tree_manager.hpp"
+#include "tree_reindex.hpp"
+
+#include "config_HAVE_ASSERTS.hpp"
 
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/tokenizer.hpp>
@@ -141,7 +143,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       for(const auto& fid2ctxtrace : Discr->c_control_flow_trace)
       {
          const auto f_id = fid2ctxtrace.first;
-         const std::string f_name = tree_helper::name_function(HLSMgr->get_tree_manager(), f_id);
+         const auto f_name = tree_helper::name_function(HLSMgr->get_tree_manager(), f_id);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->FUNCTION_ID " + STR(f_id) + ": " + f_name);
          for(const auto& ctx2trace : fid2ctxtrace.second)
          {
@@ -711,10 +713,10 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
    }
 #endif
 
-   const CustomOrderedSet<unsigned int> root_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   THROW_ASSERT(root_functions.size() == 1, "more than one root function is not supported");
-   unsigned int top_function = *(root_functions.begin());
-   structural_objectRef top_module = HLSMgr->get_HLS(top_function)->top->get_circ();
+   const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
+   THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
+   const auto top_id = GET_INDEX_CONST_NODE(HLSMgr->get_tree_manager()->GetFunction(top_symbols.front()));
+   const auto top_module = HLSMgr->get_HLS(top_id)->top->get_circ();
 
    // scope_id starts from 1 because 0 are the non-initialized ones
    size_t scope_id = 1;

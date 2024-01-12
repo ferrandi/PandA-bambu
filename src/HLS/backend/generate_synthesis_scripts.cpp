@@ -91,9 +91,9 @@ DesignFlowStep_Status GenerateSynthesisScripts::Exec()
 {
    const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
    THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
-   const auto top_id = HLSMgr->get_tree_manager()->GetFunction(top_symbols.front());
-   const auto top_hls = HLSMgr->get_HLS(GET_INDEX_CONST_NODE(top_id));
-   const auto FB = HLSMgr->CGetFunctionBehavior(GET_INDEX_CONST_NODE(top_id));
+   const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(top_symbols.front());
+   const auto top_hls = HLSMgr->get_HLS(GET_INDEX_CONST_NODE(top_fnode));
+   const auto FB = HLSMgr->CGetFunctionBehavior(GET_INDEX_CONST_NODE(top_fnode));
    HLSMgr->get_backend_flow()->GenerateSynthesisScripts(FB->CGetBehavioralHelper()->get_function_name(), top_hls->top,
                                                         HLSMgr->hdl_files, HLSMgr->aux_files);
    return DesignFlowStep_Status::SUCCESS;

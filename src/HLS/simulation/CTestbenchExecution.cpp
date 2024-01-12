@@ -106,10 +106,6 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Executing C testbench");
    // compute top function name and use it to setup the artificial main for cosimulation
-   const auto top_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   THROW_ASSERT(top_ids.size() == 1, "Multiple top functions");
-   const auto top_id = *(top_ids.begin());
-   const auto top_fname = HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->get_function_name();
    const auto is_discrepancy = c_backend_info->type == CBackendInformation::CB_DISCREPANCY_ANALYSIS;
    const auto default_compiler = parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
    // NOTE: starting from version 13 on it seems clang is not respecting the -fno-strict-aliasing flag generating

@@ -576,11 +576,11 @@ void HLSCWriter::WriteExtraCodeBeforeEveryMainCall()
 
 void HLSCWriter::WriteMainTestbench()
 {
-   THROW_ASSERT(HLSMgr->CGetCallGraphManager()->GetRootFunctions().size() == 1, "Multiple top functions not supported");
-   const auto top_id = *HLSMgr->CGetCallGraphManager()->GetRootFunctions().begin();
-   const auto top_fb = HLSMgr->CGetFunctionBehavior(top_id);
+   const auto top_symbols = Param->getOption<std::vector<std::string>>(OPT_top_functions_names);
+   THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
+   const auto top_fnode = TM->GetFunction(top_symbols.front());
+   const auto top_fb = HLSMgr->CGetFunctionBehavior(GET_INDEX_CONST_NODE(top_fnode));
    const auto top_bh = top_fb->CGetBehavioralHelper();
-   const auto top_fnode = TM->CGetTreeReindex(top_id);
    const auto top_fname = top_bh->get_function_name();
    const auto top_fname_mngl = top_bh->GetMangledFunctionName();
    const auto interface_type = Param->getOption<HLSFlowStep_Type>(OPT_interface_type);
@@ -645,7 +645,7 @@ void HLSCWriter::WriteMainTestbench()
 
    std::string top_decl;
    std::string gold_decl = "EXTERN_CDECL ";
-   std::string pp_decl = tree_helper::PrintType(TM, TM->CGetTreeReindex(top_id), false, true, false, nullptr,
+   std::string pp_decl = tree_helper::PrintType(TM, top_fnode, false, true, false, nullptr,
                                                 var_pp_functorConstRef(new std_var_pp_functor(top_bh))) +
                          ";\n";
    THROW_ASSERT(pp_decl.find(top_fname) != std::string::npos, "");
@@ -1023,7 +1023,7 @@ static size_t __m_call_count = 0;
 )");
 
    // write C code used to print initialization values for the HDL simulator's memory
-   WriteSimulatorInitMemory(top_id);
+   WriteSimulatorInitMemory(GET_INDEX_CONST_NODE(top_fnode));
 
    indented_output_stream->Append(top_decl);
    indented_output_stream->Append("{\n");
@@ -1153,10 +1153,10 @@ abort();
 
 void HLSCWriter::WriteFile(const std::string& file_name)
 {
-   const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   THROW_ASSERT(top_function_ids.size() == 1, "Multiple top function");
-   const auto function_id = *(top_function_ids.begin());
-   const auto BH = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
+   const auto top_symbols = Param->getOption<std::vector<std::string>>(OPT_top_functions_names);
+   THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
+   const auto top_fnode = TM->GetFunction(top_symbols.front());
+   const auto BH = HLSMgr->CGetFunctionBehavior(GET_INDEX_CONST_NODE(top_fnode))->CGetBehavioralHelper();
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
                   "-->C-based testbench generation for function " + BH->get_function_name() + ": " + file_name);
 

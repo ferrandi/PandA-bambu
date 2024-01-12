@@ -42,33 +42,23 @@
  */
 #include "generate_hdl.hpp"
 
+#include "BackendFlow.hpp"
+#include "HDL_manager.hpp"
+#include "Parameter.hpp"
 #include "behavioral_helper.hpp"
-#include "structural_manager.hpp"
-
+#include "call_graph_manager.hpp"
+#include "custom_set.hpp"
 #include "hls.hpp"
 #include "hls_constraints.hpp"
-#include "hls_manager.hpp"
-
-#include "BackendFlow.hpp"
-
-#include "Parameter.hpp"
-
-/// behavior include
-#include "call_graph_manager.hpp"
-
-/// design_flow_manager/backend/ToHDL includes
-#include "HDL_manager.hpp"
-
-/// HLS includes
 #include "hls_device.hpp"
 #include "hls_flow_step_factory.hpp"
+#include "hls_manager.hpp"
+#include "structural_manager.hpp"
+#include "tree_manager.hpp"
+#include "tree_reindex.hpp"
 
-/// STD include
-#include <string>
-
-/// STL includes
-#include "custom_set.hpp"
 #include <list>
+#include <string>
 #include <tuple>
 
 generate_hdl::generate_hdl(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
@@ -120,9 +110,13 @@ DesignFlowStep_Status generate_hdl::Exec()
    HDL_manager HM(HLSMgr, HLSMgr->get_HLS_device(), parameters);
    const auto file_name = parameters->getOption<std::string>(OPT_top_file);
    std::list<structural_objectRef> top_circuits;
-   const auto root_functions = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   std::transform(root_functions.begin(), root_functions.end(), std::back_inserter(top_circuits),
-                  [&](unsigned int top_function) { return HLSMgr->get_HLS(top_function)->top->get_circ(); });
+   const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
+   for(const auto& symbol : top_symbols)
+   {
+      const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(symbol);
+      top_circuits.push_back(HLSMgr->get_HLS(GET_INDEX_CONST_NODE(top_fnode))->top->get_circ());
+   }
+
    HM.hdl_gen(file_name, top_circuits, HLSMgr->hdl_files, HLSMgr->aux_files, false);
    return DesignFlowStep_Status::SUCCESS;
 }
