@@ -17,6 +17,7 @@
     <RelativeConnectionOffset value="2.0" />
     <OutputCarryConnectionRatio value="3" />
     <use_soft_64_mul value="1" />
+    <disable_extract_ternary_patterns value="1" />
   </device>
   <technology>
     <library>
