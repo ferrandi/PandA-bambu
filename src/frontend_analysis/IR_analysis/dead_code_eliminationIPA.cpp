@@ -161,8 +161,12 @@ DesignFlowStep_Status dead_code_eliminationIPA::Exec()
    fun_id_to_restartParm.clear();
    const auto TM = AppM->get_tree_manager();
    const auto CGM = AppM->CGetCallGraphManager();
-   auto interface_functions = CGM->GetRootFunctions();
+   CustomSet<unsigned int> interface_functions;
    {
+      const auto top_functions = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
+      std::transform(top_functions.begin(), top_functions.end(),
+                     std::inserter(interface_functions, interface_functions.end()),
+                     [&](const auto& fname) { return GET_INDEX_CONST_NODE(TM->GetFunction(fname)); });
       const auto addr_funcs = CGM->GetAddressedFunctions();
       interface_functions.insert(addr_funcs.begin(), addr_funcs.end());
    }

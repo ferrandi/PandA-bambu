@@ -50,6 +50,8 @@
 #include "hls_constraints.hpp"
 #include "hls_manager.hpp"
 #include "time_info.hpp"
+#include "tree_manager.hpp"
+#include "tree_reindex.hpp"
 #include "utility.hpp"
 
 SynthesisEvaluation::SynthesisEvaluation(const ParameterConstRef _Param, const HLS_managerRef _hls_mgr,
@@ -199,9 +201,10 @@ DesignFlowStep_Status SynthesisEvaluation::Exec()
          /// get the timing information after the synthesis
          time_infoRef time_m = HLSMgr->get_backend_flow()->get_timing_results();
          double minimum_period = time_m->get_execution_time();
-
-         double clock_period =
-             HLSMgr->get_HLS(*(HLSMgr->GetCallGraphManager()->GetRootFunctions().begin()))->HLS_C->get_clock_period();
+         const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
+         THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
+         const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(top_symbols.front());
+         double clock_period = HLSMgr->get_HLS(GET_INDEX_CONST_NODE(top_fnode))->HLS_C->get_clock_period();
          double slack = clock_period - minimum_period;
          if(parameters->getOption<bool>(OPT_timing_violation_abort) and slack < 0.0)
          {

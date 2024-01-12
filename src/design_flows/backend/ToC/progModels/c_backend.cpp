@@ -262,17 +262,19 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships,
                   const auto CGM = AppM->CGetCallGraphManager();
                   if(boost::num_vertices(*(CGM->CGetCallGraph())))
                   {
-                     const auto top_funs = CGM->GetRootFunctions();
-                     THROW_ASSERT(top_funs.size() == 1, "");
-                     const auto top_fu_id = *top_funs.begin();
+                     const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
+                     THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
+                     const auto top_fnode = AppM->get_tree_manager()->GetFunction(top_symbols.front());
                      const auto hls_step_factory =
                          GetPointer<const HLSFlowStepFactory>(DFMgr->CGetDesignFlowStepFactory("HLS"));
                      const auto hls_top_function = DFMgr->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(
-                         HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), top_fu_id));
+                         HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(),
+                         GET_INDEX_CONST_NODE(top_fnode)));
                      const auto hls_top_function_step =
                          hls_top_function ?
                              DFMgr->CGetDesignFlowGraph()->CGetDesignFlowStepInfo(hls_top_function)->design_flow_step :
-                             hls_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, top_fu_id);
+                             hls_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW,
+                                                                 GET_INDEX_CONST_NODE(top_fnode));
                      relationships.insert(hls_top_function_step);
                   }
                }

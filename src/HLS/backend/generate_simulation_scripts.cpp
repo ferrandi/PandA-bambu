@@ -37,48 +37,28 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-// include class header
 #include "generate_simulation_scripts.hpp"
 
-// include from ./
+#include "BackendFlow.hpp"
 #include "Parameter.hpp"
-
-/// behavior include
+#include "SimulationInformation.hpp"
+#include "SimulationTool.hpp"
+#include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
-
-/// circuit include
-#include "structural_manager.hpp"
-
-// include from HLS
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
 #include "hls.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
-
-// include from HLS/simulation
-#include "SimulationInformation.hpp"
-
-/// STD include
-#include <string>
-
-/// STL include
-#include "custom_set.hpp"
-#include <list>
-#include <tuple>
-
-// include from wrapper/synthesis
-#include "BackendFlow.hpp"
-
-// include from wrapper/simulation
-#include "SimulationTool.hpp"
-
-// include from tree
-#include "behavioral_helper.hpp"
+#include "structural_manager.hpp"
 #include "tree_helper.hpp"
-
-/// utility include
-#include "dbgPrintHelper.hpp"
+#include "tree_manager.hpp"
+#include "tree_reindex.hpp"
 #include "utility.hpp"
+
+#include <list>
+#include <string>
+#include <tuple>
 
 GenerateSimulationScripts::GenerateSimulationScripts(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                                                      const DesignFlowManagerConstRef _design_flow_manager)
@@ -119,12 +99,11 @@ GenerateSimulationScripts::ComputeHLSRelationships(const DesignFlowStep::Relatio
 
 DesignFlowStep_Status GenerateSimulationScripts::Exec()
 {
-   const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
-   const auto top_fun_id = *(top_function_ids.begin());
-
-   const hlsRef top_hls = HLSMgr->get_HLS(top_fun_id);
-   const std::string suffix = "_beh";
+   const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
+   THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
+   const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(top_symbols.front());
+   const auto top_hls = HLSMgr->get_HLS(GET_INDEX_CONST_NODE(top_fnode));
+   const auto suffix = "_beh";
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Generating simulation scripts");
    std::list<std::string> full_list;
    std::copy(HLSMgr->aux_files.begin(), HLSMgr->aux_files.end(), std::back_inserter(full_list));
@@ -139,7 +118,8 @@ DesignFlowStep_Status GenerateSimulationScripts::Exec()
 
    HLSMgr->RSim->sim_tool = SimulationTool::CreateSimulationTool(
        SimulationTool::to_sim_type(parameters->getOption<std::string>(OPT_simulator)), parameters, suffix,
-       HLSMgr->CGetFunctionBehavior(top_fun_id)->CGetBehavioralHelper()->GetMangledFunctionName(), inc_dirs);
+       HLSMgr->CGetFunctionBehavior(GET_INDEX_CONST_NODE(top_fnode))->CGetBehavioralHelper()->GetMangledFunctionName(),
+       inc_dirs);
 
    HLSMgr->RSim->sim_tool->GenerateSimulationScript(top_hls->top->get_circ()->get_id(), full_list);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Generated simulation scripts");
