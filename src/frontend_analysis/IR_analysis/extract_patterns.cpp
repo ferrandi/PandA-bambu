@@ -42,30 +42,24 @@
  *
  */
 
-// Header include
 #include "extract_patterns.hpp"
 
-// Behavior include
+#include "Parameter.hpp"
 #include "application_manager.hpp"
 #include "behavioral_helper.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "function_behavior.hpp"
-
-// Parameter include
-#include "Parameter.hpp"
-
-// STD include
-#include <cmath>
-#include <fstream>
-#include <string>
-
-// Tree include
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "hls_device.hpp"
+#include "hls_manager.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_reindex.hpp"
+#include <cmath>
+#include <fstream>
+#include <string>
 
 extract_patterns::extract_patterns(const ParameterConstRef _parameters, const application_managerRef _AppM,
                                    unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
@@ -149,6 +143,13 @@ DesignFlowStep_Status extract_patterns::InternalExec()
    if(parameters->IsParameter("disable-extract-patterns") &&
       parameters->GetParameter<unsigned int>("disable-extract-patterns") == 1)
    {
+      return DesignFlowStep_Status::UNCHANGED;
+   }
+   const auto hls_d = GetPointer<const HLS_manager>(AppM)->get_HLS_device();
+   if(hls_d->has_parameter("disable_extract_ternary_patterns") && hls_d->get_parameter<unsigned>("disable_extract_ternary_patterns"))
+   {
+      /// Now, the only patterns extracted are ternary.
+      /// So, this part needs to be changed in case other patterns will be added.
       return DesignFlowStep_Status::UNCHANGED;
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, " --------- EXTRACT_PATTERNS ---------- ");
