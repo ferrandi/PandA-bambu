@@ -244,20 +244,20 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
       {
          auto format = SplitString(opt, "*");
 
-         const auto f_index = [&]() -> auto
-         {
+         const auto f_index = [&]() {
             if(format[0] == "@")
             {
-               if(AppM->CGetCallGraphManager()->GetRootFunctions().size() > 1)
+               const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
+               THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
+               if(top_symbols.size() > 1)
                {
-                  THROW_WARNING("Multiple top functions defined, @ is replaced with first.");
+                  THROW_WARNING("Multiple top functions defined, @ is replaced with first one.");
                }
-               return *AppM->CGetCallGraphManager()->GetRootFunctions().begin();
+               format[0] = top_symbols.front();
             }
             const auto f_node = TreeM->GetFunction(format[0]);
-            return f_node ? f_node->index : 0;
-         }
-         ();
+            return f_node ? GET_INDEX_CONST_NODE(f_node) : 0;
+         }();
 
          if(!f_index)
          {

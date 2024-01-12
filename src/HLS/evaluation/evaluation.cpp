@@ -56,6 +56,8 @@
 #include "hls_flow_step_factory.hpp"
 #include "hls_manager.hpp"
 #include "string_manipulation.hpp"
+#include "tree_manager.hpp"
+#include "tree_reindex.hpp"
 #include "utility.hpp"
 #include "xml_document.hpp"
 #include "xml_helper.hpp"
@@ -383,7 +385,6 @@ DesignFlowStep_Status Evaluation::Exec()
    if(bench_name == "" || !parameters->IsParameter("simple-benchmark-name") ||
       parameters->GetParameter<int>("simple-benchmark-name") == 0)
    {
-      const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
 #if HAVE_TASTE
       if(parameters->getOption<bool>(OPT_generate_taste_architecture))
       {
@@ -426,9 +427,10 @@ DesignFlowStep_Status Evaluation::Exec()
          }
          else
          {
-            THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
-            const auto top_fun_id = *(top_function_ids.begin());
-            const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(top_fun_id);
+            const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
+            THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
+            const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(top_symbols.front());
+            const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(GET_INDEX_CONST_NODE(top_fnode));
             if(bench_name == "")
             {
                bench_name += FB->CGetBehavioralHelper()->get_function_name();
@@ -444,8 +446,8 @@ DesignFlowStep_Status Evaluation::Exec()
    }
 
    const auto bambu_args = parameters->getOption<std::string>(OPT_cat_args);
-   const std::string bambu_version = parameters->PrintVersion();
-   const std::string current_time = TimeStamp::GetCurrentTimeStamp();
+   const auto bambu_version = parameters->PrintVersion();
+   const auto current_time = TimeStamp::GetCurrentTimeStamp();
    WRITE_XNVM2(STR_XML_bambu_results_bambu_args, bambu_args, nodeRoot);
    WRITE_XNVM2(STR_XML_bambu_results_bambu_version, bambu_version, nodeRoot);
    WRITE_XNVM2(STR_XML_bambu_results_timestamp, current_time, nodeRoot);

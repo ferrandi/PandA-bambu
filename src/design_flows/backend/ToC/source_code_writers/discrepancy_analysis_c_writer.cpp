@@ -264,11 +264,11 @@ exit(1);
 
 void DiscrepancyAnalysisCWriter::WriteMainTestbench()
 {
-   THROW_ASSERT(HLSMgr->CGetCallGraphManager()->GetRootFunctions().size() == 1, "Multiple top functions not supported");
-   const auto top_id = *HLSMgr->CGetCallGraphManager()->GetRootFunctions().begin();
-   const auto top_fb = HLSMgr->CGetFunctionBehavior(top_id);
+   const auto top_symbols = Param->getOption<std::vector<std::string>>(OPT_top_functions_names);
+   THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
+   const auto top_fnode = TM->GetFunction(top_symbols.front());
+   const auto top_fb = HLSMgr->CGetFunctionBehavior(GET_INDEX_CONST_NODE(top_fnode));
    const auto top_bh = top_fb->CGetBehavioralHelper();
-   const auto top_fnode = TM->CGetTreeReindex(top_id);
    const auto top_fname = top_bh->get_function_name();
    const auto return_type = tree_helper::GetFunctionReturnType(top_fnode);
 
@@ -914,10 +914,10 @@ long long unsigned int __bambu_discrepancy_temp_check_int_ssa = 0;
 
 void DiscrepancyAnalysisCWriter::WriteExtraInitCode()
 {
-   const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   THROW_ASSERT(top_function_ids.size() == 1, "Multiple top function");
-   const auto top_fun_id = *(top_function_ids.begin());
-   const auto fun_behavior = HLSMgr->CGetFunctionBehavior(top_fun_id);
+   const auto top_symbols = Param->getOption<std::vector<std::string>>(OPT_top_functions_names);
+   THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
+   const auto top_fnode = TM->GetFunction(top_symbols.front());
+   const auto fun_behavior = HLSMgr->CGetFunctionBehavior(GET_INDEX_CONST_NODE(top_fnode));
    const auto behavioral_helper = fun_behavior->CGetBehavioralHelper();
    Discrepancy->c_trace_filename = std::filesystem::path(c_backend_info->out_filename).parent_path().string() +
                                    behavioral_helper->get_function_name() + "_discrepancy.data";

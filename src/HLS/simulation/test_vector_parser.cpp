@@ -57,6 +57,8 @@
 #include "hls_manager.hpp"
 #include "string_manipulation.hpp"
 #include "tree_helper.hpp"
+#include "tree_manager.hpp"
+#include "tree_reindex.hpp"
 #include "utility.hpp"
 #include "xml_document.hpp"
 #include "xml_dom_parser.hpp"
@@ -182,10 +184,10 @@ TestVectorParser::ParseXMLFile(const std::filesystem::path& input_xml_filename) 
 {
    const auto CGM = HLSMgr->CGetCallGraphManager();
    THROW_ASSERT(boost::num_vertices(*(CGM->CGetCallGraph())) != 0, "The call graph has not been computed yet");
-   const auto top_function_ids = CGM->GetRootFunctions();
-   THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
-   const auto top_id = *(top_function_ids.begin());
-   const auto BH = HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper();
+   const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
+   THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
+   const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(top_symbols.front());
+   const auto BH = HLSMgr->CGetFunctionBehavior(GET_INDEX_CONST_NODE(top_fnode))->CGetBehavioralHelper();
 
    if(!std::filesystem::exists(input_xml_filename))
    {

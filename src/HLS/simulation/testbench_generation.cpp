@@ -171,10 +171,10 @@ bool TestbenchGeneration::HasToBeExecuted() const
 
 void TestbenchGeneration::Initialize()
 {
-   const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-   THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
-   const auto top_function_id = *(top_function_ids.begin());
-   const auto top_hls = HLSMgr->get_HLS(top_function_id);
+   const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
+   THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
+   const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(top_symbols.front());
+   const auto top_hls = HLSMgr->get_HLS(GET_INDEX_CONST_NODE(top_fnode));
    cir = top_hls->top->get_circ();
    THROW_ASSERT(GetPointer<const module>(cir), "Not a module");
    mod = GetPointer<const module>(cir);
@@ -222,9 +222,9 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
    // Add top module wrapper
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating top level interface wrapper...");
    const auto top_id = [&]() {
-      const auto top_fsymbols = parameters->getOption<std::string>(OPT_top_functions_names);
-      THROW_ASSERT(top_fsymbols.find(STR_CST_string_separator) == std::string::npos, "Expected single top function.");
-      const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(top_fsymbols);
+      const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
+      THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
+      const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(top_symbols.front());
       return GET_INDEX_CONST_NODE(top_fnode);
    }();
    const auto top_fb = HLSMgr->CGetFunctionBehavior(top_id);
