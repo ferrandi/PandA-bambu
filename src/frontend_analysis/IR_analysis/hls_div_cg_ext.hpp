@@ -69,6 +69,7 @@ class hls_div_cg_ext : public FunctionFrontendFlowStep
    const tree_managerRef TreeM;
 
    bool use64bitMul;
+   bool use32bitMul;
 
    /**
     * Recursive examine tree node
