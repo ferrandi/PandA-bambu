@@ -74,6 +74,8 @@ CustomSet<unsigned int> FunctionCallOpt::never_inline;
 CustomMap<unsigned int, CustomSet<std::tuple<unsigned int, FunctionOptType>>> FunctionCallOpt::opt_call;
 size_t FunctionCallOpt::inline_max_cost = DEAFULT_MAX_INLINE_CONST;
 
+static const std::set<std::string> inlinedFunctionByDefault{"__mul32", "__umul32", "__mul64", "__umul64"};
+
 static CustomUnorderedMap<kind, size_t> op_costs = {
     {call_expr_K, 8},          {mult_expr_K, 3},      {widen_mult_expr_K, 3},   {widen_mult_hi_expr_K, 3},
     {widen_mult_lo_expr_K, 3}, {trunc_div_expr_K, 3}, {exact_div_expr_K, 3},    {round_div_expr_K, 3},
@@ -191,6 +193,14 @@ void FunctionCallOpt::Initialize()
             {
                INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Required inline function not found: " + fname);
             }
+         }
+      }
+      for(const auto& defaultInlineFunction : inlinedFunctionByDefault)
+      {
+         const auto fnode = TM->GetFunction(defaultInlineFunction);
+         if(fnode)
+         {
+            always_inline.insert(fnode->index);
          }
       }
       const auto HLSMgr = GetPointer<HLS_manager>(AppM);

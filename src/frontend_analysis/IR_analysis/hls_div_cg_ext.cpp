@@ -92,7 +92,8 @@ hls_div_cg_ext::hls_div_cg_ext(const ParameterConstRef _parameters, const applic
                                unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, HLS_DIV_CG_EXT, _design_flow_manager, _parameters),
       TreeM(_AppM->get_tree_manager()),
-      use64bitMul(false)
+      use64bitMul(false),
+      use32bitMul(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -140,37 +141,47 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
 
    const auto curr_tn = TreeM->GetTreeNode(function_id);
    const auto fname = tree_helper::GetFunctionName(TreeM, curr_tn);
+   const auto fd = GetPointerS<function_decl>(curr_tn);
+   const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+
+   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_device(), "unexpected condition");
+   const auto hls_d = GetPointer<const HLS_manager>(AppM)->get_HLS_device();
    if(fname != "__umul64" && fname != "__mul64")
    {
-      const auto fd = GetPointerS<function_decl>(curr_tn);
-      const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
-
-      THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_device(), "unexpected condition");
-      const auto hls_d = GetPointer<const HLS_manager>(AppM)->get_HLS_device();
-      if(hls_d->has_parameter("use_soft_64_mul") && hls_d->get_parameter<size_t>("use_soft_64_mul"))
+      if((hls_d->has_parameter("use_soft_64_mul") && hls_d->get_parameter<size_t>("use_soft_64_mul")) ||
+         (parameters->isOption(OPT_DSP_fracturing) && parameters->getOption<std::string>(OPT_DSP_fracturing) == "16") ||
+         (parameters->isOption(OPT_DSP_fracturing) && parameters->getOption<std::string>(OPT_DSP_fracturing) == "32"))
       {
          use64bitMul = true;
       }
-
-      bool modified = false;
-      for(const auto& idx_bb : sl->list_of_bloc)
+   }
+   if(fname != "__umul32" && fname != "__mul32")
+   {
+      if((hls_d->has_parameter("use_soft_32_mul") && hls_d->get_parameter<size_t>("use_soft_32_mul")) ||
+         (parameters->isOption(OPT_DSP_fracturing) && parameters->getOption<std::string>(OPT_DSP_fracturing) == "16"))
       {
-         const auto& BB = idx_bb.second;
-         for(const auto& stmt : BB->CGetStmtList())
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "-->Examine " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
-            modified |= recursive_examinate(stmt, stmt, tree_man);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "<--Examined " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
-         }
+         use32bitMul = true;
       }
+   }
 
-      if(modified)
+   bool modified = false;
+   for(const auto& idx_bb : sl->list_of_bloc)
+   {
+      const auto& BB = idx_bb.second;
+      for(const auto& stmt : BB->CGetStmtList())
       {
-         function_behavior->UpdateBBVersion();
-         return DesignFlowStep_Status::SUCCESS;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "-->Examine " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
+         modified |= recursive_examinate(stmt, stmt, tree_man);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--Examined " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
       }
+   }
+
+   if(modified)
+   {
+      function_behavior->UpdateBBVersion();
+      return DesignFlowStep_Status::SUCCESS;
    }
    return DesignFlowStep_Status::UNCHANGED;
 }
@@ -194,39 +205,6 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
       case call_expr_K:
       case aggr_init_expr_K:
       {
-         const auto ce = GetPointerS<call_expr>(curr_tn);
-         if(use64bitMul)
-         {
-            const auto fnode = [&]() {
-               if(GET_CONST_NODE(ce->fn)->get_kind() == addr_expr_K)
-               {
-                  return GetPointerS<const unary_expr>(GET_CONST_NODE(ce->fn))->op;
-               }
-               THROW_ASSERT(GET_CONST_NODE(ce->fn)->get_kind() == function_decl_K, "");
-               return ce->fn;
-            }();
-            const auto fname = tree_helper::GetFunctionName(TreeM, fnode);
-
-            if(fname == "__umul64" || fname == "__mul64")
-            {
-               THROW_ASSERT(ce->args.size() == 2, "unexpected condition");
-               const auto bitsize0 = ceil_pow2(tree_helper::Size(ce->args.at(0)));
-               const auto bitsize1 = ceil_pow2(tree_helper::Size(ce->args.at(1)));
-               const auto bitsize = std::max(bitsize0, bitsize1);
-               if(bitsize <= 32)
-               {
-                  const auto expr_type = tree_helper::CGetType(ce->args.at(0));
-                  const auto me = tree_man->create_binary_operation(expr_type, ce->args.at(0), ce->args.at(1),
-                                                                    BUILTIN_SRCP, mult_expr_K);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced " + STR(current_statement));
-                  TreeM->ReplaceTreeNode(current_statement, current_tree_node, me);
-                  AppM->GetCallGraphManager()->RemoveCallPoint(function_id, GET_INDEX_CONST_NODE(fnode),
-                                                               GET_INDEX_CONST_NODE(current_statement));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---      -> " + STR(current_statement));
-                  modified = true;
-               }
-            }
-         }
          break;
       }
       case gimple_assign_K:
@@ -327,16 +305,28 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---      -> " + STR(current_statement));
             modified = true;
          }
-         else if(be_type == mult_expr_K && use64bitMul)
+         else if(be_type == mult_expr_K)
          {
             const auto expr_type = tree_helper::CGetType(be->op0);
             const auto bitsize0 = ceil_pow2(tree_helper::Size(be->op0));
             const auto bitsize1 = ceil_pow2(tree_helper::Size(be->op1));
             const auto bitsize = std::max(bitsize0, bitsize1);
-            if(GET_CONST_NODE(expr_type)->get_kind() == integer_type_K && bitsize == 64)
+            auto doTransf = false;
+            std::string fname;
+            if(use64bitMul && GET_CONST_NODE(expr_type)->get_kind() == integer_type_K && bitsize == 64)
             {
                const auto unsignedp = tree_helper::IsUnsignedIntegerType(expr_type);
-               const std::string fname = unsignedp ? "__umul64" : "__mul64";
+               fname = unsignedp ? "__umul64" : "__mul64";
+               doTransf = true;
+            }
+            if(use32bitMul && GET_CONST_NODE(expr_type)->get_kind() == integer_type_K && bitsize == 32)
+            {
+               const auto unsignedp = tree_helper::IsUnsignedIntegerType(expr_type);
+               fname = unsignedp ? "__umul32" : "__mul32";
+               doTransf = true;
+            }
+            if(doTransf)
+            {
                const auto called_function = TreeM->GetFunction(fname);
                THROW_ASSERT(called_function, "The library miss this function " + fname);
                THROW_ASSERT(AppM->get_tree_manager()->get_implementation_node(called_function->index) != 0,

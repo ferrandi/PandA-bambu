@@ -3,7 +3,7 @@ SUBDIRS = libm libmdpi softfloat soft-fp pthread ac_types ac_math
 DIST_SUBDIRS = libm libmdpi softfloat soft-fp pthread ac_types ac_math
 EXTRA_DIST= COPYING.LIB README_PANDA.txt bambu_macros.h
 common_libbambu_src = memcmp.c memcpy.c memmove.c memset.c memmgr.c puts.c byteswap.c read.c write.c assert.c\
-                      mul64.c \
+                      mul64.c mul32.c \
                       string/stpcpy.c string/stpncpy.c\
                       string/strcasecmp.c string/strcasestr.c string/strcat.c string/strchr.c string/strchrnul.c\
                       string/strcmp.c string/strcpy.c string/strcspn.c string/strdup.c string/strlen.c string/strncasecmp.c\
