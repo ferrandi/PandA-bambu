@@ -121,7 +121,7 @@ enum class CompilerWrapper_CompilerTarget;
        xilinx_root)(xilinx_settings)(xilinx_vivado_settings)(xilinx_glbl)(mentor_root)(mentor_modelsim_bin)(           \
        mentor_optimizer)(verilator)(verilator_timescale_override)(verilator_parallel)(altera_root)(quartus_settings)(  \
        quartus_13_settings)(quartus_13_64bit)(nanoxplore_root)(nanoxplore_settings)(nanoxplore_bypass)(                \
-       shared_input_registers)(inline_functions)(constraints_functions)
+       shared_input_registers)(inline_functions)(constraints_functions)(axi_burst_type)
 
 #define FRAMEWORK_OPTIONS                                                                                            \
    (benchmark_name)(cat_args)(find_max_transformations)(max_transformations)(compatible_compilers)(compute_size_of)( \
