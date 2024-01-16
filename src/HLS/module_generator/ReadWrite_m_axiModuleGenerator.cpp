@@ -46,14 +46,13 @@
  */
 
 #include "ReadWrite_m_axiModuleGenerator.hpp"
-
+#include "BambuParameter.hpp"
+#include "hls.hpp"
+#include "hls_device.hpp"
+#include "hls_manager.hpp"
 #include "language_writer.hpp"
-
-/* To access module parameters */
-#include "structural_objects.hpp"
-
-/* For integer logarithms */
 #include "math_function.hpp"
+#include "structural_objects.hpp"
 
 enum in_port
 {
@@ -123,9 +122,8 @@ ReadWrite_m_axiModuleGenerator::ReadWrite_m_axiModuleGenerator(const HLS_manager
 {
 }
 
-void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_objectRef mod,
-                                                  unsigned int /* function_id */, vertex /* op_v */,
-                                                  const HDLWriter_Language /* language */,
+void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_objectRef mod, unsigned int function_id,
+                                                  vertex /* op_v */, const HDLWriter_Language /* language */,
                                                   const std::vector<ModuleGenerator::parameter>& /* _p */,
                                                   const std::vector<ModuleGenerator::parameter>& _ports_in,
                                                   const std::vector<ModuleGenerator::parameter>& _ports_out,
@@ -135,6 +133,52 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_
    THROW_ASSERT(_ports_out.size() >= o_last, "");
    const auto addr_bitsize = STR(_ports_out[o_awaddr].type_size);
    const auto data_bitsize = STR(_ports_out[o_wdata].type_size);
+
+   auto AXI_conversion = [&](unsigned int type) -> std::string {
+      if(type == 0)
+      {
+         return "FIXED";
+      }
+      else if(type == 1)
+      {
+         return "INCREMENTAL";
+      }
+      else
+      {
+         return "unsupported AXI burst type";
+      }
+   };
+
+   unsigned int axi_burst_type = 0U;
+
+   const auto HLS = HLSMgr->get_HLS(function_id);
+   const auto Param = HLS->Param;
+   const auto use_specific_axi_burst_type = Param->isOption(OPT_axi_burst_type);
+   const unsigned int requested_axi_burst_type =
+       use_specific_axi_burst_type ? Param->getOption<unsigned int>(OPT_axi_burst_type) : 0U;
+   if(use_specific_axi_burst_type)
+   {
+      axi_burst_type = requested_axi_burst_type;
+   }
+
+   const auto hls_d = HLSMgr->get_HLS_device();
+   const auto use_device_axi_burst_type = hls_d->has_parameter("axi_burst_type");
+   const unsigned int device_axi_burst_type =
+       use_device_axi_burst_type ? hls_d->get_parameter<unsigned int>("axi_burst_type") : 0U;
+   if(use_device_axi_burst_type)
+   {
+      axi_burst_type = device_axi_burst_type;
+   }
+
+   if(use_device_axi_burst_type && use_specific_axi_burst_type && device_axi_burst_type != requested_axi_burst_type)
+   {
+      THROW_WARNING("User required " + AXI_conversion(requested_axi_burst_type) +
+                    " axi burst but the requested board needs " + AXI_conversion(device_axi_burst_type));
+   }
+   else if(use_specific_axi_burst_type)
+   {
+      THROW_WARNING("The requested board needs " + AXI_conversion(device_axi_burst_type) + " AXI burst type");
+   }
 
    unsigned long long line_count = 0;
 
@@ -249,10 +293,11 @@ initial begin
   axi_arvalid = 0;
   axi_rready = 0;
   acc_rdata = 0;
-  awlen = 0;
-  awburst = 0;
-  arlen = 0;
-  arburst = 0;
+  awlen = 0;)";
+      out << "awburst = " + STR(axi_burst_type) + ";\n"
+          << "arlen = 0;\n"
+          << "arburst = " + STR(axi_burst_type) + ";\n"
+          << R"(
 end
   
 always @(*) begin
