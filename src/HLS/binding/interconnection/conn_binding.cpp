@@ -276,8 +276,7 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
 
 #ifndef NDEBUG
-   const HLSFlowStep_Type connection_type =
-       HLS->Param->getOption<HLSFlowStep_Type>(OPT_datapath_interconnection_algorithm);
+   const auto connection_type = HLS->Param->getOption<HLSFlowStep_Type>(OPT_datapath_interconnection_algorithm);
    /// up to now, circuit is general about interconnections. Now, proper interconnection architecture will be executed
    THROW_ASSERT(connection_type == HLSFlowStep_Type::MUX_INTERCONNECTION_BINDING, "Unexpected interconnection binding");
 #endif
@@ -285,11 +284,11 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
    mux_connection(HLS, SM);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
 
-   const structural_objectRef circuit = SM->get_circ();
+   const auto circuit = SM->get_circ();
    std::map<unsigned long long, structural_objectRef> null_values;
    for(unsigned int i = 0; i < GetPointer<module>(circuit)->get_internal_objects_size(); i++)
    {
-      structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
+      auto curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
       if(!GetPointer<module>(curr_gate) || GetPointer<module>(curr_gate)->get_id() == "scheduler_kernel")
       {
          continue;
@@ -297,7 +296,6 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
       for(unsigned int j = 0; j < GetPointer<module>(curr_gate)->get_in_port_size(); j++)
       {
          structural_objectRef port_i = GetPointer<module>(curr_gate)->get_in_port(j);
-         // std::cerr << "port_i " << port_i->get_path() << " of size " << GET_TYPE_SIZE(port_i) << std::endl;
          if((port_i->get_kind() == port_o_K || port_i->get_kind() == port_vector_o_K) &&
             GetPointer<port_o>(port_i)->find_bounded_object())
          {
@@ -307,19 +305,16 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
          {
             continue;
          }
-         // std::cerr << "  empty\n";
          if(port_i->get_kind() == port_vector_o_K)
          {
             for(unsigned int p = 0; p < GetPointer<port_o>(port_i)->get_ports_size(); ++p)
             {
-               structural_objectRef port_d = GetPointer<port_o>(port_i)->get_port(p);
-               auto bw = GET_TYPE_SIZE(port_d);
+               const auto port_d = GetPointer<port_o>(port_i)->get_port(p);
+               const auto bw = GET_TYPE_SIZE(port_d);
                if(null_values.find(bw) == null_values.end())
                {
-                  structural_type_descriptorRef bool_type =
-                      structural_type_descriptorRef(new structural_type_descriptor("bool", bw));
-                  structural_objectRef const_obj =
-                      SM->add_constant("null_value_" + STR(bw), circuit, bool_type, STR(0));
+                  structural_type_descriptorRef bool_type(new structural_type_descriptor("bool", bw));
+                  const auto const_obj = SM->add_constant("null_value_" + STR(bw), circuit, bool_type, STR(0));
                   null_values[bw] = const_obj;
                }
                if(!GetPointer<port_o>(port_d)->find_bounded_object())
@@ -333,9 +328,8 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
             auto bw = GET_TYPE_SIZE(port_i);
             if(null_values.find(bw) == null_values.end())
             {
-               structural_type_descriptorRef bool_type =
-                   structural_type_descriptorRef(new structural_type_descriptor("bool", bw));
-               structural_objectRef const_obj = SM->add_constant("null_value_" + STR(bw), circuit, bool_type, STR(0));
+               structural_type_descriptorRef bool_type(new structural_type_descriptor("bool", bw));
+               const auto const_obj = SM->add_constant("null_value_" + STR(bw), circuit, bool_type, STR(0));
                null_values[bw] = const_obj;
             }
             SM->add_connection(port_i, null_values[bw]);
@@ -343,7 +337,7 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
       }
       for(unsigned int j = 0; j < GetPointer<module>(curr_gate)->get_out_port_size(); j++)
       {
-         structural_objectRef port_out = GetPointer<module>(curr_gate)->get_out_port(j);
+         const auto port_out = GetPointer<module>(curr_gate)->get_out_port(j);
          if((port_out->get_kind() == port_o_K || port_out->get_kind() == port_vector_o_K) &&
             GetPointer<port_o>(port_out)->find_bounded_object())
          {
@@ -358,12 +352,12 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
          {
             for(unsigned int p = 0; p < GetPointer<port_o>(port_out)->get_ports_size(); ++p)
             {
-               structural_objectRef port_d = GetPointer<port_o>(port_out)->get_port(p);
+               const auto port_d = GetPointer<port_o>(port_out)->get_port(p);
                if(!GetPointer<port_o>(port_d)->find_bounded_object())
                {
-                  std::string name = "null_out_signal_" + port_out->get_owner()->get_id() + "_" + port_out->get_id() +
-                                     "_" + port_d->get_id();
-                  structural_objectRef sign = SM->add_sign(name, circuit, port_d->get_typeRef());
+                  const auto name = "null_out_signal_" + port_out->get_owner()->get_id() + "_" + port_out->get_id() +
+                                    "_" + port_d->get_id();
+                  const auto sign = SM->add_sign(name, circuit, port_d->get_typeRef());
                   SM->add_connection(port_d, sign);
                }
             }

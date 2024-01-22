@@ -553,14 +553,12 @@ unsigned int CallGraphManager::get_function(vertex node) const
 
 CustomSet<unsigned int> CallGraphManager::get_called_by(unsigned int index) const
 {
-   if(called_by.find(index) != called_by.end())
+   const auto it = called_by.find(index);
+   if(it != called_by.end())
    {
-      return called_by.at(index);
+      return it->second;
    }
-   else
-   {
-      return CustomOrderedSet<unsigned int>();
-   }
+   return CustomSet<unsigned int>();
 }
 
 CustomSet<unsigned int> CallGraphManager::get_called_by(const OpGraphConstRef cfg, const vertex& caller) const

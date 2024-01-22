@@ -149,7 +149,7 @@ module_interface::ComputeHLSRelationships(const DesignFlowStep::RelationshipType
 void module_interface::add_sign(const structural_managerRef SM, const structural_objectRef sig1,
                                 const structural_objectRef sig2, const std::string& sig_name)
 {
-   structural_objectRef sig = SM->add_sign(sig_name, SM->get_circ(), sig1->get_typeRef());
+   auto sig = SM->add_sign(sig_name, SM->get_circ(), sig1->get_typeRef());
    SM->add_connection(sig, sig1);
    SM->add_connection(sig, sig2);
 }
@@ -158,7 +158,7 @@ void module_interface::add_sign_vector(const structural_managerRef SM, const str
                                        const structural_objectRef sig2, const std::string& sig_name)
 {
    THROW_ASSERT(GetPointer<port_o>(sig1)->get_ports_size(), "");
-   structural_objectRef sig =
+   auto sig =
        SM->add_sign_vector(sig_name, GetPointer<port_o>(sig1)->get_ports_size(), SM->get_circ(), sig1->get_typeRef());
    SM->add_connection(sig, sig1);
    SM->add_connection(sig, sig2);
