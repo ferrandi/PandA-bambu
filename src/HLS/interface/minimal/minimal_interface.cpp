@@ -42,6 +42,7 @@
  *
  */
 #include "minimal_interface.hpp"
+
 #include "Parameter.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
@@ -65,6 +66,7 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+
 #include <list>
 #include <string>
 #include <utility>
