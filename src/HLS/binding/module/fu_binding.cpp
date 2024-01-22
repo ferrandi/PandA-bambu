@@ -822,7 +822,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       const auto fu_type_id = m.first;
       auto var = m.second;
       std::string name;
-      std::string fun_unit_name = allocation_information->get_fu_name(fu_type_id).first;
+      const auto fun_unit_name = allocation_information->get_fu_name(fu_type_id).first;
       if(allocation_information->is_direct_access_memory_unit(fu_type_id))
       {
          name = "array_" + STR(var);
@@ -899,20 +899,20 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    for(auto wu = wrapped_units.begin(); wu != wrapped_units.end(); ++wu)
    {
       has_resource_sharing_p = true;
-      std::string fun_unit_name = allocation_information->get_fu_name(wu->first).first;
-      const technology_nodeRef fu_lib_unit = allocation_information->get_fu(wu->first);
-      THROW_ASSERT(fu_lib_unit, "functional unit not available: check the library given. Component: " + fun_unit_name);
-      structural_objectRef curr_gate =
+      const auto fu_lib_unit = allocation_information->get_fu(wu->first);
+      THROW_ASSERT(fu_lib_unit, "functional unit not available: check the library given. Component: " +
+                                    allocation_information->get_fu_name(wu->first).first);
+      const auto curr_gate =
           add_gate(HLSMgr, HLS, fu_lib_unit, wu->second + "_instance", OpVertexSet(op_graph), clock_port, reset_port);
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                     "Wrapped Unit: " + allocation_information->get_string_name(wu->first));
-      const OpVertexSet& mapped_operations = get_operations(wu->first, 0);
+      const auto mapped_operations = get_operations(wu->first, 0);
       specialise_fu(HLSMgr, HLS, curr_gate, wu->first, mapped_operations, 0);
       check_parametrization(curr_gate);
       fun_obj[wu->first] = curr_gate;
       kill_proxy_memory_units(memory_units, curr_gate, var_call_sites_rel, reverse_memory_units);
       kill_proxy_function_units(wrapped_units, curr_gate, fun_call_sites_rel, reverse_function_units);
-      bool added_memory_element = manage_module_ports(HLSMgr, HLS, SM, curr_gate, 0);
+      const auto added_memory_element = manage_module_ports(HLSMgr, HLS, SM, curr_gate, 0);
       if(added_memory_element)
       {
          memory_modules.push_back(curr_gate);
@@ -935,9 +935,8 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
                      "-->Functional Unit: " + allocation_information->get_string_name(i));
       if(allocation_information->is_return(i))
       {
-         structural_objectRef obj = circuit->find_member(RETURN_PORT_NAME, port_o_K, circuit);
-         generic_objRef module_obj = get(i, 0);
-         module_obj->set_structural_obj(obj);
+         const auto obj = circuit->find_member(RETURN_PORT_NAME, port_o_K, circuit);
+         get(i, 0)->set_structural_obj(obj);
       }
 
       if(!allocation_information->has_to_be_synthetized(i))
@@ -945,14 +944,14 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--It has not to be synthesized");
          continue;
       }
-      bool is_multichannel = allocation_information->get_number_channels(i) > 1;
+      const auto is_multichannel = allocation_information->get_number_channels(i) > 1;
 
       for(unsigned int num = 0; num < get_number(i); num++)
       {
-         generic_objRef module_obj = get(i, num);
+         const auto module_obj = get(i, num);
          THROW_ASSERT(module_obj,
                       "module missing: " + allocation_information->get_fu_name(i).first + " instance " + STR(num));
-         std::string name = module_obj->get_string();
+         const auto name = module_obj->get_string();
 
          structural_objectRef curr_gate;
          if(allocation_information->is_memory_unit(i))
@@ -965,10 +964,10 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          }
          else if(is_multichannel && (num % allocation_information->get_number_channels(i)) != 0)
          {
-            auto n_channels = allocation_information->get_number_channels(i);
-            generic_objRef true_module_obj = get(i, (num / n_channels) * n_channels);
+            const auto n_channels = allocation_information->get_number_channels(i);
+            const auto true_module_obj = get(i, (num / n_channels) * n_channels);
             curr_gate = true_module_obj->get_structural_obj();
-            const OpVertexSet mapped_operations = get_operations(i, num);
+            const auto mapped_operations = get_operations(i, num);
             has_resource_sharing_p = has_resource_sharing_p || (mapped_operations.size() > 1);
             const auto ar_var =
                 allocation_information->is_proxy_memory_unit(i) ? allocation_information->get_proxy_memory_var(i) : 0;
@@ -977,8 +976,8 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          }
          else
          {
-            const technology_nodeRef fu_lib_unit = allocation_information->get_fu(i);
-            const OpVertexSet mapped_operations = get_operations(i, num);
+            const auto fu_lib_unit = allocation_information->get_fu(i);
+            const auto mapped_operations = get_operations(i, num);
             THROW_ASSERT(fu_lib_unit, "functional unit not available: check the library given. Component: " +
                                           allocation_information->get_fu_name(i).first);
             curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, name,
@@ -997,10 +996,10 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             if(current_op == BUILTIN_WAIT_CALL)
             {
                has_resource_sharing_p = true;
-               const vertex site = *mapped_operations.begin();
-               auto vertex_node_id = op_graph->CGetOpNodeInfo(site)->GetNodeId();
+               const auto site = *mapped_operations.begin();
+               const auto vertex_node_id = op_graph->CGetOpNodeInfo(site)->GetNodeId();
 
-               auto callSiteMemorySym = HLSMgr->Rmem->get_symbol(vertex_node_id, HLS->functionId);
+               const auto callSiteMemorySym = HLSMgr->Rmem->get_symbol(vertex_node_id, HLS->functionId);
                memory::add_memory_parameter(HLS->datapath, callSiteMemorySym->get_symbol_name(),
                                             STR(callSiteMemorySym->get_address()));
             }
@@ -1015,17 +1014,17 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
                std::string var_name = "_" + STR(proxy_memory_units.find(i)->second);
 
                /// rename proxy ports
-               structural_objectRef port_proxy_in1 = curr_gate->find_member("proxy_in1", port_o_K, curr_gate);
+               const auto port_proxy_in1 = curr_gate->find_member("proxy_in1", port_o_K, curr_gate);
                port_proxy_in1->set_id(port_proxy_in1->get_id() + var_name);
-               auto is_dual = allocation_information->is_dual_port_memory(i);
+               const auto is_dual = allocation_information->is_dual_port_memory(i);
                if(is_dual)
                {
-                  structural_objectRef port_proxy_in2r = curr_gate->find_member("proxy_in2r", port_o_K, curr_gate);
-                  structural_objectRef port_proxy_in2w = curr_gate->find_member("proxy_in2w", port_o_K, curr_gate);
-                  structural_objectRef port_proxy_in3r = curr_gate->find_member("proxy_in3r", port_o_K, curr_gate);
-                  structural_objectRef port_proxy_in3w = curr_gate->find_member("proxy_in3w", port_o_K, curr_gate);
-                  structural_objectRef port_proxy_in4r = curr_gate->find_member("proxy_in4r", port_o_K, curr_gate);
-                  structural_objectRef port_proxy_in4w = curr_gate->find_member("proxy_in4w", port_o_K, curr_gate);
+                  const auto port_proxy_in2r = curr_gate->find_member("proxy_in2r", port_o_K, curr_gate);
+                  const auto port_proxy_in2w = curr_gate->find_member("proxy_in2w", port_o_K, curr_gate);
+                  const auto port_proxy_in3r = curr_gate->find_member("proxy_in3r", port_o_K, curr_gate);
+                  const auto port_proxy_in3w = curr_gate->find_member("proxy_in3w", port_o_K, curr_gate);
+                  const auto port_proxy_in4r = curr_gate->find_member("proxy_in4r", port_o_K, curr_gate);
+                  const auto port_proxy_in4w = curr_gate->find_member("proxy_in4w", port_o_K, curr_gate);
                   port_proxy_in2r->set_id(port_proxy_in2r->get_id() + var_name);
                   port_proxy_in2w->set_id(port_proxy_in2w->get_id() + var_name);
                   port_proxy_in3r->set_id(port_proxy_in3r->get_id() + var_name);
@@ -1035,14 +1034,14 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
                }
                else
                {
-                  structural_objectRef port_proxy_in2 = curr_gate->find_member("proxy_in2", port_o_K, curr_gate);
-                  structural_objectRef port_proxy_in3 = curr_gate->find_member("proxy_in3", port_o_K, curr_gate);
+                  const auto port_proxy_in2 = curr_gate->find_member("proxy_in2", port_o_K, curr_gate);
+                  const auto port_proxy_in3 = curr_gate->find_member("proxy_in3", port_o_K, curr_gate);
                   port_proxy_in2->set_id(port_proxy_in2->get_id() + var_name);
                   port_proxy_in3->set_id(port_proxy_in3->get_id() + var_name);
                }
-               structural_objectRef port_sel_LOAD = curr_gate->find_member("proxy_sel_LOAD", port_o_K, curr_gate);
-               structural_objectRef port_sel_STORE = curr_gate->find_member("proxy_sel_STORE", port_o_K, curr_gate);
-               structural_objectRef port_proxy_out1 = curr_gate->find_member("proxy_out1", port_o_K, curr_gate);
+               const auto port_sel_LOAD = curr_gate->find_member("proxy_sel_LOAD", port_o_K, curr_gate);
+               const auto port_sel_STORE = curr_gate->find_member("proxy_sel_STORE", port_o_K, curr_gate);
+               const auto port_proxy_out1 = curr_gate->find_member("proxy_out1", port_o_K, curr_gate);
                port_sel_LOAD->set_id(port_sel_LOAD->get_id() + var_name);
                port_sel_STORE->set_id(port_sel_STORE->get_id() + var_name);
                port_proxy_out1->set_id(port_proxy_out1->get_id() + var_name);
@@ -1110,27 +1109,24 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
 
    const auto cg_man = HLSMgr->CGetCallGraphManager();
    const auto top_function_ids = cg_man->GetRootFunctions();
-   if(top_function_ids.find(HLS->functionId) != top_function_ids.end() and cg_man->ExistsAddressedFunction())
+   if(top_function_ids.find(HLS->functionId) != top_function_ids.end() && cg_man->ExistsAddressedFunction())
    {
       const auto addressed_functions = cg_man->GetAddressedFunctions();
-
-      structural_objectRef constBitZero =
+      const auto constBitZero =
           SM->add_module_from_technology_library("constBitZero", CONSTANT_STD, LIBRARY_STD, circuit, TechM);
-      structural_objectRef signBitZero =
+      const auto signBitZero =
           SM->add_sign("bitZero", circuit, circuit->find_member(CLOCK_PORT_NAME, port_o_K, circuit)->get_typeRef());
       SM->add_connection(signBitZero, constBitZero->find_member("out1", port_o_K, constBitZero));
 
       for(const auto& f_id : addressed_functions)
       {
          const auto FUName = functions::GetFUName(tree_helper::name_function(TreeM, f_id), HLSMgr);
-
          if(HLSMgr->Rfuns->is_a_proxied_function(FUName))
          {
             continue;
          }
 
          const auto FU = SM->add_module_from_technology_library(FUName + "_i0", FUName, WORK_LIBRARY, circuit, TechM);
-
          if(std::find(memory_modules.begin(), memory_modules.end(), FU) == memory_modules.end())
          {
             memory_modules.push_back(FU);
@@ -1152,7 +1148,6 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
 
          SM->add_connection(FU->find_member(CLOCK_PORT_NAME, port_o_K, FU),
                             circuit->find_member(CLOCK_PORT_NAME, port_o_K, circuit));
-
          SM->add_connection(FU->find_member(RESET_PORT_NAME, port_o_K, FU),
                             circuit->find_member(RESET_PORT_NAME, port_o_K, circuit));
 
@@ -1165,14 +1160,14 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          for(const auto additional_parameter :
              HLSMgr->CGetFunctionBehavior(f_id)->CGetBehavioralHelper()->get_parameters())
          {
-            std::string parameterName =
+            const auto parameterName =
                 HLSMgr->CGetFunctionBehavior(f_id)->CGetBehavioralHelper()->PrintVariable(additional_parameter);
 
-            structural_objectRef parameterPort = FU->find_member(parameterName, port_o_K, FU);
-            structural_objectRef constZeroParam = SM->add_module_from_technology_library(
+            const auto parameterPort = FU->find_member(parameterName, port_o_K, FU);
+            const auto constZeroParam = SM->add_module_from_technology_library(
                 "zeroParam_" + FUName + "_" + parameterName, CONSTANT_STD, LIBRARY_STD, circuit, TechM);
-            structural_objectRef constZeroOutPort = constZeroParam->find_member("out1", port_o_K, constZeroParam);
-            const std::string parameter_value =
+            const auto constZeroOutPort = constZeroParam->find_member("out1", port_o_K, constZeroParam);
+            const auto parameter_value =
                 (static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language)) ==
                  HDLWriter_Language::VHDL) ?
                     std::string("\"") + NumberToBinaryString(0, STD_GET_SIZE(parameterPort->get_typeRef())) +
@@ -1182,8 +1177,8 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
 
             constZeroOutPort->type_resize(STD_GET_SIZE(parameterPort->get_typeRef()));
 
-            structural_objectRef signBitZeroParam = SM->add_sign("signZeroParam_" + FUName + "_" + parameterName,
-                                                                 SM->get_circ(), constZeroOutPort->get_typeRef());
+            const auto signBitZeroParam = SM->add_sign("signZeroParam_" + FUName + "_" + parameterName, SM->get_circ(),
+                                                       constZeroOutPort->get_typeRef());
 
             SM->add_connection(parameterPort, signBitZeroParam);
             SM->add_connection(constZeroOutPort, signBitZeroParam);
@@ -1263,33 +1258,39 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added functional units to circuit");
 }
 
-void fu_binding::check_parametrization(structural_objectRef curr_gate)
+void fu_binding::check_parametrization(structural_objectRef
+#if HAVE_ASSERTS
+                                           curr_gate
+#endif
+)
 {
-   auto* fu_module = GetPointer<module>(curr_gate);
-   NP_functionalityRef np = fu_module->get_NP_functionality();
+#if HAVE_ASSERTS
+   const auto fu_module = GetPointer<module>(curr_gate);
+   const auto np = fu_module->get_NP_functionality();
    if(np)
    {
       std::vector<std::string> param;
       np->get_library_parameters(param);
-      auto it_end = param.end();
-      for(auto it = param.begin(); it != it_end; ++it)
+      for(const auto& p : param)
       {
-         THROW_ASSERT(curr_gate->find_member(*it, port_o_K, curr_gate) ||
-                          curr_gate->find_member(*it, port_vector_o_K, curr_gate) || curr_gate->ExistsParameter(*it),
-                      "parameter not yet specialized: " + *it + " for module " + GET_TYPE_NAME(curr_gate));
+         THROW_ASSERT(curr_gate->find_member(p, port_o_K, curr_gate) ||
+                          curr_gate->find_member(p, port_vector_o_K, curr_gate) || curr_gate->ExistsParameter(p),
+                      "parameter not yet specialized: " + p + " for module " + GET_TYPE_NAME(curr_gate));
       }
    }
+#endif
 }
 
 bool fu_binding::manage_module_ports(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM,
                                      const structural_objectRef curr_gate, unsigned int num)
 {
-   const structural_objectRef circuit = SM->get_circ();
+   const auto circuit = SM->get_circ();
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Routing module ports - " + circuit->get_path());
    /// creating extern IN port on datapath starting from extern ports on module
    bool added_memory_element = false;
    for(unsigned int j = 0; j < GetPointer<module>(curr_gate)->get_in_port_size(); j++)
    {
-      structural_objectRef port_in = GetPointer<module>(curr_gate)->get_in_port(j);
+      const auto port_in = GetPointer<module>(curr_gate)->get_in_port(j);
       manage_extern_global_port(HLSMgr, HLS, SM, port_in, port_o::IN, circuit, num);
       if(GetPointer<port_o>(port_in)->get_is_memory())
       {
@@ -1308,6 +1309,7 @@ bool fu_binding::manage_module_ports(const HLS_managerRef HLSMgr, const hlsRef H
       structural_objectRef port_in_out = GetPointer<module>(curr_gate)->get_in_out_port(j);
       manage_extern_global_port(HLSMgr, HLS, SM, port_in_out, port_o::IO, circuit, num);
    }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    return added_memory_element;
 }
 
@@ -1701,27 +1703,28 @@ void fu_binding::manage_memory_ports_parallel_chained(const HLS_managerRef, cons
    join_merge_split(SM, HLS, primary_outs, circuit, _unique_id);
 }
 
-void fu_binding::manage_extern_global_port(const HLS_managerRef, const hlsRef, const structural_managerRef SM,
-                                           structural_objectRef port_in, unsigned int _dir,
-                                           structural_objectRef circuit, unsigned int num)
+void fu_binding::manage_extern_global_port(const HLS_managerRef HLSMgr, const hlsRef HLS,
+                                           const structural_managerRef SM, structural_objectRef port_in,
+                                           unsigned int _dir, structural_objectRef circuit, unsigned int num)
 {
    auto dir = static_cast<port_o::port_direction>(_dir);
-   if(GetPointer<port_o>(port_in)->get_is_extern())
+   const auto inPort = GetPointer<port_o>(port_in);
+   const auto port_name = inPort->get_id();
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Port: " + inPort->get_path());
+   structural_objectRef ext_port = circuit->find_member(port_name, port_in->get_kind(), circuit);
+   if(inPort->get_is_extern())
    {
-      structural_objectRef ext_port;
-      if(GetPointer<port_o>(port_in)->get_is_global())
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Manage extern port");
+      if(inPort->get_is_global())
       {
-         const auto port_name = GetPointerS<port_o>(port_in)->get_id();
-         ext_port = circuit->find_member(port_name, port_in->get_kind(), circuit);
          THROW_ASSERT(!ext_port || GetPointer<port_o>(ext_port), "should be a port or null");
          if(ext_port && GetPointerS<port_o>(ext_port)->get_port_direction() != dir)
          {
             THROW_ASSERT(port_in->get_kind() == ext_port->get_kind(), "unexpected condition");
             if(port_in->get_kind() == port_vector_o_K &&
-               GetPointerS<port_o>(port_in)->get_ports_size() > GetPointerS<port_o>(ext_port)->get_ports_size())
+               inPort->get_ports_size() > GetPointerS<port_o>(ext_port)->get_ports_size())
             {
-               const auto n_ports =
-                   GetPointerS<port_o>(port_in)->get_ports_size() - GetPointerS<port_o>(ext_port)->get_ports_size();
+               const auto n_ports = inPort->get_ports_size() - GetPointerS<port_o>(ext_port)->get_ports_size();
                GetPointerS<port_o>(ext_port)->add_n_ports(n_ports, ext_port);
             }
             SM->change_port_direction(ext_port, dir, circuit);
@@ -1734,8 +1737,8 @@ void fu_binding::manage_extern_global_port(const HLS_managerRef, const hlsRef, c
          {
             if(port_in->get_kind() == port_vector_o_K)
             {
-               ext_port = SM->add_port_vector(port_name, dir, GetPointer<port_o>(port_in)->get_ports_size(), circuit,
-                                              port_in->get_typeRef());
+               ext_port =
+                   SM->add_port_vector(port_name, dir, inPort->get_ports_size(), circuit, port_in->get_typeRef());
             }
             else
             {
@@ -1746,10 +1749,9 @@ void fu_binding::manage_extern_global_port(const HLS_managerRef, const hlsRef, c
          {
             THROW_ASSERT(port_in->get_kind() == ext_port->get_kind(), "unexpected condition");
             if(port_in->get_kind() == port_vector_o_K &&
-               GetPointerS<port_o>(port_in)->get_ports_size() > GetPointerS<port_o>(ext_port)->get_ports_size())
+               inPort->get_ports_size() > GetPointerS<port_o>(ext_port)->get_ports_size())
             {
-               const auto n_ports =
-                   GetPointerS<port_o>(port_in)->get_ports_size() - GetPointerS<port_o>(ext_port)->get_ports_size();
+               const auto n_ports = inPort->get_ports_size() - GetPointerS<port_o>(ext_port)->get_ports_size();
                GetPointer<port_o>(ext_port)->add_n_ports(n_ports, ext_port);
             }
          }
@@ -1758,45 +1760,35 @@ void fu_binding::manage_extern_global_port(const HLS_managerRef, const hlsRef, c
       {
          if(port_in->get_kind() == port_vector_o_K)
          {
-            ext_port =
-                SM->add_port_vector("ext_" + GetPointer<port_o>(port_in)->get_id() + "_" + std::to_string(num), dir,
-                                    GetPointer<port_o>(port_in)->get_ports_size(), circuit, port_in->get_typeRef());
+            ext_port = SM->add_port_vector("ext_" + inPort->get_id() + "_" + std::to_string(num), dir,
+                                           inPort->get_ports_size(), circuit, port_in->get_typeRef());
          }
          else
          {
-            ext_port = SM->add_port("ext_" + GetPointer<port_o>(port_in)->get_id() + "_" + std::to_string(num), dir,
-                                    circuit, port_in->get_typeRef());
+            ext_port = SM->add_port("ext_" + inPort->get_id() + "_" + std::to_string(num), dir, circuit,
+                                    port_in->get_typeRef());
          }
       }
-      port_o::fix_port_properties(port_in, ext_port);
-      SM->add_connection(port_in, ext_port);
    }
-   else if(GetPointer<port_o>(port_in)->get_is_global())
+   else if(inPort->get_is_global())
    {
-      structural_objectRef ext_port;
-      std::string port_name = GetPointer<port_o>(port_in)->get_id();
-      ext_port = circuit->find_member(port_name, port_in->get_kind(), circuit);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Manage global port");
       THROW_ASSERT(!ext_port || GetPointer<port_o>(ext_port), "should be a port or null");
       if(!ext_port)
       {
          if(port_in->get_kind() == port_vector_o_K)
          {
-            ext_port = SM->add_port_vector(port_name, dir, GetPointer<port_o>(port_in)->get_ports_size(), circuit,
-                                           port_in->get_typeRef());
+            ext_port = SM->add_port_vector(port_name, dir, inPort->get_ports_size(), circuit, port_in->get_typeRef());
          }
          else
          {
             ext_port = SM->add_port(port_name, dir, circuit, port_in->get_typeRef());
          }
-         port_o::fix_port_properties(port_in, ext_port);
       }
-      SM->add_connection(port_in, ext_port);
    }
-   else if(GetPointer<port_o>(port_in)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
+   else if(inPort->get_port_interface() != port_o::port_interface::PI_DEFAULT)
    {
-      structural_objectRef ext_port;
-      std::string port_name = GetPointer<port_o>(port_in)->get_id();
-      ext_port = circuit->find_member(port_name, port_in->get_kind(), circuit);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Manage interface port");
       THROW_ASSERT(!ext_port || GetPointer<port_o>(ext_port), "should be a port or null");
       if(ext_port && GetPointer<port_o>(ext_port)->get_port_direction() != dir)
       {
@@ -1810,14 +1802,20 @@ void fu_binding::manage_extern_global_port(const HLS_managerRef, const hlsRef, c
       {
          if(port_in->get_kind() == port_vector_o_K)
          {
-            ext_port = SM->add_port_vector(port_name, dir, GetPointer<port_o>(port_in)->get_ports_size(), circuit,
-                                           port_in->get_typeRef());
+            ext_port = SM->add_port_vector(port_name, dir, inPort->get_ports_size(), circuit, port_in->get_typeRef());
          }
          else
          {
             ext_port = SM->add_port(port_name, dir, circuit, port_in->get_typeRef());
          }
       }
+   }
+   else
+   {
+      ext_port = nullptr;
+   }
+   if(ext_port)
+   {
       port_o::fix_port_properties(port_in, ext_port);
       SM->add_connection(port_in, ext_port);
    }

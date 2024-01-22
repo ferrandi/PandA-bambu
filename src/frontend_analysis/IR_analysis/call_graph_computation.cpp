@@ -112,7 +112,6 @@ DesignFlowStep_Status call_graph_computation::Exec()
 
    /// Root functions
    CustomSet<unsigned int> functions;
-   THROW_ASSERT(parameters->isOption(OPT_top_functions_names), "Top function must be defined by the user");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Top functions passed by user");
    auto function_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
    for(const auto& symbol : function_symbols)
@@ -121,7 +120,7 @@ DesignFlowStep_Status call_graph_computation::Exec()
       if(fnode)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Root function " + STR(GET_INDEX_CONST_NODE(fnode) + " - " + symbol));
+                        "---Root function " + STR(GET_INDEX_CONST_NODE(fnode)) + " - " + symbol);
          functions.insert(GET_INDEX_CONST_NODE(fnode));
       }
       else

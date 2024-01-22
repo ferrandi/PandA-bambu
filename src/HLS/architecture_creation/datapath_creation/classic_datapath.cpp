@@ -39,6 +39,7 @@
  *
  */
 #include "classic_datapath.hpp"
+
 #include "BambuParameter.hpp"
 #include "Parameter.hpp"
 #include "behavioral_helper.hpp"
@@ -61,7 +62,7 @@
 #include "reg_binding.hpp"
 #include "schedule.hpp"
 #include "state_transition_graph_manager.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "string_manipulation.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
@@ -69,7 +70,7 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include <iosfwd>
+
 #include <list>
 #include <string>
 
@@ -94,15 +95,15 @@ DesignFlowStep_Status classic_datapath::InternalExec()
    THROW_ASSERT(HLSMgr->Rmem, "Memory allocation not performed");
 
    /// main circuit type
-   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
-   structural_type_descriptorRef module_type = structural_type_descriptorRef(
-       new structural_type_descriptor("datapath_" + FB->CGetBehavioralHelper()->get_function_name()));
+   const auto FB = HLSMgr->CGetFunctionBehavior(funId);
+   const auto fsymbol = FB->CGetBehavioralHelper()->GetMangledFunctionName();
+   structural_type_descriptorRef module_type(new structural_type_descriptor("datapath_" + fsymbol));
 
    /// top circuit creation
    HLS->datapath = structural_managerRef(new structural_manager(HLS->Param));
 
    HLS->datapath->set_top_info("Datapath_i", module_type);
-   const structural_objectRef datapath_cir = HLS->datapath->get_circ();
+   const auto datapath_cir = HLS->datapath->get_circ();
 
    // Now the top circuit is created, just as an empty box. <circuit> is a reference to the structural object that
    // will contain all the circuit components
@@ -173,8 +174,8 @@ DesignFlowStep_Status classic_datapath::InternalExec()
 
 void classic_datapath::add_clock_reset(structural_objectRef& clock_obj, structural_objectRef& reset_obj)
 {
-   const structural_managerRef& SM = this->HLS->datapath;
-   const structural_objectRef& circuit = SM->get_circ();
+   const auto& SM = this->HLS->datapath;
+   const auto circuit = SM->get_circ();
 
    /// define boolean type for clock and reset signal
    structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
