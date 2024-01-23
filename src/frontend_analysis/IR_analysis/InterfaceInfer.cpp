@@ -807,7 +807,7 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
             }
             THROW_UNREACHABLE("AC channel method not supported: " + called_fname);
          }
-         THROW_UNREACHABLE("Hardware function interfacing not supported.");
+         THROW_UNREACHABLE("Hardware function " + called_fname + " interfacing not supported.");
       }
 
       size_t par_index = 0U;
