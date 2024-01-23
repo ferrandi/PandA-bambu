@@ -72,6 +72,8 @@
 
 #define REWRITE_REGEX
 
+#define THIS_PARAM_NAME "this"
+
 #if __clang_major__ > 9
 #define make_unique std::make_unique
 #else
@@ -841,6 +843,7 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
                         calleeDecl->addAttr(NoInlineAttr::CreateImplicit(calleeDecl->getASTContext()));
                         calleeDecl->dropAttr<AlwaysInlineAttr>();
                      }
+                     calleeDecl->dropAttr<InternalLinkageAttr>();
                   }
                }
             }
@@ -1068,6 +1071,11 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
           .getQuantity();
    }
 
+   bool hasThisParameter(FunctionDecl* FD)
+   {
+      return FD->isCXXInstanceMember() && !isa<CXXConstructorDecl>(FD) && !isa<CXXDestructorDecl>(FD);
+   }
+
    std::string removeSpaces(std::string str)
    {
       // The default CentOS 7 system compiler is gcc 4.8.5, which ships an
@@ -1135,7 +1143,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          return;
       }
       ParmVarDecl* parmDecl = nullptr;
-      size_t parmIndex = 0;
+      size_t parmIndex = hasThisParameter(FD) ? 1 : 0; // Account for parameter this in CXX instance function signature
       for(auto par : FD->parameters())
       {
          if((parmDecl = dyn_cast<ParmVarDecl>(par)))
@@ -1375,8 +1383,42 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
    {
       if(_parseAction & ParseAction_Analyze)
       {
-         const auto& func_ifaces = GetFuncAttr(FD).ifaces;
+         auto& func_ifaces = GetFuncAttr(FD).ifaces;
          size_t idx = 0;
+         // Prepend this pointer parameter to CXX class member declarations
+         if(func_ifaces.parameters.find(THIS_PARAM_NAME) == func_ifaces.parameters.end() && hasThisParameter(FD))
+         {
+            LLVM_DEBUG(dbgs() << "PORT: " THIS_PARAM_NAME "\n");
+            assert(isa<CXXMethodDecl>(FD) && "Expected CXX method declaration");
+            assert(func_ifaces.bundles.find(THIS_PARAM_NAME) == func_ifaces.bundles.end() &&
+                   "Expected no bundle for 'this'");
+
+            auto& this_param = func_ifaces.parameters[THIS_PARAM_NAME];
+            auto& this_iface = func_ifaces.bundles[THIS_PARAM_NAME];
+            this_param[key_loc_t("port", SourceLocation())] = THIS_PARAM_NAME;
+            this_param[key_loc_t("bundle", SourceLocation())] = THIS_PARAM_NAME;
+            this_param[key_loc_t("index", SourceLocation())] = "0";
+            const auto thisType =
+#if __clang_major__ >= 8
+                dyn_cast<CXXMethodDecl>(FD)->getThisType();
+#else
+                dyn_cast<CXXMethodDecl>(FD)->getThisType(_ASTContext);
+#endif
+            const auto ptdType = thisType->getPointeeType().IgnoreParens();
+            const auto paramTypeRemTD = RemoveTypedef(ptdType);
+            this_param[key_loc_t("size_in_bytes", SourceLocation())] = std::to_string(getSizeInBytes(ptdType));
+            this_param[key_loc_t("typename", SourceLocation())] = GetTypeNameCanonical(paramTypeRemTD, _PP) + "*";
+            this_param[key_loc_t("original_typename", SourceLocation())] = GetTypeNameCanonical(thisType, _PP);
+            this_param[key_loc_t("includes", SourceLocation())] = getIncludePaths(ptdType);
+
+            this_iface[key_loc_t("name", SourceLocation())] = THIS_PARAM_NAME;
+            this_iface[key_loc_t("mode", SourceLocation())] = "default";
+            LLVM_DEBUG(dbgs() << " MODE: default\n");
+            LLVM_DEBUG(dbgs() << " TYPE: " << this_param[key_loc_t("typename", SourceLocation())] << "\n");
+            LLVM_DEBUG(dbgs() << " ORIG: " << this_param[key_loc_t("original_typename", SourceLocation())] << "\n");
+            LLVM_DEBUG(dbgs() << " INCL: " << this_param[key_loc_t("includes", SourceLocation())] << "\n");
+            ++idx;
+         }
          for(auto par : FD->parameters())
          {
             ParmVarDecl* pdecl;
