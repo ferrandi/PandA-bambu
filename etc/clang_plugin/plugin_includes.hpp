@@ -71,6 +71,7 @@
 #include <list>
 #include <map>
 #include <set>
+#include <string>
 #include <unordered_set>
 #include <vector>
 
@@ -245,7 +246,7 @@ namespace llvm
       const llvm::DataLayout* DL;
       /// current module pass
       llvm::LLVMContext* moduleContext;
-      std::string TopFunctionName;
+      std::vector<std::string> TopFunctionNames;
 
       /// relation between LLVM object and serialization index
       std::map<const void*, unsigned int> llvm2index;
@@ -779,7 +780,7 @@ namespace llvm
       DumpGimpleRaw(const std::string& _outdir_name, const std::string& _InFile, bool onlyGlobals,
                     std::map<std::string, std::vector<std::string>>* fun2params, bool early);
 
-      bool exec(llvm::Module& M, const std::string& _TopFunctionName,
+      bool exec(llvm::Module& M, const std::vector<std::string>& _TopFunctionName,
                 llvm::function_ref<llvm::TargetLibraryInfo&(llvm::Function&)> GetTLI,
                 llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> GetTTI,
                 llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> GetDomTree,

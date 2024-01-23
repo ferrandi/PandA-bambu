@@ -31,7 +31,7 @@
  *
  */
 /**
- * @file plugin_topfname.c
+ * @file plugin_topfname.cpp
  * @brief Plugin making visible only the top name function
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
@@ -39,8 +39,42 @@
  */
 #include "plugin_includes.h"
 
+#include <string>
+#include <vector>
+
+std::vector<std::string> string_to_container(const std::string& str, const std::string& separator,
+                                             bool trim_empty = true)
+{
+   std::vector<std::string> _c;
+   const char* curr = str.data();
+   std::string::size_type last = 0;
+   do
+   {
+      std::string::size_type next = str.find(separator, last);
+      std::string::size_type _len = next != std::string::npos ? (next - last) : (str.size() - last);
+      if(!trim_empty || _len)
+      {
+         _c.push_back(std::string(curr, _len));
+      }
+      last += _len + 1;
+      curr += _len + 1;
+   } while(last < str.size());
+   return _c;
+}
+
 int plugin_is_GPL_compatible;
-static char TopFunctionName[1024];
+static std::vector<std::string> _top_functions;
+static bool is_top_function(const char* symbol)
+{
+   for(std::vector<std::string>::const_iterator it = _top_functions.begin(); it != _top_functions.end(); ++it)
+   {
+      if(!it->compare(symbol))
+      {
+         return true;
+      }
+   }
+   return false;
+}
 
 #if __GNUC__ == 4 && __GNUC_MINOR__ == 9
 #pragma GCC diagnostic push
@@ -187,7 +221,7 @@ static bool cgraph_externally_visible_p(struct cgraph_node* node)
       && node->definition)
     ;
 #endif
-   if(!strcmp(IDENTIFIER_POINTER(IDENTIFIER_NODE_CHECK(DECL_NAME(node->decl))), TopFunctionName))
+   if(is_top_function(IDENTIFIER_POINTER(IDENTIFIER_NODE_CHECK(DECL_NAME(node->decl)))))
       return true;
 
    return false;
@@ -515,8 +549,13 @@ static unsigned int whole_program_function_and_variable_visibility(void)
 unsigned int TopFnameIPA(void)
 {
    gcc_assert(!flag_whole_program);
-   gcc_assert(*TopFunctionName);
-   // printf("TopFnameIPA %s\n", TopFunctionName);
+   gcc_assert(_top_functions.size());
+   // printf("TopFnameIPA");
+   // for(std::vector<std::string>::const_iterator it = _top_functions.begin(); it != _top_functions.end(); ++it)
+   // {
+   //    printf(" %s", it->c_str());
+   // }
+   // printf("\n");
    whole_program_function_and_variable_visibility();
    return 0;
 }
@@ -632,14 +671,11 @@ int plugin_init(struct plugin_name_args* plugin_info, struct plugin_gcc_version*
 
    struct register_pass_info pass_info;
    int argc_index;
-   TopFunctionName[0] = 0;
    for(argc_index = 0; argc_index < plugin_info->argc; ++argc_index)
    {
       if(strcmp(plugin_info->argv[argc_index].key, "topfname") == 0)
       {
-         if(strlen(plugin_info->argv[argc_index].value) > 1024)
-            return 1;
-         strcpy(TopFunctionName, plugin_info->argv[argc_index].value);
+         _top_functions = string_to_container(plugin_info->argv[argc_index].value, ",");
          break;
       }
    }

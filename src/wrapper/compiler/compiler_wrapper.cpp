@@ -412,18 +412,16 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
        Param->isOption(OPT_gcc_optimizations) &&
        Param->getOption<std::string>(OPT_gcc_optimizations).find("whole-program") != std::string::npos &&
        Param->getOption<std::string>(OPT_gcc_optimizations).find("no-whole-program") == std::string::npos;
-   const auto fname = [&]() -> std::string {
+   const auto top_fnames = [&]() -> std::string {
       if(Param->isOption(OPT_top_functions_names))
       {
-         const auto top_functions_names = Param->getOption<std::list<std::string>>(OPT_top_functions_names);
-         if(top_functions_names.size() == 1)
-         {
-            return top_functions_names.front();
-         }
+         auto fnames = Param->getOption<std::string>(OPT_top_functions_names);
+         boost::replace_all(fnames, STR_CST_string_separator, ",");
+         return fnames;
       }
       return "";
    }();
-   THROW_ASSERT(!isWholeProgram || fname == "main", "Unexpected -fwhole-program with non-main top function.");
+   THROW_ASSERT(!isWholeProgram || top_fnames == "main", "Unexpected -fwhole-program with non-main top function.");
 
    std::string real_filename = input_filename;
    std::string command;
@@ -532,10 +530,10 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
          {
             command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang -cppflag";
          }
-         if(fname.size())
+         if(top_fnames.size())
          {
             command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang -topfname";
-            command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang " + fname;
+            command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang " + top_fnames;
          }
       }
       if(cm & CM_ANALYZER_OPTIMIZE)
@@ -565,14 +563,14 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
          command += " " + arg;
       }
    };
-   if((cm & CM_OPT_INTERNALIZE) && fname.size())
+   if((cm & CM_OPT_INTERNALIZE) && top_fnames.size())
    {
       THROW_ASSERT(!(cm & CM_LTO_FLAG), "Internalizing symbols in partial object files is not expected");
       if(compiler.is_clang)
       {
          load_plugin(compiler.topfname_plugin_obj);
          append_arg("-internalize-outputdir=" + output_temporary_directory);
-         append_arg("-panda-TFN=" + fname);
+         append_arg("-panda-TFN=" + top_fnames);
          if(Param->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
          {
             append_arg("-add-noalias");
@@ -590,7 +588,7 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
             !compiler.CSROA_plugin_obj.empty() && !compiler.expandMemOps_plugin_obj.empty())
          {
             load_plugin(compiler.CSROA_plugin_obj);
-            append_arg("-panda-KN=" + fname);
+            append_arg("-panda-KN=" + top_fnames);
             if(Param->IsParameter("max-CSROA"))
             {
                auto max_CSROA = Param->GetParameter<int>("max-CSROA");
@@ -604,7 +602,7 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
          {
             /// LTO not yet supported with GCC
             command += " -fplugin=" + compiler.topfname_plugin_obj + " -fplugin-arg-" + compiler.topfname_plugin_name +
-                       "-topfname=" + fname;
+                       "-topfname=" + top_fnames;
          }
       }
    }
@@ -623,9 +621,9 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
          append_arg("-panda-outputdir=" + output_temporary_directory);
          append_arg("-panda-infile=" + input_filename);
          append_arg("-panda-cost-table=\"" + costTable + "\"");
-         if(fname.size())
+         if(top_fnames.size())
          {
-            append_arg("-panda-topfname=" + fname);
+            append_arg("-panda-topfname=" + top_fnames);
          }
          // command += " -emit-llvm";
       }
