@@ -472,24 +472,28 @@ void parametric_list_based::CheckSchedulabilityConditions(
    }
    const auto curr_node = flow_graph->CGetOpNodeInfo(current_vertex);
    const auto curr_node_name = curr_node->GetOperation();
-   LoadStoreFunctionConflict = (curr_vertex_type & (TYPE_LOAD | TYPE_STORE)) && RWFunctions;
-   if(LoadStoreFunctionConflict)
+   const auto fid = curr_node->called.empty() ? 0U : *curr_node->called.begin();
+   if(!HLSMgr->CGetCallGraphManager()->GetRootFunctions().count(fid))
    {
-      return;
-   }
-   FunctionLoadStoreConflict =
-       (curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW) && (LoadStoreOp || RWFunctions);
-   if(FunctionLoadStoreConflict)
-   {
-      return;
-   }
-   proxyFunCond = (curr_vertex_type & TYPE_EXTERNAL) &&
-                  (proxy_functions_used.count(curr_node_name) ||
-                   (reachable_proxy_functions.count(curr_node_name) &&
-                    has_element_in_common(proxy_functions_used, reachable_proxy_functions.at(curr_node_name))));
-   if(proxyFunCond)
-   {
-      return;
+      LoadStoreFunctionConflict = (curr_vertex_type & (TYPE_LOAD | TYPE_STORE)) && RWFunctions;
+      if(LoadStoreFunctionConflict)
+      {
+         return;
+      }
+      FunctionLoadStoreConflict =
+          (curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW) && (LoadStoreOp || RWFunctions);
+      if(FunctionLoadStoreConflict)
+      {
+         return;
+      }
+      proxyFunCond = (curr_vertex_type & TYPE_EXTERNAL) &&
+                     (proxy_functions_used.count(curr_node_name) ||
+                      (reachable_proxy_functions.count(curr_node_name) &&
+                       has_element_in_common(proxy_functions_used, reachable_proxy_functions.at(curr_node_name))));
+      if(proxyFunCond)
+      {
+         return;
+      }
    }
    cannotBeChained3 = (curr_vertex_type & TYPE_EXTERNAL) && !is_pipelined && n_cycles > 1 &&
                       !HLS->allocation_information->is_operation_PI_registered(flow_graph, current_vertex, fu_type);
