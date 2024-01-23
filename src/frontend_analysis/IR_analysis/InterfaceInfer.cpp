@@ -52,6 +52,7 @@
 #include "constant_strings.hpp"
 #include "copyrights_strings.hpp"
 #include "dbgPrintHelper.hpp"
+#include "dead_code_elimination.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "function_behavior.hpp"
@@ -205,6 +206,7 @@ InterfaceInfer::ComputeFrontendRelationships(const DesignFlowStep::RelationshipT
          relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(USE_COUNTING, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(PARM2SSA, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -349,6 +351,136 @@ DesignFlowStep_Status InterfaceInfer::Exec()
       }
 
       const tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
+      const auto is_dataflow_module =
+          func_arch->attrs.find(FunctionArchitecture::func_dataflow) != func_arch->attrs.end() &&
+          func_arch->attrs.find(FunctionArchitecture::func_dataflow)->second == "module";
+      if(is_dataflow_module)
+      {
+         const auto top_v = CGM->GetVertex(top_id);
+         BOOST_FOREACH(EdgeDescriptor call, boost::in_edges(top_v, *CG))
+         {
+            const auto edge_info = CG->CGetFunctionEdgeInfo(call);
+            THROW_ASSERT(edge_info->function_addresses.empty() && edge_info->indirect_call_points.empty(),
+                         "Expected only direct call points.");
+            for(const auto call_id : edge_info->direct_call_points)
+            {
+               const auto call_stmt = TM->CGetTreeReindex(call_id);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Call point " + STR(call_stmt));
+               const std::vector<tree_nodeRef>* args = nullptr;
+               if(const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(call_stmt)))
+               {
+                  const auto ce = GetPointer<const call_expr>(GET_CONST_NODE(ga->op1));
+                  args = &ce->args;
+               }
+               else if(const auto gc = GetPointer<const gimple_call>(GET_CONST_NODE(call_stmt)))
+               {
+                  args = &gc->args;
+               }
+               else
+               {
+                  THROW_UNREACHABLE("Unexpected call statement.");
+               }
+
+               const auto gn = GetPointerS<gimple_node>(GET_NODE(call_stmt));
+               if(gn->vdef)
+               {
+                  dead_code_elimination::kill_vdef(TM, gn->vdef);
+                  gn->vdef = nullptr;
+               }
+               std::for_each(gn->vuses.begin(), gn->vuses.end(),
+                             [&](auto& it) { GetPointer<ssa_name>(GET_NODE(it))->RemoveUse(call_stmt); });
+               gn->vuses.clear();
+               std::for_each(gn->vovers.begin(), gn->vovers.end(),
+                             [&](auto& it) { GetPointer<ssa_name>(GET_NODE(it))->RemoveUse(call_stmt); });
+               gn->vovers.clear();
+               THROW_ASSERT(!gn->memdef && !gn->memuse, "Unexpected condition");
+
+               size_t idx = 0;
+               for(const auto& arg : *args)
+               {
+                  if(tree_helper::IsPointerType(arg))
+                  {
+                     const auto base_var = tree_helper::GetBaseVariable(arg);
+                     const auto parm_attr =
+                         std::find_if(func_arch->parms.begin(), func_arch->parms.end(), [&](auto& it) {
+                            return it.second.at(FunctionArchitecture::parm_index) == std::to_string(idx);
+                         });
+                     THROW_ASSERT(parm_attr != func_arch->parms.end(),
+                                  "Expected parameter index " + std::to_string(idx));
+                     auto& current_bundle = parm_attr->second.at(FunctionArchitecture::parm_bundle);
+                     std::string bundle_name;
+                     if(GET_CONST_NODE(base_var)->get_kind() == parm_decl_K)
+                     {
+                        func_arch->ifaces[current_bundle].at(FunctionArchitecture::iface_mode) = "default";
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---Parameter " + parm_attr->second.at(FunctionArchitecture::parm_port) +
+                                           " forwarded from caller function");
+                        ++idx;
+                        continue;
+                     }
+                     else if(GetPointer<const cst_node>(GET_CONST_NODE(base_var)))
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---Parameter " + parm_attr->second.at(FunctionArchitecture::parm_port) +
+                                           " is constant at this call point");
+                        ++idx;
+                        continue;
+                     }
+                     else if(const auto dn = GetPointer<const decl_node>(GET_CONST_NODE(base_var)))
+                     {
+                        bundle_name = "DF_bambu_" + std::to_string(GET_INDEX_CONST_NODE(base_var));
+                     }
+                     else
+                     {
+                        THROW_UNREACHABLE("Unexpected declaration.");
+                     }
+                     func_arch->ifaces[bundle_name] = func_arch->ifaces.at(current_bundle);
+                     func_arch->ifaces[bundle_name].at(FunctionArchitecture::iface_name) = bundle_name;
+                     func_arch->ifaces.erase(current_bundle);
+                     current_bundle = bundle_name;
+                     THROW_ASSERT(fd->list_of_args.size() > idx, "Unexpected function parameters count");
+                     auto pd = GetPointerS<parm_decl>(GET_NODE(fd->list_of_args.at(idx)));
+                     pd->name = tree_man->create_identifier_node(bundle_name);
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                    "---Parameter " + parm_attr->second.at(FunctionArchitecture::parm_port) +
+                                        " renamed and bound to internal interface " + STR(base_var) + " - " +
+                                        bundle_name);
+                     parm_attr->second.at(FunctionArchitecture::parm_port) = bundle_name;
+                     func_arch->parms[bundle_name] = parm_attr->second;
+                     func_arch->parms.erase(parm_attr);
+                  }
+                  ++idx;
+               }
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+            }
+         }
+
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Generating control flow loop for dataflow module");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+         const auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
+         THROW_ASSERT(sl->list_of_bloc.count(BB_ENTRY) && sl->list_of_bloc.count(BB_EXIT),
+                      "Expected entry and exit basic blocks for function " + fname);
+         const auto& bb_entry = sl->list_of_bloc.at(BB_ENTRY);
+         THROW_ASSERT(bb_entry->list_of_succ.size() == 1, "Expected single entry basic block for function " + fname);
+         const auto& bb_first = sl->list_of_bloc.at(bb_entry->list_of_succ.front());
+         for(auto& [bbi, bb] : sl->list_of_bloc)
+         {
+            if(std::find(bb->list_of_succ.begin(), bb->list_of_succ.end(), BB_EXIT) != bb->list_of_succ.end())
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---BB" + std::to_string(bbi) + " loop-back to entry BB" +
+                                  std::to_string(bb_first->number));
+               bb->list_of_succ.clear();
+               bb->list_of_succ.push_back(bb_first->number);
+               bb_first->list_of_pred.push_back(bbi);
+               const auto return_stmt = bb->CGetStmtList().back();
+               THROW_ASSERT(GetPointer<const gimple_return>(GET_CONST_NODE(return_stmt)),
+                            "Expected return statement as last statement");
+               bb->RemoveStmt(return_stmt, AppM);
+            }
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+      }
 
       std::map<std::string, TreeNodeSet> bundle_vdefs;
       for(const auto& arg : fd->list_of_args)
