@@ -1005,14 +1005,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
       {
          return RemoveTypedef(t->getAs<ElaboratedType>()->getNamedType());
       }
-      else if(t->getTypeClass() == clang::Type::TemplateSpecialization)
-      {
-         return t;
-      }
-      else
-      {
-         return t;
-      }
+      return t;
    }
 
    std::string GetTypeNameCanonical(const QualType& t, const PrintingPolicy& pp) const
@@ -1073,6 +1066,60 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
           Width
 #endif
           .getQuantity();
+   }
+
+   std::string removeSpaces(std::string str)
+   {
+      // The default CentOS 7 system compiler is gcc 4.8.5, which ships an
+      // incomplete version of <regex> in libstdc++. As such, the following
+      // line of code will not compile with the system compiler or any other
+      // compiler that relies on the default system libstdc++. When using
+      // toolchains built with /opt/rh/devtoolset-9/ (gcc 9.3.1) or that can
+      // provide their own c++ libs, this is no longer an issue.
+#ifndef REWRITE_REGEX
+      return std::regex_replace(str, std::regex(" ([<>&*])|([<>&*]) | $|^ "), "$1$2");
+#else
+      const char anchors[] = "[<>&*]";
+      const char remove = ' ';
+
+      size_t num_deleted = 0;
+      for(int i = str.size() - 1; i > 0; i--)
+      {
+         char curr = str[i];
+         char prev = str[i - 1];
+
+         char curr_in_anchors = 0;
+         char prev_in_anchors = 0;
+         for(size_t j = 0; j < sizeof(anchors) - 1; j++)
+         {
+            curr_in_anchors |= (curr == anchors[j]);
+            prev_in_anchors |= (prev == anchors[j]);
+         }
+
+         // "delete" the curr/prev char by shifting it to the end
+         if(curr == remove && (i == str.size() - 1 || prev_in_anchors))
+         {
+            for(size_t k = i; k < str.size() - 1; k++)
+            {
+               str[k] = str[k + 1];
+            }
+            str[str.size() - 1] = curr;
+            num_deleted++;
+         }
+         else if(prev == remove && (i == 1 || curr_in_anchors))
+         {
+            for(size_t k = i - 1; k < str.size() - 1; k++)
+            {
+               str[k] = str[k + 1];
+            }
+            str[str.size() - 1] = prev;
+            num_deleted++;
+         }
+      }
+
+      str.erase(str.end() - num_deleted, str.end());
+      return str;
+#endif
    }
 
    void AnalyzeParameterInterface(FunctionDecl* FD, const pragma_line_t& p)
@@ -1278,65 +1325,13 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          ReportError(ifaceModeReq->first.loc, "HLS interface array element count missing");
       }
 
-      const auto remove_spaces = [](std::string& str) {
-      // The default CentOS 7 system compiler is gcc 4.8.5, which ships an
-      // incomplete version of <regex> in libstdc++. As such, the following
-      // line of code will not compile with the system compiler or any other
-      // compiler that relies on the default system libstdc++. When using
-      // toolchains built with /opt/rh/devtoolset-9/ (gcc 9.3.1) or that can
-      // provide their own c++ libs, this is no longer an issue.
-#ifndef REWRITE_REGEX
-         str = std::regex_replace(str, std::regex(" ([<>&*])|([<>&*]) | $|^ "), "$1$2");
-#else
-         const char anchors[] = "[<>&*]";
-         const char remove = ' ';
-
-         size_t num_deleted = 0;
-         for(int i = str.size() - 1; i > 0; i--)
-         {
-            char curr = str[i];
-            char prev = str[i - 1];
-
-            char curr_in_anchors = 0;
-            char prev_in_anchors = 0;
-            for(size_t j = 0; j < sizeof(anchors) - 1; j++)
-            {
-               curr_in_anchors |= (curr == anchors[j]);
-               prev_in_anchors |= (prev == anchors[j]);
-            }
-
-            // "delete" the curr/prev char by shifting it to the end
-            if(curr == remove && (i == str.size() - 1 || prev_in_anchors))
-            {
-               for(size_t k = i; k < str.size() - 1; k++)
-               {
-                  str[k] = str[k + 1];
-               }
-               str[str.size() - 1] = curr;
-               num_deleted++;
-            }
-            else if(prev == remove && (i == 1 || curr_in_anchors))
-            {
-               for(size_t k = i - 1; k < str.size() - 1; k++)
-               {
-                  str[k] = str[k + 1];
-               }
-               str[str.size() - 1] = prev;
-               num_deleted++;
-            }
-         }
-
-         str.erase(str.end() - num_deleted, str.end());
-#endif
-      };
-
-      remove_spaces(parmTypename);
-      remove_spaces(parmOriginalTypename);
+      parmTypename = removeSpaces(parmTypename);
+      parmOriginalTypename = removeSpaces(parmOriginalTypename);
       if(parmOriginalTypename == "size_t")
       {
          parmIncludePaths = "stddef.h";
       }
-      remove_spaces(parmIncludePaths);
+      parmIncludePaths = removeSpaces(parmIncludePaths);
 
       LLVM_DEBUG(dbgs() << " MODE: " << ifaceMode << "\n");
       LLVM_DEBUG(dbgs() << " TYPE: " << parmTypename << "\n");
