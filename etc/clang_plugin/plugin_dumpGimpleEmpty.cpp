@@ -126,12 +126,12 @@ namespace llvm
             return false;
 
          DumpGimpleRaw gimpleRawWriter(outdir_nameGE, InFileGE, true, nullptr, false);
-         const std::string empty;
+         std::vector<std::string> empty;
          auto res = gimpleRawWriter.exec(M, empty, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC,
 #if __clang_major__ > 5
                                          GetORE,
 #endif
-                                         empty);
+                                         "");
          return res;
       }
 

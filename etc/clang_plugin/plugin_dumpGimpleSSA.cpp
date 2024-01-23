@@ -40,7 +40,8 @@
 // #undef NDEBUG
 #include "plugin_includes.hpp"
 
-#include <llvm-c/Transforms/Scalar.h>
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/StringExtras.h>
 #include <llvm/Analysis/AliasAnalysis.h>
 #include <llvm/Analysis/AssumptionCache.h>
 #include <llvm/Analysis/DominanceFrontier.h>
@@ -190,6 +191,17 @@ namespace llvm
 #endif
                 const std::string& costTable)
       {
+         std::vector<std::string> TopFunctionNames;
+         for(std::size_t last = 0, it = 0; it < TopFunctionName.size(); last = it + 1)
+         {
+            it = TopFunctionName.find(",", last);
+            TopFunctionNames.push_back(TopFunctionName.substr(last, it));
+         }
+         if(!TopFunctionNames.empty())
+         {
+            LLVM_DEBUG(llvm::dbgs() << "Top function names: " << llvm::join(TopFunctionNames, ", ") << "\n");
+         }
+
          /// load parameter names
          std::map<std::string, std::vector<std::string>> Fun2Params;
          const auto first_filename =
@@ -214,20 +226,13 @@ namespace llvm
                   }
                   func_parms[idx] = parm_name;
                }
-#if __clang_major__ >= 6
-               LLVM_DEBUG(dbgs() << "FUNC: " << func_symbol << "(" << llvm::join(func_parms, ", ") << ")\n");
-#endif
+               LLVM_DEBUG(dbgs() << "FUNC: " << func_symbol << "("
+                                 << llvm::join(func_parms.begin(), func_parms.end(), ", ") << ")\n");
             }
          }
 
          DumpGimpleRaw gimpleRawWriter(outdir_name, first_filename, false, &Fun2Params, earlyAnalysis);
-
-         if(!TopFunctionName.empty())
-         {
-            LLVM_DEBUG(llvm::dbgs() << "Top function name: " << TopFunctionName << "\n");
-         }
-
-         auto res = gimpleRawWriter.exec(M, TopFunctionName, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC,
+         auto res = gimpleRawWriter.exec(M, TopFunctionNames, GetTLI, GetTTI, GetDomTree, GetLI, GetMSSA, GetLVI, GetAC,
 #if __clang_major__ > 5
                                          GetORE,
 #endif
