@@ -199,14 +199,11 @@ DesignFlowStep_Status SynthesisEvaluation::Exec()
       else if(objective == "CLOCK_SLACK")
       {
          /// get the timing information after the synthesis
-         time_infoRef time_m = HLSMgr->get_backend_flow()->get_timing_results();
-         double minimum_period = time_m->get_execution_time();
-         const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
-         THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
-         const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(top_symbols.front());
-         double clock_period = HLSMgr->get_HLS(GET_INDEX_CONST_NODE(top_fnode))->HLS_C->get_clock_period();
-         double slack = clock_period - minimum_period;
-         if(parameters->getOption<bool>(OPT_timing_violation_abort) and slack < 0.0)
+         const auto time_m = HLSMgr->get_backend_flow()->get_timing_results();
+         const auto minimum_period = time_m->get_execution_time();
+         const auto clock_period = parameters->getOption<double>(OPT_clock_period);
+         const auto slack = clock_period - minimum_period;
+         if(parameters->getOption<bool>(OPT_timing_violation_abort) && slack < 0.0)
          {
             THROW_UNREACHABLE("Slack is " + STR(slack));
          }
