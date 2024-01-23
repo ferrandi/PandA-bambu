@@ -280,33 +280,15 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
                          HLSMgr->CGetFunctionBehavior(top_fid)->CGetBehavioralHelper()->get_function_name());
       const auto top_vertex = CGM->GetVertex(top_fid);
       const auto reached_from_top = CGM->GetReachedFunctionsFrom(top_fid, false);
-
-      CallGraphConstRef subgraph;
-      size_t vertex_count;
-      boost::tie(vertex_count, subgraph) = [&]() {
-         CustomUnorderedSet<vertex> preset;
-         preset.insert(top_vertex);
-         for(const auto& funID : reached_from_top)
-         {
-            if(!root_functions.count(funID))
-            {
-               preset.insert(CGM->GetVertex(funID));
-            }
-         }
-         const auto presub = CGM->CGetCallSubGraph(preset);
+      const auto subgraph = [&]() {
          CustomUnorderedSet<vertex> subset;
          subset.insert(top_vertex);
-         for(const auto& v : preset)
-         {
-            if(presub->IsReachable(top_vertex, v))
-            {
-               subset.insert(v);
-            }
-         }
-         return std::make_pair(subset.size(), CGM->CGetCallSubGraph(subset));
+         std::transform(reached_from_top.begin(), reached_from_top.end(), std::inserter(subset, subset.end()),
+                        [&](unsigned int fid) { return CGM->GetVertex(fid); });
+         return CGM->CGetCallSubGraph(subset);
       }();
 
-      if(vertex_count < 2)
+      if(boost::num_vertices(*subgraph) < 2)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Empty thread");
          continue;
@@ -435,29 +417,28 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
       for(const auto& cur : topology_sorted_vertex)
       {
          const auto cur_id = CGM->get_function(cur);
-         const auto cur_fu_name = functions::GetFUName(cur_id, HLSMgr);
-         if(reached_from_top.find(cur_id) == reached_from_top.end())
+         if(reached_from_top.find(cur_id) != reached_from_top.end())
          {
-            continue;
-         }
-         THROW_ASSERT(num_instances.count(cur_fu_name),
-                      "missing number of instances of function " +
-                          HLSMgr->CGetFunctionBehavior(cur_id)->CGetBehavioralHelper()->get_function_name());
-         function_allocation_map[cur_id];
-         const auto cur_instances = num_instances.at(cur_fu_name);
-         BOOST_FOREACH(EdgeDescriptor eo, boost::out_edges(cur, *subgraph))
-         {
-            const auto tgt = boost::target(eo, *subgraph);
-            const auto tgt_fu_name = functions::GetFUName(CGM->get_function(tgt), HLSMgr);
-            const auto n_call_points = static_cast<unsigned int>(
-                Cget_edge_info<FunctionEdgeInfo, const CallGraph>(eo, *subgraph)->direct_call_points.size());
-            if(num_instances.find(tgt_fu_name) == num_instances.end())
+            const auto cur_fu_name = functions::GetFUName(cur_id, HLSMgr);
+            THROW_ASSERT(num_instances.count(cur_fu_name),
+                         "missing number of instances of function " +
+                             HLSMgr->CGetFunctionBehavior(cur_id)->CGetBehavioralHelper()->get_function_name());
+            function_allocation_map[cur_id];
+            const auto cur_instances = num_instances.at(cur_fu_name);
+            BOOST_FOREACH(EdgeDescriptor eo, boost::out_edges(cur, *subgraph))
             {
-               num_instances[tgt_fu_name] = cur_instances * n_call_points;
-            }
-            else
-            {
-               num_instances[tgt_fu_name] += cur_instances * n_call_points;
+               const auto tgt = boost::target(eo, *subgraph);
+               const auto tgt_fu_name = functions::GetFUName(CGM->get_function(tgt), HLSMgr);
+               const auto n_call_points = static_cast<unsigned int>(
+                   Cget_edge_info<FunctionEdgeInfo, const CallGraph>(eo, *subgraph)->direct_call_points.size());
+               if(num_instances.find(tgt_fu_name) == num_instances.end())
+               {
+                  num_instances[tgt_fu_name] = cur_instances * n_call_points;
+               }
+               else
+               {
+                  num_instances[tgt_fu_name] += cur_instances * n_call_points;
+               }
             }
          }
       }
@@ -539,6 +520,9 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
       /// really allocate
       for(const auto& funID : reached_from_top)
       {
+         THROW_ASSERT(function_allocation_map.find(funID) != function_allocation_map.end(),
+                      "Expected function allocation map for function " +
+                          HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name());
          for(const auto& fu_name : function_allocation_map.at(funID))
          {
             if(io_proxies_only && fu_name.find(STR_CST_interface_parameter_keyword) == std::string::npos)
