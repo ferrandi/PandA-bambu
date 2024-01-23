@@ -485,29 +485,29 @@ bool llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::exec(
          {
             if(auto InstrCall = dyn_cast<llvm::MemIntrinsic>(&I))
             {
-               LLVM_DEBUG(llvm::dbgs() << "    Found mem intrinsic: ");
-#ifndef NDEBUG
-               InstrCall->print(llvm::errs(), true);
-#endif
-               LLVM_DEBUG(llvm::dbgs() << "\n");
+               LLVM_DEBUG({
+                  llvm::dbgs() << "    Found mem intrinsic: ";
+                  InstrCall->print(llvm::dbgs(), true);
+                  llvm::dbgs() << "\n";
+               });
                MemCalls.push_back(InstrCall);
-#ifndef NDEBUG
-               if(auto* Memcpy = dyn_cast<llvm::MemCpyInst>(InstrCall))
-               {
-                  if(dyn_cast<llvm::ConstantInt>(Memcpy->getLength()))
+               LLVM_DEBUG({
+                  if(auto* Memcpy = dyn_cast<llvm::MemCpyInst>(InstrCall))
                   {
-                     LLVM_DEBUG(llvm::dbgs() << "    Found a memcpy with a constant number of iterations\n");
+                     if(dyn_cast<llvm::ConstantInt>(Memcpy->getLength()))
+                     {
+                        llvm::dbgs() << "    Found a memcpy with a constant number of iterations\n";
+                     }
+                     else
+                     {
+                        llvm::dbgs() << "    Found a memcpy with an unknown number of iterations\n";
+                     }
                   }
-                  else
+                  else if(dyn_cast<llvm::MemSetInst>(InstrCall))
                   {
-                     LLVM_DEBUG(llvm::dbgs() << "    Found a memcpy with an unknown number of iterations\n");
+                     llvm::dbgs() << "    Found a memset intrinsic\n";
                   }
-               }
-               else if(dyn_cast<llvm::MemSetInst>(InstrCall))
-               {
-                  LLVM_DEBUG(llvm::dbgs() << "    Found a memset intrinsic\n");
-               }
-#endif
+               });
             }
          }
       }
