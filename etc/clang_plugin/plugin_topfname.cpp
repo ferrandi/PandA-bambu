@@ -40,6 +40,7 @@
  */
 #include "plugin_includes.hpp"
 
+#include <llvm/ADT/StringExtras.h>
 #include <llvm/ADT/StringSet.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Module.h>
@@ -133,13 +134,13 @@ static std::string getDemangled(const std::string& declname)
 
 namespace llvm
 {
-   static cl::opt<std::string> TopFunctionName_TFP("panda-TFN", cl::desc("Specify the name of the top function"),
-                                                   cl::value_desc("name of the top function"));
+   static cl::opt<std::string> TopFunctionName_TFP("panda-TFN", cl::desc("Specify the list of top function symbols"),
+                                                   cl::value_desc("comma-separated list of top function symbols"));
    static cl::opt<bool> Internalize_TFP("panda-Internalize", cl::init(false),
                                         cl::desc("Specify if the global variables has to be internalized"));
    static cl::opt<std::string> ExternSymbolsList("panda-ESL",
                                                  cl::desc("Specify the list of symbols not to be internalized"),
-                                                 cl::value_desc("comma separated list of external symbols"));
+                                                 cl::value_desc("comma-separated list of external symbols"));
    static cl::opt<std::string>
        outdir_name("internalize-outputdir",
                    cl::desc("Specify the directory where the external symbols file will be written"),
@@ -172,7 +173,13 @@ namespace llvm
       {
          bool changed = false;
          bool hasTopFun = false;
-         if(TopFunctionName_TFP.empty())
+         std::vector<std::string> TopFunctionNames;
+         for(std::size_t last = 0, it = 0; it < TopFunctionName_TFP.size(); last = it + 1)
+         {
+            it = TopFunctionName_TFP.find(",", last);
+            TopFunctionNames.push_back(TopFunctionName_TFP.substr(last, it));
+         }
+         if(TopFunctionNames.empty())
          {
             LLVM_DEBUG(llvm::dbgs() << "No top function specified\n");
             return false;
@@ -194,17 +201,23 @@ namespace llvm
          {
             if(!fun.isIntrinsic() && !fun.isDeclaration())
             {
-               std::string funName = fun.getName().data();
-               auto demangled = getDemangled(funName);
-               LLVM_DEBUG(llvm::dbgs() << "Checking function: " + funName + " | " + demangled + "\n");
+               const auto funName = fun.getName().str();
+               const auto demangled = getDemangled(funName);
+               LLVM_DEBUG(llvm::dbgs() << "Checking function: " << funName << " | " << demangled << " ("
+                                       << fun.getLinkage() << ")\n");
                if(is_builtin_fn(funName) || is_builtin_fn(demangled))
                {
                   LLVM_DEBUG(llvm::dbgs() << "  builtin\n");
                   symbolList.push_back(funName);
                }
-               if(!fun.hasInternalLinkage() && (funName == TopFunctionName_TFP || demangled == TopFunctionName_TFP))
+               if(llvm::find(TopFunctionNames, funName) != TopFunctionNames.end() ||
+                  llvm::find(TopFunctionNames, demangled) != TopFunctionNames.end())
                {
                   LLVM_DEBUG(llvm::dbgs() << "  top function\n");
+                  fun.setLinkage(GlobalValue::LinkageTypes::ExternalLinkage);
+#if __clang_major__ >= 7
+                  fun.setDSOLocal(false);
+#endif
                   symbolList.push_back(funName);
                   hasTopFun = true;
                   /// in case add noalias
@@ -225,7 +238,8 @@ namespace llvm
          {
             return changed;
          }
-         LLVM_DEBUG(llvm::dbgs() << "Top function name: " << TopFunctionName_TFP << "\n");
+         LLVM_DEBUG(llvm::dbgs() << "Top function symbols: "
+                                 << llvm::join(TopFunctionNames.begin(), TopFunctionNames.end(), ", ") << "\n");
          symbolList.push_back("signgam");
 
          if(!Internalize_TFP)

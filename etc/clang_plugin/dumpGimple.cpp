@@ -1528,10 +1528,11 @@ namespace llvm
          auto isVecType = ty->isVectorTy();
          auto type = assignCodeType(ty);
          auto written_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         std::string funName = getName(store.getFunction());
-         auto demangled = getDemangled(funName);
+         const auto funName = getName(store.getFunction());
+         const auto demangled = getDemangled(funName);
          bool is_a_top_parameter = isa<llvm::Argument>(store.getPointerOperand()) &&
-                                   (funName == TopFunctionName || demangled == TopFunctionName);
+                                   (llvm::find(TopFunctionNames, funName) != TopFunctionNames.end() ||
+                                    llvm::find(TopFunctionNames, demangled) != TopFunctionNames.end());
 #if __clang_major__ < 16
          if(store.getAlignment() && written_obj_size > (8 * store.getAlignment()) && !is_a_top_parameter && !isVecType)
 #else
@@ -2382,10 +2383,11 @@ namespace llvm
          auto isVecType = ty->isVectorTy();
          auto type = assignCodeType(ty);
          auto read_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         std::string funName = getName(load.getFunction());
-         auto demangled = getDemangled(funName);
+         const auto funName = getName(load.getFunction());
+         const auto demangled = getDemangled(funName);
          bool is_a_top_parameter = isa<llvm::Argument>(load.getPointerOperand()) &&
-                                   (funName == TopFunctionName || demangled == TopFunctionName);
+                                   (llvm::find(TopFunctionNames, funName) != TopFunctionNames.end() ||
+                                    llvm::find(TopFunctionNames, demangled) != TopFunctionNames.end());
 
 #if __clang_major__ < 16
          if(load.getAlignment() && read_obj_size > (8 * load.getAlignment()) && !is_a_top_parameter && !isVecType)
@@ -6374,7 +6376,7 @@ namespace llvm
       }
    }
 
-   bool DumpGimpleRaw::exec(llvm::Module& M, const std::string& _TopFunctionName,
+   bool DumpGimpleRaw::exec(llvm::Module& M, const std::vector<std::string>& _TopFunctionNames,
                             llvm::function_ref<llvm::TargetLibraryInfo&(llvm::Function&)> _GetTLI,
                             llvm::function_ref<llvm::TargetTransformInfo&(llvm::Function&)> _GetTTI,
                             llvm::function_ref<llvm::DominatorTree&(llvm::Function&)> _GetDomTree,
@@ -6396,7 +6398,7 @@ namespace llvm
       GetLVI = _GetLVI;
       GetAC = _GetAC;
       moduleContext = &M.getContext();
-      TopFunctionName = _TopFunctionName;
+      TopFunctionNames = _TopFunctionNames;
       bool res = false;
 #if __clang_major__ > 5
       if(!costTable.empty())
@@ -6422,9 +6424,11 @@ namespace llvm
 #if HAVE_LIBBDD
          if(!onlyGlobals)
          {
-            if(TopFunctionName != "")
+            if(TopFunctionNames.size())
             {
-               LLVM_DEBUG(llvm::dbgs() << "Performing alias analysis\n");
+               const auto TopFunctionName = TopFunctionNames.front();
+               LLVM_DEBUG(llvm::dbgs() << "Performing alias analysis on first top function: " << TopFunctionName
+                                       << "\n");
 #if ANDERSEN_AA
                PtoSets_AA = new Andersen_AA(TopFunctionName);
 #else
