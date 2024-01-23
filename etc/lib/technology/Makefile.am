@@ -16,6 +16,7 @@ EXTRA_DIST = \
   NC_HLS_IPs.xml \
   NC_MEM_IPs.xml \
   NC_CACHE_IPs.xml \
+  NC_DATAFLOW_IPs.xml \
   NC_PC_IPs.xml \
   NC_SF_IPs.xml \
   NC_STD_IPs.xml \

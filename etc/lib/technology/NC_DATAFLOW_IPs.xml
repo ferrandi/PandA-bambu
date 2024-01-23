@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<technology>
+   <library>
+      <name>STD_DATAFLOW</name>
+      <cell>
+         <name>dataflow_fifo</name>
+         <circuit>
+            <component_o id="dataflow_fifo">
+               <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+               <copyright>Copyright (C) 2014-2023 Politecnico di Milano</copyright>
+               <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+               <license>PANDA_LGPLv3</license>
+               <structural_type_descriptor id_type="dataflow_fifo"/>
+               <parameter name="QUEUESIZE_LOG">2</parameter>
+               <port_o id="clock" dir="IN" is_clock="1">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <port_o id="reset" dir="IN">
+                  <structural_type_descriptor type="BOOL" size="1"/>
+               </port_o>
+               <port_o id="write" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+               </port_o>
+               <port_o id="read" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+               </port_o>
+               <port_o id="din" dir="IN">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+               </port_o>
+               <port_o id="empty_n" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+               </port_o>
+               <port_o id="full_n" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+               </port_o>
+               <port_o id="dout" dir="OUT">
+                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+               </port_o>
+               <NP_functionality LIBRARY="dataflow_fifo QUEUESIZE_LOG din dout" VERILOG_PROVIDED="reg [QUEUESIZE_LOG-1:0] read_idx, write_idx;
+reg [BITSIZE_din-1:0] circ_fifo [0:((1&lt;&lt;QUEUESIZE_LOG)-1)];
+// reg [BITSIZE_din-1:0] reg_out_value;
+
+assign full_n = ((write_idx + 1&apos;b1) == read_idx) ? 1&apos;b0 : 1&apos;b1;
+assign empty_n = (write_idx == read_idx) ? 1&apos;b0 : 1&apos;b1;
+assign dout = (write_idx == read_idx) ? &apos;d0 : circ_fifo[read_idx];
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if (1RESET_VALUE)
+  begin
+    read_idx &lt;= &apos;d0;
+    write_idx &lt;= &apos;d0;
+  end
+  else
+  begin
+    if (write == 1&apos;b1 &amp;&amp; full_n)
+    begin
+      circ_fifo[write_idx] &lt;= din;
+    end
+    if (write == 1&apos;b1 &amp;&amp; full_n)
+    begin
+      write_idx &lt;= write_idx + 1&apos;b1;
+    end
+    if (read == 1&apos;b1 &amp;&amp; empty_n)
+    begin
+      read_idx &lt;= read_idx + 1&apos;b1;
+    end
+  end
+end"/>
+            </component_o>
+         </circuit>
+      </cell>
+   </library>
+</technology>
