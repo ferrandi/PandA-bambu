@@ -60,6 +60,11 @@
 #include <llvm/Passes/PassPlugin.h>
 #endif
 
+#define PUGIXML_NO_EXCEPTIONS
+#define PUGIXML_HEADER_ONLY
+
+#include <pugixml.hpp>
+
 #include <cxxabi.h>
 #include <list>
 #include <set>
@@ -178,6 +183,23 @@ namespace llvm
          {
             it = TopFunctionName_TFP.find(",", last);
             TopFunctionNames.push_back(TopFunctionName_TFP.substr(last, it));
+         }
+         pugi::xml_document doc;
+         const auto arch_filename = outdir_name + "/architecture.xml";
+         if(doc.load_file(arch_filename.c_str()))
+         {
+            for(auto& f : doc.child("module"))
+            {
+               const auto func_symbol = std::string(f.attribute("symbol").value());
+               const auto func_name = std::string(f.attribute("name").value());
+               const auto is_dataflow = !f.attribute("dataflow").empty();
+               if(is_dataflow && (llvm::find(TopFunctionNames, func_name) == TopFunctionNames.end() ||
+                                  llvm::find(TopFunctionNames, func_symbol) == TopFunctionNames.end()))
+               {
+                  LLVM_DEBUG(dbgs() << " - " << func_symbol << "|" << func_name << "\n");
+                  TopFunctionNames.push_back(func_symbol);
+               }
+            }
          }
          if(TopFunctionNames.empty())
          {

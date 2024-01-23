@@ -106,6 +106,7 @@ call_graph_computation::ComputeFrontendRelationships(const DesignFlowStep::Relat
 DesignFlowStep_Status call_graph_computation::Exec()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Creating call graph data structure");
+   const auto HLSMgr = GetPointer<HLS_manager>(AppM);
    const auto TM = AppM->get_tree_manager();
    const auto CGM = AppM->GetCallGraphManager();
    already_visited.clear();
@@ -114,6 +115,15 @@ DesignFlowStep_Status call_graph_computation::Exec()
    CustomSet<unsigned int> functions;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Top functions passed by user");
    auto function_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
+   for(const auto& [symbol, arch] : *HLSMgr->module_arch)
+   {
+      THROW_ASSERT(arch, "Expected function architecture for function " + symbol);
+      const auto dataflow_attr = arch->attrs.find(FunctionArchitecture::func_dataflow);
+      if(dataflow_attr != arch->attrs.end() && dataflow_attr->second == "module")
+      {
+         function_symbols.push_back(symbol);
+      }
+   }
    for(const auto& symbol : function_symbols)
    {
       const auto fnode = TM->GetFunction(symbol);

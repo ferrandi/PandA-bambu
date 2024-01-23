@@ -1789,6 +1789,17 @@ void fu_binding::manage_extern_global_port(const HLS_managerRef HLSMgr, const hl
    else if(inPort->get_port_interface() != port_o::port_interface::PI_DEFAULT)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Manage interface port");
+      const auto fsymbol =
+          HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()->GetMangledFunctionName();
+      const auto func_arch = HLSMgr->module_arch->GetArchitecture(fsymbol);
+      const auto is_dataflow_top =
+          func_arch && func_arch->attrs.find(FunctionArchitecture::func_dataflow) != func_arch->attrs.end() &&
+          func_arch->attrs.find(FunctionArchitecture::func_dataflow)->second == "top";
+      if(is_dataflow_top && starts_with(port_name, "_DF_bambu"))
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Stop interface propagation at dataflow top module");
+         return;
+      }
       THROW_ASSERT(!ext_port || GetPointer<port_o>(ext_port), "should be a port or null");
       if(ext_port && GetPointer<port_o>(ext_port)->get_port_direction() != dir)
       {

@@ -214,6 +214,13 @@ namespace llvm
             for(auto& f : doc.child("module"))
             {
                const auto func_symbol = std::string(f.attribute("symbol").value());
+               const auto func_name = std::string(f.attribute("name").value());
+               const auto is_dataflow = !f.attribute("dataflow").empty();
+               if(is_dataflow && (llvm::find(TopFunctionNames, func_name) == TopFunctionNames.end() ||
+                                  llvm::find(TopFunctionNames, func_symbol) == TopFunctionNames.end()))
+               {
+                  TopFunctionNames.push_back(func_symbol);
+               }
                auto& func_parms = Fun2Params[func_symbol];
                for(auto& p : f.child("parameters"))
                {
