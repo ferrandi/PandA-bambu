@@ -72,6 +72,8 @@
 #define CG_LIBRARY std::string("CG")
 /// standard library for parallel controller
 #define LIBRARY_PC std::string("STD_PC")
+/// standard library for dataflow interface modules
+#define LIBRARY_STD_DATAFLOW std::string("STD_DATAFLOW")
 
 /**
  * @name Forward declarations.
