@@ -1057,9 +1057,18 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
 
    int64_t getSizeInBytes(QualType T)
    {
-      if(T->isIncompleteType() || T->isTemplateTypeParmType() || isa<TemplateSpecializationType>(T))
+      if(T->isDependentType() || T->isIncompleteType() || T->isTemplateTypeParmType())
       {
          return 1;
+      }
+      if(isa<InjectedClassNameType>(T))
+      {
+         return getSizeInBytes(cast<InjectedClassNameType>(T)->getInjectedSpecializationType());
+      }
+      else if(isa<TemplateSpecializationType>(T))
+      {
+         const auto TST = cast<TemplateSpecializationType>(T);
+         return TST->isTypeAlias() ? getSizeInBytes(TST->getAliasedType()) : 1;
       }
       return _ASTContext.getTypeInfoDataSizeInChars(T)
           .
@@ -1074,6 +1083,12 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
    bool hasThisParameter(FunctionDecl* FD)
    {
       return FD->isCXXInstanceMember() && !isa<CXXConstructorDecl>(FD) && !isa<CXXDestructorDecl>(FD);
+   }
+
+   bool isUnsupportedInterface(FunctionDecl* FD)
+   {
+      return FD->isVariadic() ||
+             llvm::any_of(FD->parameters(), [](const ParmVarDecl* D) { return D->isParameterPack(); });
    }
 
    std::string removeSpaces(std::string str)
@@ -1132,7 +1147,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
 
    void AnalyzeParameterInterface(FunctionDecl* FD, const pragma_line_t& p)
    {
-      if(FD->isVariadic())
+      if(isUnsupportedInterface(FD))
       {
          ReportError(p.loc, "HLS pragma not supported on variadic function declarations");
       }
@@ -1383,6 +1398,11 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
    {
       if(_parseAction & ParseAction_Analyze)
       {
+         if(isUnsupportedInterface(FD))
+         {
+            LLVM_DEBUG(dbgs() << " Skip variadic arguments or unexpandend parameter pack tempalte declaration\n");
+            return;
+         }
          auto& func_ifaces = GetFuncAttr(FD).ifaces;
          size_t idx = 0;
          // Prepend this pointer parameter to CXX class member declarations
