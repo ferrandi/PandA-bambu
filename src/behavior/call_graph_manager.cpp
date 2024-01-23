@@ -571,31 +571,22 @@ void CallGraphManager::ComputeRootAndReachedFunctions()
    reached_body_functions.clear();
    reached_library_functions.clear();
    CalledFunctionsVisitor vis(allow_recursive_functions, this, reached_body_functions, reached_library_functions);
-   for(const auto root_fun_id : root_functions)
+   for(const auto root_id : root_functions)
    {
-      if(IsVertex(root_fun_id))
+      if(IsVertex(root_id))
       {
          std::vector<boost::default_color_type> color_vec(boost::num_vertices(*call_graph));
-         {
-            // Prevent top functions traversing
-            const auto index_map = boost::get(boost::vertex_index, *call_graph);
-            for(const auto top_id : root_functions)
-            {
-               if(top_id != root_fun_id)
-               {
-                  const auto v_it = functionID_vertex_map.find(top_id);
-                  if(v_it != functionID_vertex_map.end())
-                  {
-                     color_vec.at(index_map[v_it->second]) = boost::black_color;
-                  }
-               }
-            }
-         }
-         const auto top_vertex = GetVertex(root_fun_id);
-         boost::depth_first_visit(*call_graph, top_vertex, vis,
-                                  boost::make_iterator_property_map(color_vec.begin(),
-                                                                    boost::get(boost::vertex_index_t(), *call_graph),
-                                                                    boost::white_color));
+         auto other_root_functions = root_functions;
+         other_root_functions.erase(root_id);
+         const auto top_vertex = GetVertex(root_id);
+         boost::depth_first_visit(
+             *call_graph, top_vertex, vis,
+             boost::make_iterator_property_map(color_vec.begin(), boost::get(boost::vertex_index_t(), *call_graph),
+                                               boost::white_color),
+             [&](vertex u, const CallGraph& g) {
+                return other_root_functions.find(Cget_node_info<FunctionInfo, graph>(u, g)->nodeID) !=
+                       other_root_functions.end();
+             });
       }
    }
 }
@@ -625,25 +616,16 @@ CustomOrderedSet<unsigned int> CallGraphManager::GetReachedFunctionsFrom(unsigne
    const auto top_vertex = GetVertex(from);
    CalledFunctionsVisitor vis(allow_recursive_functions, this, f_list, with_body ? dummy : f_list);
    std::vector<boost::default_color_type> color_vec(boost::num_vertices(*call_graph));
-   {
-      // Prevent top functions traversing
-      const auto index_map = boost::get(boost::vertex_index, *call_graph);
-      for(const auto top_id : root_functions)
-      {
-         if(top_id != from)
-         {
-            const auto v_it = functionID_vertex_map.find(top_id);
-            if(v_it != functionID_vertex_map.end())
-            {
-               color_vec.at(index_map[v_it->second]) = boost::black_color;
-            }
-         }
-      }
-   }
+   auto other_root_functions = root_functions;
+   other_root_functions.erase(from);
    boost::depth_first_visit(*call_graph, top_vertex, vis,
                             boost::make_iterator_property_map(color_vec.begin(),
                                                               boost::get(boost::vertex_index_t(), *call_graph),
-                                                              boost::white_color));
+                                                              boost::white_color),
+                            [&](vertex u, const CallGraph& g) {
+                               return other_root_functions.find(Cget_node_info<FunctionInfo, graph>(u, g)->nodeID) !=
+                                      other_root_functions.end();
+                            });
    return f_list;
 }
 
