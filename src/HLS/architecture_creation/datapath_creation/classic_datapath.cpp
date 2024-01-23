@@ -43,6 +43,7 @@
 #include "BambuParameter.hpp"
 #include "Parameter.hpp"
 #include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
 #include "commandport_obj.hpp"
 #include "conn_binding.hpp"
 #include "copyrights_strings.hpp"
@@ -141,6 +142,105 @@ DesignFlowStep_Status classic_datapath::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding multi-unbounded controllers");
    HLS->STG->add_to_SM(clock, reset);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
+
+   const auto func_arch = HLSMgr->module_arch->GetArchitecture(fsymbol);
+   const auto is_dataflow_top = func_arch &&
+                                func_arch->attrs.find(FunctionArchitecture::func_dataflow) != func_arch->attrs.end() &&
+                                func_arch->attrs.find(FunctionArchitecture::func_dataflow)->second == "top";
+   if(is_dataflow_top)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding dataflow module interfaces");
+      const auto CGM = HLSMgr->CGetCallGraphManager();
+      const auto dataflow_module_ids = CGM->get_called_by(funId);
+      std::map<std::string, const FunctionArchitecture::iface_attrs*> iface_attrs;
+      std::map<std::string, std::vector<structural_objectRef>> iface_ports;
+      const auto manage_port = [&](const structural_objectRef& port) {
+         const auto port_name = port->get_id();
+         if(starts_with(port_name, "_DF_bambu_"))
+         {
+            const auto bundle_id = port_name.substr(1, port_name.find('_', 11) - 1);
+            iface_ports[bundle_id].push_back(port);
+         }
+      };
+      // Gather dataflow module ports grouped by interface bundle
+      for(unsigned int n = 0; n < GetPointer<module>(datapath_cir)->get_internal_objects_size(); ++n)
+      {
+         const auto member = GetPointer<module>(datapath_cir)->get_internal_object(n);
+         const auto msymbol = GET_TYPE_NAME(member).substr(1);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Analyze module " + msymbol);
+         const auto march = HLSMgr->module_arch->GetArchitecture(msymbol);
+         THROW_ASSERT(march || HLSMgr->get_tree_manager()->GetFunction(msymbol) == nullptr,
+                      "Expected function architecture for function " + msymbol);
+         if(march)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Dataflow module");
+            for(const auto& [bundle, attrs] : march->ifaces)
+            {
+               iface_attrs.emplace(bundle, &attrs);
+            }
+            for(unsigned int p = 0; p < GetPointer<module>(member)->get_in_port_size(); ++p)
+            {
+               manage_port(GetPointer<module>(member)->get_in_port(p));
+            }
+            for(unsigned int p = 0; p < GetPointer<module>(member)->get_out_port_size(); ++p)
+            {
+               manage_port(GetPointer<module>(member)->get_out_port(p));
+            }
+            for(unsigned int p = 0; p < GetPointer<module>(member)->get_in_out_port_size(); ++p)
+            {
+               manage_port(GetPointer<module>(member)->get_in_out_port(p));
+            }
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
+      }
+      for(auto& [iface, ports] : iface_ports)
+      {
+         const auto attrs = iface_attrs.at(iface);
+         structural_objectRef dataflow_if;
+         const auto& iface_mode = attrs->at(FunctionArchitecture::iface_mode);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding dataflow " + iface_mode + " " + iface);
+         if(iface_mode == "fifo")
+         {
+            dataflow_if = HLS->datapath->add_module_from_technology_library(
+                iface, "dataflow_fifo", LIBRARY_STD_DATAFLOW, datapath_cir, HLS->HLS_D->get_technology_manager());
+         }
+         else
+         {
+            THROW_ERROR("Dataflow interface not supported: " + iface_mode);
+         }
+         const auto if_clock = GetPointer<module>(dataflow_if)->find_member("clock", port_o_K, dataflow_if);
+         const auto if_reset = GetPointer<module>(dataflow_if)->find_member("reset", port_o_K, dataflow_if);
+         HLS->datapath->add_connection(clock, if_clock);
+         HLS->datapath->add_connection(reset, if_reset);
+         for(auto& port : ports)
+         {
+            const auto port_name = port->get_id();
+            const auto port_suffix = port_name.substr(iface.size() + 2);
+            const auto if_port = GetPointer<module>(dataflow_if)->find_member(port_suffix, port_o_K, dataflow_if);
+            THROW_ASSERT(if_port, "Expected port " + port_suffix + " in dataflow interface module " +
+                                      GET_TYPE_NAME(dataflow_if));
+            // port_o::fix_port_properties(port, if_port);
+            structural_objectRef if_sign;
+            if(if_port->get_kind() == port_vector_o_K)
+            {
+               port_o::resize_std_port(GetPointerS<port_o>(port)->get_ports_size() * STD_GET_SIZE(port->get_typeRef()),
+                                       0U, DEBUG_LEVEL_NONE, if_port);
+               if_sign = HLS->datapath->add_sign_vector(iface + "_" + port_suffix,
+                                                        GetPointerS<port_o>(port)->get_ports_size(), datapath_cir,
+                                                        port->get_typeRef());
+            }
+            else
+            {
+               port_o::resize_std_port(STD_GET_SIZE(port->get_typeRef()), 0U, DEBUG_LEVEL_NONE, if_port);
+               if_sign = HLS->datapath->add_sign(iface + "_" + port_suffix, datapath_cir, port->get_typeRef());
+            }
+            HLS->datapath->add_connection(port, if_sign);
+            HLS->datapath->add_connection(if_sign, if_port);
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
+   }
 
    /// allocate interconnections
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding interconnections");

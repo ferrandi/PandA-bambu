@@ -158,6 +158,11 @@ void fsm_controller::create_state_machine(std::string& parse)
    const auto astg = HLS->STG->CGetAstg();
    const auto FB = HLSMgr->CGetFunctionBehavior(funId);
    const auto data = FB->CGetOpGraph(FunctionBehavior::CFG);
+   const auto fsymbol = FB->CGetBehavioralHelper()->GetMangledFunctionName();
+   const auto func_arch = HLSMgr->module_arch->GetArchitecture(fsymbol);
+   const auto is_dataflow_top = func_arch &&
+                                func_arch->attrs.find(FunctionArchitecture::func_dataflow) != func_arch->attrs.end() &&
+                                func_arch->attrs.find(FunctionArchitecture::func_dataflow)->second == "top";
 
    const auto entry = HLS->STG->get_entry_state();
    THROW_ASSERT(boost::out_degree(entry, *stg) == 1, "Non deterministic initial state");
@@ -360,7 +365,7 @@ void fsm_controller::create_state_machine(std::string& parse)
 
             // since v now has to wait for loop completion, every operation will be unbounded
             bool is_starting_operation = true;
-            if(stg->CGetStateInfo(v)->loopId == 0 || !FB->is_pipeline_enabled())
+            if(!is_dataflow_top && (stg->CGetStateInfo(v)->loopId == 0 || !FB->is_pipeline_enabled()))
             {
                const auto& starting_ops = stg->CGetStateInfo(v)->starting_operations;
                is_starting_operation = std::find(starting_ops.begin(), starting_ops.end(), op) != starting_ops.end();
@@ -392,7 +397,8 @@ void fsm_controller::create_state_machine(std::string& parse)
                }
             }
 
-            if(!GetPointer<operation>(op_tn)->is_bounded() && !stg->CGetStateInfo(v)->is_dummy && is_starting_operation)
+            if((!GetPointer<operation>(op_tn)->is_bounded() || start_port_i) &&
+               (!stg->CGetStateInfo(v)->is_dummy || is_dataflow_top) && is_starting_operation)
             {
                const auto unbounded_port =
                    out_ports[HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::UNBOUNDED, op, data)];

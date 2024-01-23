@@ -307,10 +307,10 @@ clang10_plugin_CSROA.o : $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp $(top_s
 clang10_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -fPIC $(I386_LLVM10_CXXFLAGS) $(WFLAGS) -I.'; \
+	    compile_options=' -fPIC $(I386_LLVM10_CXXFLAGS) $(WFLAGS) -I. -I$(top_srcdir)/ext/pugixml/src'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -fPIC $(I386_LLVM10_CXXFLAGS) $(WFLAGS) -I.';; \
+	    compile_options=' -fPIC $(I386_LLVM10_CXXFLAGS) $(WFLAGS) -I. -I$(top_srcdir)/ext/pugixml/src';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG10_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clang10_plugin_topfname.o; \
