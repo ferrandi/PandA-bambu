@@ -370,7 +370,6 @@ endfunction"/>
           <NP_functionality
             LIBRARY="MinimalAXI4AdapterSingleBeat BURST_TYPE Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size M_Rdata_ram m_axi_arid m_axi_araddr m_axi_arlen m_axi_arsize m_axi_arburst m_axi_arcache m_axi_arprot m_axi_arqos m_axi_arregion m_axi_aruser m_axi_rid m_axi_rdata m_axi_rresp m_axi_awid m_axi_awaddr m_axi_awlen m_axi_awsize m_axi_awburst m_axi_awcache m_axi_awprot m_axi_awqos m_axi_awregion m_axi_awuser m_axi_wdata m_axi_wstrb m_axi_wuser m_axi_bid m_axi_bresp" VERILOG_PROVIDED="
 assign m_axi_arlen = 0;
-assign m_axi_arsize = 0;
 assign m_axi_arburst = BURST_TYPE;
 assign m_axi_arlock = 0;
 assign m_axi_arcache = 0;
@@ -380,7 +379,6 @@ assign m_axi_arregion = 0;
 assign m_axi_aruser = 0;
 assign m_axi_arid = 0;
 assign m_axi_awlen = 0;
-assign m_axi_awsize = 0;
 assign m_axi_awburst = BURST_TYPE;
 assign m_axi_awlock = 0;
 assign m_axi_awcache = 0;
@@ -391,6 +389,18 @@ assign m_axi_awuser = 0;
 assign m_axi_awid = 0;
 assign m_axi_wlast = 1;
 assign m_axi_wuser = 0;
+
+`ifndef _SIM_HAVE_CLOG2
+  `define CLOG2(x) \
+    (x <= 2) ? 1 : \
+    (x <= 4) ? 2 : \
+    (x <= 8) ? 3 : \
+    (x <= 16) ? 4 : \
+    (x <= 32) ? 5 : \
+    (x <= 64) ? 6 : \
+    (x <= 128) ? 7 : \
+    -1
+`endif
 
 reg double_answer_second;
 wire double_answer_second_next;
@@ -459,19 +469,30 @@ assign m_axi_wdata = m_axi_wdata_reg;
 assign m_axi_wstrb = m_axi_wstrb_reg;
 
 reg [BITSIZE_m_axi_awaddr-1:0] m_axi_awaddr_reg;
+reg [BITSIZE_m_axi_awsize-1:0] m_axi_awsize_reg;
+wire [BITSIZE_m_axi_awsize-1:0] m_axi_awsize_next;
 
 always @(posedge clock 1RESET_EDGE)
 begin
   if(1RESET_VALUE)
   begin
     m_axi_awaddr_reg &lt;= 0;
+    m_axi_awsize_reg &lt;= 0;
   end
   else
   begin
     m_axi_awaddr_reg &lt;= Mout_addr_ram;
+    m_axi_awsize_reg &lt;= m_axi_awsize_next;
   end
 end
 
+`ifdef _SIM_HAVE_CLOG2
+  assign m_axi_awsize_next = $clog2(Mout_data_ram_size >> 3);
+`else
+  assign m_axi_awsize_next = `CLOG2(Mout_data_ram_size >> 3);
+`endif
+
+assign m_axi_awsize = m_axi_awsize_reg;
 assign m_axi_awaddr = m_axi_awaddr_reg;
 
 always @(posedge clock 1RESET_EDGE)
@@ -502,19 +523,30 @@ end
 assign m_axi_arvalid = m_axi_arvalid_reg;
 
 reg [BITSIZE_m_axi_araddr-1:0] m_axi_araddr_reg;
+reg [BITSIZE_m_axi_arsize-1:0] m_axi_arsize_reg;
+wire [BITSIZE_m_axi_arsize-1:0] m_axi_arsize_next;
 
 always @(posedge clock 1RESET_EDGE)
 begin
   if(1RESET_VALUE)
   begin
     m_axi_araddr_reg &lt;= 0;
+    m_axi_arsize_reg &lt;= 0;
   end
   else
   begin
     m_axi_araddr_reg &lt;= Mout_addr_ram;
+    m_axi_arsize_reg &lt;= m_axi_arsize_next;
   end
 end
 
+`ifdef _SIM_HAVE_CLOG2
+  assign m_axi_arsize_next = $clog2(Mout_data_ram_size >> 3);
+`else
+  assign m_axi_arsize_next = `CLOG2(Mout_data_ram_size >> 3);
+`endif
+
+assign m_axi_arsize = m_axi_arsize_reg;
 assign m_axi_araddr = m_axi_araddr_reg;
 
 reg M_DataRdy_reg;
