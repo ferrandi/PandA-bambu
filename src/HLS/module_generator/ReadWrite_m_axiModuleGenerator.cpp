@@ -47,6 +47,7 @@
 
 #include "ReadWrite_m_axiModuleGenerator.hpp"
 #include "BambuParameter.hpp"
+#include "call_graph_manager.hpp"
 #include "hls.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
@@ -122,8 +123,9 @@ ReadWrite_m_axiModuleGenerator::ReadWrite_m_axiModuleGenerator(const HLS_manager
 {
 }
 
-void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_objectRef mod, unsigned int function_id,
-                                                  vertex /* op_v */, const HDLWriter_Language /* language */,
+void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_objectRef mod,
+                                                  unsigned int /* function_id */, vertex /* op_v */,
+                                                  const HDLWriter_Language /* language */,
                                                   const std::vector<ModuleGenerator::parameter>& /* _p */,
                                                   const std::vector<ModuleGenerator::parameter>& _ports_in,
                                                   const std::vector<ModuleGenerator::parameter>& _ports_out,
@@ -133,6 +135,7 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_
    THROW_ASSERT(_ports_out.size() >= o_last, "");
    const auto addr_bitsize = STR(_ports_out[o_awaddr].type_size);
    const auto data_bitsize = STR(_ports_out[o_wdata].type_size);
+   const auto data_size = STR(_ports_out[o_wdata].type_size / 8);
 
    auto AXI_conversion = [&](unsigned int type) -> std::string {
       if(type == 0)
@@ -151,7 +154,9 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_
 
    unsigned int axi_burst_type = 0U;
 
-   const auto HLS = HLSMgr->get_HLS(function_id);
+   THROW_ASSERT(HLSMgr->CGetCallGraphManager()->GetRootFunctions().size() == 1, "Multiple top functions not supported");
+   const auto top_id = *HLSMgr->CGetCallGraphManager()->GetRootFunctions().begin();
+   const auto HLS = HLSMgr->get_HLS(top_id);
    const auto Param = HLS->Param;
    const auto use_specific_axi_burst_type = Param->isOption(OPT_axi_burst_type);
    const unsigned int requested_axi_burst_type =
