@@ -217,7 +217,7 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_
           << ".M_Rdata_ram(out1),\n"
           << ".m_axi_arid(" << _ports_out[o_arid].name << "),\n"
           << ".m_axi_araddr(" << _ports_out[o_araddr].name << "),\n"
-          << ".m_axi_arlen(" << _ports_out[o_wstrb].name << "),\n"
+          << ".m_axi_arlen(" << _ports_out[o_arlen].name << "),\n"
           << ".m_axi_arsize(" << _ports_out[o_arsize].name << "),\n"
           << ".m_axi_arburst(" << _ports_out[o_arburst].name << "),\n"
           << ".m_axi_arlock(" << _ports_out[o_arlock].name << "),\n"
