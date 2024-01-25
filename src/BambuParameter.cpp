@@ -1082,7 +1082,7 @@ int BambuParameter::Exec()
       {"context_switch", optional_argument, nullptr, OPT_INPUT_CONTEXT_SWITCH},
 #endif
       {"memory-banks-number", required_argument, nullptr, OPT_MEMORY_BANKS_NUMBER},
-      {"AXI-burst-type", optional_argument, nullptr, OPT_INPUT_CONTEXT_SWITCH},
+      {"AXI-burst-type", optional_argument, nullptr, OPT_AXI_BURST_TYPE},
       {"C-no-parse", required_argument, nullptr, INPUT_OPT_C_NO_PARSE},
       {"C-python-no-parse", required_argument, nullptr, INPUT_OPT_C_PYTHON_NO_PARSE},
       {"accept-nonzero-return", no_argument, nullptr, OPT_ACCEPT_NONZERO_RETURN},
