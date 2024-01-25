@@ -676,6 +676,8 @@ end)";
           .AXI_ID(0),
           .CTRL_CACHE(`_CACHE_CNT),
           .CTRL_CNT(`_CACHE_CNT),
+          .BURST_TYPE()"
+          << STR(axi_burst_type) << R"(),
           .BITSIZE_addr(0 + BITSIZE_in4 - $clog2(BITSIZE_in3 / 8)),
           .BITSIZE_wdata(BITSIZE_in3),
           .BITSIZE_wstrb(BITSIZE_in3 / 8),
