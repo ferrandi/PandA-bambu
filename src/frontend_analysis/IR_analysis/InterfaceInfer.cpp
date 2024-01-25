@@ -2239,6 +2239,11 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
             mod->AddParameter("WR_POL", wp == "wt" ? "0" : wp == "wb" ? "1" : wp);
          }
       }
+      else
+      {
+         CM->add_NP_functionality(interface_top, NP_functionality::IP_COMPONENT, "MinimalAXI4AdapterSingleBeat");
+      }
+
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
 
       const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
