@@ -410,16 +410,11 @@ begin : read_seq
     begin
       currAddr = next_arqueue[OFFSET_addr+:BITSIZE_addr] + (next_arqueue[OFFSET_counter+:BITSIZE_counter] - 1) * (1 << next_arqueue[OFFSET_size+:BITSIZE_size]);
     end
-    else if(next_arqueue[OFFSET_burst+:BITSIZE_burst] == 2'b10)
+    else
     begin
-      endAddr = next_arqueue[OFFSET_addr+:BITSIZE_addr] - (next_arqueue[OFFSET_addr+:BITSIZE_addr] % ((next_arqueue[OFFSET_len+:BITSIZE_len] + 1) * (1 << next_arqueue[OFFSET_size+:BITSIZE_size]))) + ((next_arqueue[OFFSET_len+:BITSIZE_len] + 1) * (1 << next_arqueue[OFFSET_size+:BITSIZE_size]));
-      currAddr = next_arqueue[OFFSET_addr+:BITSIZE_addr] + (next_arqueue[OFFSET_counter+:BITSIZE_counter] - 1) * (1 << next_arqueue[OFFSET_size+:BITSIZE_size]);
-      if(currAddr > endAddr)
-      begin
-        currAddr = currAddr - ((next_arqueue[OFFSET_len+:BITSIZE_len] + 1) * (1 << next_arqueue[OFFSET_size+:BITSIZE_size]));
-      end
+      $display("Unsupported burst type: %0d", next_arqueue[OFFSET_burst+:BITSIZE_burst]);
+      $finish;
     end
-    currAddr = currAddr - (currAddr % (1 << next_arqueue[OFFSET_size+:BITSIZE_size]));
     test_addr_read <= currAddr;
     rid <= next_arqueue[OFFSET_id+:BITSIZE_id];
     rdata <= m_utils.read(currAddr); // {_bambu_testbench_mem_[currAddr + 1 - base_addr], _bambu_testbench_mem_[currAddr + 0 - base_addr]};
@@ -449,17 +444,10 @@ begin: write_seq
     begin
       currAddr = next_awqueue[OFFSET_addr+:BITSIZE_addr] + next_awqueue[OFFSET_counter+:BITSIZE_counter] * (1 << next_awqueue[OFFSET_size+:BITSIZE_size]);
     end
-    else if(next_awqueue[OFFSET_burst+:BITSIZE_burst] == 2'b10)
+    else
     begin
-      endAddr = next_awqueue[OFFSET_addr+:BITSIZE_addr] 
-        - (next_awqueue[OFFSET_addr+:BITSIZE_addr] % ((next_awqueue[OFFSET_len+:BITSIZE_len] + 1) * (1 << next_awqueue[OFFSET_size+:BITSIZE_size])))
-        + ((next_awqueue[OFFSET_len+:BITSIZE_len] + 1) * (1 << next_awqueue[OFFSET_size+:BITSIZE_size]));
-      currAddr = next_awqueue[OFFSET_addr+:BITSIZE_addr] 
-        + next_awqueue[OFFSET_counter+:BITSIZE_counter] * (1 << next_awqueue[OFFSET_size+:BITSIZE_size]);
-      if(currAddr > endAddr)
-      begin
-        currAddr = currAddr - ((next_awqueue[OFFSET_len+:BITSIZE_len] + 1) * (1 << next_awqueue[OFFSET_size+:BITSIZE_size]));
-      end
+      $display("Unsupported burst type: %0d", next_arqueue[OFFSET_burst+:BITSIZE_burst]);
+      $finish;
     end
     test_wstrb <= next_awqueue[OFFSET_wstrb+:BITSIZE_wstrb];
     test_addr <= currAddr;
