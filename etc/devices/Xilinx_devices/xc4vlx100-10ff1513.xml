@@ -14,6 +14,7 @@
     <DSPs_y_sizes value="18"/>
     <is_single_write_memory value="1"/>
     <max_lut_size value="4"/>
+    <axi_burst_type value="1"/>
   </device>
   <technology>
     <library>
