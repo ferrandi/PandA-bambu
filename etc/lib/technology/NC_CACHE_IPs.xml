@@ -3803,6 +3803,18 @@ endgenerate
         end // else: !if(CTRL_CACHE)
       
    endgenerate
+
+    // synthesis translate_off
+    always @(posedge clock)
+    begin
+      if(m_axi_bresp != 0 || m_axi_rresp !=0)
+      begin
+        $display(&quot;ERROR: Sim: Abort incorret AXI answer from slave &quot;);
+        $finish;
+      end
+    end
+    // synthesis translate_on
+
    `undef CTRL_ADDR_W
    `undef WORD_ADDR
      "/>
