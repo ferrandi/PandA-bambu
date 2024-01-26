@@ -862,6 +862,9 @@ end
           <port_o id="m_axi_arregion" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
           </port_o>
+          <port_o id="m_axi_aruser" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o> 
           <port_o id="m_axi_arvalid" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -879,9 +882,6 @@ end
           </port_o>
           <port_o id="m_axi_rlast" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="m_axi_aruser" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="m_axi_rvalid" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
