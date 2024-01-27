@@ -190,6 +190,7 @@ assign data_valid_reg = valid_reg;"/>
           <parameter name="WORD_OFF_W"> 3 </parameter>
           <parameter name="BE_ADDR_W"> 32 </parameter>
           <parameter name="AXI_ID"> 0 </parameter>
+          <parameter name="BURST_TYPE"> 0 </parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -265,7 +266,7 @@ assign data_valid_reg = valid_reg;"/>
           <port_o id="m_axi_rready" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="IOB_read_channel_axi FE_ADDR_W FE_DATA_W WORD_OFF_W BE_ADDR_W AXI_ID replace_addr read_addr read_rdata m_axi_arid m_axi_araddr m_axi_arlen m_axi_rid m_axi_rdata" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="IOB_read_channel_axi FE_ADDR_W FE_DATA_W WORD_OFF_W BE_ADDR_W AXI_ID BURST_TYPE replace_addr read_addr read_rdata m_axi_arid m_axi_araddr m_axi_arlen m_axi_rid m_axi_rdata" VERILOG_PROVIDED="
 localparam LINE2MEM_W = BITSIZE_read_addr;
 localparam BE_BYTE_W = $clog2(BITSIZE_read_rdata/8);
 
@@ -401,7 +402,7 @@ generate
     //Burst parameters - single 
     assign m_axi_arlen   = 8&apos;d0; //A single burst of Memory data width word
     assign m_axi_arsize  = BE_BYTE_W; //each word will be the width of the memory for maximum bandwidth
-    assign m_axi_arburst = 2&apos;b00; 
+    assign m_axi_arburst = BURST_TYPE; 
     assign m_axi_araddr  = {BE_ADDR_W{1&apos;b0}} + {replace_addr, {BE_BYTE_W{1&apos;b0}}}; //base address for the burst, with width extension 
 
     // Read Line values
@@ -516,6 +517,7 @@ endgenerate"/>
           <parameter name="AXI_ID"> 0 </parameter>
           <parameter name="WRITE_POL"> 0 </parameter>
           <parameter name="WORD_OFF_W"> 3 </parameter>
+          <parameter name="BURST_TYPE"> 0 </parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -600,7 +602,7 @@ endgenerate"/>
           <port_o id="m_axi_bready" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="IOB_write_channel_axi FE_ADDR_W FE_DATA_W BE_ADDR_W BE_DATA_W AXI_ID WRITE_POL WORD_OFF_W addr wdata wstrb m_axi_awid m_axi_awaddr m_axi_awlen m_axi_wdata m_axi_wstrb m_axi_bid" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="IOB_write_channel_axi FE_ADDR_W FE_DATA_W BE_ADDR_W BE_DATA_W AXI_ID WRITE_POL WORD_OFF_W BURST_TYPE addr wdata wstrb m_axi_awid m_axi_awaddr m_axi_awlen m_axi_wdata m_axi_wstrb m_axi_bid" VERILOG_PROVIDED="
 //Write Policy
 `define WRITE_THROUGH 0 //write-through not allocate: implements a write-through buffer
 `define WRITE_BACK 1    //write-back allocate: implementes a dirty-memory
@@ -645,7 +647,7 @@ generate
     assign m_axi_awid    = AXI_ID;
     assign m_axi_awlen   = 8&apos;d0;
     assign m_axi_awsize  = BE_BYTE_W; // verify - Writes data of the size of BE_DATA_W
-    assign m_axi_awburst = 2&apos;d0;
+    assign m_axi_awburst = BURST_TYPE;
     assign m_axi_awlock  = 1&apos;b0; // 00 - Normal Access
     assign m_axi_awcache = 4&apos;b0011;
     assign m_axi_awprot  = 3&apos;d0;
@@ -850,7 +852,7 @@ generate
       //Burst parameters - single
       assign m_axi_awlen   = 8&apos;d0; //A single burst of Memory data width word
       assign m_axi_awsize  = BE_BYTE_W; //each word will be the width of the memory for maximum bandwidth
-      assign m_axi_awburst = 2&apos;b00;
+      assign m_axi_awburst = BURST_TYPE;
       assign m_axi_bready  = 1&apos;b1;
 
       //memory address
@@ -973,6 +975,7 @@ end
           <parameter name="BE_BYTE_W"> 32 </parameter>
           <parameter name="WRITE_POL"> 0 </parameter>
           <parameter name="AXI_ID"> 0 </parameter>
+          <parameter name="BURST_TYPE"> 0 </parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -1126,7 +1129,7 @@ end
           <port_o id="m_axi_rready" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="IOB_back_end_axi FE_ADDR_W FE_DATA_W WORD_OFF_W BE_ADDR_W WRITE_POL AXI_ID write_addr write_wdata write_wstrb replace_addr read_addr read_rdata m_axi_awid m_axi_awaddr m_axi_awlen m_axi_wdata m_axi_wstrb m_axi_bid m_axi_arid m_axi_araddr m_axi_arlen m_axi_rid m_axi_rdata" IP_COMPONENT="IOB_read_channel_axi,IOB_write_channel_axi" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="IOB_back_end_axi FE_ADDR_W FE_DATA_W WORD_OFF_W BE_ADDR_W WRITE_POL AXI_ID BURST_TYPE write_addr write_wdata write_wstrb replace_addr read_addr read_rdata m_axi_awid m_axi_awaddr m_axi_awlen m_axi_wdata m_axi_wstrb m_axi_bid m_axi_arid m_axi_araddr m_axi_arlen m_axi_rid m_axi_rdata" IP_COMPONENT="IOB_read_channel_axi,IOB_write_channel_axi" VERILOG_PROVIDED="
 localparam FE_NBYTES = FE_DATA_W / 8;
 localparam FE_BYTE_W = $clog2(FE_NBYTES);
 localparam BE_DATA_W = BITSIZE_read_rdata;
@@ -1159,6 +1162,7 @@ IOB_read_channel_axi #(.FE_ADDR_W(FE_ADDR_W),
   .WORD_OFF_W(WORD_OFF_W),
   .BE_ADDR_W (BE_ADDR_W),
   .AXI_ID  (AXI_ID),
+  .BURST_TYPE(BURST_TYPE),
   .BITSIZE_replace_addr(FE_ADDR_W - ($clog2(BE_DATA_W/8) + (WORD_OFF_W-$clog2(BE_DATA_W/FE_DATA_W)))),
   .BITSIZE_read_addr(WORD_OFF_W-$clog2(BE_DATA_W/FE_DATA_W)),
   .BITSIZE_read_rdata(BE_DATA_W),
@@ -1200,6 +1204,7 @@ IOB_write_channel_axi #(.FE_ADDR_W(FE_ADDR_W),
   .WRITE_POL (WRITE_POL),
   .WORD_OFF_W(WORD_OFF_W),
   .AXI_ID(AXI_ID),
+  .BURST_TYPE(BURST_TYPE),
   .BITSIZE_addr(FE_ADDR_W - (FE_BYTE_W + WRITE_POL*WORD_OFF_W)),
   .BITSIZE_wdata(FE_DATA_W + WRITE_POL*(FE_DATA_W*(2**WORD_OFF_W)-FE_DATA_W)),
   .BITSIZE_wstrb(FE_NBYTES),
@@ -3371,7 +3376,7 @@ endgenerate
           <parameter name="AXI_ID"> 0 </parameter>
           <parameter name="CTRL_CACHE"> 0 </parameter>
           <parameter name="CTRL_CNT"> 0 </parameter>
-
+          <parameter name="BURST_TYPE"> 0 </parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -3513,7 +3518,7 @@ endgenerate
           <port_o id="m_axi_rready" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="IOB_cache_axi FE_ADDR_W BE_ADDR_W BE_DATA_W N_WAYS LINE_OFF_W WORD_OFF_W WTBUF_DEPTH_W REP_POLICY WRITE_POL AXI_ID CTRL_CACHE CTRL_CNT addr wdata wstrb rdata m_axi_awid m_axi_awaddr m_axi_awlen m_axi_wdata m_axi_wstrb m_axi_bid m_axi_arid m_axi_araddr m_axi_arlen m_axi_rid m_axi_rdata" IP_COMPONENT="IOB_front_end,IOB_cache_memory,IOB_back_end_axi,IOB_cache_control" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="IOB_cache_axi FE_ADDR_W BE_ADDR_W BE_DATA_W N_WAYS LINE_OFF_W WORD_OFF_W WTBUF_DEPTH_W REP_POLICY WRITE_POL AXI_ID CTRL_CACHE CTRL_CNT BURST_TYPE addr wdata wstrb rdata m_axi_awid m_axi_awaddr m_axi_awlen m_axi_wdata m_axi_wstrb m_axi_bid m_axi_arid m_axi_araddr m_axi_arlen m_axi_rid m_axi_rdata" IP_COMPONENT="IOB_front_end,IOB_cache_memory,IOB_back_end_axi,IOB_cache_control" VERILOG_PROVIDED="
    //Cache-Control
    `define CTRL_ADDR_W 4
    //Address-port
@@ -3687,6 +3692,7 @@ endgenerate
        .WORD_OFF_W(WORD_OFF_W),
        .WRITE_POL (WRITE_POL),
        .AXI_ID(AXI_ID),
+       .BURST_TYPE(BURST_TYPE),
        .BITSIZE_write_addr(FE_ADDR_W - (FE_BYTE_W + WRITE_POL*WORD_OFF_W)),
        .BITSIZE_write_wdata(FE_DATA_W + WRITE_POL*(FE_DATA_W*(2**WORD_OFF_W)-FE_DATA_W)),
        .BITSIZE_write_wstrb(FE_NBYTES),
@@ -3797,6 +3803,18 @@ endgenerate
         end // else: !if(CTRL_CACHE)
       
    endgenerate
+
+    // synthesis translate_off
+    always @(posedge clock)
+    begin
+      if(m_axi_bresp != 0 || m_axi_rresp !=0)
+      begin
+        $display(&quot;ERROR: Sim: Abort incorret AXI answer from slave &quot;);
+        $finish;
+      end
+    end
+    // synthesis translate_on
+
    `undef CTRL_ADDR_W
    `undef WORD_ADDR
      "/>

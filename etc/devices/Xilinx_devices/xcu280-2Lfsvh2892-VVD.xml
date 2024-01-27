@@ -11,6 +11,7 @@
     <DSPs_x_sizes value="18"/>
     <DSPs_y_sizes value="27"/>
     <max_lut_size value="6"/>
+    <axi_burst_type value="1"/>
   </device>
   <technology>
     <library>
