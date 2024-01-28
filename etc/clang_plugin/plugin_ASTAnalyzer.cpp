@@ -1197,7 +1197,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          parmSizeInBytes = std::to_string(getSizeInBytes(DT));
          if(isa<ConstantArrayType>(DT))
          {
-            manageArray(cast<ConstantArrayType>(DT), true);
+            manageArray(cast<ConstantArrayType>(DT), ifaceMode == "default");
          }
          else
          {
@@ -1208,15 +1208,10 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          }
          if(ifaceMode != "default")
          {
-            if(ifaceMode != "handshake" && ifaceMode != "fifo" && ifaceMode.find("array") == std::string::npos &&
-               ifaceMode != "bus" && ifaceMode != "m_axi" && ifaceMode != "axis")
+            if(ifaceMode != "handshake" && ifaceMode != "fifo" && ifaceMode != "array" && ifaceMode != "bus" &&
+               ifaceMode != "m_axi" && ifaceMode != "axis")
             {
                ReportError(ifaceModeReq->first.loc, "Invalid HLS interface mode");
-            }
-            else if(ifaceMode == "array" &&
-                    parm_attrs.find(key_loc_t("elem_count", SourceLocation())) == parm_attrs.end())
-            {
-               ReportError(ifaceModeReq->first.loc, "HLS interface array element count");
             }
          }
       }
@@ -1277,6 +1272,11 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          {
             ifaceMode = "none";
          }
+      }
+
+      if(ifaceMode == "array" && parm_attrs.find(key_loc_t("elem_count", SourceLocation())) == parm_attrs.end())
+      {
+         ReportError(ifaceModeReq->first.loc, "HLS interface array element count missing");
       }
 
       const auto remove_spaces = [](std::string& str) {
