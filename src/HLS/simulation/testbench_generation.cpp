@@ -222,9 +222,10 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
    // Add top module wrapper
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating top level interface wrapper...");
    const auto top_id = [&]() {
-      const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
-      THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
-      return *top_function_ids.begin();
+      const auto top_fsymbols = parameters->getOption<std::string>(OPT_top_functions_names);
+      THROW_ASSERT(top_fsymbols.find(STR_CST_string_separator) == std::string::npos, "Expected single top function.");
+      const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(top_fsymbols);
+      return GET_INDEX_CONST_NODE(top_fnode);
    }();
    const auto top_fb = HLSMgr->CGetFunctionBehavior(top_id);
    mgm.create_generic_module("TestbenchDUT", nullptr, top_fb, LIBRARY_STD, "TestbenchDUT");
