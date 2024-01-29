@@ -716,6 +716,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                                    --memory-allocation-policy=ALL_BRAM\n"
       << "                                    --DSP-allocation-coefficient=1.75\n"
       << "                                    --distram-threshold=256\n"
+      << "                                    --enable-function-proxy\n"
       << "             BAMBU-AREA-MP        - this setup implies:\n"
       << "                                    -Os  -D'printf(fmt, ...)='\n"
       << "                                    --channels-type=MEM_ACC_NN\n"
@@ -723,6 +724,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                                    --memory-allocation-policy=ALL_BRAM\n"
       << "                                    --DSP-allocation-coefficient=1.75\n"
       << "                                    --distram-threshold=256\n"
+      << "                                    --enable-function-proxy\n"
       << "             BAMBU-BALANCED       - this setup implies:\n"
       << "                                    -O2  -D'printf(fmt, ...)='\n"
       << "                                    --channels-type=MEM_ACC_11\n"
@@ -733,6 +735,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                                    --param max-inline-insns-auto=25\n"
       << "                                    -fno-tree-loop-ivcanon\n"
       << "                                    --distram-threshold=256\n"
+      << "                                    -C='*'\n"
+      << "                                    --disable-function-proxy\n"
       << "             BAMBU-BALANCED-MP    - (default) this setup implies:\n"
       << "                                    -O2  -D'printf(fmt, ...)='\n"
       << "                                    --channels-type=MEM_ACC_NN\n"
@@ -743,6 +747,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                                    -finline-functions  -fdisable-tree-bswap\n"
       << "                                    --param max-inline-insns-auto=25\n"
       << "                                    -fno-tree-loop-ivcanon\n"
+      << "                                    --disable-function-proxy\n"
+      << "                                    -C='*'\n"
       << "                                    --distram-threshold=256\n"
       << "             BAMBU-TASTE          - this setup concatenate the input files and\n"
       << "                                    passes these options to the compiler:\n"
@@ -754,6 +760,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                                    -finline-functions  -fdisable-tree-bswap\n"
       << "                                    --param max-inline-insns-auto=25\n"
       << "                                    -fno-tree-loop-ivcanon\n"
+      << "                                    --disable-function-proxy\n"
+      << "                                    -C='*'\n"
       << "                                    --distram-threshold=256\n"
       << "             BAMBU-PERFORMANCE    - this setup implies:\n"
       << "                                    -O3  -D'printf(fmt, ...)='\n"
@@ -815,9 +823,11 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        limiting the number of function instances to 'num_resources'.\n"
       << "        Functions are specified as a comma-separated list with an optional\n"
       << "        number of resources. (num_resources is by default equal to 1 when not specified).\n"
+      << "        In case <num_resources> is equal to 'u', the function is unconstrained.\n"
       << "        If the first character of func_name is '*', then 'num_resources'\n"
-      << "        applies to all functions that match with 'func_name' with the first\n"
-      << "        character removed.\n\n"
+      << "        applies to all functions having as a prefix 'func_name' with '*'\n"
+      << "        character removed.\n"
+      << "        In case we have -C='*', all functions have 1 instance constraint. \n\n"
       << "    --AXI-burst-type=value\n."
       << "        Specify the type of AXI burst when performing single beat operations:\n"
       << "              FIXED        - fixed type burst (default)\n"
@@ -3266,6 +3276,10 @@ void BambuParameter::CheckParameters()
       if(!isOption(OPT_disable_function_proxy))
       {
          setOption(OPT_disable_function_proxy, true);
+      }
+      if(!isOption(OPT_constraints_functions))
+      {
+         setOption(OPT_constraints_functions, "*");
       }
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-PERFORMANCE-MP")

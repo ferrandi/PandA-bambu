@@ -146,7 +146,8 @@ DesignFlowStep_Status extract_patterns::InternalExec()
       return DesignFlowStep_Status::UNCHANGED;
    }
    const auto hls_d = GetPointer<const HLS_manager>(AppM)->get_HLS_device();
-   if(hls_d->has_parameter("disable_extract_ternary_patterns") && hls_d->get_parameter<unsigned>("disable_extract_ternary_patterns"))
+   if(hls_d->has_parameter("disable_extract_ternary_patterns") &&
+      hls_d->get_parameter<unsigned>("disable_extract_ternary_patterns"))
    {
       /// Now, the only patterns extracted are ternary.
       /// So, this part needs to be changed in case other patterns will be added.
