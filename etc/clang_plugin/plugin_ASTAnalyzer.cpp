@@ -430,7 +430,7 @@ class HLSPragmaHandler : public PragmaHandler
          pragma_line_t p(&PP, pragmaLoc, PP.getSpelling(Tok), Tok.getLocation());
          for(PP.Lex(Tok); Tok.isNot(tok::eod);)
          {
-            if(tok::isAnyIdentifier(Tok.getKind()))
+            if(Tok.isOneOf(tok::identifier, tok::raw_identifier, tok::kw_register))
             {
                auto& attr_val = p.attrs[key_loc_t(PP.getSpelling(Tok), Tok.getLocation())];
                attr_val = "";
@@ -439,15 +439,15 @@ class HLSPragmaHandler : public PragmaHandler
                if(Tok.is(tok::equal))
                {
                   PP.Lex(Tok);
-                  if(tok::isAnyIdentifier(Tok.getKind()) || tok::isLiteral(Tok.getKind()) || Tok.is(tok::kw_true) ||
-                     Tok.is(tok::kw_false))
+                  if(Tok.isOneOf(tok::identifier, tok::raw_identifier, tok::kw_true, tok::kw_false) ||
+                     tok::isLiteral(Tok.getKind()))
                   {
                      attr_val = PP.getSpelling(Tok);
                      PP.Lex(Tok);
                      continue;
                   }
                }
-               else if(tok::isAnyIdentifier(Tok.getKind()))
+               else if(Tok.isOneOf(tok::identifier, tok::raw_identifier, tok::eod))
                {
                   continue;
                }
