@@ -3110,6 +3110,11 @@ void BambuParameter::CheckParameters()
       else
       {
          setOption(OPT_disable_function_proxy, false);
+         if(isOption(OPT_constraints_functions))
+         {
+            THROW_ERROR("--discrepancy-hw Hardware Discrepancy Analysis only works with function proxies and not with "
+                        "-C defined");
+         }
       }
    }
    /// Disable proxy when there are multiple top functions
@@ -3276,10 +3281,10 @@ void BambuParameter::CheckParameters()
       if(!isOption(OPT_disable_function_proxy))
       {
          setOption(OPT_disable_function_proxy, true);
-      }
-      if(!isOption(OPT_constraints_functions))
-      {
-         setOption(OPT_constraints_functions, "*");
+         if(!isOption(OPT_constraints_functions))
+         {
+            setOption(OPT_constraints_functions, "*");
+         }
       }
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-PERFORMANCE-MP")
@@ -3371,7 +3376,14 @@ void BambuParameter::CheckParameters()
       add_experimental_setup_compiler_options(!flag_cpp);
       if(!isOption(OPT_disable_function_proxy))
       {
-         setOption(OPT_disable_function_proxy, false);
+         if(!isOption(OPT_constraints_functions))
+         {
+            setOption(OPT_disable_function_proxy, false);
+         }
+         else
+         {
+            setOption(OPT_disable_function_proxy, true);
+         }
       }
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-AREA")
@@ -3407,7 +3419,14 @@ void BambuParameter::CheckParameters()
       add_experimental_setup_compiler_options(!flag_cpp);
       if(!isOption(OPT_disable_function_proxy))
       {
-         setOption(OPT_disable_function_proxy, false);
+         if(!isOption(OPT_constraints_functions))
+         {
+            setOption(OPT_disable_function_proxy, false);
+         }
+         else
+         {
+            setOption(OPT_disable_function_proxy, true);
+         }
       }
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU")
@@ -3423,7 +3442,14 @@ void BambuParameter::CheckParameters()
       add_experimental_setup_compiler_options(false);
       if(!isOption(OPT_disable_function_proxy))
       {
-         setOption(OPT_disable_function_proxy, false);
+         if(!isOption(OPT_constraints_functions))
+         {
+            setOption(OPT_disable_function_proxy, false);
+         }
+         else
+         {
+            setOption(OPT_disable_function_proxy, true);
+         }
       }
    }
    else
