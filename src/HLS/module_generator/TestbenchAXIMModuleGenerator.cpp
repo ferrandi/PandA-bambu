@@ -192,25 +192,44 @@ void TestbenchAXIMModuleGenerator::InternalExec(std::ostream& out, structural_ob
        << "  BITSIZE_delay=32,\n"
        << "  BITSIZE_size=BITSIZE_" << port_prefix << "_arsize,\n"
        << "  BITSIZE_addr=BITSIZE_" << port_prefix << "_araddr,\n"
+       << "  BITSIZE_wstrb=BITSIZE_" << port_prefix << "_wstrb,\n"
+       << "  BITSIZE_id=BITSIZE_" << port_prefix << "_arid,\n"
        << "  OFFSET_delay=0,\n"
        << "  OFFSET_counter=OFFSET_delay+BITSIZE_delay,\n"
        << "  OFFSET_burst=OFFSET_counter+BITSIZE_counter,\n"
        << "  OFFSET_len=OFFSET_burst+BITSIZE_burst,\n"
        << "  OFFSET_size=OFFSET_len+BITSIZE_len,\n"
        << "  OFFSET_addr=OFFSET_size+BITSIZE_size,\n"
-       << "  BITSIZE_aritem=BITSIZE_addr+BITSIZE_size+BITSIZE_len+BITSIZE_burst+BITSIZE_counter+BITSIZE_delay,\n"
-       << "  BITSIZE_awitem=BITSIZE_addr+BITSIZE_size+BITSIZE_len+BITSIZE_burst+BITSIZE_counter+BITSIZE_delay;\n"
+       << "  OFFSET_id=OFFSET_addr+BITSIZE_addr,\n"
+       << "  OFFSET_data=OFFSET_id+BITSIZE_id,\n"
+       << "  OFFSET_wstrb=OFFSET_data+BITSIZE_data,\n"
+       << "  "
+          "BITSIZE_aritem=BITSIZE_id+BITSIZE_addr+BITSIZE_size+BITSIZE_len+BITSIZE_burst+BITSIZE_counter+BITSIZE_delay,"
+          "\n"
+       << "  "
+          "BITSIZE_awitem=BITSIZE_wstrb+BITSIZE_data+BITSIZE_id+BITSIZE_addr+BITSIZE_size+BITSIZE_len+"
+          "BITSIZE_burst+BITSIZE_counter+BITSIZE_delay;"
+          "\n"
        << R"(
 reg [QUEUE_SIZE*BITSIZE_aritem-1:0] arqueue;
 reg [QUEUE_SIZE*BITSIZE_aritem-1:0] next_arqueue;
 reg [QUEUE_SIZE*BITSIZE_awitem-1:0] awqueue; 
 reg [QUEUE_SIZE*BITSIZE_awitem-1:0] next_awqueue;
 reg [31:0] test_addr;
-reg [31:0] test_strb;
+reg [31:0] test_wstrb;
 reg [31:0] test_data;
 reg [31:0] test_addr_read;
 integer arqueue_size, next_arqueue_size;
 integer awqueue_size, next_awqueue_size;
+
+reg [BITSIZE_id-1:0] awid_reg;
+reg [BITSIZE_addr-1:0] awaddr_reg;
+reg [BITSIZE_size-1:0] awsize_reg;
+reg [BITSIZE_len-1:0] awlen_reg; 
+reg [BITSIZE_burst-1:0] awburst_reg;
+reg [BITSIZE_counter-1:0] counter_reg, counter_next;
+reg write_done;
+reg wlast_reg, wlast_next;
 
 mem_utils #(BITSIZE_data) m_utils();
 
@@ -237,6 +256,11 @@ begin
   rlast = 0;
   ruser = 0;
   rvalid = 0;
+  awid_reg = 0;
+  awaddr_reg = 0;
+  awsize_reg = 0;
+  awlen_reg = 0;
+  awburst_reg = 0;
 end
 
 // Combinatorial logic for read transactions
@@ -247,16 +271,8 @@ begin: read_comb
   next_arqueue_size = arqueue_size;
   if(arvalid && arready)  // Valid and ready -> accept new transaction
   begin
-    next_arqueue[arqueue_size*BITSIZE_aritem +:BITSIZE_aritem] = {araddr, arsize, arlen, arburst, {BITSIZE_counter{1'b0}}, ({BITSIZE_delay{1'b0}} + READ_DELAY)}; // size of parameter is implementation dependent
+    next_arqueue[arqueue_size*BITSIZE_aritem +:BITSIZE_aritem] = {arid, araddr, arsize, arlen, arburst, {BITSIZE_counter{1'b0}}, ({BITSIZE_delay{1'b0}} + READ_DELAY)}; // size of parameter is implementation dependent
     next_arqueue_size = arqueue_size + 1;
-  end
-  if(arqueue_size > 0 && next_arqueue[OFFSET_counter+:BITSIZE_counter] == (next_arqueue[OFFSET_len+:BITSIZE_len] + 1) && rready && rvalid)
-  begin
-    for(i = 1; i < QUEUE_SIZE; i = i + 1)
-    begin
-      next_arqueue[(i-1)*BITSIZE_aritem+:BITSIZE_aritem] = next_arqueue[i*BITSIZE_aritem+:BITSIZE_aritem];
-    end
-    next_arqueue_size = next_arqueue_size - 1;
   end
   for(i = 0; i < QUEUE_SIZE; i = i + 1)
   begin
@@ -265,7 +281,15 @@ begin: read_comb
       next_arqueue[i*BITSIZE_aritem+OFFSET_delay+:BITSIZE_delay] = arqueue[i*BITSIZE_aritem+OFFSET_delay+:BITSIZE_delay] - 1;
     end
   end
-  if(next_arqueue_size > 0 && (next_arqueue[OFFSET_delay+:BITSIZE_delay] == 1))
+  if(next_arqueue_size > 0 && next_arqueue[OFFSET_counter+:BITSIZE_counter] >= (next_arqueue[OFFSET_len+:BITSIZE_len] + 1) && rready && rvalid)
+  begin
+    for(i = 1; i < QUEUE_SIZE; i = i + 1)
+    begin
+      next_arqueue[(i-1)*BITSIZE_aritem+:BITSIZE_aritem] = next_arqueue[i*BITSIZE_aritem+:BITSIZE_aritem];
+    end
+    next_arqueue_size = next_arqueue_size - 1;
+  end
+  if(next_arqueue_size > 0 && (next_arqueue[OFFSET_delay+:BITSIZE_delay] == 1) && (next_arqueue[OFFSET_counter+:BITSIZE_counter] < (next_arqueue[OFFSET_len+:BITSIZE_len] + 1)))
   begin
     next_arqueue[OFFSET_counter+:BITSIZE_counter] = next_arqueue[OFFSET_counter+:BITSIZE_counter] + 1;
   end
@@ -278,29 +302,42 @@ begin: write_comb
   automatic reg [BITSIZE_counter-1:0] counter;
   next_awqueue = awqueue;
   next_awqueue_size = awqueue_size;
-  if(awvalid && awready) // Valid and ready -> accept new transaction and save data
+  wlast_next = wlast_reg;
+  if(awvalid && awready && wready && wvalid) // Valid and ready -> accept new transaction and save data
   begin
-    next_awqueue[awqueue_size*BITSIZE_awitem+:BITSIZE_awitem] = {awaddr, awsize, awlen, awburst, {BITSIZE_counter{1'b0}}, ({BITSIZE_delay{1'b0}} + WRITE_DELAY)};
+    next_awqueue[awqueue_size*BITSIZE_awitem+:BITSIZE_awitem] = {wstrb, wdata, awid, awaddr, awsize, awlen, awburst, {BITSIZE_counter{1'b0}}, ({BITSIZE_delay{1'b0}} + WRITE_DELAY)};
     next_awqueue_size = awqueue_size + 1;
   end
-  if(next_awqueue_size > 0 && next_awqueue[OFFSET_counter+:BITSIZE_counter] == (next_awqueue[OFFSET_len+:BITSIZE_len] + 1) && bready && bvalid)
+  else if(awvalid && awready && wlast_reg)
+  begin
+    awid_reg = awid;
+    awaddr_reg = awaddr;
+    awsize_reg = awsize;
+    awlen_reg = awlen; 
+    awburst_reg = awburst;
+    counter_next = 0;
+    wlast_next = 0;
+  end
+  else if(wready && wvalid)
+  begin
+    next_awqueue[awqueue_size*BITSIZE_awitem+:BITSIZE_awitem] = {wstrb, wdata, awid_reg, awaddr_reg, awsize_reg, awlen_reg, awburst_reg, counter_reg, ({BITSIZE_delay{1'b0}} + WRITE_DELAY)};
+    next_awqueue_size = awqueue_size + 1;
+    counter_next = counter_reg + 1;
+  end
+  for(i = 0; i < QUEUE_SIZE; i = i + 1)
+  begin
+    if(awqueue[i*BITSIZE_awitem+OFFSET_delay+:BITSIZE_delay] > 1)
+    begin
+      next_awqueue[i*BITSIZE_awitem+OFFSET_delay+:BITSIZE_delay] = awqueue[i*BITSIZE_awitem+OFFSET_delay+:BITSIZE_delay] - 1;
+    end
+  end
+  if(write_done && next_awqueue_size > 0 && ((next_awqueue[OFFSET_counter+:BITSIZE_counter] == next_awqueue[OFFSET_len+:BITSIZE_len] && bready) || next_awqueue[OFFSET_counter+:BITSIZE_counter] < next_awqueue[OFFSET_len+:BITSIZE_len]))
   begin
     for(i = 1; i < QUEUE_SIZE; i = i + 1)
     begin
       next_awqueue[(i-1)*BITSIZE_awitem+:BITSIZE_awitem] = next_awqueue[i*BITSIZE_awitem+:BITSIZE_awitem];
     end
     next_awqueue_size = next_awqueue_size - 1;
-  end
-  for(i = 0; i < QUEUE_SIZE; i = i + 1)
-  begin
-    if(next_awqueue[i*BITSIZE_awitem+OFFSET_delay+:BITSIZE_delay] > 1)
-    begin
-      next_awqueue[i*BITSIZE_awitem+OFFSET_delay+:BITSIZE_delay] = next_awqueue[i*BITSIZE_awitem+OFFSET_delay+:BITSIZE_delay] - 1;
-    end
-  end
-  if(next_awqueue_size > 0 && (next_awqueue[OFFSET_delay+:BITSIZE_delay] == 1) && wvalid)
-  begin
-    next_awqueue[OFFSET_counter+:BITSIZE_counter] = next_awqueue[OFFSET_counter+:BITSIZE_counter] + 1;
   end
 end
 
@@ -311,12 +348,16 @@ begin
     arready <= 0;
     awready <= 0;
     wready <= 0;
+    wlast_reg <= 1;
+    counter_reg <= 0;
    end
    else
    begin
-    arready <= (next_arqueue_size - (next_arqueue_size > 0 && next_arqueue[OFFSET_counter+:BITSIZE_counter] == next_arqueue[OFFSET_len+:BITSIZE_len]) < QUEUE_SIZE);  //Ready if next_queue_size - rlast < QUEUE_SIZE
-    awready <= (next_awqueue_size - (next_awqueue_size > 0 && next_awqueue[OFFSET_delay+:BITSIZE_delay] == 1 && (next_awqueue[OFFSET_counter+:BITSIZE_counter] == next_awqueue[OFFSET_len+:BITSIZE_len] + 1)) < QUEUE_SIZE); // ready if next_queue_size - bvalid < QUEUE_SIZE
-    wready <= (next_awqueue_size > 0) && next_awqueue[OFFSET_delay+:BITSIZE_delay] == 1;
+    arready <= (next_arqueue_size - (next_arqueue_size > 0 && next_arqueue[OFFSET_counter+:BITSIZE_counter] >= next_arqueue[OFFSET_len+:BITSIZE_len]) < QUEUE_SIZE);  //Ready if next_queue_size - rlast < QUEUE_SIZE
+    awready <= (wlast_next || wlast) && (next_awqueue_size - (next_awqueue_size > 0 && next_awqueue[OFFSET_delay+:BITSIZE_delay] == 1 && next_awqueue[OFFSET_counter+:BITSIZE_counter] == next_awqueue[OFFSET_len+:BITSIZE_len]) < QUEUE_SIZE); // ready if next_queue_size - bvalid < QUEUE_SIZE
+    wready <= (next_awqueue_size - (next_awqueue_size > 0 && next_awqueue[OFFSET_delay+:BITSIZE_delay] == 1 && next_awqueue[OFFSET_counter+:BITSIZE_counter] == next_awqueue[OFFSET_len+:BITSIZE_len]) < QUEUE_SIZE); 
+    wlast_reg <= wlast_next || wlast;
+    counter_reg <= counter_next;
    end
 end
 
@@ -330,7 +371,7 @@ begin
    else
    begin
     rvalid <= (next_arqueue_size > 0 && next_arqueue[OFFSET_delay+:BITSIZE_delay] == 1); // if at posedge_clock delay is 1 I have to perfrom the operation in this cycle
-    bvalid <= wvalid && (next_awqueue_size > 0 && next_awqueue[OFFSET_delay+:BITSIZE_delay] == 1 && (next_awqueue[OFFSET_counter+:BITSIZE_counter] == (next_awqueue[OFFSET_len+:BITSIZE_len] + 1))); // if at posedge_clock delay is 1 I have to perfrom the last operation in this cycle
+    bvalid <= (next_awqueue_size > 0 && next_awqueue[OFFSET_delay+:BITSIZE_delay] == 1 && next_awqueue[OFFSET_counter+:BITSIZE_counter] == (next_awqueue[OFFSET_len+:BITSIZE_len])); // if at posedge_clock delay is 1 I have to perfrom the last operation in this cycle
    end
 end
 
@@ -369,19 +410,15 @@ begin : read_seq
     begin
       currAddr = next_arqueue[OFFSET_addr+:BITSIZE_addr] + (next_arqueue[OFFSET_counter+:BITSIZE_counter] - 1) * (1 << next_arqueue[OFFSET_size+:BITSIZE_size]);
     end
-    else if(next_arqueue[OFFSET_burst+:BITSIZE_burst] == 2'b10)
+    else
     begin
-      endAddr = next_arqueue[OFFSET_addr+:BITSIZE_addr] - (next_arqueue[OFFSET_addr+:BITSIZE_addr] % ((next_arqueue[OFFSET_len+:BITSIZE_len] + 1) * (1 << next_arqueue[OFFSET_size+:BITSIZE_size]))) + ((next_arqueue[OFFSET_len+:BITSIZE_len] + 1) * (1 << next_arqueue[OFFSET_size+:BITSIZE_size]));
-      currAddr = next_arqueue[OFFSET_addr+:BITSIZE_addr] + (next_awqueue[OFFSET_counter+:BITSIZE_counter] - 1) * (1 << next_arqueue[OFFSET_size+:BITSIZE_size]);
-      if(currAddr > endAddr)
-      begin
-        currAddr = currAddr - ((next_arqueue[OFFSET_len+:BITSIZE_len] + 1) * (1 << next_arqueue[OFFSET_size+:BITSIZE_size]));
-      end
+      $display("Unsupported burst type: %0d", next_arqueue[OFFSET_burst+:BITSIZE_burst]);
+      $finish;
     end
-    currAddr = currAddr - (currAddr % (1 << next_arqueue[OFFSET_size+:BITSIZE_size]));
     test_addr_read <= currAddr;
+    rid <= next_arqueue[OFFSET_id+:BITSIZE_id];
     rdata <= m_utils.read(currAddr); // {_bambu_testbench_mem_[currAddr + 1 - base_addr], _bambu_testbench_mem_[currAddr + 0 - base_addr]};
-    if(next_arqueue[OFFSET_counter+:BITSIZE_counter] == (next_arqueue[OFFSET_len+:BITSIZE_len] + 1))
+    if(next_arqueue[OFFSET_counter+:BITSIZE_counter] >= (next_arqueue[OFFSET_len+:BITSIZE_len] + 1))
     begin
       rlast <= 1;
     end
@@ -393,10 +430,11 @@ always@(posedge clock)
 begin: write_seq
   automatic ptr_t currAddr;
   automatic ptr_t endAddr;
-  test_strb <=0;
-  test_addr <=0;
-  test_data <=0;
-  if(next_awqueue_size > 0 && (next_awqueue[OFFSET_delay+:BITSIZE_delay] == 1) && wvalid) // Performs the first write of the queue
+  test_wstrb <=0;
+  test_addr <= 0;
+  test_data <= 0;
+  write_done <= 0;
+  if(next_awqueue_size > 0 && next_awqueue[OFFSET_delay+:BITSIZE_delay] == 1) // Performs the first write of the queue
   begin
     if(next_awqueue[OFFSET_burst+:BITSIZE_burst] == 2'b00)
     begin
@@ -404,24 +442,19 @@ begin: write_seq
     end
     else if(next_awqueue[OFFSET_burst+:BITSIZE_burst] == 2'b01)
     begin
-      currAddr = next_awqueue[OFFSET_addr+:BITSIZE_addr] + (next_awqueue[OFFSET_counter+:BITSIZE_counter] - 1) * (1 << next_awqueue[OFFSET_size+:BITSIZE_size]);
+      currAddr = next_awqueue[OFFSET_addr+:BITSIZE_addr] + next_awqueue[OFFSET_counter+:BITSIZE_counter] * (1 << next_awqueue[OFFSET_size+:BITSIZE_size]);
     end
-    else if(next_awqueue[OFFSET_burst+:BITSIZE_burst] == 2'b10)
+    else
     begin
-      endAddr = next_awqueue[OFFSET_addr+:BITSIZE_addr] 
-        - (next_awqueue[OFFSET_addr+:BITSIZE_addr] % ((next_awqueue[OFFSET_len+:BITSIZE_len] + 1) * (1 << next_awqueue[OFFSET_size+:BITSIZE_size])))
-        + ((next_awqueue[OFFSET_len+:BITSIZE_len] + 1) * (1 << next_awqueue[OFFSET_size+:BITSIZE_size]));
-      currAddr = next_awqueue[OFFSET_addr+:BITSIZE_addr] 
-        + (next_awqueue[OFFSET_counter+:BITSIZE_counter] - 1) * (1 << next_awqueue[OFFSET_size+:BITSIZE_size]);
-      if(currAddr > endAddr)
-      begin
-        currAddr = currAddr - ((next_awqueue[OFFSET_len+:BITSIZE_len] + 1) * (1 << next_awqueue[OFFSET_size+:BITSIZE_size]));
-      end
+      $display("Unsupported burst type: %0d", next_arqueue[OFFSET_burst+:BITSIZE_burst]);
+      $finish;
     end
-    test_strb <= wstrb;
+    test_wstrb <= next_awqueue[OFFSET_wstrb+:BITSIZE_wstrb];
     test_addr <= currAddr;
-    test_data <= wdata;
-    m_utils.write_strobe(wstrb, wdata, currAddr);
+    test_data <= next_awqueue[OFFSET_data+:BITSIZE_data];
+    bid <= next_awqueue[OFFSET_id+:BITSIZE_id];
+    write_done <= 1;
+    m_utils.write_strobe(next_awqueue[OFFSET_wstrb+:BITSIZE_wstrb], next_awqueue[OFFSET_data+:BITSIZE_data], currAddr);
   end
 end
 )";

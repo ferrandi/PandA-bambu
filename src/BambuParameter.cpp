@@ -225,6 +225,7 @@
 #define OPT_NANOXPLORE_BYPASS (1 + OPT_NANOXPLORE_ROOT)
 #define OPT_SHARED_INPUT_REGISTERS (1 + OPT_NANOXPLORE_BYPASS)
 #define OPT_INLINE_FUNCTIONS (1 + OPT_SHARED_INPUT_REGISTERS)
+#define OPT_AXI_BURST_TYPE (1 + OPT_INLINE_FUNCTIONS)
 
 /// constant correspond to the "parametric list based option"
 #define PAR_LIST_BASED_OPT "parametric-list-based"
@@ -810,7 +811,11 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        number of resources. (num_resources is by default equal to 1 when not specified).\n"
       << "        If the first character of func_name is '*', then 'num_resources'\n"
       << "        applies to all functions that match with 'func_name' with the first\n"
-      << "        character removed.\n\n";
+      << "        character removed.\n\n"
+      << "    --AXI-burst-type=value\n."
+      << "        Specify the type of AXI burst when performing single beat operations:\n"
+      << "              FIXED        - fixed type burst (default)\n"
+      << "              INCREMENTAL  - incremental type burst\n\n";
    os << std::endl;
 
    // Checks and debugging options
@@ -1069,6 +1074,7 @@ int BambuParameter::Exec()
       {"context_switch", optional_argument, nullptr, OPT_INPUT_CONTEXT_SWITCH},
 #endif
       {"memory-banks-number", required_argument, nullptr, OPT_MEMORY_BANKS_NUMBER},
+      {"AXI-burst-type", optional_argument, nullptr, OPT_AXI_BURST_TYPE},
       {"C-no-parse", required_argument, nullptr, INPUT_OPT_C_NO_PARSE},
       {"C-python-no-parse", required_argument, nullptr, INPUT_OPT_C_PYTHON_NO_PARSE},
       {"accept-nonzero-return", no_argument, nullptr, OPT_ACCEPT_NONZERO_RETURN},
@@ -2013,6 +2019,23 @@ int BambuParameter::Exec()
          case OPT_MEMORY_BANKS_NUMBER:
          {
             setOption(OPT_memory_banks_number, std::string(optarg));
+            break;
+         }
+         case OPT_AXI_BURST_TYPE:
+         {
+            std::string burst_type(optarg);
+            if(burst_type == "FIXED")
+            {
+               setOption(OPT_axi_burst_type, 0);
+            }
+            else if(burst_type == "INCREMENTAL")
+            {
+               setOption(OPT_axi_burst_type, 1);
+            }
+            else
+            {
+               THROW_ERROR("AXI burst type not recognized: currently only FIXED and INCREMENTAL mode are supported");
+            };
             break;
          }
          case OPT_ACCEPT_NONZERO_RETURN:
