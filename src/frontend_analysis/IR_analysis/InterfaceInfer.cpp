@@ -407,8 +407,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             if(tree_helper::IsPointerType(arg_type))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Is a pointer type");
-               interface_info info(arg_name, fname,
-                                   interface_type == "array" || interface_type == "fifo" || interface_type == "axis");
+               interface_info info(arg_name, fname, interface_type != "m_axi");
                info.update(arg_ssa, parm_attrs.at(FunctionArchitecture::parm_typename), parameters);
 
                std::list<tree_nodeRef> writeStmt;
