@@ -81,13 +81,14 @@ void Write_noneModuleGenerator::InternalExec(std::ostream& out, structural_objec
                                              const std::vector<ModuleGenerator::parameter>& _ports_out,
                                              const std::vector<ModuleGenerator::parameter>& /* _ports_inout */)
 {
+   THROW_ASSERT(_ports_in.size() >= i_last, "");
+   THROW_ASSERT(_ports_out.size() >= o_last, "");
+
    const auto bundle_name = mod_cir->get_id().substr(0, mod_cir->get_id().find(STR_CST_interface_parameter_keyword));
    const auto top_bh = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
    const auto top_fname = top_bh->GetMangledFunctionName();
    const auto& iface_attrs = HLSMgr->module_arch->GetArchitecture(top_fname)->ifaces.at(bundle_name);
 
-   THROW_ASSERT(_ports_in.size() >= i_last, "");
-   THROW_ASSERT(_ports_out.size() >= o_last, "");
    if(iface_attrs.find(FunctionArchitecture::iface_register) != iface_attrs.end())
    {
       if(language == HDLWriter_Language::VHDL)

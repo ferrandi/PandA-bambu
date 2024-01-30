@@ -46,7 +46,13 @@
 
 #include "Read_acknowledgeModuleGenerator.hpp"
 
+#include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"
+#include "constant_strings.hpp"
+#include "function_behavior.hpp"
+#include "hls_manager.hpp"
 #include "language_writer.hpp"
+#include "structural_objects.hpp"
 
 enum in_port
 {
@@ -69,8 +75,8 @@ Read_acknowledgeModuleGenerator::Read_acknowledgeModuleGenerator(const HLS_manag
 {
 }
 
-void Read_acknowledgeModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */,
-                                                   unsigned int /* function_id */, vertex /* op_v */,
+void Read_acknowledgeModuleGenerator::InternalExec(std::ostream& out, structural_objectRef mod,
+                                                   unsigned int function_id, vertex /* op_v */,
                                                    const HDLWriter_Language /* language */,
                                                    const std::vector<ModuleGenerator::parameter>& /* _p */,
                                                    const std::vector<ModuleGenerator::parameter>& _ports_in,
@@ -80,6 +86,15 @@ void Read_acknowledgeModuleGenerator::InternalExec(std::ostream& out, structural
    THROW_ASSERT(_ports_in.size() >= i_last, "");
    THROW_ASSERT(_ports_out.size() >= o_last, "");
 
+   const auto bundle_name = mod->get_id().substr(0, mod->get_id().find(STR_CST_interface_parameter_keyword));
+   const auto top_fid = HLSMgr->CGetCallGraphManager()->GetRootFunctionFrom(function_id);
+   const auto top_fname = HLSMgr->CGetFunctionBehavior(top_fid)->CGetBehavioralHelper()->GetMangledFunctionName();
+   const auto& iface_attrs = HLSMgr->module_arch->GetArchitecture(top_fname)->ifaces.at(bundle_name);
+
+   if(iface_attrs.find(FunctionArchitecture::iface_register) != iface_attrs.end())
+   {
+      THROW_ERROR("Registered acknowledge interface not yet implemented.");
+   }
    out << "assign " << _ports_out[o_out1].name << " = " << _ports_in[i_in2].name << " >> (8*" << _ports_in[i_in1].name
        << ");\n";
 
