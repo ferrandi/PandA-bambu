@@ -51,7 +51,11 @@
 enum in_port
 {
    i_clock = 0,
+   i_reset,
+   i_start,
    i_in1,
+   i_in2,
+   i_in3,
    i_last
 };
 
@@ -78,10 +82,10 @@ void Write_noneModuleGenerator::InternalExec(std::ostream& out, structural_objec
    if(language == HDLWriter_Language::VHDL)
    {
       out << "begin\n  \\" << _ports_out[o_out1].name << "\\ <= std_logic_vector(resize(unsigned("
-          << _ports_in[i_in1].name << "), " << _ports_out[o_out1].type_size << "));\n";
+          << _ports_in[i_in2].name << "), " << _ports_out[o_out1].type_size << "));\n";
    }
    else
    {
-      out << "assign " << _ports_out[o_out1].name << " = " << _ports_in[i_in1].name << ";\n";
+      out << "assign " << _ports_out[o_out1].name << " = " << _ports_in[i_in2].name << ";\n";
    }
 }
