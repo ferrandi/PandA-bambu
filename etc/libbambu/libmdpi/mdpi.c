@@ -98,6 +98,7 @@ int m_fini()
 unsigned int m_next(unsigned int state)
 {
    mdpi_state_t state_next = MDPI_STATE_UNDEFINED;
+   uint16_t retval = 0;
 
    debug("Current state: %s\n", mdpi_state_str((mdpi_state_t)(state)));
    switch(state)
@@ -112,6 +113,7 @@ unsigned int m_next(unsigned int state)
             debug("Next state required\n");
             __ipc_wait(MDPI_IPC_STATE_RESPONSE);
             state_next = __m_ipc_operation.payload.sc.state;
+            retval = __m_ipc_operation.payload.sc.retval;
             __ipc_release();
          } while(state_next == state);
          break;
@@ -121,14 +123,15 @@ unsigned int m_next(unsigned int state)
          break;
    }
    debug("Next state: %s\n", mdpi_state_str((mdpi_state_t)(state_next)));
-   if(state_next == MDPI_STATE_ERROR || state_next == MDPI_STATE_ABORT)
+   if(state_next == MDPI_STATE_ERROR)
    {
       state_next = MDPI_STATE_END;
    }
 
-   assert((state_next == MDPI_STATE_SETUP || state_next == MDPI_STATE_END) && "Unexpected state required.");
+   assert((state_next == MDPI_STATE_SETUP || state_next == MDPI_STATE_END || state_next == MDPI_STATE_ABORT) &&
+          "Unexpected state required.");
 
-   return state_next;
+   return (retval << 8) | (state_next & 0xFF);
 }
 
 unsigned int m_getptrargsize(unsigned int index)
