@@ -228,6 +228,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       return GET_INDEX_CONST_NODE(top_fnode);
    }();
    const auto top_fb = HLSMgr->CGetFunctionBehavior(top_id);
+   const auto top_bh = top_fb->CGetBehavioralHelper();
    mgm.create_generic_module("TestbenchDUT", nullptr, top_fb, LIBRARY_STD, "TestbenchDUT");
    const auto dut = tb_top->add_module_from_technology_library("DUT", "TestbenchDUT", LIBRARY_STD, tb_cir, TechM);
    const auto dut_clock = dut->find_member(CLOCK_PORT_NAME, port_o_K, dut);
@@ -295,10 +296,11 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
                                               parameters->getOption<std::string>(OPT_mem_delay_read));
    tb_mem->SetParameter("MEM_DELAY_WRITE", parameters->getOption<std::string>(OPT_mem_delay_write));
    tb_mem->SetParameter("base_addr", STR(HLSMgr->base_address));
+   tb_mem->SetParameter("index",
+                        std::to_string(top_bh->GetParameters().size() + (top_bh->GetFunctionReturnType(top_id) != 0)));
    if_modules.push_back(tb_mem);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating handler modules for top level parameters...");
-   const auto top_bh = top_fb->CGetBehavioralHelper();
    if(parameters->getOption<bool>(OPT_memory_mapped_top))
    {
       const std::string if_suffix =
@@ -464,6 +466,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
                const auto if_port = tb_top->add_module_from_technology_library(
                    axim_bundle_name + "_fu", axim_bundle_name, LIBRARY_STD, tb_cir, TechM);
                if_modules.push_back(if_port);
+               if_port->SetParameter("index", tb_mem->GetParameter("index"));
             }
             const auto if_port = tb_top->add_module_from_technology_library("if_addr_" + arg_name, "IF_PORT_IN",
                                                                             LIBRARY_STD, tb_cir, TechM);

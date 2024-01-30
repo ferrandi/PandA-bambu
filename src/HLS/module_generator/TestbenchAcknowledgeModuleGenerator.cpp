@@ -48,6 +48,7 @@
 #include "hls_manager.hpp"
 #include "language_writer.hpp"
 #include "structural_manager.hpp"
+#include "utility.hpp"
 
 TestbenchAcknowledgeModuleGenerator::TestbenchAcknowledgeModuleGenerator(const HLS_managerRef& _HLSMgr)
     : Registrar(_HLSMgr)
@@ -75,104 +76,42 @@ void TestbenchAcknowledgeModuleGenerator::InternalExec(
    const std::string in_suffix = if_dir == port_o::IO ? "_i" : "";
    const std::string out_suffix = if_dir == port_o::IO ? "_o" : "";
    std::string np_library = mod_cir->get_id() + " index";
+   std::vector<std::string> ip_components;
    const auto add_port_parametric = [&](const std::string& suffix, port_o::port_direction dir, unsigned port_size) {
       const auto port_name = arg_name + suffix;
       structural_manager::add_port(port_name, dir, mod_cir,
                                    structural_type_descriptorRef(new structural_type_descriptor("bool", port_size)));
       np_library += " " + port_name;
    };
-   out << "localparam BITSIZE_data=BITSIZE_" << arg_name << (in_suffix.size() ? in_suffix : out_suffix) << ";\n"
-       << R"(
-arg_utils a_utils();
-mem_utils #(BITSIZE_data) m_utils();
-)";
+   out << "localparam BITSIZE_data=BITSIZE_" << arg_name << (in_suffix.size() ? in_suffix : out_suffix) << ";\n";
    if(if_dir == port_o::IN || if_dir == port_o::IO)
    {
       add_port_parametric(in_suffix, port_o::OUT, 1U);
       add_port_parametric(in_suffix + "_ack", port_o::IN, 0U);
-      out << R"(
-reg ack_trigger; 
-wire ack_trigger_next;
-reg [BITSIZE_data-1:0] val;
-wire [BITSIZE_data-1:0] val_next;
-
-initial
-begin
-  val = 0;
-  ack_trigger = 0;
-end
-
-always @(posedge clock)
-begin
-  if(setup_port)
-  begin
-    automatic ptr_t addr = a_utils.getptrarg(index);
-    val <= m_utils.read(addr);
-    ack_trigger <= 0;
-  end
-  else
-  begin
-    val <= val_next;
-    ack_trigger <= ack_trigger_next;
-    if(ack_trigger_next)
-    begin
-      val <= 0;
-    end
-    if(done_port && !ack_trigger_next)
-    begin
-      $display("Acknowledge signal never asserted for parameter )"
-          << arg_name << in_suffix << R"(");
-      $finish;
-    end
-  end
-end
-
-assign val_next = val;
-assign ack_trigger_next = )"
-          << arg_name << in_suffix << R"(_ack | ack_trigger;
-)";
-      out << "assign " << arg_name << in_suffix << " = val;\n";
+      ip_components.push_back("TestbenchFifoRead");
+      out << "TestbenchFifoRead #(.index(index),\n"
+          << "  .CHECK_ACK(1),\n"
+          << "  .BITSIZE_dout(BITSIZE_data)) fifo_read(.clock(clock),\n"
+          << "  .setup_port(setup_port),\n"
+          << "  .done_port(done_port),\n"
+          << "  .read(" << arg_name << in_suffix << "_ack),\n"
+          << "  .dout(" << arg_name << in_suffix << "));\n";
    }
    if(if_dir == port_o::OUT || if_dir == port_o::IO)
    {
       add_port_parametric(out_suffix, port_o::IN, 1U);
       add_port_parametric(out_suffix + "_ack", port_o::OUT, 0U);
-      out << R"(
-ptr_t addr, addr_next;
-reg enable, enable_next;
-
-initial
-begin
-  enable = 0;
-  $display("BEAWARE: Output acknowledge interface will read at each clock cycle");
-end
-
-always @(posedge clock)
-begin
-  if(setup_port)
-  begin
-    addr <= a_utils.getptrarg(index);
-    enable <= 1'b1;
-  end
-  else
-  begin
-    addr <= addr_next;
-    enable <= enable_next;
-    if(enable_next)
-    begin
-      m_utils.write(BITSIZE_data, )"
-          << arg_name << out_suffix << R"(, addr_next);
-    end
-  end
-end
-
-always @(*)
-begin
-  addr_next = addr;
-  enable_next = enable && !done_port;
-end
-)";
-      out << "assign " << arg_name << out_suffix << "_ack = 1'b1;\n";
+      ip_components.push_back("TestbenchFifoWrite");
+      out << "initial $display(\"BEAWARE: Output acknowledge interface will read output at each clock cycle\");\n\n"
+          << "TestbenchFifoWrite #(.index(index),\n"
+          << "  .BITSIZE_din(BITSIZE_data)) fifo_write(.clock(clock),\n"
+          << "  .setup_port(setup_port),\n"
+          << "  .done_port(done_port),\n"
+          << "  .full_n(" << arg_name << out_suffix << "_ack),\n"
+          << "  .write(1'b1),\n"
+          << "  .din(" << arg_name << out_suffix << "));\n";
    }
+   structural_manager::add_NP_functionality(mod_cir, NP_functionality::IP_COMPONENT,
+                                            container_to_string(ip_components, ","));
    structural_manager::add_NP_functionality(mod_cir, NP_functionality::LIBRARY, np_library);
 }

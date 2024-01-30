@@ -55,10 +55,14 @@
 #include "mdpi_debug.h"
 #include "mdpi_types.h"
 
+/**
+ * @brief MDPI IPC state represents the state of the IPC shared memory (free, locked, holding a request/response)
+ *
+ */
 typedef enum
 {
    MDPI_IPC_STATE_FREE = 0,
-   MDPI_IPC_STATE_WRITING,
+   MDPI_IPC_STATE_LOCKED,
    MDPI_IPC_STATE_REQUEST,
    MDPI_IPC_STATE_RESPONSE
 } mdpi_ipc_state_t;
@@ -83,41 +87,31 @@ typedef enum
    (s == MDPI_STATE_ERROR   ? "ERROR" :   \
    (s == MDPI_STATE_ABORT   ? "ABORT" :   \
                               "UNDEFINED")))))
-// clang-format on
 
 typedef enum
 {
-   MDPI_OP_TYPE_NONE = 0,
+   MDPI_OP_TYPE_NONE         = 0,
    MDPI_OP_TYPE_STATE_CHANGE = 1,
-   MDPI_OP_TYPE_MEM_READ,
-   MDPI_OP_TYPE_MEM_WRITE,
-   MDPI_OP_TYPE_ARG_READ,
-   MDPI_OP_TYPE_ARG_WRITE,
-   MDPI_OP_TYPE_PARAM_INFO
+   MDPI_OP_TYPE_IF_READ      = 1 << 1,
+   MDPI_OP_TYPE_IF_WRITE     = 1 << 2,
+   MDPI_OP_TYPE_IF_POP       = 1 << 1 | 1 << 3,
+   MDPI_OP_TYPE_IF_PUSH      = 1 << 2 | 1 << 3,
+   MDPI_OP_TYPE_IF_INFO      = 1 << 4,
+   MDPI_OP_TYPE_IF_EXIT      = 1 << 5
 } mdpi_op_type_t;
+// clang-format on
+
+#define MDPI_IF_IDX_OUT_OF_BOUNDS (UINT8_MAX)
+#define MDPI_IF_IDX_EMPTY (UINT8_MAX - 1)
 
 typedef struct
 {
+   uint8_t id;
+   int info;
    ptr_t addr;
-   uint16_t size; // Size in bytes
-   byte_t buffer[512];
-} IPC_STRUCT_ATTR mdpi_op_mem_t;
-
-#define MDPI_ARG_IDX_OUT_OF_BOUNDS (UINT8_MAX)
-#define MDPI_ARG_IDX_EMPTY (UINT8_MAX - 1)
-
-typedef struct
-{
-   uint8_t index;
    uint16_t bitsize;
    byte_t buffer[512];
-} IPC_STRUCT_ATTR mdpi_op_arg_t;
-
-typedef struct
-{
-   uint8_t index;
-   uint64_t size;
-} IPC_STRUCT_ATTR mdpi_op_param_t;
+} IPC_STRUCT_ATTR mdpi_op_interface_t;
 
 typedef struct
 {
@@ -131,9 +125,7 @@ typedef struct
    union
    {
       mdpi_op_state_change_t sc;
-      mdpi_op_param_t param;
-      mdpi_op_mem_t mem;
-      mdpi_op_arg_t arg;
+      mdpi_op_interface_t interface;
    } __attribute__((aligned(8))) payload;
 } __attribute__((aligned(8))) mdpi_op_t;
 
