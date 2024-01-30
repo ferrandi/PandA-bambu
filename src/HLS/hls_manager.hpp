@@ -67,10 +67,10 @@ REF_FORWARD_DECL(BackendFlow);
 #define FUNC_ARCH_PARM_ATTR_ENUM                                                                            \
    (parm_port)(parm_index)(parm_bundle)(parm_offset)(parm_includes)(parm_typename)(parm_original_typename)( \
        parm_elem_count)(parm_size_in_bytes)
-#define FUNC_ARCH_IFACE_ATTR_ENUM                                                                                 \
-   (iface_name)(iface_mode)(iface_direction)(iface_bitwidth)(iface_alignment)(iface_cache_ways)(                  \
-       iface_cache_line_count)(iface_cache_line_size)(iface_cache_num_write_outstanding)(iface_cache_rep_policy)( \
-       iface_cache_bus_size)(iface_cache_write_policy)
+#define FUNC_ARCH_IFACE_ATTR_ENUM                                                                           \
+   (iface_name)(iface_mode)(iface_direction)(iface_bitwidth)(iface_alignment)(iface_depth)(iface_register)( \
+       iface_cache_ways)(iface_cache_line_count)(iface_cache_line_size)(iface_cache_num_write_outstanding)( \
+       iface_cache_rep_policy)(iface_cache_bus_size)(iface_cache_write_policy)
 
 REF_FORWARD_DECL(FunctionArchitecture);
 
