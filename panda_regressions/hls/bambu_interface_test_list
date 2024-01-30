@@ -68,7 +68,7 @@ bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu
 bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG_BUS --benchmark-name=2mm_cache_big_bus
 bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG --benchmark-name=2mm_cache_big
 bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG_LINE --benchmark-name=2mm_cache_big_line
-bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DFULLY_ASS --benchmark-name=2mm_cache_fully_ass
+# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DFULLY_ASS --benchmark-name=2mm_cache_fully_ass
 bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c
 bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DSET_ASS --benchmark-name=2mm_cache_set_ass
 bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DSIMPLE --benchmark-name=2mm_cache_simple
@@ -80,7 +80,7 @@ bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu
 bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG_BUS --benchmark-name=2mm_cache_big_bus_delayed --mem-delay-read=20 --mem-delay-write=20
 bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG --benchmark-name=2mm_cache_big_delayed --mem-delay-read=20 --mem-delay-write=20
 bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DBIG_LINE --benchmark-name=2mm_cache_big_line_delayed --mem-delay-read=20 --mem-delay-write=20
-bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DFULLY_ASS --benchmark-name=2mm_cache_fully_ass_delayed --mem-delay-read=20 --mem-delay-write=20
+# bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DFULLY_ASS --benchmark-name=2mm_cache_fully_ass_delayed --mem-delay-read=20 --mem-delay-write=20
 bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c --benchmark-name=2mm_delayed --mem-delay-read=20 --mem-delay-write=20
 bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DSET_ASS --benchmark-name=2mm_cache_set_ass_delayed --mem-delay-read=20 --mem-delay-write=20
 bambu_interface_test/2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/bambu_interface_test/2mm.c -DSIMPLE --benchmark-name=2mm_cache_simple_delayed --mem-delay-read=20 --mem-delay-write=20
