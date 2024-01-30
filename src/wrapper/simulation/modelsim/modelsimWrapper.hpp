@@ -74,7 +74,8 @@ class modelsimWrapper : public SimulationTool
     * Constructor
     * @param Param is the set of parameters
     */
-   modelsimWrapper(const ParameterConstRef& Param, const std::string& suffix, const std::string& top_fname);
+   modelsimWrapper(const ParameterConstRef& Param, const std::string& suffix, const std::string& top_fname,
+                   const std::string& inc_dirs);
 
    /**
     * Destructor

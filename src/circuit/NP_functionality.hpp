@@ -113,6 +113,7 @@ class NP_functionality
       FLOPOCO_PROVIDED,
       BAMBU_PROVIDED,
       IP_COMPONENT,
+      IP_INCLUDE,
       IP_LIBRARY,
       VERILOG_FILE_PROVIDED,
       VHDL_FILE_PROVIDED,
