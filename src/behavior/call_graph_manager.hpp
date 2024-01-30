@@ -240,6 +240,14 @@ class CallGraphManager
    CustomSet<unsigned int> GetReachedFunctionsFrom(unsigned int from_f, bool with_body = true) const;
 
    /**
+    * @brief Get the parent root function
+    *
+    * @param fid Function id
+    * @return unsigned int Parent root function id
+    */
+   unsigned int GetRootFunctionFrom(unsigned int fid) const;
+
+   /**
     * Returns the library functions called by the root functions
     * @return the set of library function (without implementation)
     */
