@@ -92,7 +92,7 @@ jobs:
       matrix: ${{fromJson(needs.setup.outputs.grs-matrix)}}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -130,7 +130,7 @@ jobs:
           ./panda_regressions/hls/${{matrix.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{steps.get.outputs.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
@@ -148,7 +148,7 @@ jobs:
       basename: libm-vhdl
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -186,7 +186,7 @@ jobs:
           ./panda_regressions/hls/${{env.script}} --returnfail --junitdir="$out_dir" --csv="$out_dir/perf.csv" --table="$out_dir/perf.tex" -c=--compiler=${{matrix.compiler}} ${{env.args}} ${{matrix.args}}
       - name: Upload test reports
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{steps.get.outputs.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}

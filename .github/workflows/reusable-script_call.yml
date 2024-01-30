@@ -46,7 +46,7 @@ jobs:
     name: ${{inputs.name}}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -86,7 +86,7 @@ jobs:
             --table="$out_dir/perf.tex" -c=--compiler=${{inputs.compiler}} ${{inputs.args}}
       - name: Upload test reports
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{steps.get.outputs.outname}}
           path: ${{steps.suite.outputs.test-reports-dir}}
