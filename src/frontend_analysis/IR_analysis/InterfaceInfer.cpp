@@ -2191,46 +2191,6 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR,
                                "ReadWrite_" + info.name + "ModuleGenerator");
 
-      /* Add the dependency to the IOB_cache module if there is a cache */
-      if(iface_attrs.find(FunctionArchitecture::iface_cache_line_count) != iface_attrs.end())
-      {
-         CM->add_NP_functionality(interface_top, NP_functionality::IP_COMPONENT, "IOB_cache_axi");
-         auto mod = GetPointerS<module>(CM->get_circ());
-
-         mod->AddParameter("WAY_LINES", iface_attrs.find(FunctionArchitecture::iface_cache_line_count)->second);
-         if(iface_attrs.find(FunctionArchitecture::iface_cache_line_size) != iface_attrs.end())
-         {
-            mod->AddParameter("LINE_SIZE", iface_attrs.find(FunctionArchitecture::iface_cache_line_size)->second);
-         }
-         if(iface_attrs.find(FunctionArchitecture::iface_cache_bus_size) != iface_attrs.end())
-         {
-            mod->AddParameter("BUS_SIZE", iface_attrs.find(FunctionArchitecture::iface_cache_bus_size)->second);
-         }
-         if(iface_attrs.find(FunctionArchitecture::iface_cache_line_count) != iface_attrs.end())
-         {
-            mod->AddParameter("N_WAYS", iface_attrs.find(FunctionArchitecture::iface_cache_line_count)->second);
-         }
-         if(iface_attrs.find(FunctionArchitecture::iface_cache_num_write_outstanding) != iface_attrs.end())
-         {
-            mod->AddParameter("BUF_SIZE",
-                              iface_attrs.find(FunctionArchitecture::iface_cache_num_write_outstanding)->second);
-         }
-         if(iface_attrs.find(FunctionArchitecture::iface_cache_rep_policy) != iface_attrs.end())
-         {
-            const auto& rp = iface_attrs.find(FunctionArchitecture::iface_cache_rep_policy)->second;
-            mod->AddParameter("REP_POL", rp == "lru" ? "0" : rp == "mru" ? "1" : rp == "tree" ? "2" : rp);
-         }
-         if(iface_attrs.find(FunctionArchitecture::iface_cache_write_policy) != iface_attrs.end())
-         {
-            const auto& wp = iface_attrs.find(FunctionArchitecture::iface_cache_write_policy)->second;
-            mod->AddParameter("WR_POL", wp == "wt" ? "0" : wp == "wb" ? "1" : wp);
-         }
-      }
-      else
-      {
-         CM->add_NP_functionality(interface_top, NP_functionality::IP_COMPONENT, "MinimalAXI4AdapterSingleBeat");
-      }
-
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
 
       const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));

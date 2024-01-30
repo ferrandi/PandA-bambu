@@ -44,16 +44,22 @@
  * Last modified by $Author$
  *
  */
-
 #include "ReadWrite_m_axiModuleGenerator.hpp"
+
 #include "BambuParameter.hpp"
+#include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
+#include "constant_strings.hpp"
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
 #include "language_writer.hpp"
 #include "math_function.hpp"
+#include "structural_manager.hpp"
 #include "structural_objects.hpp"
+
+#define BURST_TYPE_STR(type) std::string(type == 0 ? "FIXED" : (type == 1 ? "INCREMENTAL" : "UNKNOWN"))
 
 enum in_port
 {
@@ -123,231 +129,233 @@ ReadWrite_m_axiModuleGenerator::ReadWrite_m_axiModuleGenerator(const HLS_manager
 {
 }
 
-void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_objectRef mod,
-                                                  unsigned int /* function_id */, vertex /* op_v */,
-                                                  const HDLWriter_Language /* language */,
+void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_objectRef mod, unsigned int function_id,
+                                                  vertex /* op_v */, const HDLWriter_Language language,
                                                   const std::vector<ModuleGenerator::parameter>& /* _p */,
                                                   const std::vector<ModuleGenerator::parameter>& _ports_in,
                                                   const std::vector<ModuleGenerator::parameter>& _ports_out,
                                                   const std::vector<ModuleGenerator::parameter>& /* _ports_inout */)
 {
-   THROW_ASSERT(_ports_in.size() >= i_last, "(_ports_in.size() = " + STR(_ports_in.size()) + ")");
-   THROW_ASSERT(_ports_out.size() >= o_last, "");
-   const auto addr_bitsize = STR(_ports_out[o_awaddr].type_size);
-   const auto data_bitsize = STR(_ports_out[o_wdata].type_size);
-   const auto data_size = STR(_ports_out[o_wdata].type_size / 8);
-
-   auto AXI_conversion = [&](unsigned int type) -> std::string {
-      if(type == 0)
-      {
-         return "FIXED";
-      }
-      else if(type == 1)
-      {
-         return "INCREMENTAL";
-      }
-      else
-      {
-         return "unsupported AXI burst type";
-      }
-   };
-
-   unsigned int axi_burst_type = 0U;
-
-   THROW_ASSERT(HLSMgr->CGetCallGraphManager()->GetRootFunctions().size() == 1, "Multiple top functions not supported");
-   const auto top_id = *HLSMgr->CGetCallGraphManager()->GetRootFunctions().begin();
-   const auto HLS = HLSMgr->get_HLS(top_id);
-   const auto Param = HLS->Param;
-   const auto use_specific_axi_burst_type = Param->isOption(OPT_axi_burst_type);
-   const unsigned int requested_axi_burst_type =
-       use_specific_axi_burst_type ? Param->getOption<unsigned int>(OPT_axi_burst_type) : 0U;
-   if(use_specific_axi_burst_type)
+   if(language != HDLWriter_Language::VERILOG)
    {
-      axi_burst_type = requested_axi_burst_type;
+      THROW_UNREACHABLE("Unsupported output language");
+      return;
    }
+
+   THROW_ASSERT(_ports_in.size() >= i_last, "");
+   THROW_ASSERT(_ports_out.size() >= o_last, "");
+
+   const auto bundle_name = mod->get_id().substr(0, mod->get_id().find(STR_CST_interface_parameter_keyword));
+   const auto top_fname = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->GetMangledFunctionName();
+   const auto& iface_attrs = HLSMgr->module_arch->GetArchitecture(top_fname)->ifaces.at(bundle_name);
+
+   const auto Param = HLSMgr->get_parameter();
+   const auto has_requested_burst_type = Param->isOption(OPT_axi_burst_type);
+   unsigned int axi_burst_type = has_requested_burst_type ? Param->getOption<unsigned int>(OPT_axi_burst_type) : 0U;
 
    const auto hls_d = HLSMgr->get_HLS_device();
-   const auto use_device_axi_burst_type = hls_d->has_parameter("axi_burst_type");
-   const unsigned int device_axi_burst_type =
-       use_device_axi_burst_type ? hls_d->get_parameter<unsigned int>("axi_burst_type") : 0U;
-   if(use_device_axi_burst_type)
+   const auto has_device_burst_type = hls_d->has_parameter("axi_burst_type");
+   const auto device_burst_type = has_device_burst_type ? hls_d->get_parameter<unsigned int>("axi_burst_type") : 0U;
+   if(has_device_burst_type)
    {
-      axi_burst_type = device_axi_burst_type;
+      if(has_requested_burst_type && axi_burst_type != device_burst_type)
+      {
+         THROW_WARNING("Requested AXI burst type conflicts with selected device supported AXI burst type: " +
+                       BURST_TYPE_STR(axi_burst_type) + " != " + BURST_TYPE_STR(device_burst_type));
+      }
+      axi_burst_type = device_burst_type;
    }
-
-   if(use_device_axi_burst_type && use_specific_axi_burst_type && device_axi_burst_type != requested_axi_burst_type)
-   {
-      THROW_WARNING("User required " + AXI_conversion(requested_axi_burst_type) +
-                    " axi burst but the requested board needs " + AXI_conversion(device_axi_burst_type));
-   }
-   else if(use_specific_axi_burst_type)
-   {
-      THROW_WARNING("The requested board needs " + AXI_conversion(device_axi_burst_type) + " AXI burst type");
-   }
-
-   unsigned long long line_count = 0;
 
    /* Get cache info */
-   const std::string c_size_str = "WAY_LINES";
-   const auto params = mod->GetParameters();
-   if(params.find(c_size_str) != params.end())
+   unsigned long long line_count = 0;
+   if(auto it = iface_attrs.find(FunctionArchitecture::iface_cache_line_count); it != iface_attrs.end())
    {
-      line_count = std::stoull(params.at(c_size_str));
+      line_count = std::stoull(it->second);
    }
 
+   out << "localparam BITSIZE_address=" << _ports_out[o_awaddr].type_size << ",\n"
+       << "  BITSIZE_data=" << _ports_out[o_wdata].type_size << ",\n"
+       << "  BITSIZE_data_size=BITSIZE_data / 8;\n";
+
    /* No cache, build the AXI controller */
+   std::string ip_components;
    if(line_count == 0)
    {
+      ip_components = "MinimalAXI4AdapterSingleBeat";
       out << "MinimalAXI4AdapterSingleBeat #(.BURST_TYPE(" + STR(axi_burst_type) + "),\n"
-          << ".BITSIZE_Mout_addr_ram(" + addr_bitsize + "),\n"
-          << ".BITSIZE_Mout_Wdata_ram(" + data_bitsize + "),\n"
-          << ".BITSIZE_Mout_data_ram_size(BITSIZE_in2),\n"
-          << ".BITSIZE_M_Rdata_ram(" + data_bitsize + "),\n"
-          << ".BITSIZE_m_axi_awid(6),\n"
-          << ".BITSIZE_m_axi_awaddr(" + addr_bitsize + "),\n"
-          << ".BITSIZE_m_axi_awlen(8),\n"
-          << ".BITSIZE_m_axi_wdata(" + data_bitsize + "),\n"
-          << ".BITSIZE_m_axi_wstrb(" + data_size + "),\n"
-          << ".BITSIZE_m_axi_bid(6),\n"
-          << ".BITSIZE_m_axi_arid(6),\n"
-          << ".BITSIZE_m_axi_araddr(" + addr_bitsize + "),\n"
-          << ".BITSIZE_m_axi_arlen(8),\n"
-          << ".BITSIZE_m_axi_rid(6),\n"
-          << ".BITSIZE_m_axi_rdata(" + data_bitsize + ")) adapter (.M_DataRdy(done_port),\n"
-          << ".M_Rdata_ram(out1),\n"
-          << ".m_axi_arid(" << _ports_out[o_arid].name << "),\n"
-          << ".m_axi_araddr(" << _ports_out[o_araddr].name << "),\n"
-          << ".m_axi_arlen(" << _ports_out[o_arlen].name << "),\n"
-          << ".m_axi_arsize(" << _ports_out[o_arsize].name << "),\n"
-          << ".m_axi_arburst(" << _ports_out[o_arburst].name << "),\n"
-          << ".m_axi_arlock(" << _ports_out[o_arlock].name << "),\n"
-          << ".m_axi_arcache(" << _ports_out[o_arcache].name << "),\n"
-          << ".m_axi_arprot(" << _ports_out[o_arprot].name << "),\n"
-          << ".m_axi_arqos(" << _ports_out[o_arqos].name << "),\n"
-          << ".m_axi_arregion(" << _ports_out[o_arregion].name << "),\n"
-          << ".m_axi_aruser(" << _ports_out[o_aruser].name << "),\n"
-          << ".m_axi_arvalid(" << _ports_out[o_arvalid].name << "),\n"
-          << ".m_axi_rready(" << _ports_out[o_rready].name << "),\n"
-          << ".m_axi_awid(" << _ports_out[o_awid].name << "),\n"
-          << ".m_axi_awaddr(" << _ports_out[o_awaddr].name << "),\n"
-          << ".m_axi_awlen(" << _ports_out[o_awlen].name << "),\n"
-          << ".m_axi_awsize(" << _ports_out[o_awsize].name << "),\n"
-          << ".m_axi_awburst(" << _ports_out[o_awburst].name << "),\n"
-          << ".m_axi_awlock(" << _ports_out[o_awlock].name << "),\n"
-          << ".m_axi_awcache(" << _ports_out[o_awcache].name << "),\n"
-          << ".m_axi_awprot(" << _ports_out[o_awprot].name << "),\n"
-          << ".m_axi_awqos(" << _ports_out[o_awqos].name << "),\n"
-          << ".m_axi_awregion(" << _ports_out[o_awregion].name << "),\n"
-          << ".m_axi_awuser(" << _ports_out[o_awuser].name << "),\n"
-          << ".m_axi_awvalid(" << _ports_out[o_awvalid].name << "),\n"
-          << ".m_axi_wdata(" << _ports_out[o_wdata].name << "),\n"
-          << ".m_axi_wstrb(" << _ports_out[o_wstrb].name << "),\n"
-          << ".m_axi_wlast(" << _ports_out[o_wlast].name << "),\n"
-          << ".m_axi_wuser(" << _ports_out[o_wuser].name << "),\n"
-          << ".m_axi_wvalid(" << _ports_out[o_wvalid].name << "),\n"
-          << ".m_axi_bready(" << _ports_out[o_bready].name << "),\n"
-          << ".clock(clock),\n"
-          << ".reset(reset),\n"
-          << ".Mout_oe_ram(" << _ports_in[i_start].name << " && !" << _ports_in[i_in1].name << "),\n"
-          << ".Mout_we_ram(" << _ports_in[i_start].name << " && " << _ports_in[i_in1].name << "),\n"
-          << ".Mout_addr_ram(in4),\n"
-          << ".Mout_Wdata_ram(in3),\n"
-          << ".Mout_data_ram_size(in2),\n"
-          << ".m_axi_arready(" << _ports_in[i_arready].name << "),\n"
-          << ".m_axi_rid(" << _ports_in[i_rid].name << "),\n"
-          << ".m_axi_rdata(" << _ports_in[i_rdata].name << "),\n"
-          << ".m_axi_rresp(" << _ports_in[i_rresp].name << "),\n"
-          << ".m_axi_rlast(" << _ports_in[i_rlast].name << "),\n"
-          << ".m_axi_rvalid(" << _ports_in[i_rvalid].name << "),\n"
-          << ".m_axi_awready(" << _ports_in[i_awready].name << "),\n"
-          << ".m_axi_wready(" << _ports_in[i_wready].name << "),\n"
-          << ".m_axi_bid(" << _ports_in[i_bid].name << "),\n"
-          << ".m_axi_bresp(" << _ports_in[i_bresp].name << "),\n"
-          << ".m_axi_bvalid(" << _ports_in[i_bvalid].name << "));\n";
+          << "  .BITSIZE_Mout_addr_ram(BITSIZE_address),\n"
+          << "  .BITSIZE_Mout_Wdata_ram(BITSIZE_data),\n"
+          << "  .BITSIZE_Mout_data_ram_size(BITSIZE_in2),\n"
+          << "  .BITSIZE_M_Rdata_ram(BITSIZE_data),\n"
+          << "  .BITSIZE_m_axi_awid(6),\n"
+          << "  .BITSIZE_m_axi_awaddr(BITSIZE_address),\n"
+          << "  .BITSIZE_m_axi_awlen(8),\n"
+          << "  .BITSIZE_m_axi_wdata(BITSIZE_data),\n"
+          << "  .BITSIZE_m_axi_wstrb(BITSIZE_data_size),\n"
+          << "  .BITSIZE_m_axi_bid(6),\n"
+          << "  .BITSIZE_m_axi_arid(6),\n"
+          << "  .BITSIZE_m_axi_araddr(BITSIZE_address),\n"
+          << "  .BITSIZE_m_axi_arlen(8),\n"
+          << "  .BITSIZE_m_axi_rid(6),\n"
+          << "  .BITSIZE_m_axi_rdata(BITSIZE_data)) adapter (.M_DataRdy(done_port),\n"
+          << "  .M_Rdata_ram(" << _ports_out[o_out1].name << "),\n"
+          << "  .m_axi_arid(" << _ports_out[o_arid].name << "),\n"
+          << "  .m_axi_araddr(" << _ports_out[o_araddr].name << "),\n"
+          << "  .m_axi_arlen(" << _ports_out[o_arlen].name << "),\n"
+          << "  .m_axi_arsize(" << _ports_out[o_arsize].name << "),\n"
+          << "  .m_axi_arburst(" << _ports_out[o_arburst].name << "),\n"
+          << "  .m_axi_arlock(" << _ports_out[o_arlock].name << "),\n"
+          << "  .m_axi_arcache(" << _ports_out[o_arcache].name << "),\n"
+          << "  .m_axi_arprot(" << _ports_out[o_arprot].name << "),\n"
+          << "  .m_axi_arqos(" << _ports_out[o_arqos].name << "),\n"
+          << "  .m_axi_arregion(" << _ports_out[o_arregion].name << "),\n"
+          << "  .m_axi_aruser(" << _ports_out[o_aruser].name << "),\n"
+          << "  .m_axi_arvalid(" << _ports_out[o_arvalid].name << "),\n"
+          << "  .m_axi_rready(" << _ports_out[o_rready].name << "),\n"
+          << "  .m_axi_awid(" << _ports_out[o_awid].name << "),\n"
+          << "  .m_axi_awaddr(" << _ports_out[o_awaddr].name << "),\n"
+          << "  .m_axi_awlen(" << _ports_out[o_awlen].name << "),\n"
+          << "  .m_axi_awsize(" << _ports_out[o_awsize].name << "),\n"
+          << "  .m_axi_awburst(" << _ports_out[o_awburst].name << "),\n"
+          << "  .m_axi_awlock(" << _ports_out[o_awlock].name << "),\n"
+          << "  .m_axi_awcache(" << _ports_out[o_awcache].name << "),\n"
+          << "  .m_axi_awprot(" << _ports_out[o_awprot].name << "),\n"
+          << "  .m_axi_awqos(" << _ports_out[o_awqos].name << "),\n"
+          << "  .m_axi_awregion(" << _ports_out[o_awregion].name << "),\n"
+          << "  .m_axi_awuser(" << _ports_out[o_awuser].name << "),\n"
+          << "  .m_axi_awvalid(" << _ports_out[o_awvalid].name << "),\n"
+          << "  .m_axi_wdata(" << _ports_out[o_wdata].name << "),\n"
+          << "  .m_axi_wstrb(" << _ports_out[o_wstrb].name << "),\n"
+          << "  .m_axi_wlast(" << _ports_out[o_wlast].name << "),\n"
+          << "  .m_axi_wuser(" << _ports_out[o_wuser].name << "),\n"
+          << "  .m_axi_wvalid(" << _ports_out[o_wvalid].name << "),\n"
+          << "  .m_axi_bready(" << _ports_out[o_bready].name << "),\n"
+          << "  .clock(clock),\n"
+          << "  .reset(reset),\n"
+          << "  .Mout_oe_ram(" << _ports_in[i_start].name << " && !" << _ports_in[i_in1].name << "),\n"
+          << "  .Mout_we_ram(" << _ports_in[i_start].name << " && " << _ports_in[i_in1].name << "),\n"
+          << "  .Mout_addr_ram(" << _ports_in[i_in4].name << "),\n"
+          << "  .Mout_Wdata_ram(" << _ports_in[i_in3].name << "),\n"
+          << "  .Mout_data_ram_size(" << _ports_in[i_in2].name << "),\n"
+          << "  .m_axi_arready(" << _ports_in[i_arready].name << "),\n"
+          << "  .m_axi_rid(" << _ports_in[i_rid].name << "),\n"
+          << "  .m_axi_rdata(" << _ports_in[i_rdata].name << "),\n"
+          << "  .m_axi_rresp(" << _ports_in[i_rresp].name << "),\n"
+          << "  .m_axi_rlast(" << _ports_in[i_rlast].name << "),\n"
+          << "  .m_axi_rvalid(" << _ports_in[i_rvalid].name << "),\n"
+          << "  .m_axi_awready(" << _ports_in[i_awready].name << "),\n"
+          << "  .m_axi_wready(" << _ports_in[i_wready].name << "),\n"
+          << "  .m_axi_bid(" << _ports_in[i_bid].name << "),\n"
+          << "  .m_axi_bresp(" << _ports_in[i_bresp].name << "),\n"
+          << "  .m_axi_bvalid(" << _ports_in[i_bvalid].name << "));\n";
    }
    else /* Connect to IOB cache, no need for AXI controller */
    {
-      auto line_off_w = ceil_log2(line_count);
-      unsigned long long word_off_w = 1;
-      std::string be_data_w = data_bitsize;
+      const auto line_off_w = std::to_string(ceil_log2(line_count));
+      std::string word_off_w = "1";
+      std::string be_data_w = std::to_string(_ports_out[o_wdata].type_size);
       std::string n_ways = "1";
-      unsigned long long wtbuf_depth_w = 2;
+      unsigned long long wtbuf_depth_w = 2ULL;
       std::string rep_policy = "0";
       std::string write_pol = "0";
 
-      if(params.find("LINE_SIZE") != params.end())
+      if(auto it = iface_attrs.find(FunctionArchitecture::iface_cache_line_size); it != iface_attrs.end())
       {
-         word_off_w = ceil_log2(std::stoull(params.at("LINE_SIZE")));
+         word_off_w = std::to_string(ceil_log2(std::stoull(it->second)));
       }
-      if(params.find("BUS_SIZE") != params.end())
+      if(auto it = iface_attrs.find(FunctionArchitecture::iface_cache_bus_size); it != iface_attrs.end())
       {
-         be_data_w = params.at("BUS_SIZE");
+         be_data_w = it->second;
       }
-      if(params.find("N_WAYS") != params.end())
+      if(auto it = iface_attrs.find(FunctionArchitecture::iface_cache_ways); it != iface_attrs.end())
       {
-         n_ways = params.at("N_WAYS");
+         n_ways = it->second;
       }
-      if(params.find("BUF_SIZE") != params.end())
+      if(auto it = iface_attrs.find(FunctionArchitecture::iface_cache_num_write_outstanding); it != iface_attrs.end())
       {
-         wtbuf_depth_w = ceil_log2(std::stoull(params.at("BUF_SIZE")));
+         wtbuf_depth_w = ceil_log2(std::stoull(it->second));
          if(wtbuf_depth_w < 1)
          {
             wtbuf_depth_w = 1;
          }
       }
-      if(params.find("REP_POL") != params.end())
+      if(auto it = iface_attrs.find(FunctionArchitecture::iface_cache_rep_policy); it != iface_attrs.end())
       {
-         rep_policy = params.at("REP_POL");
+         const auto rp_name = boost::to_upper_copy(it->second);
+         if(rp_name == "LRU")
+         {
+            rep_policy = "0";
+         }
+         else if(rp_name == "MRU")
+         {
+            rep_policy = "1";
+         }
+         else if(rp_name == "TREE")
+         {
+            rep_policy = "2";
+         }
+         else
+         {
+            THROW_ERROR("Unexpected cache replacement policy: " + it->second);
+         }
       }
-      if(params.find("WR_POL") != params.end())
+      if(auto it = iface_attrs.find(FunctionArchitecture::iface_cache_write_policy); it != iface_attrs.end())
       {
-         write_pol = params.at("WR_POL");
+         const auto wp_name = boost::to_upper_copy(it->second);
+         if(wp_name == "WT")
+         {
+            write_pol = "0";
+         }
+         else if(wp_name == "WB")
+         {
+            write_pol = "1";
+         }
+         else
+         {
+            THROW_ERROR("Unexpected cache write policy: " + it->second);
+         }
       }
 
-      out << R"(
-  wire [BITSIZE_in4 - 1: $clog2(BITSIZE_in3 / 8)] addr;
-  wire [(BITSIZE_in3 / 8) - 1: 0] wstrb;
-  wire [BITSIZE_in3 - 1: 0] rdata;
-  wire ready;
-  wire dirty;
-  reg state, state_next;
-)";
-      out << "localparam S_IDLE = 0, S_FLUSH = 1;\n";
-      out << "initial begin\n";
-      out << "  state = S_IDLE;\n";
-      out << "end\n";
-      out << "assign " << _ports_out[o_aruser].name << " = 0;\n";
-      out << "assign " << _ports_out[o_arregion].name << " = 0;\n";
-      out << "assign " << _ports_out[o_wuser].name << " = 0;\n";
-      out << "assign " << _ports_out[o_awuser].name << " = 0;\n";
-      out << "assign " << _ports_out[o_awregion].name << " = 0;\n";
+      ip_components = "IOB_cache_axi";
+      out << "wire [BITSIZE_" << _ports_in[i_in4].name << "-1:$clog2(BITSIZE_" << _ports_in[i_in3].name
+          << " / 8)] addr;\n"
+          << "wire [(BITSIZE_" << _ports_in[i_in3].name << "/8)-1:0] wstrb;\n"
+          << "wire [BITSIZE_" << _ports_in[i_in3].name << "-1:0] rdata;\n"
+          << "wire ready;\n"
+          << "wire dirty;\n"
+          << "reg state, state_next;\n\n";
 
-      out << R"(
-      assign done_port = state == S_IDLE? ready : !dirty;
-      assign addr = in4[BITSIZE_in4 - 1:$clog2(BITSIZE_in3 / 8)];
-      assign wstrb = in1 ? (1 << (in2 / 8)) - 1 : 0;
-      assign out1 = done_port ? rdata : 0;
-
-      always @(*) begin
-        state_next = state;
-        if(state == S_IDLE) begin
-)";
-      out << "          if(" << _ports_in[i_start].name << " && " << _ports_in[i_in1].name << " && "
-          << _ports_in[i_in2].name << " == 0) begin\n";
-      out << "            state_next = S_FLUSH;\n";
-      out << "          end\n";
-      out << "        end else if(state == S_FLUSH) begin\n";
-      out << "          if(!dirty) begin\n";
-      out << "            state_next = S_IDLE;\n";
-      out << "          end\n";
-      out << "        end\n";
-      out << "      end\n";
-      out << "      always @(posedge " << CLOCK_PORT_NAME << ") begin\n";
-      out << "        state <= state_next;\n";
-      out << "        if(1RESET_VALUE) begin\n";
-      out << "          state <= S_IDLE;\n";
-      out << "        end\n";
-      out << "      end\n";
+      out << "localparam S_IDLE = 0, S_FLUSH = 1;\n"
+          << "initial state = S_IDLE;\n\n"
+          << "assign " << _ports_out[o_aruser].name << " = 0;\n"
+          << "assign " << _ports_out[o_arregion].name << " = 0;\n"
+          << "assign " << _ports_out[o_wuser].name << " = 0;\n"
+          << "assign " << _ports_out[o_awuser].name << " = 0;\n"
+          << "assign " << _ports_out[o_awregion].name << " = 0;\n\n"
+          << "assign done_port = state == S_IDLE? ready : !dirty;\n"
+          << "assign addr = " << _ports_in[i_in4].name << R"([BITSIZE_)" << _ports_in[i_in4].name
+          << R"(-1:$clog2(BITSIZE_)" << _ports_in[i_in3].name << "/8)];\n"
+          << "assign wstrb = " << _ports_in[i_in1].name << " ? (1 << (" << _ports_in[i_in2].name << "/8)) - 1 : 0;\n"
+          << "assign " << _ports_out[o_out1].name << " = done_port ? rdata : 0;\n\n"
+          << "always @(*) begin\n"
+          << "  state_next = state;\n"
+          << "  if(state == S_IDLE) begin\n"
+          << "    if(" << _ports_in[i_start].name << " && " << _ports_in[i_in1].name << " && " << _ports_in[i_in2].name
+          << " == 0) begin\n"
+          << "      state_next = S_FLUSH;\n"
+          << "    end\n"
+          << "  end else if(state == S_FLUSH) begin\n"
+          << "    if(!dirty) begin\n"
+          << "      state_next = S_IDLE;\n"
+          << "    end\n"
+          << "  end\n"
+          << "end\n\n"
+          << "always @(posedge " << CLOCK_PORT_NAME << " 1RESET_EDGE) begin\n"
+          << "  state <= state_next;\n"
+          << "  if(1RESET_VALUE) begin\n"
+          << "    state <= S_IDLE;\n"
+          << "  end\n"
+          << "end\n";
 
       out << R"(
 `ifdef __ICARUS__
@@ -370,99 +378,104 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_
       )";
 
       out << R"(
-      IOB_cache_axi #(
-          .FE_ADDR_W(BITSIZE_in4),
-          .BE_ADDR_W(BITSIZE_in4),
-          .BE_DATA_W()"
+IOB_cache_axi #(
+  .FE_ADDR_W(BITSIZE_)"
+          << _ports_in[i_in4].name << R"(),
+  .BE_ADDR_W(BITSIZE_)"
+          << _ports_in[i_in4].name << R"(),
+  .BE_DATA_W()"
           << be_data_w << R"(),
-          .N_WAYS()"
+  .N_WAYS()"
           << n_ways << R"(),
-          .LINE_OFF_W()"
-          << STR(line_off_w) << R"(),
-          .WORD_OFF_W()"
-          << STR(word_off_w) << R"(),
-          .WTBUF_DEPTH_W()"
+  .LINE_OFF_W()"
+          << line_off_w << R"(),
+  .WORD_OFF_W()"
+          << word_off_w << R"(),
+  .WTBUF_DEPTH_W()"
           << STR(wtbuf_depth_w) << R"(),
-          .REP_POLICY()"
+  .REP_POLICY()"
           << rep_policy << R"(),
-          .WRITE_POL()"
+  .WRITE_POL()"
           << write_pol << R"(),
-          .AXI_ID(0),
-          .CTRL_CACHE(`_CACHE_CNT),
-          .CTRL_CNT(`_CACHE_CNT),
-          .BURST_TYPE()"
+  .AXI_ID(0),
+  .CTRL_CACHE(`_CACHE_CNT),
+  .CTRL_CNT(`_CACHE_CNT),
+  .BURST_TYPE()"
           << STR(axi_burst_type) << R"(),
-          .BITSIZE_addr(0 + BITSIZE_in4 - $clog2(BITSIZE_in3 / 8)),
-          .BITSIZE_wdata(BITSIZE_in3),
-          .BITSIZE_wstrb(BITSIZE_in3 / 8),
-          .BITSIZE_rdata(BITSIZE_in3),
-          .BITSIZE_m_axi_awid(1),
-          .BITSIZE_m_axi_awaddr(BITSIZE_in4),
-          .BITSIZE_m_axi_awlen(8),
-          .BITSIZE_m_axi_wdata()"
+  .BITSIZE_addr(0 + BITSIZE_)"
+          << _ports_in[i_in4].name << R"( - $clog2(BITSIZE_)" << _ports_in[i_in3].name << R"( / 8)),
+  .BITSIZE_wdata(BITSIZE_)"
+          << _ports_in[i_in3].name << R"(),
+  .BITSIZE_wstrb(BITSIZE_)"
+          << _ports_in[i_in3].name << R"( / 8),
+  .BITSIZE_rdata(BITSIZE_)"
+          << _ports_in[i_in3].name << R"(),
+  .BITSIZE_m_axi_awid(1),
+  .BITSIZE_m_axi_awaddr(BITSIZE_)"
+          << _ports_in[i_in4].name << R"(),
+  .BITSIZE_m_axi_awlen(8),
+  .BITSIZE_m_axi_wdata()"
           << be_data_w << R"(),
-          .BITSIZE_m_axi_wstrb()"
+  .BITSIZE_m_axi_wstrb()"
           << be_data_w << R"( / 8),
-          .BITSIZE_m_axi_bid(1),
-          .BITSIZE_m_axi_arid(1),
-          .BITSIZE_m_axi_araddr(BITSIZE_in4),
-          .BITSIZE_m_axi_arlen(8),
-          .BITSIZE_m_axi_rid(1),
-          .BITSIZE_m_axi_rdata()"
-          << be_data_w << R"()
-        )
-        cache(
-          .addr(addr),
-          .wdata(in3),
-          .wstrb(wstrb),
-          .rdata(rdata),
-          .ready(ready),
-          )";
+  .BITSIZE_m_axi_bid(1),
+  .BITSIZE_m_axi_arid(1),
+  .BITSIZE_m_axi_araddr(BITSIZE_in4),
+  .BITSIZE_m_axi_arlen(8),
+  .BITSIZE_m_axi_rid(1),
+  .BITSIZE_m_axi_rdata()"
+          << be_data_w << R"()) cache(.addr(addr),
+  .wdata()"
+          << _ports_in[i_in3].name << R"(),
+  .wstrb(wstrb),
+  .rdata(rdata),
+  .ready(ready),
+  )";
       out << ".valid(" << _ports_in[i_start].name << " && !(" << _ports_in[i_in1].name << " && "
           << _ports_in[i_in2].name << R"( == 0)),
-          .dirty(dirty),
-          .flush(state == S_FLUSH),
+  .dirty(dirty),
+  .flush(state == S_FLUSH),
 )";
-      out << "          .m_axi_awready(" << _ports_in[i_awready].name << "),\n";
-      out << "          .m_axi_wready(" << _ports_in[i_wready].name << "),\n";
-      out << "          .m_axi_bid(" << _ports_in[i_bid].name << "),\n";
-      out << "          .m_axi_bresp(" << _ports_in[i_bresp].name << "),\n";
-      out << "          .m_axi_bvalid(" << _ports_in[i_bvalid].name << "),\n";
-      out << "          .m_axi_arready(" << _ports_in[i_arready].name << "),\n";
-      out << "          .m_axi_rid(" << _ports_in[i_rid].name << "),\n";
-      out << "          .m_axi_rdata(" << _ports_in[i_rdata].name << "),\n";
-      out << "          .m_axi_rresp(" << _ports_in[i_rresp].name << "),\n";
-      out << "          .m_axi_rlast(" << _ports_in[i_rlast].name << "),\n";
-      out << "          .m_axi_rvalid(" << _ports_in[i_rvalid].name << "),\n";
-      out << "          .m_axi_awid(" << _ports_out[o_awid].name << "),\n";
-      out << "          .m_axi_awaddr(" << _ports_out[o_awaddr].name << "),\n";
-      out << "          .m_axi_awlen(" << _ports_out[o_awlen].name << "),\n";
-      out << "          .m_axi_awsize(" << _ports_out[o_awsize].name << "),\n";
-      out << "          .m_axi_awburst(" << _ports_out[o_awburst].name << "),\n";
-      out << "          .m_axi_awlock(" << _ports_out[o_awlock].name << "),\n";
-      out << "          .m_axi_awcache(" << _ports_out[o_awcache].name << "),\n";
-      out << "          .m_axi_awprot(" << _ports_out[o_awprot].name << "),\n";
-      out << "          .m_axi_awqos(" << _ports_out[o_awqos].name << "),\n";
-      out << "          .m_axi_awvalid(" << _ports_out[o_awvalid].name << "),\n";
-      out << "          .m_axi_wdata(" << _ports_out[o_wdata].name << "),\n";
-      out << "          .m_axi_wstrb(" << _ports_out[o_wstrb].name << "),\n";
-      out << "          .m_axi_wlast(" << _ports_out[o_wlast].name << "),\n";
-      out << "          .m_axi_wvalid(" << _ports_out[o_wvalid].name << "),\n";
-      out << "          .m_axi_bready(" << _ports_out[o_bready].name << "),\n";
-      out << "          .m_axi_arid(" << _ports_out[o_arid].name << "),\n";
-      out << "          .m_axi_araddr(" << _ports_out[o_araddr].name << "),\n";
-      out << "          .m_axi_arlen(" << _ports_out[o_arlen].name << "),\n";
-      out << "          .m_axi_arsize(" << _ports_out[o_arsize].name << "),\n";
-      out << "          .m_axi_arburst(" << _ports_out[o_arburst].name << "),\n";
-      out << "          .m_axi_arlock(" << _ports_out[o_arlock].name << "),\n";
-      out << "          .m_axi_arcache(" << _ports_out[o_arcache].name << "),\n";
-      out << "          .m_axi_arprot(" << _ports_out[o_arprot].name << "),\n";
-      out << "          .m_axi_arqos(" << _ports_out[o_arqos].name << "),\n";
-      out << "          .m_axi_arvalid(" << _ports_out[o_arvalid].name << "),\n";
-      out << "          .m_axi_rready(" << _ports_out[o_rready].name << "),\n";
-      out << "          .clock(clock),\n";
-      out << "          .reset(reset)\n";
-      out << "       );\n";
-      out << "`undef _CACHE_CNT\n";
+      out << "  .m_axi_awready(" << _ports_in[i_awready].name << "),\n"
+          << "  .m_axi_wready(" << _ports_in[i_wready].name << "),\n"
+          << "  .m_axi_bid(" << _ports_in[i_bid].name << "),\n"
+          << "  .m_axi_bresp(" << _ports_in[i_bresp].name << "),\n"
+          << "  .m_axi_bvalid(" << _ports_in[i_bvalid].name << "),\n"
+          << "  .m_axi_arready(" << _ports_in[i_arready].name << "),\n"
+          << "  .m_axi_rid(" << _ports_in[i_rid].name << "),\n"
+          << "  .m_axi_rdata(" << _ports_in[i_rdata].name << "),\n"
+          << "  .m_axi_rresp(" << _ports_in[i_rresp].name << "),\n"
+          << "  .m_axi_rlast(" << _ports_in[i_rlast].name << "),\n"
+          << "  .m_axi_rvalid(" << _ports_in[i_rvalid].name << "),\n"
+          << "  .m_axi_awid(" << _ports_out[o_awid].name << "),\n"
+          << "  .m_axi_awaddr(" << _ports_out[o_awaddr].name << "),\n"
+          << "  .m_axi_awlen(" << _ports_out[o_awlen].name << "),\n"
+          << "  .m_axi_awsize(" << _ports_out[o_awsize].name << "),\n"
+          << "  .m_axi_awburst(" << _ports_out[o_awburst].name << "),\n"
+          << "  .m_axi_awlock(" << _ports_out[o_awlock].name << "),\n"
+          << "  .m_axi_awcache(" << _ports_out[o_awcache].name << "),\n"
+          << "  .m_axi_awprot(" << _ports_out[o_awprot].name << "),\n"
+          << "  .m_axi_awqos(" << _ports_out[o_awqos].name << "),\n"
+          << "  .m_axi_awvalid(" << _ports_out[o_awvalid].name << "),\n"
+          << "  .m_axi_wdata(" << _ports_out[o_wdata].name << "),\n"
+          << "  .m_axi_wstrb(" << _ports_out[o_wstrb].name << "),\n"
+          << "  .m_axi_wlast(" << _ports_out[o_wlast].name << "),\n"
+          << "  .m_axi_wvalid(" << _ports_out[o_wvalid].name << "),\n"
+          << "  .m_axi_bready(" << _ports_out[o_bready].name << "),\n"
+          << "  .m_axi_arid(" << _ports_out[o_arid].name << "),\n"
+          << "  .m_axi_araddr(" << _ports_out[o_araddr].name << "),\n"
+          << "  .m_axi_arlen(" << _ports_out[o_arlen].name << "),\n"
+          << "  .m_axi_arsize(" << _ports_out[o_arsize].name << "),\n"
+          << "  .m_axi_arburst(" << _ports_out[o_arburst].name << "),\n"
+          << "  .m_axi_arlock(" << _ports_out[o_arlock].name << "),\n"
+          << "  .m_axi_arcache(" << _ports_out[o_arcache].name << "),\n"
+          << "  .m_axi_arprot(" << _ports_out[o_arprot].name << "),\n"
+          << "  .m_axi_arqos(" << _ports_out[o_arqos].name << "),\n"
+          << "  .m_axi_arvalid(" << _ports_out[o_arvalid].name << "),\n"
+          << "  .m_axi_rready(" << _ports_out[o_rready].name << "),\n"
+          << "  .clock(clock),\n"
+          << "  .reset(reset));\n\n"
+          << "`undef _CACHE_CNT\n";
    }
+   structural_manager::add_NP_functionality(mod, NP_functionality::IP_COMPONENT, ip_components);
 }
