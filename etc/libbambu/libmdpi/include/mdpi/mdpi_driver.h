@@ -46,7 +46,7 @@
 
 #include <stddef.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus) && __cplusplus >= 201103L
 #include <ac_channel.h>
 #endif
 
@@ -73,7 +73,7 @@ EXTERN_C void __m_exit(int __status);
 EXTERN_C void __m_abort();
 EXTERN_C void __m_assert_fail(const char* __assertion, const char* __file, unsigned int __line, const char* __function);
 
-#ifdef __cplusplus
+#if defined(__cplusplus) && __cplusplus >= 201103L
 class interface
 {
  public:
