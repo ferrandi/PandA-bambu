@@ -81,6 +81,7 @@ void TestbenchAxisModuleGenerator::InternalExec(std::ostream& out, structural_ob
    const auto if_ndir = if_dir == port_o::IN ? port_o::OUT : port_o::IN;
    const auto port_prefix = (if_dir == port_o::IN ? "s_axis_" : "m_axis_") + arg_name;
    std::string np_library = mod_cir->get_id() + " index";
+   std::string ip_components;
    const auto add_port_parametric = [&](const std::string& suffix, port_o::port_direction dir, unsigned port_size) {
       const auto port_name = port_prefix + suffix;
       structural_manager::add_port(port_name, dir, mod_cir,
@@ -90,154 +91,36 @@ void TestbenchAxisModuleGenerator::InternalExec(std::ostream& out, structural_ob
    add_port_parametric("_TDATA", if_ndir, 1U);
    add_port_parametric("_TVALID", if_ndir, 0U);
    add_port_parametric("_TREADY", if_dir, 0U);
-   structural_manager::add_NP_functionality(mod_cir, NP_functionality::LIBRARY, np_library);
-
-   out << R"(
-function automatic integer log2;
-  input integer value;
-  `ifdef _SIM_HAVE_CLOG2
-    log2 = $clog2(value);
-  `else
-    automatic integer temp_value = value-1;
-    for (log2=0; temp_value > 0; log2=log2+1)
-      temp_value = temp_value >> 1;
-  `endif
-endfunction
-
-localparam BITSIZE_data=BITSIZE_)"
-       << port_prefix << "_TDATA,\n  "
-       << "ALIGNMENT=" << if_alignment << R"(;
-
-arg_utils a_utils();
-mem_utils #(BITSIZE_data) m_utils();
-)";
+   out << "localparam BITSIZE_data=BITSIZE_" << port_prefix << "_TDATA;\n";
 
    if(if_dir == port_o::IN)
    {
-      out << R"(
-ptr_t addr, addr_next, addr_last, addr_last_next;
-reg [BITSIZE_data-1:0] val;
-wire [BITSIZE_data-1:0] val_next;
-
-initial
-begin
-  val = 0;
-  addr = 0;
-  addr_last = 0;
-end
-
-always @(posedge clock)
-begin
-  if(setup_port)
-  begin
-    automatic ptr_t addr_val = a_utils.getptrarg(index);
-    addr <= addr_val;
-    addr_last <= addr_val + a_utils.getptrargsize(index)"
-          << (return_type ? "-1" : "") << R"();
-    val <= m_utils.read(addr_val);
-  end
-  else
-  begin
-    val <= val_next;
-    addr <= addr_next;
-    addr_last <= addr_last_next;
-    if ()" << port_prefix
-          << R"(_TREADY == 1'b1)
-    begin
-      automatic ptr_t val_next_addr = addr_next + ALIGNMENT;
-      addr <= val_next_addr;
-      if(val_next_addr < addr_last_next)
-      begin
-        val <= m_utils.read(val_next_addr);
-      end
-      if(addr_next >= addr_last_next)
-      begin
-        $display("Too many read requests for parameter )"
-          << port_prefix << R"(");
-        $finish;
-      end
-    end
-  end
-end
-
-assign val_next = val;
-
-always @(*) 
-begin
-  addr_next = addr;
-  addr_last_next = addr_last;
-end
-)";
-      out << "assign " << port_prefix << "_TDATA = val;\n"
-          << "assign " << port_prefix << "_TVALID = addr < addr_last;";
+      ip_components = "TestbenchFifoRead";
+      out << "TestbenchFifoRead #(.index(index),\n"
+          << "  .CHECK_ACK(1),\n"
+          << "  .BITSIZE_dout(BITSIZE_data)) fifo_read(.clock(clock),\n"
+          << "  .setup_port(setup_port),\n"
+          << "  .done_port(done_port),\n"
+          << "  .empty_n(" << port_prefix << "_TVALID),\n"
+          << "  .read(" << port_prefix << "_TREADY),\n"
+          << "  .dout(" << port_prefix << "_TDATA));\n";
    }
    else if(if_dir == port_o::OUT)
    {
-      out << R"(
-ptr_t addr, addr_next, addr_last, addr_last_next;
-reg enable;
-wire enable_next;
-
-initial
-begin
-  addr = 0;
-  addr_last = 0;
-  enable = 0;
-end
-
-always @(posedge clock)
-begin
-  if(setup_port)
-  begin
-    automatic ptr_t addr_val = a_utils.getptrarg(index);
-    addr <= addr_val;
-    addr_last <= addr_val + a_utils.getptrargsize(index)"
-          << (return_type ? "-1" : "") << R"();
-    enable <= 1'b1;
-  end
-  else
-  begin
-    addr <= addr_next;
-    addr_last <= addr_last_next;
-    enable <= enable_next;
-    if(enable == 1'b1 && )"
-          << port_prefix << R"(_TVALID == 1'b1)
-    begin
-      if(addr_next >= addr_last_next)
-      begin
-        $display("Too many write requests for parameter )"
-          << port_prefix << R"(");
-        $finish;
-      end
-      addr <= addr_next + ALIGNMENT;
-    end
-  end
-end
-
-assign enable_next = enable && !done_port;
-
-always @(*) 
-begin
-  addr_next = addr;
-  addr_last_next = addr_last;
-end
-always @(negedge clock)
-begin
-  if (enable == 1'b1 && )"
-          << port_prefix << R"(_TVALID == 1'b1)
-  begin
-    if(addr < addr_last)
-    begin
-      m_utils.write(BITSIZE_data, )"
-          << port_prefix << R"(_TDATA, addr);
-    end
-  end
-end
-)";
-      out << "assign " << port_prefix << "_TREADY = addr < addr_last;";
+      ip_components = "TestbenchFifoWrite";
+      out << "TestbenchFifoWrite #(.index(index),\n"
+          << "  .BITSIZE_din(BITSIZE_data)) fifo_write(.clock(clock),\n"
+          << "  .setup_port(setup_port),\n"
+          << "  .done_port(done_port),\n"
+          << "  .full_n(" << port_prefix << "_TREADY),\n"
+          << "  .write(" << port_prefix << "_TVALID),\n"
+          << "  .din(" << port_prefix << "_TDATA));\n";
    }
    else
    {
       THROW_UNREACHABLE("Unknown AXIS interface port direction: " + port_o::GetString(if_dir));
    }
+
+   structural_manager::add_NP_functionality(mod_cir, NP_functionality::IP_COMPONENT, ip_components);
+   structural_manager::add_NP_functionality(mod_cir, NP_functionality::LIBRARY, np_library);
 }

@@ -1270,22 +1270,21 @@ timeprecision 1ps;
 `endif
 reg done_port 1INIT_ZERO_VALUE;
 // synthesis translate_off
-import &quot;DPI-C&quot; function void m_setarg(input logic [127:0] data, input int unsigned index);
+import &quot;DPI-C&quot; function void m_builtin_exit (input int status);
 always @(posedge clock)
   if(start_port == 1&apos;b1)
   begin
     automatic integer res_file;
-    automatic reg [127:0] _status = {96'd0, status};
     res_file = $fopen(RESFILE,&quot;a&quot;);
     $fwrite(res_file, &quot;%0d\n&quot;, $time);
     $fwrite(res_file, &quot;%0d\n&quot;, status);
     $fclose(res_file);
-    m_setarg(_status, 0);
+    m_builtin_exit(status);
     $display(&quot;Sim: Exit called: %0d&quot;, status);
     $finish;
   end
 // synthesis translate_on
-always @(posedge clock) done_port &lt;= start_port;" />
+always @(posedge clock) done_port &lt;= start_port;"/>
         </component_o>
       </circuit>
     </cell>
@@ -1323,21 +1322,20 @@ timeprecision 1ps;
 `endif
 reg done_port 1INIT_ZERO_VALUE;
 // synthesis translate_off
-import &quot;DPI-C&quot; function void m_setarg(input logic [127:0] data, input int unsigned index);
+import &quot;DPI-C&quot; function void m_builtin_exit (input int status);
 always @(negedge clock)
   if(start_port == 1&apos;b1)
   begin
     automatic integer res_file;
-    automatic reg [127:0] _status = -1;
     res_file = $fopen(RESFILE,&quot;a&quot;);
     $fwrite(res_file, &quot;A\n&quot;);
     $fclose(res_file);
-    m_setarg(_status, 0);
+    m_builtin_exit(-1);
     $display(&quot;ERROR: Sim: Abort called&quot;);
     $finish;
   end
 // synthesis translate_on
-always @(posedge clock) done_port &lt;= start_port;" />
+always @(posedge clock) done_port &lt;= start_port;"/>
         </component_o>
       </circuit>
     </cell>

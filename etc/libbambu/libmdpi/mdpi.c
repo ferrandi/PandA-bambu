@@ -134,133 +134,28 @@ unsigned int m_next(unsigned int state)
    return (retval << 8) | (state_next & 0xFF);
 }
 
-unsigned int m_getptrargsize(unsigned int index)
+int m_read(uint8_t id, svLogicVecVal* data, uint16_t bitsize, ptr_t addr, uint8_t shift)
 {
-   uint64_t size;
+   int retval;
    __ipc_reserve();
-   __m_ipc_operation.type = MDPI_OP_TYPE_PARAM_INFO;
-   __m_ipc_operation.payload.param.index = index;
-   __ipc_request();
-   __ipc_wait(MDPI_IPC_STATE_RESPONSE);
-   if(__m_ipc_operation.payload.param.index != index)
-   {
-      __ipc_release();
-      error("Parameter %u size read failed.\n", index);
-      abort();
-   }
-   size = __m_ipc_operation.payload.param.size;
-   __ipc_release();
-   return size;
-}
-
-void m_getarg(svLogicVecVal* data, unsigned int index)
-{
-   uint16_t bitsize, byte_count, i;
-   debug("Parameter %u read\n", index);
-   __ipc_reserve();
-   __m_ipc_operation.type = MDPI_OP_TYPE_ARG_READ;
-   __m_ipc_operation.payload.arg.index = index;
-   __ipc_request();
-   __ipc_wait(MDPI_IPC_STATE_RESPONSE);
-   if(__m_ipc_operation.payload.arg.index != index)
-   {
-      __ipc_release();
-      if(__m_ipc_operation.payload.arg.index == MDPI_ARG_IDX_EMPTY)
-      {
-         debug("Parameter %u fake pipelined read.", index);
-      }
-      else
-      {
-         error("Parameter %u read failed.\n", index);
-         abort();
-      }
-      return;
-   }
-
-   bitsize = __m_ipc_operation.payload.arg.bitsize;
-   byte_count = (bitsize / 8) + ((bitsize % 8) != 0);
-   for(i = 0; i < byte_count; ++i)
-   {
-      uint8_t mem = __m_ipc_operation.payload.arg.buffer[i];
-      if(i % 4)
-      {
-         data[i / 4].aval |= (unsigned int)(mem) << byte_offset(i);
-      }
-      else
-      {
-         data[i / 4].aval = mem;
-         data[i / 4].bval = 0;
-      }
-   }
-
-   __ipc_release();
-}
-
-void m_setarg(CONSTARG svLogicVecVal* data, unsigned int index)
-{
-   uint16_t bitsize, byte_count, i;
-
-   debug("Parameter %u write\n", index);
-
-   __ipc_reserve();
-   __m_ipc_operation.type = MDPI_OP_TYPE_ARG_READ;
-   __m_ipc_operation.payload.arg.index = index;
-   __ipc_request();
-   __ipc_wait(MDPI_IPC_STATE_RESPONSE);
-   if(__m_ipc_operation.payload.arg.index != index)
-   {
-      __ipc_release();
-      if(__m_ipc_operation.payload.arg.index == MDPI_ARG_IDX_EMPTY)
-      {
-         debug("Parameter %u fake pipelined write.", index);
-      }
-      else
-      {
-         error("Parameter %u read failed.\n", index);
-         abort();
-      }
-      return;
-   }
-   bitsize = __m_ipc_operation.payload.arg.bitsize;
-   __ipc_release();
-
-   __ipc_reserve();
-   __m_ipc_operation.type = MDPI_OP_TYPE_ARG_WRITE;
-   __m_ipc_operation.payload.arg.index = index;
-   __m_ipc_operation.payload.arg.bitsize = bitsize;
-   byte_count = (bitsize / 8) + ((bitsize % 8) != 0);
-   for(i = 0; i < byte_count; ++i)
-   {
-      assert((data[i / 4].bval == 0) && "Memory write data must not contain undefined states X or Z from "
-                                        "the simulation");
-      __m_ipc_operation.payload.arg.buffer[i] = data[i / 4].aval >> byte_offset(i);
-   }
-   __ipc_request();
-   __ipc_wait(MDPI_IPC_STATE_RESPONSE);
-   if(__m_ipc_operation.payload.arg.index != index)
-   {
-      error("Parameter %u write failed.\n", index);
-      abort();
-   }
-   __ipc_release();
-}
-
-static void __attribute__((noinline)) __m_read(const uint16_t size, svLogicVecVal* data, ptr_t addr)
-{
-   __ipc_reserve();
-   __m_ipc_operation.type = MDPI_OP_TYPE_MEM_READ;
-   __m_ipc_operation.payload.mem.addr = addr;
-   __m_ipc_operation.payload.mem.size = size;
+   __m_ipc_operation.type = shift ? MDPI_OP_TYPE_IF_POP : MDPI_OP_TYPE_IF_READ;
+   __m_ipc_operation.payload.interface.id = id;
+   __m_ipc_operation.payload.interface.info = 0;
+   __m_ipc_operation.payload.interface.addr = addr;
+   __m_ipc_operation.payload.interface.bitsize = bitsize;
    __ipc_request();
    __ipc_wait(MDPI_IPC_STATE_RESPONSE);
 
-   if(__m_ipc_operation.payload.mem.addr == addr)
+   retval = __m_ipc_operation.payload.interface.info;
+   debug("Interface %u read state -> %d.\n", id, retval);
+
+   if(__m_ipc_operation.payload.interface.id == id)
    {
-      uint16_t i;
+      uint16_t i, size = bitsize / 8 + ((bitsize % 8) != 0);
 #pragma unroll(4)
       for(i = 0; i < size; ++i)
       {
-         byte_t mem = __m_ipc_operation.payload.mem.buffer[i];
+         byte_t mem = __m_ipc_operation.payload.interface.buffer[i];
          if(i % 4)
          {
             data[i / 4].aval |= (unsigned int)(mem) << byte_offset(i);
@@ -272,132 +167,113 @@ static void __attribute__((noinline)) __m_read(const uint16_t size, svLogicVecVa
          }
       }
    }
+   else if(__m_ipc_operation.payload.interface.id == MDPI_IF_IDX_EMPTY)
+   {
+      debug("Fake pipelined read operation on interface %u.\n", id);
+   }
    else
    {
-      error("Read to non-mapped address " PTR_FORMAT ".\n", addr);
+      error("Read operation on uninitialized interface %u.\n", id);
       abort();
    }
    __ipc_release();
+   return retval;
 }
 
-static void __attribute__((noinline))
-__m_write(const uint16_t max_bsize, uint16_t size, CONSTARG svLogicVecVal* data, ptr_t addr)
+int m_write(uint8_t id, CONSTARG svLogicVecVal* data, uint16_t bitsize, ptr_t addr, uint8_t shift)
 {
+   int retval;
    uint16_t i;
-   const uint16_t bsize = (size / 8) + ((size % 8) != 0);
+   const uint16_t bsize = (bitsize / 8) + ((bitsize % 8) != 0);
    __ipc_reserve();
-   __m_ipc_operation.type = MDPI_OP_TYPE_MEM_WRITE;
-   __m_ipc_operation.payload.mem.addr = addr;
-   __m_ipc_operation.payload.mem.size = size;
-   assert((max_bsize * 8) >= size && "Memory write bitsize must be smaller than bus size");
+   __m_ipc_operation.type = shift ? MDPI_OP_TYPE_IF_PUSH : MDPI_OP_TYPE_IF_WRITE;
+   __m_ipc_operation.payload.interface.id = id;
+   __m_ipc_operation.payload.interface.info = 0;
+   __m_ipc_operation.payload.interface.addr = addr;
+   __m_ipc_operation.payload.interface.bitsize = bitsize;
 #pragma unroll(4)
    for(i = 0; i < bsize; ++i)
    {
 #ifndef NDEBUG
       byte_t bdata_byte = data[i / 4].bval >> byte_offset(i);
-      if(size >= (i * 8))
+      if(bitsize >= (i * 8))
       {
          assert((bdata_byte == 0) && "Memory write data must not contain undefined states X or Z from "
                                      "the simulation");
       }
       else
       {
-         byte_t mask = (byte_t)((1 << (size & 7)) - 1);
+         byte_t mask = (byte_t)((1 << (bitsize & 7)) - 1);
          assert(((bdata_byte & mask) == 0) && "Memory write data must not contain undefined states X or Z from "
                                               "the simulation");
       }
 #endif
-      __m_ipc_operation.payload.mem.buffer[i] = data[i / 4].aval >> byte_offset(i);
+      __m_ipc_operation.payload.interface.buffer[i] = data[i / 4].aval >> byte_offset(i);
    }
    __ipc_request();
    __ipc_wait(MDPI_IPC_STATE_RESPONSE);
 
-   if(__m_ipc_operation.payload.mem.addr != addr)
+   retval = __m_ipc_operation.payload.interface.info;
+   debug("Interface %u write state -> %d.\n", id, retval);
+
+   if(__m_ipc_operation.payload.interface.id == MDPI_IF_IDX_EMPTY)
    {
-      error("Write to non-mapped address " PTR_FORMAT ".\n", addr);
+      debug("Fake pipelined write operation on interface %u.\n", id);
+   }
+   else if(__m_ipc_operation.payload.interface.id != id)
+   {
+      error("Write operation on uninitialized interface %u.\n", id);
       abort();
    }
    __ipc_release();
+   return retval;
 }
 
-void m_read8(svLogicVecVal* data, ptr_t addr)
+int m_state(uint8_t id, int data)
 {
-   __m_read(1, data, addr);
-}
-void m_read16(svLogicVecVal* data, ptr_t addr)
-{
-   __m_read(2, data, addr);
-}
-void m_read32(svLogicVecVal* data, ptr_t addr)
-{
-   __m_read(4, data, addr);
-}
-void m_read64(svLogicVecVal* data, ptr_t addr)
-{
-   __m_read(8, data, addr);
-}
-void m_read128(svLogicVecVal* data, ptr_t addr)
-{
-   __m_read(16, data, addr);
-}
-void m_read256(svLogicVecVal* data, ptr_t addr)
-{
-   __m_read(32, data, addr);
-}
-void m_read512(svLogicVecVal* data, ptr_t addr)
-{
-   __m_read(64, data, addr);
-}
-void m_read1024(svLogicVecVal* data, ptr_t addr)
-{
-   __m_read(128, data, addr);
-}
-void m_read2048(svLogicVecVal* data, ptr_t addr)
-{
-   __m_read(256, data, addr);
-}
-void m_read4096(svLogicVecVal* data, ptr_t addr)
-{
-   __m_read(512, data, addr);
+   int retval;
+   __ipc_reserve();
+   __m_ipc_operation.type = MDPI_OP_TYPE_IF_INFO;
+   __m_ipc_operation.payload.interface.id = id;
+   __m_ipc_operation.payload.interface.info = data;
+   __ipc_request();
+   __ipc_wait(MDPI_IPC_STATE_RESPONSE);
+
+   retval = __m_ipc_operation.payload.interface.info;
+
+   if(__m_ipc_operation.payload.interface.id == MDPI_IF_IDX_EMPTY)
+   {
+      debug("Fake state operation on interface %u.\n", id);
+   }
+   else if(__m_ipc_operation.payload.interface.id != id)
+   {
+      error("State operation on uninitialized interface %u.\n", id);
+      abort();
+   }
+   __ipc_release();
+
+   debug("Interface %u state(%d) -> %d.\n", id, data, retval);
+
+   return retval;
 }
 
-void m_write8(uint16_t size, CONSTARG svLogicVecVal* data, ptr_t addr)
+void m_builtin_exit(int status)
 {
-   __m_write(1, size, data, addr);
-}
-void m_write16(uint16_t size, CONSTARG svLogicVecVal* data, ptr_t addr)
-{
-   __m_write(2, size, data, addr);
-}
-void m_write32(uint16_t size, CONSTARG svLogicVecVal* data, ptr_t addr)
-{
-   __m_write(4, size, data, addr);
-}
-void m_write64(uint16_t size, CONSTARG svLogicVecVal* data, ptr_t addr)
-{
-   __m_write(8, size, data, addr);
-}
-void m_write128(uint16_t size, CONSTARG svLogicVecVal* data, ptr_t addr)
-{
-   __m_write(16, size, data, addr);
-}
-void m_write256(uint16_t size, CONSTARG svLogicVecVal* data, ptr_t addr)
-{
-   __m_write(32, size, data, addr);
-}
-void m_write512(uint16_t size, CONSTARG svLogicVecVal* data, ptr_t addr)
-{
-   __m_write(64, size, data, addr);
-}
-void m_write1024(uint16_t size, CONSTARG svLogicVecVal* data, ptr_t addr)
-{
-   __m_write(128, size, data, addr);
-}
-void m_write2048(uint16_t size, CONSTARG svLogicVecVal* data, ptr_t addr)
-{
-   __m_write(256, size, data, addr);
-}
-void m_write4096(uint16_t size, CONSTARG svLogicVecVal* data, ptr_t addr)
-{
-   __m_write(512, size, data, addr);
+   __ipc_reserve();
+   __m_ipc_operation.type = MDPI_OP_TYPE_IF_EXIT;
+   __m_ipc_operation.payload.interface.id = MDPI_IF_IDX_EMPTY;
+   __m_ipc_operation.payload.interface.info = status;
+   __m_ipc_operation.payload.interface.bitsize = 32;
+   __ipc_request();
+   __ipc_wait(MDPI_IPC_STATE_RESPONSE);
+
+   debug("Interface %u exit state -> %d.\n", __m_ipc_operation.payload.interface.id,
+         __m_ipc_operation.payload.interface.info);
+
+   if(__m_ipc_operation.payload.interface.id != MDPI_IF_IDX_EMPTY)
+   {
+      error("Builtin exit operation failed.\n");
+      abort();
+   }
+   __ipc_release();
 }

@@ -1235,10 +1235,9 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
                                     parmTypename.find("hls::stream<") == 0;
          if(ifaceMode != "default")
          {
-            if((ifaceMode != "ptrdefault" && ifaceMode != "none" && ifaceMode != "none_registered" &&
-                ifaceMode != "handshake" && ifaceMode != "valid" && ifaceMode != "ovalid" &&
-                ifaceMode != "acknowledge" && ifaceMode != "fifo" && ifaceMode != "bus" && ifaceMode != "m_axi" &&
-                ifaceMode != "axis") ||
+            if((ifaceMode != "ptrdefault" && ifaceMode != "none" && ifaceMode != "handshake" && ifaceMode != "valid" &&
+                ifaceMode != "ovalid" && ifaceMode != "acknowledge" && ifaceMode != "fifo" && ifaceMode != "bus" &&
+                ifaceMode != "m_axi" && ifaceMode != "axis") ||
                (is_channel_if && ifaceMode != "fifo" && ifaceMode != "axis"))
             {
                ReportError(ifaceModeReq->first.loc, "Invalid HLS interface mode");
@@ -1258,8 +1257,8 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          parmIncludePaths = getIncludePaths(argType);
          if(ifaceMode != "default")
          {
-            if(ifaceMode != "default" && ifaceMode != "none" && ifaceMode != "none_registered" &&
-               ifaceMode != "handshake" && ifaceMode != "valid" && ifaceMode != "ovalid" && ifaceMode != "acknowledge")
+            if(ifaceMode != "default" && ifaceMode != "none" && ifaceMode != "handshake" && ifaceMode != "valid" &&
+               ifaceMode != "ovalid" && ifaceMode != "acknowledge")
             {
                ReportError(ifaceModeReq->first.loc, "Invalid HLS interface mode");
             }

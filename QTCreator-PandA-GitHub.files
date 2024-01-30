@@ -1811,8 +1811,6 @@ src/HLS/module_generator/Write_handshakeModuleGenerator.cpp
 src/HLS/module_generator/Write_handshakeModuleGenerator.hpp
 src/HLS/module_generator/Write_noneModuleGenerator.cpp
 src/HLS/module_generator/Write_noneModuleGenerator.hpp
-src/HLS/module_generator/Write_none_registeredModuleGenerator.cpp
-src/HLS/module_generator/Write_none_registeredModuleGenerator.hpp
 src/HLS/module_generator/Write_validModuleGenerator.cpp
 src/HLS/module_generator/Write_validModuleGenerator.hpp
 src/HLS/scheduling/ASLAP.cpp

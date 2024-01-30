@@ -50,6 +50,7 @@
 #include "structural_manager.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
+#include "utility.hpp"
 
 TestbenchFifoModuleGenerator::TestbenchFifoModuleGenerator(const HLS_managerRef& _HLSMgr) : Registrar(_HLSMgr)
 {
@@ -74,168 +75,54 @@ void TestbenchFifoModuleGenerator::InternalExec(std::ostream& out, structural_ob
    const auto top_bh = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
    const auto top_fname = top_bh->GetMangledFunctionName();
    const auto top_fnode = HLSMgr->get_tree_manager()->CGetTreeReindex(function_id);
-   const auto return_type = tree_helper::GetFunctionReturnType(top_fnode);
    const auto& iface_attrs = HLSMgr->module_arch->GetArchitecture(top_fname)->ifaces.at(arg_name);
    const auto if_dir = port_o::to_port_direction(iface_attrs.at(FunctionArchitecture::iface_direction));
    const auto if_alignment = iface_attrs.at(FunctionArchitecture::iface_alignment);
    const auto if_ndir = if_dir == port_o::IN ? port_o::OUT : port_o::IN;
    std::string np_library = mod_cir->get_id() + " index";
+   std::vector<std::string> ip_components;
    const auto add_port_parametric = [&](const std::string& suffix, port_o::port_direction dir, unsigned port_size) {
       const auto port_name = arg_name + suffix;
       structural_manager::add_port(port_name, dir, mod_cir,
                                    structural_type_descriptorRef(new structural_type_descriptor("bool", port_size)));
       np_library += " " + port_name;
    };
+   out << "localparam BITSIZE_data=BITSIZE_" << arg_name << ((if_dir == port_o::IN) ? "_dout" : "_din") << ";\n";
 
-   out << R"(
-function automatic integer log2;
-  input integer value;
-  `ifdef _SIM_HAVE_CLOG2
-    log2 = $clog2(value);
-  `else
-    automatic integer temp_value = value-1;
-    for (log2=0; temp_value > 0; log2=log2+1)
-      temp_value = temp_value >> 1;
-  `endif
-endfunction
-
-localparam BITSIZE_data=BITSIZE_)"
-       << arg_name << (if_dir == port_o::IN ? "_dout" : "_din") << ",\n  "
-       << "ALIGNMENT=" << if_alignment << R"(;
-
-arg_utils a_utils();
-mem_utils #(BITSIZE_data)m_utils();
-)";
-
-   if(if_dir == port_o::IN || if_dir == port_o::IO)
+   if(if_dir == port_o::IN)
    {
       add_port_parametric("_dout", if_ndir, 1U);
       add_port_parametric("_empty_n", if_ndir, 0U);
       add_port_parametric("_read", if_dir, 0U);
-      out << R"(
-ptr_t raddr, raddr_next, raddr_last, raddr_last_next;
-reg [BITSIZE_data-1:0] val;
-wire [BITSIZE_data-1:0] val_next;
-
-initial
-begin
-  val = 0;
-  raddr = 0;
-  raddr_last = 0;
-end
-
-always @(posedge clock)
-begin
-  if(setup_port)
-  begin
-    automatic ptr_t addr_val = a_utils.getptrarg(index);
-    val <= m_utils.read(addr_val);
-    raddr <= addr_val;
-    raddr_last <= addr_val + a_utils.getptrargsize(index)"
-          << (return_type ? "-1" : "") << R"();
-  end
-  else
-  begin
-    val <= val_next;
-    raddr <= raddr_next;
-    raddr_last <= raddr_last_next;
-    if ()" << arg_name
-          << R"(_read == 1'b1)
-    begin
-      automatic ptr_t val_next_addr = raddr_next + ALIGNMENT;
-      raddr <= val_next_addr;
-      if(val_next_addr < raddr_last_next)
-      begin
-        val <= m_utils.read(val_next_addr);
-      end
-      if(raddr_next >= raddr_last_next)
-      begin
-        $display("Too many read requests for parameter )"
-          << arg_name << R"(");
-        $finish;
-      end
-    end
-  end
-end
-
-assign val_next = val;
-
-always @(*)
-begin
-  raddr_next = raddr;
-  raddr_last_next = raddr_last;
-end
-)";
-      out << "assign " << arg_name << "_dout = val;\n"
-          << "assign " << arg_name << "_empty_n = raddr < raddr_last;";
+      ip_components.push_back("TestbenchFifoRead");
+      out << "TestbenchFifoRead #(.index(index),\n"
+          << "  .CHECK_ACK(1),\n"
+          << "  .BITSIZE_dout(BITSIZE_data)) fifo_read(.clock(clock),\n"
+          << "  .setup_port(setup_port),\n"
+          << "  .done_port(done_port),\n"
+          << "  .empty_n(" << arg_name << "_empty_n),\n"
+          << "  .read(" << arg_name << "_read),\n"
+          << "  .dout(" << arg_name << "_dout));\n";
    }
-   if(if_dir == port_o::OUT || if_dir == port_o::IO)
+   else if(if_dir == port_o::OUT)
    {
       add_port_parametric("_din", if_ndir, 1U);
       add_port_parametric("_full_n", if_dir, 0U);
       add_port_parametric("_write", if_ndir, 0U);
-      out << R"(
-ptr_t waddr, waddr_next, waddr_last, waddr_last_next;
-reg enable;
-wire enable_next;
-
-initial
-begin
-  waddr = 0;
-  waddr_last = 0;
-  enable = 0;
-end
-
-always @(posedge clock)
-begin
-  if(setup_port)
-  begin
-    automatic ptr_t addr_val = a_utils.getptrarg(index);
-    waddr <= addr_val;
-    waddr_last <= addr_val + a_utils.getptrargsize(index)"
-          << (return_type ? "-1" : "") << R"();
-    enable <= 1'b1;
-  end
-  else
-  begin
-    waddr <= waddr_next;
-    waddr_last <= waddr_last_next;
-    enable <= enable_next;
-    if(enable == 1'b1 && )"
-          << arg_name << R"(_write == 1'b1)
-    begin
-      if(waddr_next >= waddr_last_next)
-      begin
-        $display("Too many write requests for parameter )"
-          << arg_name << R"(");
-        $finish;
-      end
-      waddr <= waddr_next + ALIGNMENT;
-    end
-  end
-end
-
-assign enable_next = enable && !done_port;
-
-always @(*) 
-begin
-  waddr_next = waddr;
-  waddr_last_next = waddr_last;
-end
-always @(negedge clock)
-begin
-  if (enable == 1'b1 && )"
-          << arg_name << R"(_write == 1'b1)
-  begin
-    if(waddr < waddr_last)
-    begin
-      m_utils.write(BITSIZE_data, )"
-          << arg_name << R"(_din, waddr);
-    end
-  end
-end
-)";
-      out << "assign " << arg_name << "_full_n = waddr < waddr_last;";
+      ip_components.push_back("TestbenchFifoWrite");
+      out << "TestbenchFifoWrite #(.index(index),\n"
+          << "  .BITSIZE_din(BITSIZE_data)) fifo_write(.clock(clock),\n"
+          << "  .setup_port(setup_port),\n"
+          << "  .done_port(done_port),\n"
+          << "  .full_n(" << arg_name << "_full_n),\n"
+          << "  .write(" << arg_name << "_write),\n"
+          << "  .din(" << arg_name << "_din));\n";
    }
+   else
+   {
+      THROW_UNREACHABLE("Unknown FIFO interface port direction: " + port_o::GetString(if_dir));
+   }
+   structural_manager::add_NP_functionality(mod_cir, NP_functionality::IP_COMPONENT,
+                                            container_to_string(ip_components, ","));
    structural_manager::add_NP_functionality(mod_cir, NP_functionality::LIBRARY, np_library);
 }
