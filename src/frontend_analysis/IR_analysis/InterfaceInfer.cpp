@@ -1484,15 +1484,12 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
       const auto out_bitsize = if_name == "fifo" ? (info.bitwidth + 1U) : info.bitwidth;
       structural_type_descriptorRef outType(new structural_type_descriptor("bool", out_bitsize));
       structural_type_descriptorRef bool_type(new structural_type_descriptor("bool", 0));
+      CM->add_port(CLOCK_PORT_NAME, port_o::IN, interface_top, bool_type);
+      CM->add_port(RESET_PORT_NAME, port_o::IN, interface_top, bool_type);
+      CM->add_port_vector(START_PORT_NAME, port_o::IN, 1U, interface_top, bool_type);
       if(is_unbounded)
       {
-         CM->add_port(CLOCK_PORT_NAME, port_o::IN, interface_top, bool_type);
-         CM->add_port(RESET_PORT_NAME, port_o::IN, interface_top, bool_type);
          CM->add_port_vector(DONE_PORT_NAME, port_o::OUT, 1U, interface_top, bool_type);
-      }
-      if(is_unbounded || info.name == "acknowledge")
-      {
-         CM->add_port_vector(START_PORT_NAME, port_o::IN, 1U, interface_top, bool_type);
       }
       const auto addrPort = CM->add_port("in1", port_o::IN, interface_top, addrType);
       GetPointerS<port_o>(addrPort)->set_is_addr_bus(true);
@@ -1628,15 +1625,10 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
       structural_type_descriptorRef rwsize(new structural_type_descriptor("bool", nbitDataSize));
       structural_type_descriptorRef rwtype(new structural_type_descriptor("bool", info.bitwidth));
       structural_type_descriptorRef bool_type(new structural_type_descriptor("bool", 0));
-      if(is_unbounded || if_name == "none_registered")
-      {
-         CM->add_port(CLOCK_PORT_NAME, port_o::IN, interface_top, bool_type);
-         CM->add_port(RESET_PORT_NAME, port_o::IN, interface_top, bool_type);
-      }
-      if(is_unbounded || if_name == "valid" || if_name == "none_registered")
-      {
-         CM->add_port_vector(START_PORT_NAME, port_o::IN, 1U, interface_top, bool_type);
-      }
+
+      CM->add_port(CLOCK_PORT_NAME, port_o::IN, interface_top, bool_type);
+      CM->add_port(RESET_PORT_NAME, port_o::IN, interface_top, bool_type);
+      CM->add_port_vector(START_PORT_NAME, port_o::IN, 1U, interface_top, bool_type);
       if(is_unbounded)
       {
          CM->add_port_vector(DONE_PORT_NAME, port_o::OUT, 1U, interface_top, bool_type);
