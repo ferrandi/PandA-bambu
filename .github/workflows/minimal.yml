@@ -37,7 +37,7 @@ jobs:
       ac_types: ${{ steps.filter.outputs.ac_types }}
     steps:
       - name: Detect changes
-        uses: dorny/paths-filter@v2
+        uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: |
