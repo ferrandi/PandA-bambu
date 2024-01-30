@@ -57,7 +57,7 @@ jobs:
       characterize-matrix: ${{steps.matrix.outputs.value}}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -96,7 +96,7 @@ jobs:
           array+="]}"
           echo "value={\"include\":[${array}]}" >> $GITHUB_OUTPUT
       - name: Upload device FUs list
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{env.device_fu_list}}
           path: ${{env.device_fu_list}}
@@ -111,7 +111,7 @@ jobs:
       upload-dir: upload
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -129,7 +129,7 @@ jobs:
           ln -s $PWD/*.AppImage bin/spider
           echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Download device FUs list
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{env.device_fu_list}}
       - name: Launch Bambu specific tests ${{matrix.index}}
@@ -143,7 +143,7 @@ jobs:
           mkdir -p ${{env.upload-dir}}
           mv ${{env.device}}.xml ${{env.upload-dir}}/${{env.device}}.${{matrix.index}}.xml
       - name: Upload characterization batch ${{matrix.index}}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{env.device}}
           path: ${{env.upload-dir}}
@@ -153,7 +153,7 @@ jobs:
     runs-on: [self-hosted]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download Bambu AppImage
         uses: ./.github/actions/storage-download
         with:
@@ -171,7 +171,7 @@ jobs:
           ln -s $PWD/*.AppImage bin/spider
           echo "local-bin=$PWD/bin" >> $GITHUB_OUTPUT
       - name: Download device FUs characterizations
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{env.device}}
       - name: Merge characterization results
@@ -180,7 +180,7 @@ jobs:
           export PATH=${{steps.setup.outputs.local-bin}}:$PATH
           spider $(find ${{env.upload-dir}} -type f) ${{env.device}}.xml
       - name: Upload device characterization
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: "${{env.device}}_characterization"
           path: "${{env.device}}.xml"
