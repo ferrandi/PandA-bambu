@@ -50,7 +50,9 @@
 
 enum in_port
 {
-   i_start = 0,
+   i_clock = 0,
+   i_reset,
+   i_start,
    i_in1,
    i_in2,
    i_in3,

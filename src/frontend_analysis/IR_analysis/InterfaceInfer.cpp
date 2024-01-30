@@ -365,6 +365,14 @@ DesignFlowStep_Status InterfaceInfer::Exec()
          THROW_ASSERT(parm_attrs.find(FunctionArchitecture::parm_bundle) != parm_attrs.end(),
                       "Missing parameter bundle name");
          parm_attrs.emplace(FunctionArchitecture::parm_offset, "off");
+         if(tree_helper::IsPointerType(arg_type))
+         {
+            const auto ptd_type = tree_helper::CGetPointedType(arg_type);
+            const auto array_size =
+                tree_helper::IsArrayType(ptd_type) ? tree_helper::GetArrayTotalSize(ptd_type) : 1ULL;
+            parm_attrs.emplace(FunctionArchitecture::parm_size_in_bytes,
+                               std::to_string(array_size * (get_aligned_bitsize(tree_helper::Size(arg_type)) >> 3)));
+         }
          THROW_ASSERT(func_arch->ifaces.find(parm_attrs.at(FunctionArchitecture::parm_bundle)) !=
                           func_arch->ifaces.end(),
                       "Missing parameter bundle: " + parm_attrs.at(FunctionArchitecture::parm_bundle));
@@ -372,7 +380,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
          iface_attrs[FunctionArchitecture::iface_direction] = port_o::GetString(port_o::IN);
          iface_attrs[FunctionArchitecture::iface_bitwidth] = STR(tree_helper::Size(arg_type));
          iface_attrs[FunctionArchitecture::iface_alignment] =
-             STR(get_aligned_bitsize(tree_helper::Size(arg_type)) >> 3);
+             std::to_string(get_aligned_bitsize(tree_helper::Size(arg_type)) >> 3);
          auto& interface_type = iface_attrs[FunctionArchitecture::iface_mode];
          THROW_ASSERT(parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) !=
                               HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION ||
@@ -426,21 +434,11 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                               "' since no load/store is associated with it");
                }
 
-               if(parm_attrs.find(FunctionArchitecture::parm_size_in_bytes) != parm_attrs.end())
-               {
-                  auto temp_factor =
-                      info.type == datatype::generic ?
-                          (8 * std::stoull(parm_attrs.at(FunctionArchitecture::parm_size_in_bytes))) / info.bitwidth :
-                          1;
-                  if(temp_factor > 1)
-                  {
-                     info.factor = temp_factor;
-                  }
-               }
-               else
-               {
-                  info.factor = 1;
-               }
+               info.factor = std::max(
+                   info.type == datatype::generic ?
+                       (8ULL * std::stoull(parm_attrs.at(FunctionArchitecture::parm_size_in_bytes))) / info.bitwidth :
+                       1ULL,
+                   1ULL);
                info.name = [&]() -> std::string {
                   if(isRead && isWrite)
                   {
@@ -469,7 +467,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                         else if(parameters->IsParameter("none-registered-ptrdefault") &&
                                 parameters->GetParameter<int>("none-registered-ptrdefault") == 1)
                         {
-                           return "none_registered";
+                           iface_attrs[FunctionArchitecture::iface_register] = "";
+                           return "none";
                         }
                         return "ovalid";
                      }
@@ -514,7 +513,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      {
                         if(info.factor > 1)
                         {
-                           parm_attrs[FunctionArchitecture::parm_elem_count] = STR(info.factor);
+                           parm_attrs[FunctionArchitecture::parm_elem_count] = std::to_string(info.factor);
                         }
                         return "array";
                      }
@@ -522,7 +521,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      {
                         if(info.factor > 1)
                         {
-                           parm_attrs[FunctionArchitecture::parm_elem_count] = STR(info.factor);
+                           parm_attrs[FunctionArchitecture::parm_elem_count] = std::to_string(info.factor);
                            return "array";
                         }
                         else if(parameters->IsParameter("none-ptrdefault") &&
@@ -533,15 +532,20 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                         else if(parameters->IsParameter("none-registered-ptrdefault") &&
                                 parameters->GetParameter<int>("none-registered-ptrdefault") == 1)
                         {
-                           return "none_registered";
+                           iface_attrs[FunctionArchitecture::iface_register] = "";
+                           return "none";
                         }
                         return "valid";
                      }
                   }
                   return interface_type;
                }();
-               iface_attrs[FunctionArchitecture::iface_bitwidth] = STR(info.bitwidth);
-               iface_attrs[FunctionArchitecture::iface_alignment] = STR(info.alignment);
+               iface_attrs[FunctionArchitecture::iface_bitwidth] = std::to_string(info.bitwidth);
+               iface_attrs[FunctionArchitecture::iface_alignment] = std::to_string(info.alignment);
+               if(interface_type == "fifo" || interface_type == "axis")
+               {
+                  iface_attrs.emplace(FunctionArchitecture::iface_depth, "0");
+               }
                interface_type = info.name;
 
                THROW_ASSERT(info.bitwidth, "Expected non-zero bitwidth");
@@ -1690,7 +1694,7 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
 
       CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "in1 in2 in3");
       const auto writer = static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
-      if((if_name == "none" || if_name == "none_registered") && writer == HDLWriter_Language::VHDL)
+      if(if_name == "none" && writer == HDLWriter_Language::VHDL)
       {
          CM->add_NP_functionality(interface_top, NP_functionality::VHDL_GENERATOR,
                                   "Write_" + if_name + "ModuleGenerator");
@@ -1713,27 +1717,19 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
          fu->logical_type = functional_unit::COMBINATIONAL;
       }
 
+      const auto& iface_attrs = func_arch->ifaces.at(bundle_name);
+      const auto is_registered = iface_attrs.find(FunctionArchitecture::iface_register) != iface_attrs.end();
       for(const auto& fdName : operations)
       {
          const auto op_bounded = fdName.find("Async") != std::string::npos || !is_unbounded;
-         const auto exec_time = (!op_bounded ? HLS_D->get_technology_manager()->CGetSetupHoldTime() : 0.0) + EPSILON;
-         const auto cycles = [&]() {
-            if(if_name == "none_registered")
-            {
-               return 2U;
-            }
-            else if(if_name == "none" || (if_name == "fifo" && op_bounded))
-            {
-               return 1U;
-            }
-            return 0U;
-         }();
+         const auto exec_time = (op_bounded ? 0.0 : HLS_D->get_technology_manager()->CGetSetupHoldTime()) + EPSILON;
+         const auto cycles = op_bounded ? (1U + is_registered) : 0U;
 
          const auto op = GetPointerS<operation>(fu->get_operation(fdName));
          op->time_m = time_info::factory(parameters);
          op->bounded = op_bounded;
          op->time_m->set_execution_time(exec_time, cycles);
-         if(if_name == "none_registered")
+         if(op_bounded && is_registered)
          {
             op->time_m->set_stage_period(HLS_D->get_technology_manager()->CGetSetupHoldTime() + EPSILON);
             op->time_m->set_initiation_time(ControlStep(1U));
@@ -2287,8 +2283,8 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
 void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
                                      const interface_info& info, FunctionArchitectureRef func_arch) const
 {
-   if(info.name == "none" || info.name == "none_registered" || info.name == "acknowledge" || info.name == "valid" ||
-      info.name == "ovalid" || info.name == "handshake" || info.name == "fifo" || info.name == "axis")
+   if(info.name == "none" || info.name == "acknowledge" || info.name == "valid" || info.name == "ovalid" ||
+      info.name == "handshake" || info.name == "fifo" || info.name == "axis")
    {
       THROW_ASSERT(!operationsR.empty() || !operationsW.empty(), "unexpected condition");
       const auto IO_P = !operationsR.empty() && !operationsW.empty();

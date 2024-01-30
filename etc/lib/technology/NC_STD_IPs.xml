@@ -3,16 +3,21 @@
   <library>
     <name>STD</name>
     <cell>
-      <name>arg_utils</name>
+      <name>if_utils</name>
       <circuit>
-        <component_o id="arg_utils">
+        <component_o id="if_utils">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="arg_utils"/>
+          <structural_type_descriptor id_type="if_utils"/>
+          <parameter name="ID">0</parameter>
           <parameter name="BITSIZE_data">32</parameter>
-          <NP_functionality LIBRARY="arg_utils BITSIZE_data" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="if_utils ID BITSIZE_data" VERILOG_PROVIDED="
+import &quot;DPI-C&quot; function int m_read (input byte unsigned id, output logic [4095:0] data, input shortint unsigned bitsize, input ptr_t addr, input byte unsigned shift);
+import &quot;DPI-C&quot; function int m_write (input byte unsigned id, input logic [4095:0] data, input shortint unsigned bitsize, input ptr_t addr, input byte unsigned shift);
+import &quot;DPI-C&quot; function int m_state (input byte unsigned id, input int data);
+
 function automatic integer log2;
   input integer value;
   `ifdef _SIM_HAVE_CLOG2
@@ -24,150 +29,57 @@ function automatic integer log2;
   `endif
 endfunction
 
-import &quot;DPI-C&quot; function void m_getarg(inout logic [127:0] data, input int unsigned index);
-import &quot;DPI-C&quot; function void m_setarg(input logic [127:0] data, input int unsigned index);
-import &quot;DPI-C&quot; function int unsigned m_getptrargsize(input int unsigned index);
+localparam BITSIZE_strobe=log2(BITSIZE_data) &gt; 3 ? (1&lt;&lt;(log2(BITSIZE_data)-3)) : 1;
 
-function automatic [BITSIZE_data-1:0] getarg(input int unsigned index);
-  automatic reg [127:0] data = 0;
-  m_getarg(data, index);
-  return data[BITSIZE_data-1:0];
+function automatic [BITSIZE_data-1:0] read();
+  automatic reg [4095:0] _data = 0;
+  m_read(ID, _data, BITSIZE_data, 0, 0);
+  return _data[BITSIZE_data-1:0];
 endfunction
 
-function automatic ptr_t getptrarg(input int unsigned index);
-  automatic reg [127:0] data = 0;
-  m_getarg(data, index);
-  return data[$bits(ptr_t)-1:0];
+function automatic [BITSIZE_data-1:0] read_a(input ptr_t addr);
+  automatic reg [4095:0] _data = 0;
+  m_read(ID, _data, BITSIZE_data, addr, 0);
+  return _data[BITSIZE_data-1:0];
 endfunction
 
-function automatic int unsigned getptrargsize(input int unsigned index);
-  return m_getptrargsize(index);
+function automatic [BITSIZE_data-1:0] read_i(output int info);
+  automatic reg [4095:0] _data = 0;
+  info = m_read(ID, _data, BITSIZE_data, 0, 0);
+  return _data[BITSIZE_data-1:0];
 endfunction
 
-function automatic void setarg(input logic [BITSIZE_data-1:0] data, input int unsigned index);
-  automatic reg [127:0] _data = 0;
+function automatic [BITSIZE_data-1:0] read_ai(input ptr_t addr, output int info);
+  automatic reg [4095:0] _data = 0;
+  info = m_read(ID, _data, BITSIZE_data, addr, 0);
+  return _data[BITSIZE_data-1:0];
+endfunction
+
+function automatic [BITSIZE_data-1:0] pop(output int info);
+  automatic reg [4095:0] _data = 0;
+  info = m_read(ID, _data, BITSIZE_data, 0, 1);
+  return _data[BITSIZE_data-1:0];
+endfunction
+
+function automatic int write(input logic [BITSIZE_data-1:0] data);
+  automatic reg [4095:0] _data = 0;
   _data[BITSIZE_data-1:0] = data;
-  m_setarg(_data, index);
-endfunction"/>
-        </component_o>
-      </circuit>
-    </cell>
-    <cell>
-      <name>mem_utils</name>
-      <circuit>
-        <component_o id="mem_utils">
-          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
-          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="mem_utils"/>
-          <parameter name="BITSIZE_data">32</parameter>
-          <NP_functionality LIBRARY="mem_utils BITSIZE_data" VERILOG_PROVIDED="
-function automatic integer log2;
-  input integer value;
-  `ifdef _SIM_HAVE_CLOG2
-    log2 = $clog2(value);
-  `else
-    automatic integer temp_value = value-1;
-    for (log2=0; temp_value &gt; 0; log2=log2+1)
-      temp_value = temp_value &gt;&gt; 1;
-  `endif
+  return m_write(ID, _data, BITSIZE_data, 0, 0);
 endfunction
 
-localparam BITSIZE_mem_bus=1&lt;&lt;(log2(BITSIZE_data) &gt; 3 ? log2(BITSIZE_data) : 3),
-  BITSIZE_strobe=BITSIZE_mem_bus/8;
-
-import &quot;DPI-C&quot; function void m_read8    (output logic    [7:0] data, input ptr_t addr);
-import &quot;DPI-C&quot; function void m_read16   (output logic   [15:0] data, input ptr_t addr);
-import &quot;DPI-C&quot; function void m_read32   (output logic   [31:0] data, input ptr_t addr);
-import &quot;DPI-C&quot; function void m_read64   (output logic   [63:0] data, input ptr_t addr);
-import &quot;DPI-C&quot; function void m_read128  (output logic  [127:0] data, input ptr_t addr);
-import &quot;DPI-C&quot; function void m_read256  (output logic  [255:0] data, input ptr_t addr);
-import &quot;DPI-C&quot; function void m_read512  (output logic  [511:0] data, input ptr_t addr);
-import &quot;DPI-C&quot; function void m_read1024 (output logic [1023:0] data, input ptr_t addr);
-import &quot;DPI-C&quot; function void m_read2048 (output logic [2047:0] data, input ptr_t addr);
-import &quot;DPI-C&quot; function void m_read4096 (output logic [4095:0] data, input ptr_t addr);
-
-import &quot;DPI-C&quot; function void m_write8    (input shortint unsigned size, input logic    [7:0] data, input ptr_t addr);
-import &quot;DPI-C&quot; function void m_write16   (input shortint unsigned size, input logic   [15:0] data, input ptr_t addr);
-import &quot;DPI-C&quot; function void m_write32   (input shortint unsigned size, input logic   [31:0] data, input ptr_t addr);
-import &quot;DPI-C&quot; function void m_write64   (input shortint unsigned size, input logic   [63:0] data, input ptr_t addr);
-import &quot;DPI-C&quot; function void m_write128  (input shortint unsigned size, input logic  [127:0] data, input ptr_t addr);
-import &quot;DPI-C&quot; function void m_write256  (input shortint unsigned size, input logic  [255:0] data, input ptr_t addr);
-import &quot;DPI-C&quot; function void m_write512  (input shortint unsigned size, input logic  [511:0] data, input ptr_t addr);
-import &quot;DPI-C&quot; function void m_write1024 (input shortint unsigned size, input logic [1023:0] data, input ptr_t addr);
-import &quot;DPI-C&quot; function void m_write2048 (input shortint unsigned size, input logic [2047:0] data, input ptr_t addr);
-import &quot;DPI-C&quot; function void m_write4096 (input shortint unsigned size, input logic [4095:0] data, input ptr_t addr);
-
-function automatic [BITSIZE_data-1:0] read(input ptr_t addr);
-  automatic reg [4095:0] wtmp = 0;
-
-  if(BITSIZE_mem_bus == 8)
-    m_read8(wtmp[7:0], addr);
-  else if(BITSIZE_mem_bus == 16)
-    m_read16(wtmp[15:0], addr);
-  else if(BITSIZE_mem_bus == 32)
-    m_read32(wtmp[31:0], addr);
-  else if(BITSIZE_mem_bus == 64)
-    m_read64(wtmp[63:0], addr);
-  else if(BITSIZE_mem_bus == 128)
-    m_read128(wtmp[127:0], addr);
-  else if(BITSIZE_mem_bus == 256)
-    m_read256(wtmp[255:0], addr);
-  else if(BITSIZE_mem_bus == 512)
-    m_read512(wtmp[511:0], addr);
-  else if(BITSIZE_mem_bus == 1024)
-    m_read1024(wtmp[1023:0], addr);
-  else if(BITSIZE_mem_bus == 2048)
-    m_read2048(wtmp[2047:0], addr);
-  else if(BITSIZE_mem_bus == 4096)
-    m_read4096(wtmp[4095:0], addr);
-  else
-  begin
-    $display(&quot;Unsupported memory bus size: %0d&quot;, BITSIZE_mem_bus);
-    $finish;
-  end
-  return wtmp[BITSIZE_data-1:0];
+function automatic int write_a(input logic [BITSIZE_data-1:0] data, input ptr_t addr);
+  automatic reg [4095:0] _data = 0;
+  _data[BITSIZE_data-1:0] = data;
+  return m_write(ID, _data, BITSIZE_data, addr, 0);
 endfunction
 
-function automatic void write(
-  input shortint size,
-  input logic [BITSIZE_data-1:0] data,
-  input ptr_t addr);
-  automatic reg [4095:0] wtmp = 0;
-  
-  wtmp[BITSIZE_data-1:0] = data[BITSIZE_data-1:0];
-  if(BITSIZE_mem_bus == 8)
-    m_write8(size, wtmp[7:0], addr);
-  else if(BITSIZE_mem_bus == 16)
-    m_write16(size, wtmp[15:0], addr);
-  else if(BITSIZE_mem_bus == 32)
-    m_write32(size, wtmp[31:0], addr);
-  else if(BITSIZE_mem_bus == 64)
-    m_write64(size, wtmp[63:0], addr);
-  else if(BITSIZE_mem_bus == 128)
-    m_write128(size, wtmp[127:0], addr);
-  else if(BITSIZE_mem_bus == 256)
-    m_write256(size, wtmp[255:0], addr);
-  else if(BITSIZE_mem_bus == 512)
-    m_write512(size, wtmp[511:0], addr);
-  else if(BITSIZE_mem_bus == 1024)
-    m_write1024(size, wtmp[1023:0], addr);
-  else if(BITSIZE_mem_bus == 2048)
-    m_write2048(size, wtmp[2047:0], addr);
-  else if(BITSIZE_mem_bus == 4096)
-    m_write4096(size, wtmp[4095:0], addr);
-  else
-  begin
-    $display(&quot;Unsupported memory bus size: %0d&quot;, BITSIZE_mem_bus);
-    $finish;
-  end
+function automatic int write_sa(input logic [BITSIZE_data-1:0] data, input shortint unsigned bitsize, input ptr_t addr);
+  automatic reg [4095:0] _data = 0;
+  _data[BITSIZE_data-1:0] = data;
+  return m_write(ID, _data, bitsize, addr, 0);
 endfunction
 
-function automatic void write_strobe(
-  input logic [BITSIZE_strobe-1:0] strobe,
-  input logic [BITSIZE_data-1:0] data,
-  input ptr_t addr);
+function automatic int write_strobe(input logic [BITSIZE_data-1:0] data, input logic [BITSIZE_strobe-1:0] strobe, input ptr_t addr);
   automatic shortint unsigned size = 0;
   
   while(strobe != 0 &amp;&amp; !strobe[0])
@@ -186,7 +98,17 @@ function automatic void write_strobe(
     $finish;
   end
 
-  write(size, data, addr);
+  return write_sa(data, size, addr);
+endfunction
+
+function automatic int push(input logic [BITSIZE_data-1:0] data);
+  automatic reg [4095:0] _data = 0;
+  _data[BITSIZE_data-1:0] = data;
+  return m_write(ID, _data, BITSIZE_data, 0, 1);
+endfunction
+
+function automatic int state(input int data);
+  return m_state(ID, data);
 endfunction"/>
         </component_o>
       </circuit>
@@ -1450,6 +1372,7 @@ end"/>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="TestbenchMEMMinimal"/>
+          <parameter name="index">0</parameter>
           <parameter name="MEM_DELAY_READ">2</parameter>
           <parameter name="MEM_DELAY_WRITE">1</parameter>
           <parameter name="PIPELINED">1</parameter>
@@ -1513,8 +1436,8 @@ end"/>
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
           </port_o>
           <NP_functionality
-            IP_COMPONENT="mem_utils"
-            LIBRARY="TestbenchMEMMinimal MEM_DELAY_READ MEM_DELAY_WRITE PIPELINED base_addr MEM_DUMP MEM_DUMP_FILE QUEUE_SIZE QUEUE_BITSIZE M_DataRdy M_Rdata_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_back_pressure Sout_DataRdy Sout_Rdata_ram S_oe_ram S_we_ram S_addr_ram S_data_ram_size S_Wdata_ram"
+            IP_COMPONENT="if_utils"
+            LIBRARY="TestbenchMEMMinimal index MEM_DELAY_READ MEM_DELAY_WRITE PIPELINED base_addr MEM_DUMP MEM_DUMP_FILE QUEUE_SIZE QUEUE_BITSIZE M_DataRdy M_Rdata_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_back_pressure Sout_DataRdy Sout_Rdata_ram S_oe_ram S_we_ram S_addr_ram S_data_ram_size S_Wdata_ram"
             VERILOG_PROVIDED="
 localparam MEM_DELAY_MAX= MEM_DELAY_READ &gt; MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM_DELAY_WRITE,
   ACTIVE_READ= MEM_DELAY_READ &gt; 1 ? (MEM_DELAY_READ-2) : 0,
@@ -1569,7 +1492,7 @@ generate
   end
 endgenerate
 
-mem_utils #(BITSIZE_Rdata) m_utils();
+if_utils #(index, BITSIZE_Rdata) m_utils();
 
 generate
   for(i = 0; i &lt; CHANNELS_NUMBER; i = i + 1)
@@ -1600,7 +1523,7 @@ generate
       end
     end
 
-    assign queue_counter_next = queue_counter + ((Mout_we_ram[i] || Mout_oe_ram[i]) &amp;&amp; ((queue_counter  - _M_DataRdy[BITSIZE_ready*i+:BITSIZE_ready]) < (QUEUE_SIZE - 1))) - _M_DataRdy[BITSIZE_ready*i+:BITSIZE_ready];
+    assign queue_counter_next = queue_counter + ((Mout_we_ram[i] || Mout_oe_ram[i]) &amp;&amp; ((queue_counter  - _M_DataRdy[BITSIZE_ready*i+:BITSIZE_ready]) &lt; (QUEUE_SIZE - 1))) - _M_DataRdy[BITSIZE_ready*i+:BITSIZE_ready];
 
     
     if(MEM_DELAY_MAX &gt; 1)
@@ -1679,7 +1602,7 @@ generate
         Rdata &lt;= 0;
         if(oe &amp;&amp; base_addr &lt;= Raddr)
         begin
-          data = m_utils.read(Raddr);
+          data = m_utils.read_a(Raddr);
           Rdata &lt;= data;
           Rready &lt;= 1;
           if(MEM_DUMP)
@@ -1698,7 +1621,7 @@ generate
         Rdata &lt;= 0;
         if(oe &amp;&amp; base_addr &lt;= Raddr)
         begin
-          data = m_utils.read(Raddr);
+          data = m_utils.read_a(Raddr);
           Rdata &lt;= data;
           Rready &lt;= 1;
           if(MEM_DUMP)
@@ -1721,7 +1644,7 @@ generate
         Wready &lt;= 0;
         if(we &amp;&amp; base_addr &lt;= Waddr)
         begin
-          m_utils.write(Wsize, Wdata, Waddr);
+          m_utils.write_sa(Wdata, Wsize, Waddr);
           Wready &lt;= 1;
           if(MEM_DUMP)
           begin
@@ -1737,7 +1660,7 @@ generate
         Wready &lt;= 0;
         if(we &amp;&amp; base_addr &lt;= Waddr)
         begin
-          m_utils.write(Wsize, Wdata, Waddr);
+          m_utils.write_sa(Wdata, Wsize, Waddr);
           Wready &lt;= 1;
           if(MEM_DUMP)
           begin
@@ -1769,6 +1692,7 @@ endgenerate"/>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="TestbenchMEMWishboneB4"/>
+          <parameter name="index">0</parameter>
           <parameter name="MEM_DELAY_READ">2</parameter>
           <parameter name="MEM_DELAY_WRITE">1</parameter>
           <parameter name="base_addr">1073741824</parameter>
@@ -1830,8 +1754,8 @@ endgenerate"/>
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality
-            IP_COMPONENT="mem_utils"
-            LIBRARY="TestbenchMEMWishboneB4 MEM_DELAY_READ MEM_DELAY_WRITE base_addr addr_om dat_om sel_om dat_im addr_is dat_is sel_is dat_os"
+            IP_COMPONENT="if_utils"
+            LIBRARY="TestbenchMEMWishboneB4 index MEM_DELAY_READ MEM_DELAY_WRITE base_addr addr_om dat_om sel_om dat_im addr_is dat_is sel_is dat_os"
             VERILOG_PROVIDED="localparam MEM_DELAY_MAX= MEM_DELAY_READ > MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM_DELAY_WRITE,
   BITSIZE_item=BITSIZE_dat_im+1+1;
 reg cyc, stb, we, stall, ack;
@@ -1842,7 +1766,7 @@ reg [BITSIZE_dat_im-1:0] Rdata;
 
 reg [MEM_DELAY_MAX*BITSIZE_item-1:0] queue, queue_next;
 
-mem_utils #(BITSIZE_dat_im) m_utils();
+if_utils #(index, BITSIZE_dat_im) m_utils();
 
 initial
 begin
@@ -1893,11 +1817,11 @@ begin
     automatic ptr_t ptr_addr = addr;
     if(queue_next[1])
     begin
-      m_utils.write_strobe(sel_om, Wdata, ptr_addr);
+      m_utils.write_strobe(Wdata, sel_om, ptr_addr);
     end
     else
     begin
-      queue_next[BITSIZE_item-1:2] &lt;= m_utils.read(ptr_addr);
+      queue_next[BITSIZE_item-1:2] &lt;= m_utils.read_a(ptr_addr);
     end
   end
 end
@@ -1924,26 +1848,24 @@ end
           <port_o id="val_port" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality IP_COMPONENT="arg_utils" LIBRARY="IF_PORT_IN index val_port" VERILOG_PROVIDED="arg_utils #(BITSIZE_val_port) m_utils();
+          <NP_functionality IP_COMPONENT="if_utils" LIBRARY="IF_PORT_IN index val_port" VERILOG_PROVIDED="if_utils #(index, BITSIZE_val_port) m_utils();
 reg [BITSIZE_val_port-1:0] val;
 wire [BITSIZE_val_port-1:0] val_next;
-assign val_port = val;
 
-initial
-begin
-  val = 0;
-end
+initial val = 0;
+
+assign val_port = val;
+assign val_next = val;
 
 always @(posedge clock) 
 begin
   val &lt;= val_next;
   if(setup_port)
   begin
-    val &lt;= m_utils.getarg(index);
+    val &lt;= m_utils.read();
   end
 end
-
-assign val_next = val;"/>
+"/>
         </component_o>
       </circuit>
     </cell>
@@ -1996,7 +1918,7 @@ assign val_next = val;"/>
           <port_o id="Sout_DataRdy" dir="IN" is_memory="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality IP_COMPONENT="arg_utils" LIBRARY="TestbenchArgMapMinimal index tgt_addr bitsize PIPELINED S_oe_ram S_we_ram S_addr_ram S_Wdata_ram S_data_ram_size Sout_Rdata_ram Sout_DataRdy" VERILOG_PROVIDED="localparam HOLD=PIPELINED ? 1&apos;b0 : 1&apos;b1,
+          <NP_functionality IP_COMPONENT="if_utils" LIBRARY="TestbenchArgMapMinimal index tgt_addr bitsize PIPELINED S_oe_ram S_we_ram S_addr_ram S_Wdata_ram S_data_ram_size Sout_Rdata_ram Sout_DataRdy" VERILOG_PROVIDED="localparam HOLD=PIPELINED ? 1&apos;b0 : 1&apos;b1,
   CHANNELS_NUMBER=BITSIZE_S_we_ram,
   BITSIZE_we=1,
   BITSIZE_addr=BITSIZE_S_addr_ram/CHANNELS_NUMBER,
@@ -2010,7 +1932,7 @@ reg [BITSIZE_Wdata-1:0] data, data_next;
 reg [BITSIZE_Wsize-1:0] data_size, data_size_next;
 wire rdy;
 
-arg_utils #(bitsize) a_utils();
+if_utils #(index, bitsize) m_utils();
 
 assign rdy = Sout_DataRdy[0];
 
@@ -2042,7 +1964,7 @@ begin
   end
   else if(setup_port)
   begin
-    val &lt;= a_utils.getarg(index);
+    val &lt;= m_utils.read();
   end
 end
 
@@ -2123,7 +2045,7 @@ end"/>
           <port_o id="Sout_DataRdy" dir="IN" is_memory="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality IP_COMPONENT="arg_utils" LIBRARY="TestbenchReturnMapMinimal index tgt_addr bitsize PIPELINED S_oe_ram S_we_ram S_addr_ram S_Wdata_ram S_data_ram_size Sout_Rdata_ram Sout_DataRdy" VERILOG_PROVIDED="localparam HOLD=PIPELINED ? 1&apos;b0 : 1&apos;b1,
+          <NP_functionality IP_COMPONENT="if_utils" LIBRARY="TestbenchReturnMapMinimal index tgt_addr bitsize PIPELINED S_oe_ram S_we_ram S_addr_ram S_Wdata_ram S_data_ram_size Sout_Rdata_ram Sout_DataRdy" VERILOG_PROVIDED="localparam HOLD=PIPELINED ? 1&apos;b0 : 1&apos;b1,
   CHANNELS_NUMBER=BITSIZE_S_oe_ram,
   BITSIZE_oe=1,
   BITSIZE_addr=BITSIZE_S_addr_ram/CHANNELS_NUMBER,
@@ -2133,7 +2055,7 @@ reg oe, oe_next, waiting, waiting_next, done, done_next;
 reg [BITSIZE_addr-1:0] addr, addr_next;
 wire rdy;
 
-arg_utils #(bitsize) a_utils();
+if_utils #(index, bitsize) m_utils();
 
 assign rdy = Sout_DataRdy[0];
 
@@ -2160,7 +2082,7 @@ begin
   end
   else if(done_next)
   begin
-    a_utils.setarg(Sout_Rdata_ram[BITSIZE_Rdata-1:0], index);
+    m_utils.write(Sout_Rdata_ram[BITSIZE_Rdata-1:0]);
   end
 end
 
@@ -2338,7 +2260,7 @@ end"/>
           <port_o id="ack_os" dir="IN" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality IP_COMPONENT="arg_utils" LIBRARY="TestbenchArgMapWishboneB4 index tgt_addr bitsize addr_is dat_is sel_is dat_os" VERILOG_PROVIDED="localparam bytesize=((bitsize&gt;&gt;3)&lt;&lt;3) == bitsize ? (bitsize&gt;&gt;3) : ((bitsize&gt;&gt;3) + 1);
+          <NP_functionality IP_COMPONENT="if_utils" LIBRARY="TestbenchArgMapWishboneB4 index tgt_addr bitsize addr_is dat_is sel_is dat_os" VERILOG_PROVIDED="localparam bytesize=((bitsize&gt;&gt;3)&lt;&lt;3) == bitsize ? (bitsize&gt;&gt;3) : ((bitsize&gt;&gt;3) + 1);
 reg [bitsize-1:0] val;
 wire [bitsize-1:0] val_next;
 reg cyc, cyc_next, stb, stb_next, we, we_next, stall, ack, start;
@@ -2346,7 +2268,7 @@ reg [BITSIZE_addr_is-1:0] addr, addr_next;
 reg [BITSIZE_dat_is-1:0] data, data_next;
 reg [BITSIZE_sel_is-1:0] sel, sel_next;
 
-arg_utils #(bitsize) a_utils();
+if_utils #(index, bitsize) m_utils();
 
 initial
 begin
@@ -2390,7 +2312,7 @@ begin
   start &lt;= ack &amp; cyc_next;
   if(setup_port)
   begin
-    val &lt;= a_utils.getarg(index);
+    val &lt;= m_utils.read();
   end
 end
 
@@ -2474,11 +2396,11 @@ end"/>
           <port_o id="ack_os" dir="IN" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality IP_COMPONENT="arg_utils" LIBRARY="TestbenchReturnMapWishboneB4 index tgt_addr bitsize addr_is dat_is sel_is dat_os" VERILOG_PROVIDED="localparam bytesize=((bitsize&gt;&gt;3)&lt;&lt;3) == bitsize ? (bitsize&gt;&gt;3) : ((bitsize&gt;&gt;3) + 1);
+          <NP_functionality IP_COMPONENT="if_utils" LIBRARY="TestbenchReturnMapWishboneB4 index tgt_addr bitsize addr_is dat_is sel_is dat_os" VERILOG_PROVIDED="localparam bytesize=((bitsize&gt;&gt;3)&lt;&lt;3) == bitsize ? (bitsize&gt;&gt;3) : ((bitsize&gt;&gt;3) + 1);
 reg cyc, cyc_next, stb, stb_next, stall, ack, done;
 reg [BITSIZE_addr_is-1:0] addr, addr_next;
 
-arg_utils #(bitsize) a_utils();
+if_utils #(index, bitsize) m_utils();
 
 initial
 begin
@@ -2512,7 +2434,7 @@ begin
   done &lt;= ack &amp; cyc_next;
   if(ack &amp; cyc_next)
   begin
-    a_utils.setarg(dat_os, index);
+    m_utils.write(dat_os);
   end
 end
 
@@ -2664,17 +2586,187 @@ end"/>
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality
-            IP_COMPONENT="arg_utils"
+            IP_COMPONENT="if_utils"
             LIBRARY="IF_PORT_OUT index val_port"
-            VERILOG_PROVIDED="arg_utils #(BITSIZE_val_port) m_utils();
+            VERILOG_PROVIDED="if_utils #(index, BITSIZE_val_port) m_utils();
 
 always @(posedge clock)
 begin
   if(done_port)
   begin
-    m_utils.setarg(val_port, index);
+    m_utils.write(val_port);
   end
 end"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchArrayImpl</name>
+      <circuit>
+        <component_o id="TestbenchArrayImpl">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchArrayImpl"/>
+          <parameter name="index">0</parameter>
+          <parameter name="WRITE_DELAY">1</parameter>
+          <parameter name="READ_DELAY">2</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="setup_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_vector_o id="ce" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="we" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="address" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="d" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="q" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <NP_functionality IP_COMPONENT="if_utils" LIBRARY="TestbenchArrayImpl index WRITE_DELAY READ_DELAY ce we address d q" VERILOG_PROVIDED="
+localparam CHANNELS_NUMBER=PORTSIZE_ce,
+  BITSIZE_dq=BITSIZE_d &gt; BITSIZE_q ? BITSIZE_d : BITSIZE_q,
+  BITSIZE_item=BITSIZE_d+BITSIZE_address+BITSIZE_ce+BITSIZE_we,
+  BITSIZE_chunk=BITSIZE_item*CHANNELS_NUMBER,
+  OFFSET_ce=0,
+  OFFSET_we=OFFSET_ce+BITSIZE_ce,
+  OFFSET_address=OFFSET_we+BITSIZE_we,
+  OFFSET_data=OFFSET_address+BITSIZE_address,
+  LAST_READ_item=READ_DELAY &gt; 1 ? READ_DELAY-2 : 0,
+  LAST_READ_size=READ_DELAY &gt; 1 ? READ_DELAY-1 : 1;
+genvar i;
+
+if_utils #(index, BITSIZE_dq) m_utils();
+
+wire [BITSIZE_chunk-1:0] current;
+reg [BITSIZE_chunk*WRITE_DELAY-1:0] queue = 0, queue_next = 0;
+reg [CHANNELS_NUMBER*BITSIZE_q*LAST_READ_size-1:0] _q_next = 0;
+reg [CHANNELS_NUMBER*BITSIZE_q*LAST_READ_size-1:0] _q = 0;
+
+generate
+  for(i = 0; i &lt; CHANNELS_NUMBER; i = i + 1)
+  begin
+    assign current[BITSIZE_item*i+:BITSIZE_item] = {d[BITSIZE_d*i+:BITSIZE_d], address[BITSIZE_address*i+:BITSIZE_address], we[BITSIZE_we*i+:BITSIZE_we], ce[BITSIZE_ce*i+:BITSIZE_ce]};
+    assign q[BITSIZE_q*i+:BITSIZE_q] = _q[LAST_READ_item*BITSIZE_q*CHANNELS_NUMBER+BITSIZE_q*i+:BITSIZE_q];
+  end
+endgenerate
+
+generate
+  if(WRITE_DELAY &gt; 1)
+  begin
+    always @(posedge clock)
+    begin
+      if(setup_port)
+      begin
+        queue[BITSIZE_chunk*WRITE_DELAY-1:BITSIZE_chunk] &lt;= 0;
+        queue[BITSIZE_chunk-1:0] &lt;= current;
+      end
+      else
+      begin
+        queue[BITSIZE_chunk*WRITE_DELAY-1:BITSIZE_chunk] &lt;= queue_next[BITSIZE_chunk*WRITE_DELAY-1:BITSIZE_chunk];
+        queue[BITSIZE_chunk-1:0] &lt;= current;
+      end
+    end
+    always @(*)
+    begin
+      queue_next[BITSIZE_chunk*WRITE_DELAY-1:BITSIZE_chunk] = queue[BITSIZE_chunk*(WRITE_DELAY-1)-1:0];
+      queue_next[BITSIZE_chunk-1:0] = 0;
+    end
+  end
+endgenerate
+
+generate
+  for(i = 0; i &lt; CHANNELS_NUMBER; i = i + 1)
+  begin : write_port
+    if(WRITE_DELAY &gt; 1)
+    begin
+      always @(posedge clock)
+      begin
+        automatic ptr_t address = queue_next[(WRITE_DELAY-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_address+:BITSIZE_address];
+        automatic reg [BITSIZE_d-1:0] data = queue_next[(WRITE_DELAY-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_data+:BITSIZE_d];
+        if(queue_next[(WRITE_DELAY-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_ce+:BITSIZE_ce] === 1&apos;b1
+          &amp;&amp; queue_next[(WRITE_DELAY-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_we+:BITSIZE_we] === 1&apos;b1)
+        begin
+          m_utils.write_a(data, address);
+        end
+      end
+    end
+    else
+    begin
+      always @(posedge clock)
+      begin
+        automatic ptr_t address = current[BITSIZE_item*i+OFFSET_address+:BITSIZE_address];
+        automatic reg [BITSIZE_d-1:0] data = current[BITSIZE_item*i+OFFSET_data+BITSIZE_d-1:BITSIZE_item*i+OFFSET_data];
+        if(current[BITSIZE_item*i+OFFSET_ce+:BITSIZE_ce] === 1&apos;b1 &amp;&amp; current[BITSIZE_item*i+OFFSET_we+:BITSIZE_we] === 1&apos;b1)
+        begin
+          m_utils.write_a(data, address);
+        end
+      end
+    end
+  end
+endgenerate
+
+generate
+  if(READ_DELAY &gt; 2)
+  begin : shift_output_queue1
+    always @(*)
+    begin
+      _q_next[(READ_DELAY-1)*CHANNELS_NUMBER*BITSIZE_q-1:BITSIZE_q*CHANNELS_NUMBER] = _q[LAST_READ_item*CHANNELS_NUMBER*BITSIZE_q-1:0];
+    end
+  end
+endgenerate
+generate
+  if(READ_DELAY &gt; 2)
+  begin : shift_output_queue2
+    always @(posedge clock)
+    begin
+      _q[(READ_DELAY-1)*CHANNELS_NUMBER*BITSIZE_q-1:BITSIZE_q*CHANNELS_NUMBER] &lt;= _q_next[(READ_DELAY-1)*CHANNELS_NUMBER*BITSIZE_q-1:BITSIZE_q*CHANNELS_NUMBER];
+    end
+  end
+endgenerate
+generate
+  for(i = 0; i &lt; CHANNELS_NUMBER; i = i + 1)
+  begin : read_port
+    if(READ_DELAY &gt; 1)
+    begin
+      always @(posedge clock)
+      begin
+        if(current[BITSIZE_item*i+OFFSET_ce+:BITSIZE_ce] === 1&apos;b1
+            &amp;&amp; current[BITSIZE_item*i+OFFSET_we+:BITSIZE_we] === 1&apos;b0)
+        begin
+          automatic ptr_t address = current[BITSIZE_item*i+OFFSET_address+:BITSIZE_address];
+          _q[BITSIZE_q*i+:BITSIZE_q] &lt;= m_utils.read_a(address);
+        end
+        else
+        begin
+          _q[BITSIZE_q*i+:BITSIZE_q] &lt;= 0;
+        end
+      end
+    end
+    else
+    begin
+      always @(*)
+      begin
+        if(current[BITSIZE_item*i+OFFSET_ce+:BITSIZE_ce] === 1&apos;b1 &amp;&amp; current[BITSIZE_item*i+OFFSET_we+:BITSIZE_we] === 1&apos;b0)
+        begin
+          automatic ptr_t address = current[BITSIZE_item*i+OFFSET_address+:BITSIZE_address];
+          _q[BITSIZE_q*i+:BITSIZE_q] = m_utils.read_a(address);
+        end
+      end
+    end
+  end
+endgenerate
+"/>
         </component_o>
       </circuit>
     </cell>
@@ -2696,7 +2788,7 @@ end"/>
           <port_o id="setup_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchArray index WRITE_DELAY READ_DELAY" VERILOG_GENERATOR="TestbenchArrayModuleGenerator"/>
+          <NP_functionality IP_COMPONENT="TestbenchArrayImpl" LIBRARY="TestbenchArray index WRITE_DELAY READ_DELAY" VERILOG_GENERATOR="TestbenchArrayModuleGenerator"/>
         </component_o>
       </circuit>
     </cell>
@@ -2719,7 +2811,7 @@ end"/>
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchAcknowledge index" VERILOG_GENERATOR="TestbenchAcknowledgeModuleGenerator"/>
+          <NP_functionality LIBRARY="TestbenchAcknowledge index" VERILOG_GENERATOR="TestbenchAcknowledgeModuleGenerator"/>
         </component_o>
       </circuit>
     </cell>
@@ -2742,7 +2834,7 @@ end"/>
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchValid index" VERILOG_GENERATOR="TestbenchValidModuleGenerator"/>
+          <NP_functionality LIBRARY="TestbenchValid index" VERILOG_GENERATOR="TestbenchValidModuleGenerator"/>
         </component_o>
       </circuit>
     </cell>
@@ -2765,7 +2857,7 @@ end"/>
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchOvalid index" VERILOG_GENERATOR="TestbenchOvalidModuleGenerator"/>
+          <NP_functionality LIBRARY="TestbenchOvalid index" VERILOG_GENERATOR="TestbenchOvalidModuleGenerator"/>
         </component_o>
       </circuit>
     </cell>
@@ -2788,7 +2880,7 @@ end"/>
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchHandshake index" VERILOG_GENERATOR="TestbenchHandshakeModuleGenerator"/>
+          <NP_functionality LIBRARY="TestbenchHandshake index" VERILOG_GENERATOR="TestbenchHandshakeModuleGenerator"/>
         </component_o>
       </circuit>
     </cell>
@@ -2811,7 +2903,194 @@ end"/>
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchAxis index" VERILOG_GENERATOR="TestbenchAxisModuleGenerator"/>
+          <NP_functionality LIBRARY="TestbenchAxis index" VERILOG_GENERATOR="TestbenchAxisModuleGenerator"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchFifoRead</name>
+      <circuit>
+        <component_o id="TestbenchFifoRead">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchFifoRead"/>
+          <parameter name="index">0</parameter>
+          <parameter name="CHECK_ACK">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="setup_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="empty_n" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="read" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="dout" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality IP_COMPONENT="if_utils" LIBRARY="TestbenchFifoRead index CHECK_ACK dout" VERILOG_PROVIDED="
+if_utils #(index, BITSIZE_dout) m_utils();
+
+reg enable, enable_next;
+reg _empty_n, _empty_n_next;
+reg _empty_n_succ, _empty_n_succ_next;
+reg [BITSIZE_dout-1:0] val, val_next;
+
+initial
+begin
+  enable = 0;
+  _empty_n = 0;
+  _empty_n_succ = 0;
+  val = 0;
+end
+
+assign dout = val;
+assign empty_n = _empty_n;
+
+always @(posedge clock)
+begin
+  enable &lt;= enable_next;
+  _empty_n &lt;= _empty_n_next;
+  _empty_n_succ &lt;= _empty_n_succ_next;
+  val &lt;= val_next;
+  if(setup_port)
+  begin
+    automatic int data = 0;
+    val &lt;= m_utils.read_i(data);
+    _empty_n &lt;= data &gt;= 0;
+    _empty_n_succ &lt;= data &gt; 0;
+    enable &lt;= 1&apos;b1;
+  end
+  if((enable_next | done_port) &amp; read)
+  begin
+    automatic int data = 0;
+    if(~_empty_n_next)
+    begin
+      $display(&quot;Too many read requests on interface %0d&quot;, index);
+      $finish;
+    end
+    if(_empty_n_succ_next)
+    begin
+      val &lt;= m_utils.pop(data);
+    end
+    _empty_n &lt;= _empty_n_succ_next;
+    _empty_n_succ &lt;= data &gt; 0;
+  end
+end
+
+always @(*)
+begin
+  enable_next = enable &amp; ~done_port;
+  _empty_n_next = _empty_n;
+  _empty_n_succ_next = _empty_n_succ;
+  val_next = val;
+end
+
+generate
+  if(CHECK_ACK)
+  begin
+    reg ack_check, ack_check_next;
+    initial ack_check = 0;
+    assign ack_check_next = read | ack_check;
+    always @(posedge clock)
+    begin
+      ack_check &lt;= ack_check_next;
+      if(setup_port)
+      begin
+        ack_check &lt;= 0;
+      end
+      if(done_port &amp; ~ack_check_next)
+      begin
+        $display(&quot;Acknowledge signal never asserted on interface %0d.&quot;, index);
+        $finish;
+      end
+    end
+  end
+endgenerate
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchFifoWrite</name>
+      <circuit>
+        <component_o id="TestbenchFifoWrite">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="TestbenchFifoWrite"/>
+          <parameter name="index">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="setup_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="full_n" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="write" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="din" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality IP_COMPONENT="if_utils" LIBRARY="TestbenchFifoWrite index din" VERILOG_PROVIDED="
+if_utils #(index, BITSIZE_din) m_utils();
+
+reg enable, enable_next;
+reg _full_n, _full_n_next;
+
+initial
+begin
+  enable = 0;
+  _full_n = 0;
+end
+
+assign full_n = _full_n;
+
+always @(posedge clock)
+begin
+  enable &lt;= enable_next;
+  _full_n &lt;= _full_n_next;
+  if(setup_port)
+  begin
+    automatic int data = 0;
+    data = m_utils.state(4);
+    _full_n &lt;= data &gt; 0;
+    enable &lt;= 1&apos;b1;
+  end
+  if((enable_next | done_port) &amp; write)
+  begin
+    automatic int data = 0;
+    data = m_utils.push(din);
+    _full_n &lt;= data &gt; 0;
+    if(data &lt; 0)
+    begin
+      $display(&quot;Too many write requests on interface %0d&quot;, index);
+      $finish;
+    end
+  end
+end
+
+always @(*) 
+begin
+  enable_next = enable &amp; ~done_port;
+  _full_n_next = _full_n;
+end
+"/>
         </component_o>
       </circuit>
     </cell>
@@ -2834,7 +3113,7 @@ end"/>
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchFifo index" VERILOG_GENERATOR="TestbenchFifoModuleGenerator"/>
+          <NP_functionality LIBRARY="TestbenchFifo index" VERILOG_GENERATOR="TestbenchFifoModuleGenerator"/>
         </component_o>
       </circuit>
     </cell>
@@ -2857,30 +3136,7 @@ end"/>
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchNone index" VERILOG_GENERATOR="TestbenchNoneModuleGenerator"/>
-        </component_o>
-      </circuit>
-    </cell>
-    <cell>
-      <name>TestbenchNone_registered</name>
-      <circuit>
-        <component_o id="TestbenchNone_registered">
-          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
-          <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
-          <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="TestbenchNone_registered"/>
-          <parameter name="index">0</parameter>
-          <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="setup_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <NP_functionality IP_COMPONENT="arg_utils,mem_utils" LIBRARY="TestbenchNone_registered index" VERILOG_GENERATOR="TestbenchNoneModuleGenerator"/>
+          <NP_functionality LIBRARY="TestbenchNone index" VERILOG_GENERATOR="TestbenchNoneModuleGenerator"/>
         </component_o>
       </circuit>
     </cell>
@@ -2893,6 +3149,7 @@ end"/>
           <authors>Michele Fiorito &lt;michele.fiorito@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="TestbenchAXIM"/>
+          <parameter name="index">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -2902,7 +3159,7 @@ end"/>
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality IP_COMPONENT="mem_utils" LIBRARY="TestbenchAXIM" VERILOG_GENERATOR="TestbenchAXIMModuleGenerator"/>
+          <NP_functionality IP_COMPONENT="if_utils" LIBRARY="TestbenchAXIM" VERILOG_GENERATOR="TestbenchAXIMModuleGenerator"/>
         </component_o>
       </circuit>
     </cell>

@@ -136,10 +136,14 @@ class ac_channel
    // constructors
    ac_channel();
 #if !defined(__BAMBU__) || defined(__BAMBU_SIM__)
+   ac_channel(const ac_channel<T>&) = default;
+
    ac_channel(int init);
    ac_channel(int init, T val);
    ac_channel(std::initializer_list<T> val);
    ac_channel(const char* bin_file);
+
+   ac_channel& operator=(const ac_channel<T>&) = default;
 #endif
 
    __FORCE_INLINE T read()
@@ -179,6 +183,11 @@ class ac_channel
    __FORCE_INLINE bool empty()
    {
       return chan.empty();
+   }
+
+   __FORCE_INLINE unsigned int num_free()
+   {
+      return chan.num_free();
    }
 
    // Return true if channel has at least k entries
@@ -316,16 +325,8 @@ class ac_channel
       struct fifo_ac_channel : fifo_abstract
       {
          std::deque<T> ch;
-         unsigned int max_size;
-#ifdef __BAMBU_SIM__
-         unsigned int _write_count = 0;
-#endif
 
-         fifo_ac_channel(unsigned int _max_size = 0) : max_size(_max_size)
-         {
-         }
-
-         ~fifo_ac_channel() = default;
+         ~fifo_ac_channel(){};
 
          static inline fifo_type ftype()
          {
@@ -361,19 +362,11 @@ class ac_channel
 
          void write(const T& t)
          {
-#ifdef __BAMBU_SIM__
-            if(!num_free() && _write_count++ < max_size)
-               ch.pop_front();
-#endif
             AC_CHANNEL_ASSERT(num_free(), ac_channel_exception::write_to_full_channel);
             ch.push_back(t);
          }
          bool nb_write(T& t)
          {
-#ifdef __BAMBU_SIM__
-            if(!num_free() && _write_count++ < max_size)
-               ch.pop_front();
-#endif
             return !num_free() ? false : (write(t), true);
          }
 
@@ -391,10 +384,6 @@ class ac_channel
          }
          unsigned int num_free() const
          {
-            if(max_size)
-            {
-               return max_size - ch.size();
-            }
             return ch.max_size() - ch.size();
          }
 
@@ -658,8 +647,8 @@ class ac_channel
     private:
 #endif
 
-      template <typename fifo_T>
-      fifo_T& get_fifo(unsigned int _max_size = 0)
+      template <typename fifo_T, typename... Args>
+      fifo_T& get_fifo()
       {
          if(!f || f->get_fifo_type() != fifo_T::ftype())
          {
@@ -668,7 +657,7 @@ class ac_channel
                AC_CHANNEL_ASSERT(f->empty(), ac_channel_exception::fifo_not_empty_when_reset);
                delete f;
             }
-            f = new fifo_T(_max_size);
+            f = new fifo_T;
          }
          return static_cast<fifo_T&>(*f);
       }
@@ -707,11 +696,22 @@ class ac_channel
       }
       fifo(int init) : f(0), rSz(init), size_call_count(0)
       {
-         get_fifo<fifo_ac_channel>(init);
+         get_fifo<fifo_ac_channel>();
       }
       fifo(int init, T val) : f(0), rSz(init), rVal(val), size_call_count(0)
       {
-         get_fifo<fifo_ac_channel>(init);
+         get_fifo<fifo_ac_channel>();
+      }
+      fifo(const fifo& other)
+      {
+         if(!other.f || other.f->get_fifo_type() != fifo_ac_channel::ftype())
+         {
+            get_fifo<fifo_ac_channel>();
+         }
+         else
+         {
+            f = new fifo_ac_channel(*static_cast<fifo_ac_channel*>(other.f));
+         }
       }
       ~fifo()
       {
@@ -819,10 +819,12 @@ class ac_channel
    fifo chan;
 
  private:
+#if defined(__BAMBU__) && !defined(__BAMBU_SIM__)
    // Prevent the compiler from autogenerating these.
    //  (This enforces that channels are always passed by reference.)
    ac_channel(const ac_channel<T>&) = delete;
    ac_channel& operator=(const ac_channel<T>&) = delete;
+#endif
 };
 
 template <class T>

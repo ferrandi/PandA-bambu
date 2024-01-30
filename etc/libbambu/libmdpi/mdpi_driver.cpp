@@ -48,6 +48,12 @@
 #define NDEBUG
 #endif
 
+#ifndef NDEBUG
+#define DEBUG_PARAM(p) p
+#else
+#define DEBUG_PARAM(p)
+#endif
+
 #include <mdpi/mdpi_driver.h>
 #include <mdpi/mdpi_ipc.h>
 #include <mdpi/mdpi_memmap.h>
@@ -64,6 +70,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <vector>
 
 #ifdef MDPI_PARALLEL_VERIFICATION
 #include <pthread.h>
@@ -87,6 +94,23 @@ static pthread_t __m_ipc_driver = 0;
 static mdpi_params_t __m_params;
 static std::map<uint8_t, size_t> __m_params_size;
 static std::unique_ptr<memmap> __m_mapper;
+
+static std::vector<std::unique_ptr<interface>> __m_interfaces;
+
+void __m_interface_set(uint8_t id, interface* if_manager)
+{
+   if(__m_interfaces.size() <= id)
+   {
+      __m_interfaces.resize(id + 1);
+   }
+   __m_interfaces[id] = std::unique_ptr<interface>(if_manager);
+}
+
+void __m_interface_fini()
+{
+   debug("Finalize interface list.\n");
+   __m_interfaces.clear();
+}
 
 class device_memmap : public memmap
 {
@@ -237,6 +261,242 @@ class shared_memmap : public memmap
    }
 };
 #endif
+
+int interface::state(int data)
+{
+   error("Information not available for this interface.\n");
+   return interface::IF_ERROR;
+}
+
+class port_interface : public interface
+{
+   const uint16_t _bitsize;
+   const uint64_t _size;
+   const bptr_t _data;
+
+ public:
+   port_interface(void* data, uint16_t bitsize)
+       : interface(),
+         _data(reinterpret_cast<bptr_t>(data)),
+         _bitsize(bitsize),
+         _size(bitsize / 8 + ((bitsize % 8) ? 1 : 0))
+   {
+      debug("Interface port for " BPTR_FORMAT " %u bits.\n", bptr_to_int(_data), _bitsize);
+   }
+
+   int read(bptr_t data, uint16_t bitsize, ptr_t /*addr*/, bool /*shift*/) override
+   {
+      assert(bitsize == _bitsize && "Bitsize mismatch");
+      memcpy(data, _data, _size);
+      return 1;
+   }
+
+   int write(bptr_t data, uint16_t bitsize, ptr_t /*addr*/, bool /*shift*/) override
+   {
+      assert(bitsize == _bitsize && "Bitsize mismatch");
+      memcpy(_data, data, _size);
+      return 1;
+   }
+};
+
+void __m_interface_port(uint8_t idx, void* bits, uint16_t bitsize)
+{
+   __m_interface_set(idx, new port_interface(bits, bitsize));
+}
+
+void __m_interface_ptr(uint8_t idx, bptr_t* bits, uint16_t bitsize)
+{
+   const bptr_t addr = *bits;
+   const ptr_t dst = __m_mapper->mapaddr(addr);
+   if(dst)
+   {
+      info("Pointer parameter " BPTR_FORMAT " mapped at " PTR_FORMAT "\n", bptr_to_int(addr), dst);
+      assert((bitsize == PTR_SIZE || dst < (UINT64_MAX >> (64 - PTR_SIZE))) && "Pointer value overflow.");
+      *bits = ptr_to_bptr(dst);
+      return __m_interface_set(idx, new port_interface(bits, bitsize));
+   }
+   error("Unknown parameter %u address mapping for " BPTR_FORMAT "\n", idx, bptr_to_int(addr));
+   // TODO: report to simulator
+   exit(EXIT_FAILURE);
+}
+
+class array_interface : public interface
+{
+   const bptr_t _base;
+   const uint16_t _bitsize;
+   const uint8_t _align;
+   const uint16_t _esize;
+   const uint64_t _size;
+
+ public:
+   array_interface(void* data, uint16_t bitsize, uint8_t align, uint64_t size)
+       : interface(),
+         _base(reinterpret_cast<bptr_t>(data)),
+         _bitsize(bitsize),
+         _align(align),
+         _esize(bitsize / 8 + ((bitsize % 8 ? 1 : 0))),
+         _size(size)
+   {
+      debug("Interface array for " BPTR_FORMAT ", %llu elements of %u bits aligned at %u bytes.\n", bptr_to_int(_base),
+            _size, _bitsize, _align);
+   }
+
+   int read(bptr_t data, uint16_t DEBUG_PARAM(bitsize), ptr_t addr, bool /*shift*/) override
+   {
+      assert(bitsize == _bitsize && "Bitsize mismatch");
+      if(addr >= _size)
+      {
+         error("Access out of bounds: " PTR_FORMAT " > %llu\n", addr, _size);
+         return IF_ERROR;
+      }
+      memcpy(data, _base + (_align * addr), _esize);
+      return IF_OK;
+   }
+
+   int write(bptr_t data, uint16_t DEBUG_PARAM(bitsize), ptr_t addr, bool /*shift*/) override
+   {
+      assert(bitsize == _bitsize && "Bitsize mismatch");
+      if(addr >= _size)
+      {
+         error("Access out of bounds: " PTR_FORMAT " > %llu\n", addr, _size);
+         return IF_ERROR;
+      }
+      memcpy(_base + (_align * addr), data, _esize);
+      return IF_OK;
+   }
+};
+
+void __m_interface_array(uint8_t idx, void* base, uint16_t bitsize, uint8_t align, uint64_t size)
+{
+   __m_interface_set(idx, new array_interface(base, bitsize, align, size));
+}
+
+class fifo_interface : public interface
+{
+   bptr_t _base;
+   const bptr_t _end;
+   const uint16_t _bitsize;
+   const uint8_t _align;
+   const uint16_t _esize;
+
+   inline int _size()
+   {
+      return std::distance(_base, _end) / _align;
+   }
+
+ public:
+   fifo_interface(void* data, uint16_t bitsize, uint8_t align, uint64_t size)
+       : interface(),
+         _base(reinterpret_cast<bptr_t>(data)),
+         _end(_base + (align * size)),
+         _bitsize(bitsize),
+         _align(align),
+         _esize(bitsize / 8 + ((bitsize % 8 ? 1 : 0)))
+   {
+      debug("Interface FIFO for " BPTR_FORMAT ", %llu elements of %u bits aligned at %u bytes.\n", bptr_to_int(_base),
+            size, _bitsize, _align);
+   }
+
+   int read(bptr_t data, uint16_t DEBUG_PARAM(bitsize), ptr_t /*addr*/, bool shift) override
+   {
+      assert(bitsize == _bitsize && "Bitsize mismatch");
+      if(_base == _end)
+      {
+         return IF_EMPTY;
+      }
+      memcpy(data, _base, _esize);
+      if(shift)
+      {
+         _base += _align;
+      }
+      return _size();
+   }
+
+   int write(bptr_t data, uint16_t DEBUG_PARAM(bitsize), ptr_t /*addr*/, bool shift) override
+   {
+      assert(bitsize == _bitsize && "Bitsize mismatch");
+      if(_base == _end)
+      {
+         return IF_FULL;
+      }
+      memcpy(_base, data, _esize);
+      if(shift)
+      {
+         _base += _align;
+      }
+      return _size();
+   }
+
+   int state(int data) override
+   {
+      if(data == MDPI_OP_TYPE_IF_READ || data == MDPI_OP_TYPE_IF_WRITE)
+      {
+         return _size();
+      }
+      return IF_ERROR;
+   }
+};
+
+void __m_interface_fifo(uint8_t idx, void* base, uint16_t bitsize, uint8_t align, uint64_t size)
+{
+   __m_interface_set(idx, new fifo_interface(base, bitsize, align, size));
+}
+
+class mem_interface : public interface
+{
+ public:
+   mem_interface() : interface()
+   {
+      debug("Interface memory.\n");
+   }
+
+   int read(bptr_t data, uint16_t bitsize, ptr_t addr, bool shift) override
+   {
+      assert((bitsize % 8) == 0 && "Expected byte-aligned memory address");
+      bptr_t __addr = __m_mapper->addrmap(addr);
+      if(__addr)
+      {
+         debug("Read %u bytes at " PTR_FORMAT "->" BPTR_FORMAT "\n", bitsize / 8, addr, bptr_to_int(__addr));
+         memcpy(data, __addr, bitsize / 8);
+      }
+      else
+      {
+         error("Read to non-mapped address " PTR_FORMAT ".\n", addr);
+         // TODO: report abort to simulator
+         abort();
+      }
+      return IF_OK;
+   }
+
+   int write(bptr_t data, uint16_t bitsize, ptr_t addr, bool shift) override
+   {
+      bptr_t __addr = __m_mapper->addrmap(addr);
+      if(__addr)
+      {
+         debug("Write %u bits at " PTR_FORMAT "->" BPTR_FORMAT "\n", bitsize, addr, bptr_to_int(__addr));
+         auto floor_bytes = bitsize / 8;
+         memcpy(__addr, data, floor_bytes);
+         auto spare = bitsize % 8;
+         if(spare)
+         {
+            byte_t mask = 0xFF << spare;
+            __addr[floor_bytes] = (__addr[floor_bytes] & mask) | (data[floor_bytes] & ~mask);
+         }
+      }
+      else
+      {
+         error("Write to non-mapped address " PTR_FORMAT ".\n", addr);
+         // TODO: report abort to simulator
+         abort();
+      }
+      return IF_OK;
+   }
+};
+
+void __m_interface_mem(uint8_t idx)
+{
+   __m_interface_set(idx, new mem_interface());
+}
 
 static FORCE_INLINE void __ipc_exit(mdpi_state_t state, uint8_t retval)
 {
@@ -454,52 +714,6 @@ unsigned int __m_sim_end()
    return retval;
 }
 
-void __m_arg_init(uint8_t argcount)
-{
-   debug("Initializing shared memory for %u parameters\n", argcount);
-   __m_params.prms = (mdpi_parm_t*)malloc(sizeof(mdpi_parm_t) * argcount);
-   if(!__m_params.prms)
-   {
-      exit(EXIT_FAILURE);
-   }
-   __m_params.size = argcount;
-}
-
-void __m_arg_fini()
-{
-   debug("Finalizing parameters' shared memory\n");
-   free(__m_params.prms);
-   __m_params.size = 0;
-}
-
-void __m_setarg(uint8_t index, void* bits, uint16_t bitsize)
-{
-   if(index >= __m_params.size)
-   {
-      error("Parameter index out of bounds %u\n", (unsigned int)index);
-      exit(EXIT_FAILURE);
-   }
-   info("Parameter %u is %u bits at " BPTR_FORMAT "\n", index, bitsize, bptr_to_int(bits));
-   __m_params.prms[index].bits = static_cast<bptr_t>(bits);
-   __m_params.prms[index].bitsize = bitsize;
-}
-
-void __m_setptrarg(uint8_t index, bptr_t* bits, uint16_t bitsize)
-{
-   const bptr_t addr = *bits;
-   const ptr_t dst = __m_mapper->mapaddr(addr);
-   if(dst)
-   {
-      info("Pointer parameter " BPTR_FORMAT " mapped at " PTR_FORMAT "\n", bptr_to_int(addr), dst);
-      assert((bitsize == PTR_SIZE || dst < (UINT64_MAX >> (64 - PTR_SIZE))) && "Pointer value overflow.");
-      *bits = ptr_to_bptr(dst);
-      return __m_setarg(index, reinterpret_cast<bptr_t>(bits), PTR_SIZE);
-   }
-   error("Unknown parameter %u address mapping for " BPTR_FORMAT "\n", index, bptr_to_int(addr));
-   // TODO: report to simulator
-   exit(EXIT_FAILURE);
-}
-
 void __m_memmap_init(int map_mode)
 {
    debug("Initializing co-simulation MMU\n");
@@ -546,105 +760,6 @@ void __m_param_alloc(uint8_t idx, size_t size)
    }
 }
 
-static void __mem_read(const uint16_t size, bptr_t data, ptr_t addr)
-{
-   bptr_t __addr = __m_mapper->addrmap(addr);
-   if(__addr)
-   {
-      debug("Read %u bytes at " PTR_FORMAT "->" BPTR_FORMAT "\n", size, addr, bptr_to_int(__addr));
-      memcpy(data, __addr, size);
-   }
-   else
-   {
-      error("Read to non-mapped address " PTR_FORMAT ".\n", addr);
-      // TODO: report abort to simulator
-      abort();
-   }
-}
-
-static void __mem_write(const uint16_t size, bptr_t data, ptr_t addr)
-{
-   bptr_t __addr = __m_mapper->addrmap(addr);
-   if(__addr)
-   {
-      debug("Write %u bits at " PTR_FORMAT "->" BPTR_FORMAT "\n", size, addr, bptr_to_int(__addr));
-      auto floor_bytes = size / 8;
-      memcpy(__addr, data, floor_bytes);
-      auto spare = size % 8;
-      if(spare)
-      {
-         byte_t mask = 0xFF << spare;
-         __addr[floor_bytes] = (__addr[floor_bytes] & mask) | (data[floor_bytes] & ~mask);
-      }
-   }
-   else
-   {
-      error("Write to non-mapped address " PTR_FORMAT ".\n", addr);
-      // TODO: report abort to simulator
-      abort();
-   }
-}
-
-static uint16_t __arg_read(uint8_t* index, bptr_t buffer)
-{
-   debug("Parameter %u read\n", *index);
-   if(__m_params.size == 0)
-   {
-      error("Parameter read on uninitialized parameters' list.\n");
-      *index = MDPI_ARG_IDX_EMPTY;
-      return 0;
-   }
-   else if(*index >= __m_params.size)
-   {
-      error("Parameter index out of bounds: %u\n", *index);
-      *index = MDPI_ARG_IDX_OUT_OF_BOUNDS;
-      return 0;
-   }
-   mdpi_parm_t* p = &__m_params.prms[*index];
-   uint16_t byte_count = (p->bitsize / 8) + ((p->bitsize % 8) != 0);
-   memcpy(buffer, p->bits, byte_count);
-   return p->bitsize;
-}
-
-static void __arg_write(uint8_t* index, bptr_t buffer)
-{
-   debug("Parameter %u write\n", *index);
-   if(__m_params.size == 0)
-   {
-      error("Parameter write on uninitialized parameters' list.\n");
-      *index = MDPI_ARG_IDX_EMPTY;
-      return;
-   }
-   else if(*index >= __m_params.size)
-   {
-      error("Parameter index out of bounds: %u\n", *index);
-      *index = MDPI_ARG_IDX_OUT_OF_BOUNDS;
-      return;
-   }
-   mdpi_parm_t* p = &__m_params.prms[*index];
-   uint16_t byte_count = (p->bitsize / 8) + ((p->bitsize % 8) != 0);
-   memcpy(p->bits, buffer, byte_count);
-}
-
-static uint64_t __param_size(uint8_t* index)
-{
-   debug("Parameter %u size\n", *index);
-   if(__m_params_size.empty())
-   {
-      error("Parameter size request on uninitialized parameters' list.\n");
-      *index = MDPI_ARG_IDX_EMPTY;
-      return 0;
-   }
-   const std::map<uint8_t, size_t>::iterator mps_it = __m_params_size.find(*index);
-   if(mps_it == __m_params_size.end())
-   {
-      error("Parameter index out of bounds: %u\n", *index);
-      *index = MDPI_ARG_IDX_OUT_OF_BOUNDS;
-      return 0;
-   }
-   return mps_it->second;
-}
-
 static void* __m_driver_loop(void*)
 {
    debug("IPC thread started.\n");
@@ -657,29 +772,61 @@ static void* __m_driver_loop(void*)
          case MDPI_OP_TYPE_STATE_CHANGE:
             return NULL;
             break;
-         case MDPI_OP_TYPE_MEM_READ:
-            __mem_read(__m_ipc_operation.payload.mem.size, __m_ipc_operation.payload.mem.buffer,
-                       __m_ipc_operation.payload.mem.addr);
+         case MDPI_OP_TYPE_IF_READ:
+         case MDPI_OP_TYPE_IF_WRITE:
+         case MDPI_OP_TYPE_IF_POP:
+         case MDPI_OP_TYPE_IF_PUSH:
+         case MDPI_OP_TYPE_IF_INFO:
+            if(__m_interfaces.empty())
+            {
+               error("Operation on uninitialized interfaces' list.\n");
+               __m_ipc_operation.payload.interface.id = MDPI_IF_IDX_EMPTY;
+            }
+            else if(__m_interfaces.size() <= __m_ipc_operation.payload.interface.id)
+            {
+               error("Interface id out of bounds: %u.\n", __m_ipc_operation.payload.interface.id);
+               __m_ipc_operation.payload.interface.id = MDPI_IF_IDX_OUT_OF_BOUNDS;
+            }
+            else
+            {
+               debug("Interface %u operation: ", __m_ipc_operation.payload.interface.id);
+               if(__m_ipc_operation.type & MDPI_OP_TYPE_IF_READ)
+               {
+                  debug("read %u bits at " PTR_FORMAT ".\n", __m_ipc_operation.payload.interface.bitsize,
+                        __m_ipc_operation.payload.interface.addr);
+                  __m_ipc_operation.payload.interface.info =
+                      __m_interfaces.at(__m_ipc_operation.payload.interface.id)
+                          ->read(__m_ipc_operation.payload.interface.buffer,
+                                 __m_ipc_operation.payload.interface.bitsize, __m_ipc_operation.payload.interface.addr,
+                                 __m_ipc_operation.type & MDPI_OP_TYPE_IF_POP);
+               }
+               else if(__m_ipc_operation.type & MDPI_OP_TYPE_IF_WRITE)
+               {
+                  debug("write %u bits at " PTR_FORMAT ".\n", __m_ipc_operation.payload.interface.bitsize,
+                        __m_ipc_operation.payload.interface.addr);
+                  __m_ipc_operation.payload.interface.info =
+                      __m_interfaces.at(__m_ipc_operation.payload.interface.id)
+                          ->write(__m_ipc_operation.payload.interface.buffer,
+                                  __m_ipc_operation.payload.interface.bitsize, __m_ipc_operation.payload.interface.addr,
+                                  __m_ipc_operation.type & MDPI_OP_TYPE_IF_PUSH);
+               }
+               else
+               {
+                  debug("state (data: %u).\n", __m_ipc_operation.payload.interface.info);
+                  __m_ipc_operation.payload.interface.info = __m_interfaces.at(__m_ipc_operation.payload.interface.id)
+                                                                 ->state(__m_ipc_operation.payload.interface.info);
+               }
+            }
             __ipc_response();
             break;
-         case MDPI_OP_TYPE_MEM_WRITE:
-            __mem_write(__m_ipc_operation.payload.mem.size, __m_ipc_operation.payload.mem.buffer,
-                        __m_ipc_operation.payload.mem.addr);
+         case MDPI_OP_TYPE_IF_EXIT:
+            assert(__m_interfaces.size() == 1 && "Expected single interface on builtin exit/abort.");
+            __m_interfaces.at(0)->write(reinterpret_cast<bptr_t>(&__m_ipc_operation.payload.interface.info),
+                                        sizeof(__m_ipc_operation.payload.interface.info) * 8, 0, 0);
+            __m_ipc_operation.payload.interface.id = 0;
+            __m_ipc_operation.payload.interface.info = 0;
             __ipc_response();
-            break;
-         case MDPI_OP_TYPE_ARG_READ:
-            __m_ipc_operation.payload.arg.bitsize =
-                __arg_read(&__m_ipc_operation.payload.arg.index, __m_ipc_operation.payload.arg.buffer);
-            __ipc_response();
-            break;
-         case MDPI_OP_TYPE_ARG_WRITE:
-            __arg_write(&__m_ipc_operation.payload.arg.index, __m_ipc_operation.payload.arg.buffer);
-            __ipc_response();
-            break;
-         case MDPI_OP_TYPE_PARAM_INFO:
-            __m_ipc_operation.payload.param.size = __param_size(&__m_ipc_operation.payload.param.index);
-            __ipc_response();
-            break;
+            return NULL;
          case MDPI_OP_TYPE_NONE:
          default:
             error("Unexpected transaction type: %u\n", __m_ipc_operation.type);

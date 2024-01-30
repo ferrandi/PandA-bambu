@@ -523,6 +523,11 @@ error |= __m_memmap(memmap_init[i].addrmap, memmap_init[i].addr, memmap_init[i].
 
 for(i = 0; i < args_count; ++i)
 {
+if(args[i].map_addr == NULL)
+{
+args[i].map_addr = args[i].addr;
+continue;
+}
 const size_t arg_size = __m_param_size(i);
 size_t map_size = arg_size;
 base_addr += (align - 1) - ((base_addr - 1) % align);
@@ -659,10 +664,7 @@ void HLSCWriter::WriteMainTestbench()
       gold_decl += return_type_str;
       gold_call += "retval_gold = ";
       pp_call += "retval_pp = ";
-      args_init = "__m_param_alloc(" + STR(top_params.size()) + ", sizeof(" + return_type_str + "));\n";
       args_decl = return_type_str + " retval, retval_gold, retval_pp;\n" + args_decl;
-      args_set += "__m_setarg(" + STR(top_params.size()) + ", args[" + STR(top_params.size()) + "].map_addr, " +
-                  STR(tree_helper::Size(return_type)) + ");\n";
    }
    else
    {
@@ -677,47 +679,35 @@ void HLSCWriter::WriteMainTestbench()
    {
       for(const auto& arg : top_params)
       {
-         std::string arg_interface, arg_size;
-         unsigned long long arg_align = 1;
-         const auto arg_type = tree_helper::CGetType(arg);
          const auto parm_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
          THROW_ASSERT(func_arch->parms.find(parm_name) != func_arch->parms.end(),
                       "Attributes missing for parameter " + parm_name + " in function " + top_fname);
          const auto& parm_attrs = func_arch->parms.at(parm_name);
-         auto arg_typename = parm_attrs.at(FunctionArchitecture::parm_original_typename);
-         if(is_interface_inferred)
-         {
-            const auto& bundle_name = parm_attrs.at(FunctionArchitecture::parm_bundle);
-
-            const auto& iface_attrs = func_arch->ifaces.at(bundle_name);
-            arg_interface = iface_attrs.at(FunctionArchitecture::iface_mode);
+         const auto& iface_attrs = func_arch->ifaces.at(parm_attrs.at(FunctionArchitecture::parm_bundle));
+         const auto arg_type = tree_helper::CGetType(arg);
+         const auto& arg_interface = iface_attrs.at(FunctionArchitecture::iface_mode);
+         const auto& arg_bitsize = iface_attrs.at(FunctionArchitecture::iface_bitwidth);
+         const auto arg_align = [&]() {
             if(iface_attrs.find(FunctionArchitecture::iface_cache_bus_size) != iface_attrs.end())
             {
                const auto bus_size = std::stoull(iface_attrs.at(FunctionArchitecture::iface_cache_bus_size));
                const auto line_size = std::stoull(iface_attrs.at(FunctionArchitecture::iface_cache_line_size));
-               arg_align = line_size * bus_size / 8ULL;
+               return std::to_string(line_size * bus_size / 8ULL);
             }
-            else
-            {
-               arg_align = std::stoull(iface_attrs.at(FunctionArchitecture::iface_alignment));
-            }
-         }
-         else
-         {
-            arg_interface = "default";
-            arg_align = get_aligned_bitsize(tree_helper::Size(arg_type)) >> 3;
-         }
+            return iface_attrs.at(FunctionArchitecture::iface_alignment);
+         }();
+         std::string iface_type, arg_size;
+
+         auto arg_typename = parm_attrs.at(FunctionArchitecture::parm_original_typename);
          if(arg_typename.find("(*)") != std::string::npos)
          {
             arg_typename = arg_typename.substr(0, arg_typename.find("(*)")) + "*";
          }
-         arg_size = STR(tree_helper::Size(arg_type));
-         const auto arg_name = "P" + STR(param_idx);
+         const auto arg_name = "P" + std::to_string(param_idx);
          const auto is_pointer_type = arg_typename.back() == '*';
          const auto is_reference_type = arg_typename.back() == '&';
          top_decl += arg_typename + " " + arg_name + ", ";
          gold_decl += arg_typename + ", ";
-         args_decl += "{";
          std::cmatch what;
          const auto arg_is_channel =
              std::regex_search(arg_typename.data(), what, std::regex("(ac_channel|stream|hls::stream)<(.*)>"));
@@ -726,20 +716,22 @@ void HLSCWriter::WriteMainTestbench()
             THROW_ASSERT(is_pointer_type || is_reference_type, "Channel parameters must be pointers or references.");
             const std::string channel_type(what[1].first, what[1].second);
             arg_typename.pop_back();
-            gold_call += arg_name + ", ";
+            gold_call += arg_name + "_gold, ";
             gold_cmp += "m_channelcmp(" + STR(param_idx) + ", " + cmp_type(arg_type, channel_type) + ");\n";
-            args_init += "m_channel_init(" + STR(param_idx) + ");\n";
-            args_decl += arg_name + "_sim";
-            args_set += "__m_setargptr";
+            iface_type = "channel";
+            THROW_ASSERT(iface_attrs.find(FunctionArchitecture::iface_depth) != iface_attrs.end(),
+                         "Expected channel depth information.");
+            arg_size = iface_attrs.at(FunctionArchitecture::iface_depth);
          }
          else if(is_pointer_type)
          {
             gold_call += "(" + arg_typename + ")" + arg_name + "_gold, ";
             pp_call += "(" + tree_helper::PrintType(TM, arg, false, true) + ")" + arg_name + "_pp, ";
             gold_cmp += "m_argcmp(" + STR(param_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
+            iface_type = arg_interface == "default" ? "ptr" : arg_interface;
             if(param_size_default.find(param_idx) != param_size_default.end())
             {
-               args_init += "__m_param_alloc(" + STR(param_idx) + ", " + param_size_default.at(param_idx) + ");\n";
+               arg_size = param_size_default.at(param_idx);
             }
             else
             {
@@ -748,8 +740,7 @@ void HLSCWriter::WriteMainTestbench()
                   THROW_ASSERT(parm_attrs.find(FunctionArchitecture::parm_size_in_bytes) != parm_attrs.end(),
                                "Attributes parm_size_in_bytes missing for parameter " + parm_name + " in function " +
                                    top_fname);
-                  auto size_in_bytes = parm_attrs.at(FunctionArchitecture::parm_size_in_bytes);
-                  args_init += "__m_param_alloc(" + STR(param_idx) + ", " + STR(size_in_bytes) + ");\n";
+                  arg_size = parm_attrs.at(FunctionArchitecture::parm_size_in_bytes);
                }
                else
                {
@@ -757,12 +748,9 @@ void HLSCWriter::WriteMainTestbench()
                      const auto ptd_type = tree_helper::CGetPointedType(arg_type);
                      return tree_helper::IsArrayType(ptd_type) ? tree_helper::GetArrayTotalSize(ptd_type) : 1ULL;
                   }();
-                  args_init +=
-                      "__m_param_alloc(" + STR(param_idx) + ", sizeof(*" + arg_name + ") * " + STR(array_size) + ");\n";
+                  arg_size = "sizeof(*" + arg_name + ") * " + std::to_string(array_size);
                }
             }
-            args_decl += "(void*)" + arg_name;
-            args_set += "m_setargptr";
          }
          else if(is_reference_type)
          {
@@ -770,20 +758,21 @@ void HLSCWriter::WriteMainTestbench()
             gold_call += "*(" + arg_typename + "*)" + arg_name + "_gold, ";
             pp_call += "(" + tree_helper::PrintType(TM, arg, false, true) + "*)" + arg_name + "_pp, ";
             gold_cmp += "m_argcmp(" + STR(param_idx) + ", " + cmp_type(arg_type, arg_typename) + ");\n";
-            args_init += "__m_param_alloc(" + STR(param_idx) + ", sizeof(" + arg_typename + "));\n";
-            args_decl += "(void*)&" + arg_name;
-            args_set += "m_setargptr";
+            iface_type = arg_interface == "default" ? "ptr" : arg_interface;
+            arg_size = "sizeof(" + arg_typename + ")";
          }
          else
          {
             gold_call += arg_name + ", ";
             pp_call += arg_name + ", ";
-            args_init += "__m_param_alloc(" + STR(param_idx) + ", sizeof(" + arg_typename + "));\n";
-            args_decl += "(void*)&" + arg_name;
-            args_set += arg_interface == "default" ? "__m_setarg" : "m_setargptr";
+            iface_type = arg_interface;
+            arg_size = "sizeof(" + arg_typename + ")";
          }
-         args_decl += ", " + std::to_string(arg_align) + ", NULL},\n";
-         args_set += "(" + STR(param_idx) + ", args[" + STR(param_idx) + "].map_addr, " + arg_size + ");\n";
+         const auto arg_ptr = (is_pointer_type ? "(void*)" : "(void*)&") + arg_name;
+         args_init += "__m_param_alloc(" + std::to_string(param_idx) + ", " + arg_size + ");\n";
+         args_decl += "{" + arg_ptr + ", " + arg_align + ", m_map_" + iface_type + "(" + arg_ptr + ")},\n";
+         args_set += "m_interface_" + iface_type + "(" + std::to_string(param_idx) + ", args[" +
+                     std::to_string(param_idx) + "].map_addr, " + arg_bitsize + ", " + arg_align + ");\n";
          ++param_idx;
       }
       top_decl.erase(top_decl.size() - 2);
@@ -797,8 +786,13 @@ void HLSCWriter::WriteMainTestbench()
    }
    if(return_type)
    {
-      args_decl += +"{(void*)&retval, 1, NULL}";
+      args_init += "__m_param_alloc(" + std::to_string(param_idx) + ", sizeof(retval));\n";
+      args_decl += "{&retval, 1, m_map_default(&retval)}";
+      args_set += "m_interface_default(" + std::to_string(param_idx) + ", args[" + std::to_string(param_idx) +
+                  "].map_addr, " + std::to_string(tree_helper::Size(return_type)) + ", sizeof(retval));\n";
+      ++param_idx;
    }
+   args_set += "__m_interface_mem(" + std::to_string(param_idx) + ");\n";
    top_decl += ")\n";
    gold_decl += ");\n";
    gold_call += ");\n";
@@ -862,6 +856,28 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
    }                                                                                                          \
    free(P##idx##_##suffix)
 
+#define _ms_setargchannel(suffix, idx) m_getvalt(P##idx) P##idx##_##suffix = *m_getptr(P##idx)
+
+#define _ms_channelcmp(suffix, idx, cmp)                                                                          \
+   if(m_getptr(P##idx)->size() != m_getptr(P##idx##_##suffix)->size())                                            \
+   {                                                                                                              \
+      error("Channel parameter %u size mismatch with respect to " #suffix " reference: %zu != %zu.\n", idx,       \
+            m_getptr(P##idx)->size(), m_getptr(P##idx##_##suffix)->size());                                       \
+      ++mismatch_count;                                                                                           \
+   }                                                                                                              \
+   else                                                                                                           \
+   {                                                                                                              \
+      for(i = 0; i < m_getptr(P##idx)->size(); ++i)                                                               \
+      {                                                                                                           \
+         if(m_cmp##cmp(&m_getptr(P##idx)->operator[](i), &m_getptr(P##idx##_##suffix)->operator[](i)))            \
+         {                                                                                                        \
+            error("Channel parameter %u (%zu/%zu) mismatch with respect to " #suffix " reference.\n", idx, i + 1, \
+                  m_getptr(P##idx)->size());                                                                      \
+            ++mismatch_count;                                                                                     \
+         }                                                                                                        \
+      }                                                                                                           \
+   }
+
 #define _ms_retvalcmp(suffix, cmp)                                             \
    if(m_cmp##cmp(&retval, &retval_##suffix))                                   \
    {                                                                           \
@@ -872,34 +888,17 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 #ifndef CUSTOM_VERIFICATION
 #define _m_setargptr(idx, ptr) _ms_setargptr(gold, idx, ptr)
 #define _m_argcmp(idx, cmp) _ms_argcmp(gold, idx, cmp)
+#define _m_setargchannel(idx) _ms_setargchannel(gold, idx)
+#define _m_channelcmp(idx, cmp) _ms_channelcmp(gold, idx, cmp)
 #define _m_retvalcmp(cmp) _ms_retvalcmp(gold, cmp)
-
-#define m_channelcmp(idx, cmp)                                                                              \
-   P##idx##_count = m_getptr(P##idx)->size();                                                               \
-   for(i = 0; i < P##idx##_count; ++i)                                                                      \
-   {                                                                                                        \
-      if(m_cmp##cmp((m_getvalt(m_getptr(P##idx))::element_type*)P##idx##_sim + i, &(*m_getptr(P##idx))[i])) \
-      {                                                                                                     \
-         error("Channel parameter %u (%zu/%zu) mismatch with respect to golden reference.\n", idx, i + 1,   \
-               P##idx##_count);                                                                             \
-         ++mismatch_count;                                                                                  \
-         break;                                                                                             \
-      }                                                                                                     \
-   }                                                                                                        \
-   free(P##idx##_sim)
 
 )" + gold_decl +
                                           R"(#else
 #define _m_setargptr(...)
 #define _m_argcmp(...)
+#define _m_setargchannel(...)
+#define _m_channelcmp(...)
 #define _m_retvalcmp(...)
-
-#define m_channelcmp(idx, cmp)                                                                                      \
-   for(i = 0; i < P##idx##_count; ++i)                                                                              \
-   {                                                                                                                \
-      memcpy(&(*m_getptr(P##idx))[i], (m_getvalt(m_getptr(P##idx))::element_type*)P##idx##_sim + i, P##idx##_item); \
-   }                                                                                                                \
-   free(P##idx##_sim)
 #endif
 
 #ifdef PP_VERIFICATION
@@ -961,10 +960,56 @@ static size_t __m_call_count = 0;
 #define _m_golddump(idx)
 #endif
 
-#define m_setargptr(idx, ptr, ptrsize) \
-   __m_setargptr(idx, ptr, ptrsize);   \
-   _m_pp_setargptr(idx, ptr);          \
+#define m_map_default(ptr) NULL
+#define m_interface_default(idx, ptr, bitsize, align) \
+   __m_interface_port(idx, ptr, bitsize);             \
+   _m_pp_setargptr(idx, ptr);                         \
    _m_setargptr(idx, ptr)
+
+#define m_map_ptr(ptr) (void*)ptr
+#define m_interface_ptr(idx, ptr, bitsize, align)               \
+   bptr_t __ptrval_##idx = (bptr_t)ptr;                         \
+   __m_interface_ptr(idx, &__ptrval_##idx, sizeof(bptr_t) * 8); \
+   _m_pp_setargptr(idx, ptr);                                   \
+   _m_setargptr(idx, ptr)
+
+#define m_map_array(...) m_map_default(__VA_ARGS__)
+#define m_interface_array(idx, ptr, bitsize, align)                            \
+   __m_interface_array(idx, ptr, bitsize, align, __m_param_size(idx) / align); \
+   _m_pp_setargptr(idx, ptr);                                                  \
+   _m_setargptr(idx, ptr)
+
+#define m_map_fifo(...) m_map_default(__VA_ARGS__)
+#define m_interface_fifo(idx, ptr, bitsize, align)                            \
+   __m_interface_fifo(idx, ptr, bitsize, align, __m_param_size(idx) / align); \
+   _m_pp_setargptr(idx, ptr);                                                 \
+   _m_setargptr(idx, ptr)
+
+#define m_map_channel(ptr) NULL 
+#define m_interface_channel(idx, ptr, bitsize, align)                  \
+   __m_interface_channel(idx, *m_getptr(P##idx), __m_param_size(idx)); \
+   _m_setargchannel(idx)
+
+#define m_map_none(...) m_map_default(__VA_ARGS__)
+#define m_interface_none(...) m_interface_default(__VA_ARGS__)
+
+#define m_map_valid(...) m_map_default(__VA_ARGS__)
+#define m_interface_valid(...) m_interface_default(__VA_ARGS__)
+
+#define m_map_ovalid(...) m_map_default(__VA_ARGS__)
+#define m_interface_ovalid(...) m_interface_default(__VA_ARGS__)
+
+#define m_map_acknowledge(...) m_map_default(__VA_ARGS__)
+#define m_interface_acknowledge(...) m_interface_default(__VA_ARGS__)
+
+#define m_map_handshake(...) m_map_default(__VA_ARGS__)
+#define m_interface_handshake(...) m_interface_default(__VA_ARGS__)
+
+#define m_map_axis(...) m_map_fifo(__VA_ARGS__)
+#define m_interface_axis(...) m_interface_fifo(__VA_ARGS__)
+
+#define m_map_m_axi(...) m_map_ptr(__VA_ARGS__)
+#define m_interface_m_axi(...) m_interface_ptr(__VA_ARGS__)
 
 #define m_argcmp(idx, cmp) \
    _m_argdump(idx);        \
@@ -972,17 +1017,9 @@ static size_t __m_call_count = 0;
    _m_pp_argcmp(idx, cmp); \
    _m_argcmp(idx, cmp)
 
-#define m_retvalcmp(cmp) _m_pp_retvalcmp(cmp) _m_retvalcmp(cmp)
+#define m_channelcmp(idx, cmp) _m_channelcmp(idx, cmp)
 
-#define m_channel_init(idx)                                                                                         \
-   const size_t P##idx##_item = sizeof(m_getvalt(m_getptr(P##idx))::element_type);                                  \
-   size_t P##idx##_count = m_getptr(P##idx)->size();                                                                \
-   __m_param_alloc(idx, P##idx##_count * P##idx##_item);                                                            \
-   void* P##idx##_sim = malloc(P##idx##_count * P##idx##_item);                                                     \
-   for(i = 0; i < P##idx##_count; ++i)                                                                              \
-   {                                                                                                                \
-      memcpy((m_getvalt(m_getptr(P##idx))::element_type*)P##idx##_sim + i, &(*m_getptr(P##idx))[i], P##idx##_item); \
-   }
+#define m_retvalcmp(cmp) _m_pp_retvalcmp(cmp) _m_retvalcmp(cmp)
 )");
 
    // write C code used to print initialization values for the HDL simulator's memory
@@ -1000,11 +1037,10 @@ static size_t __m_call_count = 0;
    }();
    indented_output_stream->Append("const long double max_ulp = " + max_ulp + ";\n");
    indented_output_stream->Append("size_t i;\n");
-   indented_output_stream->Append(args_init);
    indented_output_stream->Append(args_decl);
+   indented_output_stream->Append(args_init);
    indented_output_stream->Append("__m_memsetup(args, " + STR(args_decl_size) + ");\n\n");
 
-   indented_output_stream->Append("__m_arg_init(" + STR(args_decl_size) + ");\n");
    indented_output_stream->Append(args_set);
 
    indented_output_stream->Append("\n__m_sim_start();\n\n");
@@ -1015,7 +1051,7 @@ static size_t __m_call_count = 0;
    indented_output_stream->Append(pp_call);
    indented_output_stream->Append("#endif\n\n");
    indented_output_stream->Append("__m_sim_end();\n");
-   indented_output_stream->Append("__m_arg_fini();\n\n");
+   indented_output_stream->Append("__m_interface_fini();\n\n");
 
    if(gold_cmp.size() || return_type)
    {

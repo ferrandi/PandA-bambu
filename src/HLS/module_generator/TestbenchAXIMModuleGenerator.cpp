@@ -71,7 +71,7 @@ void TestbenchAXIMModuleGenerator::InternalExec(std::ostream& out, structural_ob
    }
 
    const auto port_prefix = mod_cir->get_id().substr(sizeof("if_") - 1U, std::string::npos);
-   std::string np_library = mod_cir->get_id();
+   std::string np_library = mod_cir->get_id() + " index";
    std::string internal_port_assign;
    const auto add_port_parametric_wire = [&](const std::string& name, port_o::port_direction dir, unsigned port_size) {
       const auto port_name = port_prefix + "_" + name;
@@ -231,7 +231,7 @@ reg [BITSIZE_counter-1:0] counter_reg, counter_next;
 reg write_done;
 reg wlast_reg, wlast_next;
 
-mem_utils #(BITSIZE_data) m_utils();
+if_utils #(index, BITSIZE_data) m_utils();
 
 initial
 begin
@@ -417,7 +417,7 @@ begin : read_seq
     end
     test_addr_read <= currAddr;
     rid <= next_arqueue[OFFSET_id+:BITSIZE_id];
-    rdata <= m_utils.read(currAddr); // {_bambu_testbench_mem_[currAddr + 1 - base_addr], _bambu_testbench_mem_[currAddr + 0 - base_addr]};
+    rdata <= m_utils.read_a(currAddr);
     if(next_arqueue[OFFSET_counter+:BITSIZE_counter] >= (next_arqueue[OFFSET_len+:BITSIZE_len] + 1))
     begin
       rlast <= 1;
@@ -454,7 +454,7 @@ begin: write_seq
     test_data <= next_awqueue[OFFSET_data+:BITSIZE_data];
     bid <= next_awqueue[OFFSET_id+:BITSIZE_id];
     write_done <= 1;
-    m_utils.write_strobe(next_awqueue[OFFSET_wstrb+:BITSIZE_wstrb], next_awqueue[OFFSET_data+:BITSIZE_data], currAddr);
+    m_utils.write_strobe(next_awqueue[OFFSET_data+:BITSIZE_data], next_awqueue[OFFSET_wstrb+:BITSIZE_wstrb], currAddr);
   end
 end
 )";
