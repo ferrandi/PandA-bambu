@@ -43,7 +43,6 @@
  *
  */
 #include "call_graph_manager.hpp"
-#include "config_HAVE_ASSERTS.hpp"
 
 #include "Parameter.hpp"
 #include "application_manager.hpp"
@@ -62,13 +61,17 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include <algorithm>
+
 #include <boost/tuple/tuple.hpp>
+
+#include <algorithm>
 #include <iterator>
 #include <list>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "config_HAVE_ASSERTS.hpp"
 
 /**
  * Helper macro adding a call point to an edge of the call graph
@@ -653,6 +656,44 @@ CustomOrderedSet<unsigned int> CallGraphManager::GetReachedFunctionsFrom(unsigne
                                                               boost::get(boost::vertex_index_t(), *call_graph),
                                                               boost::white_color));
    return f_list;
+}
+
+unsigned int CallGraphManager::GetRootFunctionFrom(unsigned int fid) const
+{
+   unsigned int parent_fid = 0;
+   const auto top_vertex = GetVertex(fid);
+   for(auto root_fid : root_functions)
+   {
+      CustomOrderedSet<unsigned int> f_list;
+
+      CalledFunctionsVisitor vis(allow_recursive_functions, this, f_list, f_list);
+      std::vector<boost::default_color_type> color_vec(boost::num_vertices(*call_graph));
+      {
+         // Prevent top functions traversing
+         const auto index_map = boost::get(boost::vertex_index, *call_graph);
+         for(const auto top_id : root_functions)
+         {
+            if(top_id != fid)
+            {
+               const auto v_it = functionID_vertex_map.find(top_id);
+               if(v_it != functionID_vertex_map.end())
+               {
+                  color_vec.at(index_map[v_it->second]) = boost::black_color;
+               }
+            }
+         }
+      }
+      boost::depth_first_visit(*call_graph, top_vertex, vis,
+                               boost::make_iterator_property_map(color_vec.begin(),
+                                                                 boost::get(boost::vertex_index_t(), *call_graph),
+                                                                 boost::white_color));
+      if(f_list.find(fid) != f_list.end())
+      {
+         THROW_ASSERT(parent_fid == 0, "Expected single parent root functions.");
+         parent_fid = root_fid;
+      }
+   }
+   return parent_fid;
 }
 
 CustomOrderedSet<unsigned int> CallGraphManager::GetReachedLibraryFunctions() const
