@@ -46,13 +46,20 @@
 
 #include <stddef.h>
 
+#ifdef __cplusplus
+#include <ac_channel.h>
+#endif
+
 #define MDPI_MEMMAP_DEVICE 0
 #define MDPI_MEMMAP_SHARED 1
 
-EXTERN_C void __m_arg_init(uint8_t argcount);
-EXTERN_C void __m_arg_fini();
-EXTERN_C void __m_setarg(uint8_t index, void* bits, uint16_t bitsize);
-EXTERN_C void __m_setptrarg(uint8_t index, bptr_t* bits, uint16_t bitsize);
+EXTERN_C void __m_interface_port(uint8_t idx, void* bits, uint16_t bitsize);
+EXTERN_C void __m_interface_ptr(uint8_t idx, bptr_t* bits, uint16_t bitsize);
+EXTERN_C void __m_interface_array(uint8_t idx, void* base, uint16_t bitsize, uint8_t align, uint64_t size);
+EXTERN_C void __m_interface_fifo(uint8_t idx, void* base, uint16_t bitsize, uint8_t align, uint64_t size);
+EXTERN_C void __m_interface_mem(uint8_t idx);
+EXTERN_C void __m_interface_fini();
+
 EXTERN_C void __m_memmap_init(int map_mode);
 EXTERN_C int __m_memmap(ptr_t dst, void* src, size_t bytes);
 EXTERN_C void __m_param_alloc(uint8_t idx, size_t size);
@@ -66,8 +73,110 @@ EXTERN_C void __m_exit(int __status);
 EXTERN_C void __m_abort();
 EXTERN_C void __m_assert_fail(const char* __assertion, const char* __file, unsigned int __line, const char* __function);
 
-#define __m_setargptr(index, bits, bitsize) \
-   bptr_t __ptrval_##index = (bptr_t)bits;  \
-   __m_setptrarg(index, &__ptrval_##index, bitsize)
+#ifdef __cplusplus
+class interface
+{
+ public:
+   enum state
+   {
+      IF_OK = 0,
+      IF_ERROR = -1,
+      IF_FULL = -2,
+      IF_EMPTY = -3
+   };
+
+   interface() = default;
+
+   virtual ~interface() = default;
+
+   virtual int read(bptr_t data, uint16_t bitsize, ptr_t addr, bool shift) = 0;
+
+   virtual int write(bptr_t data, uint16_t bitsize, ptr_t addr, bool shift) = 0;
+
+   virtual int state(int data);
+};
+
+template <typename T>
+class channel_interface : public interface
+{
+   ac_channel<T>& _chan;
+   unsigned int _count;
+   const unsigned int _max_size;
+
+   unsigned int _read_size()
+   {
+      return _max_size ? (_max_size - _count) : _chan.size();
+   }
+
+   unsigned int _write_size()
+   {
+      return _max_size ? (_max_size - _count) : _chan.num_free();
+   }
+
+ public:
+   channel_interface(ac_channel<T>& chan, unsigned int max_size = 0)
+       : interface(), _chan(chan), _count(0), _max_size(max_size)
+   {
+      debug("Interface channel with %u/%u read/write elements.\n", _read_size(), _write_size());
+   }
+
+   int read(bptr_t data, uint16_t /*bitsize*/, ptr_t /*addr*/, bool shift) override
+   {
+      if(!_read_size())
+      {
+         return IF_EMPTY;
+      }
+      if(shift)
+      {
+         *reinterpret_cast<T*>(data) = _chan.read();
+         ++_count;
+      }
+      else
+      {
+         *reinterpret_cast<T*>(data) = _chan[0];
+      }
+      return _read_size();
+   }
+
+   int write(bptr_t data, uint16_t /*bitsize*/, ptr_t /*addr*/, bool shift) override
+   {
+      if(!_write_size())
+      {
+         return IF_FULL;
+      }
+      if(shift)
+      {
+         _chan.write(*reinterpret_cast<T*>(data));
+         ++_count;
+      }
+      else
+      {
+         _chan[_chan.size() - 1] = *reinterpret_cast<T*>(data);
+      }
+      return _write_size();
+   }
+
+   int state(int data)
+   {
+      if(data == (1 << 1))
+      {
+         return _read_size();
+      }
+      else if(data == (1 << 2))
+      {
+         return _write_size();
+      }
+      return IF_ERROR;
+   }
+};
+
+template <typename T>
+void __m_interface_channel(uint8_t id, ac_channel<T>& chan, unsigned int max_size = 0)
+{
+   __m_interface_set(id, new channel_interface<T>(chan, max_size));
+}
+
+void __m_interface_set(uint8_t id, interface* if_manager);
+#endif
 
 #endif // __MDPI_DRIVER_H

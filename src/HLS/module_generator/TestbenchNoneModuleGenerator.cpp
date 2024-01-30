@@ -48,6 +48,7 @@
 #include "hls_manager.hpp"
 #include "language_writer.hpp"
 #include "structural_manager.hpp"
+#include "utility.hpp"
 
 TestbenchNoneModuleGenerator::TestbenchNoneModuleGenerator(const HLS_managerRef& _HLSMgr) : Registrar(_HLSMgr)
 {
@@ -67,12 +68,7 @@ void TestbenchNoneModuleGenerator::InternalExec(std::ostream& out, structural_ob
       return;
    }
 
-   const auto arg_name = [&]() {
-      std::string mod_id = mod_cir->get_id();
-      boost::replace_first(mod_id, "if_none_registered_", "");
-      boost::replace_first(mod_id, "if_none_", "");
-      return mod_id;
-   }();
+   const auto arg_name = boost::replace_first_copy(mod_cir->get_id(), "if_none_", "");
 
    const auto top_fname = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->GetMangledFunctionName();
    const auto& iface_attrs = HLSMgr->module_arch->GetArchitecture(top_fname)->ifaces.at(arg_name);
@@ -80,81 +76,37 @@ void TestbenchNoneModuleGenerator::InternalExec(std::ostream& out, structural_ob
    const std::string in_suffix = if_dir == port_o::IO ? "_i" : "";
    const std::string out_suffix = if_dir == port_o::IO ? "_o" : "";
    std::string np_library = mod_cir->get_id() + " index";
+   std::vector<std::string> ip_components;
    const auto add_port_parametric = [&](const std::string& suffix, port_o::port_direction dir, unsigned port_size) {
       const auto port_name = arg_name + suffix;
       structural_manager::add_port(port_name, dir, mod_cir,
                                    structural_type_descriptorRef(new structural_type_descriptor("bool", port_size)));
       np_library += " " + port_name;
    };
-   out << "localparam BITSIZE_data=BITSIZE_" << arg_name << (in_suffix.size() ? in_suffix : out_suffix) << ";\n"
-       << R"(
-arg_utils a_utils();
-mem_utils #(BITSIZE_data) m_utils();
-)";
+   out << "localparam BITSIZE_data=BITSIZE_" << arg_name << (in_suffix.size() ? in_suffix : out_suffix) << ";\n";
 
    if(if_dir == port_o::IN || if_dir == port_o::IO)
    {
       add_port_parametric(in_suffix, port_o::OUT, 1U);
-      out << R"(
-reg [BITSIZE_data-1:0] val;
-wire [BITSIZE_data-1:0] val_next;
-
-initial
-begin
-  val = 0;
-end
-
-always @(posedge clock)
-begin
-  if(setup_port)
-  begin
-    automatic ptr_t addr = a_utils.getptrarg(index);
-    val <= m_utils.read(addr);
-  end
-  else
-  begin
-    val <= val_next;
-  end
-end
-
-assign val_next = val;
-)";
-      out << "assign " << arg_name << in_suffix << " = val;";
+      ip_components.push_back("TestbenchFifoRead");
+      out << "TestbenchFifoRead #(.index(index),\n"
+          << "  .BITSIZE_dout(BITSIZE_data)) fifo_read(.clock(clock),\n"
+          << "  .setup_port(setup_port),\n"
+          << "  .done_port(done_port),\n"
+          << "  .dout(" << arg_name << in_suffix << "));\n";
    }
    if(if_dir == port_o::OUT || if_dir == port_o::IO)
    {
       add_port_parametric(out_suffix, port_o::IN, 1U);
-      out << R"(
-ptr_t addr, addr_next;
-
-initial
-begin
-  addr = 0;
-  addr_next = 0;
-end
-
-always @(posedge clock)
-begin
-  if(setup_port)
-  begin
-    addr <= a_utils.getptrarg(index);
-  end
-  else
-  begin
-    addr <= addr_next;
-    if(done_port)
-    begin
-      m_utils.write(BITSIZE_data, )"
-          << arg_name << out_suffix << R"(, addr_next);
-    end
-  end
-end
-
-always @(*) 
-begin
-  addr_next = addr;
-end
-)";
+      ip_components.push_back("TestbenchFifoWrite");
+      out << "TestbenchFifoWrite #(.index(index),\n"
+          << "  .BITSIZE_din(BITSIZE_data)) fifo_write(.clock(clock),\n"
+          << "  .setup_port(setup_port),\n"
+          << "  .done_port(done_port),\n"
+          << "  .write(done_port),\n"
+          << "  .din(" << arg_name << out_suffix << "));\n";
    }
    structural_manager::add_NP_functionality(mod_cir, NP_functionality::LIBRARY, np_library);
+   structural_manager::add_NP_functionality(mod_cir, NP_functionality::IP_COMPONENT,
+                                            container_to_string(ip_components, ","));
 }

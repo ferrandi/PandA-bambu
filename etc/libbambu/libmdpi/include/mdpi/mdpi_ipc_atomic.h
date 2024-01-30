@@ -91,15 +91,15 @@ static void __ipc_reserve()
    {
       expected = MDPI_IPC_STATE_FREE;
       __ipc_wait(expected);
-   } while(!atomic_compare_exchange_strong(&__m_ipc_file->handle, &expected, MDPI_IPC_STATE_WRITING));
+   } while(!atomic_compare_exchange_strong(&__m_ipc_file->handle, &expected, MDPI_IPC_STATE_LOCKED));
 }
 
 static void __ipc_request()
 {
 #ifndef NDEBUG
-   mdpi_ipc_state_t expected = MDPI_IPC_STATE_WRITING;
+   mdpi_ipc_state_t expected = MDPI_IPC_STATE_LOCKED;
    atomic_compare_exchange_strong(&__m_ipc_file->handle, &expected, MDPI_IPC_STATE_REQUEST);
-   assert(expected == MDPI_IPC_STATE_WRITING && "Illegal IPC commit operation.");
+   assert(expected == MDPI_IPC_STATE_LOCKED && "Illegal IPC commit operation.");
 #else
    atomic_store(&__m_ipc_file->handle, MDPI_IPC_STATE_REQUEST);
 #endif
@@ -127,9 +127,9 @@ static void __ipc_exit(mdpi_ipc_state_t ipc_state, mdpi_state_t state, uint8_t r
    do
    {
       expected = atomic_load(&__m_ipc_file->handle);
-      if(expected == MDPI_IPC_STATE_WRITING)
+      if(expected == MDPI_IPC_STATE_LOCKED)
          continue;
-   } while(!atomic_compare_exchange_strong(&__m_ipc_file->handle, &expected, MDPI_IPC_STATE_WRITING));
+   } while(!atomic_compare_exchange_strong(&__m_ipc_file->handle, &expected, MDPI_IPC_STATE_LOCKED));
    __m_ipc_operation.type = MDPI_OP_TYPE_STATE_CHANGE;
    __m_ipc_operation.payload.sc.state = state;
    __m_ipc_operation.payload.sc.retval = retval;

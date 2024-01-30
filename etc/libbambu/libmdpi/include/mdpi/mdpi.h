@@ -48,30 +48,11 @@
 EXTERN_C EXPORT unsigned int m_next(unsigned int state);
 EXTERN_C EXPORT int m_fini();
 
-EXTERN_C EXPORT void m_getarg(svLogicVecVal* data, unsigned int index);
-EXTERN_C EXPORT void m_setarg(CONSTARG svLogicVecVal* data, unsigned int index);
-EXTERN_C EXPORT unsigned int m_getptrargsize(unsigned int index);
-
-EXTERN_C EXPORT void m_read8(svLogicVecVal* data, ptr_t addr);
-EXTERN_C EXPORT void m_read16(svLogicVecVal* data, ptr_t addr);
-EXTERN_C EXPORT void m_read32(svLogicVecVal* data, ptr_t addr);
-EXTERN_C EXPORT void m_read64(svLogicVecVal* data, ptr_t addr);
-EXTERN_C EXPORT void m_read128(svLogicVecVal* data, ptr_t addr);
-EXTERN_C EXPORT void m_read256(svLogicVecVal* data, ptr_t addr);
-EXTERN_C EXPORT void m_read512(svLogicVecVal* data, ptr_t addr);
-EXTERN_C EXPORT void m_read1024(svLogicVecVal* data, ptr_t addr);
-EXTERN_C EXPORT void m_read2048(svLogicVecVal* data, ptr_t addr);
-EXTERN_C EXPORT void m_read4096(svLogicVecVal* data, ptr_t addr);
-
-EXTERN_C EXPORT void m_write8(unsigned short size, CONSTARG svLogicVecVal* data, ptr_t addr);
-EXTERN_C EXPORT void m_write16(unsigned short size, CONSTARG svLogicVecVal* data, ptr_t addr);
-EXTERN_C EXPORT void m_write32(unsigned short size, CONSTARG svLogicVecVal* data, ptr_t addr);
-EXTERN_C EXPORT void m_write64(unsigned short size, CONSTARG svLogicVecVal* data, ptr_t addr);
-EXTERN_C EXPORT void m_write128(unsigned short size, CONSTARG svLogicVecVal* data, ptr_t addr);
-EXTERN_C EXPORT void m_write256(unsigned short size, CONSTARG svLogicVecVal* data, ptr_t addr);
-EXTERN_C EXPORT void m_write512(unsigned short size, CONSTARG svLogicVecVal* data, ptr_t addr);
-EXTERN_C EXPORT void m_write1024(unsigned short size, CONSTARG svLogicVecVal* data, ptr_t addr);
-EXTERN_C EXPORT void m_write2048(unsigned short size, CONSTARG svLogicVecVal* data, ptr_t addr);
-EXTERN_C EXPORT void m_write4096(unsigned short size, CONSTARG svLogicVecVal* data, ptr_t addr);
+EXTERN_C EXPORT int m_read(unsigned char id, svLogicVecVal* data, unsigned short bitsize, ptr_t addr,
+                           unsigned char shift);
+EXTERN_C EXPORT int m_write(unsigned char id, CONSTARG svLogicVecVal* data, unsigned short bitsize, ptr_t addr,
+                            unsigned char shift);
+EXTERN_C EXPORT int m_state(unsigned char id, int data);
+EXTERN_C EXPORT void m_builtin_exit(int status);
 
 #endif // __MDPI_H

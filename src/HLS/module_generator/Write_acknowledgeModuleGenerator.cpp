@@ -46,7 +46,12 @@
 
 #include "Write_acknowledgeModuleGenerator.hpp"
 
+#include "behavioral_helper.hpp"
+#include "constant_strings.hpp"
+#include "function_behavior.hpp"
+#include "hls_manager.hpp"
 #include "language_writer.hpp"
+#include "structural_objects.hpp"
 
 enum in_port
 {
@@ -71,17 +76,28 @@ Write_acknowledgeModuleGenerator::Write_acknowledgeModuleGenerator(const HLS_man
 {
 }
 
-void Write_acknowledgeModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */,
-                                                    unsigned int /* function_id */, vertex /* op_v */,
-                                                    const HDLWriter_Language /* language */,
+void Write_acknowledgeModuleGenerator::InternalExec(std::ostream& out, structural_objectRef mod_cir,
+                                                    unsigned int function_id, vertex /* op_v */,
+                                                    const HDLWriter_Language language,
                                                     const std::vector<ModuleGenerator::parameter>& /* _p */,
                                                     const std::vector<ModuleGenerator::parameter>& _ports_in,
                                                     const std::vector<ModuleGenerator::parameter>& _ports_out,
                                                     const std::vector<ModuleGenerator::parameter>& /* _ports_inout */)
 {
+   if(language != HDLWriter_Language::VERILOG)
+   {
+      THROW_UNREACHABLE("Unsupported output language");
+      return;
+   }
+
+   const auto bundle_name = mod_cir->get_id().substr(0, mod_cir->get_id().find(STR_CST_interface_parameter_keyword));
+   const auto top_bh = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
+   const auto top_fname = top_bh->GetMangledFunctionName();
+   const auto& iface_attrs = HLSMgr->module_arch->GetArchitecture(top_fname)->ifaces.at(bundle_name);
+
    THROW_ASSERT(_ports_in.size() >= i_last, "");
    THROW_ASSERT(_ports_out.size() >= o_last, "");
-   bool registered = false;
+   const auto registered = iface_attrs.find(FunctionArchitecture::iface_register) != iface_attrs.end();
    if(registered)
    {
       out << "reg acked;\n";

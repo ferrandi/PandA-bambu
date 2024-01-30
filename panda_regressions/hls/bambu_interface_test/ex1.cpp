@@ -2,7 +2,7 @@
 
 void test_func(ap_int<1> bit_stream[20], ap_int<20>* a_out)
 {
-#pragma HLS interface port = a_out mode = none_registered
+#pragma HLS interface port=a_out mode=none register
    int i;
    ap_int<20> a_out_temp;
 #pragma unroll
