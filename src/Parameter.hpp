@@ -117,9 +117,9 @@ enum class CompilerWrapper_CompilerTarget;
        no_parse_c_python)(num_accelerators)(post_rescheduling)(technology_file)(tb_extra_gcc_options)(                 \
        timing_violation_abort)(top_design_name)(serialize_output)(use_ALUs)(range_analysis_mode)(fp_format)(           \
        fp_format_propagate)(fp_format_interface)(fp_rounding_mode)(fp_exception_mode)(parallel_backend)(               \
-       architecture_xml)(lattice_root)(lattice_settings)(lattice_pmi_def)(lattice_pmi_tdpbe)(lattice_pmi_mul)(         \
-       xilinx_root)(xilinx_settings)(xilinx_vivado_settings)(xilinx_glbl)(mentor_root)(mentor_modelsim_bin)(           \
-       mentor_optimizer)(verilator)(verilator_timescale_override)(verilator_parallel)(altera_root)(quartus_settings)(  \
+       architecture_xml)(lattice_root)(lattice_settings)(lattice_pmi_def)(lattice_inc_dirs)(xilinx_root)(              \
+       xilinx_settings)(xilinx_vivado_settings)(xilinx_glbl)(mentor_root)(mentor_modelsim_bin)(mentor_optimizer)(      \
+       verilator)(verilator_timescale_override)(verilator_parallel)(altera_root)(quartus_settings)(                    \
        quartus_13_settings)(quartus_13_64bit)(nanoxplore_root)(nanoxplore_settings)(nanoxplore_bypass)(                \
        shared_input_registers)(inline_functions)(constraints_functions)(axi_burst_type)
 

@@ -484,8 +484,20 @@ std::string verilog_writer::may_slice_string(const structural_objectRef& cir)
    return "";
 }
 
-void verilog_writer::write_library_declaration(const structural_objectRef&)
+void verilog_writer::write_library_declaration(const structural_objectRef& cir)
 {
+   THROW_ASSERT(cir->get_kind() == component_o_K || cir->get_kind() == channel_o_K,
+                "Expected a component or a channel got something of different");
+   NP_functionalityRef NPF = GetPointer<module>(cir)->get_NP_functionality();
+   if(NPF and NPF->exist_NP_functionality(NP_functionality::IP_INCLUDE))
+   {
+      const auto IP_includes = NPF->get_NP_functionality(NP_functionality::IP_INCLUDE);
+      const auto IP_includes_list = string_to_container<std::vector<std::string>>(IP_includes, ";");
+      for(const auto& inc : IP_includes_list)
+      {
+         indented_output_stream->Append("`include \"" + inc + "\"\n");
+      }
+   }
 }
 
 void verilog_writer::write_module_declaration(const structural_objectRef& cir)
