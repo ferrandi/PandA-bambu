@@ -62,8 +62,8 @@
 
 // constructor
 VIVADO_xsim_wrapper::VIVADO_xsim_wrapper(const ParameterConstRef& _Param, const std::string& _suffix,
-                                         const std::string& _top_fname)
-    : SimulationTool(_Param, _top_fname), suffix(_suffix)
+                                         const std::string& _top_fname, const std::string& _inc_dirs)
+    : SimulationTool(_Param, _top_fname, _inc_dirs), suffix(_suffix)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the XSIM wrapper...");
    std::filesystem::create_directory(XSIM_SUBDIR + suffix + "/");
@@ -149,6 +149,11 @@ std::string VIVADO_xsim_wrapper::GenerateScript(std::ostream& script, const std:
       if(Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy))
       {
          flags += " -define GENERATE_VCD_DISCREPANCY";
+      }
+      const auto inc_dir_list = string_to_container<std::vector<std::string>>(inc_dirs, ",");
+      for(const auto& inc : inc_dir_list)
+      {
+         flags += " -i " + inc;
       }
       return flags;
    }();

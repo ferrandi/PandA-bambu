@@ -11635,7 +11635,7 @@ endgenerate"/>
           <port_o id="dout_b" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="BRAM_MEMORY_PMI dout_a dout_b memory_addr_a memory_addr_b din_value_aggregated be MEMORY_INIT_file BRAM_BITSIZE nbit_read_addr n_byte_on_databus n_elements n_bytes READ_ONLY_MEMORY HIGH_LATENCY" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="BRAM_MEMORY_PMI dout_a dout_b memory_addr_a memory_addr_b din_value_aggregated be MEMORY_INIT_file BRAM_BITSIZE nbit_read_addr n_byte_on_databus n_elements n_bytes READ_ONLY_MEMORY HIGH_LATENCY" IP_INCLUDE="simulation/verilog/pmi/pmi_ram_dp_true_be.v" VERILOG_PROVIDED="
 reg bram_write1;
 reg [BITSIZE_memory_addr_a-1:0] memory_addr_a1;
 reg [BITSIZE_memory_addr_b-1:0] memory_addr_b1;
@@ -12979,7 +12979,7 @@ end generate;
           <port_vector_o id="dout_a" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="BRAM_MEMORY_NN_PMI bram_write dout_a memory_addr_a din_value_aggregated_swapped be_swapped MEMORY_INIT_file BRAM_BITSIZE nbit_read_addr n_byte_on_databus n_elements max_n_reads max_n_writes memory_offset n_byte_on_databus_offset READ_ONLY_MEMORY HIGH_LATENCY" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="BRAM_MEMORY_NN_PMI bram_write dout_a memory_addr_a din_value_aggregated_swapped be_swapped MEMORY_INIT_file BRAM_BITSIZE nbit_read_addr n_byte_on_databus n_elements max_n_reads max_n_writes memory_offset n_byte_on_databus_offset READ_ONLY_MEMORY HIGH_LATENCY" IP_INCLUDE="simulation/verilog/pmi/pmi_ram_dp_true_be.v" VERILOG_PROVIDED="
 reg [PORTSIZE_bram_write-1:0] bram_write1;
 reg [(PORTSIZE_memory_addr_a*BITSIZE_memory_addr_a)+(-1):0] memory_addr_a1;
 reg [(PORTSIZE_din_value_aggregated_swapped*BITSIZE_din_value_aggregated_swapped)+(-1):0] din_value_aggregated_swapped1;

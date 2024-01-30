@@ -76,6 +76,9 @@ class SimulationTool
    /// log file
    std::string log_file;
 
+   /// comma separated list of include dirs
+   const std::string inc_dirs;
+
    /**
     * Performs the actual writing
     */
@@ -89,7 +92,7 @@ class SimulationTool
    /**
     * Constructor
     */
-   explicit SimulationTool(const ParameterConstRef& Param, const std::string& top_fname);
+   explicit SimulationTool(const ParameterConstRef& Param, const std::string& top_fname, const std::string& inc_dirs);
 
    /**
     * Destructor
@@ -100,7 +103,7 @@ class SimulationTool
     * Factory method
     */
    static SimulationToolRef CreateSimulationTool(type_t type, const ParameterConstRef& Param, const std::string& suffix,
-                                                 const std::string& top_fname);
+                                                 const std::string& top_fname, const std::string& inc_dirs);
 
    /**
     * Checks if the current specification can be executed or not
