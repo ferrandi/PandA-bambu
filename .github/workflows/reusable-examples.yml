@@ -69,7 +69,7 @@ jobs:
             batch: "5SGXEA7N2F45C1_10.0"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: 'true'
       - name: Download Bambu AppImage
@@ -120,7 +120,7 @@ jobs:
           done
       - name: Upload test reports
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{steps.get.outputs.outname}}
           path: ${{steps.batch.outputs.test-reports-dir}}
@@ -172,7 +172,7 @@ jobs:
           #   batch: "xc7vx690t-3ffg1930-VVD_10.0"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: 'true'
       - name: Download Bambu AppImage
@@ -223,7 +223,7 @@ jobs:
           done
       - name: Upload test reports
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{steps.get.outputs.outname}}
           path: ${{steps.batch.outputs.test-reports-dir}}
@@ -263,7 +263,7 @@ jobs:
             batch: "LFE335EA8FN484C_15.0"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: 'true'
       - name: Download Bambu AppImage
@@ -314,7 +314,7 @@ jobs:
           done
       - name: Upload test reports
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{steps.get.outputs.outname}}
           path: ${{steps.batch.outputs.test-reports-dir}}

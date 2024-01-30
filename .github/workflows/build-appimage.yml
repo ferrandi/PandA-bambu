@@ -84,7 +84,7 @@ jobs:
       package-name: ${{env.package-name}}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{inputs.branch}}
           submodules: 'true'
@@ -104,14 +104,14 @@ jobs:
           echo "env_id=$env_id" >> $GITHUB_OUTPUT
           echo "timestamp=$(date -u +'%Y-%m-%d-%H;%M;%S')" >> $GITHUB_OUTPUT
       - name: CCache cache files
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .ccache
           key: panda-build-ccache-${{steps.setup.outputs.version}}-${{ steps.setup.outputs.timestamp }}
           restore-keys: |
             panda-build-ccache-${{steps.setup.outputs.version}}-
       - name: Autoconf cache files
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .autoconf
           key: panda-build-autoconf-${{steps.setup.outputs.version}}-${{ steps.setup.outputs.env_id }}-${{ steps.setup.outputs.timestamp }}
