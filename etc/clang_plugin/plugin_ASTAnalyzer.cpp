@@ -1129,7 +1129,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
       for(auto& attr : p.attrs)
       {
          if(iequals(attr.first.id, "register") || iequals(attr.first.id, "register_mode") ||
-            iequals(attr.first.id, "num_write_outstanding"))
+            iequals(attr.first.id, "num_write_outstanding") || iequals(attr.first.id, "depth"))
          {
             auto it_res = bundle_attrs.emplace(key_loc_t(to_lower(attr.first.id), attr.first.loc), attr.second);
             if(!it_res.second && it_res.first->second != attr.second)
