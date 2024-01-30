@@ -54,9 +54,7 @@
 #include "hls_manager.hpp"
 #include "language_writer.hpp"
 #include "math_function.hpp"
-#include "op_graph.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
+#include "structural_objects.hpp"
 
 enum in_port
 {
@@ -90,28 +88,17 @@ ReadWriteDP_arrayModuleGenerator::ReadWriteDP_arrayModuleGenerator(const HLS_man
 {
 }
 
-void ReadWriteDP_arrayModuleGenerator::InternalExec(std::ostream& out, structural_objectRef /* mod */,
-                                                    unsigned int function_id, vertex op_v,
+void ReadWriteDP_arrayModuleGenerator::InternalExec(std::ostream& out, structural_objectRef mod,
+                                                    unsigned int function_id, vertex /* op_v */,
                                                     const HDLWriter_Language /* language */,
                                                     const std::vector<ModuleGenerator::parameter>& /* _p */,
                                                     const std::vector<ModuleGenerator::parameter>& _ports_in,
                                                     const std::vector<ModuleGenerator::parameter>& _ports_out,
                                                     const std::vector<ModuleGenerator::parameter>& /* _ports_inout */)
 {
-   const auto fname = [&]() {
-      const auto FB = HLSMgr->CGetFunctionBehavior(function_id);
-      if(op_v)
-      {
-         const auto cfg = FB->CGetOpGraph(FunctionBehavior::CFG);
-         return cfg->CGetOpNodeInfo(op_v)->GetOperation();
-      }
-      return FB->CGetBehavioralHelper()->get_function_name();
-   }();
-   THROW_ASSERT(fname.find(STR_CST_interface_parameter_keyword) != std::string::npos,
-                "Unexpected array interface module name");
-   const auto top_id = *HLSMgr->CGetCallGraphManager()->GetRootFunctions().begin();
-   const auto top_fname = HLSMgr->CGetFunctionBehavior(top_id)->CGetBehavioralHelper()->GetMangledFunctionName();
-   const auto bundle_name = fname.substr(0, fname.find(STR_CST_interface_parameter_keyword));
+   const auto bundle_name = mod->get_id().substr(0, mod->get_id().find(STR_CST_interface_parameter_keyword));
+   const auto top_fid = HLSMgr->CGetCallGraphManager()->GetRootFunctionFrom(function_id);
+   const auto top_fname = HLSMgr->CGetFunctionBehavior(top_fid)->CGetBehavioralHelper()->GetMangledFunctionName();
    const auto func_arch = HLSMgr->module_arch->GetArchitecture(top_fname);
    THROW_ASSERT(func_arch, "Expected function architecture for function " + top_fname);
    const auto arraySize =
