@@ -1307,7 +1307,7 @@ begin
     begin
       automatic integer unsigned next_state = m_next(STATE_READY);
       `ifndef NDEBUG
-      $display(&quot;Sim: next state: %0d&quot;, next_state);
+      $display(&quot;Sim: next state: %0d (retval: %0d)&quot;, next_state[$bits(state_succ)-1:0], next_state[15:8]);
       `endif
       state_succ &lt;= next_state[$bits(state_succ)-1:0];
     end
@@ -1357,16 +1357,18 @@ begin
       automatic integer r = m_fini();
       automatic integer res_file;
       res_file = $fopen(RESFILE, &quot;a&quot;);
-      if(r[$bits(STATE_READY)-1:0] == STATE_ABORT)
-      begin
-        $fwrite(res_file, &quot;\nA\n&quot;);
-        $display(&quot;Sim: Testbench aborted&quot;);
-      end
-      else
-      begin
-        $fwrite(res_file, &quot;\n%0d\n&quot;, r[15:8]);
-        $display(&quot;Sim: Testbench returned: %0d&quot;, r[15:8]);
-      end
+      $fwrite(res_file, &quot;\n%0d\n&quot;, r[15:8]);
+      $display(&quot;Sim: Testbench returned: %0d&quot;, r[15:8]);
+      $fclose(res_file);
+      $finish;
+    end
+  STATE_ABORT:
+    begin
+      automatic integer r = m_fini();
+      automatic integer res_file;
+      res_file = $fopen(RESFILE, &quot;a&quot;);
+      $fwrite(res_file, &quot;\nA\n&quot;);
+      $display(&quot;Sim: Testbench aborted&quot;);
       $fclose(res_file);
       $finish;
     end
@@ -1425,6 +1427,9 @@ begin
       state_next = STATE_READY;
     end
   STATE_END:
+    begin
+    end
+  STATE_ABORT:
     begin
     end
   default:
