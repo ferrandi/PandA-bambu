@@ -50,8 +50,11 @@
 
 enum in_port
 {
-   i_in1 = 0,
-   i_in3,
+   i_clock = 0,
+   i_reset,
+   i_start,
+   i_in1,
+   i_in2,
    i_last
 };
 
@@ -75,6 +78,6 @@ void Read_noneModuleGenerator::InternalExec(std::ostream& out, structural_object
 {
    THROW_ASSERT(_ports_in.size() >= i_last, "");
    THROW_ASSERT(_ports_out.size() >= o_last, "");
-   out << "assign " << _ports_out[o_out1].name << " = " << _ports_in[i_in3].name << " >> (8*" << _ports_in[i_in1].name
-       << ");\n";
+      out << "assign " << _ports_out[o_out1].name << " = " << _ports_in[i_in2].name << " >> (8*"
+          << _ports_in[i_in1].name << ");\n";
 }
