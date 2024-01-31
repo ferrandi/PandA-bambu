@@ -797,6 +797,16 @@ const char* UnrollHLSPragmaHandler::PragmaKeyword = "unroll";
 
 class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
 {
+   void forceNoInline(FunctionDecl* FD) const
+   {
+      if(!FD->hasAttr<NoInlineAttr>())
+      {
+         FD->addAttr(NoInlineAttr::CreateImplicit(FD->getASTContext()));
+         FD->dropAttr<AlwaysInlineAttr>();
+      }
+      FD->dropAttr<InternalLinkageAttr>();
+   }
+
  public:
    DataflowHLSPragmaHandler(ASTContext& ctx, PrintingPolicy& pp, std::map<std::string, func_attr_t>& func_attributes)
        : HLSPragmaAnalyzer(ctx, pp, func_attributes), HLSPragmaParser()
@@ -824,6 +834,7 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
          {
             bool hasModule = false;
             LLVM_DEBUG(dbgs() << "DATAFLOW: " << functionSym << "\n");
+            forceNoInline(FD);
             for(auto* stmt : FD->getBody()->children())
             {
                auto callExpr = dyn_cast<CallExpr>(stmt);
@@ -835,15 +846,9 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
                      LLVM_DEBUG(dbgs() << " -> " << MangledName(calleeDecl) << "\n");
                      GetFuncAttr(calleeDecl).attrs[key_loc_t("dataflow", SourceLocation())] = "module";
                      GetFuncAttr(calleeDecl).attrs[key_loc_t("inline", SourceLocation())] = "off";
-                     hasModule = true;
+                     forceNoInline(calleeDecl);
 
-                     // Try to avoid inlining on dataflow module
-                     if(!calleeDecl->hasAttr<NoInlineAttr>())
-                     {
-                        calleeDecl->addAttr(NoInlineAttr::CreateImplicit(calleeDecl->getASTContext()));
-                        calleeDecl->dropAttr<AlwaysInlineAttr>();
-                     }
-                     calleeDecl->dropAttr<InternalLinkageAttr>();
+                     hasModule = true;
                   }
                }
             }
