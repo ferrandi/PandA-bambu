@@ -38,6 +38,7 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
+// #undef NDEBUG
 #include "plugin_includes.hpp"
 
 #include <llvm/ADT/StringExtras.h>
@@ -182,7 +183,9 @@ namespace llvm
          for(std::size_t last = 0, it = 0; it < TopFunctionName_TFP.size(); last = it + 1)
          {
             it = TopFunctionName_TFP.find(",", last);
-            TopFunctionNames.push_back(TopFunctionName_TFP.substr(last, it));
+            const auto func_symbol = TopFunctionName_TFP.substr(last, it);
+            LLVM_DEBUG(dbgs() << " - " << func_symbol << "\n");
+            TopFunctionNames.push_back(func_symbol);
          }
          pugi::xml_document doc;
          const auto arch_filename = outdir_name + "/architecture.xml";
@@ -236,6 +239,7 @@ namespace llvm
                   llvm::find(TopFunctionNames, demangled) != TopFunctionNames.end())
                {
                   LLVM_DEBUG(llvm::dbgs() << "  top function\n");
+                  fun.addFnAttr(Attribute::NoInline);
                   fun.setLinkage(GlobalValue::LinkageTypes::ExternalLinkage);
 #if __clang_major__ >= 7
                   fun.setDSOLocal(false);
