@@ -475,9 +475,10 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                      }
                      else if(state_info->is_last_state)
                      {
-                        auto def_op = HLS->Rliv->get_op_where_defined(lo.first);
-                        if(std::find(tgt_state_info->ending_operations.begin(), tgt_state_info->ending_operations.end(),
-                                     def_op) == tgt_state_info->ending_operations.end())
+                        if(!tree_helper::is_parameter(HLSMgr->get_tree_manager(), lo.first) &&
+                           std::find(tgt_state_info->ending_operations.begin(), tgt_state_info->ending_operations.end(),
+                                     HLS->Rliv->get_op_where_defined(lo.first)) ==
+                               tgt_state_info->ending_operations.end())
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "is_last_state");
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
