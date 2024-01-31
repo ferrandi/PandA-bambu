@@ -631,33 +631,28 @@ CustomOrderedSet<unsigned int> CallGraphManager::GetReachedFunctionsFrom(unsigne
 
 unsigned int CallGraphManager::GetRootFunctionFrom(unsigned int fid) const
 {
+   if(root_functions.find(fid) != root_functions.end())
+   {
+      return fid;
+   }
+
    unsigned int parent_fid = 0;
    const auto top_vertex = GetVertex(fid);
    for(auto root_fid : root_functions)
    {
       CustomOrderedSet<unsigned int> f_list;
-
       CalledFunctionsVisitor vis(allow_recursive_functions, this, f_list, f_list);
       std::vector<boost::default_color_type> color_vec(boost::num_vertices(*call_graph));
-      {
-         // Prevent top functions traversing
-         const auto index_map = boost::get(boost::vertex_index, *call_graph);
-         for(const auto top_id : root_functions)
-         {
-            if(top_id != fid)
-            {
-               const auto v_it = functionID_vertex_map.find(top_id);
-               if(v_it != functionID_vertex_map.end())
-               {
-                  color_vec.at(index_map[v_it->second]) = boost::black_color;
-               }
-            }
-         }
-      }
+      auto other_root_functions = root_functions;
+      other_root_functions.erase(fid);
       boost::depth_first_visit(*call_graph, top_vertex, vis,
                                boost::make_iterator_property_map(color_vec.begin(),
                                                                  boost::get(boost::vertex_index_t(), *call_graph),
-                                                                 boost::white_color));
+                                                                 boost::white_color),
+                               [&](vertex u, const CallGraph& g) {
+                                  return other_root_functions.find(Cget_node_info<FunctionInfo, graph>(u, g)->nodeID) !=
+                                         other_root_functions.end();
+                               });
       if(f_list.find(fid) != f_list.end())
       {
          THROW_ASSERT(parent_fid == 0, "Expected single parent root functions.");
