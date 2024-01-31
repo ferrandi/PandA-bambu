@@ -10775,7 +10775,7 @@
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -10864,7 +10864,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -10953,7 +10953,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -11042,7 +11042,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -11131,7 +11131,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -11220,7 +11220,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -11309,7 +11309,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -11397,7 +11397,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -11486,7 +11486,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -11575,7 +11575,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -11664,7 +11664,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -11753,7 +11753,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -11842,7 +11842,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -11931,7 +11931,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -12020,7 +12020,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -12109,7 +12109,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -12198,7 +12198,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -12287,7 +12287,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -12376,7 +12376,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -12465,7 +12465,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -12554,7 +12554,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -12643,7 +12643,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -12732,7 +12732,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -12821,7 +12821,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -12910,7 +12910,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -12999,7 +12999,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -13088,7 +13088,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="INT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire signed [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -20819,7 +20819,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -20908,7 +20908,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -20997,7 +20997,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -21086,7 +21086,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -21175,7 +21175,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -21264,7 +21264,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -21353,7 +21353,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -21441,7 +21441,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -21530,7 +21530,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -21619,7 +21619,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -21708,7 +21708,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -21797,7 +21797,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -21886,7 +21886,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -21975,7 +21975,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -22064,7 +22064,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -22153,7 +22153,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -22242,7 +22242,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -22331,7 +22331,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -22420,7 +22420,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -22509,7 +22509,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -22598,7 +22598,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -22687,7 +22687,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -22776,7 +22776,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -22865,7 +22865,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -22954,7 +22954,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -23043,7 +23043,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),
@@ -23132,7 +23132,7 @@ pmi_dsp_mult #(
             <port_o id="out1" path="ui_mult_expr_FU/out1" dir="OUT">
               <structural_type_descriptor type="UINT" size="1"/>
             </port_o>
-            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
+            <NP_functionality LIBRARY="ui_mult_expr_FU in1 in2 out1 PIPE_PARAMETER" IP_INCLUDE="simulation/verilog/pmi/pmi_dsp_mult.v" VERILOG_PROVIDED="wire [BITSIZE_in1+BITSIZE_in2-1:0] out1_tmp;
 assign out1 = out1_tmp;
 pmi_dsp_mult #(
   .pmi_dataa_width(BITSIZE_in1),

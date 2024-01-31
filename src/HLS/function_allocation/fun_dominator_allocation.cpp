@@ -180,14 +180,20 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
             fun_resources = fun_resources.substr(1);
          }
          const auto splitted = SplitString(fun_resources, "=");
+         auto TM = HLSMgr->get_tree_manager();
          for(auto funid : reached_from_all)
          {
-            auto* decl_node = GetPointer<function_decl>(HLSMgr->get_tree_manager()->GetTreeNode(funid));
+            auto* decl_node = GetPointer<function_decl>(TM->GetTreeNode(funid));
             const auto fname = tree_helper::GetMangledFunctionName(decl_node);
             const auto fu_name = functions::GetFUName(fname, HLSMgr);
-            if(!splitted.empty() &&
-               (fu_name == splitted.at(0) || (splitted.at(0).max_size() > 1 && splitted.at(0).at(0) == '*' &&
-                                              fu_name.find(splitted.at(0).substr(1)) != std::string::npos)))
+            if(fu_name.find(STR_CST_interface_parameter_keyword) != std::string::npos || TM->is_top_function(decl_node))
+            {
+               continue;
+            }
+
+            if(!splitted.empty() && (fu_name == splitted.at(0) || splitted.at(0) == "*" ||
+                                     (splitted.at(0).max_size() > 1 && splitted.at(0).at(0) == '*' &&
+                                      fu_name.find(splitted.at(0).substr(1)) == 0)))
             {
                functions_constrained.insert(funid);
                unsigned num_resources = 0;
@@ -197,7 +203,14 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
                }
                else if(splitted.size() == 2)
                {
-                  num_resources = static_cast<unsigned>(std::stoul(splitted.at(1)));
+                  auto res_num = splitted.at(1);
+                  std::transform(res_num.begin(), res_num.end(), res_num.begin(),
+                                 [](unsigned char c) { return std::tolower(c); });
+                  if(splitted.at(1) == "u")
+                  {
+                     continue;
+                  }
+                  num_resources = static_cast<unsigned>(std::stoul(res_num));
                }
                else
                {
@@ -341,14 +354,16 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
                   HLSMgr->global_resource_constraints.end())
                {
                   auto c = HLSMgr->global_resource_constraints.at(std::make_pair(called_fu_name, WORK_LIBRARY));
-                  if(HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY) != c.first)
+                  auto curr_res_n = HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY);
+                  if(curr_res_n != c.first)
                   {
-                     HLS_C->set_number_fu(called_fu_name, WORK_LIBRARY, c.first);
                      INDENT_OUT_MEX(
                          OUTPUT_LEVEL_MINIMUM, parameters->getOption<int>(OPT_output_level),
                          "---Upgraded function constraints for " +
                              HLSMgr->CGetFunctionBehavior(current_id)->CGetBehavioralHelper()->get_function_name() +
-                             " with " + STR(c.first) + " resources of " + called_fu_name);
+                             " with " + STR(c.first) + " resources of " + called_fu_name + ", before was " +
+                             (curr_res_n == INFINITE_UINT ? "INF" : STR(curr_res_n)));
+                     HLS_C->set_number_fu(called_fu_name, WORK_LIBRARY, c.first);
                   }
                   multiplicity = c.second;
                }

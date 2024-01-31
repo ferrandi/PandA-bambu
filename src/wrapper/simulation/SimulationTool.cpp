@@ -82,18 +82,21 @@ SimulationTool::type_t SimulationTool::to_sim_type(const std::string& str)
    return SimulationTool::UNKNOWN;
 }
 
-SimulationTool::SimulationTool(const ParameterConstRef& _Param, const std::string& _top_fname)
+SimulationTool::SimulationTool(const ParameterConstRef& _Param, const std::string& _top_fname,
+                               const std::string& _inc_dirs)
     : Param(_Param),
       debug_level(Param->getOption<int>(OPT_debug_level)),
       output_level(Param->getOption<unsigned int>(OPT_output_level)),
-      top_fname(_top_fname)
+      top_fname(_top_fname),
+      inc_dirs(_inc_dirs)
 {
 }
 
 SimulationTool::~SimulationTool() = default;
 
 SimulationToolRef SimulationTool::CreateSimulationTool(type_t type, const ParameterConstRef& _Param,
-                                                       const std::string& suffix, const std::string& top_fname)
+                                                       const std::string& suffix, const std::string& top_fname,
+                                                       const std::string& inc_dirs)
 {
    switch(type)
    {
@@ -101,13 +104,13 @@ SimulationToolRef SimulationTool::CreateSimulationTool(type_t type, const Parame
          THROW_ERROR("Simulation tool not specified");
          break;
       case MODELSIM:
-         return SimulationToolRef(new modelsimWrapper(_Param, suffix, top_fname));
+         return SimulationToolRef(new modelsimWrapper(_Param, suffix, top_fname, inc_dirs));
          break;
       case XSIM:
-         return SimulationToolRef(new VIVADO_xsim_wrapper(_Param, suffix, top_fname));
+         return SimulationToolRef(new VIVADO_xsim_wrapper(_Param, suffix, top_fname, inc_dirs));
          break;
       case VERILATOR:
-         return SimulationToolRef(new VerilatorWrapper(_Param, suffix, top_fname));
+         return SimulationToolRef(new VerilatorWrapper(_Param, suffix, top_fname, inc_dirs));
          break;
       default:
          THROW_ERROR("Simulation tool currently not supported");
