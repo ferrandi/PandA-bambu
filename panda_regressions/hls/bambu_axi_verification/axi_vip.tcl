@@ -49,7 +49,7 @@ set_property -name {xsim.elaborate.debug_level} -value {off} -objects [get_files
 set_property -name {xsim.elaborate.relax} -value {false} -objects [get_filesets sim_1]
 set_property -name {xsim.elaborate.mt_level} -value {off} -objects [get_filesets sim_1]
 set_property -name {xsim.elaborate.xelab.more_options} -value "-sv_root $::env(OUT_DIR)/HLS_output/xsim_beh -sv_lib libmdpi -define M64" -objects [get_filesets sim_1]
-set __testbench_pid [exec bash -c "$::env(OUT_DIR)/HLS_output/simulation/testbench |& tee $::env(OUT_DIR)/HLS_output/simulation/testbench.log" &]
+set __testbench_pid [exec bash -c "LD_LIBRARY_PATH=\"\" $::env(OUT_DIR)/HLS_output/simulation/testbench |& tee $::env(OUT_DIR)/HLS_output/simulation/testbench.log" &]
 launch_simulation
 set finished [catch {exec ps -p ${__testbench_pid} >/dev/null}]
 close_sim

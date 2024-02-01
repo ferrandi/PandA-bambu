@@ -31,9 +31,9 @@ while read line; do
     echo "${benchmark_name} failed with error $retval"
     exit $retval
   fi
-  if [ ! -z "$(cat vivado.log | grep ^ERROR:)" ]; then 
+  if [ ! -z "$(cat vivado.log | grep -i '^ERROR:')" ]; then 
     echo "${benchmark_name} failed with following errors:"
-    cat vivado.log | grep --color=never ^ERROR:
+    cat vivado.log | grep --color=never -i '^ERROR:'
     exit 1
   fi
 done < ${script_dir}/bambu_axi_verification_list
