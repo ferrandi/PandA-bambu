@@ -117,7 +117,7 @@ void TestbenchAcknowledgeModuleGenerator::InternalExec(
           << "  .BITSIZE_din(BITSIZE_data)) fifo_write(.clock(clock),\n"
           << "  .setup_port(setup_port),\n"
           << "  .done_port(done_port),\n"
-          << "  .full_n(_full_n)),\n"
+          << "  .full_n(_full_n),\n"
           << "  .write(1'b1),\n"
           << "  .din(" << arg_name << out_suffix << "));\n";
    }
