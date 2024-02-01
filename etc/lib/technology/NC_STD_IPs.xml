@@ -2811,6 +2811,9 @@ endgenerate
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="tb_done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <NP_functionality LIBRARY="TestbenchAcknowledge index" VERILOG_GENERATOR="TestbenchAcknowledgeModuleGenerator"/>
         </component_o>
       </circuit>
@@ -2832,6 +2835,9 @@ endgenerate
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="tb_done_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="TestbenchValid index" VERILOG_GENERATOR="TestbenchValidModuleGenerator"/>
@@ -2857,6 +2863,9 @@ endgenerate
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="tb_done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <NP_functionality LIBRARY="TestbenchOvalid index" VERILOG_GENERATOR="TestbenchOvalidModuleGenerator"/>
         </component_o>
       </circuit>
@@ -2880,6 +2889,9 @@ endgenerate
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="tb_done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <NP_functionality LIBRARY="TestbenchHandshake index" VERILOG_GENERATOR="TestbenchHandshakeModuleGenerator"/>
         </component_o>
       </circuit>
@@ -2901,6 +2913,9 @@ endgenerate
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="tb_done_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="TestbenchAxis index" VERILOG_GENERATOR="TestbenchAxisModuleGenerator"/>
@@ -3113,6 +3128,9 @@ end
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="tb_done_port" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <NP_functionality LIBRARY="TestbenchFifo index" VERILOG_GENERATOR="TestbenchFifoModuleGenerator"/>
         </component_o>
       </circuit>
@@ -3134,6 +3152,9 @@ end
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="tb_done_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="TestbenchNone index" VERILOG_GENERATOR="TestbenchNoneModuleGenerator"/>
@@ -5073,6 +5094,50 @@ begin
   for I in 0 to PORTSIZE_in1-1 loop
     temp_out1 := temp_out1 or in1(((I+1)*BITSIZE_in1)-1 downto (I*BITSIZE_in1));
   end loop;  out1 &lt;= temp_out1;
+end process;
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>and_gate</name>
+      <circuit>
+        <component_o id="and_gate">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2013-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="and_gate"/>
+          <port_vector_o id="in1" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="and_gate in1 out1" VERILOG_PROVIDED="assign out1 = &amp;in1;" VHDL_PROVIDED="begin process(in1)
+  out1 &lt;= and_reduce(in1);
+end process;
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>or_gate</name>
+      <circuit>
+        <component_o id="or_gate">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2013-2023 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="or_gate"/>
+          <port_vector_o id="in1" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="or_gate in1 out1" VERILOG_PROVIDED="assign out1 = |in1;" VHDL_PROVIDED="begin process(in1)
+  out1 &lt;= or_reduce(in1);
 end process;
 "/>
         </component_o>
