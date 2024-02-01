@@ -2811,7 +2811,7 @@ endgenerate
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="tb_done_port" dir="OUT">
+          <port_o id="tb_done_port" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="TestbenchAcknowledge index" VERILOG_GENERATOR="TestbenchAcknowledgeModuleGenerator"/>
@@ -2837,7 +2837,7 @@ endgenerate
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="tb_done_port" dir="OUT">
+          <port_o id="tb_done_port" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="TestbenchValid index" VERILOG_GENERATOR="TestbenchValidModuleGenerator"/>
@@ -2863,7 +2863,7 @@ endgenerate
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="tb_done_port" dir="OUT">
+          <port_o id="tb_done_port" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="TestbenchOvalid index" VERILOG_GENERATOR="TestbenchOvalidModuleGenerator"/>
@@ -2889,7 +2889,7 @@ endgenerate
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="tb_done_port" dir="OUT">
+          <port_o id="tb_done_port" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="TestbenchHandshake index" VERILOG_GENERATOR="TestbenchHandshakeModuleGenerator"/>
@@ -2915,7 +2915,7 @@ endgenerate
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="tb_done_port" dir="OUT">
+          <port_o id="tb_done_port" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="TestbenchAxis index" VERILOG_GENERATOR="TestbenchAxisModuleGenerator"/>
@@ -3128,7 +3128,7 @@ end
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="tb_done_port" dir="OUT">
+          <port_o id="tb_done_port" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="TestbenchFifo index" VERILOG_GENERATOR="TestbenchFifoModuleGenerator"/>
@@ -3154,7 +3154,7 @@ end
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="tb_done_port" dir="OUT">
+          <port_o id="tb_done_port" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="TestbenchNone index" VERILOG_GENERATOR="TestbenchNoneModuleGenerator"/>
