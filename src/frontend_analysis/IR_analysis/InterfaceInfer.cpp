@@ -2085,7 +2085,7 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       const structural_type_descriptorRef rwsize(new structural_type_descriptor("bool", nbitDataSize));
       const structural_type_descriptorRef rwtypeIn(new structural_type_descriptor("bool", info.bitwidth));
       const structural_type_descriptorRef rwtypeOut(new structural_type_descriptor("bool", backEndBitsize));
-      const structural_type_descriptorRef idType(new structural_type_descriptor("bool", 1));
+      const structural_type_descriptorRef idType(new structural_type_descriptor("bool", 6));
       const structural_type_descriptorRef lenType(new structural_type_descriptor("bool", 8));
       const structural_type_descriptorRef sizeType(new structural_type_descriptor("bool", 3));
       const structural_type_descriptorRef burstType(new structural_type_descriptor("bool", 2));

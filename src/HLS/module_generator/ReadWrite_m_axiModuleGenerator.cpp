@@ -174,30 +174,36 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_
       line_count = std::stoull(it->second);
    }
 
-   out << "localparam BITSIZE_address=" << _ports_out[o_awaddr].type_size << ",\n"
+   out << "localparam BITSIZE_address=BITSIZE_" << _ports_in[i_in4].name << ",\n"
        << "  BITSIZE_data=" << _ports_out[o_wdata].type_size << ",\n"
-       << "  BITSIZE_data_size=BITSIZE_data / 8;\n";
+       << "  BITSIZE_data_size=BITSIZE_data/8,\n"
+       << "  BITSIZE_awlen=" << _ports_out[o_awlen].type_size << ",\n"
+       << "  BITSIZE_arlen=" << _ports_out[o_arlen].type_size << ",\n"
+       << "  BITSIZE_awid=" << _ports_out[o_awid].type_size << ",\n"
+       << "  BITSIZE_arid=" << _ports_out[o_arid].type_size << ",\n"
+       << "  BITSIZE_bid=" << _ports_in[i_bid].type_size << ",\n"
+       << "  BITSIZE_rid=" << _ports_in[i_rid].type_size << ";\n\n";
 
    /* No cache, build the AXI controller */
    std::string ip_components;
    if(line_count == 0)
    {
       ip_components = "MinimalAXI4AdapterSingleBeat";
-      out << "MinimalAXI4AdapterSingleBeat #(.BURST_TYPE(" + STR(axi_burst_type) + "),\n"
+      out << "MinimalAXI4AdapterSingleBeat #(.BURST_TYPE(" << axi_burst_type << "),\n"
           << "  .BITSIZE_Mout_addr_ram(BITSIZE_address),\n"
           << "  .BITSIZE_Mout_Wdata_ram(BITSIZE_data),\n"
-          << "  .BITSIZE_Mout_data_ram_size(BITSIZE_in2),\n"
+          << "  .BITSIZE_Mout_data_ram_size(BITSIZE_" << _ports_in[i_in2].name << "),\n"
           << "  .BITSIZE_M_Rdata_ram(BITSIZE_data),\n"
-          << "  .BITSIZE_m_axi_awid(6),\n"
+          << "  .BITSIZE_m_axi_awid(BITSIZE_awid),\n"
           << "  .BITSIZE_m_axi_awaddr(BITSIZE_address),\n"
-          << "  .BITSIZE_m_axi_awlen(8),\n"
+          << "  .BITSIZE_m_axi_awlen(BITSIZE_awlen),\n"
           << "  .BITSIZE_m_axi_wdata(BITSIZE_data),\n"
           << "  .BITSIZE_m_axi_wstrb(BITSIZE_data_size),\n"
-          << "  .BITSIZE_m_axi_bid(6),\n"
-          << "  .BITSIZE_m_axi_arid(6),\n"
+          << "  .BITSIZE_m_axi_bid(BITSIZE_bid),\n"
+          << "  .BITSIZE_m_axi_arid(BITSIZE_arid),\n"
           << "  .BITSIZE_m_axi_araddr(BITSIZE_address),\n"
-          << "  .BITSIZE_m_axi_arlen(8),\n"
-          << "  .BITSIZE_m_axi_rid(6),\n"
+          << "  .BITSIZE_m_axi_arlen(BITSIZE_arlen),\n"
+          << "  .BITSIZE_m_axi_rid(BITSIZE_rid),\n"
           << "  .BITSIZE_m_axi_rdata(BITSIZE_data)) adapter (.M_DataRdy(done_port),\n"
           << "  .M_Rdata_ram(" << _ports_out[o_out1].name << "),\n"
           << "  .m_axi_arid(" << _ports_out[o_arid].name << "),\n"
@@ -318,10 +324,9 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_
       }
 
       ip_components = "IOB_cache_axi";
-      out << "wire [BITSIZE_" << _ports_in[i_in4].name << "-1:$clog2(BITSIZE_" << _ports_in[i_in3].name
-          << " / 8)] addr;\n"
-          << "wire [(BITSIZE_" << _ports_in[i_in3].name << "/8)-1:0] wstrb;\n"
-          << "wire [BITSIZE_" << _ports_in[i_in3].name << "-1:0] rdata;\n"
+      out << "wire [BITSIZE_address-1:$clog2(BITSIZE_data_size)] addr;\n"
+          << "wire [BITSIZE_data_size-1:0] wstrb;\n"
+          << "wire [BITSIZE_data-1:0] rdata;\n"
           << "wire ready;\n"
           << "wire dirty;\n"
           << "reg state, state_next;\n\n";
@@ -334,8 +339,7 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_
           << "assign " << _ports_out[o_awuser].name << " = 0;\n"
           << "assign " << _ports_out[o_awregion].name << " = 0;\n\n"
           << "assign done_port = state == S_IDLE? ready : !dirty;\n"
-          << "assign addr = " << _ports_in[i_in4].name << R"([BITSIZE_)" << _ports_in[i_in4].name
-          << R"(-1:$clog2(BITSIZE_)" << _ports_in[i_in3].name << "/8)];\n"
+          << "assign addr = " << _ports_in[i_in4].name << "[BITSIZE_address-1:$clog2(BITSIZE_data_size)];\n"
           << "assign wstrb = " << _ports_in[i_in1].name << " ? (1 << (" << _ports_in[i_in2].name << "/8)) - 1 : 0;\n"
           << "assign " << _ports_out[o_out1].name << " = done_port ? rdata : 0;\n\n"
           << "always @(*) begin\n"
@@ -351,7 +355,7 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_
           << "    end\n"
           << "  end\n"
           << "end\n\n"
-          << "always @(posedge " << CLOCK_PORT_NAME << " 1RESET_EDGE) begin\n"
+          << "always @(posedge clock 1RESET_EDGE) begin\n"
           << "  state <= state_next;\n"
           << "  if(1RESET_VALUE) begin\n"
           << "    state <= S_IDLE;\n"
@@ -378,66 +382,43 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_
 `endif
       )";
 
-      out << R"(
-IOB_cache_axi #(
-  .FE_ADDR_W(BITSIZE_)"
-          << _ports_in[i_in4].name << R"(),
-  .BE_ADDR_W(BITSIZE_)"
-          << _ports_in[i_in4].name << R"(),
-  .BE_DATA_W()"
-          << be_data_w << R"(),
-  .N_WAYS()"
-          << n_ways << R"(),
-  .LINE_OFF_W()"
-          << line_off_w << R"(),
-  .WORD_OFF_W()"
-          << word_off_w << R"(),
-  .WTBUF_DEPTH_W()"
-          << STR(wtbuf_depth_w) << R"(),
-  .REP_POLICY()"
-          << rep_policy << R"(),
-  .WRITE_POL()"
-          << write_pol << R"(),
-  .AXI_ID(0),
-  .CTRL_CACHE(`_CACHE_CNT),
-  .CTRL_CNT(`_CACHE_CNT),
-  .BURST_TYPE()"
-          << STR(axi_burst_type) << R"(),
-  .BITSIZE_addr(0 + BITSIZE_)"
-          << _ports_in[i_in4].name << R"( - $clog2(BITSIZE_)" << _ports_in[i_in3].name << R"( / 8)),
-  .BITSIZE_wdata(BITSIZE_)"
-          << _ports_in[i_in3].name << R"(),
-  .BITSIZE_wstrb(BITSIZE_)"
-          << _ports_in[i_in3].name << R"( / 8),
-  .BITSIZE_rdata(BITSIZE_)"
-          << _ports_in[i_in3].name << R"(),
-  .BITSIZE_m_axi_awid(1),
-  .BITSIZE_m_axi_awaddr(BITSIZE_)"
-          << _ports_in[i_in4].name << R"(),
-  .BITSIZE_m_axi_awlen(8),
-  .BITSIZE_m_axi_wdata()"
-          << be_data_w << R"(),
-  .BITSIZE_m_axi_wstrb()"
-          << be_data_w << R"( / 8),
-  .BITSIZE_m_axi_bid(1),
-  .BITSIZE_m_axi_arid(1),
-  .BITSIZE_m_axi_araddr(BITSIZE_in4),
-  .BITSIZE_m_axi_arlen(8),
-  .BITSIZE_m_axi_rid(1),
-  .BITSIZE_m_axi_rdata()"
-          << be_data_w << R"()) cache(.addr(addr),
-  .wdata()"
-          << _ports_in[i_in3].name << R"(),
-  .wstrb(wstrb),
-  .rdata(rdata),
-  .ready(ready),
-  )";
-      out << ".valid(" << _ports_in[i_start].name << " && !(" << _ports_in[i_in1].name << " && "
-          << _ports_in[i_in2].name << R"( == 0)),
-  .dirty(dirty),
-  .flush(state == S_FLUSH),
-)";
-      out << "  .m_axi_awready(" << _ports_in[i_awready].name << "),\n"
+      out << "IOB_cache_axi #(.FE_ADDR_W(BITSIZE_address),\n"
+          << "  .BE_ADDR_W(BITSIZE_address),\n"
+          << "  .BE_DATA_W(" << be_data_w << "),\n"
+          << "  .N_WAYS(" << n_ways << "),\n"
+          << "  .LINE_OFF_W(" << line_off_w << "),\n"
+          << "  .WORD_OFF_W(" << word_off_w << "),\n"
+          << "  .WTBUF_DEPTH_W(" << wtbuf_depth_w << "),\n"
+          << "  .REP_POLICY(" << rep_policy << "),\n"
+          << "  .WRITE_POL(" << write_pol << "),\n"
+          << "  .AXI_ID(0),\n"
+          << "  .CTRL_CACHE(`_CACHE_CNT),\n"
+          << "  .CTRL_CNT(`_CACHE_CNT),\n"
+          << "  .BURST_TYPE(" << axi_burst_type << "),\n"
+          << "  .BITSIZE_addr(BITSIZE_address-$clog2(BITSIZE_data_size)),\n"
+          << "  .BITSIZE_wdata(BITSIZE_data),\n"
+          << "  .BITSIZE_wstrb(BITSIZE_data_size),\n"
+          << "  .BITSIZE_rdata(BITSIZE_data),\n"
+          << "  .BITSIZE_m_axi_awid(BITSIZE_awid),\n"
+          << "  .BITSIZE_m_axi_awaddr(BITSIZE_address),\n"
+          << "  .BITSIZE_m_axi_awlen(BITSIZE_awlen),\n"
+          << "  .BITSIZE_m_axi_wdata(" << be_data_w << "),\n"
+          << "  .BITSIZE_m_axi_wstrb(" << be_data_w << " / 8),\n"
+          << "  .BITSIZE_m_axi_bid(BITSIZE_bid),\n"
+          << "  .BITSIZE_m_axi_arid(BITSIZE_arid),\n"
+          << "  .BITSIZE_m_axi_araddr(BITSIZE_address),\n"
+          << "  .BITSIZE_m_axi_arlen(BITSIZE_arlen),\n"
+          << "  .BITSIZE_m_axi_rid(BITSIZE_rid),\n"
+          << "  .BITSIZE_m_axi_rdata(" << be_data_w << ")) cache(.addr(addr),\n"
+          << "  .wdata(" << _ports_in[i_in3].name << "),\n"
+          << "  .wstrb(wstrb),\n"
+          << "  .rdata(rdata),\n"
+          << "  .ready(ready),\n"
+          << "  .valid(" << _ports_in[i_start].name << " && !(" << _ports_in[i_in1].name << " && "
+          << _ports_in[i_in2].name << " == 0)),\n"
+          << "  .dirty(dirty),\n"
+          << "  .flush(state == S_FLUSH),\n"
+          << "  .m_axi_awready(" << _ports_in[i_awready].name << "),\n"
           << "  .m_axi_wready(" << _ports_in[i_wready].name << "),\n"
           << "  .m_axi_bid(" << _ports_in[i_bid].name << "),\n"
           << "  .m_axi_bresp(" << _ports_in[i_bresp].name << "),\n"
