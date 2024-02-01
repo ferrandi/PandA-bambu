@@ -5099,50 +5099,6 @@ end process;
         </component_o>
       </circuit>
     </cell>
-    <cell>
-      <name>and_gate</name>
-      <circuit>
-        <component_o id="and_gate">
-          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2013-2023 Politecnico di Milano</copyright>
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="and_gate"/>
-          <port_vector_o id="in1" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
-          </port_vector_o>
-          <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <NP_functionality LIBRARY="and_gate in1 out1" VERILOG_PROVIDED="assign out1 = &amp;in1;" VHDL_PROVIDED="begin process(in1)
-  out1 &lt;= and_reduce(in1);
-end process;
-"/>
-        </component_o>
-      </circuit>
-    </cell>
-    <cell>
-      <name>or_gate</name>
-      <circuit>
-        <component_o id="or_gate">
-          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2013-2023 Politecnico di Milano</copyright>
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
-          <license>PANDA_LGPLv3</license>
-          <structural_type_descriptor id_type="or_gate"/>
-          <port_vector_o id="in1" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
-          </port_vector_o>
-          <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <NP_functionality LIBRARY="or_gate in1 out1" VERILOG_PROVIDED="assign out1 = |in1;" VHDL_PROVIDED="begin process(in1)
-  out1 &lt;= or_reduce(in1);
-end process;
-"/>
-        </component_o>
-      </circuit>
-    </cell>
     <template>
       <name>DEMUX_GATE</name>
       <circuit>
