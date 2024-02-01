@@ -81,21 +81,25 @@ void TestbenchFifoModuleGenerator::InternalExec(std::ostream& out, structural_ob
    const auto if_ndir = if_dir == port_o::IN ? port_o::OUT : port_o::IN;
    std::string np_library = mod_cir->get_id() + " index";
    std::vector<std::string> ip_components;
-   const auto add_port_parametric = [&](const std::string& suffix, port_o::port_direction dir, unsigned port_size) {
-      const auto port_name = arg_name + suffix;
+   const auto addPort = [&](const std::string& port_name, port_o::port_direction dir, unsigned port_size,
+                            bool isParametric = false) {
       structural_manager::add_port(port_name, dir, mod_cir,
                                    structural_type_descriptorRef(new structural_type_descriptor("bool", port_size)));
-      np_library += " " + port_name;
+      if(isParametric)
+      {
+         np_library += " " + port_name;
+      }
    };
    out << "localparam BITSIZE_data=BITSIZE_" << arg_name << ((if_dir == port_o::IN) ? "_dout" : "_din") << ";\n";
 
    if(if_dir == port_o::IN)
    {
-      add_port_parametric("_dout", if_ndir, 1U);
-      add_port_parametric("_empty_n", if_ndir, 0U);
-      add_port_parametric("_read", if_dir, 0U);
+      addPort(arg_name + "_dout", if_ndir, 1U, true);
+      addPort(arg_name + "_empty_n", if_ndir, 0U);
+      addPort(arg_name + "_read", if_dir, 0U);
       ip_components.push_back("TestbenchFifoRead");
-      out << "TestbenchFifoRead #(.index(index),\n"
+      out << "assign tb_done_port = 1'b1;\n\n"
+          << "TestbenchFifoRead #(.index(index),\n"
           << "  .CHECK_ACK(1),\n"
           << "  .BITSIZE_dout(BITSIZE_data)) fifo_read(.clock(clock),\n"
           << "  .setup_port(setup_port),\n"
@@ -106,15 +110,18 @@ void TestbenchFifoModuleGenerator::InternalExec(std::ostream& out, structural_ob
    }
    else if(if_dir == port_o::OUT)
    {
-      add_port_parametric("_din", if_ndir, 1U);
-      add_port_parametric("_full_n", if_dir, 0U);
-      add_port_parametric("_write", if_ndir, 0U);
+      addPort(arg_name + "_din", if_ndir, 1U, true);
+      addPort(arg_name + "_full_n", if_dir, 0U);
+      addPort(arg_name + "_write", if_ndir, 0U);
       ip_components.push_back("TestbenchFifoWrite");
-      out << "TestbenchFifoWrite #(.index(index),\n"
+      out << "wire _full_n;\n\n"
+          << "assign " << arg_name << "_full_n = _full_n;\n"
+          << "assign tb_done_port = ~_full_n;\n\n"
+          << "TestbenchFifoWrite #(.index(index),\n"
           << "  .BITSIZE_din(BITSIZE_data)) fifo_write(.clock(clock),\n"
           << "  .setup_port(setup_port),\n"
           << "  .done_port(done_port),\n"
-          << "  .full_n(" << arg_name << "_full_n),\n"
+          << "  .full_n(_full_n),\n"
           << "  .write(" << arg_name << "_write),\n"
           << "  .din(" << arg_name << "_din));\n";
    }

@@ -516,14 +516,79 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       add_internal_connection(fsm_start, dut_start);
    }
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Connecting testbench modules...");
+   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Connecting DUT control ports...");
    {
+      const auto has_dataflow =
+          std::any_of(HLSMgr->module_arch->begin(), HLSMgr->module_arch->end(), [](const auto& fsymbol_arch) {
+             return fsymbol_arch.second->attrs.find(FunctionArchitecture::func_dataflow) !=
+                    fsymbol_arch.second->attrs.end();
+          });
+      if(has_dataflow)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Generating dataflow termination logic...");
+         std::vector<structural_objectRef> tb_done_ports;
+         for(const auto& if_obj : if_modules)
+         {
+            const auto tb_done_port = if_obj->find_member("tb_done_port", port_o_K, if_obj);
+            if(tb_done_port)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
+                              "---Considering testbench done port form " + if_obj->get_path());
+               tb_done_ports.push_back(tb_done_port);
+            }
+         }
+         if(tb_done_ports.size())
+         {
+            // Compute logic AND between all dataflow done ports from testbench interface modules
+            const auto tb_done =
+                tb_top->add_module_from_technology_library("tb_done_and", "and_gate", LIBRARY_STD, tb_cir, TechM);
+            const auto tb_done_out = GetPointerS<module>(tb_done)->get_out_port(0);
+            {
+               const auto merge_port = GetPointerS<module>(tb_done)->get_in_port(0);
+               const auto merge_port_o = GetPointerS<port_o>(merge_port);
+               merge_port_o->add_n_ports(static_cast<unsigned int>(tb_done_ports.size()), merge_port);
+               merge_port_o->type_resize(STD_GET_SIZE(tb_done_out->get_typeRef()));
+
+               unsigned int i = 0;
+               for(const auto& tb_done_port : tb_done_ports)
+               {
+                  const auto sig =
+                      tb_top->add_sign("sig_tb_done_" + std::to_string(i), tb_cir, tb_done_port->get_typeRef());
+                  tb_top->add_connection(tb_done_port, sig);
+                  tb_top->add_connection(sig, merge_port_o->get_port(i));
+                  ++i;
+               }
+            }
+
+            // Compute logic OR between dataflow done ports' logic AND and standard DUT done port
+            const auto done_or =
+                tb_top->add_module_from_technology_library("tb_done_port", "or_gate", LIBRARY_STD, tb_cir, TechM);
+            const auto tb_done_port = GetPointerS<module>(done_or)->get_out_port(0);
+            {
+               const auto merge_port = GetPointerS<module>(done_or)->get_in_port(0);
+               const auto merge_port_o = GetPointerS<port_o>(merge_port);
+               merge_port_o->add_n_ports(2U, merge_port);
+               merge_port_o->type_resize(STD_GET_SIZE(tb_done_port->get_typeRef()));
+               add_internal_connection(merge_port_o->get_port(0U), dut_done);
+               {
+                  const auto sig = tb_top->add_sign("sig_tb_done_port", tb_cir, tb_done_out->get_typeRef());
+                  tb_top->add_connection(tb_done_out, sig);
+                  tb_top->add_connection(sig, merge_port_o->get_port(1U));
+               }
+            }
+
+            dut_done = tb_done_port;
+            INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--");
+         }
+      }
+
       const auto dut_reset = dut->find_member(RESET_PORT_NAME, port_o_K, dut);
       THROW_ASSERT(dut_reset, "");
       add_internal_connection(fsm_reset, dut_reset);
       const auto fsm_done = tb_fsm->find_member(DONE_PORT_NAME, port_o_K, tb_fsm);
       add_internal_connection(fsm_done, dut_done);
    }
+   INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Connecting testbench modules...");
    for(const auto& if_obj : if_modules)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Module " + if_obj->get_id());
