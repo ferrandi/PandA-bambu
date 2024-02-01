@@ -83,17 +83,8 @@ bool StorageValueInformationFsm::are_storage_value_compatible(unsigned int stora
    const tree_managerRef TreeM = HLS_mgr->get_tree_manager();
    const auto is_par1 = tree_helper::is_parameter(TreeM, var_stage1.first);
    const auto is_par2 = tree_helper::is_parameter(TreeM, var_stage2.first);
-   if(is_par1)
-   {
-      std::cerr << "param1\n";
-   }
-   if(is_par2)
-   {
-      std::cerr << "param2\n";
-   }
    if((is_par1 && var_stage1.second == 0) || (is_par2 && var_stage2.second == 0))
    {
-      std::cerr << "not compatible because param\n";
       return false;
    }
    else

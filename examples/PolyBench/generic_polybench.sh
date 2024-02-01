@@ -12,13 +12,13 @@ BENCHMARKS_ROOT="${script_dir}/PolyBenchC"
 
 python3 ${script_dir}/../../etc/scripts/test_panda.py --tool=bambu  \
    --args="--configuration-name=${configuration}-float0-c -DDATA_TYPE_IS_FLOAT -C='*__float' ${BATCH_ARGS[*]}"\
-   --args="--configuration-name=${configuration}-float1-u -DDATA_TYPE_IS_FLOAT ${BATCH_ARGS[*]}"\
+   --args="--configuration-name=${configuration}-float1-u -DDATA_TYPE_IS_FLOAT -C='*=u' ${BATCH_ARGS[*]}"\
    --args="--configuration-name=${configuration}-float2-no-unroll-c -DDATA_TYPE_IS_FLOAT --channels-number=1 -fno-unroll-loops -C='*__float' ${BATCH_ARGS[*]}"\
-   --args="--configuration-name=${configuration}-float3-no-unroll-u -DDATA_TYPE_IS_FLOAT --channels-number=1 -fno-unroll-loops ${BATCH_ARGS[*]}"\
+   --args="--configuration-name=${configuration}-float3-no-unroll-u -DDATA_TYPE_IS_FLOAT --channels-number=1 -fno-unroll-loops  -C='*=u' ${BATCH_ARGS[*]}"\
    --args="--configuration-name=${configuration}-float4-no-lp-c -DDATA_TYPE_IS_FLOAT --panda-parameter=LP-BB-list=0 -C='*__float' ${BATCH_ARGS[*]}"\
-   --args="--configuration-name=${configuration}-float5-no-lp-u -DDATA_TYPE_IS_FLOAT --panda-parameter=LP-BB-list=0 ${BATCH_ARGS[*]}"\
+   --args="--configuration-name=${configuration}-float5-no-lp-u -DDATA_TYPE_IS_FLOAT --panda-parameter=LP-BB-list=0  -C='*=u' ${BATCH_ARGS[*]}"\
    --args="--configuration-name=${configuration}-float6-no-unroll-no-lp-c -DDATA_TYPE_IS_FLOAT --channels-number=1 -fno-unroll-loops --panda-parameter=LP-BB-list=0  -C='*__float' ${BATCH_ARGS[*]}"\
-   --args="--configuration-name=${configuration}-float7-no-unroll-no-lp-u -DDATA_TYPE_IS_FLOAT --channels-number=1 -fno-unroll-loops --panda-parameter=LP-BB-list=0 ${BATCH_ARGS[*]}"\
+   --args="--configuration-name=${configuration}-float7-no-unroll-no-lp-u -DDATA_TYPE_IS_FLOAT --channels-number=1 -fno-unroll-loops --panda-parameter=LP-BB-list=0  -C='*=u' ${BATCH_ARGS[*]}"\
    -l${script_dir}/polybench_list \
    -o "out${OUT_SUFFIX}" -b${BENCHMARKS_ROOT} \
    --name="${OUT_SUFFIX}" "$@"

@@ -60,8 +60,8 @@
 
 // constructor
 VerilatorWrapper::VerilatorWrapper(const ParameterConstRef& _Param, const std::string& _suffix,
-                                   const std::string& _top_fname)
-    : SimulationTool(_Param, _top_fname), suffix(_suffix)
+                                   const std::string& _top_fname, const std::string& _inc_dirs)
+    : SimulationTool(_Param, _top_fname, _inc_dirs), suffix(_suffix)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating the VERILATOR wrapper...");
    std::string verilator_beh_dir = SIM_SUBDIR + suffix;
@@ -114,6 +114,11 @@ std::string VerilatorWrapper::GenerateScript(std::ostream& script, const std::st
       else if(cflags.find("-m64") != std::string::npos)
       {
          flags += " +define+__M64";
+      }
+      const auto inc_dir_list = string_to_container<std::vector<std::string>>(inc_dirs, ",");
+      for(const auto& inc : inc_dir_list)
+      {
+         flags += " +incdir+" + inc;
       }
       return flags;
    }();

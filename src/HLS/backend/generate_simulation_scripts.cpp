@@ -129,18 +129,17 @@ DesignFlowStep_Status GenerateSimulationScripts::Exec()
    std::list<std::string> full_list;
    std::copy(HLSMgr->aux_files.begin(), HLSMgr->aux_files.end(), std::back_inserter(full_list));
    std::copy(HLSMgr->hdl_files.begin(), HLSMgr->hdl_files.end(), std::back_inserter(full_list));
-   if(parameters->isOption(OPT_lattice_pmi_tdpbe) && parameters->isOption(OPT_lattice_pmi_mul) &&
-      BackendFlow::DetermineBackendFlowType(HLSMgr->get_HLS_device(), parameters) == BackendFlow::LATTICE_FPGA)
+   std::string inc_dirs;
+   if(BackendFlow::DetermineBackendFlowType(HLSMgr->get_HLS_device(), parameters) == BackendFlow::LATTICE_FPGA)
    {
-      full_list.push_back(parameters->getOption<std::string>(OPT_lattice_pmi_tdpbe));
-      full_list.push_back(parameters->getOption<std::string>(OPT_lattice_pmi_mul));
+      inc_dirs = parameters->getOption<std::string>(OPT_lattice_inc_dirs);
    }
    THROW_ASSERT(HLSMgr->RSim->filename_bench != "", "Testbench not yet set");
    full_list.push_back(HLSMgr->RSim->filename_bench);
 
    HLSMgr->RSim->sim_tool = SimulationTool::CreateSimulationTool(
        SimulationTool::to_sim_type(parameters->getOption<std::string>(OPT_simulator)), parameters, suffix,
-       HLSMgr->CGetFunctionBehavior(top_fun_id)->CGetBehavioralHelper()->GetMangledFunctionName());
+       HLSMgr->CGetFunctionBehavior(top_fun_id)->CGetBehavioralHelper()->GetMangledFunctionName(), inc_dirs);
 
    HLSMgr->RSim->sim_tool->GenerateSimulationScript(top_hls->top->get_circ()->get_id(), full_list);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Generated simulation scripts");

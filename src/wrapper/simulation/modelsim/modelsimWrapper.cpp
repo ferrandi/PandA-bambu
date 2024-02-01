@@ -75,8 +75,8 @@
 
 // constructor
 modelsimWrapper::modelsimWrapper(const ParameterConstRef& _Param, const std::string& _suffix,
-                                 const std::string& _top_fname)
-    : SimulationTool(_Param, _top_fname), suffix(_suffix)
+                                 const std::string& _top_fname, const std::string& _inc_dirs)
+    : SimulationTool(_Param, _top_fname, _inc_dirs), suffix(_suffix)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating the modelsim wrapper...");
    const auto lic_path = std::getenv("LM_LICENSE_FILE");
@@ -124,6 +124,11 @@ std::string modelsimWrapper::GenerateScript(std::ostream& script, const std::str
       if(Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy))
       {
          flags += " +define+GENERATE_VCD_DISCREPANCY";
+      }
+      const auto inc_dir_list = string_to_container<std::vector<std::string>>(inc_dirs, ",");
+      for(const auto& inc : inc_dir_list)
+      {
+         flags += " +incdir+" + inc;
       }
       return flags;
    }();

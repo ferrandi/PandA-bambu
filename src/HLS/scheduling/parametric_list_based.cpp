@@ -814,8 +814,7 @@ bool parametric_list_based::compute_minmaxII(std::list<vertex>& bb_operations, c
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---  minII=" + STR(minII));
 
    std::vector<std::pair<vertex, vertex>> emptyVector;
-   bool stopSearch;
-   exec<false>(Operations, ctrl_steps, 0, emptyVector, stopSearch);
+   exec<false>(Operations, ctrl_steps, 0, emptyVector);
    auto last_cs = HLS->Rsch->get_csteps();
    maxII = from_strongtype_cast<unsigned>(last_cs - ctrl_steps);
 
@@ -836,7 +835,7 @@ bool parametric_list_based::compute_minmaxII(std::list<vertex>& bb_operations, c
 
 template <bool LPBB_predicate>
 bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep current_cycle, unsigned LP_II,
-                                 const std::vector<std::pair<vertex, vertex>>& toBeScheduled, bool& stopSearch)
+                                 const std::vector<std::pair<vertex, vertex>>& toBeScheduled)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Executing parametric_list_based::exec...");
    THROW_ASSERT(Operations.size(), "At least one vertex is expected");
@@ -1342,6 +1341,22 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "            Scheduling of Control Vertex " + GET_NAME(flow_graph, current_vertex) +
                                     " postponed to the next cycle to register the output");
+                  continue;
+               }
+               else if(LPBB_predicate && (curr_vertex_type & TYPE_RET) &&
+                       ((schedule->num_scheduled() - already_sch) == operations_number - 1) &&
+                       ((from_strongtype_cast<unsigned>(current_cycle - initialCycle) % LP_II) != (LP_II - 1)))
+               {
+                  if(black_list.find(fu_type) == black_list.end())
+                  {
+                     black_list.emplace(fu_type, OpVertexSet(flow_graph));
+                  }
+                  black_list.at(fu_type).insert(current_vertex);
+
+                  PRINT_DBG_MEX(
+                      DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                      "            Scheduling of return vertex " + GET_NAME(flow_graph, current_vertex) +
+                          " postponed to the next cycle such that it will be scheduled in the last LP_II step");
                   continue;
                }
                else if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) &&
@@ -1946,12 +1961,6 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
          LPBB_satisfied = true;
       }
    }
-   if(LPBB_predicate && (from_strongtype_cast<unsigned>(current_cycle - initialCycle) + 1) <= LP_II)
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "number of control steps equal to the II " + STR(LP_II));
-      stopSearch = true;
-      return false;
-   }
    /// check if FB edge meet the loop pipelining constraints
    if(LPBB_predicate)
    {
@@ -2534,20 +2543,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
             for(unsigned II = minII; II < maxII; ++II)
             {
                PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "  .trying II=" + STR(II));
-               bool stopSearch = false;
-               auto res_sched = exec<true>(operations, ctrl_steps, II, toBeScheduled, stopSearch);
-               if(stopSearch)
-               {
-                  doLP = false;
-                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                                 "---  Loop pipelining not possible for loop (BB" + STR(BBI->block->number) + ")");
-                  /// revert to the no solution case
-                  for(auto& op : operations)
-                  {
-                     HLS->Rsch->remove_sched(op);
-                  }
-                  break;
-               }
+               auto res_sched = exec<true>(operations, ctrl_steps, II, toBeScheduled);
                if(res_sched)
                {
                   doLP = true;
@@ -2576,8 +2572,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
                INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                               "---  Loop pipelining not possible for loop (BB" + STR(BBI->block->number) + ")");
                std::vector<std::pair<vertex, vertex>> emptyVector;
-               bool stopSearch;
-               exec<false>(operations, ctrl_steps, 0, emptyVector, stopSearch);
+               exec<false>(operations, ctrl_steps, 0, emptyVector);
             }
          }
          else if(FB->is_function_pipelined())
@@ -2588,16 +2583,14 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
                HLS->Rsch->remove_sched(op);
             }
             std::vector<std::pair<vertex, vertex>> emptyVector;
-            bool stopSearch;
-            exec<false>(operations, ctrl_steps, 0, emptyVector, stopSearch);
+            exec<false>(operations, ctrl_steps, 0, emptyVector);
             FB->disable_function_pipelining();
          }
       }
       else
       {
          std::vector<std::pair<vertex, vertex>> emptyVector;
-         bool stopSearch;
-         exec<false>(operations, ctrl_steps, 0, emptyVector, stopSearch);
+         exec<false>(operations, ctrl_steps, 0, emptyVector);
       }
 
       ctrl_steps = HLS->Rsch->get_csteps();
