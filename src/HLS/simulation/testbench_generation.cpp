@@ -541,13 +541,12 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
          {
             // Compute logic AND between all dataflow done ports from testbench interface modules
             const auto tb_done =
-                tb_top->add_module_from_technology_library("tb_done_and", "and_gate", LIBRARY_STD, tb_cir, TechM);
+                tb_top->add_module_from_technology_library("tb_done_and", AND_GATE_STD, LIBRARY_STD, tb_cir, TechM);
             const auto tb_done_out = GetPointerS<module>(tb_done)->get_out_port(0);
             {
                const auto merge_port = GetPointerS<module>(tb_done)->get_in_port(0);
                const auto merge_port_o = GetPointerS<port_o>(merge_port);
                merge_port_o->add_n_ports(static_cast<unsigned int>(tb_done_ports.size()), merge_port);
-               merge_port_o->type_resize(STD_GET_SIZE(tb_done_out->get_typeRef()));
 
                unsigned int i = 0;
                for(const auto& tb_done_port : tb_done_ports)
@@ -562,13 +561,13 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
 
             // Compute logic OR between dataflow done ports' logic AND and standard DUT done port
             const auto done_or =
-                tb_top->add_module_from_technology_library("tb_done_port", "or_gate", LIBRARY_STD, tb_cir, TechM);
+                tb_top->add_module_from_technology_library("tb_done_port", OR_GATE_STD, LIBRARY_STD, tb_cir, TechM);
             const auto tb_done_port = GetPointerS<module>(done_or)->get_out_port(0);
             {
                const auto merge_port = GetPointerS<module>(done_or)->get_in_port(0);
                const auto merge_port_o = GetPointerS<port_o>(merge_port);
                merge_port_o->add_n_ports(2U, merge_port);
-               merge_port_o->type_resize(STD_GET_SIZE(tb_done_port->get_typeRef()));
+
                add_internal_connection(merge_port_o->get_port(0U), dut_done);
                {
                   const auto sig = tb_top->add_sign("sig_tb_done_port", tb_cir, tb_done_out->get_typeRef());
