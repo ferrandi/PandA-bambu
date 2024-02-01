@@ -1,0 +1,3 @@
+bambu_specific_test4/dataflow.cpp --top-fname=dataflow_top --generate-tb=BENCHMARKS_ROOT/bambu_specific_test4/tb_dataflow.cpp --benchmark-name=simple_dataflow
+bambu_specific_test4/dataflow.cpp --top-fname=dataflow_top --generate-tb=BENCHMARKS_ROOT/bambu_specific_test4/tb_dataflow.cpp --benchmark-name=class_dataflow -DUSE_CLASS
+bambu_specific_test4/duplicate.cpp --top-fname=dataflow_top --generate-tb=BENCHMARKS_ROOT/bambu_specific_test4/tb_dataflow.cpp
