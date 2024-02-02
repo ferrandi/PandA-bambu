@@ -151,7 +151,7 @@ class parametric_list_based : public schedulingBaseStep
                                 double& phi_extra_time, double current_starting_time, double setup_hold_time);
    unsigned computeLatestStep(unsigned cs_vertex, const OpGraphConstRef opDFG, vertex first_vertex,
                               const OpVertexSet& Operations, const ScheduleRef schedule, unsigned int level,
-                              std::list<vertex>& phi_list);
+                              std::list<vertex>& phi_list, double connectionOffset);
 
    /// The used metric
    const ParametricListBased_Metric parametric_list_based_metric;
