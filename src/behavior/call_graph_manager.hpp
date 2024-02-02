@@ -165,11 +165,6 @@ class CallGraphManager
    ~CallGraphManager();
 
    /**
-    * Return the call graph
-    */
-   CallGraphRef GetCallGraph();
-
-   /**
     * Return an acyclic version of the call graph
     */
    CallGraphConstRef CGetAcyclicCallGraph() const;
@@ -245,7 +240,7 @@ class CallGraphManager
     * @param fid Function id
     * @return unsigned int Parent root function id
     */
-   unsigned int GetRootFunctionFrom(unsigned int fid) const;
+   unsigned int GetRootFunction(unsigned int fid) const;
 
    /**
     * Returns the library functions called by the root functions

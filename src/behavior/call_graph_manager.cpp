@@ -629,7 +629,7 @@ CustomOrderedSet<unsigned int> CallGraphManager::GetReachedFunctionsFrom(unsigne
    return f_list;
 }
 
-unsigned int CallGraphManager::GetRootFunctionFrom(unsigned int fid) const
+unsigned int CallGraphManager::GetRootFunction(unsigned int fid) const
 {
    if(root_functions.find(fid) != root_functions.end())
    {
@@ -656,7 +656,11 @@ unsigned int CallGraphManager::GetRootFunctionFrom(unsigned int fid) const
       if(f_list.find(fid) != f_list.end())
       {
          THROW_ASSERT(parent_fid == 0, "Expected single parent root functions.");
+#if HAVE_ASSERTS
          parent_fid = root_fid;
+#else
+         return root_fid;
+#endif
       }
    }
    return parent_fid;
