@@ -68,6 +68,7 @@ CompleteCallGraph::ComputeFrontendRelationships(const DesignFlowStep::Relationsh
       {
          relationships.insert(std::make_pair(CALL_GRAPH_BUILTIN_CALL, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(COMPUTE_IMPLICIT_CALLS, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(DATAFLOW_CG_EXT, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
          if(parameters->isOption(OPT_hls_div) && parameters->getOption<std::string>(OPT_hls_div) != "none")
          {

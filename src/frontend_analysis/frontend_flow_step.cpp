@@ -221,6 +221,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #endif
       case(CREATE_TREE_MANAGER):
          return "CreateTreeManager";
+      case DATAFLOW_CG_EXT:
+         return "DataflowCGExt";
       case(DEAD_CODE_ELIMINATION):
          return "DeadCodeElimination";
       case(DEAD_CODE_ELIMINATION_IPA):

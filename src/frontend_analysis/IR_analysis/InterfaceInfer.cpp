@@ -203,10 +203,11 @@ InterfaceInfer::ComputeFrontendRelationships(const DesignFlowStep::RelationshipT
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(USE_COUNTING, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(PARM2SSA, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(DATAFLOW_CG_EXT, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(PARM2SSA, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(USE_COUNTING, ALL_FUNCTIONS));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
