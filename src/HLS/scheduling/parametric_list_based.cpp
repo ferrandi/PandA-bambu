@@ -1994,8 +1994,8 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                               "starting computeLatestStep from vertex=" + GET_NAME(flow_graph, first_vertex) +
                                   " to vertex" + GET_NAME(flow_graph, last_vertex));
                std::list<vertex> phi_list;
-               auto latest_cs =
-                   computeLatestStep(cs_last_vertex, opDFG, first_vertex, Operations, schedule, 0, phi_list);
+               auto latest_cs = computeLatestStep(cs_last_vertex, opDFG, first_vertex, Operations, schedule, 0,
+                                                  phi_list, HLS->allocation_information->getConnectionOffset());
                for(auto p : phi_list)
                {
                   schedule->remove_sched(p);
@@ -2044,7 +2044,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
 unsigned parametric_list_based::computeLatestStep(unsigned cs_last_vertex, const OpGraphConstRef opDFG,
                                                   vertex first_vertex, const OpVertexSet& Operations,
                                                   const ScheduleRef schedule, unsigned level,
-                                                  std::list<vertex>& phi_list)
+                                                  std::list<vertex>& phi_list, double connectionOffset)
 {
    OutEdgeIterator eo, eo_end;
    auto latest_cs = cs_last_vertex;
@@ -2058,7 +2058,7 @@ unsigned parametric_list_based::computeLatestStep(unsigned cs_last_vertex, const
          const auto target_index = opDFG->CGetOpNodeInfo(target)->GetNodeId();
          const auto target_starting_time = schedule->GetStartingTime(target_index);
          const auto target_ending_time = schedule->GetEndingTime(target_index);
-         if((target_ending_time - target_starting_time) < 10 * EPSILON)
+         if((target_ending_time - target_starting_time) < (connectionOffset + 10 * EPSILON))
          {
             if(level == 1 && GET_TYPE(flow_graph, target) & (TYPE_PHI | TYPE_VPHI))
             {
@@ -2073,11 +2073,11 @@ unsigned parametric_list_based::computeLatestStep(unsigned cs_last_vertex, const
                {
                   number_fu = HLS->allocation_information->min_number_of_resources(target);
                }
-               else if(number_fu == INFINITE_UINT)
+               if(number_fu == INFINITE_UINT)
                {
                   auto currentCSTarget = from_strongtype_cast<unsigned>(schedule->get_cstep(target).second);
-                  auto latestCSTarget =
-                      computeLatestStep(cs_last_vertex, opDFG, target, Operations, schedule, level + 1, phi_list);
+                  auto latestCSTarget = computeLatestStep(cs_last_vertex, opDFG, target, Operations, schedule,
+                                                          level + 1, phi_list, connectionOffset);
                   if(latestCSTarget > currentCSTarget)
                   {
                      if(level == 0 && GET_TYPE(flow_graph, target) & (TYPE_PHI | TYPE_VPHI))

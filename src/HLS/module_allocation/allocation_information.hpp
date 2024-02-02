@@ -1042,6 +1042,15 @@ class AllocationInformation : public HLSFunctionIR
     * @return true if they can be chained
     */
    bool CanBeChained(const vertex first_statement, const vertex second_statement) const;
+
+   /**
+    * @brief getConnectionOffset
+    * @return the connection offset
+    */
+   double getConnectionOffset() const
+   {
+      return std::max(connection_offset, get_setup_hold_time());
+   }
 };
 using AllocationInformationRef = refcount<AllocationInformation>;
 using AllocationInformationConstRef = refcount<const AllocationInformation>;
