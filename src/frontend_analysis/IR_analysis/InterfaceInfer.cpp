@@ -802,7 +802,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
    for(auto it = HLSMgr->module_arch->cbegin(); it != HLSMgr->module_arch->cend();)
    {
       const auto fnode = TM->GetFunction(it->first);
-      if(!fnode || top_functions.find(GET_INDEX_CONST_NODE(fnode)) == top_functions.end())
+      if(!fnode || it->second->attrs.empty())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "Erase function architecture for function " + it->first);
