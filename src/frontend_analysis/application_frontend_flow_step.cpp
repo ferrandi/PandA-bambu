@@ -91,6 +91,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case COMMUTATIVE_EXPR_RESTRUCTURING:
       case COND_EXPR_RESTRUCTURING:
       case CSE_STEP:
+      case DATAFLOW_CG_EXT:
       case DEAD_CODE_ELIMINATION:
       case DETERMINE_MEMORY_ACCESSES:
       case DOM_POST_DOM_COMPUTATION:

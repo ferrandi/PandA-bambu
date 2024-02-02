@@ -85,6 +85,7 @@
 #include "create_address_translation.hpp"
 #endif
 #include "create_tree_manager.hpp"
+#include "dataflow_cg_ext.hpp"
 #include "dead_code_elimination.hpp"
 #include "dead_code_eliminationIPA.hpp"
 #include "determine_memory_accesses.hpp"
@@ -208,6 +209,7 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
       case COMMUTATIVE_EXPR_RESTRUCTURING:
       case COND_EXPR_RESTRUCTURING:
       case CSE_STEP:
+      case DATAFLOW_CG_EXT:
       case DEAD_CODE_ELIMINATION:
       case DETERMINE_MEMORY_ACCESSES:
       case DOM_POST_DOM_COMPUTATION:
@@ -411,6 +413,7 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
       case COMMUTATIVE_EXPR_RESTRUCTURING:
       case COND_EXPR_RESTRUCTURING:
       case CSE_STEP:
+      case DATAFLOW_CG_EXT:
       case DEAD_CODE_ELIMINATION:
       case DETERMINE_MEMORY_ACCESSES:
       case DOM_POST_DOM_COMPUTATION:
@@ -591,6 +594,10 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
       case CSE_STEP:
       {
          return DesignFlowStepRef(new CSE(parameters, AppM, function_id, design_flow_manager.lock()));
+      }
+      case DATAFLOW_CG_EXT:
+      {
+         return DesignFlowStepRef(new dataflow_cg_ext(parameters, AppM, function_id, design_flow_manager.lock()));
       }
       case DEAD_CODE_ELIMINATION:
       {
