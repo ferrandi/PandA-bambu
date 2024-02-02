@@ -88,7 +88,7 @@ void Write_handshakeModuleGenerator::InternalExec(std::ostream& out, structural_
    THROW_ASSERT(_ports_out.size() >= o_last, "");
 
    const auto bundle_name = mod->get_id().substr(0, mod->get_id().find(STR_CST_interface_parameter_keyword));
-   const auto top_fid = HLSMgr->CGetCallGraphManager()->GetRootFunctionFrom(function_id);
+   const auto top_fid = HLSMgr->CGetCallGraphManager()->GetRootFunction(function_id);
    const auto top_fname = HLSMgr->CGetFunctionBehavior(top_fid)->CGetBehavioralHelper()->GetMangledFunctionName();
    const auto& iface_attrs = HLSMgr->module_arch->GetArchitecture(top_fname)->ifaces.at(bundle_name);
 
