@@ -736,12 +736,22 @@ class tree_manipulation
    /**
     * @brief Execute function call inlining of given call statement (call graph must be recomputed after inlining)
     *
-    * @param call_stmt call statement to inline
-    * @param block block containing the call statement (list_of_stmts is modified during the call)
-    * @param fd function declaration of the calling function (body->list_of_bloc is modified during the call)
+    * @param call_stmt tree node of the call statement to inline
+    * @param caller_node caller function tree node
     * @return unsigned int exit basic block number where statements after inlined call have been moved
     */
-   unsigned int InlineFunctionCall(const tree_nodeRef& call_stmt, const blocRef& block, function_decl* fd);
+   unsigned int InlineFunctionCall(const tree_nodeRef& call_node, const tree_nodeRef& caller_node);
+
+   /**
+    * @brief Perform function call versioning
+    *
+    * @param call_node Call statement tree node
+    * @param caller_node Caller function tree node
+    * @param version_suffix Suffix applied to the versioned function name
+    * @return bool true if versioning happened, false if function was already versioned
+    */
+   bool VersionFunctionCall(const tree_nodeRef& call_node, const tree_nodeRef& caller_node,
+                            const std::string& version_suffix);
 };
 
 using tree_manipulationRef = refcount<tree_manipulation>;
