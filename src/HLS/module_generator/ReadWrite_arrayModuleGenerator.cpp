@@ -90,7 +90,7 @@ void ReadWrite_arrayModuleGenerator::InternalExec(std::ostream& out, structural_
                                                   const std::vector<ModuleGenerator::parameter>& /* _ports_inout */)
 {
    const auto bundle_name = mod->get_id().substr(0, mod->get_id().find(STR_CST_interface_parameter_keyword));
-   const auto top_fid = HLSMgr->CGetCallGraphManager()->GetRootFunctionFrom(function_id);
+   const auto top_fid = HLSMgr->CGetCallGraphManager()->GetRootFunction(function_id);
    const auto top_fname = HLSMgr->CGetFunctionBehavior(top_fid)->CGetBehavioralHelper()->GetMangledFunctionName();
    const auto func_arch = HLSMgr->module_arch->GetArchitecture(top_fname);
    THROW_ASSERT(func_arch, "Expected function architecture for function " + top_fname);
