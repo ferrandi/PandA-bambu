@@ -253,7 +253,8 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    const auto TM = AppM->get_tree_manager();
-   const auto fd = GetPointerS<function_decl>(TM->GetTreeNode(function_id));
+   const auto fnode = TM->CGetTreeReindex(function_id);
+   const auto fd = GetPointerS<function_decl>(GET_NODE(fnode));
    THROW_ASSERT(fd->body, "");
    const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
    bool modified = false;
@@ -289,82 +290,43 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "Inlining required for call statement " + GET_CONST_NODE(stmt)->ToString());
-                     tree_man->InlineFunctionCall(stmt, bb, fd);
+                     tree_man->InlineFunctionCall(stmt, fnode);
                      AppM->RegisterTransformation(GetName(), nullptr);
+                     modified = true;
                   }
                   else if(opt_type == FunctionOptType::VERSION)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "Versioning required for call statement " + GET_CONST_NODE(stmt)->ToString());
-                     const auto call_node = GET_CONST_NODE(stmt);
-                     tree_nodeRef called_fn = nullptr;
-                     tree_nodeRef ret_val = nullptr;
-                     std::vector<tree_nodeRef> const* args = nullptr;
-                     if(call_node->get_kind() == gimple_call_K)
-                     {
-                        const auto gc = GetPointerS<const gimple_call>(call_node);
-                        called_fn = gc->fn;
-                        args = &gc->args;
-                     }
-                     else if(call_node->get_kind() == gimple_assign_K)
-                     {
-                        const auto ga = GetPointerS<const gimple_assign>(call_node);
-                        const auto ce = GetPointer<const call_expr>(GET_CONST_NODE(ga->op1));
-                        THROW_ASSERT(ce, "Assign statement does not contain a function call: " + ga->ToString());
-                        called_fn = ce->fn;
-                        args = &ce->args;
-                        ret_val = ga->op0;
-                     }
-                     else
-                     {
-                        THROW_UNREACHABLE("Unsupported call statement: " + call_node->ToString());
-                     }
-                     if(GET_CONST_NODE(called_fn)->get_kind() == addr_expr_K)
-                     {
-                        called_fn = GetPointerS<const unary_expr>(GET_CONST_NODE(called_fn))->op;
-                     }
-                     THROW_ASSERT(GET_CONST_NODE(called_fn)->get_kind() == function_decl_K,
-                                  "Call statement should address a function declaration");
+                     const auto version_suffix = [&]() -> std::string {
+                        const auto call_stmt = GET_CONST_NODE(stmt);
+                        if(call_stmt->get_kind() == gimple_call_K)
+                        {
+                           const auto gc = GetPointerS<const gimple_call>(call_stmt);
+                           return __arg_suffix(gc->args);
+                        }
+                        else if(call_stmt->get_kind() == gimple_assign_K)
+                        {
+                           const auto ga = GetPointerS<const gimple_assign>(call_stmt);
+                           const auto ce = GetPointer<const call_expr>(GET_CONST_NODE(ga->op1));
+                           return __arg_suffix(ce->args);
+                        }
+                        THROW_UNREACHABLE("Unsupported call statement: " + call_stmt->get_kind_text() + " " +
+                                          STR(stmt));
 
-                     const auto version_suffix = __arg_suffix(*args);
-                     if(ends_with(tree_helper::GetFunctionName(TM, called_fn), version_suffix))
+                        return "";
+                     }();
+                     const auto _modified = tree_man->VersionFunctionCall(stmt, fnode, version_suffix);
+                     if(_modified)
                      {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call already versioned...");
-                        continue;
-                     }
-                     const auto version_fn = tree_man->CloneFunction(called_fn, version_suffix);
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call before versioning : " + STR(stmt));
-                     if(ret_val)
-                     {
-                        const auto has_args =
-                            !GetPointer<const function_decl>(GET_CONST_NODE(version_fn))->list_of_args.empty();
-                        const auto ce = tree_man->CreateCallExpr(
-                            version_fn, has_args ? *args : std::vector<tree_nodeRef>(), BUILTIN_SRCP);
-                        const auto ga = GetPointerS<const gimple_assign>(call_node);
-                        AppM->GetCallGraphManager()->RemoveCallPoint(function_id, called_fn->index, stmt->index);
-                        TM->ReplaceTreeNode(stmt, ga->op1, ce);
-                        CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, version_fn->index,
-                                                                stmt->index, FunctionEdgeInfo::CallType::direct_call,
-                                                                DEBUG_LEVEL_NONE);
                         AppM->RegisterTransformation(GetName(), stmt);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---Call after versioning  : " + STR(stmt));
-                     }
-                     else
-                     {
-                        const auto version_call =
-                            tree_man->create_gimple_call(version_fn, *args, function_id, BUILTIN_SRCP);
-                        bb->Replace(stmt, version_call, true, AppM);
-                        AppM->RegisterTransformation(GetName(), version_call);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---Call after versioning  : " + STR(version_call));
+                        modified = true;
                      }
                   }
                   else
                   {
                      THROW_UNREACHABLE("Unknown function call optimization type: " + STR(opt_type));
                   }
-                  modified = true;
                }
                else
                {
@@ -406,10 +368,9 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
       const auto function_v = CGM->GetVertex(function_id);
       const auto call_count = [&]() -> size_t {
          size_t call_points = 0u;
-         InEdgeIterator it, it_end;
-         for(boost::tie(it, it_end) = boost::in_edges(function_v, *CG); it != it_end; ++it)
+         BOOST_FOREACH(EdgeDescriptor ie, boost::in_edges(function_v, *CG))
          {
-            const auto caller_info = CG->CGetFunctionEdgeInfo(*it);
+            const auto caller_info = CG->CGetFunctionEdgeInfo(ie);
             call_points += static_cast<size_t>(caller_info->direct_call_points.size());
             call_points += static_cast<size_t>(caller_info->indirect_call_points.size());
             call_points += static_cast<size_t>(caller_info->function_addresses.size());

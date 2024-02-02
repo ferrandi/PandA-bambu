@@ -43,20 +43,16 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-/// Header include
 #include "tree_manipulation.hpp"
 
-#include <algorithm> // for find
-#include <boost/range/adaptor/reversed.hpp>
-
-#include "Parameter.hpp"           // for Parameter
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_VERY_PEDANTIC
-#include "exceptions.hpp"          // for THROW_ASSERT, THROW_ERROR
-#include "math_function.hpp"       // for resize_to_1_8_16_32_64_128_256
-#include "string_manipulation.hpp" // for STR GET_CLASS
-
-/// tree includes
+#include "Parameter.hpp"
+#include "application_manager.hpp"
+#include "call_graph_manager.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
 #include "ext_tree_node.hpp"
+#include "math_function.hpp"
+#include "string_manipulation.hpp"
 #include "token_interface.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
@@ -64,6 +60,10 @@
 #include "tree_node.hpp"
 #include "tree_node_dup.hpp"
 #include "tree_reindex.hpp"
+
+#include <boost/range/adaptor/reversed.hpp>
+
+#include <algorithm>
 #include <iostream>
 
 unsigned int tree_manipulation::goto_label_unique_id = 0;
@@ -2804,32 +2804,31 @@ tree_nodeRef tree_manipulation::CloneFunction(const tree_nodeRef& tn, const std:
    return TreeM->GetTreeReindex(clone_fd);
 }
 
-unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt, const blocRef& block,
-                                                   function_decl* fd)
+unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_node, const tree_nodeRef& caller_node)
 {
-   THROW_ASSERT(call_stmt->get_kind() == tree_reindex_K, "");
-   const auto call_node = GET_CONST_NODE(call_stmt);
+   THROW_ASSERT(call_node->get_kind() == tree_reindex_K, "");
+   const auto call_stmt = GET_CONST_NODE(call_node);
    tree_nodeRef fn;
    tree_nodeRef ret_val = nullptr;
    std::vector<tree_nodeRef> const* args;
-   if(call_node->get_kind() == gimple_call_K)
+   if(call_stmt->get_kind() == gimple_call_K)
    {
-      const auto gc = GetPointerS<const gimple_call>(call_node);
+      const auto gc = GetPointerS<const gimple_call>(call_stmt);
       fn = gc->fn;
       args = &gc->args;
    }
-   else if(call_node->get_kind() == gimple_assign_K)
+   else if(call_stmt->get_kind() == gimple_assign_K)
    {
-      const auto ga = GetPointerS<const gimple_assign>(call_node);
+      const auto ga = GetPointerS<const gimple_assign>(call_stmt);
       const auto ce = GetPointer<const call_expr>(GET_CONST_NODE(ga->op1));
-      THROW_ASSERT(ce, "Assign statement does not contain a function call: " + ga->ToString());
+      THROW_ASSERT(ce, "Assign statement does not contain a function call: " + STR(call_node));
       fn = ce->fn;
       args = &ce->args;
       ret_val = ga->op0;
    }
    else
    {
-      THROW_UNREACHABLE("Unsupported call statement: " + call_node->ToString());
+      THROW_UNREACHABLE("Unsupported call statement: " + STR(call_node));
    }
    if(GET_CONST_NODE(fn)->get_kind() == addr_expr_K)
    {
@@ -2838,7 +2837,9 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt
    THROW_ASSERT(GET_CONST_NODE(fn)->get_kind() == function_decl_K,
                 "Call statement should address a function declaration");
 
+   const auto fd = GetPointer<function_decl>(GET_NODE(caller_node));
    auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+   const auto& block = sl->list_of_bloc.at(GetPointer<gimple_node>(call_node)->bb_index);
    const auto splitBBI = sl->list_of_bloc.rbegin()->first + 1;
    THROW_ASSERT(!sl->list_of_bloc.count(splitBBI), "");
    const auto splitBB = sl->list_of_bloc[splitBBI] = blocRef(new bloc(splitBBI));
@@ -2871,7 +2872,7 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt
    }
    {
       auto it = std::find_if(block->CGetStmtList().begin(), block->CGetStmtList().end(), [&](const tree_nodeRef& tn) {
-         return GET_INDEX_CONST_NODE(tn) == GET_INDEX_CONST_NODE(call_stmt);
+         return GET_INDEX_CONST_NODE(tn) == GET_INDEX_CONST_NODE(call_node);
       });
       THROW_ASSERT(it != block->CGetStmtList().end(), "");
       ++it;
@@ -2882,7 +2883,7 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt
          block->RemoveStmt(mv_stmt, AppM);
          splitBB->PushBack(mv_stmt, AppM);
       }
-      block->RemoveStmt(call_stmt, AppM);
+      block->RemoveStmt(call_node, AppM);
    }
 
    const auto max_loop_id = [&]() {
@@ -3027,4 +3028,71 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_stmt
       sl->list_of_bloc.erase(splitBB->number);
    }
    return splitBB->number;
+}
+
+bool tree_manipulation::VersionFunctionCall(const tree_nodeRef& call_node, const tree_nodeRef& caller_node,
+                                            const std::string& version_suffix)
+{
+   const auto call_stmt = GET_CONST_NODE(call_node);
+   tree_nodeRef called_fn = nullptr;
+   tree_nodeRef ret_val = nullptr;
+   std::vector<tree_nodeRef> const* args = nullptr;
+   if(call_stmt->get_kind() == gimple_call_K)
+   {
+      const auto gc = GetPointerS<const gimple_call>(call_stmt);
+      called_fn = gc->fn;
+      args = &gc->args;
+   }
+   else if(call_stmt->get_kind() == gimple_assign_K)
+   {
+      const auto ga = GetPointerS<const gimple_assign>(call_stmt);
+      const auto ce = GetPointer<const call_expr>(GET_CONST_NODE(ga->op1));
+      THROW_ASSERT(ce, "Assign statement does not contain a function call: " + STR(call_node));
+      called_fn = ce->fn;
+      args = &ce->args;
+      ret_val = ga->op0;
+   }
+   else
+   {
+      THROW_UNREACHABLE("Unsupported call statement: " + call_stmt->get_kind_text() + " " + STR(call_node));
+   }
+   if(GET_CONST_NODE(called_fn)->get_kind() == addr_expr_K)
+   {
+      called_fn = GetPointerS<const unary_expr>(GET_CONST_NODE(called_fn))->op;
+   }
+   THROW_ASSERT(GET_CONST_NODE(called_fn)->get_kind() == function_decl_K,
+                "Call statement should address a function declaration");
+
+   if(ends_with(tree_helper::GetFunctionName(TreeM, called_fn), version_suffix))
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call already versioned...");
+      return false;
+   }
+   const auto version_fn = CloneFunction(called_fn, version_suffix);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call before versioning : " + STR(call_node));
+   const auto caller_id = GET_INDEX_CONST_NODE(caller_node);
+   if(ret_val)
+   {
+      const auto has_args = !GetPointer<const function_decl>(GET_CONST_NODE(version_fn))->list_of_args.empty();
+      const auto ce = CreateCallExpr(version_fn, has_args ? *args : std::vector<tree_nodeRef>(), BUILTIN_SRCP);
+      const auto ga = GetPointerS<const gimple_assign>(call_stmt);
+      CustomUnorderedSet<unsigned int> already_visited;
+      AppM->GetCallGraphManager()->RemoveCallPoint(caller_id, GET_INDEX_CONST_NODE(called_fn),
+                                                   GET_INDEX_CONST_NODE(call_node));
+      TreeM->ReplaceTreeNode(call_node, ga->op1, ce);
+      CallGraphManager::addCallPointAndExpand(already_visited, AppM, caller_id, GET_INDEX_CONST_NODE(version_fn),
+                                              GET_INDEX_CONST_NODE(call_node), FunctionEdgeInfo::CallType::direct_call,
+                                              DEBUG_LEVEL_NONE);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call after versioning  : " + STR(call_node));
+   }
+   else
+   {
+      const auto version_call = create_gimple_call(version_fn, *args, caller_id, BUILTIN_SRCP);
+      const auto caller_fd = GetPointer<function_decl>(GET_NODE(caller_node));
+      const auto call_bbi = GetPointer<gimple_node>(call_stmt)->bb_index;
+      const auto& call_bb = GetPointer<statement_list>(GET_NODE(caller_fd->body))->list_of_bloc.at(call_bbi);
+      call_bb->Replace(call_node, version_call, true, AppM);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call after versioning  : " + STR(version_call));
+   }
+   return true;
 }
