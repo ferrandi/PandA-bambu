@@ -1157,7 +1157,7 @@ end
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="OUT">
-            <structural_type_descriptor type="BOOL" size="1" vector_size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="TestbenchFSM RESFILE RESET_ACTIVE RESET_CYCLES CLOCK_PERIOD MAX_SIM_CYCLES" VERILOG_PROVIDED="`ifdef VERILATOR
 timeunit 1ps;
@@ -1412,19 +1412,19 @@ end"/>
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
           </port_o>
           <port_o id="Mout_back_pressure" dir="OUT" is_memory="1" is_master="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Sout_DataRdy" dir="IN" is_memory="1" is_slave="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="Sout_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
           </port_o>
           <port_o id="S_oe_ram" dir="OUT" is_memory="1" is_slave="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="S_we_ram" dir="OUT" is_memory="1" is_slave="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1"/>
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="S_addr_ram" dir="OUT" is_memory="1" is_slave="1" is_addr_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
