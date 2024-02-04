@@ -110,7 +110,11 @@ struct InterfaceInfer::interface_info
    unsigned long long factor;
    datatype type;
 
-   interface_info(const std::string& _arg_id, const std::string& _interface_fname, bool fixed_size)
+   FunctionArchitecture::parm_attrs& parm_attrs;
+   FunctionArchitecture::iface_attrs& iface_attrs;
+
+   interface_info(const std::string& _arg_id, const std::string& _interface_fname, bool fixed_size,
+                  FunctionArchitecture::parm_attrs& _parm_attrs, FunctionArchitecture::iface_attrs& _iface_attrs)
        : _fixed_size(fixed_size),
          name(""),
          arg_id(_arg_id),
@@ -118,7 +122,9 @@ struct InterfaceInfer::interface_info
          alignment(1U),
          bitwidth(0ULL),
          factor(1ULL),
-         type(datatype::generic)
+         type(datatype::generic),
+         parm_attrs(_parm_attrs),
+         iface_attrs(_iface_attrs)
    {
    }
 
@@ -184,6 +190,14 @@ struct InterfaceInfer::interface_info
       }
    }
 };
+
+static std::string get_decl_name(tree_nodeRef tn)
+{
+   const auto dn = GetPointer<const decl_node>(GET_CONST_NODE(tn));
+   THROW_ASSERT(dn, "Expected decl_node.");
+   THROW_ASSERT(dn->name, "Expected declaration name.");
+   return GetPointer<const identifier_node>(GET_CONST_NODE(dn->name))->strg;
+}
 
 InterfaceInfer::InterfaceInfer(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager,
                                const ParameterConstRef _parameters)
@@ -266,6 +280,29 @@ bool InterfaceInfer::HasToBeExecuted() const
    return !already_executed;
 }
 
+std::vector<unsigned int> GetSortedRoots(const CallGraphManagerConstRef& CGM)
+{
+   std::vector<unsigned int> sorted_roots;
+
+   const auto CG = CGM->CGetCallGraph();
+   std::vector<vertex> sorted_cg;
+   sorted_cg.reserve(boost::num_vertices(*CG));
+   boost::topological_sort(*CG, std::back_inserter(sorted_cg));
+   auto root_fid = CGM->GetRootFunctions();
+   for(auto v : sorted_cg)
+   {
+      const auto fid = CGM->get_function(v);
+      auto r_it = root_fid.find(fid);
+      if(r_it != root_fid.end())
+      {
+         root_fid.erase(r_it);
+         sorted_roots.push_back(fid);
+      }
+   }
+
+   return sorted_roots;
+}
+
 DesignFlowStep_Status InterfaceInfer::Exec()
 {
    const auto HLSMgr = GetPointer<HLS_manager>(AppM);
@@ -273,15 +310,16 @@ DesignFlowStep_Status InterfaceInfer::Exec()
    const auto TM = AppM->get_tree_manager();
    const auto CGM = AppM->CGetCallGraphManager();
    const auto CG = CGM->CGetCallGraph();
-   auto top_functions = CGM->GetRootFunctions();
+   const auto sorted_roots = GetSortedRoots(CGM);
+
    std::set<unsigned int> modified;
    const auto add_to_modified = [&](const tree_nodeRef& tn) {
       modified.insert(GET_INDEX_CONST_NODE(GetPointer<gimple_node>(GET_CONST_NODE(tn))->scpe));
    };
 
-   for(const auto& top_id : top_functions)
+   for(const auto root_id : sorted_roots)
    {
-      const auto fnode = TM->CGetTreeReindex(top_id);
+      const auto fnode = TM->CGetTreeReindex(root_id);
       const auto fd = GetPointer<const function_decl>(GET_CONST_NODE(fnode));
       const auto fname = tree_helper::GetMangledFunctionName(fd);
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Analyzing function " + fname);
@@ -356,8 +394,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
           func_arch->attrs.find(FunctionArchitecture::func_dataflow)->second == "module";
       if(is_dataflow_module)
       {
-         const auto top_v = CGM->GetVertex(top_id);
-         BOOST_FOREACH(EdgeDescriptor call, boost::in_edges(top_v, *CG))
+         const auto root_v = CGM->GetVertex(root_id);
+         BOOST_FOREACH(EdgeDescriptor call, boost::in_edges(root_v, *CG))
          {
             const auto edge_info = CG->CGetFunctionEdgeInfo(call);
             THROW_ASSERT(edge_info->function_addresses.empty() && edge_info->indirect_call_points.empty(),
@@ -398,7 +436,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      if(GET_CONST_NODE(base_var)->get_kind() == parm_decl_K)
                      {
                         func_arch->ifaces[current_bundle].at(FunctionArchitecture::iface_mode) = "default";
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                                        "---Parameter " + parm_attr->second.at(FunctionArchitecture::parm_port) +
                                            " forwarded from caller function");
                         ++idx;
@@ -471,11 +509,9 @@ DesignFlowStep_Status InterfaceInfer::Exec()
       std::map<std::string, TreeNodeSet> bundle_vdefs;
       for(const auto& arg : fd->list_of_args)
       {
-         const auto arg_pd = GetPointerS<const parm_decl>(GET_CONST_NODE(arg));
          const auto arg_id = GET_INDEX_NODE(arg);
-         const auto& arg_type = arg_pd->type;
-         THROW_ASSERT(GetPointer<const identifier_node>(GET_CONST_NODE(arg_pd->name)), "unexpected condition");
-         const auto& arg_name = GetPointerS<const identifier_node>(GET_CONST_NODE(arg_pd->name))->strg;
+         const auto arg_name = get_decl_name(arg);
+         const auto arg_type = tree_helper::CGetType(arg);
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Parameter @" + STR(arg_id) + " " + arg_name);
          THROW_ASSERT(func_arch->parms.find(arg_name) != func_arch->parms.end(),
                       "Not matched parameter name: " + arg_name);
@@ -512,7 +548,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
          }
          else if(interface_type != "default")
          {
-            const auto arg_ssa_id = AppM->getSSAFromParm(top_id, arg_id);
+            const auto arg_ssa_id = AppM->getSSAFromParm(root_id, arg_id);
             const auto arg_ssa = TM->GetTreeReindex(arg_ssa_id);
             THROW_ASSERT(GET_CONST_NODE(arg_ssa)->get_kind() == ssa_name_K, "");
             if(GetPointerS<const ssa_name>(GET_CONST_NODE(arg_ssa))->CGetUseStmts().empty())
@@ -533,7 +569,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             if(tree_helper::IsPointerType(arg_type))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Is a pointer type");
-               interface_info info(arg_name, fname, interface_type != "m_axi");
+               interface_info info(arg_name, fname, interface_type != "m_axi", parm_attrs, iface_attrs);
                info.update(arg_ssa, parm_attrs.at(FunctionArchitecture::parm_typename), parameters);
 
                std::list<tree_nodeRef> writeStmt;
@@ -944,13 +980,46 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
             return static_cast<size_t>(-1);
          }(par_index);
          THROW_ASSERT(call_fd->list_of_args.size() > par_index, "unexpected condition");
-         const auto call_arg_id = GET_INDEX_CONST_NODE(call_fd->list_of_args[par_index]);
+         const auto called_param = call_fd->list_of_args.at(par_index);
 
-         const auto call_arg_ssa_id = AppM->getSSAFromParm(call_fd->index, call_arg_id);
+         const auto call_arg_ssa_id = AppM->getSSAFromParm(call_fd->index, GET_INDEX_CONST_NODE(called_param));
          const auto call_arg_ssa = TM->CGetTreeReindex(call_arg_ssa_id);
          THROW_ASSERT(GET_CONST_NODE(call_arg_ssa)->get_kind() == ssa_name_K, "");
          if(GetPointerS<const ssa_name>(GET_CONST_NODE(call_arg_ssa))->CGetUseStmts().size())
          {
+            const auto call_fsymbol = tree_helper::GetMangledFunctionName(call_fd);
+            const auto call_arch = GetPointerS<HLS_manager>(AppM)->module_arch->GetArchitecture(call_fsymbol);
+            if(call_arch)
+            {
+               // Update function architecture information on called function
+               const auto called_pname = get_decl_name(called_param);
+               const auto called_bname = call_arch->parms.at(called_pname).at(FunctionArchitecture::parm_bundle);
+#if HAVE_ASSERTS
+               const auto ecount =
+#endif
+                   call_arch->parms.erase(called_pname);
+               THROW_ASSERT(ecount, "Expected parameter information for parameter " + called_pname + " in function " +
+                                        call_fsymbol);
+               const auto is_bundle_used =
+                   std::any_of(call_arch->parms.begin(), call_arch->parms.end(), [&](const auto& name_attrs) {
+                      return name_attrs.second.at(FunctionArchitecture::parm_bundle) == called_bname;
+                   });
+               if(!is_bundle_used)
+               {
+                  call_arch->ifaces.erase(called_bname);
+               }
+               const auto& pname = info.parm_attrs.at(FunctionArchitecture::parm_port);
+               const auto& bname = info.parm_attrs.at(FunctionArchitecture::parm_bundle);
+               THROW_ASSERT(call_arch->parms.find(pname) == call_arch->parms.end(),
+                            "Duplicate parameter name " + pname + " in " + call_fsymbol + ".");
+               THROW_ASSERT(call_arch->ifaces.find(bname) == call_arch->ifaces.end(),
+                            "Duplicate interface bundle name " + bname + " in " + call_fsymbol + ".");
+               GetPointer<parm_decl>(GET_NODE(called_param))->name =
+                   tree_manipulation(TM, parameters, AppM).create_identifier_node(pname);
+               call_arch->parms[pname] = info.parm_attrs;
+               call_arch->ifaces[bname] = info.iface_attrs;
+            }
+
             /// propagate design interfaces
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                            "-->Pointer forwarded as function argument " + STR(par_index));
