@@ -23,21 +23,9 @@ void SimpleSystem::top(ac_channel<int>& in, ac_channel<int>& out)
    add.compute(mid, out);
 }
 
+static SimpleSystem sys;
+
 void dataflow_top(ac_channel<int>& in, ac_channel<int>& out)
 {
-#ifdef USE_CLASS
-   static SimpleSystem sys;
-
    sys.top(in, out);
-#else
-#pragma HLS dataflow
-
-   static test::AddBlock<10> add;
-   static test::MulBlock mul;
-
-   static ac_channel<int> mid;
-
-   mul.compute(in, mid);
-   add.compute(mid, out);
-#endif
 }
