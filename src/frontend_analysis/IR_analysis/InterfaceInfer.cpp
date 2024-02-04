@@ -1245,6 +1245,9 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
             THROW_ASSERT(gc->args.size() == 2, "unexpected condition");
          }
       }
+      THROW_ASSERT(!valid_ptr || (tree_helper::IsPointerType(valid_ptr) &&
+                                  tree_helper::IsBooleanType(tree_helper::CGetPointedType(valid_ptr))),
+                   "Valid type must be bool pointer");
       THROW_ASSERT(!gn->memdef && !gn->memuse, "");
       THROW_ASSERT(gn->vdef, "");
       const auto vdef = gn->vdef;
@@ -1271,34 +1274,32 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
 
       // Mask and cast read data
       const auto retval = GetPointerS<const gimple_assign>(GET_CONST_NODE(new_call))->op0;
-      const auto be_mask = tree_man->create_binary_operation(
-          ret_type, retval, TM->CreateUniqueIntegerCst((APInt(1) << data_size) - 1, ret_type), BUILTIN_SRCP,
-          bit_and_expr_K);
-      const auto ga_mask = tree_man->CreateGimpleAssign(ret_type, nullptr, nullptr, be_mask, fd->index, BUILTIN_SRCP);
+      auto ga_mask = tree_man->CreateNopExpr(retval, out_type, nullptr, nullptr, fd->index);
       curr_bb->PushBefore(ga_mask, stmt, AppM);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  MASK: " + ga_mask->ToString());
-      const auto data_mask = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_mask))->op0;
+      auto data_mask = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_mask))->op0;
+      if(tree_helper::IsRealType(data_type))
+      {
+         const auto vc = tree_man->create_unary_operation(data_type, data_mask, BUILTIN_SRCP, view_convert_expr_K);
+         ga_mask = tree_man->CreateGimpleAssign(data_type, nullptr, nullptr, vc, fd->index, BUILTIN_SRCP);
+         curr_bb->PushBefore(ga_mask, stmt, AppM);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  VIEW: " + ga_mask->ToString());
+         data_mask = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_mask))->op0;
+      }
 
       tree_nodeRef last_stmt;
       if(ret_call)
       {
-         const auto nop_node = tree_man->create_unary_operation(data_type, data_mask, BUILTIN_SRCP, nop_expr_K);
-         const auto ga_data = tree_man->create_gimple_modify_stmt(stmt_op0, nop_node, fd->index, BUILTIN_SRCP);
-         curr_bb->PushBefore(ga_data, stmt, AppM);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  DATA: " + ga_data->ToString());
-         last_stmt = ga_data;
+         TM->ReplaceTreeNode(ga_mask, data_mask, stmt_op0);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---   FIX: " + ga_mask->ToString());
+         last_stmt = ga_mask;
       }
       else
       {
-         const auto ga_nop = tree_man->CreateNopExpr(data_mask, out_type, nullptr, nullptr, fd->index);
-         curr_bb->PushBefore(ga_nop, stmt, AppM);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  NOP: " + ga_nop->ToString());
-         const auto ga_nop_var_ptr = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_nop))->op0;
-
          const auto data_ptr_type = tree_helper::CGetType(data_ptr);
          const auto data_ref = tree_man->create_binary_operation(
              data_type, data_ptr, TM->CreateUniqueIntegerCst(0, data_ptr_type), BUILTIN_SRCP, mem_ref_K);
-         const auto ga_store = tree_man->create_gimple_modify_stmt(data_ref, ga_nop_var_ptr, fd->index, BUILTIN_SRCP);
+         const auto ga_store = tree_man->create_gimple_modify_stmt(data_ref, data_mask, fd->index, BUILTIN_SRCP);
          if(valid_var)
          {
             auto newSSAVdef = tree_man->create_ssa_name(tree_nodeRef(), tree_helper::CGetType(vdef), tree_nodeRef(),
@@ -1341,22 +1342,14 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
          curr_bb->PushBefore(ga_vshift, stmt, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---VSHIFT: " + ga_vshift->ToString());
          const auto v_shift = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_vshift))->op0;
-         const auto be_vmask = tree_man->create_binary_operation(
-             ret_type, v_shift, TM->CreateUniqueIntegerCst(1, ret_type), BUILTIN_SRCP, bit_and_expr_K);
-         const auto ga_vmask =
-             tree_man->CreateGimpleAssign(ret_type, nullptr, nullptr, be_vmask, fd->index, BUILTIN_SRCP);
-         curr_bb->PushBefore(ga_vmask, stmt, AppM);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- VMASK: " + ga_vmask->ToString());
-         const auto v_mask = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_vmask))->op0;
-         const auto valid_ptr_type = tree_man->GetPointerType(tree_man->GetBooleanType());
-         THROW_ASSERT(tree_helper::IsPointerType(valid_ptr_type), "unexpected condition");
-         const auto valid_type = tree_helper::CGetPointedType(valid_ptr_type);
-         const auto ga_valid = tree_man->CreateNopExpr(v_mask, valid_type, nullptr, nullptr, fd->index);
+         const auto valid_type = tree_helper::CGetType(valid_ptr);
+         const auto valid_ptd_type = tree_helper::CGetPointedType(valid_ptr);
+         const auto ga_valid = tree_man->CreateNopExpr(v_shift, valid_ptd_type, nullptr, nullptr, fd->index);
          curr_bb->PushBefore(ga_valid, stmt, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- VALID: " + ga_valid->ToString());
          const auto valid_ref = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_valid))->op0;
          const auto valid_memref = tree_man->create_binary_operation(
-             valid_type, valid_ptr, TM->CreateUniqueIntegerCst(0, valid_ptr_type), BUILTIN_SRCP, mem_ref_K);
+             valid_ptd_type, valid_ptr, TM->CreateUniqueIntegerCst(0, valid_type), BUILTIN_SRCP, mem_ref_K);
          const auto ga_valid_store =
              tree_man->create_gimple_modify_stmt(valid_memref, valid_ref, fd->index, BUILTIN_SRCP);
          curr_bb->Replace(stmt, ga_valid_store, true, AppM);
@@ -1536,6 +1529,14 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  LOAD: " + ga_load->ToString());
          data_obj = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_load))->op0;
          lastStmt = ga_load;
+      }
+      else if(tree_helper::IsRealType(data_type))
+      {
+         const auto vc = tree_man->create_unary_operation(data_type, data_obj, BUILTIN_SRCP, view_convert_expr_K);
+         const auto ga_vc = tree_man->CreateGimpleAssign(out_type, nullptr, nullptr, vc, fd->index, BUILTIN_SRCP);
+         curr_bb->PushBefore(ga_vc, stmt, AppM);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  VIEW: " + ga_vc->ToString());
+         data_obj = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_vc))->op0;
       }
 
       std::vector<tree_nodeRef> args;
