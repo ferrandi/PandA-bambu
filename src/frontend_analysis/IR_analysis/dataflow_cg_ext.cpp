@@ -47,6 +47,7 @@
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
 #include "dbgPrintHelper.hpp"
+#include "dead_code_elimination.hpp"
 #include "function_behavior.hpp"
 #include "hls_manager.hpp"
 #include "tree_helper.hpp"
@@ -71,6 +72,7 @@ dataflow_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::Relationship
       {
          relationships.insert(std::make_pair(DATAFLOW_CG_EXT, CALLING_FUNCTIONS));
          relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
@@ -92,6 +94,23 @@ dataflow_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::Relationship
 bool dataflow_cg_ext::HasToBeExecuted() const
 {
    return bb_version == 0 && FunctionFrontendFlowStep::HasToBeExecuted();
+}
+
+static void CleanVirtuals(const tree_managerRef& TM, const tree_nodeRef& call_stmt)
+{
+   const auto gn = GetPointerS<gimple_node>(GET_NODE(call_stmt));
+   if(gn->vdef)
+   {
+      dead_code_elimination::kill_vdef(TM, gn->vdef);
+      gn->vdef = nullptr;
+   }
+   std::for_each(gn->vuses.begin(), gn->vuses.end(),
+                 [&](auto& it) { GetPointer<ssa_name>(GET_NODE(it))->RemoveUse(call_stmt); });
+   gn->vuses.clear();
+   std::for_each(gn->vovers.begin(), gn->vovers.end(),
+                 [&](auto& it) { GetPointer<ssa_name>(GET_NODE(it))->RemoveUse(call_stmt); });
+   gn->vovers.clear();
+   THROW_ASSERT(!gn->memdef && !gn->memuse, "Unexpected condition");
 }
 
 DesignFlowStep_Status dataflow_cg_ext::InternalExec()
@@ -138,12 +157,17 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
       const auto fnode = TM->CGetTreeReindex(function_id);
       std::vector<unsigned int> call_points(++call_info->direct_call_points.begin(),
                                             call_info->direct_call_points.end());
+      {
+         const auto first_call = TM->CGetTreeReindex(*call_info->direct_call_points.begin());
+         CleanVirtuals(TM, first_call);
+      }
       for(auto call_id : call_points)
       {
          const auto call_node = TM->CGetTreeReindex(call_id);
          const auto module_suffix = "_" + std::to_string(call_id);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Clone module " + tsymbol + " -> " + tsymbol + module_suffix);
+         CleanVirtuals(TM, call_node);
          tree_man.VersionFunctionCall(call_node, fnode, module_suffix);
          const auto version_symbol = tsymbol + module_suffix;
          const auto version_fnode = TM->GetFunction(version_symbol);

@@ -52,7 +52,6 @@
 #include "constant_strings.hpp"
 #include "copyrights_strings.hpp"
 #include "dbgPrintHelper.hpp"
-#include "dead_code_elimination.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "function_behavior.hpp"
@@ -381,20 +380,6 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                {
                   THROW_UNREACHABLE("Unexpected call statement.");
                }
-
-               const auto gn = GetPointerS<gimple_node>(GET_NODE(call_stmt));
-               if(gn->vdef)
-               {
-                  dead_code_elimination::kill_vdef(TM, gn->vdef);
-                  gn->vdef = nullptr;
-               }
-               std::for_each(gn->vuses.begin(), gn->vuses.end(),
-                             [&](auto& it) { GetPointer<ssa_name>(GET_NODE(it))->RemoveUse(call_stmt); });
-               gn->vuses.clear();
-               std::for_each(gn->vovers.begin(), gn->vovers.end(),
-                             [&](auto& it) { GetPointer<ssa_name>(GET_NODE(it))->RemoveUse(call_stmt); });
-               gn->vovers.clear();
-               THROW_ASSERT(!gn->memdef && !gn->memuse, "Unexpected condition");
 
                size_t idx = 0;
                for(const auto& arg : *args)
