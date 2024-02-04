@@ -531,7 +531,7 @@ void allocation::add_proxy_function_wrapper(const std::string& library_name, tec
                                             const std::string& orig_fun_name)
 {
    const std::string wrapped_fu_name = WRAPPED_PROXY_PREFIX + orig_fun_name;
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - adding proxy function wrapper " + wrapped_fu_name);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - adding proxy function wrapper " + wrapped_fu_name);
    structural_managerRef structManager_obj = GetPointer<functional_unit>(techNode_obj)->CM;
    structural_objectRef fu_obj = structManager_obj->get_circ();
    auto* fu_module = GetPointer<module>(fu_obj);
@@ -645,8 +645,8 @@ void allocation::add_proxy_function_wrapper(const std::string& library_name, tec
    TechM->add_resource(PROXY_LIBRARY, wrapped_fu_name, CM);
    fu_obj->set_owner(wrapper_top);
    GetPointer<module>(wrapper_top)->add_internal_object(fu_obj);
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 " - Created proxy wrapper " + wrapped_fu_name + " and added to library " + PROXY_LIBRARY);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  " - Created proxy wrapper " + wrapped_fu_name + " and added to library " + PROXY_LIBRARY);
 
    auto wrapper_tn = TechM->get_fu(wrapped_fu_name, PROXY_LIBRARY);
    auto* wrapper_fu = GetPointer<functional_unit>(wrapper_tn);
@@ -879,7 +879,7 @@ void allocation::add_proxy_function_module(const HLS_constraintsRef HLS_C, techn
                                            const std::string& orig_fun_name)
 {
    const std::string proxied_fu_name = PROXY_PREFIX + orig_fun_name;
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - adding proxied function " + proxied_fu_name);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - adding proxied function " + proxied_fu_name);
    structural_managerRef structManager_obj = GetPointer<functional_unit>(techNode_obj)->CM;
    structural_objectRef fu_obj = structManager_obj->get_circ();
    auto* fu_module = GetPointer<module>(fu_obj);
@@ -1052,8 +1052,8 @@ void allocation::add_proxy_function_module(const HLS_constraintsRef HLS_C, techn
    orig_np_library.replace(0, orig_fun_name.size(), proxied_fu_name);
    CM->add_NP_functionality(top, NP_functionality::LIBRARY, orig_np_library);
    TechM->add_resource(PROXY_LIBRARY, proxied_fu_name, CM);
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 " - Created proxy module " + proxied_fu_name + " and added to library " + PROXY_LIBRARY);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  " - Created proxy module " + proxied_fu_name + " and added to library " + PROXY_LIBRARY);
 
    auto proxy_tn = TechM->get_fu(proxied_fu_name, PROXY_LIBRARY);
    auto* proxy_fu = GetPointer<functional_unit>(proxy_tn);
@@ -1114,8 +1114,8 @@ void allocation::add_tech_constraint(technology_nodeRef cur_fu, unsigned int tec
    }
    else
    {
-      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                    "Constrained " + STR(pos) + "=" + cur_fu->get_name() + "->" + STR(tech_constrain_value));
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                     "Constrained " + STR(pos) + "=" + cur_fu->get_name() + "->" + STR(tech_constrain_value));
       allocation_information->tech_constraints.push_back(tech_constrain_value);
    }
 }
@@ -1157,10 +1157,10 @@ bool allocation::check_templated_units(double clock_period, node_kind_prec_infoR
                      "---Not support required precision " + STR(required_prec) + "(" + fu_template_parameters + ")");
       return true;
    }
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "- required_prec: \"" + required_prec);
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "- template_suffix: \"" + template_suffix + "\"");
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "- fu_template_parameters: \"" + fu_template_parameters + "\"");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "- required_prec: \"" + required_prec);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "- template_suffix: \"" + template_suffix + "\"");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "- fu_template_parameters: \"" + fu_template_parameters + "\"");
    std::string pipeline_id = get_compliant_pipelined_unit(
        clock_period, curr_op->pipe_parameters, current_fu, curr_op->get_name(), library->get_library_name(),
        template_suffix, node_info->input_prec.size() > 1 ? node_info->input_prec[1] : node_info->input_prec[0]);
@@ -1895,14 +1895,14 @@ DesignFlowStep_Status allocation::InternalExec()
          {
             allocation_information->precision_map[current_size] = 0;
          }
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                       "  . Operation " + current_op + " mapped onto " + current_fu->get_name() +
-                           ", found in library " + TechM->get_library(current_op));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "  . Operation " + current_op + " mapped onto " + current_fu->get_name() +
+                            ", found in library " + TechM->get_library(current_op));
       }
       // Constrained FUs
       else if(binding_constraints.find(GET_NAME(g, v)) != binding_constraints.end())
       {
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  . Current node is under constraints");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  . Current node is under constraints");
          const auto& [fu_name, constraint] = binding_constraints.at(GET_NAME(g, v));
          const auto& [fu_library, fu_index] = constraint;
          const auto key = ENCODE_FU_LIB(fu_name, fu_library);
@@ -2158,10 +2158,10 @@ DesignFlowStep_Status allocation::InternalExec()
                }
                else if(curr_op->time_m->get_cycles() >= 1)
                {
-                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                "Functional unit " + current_fu->get_name() +
-                                    " compliant with the given clock period " + STR(clock_period) + " stage period " +
-                                    STR(allocation_information->time_m_stage_period(curr_op)));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "Functional unit " + current_fu->get_name() +
+                                     " compliant with the given clock period " + STR(clock_period) + " stage period " +
+                                     STR(allocation_information->time_m_stage_period(curr_op)));
                }
 
                if(GetPointer<functional_unit>(current_fu)->fu_template_name.size())
@@ -2186,7 +2186,7 @@ DesignFlowStep_Status allocation::InternalExec()
                                              ->exist_NP_functionality(NP_functionality::VHDL_GENERATOR));
                if(has_to_be_generated)
                {
-                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Unit has to be specialized.");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Unit has to be specialized.");
                   const ModuleGeneratorManagerRef modGen(new ModuleGeneratorManager(HLSMgr, parameters));
                   const auto varargs_fu = GetPointer<module>(structManager_obj->get_circ())->is_var_args();
                   if(varargs_fu)
@@ -2292,7 +2292,7 @@ DesignFlowStep_Status allocation::InternalExec()
                {
                   functionalUnitName = specialized_fuName;
                   techMap = fu_list.find(new_fu.at(functionalUnitName));
-                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Specialized unit: " + functionalUnitName);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Specialized unit: " + functionalUnitName);
                   if(techMap != fu_list.end() && techMap->second.find(max_prec) != techMap->second.end() &&
                      techMap->second.find(max_prec)->second.find(constant_id) !=
                          techMap->second.find(max_prec)->second.end())
@@ -2301,10 +2301,10 @@ DesignFlowStep_Status allocation::InternalExec()
                   }
                   else
                   {
-                     PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                   "Insert into list of unit to add: " + functionalUnitName + " prec=" + STR(max_prec) +
-                                       " constant_id=" + STR(std::get<0>(constant_id)) + "-" +
-                                       STR(std::get<1>(constant_id)));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                    "Insert into list of unit to add: " + functionalUnitName +
+                                        " prec=" + STR(max_prec) + " constant_id=" + STR(std::get<0>(constant_id)) +
+                                        "-" + STR(std::get<1>(constant_id)));
                      fu_list[new_fu.find(functionalUnitName)->second][max_prec][constant_id] = current_id;
                      allocation_information->precision_map[current_id] = max_prec;
                      if(fu_channels_type == CHANNELS_TYPE_MEM_ACC_NN && fu_memory_ctrl_type.size())
@@ -2324,8 +2324,9 @@ DesignFlowStep_Status allocation::InternalExec()
                            auto multiplicity = GetPointer<module>(fuUnitModule)->get_multi_unit_multiplicity();
                            if(multiplicity)
                            {
-                              PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                            "Added multiplicity of " + STR(multiplicity) + " to " + functionalUnitName);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                             "Added multiplicity of " + STR(multiplicity) + " to " +
+                                                 functionalUnitName);
                               set_number_channels(specializedId, multiplicity);
                            }
                         }
@@ -2370,10 +2371,10 @@ DesignFlowStep_Status allocation::InternalExec()
                   }
                }
 
-               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "    . Match found for vertex: " + GET_NAME(g, vert));
-               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                             "      . Adding candidate FU: " + functionalUnitName + " for operation: " + current_op +
-                                 " in position " + STR(specializedId));
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "    . Match found for vertex: " + GET_NAME(g, vert));
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                              "      . Adding candidate FU: " + functionalUnitName + " for operation: " + current_op +
+                                  " in position " + STR(specializedId));
                vertex_analysed.insert(vert);
                allocation_information
                    ->node_id_to_fus[std::pair<unsigned int, std::string>(vert_node_id, vert_node_operation)]
@@ -2410,8 +2411,8 @@ DesignFlowStep_Status allocation::InternalExec()
       }
       for(auto& iter_new_fu : new_fu)
       {
-         PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                       "Adding functional unit: " + iter_new_fu.first + " in " + lib_name);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "Adding functional unit: " + iter_new_fu.first + " in " + lib_name);
          TechM->add(iter_new_fu.second, lib_name);
       }
       new_fu.clear();
@@ -2764,7 +2765,7 @@ void allocation::IntegrateTechnologyLibraries()
    }
    for(const auto& l : HLSMgr->Rmem->get_function_vars(funId))
    {
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - analyzing variable " + STR(l.first));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - analyzing variable " + STR(l.first));
       const auto& var = l.first;
       technology_nodeRef current_fu;
       unsigned int n_ports = 1;
@@ -2911,9 +2912,9 @@ void allocation::IntegrateTechnologyLibraries()
       }
 
       unsigned int current_size = allocation_information->get_number_fu_types();
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    " - allocating unit " + current_fu->get_name() + " for variable " +
-                        FB->CGetBehavioralHelper()->PrintVariable(l.first) + " in position " + STR(current_size));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     " - allocating unit " + current_fu->get_name() + " for variable " +
+                         FB->CGetBehavioralHelper()->PrintVariable(l.first) + " in position " + STR(current_size));
       allocation_information->list_of_FU.push_back(current_fu);
       if(HLSMgr->Rmem->is_sds_var(var) && HLSMgr->Rmem->is_read_only_variable(var) &&
          (is_async_var ||
@@ -2954,7 +2955,7 @@ void allocation::IntegrateTechnologyLibraries()
    {
       for(const auto& proxied_var_id : HLSMgr->Rmem->get_proxied_internal_variables(funId))
       {
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - analyzing proxied variable " + STR(proxied_var_id));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - analyzing proxied variable " + STR(proxied_var_id));
          technology_nodeRef current_fu;
          unsigned int n_ports = 1;
          if(channels_type == MemoryAllocation_ChannelsType::MEM_ACC_11)
@@ -3054,10 +3055,10 @@ void allocation::IntegrateTechnologyLibraries()
             THROW_ERROR("type of channel based organization not yet supported");
          }
          unsigned int current_size = allocation_information->get_number_fu_types();
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                       " - allocating unit " + current_fu->get_name() + " for variable " +
-                           FB->CGetBehavioralHelper()->PrintVariable(proxied_var_id) + " in position " +
-                           STR(current_size));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        " - allocating unit " + current_fu->get_name() + " for variable " +
+                            FB->CGetBehavioralHelper()->PrintVariable(proxied_var_id) + " in position " +
+                            STR(current_size));
          allocation_information->list_of_FU.push_back(current_fu);
          allocation_information->tech_constraints.push_back(n_ports);
          set_number_channels(current_size, n_ports);
@@ -3076,7 +3077,7 @@ void allocation::IntegrateTechnologyLibraries()
    {
       for(const auto& shared_fu_name : HLSMgr->Rfuns->get_shared_functions(funId))
       {
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - adding proxy function wrapper " + shared_fu_name);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - adding proxy function wrapper " + shared_fu_name);
          const auto library_name = TechM->get_library(shared_fu_name);
          if(library_name.size())
          {
@@ -3123,8 +3124,8 @@ void allocation::IntegrateTechnologyLibraries()
             HLS_C->set_number_fu(shared_fu_name, PROXY_LIBRARY, 1);
             /// allocate it
             unsigned int current_size = allocation_information->get_number_fu_types();
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                          " - allocating unit " + wrapper_tn->get_name() + " in position " + STR(current_size));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           " - allocating unit " + wrapper_tn->get_name() + " in position " + STR(current_size));
             allocation_information->list_of_FU.push_back(wrapper_tn);
             allocation_information->tech_constraints.push_back(1);
             allocation_information->id_to_fu_names[current_size] =
@@ -3143,8 +3144,8 @@ void allocation::IntegrateTechnologyLibraries()
    {
       for(const auto& original_proxied_fu_name : HLSMgr->Rfuns->get_proxied_shared_functions(funId))
       {
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                       " - adding proxy function module " + original_proxied_fu_name);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        " - adding proxy function module " + original_proxied_fu_name);
          const std::string library_name = TechM->get_library(original_proxied_fu_name);
          if(library_name.size())
          {
