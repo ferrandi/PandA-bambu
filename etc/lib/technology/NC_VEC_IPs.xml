@@ -8,7 +8,7 @@
       <circuit>
         <component_o id="vec_bit_field_ref_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2004-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="vec_bit_field_ref_FU"/>
@@ -66,7 +66,7 @@ endgenerate"
       <circuit>
         <component_o id="ui_vec_bit_field_ref_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2004-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_vec_bit_field_ref_FU"/>
@@ -114,7 +114,7 @@ endgenerate
       <circuit>
         <component_o id="BIvector_converter_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2017-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2017-2024 Politecnico di Milano</copyright>
           <authors>Marco Lattuada &lt;marco_lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="BIvector_converter_FU"/>
@@ -147,7 +147,7 @@ end process;
       <circuit>
         <component_o id="BUvector_converter_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2017-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2017-2024 Politecnico di Milano</copyright>
           <authors>Marco Lattuada &lt;marco_lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="BUvector_converter_FU"/>
@@ -180,7 +180,7 @@ end process;
       <circuit>
         <component_o id="UBvector_converter_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2021-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2021-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="UBvector_converter_FU"/>
@@ -213,7 +213,7 @@ end process;
       <circuit>
         <component_o id="IIvector_converter_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2021-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2021-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IIvector_converter_FU"/>
@@ -257,7 +257,7 @@ endgenerate" VHDL_PROVIDED="begin
       <circuit>
         <component_o id="UUvector_converter_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2021-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2021-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="UUvector_converter_FU"/>
@@ -301,7 +301,7 @@ endgenerate" VHDL_PROVIDED="begin
       <circuit>
         <component_o id="UIvector_converter_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2021-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2021-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="UIvector_converter_FU"/>
@@ -345,7 +345,7 @@ endgenerate" VHDL_PROVIDED="begin
       <circuit>
         <component_o id="IUvector_converter_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2021-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2021-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IUvector_converter_FU"/>

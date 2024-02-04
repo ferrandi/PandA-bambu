@@ -30,7 +30,7 @@
         <circuit>
           <component_o id="ARRAY_1D_STD_BRAM">
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2024 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>XILINX-VIRTEX4</specialized>
@@ -182,7 +182,7 @@
         <circuit>
           <component_o id="ARRAY_1D_STD_BRAM_3">
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2024 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>XILINX-VIRTEX4</specialized>
@@ -334,7 +334,7 @@
         <circuit>
           <component_o id="ARRAY_1D_STD_BRAM_4">
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2024 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>XILINX-VIRTEX4</specialized>
@@ -485,7 +485,7 @@
         <circuit>
           <component_o id="ARRAY_1D_STD_BRAM_N1">
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2024 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>XILINX-VIRTEX4</specialized>
@@ -658,7 +658,7 @@
         <circuit>
           <component_o id="ARRAY_1D_STD_BRAM_N1_3">
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2024 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>XILINX-VIRTEX4</specialized>
@@ -831,7 +831,7 @@
         <circuit>
           <component_o id="ARRAY_1D_STD_BRAM_N1_4">
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2024 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>XILINX-VIRTEX4</specialized>
@@ -1004,7 +1004,7 @@
         <circuit>
           <component_o id="ARRAY_1D_STD_BRAM_NN">
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2024 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>XILINX-VIRTEX4</specialized>
@@ -1193,7 +1193,7 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_TP generic map (BITSIZE_in1
         <circuit>
           <component_o id="ARRAY_1D_STD_BRAM_NN_3">
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2024 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>XILINX-VIRTEX4</specialized>
@@ -1375,7 +1375,7 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_TP generic map (BITSIZE_in1
         <circuit>
           <component_o id="ARRAY_1D_STD_BRAM_NN_4">
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2024 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>XILINX-VIRTEX4</specialized>
@@ -1559,7 +1559,7 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_TP generic map (BITSIZE_in1
         <circuit>
           <component_o id="STD_BRAM">
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2024 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>XILINX-VIRTEX4</specialized>
@@ -1642,7 +1642,7 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_TP generic map (BITSIZE_in1
         <circuit>
           <component_o id="STD_BRAM_3">
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2024 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>XILINX-VIRTEX4</specialized>
@@ -1725,7 +1725,7 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_TP generic map (BITSIZE_in1
         <circuit>
           <component_o id="STD_BRAM_4">
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2024 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>XILINX-VIRTEX4</specialized>
@@ -1807,7 +1807,7 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_TP generic map (BITSIZE_in1
         <circuit>
           <component_o id="STD_BRAMN">
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2024 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>XILINX-VIRTEX4</specialized>
@@ -1904,7 +1904,7 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_TP generic map (BITSIZE_in1
         <circuit>
           <component_o id="STD_BRAMN_3">
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2024 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>XILINX-VIRTEX4</specialized>
@@ -2001,7 +2001,7 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_TP generic map (BITSIZE_in1
         <circuit>
           <component_o id="STD_BRAMN_4">
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2024 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>XILINX-VIRTEX4</specialized>
