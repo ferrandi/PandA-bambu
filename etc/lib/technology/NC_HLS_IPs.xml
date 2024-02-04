@@ -7,7 +7,7 @@
       <circuit>
         <component_o id="memory_mapped_register_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2012-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2012-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="memory_mapped_register_FU"/>
@@ -71,7 +71,7 @@ end
       <circuit>
         <component_o id="memory_mapped_registerN_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2016-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="memory_mapped_registerN_FU"/>
@@ -158,7 +158,7 @@ end"/>
       <circuit>
         <component_o id="notify_caller_minimal_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2012-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2012-2024 Politecnico di Milano</copyright>
           <authors>Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="notify_caller_minimal_FU"/>
@@ -256,7 +256,7 @@ end
       <circuit>
         <component_o id="notify_caller_minimalN_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2016-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="notify_caller_minimalN_FU"/>
@@ -354,7 +354,7 @@ end
       <circuit>
         <component_o id="return_value_mm_register_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2012-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2012-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="return_value_mm_register_FU"/>
@@ -437,7 +437,7 @@ end
       <circuit>
         <component_o id="return_value_mm_registerN_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2016-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="return_value_mm_registerN_FU"/>
@@ -542,7 +542,7 @@ end"/>
       <circuit>
         <component_o id="status_register_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2012-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2012-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="status_register_FU"/>
@@ -667,7 +667,7 @@ end
       <circuit>
         <component_o id="status_registerN_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2016-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="status_registerN_FU"/>
@@ -821,7 +821,7 @@ end"/>
       <circuit>
         <component_o id="status_register_no_notified_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2012-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2012-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Marco Minutoli &lt;mminutoli@gmail.com&gt;, Pietro Fezzardi &lt;pietrofezzardi@gmail.com&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="status_register_no_notified_FU"/>
@@ -910,7 +910,7 @@ end
       <circuit>
         <component_o id="status_register_no_notifiedN_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2016-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="status_register_no_notifiedN_FU"/>
@@ -1010,7 +1010,7 @@ end"/>
       <circuit>
         <component_o id="bit_ior_concat_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2016-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="bit_ior_concat_expr_FU"/>
@@ -1068,7 +1068,7 @@ end integer_ternary_operator;
       <circuit>
         <component_o id="ui_bit_ior_concat_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2016-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_bit_ior_concat_expr_FU"/>
@@ -1126,7 +1126,7 @@ end integer_ternary_operator;
       <circuit>
         <component_o id="__builtin_trap">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2014-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2014-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="__builtin_trap"/>
@@ -1172,7 +1172,7 @@ always @(posedge clock) done_port &lt;= start_port;"/>
       <circuit>
         <component_o id="__builtin_unreachable">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2015-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2015-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="__builtin_unreachable"/>
@@ -1240,7 +1240,7 @@ end process;
       <circuit>
         <component_o id="__builtin_exit">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2004-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="__builtin_exit"/>
@@ -1295,7 +1295,7 @@ always @(posedge clock) done_port &lt;= start_port;"/>
       <circuit>
         <component_o id="__builtin_abort">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2004-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="__builtin_abort"/>
@@ -1346,7 +1346,7 @@ always @(posedge clock) done_port &lt;= start_port;"/>
       <circuit>
         <component_o id="__builtin_dwarf_cfa">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2016-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="__builtin_dwarf_cfa"/>
@@ -1387,7 +1387,7 @@ always @(posedge clock) done_port &lt;= start_port; assign out1 = 0;"/>
       <circuit>
         <component_o id="__llvm_bitreverse_i8">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2022-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="__llvm_bitreverse_i8"/>
@@ -1418,7 +1418,7 @@ assign out1 = x;
       <circuit>
         <component_o id="__llvm_bitreverse_i16">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2022-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="__llvm_bitreverse_i16"/>
@@ -1449,7 +1449,7 @@ assign out1 = x;
       <circuit>
         <component_o id="__llvm_bitreverse_i32">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2022-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="__llvm_bitreverse_i32"/>
@@ -1480,7 +1480,7 @@ assign out1 = x;
       <circuit>
         <component_o id="__llvm_bitreverse_i64">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2022-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="__llvm_bitreverse_i64"/>

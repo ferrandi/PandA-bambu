@@ -1,5 +1,5 @@
 /* Specific functions for bambu architecture.
-   Copyright (C) 2016-2023 Politecnico di Milano (Italy).
+   Copyright (C) 2016-2024 Politecnico di Milano (Italy).
    This specific code has been derived from libgcc from GCC.
    The GCC licence and its exception applies.
 */

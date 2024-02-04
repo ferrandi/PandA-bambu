@@ -7,7 +7,7 @@
       <circuit>
         <component_o id="IOB_front_end">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2022-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_front_end"/>
@@ -181,7 +181,7 @@ assign data_valid_reg = valid_reg;"/>
       <circuit>
         <component_o id="IOB_read_channel_axi">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2022-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_read_channel_axi"/>
@@ -506,7 +506,7 @@ endgenerate"/>
       <circuit>
         <component_o id="IOB_write_channel_axi">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2022-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_write_channel_axi"/>
@@ -963,7 +963,7 @@ end
       <circuit>
         <component_o id="IOB_back_end_axi">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2022-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_back_end_axi"/>
@@ -1252,7 +1252,7 @@ write_fsm (.valid (write_valid &amp;&amp; resetted),
       <circuit>
         <component_o id="IOB_ram_2p">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2022-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_ram_2p"/>
@@ -1320,7 +1320,7 @@ end"/>
       <circuit>
         <component_o id="IOB_ram_2p_asym">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2022-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_ram_2p_asym"/>
@@ -1501,7 +1501,7 @@ assign ext_mem_r_en = r_en;
       <circuit>
         <component_o id="IOB_fifo_sync">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2022-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_fifo_sync"/>
@@ -1701,7 +1701,7 @@ iob_ram_2p_asym0 (.clock(clock),
       <circuit>
         <component_o id="IOB_ram_sp">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2022-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_ram_sp"/>
@@ -1759,7 +1759,7 @@ iob_ram_2p_asym0 (.clock(clock),
       <circuit>
         <component_o id="IOB_ram_sp_no_addr">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2022-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_ram_sp_no_addr"/>
@@ -1802,7 +1802,7 @@ iob_ram_2p_asym0 (.clock(clock),
       <circuit>
         <component_o id="IOB_gen_sp_ram">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2022-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_gen_sp_ram"/>
@@ -1850,7 +1850,7 @@ endgenerate"/>
       <circuit>
         <component_o id="IOB_gen_sp_ram_no_addr">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2022-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_gen_sp_ram_no_addr"/>
@@ -1892,7 +1892,7 @@ endgenerate"/>
       <circuit>
         <component_o id="IOB_onehot_to_bin">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2022-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_onehot_to_bin"/>
@@ -1929,7 +1929,7 @@ end"/>
       <circuit>
         <component_o id="IOB_regfile_sp">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2022-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_regfile_sp"/>
@@ -1989,7 +1989,7 @@ endgenerate"/>
       <circuit>
         <component_o id="IOB_regfile_sp_no_addr">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2022-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_regfile_sp_no_addr"/>
@@ -2035,7 +2035,7 @@ end"/>
       <circuit>
         <component_o id="IOB_replacement_policy">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2022-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_replacement_policy"/>
@@ -2262,7 +2262,7 @@ endgenerate
       <circuit>
         <component_o id="IOB_cache_memory">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2022-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_cache_memory"/>
@@ -3184,7 +3184,7 @@ endgenerate
       <circuit>
         <component_o id="IOB_cache_control">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2022-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_cache_control"/>
@@ -3360,7 +3360,7 @@ endgenerate
       <circuit>
         <component_o id="IOB_cache_axi">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2022-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_cache_axi"/>
@@ -3826,7 +3826,7 @@ endgenerate
       <circuit>
         <component_o id="IOB_cache_minimal_axi">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2023-2024 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_cache_minimal_axi"/>
@@ -4320,7 +4320,7 @@ endgenerate
       <circuit>
         <component_o id="IOB_read_channel_minimal">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2023-2024 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_read_channel_minimal"/>
@@ -4563,7 +4563,7 @@ endgenerate
       <circuit>
         <component_o id="IOB_write_channel_minimal">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2023-2024 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_write_channel_minimal"/>
@@ -4868,7 +4868,7 @@ endgenerate
       <circuit>
         <component_o id="IOB_back_end_minimal">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2023-2024 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_back_end_minimal"/>
@@ -5046,7 +5046,7 @@ endgenerate
       <circuit>
         <component_o id="IOB_cache_minimal_minimal">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2023-2024 Politecnico di Milano</copyright>
           <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_cache_minimal_minimal"/>

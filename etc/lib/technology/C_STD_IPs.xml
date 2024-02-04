@@ -7,7 +7,7 @@
       <circuit>
         <component_o id="MUX_GATE">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2004-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;, Christian Pilato &lt;christian.pilato@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="MUX_GATE"/>
@@ -35,7 +35,7 @@ out1 &lt;= in1 when sel=&apos;1&apos; else in2;"/>
       <circuit>
         <component_o id="MUX_N_to_1">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2015-2023 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2015-2024 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="MUX_N_to_1"/>

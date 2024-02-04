@@ -7,7 +7,7 @@
          <circuit>
             <component_o id="dataflow_fifo">
                <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-               <copyright>Copyright (C) 2014-2023 Politecnico di Milano</copyright>
+               <copyright>Copyright (C) 2014-2024 Politecnico di Milano</copyright>
                <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
                <license>PANDA_LGPLv3</license>
                <structural_type_descriptor id_type="dataflow_fifo"/>
