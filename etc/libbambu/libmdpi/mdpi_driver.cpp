@@ -462,8 +462,7 @@ class mem_interface : public interface
       else
       {
          error("Read to non-mapped address " PTR_FORMAT ".\n", addr);
-         // TODO: report abort to simulator
-         abort();
+         return IF_ERROR;
       }
       return IF_OK;
    }
@@ -486,8 +485,7 @@ class mem_interface : public interface
       else
       {
          error("Write to non-mapped address " PTR_FORMAT ".\n", addr);
-         // TODO: report abort to simulator
-         abort();
+         return IF_ERROR;
       }
       return IF_OK;
    }
