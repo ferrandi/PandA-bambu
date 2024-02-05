@@ -149,7 +149,12 @@ int m_read(uint8_t id, svLogicVecVal* data, uint16_t bitsize, ptr_t addr, uint8_
    retval = __m_ipc_operation.payload.interface.info;
    debug("Interface %u read state -> %d.\n", id, retval);
 
-   if(__m_ipc_operation.payload.interface.id == id)
+   if(retval < 0)
+   {
+      error("Read operation error on interface %u: %u.\n", id, retval);
+      abort();
+   }
+   else if(__m_ipc_operation.payload.interface.id == id)
    {
       uint16_t i, size = bitsize / 8 + ((bitsize % 8) != 0);
 #pragma unroll(4)
@@ -216,7 +221,12 @@ int m_write(uint8_t id, CONSTARG svLogicVecVal* data, uint16_t bitsize, ptr_t ad
    retval = __m_ipc_operation.payload.interface.info;
    debug("Interface %u write state -> %d.\n", id, retval);
 
-   if(__m_ipc_operation.payload.interface.id == MDPI_IF_IDX_EMPTY)
+   if(retval < 0)
+   {
+      error("Write operation error on interface %u: %u.\n", id, retval);
+      abort();
+   }
+   else if(__m_ipc_operation.payload.interface.id == MDPI_IF_IDX_EMPTY)
    {
       debug("Fake pipelined write operation on interface %u.\n", id);
    }
