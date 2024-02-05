@@ -823,7 +823,7 @@ static void* __m_driver_loop(void*)
             assert(__m_interfaces.size() == 1 && "Expected single interface on builtin exit/abort.");
             __m_interfaces.at(0)->write(reinterpret_cast<bptr_t>(&__m_ipc_operation.payload.interface.info),
                                         sizeof(__m_ipc_operation.payload.interface.info) * 8, 0, 0);
-            __m_ipc_operation.payload.interface.id = 0;
+            __m_ipc_operation.payload.interface.id = MDPI_IF_IDX_EMPTY;
             __m_ipc_operation.payload.interface.info = 0;
             __ipc_response();
             return NULL;
