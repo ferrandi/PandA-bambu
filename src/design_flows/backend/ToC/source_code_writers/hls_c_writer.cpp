@@ -544,7 +544,7 @@ base_addr += map_size;
 }
 if(error)
 {
-abort();
+__m_abort();
 }
 }
 
@@ -1077,7 +1077,7 @@ static size_t __m_call_count = 0;
 if(mismatch_count)
 {
 error("Memory parameter mismatch has been found.\n");
-abort();
+__m_abort();
 }
 
 #ifdef DUMP_COSIM_OUTPUT
