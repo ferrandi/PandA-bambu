@@ -332,25 +332,22 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
                       tree_helper::print_type(TM, function_id, false, true, false, 0U,
                                               var_pp_functorConstRef(new std_var_pp_functor(
                                                   AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()))));
-   fd->list_of_args = loa;
-   fd->type = ftype;
    const auto HLSMgr = GetPointer<HLS_manager>(AppM);
    const auto fname = tree_helper::GetMangledFunctionName(fd);
    const auto func_arch = HLSMgr->module_arch->GetArchitecture(fname);
    if(func_arch)
    {
-      std::vector<std::string> parm_attrs;
-      std::transform(func_arch->parms.begin(), func_arch->parms.end(), std::back_inserter(parm_attrs),
-                     [](auto& e) { return e.first; });
-      std::sort(parm_attrs.begin(), parm_attrs.end(), [&](const std::string& a, const std::string& b) {
-         return func_arch->parms.at(a).at(FunctionArchitecture::parm_index) <
-                func_arch->parms.at(b).at(FunctionArchitecture::parm_index);
-      });
       for(auto i : unused_parm_indices)
       {
-         func_arch->parms.erase(parm_attrs.at(i));
+         const auto& pnode = fd->list_of_args.at(i);
+         const auto pname = GetPointer<parm_decl>(GET_NODE(pnode))->name;
+         THROW_ASSERT(pname, "Expected parameter name.");
+         const auto pname_str = GetPointer<identifier_node>(GET_NODE(pname))->strg;
+         func_arch->parms.erase(pname_str);
       }
    }
+   fd->list_of_args = loa;
+   fd->type = ftype;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "---After : " +
                       tree_helper::print_type(TM, function_id, false, true, false, 0U,
