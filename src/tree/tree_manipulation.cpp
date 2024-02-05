@@ -2811,15 +2811,13 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_node
    tree_nodeRef fn;
    tree_nodeRef ret_val = nullptr;
    std::vector<tree_nodeRef> const* args;
-   if(call_stmt->get_kind() == gimple_call_K)
+   if(const auto gc = GetPointer<const gimple_call>(call_stmt))
    {
-      const auto gc = GetPointerS<const gimple_call>(call_stmt);
       fn = gc->fn;
       args = &gc->args;
    }
-   else if(call_stmt->get_kind() == gimple_assign_K)
+   else if(const auto ga = GetPointer<const gimple_assign>(call_stmt))
    {
-      const auto ga = GetPointerS<const gimple_assign>(call_stmt);
       const auto ce = GetPointer<const call_expr>(GET_CONST_NODE(ga->op1));
       THROW_ASSERT(ce, "Assign statement does not contain a function call: " + STR(call_node));
       fn = ce->fn;
@@ -2828,7 +2826,7 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_node
    }
    else
    {
-      THROW_UNREACHABLE("Unsupported call statement: " + STR(call_node));
+      THROW_UNREACHABLE("Unsupported call statement: " + call_stmt->get_kind_text() + " " + STR(call_node));
    }
    if(GET_CONST_NODE(fn)->get_kind() == addr_expr_K)
    {
@@ -2839,7 +2837,7 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_node
 
    const auto fd = GetPointer<function_decl>(GET_NODE(caller_node));
    auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
-   const auto& block = sl->list_of_bloc.at(GetPointer<gimple_node>(call_node)->bb_index);
+   const auto& block = sl->list_of_bloc.at(GetPointer<const gimple_node>(call_stmt)->bb_index);
    const auto splitBBI = sl->list_of_bloc.rbegin()->first + 1;
    THROW_ASSERT(!sl->list_of_bloc.count(splitBBI), "");
    const auto splitBB = sl->list_of_bloc[splitBBI] = blocRef(new bloc(splitBBI));
@@ -3037,15 +3035,13 @@ bool tree_manipulation::VersionFunctionCall(const tree_nodeRef& call_node, const
    tree_nodeRef called_fn = nullptr;
    tree_nodeRef ret_val = nullptr;
    std::vector<tree_nodeRef> const* args = nullptr;
-   if(call_stmt->get_kind() == gimple_call_K)
+   if(const auto gc = GetPointer<const gimple_call>(call_stmt))
    {
-      const auto gc = GetPointerS<const gimple_call>(call_stmt);
       called_fn = gc->fn;
       args = &gc->args;
    }
-   else if(call_stmt->get_kind() == gimple_assign_K)
+   else if(const auto ga = GetPointer<const gimple_assign>(call_stmt))
    {
-      const auto ga = GetPointerS<const gimple_assign>(call_stmt);
       const auto ce = GetPointer<const call_expr>(GET_CONST_NODE(ga->op1));
       THROW_ASSERT(ce, "Assign statement does not contain a function call: " + STR(call_node));
       called_fn = ce->fn;
