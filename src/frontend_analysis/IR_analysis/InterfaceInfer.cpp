@@ -857,7 +857,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
    for(auto it = HLSMgr->module_arch->cbegin(); it != HLSMgr->module_arch->cend();)
    {
       const auto fnode = TM->GetFunction(it->first);
-      if(!fnode || it->second->attrs.empty())
+      if(!fnode || (it->second->attrs.size() <= 2 && std::find(sorted_roots.begin(), sorted_roots.end(),
+                                                               GET_INDEX_CONST_NODE(fnode)) == sorted_roots.end()))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "Erase function architecture for function " + it->first);
@@ -1020,38 +1021,7 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
          THROW_ASSERT(GET_CONST_NODE(call_arg_ssa)->get_kind() == ssa_name_K, "");
          if(GetPointerS<const ssa_name>(GET_CONST_NODE(call_arg_ssa))->CGetUseStmts().size())
          {
-            const auto call_fsymbol = tree_helper::GetMangledFunctionName(call_fd);
-            const auto call_arch = GetPointerS<HLS_manager>(AppM)->module_arch->GetArchitecture(call_fsymbol);
-            if(call_arch)
-            {
-               // Update function architecture information on called function
-               const auto called_pname = get_decl_name(called_param);
-               const auto called_bname = call_arch->parms.at(called_pname).at(FunctionArchitecture::parm_bundle);
-#if HAVE_ASSERTS
-               const auto ecount =
-#endif
-                   call_arch->parms.erase(called_pname);
-               THROW_ASSERT(ecount, "Expected parameter information for parameter " + called_pname + " in function " +
-                                        call_fsymbol);
-               const auto is_bundle_used =
-                   std::any_of(call_arch->parms.begin(), call_arch->parms.end(), [&](const auto& name_attrs) {
-                      return name_attrs.second.at(FunctionArchitecture::parm_bundle) == called_bname;
-                   });
-               if(!is_bundle_used)
-               {
-                  call_arch->ifaces.erase(called_bname);
-               }
-               const auto& pname = info.parm_attrs.at(FunctionArchitecture::parm_port);
-               const auto& bname = info.parm_attrs.at(FunctionArchitecture::parm_bundle);
-               THROW_ASSERT(call_arch->parms.find(pname) == call_arch->parms.end(),
-                            "Duplicate parameter name " + pname + " in " + call_fsymbol + ".");
-               THROW_ASSERT(call_arch->ifaces.find(bname) == call_arch->ifaces.end(),
-                            "Duplicate interface bundle name " + bname + " in " + call_fsymbol + ".");
-               GetPointer<parm_decl>(GET_NODE(called_param))->name =
-                   tree_manipulation(TM, parameters, AppM).create_identifier_node(pname);
-               call_arch->parms[pname] = info.parm_attrs;
-               call_arch->ifaces[bname] = info.iface_attrs;
-            }
+            forwardInterface(fd_node, called_param, info);
 
             /// propagate design interfaces
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -1216,6 +1186,49 @@ void InterfaceInfer::ChasePointerInterface(tree_nodeRef ssa_node, std::list<tree
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Parameter uses:");
    ChasePointerInterfaceRecurse(Visited, ssa_node, writeStmt, readStmt, info);
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
+}
+
+void InterfaceInfer::forwardInterface(const tree_nodeRef& fnode, const tree_nodeRef& parm_node,
+                                      const interface_info& info)
+{
+   const auto fd = GetPointer<const function_decl>(GET_CONST_NODE(fnode));
+   const auto fsymbol = tree_helper::GetMangledFunctionName(fd);
+   const auto func_arch = GetPointerS<HLS_manager>(AppM)->module_arch->GetArchitecture(fsymbol);
+   if(func_arch)
+   {
+      // Update function architecture information on called function
+      const auto pname = get_decl_name(parm_node);
+      auto bname = func_arch->parms.at(pname).at(FunctionArchitecture::parm_bundle);
+#if HAVE_ASSERTS
+      const auto ecount =
+#endif
+          func_arch->parms.erase(pname);
+      THROW_ASSERT(ecount, "Expected parameter information for parameter " + pname + " in function " + fsymbol);
+      const auto is_bundle_used =
+          std::any_of(func_arch->parms.begin(), func_arch->parms.end(), [&](const auto& name_attrs) {
+             return name_attrs.second.at(FunctionArchitecture::parm_bundle) == bname;
+          });
+      if(!is_bundle_used)
+      {
+         func_arch->ifaces.erase(bname);
+      }
+      THROW_ASSERT(func_arch->parms.find(pname) == func_arch->parms.end(),
+                   "Duplicate parameter name " + pname + " in " + fsymbol + ".");
+      bname = info.iface_attrs.at(FunctionArchitecture::iface_name);
+      func_arch->parms[pname] = info.parm_attrs;
+      func_arch->parms[pname].at(FunctionArchitecture::parm_port) = pname;
+      func_arch->parms[pname].at(FunctionArchitecture::parm_bundle) = bname;
+      if(func_arch->ifaces.find(bname) == func_arch->ifaces.end())
+      {
+         func_arch->ifaces[bname] = info.iface_attrs;
+      }
+      else
+      {
+         THROW_ASSERT(func_arch->ifaces.find(bname)->second.at(FunctionArchitecture::iface_mode) ==
+                          info.iface_attrs.at(FunctionArchitecture::iface_mode),
+                      "Duplicate interface bundle name " + bname + " in " + fsymbol + ".");
+      }
+   }
 }
 
 void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_name,
