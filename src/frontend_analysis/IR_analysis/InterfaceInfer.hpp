@@ -83,6 +83,8 @@ class InterfaceInfer : public ApplicationFrontendFlowStep
    void ChasePointerInterface(tree_nodeRef ptr_var, std::list<tree_nodeRef>& writeStmt,
                               std::list<tree_nodeRef>& readStmt, interface_info& info);
 
+   void forwardInterface(const tree_nodeRef& fnode, const tree_nodeRef& parm_node, const interface_info& info);
+
    void setReadInterface(tree_nodeRef stmt, const std::string& arg_name, std::set<std::string>& operationsR,
                          bool commonRWSignature, tree_nodeConstRef interface_datatype,
                          const tree_manipulationRef tree_man, const tree_managerRef TM);
