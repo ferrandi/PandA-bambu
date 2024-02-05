@@ -1278,9 +1278,7 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
             THROW_ASSERT(gc->args.size() == 2, "unexpected condition");
          }
       }
-      THROW_ASSERT(!valid_ptr || (tree_helper::IsPointerType(valid_ptr) &&
-                                  tree_helper::IsBooleanType(tree_helper::CGetPointedType(valid_ptr))),
-                   "Valid type must be bool pointer");
+      THROW_ASSERT(!valid_ptr || tree_helper::IsPointerType(valid_ptr), "Valid type must be bool pointer");
       THROW_ASSERT(!gn->memdef && !gn->memuse, "");
       THROW_ASSERT(gn->vdef, "");
       const auto vdef = gn->vdef;
@@ -1375,8 +1373,8 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
          curr_bb->PushBefore(ga_vshift, stmt, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---VSHIFT: " + ga_vshift->ToString());
          const auto v_shift = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_vshift))->op0;
-         const auto valid_type = tree_helper::CGetType(valid_ptr);
-         const auto valid_ptd_type = tree_helper::CGetPointedType(valid_ptr);
+         const auto valid_ptd_type = tree_man->GetBooleanType();
+         const auto valid_type = tree_man->GetPointerType(valid_ptd_type);
          const auto ga_valid = tree_man->CreateNopExpr(v_shift, valid_ptd_type, nullptr, nullptr, fd->index);
          curr_bb->PushBefore(ga_valid, stmt, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- VALID: " + ga_valid->ToString());
