@@ -264,6 +264,7 @@ void memory_allocation::finalize_memory_allocation()
    bool has_misaligned_indirect_ref = HLSMgr->Rmem->has_packed_vars();
    bool needMemoryMappedRegisters = false;
    const auto call_graph_manager = HLSMgr->CGetCallGraphManager();
+   const auto root_functions = call_graph_manager->GetRootFunctions();
    /// looking for the maximum data bus size needed
    for(auto fun_id : func_list)
    {
@@ -281,26 +282,16 @@ void memory_allocation::finalize_memory_allocation()
       for(const auto function_parameter : function_parameters)
       {
          const auto pname = behavioral_helper->PrintVariable(function_parameter);
-         if(func_arch)
+         if(func_arch && root_functions.find(fun_id) != root_functions.end())
          {
-            auto parm_arch = func_arch->parms.find(pname);
-            if(parm_arch != func_arch->parms.end())
+            THROW_ASSERT(func_arch->parms.find(pname) != func_arch->parms.end(),
+                         "Parameter " + pname + " not found in function " + fname);
+            const auto& parm_attrs = func_arch->parms.at(pname);
+            const auto& iface_attrs = func_arch->ifaces.at(parm_attrs.at(FunctionArchitecture::parm_bundle));
+            const auto iface_mode = iface_attrs.at(FunctionArchitecture::iface_mode);
+            if(iface_mode != "default")
             {
-               const auto& parm_attrs = parm_arch->second;
-               const auto& iface_attrs = func_arch->ifaces.at(parm_attrs.at(FunctionArchitecture::parm_bundle));
-               const auto iface_mode = iface_attrs.at(FunctionArchitecture::iface_mode);
-               if(iface_mode != "default")
-               {
-                  continue;
-               }
-            }
-            else
-            {
-               // NOTE: Struct fileds may be promoted to separate function arguments disrupting the source-IR
-               // correspondence (which is fine and can be ignored since it will happen only on non-interfaced
-               // functions)
-               THROW_ASSERT(func_arch->parms.size() != function_parameters.size(),
-                            "Parameter " + pname + " not found in function " + fname);
+               continue;
             }
          }
          if(HLSMgr->Rmem->is_parm_decl_copied(function_parameter) &&
