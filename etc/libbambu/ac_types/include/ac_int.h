@@ -3920,56 +3920,56 @@ using Slong = long long;
          return W;
       }
 
-      __FORCE_INLINE operator bool() const
+      __FORCE_INLINE explicit operator bool() const
       {
          return !Base::equal_zero();
       }
 
-      __FORCE_INLINE operator char() const
+      __FORCE_INLINE explicit operator char() const
       {
          return (char)to_int();
       }
 
-      __FORCE_INLINE operator signed char() const
+      __FORCE_INLINE explicit operator signed char() const
       {
          return (signed char)to_int();
       }
 
-      __FORCE_INLINE operator unsigned char() const
+      __FORCE_INLINE explicit operator unsigned char() const
       {
          return (unsigned char)to_uint();
       }
 
-      __FORCE_INLINE operator short() const
+      __FORCE_INLINE explicit operator short() const
       {
          return (short)to_int();
       }
 
-      __FORCE_INLINE operator unsigned short() const
+      __FORCE_INLINE explicit operator unsigned short() const
       {
          return (unsigned short)to_uint();
       }
-      __FORCE_INLINE operator int() const
+      __FORCE_INLINE explicit operator int() const
       {
          return to_int();
       }
-      __FORCE_INLINE operator unsigned() const
+      __FORCE_INLINE explicit operator unsigned() const
       {
          return to_uint();
       }
-      __FORCE_INLINE operator long() const
+      __FORCE_INLINE explicit operator long() const
       {
          return to_long();
       }
-      __FORCE_INLINE operator unsigned long() const
+      __FORCE_INLINE explicit operator unsigned long() const
       {
          return to_ulong();
       }
-      __FORCE_INLINE operator double() const
+      __FORCE_INLINE explicit operator double() const
       {
          return to_double();
       }
-      __FORCE_INLINE operator float() const
+      __FORCE_INLINE explicit operator float() const
       {
          return to_float();
       }
@@ -4837,31 +4837,31 @@ using Slong = long long;
       {
          return W1;
       }
-      __FORCE_INLINE operator int() const
+      __FORCE_INLINE explicit operator int() const
       {
          return to_int();
       }
-      __FORCE_INLINE operator unsigned() const
+      __FORCE_INLINE explicit operator unsigned() const
       {
          return to_uint();
       }
-      __FORCE_INLINE operator long() const
+      __FORCE_INLINE explicit operator long() const
       {
          return to_long();
       }
-      __FORCE_INLINE operator unsigned long() const
+      __FORCE_INLINE explicit operator unsigned long() const
       {
          return to_ulong();
       }
-      __FORCE_INLINE operator Slong() const
+      __FORCE_INLINE explicit operator Slong() const
       {
          return to_int64();
       }
-      __FORCE_INLINE operator Ulong() const
+      __FORCE_INLINE explicit operator Ulong() const
       {
          return to_uint64();
       }
-      __FORCE_INLINE operator double() const
+      __FORCE_INLINE explicit operator double() const
       {
          return to_double();
       }
@@ -5335,24 +5335,34 @@ using Slong = long long;
 // Integers
 
 // --- Macro for range_ref
-#define OP_BIN_RANGE(BIN_OP, RTYPE)                                                                                    \
-   template <int W1, bool S1, int W2, bool S2>                                                                         \
-   __FORCE_INLINE typename ac_int<W1, S1>::template rt<W2, S2>::RTYPE operator BIN_OP(const range_ref<W1, S1>& op1,    \
-                                                                                      const range_ref<W2, S2>& op2)    \
-   {                                                                                                                   \
-      return ac_int<W1, false>(op1) BIN_OP(ac_int<W2, false>(op2));                                                    \
-   }                                                                                                                   \
-   template <int W1, bool S1, int W2, bool S2>                                                                         \
-   __FORCE_INLINE typename ac_int<W1, S1>::template rt<W2, S2>::RTYPE operator BIN_OP(const range_ref<W1, S1>& op1,    \
-                                                                                      const ac_int<W2, S2>& op2)       \
-   {                                                                                                                   \
-      return ac_int<W1, false>(op1) BIN_OP(op2);                                                                       \
-   }                                                                                                                   \
-   template <int W1, bool S1, int W2, bool S2>                                                                         \
-   __FORCE_INLINE typename ac_int<W1, S1>::template RType<W2, S2>::RTYPE operator BIN_OP(const ac_int<W1, S1>& op1,    \
-                                                                                         const range_ref<W2, S2>& op2) \
-   {                                                                                                                   \
-      return op1 BIN_OP(ac_int<W2, false>(op2));                                                                       \
+#define OP_BIN_RANGE(BIN_OP, RTYPE)                                                                                 \
+   template <int W1, bool S1, int W2, bool S2>                                                                      \
+   __FORCE_INLINE typename ac_int<W1, S1>::template rt<W2, S2>::RTYPE operator BIN_OP(const range_ref<W1, S1>& op1, \
+                                                                                      const range_ref<W2, S2>& op2) \
+   {                                                                                                                \
+      return ac_int<W1, false>(op1) BIN_OP(ac_int<W2, false>(op2));                                                 \
+   }                                                                                                                \
+   template <int W1, bool S1, int W2, bool S2>                                                                      \
+   __FORCE_INLINE typename ac_int<W1, S1>::template rt<W2, S2>::RTYPE operator BIN_OP(const range_ref<W1, S1>& op1, \
+                                                                                      const ac_int<W2, S2>& op2)    \
+   {                                                                                                                \
+      return ac_int<W1, false>(op1) BIN_OP(op2);                                                                    \
+   }                                                                                                                \
+   template <int W1, bool S1, typename T>                                                                           \
+   __FORCE_INLINE auto operator BIN_OP(const range_ref<W1, S1>& op1, T op2)                                         \
+   {                                                                                                                \
+      return op1.operator ac_int<W1, false>() BIN_OP op2;                                                           \
+   }                                                                                                                \
+   template <int W1, bool S1, int W2, bool S2>                                                                      \
+   __FORCE_INLINE typename ac_int<W1, S1>::template rt<W2, S2>::RTYPE operator BIN_OP(const ac_int<W1, S1>& op1,    \
+                                                                                      const range_ref<W2, S2>& op2) \
+   {                                                                                                                \
+      return op1 BIN_OP(ac_int<W2, false>(op2));                                                                    \
+   }                                                                                                                \
+   template <typename T, int W2, bool S2>                                                                           \
+   __FORCE_INLINE auto operator BIN_OP(T op1, const range_ref<W2, S2>& op2)                                         \
+   {                                                                                                                \
+      return op2.operator ac_int<W2, false>() BIN_OP op1;                                                           \
    }
 
 #define OP_REL_RANGE(REL_OP)                                                                       \
@@ -5366,10 +5376,20 @@ using Slong = long long;
    {                                                                                               \
       return ac_int<W1, false>(op1).operator REL_OP(op2);                                          \
    }                                                                                               \
+   template <int W1, bool S1, typename T>                                                          \
+   __FORCE_INLINE bool operator REL_OP(const range_ref<W1, S1>& op1, T op2)                        \
+   {                                                                                               \
+      return op1.operator ac_int<W1, false>() REL_OP op2;                                          \
+   }                                                                                               \
    template <int W1, bool S1, int W2, bool S2>                                                     \
    __FORCE_INLINE bool operator REL_OP(const ac_int<W1, S1>& op1, const range_ref<W2, S2>& op2)    \
    {                                                                                               \
       return op1.operator REL_OP(op2.operator ac_int<W2, false>());                                \
+   }                                                                                               \
+   template <typename T, int W2, bool S2>                                                          \
+   __FORCE_INLINE bool operator REL_OP(T op1, const range_ref<W2, S2>& op2)                        \
+   {                                                                                               \
+      return op2.operator ac_int<W2, false>() REL_OP op1;                                          \
    }
 
 #define OP_ASSIGN_RANGE(ASSIGN_OP)                                                                      \
