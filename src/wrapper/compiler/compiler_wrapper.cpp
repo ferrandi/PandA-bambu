@@ -3153,6 +3153,9 @@ std::string CompilerWrapper::getCompilerSuffix(CompilerWrapper_CompilerTarget pc
    }
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
 bool CompilerWrapper::hasCompilerM64(CompilerWrapper_CompilerTarget ct)
 {
    return false
@@ -3329,6 +3332,8 @@ bool CompilerWrapper::hasCompilerCLANGM32(CompilerWrapper_CompilerTarget ct)
 #endif
        ;
 }
+
+#pragma GCC diagnostic pop
 
 std::string CompilerWrapper::getCompilerVersion(int pc)
 {
