@@ -689,7 +689,7 @@ LIB_SUITESPARSECONFIG=
 AM_CONDITIONAL(BUILD_GLPK, test "x$panda_USE_GLPK" = xyes)
 if test "x$panda_USE_GLPK" = xyes; then
    AC_LANG_PUSH([C])
-   if test "${DISTRO:0:8}" != "centos_6" && test "$DISTRO" != "ubuntu_12.04"; then
+   if test "${DISTRO:0:8}" != "centos_6" && test "${DISTRO:0:6}" != "rhel_7" && test "${DISTRO:0:8}" != "oracle_7" && test "$DISTRO" != "ubuntu_12.04"; then
       LIB_SUITESPARSECONFIG=-lsuitesparseconfig
       AC_CHECK_LIB([suitesparseconfig],[SuiteSparse_malloc], [echo "Checking for libsuitesparseconfig... yes"], [echo "Checking for libsuitesparseconfig... no"; AC_MSG_ERROR("libsuitesparseconfig not found")])
    fi
