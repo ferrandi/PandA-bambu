@@ -199,7 +199,8 @@ namespace llvm
          }
          if(!TopFunctionNames.empty())
          {
-            LLVM_DEBUG(llvm::dbgs() << "Top function names: " << llvm::join(TopFunctionNames, ", ") << "\n");
+            LLVM_DEBUG(llvm::dbgs() << "Top function names: "
+                                    << llvm::join(TopFunctionNames.begin(), TopFunctionNames.end(), ", ") << "\n");
          }
 
          /// load parameter names
