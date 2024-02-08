@@ -1,6 +1,12 @@
 default: all
 
-all:
+fix_revision :
+	@if command -v git 2>&1 > /dev/null; then \
+		echo "\"`git rev-parse HEAD`\"" > dist_revision_info; \
+		echo "\"`git rev-parse --abbrev-ref HEAD`\"" >> dist_revision_info; \
+	fi
+
+all: fix_revision
 	 @if ! autoreconf -m -iv --warning=none > autoreconf_log 2>&1; then \
 	     if `grep -q"required directory" autoreconf_log`; then \
 	        grep -h "required directory" autoreconf_log | awk -F'directory' {'print $$2'} | awk {'print $$1'} | sort | uniq | while read -r line; do mkdir -v $$line; done; \
@@ -97,7 +103,7 @@ compose-stop :
 compose-down :
 	@docker compose -f .devcontainer/docker-compose.yml down
 
-buildenv-sync : compose-up
+buildenv-sync : compose-up fix_revision
 	@echo "Syncing local environment..."
 	@docker compose -f .devcontainer/docker-compose.yml exec buildenv rsync -avuq --filter=':- .gitignore' --exclude='/.git*' /mirror/ /workspace/
 	@echo "Sync completed"

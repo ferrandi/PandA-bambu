@@ -7,15 +7,12 @@ branch_name.hpp : $(GIT_WORKTREE_PATH)/HEAD $(GIT_WORKTREE_PATH)/index
 
 revision_hash.hpp : $(GIT_WORKTREE_PATH)/HEAD $(GIT_WORKTREE_PATH)/index
 	@echo "\"`git --git-dir $(GIT_WORKTREE_PATH) rev-parse HEAD`\"" > $@
-
 else
+branch_name.hpp : $(top_srcdir)/dist_revision_info
+	echo "$(sed -n 2p $(top_srcdir)/dist_revision_info)" > $@
 
-branch_name.hpp :
-	echo "" > $@
-
-revision_hash.hpp :
-	cat $(top_srcdir)/dist_revision_hash > $@
-
+revision_hash.hpp : $(top_srcdir)/dist_revision_info
+	echo "$(sed -n 1p $(top_srcdir)/dist_revision_info)" > $@
 endif
 
 check_PROGRAMS = program_tests
