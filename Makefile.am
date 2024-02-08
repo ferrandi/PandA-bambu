@@ -84,7 +84,8 @@ dist-hook:
 	cp $(srcdir)/ext/flopoco/autotools/configure.ac $(distdir)/ext/flopoco/autotools/configure.ac
 	mkdir $(distdir)/ext/flopoco/autotools/src
 	cp $(srcdir)/ext/flopoco/autotools/src/Makefile.am $(distdir)/ext/flopoco/autotools/src/Makefile.am
-	cp $(builddir)/src/revision_hash.hpp $(distdir)/dist_revision_hash
+	cat $(builddir)/src/revision_hash.hpp > $(distdir)/dist_revision_info
+	cat $(builddir)/src/branch_name.hpp >> $(distdir)/dist_revision_info
 	for file in \
         $(distdir)/ext/flopoco/src/ExpressionScanner.cpp $(distdir)/ext/flopoco/src/ExpressionParser.cpp \
 	$(distdir)/src/parser/polixml/xmlLexer.cpp $(distdir)/src/parser/polixml/xmlParser.hpp $(distdir)/src/parser/polixml/xmlParser.h $(distdir)/src/parser/polixml/xmlParser.cpp \
