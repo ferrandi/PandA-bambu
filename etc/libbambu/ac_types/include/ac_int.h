@@ -3619,6 +3619,8 @@ using Slong = long long;
    class ac_fixed;
    template <int W1, bool S1>
    struct range_ref;
+   template <int W1, bool S1, int W2, bool S2>
+   struct concat_ref;
 
    //////////////////////////////////////////////////////////////////////////////
    //  Arbitrary-Length Integer: ac_int
@@ -4076,6 +4078,57 @@ using Slong = long long;
          this->Base::template rem<num_s, den_s>(op2, r);
          return r;
       }
+      /// Operator concat
+      /// y = (x, z); becomes y.set_slc(WZ, x); y.set_slc(0, z);
+      template <int W2, bool S2>
+      __FORCE_INLINE constexpr auto operator,(const ac_int<W2, S2>& z) const
+      {
+         ac_int<W2 + W, S> y;
+         y.set_slc(W2, *this);
+         y.set_slc(0, z);
+         return y;
+      }
+      template <int W2, bool S2>
+      __FORCE_INLINE constexpr auto operator,(const range_ref<W2, S2>& z) const
+      {
+         ac_int<W2 + W, S> y;
+         ac_int<W2, false> z_temp(z);
+         y.set_slc(W2, *this);
+         y.set_slc(0, z_temp);
+         return y;
+      }
+      template <int W2, bool S2>
+      __FORCE_INLINE constexpr auto operator,(ac_int<W2, S2>& z)
+      {
+         concat_ref<W, S, W2, S2> res = {.ref1 = *this, .ref2 = z};
+         return res;
+      }
+
+      template <int W2, bool S2>
+      __FORCE_INLINE constexpr auto concat(const ac_int<W2, S2>& z) const
+      {
+         ac_int<W2 + W, S> y;
+         y.set_slc(W2, *this);
+         y.set_slc(0, z);
+         return y;
+      }
+      template <int W2, bool S2>
+      __FORCE_INLINE constexpr auto concat(const range_ref<W2, S2>& z) const
+      {
+         ac_int<W2 + W, S> y;
+         ac_int<W2, false> z_temp(z);
+         y.set_slc(W2, *this);
+         y.set_slc(0, z_temp);
+         return y;
+      }
+
+      template <int W2, bool S2>
+      __FORCE_INLINE constexpr auto concat(ac_int<W2, S2>& z)
+      {
+         concat_ref<W, S, W2, S2> res = {.ref1 = *this, .ref2 = z};
+         return res;
+      }
+
       // Arithmetic assign  ------------------------------------------------------
       template <int W2, bool S2>
       __FORCE_INLINE ac_int& operator*=(const ac_int<W2, S2>& op2)
@@ -4755,210 +4808,6 @@ using Slong = long long;
       }
    };
 
-   template <int W1, bool S1>
-   struct range_ref
-   {
-      ac_int<W1, S1>& ref;
-      int low;
-      int high;
-      __FORCE_INLINE range_ref(ac_int<W1, S1>& _ref, int _high, int _low) : ref(_ref), low(_low), high(_high)
-      {
-         AC_ASSERT(_high < W1, "Out of bounds range_ref");
-         AC_ASSERT(_low < W1, "Out of bounds range_ref");
-         AC_ASSERT(_low <= _high, "low and high inverted in range_ref");
-      }
-
-      template <int W2, bool S2>
-      __FORCE_INLINE const range_ref& operator=(const ac_int<W2, S2>& op) const
-      {
-         ref.set_slc(high, low, op);
-         return *this;
-      }
-      __FORCE_INLINE const range_ref& operator=(const unsigned long long op) const
-      {
-         ac_int<W1, S1> tmp(op);
-         ref.set_slc(high, low, tmp);
-         return *this;
-      }
-      template <int W2, bool S2>
-      __FORCE_INLINE operator ac_int<W2, S2>() const
-      {
-         const ac_int<W1, false> r = ref.slc(high, low);
-         return r;
-      }
-      template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
-      __FORCE_INLINE const range_ref& operator=(const ac_fixed<W2, I2, S2, Q2, O2>& b) const
-      {
-         return operator=(b.to_ac_int());
-      }
-      template <int W2, bool S2>
-      __FORCE_INLINE const range_ref& operator=(const range_ref<W2, S2>& b) const
-      {
-         const ac_int<W1, false> r = b.ref.slc(b.high, b.low);
-         return operator=(r);
-      }
-      __FORCE_INLINE int to_int() const
-      {
-         const ac_int<W1, false> r = ref.slc(high, low);
-         return r.to_int();
-      }
-      __FORCE_INLINE unsigned to_uint() const
-      {
-         const ac_int<W1, false> r = ref.slc(high, low);
-         return r.to_uint();
-      }
-      __FORCE_INLINE long to_long() const
-      {
-         const ac_int<W1, false> r = ref.slc(high, low);
-         return r.to_long();
-      }
-      __FORCE_INLINE unsigned long to_ulong() const
-      {
-         const ac_int<W1, false> r = ref.slc(high, low);
-         return r.to_ulong();
-      }
-      __FORCE_INLINE constexpr Slong to_int64() const
-      {
-         const ac_int<W1, false> r = ref.slc(high, low);
-         return r.to_int64();
-      }
-      __FORCE_INLINE constexpr Ulong to_uint64() const
-      {
-         const ac_int<W1, false> r = ref.slc(high, low);
-         return r.to_uint64();
-      }
-      __FORCE_INLINE double to_double() const
-      {
-         const ac_int<W1, false> r = ref.slc(high, low);
-         return r.to_double();
-      }
-
-      __FORCE_INLINE int length() const
-      {
-         return W1;
-      }
-      __FORCE_INLINE explicit operator int() const
-      {
-         return to_int();
-      }
-      __FORCE_INLINE explicit operator unsigned() const
-      {
-         return to_uint();
-      }
-      __FORCE_INLINE explicit operator long() const
-      {
-         return to_long();
-      }
-      __FORCE_INLINE explicit operator unsigned long() const
-      {
-         return to_ulong();
-      }
-      __FORCE_INLINE explicit operator Slong() const
-      {
-         return to_int64();
-      }
-      __FORCE_INLINE explicit operator Ulong() const
-      {
-         return to_uint64();
-      }
-      __FORCE_INLINE explicit operator double() const
-      {
-         return to_double();
-      }
-   };
-
-   namespace ac
-   {
-      template <typename T, typename T2>
-      struct rt_2T
-      {
-         using map_T = typename ac_private::map<T>::t;
-         using map_T2 = typename ac_private::map<T2>::t;
-         using mult = typename map_T::template rt_T<map_T2>::mult;
-         using plus = typename map_T::template rt_T<map_T2>::plus;
-         using minus = typename map_T::template rt_T<map_T2>::minus;
-         using minus2 = typename map_T::template rt_T<map_T2>::minus2;
-         using logic = typename map_T::template rt_T<map_T2>::logic;
-         using div = typename map_T::template rt_T<map_T2>::div;
-         using div2 = typename map_T::template rt_T<map_T2>::div2;
-      };
-   } // namespace ac
-
-   namespace ac
-   {
-      template <typename T>
-      struct ac_int_represent
-      {
-         enum
-         {
-            t_w = ac_private::c_type_params<T>::W,
-            t_s = ac_private::c_type_params<T>::S
-         };
-         using type = ac_int<t_w, t_s>;
-      };
-      template <>
-      struct ac_int_represent<float>
-      {
-      };
-      template <>
-      struct ac_int_represent<double>
-      {
-      };
-      template <int W, bool S>
-      struct ac_int_represent<ac_int<W, S>>
-      {
-         using type = ac_int<W, S>;
-      };
-   } // namespace ac
-
-   namespace ac_private
-   {
-      template <int W2, bool S2>
-      struct rt_ac_int_T<ac_int<W2, S2>>
-      {
-         using i2_t = ac_int<W2, S2>;
-         template <int W, bool S>
-         struct op1
-         {
-            using i_t = ac_int<W, S>;
-            using mult = typename i_t::template rt<W2, S2>::mult;
-            using plus = typename i_t::template rt<W2, S2>::plus;
-            using minus = typename i_t::template rt<W2, S2>::minus;
-            using minus2 = typename i2_t::template rt<W, S>::minus;
-            using logic = typename i_t::template rt<W2, S2>::logic;
-            using div = typename i_t::template rt<W2, S2>::div;
-            using div2 = typename i2_t::template rt<W, S>::div;
-            using mod = typename i_t::template rt<W2, S2>::mod;
-            using mod2 = typename i2_t::template rt<W, S>::mod;
-         };
-      };
-
-      template <typename T>
-      struct rt_ac_int_T<c_type<T>>
-      {
-         using i2_t = typename ac::ac_int_represent<T>::type;
-         enum
-         {
-            W2 = i2_t::width,
-            S2 = i2_t::sign
-         };
-         template <int W, bool S>
-         struct op1
-         {
-            using i_t = ac_int<W, S>;
-            using mult = typename i_t::template rt<W2, S2>::mult;
-            using plus = typename i_t::template rt<W2, S2>::plus;
-            using minus = typename i_t::template rt<W2, S2>::minus;
-            using minus2 = typename i2_t::template rt<W, S>::minus;
-            using logic = typename i_t::template rt<W2, S2>::logic;
-            using div = typename i_t::template rt<W2, S2>::div;
-            using div2 = typename i2_t::template rt<W, S>::div;
-            using mod = typename i_t::template rt<W2, S2>::mod;
-            using mod2 = typename i2_t::template rt<W, S>::mod;
-         };
-      };
-   } // namespace ac_private
-
    // Specializations for constructors on integers that bypass bit adjusting
    //  and are therefore more efficient
    template <>
@@ -5178,6 +5027,263 @@ using Slong = long long;
       v.set(2, 0);
    }
 
+   template <int W1, bool S1>
+   struct range_ref
+   {
+      ac_int<W1, S1>& ref;
+      int low;
+      int high;
+      __FORCE_INLINE range_ref(ac_int<W1, S1>& _ref, int _high, int _low) : ref(_ref), low(_low), high(_high)
+      {
+         AC_ASSERT(_high < W1, "Out of bounds range_ref");
+         AC_ASSERT(_low < W1, "Out of bounds range_ref");
+         AC_ASSERT(_low <= _high, "low and high inverted in range_ref");
+      }
+
+      template <int W2, bool S2>
+      __FORCE_INLINE const range_ref& operator=(const ac_int<W2, S2>& op) const
+      {
+         ref.set_slc(high, low, op);
+         return *this;
+      }
+      __FORCE_INLINE const range_ref& operator=(const unsigned long long op) const
+      {
+         ac_int<W1, S1> tmp(op);
+         ref.set_slc(high, low, tmp);
+         return *this;
+      }
+      template <int W2, bool S2>
+      __FORCE_INLINE operator ac_int<W2, S2>() const
+      {
+         const ac_int<W1, false> r = ref.slc(high, low);
+         return r;
+      }
+      template <int W2, int I2, bool S2, ac_q_mode Q2, ac_o_mode O2>
+      __FORCE_INLINE const range_ref& operator=(const ac_fixed<W2, I2, S2, Q2, O2>& b) const
+      {
+         return operator=(b.to_ac_int());
+      }
+      template <int W2, bool S2>
+      __FORCE_INLINE const range_ref& operator=(const range_ref<W2, S2>& b) const
+      {
+         const ac_int<W1, false> r = b.ref.slc(b.high, b.low);
+         return operator=(r);
+      }
+
+      template <int W2, bool S2>
+      __FORCE_INLINE constexpr auto operator,(const ac_int<W2, S2>& z) const;
+      template <int W2, bool S2>
+      __FORCE_INLINE constexpr auto concat(const ac_int<W2, S2>& z) const;
+
+      __FORCE_INLINE int to_int() const
+      {
+         const ac_int<W1, false> r = ref.slc(high, low);
+         return r.to_int();
+      }
+      __FORCE_INLINE unsigned to_uint() const
+      {
+         const ac_int<W1, false> r = ref.slc(high, low);
+         return r.to_uint();
+      }
+      __FORCE_INLINE long to_long() const
+      {
+         const ac_int<W1, false> r = ref.slc(high, low);
+         return r.to_long();
+      }
+      __FORCE_INLINE unsigned long to_ulong() const
+      {
+         const ac_int<W1, false> r = ref.slc(high, low);
+         return r.to_ulong();
+      }
+      __FORCE_INLINE constexpr Slong to_int64() const
+      {
+         const ac_int<W1, false> r = ref.slc(high, low);
+         return r.to_int64();
+      }
+      __FORCE_INLINE constexpr Ulong to_uint64() const
+      {
+         const ac_int<W1, false> r = ref.slc(high, low);
+         return r.to_uint64();
+      }
+      __FORCE_INLINE double to_double() const
+      {
+         const ac_int<W1, false> r = ref.slc(high, low);
+         return r.to_double();
+      }
+
+      __FORCE_INLINE int length() const
+      {
+         return W1;
+      }
+      __FORCE_INLINE explicit operator int() const
+      {
+         return to_int();
+      }
+      __FORCE_INLINE explicit operator unsigned() const
+      {
+         return to_uint();
+      }
+      __FORCE_INLINE explicit operator long() const
+      {
+         return to_long();
+      }
+      __FORCE_INLINE explicit operator unsigned long() const
+      {
+         return to_ulong();
+      }
+      __FORCE_INLINE explicit operator Slong() const
+      {
+         return to_int64();
+      }
+      __FORCE_INLINE explicit operator Ulong() const
+      {
+         return to_uint64();
+      }
+      __FORCE_INLINE explicit operator double() const
+      {
+         return to_double();
+      }
+   };
+
+   template <int W1, bool S1, int W2, bool S2>
+   struct concat_ref
+   {
+      ac_int<W1, S1>& ref1;
+      ac_int<W2, S2>& ref2;
+
+      template <int W3, bool S3>
+      __FORCE_INLINE concat_ref& operator=(const ac_int<W3, S3>& op)
+      {
+         ref1 = op.range(W1 + W2 - 1, W2);
+         ref2 = op.range(W2 - 1, 0);
+         return *this;
+      }
+      template <int W3, bool S3>
+      __FORCE_INLINE operator ac_int<W3, S3>() const
+      {
+         ac_int<W1 + W2, S1> y;
+         ac_int<W2, false> z_temp(ref2);
+         y.set_slc(W2, ref1);
+         y.set_slc(0, z_temp);
+         return y;
+      }
+      __FORCE_INLINE concat_ref& operator=(const concat_ref& b)
+      {
+         ref1 = b.ref1;
+         ref2 = b.ref2;
+         return *this;
+      }
+      template <int W3, bool S3, int W4, bool S4>
+      __FORCE_INLINE concat_ref& operator=(const concat_ref<W3, S3, W4, S4>& b)
+      {
+         const ac_int<W3 + W4, S3> r = b;
+         return operator=(r);
+      }
+      template <int W3, bool S3>
+      __FORCE_INLINE concat_ref& operator=(const range_ref<W3, S3>& b)
+      {
+         const ac_int<W3, false> r = b;
+         return operator=(r);
+      }
+      __FORCE_INLINE concat_ref& operator=(const unsigned long long b)
+      {
+         const ac_int<64, false> r = b;
+         return operator=(r);
+      }
+   };
+
+   namespace ac
+   {
+      template <typename T, typename T2>
+      struct rt_2T
+      {
+         using map_T = typename ac_private::map<T>::t;
+         using map_T2 = typename ac_private::map<T2>::t;
+         using mult = typename map_T::template rt_T<map_T2>::mult;
+         using plus = typename map_T::template rt_T<map_T2>::plus;
+         using minus = typename map_T::template rt_T<map_T2>::minus;
+         using minus2 = typename map_T::template rt_T<map_T2>::minus2;
+         using logic = typename map_T::template rt_T<map_T2>::logic;
+         using div = typename map_T::template rt_T<map_T2>::div;
+         using div2 = typename map_T::template rt_T<map_T2>::div2;
+      };
+   } // namespace ac
+
+   namespace ac
+   {
+      template <typename T>
+      struct ac_int_represent
+      {
+         enum
+         {
+            t_w = ac_private::c_type_params<T>::W,
+            t_s = ac_private::c_type_params<T>::S
+         };
+         using type = ac_int<t_w, t_s>;
+      };
+      template <>
+      struct ac_int_represent<float>
+      {
+      };
+      template <>
+      struct ac_int_represent<double>
+      {
+      };
+      template <int W, bool S>
+      struct ac_int_represent<ac_int<W, S>>
+      {
+         using type = ac_int<W, S>;
+      };
+   } // namespace ac
+
+   namespace ac_private
+   {
+      template <int W2, bool S2>
+      struct rt_ac_int_T<ac_int<W2, S2>>
+      {
+         using i2_t = ac_int<W2, S2>;
+         template <int W, bool S>
+         struct op1
+         {
+            using i_t = ac_int<W, S>;
+            using mult = typename i_t::template rt<W2, S2>::mult;
+            using plus = typename i_t::template rt<W2, S2>::plus;
+            using minus = typename i_t::template rt<W2, S2>::minus;
+            using minus2 = typename i2_t::template rt<W, S>::minus;
+            using logic = typename i_t::template rt<W2, S2>::logic;
+            using div = typename i_t::template rt<W2, S2>::div;
+            using div2 = typename i2_t::template rt<W, S>::div;
+            using mod = typename i_t::template rt<W2, S2>::mod;
+            using mod2 = typename i2_t::template rt<W, S>::mod;
+         };
+      };
+
+      template <typename T>
+      struct rt_ac_int_T<c_type<T>>
+      {
+         using i2_t = typename ac::ac_int_represent<T>::type;
+         enum
+         {
+            W2 = i2_t::width,
+            S2 = i2_t::sign
+         };
+         template <int W, bool S>
+         struct op1
+         {
+            using i_t = ac_int<W, S>;
+            using mult = typename i_t::template rt<W2, S2>::mult;
+            using plus = typename i_t::template rt<W2, S2>::plus;
+            using minus = typename i_t::template rt<W2, S2>::minus;
+            using minus2 = typename i2_t::template rt<W, S>::minus;
+            using logic = typename i_t::template rt<W2, S2>::logic;
+            using div = typename i_t::template rt<W2, S2>::div;
+            using div2 = typename i2_t::template rt<W, S>::div;
+            using mod = typename i_t::template rt<W2, S2>::mod;
+            using mod2 = typename i2_t::template rt<W, S>::mod;
+         };
+      };
+   } // namespace ac_private
+
    template <int W, bool S>
    template <size_t NN>
    __FORCE_INLINE constexpr void ac_int<W, S>::bit_fill_bin(const char (&str)[NN], int start)
@@ -5392,27 +5498,76 @@ using Slong = long long;
       return op2.operator ac_int<W2, false>() REL_OP op1;                                          \
    }
 
-#define OP_ASSIGN_RANGE(ASSIGN_OP)                                                                      \
-   template <int W1, bool S1, int W2, bool S2>                                                          \
-   __FORCE_INLINE ac_int<W1, S1>& operator ASSIGN_OP(ac_int<W1, S1>& op1, range_ref<W2, S2>& op2)       \
-   {                                                                                                    \
-      return op1.operator ASSIGN_OP(ac_int<W2, false>(op2));                                            \
-   }                                                                                                    \
-   template <int W1, bool S1, int W2, bool S2>                                                          \
-   __FORCE_INLINE range_ref<W1, S1>& operator ASSIGN_OP(range_ref<W1, S1>& op1, ac_int<W2, S2>& op2)    \
-   {                                                                                                    \
-      ac_int<W1, false> tmp(op1);                                                                       \
-      tmp.operator ASSIGN_OP(op2);                                                                      \
-      op1 = tmp;                                                                                        \
-      return op1;                                                                                       \
-   }                                                                                                    \
-   template <int W1, bool S1, int W2, bool S2>                                                          \
-   __FORCE_INLINE range_ref<W1, S1>& operator ASSIGN_OP(range_ref<W1, S1>& op1, range_ref<W2, S2>& op2) \
-   {                                                                                                    \
-      ac_int<W1, false> tmp(op1);                                                                       \
-      tmp.operator ASSIGN_OP(ac_int<W2, false>(op2));                                                   \
-      op1 = tmp;                                                                                        \
-      return op1;                                                                                       \
+#define OP_ASSIGN_RANGE(ASSIGN_OP)                                                                \
+   template <int W1, bool S1, int W2, bool S2>                                                    \
+   __FORCE_INLINE ac_int<W1, S1>& operator ASSIGN_OP(ac_int<W1, S1>& op1, range_ref<W2, S2>& op2) \
+   {                                                                                              \
+      return op1.operator ASSIGN_OP(ac_int<W2, false>(op2));                                      \
+   }
+
+// --- Macro for concat_ref
+#define OP_BIN_CONCAT(BIN_OP, RTYPE)                                                             \
+   template <int W1, bool S1, int W2, bool S2, int W3, bool S3, int W4, bool S4>                 \
+   __FORCE_INLINE typename ac_int<W1 + W2, S1>::template rt<W3 + W4, S3>::RTYPE operator BIN_OP( \
+       const concat_ref<W1, S1, W2, S2>& op1, const concat_ref<W3, S3, W4, S4>& op2)             \
+   {                                                                                             \
+      return ac_int<W1 + W2, S1>(op1) BIN_OP(ac_int<W3 + W4, S3>(op2));                          \
+   }                                                                                             \
+   template <int W1, bool S1, int W2, bool S2, int W3, bool S3>                                  \
+   __FORCE_INLINE typename ac_int<W1 + W2, S1>::template rt<W3, S3>::RTYPE operator BIN_OP(      \
+       const concat_ref<W1, S1, W2, S2>& op1, const ac_int<W3, S3>& op2)                         \
+   {                                                                                             \
+      return ac_int<W1 + W2, S1>(op1) BIN_OP(op2);                                               \
+   }                                                                                             \
+   template <int W1, bool S1, int W2, bool S2, typename T>                                       \
+   __FORCE_INLINE auto operator BIN_OP(const concat_ref<W1, S1, W2, S2>& op1, T op2)             \
+   {                                                                                             \
+      return op1.operator ac_int<W1 + W2, S1>() BIN_OP op2;                                      \
+   }                                                                                             \
+   template <int W1, bool S1, int W2, bool S2, int W3, bool S3>                                  \
+   __FORCE_INLINE typename ac_int<W1, S1>::template rt<W2 + W3, S2>::RTYPE operator BIN_OP(      \
+       const ac_int<W1, S1>& op1, const concat_ref<W2, S2, W3, S3>& op2)                         \
+   {                                                                                             \
+      return op1 BIN_OP(ac_int<W2 + W3, S2>(op2));                                               \
+   }                                                                                             \
+   template <typename T, int W2, bool S2, int W3, bool S3>                                       \
+   __FORCE_INLINE auto operator BIN_OP(T op1, const concat_ref<W2, S2, W3, S3>& op2)             \
+   {                                                                                             \
+      return op2.operator ac_int<W2 + W3, S2>() BIN_OP op1;                                      \
+   }
+
+#define OP_REL_CONCAT(REL_OP)                                                                                        \
+   template <int W1, bool S1, int W2, bool S2, int W3, bool S3, int W4, bool S4>                                     \
+   __FORCE_INLINE bool operator REL_OP(const concat_ref<W1, S1, W2, S2>& op1, const concat_ref<W3, S3, W4, S4>& op2) \
+   {                                                                                                                 \
+      return ac_int<W1 + W2, S1>(op1).operator REL_OP(op2.operator ac_int<W3 + W4, S3>());                           \
+   }                                                                                                                 \
+   template <int W1, bool S1, int W2, bool S2, int W3, bool S3>                                                      \
+   __FORCE_INLINE bool operator REL_OP(const concat_ref<W1, S1, W2, S2>& op1, const ac_int<W3, S3>& op2)             \
+   {                                                                                                                 \
+      return ac_int<W1 + W2, S1>(op1).operator REL_OP(op2);                                                          \
+   }                                                                                                                 \
+   template <int W1, bool S1, int W2, bool S2, typename T>                                                           \
+   __FORCE_INLINE bool operator REL_OP(const concat_ref<W1, S1, W2, S2>& op1, T op2)                                 \
+   {                                                                                                                 \
+      return op1.operator ac_int<W1 + W2, S1>() REL_OP op2;                                                          \
+   }                                                                                                                 \
+   template <int W1, bool S1, int W2, bool S2, int W3, bool S3>                                                      \
+   __FORCE_INLINE bool operator REL_OP(const ac_int<W1, S1>& op1, const concat_ref<W2, S2, W3, S3>& op2)             \
+   {                                                                                                                 \
+      return op1.operator REL_OP(op2.operator ac_int<W2 + W3, S2>());                                                \
+   }                                                                                                                 \
+   template <typename T, int W2, bool S2, int W3, bool S3>                                                           \
+   __FORCE_INLINE bool operator REL_OP(T op1, const concat_ref<W2, S2, W3, S3>& op2)                                 \
+   {                                                                                                                 \
+      return op2.operator ac_int<W2 + W3, S2>() REL_OP op1;                                                          \
+   }
+
+#define OP_ASSIGN_CONCAT(ASSIGN_OP)                                                                        \
+   template <int W1, bool S1, int W2, bool S2, int W3, bool S3>                                            \
+   __FORCE_INLINE ac_int<W1, S1>& operator ASSIGN_OP(ac_int<W1, S1>& op1, concat_ref<W2, S2, W3, S3>& op2) \
+   {                                                                                                       \
+      return op1.operator ASSIGN_OP(ac_int<W2 + W3, S2>(op2));                                             \
    }
 
    namespace ac
@@ -5469,6 +5624,38 @@ using Slong = long long;
          OP_BIN_RANGE(^, logic)
       } // namespace ops_with_range_types
 
+      namespace ops_with_concat_types
+      {
+         OP_ASSIGN_CONCAT(+=)
+         OP_ASSIGN_CONCAT(-=)
+         OP_ASSIGN_CONCAT(*=)
+         OP_ASSIGN_CONCAT(/=)
+         OP_ASSIGN_CONCAT(%=)
+         OP_ASSIGN_CONCAT(>>=)
+         OP_ASSIGN_CONCAT(<<=)
+         OP_ASSIGN_CONCAT(&=)
+         OP_ASSIGN_CONCAT(|=)
+         OP_ASSIGN_CONCAT(^=)
+
+         OP_REL_CONCAT(==)
+         OP_REL_CONCAT(!=)
+         OP_REL_CONCAT(>)
+         OP_REL_CONCAT(>=)
+         OP_REL_CONCAT(<)
+         OP_REL_CONCAT(<=)
+
+         OP_BIN_CONCAT(+, plus)
+         OP_BIN_CONCAT(-, minus)
+         OP_BIN_CONCAT(*, mult)
+         OP_BIN_CONCAT(/, div)
+         OP_BIN_CONCAT(%, mod)
+         OP_BIN_CONCAT(>>, arg1)
+         OP_BIN_CONCAT(<<, arg1)
+         OP_BIN_CONCAT(&, logic)
+         OP_BIN_CONCAT(|, logic)
+         OP_BIN_CONCAT(^, logic)
+      } // namespace ops_with_concat_types
+
       // Functions to fill bits
 
       template <typename T>
@@ -5518,6 +5705,7 @@ using Slong = long long;
 
    using namespace ac::ops_with_other_types;
    using namespace ac::ops_with_range_types;
+   using namespace ac::ops_with_concat_types;
 
    namespace ac_intN
    {
