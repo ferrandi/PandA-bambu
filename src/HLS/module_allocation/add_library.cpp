@@ -238,13 +238,22 @@ DesignFlowStep_Status add_library::InternalExec()
       TechM->add_operation(WORK_LIBRARY, module_name, function_name);
       const auto op = GetPointerS<operation>(fu->get_operation(function_name));
       op->primary_inputs_registered = HLS->registered_inputs;
-      op->bounded = HLS->STG && HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->bounded;
+      const auto is_function_pipelined = FB->is_function_pipelined();
+      if(is_function_pipelined)
+      {
+         op->bounded = true;
+      }
+      else
+      {
+         op->bounded = HLS->STG && HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->bounded;
+      }
       const auto call_delay =
           HLS->allocation_information ? HLS->allocation_information->estimate_call_delay() : clock_period_value;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Estimated call delay " + STR(call_delay));
       op->time_m = time_info::factory(parameters);
       if(op->bounded)
       {
+         THROW_ASSERT(HLS->STG, "unexpected condition");
          const auto min_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles;
          const auto max_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->max_cycles;
          const auto exec_time = [&]() {
@@ -257,7 +266,7 @@ DesignFlowStep_Status add_library::InternalExec()
          op->time_m->set_execution_time(exec_time, min_cycles);
          if(max_cycles > 1)
          {
-            if(FB->is_simple_pipeline())
+            if(is_function_pipelined)
             {
                op->time_m->set_stage_period(call_delay);
                const ControlStep jj(1);

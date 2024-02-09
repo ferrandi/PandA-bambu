@@ -356,13 +356,11 @@ lib_storage_value_insertion_la_CPPFLAGS = \
 noinst_HEADERS += \
    binding/storage_value_insertion/storage_value_information.hpp \
    binding/storage_value_insertion/storage_value_information_fsm.hpp \
-   binding/storage_value_insertion/storage_value_information_pipeline.hpp \
    binding/storage_value_insertion/storage_value_insertion.hpp \
    binding/storage_value_insertion/values_scheme.hpp
 lib_storage_value_insertion_la_SOURCES = \
    binding/storage_value_insertion/storage_value_information.cpp \
    binding/storage_value_insertion/storage_value_information_fsm.cpp \
-   binding/storage_value_insertion/storage_value_information_pipeline.cpp \
    binding/storage_value_insertion/storage_value_insertion.cpp \
    binding/storage_value_insertion/values_scheme.cpp
 
@@ -799,6 +797,7 @@ noinst_LTLIBRARIES += lib_scheduling.la
 lib_scheduling_la_CPPFLAGS = \
    -I$(top_srcdir)/src \
    -I$(top_srcdir)/src/algorithms/clique_covering \
+   -I$(top_srcdir)/src/algorithms/sdc_solver \
    -I$(top_srcdir)/src/behavior \
    -I$(top_srcdir)/src/circuit \
    -I$(top_srcdir)/src/constants \
@@ -835,18 +834,19 @@ if BUILD_COIN_OR
       -I$(top_srcdir)/src/HLS/scheduling/newilp_scheduling
 endif
 noinst_HEADERS += \
+   scheduling/DAG_SSSP.hpp \
    scheduling/ASLAP.hpp \
    scheduling/parametric_list_based.hpp \
    scheduling/priority.hpp \
    scheduling/rehashed_heap.hpp \
    scheduling/schedule.hpp \
-   scheduling/scheduling.hpp
+   scheduling/scheduling_base_step.hpp
 lib_scheduling_la_SOURCES = \
    scheduling/ASLAP.cpp \
    scheduling/parametric_list_based.cpp \
    scheduling/priority.cpp \
    scheduling/schedule.cpp \
-   scheduling/scheduling.cpp
+   scheduling/scheduling_base_step.cpp
 if BUILD_LIB_ILP
    noinst_HEADERS += \
       scheduling/sdc_scheduling.hpp
@@ -858,6 +858,13 @@ if BUILD_LIB_ILP
       -I$(top_srcdir)/src/frontend_analysis/IR_analysis \
       -I$(top_srcdir)/src/ilp
 endif
+noinst_HEADERS += \
+      scheduling/sdc_scheduling_base.hpp \
+      scheduling/sdc_scheduling2.hpp
+lib_scheduling_la_SOURCES += \
+      scheduling/sdc_scheduling_base.cpp \
+      scheduling/sdc_scheduling2.cpp
+
 PRJ_DOC += scheduling/scheduling.doc
 
 noinst_LTLIBRARIES += lib_stg.la

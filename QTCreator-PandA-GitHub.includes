@@ -42,6 +42,12 @@ ext/abseil-cpp
 ext/flopoco/src
 ext/flopoco/src/FPExpAttic
 ext/flopoco/src/FPExpressions
+ext/gbbs
+ext/gbbs/parlay
+ext/gbbs/parlay/internal
+ext/gbbs/parlay/internal/posix
+ext/gbbs/parlay/internal/scheduler_plugins
+ext/gbbs/parlay/internal/windows
 ext/libfplll-4.0.3/src
 ext/mockturtle/include
 ext/mockturtle/include/mockturtle
@@ -121,6 +127,7 @@ src/algorithms/clique_covering
 src/algorithms/dominance
 src/algorithms/graph_helpers
 src/algorithms/loops_detection
+src/algorithms/sdc_solver
 src/behavior
 src/circuit
 src/constants

@@ -409,13 +409,13 @@ DesignFlowStep_Status create_tree_manager::Exec()
                fd->set_pipelining(true);
                if(val == "frp")
                {
-                  fd->set_simple_pipeline(true);
+                  /// TO BE FIXED once the other pipeline styles are implemented
                }
             }
          }
          else if(attr == FunctionArchitecture::func_pipeline_ii)
          {
-            const auto pipeline_ii = std::stoi(val);
+            const auto pipeline_ii = static_cast<unsigned>(std::stoul(val));
             fd->set_initiation_time(pipeline_ii);
          }
       }

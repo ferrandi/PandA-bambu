@@ -361,7 +361,6 @@ void tree_node_finder::operator()(const function_decl* obj, unsigned int& mask)
        CHECK_VALUE_OPT(TOK_WRITING_MEMORY, obj->writing_memory) &&
        CHECK_VALUE_OPT(TOK_READING_MEMORY, obj->reading_memory) &&
        CHECK_VALUE_OPT(TOK_PIPELINE_ENABLED, obj->pipeline_enabled) &&
-       CHECK_VALUE_OPT(TOK_SIMPLE_PIPELINE, obj->simple_pipeline) &&
        CHECK_VALUE_OPT(TOK_INITIATION_TIME, obj->initiation_time) &&
 #if HAVE_FROM_PRAGMA_BUILT
        CHECK_VALUE_OPT(TOK_OMP_ATOMIC, obj->omp_atomic) && CHECK_VALUE_OPT(TOK_OMP_BODY_LOOP, obj->omp_body_loop) &&

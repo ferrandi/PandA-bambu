@@ -253,7 +253,7 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation& co
                   vertex def_op = HLS->Rliv->get_op_where_defined(tree_var);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "Variable is defined in " + GET_NAME(data, def_op));
-                  const CustomOrderedSet<vertex>& def_op_ending_states = HLS->Rliv->get_state_where_end(def_op);
+                  const auto& def_op_ending_states = HLS->Rliv->get_state_where_end(def_op);
                   if((GET_TYPE(data, def_op) & TYPE_PHI) == 0)
                   {
                      if(def_op_ending_states.find(state) != def_op_ending_states.end())
@@ -261,22 +261,30 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation& co
                         con_rel_per_vertex_per_port_index.insert(
                             std::make_pair(no_phi_chained, std::make_pair(tree_var, def_op)));
                      }
-                     else if(HLS->storage_value_information->is_a_storage_value(state, tree_var))
-                     {
-                        auto storage_value = HLS->storage_value_information->get_storage_value_index(state, tree_var);
-                        con_rel_per_vertex_per_port_index.insert(
-                            std::make_pair(no_phi_no_chained, std::make_pair(storage_value, def_op)));
-                     }
                      else
                      {
-                        THROW_UNREACHABLE("unexpected");
+                        auto step = HLS->Rliv->GetStep(state, current_v, tree_var, true);
+
+                        if(HLS->storage_value_information->is_a_storage_value(state, tree_var, step))
+                        {
+                           auto storage_value =
+                               HLS->storage_value_information->get_storage_value_index(state, tree_var, step);
+                           con_rel_per_vertex_per_port_index.insert(
+                               std::make_pair(no_phi_no_chained, std::make_pair(storage_value, def_op)));
+                        }
+                        else
+                        {
+                           THROW_UNREACHABLE("unexpected");
+                        }
                      }
                   }
                   else
                   {
-                     auto storage_value = HLS->storage_value_information->get_storage_value_index(state, tree_var);
-                     THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(state, tree_var),
-                                  "unxpected case");
+                     auto step = HLS->Rliv->GetStep(state, current_v, tree_var, true);
+                     THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(state, tree_var, step),
+                                  "unexpected case");
+                     auto storage_value =
+                         HLS->storage_value_information->get_storage_value_index(state, tree_var, step);
                      con_rel_per_vertex_per_port_index.insert(
                          std::make_pair(phi, std::make_pair(storage_value, def_op)));
                   }
@@ -441,10 +449,11 @@ void estimate_muxes(const connection_relation& con_rel, unsigned long long mux_p
             const CustomOrderedSet<vertex>& end = HLS->Rliv->get_state_where_end(current_v);
             for(const auto estate : end)
             {
-               if(HLS->storage_value_information->is_a_storage_value(estate, var_written))
+               auto step = HLS->Rliv->GetStep(estate, current_v, var_written, false);
+               if(HLS->storage_value_information->is_a_storage_value(estate, var_written, step))
                {
                   regs_out.insert(HLS->Rreg->get_register(
-                      HLS->storage_value_information->get_storage_value_index(estate, var_written)));
+                      HLS->storage_value_information->get_storage_value_index(estate, var_written, step)));
                }
                else
                {
@@ -550,7 +559,7 @@ struct slack_based_filtering : public filter_clique<vertex>
                                    const CustomUnorderedMap<C_vertex, vertex>& converter,
                                    const cc_compatibility_graph& cg) const override
    {
-      THROW_ASSERT(!candidate_clique.empty(), "candidate clique cannot be empty");
+      THROW_ASSERT(candidate_clique.size() > 1, "candidate clique size must have more than one element");
       double min_slack = std::numeric_limits<double>::max();
       C_vertex min_slack_vertex = *candidate_clique.begin();
       vertex current_v;
@@ -614,38 +623,39 @@ struct slack_based_filtering : public filter_clique<vertex>
             }
          }
       }
-      // std::cerr << "Min_slack " << min_slack << " mux_delay " << mux_delay << std::endl;
+      // std::cerr << "Min_slack " << min_slack << " total_muxes=" << total_muxes
+      //          << " mux_area_estimation=" << mux_area_estimation << " area_resource=" << area_resource
+      //          << " mux_time_estimation=" << mux_time_estimation << std::endl;
       /// special case
       if(total_muxes > 0 && min_slack < 0)
       {
          v = min_slack_vertex;
-         // std::cerr << "Removed0 " << GET_NAME(data, converter.find(v)->second) << " Slack "<< min_slack << "
-         // mux_delay " << mux_delay << std::endl;
+         // std::cerr << "Removed0 " << GET_NAME(data, converter.find(v)->second) << " Slack " << min_slack <<
+         // std::endl;
          return true;
       }
-      /// we accept solutions sharing resources without introducing muxes
 
       if(total_muxes > 0 &&
          ((mux_area_estimation + area_resource) >=
           (static_cast<double>(candidate_clique.size() + (total_muxes <= n_shared ? n_shared : 0)) * area_resource)))
       {
          v = min_slack_vertex;
-         // std::cerr << "Removed1 " << GET_NAME(data, converter.find(v)->second) << " Slack "<< min_slack << "
-         // mux_delay " << mux_delay << std::endl;
+         // std::cerr << "Removed1 " << GET_NAME(data, converter.find(v)->second) << " Slack " << min_slack
+         //          << "total_muxes " << total_muxes << "n_shared=" << n_shared << " area_resource=" << area_resource
+         //          << std::endl;
          return true;
       }
 
       if(total_muxes > 0 && mux_time_estimation > min_slack)
       {
          v = min_slack_vertex;
-         // std::cerr << "Removed " << GET_NAME(data, converter.find(v)->second) << " Slack "<< min_slack << " levels "
-         // << levels_in << " mux_delay " << mux_delay << std::endl;
+         // std::cerr << "Removed " << GET_NAME(data, converter.find(v)->second) << " Slack " << min_slack << std::endl;
          return true;
       }
       else
       {
-         // std::cerr << "No vertex removed " << " Slack "<< min_slack << " levels " << levels_in << " mux_delay " <<
-         // mux_delay  << std::endl;
+         // std::cerr << "No vertex removed "
+         //          << " Slack " << min_slack << std::endl;
          return false;
       }
    }
@@ -937,7 +947,6 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       START_TIME(step_time);
    }
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
-   HLS->Rliv->set_HLS(HLS);
 
    // resource binding and allocation  info
    fu_bindingRef fu = HLS->Rfu;
@@ -1346,28 +1355,36 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       /// add tabu for each pair of vertices in conflict: vertices concurrently running
       for(const auto& fu_cv : candidate_vertices)
       {
-         const CustomOrderedSet<vertex>::const_iterator cv_it_end = fu_cv.second.end();
-         for(CustomOrderedSet<vertex>::const_iterator cv_it = fu_cv.second.begin(); cv_it != cv_it_end;)
+         auto cv_it_end = fu_cv.second.end();
+         for(auto cv_it = fu_cv.second.begin(); cv_it != cv_it_end;)
          {
-            CustomOrderedSet<vertex>::const_iterator cv1_it = cv_it;
+            auto cv1_it = cv_it;
             ++cv_it;
-            for(CustomOrderedSet<vertex>::const_iterator cv2_it = cv_it; cv2_it != cv_it_end; ++cv2_it)
+            for(auto cv2_it = cv_it; cv2_it != cv_it_end; ++cv2_it)
             {
                if(!can_be_clustered(*cv1_it, fsdg, fu, slack_time, 0))
+               {
                   continue;
+               }
                if(!can_be_clustered(*cv2_it, fsdg, fu, slack_time, 0))
+               {
                   continue;
+               }
                if(clock_cycle <
                   (setup_hold_time + starting_time[*cv1_it] + ending_time[*cv2_it] - starting_time[*cv2_it]))
                   hc.add_tabu_pair(boost::get(boost::vertex_index, *fsdg, *cv1_it),
                                    boost::get(boost::vertex_index, *fsdg, *cv2_it));
                if(clock_cycle <
                   (setup_hold_time + starting_time[*cv2_it] + ending_time[*cv1_it] - starting_time[*cv1_it]))
+               {
                   hc.add_tabu_pair(boost::get(boost::vertex_index, *fsdg, *cv1_it),
                                    boost::get(boost::vertex_index, *fsdg, *cv2_it));
+               }
                if(HLS->Rliv->are_in_conflict(*cv1_it, *cv2_it))
+               {
                   hc.add_tabu_pair(boost::get(boost::vertex_index, *fsdg, *cv1_it),
                                    boost::get(boost::vertex_index, *fsdg, *cv2_it));
+               }
                // else if(allocation_information->get_worst_execution_time(fu_s1)==0)
                // hc.add_tabu_pair(boost::get(boost::vertex_index, *fsdg, *cv1_it), boost::get(boost::vertex_index,
                // *fsdg, *cv2_it));
@@ -1382,7 +1399,9 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             unsigned int fu_s1 = fu_cv.first;
             const double mux_time = MODULE_BINDING_MUX_MARGIN * allocation_information->estimate_mux_time(fu_s1);
             if(!can_be_clustered(cv, fsdg, fu, slack_time, mux_time))
+            {
                continue;
+            }
             std::vector<HLS_manager::io_binding_type> vars_read1 = HLSMgr->get_required_values(HLS->functionId, cv);
             unsigned int index = 0;
             for(auto var_pair : vars_read1)
@@ -1395,9 +1414,11 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                   if(all_candidate_vertices.find(src) != all_candidate_vertices.end() &&
                      can_be_clustered(src, fsdg, fu, slack_time, 0) &&
                      !HLS->chaining_information->may_be_chained_ops(src, tgt))
+                  {
                      hc.add_edge(boost::get(boost::vertex_index, *fsdg, src),
                                  boost::get(boost::vertex_index, *fsdg, tgt),
                                  2 * index + (HLS->chaining_information->may_be_chained_ops(src, tgt) ? 1 : 0));
+                  }
                }
                ++index;
             }
@@ -1464,11 +1485,13 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          const double mux_time = MODULE_BINDING_MUX_MARGIN * allocation_information->estimate_mux_time(fu_s1);
          double controller_delay = allocation_information->EstimateControllerDelay();
          double resource_area = allocation_information->compute_normalized_area(fu_s1);
+         auto dfp_P = parameters->isOption(OPT_disable_function_proxy) &&
+                      parameters->getOption<bool>(OPT_disable_function_proxy);
          bool disabling_slack_based_binding =
              ((allocation_information->get_number_channels(fu_s1) >= 1) and
               (!allocation_information->is_readonly_memory_unit(fu_s1) ||
                (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))) ||
-             lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY ||
+             (!dfp_P && (lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY)) ||
              allocation_information->get_number_fu(fu_s1) != INFINITE_UINT;
          const auto local_mux_time =
              (disabling_slack_based_binding ? -std::numeric_limits<double>::infinity() : mux_time);
@@ -1943,8 +1966,10 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
 
             const auto res_name = allocation_information->get_fu_name(partition.first).first;
             const auto lib_name = HLS->HLS_D->get_technology_manager()->get_library(res_name);
+            const auto dfp_P = parameters->isOption(OPT_disable_function_proxy) &&
+                               parameters->getOption<bool>(OPT_disable_function_proxy);
             const auto disabling_slack_based_binding =
-                disabling_slack_cond0 || lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY ||
+                disabling_slack_cond0 || (!dfp_P && (lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY)) ||
                 allocation_information->get_number_fu(partition.first) != INFINITE_UINT;
             THROW_ASSERT(lib_name != PROXY_LIBRARY || 1 == allocation_information->get_number_fu(partition.first),
                          "unexpected condition");
@@ -2050,6 +2075,10 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                if(allocation_information->get_number_channels(partition.first) > 0)
                {
                   module_clique->max_resources(allocation_information->get_number_channels(partition.first));
+               }
+               else if(!dfp_P && (lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY))
+               {
+                  module_clique->max_resources(allocation_information->get_number_fu(partition.first));
                }
             }
 
@@ -2171,6 +2200,10 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                      if(allocation_information->get_number_channels(partition.first) > 0)
                      {
                         module_clique->max_resources(allocation_information->get_number_channels(partition.first));
+                     }
+                     else if(!dfp_P && (lib_name == WORK_LIBRARY || lib_name == PROXY_LIBRARY))
+                     {
+                        module_clique->max_resources(allocation_information->get_number_fu(partition.first));
                      }
                   }
 
@@ -2560,7 +2593,6 @@ bool cdfc_module_binding::can_be_clustered(vertex v, OpGraphConstRef fsdg, fu_bi
    }
    auto fu_s1 = fu->get_assign(v);
    /*
-   HLS->Rliv->set_HLS(HLS);
    std::string res_name = HLS->allocation_information->get_fu_name(fu_s1).first;
    std::string lib_name = HLS->HLS_D->get_technology_manager()->get_library(res_name);
    bool disabling_slack_based_binding = (HLS->allocation_information->get_number_channels(fu_s1) >= 1) ||
@@ -2715,14 +2747,16 @@ int cdfc_module_binding::weight_computation(bool cond1, bool cond2, vertex v1, v
    {
       _w = 0;
 #ifdef HC_APPROACH
-      int _w_saved = _w;
+      size_t _w_saved = _w;
       if(can_be_clustered(v1, fsdg, fu, slack_time, mux_time) && can_be_clustered(v2, fsdg, fu, slack_time, mux_time))
       {
          double p_weight =
              hc.pair_weight(boost::get(boost::vertex_index, *fsdg, v1), boost::get(boost::vertex_index, *fsdg, v2));
-         int delta = static_cast<int>(static_cast<double>(threshold1) * p_weight);
+         auto delta = static_cast<size_t>(static_cast<double>(threshold1) * p_weight);
          if(p_weight >= 1.0)
+         {
             _w += delta;
+         }
       }
       if(_w != _w_saved)
       {

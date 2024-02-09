@@ -196,11 +196,12 @@ DesignFlowStep_Status chordal_coloring_register::RegisterBinding()
    const auto vEnd = support.end();
    for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
    {
-      const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
+      const auto& live = HLS->Rliv->get_live_in(*vIt);
       auto k_end = live.end();
       for(auto k = live.begin(); k != k_end; ++k)
       {
-         unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(*vIt, *k);
+         unsigned int storage_value_index =
+             HLS->storage_value_information->get_storage_value_index(*vIt, k->first, k->second);
          HLS->Rreg->bind(storage_value_index,
                          static_cast<unsigned int>(color[boost::vertex(storage_value_index, *cg)]));
       }

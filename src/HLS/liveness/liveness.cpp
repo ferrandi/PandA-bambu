@@ -43,29 +43,17 @@
  *
  */
 
-/// Header include
 #include "liveness.hpp"
 
-///. include
 #include "Parameter.hpp"
-#include "constant_strings.hpp"
-
-/// behavior include
 #include "basic_block.hpp"
-
-/// HLS include
 #include "hls.hpp"
 #include "hls_manager.hpp"
-
-/// tree includes
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
-
 #include "loop.hpp"
 #include "loops.hpp"
-
-#include "state_transition_graph.hpp"
-#include "state_transition_graph_manager.hpp"
+#include "string_manipulation.hpp"
+#include "tree_manager.hpp"
+#include "tree_node.hpp"
 
 liveness::liveness(const HLS_managerRef _HLSMgr, const ParameterConstRef _Param)
     : TreeM(_HLSMgr->get_tree_manager()), Param(_Param), null_vertex_string("NULL_VERTEX"), HLSMgr(_HLSMgr)
@@ -75,38 +63,29 @@ liveness::liveness(const HLS_managerRef _HLSMgr, const ParameterConstRef _Param)
 
 liveness::~liveness() = default;
 
-bool liveness::is_defined(unsigned int var) const
+void liveness::set_live_in(const vertex& v, unsigned int var, unsigned int step)
 {
-   if(var_op_definition.find(var) != var_op_definition.end())
-   {
-      return true;
-   }
-
-   return false;
+   live_in[v].insert(std::make_pair(var, step));
 }
 
-void liveness::set_live_in(const vertex& v, unsigned int var)
-{
-   live_in[v].insert(var);
-}
-
-void liveness::set_live_in(const vertex& v, const CustomOrderedSet<unsigned int>& live_set)
+void liveness::set_live_in(const vertex& v, const CustomOrderedSet<std::pair<unsigned int, unsigned int>>& live_set)
 {
    live_in[v].insert(live_set.begin(), live_set.end());
 }
 
-void liveness::set_live_in(const vertex& v, const CustomOrderedSet<unsigned int>::const_iterator first,
-                           const CustomOrderedSet<unsigned int>::const_iterator last)
+void liveness::set_live_in(const vertex& v,
+                           const CustomOrderedSet<std::pair<unsigned int, unsigned int>>::const_iterator first,
+                           const CustomOrderedSet<std::pair<unsigned int, unsigned int>>::const_iterator last)
 {
    live_in[v].insert(first, last);
 }
 
-void liveness::erase_el_live_in(const vertex& v, unsigned int var)
+void liveness::erase_el_live_in(const vertex& v, unsigned int var, unsigned int step)
 {
-   live_in[v].erase(var);
+   live_in[v].erase(std::make_pair(var, step));
 }
 
-const CustomOrderedSet<unsigned int>& liveness::get_live_in(const vertex& v) const
+const CustomOrderedSet<std::pair<unsigned int, unsigned int>>& liveness::get_live_in(const vertex& v) const
 {
    if(live_in.find(v) != live_in.end())
    {
@@ -118,28 +97,29 @@ const CustomOrderedSet<unsigned int>& liveness::get_live_in(const vertex& v) con
    }
 }
 
-void liveness::set_live_out(const vertex& v, unsigned int var)
+void liveness::set_live_out(const vertex& v, unsigned int var, unsigned int step)
 {
-   live_out[v].insert(var);
+   live_out[v].insert(std::make_pair(var, step));
 }
 
-void liveness::set_live_out(const vertex& v, const CustomOrderedSet<unsigned int>& vars)
+void liveness::set_live_out(const vertex& v, const CustomOrderedSet<std::pair<unsigned int, unsigned int>>& vars)
 {
    live_out[v].insert(vars.begin(), vars.end());
 }
 
-void liveness::set_live_out(const vertex& v, const CustomOrderedSet<unsigned int>::const_iterator first,
-                            const CustomOrderedSet<unsigned int>::const_iterator last)
+void liveness::set_live_out(const vertex& v,
+                            const CustomOrderedSet<std::pair<unsigned int, unsigned int>>::const_iterator first,
+                            const CustomOrderedSet<std::pair<unsigned int, unsigned int>>::const_iterator last)
 {
    live_out[v].insert(first, last);
 }
 
-void liveness::erase_el_live_out(const vertex& v, unsigned int var)
+void liveness::erase_el_live_out(const vertex& v, unsigned int var, unsigned int step)
 {
-   live_out[v].erase(var);
+   live_out[v].erase(std::make_pair(var, step));
 }
 
-const CustomOrderedSet<unsigned int>& liveness::get_live_out(const vertex& v) const
+const CustomOrderedSet<std::pair<unsigned int, unsigned int>>& liveness::get_live_out(const vertex& v) const
 {
    if(live_out.find(v) != live_out.end())
    {
@@ -256,182 +236,358 @@ const std::string& liveness::get_name(vertex v) const
 
 bool liveness::are_in_conflict(vertex op1, vertex op2) const
 {
-   // if(!HLS)
    const CustomOrderedSet<vertex>& op1_run = get_state_where_run(op1);
    const CustomOrderedSet<vertex>& op2_run = get_state_where_run(op2);
 
-   auto FB = HLSMgr->GetFunctionBehavior(HLS->functionId);
-   if(FB->is_pipeline_enabled() && !FB->is_simple_pipeline())
+   for(const auto s1 : op1_run)
    {
-      const OpGraphConstRef dfg = FB->CGetOpGraph(FunctionBehavior::DFG);
-      unsigned int bb_index1 = GET_BB_INDEX(dfg, op1);
-      unsigned int bb_index2 = GET_BB_INDEX(dfg, op2);
-      const CustomUnorderedMap<unsigned int, vertex>& bb_index_map =
-          FB->CGetBBGraph(FunctionBehavior::FBB)->CGetBBGraphInfo()->bb_index_map;
-      vertex bb_1 = bb_index_map.find(bb_index1)->second;
-      vertex bb_2 = bb_index_map.find(bb_index2)->second;
-
-      auto loops = HLSMgr->GetFunctionBehavior(HLS->functionId)->GetLoops()->GetList();
-      for(const auto& loop : loops)
+      if(op2_run.find(s1) != op2_run.end())
       {
-         int initiation_time = FB->get_initiation_time();
-         THROW_ASSERT(loop->num_blocks() != 1, "The loop has more than one basic block");
-         auto bbs = loop->get_blocks();
-         for(auto bb : bbs)
-         {
-            for(auto s_pair : HLS->STG->GetAstg()->GetStateTransitionGraphInfo()->vertex_to_state_id)
-            {
-               auto ids = HLS->STG->CGetAstg()->CGetStateInfo(std::get<0>(s_pair))->BB_ids;
-               for(auto id : ids)
-               {
-                  if(id ==
-                     HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBBGraph()->CGetBBNodeInfo(bb)->get_bb_index())
-                  {
-                     if(HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->loopId != 0 &&
-                        HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->loopId !=
-                            HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBBGraph()->CGetBBNodeInfo(bb)->loop_id)
-                     {
-                        THROW_ERROR("Attempting to change the loopId of state " +
-                                    HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->name);
-                     }
-                     HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->loopId =
-                         HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBBGraph()->CGetBBNodeInfo(bb)->loop_id;
-                  }
-               }
-            }
-         }
-
-         bool cond1 = false;
-         bool cond2 = false;
-         if(bbs.find(bb_1) != bbs.end())
-         {
-            cond1 = true;
-            for(const auto s1 : op1_run)
-            {
-               auto info = HLS->STG->GetAstg()->GetStateInfo(s1);
-               THROW_ASSERT(info->loopId == 0 || info->loopId == loop->GetId(),
-                            "The same operation is performed in multiple loops");
-            }
-         }
-         if(bbs.find(bb_2) != bbs.end())
-         {
-            cond2 = true;
-            for(const auto s2 : op2_run)
-            {
-               auto info = HLS->STG->GetAstg()->GetStateInfo(s2);
-               THROW_ASSERT(info->loopId == 0 || info->loopId == loop->GetId(),
-                            "The same operation is performed in multiple loops");
-            }
-         }
-
-         if(cond1 && cond2)
-         {
-            auto stg = HLS->STG->GetAstg();
-            for(const auto s1 : op1_run)
-            {
-               std::queue<vertex> to_analyze;
-               std::set<vertex> analyzed;
-               std::queue<vertex> next_frontier;
-               to_analyze.push(s1);
-               vertex src;
-               int distance = 1;
-               graph::out_edge_iterator out_edge, out_edge_end;
-               while(to_analyze.size() > 0)
-               {
-                  src = to_analyze.front();
-                  to_analyze.pop();
-                  analyzed.insert(src);
-                  for(boost::tie(out_edge, out_edge_end) = boost::out_edges(src, *stg); out_edge != out_edge_end;
-                      ++out_edge)
-                  {
-                     vertex tgt = boost::target(*out_edge, *stg);
-                     if(op1_run.find(tgt) != op1_run.end())
-                     {
-                        continue;
-                     }
-
-                     if(op2_run.find(tgt) != op2_run.end())
-                     {
-                        if(distance % initiation_time == 0)
-                        {
-                           return false;
-                        }
-                        continue;
-                     }
-
-                     if(analyzed.find(tgt) != analyzed.end())
-                     {
-                        next_frontier.push(tgt);
-                     }
-                  }
-                  if(to_analyze.size() == 0)
-                  {
-                     to_analyze = next_frontier;
-                     distance++;
-                  }
-               }
-            }
-         }
+         return true;
       }
-   }
-
-   {
-      for(const auto s1 : op1_run)
-      {
-         if(op2_run.find(s1) != op2_run.end())
-         {
-            return true;
-         }
-      }
-      return false;
    }
    return false;
 }
 
-vertex liveness::get_start_op(vertex state) const
+unsigned liveness::satStep(unsigned BB_index, unsigned step) const
 {
-   THROW_ASSERT(start_op.find(state) != start_op.end(),
-                "start_op map does not have this chained vertex " + get_name(state));
-   return start_op.find(state)->second;
+   return std::min(BB2MaxStep.at(BB_index) + 1, step);
 }
 
-void liveness::set_start_op(vertex state, vertex op)
+unsigned liveness::get_step(vertex v, vertex op, unsigned int var, bool in) const
 {
-   start_op[state] = op;
-}
-
-bool liveness::non_in_parallel(vertex v1, vertex v2, const BBGraphConstRef cdg) const
-{
-   if(cdg->CGetBBNodeInfo(v1)->cer == cdg->CGetBBNodeInfo(v2)->cer)
+   unsigned int step = 0;
+   if(in)
    {
-      return v1 == v2;
-   }
-   else if(cdg->CGetBBNodeInfo(v1)->cer > cdg->CGetBBNodeInfo(v2)->cer)
-   {
-      InEdgeIterator ie_it, ie_it_end;
-      for(boost::tie(ie_it, ie_it_end) = boost::in_edges(v1, *cdg); ie_it != ie_it_end; ++ie_it)
+      THROW_ASSERT(!phi_vertices.count(op), "unexpected condition");
+      auto running_op = op;
+      if(vertex_to_op_step_in_map.count(v))
       {
-         vertex cer0_v1 = boost::source(*ie_it, *cdg);
-         bool current_res = non_in_parallel(cer0_v1, v2, cdg);
-         if(!current_res)
+         if(var_op_definition.count(var))
          {
-            return current_res;
+            if(var_op_definition.count(var))
+            {
+               auto def_op = var_op_definition.at(var);
+               THROW_ASSERT(ending_operations.count(def_op), "unexpected condition");
+               auto& def_state = *ending_operations.at(def_op).begin();
+               if(vertex_to_op_step_out_map.count(def_state))
+               {
+                  THROW_ASSERT(vertex_to_op_step_in_map.at(v).count(running_op), "unexpected condition");
+                  step = vertex_to_op_step_in_map.at(v).at(running_op);
+               }
+            }
+            else
+            {
+               /// parameters are "not" having a def_op
+               THROW_ASSERT(vertex_to_op_step_in_map.at(v).count(running_op), "unexpected condition");
+               step = vertex_to_op_step_in_map.at(v).at(running_op);
+            }
          }
       }
-      return true;
+      else
+      {
+         if(var_op_definition.count(var))
+         {
+            auto def_op = var_op_definition.at(var);
+            THROW_ASSERT(ending_operations.count(def_op), "unexpected condition");
+            auto& def_state = *ending_operations.at(def_op).begin();
+            if(vertex_to_op_step_out_map.count(def_state))
+            {
+               THROW_ASSERT(vertex_to_op_step_out_map.at(def_state).count(def_op), "unexpected condition");
+               step = vertex_to_op_step_out_map.at(def_state).at(def_op);
+            }
+         }
+      }
    }
    else
    {
-      InEdgeIterator ie_it, ie_it_end;
-      for(boost::tie(ie_it, ie_it_end) = boost::in_edges(v2, *cdg); ie_it != ie_it_end; ++ie_it)
+      auto def_op = op;
+      if(vertex_to_op_step_out_map.count(v))
       {
-         vertex cer0_v2 = boost::source(*ie_it, *cdg);
-         bool current_res = non_in_parallel(v1, cer0_v2, cdg);
-         if(!current_res)
+         THROW_ASSERT(vertex_to_op_step_out_map.at(v).count(def_op), "unexpected condition");
+         step = vertex_to_op_step_out_map.at(v).at(def_op);
+      }
+   }
+   return step;
+}
+
+unsigned liveness::GetStep(vertex v, vertex op, unsigned int var, bool in) const
+{
+   if(var_op_definition.count(var))
+   {
+      auto def_op = get_op_where_defined(var);
+      auto def_op_BB_index = vertex_BB.at(def_op);
+      if(BB2MaxStep.at(def_op_BB_index))
+      {
+         /// the def state is pipelined
+         auto op_BB_index = vertex_BB.at(op);
+         if(def_op_BB_index == op_BB_index)
          {
-            return current_res;
+            return satStep(def_op_BB_index, get_step(v, op, var, in));
+         }
+         else
+         {
+            return BB2MaxStep.at(def_op_BB_index) + 1;
          }
       }
-      return true;
+      else
+      {
+         return 0;
+      }
+   }
+   else
+   {
+      return 0;
+   }
+}
+
+unsigned liveness::GetStepPhiIn(vertex op, unsigned int var, unsigned BB_src, unsigned int BB_src_state) const
+{
+   auto def_op = get_op_where_defined(var);
+   auto def_op_BB_index = vertex_BB.at(def_op);
+   if(BB2MaxStep.at(def_op_BB_index))
+   {
+      /// the def state is pipelined
+      auto op_BB_index = vertex_BB.at(op);
+      if(def_op_BB_index == op_BB_index)
+      {
+         THROW_ASSERT(BB2II.count(op_BB_index) && BB2II.at(op_BB_index), "unexpected condition");
+         THROW_ASSERT(op_step.count(def_op), "unexpected condition");
+         THROW_ASSERT(op_step.count(op), "unexpected condition");
+         auto II = BB2II.at(op_BB_index);
+         auto step = op_step.at(def_op);
+         auto ostep = op_step.at(op);
+         THROW_ASSERT((ostep % II == 0 ? II : ostep % II) >= (step % II), "unexpected condition");
+         auto offset = (ostep % II == 0 ? II : ostep % II) - (step % II);
+         THROW_ASSERT(step + offset >= 1,
+                      "unexpected condition ostep=" + STR(ostep) + " II=" + STR(II) + " step=" + STR(step));
+         return step + (offset > 0 ? offset - 1 : 0);
+      }
+      else
+      {
+         return BB2MaxStep.at(def_op_BB_index) + (BB_src != BB_src_state || def_op_BB_index != BB_src_state ? 1 : 0);
+      }
+   }
+   else
+   {
+      return 0;
+   }
+}
+
+unsigned liveness::GetStepPhiOut(vertex op, unsigned int var) const
+{
+   auto def_op = get_op_where_defined(var);
+   auto def_op_BB_index = vertex_BB.at(def_op);
+   if(BB2MaxStep.at(def_op_BB_index))
+   {
+      /// the def state is pipelined
+      auto op_BB_index = vertex_BB.at(op);
+      if(def_op_BB_index == op_BB_index)
+      {
+         THROW_ASSERT(BB2II.count(op_BB_index) && BB2II.at(op_BB_index), "unexpected condition");
+         THROW_ASSERT(op_step.count(def_op), "unexpected condition");
+         THROW_ASSERT(op_step.count(op), "unexpected condition");
+         auto II = BB2II.at(op_BB_index);
+         auto step = op_step.at(def_op);
+         auto ostep = op_step.at(op);
+         THROW_ASSERT((ostep % II == 0 ? II : ostep % II) >= (step % II),
+                      "unexpected condition: ostep=" + STR(ostep) + " II=" + STR(II) + " step=" + STR(step));
+         auto offset = (ostep % II == 0 ? II : ostep % II) - (step % II);
+         return step + offset;
+      }
+      else
+      {
+         return BB2MaxStep.at(def_op_BB_index) + 1;
+      }
+   }
+   else
+   {
+      return 0;
+   }
+}
+
+unsigned liveness::GetStepWrite(vertex v, vertex def_op) const
+{
+   auto def_op_BB_index = vertex_BB.at(def_op);
+   if(BB2MaxStep.at(def_op_BB_index))
+   {
+      /// the def state is pipelined
+      THROW_ASSERT(vertex_to_op_step_out_map.count(v), "unexpected condition");
+      THROW_ASSERT(vertex_to_op_step_out_map.at(v).count(def_op), "unexpected condition");
+      return satStep(def_op_BB_index, 1 + vertex_to_op_step_out_map.at(v).at(def_op));
+   }
+   else
+   {
+      return 0;
+   }
+}
+
+std::pair<bool, unsigned> liveness::GetStepIn(unsigned int BB_index, unsigned int var, vertex v) const
+{
+   if(var_op_definition.count(var))
+   {
+      auto def_op = var_op_definition.at(var);
+      auto def_op_BB_index = vertex_BB.at(def_op);
+      if(BB2MaxStep.at(def_op_BB_index))
+      {
+         /// def state is a pipelined state
+         if(BB_index != def_op_BB_index)
+         {
+            return std::make_pair(true, BB2MaxStep.at(def_op_BB_index) + 1);
+         }
+         else
+         {
+            THROW_ASSERT(phi_vertices.count(def_op), "unexpected condition");
+            if(vertex_to_op_step_out_map.at(v).count(def_op))
+            {
+               auto step = vertex_to_op_step_out_map.at(v).at(def_op);
+               return std::make_pair(true, step);
+            }
+            else
+            {
+               return std::make_pair(false, 0);
+            }
+         }
+      }
+      else
+      {
+         return std::make_pair(true, 0);
+      }
+   }
+   else
+   {
+      return std::make_pair(true, 0);
+   }
+}
+
+unsigned liveness::GetStepOut(unsigned int var) const
+{
+   if(var_op_definition.count(var))
+   {
+      auto def_op = var_op_definition.at(var);
+      auto def_op_BB_index = vertex_BB.at(def_op);
+      if(BB2MaxStep.at(def_op_BB_index))
+      {
+         /// def state is a pipelined state
+         return BB2MaxStep.at(def_op_BB_index) + 1;
+      }
+      else
+      {
+         return 0;
+      }
+   }
+   else
+   {
+      return 0;
+   }
+}
+
+unsigned liveness::GetStepDef(unsigned int BB_index, unsigned int var) const
+{
+   if(var_op_definition.count(var))
+   {
+      auto def_op = var_op_definition.at(var);
+      auto def_op_BB_index = vertex_BB.at(def_op);
+      if(BB2MaxStep.at(def_op_BB_index))
+      {
+         /// def state is a pipelined state
+         if(BB_index != def_op_BB_index)
+         {
+            return BB2MaxStep.at(def_op_BB_index) + 1;
+         }
+         else
+         {
+            THROW_ASSERT(ending_operations.count(def_op), "unexpected condition");
+            auto& def_state = *ending_operations.at(def_op).begin();
+            THROW_ASSERT(vertex_to_op_step_out_map.count(def_state), "unexpected condition");
+            return vertex_to_op_step_out_map.at(def_state).at(def_op);
+         }
+      }
+      else
+      {
+         return 0;
+      }
+   }
+   else
+   {
+      return 0;
+   }
+}
+
+std::pair<bool, unsigned> liveness::GetPrevStep(unsigned int BB_index, unsigned int var, unsigned curr_step,
+                                                unsigned offset) const
+{
+   if(var_op_definition.count(var))
+   {
+      auto def_op = var_op_definition.at(var);
+      auto def_op_BB_index = vertex_BB.at(def_op);
+      if(BB2MaxStep.at(def_op_BB_index))
+      {
+         /// def state is a pipelined state
+         if(BB_index != def_op_BB_index)
+         {
+            return std::make_pair(true, BB2MaxStep.at(def_op_BB_index) + 1);
+         }
+         else
+         {
+            if(curr_step)
+            {
+               THROW_ASSERT(ending_operations.count(def_op), "unexpected condition");
+               auto& def_state = *ending_operations.at(def_op).begin();
+               THROW_ASSERT(vertex_to_op_step_out_map.count(def_state), "unexpected condition");
+               auto def_step = vertex_to_op_step_out_map.at(def_state).at(def_op);
+               auto step = curr_step - offset;
+               if(def_step < step)
+               {
+                  return std::make_pair(true, step);
+               }
+               else
+               {
+                  return std::make_pair(false, curr_step);
+               }
+            }
+            else
+            {
+               return std::make_pair(false, curr_step);
+            }
+         }
+      }
+      else
+      {
+         return std::make_pair(true, curr_step);
+      }
+   }
+   else
+   {
+      /// relevant only for parameters
+      return std::make_pair(curr_step > 1, curr_step > 1 ? curr_step - 1 : 0);
+   }
+}
+
+void liveness::set_step(vertex v, vertex running_op, unsigned int step, bool in)
+{
+   if(in)
+   {
+      vertex_to_op_step_in_map[v][running_op] = step;
+   }
+   else
+   {
+      vertex_to_op_step_out_map[v][running_op] = step;
+   }
+}
+
+unsigned liveness::GetStepOp(vertex v, vertex exec_op) const
+{
+   auto op_BB_index = vertex_BB.at(exec_op);
+   if(BB2MaxStep.at(op_BB_index))
+   {
+      THROW_ASSERT(vertex_to_op_step_in_map.count(v), "unexpected condition");
+      THROW_ASSERT(vertex_to_op_step_in_map.at(v).count(exec_op), "unexpected condition");
+      auto step = vertex_to_op_step_in_map.at(v).at(exec_op);
+      return step;
+   }
+   else
+   {
+      return 0;
    }
 }

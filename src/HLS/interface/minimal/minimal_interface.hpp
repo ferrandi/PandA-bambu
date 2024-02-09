@@ -34,8 +34,8 @@
  * @file minimal_interface.hpp
  * @brief Class to generate minimal interfaces for high-level synthesis
  *
- * This class generates minimal intefaces for connecting modules to
- * microprocessors or busses
+ * This class generates minimal interfaces for connecting modules to
+ * microprocessors or buses
  *
  * @author Marco Minutoli <mminutoli@gmail.com>
  * $Revision$
@@ -48,11 +48,16 @@
 
 #include "module_interface.hpp"
 
+CONSTREF_FORWARD_DECL(BehavioralHelper);
+
 /**
  * Class generating minimal interfaces
  */
 class minimal_interface : public module_interface
 {
+   void build_wrapper(structural_objectRef wrappedObj, structural_objectRef interfaceObj,
+                      structural_managerRef SM_minimal_interface);
+
  public:
    /**
     * Constructor
@@ -61,8 +66,6 @@ class minimal_interface : public module_interface
                      const DesignFlowManagerConstRef design_flow_manager,
                      const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION);
 
-   void build_wrapper(structural_objectRef wrappedObj, structural_objectRef interfaceObj,
-                      structural_managerRef SM_minimal_interface);
    /**
     * Destructor
     */

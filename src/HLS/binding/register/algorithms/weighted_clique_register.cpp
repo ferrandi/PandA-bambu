@@ -124,26 +124,26 @@ DesignFlowStep_Status weighted_clique_register::RegisterBinding()
    unsigned int num_registers = 0;
    for(const auto v : verts)
    {
-      register_clique->add_vertex(v, STR(vertex_index++));
+      register_clique->add_vertex(v, STR(vertex_index));
+      ++vertex_index;
    }
    if(vertex_index > 0)
    {
       if(clique_covering_algorithm == CliqueCovering_Algorithm::BIPARTITE_MATCHING)
       {
-         const std::list<vertex>& support = HLS->Rliv->get_support();
+         const auto& support = HLS->Rliv->get_support();
          unsigned current_partition = 0;
          for(auto vState : support)
          {
-            const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(vState);
+            const auto& live = HLS->Rliv->get_live_in(vState);
             for(auto l : live)
             {
-               unsigned int sv = HLS->storage_value_information->get_storage_value_index(vState, l);
+               unsigned int sv = HLS->storage_value_information->get_storage_value_index(vState, l.first, l.second);
                register_clique->add_subpartitions(current_partition, verts[sv]);
             }
             ++current_partition;
          }
       }
-      HLS->Rreg->set_used_regs(num_registers);
       BOOST_FOREACH(compatibility_graph::edge_descriptor e, boost::edges(*CG))
       {
          const auto src = boost::source(e, *CG);
@@ -179,10 +179,11 @@ DesignFlowStep_Status weighted_clique_register::RegisterBinding()
       HLS->Rreg = reg_binding::create_reg_binding(HLS, HLSMgr);
       for(const auto v : HLS->Rliv->get_support())
       {
-         for(const auto k : HLS->Rliv->get_live_in(v))
+         for(const auto& k : HLS->Rliv->get_live_in(v))
          {
-            unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(v, k);
-            HLS->Rreg->bind(storage_value_index, v2c[verts[storage_value_index]]);
+            unsigned int storage_value_index =
+                HLS->storage_value_information->get_storage_value_index(v, k.first, k.second);
+            HLS->Rreg->bind(storage_value_index, v2c.at(verts.at(storage_value_index)));
          }
       }
    }
@@ -211,6 +212,7 @@ DesignFlowStep_Status weighted_clique_register::RegisterBinding()
                       (num_registers == register_lower_bound ? "" : ("(LB:" + STR(register_lower_bound) + ")")));
    if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
    {
+      THROW_ASSERT(HLS->Rreg, "unexpected condition");
       HLS->Rreg->print();
    }
    if(output_level >= OUTPUT_LEVEL_MINIMUM && output_level <= OUTPUT_LEVEL_PEDANTIC)

@@ -151,7 +151,6 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       has_undefined_function_receiveing_pointers(false),
       state_variables(),
       pipeline_enabled(false),
-      simple_pipeline(false),
       initiation_time(1),
       _channels_number(
           _parameters->isOption(OPT_channels_number) ? _parameters->getOption<unsigned int>(OPT_channels_number) : 0),
@@ -175,14 +174,8 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
    if(!_parameters->isOption(OPT_pipelining))
    {
       pipeline_enabled = decl_node->is_pipelined();
-      simple_pipeline = decl_node->is_simple_pipeline();
       initiation_time = decl_node->get_initiation_time();
-      if(pipeline_enabled && simple_pipeline)
-      {
-         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
-                        "Required pipelining with II=1 for function: " + fname);
-      }
-      else if(pipeline_enabled)
+      if(pipeline_enabled)
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
                         "Required pipelining with II=" + STR(initiation_time) + " for function: " + fname);
@@ -198,7 +191,7 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       else if(tmp_string == "@ll")
       {
          pipeline_enabled = true;
-         simple_pipeline = true;
+         initiation_time = 1;
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
                         "Required pipelining with II=1 for function: " + fname);
       }
@@ -218,18 +211,14 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
                if(splitted.size() == 1)
                {
                   pipeline_enabled = true;
-                  simple_pipeline = true;
+                  initiation_time = 1;
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
                                  "Required pipelining with II=1 for function: " + fname);
                }
                else if(splitted.size() == 2)
                {
                   pipeline_enabled = true;
-                  initiation_time = std::stoi(splitted.at(1));
-                  if(initiation_time == 1)
-                  {
-                     simple_pipeline = true;
-                  }
+                  initiation_time = boost::lexical_cast<unsigned int>(splitted.at(1));
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level),
                                  "Required pipelining with II=" + STR(initiation_time) + " for function: " + fname);
                }
@@ -381,6 +370,10 @@ const BehavioralHelperConstRef FunctionBehavior::CGetBehavioralHelper() const
 const OpGraphConstRef FunctionBehavior::CGetOpGraph(FunctionBehavior::graph_type gt,
                                                     const OpVertexSet& statements) const
 {
+   if(statements.size() == boost::num_vertices(*op_graphs_collection))
+   {
+      return CGetOpGraph(gt);
+   }
    /// This "transformation" is necessary because of graph constructor
    CustomUnorderedSet<vertex> subset;
    subset.insert(statements.begin(), statements.end());

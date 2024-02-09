@@ -73,7 +73,7 @@
  * This example shows an example of a loop, but it is not the most general case.
  * The example has the following properties:
  *
- * 1) it is bottom tested (the exit condition is evaulated at the end of the loop,
+ * 1) it is bottom tested (the exit condition is evaluated at the end of the loop,
  *    which means the loop is do-while)
  * 2) it is reducible (single entry point)
  * 3) has a single pre header (for reducible loops it is always possible to change the
@@ -220,8 +220,8 @@ class Loop
    /// the main induction variable of countable loop;
    unsigned int main_iv;
 
-   /// The index of the tree node containing the value of the initialization of the induction variable
-   unsigned int initialization_tree_node_id;
+   /// value of the initialization of the induction variable
+   tree_nodeRef init;
 
    /// The index of the gimple tree node containing the initialization of the induction variable; right operand can be
    /// different from initialization_tree_node_id because of assignments chain
@@ -237,15 +237,18 @@ class Loop
    tree_nodeRef increment_tn;
 
    /// Initial value of induction variable
+   /// defined when loop_type is COUNTABLE_LOOP
    integer_cst_t lower_bound;
 
    /// Final value of induction variable
+   /// defined when loop_type is COUNTABLE_LOOP
    integer_cst_t upper_bound;
 
    /// Final value of induction variable
    tree_nodeRef upper_bound_tn;
 
    /// flag for induction variable close interval
+   /// defined when loop_type is COUNTABLE_LOOP
    bool close_interval;
 
    /**

@@ -31,38 +31,53 @@
  *
  */
 /**
- * @file storage_value_information.cpp
- * @brief This package is used to define the storage value scheme adopted when register replication for pipelining is
- * required.
+ * @file sdc_scheduling_base.cpp
+ * @brief SDC scheduling base class
  *
- * @author Marco Lattuada <marco.lattuada@polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-/// Header include
-#include "storage_value_information_pipeline.hpp"
 
-StorageValueInformationPipeline::StorageValueInformationPipeline(const HLS_managerConstRef _HLS_mgr,
-                                                                 const unsigned int _function_id)
-    : StorageValueInformation::StorageValueInformation(_HLS_mgr, _function_id)
+#include "sdc_scheduling_base.hpp"
+
+#include "basic_block.hpp"
+#include "function_behavior.hpp"
+#include "op_graph.hpp"
+
+SDCSorter::SDCSorter(const FunctionBehaviorConstRef _function_behavior, const OpGraphConstRef _op_graph)
+    : function_behavior(_function_behavior),
+      op_graph(_op_graph),
+      bb_index_map(_function_behavior->CGetBBGraph(FunctionBehavior::BB)->CGetBBGraphInfo()->bb_index_map)
 {
 }
 
-StorageValueInformationPipeline::~StorageValueInformationPipeline() = default;
-
-bool StorageValueInformationPipeline::is_a_storage_value(vertex state, unsigned int var_index)
+bool SDCSorter::operator()(const vertex& x, const vertex& y) const
 {
-   return storage_index_double_map.find(std::make_pair(state, var_index)) != storage_index_double_map.end();
-}
-
-unsigned int StorageValueInformationPipeline::get_storage_value_index(vertex state, unsigned int var_index)
-{
-   THROW_ASSERT(storage_index_double_map.find(std::make_pair(state, var_index)) != storage_index_double_map.end(),
-                "the storage value is missing");
-   return storage_index_double_map.find(std::make_pair(state, var_index))->second;
-}
-
-void StorageValueInformationPipeline::set_storage_value_index(vertex state, unsigned int variable, unsigned int sv)
-{
-   storage_index_double_map[std::make_pair(state, variable)] = sv;
+   const auto first_bb_index = op_graph->CGetOpNodeInfo(x)->bb_index;
+   const auto second_bb_index = op_graph->CGetOpNodeInfo(y)->bb_index;
+   if(first_bb_index != second_bb_index)
+   {
+      const auto first_bb_vertex = bb_index_map.at(first_bb_index);
+      const auto second_bb_vertex = bb_index_map.at(second_bb_index);
+      if(function_behavior->CheckBBReachability(first_bb_vertex, second_bb_vertex))
+      {
+         return true;
+      }
+      if(function_behavior->CheckBBReachability(second_bb_vertex, first_bb_vertex))
+      {
+         return false;
+      }
+   }
+   if(x != y)
+   {
+      if(function_behavior->CheckReachability(x, y))
+      {
+         return true;
+      }
+      if(function_behavior->CheckReachability(y, x))
+      {
+         return false;
+      }
+   }
+   return x < y;
 }

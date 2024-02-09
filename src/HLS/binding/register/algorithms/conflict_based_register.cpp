@@ -82,9 +82,9 @@ void conflict_based_register::create_conflict_graph()
    const auto vEnd = support.end();
    for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
    {
-      const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
+      const auto& live = HLS->Rliv->get_live_in(*vIt);
       register_lower_bound = std::max(static_cast<unsigned int>(live.size()), register_lower_bound);
-      const CustomOrderedSet<unsigned int>::const_iterator k_end = live.end();
+      const auto k_end = live.end();
       for(auto k = live.begin(); k != k_end; ++k)
       {
          auto k_inner = k;
@@ -92,9 +92,10 @@ void conflict_based_register::create_conflict_graph()
          while(k_inner != k_end)
          {
             boost::graph_traits<conflict_graph>::edge_descriptor e1;
-            unsigned int tail = HLS->storage_value_information->get_storage_value_index(*vIt, *k);
+            unsigned int tail = HLS->storage_value_information->get_storage_value_index(*vIt, k->first, k->second);
             THROW_ASSERT(tail < cg_num_vertices, "wrong conflict graph index");
-            unsigned int head = HLS->storage_value_information->get_storage_value_index(*vIt, *k_inner);
+            unsigned int head =
+                HLS->storage_value_information->get_storage_value_index(*vIt, k_inner->first, k_inner->second);
             THROW_ASSERT(head < cg_num_vertices, "wrong conflict graph index");
             boost::add_edge(boost::vertex(tail, *cg), boost::vertex(head, *cg), *cg);
             ++k_inner;
@@ -106,7 +107,7 @@ void conflict_based_register::create_conflict_graph()
    {
       for(unsigned int vi = 0; vi < vj; ++vi)
       {
-         if(!HLS->storage_value_information->are_value_bitsize_compatible(vi, vj))
+         if(!HLS->storage_value_information->are_storage_value_compatible(vi, vj))
          {
             boost::graph_traits<conflict_graph>::edge_descriptor e1;
             boost::add_edge(boost::vertex(vi, *cg), boost::vertex(vj, *cg), *cg);

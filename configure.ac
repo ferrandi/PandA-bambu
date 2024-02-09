@@ -300,6 +300,7 @@ panda_USE_LIB_PARSER=no;
 panda_USE_LIB_POLIXML=no;
 panda_USE_LIB_PRAGMA=no;
 panda_USE_LIB_RTL_CHARACTERIZATION=no;
+panda_USE_LIB_SDC_SOLVER=no;
 panda_USE_LIB_SIMULATION_WRAPPER=no;
 panda_USE_LIB_SYNTHESIS_WRAPPER=no;
 panda_USE_LIB_TECHNOLOGY=no;
@@ -369,6 +370,7 @@ if test "x$panda_USE_BAMBU" = xyes; then
   panda_USE_LIB_HLS=yes;
   panda_USE_LIB_HOST_PROFILING=yes;
   panda_USE_LIB_PRAGMA=yes;
+  panda_USE_LIB_SDC_SOLVER=yes;
   panda_USE_LIB_SIMULATION_WRAPPER=yes;
   panda_USE_LIB_SYNTHESIS_WRAPPER=yes;
   panda_USE_LIB_TECHNOLOGY=yes;
@@ -381,6 +383,7 @@ if test "x$panda_USE_BAMBU" = xyes; then
   panda_USE_SYNTHESIS_TOOL=yes;
   panda_USE_TASTE=yes;
   panda_USE_TREE_PANDA_GCC=yes;
+  
   AS_VERSION_COMPARE($MIN_GCC_VERSION, [4.9.0], [MIN_GCC_VERSION=4.9.0],,)
   AS_VERSION_COMPARE($MAX_GCC_VERSION, [9.0.0],,,[MAX_GCC_VERSION=9.0.0])
   AS_VERSION_COMPARE($MIN_CLANG_VERSION, [4.0.0], [MIN_CLANG_VERSION=4.0.0],,)
@@ -788,8 +791,9 @@ AC_CONFIG_FILES(
 AM_CONDITIONAL(BUILD_LIB_CLIQUECOVER,  test "x$panda_USE_LIB_CLIQUECOVER" = xyes)
 AM_CONDITIONAL(BUILD_LIB_DOMINANCE,  test "x$panda_USE_LIB_DOMINANCE" = xyes)
 AM_CONDITIONAL(BUILD_LIB_LOOPS,  test "x$panda_USE_LIB_LOOPS" = xyes)
+AM_CONDITIONAL(BUILD_LIB_SDC_SOLVER,  test "x$panda_USE_LIB_SDC_SOLVER" = xyes)
 
-if test "x$panda_USE_LIB_CLIQUECOVER" = xyes || test "x$panda_USE_LIB_DOMINANCE" = xyes || test "x$panda_USE_LIB_LOOPS" = xyes; then
+if test "x$panda_USE_LIB_CLIQUECOVER" = xyes || test "x$panda_USE_LIB_DOMINANCE" = xyes || test "x$panda_USE_LIB_LOOPS" = xyes || test "x$panda_USE_LIB_SDC_SOLVER" = xyes; then
   panda_USE_LIB_ALGORITHMS=yes;
 fi
 AM_CONDITIONAL(BUILD_LIB_ALGORITHMS,  test "x$panda_USE_LIB_ALGORITHMS" = xyes)
@@ -1463,11 +1467,12 @@ AC_CONFIG_FILES(ext/Makefile)
 ############### Final check for static linking #############################################
 if test "x$panda_ALLSTATIC" = xyes ;then
   AM_LDFLAGS="-all-static -pthread";
-  LDFLAGS+=" -static";
+  LDFLAGS+="-all-static -pthread -static";
   AC_SUBST(AM_LDFLAGS)
 else
   AM_LDFLAGS="-pthread";
 fi
+AC_SUBST(AM_LDFLAGS)
 
 AC_MSG_CHECKING([if std::filesystem requires linking stdc++fs])
 AC_LANG_PUSH([C++])
@@ -1505,15 +1510,17 @@ AC_SUBST(PTHREAD_HACK)
 
 
 openmp_ok=no
+AC_LANG_PUSH([C++])
 m4_ifdef([AC_OPENMP], [AC_OPENMP], [AX_OPENMP([openmp_ok=yes],[openmp_ok=no])])
 if test "x$ac_cv_prog_cxx_openmp" != "xunsupported" && test "x$ac_cv_prog_cxx_openmp" != "x"; then
    openmp_ok=yes
-   AC_DEFINE(HAVE_OPENMP, 1, "Define if OpenMP is supported")
 fi
 if test "x$openmp_ok" = "xyes"; then
    dnl We have it, now set up the flags
    CXXFLAGS+=" $OPENMP_CXXFLAGS "
+   AC_DEFINE(HAVE_OPENMP, 1, "Define if OpenMP is supported")
 fi
+AC_LANG_POP([C++])
 
 ################ Debug checking ##############################
 if test "x$panda_DEBUG" = xyes; then

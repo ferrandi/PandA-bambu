@@ -183,8 +183,8 @@ void dead_code_elimination::fix_sdc_motion(DesignFlowManagerConstRef design_flow
        HLSFlowStep_Type::SDC_SCHEDULING, HLSFlowStepSpecializationConstRef(), function_id));
    if(sdc_scheduling_step)
    {
-      const auto sdc_scheduling =
-          GetPointer<SDCScheduling>(design_flow_graph->CGetDesignFlowStepInfo(sdc_scheduling_step)->design_flow_step);
+      const auto sdc_scheduling = GetPointer<SDCScheduling_base>(
+          design_flow_graph->CGetDesignFlowStepInfo(sdc_scheduling_step)->design_flow_step);
       const auto removed_index = GET_INDEX_CONST_NODE(removedStmt);
       sdc_scheduling->movements_list.remove_if(
           [&](const std::vector<unsigned int>& mv) { return mv[0] == removed_index; });

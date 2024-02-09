@@ -84,7 +84,7 @@
 #include "pipeline_controller.hpp"
 #include "port_swapping.hpp"
 #include "sched_based_chaining_computation.hpp"
-#include "scheduling.hpp"
+#include "scheduling_base_step.hpp"
 #include "simulation_evaluation.hpp"
 #include "standard_hls.hpp"
 #include "string_manipulation.hpp"
@@ -120,6 +120,7 @@
 #if HAVE_ILP_BUILT
 #include "sdc_scheduling.hpp"
 #endif
+#include "sdc_scheduling2.hpp"
 
 #if HAVE_VCD_BUILT
 #include "HWDiscrepancyAnalysis.hpp"
@@ -442,14 +443,24 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
              new sched_based_chaining_computation(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
-#if HAVE_ILP_BUILT
       case HLSFlowStep_Type::SDC_SCHEDULING:
       {
-         design_flow_step = DesignFlowStepRef(
-             new SDCScheduling(parameters, HLS_mgr, funId, design_flow_manager.lock(), hls_flow_step_specialization));
+#if HAVE_ILP_BUILT
+         if(parameters->IsParameter("new-SDC") && parameters->GetParameter<int>("new-SDC") == 1)
+         {
+#endif
+            design_flow_step = DesignFlowStepRef(new SDCScheduling2(
+                parameters, HLS_mgr, funId, design_flow_manager.lock(), hls_flow_step_specialization));
+#if HAVE_ILP_BUILT
+         }
+         else
+         {
+            design_flow_step = DesignFlowStepRef(new SDCScheduling(
+                parameters, HLS_mgr, funId, design_flow_manager.lock(), hls_flow_step_specialization));
+         }
+#endif
          break;
       }
-#endif
       case HLSFlowStep_Type::SIMULATION_EVALUATION:
       {
          design_flow_step =

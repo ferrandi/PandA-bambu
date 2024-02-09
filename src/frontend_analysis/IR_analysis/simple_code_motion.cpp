@@ -189,7 +189,7 @@ void simple_code_motion::Initialize()
 FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned int bb_index, tree_nodeRef tn,
                                                                   bool& zero_delay, const tree_managerRef TM)
 {
-   if(AppM->CGetFunctionBehavior(function_id)->is_simple_pipeline())
+   if(AppM->CGetFunctionBehavior(function_id)->is_function_pipelined())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Yes because we aim to full pipelining");
       return FunctionFrontendFlowStep_Movable::MOVABLE;
@@ -204,6 +204,48 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Checking if " + STR(ga->index) + " - " + ga->ToString() + " can be moved in BB" + STR(bb_index));
    tree_nodeRef left = GET_NODE(ga->op0);
+   bool storeCanBePredicated = false;
+   if(left->get_kind() == mem_ref_K)
+   {
+      auto var = tree_helper::get_base_index(TM, GET_INDEX_NODE(ga->op0));
+      if(var)
+      {
+         const auto vd = GetPointer<const var_decl>(TM->get_tree_node_const(var));
+         if(vd && !tree_helper::is_volatile(TM, var))
+         {
+            if(vd->static_flag || (vd->scpe && GET_NODE(vd->scpe)->get_kind() != translation_unit_decl_K))
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---STORE can be predicated");
+               storeCanBePredicated = true;
+            }
+         }
+      }
+   }
+   if(storeCanBePredicated)
+   {
+#if HAVE_ILP_BUILT
+      if(schedule)
+      {
+         auto movable = schedule->CanBeMoved(ga->index, bb_index);
+         if(movable == FunctionFrontendFlowStep_Movable::UNMOVABLE or
+            movable == FunctionFrontendFlowStep_Movable::TIMING)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because of timing");
+         }
+         else
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because of timing");
+         }
+         return movable;
+      }
+      else
+#endif
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--No because of " + left->get_kind_text() + " in left part");
+         return FunctionFrontendFlowStep_Movable::UNMOVABLE;
+      }
+   }
    if(!GetPointer<ssa_name>(left))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -678,7 +720,9 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
    const auto fd = GetPointerS<const function_decl>(TM->CGetTreeNode(function_id));
    const auto sl = GetPointerS<const statement_list>(GET_CONST_NODE(fd->body));
 
-   const auto isFunctionPipelined = AppM->CGetFunctionBehavior(function_id)->is_simple_pipeline();
+   const auto isFunctionPipelined = AppM->CGetFunctionBehavior(function_id)->is_function_pipelined();
+   const auto ld_st_predication_forced = isFunctionPipelined || (parameters->IsParameter("predicate-LDST") &&
+                                                                 parameters->GetParameter<int>("predicate-LDST") == 1);
 
    /// store the GCC BB graph ala boost::graph
    const auto bb_graph_info = BBGraphInfoRef(new BBGraphInfo(AppM, function_id));
@@ -878,9 +922,51 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             /// skip gimple statements defining or using virtual operands
             tree_nodeRef tn = GET_NODE(*statement);
             auto* gn = GetPointer<gimple_node>(tn);
+            bool loadCanBePredicated = false;
+            if(ld_st_predication_forced ||
+               (parameters->IsParameter("predicate-LD") && parameters->GetParameter<int>("predicate-LD") == 1))
+            {
+               if(GetPointer<gimple_assign>(tn) and
+                  GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K)
+               {
+                  auto var = tree_helper::get_base_index(TM, GET_INDEX_NODE(GetPointer<gimple_assign>(tn)->op1));
+                  if(var)
+                  {
+                     const auto vd = GetPointer<const var_decl>(TM->get_tree_node_const(var));
+                     if(vd && !tree_helper::is_volatile(TM, var))
+                     {
+                        if(vd->static_flag || (vd->scpe && GET_NODE(vd->scpe)->get_kind() != translation_unit_decl_K))
+                        {
+                           loadCanBePredicated = true;
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                          "---LOAD can be predicated " + (*statement)->ToString());
+                        }
+                     }
+                  }
+               }
+            }
+            bool storeCanBePredicated = false;
+            if(GetPointer<gimple_assign>(tn) and GET_NODE(GetPointer<gimple_assign>(tn)->op0)->get_kind() == mem_ref_K)
+            {
+               auto var = tree_helper::get_base_index(TM, GET_INDEX_NODE(GetPointer<gimple_assign>(tn)->op0));
+               if(var)
+               {
+                  const auto vd = GetPointer<const var_decl>(TM->get_tree_node_const(var));
+                  if(vd && !tree_helper::is_volatile(TM, var))
+                  {
+                     if(vd->static_flag || (vd->scpe && GET_NODE(vd->scpe)->get_kind() != translation_unit_decl_K))
+                     {
+                        storeCanBePredicated = true;
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---STORE can be predicated " + (*statement)->ToString());
+                     }
+                  }
+               }
+            }
 
             THROW_ASSERT(gn, "unexpected condition");
-            if(!isFunctionPipelined && !parallel_bb && gn->vdef) /// load can be loop pipelined/predicated
+            if(!storeCanBePredicated && !ld_st_predication_forced && !parallel_bb &&
+               gn->vdef) /// load can be loop pipelined/predicated
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of memory store");
                continue;
@@ -968,10 +1054,13 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                               "<--Skipped because uses ssa defined in the same block");
                continue;
             }
-            if((gn->vuses.size() || (GetPointer<gimple_assign>(tn) &&
-                                     (GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == call_expr_K ||
-                                      GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K))) &&
-               !isFunctionPipelined && !parallel_bb)
+            if((gn->vuses.size() && GetPointer<gimple_assign>(tn) &&
+                GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == call_expr_K && !parallel_bb) ||
+               ((gn->vuses.size() || (GetPointer<gimple_assign>(tn) &&
+                                      (GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K ||
+                                       GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == call_expr_K)))
+                // && (!schedule)
+                && !loadCanBePredicated && !ld_st_predication_forced && !parallel_bb))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of vuses");
                continue; /// load cannot be code moved
@@ -982,7 +1071,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             auto prev_dest_bb_index = curr_bb;
             if(gn->vdef || gn->vuses.size() ||
                (tn->get_kind() == gimple_assign_K &&
-                GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K))
+                (GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K ||
+                 GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == call_expr_K)))
             {
                if(list_of_bloc.at(curr_bb)->list_of_pred.size() == 1 &&
                   list_of_bloc.at(curr_bb)->list_of_pred.front() != bloc::ENTRY_BLOCK_ID &&
@@ -1101,7 +1191,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             {
                check_movable = FunctionFrontendFlowStep_Movable::MOVABLE;
             }
-            if(!isFunctionPipelined && !parallel_bb && check_movable == FunctionFrontendFlowStep_Movable::UNMOVABLE)
+            if(!ld_st_predication_forced && !parallel_bb &&
+               check_movable == FunctionFrontendFlowStep_Movable::UNMOVABLE)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because cannot be moved");
                continue;

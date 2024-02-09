@@ -121,7 +121,8 @@ class StateTransitionGraphManager
     * Constructor of the class. It creates a new empty graph and it sets reference to hls class
     * @param HLS is the HLS data structure
     */
-   StateTransitionGraphManager(const HLS_managerConstRef HLSMgr, hlsRef HLS, const ParameterConstRef _Param);
+   StateTransitionGraphManager(const HLS_managerConstRef HLSMgr, hlsRef HLS, const ParameterConstRef _Param,
+                               bool is_function_pipelined);
 
    /**
     * Destructor
@@ -212,6 +213,8 @@ class StateTransitionGraphManager
     * Add components to the datapath required by the FSM
     */
    void add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port);
+
+   bool not_same_step(vertex state, vertex def, vertex op) const;
 };
 /// refcount definition to allocate the class
 using StateTransitionGraphManagerRef = refcount<StateTransitionGraphManager>;

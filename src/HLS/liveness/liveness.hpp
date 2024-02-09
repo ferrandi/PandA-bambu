@@ -62,7 +62,6 @@
  * @name Forward declarations.
  */
 //@{
-REF_FORWARD_DECL(hls);
 REF_FORWARD_DECL(HLS_manager);
 CONSTREF_FORWARD_DECL(Parameter);
 CONSTREF_FORWARD_DECL(BBGraph);
@@ -79,16 +78,16 @@ class liveness
    const ParameterConstRef Param;
 
    /// This is the map from each vertex to the set of variables live at the input of vertex.
-   std::map<vertex, CustomOrderedSet<unsigned int>> live_in;
+   std::map<vertex, CustomOrderedSet<std::pair<unsigned int, unsigned int>>> live_in;
 
    /// This is the map from each vertex to the set of variables live at the output of vertex.
-   std::map<vertex, CustomOrderedSet<unsigned int>> live_out;
+   std::map<vertex, CustomOrderedSet<std::pair<unsigned int, unsigned int>>> live_out;
 
    /// null vertex string
    const std::string null_vertex_string;
 
    /// used to return a reference to an empty set
-   const CustomOrderedSet<unsigned int> empty_set;
+   const CustomOrderedSet<std::pair<unsigned int, unsigned int>> empty_set;
 
    /// vertex over which the live in/out is computed
    std::list<vertex> support_set;
@@ -102,6 +101,14 @@ class liveness
    /// store where an operation run and need its input
    std::map<vertex, CustomOrderedSet<vertex>> running_operations;
 
+   std::map<vertex, std::map<vertex, unsigned>> vertex_to_op_step_in_map;
+   std::map<vertex, std::map<vertex, unsigned>> vertex_to_op_step_out_map;
+   std::map<unsigned, unsigned> BB2MaxStep;
+   std::map<unsigned, unsigned> BB2II;
+   std::map<vertex, unsigned> vertex_BB;
+   std::set<vertex> phi_vertices;
+   std::map<vertex, unsigned> op_step;
+
    /// store where a variable comes from given a support state and an operation
    std::map<vertex, std::map<vertex, std::map<unsigned int, CustomOrderedSet<vertex>>>> state_in_definitions;
 
@@ -111,7 +118,6 @@ class liveness
    /// store the name of each state
    std::map<vertex, std::string> names;
 
-   hlsRef HLS;
    const HLS_managerRef HLSMgr;
 
    CustomOrderedSet<vertex> dummy_states;
@@ -134,14 +140,14 @@ class liveness
     * @param v is the vertex
     * @param the identifier of the variable
     */
-   void set_live_in(const vertex& v, unsigned int var);
+   void set_live_in(const vertex& v, unsigned int var, unsigned int step);
 
    /**
     * Store a set of variables alive at the input of the given vertex
     * @param v is the vertex
     * @param live_set the set of ids of live variables
     */
-   void set_live_in(const vertex& v, const CustomOrderedSet<unsigned int>& live_set);
+   void set_live_in(const vertex& v, const CustomOrderedSet<std::pair<unsigned int, unsigned int>>& live_set);
 
    /**
     * Store the variables alive at the input of the given vertex
@@ -149,29 +155,30 @@ class liveness
     * @param first is the first iterator of a set to be merged in the live in
     * @param last is the last iterator of a set to be merged in the live in
     */
-   void set_live_in(const vertex& v, const CustomOrderedSet<unsigned int>::const_iterator first,
-                    const CustomOrderedSet<unsigned int>::const_iterator last);
+   void set_live_in(const vertex& v,
+                    const CustomOrderedSet<std::pair<unsigned int, unsigned int>>::const_iterator first,
+                    const CustomOrderedSet<std::pair<unsigned int, unsigned int>>::const_iterator last);
 
    /**
     * erase a variable from the live in
     * @param v is the vertex
     * @param var is the variable
     */
-   void erase_el_live_in(const vertex& v, unsigned int var);
+   void erase_el_live_in(const vertex& v, unsigned int var, unsigned int step);
 
    /**
     * Store the variables alive at the output of the given vertex
     * @param v is the vertex
     * @param vars is a set containing the identifiers of the variables
     */
-   void set_live_out(const vertex& v, const CustomOrderedSet<unsigned int>& vars);
+   void set_live_out(const vertex& v, const CustomOrderedSet<std::pair<unsigned int, unsigned int>>& vars);
 
    /**
     * Store a variable alive at the output of the given vertex
     * @param v is the vertex
     * @param the identifier of the variable
     */
-   void set_live_out(const vertex& v, unsigned int var);
+   void set_live_out(const vertex& v, unsigned int var, unsigned int step);
 
    /**
     * Store the variables alive at the output of the given vertex
@@ -179,29 +186,30 @@ class liveness
     * @param first is the first iterator of a set to be merged in the live out
     * @param last is the last iterator of a set to be merged in the live out
     */
-   void set_live_out(const vertex& v, const CustomOrderedSet<unsigned int>::const_iterator first,
-                     const CustomOrderedSet<unsigned int>::const_iterator last);
+   void set_live_out(const vertex& v,
+                     const CustomOrderedSet<std::pair<unsigned int, unsigned int>>::const_iterator first,
+                     const CustomOrderedSet<std::pair<unsigned int, unsigned int>>::const_iterator last);
 
    /**
     * erase a variable from the live out
     * @param v is the vertex
     * @param var is the variable
     */
-   void erase_el_live_out(const vertex& v, unsigned int var);
+   void erase_el_live_out(const vertex& v, unsigned int var, unsigned int step);
 
    /**
     * Get the set of variables live at the input of a vertex
     * @param v is the vertex
     * @return a set containing the identifiers of the variables
     */
-   const CustomOrderedSet<unsigned int>& get_live_in(const vertex& v) const;
+   const CustomOrderedSet<std::pair<unsigned int, unsigned int>>& get_live_in(const vertex& v) const;
 
    /**
     * Get the set of variables live at the output of a vertex
     * @param v is the vertex
     * @return a set containing the identifiers of the variables
     */
-   const CustomOrderedSet<unsigned int>& get_live_out(const vertex& v) const;
+   const CustomOrderedSet<std::pair<unsigned int, unsigned int>>& get_live_out(const vertex& v) const;
 
    /// map a chained vertex with one of the starting operation
    std::map<vertex, vertex> start_op;
@@ -235,11 +243,15 @@ class liveness
       var_op_definition[var] = v;
    }
 
-   /**
-    * return true in case the variable var for a given opoeration v has been defined
-    * @param var is the variable
-    */
-   bool is_defined(unsigned int var) const;
+   void add_phi_vertices(vertex v)
+   {
+      phi_vertices.insert(v);
+   }
+
+   void add_op_step(vertex op, unsigned int step)
+   {
+      op_step[op] = step;
+   }
 
    /**
     * given a variable and a state it returns the set of states from which the variable may come
@@ -353,32 +365,6 @@ class liveness
     */
    bool are_in_conflict(vertex op1, vertex op2) const;
 
-   // activate conflicts with reachability computation
-   // void compute_conflicts_with_reachability(hlsRef _HLS)
-   //{
-   //   HLS = _HLS;
-   //}
-
-   void set_HLS(hlsRef _HLS)
-   {
-      HLS = _HLS;
-   }
-
-   /**
-    * Return the operation from which the computation start.
-    * More than one operation can be a starting operation in a chained vertex, we choose one randomly.
-    * @param state is the chaining state
-    * @return is the associated operation that start the computation in a chaining vertex
-    */
-   vertex get_start_op(vertex state) const;
-
-   /**
-    * Set the starting operation for a specified chained state
-    * @param state is the chained state
-    * @param op is the operation
-    */
-   void set_start_op(vertex state, vertex op);
-
    /**
     * add a state to the set of dummy vertices
     * @param state is the dummy state
@@ -398,7 +384,64 @@ class liveness
       return dummy_states.find(state) != dummy_states.end();
    }
 
-   bool non_in_parallel(vertex v1, vertex v2, const BBGraphConstRef cdg) const;
+ private:
+   /**
+    * @brief get_step return the step in which the variable is given the running operation and the current state
+    * @param v is the current state
+    * @param running_op is the operation using var
+    * @param var is the variable under consideration
+    * @return the step
+    */
+   unsigned get_step(vertex v, vertex running_op, unsigned int var, bool in) const;
+
+   unsigned satStep(unsigned BB_index, unsigned step) const;
+
+ public:
+   void set_step(vertex v, vertex running_op, unsigned int step, bool in);
+
+   unsigned GetStep(vertex v, vertex op, unsigned int var, bool in) const;
+   unsigned GetStepWrite(vertex v, vertex def_op) const;
+   std::pair<bool, unsigned> GetStepIn(unsigned int BB_index, unsigned int var, vertex v) const;
+   unsigned GetStepPhiIn(vertex op, unsigned int var, unsigned int BB_src, unsigned BB_src_state) const;
+   unsigned GetStepPhiOut(vertex op, unsigned int var) const;
+   unsigned GetStepOut(unsigned int var) const;
+   unsigned GetStepDef(unsigned int BB_index, unsigned int var) const;
+   std::pair<bool, unsigned> GetPrevStep(unsigned int BB_index, unsigned int var, unsigned curr_step,
+                                         unsigned int offset) const;
+   unsigned GetStepOp(vertex v, vertex exec_op) const;
+
+   /**
+    * @brief set_max_step set the maximum step associated with a BB
+    * @param BB_index is the current BB index
+    * @param step is the maximum step associated with v
+    */
+   void set_max_step(unsigned BB_index, unsigned int step)
+   {
+      if(BB2MaxStep.count(BB_index))
+      {
+         THROW_ASSERT(BB2MaxStep.at(BB_index) == step, "unexpected condition");
+      }
+      else
+      {
+         BB2MaxStep[BB_index] = step;
+      }
+   }
+   void set_II(unsigned BB_index, unsigned int II)
+   {
+      if(BB2II.count(BB_index))
+      {
+         THROW_ASSERT(BB2II.at(BB_index) == II, "unexpected condition");
+      }
+      else
+      {
+         BB2II[BB_index] = II;
+      }
+   }
+
+   void set_BB(vertex op, unsigned BB_index)
+   {
+      vertex_BB[op] = BB_index;
+   }
 };
 
 // refcount definition for class

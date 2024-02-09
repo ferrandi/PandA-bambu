@@ -897,12 +897,12 @@ void VcdSignalSelection::SelectInternalSignals(
             if(!phi->virtual_flag)
             {
                const auto& storage_val_info = HLSMgr->get_HLS(f_id)->storage_value_information;
-               THROW_ASSERT(storage_val_info->is_a_storage_value(nullptr, assigned_tree_node_id),
+               THROW_ASSERT(storage_val_info->is_a_storage_value(nullptr, assigned_tree_node_id, 0),
                             " variable " +
                                 HLSMgr->CGetFunctionBehavior(f_id)->CGetBehavioralHelper()->PrintVariable(
                                     assigned_tree_node_id) +
                                 " with tree node index " + STR(assigned_tree_node_id) + " has to be a storage value");
-               const auto storage_index = storage_val_info->get_storage_value_index(nullptr, assigned_tree_node_id);
+               const auto storage_index = storage_val_info->get_storage_value_index(nullptr, assigned_tree_node_id, 0);
                const auto& regbind = HLSMgr->get_HLS(f_id)->Rreg;
                const auto reg_name = regbind->get(regbind->get_register(storage_index))->get_string();
                const auto reg_outsig_name = "out_" + reg_name + "_" + reg_name;

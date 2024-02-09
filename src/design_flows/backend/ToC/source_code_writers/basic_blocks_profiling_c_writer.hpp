@@ -53,33 +53,33 @@ class BasicBlocksProfilingCWriter final : public EdgeCWriter
     * Dump operations requested for record information about a loop path which ends
     * @param e is the feedback or outgoing edge
     */
-   void print_loop_ending(EdgeDescriptor e) override;
+   void print_loop_ending(EdgeDescriptor e) final;
 
    /**
     * Dump operations requested for record information about a path which exit from a loop
     * @param e is the feedback or outgoing edge
     */
-   void print_loop_escaping(EdgeDescriptor e) override;
+   void print_loop_escaping(EdgeDescriptor e) final;
 
    /**
     * Dump initializations of variable for recording a loop path
     * @param e is the incoming edged
     */
-   void print_loop_starting(EdgeDescriptor e) override;
+   void print_loop_starting(EdgeDescriptor e) final;
 
    /**
     * Dump operation requested for instrument an edges
     * @param e is the edge
     * @param index is the index of the variable to be incremented
     */
-   void print_edge(EdgeDescriptor e, unsigned int index) override;
+   void print_edge(EdgeDescriptor e, unsigned int index) final;
 
    /**
     * Print operation requested for record information about a path which exit from a loop and immediately enter in
     * another
     * @param e is the edge
     */
-   void print_loop_switching(EdgeDescriptor e) override;
+   void print_loop_switching(EdgeDescriptor e) final;
 
  public:
    /**

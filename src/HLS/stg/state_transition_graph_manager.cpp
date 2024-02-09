@@ -84,7 +84,7 @@
 #define DEFAULT_MAX_CYCLES_BOUNDED (8)
 
 StateTransitionGraphManager::StateTransitionGraphManager(const HLS_managerConstRef _HLSMgr, hlsRef _HLS,
-                                                         const ParameterConstRef _Param)
+                                                         const ParameterConstRef _Param, bool is_function_pipelined)
     : state_transition_graphs_collection(StateTransitionGraphsCollectionRef(new StateTransitionGraphsCollection(
           StateTransitionGraphInfoRef(new StateTransitionGraphInfo(
               _HLSMgr->CGetFunctionBehavior(_HLS->functionId)->CGetOpGraph(FunctionBehavior::CFG))),
@@ -109,7 +109,10 @@ StateTransitionGraphManager::StateTransitionGraphManager(const HLS_managerConstR
           new StateTransitionGraph_constructor(state_transition_graphs_collection, _HLSMgr, _HLS->functionId)))
 {
    STG_builder->create_entry_state();
-   STG_builder->create_exit_state();
+   if(!is_function_pipelined)
+   {
+      STG_builder->create_exit_state();
+   }
 }
 
 StateTransitionGraphManager::~StateTransitionGraphManager() = default;
@@ -132,7 +135,7 @@ const StateTransitionGraphConstRef StateTransitionGraphManager::CGetEPPStg() con
 void StateTransitionGraphManager::ComputeCyclesCount(bool is_pipelined)
 {
    auto info = STG_graph->GetStateTransitionGraphInfo();
-   if(info->is_a_dag && !Param->getOption<bool>(OPT_disable_bounded_function))
+   if(is_pipelined || (info->is_a_dag && !Param->getOption<bool>(OPT_disable_bounded_function)))
    {
       std::list<vertex> sorted_vertices;
       ACYCLIC_STG_graph->TopologicalSort(sorted_vertices);
@@ -162,16 +165,11 @@ void StateTransitionGraphManager::ComputeCyclesCount(bool is_pipelined)
       }
       THROW_ASSERT(CSteps_min.find(info->exit_node) != CSteps_min.end(), "Exit node not reachable");
       THROW_ASSERT(CSteps_max.find(info->exit_node) != CSteps_max.end(), "Exit node not reachable");
-      info->min_cycles = CSteps_min.find(info->exit_node)->second - 1;
-      info->max_cycles = CSteps_max.find(info->exit_node)->second - 1;
+      info->min_cycles = CSteps_min.find(info->exit_node)->second - (is_pipelined ? 0 : 1);
+      info->max_cycles = CSteps_max.find(info->exit_node)->second - (is_pipelined ? 0 : 1);
       info->bounded =
           is_pipelined || (info->min_cycles == info->max_cycles && info->max_cycles <= _max_cycles_bounded &&
                            info->min_cycles > 0 && !has_dummy_state);
-   }
-   else
-   {
-      THROW_ASSERT(Param->getOption<bool>(OPT_disable_bounded_function) || !is_pipelined,
-                   "A pipelined function should always generate a DAG");
    }
 }
 
@@ -323,4 +321,19 @@ void StateTransitionGraphManager::add_to_SM(structural_objectRef clock_port, str
       mu->set_out_sign(p_obj);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Adding :multi-unbounded controllers");
+}
+
+bool StateTransitionGraphManager::not_same_step(vertex state, vertex def, vertex op) const
+{
+   const StateInfoConstRef state_info = CGetAstg()->CGetStateInfo(state);
+   if(!state_info->step_in.empty() && !state_info->step_out.empty())
+   {
+      return state_info->step_out.find(def) != state_info->step_out.end() &&
+             state_info->step_in.find(op) != state_info->step_in.end() &&
+             state_info->step_out.at(def) != state_info->step_in.at(op);
+   }
+   else
+   {
+      return false;
+   }
 }

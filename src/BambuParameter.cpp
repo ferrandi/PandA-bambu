@@ -176,8 +176,7 @@
 #define OPT_POWER_OPTIMIZATION (1 + OPT_DONE_NAME)
 #define OPT_PRAGMA_PARSE (1 + OPT_POWER_OPTIMIZATION)
 #define OPT_PRETTY_PRINT (1 + OPT_PRAGMA_PARSE)
-#define OPT_POST_RESCHEDULING (1 + OPT_PRETTY_PRINT)
-#define OPT_REGISTER_ALLOCATION (1 + OPT_POST_RESCHEDULING)
+#define OPT_REGISTER_ALLOCATION (1 + OPT_PRETTY_PRINT)
 #define OPT_REGISTERED_INPUTS (1 + OPT_REGISTER_ALLOCATION)
 #define OPT_FSM_ENCODING (1 + OPT_REGISTERED_INPUTS)
 #define OPT_RESET_TYPE (1 + OPT_FSM_ENCODING)
@@ -195,8 +194,7 @@
 #define OPT_FP_EXC (1 + OPT_FP_RND)
 #define OPT_SOFT_FP (1 + OPT_FP_EXC)
 #define OPT_STG (1 + OPT_SOFT_FP)
-#define OPT_SPECULATIVE (1 + OPT_STG)
-#define INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS (1 + OPT_SPECULATIVE)
+#define INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS (1 + OPT_STG)
 #define INPUT_OPT_TEST_SINGLE_NON_DETERMINISTIC_FLOW (1 + INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS)
 #define OPT_TESTBENCH (1 + INPUT_OPT_TEST_SINGLE_NON_DETERMINISTIC_FLOW)
 #define OPT_TESTBENCH_ARGV (1 + OPT_TESTBENCH)
@@ -331,16 +329,12 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "            0 - Dynamic mobility (default)\n"
       << "            1 - Static mobility\n"
       << "            2 - Priority-fixed mobility\n\n"
-      << "    --post-rescheduling\n"
-      << "        Perform post rescheduling to better distribute resources.\n\n"
 #if HAVE_ILP_BUILT
       << "    --speculative-sdc-scheduling,-s\n"
       << "        Perform scheduling by using speculative SDC.\n"
       << "        The speculative SDC is more conservative, in case \n"
       << "        --panda-parameter=enable-conservative-sdc=1 is passed.\n\n"
 #endif
-      << "    --pipelining,-p\n"
-      << "        Perform functional pipelining starting from the top function.\n\n"
       << "    --pipelining,-p=<func_name>[=<init_interval>][,<func_name>[=<init_interval>]]*\n"
       << "        Perform pipelining of comma separated list of specified functions with optional \n"
       << "        initiation interval (default II=1).\n"
@@ -360,10 +354,10 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "            WEIGHTED_TS         - use weighted clique covering algorithm by\n"
       << "                                  exploiting the Tseng&Siewiorek heuristics\n"
       << "                                  (default)\n"
+      << "            BIPARTITE_MATCHING  - use bipartite matching algorithm\n"
       << "            COLORING            - use simple coloring algorithm\n"
       << "            WEIGHTED_COLORING   - use weighted coloring algorithm\n"
       << "            CHORDAL_COLORING    - use chordal coloring algorithm\n"
-      << "            BIPARTITE_MATCHING  - use bipartite matching algorithm\n"
       << "            TTT_CLIQUE_COVERING - use a weighted clique covering algorithm\n"
       << "            UNIQUE_BINDING      - unique binding algorithm\n"
       << "\n"
@@ -373,6 +367,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "            WEIGHTED_TS        - solve the weighted clique covering problem by\n"
       << "                                 exploiting the Tseng&Siewiorek heuristics\n"
       << "                                 (default)\n"
+      << "            BIPARTITE_MATCHING - solve the weighted clique covering problem\n"
+      << "                                 exploiting the bipartite matching approach\n"
       << "            WEIGHTED_COLORING  - solve the weighted clique covering problem\n"
       << "                                 performing a coloring on the conflict graph\n"
       << "            COLORING           - solve the unweighted clique covering problem\n"
@@ -391,8 +387,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                                 solve the clique covering problem\n"
       << "            TS                 - solve the unweighted clique covering problem\n"
       << "                                 by exploiting the Tseng&Siewiorek heuristic\n"
-      << "            BIPARTITE_MATCHING - solve the weighted clique covering problem\n"
-      << "                                 exploiting the bipartite matching approach\n"
       << "            UNIQUE             - use a 1-to-1 binding algorithm\n\n"
       << std::endl;
    os << "    --shared-input-registers\n"
@@ -964,14 +958,12 @@ int BambuParameter::Exec()
       {"pipelining", optional_argument, nullptr, 'p'},
       {"serialize-memory-accesses", no_argument, nullptr, OPT_SERIALIZE_MEMORY_ACCESSES},
       {PAR_LIST_BASED_OPT, optional_argument, nullptr, OPT_LIST_BASED}, // no short option
-      {"post-rescheduling", no_argument, nullptr, OPT_POST_RESCHEDULING},
 #if HAVE_ILP_BUILT
       {"ilp-solver", required_argument, nullptr, OPT_ILP_SOLVER},
       {"ilp", no_argument, nullptr, OPT_ILP},
       {"ilp-newform", no_argument, nullptr, OPT_ILP_NEWFORM},
       {"silp", no_argument, nullptr, OPT_SILP},
 #endif
-      {"speculative", no_argument, nullptr, OPT_SPECULATIVE},
       {"no-chaining", no_argument, nullptr, 0},
       /// Finite state machine options
       {"stg", required_argument, nullptr, OPT_STG},
@@ -1191,11 +1183,6 @@ int BambuParameter::Exec()
             {
                setOption(OPT_scheduling_priority, optarg);
             }
-            break;
-         }
-         case OPT_POST_RESCHEDULING:
-         {
-            setOption(OPT_post_rescheduling, true);
             break;
          }
          case OPT_STG:
@@ -3726,8 +3713,6 @@ void BambuParameter::SetDefaults()
    setOption(OPT_ilp_solver, meilp_solver::LP_SOLVE);
 #endif
 #endif
-   /// speculative execution flag
-   setOption(OPT_speculative, false);
 
    /// -- Module binding -- //
    /// module binding algorithm

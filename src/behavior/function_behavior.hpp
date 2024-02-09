@@ -370,11 +370,8 @@ class FunctionBehavior
    /// true when pipelining is enabled for the function
    bool pipeline_enabled;
 
-   /// true when the requested pipeline does not include unbounded functions
-   bool simple_pipeline;
-
-   /// used only for stallable pipelines
-   int initiation_time;
+   /// initiation time of the pipelined function
+   unsigned initiation_time;
 
    /// Function scope channels number
    unsigned int _channels_number;
@@ -800,24 +797,18 @@ class FunctionBehavior
       return packed_vars;
    }
 
-   bool is_pipeline_enabled() const
+   bool is_function_pipelined() const
    {
       return pipeline_enabled;
    }
 
-   bool is_simple_pipeline() const
+   void disable_function_pipelining()
    {
-      if(simple_pipeline)
-      {
-         THROW_ASSERT(pipeline_enabled, "Simple pipeline is true but pipeline is not enabled");
-      }
-      return simple_pipeline;
+      pipeline_enabled = false;
    }
 
-   int get_initiation_time() const
+   unsigned int get_initiation_time() const
    {
-      THROW_ASSERT(pipeline_enabled && !simple_pipeline,
-                   "Should not request initiation time when pipeline is not enabled or simple pipeline is requested");
       return initiation_time;
    }
 

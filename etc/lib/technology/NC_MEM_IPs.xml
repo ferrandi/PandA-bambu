@@ -1702,9 +1702,7 @@ endgenerate
 assign proxy_in4r = int_sel_LOAD;
 assign proxy_in4w = int_sel_STORE;
 assign proxy_sel_LOAD = int_sel_LOAD;
-assign proxy_sel_STORE = int_sel_STORE;
-
-"/>
+assign proxy_sel_STORE = int_sel_STORE;"/>
         </component_o>
       </circuit>
     </cell>

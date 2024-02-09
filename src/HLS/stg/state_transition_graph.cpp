@@ -126,7 +126,13 @@ void StateInfo::print(std::ostream& os, const int detail_level) const
          os << GET_NAME(op_function_graph, op) << " [" << NumberToString(first_starting_time, 2, 7) << "---"
             << NumberToString(first_ending_time, 2, 7) << "("
             << NumberToString(first_ending_time - first_starting_time, 2, 7) << ")"
-            << "] --&gt; ";
+            << "]";
+         if(LP_II)
+         {
+            const auto step = step_in.at(op);
+            os << "(" << LP_II << ")(" << step << ")";
+         }
+         os << " --&gt; ";
       }
       std::string vertex_print = BH->print_vertex(op_function_graph, op, vpp, true);
       boost::replace_all(vertex_print, "&", "&amp;");
@@ -174,7 +180,13 @@ void StateInfo::print(std::ostream& os, const int detail_level) const
          os << GET_NAME(op_function_graph, op) << " [" << NumberToString(first_starting_time, 2, 7) << "---"
             << NumberToString(first_ending_time, 2, 7) << "("
             << NumberToString(first_ending_time - first_starting_time, 2, 7) << ")"
-            << "] --&gt; ";
+            << "]";
+         if(LP_II)
+         {
+            const auto step = step_out.at(op);
+            os << "(" << LP_II << ")(" << step << ")";
+         }
+         os << " --&gt; ";
          std::string vertex_print = BH->print_vertex(op_function_graph, op, vpp, true);
          boost::replace_all(vertex_print, "&", "&amp;");
          boost::replace_all(vertex_print, "|", "\\|");

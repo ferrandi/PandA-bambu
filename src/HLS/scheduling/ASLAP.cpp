@@ -82,9 +82,8 @@
 // in case asap and alap are computed with/without constraints on the resources available
 #define WITH_CONSTRAINT 0
 
-ASLAP::ASLAP(const HLS_managerConstRef _hls_manager, const hlsRef HLS, const bool _speculation,
-             const CustomUnorderedSet<vertex>& _operations, const ParameterConstRef _parameters,
-             unsigned int _ctrl_step_multiplier)
+ASLAP::ASLAP(const HLS_managerConstRef _hls_manager, const hlsRef HLS, const CustomUnorderedSet<vertex>& _operations,
+             const ParameterConstRef _parameters, unsigned int _ctrl_step_multiplier)
     : ASAP(ScheduleRef(new Schedule(
           _hls_manager,
           _hls_manager->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()->get_function_index(),
@@ -97,20 +96,13 @@ ASLAP::ASLAP(const HLS_managerConstRef _hls_manager, const hlsRef HLS, const boo
       max_tot_csteps(0u),
       has_branching_blocks(false),
       allocation_information(HLS->allocation_information),
-      speculation(_speculation),
       clock_period(HLS->HLS_C->get_clock_period() * HLS->HLS_C->get_clock_period_resource_fraction()),
       debug_level(_parameters->get_class_debug_level(GET_CLASS(*this))),
       ctrl_step_multiplier(_ctrl_step_multiplier),
       operations(_operations)
 {
-   if(speculation)
-   {
-      beh_graph = _hls_manager->CGetFunctionBehavior(HLS->functionId)->CGetOpGraph(FunctionBehavior::SG);
-   }
-   else
-   {
-      beh_graph = _hls_manager->CGetFunctionBehavior(HLS->functionId)->CGetOpGraph(FunctionBehavior::FLSAODG);
-   }
+   beh_graph = _hls_manager->CGetFunctionBehavior(HLS->functionId)->CGetOpGraph(FunctionBehavior::FLSAODG);
+
    VertexIterator it, end_it;
    for(boost::tie(it, end_it) = boost::vertices(*beh_graph); !has_branching_blocks && it != end_it; it++)
    {

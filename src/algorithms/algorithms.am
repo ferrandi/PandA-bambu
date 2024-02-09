@@ -77,4 +77,14 @@ if BUILD_LIB_LOOPS
 
   lib_algorithms_la_LIBADD += lib_loops_detection.la
 endif
+if BUILD_LIB_SDC_SOLVER
+  noinst_LTLIBRARIES += lib_sdc_solver.la
+  noinst_HEADERS += algorithms/sdc_solver/sdc_solver.hpp
+  lib_sdc_solver_la_CPPFLAGS = \
+   -isystem $(top_srcdir)/ext/\
+   -I$(top_srcdir)/src/utility \
+   $(AM_CPPFLAGS)
+  lib_sdc_solver_la_SOURCES = algorithms/sdc_solver/sdc_solver.cpp
+  lib_algorithms_la_LIBADD += lib_sdc_solver.la
+endif
 
