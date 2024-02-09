@@ -1198,8 +1198,8 @@ begin
   state_next = STATE_READY;
   state_succ = STATE_READY;
   state_succ_next = STATE_READY;
-  rst = ~RESET_ACTIVE;
-  rst_next = ~RESET_ACTIVE;
+  rst = RESET_ACTIVE;
+  rst_next = RESET_ACTIVE;
   rst_count = RESET_CYCLES - 1;
   rst_count_next = RESET_CYCLES - 1;
   setup = 0;

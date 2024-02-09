@@ -15,6 +15,7 @@ while read line; do
   benchmark_name="$(sed -n 's/.*--benchmark-name=\([^ ]*\).*/\1/p' <<< ${line})"
   top_fname="$(sed -n 's/.*--top-fname=\([^ ]*\).*/\1/p' <<< ${line})"
   line="$(sed "s/BENCHMARKS_ROOT/${script_dir//'/'/'\/'}/g" <<< ${line})"
+  rm -rf out_${OUT_SUFFIX}/${benchmark_name}
   mkdir -p out_${OUT_SUFFIX}/${benchmark_name}
   cd out_${OUT_SUFFIX}/${benchmark_name}
   bambu ${script_dir}/${line} ${BATCH_ARGS[*]}
@@ -23,7 +24,7 @@ while read line; do
   # Replace top-level module with Vivado IP integrator design
   sed -i "s/${top_fname} top/${top_fname}_VIP top/" HLS_output/simulation/bambu_testbench.v
   # Set 20 cycle reset pulse to fulfill Xilinx IP requirement of 16 cycles of the slowest AXI clock
-  sed -i 's/RESET_CYCLES([0-9]*)/RESET_CYCLES(20)/' HLS_output/simulation/bambu_testbench.v
+  sed -i 's/RESET_CYCLES([0-9]*)/RESET_CYCLES(100)/' HLS_output/simulation/bambu_testbench.v
   echo "Launch verification for ${benchmark_name}"
   vivado -mode tcl -source ${tcl_file} -log vivado.log
   retval=$?
