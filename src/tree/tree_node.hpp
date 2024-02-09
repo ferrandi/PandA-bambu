@@ -968,36 +968,6 @@ struct decl_node : public srcp, public tree_node
 };
 
 /**
- * struct definition for PointToInformation
- * This struct contains information about what a pointer points to
- * Since pointer can also be field of a struct or element of an array,
- * this structure is associated also with var_decl nodes
- */
-struct PointToInformation
-{
-   /// The string used in point_to_size map for scalar variables
-   static const std::string default_key;
-
-   /// The string used in point_to_size map for deferenced variable
-   static const std::string deferenced_key;
-
-   /// the bit size of the largest object to which the pointer points to
-   CustomMap<std::string, size_t> point_to_size;
-   CustomMap<std::string, size_t> symbolic_point_to_size;
-
-   /**
-    * Empty constructor
-    */
-   PointToInformation();
-
-   /**
-    * Destructor
-    */
-   ~PointToInformation();
-};
-using PointToInformationRef = refcount<PointToInformation>;
-
-/**
  * struct definition of the common part of an expression
  */
 struct expr_node : public srcp, public WeightedNode
@@ -3729,9 +3699,6 @@ struct parm_decl : public decl_node
     */
    tree_nodeRef smt_ann;
 
-   /// PointToInformation associated with this ssa_name if the corresponding variable is a pointer
-   const PointToInformationRef point_to_information;
-
    /// Range information about bounds of the function parameter (valid for real_type too)
    RangeRef range;
 
@@ -4628,9 +4595,6 @@ struct ssa_name : public tree_node
 
    /// point to solution
    PointToSolutionRef use_set;
-
-   /// PointToInformation associated with this ssa_name if the corresponding variable is a pointer
-   const PointToInformationRef point_to_information;
 
    /**
     * Set the def stmt erasing the old definitions
@@ -5764,9 +5728,6 @@ struct var_decl : public decl_node, public attr
     * symbol_memory_tag annotation
     */
    tree_nodeRef smt_ann;
-
-   /// PointToInformation associated with this ssa_name if the corresponding variable is a pointer
-   const PointToInformationRef point_to_information;
 
    /// The set of gimple node which writes this variable
    CustomUnorderedSet<tree_nodeRef> defs;

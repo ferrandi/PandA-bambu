@@ -294,14 +294,6 @@ void decl_node::visit(tree_node_visitor* const v) const
    VISIT_MEMBER(mask, chan, visit(v));
 }
 
-const std::string PointToInformation::default_key = "default";
-
-const std::string PointToInformation::deferenced_key = "pointed";
-
-PointToInformation::PointToInformation() = default;
-
-PointToInformation::~PointToInformation() = default;
-
 void expr_node::visit(tree_node_visitor* const v) const
 {
    unsigned int mask = ALL_VISIT;
@@ -962,13 +954,7 @@ void overload::visit(tree_node_visitor* const v) const
    VISIT_MEMBER(mask, chan, visit(v));
 }
 
-parm_decl::parm_decl(unsigned int i)
-    : decl_node(i),
-      algn(0),
-      used(0),
-      register_flag(false),
-      readonly_flag(false),
-      point_to_information(new PointToInformation())
+parm_decl::parm_decl(unsigned int i) : decl_node(i), algn(0), used(0), register_flag(false), readonly_flag(false)
 {
 }
 
@@ -1239,8 +1225,7 @@ ssa_name::ssa_name(unsigned int i)
       volatile_flag(false),
       virtual_flag(false),
       default_flag(false),
-      use_set(new PointToSolution()),
-      point_to_information(new PointToInformation())
+      use_set(new PointToSolution())
 {
 }
 
@@ -1518,8 +1503,7 @@ var_decl::var_decl(unsigned int i)
       algn(0),
       used(0),
       register_flag(false),
-      readonly_flag(false),
-      point_to_information(new PointToInformation())
+      readonly_flag(false)
 {
 }
 
