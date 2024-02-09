@@ -7184,37 +7184,16 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
       case(var_decl_K):
       {
          const auto sn = GetPointer<const ssa_name>(parameter);
-         if(sn and (GET_NODE(sn->var)->get_kind() == parm_decl_K) and sn->CGetDefStmts().empty())
+         if(sn && (GET_NODE(sn->var)->get_kind() == parm_decl_K) && sn->CGetDefStmts().empty())
          {
             return AllocatedMemorySize(GET_NODE(sn->var));
          }
 
-         const auto type = CGetType(parameter);
-         if(GET_CONST_NODE(type)->get_kind() == pointer_type_K)
-         {
-            const size_t point_to_size =
-                GetPointer<const parm_decl>(parameter) ?
-                    GetPointer<const parm_decl>(parameter)
-                            ->point_to_information->point_to_size[PointToInformation::default_key] /
-                        8 :
-                    (GetPointer<const ssa_name>(parameter) ?
-                         GetPointer<const ssa_name>(parameter)
-                                 ->point_to_information->point_to_size[PointToInformation::default_key] /
-                             8 :
-                         GetPointer<const var_decl>(parameter)
-                                 ->point_to_information->point_to_size[PointToInformation::default_key] /
-                             8);
-            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                           "<--Analyzed " + parameter->ToString() + " - Size is " + STR(point_to_size / 8));
-            return point_to_size;
-         }
-         else
-         {
-            const size_t byte_parameter_size = AllocatedMemorySize(CGetType(parameter));
-            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                           "<--Analyzed " + parameter->ToString() + " - Size is " + STR(byte_parameter_size));
-            return byte_parameter_size;
-         }
+         const auto ptype = CGetType(parameter);
+         const auto byte_parameter_size = AllocatedMemorySize(IsPointerType(ptype) ? CGetPointedType(ptype) : ptype);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
+                        "<--Analyzed " + parameter->ToString() + " - Size is " + STR(byte_parameter_size));
+         return byte_parameter_size;
       }
       case binfo_K:
       case bit_field_ref_K:
