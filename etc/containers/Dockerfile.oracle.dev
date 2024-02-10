@@ -1,0 +1,99 @@
+ARG BASE=oraclelinux:7.6
+FROM ${BASE}
+
+ENV TZ=Europe/Rome
+WORKDIR /tmp
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
+   && printf "\n[ol7_software_collections]\n" >> /etc/yum.repos.d/oracle-linux-ol7.repo \
+   && printf "name=Software Collection Library release 3.0 packages for Oracle Linux 7 (x86_64)\n" >> /etc/yum.repos.d/oracle-linux-ol7.repo \
+   && printf "baseurl=https://yum.oracle.com/repo/OracleLinux/OL7/SoftwareCollections/x86_64/\n" >> /etc/yum.repos.d/oracle-linux-ol7.repo \
+   && printf "gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle\n" >> /etc/yum.repos.d/oracle-linux-ol7.repo \
+   && printf "gpgcheck=1\n" >> /etc/yum.repos.d/oracle-linux-ol7.repo \
+   && printf "enabled=1\n" >> /etc/yum.repos.d/oracle-linux-ol7.repo \
+   && yum-config-manager --enable ol7_optional_latest \
+   && yum install -y \
+      autoconf autoconf-archive automake bison bzip2 ca-certificates ccache curl doxygen \
+      gcc gcc-c++ gcc-gfortran gettext-devel ghostscript git glpk-devel gmp-devel \
+      graphviz glibc-devel glibc-devel.i686 indent libicu-devel libstdc++-devel \
+      libstdc++-devel.i686 libxml2-devel make mpfr-devel ncurses-libs openblas-devel \
+      pkgconfig redhat-lsb rsync suitesparse-devel texinfo time wget zlib-devel \
+      devtoolset-8-gcc devtoolset-8-gcc-c++ devtoolset-8-gcc-gfortran \
+      glpk-static gmp-static glibc-static libstdc++-static suitesparse-static zlib-static \
+   # Missing: texlive-fonts-recommended texlive-latex-extra texlive-latex-recommended
+   && update-ca-trust \
+   && echo "LANG=en_US.UTF-8" >> /etc/environment \
+   && printf '#!/bin/bash\nsource scl_source enable devtoolset-8\n' > /etc/profile.d/enable_devtoolset.sh \
+   && source /etc/environment \
+   # Build and install GNU Libtool (yum package is available, but does not provide static libraries)
+   && wget https://release.bambuhls.eu/libs/libtool-2.4.7.tar.gz -qO- | tar xz \
+   && cd libtool-2.4.7 \
+   && ./configure --prefix=/usr --libdir=/usr/lib64 \
+   && make -j4 \
+   && make install \
+   && cd .. \
+   && rm -rf libtool* \
+   # Install help2man (required to install Flex)
+   && wget https://mirror.kumi.systems/gnu/help2man/help2man-1.49.3.tar.xz -qO- | tar xJ \
+   && cd help2man-1.49.3 \
+   && ./configure \
+   && make \
+   && make install \
+   && cd .. \
+   && rm -rf help2man* \
+   # Install Flex (yes, you need Flex to build Flex...)
+   && yum install -y flex \
+   && git clone --depth 1 --branch v2.6.4 https://github.com/westes/flex.git \
+   && cd flex \
+   && ./autogen.sh \
+   && ./configure \
+   && make -j4 \
+   && yum remove -y flex \
+   && make install \
+   && cd .. \
+   && rm -rf flex \
+   # Clean yum cache
+   && yum clean all \
+   && rm -rf /var/cache/yum \
+   # Install CMake from source
+   && git clone --depth 1 --branch v3.26.3 https://gitlab.kitware.com/cmake/cmake.git cmake \
+   && cd cmake \
+   && ./bootstrap --parallel=4 -- -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_USE_OPENSSL=OFF \
+   && make -j4 install \
+   && cd .. \
+   && rm -rf cmake \
+   # Install AppImage tools
+   && wget "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" \
+   && chmod +x appimagetool-x86_64.AppImage \
+   && ./appimagetool-x86_64.AppImage --appimage-extract \
+   && mv squashfs-root /opt/appimage-tool.AppDir \
+   && ln -sf /opt/appimage-tool.AppDir/AppRun /usr/bin/appimagetool \
+   && rm -f appimagetool-x86_64.AppImage \
+   # Install patch for appimage tool inside docker
+   && wget https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0-x86_64.tar.gz -qO- | tar xz -C /usr/ \
+   # Build and install boost libraries
+   && wget https://github.com/boostorg/boost/releases/download/boost-1.82.0/boost-1.82.0.tar.xz -qO- | tar xJ \
+   && cd boost-1.82.0 \
+   && ./bootstrap.sh --with-libraries=headers --prefix=/usr \
+   && ./b2 release install \
+   && cd .. \
+   && rm -rf boost* \
+   # Build and install BuDDy library
+   && wget https://release.bambuhls.eu/libs/buddy-2.4.tar.gz -qO- | tar xz \
+   && cd buddy-2.4 \
+   && ./configure --prefix=/usr --libdir=/usr/lib64 \
+   && make -j4 \
+   && make install \
+   && cd .. \
+   && rm -rf buddy* \
+   # Build and install MPFI library
+   && wget https://release.bambuhls.eu/libs/mpfi-1.5.4.tar.gz -qO- | tar xz \
+   && cd mpfi \
+   && ./autogen.sh \
+   && ./configure --prefix=/usr --libdir=/usr/lib64 \
+   && make -j4 \
+   && make install \
+   && cd .. \
+   && rm -rf mpfi
+
+WORKDIR /
+CMD [ "/bin/bash" ]
