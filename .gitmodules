@@ -1,6 +1,6 @@
 [submodule "MachSuite"]
 	path = examples/MachSuite/MachSuite
-	url = https://github.com/breagen/MachSuite.git
+	url = https://github.com/ferrandi/MachSuite.git
 [submodule "CHStone"]
 	path = examples/CHStone/CHStone
 	url = https://github.com/ferrandi/CHStone.git
