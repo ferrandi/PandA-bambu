@@ -64,35 +64,28 @@ distclean :
 	@rm -rf ext/sollya/config.h.in ext/sollya/config.h.in~ ext/sollya/configure ext/sollya/m4/l*
 
 install : all
-	rm -rf obj; \
-	mkdir -p obj; \
-	cd obj; \
-	if test `cat /etc/debian_chroot` = centos_6_64; then\
-	  export CXX=/opt/centos/devtoolset-1.1/root/usr/bin/g++;\
-	  export CC=/opt/centos/devtoolset-1.1/root/usr/bin/gcc;\
-	  ../configure $(CONFIGURE_OPTIONS) --with-boost=/opt/boost/1.48.0 --with-gcc47=/opt/centos/devtoolset-1.1/root/usr/bin/gcc --prefix=$(pwd)/panda_installation; \
-	else\
-	  ../configure $(CONFIGURE_OPTIONS) --prefix=$(pwd)/panda_installations; \
-	fi;\
-	if [ $$? != 0 ]; then\
+	@mkdir -p build
+	@cd build
+	@../configure $(CONFIGURE_OPTIONS) --prefix=$(pwd)/panda_installations
+	@if [ $$? != 0 ]; then \
 	  false; \
 	  exit; \
-	fi; \
-	make -j$J; \
-	if [ $$? != 0 ]; then\
+	fi
+	@make -j$J
+	@if [ $$? != 0 ]; then \
 	  false; \
 	  exit; \
-	fi; \
-	make install; \
-	if [ $$? != 0 ]; then\
+	fi
+	@make install
+	@if [ $$? != 0 ]; then \
 	  false; \
 	  exit; \
-	fi; \
-	make check -j$J;
-	if [ $$? != 0 ]; then\
+	fi
+	@make check -j$J
+	@if [ $$? != 0 ]; then \
 	  false; \
 	  exit; \
-	fi;
+	fi
 
 compose-up :
 	@docker compose -f .devcontainer/docker-compose.yml up -d
