@@ -36,20 +36,30 @@
 
 
   \section install_source_dep Install PandA build dependencies
-  To compile and install the PandA framework on one of the \ref install_supportedos "supported operating systems" you must first install essential build dependencies:
+  To compile and install the PandA framework on one of the \ref install_supportedos "supported operating systems" you must first install build dependencies.
+  Here is a generic list of the tools and libraries required to compile the framework:
   \verbatim
-  sudo apt-get install -y \
-      autoconf autoconf-archive automake bison bzip2 \
-      doxygen flex g++ g++-multilib gcc gcc-multilib ghostscript \
-      graphviz libbdd-dev libboost-all-dev libc6-dev-i386 libfl-dev libglpk-dev \
-      libicu-dev libltdl-dev liblzma-dev libmpc-dev libmpfi-dev libmpfr-dev \
-      libsuitesparse-dev libtinfo5 libtool libxml2-dev linux-libc-dev \
-      lsb-release make pkg-config texlive-fonts-recommended \
-      texlive-latex-extra texlive-latex-recommended time xz-utils zlib1g-dev
-  \endverbatim
-
-  \verbatim
-  NOTE: Boost libraries headers only are required, object libraries are not used by the PandA framework.
+  - Automake
+  - Autoconf
+  - Bison
+  - Doxygen
+  - Flex (>=2.6.4)
+  - GCC/Clang compiler with C++17 support
+  - BuDDy library (optional: necessary to build front-end alias analysis plugin)
+  - Boost headers
+  - GLPK (optional: needed to build SDC scheduling)
+  - Libtool
+  - Make
+  - MPFI (only to build FloPoCo)
+  - MPFR
+  - Suite Sparse libraries (optional: needed to build SDC scheduling)
+  - libicu
+  - liblzma
+  - libtinfo5
+  - libxml2
+  - lsb-release
+  - pkgconfig
+  - zlib
   \endverbatim
 
   Furthermore, to compile the PandA Bambu HLS tool, at least one of the supported Clang LLVM compilers must be installed on the host machine.
@@ -73,7 +83,20 @@
   - Clang LLVM 16.0.0
   
   Exact supported distribution of each one of the supported compilers can be downloaded from PandA release website at https://release.bambuhls.eu/compiler for convenience.
-  Compilers packages from APT may be valid but are not guaranteed to work and are not tested, but may still be fine to use.
+  Compilers packages from APT may be valid but are not guaranteed to work and are not tested, but should still be fine to use.
+
+  \subsection install_source_dep_debian Debian-based systems
+  The following command can be used on Debian-based systems to install PandA framework build dependencies:
+  \verbatim
+  sudo apt-get install -y \
+      autoconf autoconf-archive automake bison bzip2 \
+      doxygen flex g++ g++-multilib gcc gcc-multilib ghostscript \
+      graphviz libbdd-dev libboost-all-dev libc6-dev-i386 libfl-dev libglpk-dev \
+      libicu-dev libltdl-dev liblzma-dev libmpc-dev libmpfi-dev libmpfr-dev \
+      libsuitesparse-dev libtinfo5 libtool libxml2-dev linux-libc-dev \
+      lsb-release make pkg-config texlive-fonts-recommended \
+      texlive-latex-extra texlive-latex-recommended time xz-utils zlib1g-dev
+  \endverbatim
   
   To install GNU GCC compiler from APT, the following packages are required:
   - gcc-<version>
@@ -87,12 +110,66 @@
   To install Clang LLVM compiler from APT, the following packages are required:
   - clang-<version>
   - libclang-<version>-dev
+  
+  \subsection install_source_dep_fedora Fedora-based systems
+  The following command can be used on Fedora-based systems (CentOS, RHEL, Oracle Linux) to install PandA framework build dependencies:
+  \verbatim
+  sudo yum install -y \
+      autoconf autoconf-archive automake bison bzip2 ca-certificates ccache curl doxygen \
+      flex gcc gcc-c++ gcc-gfortran gettext-devel ghostscript glpk-devel gmp-devel \
+      graphviz glibc-devel glibc-devel.i686 indent libicu-devel libstdc++-devel \
+      libstdc++-devel.i686 libxml2-devel make mpfr-devel ncurses-libs openblas-devel \
+      pkgconfig redhat-lsb rsync suitesparse-devel texinfo time wget zlib-devel \
+      devtoolset-8-gcc devtoolset-8-gcc-c++ devtoolset-8-gcc-gfortran \
+      glpk-static gmp-static glibc-static libstdc++-static suitesparse-static zlib-static
+  \endverbatim
+
+  Depending on the OS distribution it may also be required to build some dependencies from source, since they are not provided as needed by the system package provider (i.e. older version, missing static libraries, ...).
+  
+  \subsubsection install_source_dep_fedora_libtool Libtool 2.4.7
+  Libtool is provided as a system package, but it does not provide static libraries, thus it is necessary to compile it from source if you need statically compiled binaries.
+  \verbatim
+  wget https://release.bambuhls.eu/libs/libtool-2.4.7.tar.gz -qO- | tar xz
+  cd libtool-2.4.7
+  ./configure --prefix=/usr --libdir=/usr/lib64
+  make -j4
+  sudo make install
+  \endverbatim
+  
+  \subsubsection install_source_dep_fedora_flex Flex 2.6.4
+  Flex is provided as a system package, but in an older version that generates erratic code when compiled using C++17 standard (i.e. register keyword is used).
+  \verbatim
+  # Install help2man (required to install Flex)
+  wget https://mirror.kumi.systems/gnu/help2man/help2man-1.49.3.tar.xz -qO- | tar xJ
+  cd help2man-1.49.3
+  ./configure
+  make
+  sudo make install
+  
+  # Install Flex
+  git clone --depth 1 --branch v2.6.4 https://github.com/westes/flex.git
+  cd flex
+  ./autogen.sh
+  ./configure
+  make -j4
+  sudo make install
+  \endverbatim
+
+  \subsubsection install_source_dep_fedora_buddy BuDDy library
+  BuDDy library is needed to compile the Bambu HLS front-end plugin used to perform alias analysis during the HLS flow.
+  \verbatim
+  wget https://release.bambuhls.eu/libs/buddy-2.4.tar.gz -qO- | tar xz
+  cd buddy-2.4
+  ./configure --prefix=/usr --libdir=/usr/lib64
+  make -j4
+  sudo make install
+  \endverbatim
 
 
   \section install_source_clone Clone PandA repository
   Once all build dependencies have been successfully installed on the host machine, you may clone the git repository of the PandA framework on your machine and enter the root directory:
   \verbatim
-  git clone https://github.com/ferrandi/PandA-bambu
+  git clone --depth 1 https://github.com/ferrandi/PandA-bambu.git
   cd PandA-bambu
   \endverbatim
 
