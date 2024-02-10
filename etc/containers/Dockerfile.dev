@@ -26,24 +26,20 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
    && rm -rf cmake \
    # Install AppImage tools
    && wget "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" \
-   && chmod +x /tmp/appimagetool-x86_64.AppImage \
-   && cd /opt \
-   && /tmp/appimagetool-x86_64.AppImage --appimage-extract \
-   && mv squashfs-root appimage-tool.AppDir \
+   && chmod +x appimagetool-x86_64.AppImage \
+   && ./appimagetool-x86_64.AppImage --appimage-extract \
+   && mv squashfs-root /opt/appimage-tool.AppDir \
    && ln -sf /opt/appimage-tool.AppDir/AppRun /usr/bin/appimagetool \
-   && cd /tmp \
-   && rm /tmp/appimagetool-x86_64.AppImage \
+   && rm -f appimagetool-x86_64.AppImage \
    # Install patch for appimage tool inside docker
-   && wget https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0-x86_64.tar.gz -O patchelf.tar.gz  \
-   && tar -C /usr/ -xf patchelf.tar.gz \
-   && rm -rf patchelf* \
+   && wget https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0-x86_64.tar.gz -qO- | tar xz -C /usr/ \
    # Built and install boost libraries
-   && git clone --depth 1 --branch boost-1.82.0 --recurse-submodules https://github.com/boostorg/boost.git \
-   && cd boost \
+   && wget https://github.com/boostorg/boost/releases/download/boost-1.82.0/boost-1.82.0.tar.xz -qO- | tar xJ \
+   && cd boost-1.82.0 \
    && ./bootstrap.sh --with-libraries=headers --prefix=/usr \
    && ./b2 release install \
    && cd .. \
-   && rm -rf boost
+   && rm -rf boost*
 
 WORKDIR /
 CMD [ "/bin/bash" ]
