@@ -268,15 +268,6 @@ endif
 
 endif
 
-frontend_analysis/IR_analysis/update_rtl_weights.cpp : frontend_analysis/IR_analysis/rtl_weights_constant.data frontend_analysis/IR_analysis/rtl_weights_symbolic.data
-
-#The tab in this rule can't be replaced by blanks
-frontend_analysis/IR_analysis/rtl_weights_constant.data: $(top_srcdir)/etc/weight-models/rtl_weights_constant.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/weight-models/rtl_weights_constant.xml frontend_analysis/IR_analysis/rtl_weights_constant.data
-
-frontend_analysis/IR_analysis/rtl_weights_symbolic.data: $(top_srcdir)/etc/weight-models/rtl_weights_symbolic.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/weight-models/rtl_weights_symbolic.xml frontend_analysis/IR_analysis/rtl_weights_symbolic.data
-
 if BUILD_LIB_FROM_PRAGMA
   noinst_HEADERS += \
        frontend_analysis/IR_analysis/extract_omp_atomic.hpp \
@@ -290,17 +281,6 @@ if BUILD_LIB_FROM_PRAGMA
      -I$(top_srcdir)/src/parser/pragma \
      -I$(top_srcdir)/src/pragma
 endif
-
-
-frontend_analysis/IR_analysis/update_tree_weight.cpp : frontend_analysis/IR_analysis/tree_weights_constant.data frontend_analysis/IR_analysis/tree_weights_symbolic.data
-
-
-#The tab in this rule can't be replaced by blanks
-frontend_analysis/IR_analysis/tree_weights_constant.data: $(top_srcdir)/etc/weight-models/tree_weights_constant.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/weight-models/tree_weights_constant.xml frontend_analysis/IR_analysis/tree_weights_constant.data
-
-frontend_analysis/IR_analysis/tree_weights_symbolic.data: $(top_srcdir)/etc/weight-models/tree_weights_symbolic.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/weight-models/tree_weights_symbolic.xml frontend_analysis/IR_analysis/tree_weights_symbolic.data
 
 CLEANFILES = $(BUILT_SOURCES)
 
