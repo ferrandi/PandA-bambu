@@ -758,7 +758,7 @@ PROXY_CTRL #(.BITSIZE_in1(BITSIZE_in1),
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="PROXY_CTRL_4 in1 in2 in3 out1 proxy_in1 proxy_in2 proxy_in3 proxy_out1"
-          IP_COMPONENT="PROXY_CTRL" VERILOG_PROVIDED="
+            IP_COMPONENT="PROXY_CTRL" VERILOG_PROVIDED="
 PROXY_CTRL #(
   .BITSIZE_in1(BITSIZE_in1),
   .BITSIZE_in2(BITSIZE_in2),
@@ -782,7 +782,7 @@ PROXY_CTRL #(
   .sel_LOAD(sel_LOAD),
   .sel_STORE(sel_STORE),
   .proxy_out1(proxy_out1));"
-  VHDL_PROVIDED="
+            VHDL_PROVIDED="
 begin
   PROXY_CTRL_i0 : PROXY_CTRL generic map(
   BITSIZE_in1=>BITSIZE_in1,
@@ -1259,7 +1259,7 @@ assign proxy_in4w = int_sel_STORE;
 assign proxy_sel_LOAD = int_sel_LOAD;
 assign proxy_sel_STORE = int_sel_STORE;
 "
-VHDL_PROVIDED="
+            VHDL_PROVIDED="
 signal int_sel_LOAD : std_logic;
 signal int_sel_STORE : std_logic;
 begin
@@ -1354,7 +1354,7 @@ begin
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="SPROXY_CTRL_3 in1 in2r in2w in3r in3w out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_out1"
-          IP_COMPONENT="SPROXY_CTRL" VERILOG_PROVIDED="
+            IP_COMPONENT="SPROXY_CTRL" VERILOG_PROVIDED="
 SPROXY_CTRL #(.BITSIZE_in1(BITSIZE_in1),
   .BITSIZE_in2r(BITSIZE_in2r),
   .BITSIZE_in2w(BITSIZE_in2w),
@@ -1422,8 +1422,7 @@ SPROXY_CTRL_i0 : SPROXY_CTRL generic map(
   in4w => in4w,
   sel_LOAD => sel_LOAD,
   sel_STORE => sel_STORE,
-  proxy_out1 => proxy_out1);"
-  />
+  proxy_out1 => proxy_out1);"/>
         </component_o>
       </circuit>
     </cell>
@@ -1648,7 +1647,7 @@ SPROXY_CTRL_i0 : SPROXY_CTRL generic map(
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="SPROXY_CTRLN in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1"
-          VERILOG_PROVIDED="
+            VERILOG_PROVIDED="
 wire [PORTSIZE_sel_LOAD-1:0] int_sel_LOAD;
 wire [PORTSIZE_sel_STORE-1:0] int_sel_STORE;
 assign int_sel_LOAD = sel_LOAD &amp; in4r;
@@ -1702,9 +1701,7 @@ endgenerate
 assign proxy_in4r = int_sel_LOAD;
 assign proxy_in4w = int_sel_STORE;
 assign proxy_sel_LOAD = int_sel_LOAD;
-assign proxy_sel_STORE = int_sel_STORE;
-
-"/>
+assign proxy_sel_STORE = int_sel_STORE;"/>
         </component_o>
       </circuit>
     </cell>
@@ -1783,7 +1780,7 @@ assign proxy_sel_STORE = int_sel_STORE;
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="SPROXY_CTRLN_3 in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1"
-          IP_COMPONENT="SPROXY_CTRLN" VERILOG_PROVIDED="
+            IP_COMPONENT="SPROXY_CTRLN" VERILOG_PROVIDED="
 SPROXY_CTRLN #(
   .BITSIZE_in1(BITSIZE_in1),
   .PORTSIZE_in1(PORTSIZE_in1),
@@ -1908,8 +1905,7 @@ SPROXY_CTRLN #(
   in4w => in4w,
   sel_LOAD => sel_LOAD,
   sel_STORE => sel_STORE,
-  proxy_out1 => proxy_out1);"
-  />
+  proxy_out1 => proxy_out1);"/>
         </component_o>
       </circuit>
     </cell>
@@ -1988,7 +1984,7 @@ SPROXY_CTRLN #(
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="SPROXY_CTRLN_4 in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1"
-          IP_COMPONENT="SPROXY_CTRLN" VERILOG_PROVIDED="
+            IP_COMPONENT="SPROXY_CTRLN" VERILOG_PROVIDED="
 SPROXY_CTRLN #(
   .BITSIZE_in1(BITSIZE_in1),
   .PORTSIZE_in1(PORTSIZE_in1),
@@ -2191,7 +2187,7 @@ SPROXY_CTRLN #(
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="DPROXY_CTRL in1 in2r in2w in3r in3w out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_out1"
-          IP_COMPONENT="SPROXY_CTRL" VERILOG_PROVIDED="
+            IP_COMPONENT="SPROXY_CTRL" VERILOG_PROVIDED="
 SPROXY_CTRL #(.BITSIZE_in1(BITSIZE_in1),
   .BITSIZE_in2r(BITSIZE_in2r),
   .BITSIZE_in2w(BITSIZE_in2w),
@@ -2259,8 +2255,7 @@ SPROXY_CTRL_i0 : SPROXY_CTRL generic map(
   in4w => in4w,
   sel_LOAD => sel_LOAD,
   sel_STORE => sel_STORE,
-  proxy_out1 => proxy_out1);"
-  />
+  proxy_out1 => proxy_out1);"/>
         </component_o>
       </circuit>
     </cell>
@@ -2338,7 +2333,7 @@ SPROXY_CTRL_i0 : SPROXY_CTRL generic map(
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="DPROXY_CTRLN in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE out1 proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1"
-          IP_COMPONENT="SPROXY_CTRLN" VERILOG_PROVIDED="
+            IP_COMPONENT="SPROXY_CTRLN" VERILOG_PROVIDED="
 SPROXY_CTRLN #(
   .BITSIZE_in1(BITSIZE_in1),
   .PORTSIZE_in1(PORTSIZE_in1),
@@ -2463,8 +2458,7 @@ SPROXY_CTRLN #(
   in4w => in4w,
   sel_LOAD => sel_LOAD,
   sel_STORE => sel_STORE,
-  proxy_out1 => proxy_out1);"
-/>
+  proxy_out1 => proxy_out1);"/>
         </component_o>
       </circuit>
     </cell>
@@ -2523,8 +2517,8 @@ SPROXY_CTRLN #(
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="STD_BRAM_TP S_addr_ram S_Wdata_ram Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE USE_SPARSE_MEMORY HIGH_LATENCY"
-          IP_COMPONENT="ARRAY_1D_STD_BRAM_TP"
-          VERILOG_PROVIDED="ARRAY_1D_STD_BRAM_TP #(.BITSIZE_in1(1),
+            IP_COMPONENT="ARRAY_1D_STD_BRAM_TP"
+            VERILOG_PROVIDED="ARRAY_1D_STD_BRAM_TP #(.BITSIZE_in1(1),
   .BITSIZE_in2(BITSIZE_S_addr_ram),
   .BITSIZE_in3(BITSIZE_S_data_ram_size),
   .BITSIZE_out1(1),
@@ -5159,8 +5153,8 @@ end process;
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="BRAM_MEMORY_SV dout_a dout_b memory_addr_a memory_addr_b din_value_aggregated be MEMORY_INIT_file BRAM_BITSIZE nbit_read_addr n_byte_on_databus n_elements n_bytes READ_ONLY_MEMORY HIGH_LATENCY"
-          IP_COMPONENT="BRAM_MEMORY_SV_CORE"
-          VERILOG_PROVIDED="
+            IP_COMPONENT="BRAM_MEMORY_SV_CORE"
+            VERILOG_PROVIDED="
 reg bram_write1;
 reg [BITSIZE_memory_addr_a-1:0] memory_addr_a1;
 reg [BITSIZE_memory_addr_b-1:0] memory_addr_b1;
@@ -7283,8 +7277,8 @@ ADDRESS_DECODING_LOGIC #(.BITSIZE_memory_addr_a(nbit_read_addr),
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_N1_TP in1 in2 in3 sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file_a MEMORY_INIT_file_b n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_sel_LOAD proxy_sel_STORE proxy_out1 HIGH_LATENCY"
-          IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_TP"
-          VERILOG_PROVIDED="ARRAY_1D_STD_BRAM_NN_TP #(
+            IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_TP"
+            VERILOG_PROVIDED="ARRAY_1D_STD_BRAM_NN_TP #(
   .BITSIZE_in1(BITSIZE_in1),
   .PORTSIZE_in1(PORTSIZE_in1),
   .BITSIZE_in2(BITSIZE_in2),
@@ -8006,8 +8000,8 @@ ADDRESS_DECODING_LOGIC_instance : ADDRESS_DECODING_LOGIC generic map (BITSIZE_me
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_N1_SP in1 in2 in3 sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file_a MEMORY_INIT_file_b n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_sel_LOAD proxy_sel_STORE proxy_out1 HIGH_LATENCY"
-          IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SP"
-          VERILOG_PROVIDED="
+            IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SP"
+            VERILOG_PROVIDED="
 ARRAY_1D_STD_BRAM_NN_SP #(
   .BITSIZE_in1(BITSIZE_in1),
   .PORTSIZE_in1(PORTSIZE_in1),
@@ -8994,8 +8988,8 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1),
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_N1_SV in1 in2 in3 sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file_a MEMORY_INIT_file_b n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_sel_LOAD proxy_sel_STORE proxy_out1 HIGH_LATENCY"
-          IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SV"
-          VERILOG_PROVIDED="ARRAY_1D_STD_BRAM_NN_SV #(
+            IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SV"
+            VERILOG_PROVIDED="ARRAY_1D_STD_BRAM_NN_SV #(
   .BITSIZE_in1(BITSIZE_in1),
   .PORTSIZE_in1(PORTSIZE_in1),
   .BITSIZE_in2(BITSIZE_in2),
@@ -9127,8 +9121,8 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1),
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="STD_BRAM_SV S_addr_ram S_Wdata_ram Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE USE_SPARSE_MEMORY HIGH_LATENCY"
-          IP_COMPONENT="ARRAY_1D_STD_BRAM_SV"
-          VERILOG_PROVIDED="
+            IP_COMPONENT="ARRAY_1D_STD_BRAM_SV"
+            VERILOG_PROVIDED="
 ARRAY_1D_STD_BRAM_SV #(
   .BITSIZE_in1(1),
   .BITSIZE_in2(BITSIZE_S_addr_ram),
@@ -9231,8 +9225,8 @@ ARRAY_1D_STD_BRAM_SV #(
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="STD_BRAMN_SV S_oe_ram S_we_ram S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file_a MEMORY_INIT_file_b n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE USE_SPARSE_MEMORY HIGH_LATENCY"
-          IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SV"
-          VERILOG_PROVIDED="
+            IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SV"
+            VERILOG_PROVIDED="
 ARRAY_1D_STD_BRAM_NN_SV #(
   .BITSIZE_in1(BITSIZE_Sin_Rdata_ram),
   .PORTSIZE_in1(PORTSIZE_Sin_Rdata_ram),
@@ -9634,7 +9628,7 @@ endgenerate
           <parameter name="HIGH_LATENCY">0</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
-         </port_o>
+          </port_o>
           <port_vector_o id="write_enable" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
@@ -9648,7 +9642,7 @@ endgenerate
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="STD_DP_BRAM write_enable data_in address_in data_out MEMORY_INIT_file n_elements READ_ONLY_MEMORY HIGH_LATENCY"
-          VERILOG_PROVIDED="
+            VERILOG_PROVIDED="
 wire [2*BITSIZE_address_in-1:0] address_in_mem;
 reg [2*BITSIZE_address_in-1:0] address_in1;
 
@@ -9714,7 +9708,7 @@ begin
     data_out_mem[BITSIZE_data_out*1+:BITSIZE_data_out] &lt;= memory[address_in_mem[BITSIZE_address_in*1+:BITSIZE_address_in]];
 end
 "
-VHDL_PROVIDED="
+            VHDL_PROVIDED="
   signal address_in_mem : std_logic_vector(2*BITSIZE_address_in-1 downto 0);
   signal address_in1 : std_logic_vector(2*BITSIZE_address_in-1 downto 0);
 
@@ -10083,8 +10077,8 @@ endgenerate"/>
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
           </port_vector_o>
           <NP_functionality LIBRARY="STD_NR_BRAM_BYTE address_inr address_inw data_out MEMORY_INIT_file n_elements forwarding byte_offset BRAM_BITSIZE READ_ONLY_MEMORY HIGH_LATENCY"
-          IP_COMPONENT="STD_SP_BRAM_BYTE,STD_SP_BRAMFW_BYTE"
-          VERILOG_PROVIDED="
+            IP_COMPONENT="STD_SP_BRAM_BYTE,STD_SP_BRAMFW_BYTE"
+            VERILOG_PROVIDED="
 generate
 genvar i1;
   for (i1=0; i1&lt;PORTSIZE_address_inr; i1=i1+1)
@@ -10308,7 +10302,7 @@ STD_LIVE_VALUE_TABLE_SRAM #(.BITSIZE_write_enable(BITSIZE_write_enable),
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="STD_LIVE_VALUE_TABLE write_enable address_inw address_inr read_selector n_elements READ_ONLY_MEMORY HIGH_LATENCY"
-          VERILOG_PROVIDED="
+            VERILOG_PROVIDED="
 parameter max_portsize = PORTSIZE_address_inw &gt; PORTSIZE_address_inr ? PORTSIZE_address_inw : PORTSIZE_address_inr;
 
 reg [(PORTSIZE_read_selector*BITSIZE_read_selector)+(-1):0] read_selector_mem;
@@ -10403,7 +10397,7 @@ endgenerate
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="STD_LIVE_VALUE_TABLE_SRAM write_enable address_inw address_inr read_selector n_elements READ_ONLY_MEMORY HIGH_LATENCY" IP_COMPONENT="STD_NR_BRAM"
-          VERILOG_PROVIDED="
+            VERILOG_PROVIDED="
 wire [PORTSIZE_address_inw*BITSIZE_read_selector-1:0] BankSelectorMask;
 reg [PORTSIZE_address_inw*BITSIZE_read_selector-1:0] WriteFeedBackData;
 wire [BITSIZE_read_selector*(PORTSIZE_address_inw*(PORTSIZE_address_inw-1))-1:0] ReadFeedBackData;
@@ -10622,8 +10616,8 @@ endgenerate"/>
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="STD_NRNW_BRAM write_enable address_inr address_inw data_in dout_value MEMORY_INIT_file n_elements READ_ONLY_MEMORY HIGH_LATENCY"
-          IP_COMPONENT="STD_NR_BRAM,STD_N21_BYTEMUX,STD_LIVE_VALUE_TABLE_SRAM"
-          VERILOG_PROVIDED="
+            IP_COMPONENT="STD_NR_BRAM,STD_N21_BYTEMUX,STD_LIVE_VALUE_TABLE_SRAM"
+            VERILOG_PROVIDED="
 `ifndef _SIM_HAVE_CLOG2
   function integer log2;
      input integer value;
@@ -10746,8 +10740,8 @@ STD_LIVE_VALUE_TABLE_instance (
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="STD_NRNW_BRAM_XOR write_enable address_inr address_inw data_in dout_value MEMORY_INIT_file n_elements READ_ONLY_MEMORY HIGH_LATENCY"
-          IP_COMPONENT="STD_NR_BRAM"
-          VERILOG_PROVIDED="
+            IP_COMPONENT="STD_NR_BRAM"
+            VERILOG_PROVIDED="
 `ifndef _SIM_HAVE_CLOG2
   function integer log2;
      input integer value;
@@ -10933,8 +10927,8 @@ end
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="STD_NRNW_BRAM_GEN write_enable address_inr address_inw data_in dout_value MEMORY_INIT_file n_elements READ_ONLY_MEMORY HIGH_LATENCY"
-          IP_COMPONENT="STD_NRNW_BRAM_XOR,STD_DP_BRAM"
-          VERILOG_PROVIDED="
+            IP_COMPONENT="STD_NRNW_BRAM_XOR,STD_DP_BRAM"
+            VERILOG_PROVIDED="
 parameter nbit_addr = BITSIZE_address_inr &gt; BITSIZE_address_inw ? BITSIZE_address_inr : BITSIZE_address_inw;
 wire [2*nbit_addr-1:0] address_in;
 generate
@@ -11048,8 +11042,8 @@ endgenerate
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="STD_NRNW_BRAM_SB write_enable Addr data_in dout_value MEMORY_INIT_file n_elements BRAM_BITSIZE READ_ONLY_MEMORY HIGH_LATENCY"
-          IP_COMPONENT="STD_NRNW_BRAM_BYTE"
-          VERILOG_PROVIDED="localparam nbytes_per_word = BRAM_BITSIZE / 8;
+            IP_COMPONENT="STD_NRNW_BRAM_BYTE"
+            VERILOG_PROVIDED="localparam nbytes_per_word = BRAM_BITSIZE / 8;
 wire [(PORTSIZE_data_in*BITSIZE_data_in)+(-1):0] din_value_swapped;
 wire [(PORTSIZE_dout_value*BITSIZE_dout_value)+(-1):0] dout_value_swapped;
 wire [(PORTSIZE_write_enable*BITSIZE_write_enable)+(-1):0] we_swapped;
@@ -11435,7 +11429,7 @@ end process;
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="TRUE_DUAL_PORT_BYTE_ENABLING_RAM_NBE dout_a dout_b memory_addr_a memory_addr_b din_value_aggregated_a din_value_aggregated_b be_a be_b MEMORY_INIT_file BRAM_BITSIZE n_byte_on_databus n_elements READ_ONLY_MEMORY HIGH_LATENCY"
-          IP_COMPONENT="TRUE_DUAL_PORT" VERILOG_PROVIDED="
+            IP_COMPONENT="TRUE_DUAL_PORT" VERILOG_PROVIDED="
 wire [n_byte_on_databus-1:0] we_a;
 wire [n_byte_on_databus-1:0] we_b;
 
@@ -11552,8 +11546,8 @@ begin
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="BRAM_MEMORY_NOBYTE_ENABLE dout_a dout_b memory_addr_a memory_addr_b din_value_aggregated be MEMORY_INIT_file BRAM_BITSIZE nbit_read_addr n_byte_on_databus n_elements n_bytes READ_ONLY_MEMORY HIGH_LATENCY"
-          IP_COMPONENT="STD_NRNW_BRAM_SB"
-          VERILOG_PROVIDED="
+            IP_COMPONENT="STD_NRNW_BRAM_SB"
+            VERILOG_PROVIDED="
 wire [n_byte_on_databus-1:0] we_a;
 wire [n_byte_on_databus-1:0] we_b;
 
@@ -11992,8 +11986,8 @@ endgenerate
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="BRAM_MEMORY_CORE dout_a dout_b memory_addr_a memory_addr_b din_value_aggregated be MEMORY_INIT_file BRAM_BITSIZE nbit_read_addr n_byte_on_databus n_elements n_bytes READ_ONLY_MEMORY HIGH_LATENCY"
-          IP_COMPONENT="BRAM_MEMORY_CORE_SMALL,TRUE_DUAL_PORT_BYTE_ENABLING_RAM"
-          VERILOG_PROVIDED="
+            IP_COMPONENT="BRAM_MEMORY_CORE_SMALL,TRUE_DUAL_PORT_BYTE_ENABLING_RAM"
+            VERILOG_PROVIDED="
 generate
 if(n_elements == 1)
 begin
@@ -12147,7 +12141,7 @@ end generate;
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_vector_o id="bram_write" dir="IN">
-            <structural_type_descriptor  type="BOOL" size="1"/>
+            <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
           <port_vector_o id="memory_addr_a" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
@@ -12730,8 +12724,8 @@ end process;
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="BRAM_MEMORY_NN_NOBYTE_ENABLE bram_write dout_a memory_addr_a din_value_aggregated_swapped be_swapped MEMORY_INIT_file BRAM_BITSIZE n_bytes n_byte_on_databus n_elements max_n_reads max_n_writes memory_offset n_byte_on_databus_offset READ_ONLY_MEMORY HIGH_LATENCY"
-          IP_COMPONENT="STD_NRNW_BRAM_SB"
-          VERILOG_PROVIDED="
+            IP_COMPONENT="STD_NRNW_BRAM_SB"
+            VERILOG_PROVIDED="
 wire [(n_byte_on_databus/2)*max_n_writes-1:0] we_a;
 wire [max_n_writes*BRAM_BITSIZE-1:0] din_value_swapped;
 
@@ -12812,8 +12806,8 @@ endgenerate"/>
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="BRAM_MEMORY_NN_CORE bram_write dout_a memory_addr_a din_value_aggregated_swapped be_swapped MEMORY_INIT_file BRAM_BITSIZE n_bytes n_byte_on_databus n_elements max_n_reads max_n_writes memory_offset n_byte_on_databus_offset READ_ONLY_MEMORY HIGH_LATENCY"
-          IP_COMPONENT="BRAM_MEMORY_CORE_SMALL,TRUE_DUAL_PORT_BYTE_ENABLING_RAM"
-          VERILOG_PROVIDED="
+            IP_COMPONENT="BRAM_MEMORY_CORE_SMALL,TRUE_DUAL_PORT_BYTE_ENABLING_RAM"
+            VERILOG_PROVIDED="
 wire [(n_byte_on_databus/2)*8-1:0] dina;
 wire [(n_byte_on_databus/2)*8-1:0] dinb;
 wire [n_byte_on_databus*8-1:0] din;
@@ -13794,8 +13788,8 @@ ADDRESS_DECODING_LOGIC #(.BITSIZE_memory_addr_a(nbit_read_addr),
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_NN_NOBYTE_ENABLE in1 in2 in3 sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file_a MEMORY_INIT_file_b n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_sel_LOAD proxy_sel_STORE proxy_out1 HIGH_LATENCY"
-          IP_COMPONENT="ADDRESS_DECODING_LOGIC_NN,BRAM_MEMORY_NN_NOBYTE_ENABLE"
-          VERILOG_PROVIDED="
+            IP_COMPONENT="ADDRESS_DECODING_LOGIC_NN,BRAM_MEMORY_NN_NOBYTE_ENABLE"
+            VERILOG_PROVIDED="
 `ifndef _SIM_HAVE_CLOG2
   function integer log2;
      input integer value;
