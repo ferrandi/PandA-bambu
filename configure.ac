@@ -1463,11 +1463,11 @@ AC_CONFIG_FILES(ext/Makefile)
 ############### Final check for static linking #############################################
 if test "x$panda_ALLSTATIC" = xyes ;then
   AM_LDFLAGS="-all-static -pthread";
-  LDFLAGS+=" -static";
-  AC_SUBST(AM_LDFLAGS)
+  LDFLAGS+="-all-static -pthread -static";
 else
   AM_LDFLAGS="-pthread";
 fi
+AC_SUBST(AM_LDFLAGS)
 
 AC_MSG_CHECKING([if std::filesystem requires linking stdc++fs])
 AC_LANG_PUSH([C++])
@@ -1505,15 +1505,17 @@ AC_SUBST(PTHREAD_HACK)
 
 
 openmp_ok=no
+AC_LANG_PUSH([C++])
 m4_ifdef([AC_OPENMP], [AC_OPENMP], [AX_OPENMP([openmp_ok=yes],[openmp_ok=no])])
 if test "x$ac_cv_prog_cxx_openmp" != "xunsupported" && test "x$ac_cv_prog_cxx_openmp" != "x"; then
    openmp_ok=yes
-   AC_DEFINE(HAVE_OPENMP, 1, "Define if OpenMP is supported")
 fi
 if test "x$openmp_ok" = "xyes"; then
    dnl We have it, now set up the flags
    CXXFLAGS+=" $OPENMP_CXXFLAGS "
+   AC_DEFINE(HAVE_OPENMP, 1, "Define if OpenMP is supported")
 fi
+AC_LANG_POP([C++])
 
 ################ Debug checking ##############################
 if test "x$panda_DEBUG" = xyes; then
