@@ -3840,44 +3840,38 @@ bool AllocationInformation::CanBeChained(const unsigned int first_statement_inde
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Checking if (" + STR(second_statement_index) + ") " + STR(second_tree_node) +
                       " can be chained with (" + STR(first_statement_index) + ") " + STR(first_tree_node));
-   const auto first_operation = GetPointer<const gimple_node>(first_tree_node)->operation;
-   const auto second_operation = GetPointer<const gimple_node>(second_tree_node)->operation;
-   // auto fu_type_first = GetFuType(first_statement_index);
-   // bool is_array_first = is_direct_access_memory_unit(fu_type_first);
-   // unsigned var_first = is_array_first ? (is_memory_unit(fu_type_first) ? get_memory_var(fu_type_first) :
-   // get_proxy_memory_var(fu_type_first)) : 0;
-
-   if(behavioral_helper->IsStore(first_statement_index) /*&& (!var_first || !Rmem->is_private_memory(var_first))*/)
+   auto first_store = behavioral_helper->IsStore(first_statement_index);
+   if(first_store)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because first is a store");
       return false;
    }
-   else if(not is_operation_bounded(first_statement_index))
+   if(not is_operation_bounded(first_statement_index))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because first is unbounded");
       return false;
    }
+   auto second_load = behavioral_helper->IsLoad(second_statement_index);
    /// Load/Store from distributed memory cannot be chained with non-zero delay operations
-   else if(GetTimeLatency(first_statement_index,
-                          CanImplementSetNotEmpty(first_statement_index) ? GetFuType(first_statement_index) :
-                                                                           fu_binding::UNKNOWN,
-                          0)
-                   .first > 0.001 &&
-           behavioral_helper->IsLoad(second_statement_index) &&
-           is_one_cycle_direct_access_memory_unit(GetFuType(second_statement_index)) &&
-           (!is_readonly_memory_unit(GetFuType(second_statement_index)) ||
-            (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication))) &&
-           ((Rmem->get_maximum_references(is_memory_unit(GetFuType(second_statement_index)) ?
-                                              get_memory_var(GetFuType(second_statement_index)) :
-                                              get_proxy_memory_var(GetFuType(second_statement_index)))) >
-            get_number_channels(GetFuType(second_statement_index))))
+   if(GetTimeLatency(
+          first_statement_index,
+          CanImplementSetNotEmpty(first_statement_index) ? GetFuType(first_statement_index) : fu_binding::UNKNOWN, 0)
+              .first > 0.001 &&
+      second_load && is_one_cycle_direct_access_memory_unit(GetFuType(second_statement_index)) &&
+      (!is_readonly_memory_unit(GetFuType(second_statement_index)) ||
+       (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication))) &&
+      ((Rmem->get_maximum_references(is_memory_unit(GetFuType(second_statement_index)) ?
+                                         get_memory_var(GetFuType(second_statement_index)) :
+                                         get_proxy_memory_var(GetFuType(second_statement_index)))) >
+       get_number_channels(GetFuType(second_statement_index))))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because second is a load from distributed memory");
       return false;
    }
+   auto first_type = first_tree_node->get_kind();
+   auto second_store = behavioral_helper->IsStore(second_statement_index);
    /// STORE cannot be executed in the same clock cycle of the condition which controls it
-   else if((first_tree_node->get_kind() == gimple_cond_K || first_tree_node->get_kind() == gimple_multi_way_if_K) &&
-           behavioral_helper->IsStore(second_statement_index))
+   if((first_type == gimple_cond_K || first_type == gimple_multi_way_if_K) && second_store)
    {
       INDENT_DBG_MEX(
           DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -3885,8 +3879,8 @@ bool AllocationInformation::CanBeChained(const unsigned int first_statement_inde
       return false;
    }
    /// UNBOUNDED operations cannot be executed in the same clock cycle of the condition which controls it
-   else if((first_tree_node->get_kind() == gimple_cond_K || first_tree_node->get_kind() == gimple_multi_way_if_K) &&
-           !is_operation_bounded(second_statement_index))
+   if((first_type == gimple_cond_K || first_type == gimple_multi_way_if_K) &&
+      !is_operation_bounded(second_statement_index))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "<--No because unbounded operations cannot be executed in the same clock cycle of the condition "
@@ -3894,8 +3888,8 @@ bool AllocationInformation::CanBeChained(const unsigned int first_statement_inde
       return false;
    }
    /// labels cannot be executed in the same clock cycle of the condition which controls it
-   else if((first_tree_node->get_kind() == gimple_cond_K || first_tree_node->get_kind() == gimple_multi_way_if_K) &&
-           (second_tree_node->get_kind() == gimple_label_K))
+   if((first_type == gimple_cond_K || first_type == gimple_multi_way_if_K) &&
+      (second_tree_node->get_kind() == gimple_label_K))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "<--No because labels and nops cannot be executed in the same clock cycle of the condition which "
@@ -3903,47 +3897,38 @@ bool AllocationInformation::CanBeChained(const unsigned int first_statement_inde
       return false;
    }
    /// Operations with side effect cannot be executed in the same clock cycle of the control_step which controls them
-   else if((first_tree_node->get_kind() == gimple_cond_K || first_tree_node->get_kind() == gimple_multi_way_if_K) &&
-           (GetPointer<const gimple_node>(second_tree_node)->vdef))
+   if((first_type == gimple_cond_K || first_type == gimple_multi_way_if_K) &&
+      (GetPointer<const gimple_node>(second_tree_node)->vdef))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "<--No because operations with side effect cannot be executed in the same clock cycle of the "
                      "condition which controls it");
       return false;
    }
-   else if(behavioral_helper->IsStore(first_statement_index) && !(!is_operation_bounded(second_statement_index)) &&
-           is_operation_PI_registered(second_statement_index, GetFuType(second_statement_index)))
+   if(first_store && !(!is_operation_bounded(second_statement_index)) &&
+      is_operation_PI_registered(second_statement_index, GetFuType(second_statement_index)))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       return false;
    }
    /// Load and store from bus cannot be chained (if param is enabled)
-   else if(parameters->IsParameter("bus-no-chain") && parameters->GetParameter<int>("bus-no-chain") == 1 &&
-           ((CanImplementSetNotEmpty(first_statement_index) &&
-             is_indirect_access_memory_unit(GetFuType(first_statement_index))) ||
-            (CanImplementSetNotEmpty(second_statement_index) &&
-             is_indirect_access_memory_unit(GetFuType(second_statement_index)))))
+   if(parameters->IsParameter("bus-no-chain") && parameters->GetParameter<int>("bus-no-chain") == 1 &&
+      ((CanImplementSetNotEmpty(first_statement_index) &&
+        is_indirect_access_memory_unit(GetFuType(first_statement_index))) ||
+       (CanImplementSetNotEmpty(second_statement_index) &&
+        is_indirect_access_memory_unit(GetFuType(second_statement_index)))))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "<--No because one of the operations is an access through bus");
       return false;
    }
-   else if(parameters->IsParameter("load-store-no-chain") &&
-           parameters->GetParameter<int>("load-store-no-chain") == 1 &&
-           (behavioral_helper->IsLoad(first_statement_index) || behavioral_helper->IsLoad(second_statement_index) ||
-            behavioral_helper->IsStore(first_statement_index) || behavioral_helper->IsStore(second_statement_index)))
+   if(parameters->IsParameter("load-store-no-chain") && parameters->GetParameter<int>("load-store-no-chain") == 1 &&
+      (behavioral_helper->IsLoad(first_statement_index) || second_load || first_store || second_store))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "<--No because one of the operations is a load or a store");
       return false;
    }
-   /// Load from bus cannot be chained with READ_COND and MULTI_READ_COND
-   /*else if((((GET_TYPE(op_graph, other) & (TYPE_STORE | TYPE_LOAD)) != 0) &&
-     !is_direct_access_memory_unit(GetFuType(other))) && ((GET_TYPE(op_graph, current) & (TYPE_IF | TYPE_MULTIIF)) !=
-     0))
-     {
-     constraint_to_be_added = true;
-     }*/
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes");
    return true;
 }
