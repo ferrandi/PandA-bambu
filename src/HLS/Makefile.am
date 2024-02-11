@@ -1092,9 +1092,9 @@ endif
 hls_constraints.cpp : constraints_STD.data constraints_STD_ALUs.data
 #The tab in this rule can't be replaced by blanks
 constraints_STD.data: $(top_srcdir)/etc/lib/technology/constraints_STD.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/constraints_STD.xml constraints_STD.data
+	$(top_srcdir)/etc/scripts/add_escape.sh $^ $@
 constraints_STD_ALUs.data: $(top_srcdir)/etc/lib/technology/constraints_STD_ALUs.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/constraints_STD_ALUs.xml constraints_STD_ALUs.data
+	$(top_srcdir)/etc/scripts/add_escape.sh $^ $@
 
 
 noinst_LTLIBRARIES += lib_module_generator.la

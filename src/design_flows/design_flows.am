@@ -251,7 +251,7 @@ endif
 
 design_flows/backend/ToDataFile/translator.cpp : design_flows/backend/ToDataFile/latex_format_stat.data
 design_flows/backend/ToDataFile/latex_format_stat.data: $(top_srcdir)/etc/scripts/latex_table_format/latex_format_stat.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/scripts/latex_table_format/latex_format_stat.xml design_flows/backend/ToDataFile/latex_format_stat.data
+	$(top_srcdir)/etc/scripts/add_escape.sh $^ $@
 
   BUILT_SOURCES = design_flows/backend/ToDataFile/latex_format_stat.data
   lib_backend_la_LIBADD += lib_ToDataFile.la
