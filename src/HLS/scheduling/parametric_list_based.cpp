@@ -42,8 +42,6 @@
  */
 #include "parametric_list_based.hpp"
 
-#include "config_HAVE_ASSERTS.hpp"
-
 #include "ASLAP.hpp"
 #include "DAG_SSSP.hpp"
 #include "Parameter.hpp"
@@ -2629,7 +2627,6 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
       min_slack = std::min(min_slack, slack);
    }
    HLS->allocation_information->setMinimumSlack(min_slack);
-
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Number of control steps: " + STR(ctrl_steps));
 
    if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
