@@ -40,23 +40,23 @@
  */
 #include "plugin_includes.h"
 
-extern unsigned int gimplePssa(void);
+extern unsigned int bambuIR(void);
 extern void DumpGimpleInit(char*);
 static char outdir_name[1024];
 
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 8)
 namespace
 {
-   const pass_data pass_data_dump_GSSA =
+   const pass_data pass_data_dump_BambuIR =
 #else
 static struct
-gimple_opt_pass pass_dump_GSSA =
+gimple_opt_pass pass_dump_BambuIR =
 #endif
        {
 #if(__GNUC__ == 4 && __GNUC_MINOR__ <= 8)
            {
 #endif
-               GIMPLE_PASS, "gimplePSSA", /* name */
+               GIMPLE_PASS, "bambuIR", /* name */
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
                OPTGROUP_NONE, /* optinfo_flags */
 #endif
@@ -65,7 +65,7 @@ gimple_opt_pass pass_dump_GSSA =
                true, /* has_execute */
 #elif(__GNUC__ == 4 && __GNUC_MINOR__ <= 8)
     is_alwaysTrue,				/* gate */
-    gimplePssa, 				/* execute */
+    bambuIR, 				/* execute */
     NULL,					/* sub */
     NULL,					/* next */
     0,						/* static_pass_number */
@@ -86,10 +86,10 @@ gimple_opt_pass pass_dump_GSSA =
    };
 
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 8)
-   class pass_dump_GSSA : public gimple_opt_pass
+   class pass_dump_BambuIR : public gimple_opt_pass
    {
     public:
-      pass_dump_GSSA(gcc::context* ctxt) : gimple_opt_pass(pass_data_dump_GSSA, ctxt)
+      pass_dump_BambuIR(gcc::context* ctxt) : gimple_opt_pass(pass_data_dump_BambuIR, ctxt)
       {
       }
 
@@ -108,15 +108,15 @@ gimple_opt_pass pass_dump_GSSA =
 #endif
       )
       {
-         return gimplePssa();
+         return bambuIR();
       }
 
-   }; // class pass_dump_GSSA
+   }; // class pass_dump_BambuIR
 
 } // anon namespace
-gimple_opt_pass* make_pass_dump_GSSA(gcc::context* ctxt)
+gimple_opt_pass* make_pass_dump_BambuIR(gcc::context* ctxt)
 {
-   return new pass_dump_GSSA(ctxt);
+   return new pass_dump_BambuIR(ctxt);
 }
 #endif
 
@@ -179,9 +179,9 @@ int plugin_init(struct plugin_name_args* plugin_info, struct plugin_gcc_version*
 
    struct register_pass_info pass_info;
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 8)
-   pass_info.pass = make_pass_dump_GSSA(g);
+   pass_info.pass = make_pass_dump_BambuIR(g);
 #else
-   pass_info.pass = &pass_dump_GSSA.pass;
+   pass_info.pass = &pass_dump_BambuIR.pass;
 #endif
    pass_info.reference_pass_name = "optimized";
 

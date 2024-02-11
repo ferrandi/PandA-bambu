@@ -1,4 +1,4 @@
-GCC_VERSION: "4.5.3"
+COMPILER_VERSION: "GCC 4.5.3"
 PLUGIN_VERSION: "0.12"
 @1      var_decl         name: @2       type: @3       srcp: "<orig-file>":4:11     
                          uid : 1235     static         size: @4      
