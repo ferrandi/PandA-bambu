@@ -1,7 +1,7 @@
 default: all
 
 fix_revision :
-	@if command -v git 2>&1 > /dev/null; then \
+	@if command -v git 2>&1 > /dev/null && git status 2>&1 > /dev/null; then \
 		echo "\"`git rev-parse HEAD`\"" > dist_revision_info; \
 		echo "\"`git rev-parse --abbrev-ref HEAD`\"" >> dist_revision_info; \
 	fi
