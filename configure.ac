@@ -1468,7 +1468,6 @@ AC_CONFIG_FILES(ext/Makefile)
 if test "x$panda_ALLSTATIC" = xyes ;then
   AM_LDFLAGS="-all-static -pthread";
   LDFLAGS+="-all-static -pthread -static";
-  AC_SUBST(AM_LDFLAGS)
 else
   AM_LDFLAGS="-pthread";
 fi
