@@ -94,9 +94,9 @@
           <port_o id="proxy_out1" dir="OUT" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM in1 in2 in3 out1 S_addr_ram S_Wdata_ram Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_out1" 
-          IP_COMPONENT="ARRAY_1D_STD_BRAM_SP" 
-          VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM in1 in2 in3 out1 S_addr_ram S_Wdata_ram Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_out1"
+            IP_COMPONENT="ARRAY_1D_STD_BRAM_SP"
+            VERILOG_PROVIDED="
 ARRAY_1D_STD_BRAM_SP #(
   .BITSIZE_in1(BITSIZE_in1),
   .BITSIZE_in2(BITSIZE_in2),
@@ -143,8 +143,8 @@ ARRAY_1D_STD_BRAM_SP #(
   .proxy_in2(proxy_in2),
   .proxy_in3(proxy_in3),
   .proxy_sel_LOAD(proxy_sel_LOAD),
-  .proxy_sel_STORE(proxy_sel_STORE));" 
-VHDL_PROVIDED="  signal sel_LOAD_int : std_logic;
+  .proxy_sel_STORE(proxy_sel_STORE));"
+            VHDL_PROVIDED="  signal sel_LOAD_int : std_logic;
   signal sel_STORE_int : std_logic;
 begin
   sel_LOAD_int &lt;= sel_LOAD and in4;
@@ -291,9 +291,9 @@ begin
           <port_o id="proxy_out1" dir="OUT" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_3 in1 in2 in3 out1 S_addr_ram S_Wdata_ram Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_out1" 
-          IP_COMPONENT="ARRAY_1D_STD_BRAM_SP" 
-          VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_3 in1 in2 in3 out1 S_addr_ram S_Wdata_ram Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_out1"
+            IP_COMPONENT="ARRAY_1D_STD_BRAM_SP"
+            VERILOG_PROVIDED="
 ARRAY_1D_STD_BRAM_SP #(
   .BITSIZE_in1(BITSIZE_in1),
   .BITSIZE_in2(BITSIZE_in2),
@@ -340,8 +340,8 @@ ARRAY_1D_STD_BRAM_SP #(
   .proxy_in2(proxy_in2),
   .proxy_in3(proxy_in3),
   .proxy_sel_LOAD(proxy_sel_LOAD),
-  .proxy_sel_STORE(proxy_sel_STORE));" 
-          VHDL_PROVIDED="
+  .proxy_sel_STORE(proxy_sel_STORE));"
+            VHDL_PROVIDED="
   signal sel_LOAD_int : std_logic;
   signal sel_STORE_int : std_logic;
 begin
@@ -489,9 +489,9 @@ begin
           <port_o id="proxy_out1" dir="OUT" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_4 in1 in2 in3 out1 S_addr_ram S_Wdata_ram Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_out1" 
-          IP_COMPONENT="ARRAY_1D_STD_BRAM_SP" 
-          VERILOG_PROVIDED="ARRAY_1D_STD_BRAM_SP #(
+          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_4 in1 in2 in3 out1 S_addr_ram S_Wdata_ram Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_out1"
+            IP_COMPONENT="ARRAY_1D_STD_BRAM_SP"
+            VERILOG_PROVIDED="ARRAY_1D_STD_BRAM_SP #(
   .BITSIZE_in1(BITSIZE_in1),
   .BITSIZE_in2(BITSIZE_in2),
   .BITSIZE_in3(BITSIZE_in3),
@@ -701,9 +701,9 @@ begin
           <port_o id="proxy_out1" dir="OUT" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_SDS in1 in2r in2w in3r in3w out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_out1" 
-          IP_COMPONENT="ARRAY_1D_STD_BRAM_SDS_BASE" 
-          VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_SDS in1 in2r in2w in3r in3w out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_out1"
+            IP_COMPONENT="ARRAY_1D_STD_BRAM_SDS_BASE"
+            VERILOG_PROVIDED="
 ARRAY_1D_STD_BRAM_SDS_BASE #(
   .BITSIZE_in1(BITSIZE_in1),
   .BITSIZE_in2r(BITSIZE_in2r),
@@ -938,9 +938,9 @@ ARRAY_1D_STD_BRAM_instance : ARRAY_1D_STD_BRAM_SDS_BASE generic map(
           <port_o id="proxy_out1" dir="OUT" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_SDS_3 in1 in2r in2w in3r in3w out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_out1" 
-          IP_COMPONENT="ARRAY_1D_STD_BRAM_SDS_BASE" 
-          VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_SDS_3 in1 in2r in2w in3r in3w out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_out1"
+            IP_COMPONENT="ARRAY_1D_STD_BRAM_SDS_BASE"
+            VERILOG_PROVIDED="
 ARRAY_1D_STD_BRAM_SDS_BASE #(
   .BITSIZE_in1(BITSIZE_in1),
   .BITSIZE_in2r(BITSIZE_in2r),
@@ -1175,8 +1175,8 @@ ARRAY_1D_STD_BRAM_instance : ARRAY_1D_STD_BRAM_SDS_BASE generic map(
           <port_o id="proxy_out1" dir="OUT" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_SDS_4 in1 in2r in2w in3r in3w out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_out1" 
-          IP_COMPONENT="ARRAY_1D_STD_BRAM_SDS_BASE" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_SDS_4 in1 in2r in2w in3r in3w out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_out1"
+            IP_COMPONENT="ARRAY_1D_STD_BRAM_SDS_BASE" VERILOG_PROVIDED="
 ARRAY_1D_STD_BRAM_SDS_BASE #(
   .BITSIZE_in1(BITSIZE_in1),
   .BITSIZE_in2r(BITSIZE_in2r),
@@ -1393,9 +1393,9 @@ ARRAY_1D_STD_BRAM_instance : ARRAY_1D_STD_BRAM_SDS_BASE generic map(
           <port_o id="proxy_out1" dir="OUT" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_SDS_BUS in1 in2 in3 out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2 proxy_in3 proxy_out1" 
-          IP_COMPONENT="ARRAY_1D_STD_BRAM_SDS_BUS_BASE" 
-          VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_SDS_BUS in1 in2 in3 out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2 proxy_in3 proxy_out1"
+            IP_COMPONENT="ARRAY_1D_STD_BRAM_SDS_BUS_BASE"
+            VERILOG_PROVIDED="
 ARRAY_1D_STD_BRAM_SDS_BUS_BASE #(
   .BITSIZE_in1(BITSIZE_in1),
   .BITSIZE_in2(BITSIZE_in2),
@@ -1589,9 +1589,9 @@ ARRAY_1D_STD_BRAM_instance : ARRAY_1D_STD_BRAM_SDS_BUS_BASE generic map(BITSIZE_
           <port_o id="proxy_out1" dir="OUT" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_SDS_BUS_3 in1 in2 in3 out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2 proxy_in3 proxy_out1" 
-          IP_COMPONENT="ARRAY_1D_STD_BRAM_SDS_BUS_BASE" 
-          VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_SDS_BUS_3 in1 in2 in3 out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2 proxy_in3 proxy_out1"
+            IP_COMPONENT="ARRAY_1D_STD_BRAM_SDS_BUS_BASE"
+            VERILOG_PROVIDED="
 ARRAY_1D_STD_BRAM_SDS_BUS_BASE #(
   .BITSIZE_in1(BITSIZE_in1),
   .BITSIZE_in2(BITSIZE_in2),
@@ -1785,9 +1785,9 @@ ARRAY_1D_STD_BRAM_instance : ARRAY_1D_STD_BRAM_SDS_BUS_BASE generic map(BITSIZE_
           <port_o id="proxy_out1" dir="OUT" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_SDS_BUS_4 in1 in2 in3 out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2 proxy_in3 proxy_out1" 
-          IP_COMPONENT="ARRAY_1D_STD_BRAM_SDS_BUS_BASE" 
-          VERILOG_PROVIDED="ARRAY_1D_STD_BRAM_SDS_BUS_BASE #(
+          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_SDS_BUS_4 in1 in2 in3 out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2 proxy_in3 proxy_out1"
+            IP_COMPONENT="ARRAY_1D_STD_BRAM_SDS_BUS_BASE"
+            VERILOG_PROVIDED="ARRAY_1D_STD_BRAM_SDS_BUS_BASE #(
   .BITSIZE_in1(BITSIZE_in1),
   .BITSIZE_in2(BITSIZE_in2),
   .BITSIZE_in3(BITSIZE_in3),
@@ -2707,8 +2707,8 @@ ARRAY_1D_STD_BRAM_N1_instance : ARRAY_1D_STD_BRAM_N1_SP generic map (BITSIZE_in1
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
             <cconnected_objects/>
           </port_vector_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_N1_SDS in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1" 
-          IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SDS" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_N1_SDS in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1"
+            IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SDS" VERILOG_PROVIDED="
 ARRAY_1D_STD_BRAM_NN_SDS #(
   .BITSIZE_in1(BITSIZE_in1),
   .PORTSIZE_in1(PORTSIZE_in1),
@@ -3027,9 +3027,9 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS generic map (BITSIZE_in
           <port_vector_o id="proxy_out1" dir="OUT" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_N1_SDS_3 in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1" 
-          IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SDS_3" 
-          VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_N1_SDS_3 in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1"
+            IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SDS_3"
+            VERILOG_PROVIDED="
 ARRAY_1D_STD_BRAM_NN_SDS_3 #(
   .BITSIZE_in1(BITSIZE_in1),
   .PORTSIZE_in1(PORTSIZE_in1),
@@ -3347,8 +3347,8 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_3 generic map (BITSIZE_
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_N1_SDS_4 in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1"
-          IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SDS_4"
-          VERILOG_PROVIDED="
+            IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SDS_4"
+            VERILOG_PROVIDED="
 ARRAY_1D_STD_BRAM_NN_SDS_4 #(
   .BITSIZE_in1(BITSIZE_in1),
   .PORTSIZE_in1(PORTSIZE_in1),
@@ -4217,7 +4217,7 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BUS_3 generic map (BITS
   .proxy_in3(proxy_in3),
   .proxy_sel_LOAD(proxy_sel_LOAD),
   .proxy_sel_STORE(proxy_sel_STORE));"
-   VHDL_PROVIDED="
+            VHDL_PROVIDED="
 begin
 ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BUS_4 generic map (BITSIZE_in1=&gt;BITSIZE_in1,
   PORTSIZE_in1=&gt;PORTSIZE_in1,
@@ -4391,9 +4391,9 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BUS_4 generic map (BITS
           <port_vector_o id="proxy_out1" dir="OUT" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_NN in1 in2 in3 in4 sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file_a MEMORY_INIT_file_b n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_sel_LOAD proxy_sel_STORE proxy_out1" 
-          IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SP" 
-          VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_NN in1 in2 in3 in4 sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file_a MEMORY_INIT_file_b n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_sel_LOAD proxy_sel_STORE proxy_out1"
+            IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SP"
+            VERILOG_PROVIDED="
 ARRAY_1D_STD_BRAM_NN_SP #(
   .BITSIZE_in1(BITSIZE_in1),
   .PORTSIZE_in1(PORTSIZE_in1),
@@ -4647,8 +4647,8 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SP generic map (BITSIZE_in1
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_NN_3 in1 in2 in3 in4 sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file_a MEMORY_INIT_file_b n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY proxy_in1 proxy_in2 proxy_in3 proxy_sel_LOAD proxy_sel_STORE proxy_out1"
-          IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SP"
-          VERILOG_PROVIDED="
+            IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SP"
+            VERILOG_PROVIDED="
 ARRAY_1D_STD_BRAM_NN_SP #(
   .BITSIZE_in1(BITSIZE_in1),
   .PORTSIZE_in1(PORTSIZE_in1),
@@ -5177,8 +5177,8 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SP generic map (BITSIZE_in1
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_NN_SDS in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1"
-          IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SDS_BASE" 
-          VERILOG_PROVIDED="
+            IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SDS_BASE"
+            VERILOG_PROVIDED="
 ARRAY_1D_STD_BRAM_NN_SDS_BASE #(
   .BITSIZE_in1(BITSIZE_in1),
   .PORTSIZE_in1(PORTSIZE_in1),
@@ -5498,8 +5498,8 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BASE generic map (BITSI
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_NN_SDS_3 in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1"
-          IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SDS_BASE"
-          VERILOG_PROVIDED="
+            IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SDS_BASE"
+            VERILOG_PROVIDED="
 ARRAY_1D_STD_BRAM_NN_SDS_BASE #(
   .BITSIZE_in1(BITSIZE_in1),
   .PORTSIZE_in1(PORTSIZE_in1),
@@ -5818,8 +5818,8 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SDS_BASE generic map (BITSI
           <port_vector_o id="proxy_out1" dir="OUT" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_NN_SDS_4 in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1" 
-          IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SDS_BASE" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_NN_SDS_4 in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1"
+            IP_COMPONENT="ARRAY_1D_STD_BRAM_NN_SDS_BASE" VERILOG_PROVIDED="
 ARRAY_1D_STD_BRAM_NN_SDS_BASE #(
   .BITSIZE_in1(BITSIZE_in1),
   .PORTSIZE_in1(PORTSIZE_in1),
@@ -8813,8 +8813,8 @@ endgenerate"/>
           <port_o id="proxy_out1" dir="OUT" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_DISTRAM_SDS in1 in2r in2w in3r in3w out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_out1" 
-          VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="ARRAY_1D_STD_DISTRAM_SDS in1 in2r in2w in3r in3w out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_out1"
+            VERILOG_PROVIDED="
 `ifndef _SIM_HAVE_CLOG2
   function integer log2;
      input integer value;
@@ -8908,7 +8908,7 @@ assign Sout_DataRdy = Sin_DataRdy;
 // psl default clock = (posedge clock);
 // psl ERROR_SDS_data_ram_size: assert never {((data_size != in3r &amp;&amp; sel_LOAD &amp;&amp; in4r) || (data_size != in3w &amp;&amp; sel_STORE &amp; in4w)) || ((data_size != proxy_in3r &amp;&amp; proxy_sel_LOAD) || (data_size != proxy_in3w &amp;&amp; proxy_sel_STORE))};
 // psl ERROR_SDS_alignment: assert never {(((in2r-address_space_begin) %(ALIGNMENT/8) != 0) &amp;&amp; sel_LOAD &amp;&amp; in4r) || (((in2r-address_space_begin) %(ALIGNMENT/8) != 0) &amp;&amp; sel_STORE &amp;&amp; in4w) || (((proxy_in2r-address_space_begin) %(ALIGNMENT/8) != 0) &amp;&amp; proxy_sel_LOAD  &amp;&amp; proxy_in4r) || (((proxy_in2w-address_space_begin) %(ALIGNMENT/8) != 0) &amp;&amp; proxy_sel_STORE &amp;&amp; proxy_in4r)};
-" />
+"/>
         </component_o>
       </circuit>
     </cell>
@@ -9020,8 +9020,8 @@ assign Sout_DataRdy = Sin_DataRdy;
           <port_vector_o id="proxy_out1" dir="OUT" is_data_bus="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_DISTRAM_N1_SDS in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1" 
-          IP_COMPONENT="ARRAY_1D_STD_DISTRAM_NN_SDS" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="ARRAY_1D_STD_DISTRAM_N1_SDS in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1"
+            IP_COMPONENT="ARRAY_1D_STD_DISTRAM_NN_SDS" VERILOG_PROVIDED="
 ARRAY_1D_STD_DISTRAM_NN_SDS #(
   .BITSIZE_in1(BITSIZE_in1),
   .PORTSIZE_in1(PORTSIZE_in1),
@@ -9336,7 +9336,7 @@ ARRAY_1D_STD_DISTRAM_NN_SDS_instance : ARRAY_1D_STD_DISTRAM_NN_SDS generic map (
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_vector_o>
           <NP_functionality LIBRARY="ARRAY_1D_STD_DISTRAM_NN_SDS in1 in2r in2w in3r in3w in4r in4w sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY ALIGNMENT proxy_in1 proxy_in2r proxy_in2w proxy_in3r proxy_in3w proxy_in4r proxy_in4w proxy_sel_LOAD proxy_sel_STORE proxy_out1"
-          VERILOG_PROVIDED="
+            VERILOG_PROVIDED="
 `ifndef _SIM_HAVE_CLOG2
     function integer log2;
       input integer value;
