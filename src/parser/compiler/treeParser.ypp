@@ -73,6 +73,8 @@ REF_FORWARD_DECL(TreeFlexLexer);
 ///Lexer include
 #include "treeLexer.hpp"
 
+#include "token_interface.hpp"
+
 ///Parameter include
 #include "Parameter.hpp"
 
@@ -285,9 +287,6 @@ struct BisonParserData
    /// Current string reference
    std::string curr_string;
 
-   /// GCC version
-   std::string gcc_version;
-
    /// Store the current NODE_ID as integer.
    unsigned int curr_NODE_ID;
 
@@ -463,7 +462,7 @@ bool pred;
 %token <value> NODE_ID
 %token <text> TOK_BISON_STRING
 %token <text> TOK_BISON_NUMBER
-%token TOK_BISON_GCC_VERSION TOK_BISON_PLUGIN_VERSION
+%token TOK_BISON_COMPILER_VERSION TOK_BISON_PLUGIN_VERSION
 %token TOK_BISON_ERROR_MARK TOK_BISON_IDENTIFIER_NODE TOK_BISON_TREE_LIST TOK_BISON_TREE_VEC
 %token TOK_BISON_BLOCK TOK_BISON_VOID_TYPE TOK_BISON_INTEGER_TYPE TOK_BISON_REAL_TYPE
 %token TOK_BISON_COMPLEX_TYPE TOK_BISON_TYPE_ARGUMENT_PACK TOK_BISON_NONTYPE_ARGUMENT_PACK TOK_BISON_EXPR_PACK_EXPANSION TOK_BISON_VECTOR_TYPE TOK_BISON_ENUMERAL_TYPE TOK_BISON_BOOLEAN_TYPE
@@ -609,12 +608,12 @@ bool pred;
       version
       | raw_unit node
       ;
-   version : TOK_BISON_GCC_VERSION
-             string_id {data->gcc_version = data->curr_string;}
+   version : TOK_BISON_COMPILER_VERSION
+             string_id { CompilerWrapper::bambu_ir_info += STOK(TOK_COMPILER_VERSION) + ": \"" + data->curr_string + "\"\n"; }
              TOK_BISON_PLUGIN_VERSION
              string_id
              {
-                CompilerWrapper::CheckCompilerCompatibleVersion(data->gcc_version, data->curr_string);
+                CompilerWrapper::bambu_ir_info += STOK(TOK_PLUGIN_VERSION) + ": \"" + data->curr_string + "\"\n";
                 if(data->final_TM)
                    data->final_TM->merge_tree_managers(data->current_TM);
                 else if(data->current_TM)

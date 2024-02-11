@@ -375,9 +375,7 @@ static std::string __escape_define(const std::string& str)
    return std::regex_replace(str, std::regex("([\\(\\) ])"), "\\$1");
 }
 
-std::string CompilerWrapper::current_compiler_version;
-
-std::string CompilerWrapper::current_plugin_version;
+std::string CompilerWrapper::bambu_ir_info;
 
 CompilerWrapper::CompilerWrapper(const ParameterConstRef _Param, const CompilerWrapper_CompilerTarget _compiler_target,
                                  const CompilerWrapper_OptimizationSet _OS)
@@ -843,13 +841,13 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::vector<std:
       }
       else if(!(compile_only || preprocess_only))
       {
-         auto gimple_file = output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix;
+         auto gimple_file = output_temporary_directory + "/" + leaf_name + STR_CST_bambu_ir_suffix;
          if(!std::filesystem::exists(gimple_file))
          {
             CompileFile(source_file, "", frontend_compiler_parameters, CM_EMPTY, costTable);
             // source_file has been changed by previous call to CompileFile
             gimple_file = output_temporary_directory + "/" + std::filesystem::path(source_file).filename().string() +
-                          STR_CST_gcc_tree_suffix;
+                          STR_CST_bambu_ir_suffix;
          }
          obj_files.push_back(gimple_file);
       }
@@ -878,7 +876,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::vector<std:
                     clang_recipes(optimization_set, "") + plugin_prefix + compiler.ssa_plugin_name;
       CompileFile(lto_source, lto_obj, opt_command, CM_COMPILER_OPT | CM_OPT_DUMPGIMPLE, costTable);
 
-      const auto gimple_obj = output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix;
+      const auto gimple_obj = output_temporary_directory + "/" + leaf_name + STR_CST_bambu_ir_suffix;
       if(!std::filesystem::exists(gimple_obj))
       {
          THROW_ERROR("Object file not found: " + gimple_obj);
@@ -2724,19 +2722,6 @@ const std::string CompilerWrapper::AddSourceCodeIncludes(const std::list<std::st
    return includes;
 }
 
-size_t CompilerWrapper::ConvertVersion(const std::string& version)
-{
-   size_t ret_value = 0;
-   std::vector<std::string> version_tokens = SplitString(version, ".");
-   for(size_t index = version_tokens.size(); index > 0; index--)
-   {
-      const auto shifter = static_cast<size_t>(pow(100, static_cast<double>(version_tokens.size() - index)));
-      const auto value = std::stoul(version_tokens[index - 1]);
-      ret_value += (value * shifter);
-   }
-   return ret_value;
-}
-
 std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet optimization_set,
                                            const std::string& fname) const
 {
@@ -2923,33 +2908,6 @@ std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet
       THROW_ERROR("Clang compiler not yet supported");
    }
    return " " + recipe;
-}
-
-void CompilerWrapper::CheckCompilerCompatibleVersion(const std::string& compiler_version,
-                                                     const std::string& plugin_version)
-{
-   current_compiler_version = compiler_version;
-   current_plugin_version = plugin_version;
-   const size_t compiler_version_number = ConvertVersion(compiler_version);
-   const size_t plugin_version_number = ConvertVersion(plugin_version);
-   const size_t minimum_plugin_version_number = ConvertVersion(STR_CST_gcc_min_plugin_version);
-   const size_t maximum_plugin_version_number = ConvertVersion(STR_CST_gcc_max_plugin_version);
-   if(plugin_version_number < minimum_plugin_version_number || plugin_version_number > maximum_plugin_version_number)
-   {
-      THROW_ERROR("Plugin version not correct. Plugin version supported has to be in this range: [" +
-                  std::string(STR_CST_gcc_min_plugin_version) + "-" + std::string(STR_CST_gcc_max_plugin_version) +
-                  "]");
-   }
-   if(std::string(STR_CST_gcc_supported_versions).find(compiler_version) != std::string::npos)
-   {
-      return;
-   }
-   if(compiler_version_number < ConvertVersion(STR_CST_gcc_first_not_supported))
-   {
-      THROW_WARNING("GCC/CLANG " + compiler_version + " has not been tested with the PandA framework");
-      return;
-   }
-   THROW_ERROR("GCC/CLANG " + compiler_version + " is not supported by this version of the PandA framework");
 }
 
 size_t CompilerWrapper::CGetPointerSize(const ParameterConstRef parameters)

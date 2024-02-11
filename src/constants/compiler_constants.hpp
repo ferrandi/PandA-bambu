@@ -46,17 +46,8 @@
 /// The suffix of gcc initial dump
 #define STR_CST_gcc_empty_suffix ".001t.tu"
 
-/// The first version of gcc not suppoted
-#define STR_CST_gcc_first_not_supported "9.0.0"
-
 /// The temporary directory used by compiler
 #define STR_CST_gcc_include "__include"
-
-/// The maximum version of the plugin supported
-#define STR_CST_gcc_max_plugin_version "0.12"
-
-/// The minimum version of the plugin supported
-#define STR_CST_gcc_min_plugin_version "0.10"
 
 /// The output file for tree-panda-gcc
 #define STR_CST_gcc_obj_file "run-%%%%-%%%%-%%%%-%%%%.o"
@@ -70,13 +61,8 @@
 /// The file where output messages of gcc are saved
 #define STR_CST_gcc_output "__gcc_output"
 
-/// The list of tested versions of gcc
-#define STR_CST_gcc_supported_versions                                                                            \
-   "4.9.0 4.9.1 4.9.2 4.9.3 4.9.4 5.1.0 5.1.1 5.2.0 5.2.1 5.3.0 5.3.1 5.4.0 5.4.1 5.5.0 6.0.0 6.2.0 6.2.1 6.3.0 " \
-   "6.4.0 6.5.0 7.0.1 7.1.0 7.3.0 7.4.0 7.5.0 8.0.1 8.2.0 8.2.1 8.3.0 8.3.1 8.4.0 8.5.0 4.2.1"
-
 /// The suffix of gimple files
-#define STR_CST_gcc_tree_suffix ".gimplePSSA"
+#define STR_CST_bambu_ir_suffix ".bambuir"
 
 /// The string used to replace sizeof keyword in the original source code (first step)
 #define STR_CST_panda_sizeof "__panda_sizeof"
