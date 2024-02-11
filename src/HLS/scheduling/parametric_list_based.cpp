@@ -2650,13 +2650,6 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
       min_slack = std::min(min_slack, slack);
    }
    HLS->allocation_information->setMinimumSlack(min_slack);
-
-   if(output_level <= OUTPUT_LEVEL_PEDANTIC)
-   {
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
-   }
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                  "-->Scheduling Information of function " + FB->CGetBehavioralHelper()->get_function_name() + ":");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Number of control steps: " + STR(ctrl_steps));
 
    if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
