@@ -151,6 +151,8 @@ EdgeDescriptor StateTransitionGraph_constructor::connect_state(const vertex& src
    {
       state_transition_graphs_collection->AddSelector(e, type);
    }
+   std::cerr << "edge " << state_transition_graph->GetStateInfo(src)->name << "-->"
+             << state_transition_graph->GetStateInfo(tgt)->name << "\n";
    return e;
 }
 

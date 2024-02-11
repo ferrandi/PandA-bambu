@@ -481,11 +481,14 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       // std::cerr << "BBIndex " << BBIndex << " isLP " << (isLP ? "T" : "F") << " LPII " << LPII
       // << " n_iter_LP_STG_building " << n_iter_LP_STG_building << "\n";
       bool has_previous_LP_first_state = false;
-      vertex previous_LP_first_state;
+      std::set<vertex> previous_LP_first_state;
       vertex current_LP_first_state;
       CustomOrderedMap<unsigned int, vertex> next_LP_first_state;
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "---n_iter_LP_STG_building=" + STR(n_iter_LP_STG_building) + " LPII=" + STR(LPII));
       for(unsigned LP_Index = 0; LP_Index < n_iter_LP_STG_building; ++LP_Index)
       {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---LP_Index " + STR(LP_Index));
          if(!is_function_pipelined)
          {
             have_previous = false;
@@ -549,8 +552,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
             CustomOrderedSet<unsigned int> BB_ids;
             BB_ids.insert(operations->get_bb_index());
             CustomOrderedSet<unsigned int> tgt_ids;
-            if(have_previous && call_states.find(previous.begin()->second) == call_states.end() && isLP &&
-               (l == min_cstep + LPII))
+            if(have_previous && isLP && (l == min_cstep + LPII))
             {
                for(const auto& bb_ids_pair : no_backedge_cfg_edge_ids)
                {
@@ -693,7 +695,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                         next_LP_first_state[s_curBB] = s_curState;
                      }
                      has_previous_LP_first_state = true;
-                     previous_LP_first_state = previous.begin()->second;
+                     previous_LP_first_state.insert(previous.begin()->second);
                   }
                   else
                   {
@@ -710,30 +712,71 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                }
                else
                {
-                  for(const auto& bb_state_pair : previous)
+                  if(isLP && (l == min_cstep + LPII))
                   {
-                     const auto previousBB = bb_state_pair.first;
-                     const auto& previousState = bb_state_pair.second;
-
-                     THROW_ASSERT(call_operations.find(previousState) != call_operations.end() &&
-                                      call_operations.find(previousState)->second.begin() !=
-                                          call_operations.find(previousState)->second.end(),
-                                  "unexpected condition");
-                     THROW_ASSERT(call_states.count(previousState), "unexpected condition");
-                     CustomOrderedSet<vertex> ops;
-                     ops.insert(call_operations.find(previousState)->second.begin(),
-                                call_operations.find(previousState)->second.end());
-                     auto call_sets = call_states.find(previousState)->second;
-                     THROW_ASSERT(s_cur.find(previousBB) != s_cur.end(), "unexpected condition");
-                     for(auto& call_set : call_sets)
+                     THROW_ASSERT(previous.size() == 1, "unexpected condition");
+                     for(const auto& bb_state_pair : s_cur)
                      {
+                        const auto s_curBB = bb_state_pair.first;
+                        const auto& s_curState = bb_state_pair.second;
+                        const auto& previousState = previous.begin()->second;
+                        THROW_ASSERT(call_states.count(previousState), "unexpected condition");
+                        auto call_sets = call_states.find(previousState)->second;
+
+                        auto s_e = STG_builder->connect_state(
+                            previousState, s_curState,
+                            is_exit_edge_FB.contains(s_curBB) ? TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK :
+                                                                TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
+                        const BBNodeInfoConstRef bb_node_info = fbb->CGetBBNodeInfo(*vit);
+                        THROW_ASSERT(bb_node_info->statements_list.size(),
+                                     "at least one operation should belong to this basic block");
+                        vertex last_operation = *(bb_node_info->statements_list.rbegin());
+                        THROW_ASSERT(no_backedge_cfg_edge_ids.find(s_curBB) != no_backedge_cfg_edge_ids.end(),
+                                     "unexpected condition");
+                        set_edge_condition(no_backedge_cfg_edge_ids.at(s_curBB), STG_builder, last_operation, s_e);
+                        for(auto& call_set : call_sets)
+                        {
+                           EdgeDescriptor s_e_cs =
+                               STG_builder->connect_state(call_set, s_curState,
+                                                          is_exit_edge_FB.contains(s_curBB) ?
+                                                              TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK :
+                                                              TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
+                           set_edge_condition(no_backedge_cfg_edge_ids.at(s_curBB), STG_builder, last_operation,
+                                              s_e_cs);
+                           previous_LP_first_state.insert(call_set);
+                        }
+                        next_LP_first_state[s_curBB] = s_curState;
+                     }
+                     has_previous_LP_first_state = true;
+                     previous_LP_first_state.insert(previous.begin()->second);
+                  }
+                  else
+                  {
+                     for(const auto& bb_state_pair : previous)
+                     {
+                        const auto previousBB = bb_state_pair.first;
+                        const auto& previousState = bb_state_pair.second;
+
+                        THROW_ASSERT(call_operations.find(previousState) != call_operations.end() &&
+                                         call_operations.find(previousState)->second.begin() !=
+                                             call_operations.find(previousState)->second.end(),
+                                     "unexpected condition");
+                        THROW_ASSERT(call_states.count(previousState), "unexpected condition");
+                        CustomOrderedSet<vertex> ops;
+                        ops.insert(call_operations.find(previousState)->second.begin(),
+                                   call_operations.find(previousState)->second.end());
+                        auto call_sets = call_states.find(previousState)->second;
+                        THROW_ASSERT(s_cur.find(previousBB) != s_cur.end(), "unexpected condition");
+                        for(auto& call_set : call_sets)
+                        {
+                           EdgeDescriptor s_e = STG_builder->connect_state(
+                               call_set, s_cur.at(previousBB), TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
+                           STG_builder->set_unbounded_condition(s_e, ALL_FINISHED, ops, previousState);
+                        }
                         EdgeDescriptor s_e = STG_builder->connect_state(
-                            call_set, s_cur.at(previousBB), TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
+                            previousState, s_cur.at(previousBB), TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
                         STG_builder->set_unbounded_condition(s_e, ALL_FINISHED, ops, previousState);
                      }
-                     EdgeDescriptor s_e = STG_builder->connect_state(
-                         previousState, s_cur.at(previousBB), TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
-                     STG_builder->set_unbounded_condition(s_e, ALL_FINISHED, ops, previousState);
                   }
                }
             }
@@ -744,13 +787,16 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
             if(isLP && l == min_cstep && LP_Index && has_previous_LP_first_state)
             {
                THROW_ASSERT(s_cur.size() == 1, "unexpected condition");
-               auto s_e = STG_builder->connect_state(previous_LP_first_state, s_cur.begin()->second,
-                                                     TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
-               const BBNodeInfoConstRef bb_node_info = fbb->CGetBBNodeInfo(*vit);
-               THROW_ASSERT(bb_node_info->statements_list.size(),
-                            "at least one operation should belong to this basic block");
-               vertex last_operation = *(bb_node_info->statements_list.rbegin());
-               set_edge_condition(backedge_cfg_edge_ids, STG_builder, last_operation, s_e);
+               for(auto pv_state : previous_LP_first_state)
+               {
+                  auto s_e = STG_builder->connect_state(pv_state, s_cur.begin()->second,
+                                                        TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
+                  const BBNodeInfoConstRef bb_node_info = fbb->CGetBBNodeInfo(*vit);
+                  THROW_ASSERT(bb_node_info->statements_list.size(),
+                               "at least one operation should belong to this basic block");
+                  vertex last_operation = *(bb_node_info->statements_list.rbegin());
+                  set_edge_condition(backedge_cfg_edge_ids, STG_builder, last_operation, s_e);
+               }
                current_LP_first_state = s_cur.begin()->second;
             }
             else if(is_function_pipelined && isLP && l == min_cstep && LP_Index)
@@ -790,6 +836,13 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                   s_e = STG_builder->connect_state(waiting_state, waiting_state,
                                                    TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK);
                   STG_builder->set_unbounded_condition(s_e, NOT_ALL_FINISHED, ops, s_curState);
+                  if(is_function_pipelined && isLP && LP_Index == n_iter_LP_STG_building - 1 &&
+                     l == min_cstep + (LPII - 1))
+                  {
+                     s_e = STG_builder->connect_state(waiting_state, current_LP_first_state,
+                                                      TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK);
+                     STG_builder->set_unbounded_condition(s_e, ALL_FINISHED, ops, current_LP_first_state);
+                  }
                }
             }
             if(l == max_cstep)
@@ -815,8 +868,14 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                THROW_ASSERT(s_cur.size() == 1, "unexpected condition");
                const auto& s_curState = s_cur.begin()->second;
                STG_builder->set_exit_state(s_curState);
-               STG_builder->connect_state(s_curState, current_LP_first_state,
-                                          TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK);
+               EdgeDescriptor s_e = STG_builder->connect_state(s_curState, current_LP_first_state,
+                                                               TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK);
+               if(call_states.count(s_curState))
+               {
+                  CustomOrderedSet<vertex> ops;
+                  ops.insert(call_operations.at(s_curState).begin(), call_operations.at(s_curState).end());
+                  STG_builder->set_unbounded_condition(s_e, ALL_FINISHED, ops, current_LP_first_state);
+               }
             }
             else if(isLP && LP_Index == n_iter_LP_STG_building - 1 && l == min_cstep + (LPII - 1))
             {
@@ -829,6 +888,16 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                             "at least one operation should belong to this basic block");
                vertex last_operation = *(bb_node_info->statements_list.rbegin());
                set_edge_condition(backedge_cfg_edge_ids, STG_builder, last_operation, s_e_f);
+               if(call_states.count(s_curState))
+               {
+                  auto call_sets = call_states.find(s_curState)->second;
+                  for(auto& call_set : call_sets)
+                  {
+                     EdgeDescriptor s_e_csf = STG_builder->connect_state(
+                         call_set, current_LP_first_state, TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK);
+                     set_edge_condition(backedge_cfg_edge_ids, STG_builder, last_operation, s_e_csf);
+                  }
+               }
                for(auto nLP_FS : next_LP_first_state)
                {
                   auto s_e = STG_builder->connect_state(s_curState, nLP_FS.second,
@@ -836,6 +905,21 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                                                             TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK :
                                                             TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
                   set_edge_condition(no_backedge_cfg_edge_ids.at(nLP_FS.first), STG_builder, last_operation, s_e);
+
+                  if(call_states.count(s_curState))
+                  {
+                     auto call_sets = call_states.find(s_curState)->second;
+                     for(auto& call_set : call_sets)
+                     {
+                        EdgeDescriptor s_e_cs =
+                            STG_builder->connect_state(call_set, nLP_FS.second,
+                                                       is_exit_edge_FB.contains(nLP_FS.first) ?
+                                                           TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK :
+                                                           TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
+                        set_edge_condition(no_backedge_cfg_edge_ids.at(nLP_FS.first), STG_builder, last_operation,
+                                           s_e_cs);
+                     }
+                  }
                }
                break;
             }
@@ -884,25 +968,35 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       }
       auto edge_type = (FB_CFG_SELECTOR & fbb->GetSelector(e)) ? TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK :
                                                                  TransitionInfo::StateTransitionType::ST_EDGE_NORMAL;
-      auto manage_edges_and_calls = [&](vertex ls) -> EdgeDescriptor {
+      auto manage_edges_and_calls = [&](vertex ls) {
          EdgeDescriptor s_e;
          s_e = STG_builder->connect_state(ls, s_tgt, edge_type);
+         CustomOrderedSet<std::pair<vertex, unsigned int>> out_conditions;
+         /// compute the controlling vertex
+         const auto bb_node_info = fbb->CGetBBNodeInfo(bb_src);
+         THROW_ASSERT(bb_node_info->statements_list.size(), "at least one operation should belong to this basic block");
+         const auto last_operation = *(bb_node_info->statements_list.rbegin());
+         const auto& cfg_edge_ids = fbb->CGetBBEdgeInfo(e)->get_labels(CFG_SELECTOR);
+
+         if(!isLP)
+         {
+            set_edge_condition(cfg_edge_ids, STG_builder, last_operation, s_e);
+         }
          if(call_states.find(ls) != call_states.end())
          {
             const auto& call_sets = call_states.at(ls);
             THROW_ASSERT(call_operations.find(ls) != call_operations.end() &&
                              call_operations.find(ls)->second.size() != 0,
                          "State " + HLS->STG->get_state_name(ls) + " does not contain any call expression");
-            CustomOrderedSet<vertex> ops;
-            ops.insert(call_operations.at(ls).begin(), call_operations.at(ls).end());
-            STG_builder->set_unbounded_condition(s_e, ALL_FINISHED, ops, ls);
             for(const auto& call_set : call_sets)
             {
                EdgeDescriptor s_e1 = STG_builder->connect_state(call_set, s_tgt, edge_type);
-               STG_builder->set_unbounded_condition(s_e1, ALL_FINISHED, ops, ls);
+               if(!isLP)
+               {
+                  set_edge_condition(cfg_edge_ids, STG_builder, last_operation, s_e1);
+               }
             }
          }
-         return s_e;
       };
       if(isLP)
       {
@@ -921,7 +1015,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       else
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Analyzing BB" + STR(fbb->CGetBBNodeInfo(bb_src)->block->number) + "-->" +
+                        "-->Analyzing BB" + STR(fbb->CGetBBNodeInfo(bb_src)->block->number) + "-->BB" +
                             STR(fbb->CGetBBNodeInfo(bb_tgt)->block->number));
          vertex s_src;
          if(bb_src == bb_exit)
@@ -933,19 +1027,10 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
             THROW_ASSERT(last_state.find(bb_src) != last_state.end(), "missing a state vertex");
             s_src = last_state.find(bb_src)->second;
          }
-         auto s_e = manage_edges_and_calls(s_src);
-
-         CustomOrderedSet<std::pair<vertex, unsigned int>> out_conditions;
-         /// compute the controlling vertex
-         const auto bb_node_info = fbb->CGetBBNodeInfo(bb_src);
-         THROW_ASSERT(bb_node_info->statements_list.size(), "at least one operation should belong to this basic block");
-         const auto last_operation = *(bb_node_info->statements_list.rbegin());
-         const auto& cfg_edge_ids = fbb->CGetBBEdgeInfo(e)->get_labels(CFG_SELECTOR);
-
-         set_edge_condition(cfg_edge_ids, STG_builder, last_operation, s_e);
+         manage_edges_and_calls(s_src);
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "<--Analyzed BB" + STR(fbb->CGetBBNodeInfo(bb_src)->block->number) + "-->" +
+                        "<--Analyzed BB" + STR(fbb->CGetBBNodeInfo(bb_src)->block->number) + "-->BB" +
                             STR(fbb->CGetBBNodeInfo(bb_tgt)->block->number));
       }
    }

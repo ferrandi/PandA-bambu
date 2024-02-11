@@ -1290,8 +1290,19 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                                                              clock_cycle, LPBB_predicate, HLS);
                THROW_ASSERT(!(curr_vertex_type & (TYPE_WHILE | TYPE_FOR)), "not expected operation type");
                /// put these type of operations as last operation scheduled for the basic block
-               if((curr_vertex_type & (TYPE_IF | TYPE_RET | TYPE_SWITCH | TYPE_MULTIIF | TYPE_GOTO)) &&
-                  (unbounded || unbounded_RW || is_live))
+               if((curr_vertex_type & (TYPE_RET | TYPE_GOTO)) && (unbounded || unbounded_RW || is_live))
+               {
+                  if(black_list.find(fu_type) == black_list.end())
+                  {
+                     black_list.emplace(fu_type, OpVertexSet(flow_graph));
+                  }
+                  black_list.at(fu_type).insert(current_vertex);
+                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                "            Scheduling of Control Vertex " + GET_NAME(flow_graph, current_vertex) +
+                                    " postponed to the next cycle");
+                  continue;
+               }
+               else if((curr_vertex_type & (TYPE_IF | TYPE_SWITCH | TYPE_MULTIIF)) && is_live)
                {
                   if(black_list.find(fu_type) == black_list.end())
                   {
@@ -1330,7 +1341,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                                     " postponed to the next cycle to satisfy loop pipelining constraints on the FSM");
                   continue;
                }
-               else if(LPBB_predicate &&
+               /*else if(LPBB_predicate &&
                        (LP_II - 1) == (from_strongtype_cast<unsigned>(current_cycle - initialCycle) % LP_II) &&
                        !HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type))
                {
@@ -1345,7 +1356,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                       "            Scheduling of unbounded vertex " + GET_NAME(flow_graph, current_vertex) +
                           " postponed to the next cycle to avoid conflicts with the Control Vertex: II=" + STR(LP_II));
                   schedulable = false;
-               }
+               }*/
                else if((curr_vertex_type & TYPE_RET) &&
                        ((schedule->num_scheduled() - already_sch) == operations_number - 1) && n_scheduled_ops != 0 &&
                        registering_output_p)
@@ -2503,14 +2514,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
          for(auto op : operations)
          {
             unsigned int fu_type = HLS->allocation_information->GetFuType(op);
-            if(!HLS->allocation_information->is_operation_bounded(op_graph, op, fu_type))
-            {
-               if(FB->is_function_pipelined())
-               {
-                  THROW_ERROR("Function pipelining not possible with II=" + STR(FB->get_initiation_time()));
-               }
-            }
-            else
+            if(HLS->allocation_information->is_operation_bounded(op_graph, op, fu_type))
             {
                const auto II =
                    from_strongtype_cast<unsigned>(HLS->allocation_information->get_initiation_time(fu_type, op));
