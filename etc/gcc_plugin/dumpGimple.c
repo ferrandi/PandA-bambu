@@ -412,10 +412,9 @@ void DumpGimpleInit(char* _outdir_name)
  */
 static void DumpVersion(FILE* stream)
 {
-   const char* panda_plugin_version = (const char*)PANDA_PLUGIN_VERSION;
    int version = __GNUC__, minor = __GNUC_MINOR__, patchlevel = __GNUC_PATCHLEVEL__;
-   fprintf(stream, "GCC_VERSION: \"%d.%d.%d\"\n", version, minor, patchlevel);
-   fprintf(stream, "PLUGIN_VERSION: \"%s\"\n", panda_plugin_version);
+   fprintf(stream, "COMPILER_VERSION: \"GCC %d.%d.%d\"\nPLUGIN_VERSION: \"" PANDA_PLUGIN_VERSION "\"\n", version, minor,
+           patchlevel);
 }
 
 /**
@@ -612,7 +611,7 @@ void SerializeGimpleEnd()
    fclose(serialize_gimple_info.stream);
 }
 
-unsigned int gimplePssa(void)
+unsigned int bambuIR(void)
 {
    size_t nc = strlen(dump_base_name);
    size_t nc_index = 0;
@@ -636,7 +635,7 @@ unsigned int gimplePssa(void)
          if(cfun->cfg && basic_block_info)
 #endif
    {
-      char* name = concat(outdir_name, "/", dump_base_name_trimmed, ".gimplePSSA", NULL);
+      char* name = concat(outdir_name, "/", dump_base_name_trimmed, ".bambuir", NULL);
       bool has_loop = current_loops != NULL;
       if(!has_loop)
          loop_optimizer_init(AVOID_CFG_MODIFICATIONS);

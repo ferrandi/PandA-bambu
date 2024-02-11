@@ -113,7 +113,7 @@ static std::string create_file_name_string(const std::string& outdir_name, const
       dump_base_name = original_filename;
    else
       dump_base_name = original_filename.substr(found + 1);
-   return outdir_name + "/" + dump_base_name + ".gimplePSSA";
+   return outdir_name + "/" + dump_base_name + ".bambuir";
 }
 
 #define PEEL_THRESHOLD 16
@@ -4075,10 +4075,7 @@ namespace llvm
 
    void DumpGimpleRaw::DumpVersion(llvm::raw_fd_ostream& stream)
    {
-      const char* panda_plugin_version = (const char*)PANDA_PLUGIN_VERSION;
-      int version = __GNUC__, minor = __GNUC_MINOR__, patchlevel = __GNUC_PATCHLEVEL__;
-      stream << "GCC_VERSION: \"" << version << "." << minor << "." << patchlevel << "\"\n";
-      stream << "PLUGIN_VERSION: \"" << panda_plugin_version << "\"\n";
+      stream << "COMPILER_VERSION: \"Clang " __clang_version__ "\"\nPLUGIN_VERSION: \"" PANDA_PLUGIN_VERSION "\"\n";
    }
 
    void DumpGimpleRaw::serialize_int(const char* field, int i)

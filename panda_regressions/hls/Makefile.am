@@ -8,7 +8,7 @@ EXTRA_DIST= \
    %D%/bambu_axi_verification/mm_axi.c \
    %D%/bambu_axi_verification/mm_axi_tb.xml \
    %D%/bambu_axi_verification.sh \
-   %D%/bambu_specific_test/20020108-1.c.gimplePSSA \
+   %D%/bambu_specific_test/20020108-1.c.bambuir \
    %D%/bambu_specific_test2/complex_test.c \
    %D%/bambu_specific_test2/complex_test.xml \
    %D%/bambu_specific_test2/complext_test.xml \
@@ -110,20 +110,20 @@ EXTRA_DIST= \
    %D%/bambu_specific_test6/sat_op.ll \
    %D%/bambu_specific_test6/frem_test.c \
    %D%/bambu_specific_test6.sh \
-   %D%/bambu_specific_test/930608-1.c.gimplePSSA \
-   %D%/bambu_specific_test/990829-1.c.gimplePSSA \
+   %D%/bambu_specific_test/930608-1.c.bambuir \
+   %D%/bambu_specific_test/990829-1.c.bambuir \
    %D%/bambu_specific_test/bambu1.c \
    %D%/bambu_specific_test/chk.h \
-   %D%/bambu_specific_test/divconst-2.c.gimplePSSA \
+   %D%/bambu_specific_test/divconst-2.c.bambuir \
    %D%/bambu_specific_test_list \
    %D%/bambu_specific_test/memset-chk.c \
-   %D%/bambu_specific_test/pr35472.c.gimplePSSA \
-   %D%/bambu_specific_test/pta-field-1.c.gimplePSSA \
+   %D%/bambu_specific_test/pr35472.c.bambuir \
+   %D%/bambu_specific_test/pta-field-1.c.bambuir \
    %D%/bambu_specific_test/return_vector.c \
    %D%/bambu_specific_test.sh \
    %D%/bambu_specific_test/soft_mul.c \
    %D%/bambu_specific_test/soft_umul.c \
-   %D%/bambu_specific_test/unsafe-fp-assoc-1.c.gimplePSSA \
+   %D%/bambu_specific_test/unsafe-fp-assoc-1.c.bambuir \
    %D%/chstone_memarch_list1 \
    %D%/chstone_memarch_list2 \
    %D%/gcc_memarch_list3 \
