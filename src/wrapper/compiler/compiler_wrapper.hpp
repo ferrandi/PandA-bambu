@@ -246,13 +246,6 @@ class CompilerWrapper
     */
    const std::string AddSourceCodeIncludes(const std::list<std::string>& source_files) const;
 
-   /**
-    * Convert a string version to a number
-    * @param version is the version to be converted
-    * @return the corresponding number
-    */
-   static size_t ConvertVersion(const std::string& version);
-
    std::string readExternalSymbols(const std::string& filename) const;
 
    std::string clang_recipes(const CompilerWrapper_OptimizationSet optimization_level, const std::string& fname) const;
@@ -265,10 +258,7 @@ class CompilerWrapper
 
  public:
    /// The version of the frontend compiler
-   static std::string current_compiler_version;
-
-   /// The version of the plugin
-   static std::string current_plugin_version;
+   static std::string bambu_ir_info;
 
    /**
     * Constructor
@@ -353,13 +343,6 @@ class CompilerWrapper
     * @return the optimization level in string format
     */
    static std::string WriteOptimizationLevel(const CompilerWrapper_OptimizationSet optimization_level);
-
-   /**
-    * Check if the gcc-plugin is supported; if not it throws error
-    * @param gcc_version is the frontend compiler version in form x.x.x
-    * @param plugin_version is the plugin version in form x.x
-    */
-   static void CheckCompilerCompatibleVersion(const std::string& compiler_version, const std::string& plugin_version);
 
    /**
     * Return the size of the pointer in bit

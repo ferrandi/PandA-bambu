@@ -1086,7 +1086,7 @@ Parameters_FileFormat Parameter::GetFileFormat(const std::filesystem::path& file
       if(!opened_file->eof())
       {
          getline(*opened_file, line);
-         if(line.find(STOK(TOK_GCC_VERSION)) != std::string::npos)
+         if(line.find(STOK(TOK_COMPILER_VERSION)) != std::string::npos)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Raw file");
             return Parameters_FileFormat::FF_RAW;

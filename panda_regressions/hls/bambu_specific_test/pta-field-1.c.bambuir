@@ -1,4 +1,4 @@
-GCC_VERSION: "4.6.3"
+COMPILER_VERSION: "GCC 4.6.3"
 PLUGIN_VERSION: "0.12"
 
 ;; Function bar (bar)
