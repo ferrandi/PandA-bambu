@@ -343,10 +343,9 @@ void Range::normalizeRange(const APInt& lb, const APInt& ub, RangeType rType)
          }
          break;
       }
-      case Real:
       default:
       {
-         THROW_UNREACHABLE("Real range is a storage class only");
+         THROW_UNREACHABLE("Unknown range type");
          break;
       }
    }
@@ -479,10 +478,6 @@ RangeRef Range::getAnti() const
    {
       return RangeRef(this->clone());
    }
-   if(type == Real)
-   {
-      THROW_UNREACHABLE("Real range is a storage class only");
-   }
    THROW_UNREACHABLE("unexpected condition");
    return nullptr;
 }
@@ -494,21 +489,18 @@ bw_t Range::getBitWidth() const
 
 const APInt& Range::getLower() const
 {
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
    THROW_ASSERT(!isAnti(), "Lower bound not valid for Anti range");
    return l;
 }
 
 const APInt& Range::getUpper() const
 {
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
    THROW_ASSERT(!isAnti(), "Upper bound not valid for Anti range");
    return u;
 }
 
 APInt Range::getSignedMax() const
 {
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
    THROW_ASSERT(!isUnknown() && !isEmpty(), "Max not valid for Unknown/Empty range");
    const auto maxS = APInt::getSignedMaxValue(bw);
    if(type == Regular)
@@ -520,7 +512,6 @@ APInt Range::getSignedMax() const
 
 APInt Range::getSignedMin() const
 {
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
    THROW_ASSERT(!isUnknown() && !isEmpty(), "Min not valid for Unknown/Empty range");
    const auto minS = APInt::getSignedMinValue(bw);
    if(type == Regular)
@@ -532,7 +523,6 @@ APInt Range::getSignedMin() const
 
 APInt Range::getUnsignedMax() const
 {
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
    THROW_ASSERT(!isUnknown() && !isEmpty(), "UMax not valid for Unknown/Empty range");
    if(isAnti())
    {
@@ -545,7 +535,6 @@ APInt Range::getUnsignedMax() const
 
 APInt Range::getUnsignedMin() const
 {
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
    THROW_ASSERT(!isUnknown() && !isEmpty(), "UMin not valid for Unknown/Empty range");
    if(isAnti())
    {
@@ -556,7 +545,6 @@ APInt Range::getUnsignedMin() const
 
 APInt Range::getSpan() const
 {
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
    if(isEmpty())
    {
       return 0;
@@ -597,11 +585,6 @@ bool Range::isAnti() const
 bool Range::isEmpty() const
 {
    return type == Empty;
-}
-
-bool Range::isReal() const
-{
-   return false;
 }
 
 bool Range::isSameType(const RangeConstRef& other) const
@@ -651,7 +634,6 @@ bool Range::isConstant() const
 
 RangeRef Range::add(const RangeConstRef& other) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
    if(this->isFullSet() || other->isFullSet())
@@ -700,7 +682,6 @@ RangeRef Range::add(const RangeConstRef& other) const
 
 RangeRef Range::sat_add(const RangeConstRef& other) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
    if(this->isFullSet() || other->isFullSet())
@@ -769,7 +750,6 @@ RangeRef Range::sat_add(const RangeConstRef& other) const
 
 RangeRef Range::usat_add(const RangeConstRef& other) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
    if(this->isFullSet() || other->isFullSet())
@@ -818,7 +798,6 @@ RangeRef Range::usat_add(const RangeConstRef& other) const
 
 RangeRef Range::sub(const RangeConstRef& other) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
    if(this->isFullSet() || other->isFullSet())
@@ -888,7 +867,6 @@ RangeRef Range::sub(const RangeConstRef& other) const
 
 RangeRef Range::sat_sub(const RangeConstRef& other) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
    if(this->isFullSet() || other->isFullSet())
@@ -953,7 +931,6 @@ RangeRef Range::sat_sub(const RangeConstRef& other) const
 
 RangeRef Range::usat_sub(const RangeConstRef& other) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
    if(this->isFullSet() || other->isFullSet())
@@ -1012,7 +989,6 @@ RangeRef Range::usat_sub(const RangeConstRef& other) const
 
 RangeRef Range::mul(const RangeConstRef& other) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
    if(this->isFullSet() || other->isFullSet() || this->isAnti() || other->isAnti())
@@ -1056,7 +1032,6 @@ RangeRef Range::mul(const RangeConstRef& other) const
 
 RangeRef Range::udiv(const RangeConstRef& other) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
    if(this->isFullSet())
@@ -1090,7 +1065,6 @@ RangeRef Range::udiv(const RangeConstRef& other) const
 
 RangeRef Range::sdiv(const RangeConstRef& other) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
    if(this->isFullSet() || this->isAnti())
@@ -1176,7 +1150,6 @@ RangeRef Range::sdiv(const RangeConstRef& other) const
 
 RangeRef Range::urem(const RangeConstRef& other) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
    if(this->isAnti() || other->isAnti())
@@ -1228,7 +1201,6 @@ RangeRef Range::urem(const RangeConstRef& other) const
 
 RangeRef Range::srem(const RangeConstRef& other) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
    if(this->isFullSet() || this->isAnti() || other->isAnti())
@@ -1265,7 +1237,6 @@ RangeRef Range::srem(const RangeConstRef& other) const
 
 RangeRef Range::shl(const RangeConstRef& other) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
    if(this->isFullSet() || other->isFullSet() || this->isAnti() || other->isAnti())
@@ -1318,7 +1289,6 @@ RangeRef Range::shl(const RangeConstRef& other) const
 
 RangeRef Range::shr(const RangeConstRef& other, bool sign) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
    if(this->isAnti() || other->isAnti())
@@ -1611,7 +1581,6 @@ namespace
 
 RangeRef Range::Or(const RangeConstRef& other) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
    if(this->isConstant() && this->getSignedMax() == 0)
@@ -1634,7 +1603,6 @@ RangeRef Range::Or(const RangeConstRef& other) const
 
 RangeRef Range::And(const RangeConstRef& other) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
    if(this->isConstant() && this->getSignedMax() == -1)
@@ -1657,7 +1625,6 @@ RangeRef Range::And(const RangeConstRef& other) const
 
 RangeRef Range::Xor(const RangeConstRef& other) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
 
@@ -1684,7 +1651,6 @@ RangeRef Range::Xor(const RangeConstRef& other) const
 
 RangeRef Range::Not() const
 {
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
    if(isEmpty() || isUnknown())
    {
       return RangeRef(new Range(this->type, bw));
@@ -1698,7 +1664,6 @@ RangeRef Range::Not() const
 
 RangeRef Range::Eq(const RangeConstRef& other, bw_t _bw) const
 {
-   THROW_ASSERT(!other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
    if(this->isAnti() && other->isAnti())
@@ -1734,7 +1699,6 @@ RangeRef Range::Eq(const RangeConstRef& other, bw_t _bw) const
 
 RangeRef Range::Ne(const RangeConstRef& other, bw_t _bw) const
 {
-   THROW_ASSERT(!other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
    if(this->isAnti() && other->isAnti())
@@ -1769,7 +1733,6 @@ RangeRef Range::Ne(const RangeConstRef& other, bw_t _bw) const
 
 RangeRef Range::Ugt(const RangeConstRef& other, bw_t _bw) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
    if(isAnti() || other->isAnti())
@@ -1795,7 +1758,6 @@ RangeRef Range::Ugt(const RangeConstRef& other, bw_t _bw) const
 
 RangeRef Range::Uge(const RangeConstRef& other, bw_t _bw) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
    if(isAnti() || other->isAnti())
@@ -1821,7 +1783,6 @@ RangeRef Range::Uge(const RangeConstRef& other, bw_t _bw) const
 
 RangeRef Range::Ult(const RangeConstRef& other, bw_t _bw) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
    if(isAnti() || other->isAnti())
@@ -1847,7 +1808,6 @@ RangeRef Range::Ult(const RangeConstRef& other, bw_t _bw) const
 
 RangeRef Range::Ule(const RangeConstRef& other, bw_t _bw) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
    if(isAnti() || other->isAnti())
@@ -1873,7 +1833,6 @@ RangeRef Range::Ule(const RangeConstRef& other, bw_t _bw) const
 
 RangeRef Range::Sgt(const RangeConstRef& other, bw_t _bw) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
    if(isAnti() || other->isAnti())
@@ -1899,7 +1858,6 @@ RangeRef Range::Sgt(const RangeConstRef& other, bw_t _bw) const
 
 RangeRef Range::Sge(const RangeConstRef& other, bw_t _bw) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
    if(isAnti() || other->isAnti())
@@ -1925,7 +1883,6 @@ RangeRef Range::Sge(const RangeConstRef& other, bw_t _bw) const
 
 RangeRef Range::Slt(const RangeConstRef& other, bw_t _bw) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
    if(isAnti() || other->isAnti())
@@ -1951,7 +1908,6 @@ RangeRef Range::Slt(const RangeConstRef& other, bw_t _bw) const
 
 RangeRef Range::Sle(const RangeConstRef& other, bw_t _bw) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
    if(isAnti() || other->isAnti())
@@ -1977,7 +1933,6 @@ RangeRef Range::Sle(const RangeConstRef& other, bw_t _bw) const
 
 RangeRef Range::SMin(const RangeConstRef& other) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
    if(isAnti() || other->isAnti())
@@ -1997,7 +1952,6 @@ RangeRef Range::SMin(const RangeConstRef& other) const
 
 RangeRef Range::SMax(const RangeConstRef& other) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
    if(isAnti() || other->isAnti())
@@ -2017,7 +1971,6 @@ RangeRef Range::SMax(const RangeConstRef& other) const
 
 RangeRef Range::UMin(const RangeConstRef& other) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
    if(isAnti() || other->isAnti())
@@ -2037,7 +1990,6 @@ RangeRef Range::UMin(const RangeConstRef& other) const
 
 RangeRef Range::UMax(const RangeConstRef& other) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
    if(isAnti() || other->isAnti())
@@ -2107,7 +2059,6 @@ RangeRef Range::abs() const
 
 RangeRef Range::negate() const
 {
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
    if(isEmpty() || isUnknown())
    {
       return RangeRef(this->clone());
@@ -2124,7 +2075,6 @@ RangeRef Range::negate() const
 // - else, the result is the max bit range
 RangeRef Range::truncate(bw_t bitwidth) const
 {
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
    if(isEmpty())
    {
       return RangeRef(new Range(Empty, bitwidth));
@@ -2184,7 +2134,7 @@ RangeRef Range::sextOrTrunc(bw_t bitwidth) const
    {
       return truncate(bitwidth);
    }
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
+
    if(isEmpty())
    {
       return RangeRef(new Range(Empty, bitwidth));
@@ -2212,7 +2162,7 @@ RangeRef Range::zextOrTrunc(bw_t bitwidth) const
    {
       return truncate(bitwidth);
    }
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
+
    if(isEmpty())
    {
       return RangeRef(new Range(Empty, bitwidth));
@@ -2244,7 +2194,7 @@ RangeRef Range::intersectWith(const RangeConstRef& other) const
 #ifdef DEBUG_RANGE_OP
    PRINT_MSG("intersectWith-this: " << *this << std::endl << "intersectWith-other: " << *other);
 #endif
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
 
@@ -2358,7 +2308,7 @@ RangeRef Range::unionWith(const RangeConstRef& other) const
 #ifdef DEBUG_RANGE_OP
    PRINT_MSG("unionWith-this: " << *this << std::endl << "unionWith-other: " << *other);
 #endif
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+
    if(this->isEmpty() || this->isUnknown())
    {
       return RangeRef(other->clone());
@@ -2538,10 +2488,6 @@ RangeRef Range::makeSatisfyingCmpRegion(kind pred, const RangeConstRef& Other)
       THROW_UNREACHABLE("Invalid request " + tree_node::GetString(pred) + " " + Other->ToString());
       return RangeRef(new Range(Empty, bw));
    }
-   if(Other->isReal() && pred != eq_expr_K && pred != ne_expr_K && pred != uneq_expr_K)
-   {
-      THROW_UNREACHABLE("Compare region for real range not handled (" + tree_node::GetString(pred) + ")");
-   }
 
    switch(pred)
    {
@@ -2654,323 +2600,4 @@ RangeRef Range::makeSatisfyingCmpRegion(kind pred, const RangeConstRef& Other)
    }
    THROW_UNREACHABLE("Unhandled compare operation (" + STR(pred) + ")");
    return nullptr;
-}
-
-// ========================================================================== //
-// RealRange
-// ========================================================================== //
-RealRange::RealRange(const Range& s, const Range& e, const Range& f)
-    : Range(Real, static_cast<bw_t>(s.getBitWidth() + e.getBitWidth() + f.getBitWidth())),
-      sign(s.clone()),
-      exponent(e.clone()),
-      significand(f.clone())
-{
-   THROW_ASSERT(getBitWidth() == 32 || getBitWidth() == 64, "Composed range bitwidth not valid [" + s.ToString() + " " +
-                                                                e.ToString() + " " + f.ToString() + "]<" +
-                                                                STR(getBitWidth()) + ">");
-   THROW_ASSERT(!s.isReal() && !e.isReal() && !f.isReal(), "Real range components shouldn't be real ranges");
-}
-
-RealRange::RealRange(const RangeConstRef& s, const RangeConstRef& e, const RangeConstRef& f)
-    : Range(Real, static_cast<bw_t>(s->getBitWidth() + e->getBitWidth() + f->getBitWidth())),
-      sign(s->clone()),
-      exponent(e->clone()),
-      significand(f->clone())
-{
-   THROW_ASSERT(getBitWidth() == 32 || getBitWidth() == 64, "Composed range bitwidth not valid [" + s->ToString() +
-                                                                " " + e->ToString() + " " + f->ToString() + "]<" +
-                                                                STR(getBitWidth()) + ">");
-   THROW_ASSERT(!s->isReal() && !e->isReal() && !f->isReal(), "Real range components shouldn't be real ranges");
-}
-
-RealRange::RealRange(const RangeConstRef& vc)
-    : Range(Real, vc->getBitWidth()), sign(vc->Slt(RangeRef(new Range(Regular, 1, 0, 0)), 1))
-{
-   if(vc->getBitWidth() == 32)
-   {
-      exponent = vc->shr(RangeRef(new Range(Regular, max_digits, 23, 23)), false)->zextOrTrunc(8);
-      significand = vc->zextOrTrunc(23);
-   }
-   else if(vc->getBitWidth() == 64)
-   {
-      exponent = vc->shr(RangeRef(new Range(Regular, max_digits, 52, 52)), false)->zextOrTrunc(11);
-      significand = vc->zextOrTrunc(52);
-   }
-   else
-   {
-      THROW_UNREACHABLE("Unhandled view convert bitwidth: could not transform " + vc->ToString() + " into real range");
-   }
-}
-
-RangeRef RealRange::getRange() const
-{
-   const auto _bw = getBitWidth();
-   if(_bw == 32)
-   {
-      auto s = sign->zextOrTrunc(32)->shl(RangeRef(new Range(Regular, max_digits, 31, 31)));
-      auto e = exponent->zextOrTrunc(32)->shl(RangeRef(new Range(Regular, max_digits, 23, 23)));
-      return significand->zextOrTrunc(32)->Or(e)->Or(s);
-   }
-   else if(_bw == 64)
-   {
-      auto s = sign->zextOrTrunc(64)->shl(RangeRef(new Range(Regular, max_digits, 63, 63)));
-      auto e = exponent->zextOrTrunc(64)->shl(RangeRef(new Range(Regular, max_digits, 52, 52)));
-      return significand->zextOrTrunc(64)->Or(e)->Or(s);
-   }
-   THROW_UNREACHABLE("Unhandled view convert bitwidth");
-   return nullptr;
-}
-
-RangeRef RealRange::getSign() const
-{
-   return sign;
-}
-
-RangeRef RealRange::getExponent() const
-{
-   return exponent;
-}
-
-RangeRef RealRange::getSignificand() const
-{
-   return significand;
-}
-
-std::deque<bit_lattice> RealRange::getBitValues(bool) const
-{
-   const auto sign_bv = sign->getBitValues(true);
-   auto exp_bv = exponent->getBitValues(true);
-   if(exp_bv.size() < exponent->getBitWidth())
-   {
-      exp_bv = BitLatticeManipulator::sign_extend_bitstring(exp_bv, true, exponent->getBitWidth());
-   }
-   auto sig_bv = significand->getBitValues(true);
-   if(sig_bv.size() < significand->getBitWidth())
-   {
-      sig_bv = BitLatticeManipulator::sign_extend_bitstring(sig_bv, true, significand->getBitWidth());
-   }
-   sig_bv.insert(sig_bv.begin(), exp_bv.begin(), exp_bv.end());
-   sig_bv.insert(sig_bv.begin(), sign_bv.front());
-   THROW_ASSERT(sig_bv.size() == getBitWidth(), "Floating-point bit_values must be exact");
-   return sig_bv;
-}
-
-RangeRef RealRange::getAnti() const
-{
-   return RangeRef(new RealRange(sign->getAnti(), exponent->getAnti(), significand->getAnti()));
-}
-
-void RealRange::setSign(const RangeConstRef& s)
-{
-   sign.reset(s->clone());
-}
-
-void RealRange::setExponent(const RangeConstRef& e)
-{
-   exponent.reset(e->clone());
-}
-
-void RealRange::setSignificand(const RangeConstRef& f)
-{
-   significand.reset(f->clone());
-}
-
-bool RealRange::isSameRange(const RangeConstRef& other) const
-{
-   if(other->isReal())
-   {
-      auto rOther = RefcountCast<const RealRange>(other);
-      return this->getBitWidth() == other->getBitWidth() && sign->isSameRange(rOther->sign) &&
-             exponent->isSameRange(rOther->exponent) && significand->isSameRange(rOther->significand);
-   }
-   return false;
-}
-
-bool RealRange::isEmpty() const
-{
-   return sign->isEmpty() || exponent->isEmpty() || significand->isEmpty();
-}
-
-bool RealRange::isUnknown() const
-{
-   return sign->isUnknown() || exponent->isUnknown() || significand->isUnknown();
-}
-
-void RealRange::setUnknown()
-{
-   sign->setUnknown();
-   exponent->setUnknown();
-   significand->setUnknown();
-}
-
-bool RealRange::isFullSet() const
-{
-   return sign->isFullSet() && exponent->isFullSet() && significand->isFullSet();
-}
-
-bool RealRange::isSingleElement() const
-{
-   return sign->isSingleElement() && exponent->isSingleElement() && significand->isSingleElement();
-}
-
-bool RealRange::isConstant() const
-{
-   return sign->isConstant() && exponent->isConstant() && significand->isConstant();
-}
-
-bool RealRange::isReal() const
-{
-   return true;
-}
-
-void RealRange::print(std::ostream& OS) const
-{
-   OS << "[ ";
-   sign->print(OS);
-   OS << ", ";
-   exponent->print(OS);
-   OS << ", ";
-   significand->print(OS);
-   OS << ", " << STR(getBitWidth()) << "]";
-}
-
-Range* RealRange::clone() const
-{
-   return new RealRange(sign, exponent, significand);
-}
-
-RangeRef RealRange::abs() const
-{
-   return RangeRef(new RealRange(RangeRef(new Range(Regular, 1, 0, 0)), exponent, significand));
-}
-
-RangeRef RealRange::negate() const
-{
-   if(sign->isAnti() || sign->isConstant())
-   {
-      const auto s = sign->getUnsignedMin() ? 0 : 1;
-      return RangeRef(new RealRange(RangeRef(new Range(Regular, 1, s, s)), exponent, significand));
-   }
-   return RangeRef(this->clone());
-}
-
-RangeRef RealRange::Eq(const RangeConstRef& other, bw_t _bw) const
-{
-   if(const auto rOther = RefcountCast<const RealRange>(other))
-   {
-      const auto zeroEt = exponent->Eq(RangeRef(new Range(Regular, exponent->getBitWidth(), 0, 0)), 1);
-      const auto zeroMt = significand->Eq(RangeRef(new Range(Regular, significand->getBitWidth(), 0, 0)), 1);
-      const auto zeroContainedt = zeroEt->And(zeroMt);
-      const auto zeroEo = rOther->exponent->Eq(RangeRef(new Range(Regular, rOther->exponent->getBitWidth(), 0, 0)), 1);
-      const auto zeroMo =
-          rOther->significand->Eq(RangeRef(new Range(Regular, rOther->significand->getBitWidth(), 0, 0)), 1);
-      const auto zeroContainedo = zeroEo->And(zeroMo);
-      const auto zeroContained = zeroContainedt->And(zeroContainedo);
-      if(!zeroContained->isConstant() || zeroContained->getUnsignedMin() == 1)
-      {
-         return zeroContained->zextOrTrunc(_bw);
-      }
-      return sign->Eq(rOther->sign, 1)
-          ->And(exponent->Eq(rOther->exponent, 1))
-          ->And(significand->Eq(rOther->significand, 1))
-          ->zextOrTrunc(_bw);
-   }
-   return RangeRef(new Range(Regular, _bw, 0, 0));
-}
-
-RangeRef RealRange::Ne(const RangeConstRef& other, bw_t _bw) const
-{
-   return Eq(other, 1)->Not()->zextOrTrunc(_bw);
-}
-
-RangeRef RealRange::intersectWith(const RangeConstRef& other) const
-{
-#ifdef DEBUG_RANGE_OP
-   PRINT_MSG("intersectWith-this: " << *this << std::endl << "intersectWith-other: " << *other);
-#endif
-   THROW_ASSERT(other->isReal(), "Real range should intersect with real range only");
-   auto rrOther = RefcountCast<const RealRange>(other);
-   return RangeRef(new RealRange(sign->intersectWith(rrOther->sign), exponent->intersectWith(rrOther->exponent),
-                                 significand->intersectWith(rrOther->significand)));
-}
-
-RangeRef RealRange::unionWith(const RangeConstRef& other) const
-{
-#ifdef DEBUG_RANGE_OP
-   PRINT_MSG("unionWith-this: " << *this << std::endl << "unionWith-other: " << *other);
-#endif
-   THROW_ASSERT(other->isReal(), "Real range should unite to real range only");
-   auto rrOther = RefcountCast<const RealRange>(other);
-   return RangeRef(new RealRange(sign->unionWith(rrOther->sign), exponent->unionWith(rrOther->exponent),
-                                 significand->unionWith(rrOther->significand)));
-}
-
-RangeRef RealRange::toFloat64() const
-{
-   if(getBitWidth() == 64)
-   {
-      return RangeRef(this->clone());
-   }
-
-   RangeRef exponent64;
-   // Denormalized case
-   if(exponent->isConstant() && exponent->getUnsignedMin() == 0)
-   {
-      exponent64.reset(new Range(Regular, 11, 0, 0));
-   }
-   else if(exponent->isFullSet())
-   {
-      exponent64.reset(new Range(Regular, 11));
-   }
-   else
-   {
-      exponent64.reset(new Range(Regular, 11, (exponent->getUnsignedMin() + 896).extOrTrunc(11, true),
-                                 (exponent->getUnsignedMax() + 896).extOrTrunc(11, true)));
-   }
-
-   return RangeRef(
-       new RealRange(sign, exponent64, significand->zextOrTrunc(52)->shl(RangeRef(new Range(Regular, 52, 29, 29)))));
-}
-
-RangeRef RealRange::toFloat32() const
-{
-   if(getBitWidth() == 32)
-   {
-      return RangeRef(this->clone());
-   }
-
-   RangeRef exponent32;
-   RangeRef significand32 = significand->shr(RangeRef(new Range(Regular, 52, 29, 29)), false)->zextOrTrunc(23);
-   const auto min = exponent->getUnsignedMin() - 896;
-   const auto max = exponent->getUnsignedMax() - 896;
-   if(min < 0 && max > APInt::getMaxValue(8))
-   {
-      exponent32.reset(new Range(Regular, 8));
-   }
-   else if(exponent->isConstant() && min < 0)
-   {
-      exponent32.reset(new Range(Regular, 8, 0, 0));
-   }
-   else if(exponent->isConstant() && max >= APInt::getMaxValue(8))
-   {
-      exponent32.reset(new Range(Regular, 8, -1, -1));
-      significand32.reset(new Range(Regular, 23, 0, 0));
-   }
-   else
-   {
-      exponent32.reset(new Range(Regular, 8, std::max({min, APInt(0)}).extOrTrunc(8, true),
-                                 std::min({max, APInt(255)}).extOrTrunc(8, true)));
-   }
-
-   return RangeRef(new RealRange(sign, exponent32, significand32));
-}
-
-refcount<RealRange> RealRange::fromBitValues(const std::deque<bit_lattice>& bv)
-{
-   THROW_ASSERT(bv.size() == 32 || bv.size() == 64, "Floating-point bit_values must be exact");
-   const std::deque<bit_lattice> bv_exp(bv.begin() + 1, bv.begin() + (bv.size() == 64 ? 12 : 9));
-   const std::deque<bit_lattice> bv_sigf(bv.begin() + 1 + static_cast<long>(bv_exp.size()), bv.end());
-   return refcount<RealRange>(new RealRange(Range::fromBitValues({bv.front()}, 1, false),
-                                            Range::fromBitValues(bv_exp, static_cast<bw_t>(bv_exp.size()), true),
-                                            Range::fromBitValues(bv_sigf, static_cast<bw_t>(bv_sigf.size()), true)));
 }
