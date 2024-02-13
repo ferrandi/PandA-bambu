@@ -160,7 +160,7 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
       case ssa_name_K:
       {
          const auto sa = GetPointerS<const ssa_name>(t);
-         if(!sa->bit_values.empty())
+         if(sa->bit_values.size())
          {
             if(IsRealType(sa->type))
             {
@@ -172,14 +172,6 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
          }
          return sa->var ? Size(sa->var) : Size(sa->type);
       }
-      case pointer_type_K:
-      {
-         return static_cast<unsigned long long>(GetConstValue(GetPointerS<const pointer_type>(t)->size));
-      }
-      case reference_type_K:
-      {
-         return static_cast<unsigned long long>(GetConstValue(GetPointerS<const reference_type>(t)->size));
-      }
       case array_type_K:
       {
          const auto at = GetPointerS<const array_type>(t);
@@ -190,29 +182,14 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
             {
                return static_cast<unsigned long long>(GetConstValue(at->size));
             }
-            else
-            {
-               return 32ull;
-            }
-         }
-         else
-         {
-            return 0ull;
+            return 32ull; // TODO: this should be pointer size?
          }
          break;
       }
-      case boolean_type_K:
-      {
-         return 1ull;
-      }
-      case void_type_K:
-      {
-         return 8ull;
-      }
       case enumeral_type_K:
       {
-         const auto et = GetPointerS<const enumeral_type>(t);
          const auto retval = [&]() -> integer_cst_t {
+            const auto et = GetPointerS<const enumeral_type>(t);
             if(et->min && et->max && GET_CONST_NODE(et->min)->get_kind() == integer_cst_K &&
                GET_CONST_NODE(et->max)->get_kind() == integer_cst_K)
             {
@@ -229,33 +206,15 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
             }
             else
             {
-               if(!GetPointerS<const type_node>(t)->size)
+               const auto snode = GetPointerS<const type_node>(t)->size;
+               if(!snode)
                {
                   return 0;
                }
-               return GetConstValue(GetPointerS<const type_node>(t)->size);
+               return GetConstValue(snode);
             }
          }();
          return static_cast<unsigned long long>(retval);
-         break;
-      }
-      case vector_type_K:
-      case CharType_K:
-      case nullptr_type_K:
-      case type_pack_expansion_K:
-      case type_argument_pack_K:
-      case real_type_K:
-      case complex_type_K:
-      case function_type_K:
-      case method_type_K:
-      case union_type_K:
-      case record_type_K:
-      {
-         if(!GetPointerS<const type_node>(t)->size)
-         {
-            return 0;
-         }
-         return static_cast<unsigned long long>(GetConstValue(GetPointerS<const type_node>(t)->size));
       }
       case integer_type_K:
       {
@@ -266,74 +225,75 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
          {
             return prec;
          }
-         else
-         {
-            return static_cast<unsigned long long>(GetConstValue(it->size));
-         }
-         break;
-      }
-      case lut_expr_K:
-      {
-         return 1;
+         return static_cast<unsigned long long>(GetConstValue(it->size));
       }
       case integer_cst_K:
       {
          const auto is_signed = IsSignedIntegerType(t);
          const auto retval = GetConstValue(t, is_signed).minBitwidth(is_signed);
          return static_cast<unsigned long long>(retval);
-         break;
       }
-      case field_decl_K:
-      case parm_decl_K:
-      case result_decl_K:
-      case var_decl_K:
-      case call_expr_K:
-      case aggr_init_expr_K:
+      case CharType_K:
+      case complex_type_K:
+      case function_type_K:
+      case method_type_K:
+      case nullptr_type_K:
+      case pointer_type_K:
+      case real_type_K:
+      case record_type_K:
+      case reference_type_K:
+      case type_argument_pack_K:
+      case type_pack_expansion_K:
+      case union_type_K:
+      case vector_type_K:
+      {
+         const auto snode = GetPointerS<const type_node>(t)->size;
+         return snode ? static_cast<unsigned long long>(GetConstValue(snode)) : 0;
+      }
+      case CASE_DECL_NODES:
       case CASE_UNARY_EXPRESSION:
       case CASE_BINARY_EXPRESSION:
       case CASE_TERNARY_EXPRESSION:
+      case aggr_init_expr_K:
       case array_ref_K:
-      case string_cst_K:
-      case vector_cst_K:
-      case real_cst_K:
+      case call_expr_K:
       case complex_cst_K:
       case constructor_K:
+      case gimple_assign_K:
+      case gimple_call_K:
+      case gimple_phi_K:
+      case gimple_return_K:
+      case real_cst_K:
+      case string_cst_K:
       case target_mem_ref461_K:
+      case target_mem_ref_K:
+      case vector_cst_K:
+      case void_cst_K:
       {
+         if(t->get_kind() == function_decl_K || t->get_kind() == gimple_call_K)
+         {
+            return 32ull; // static_cast<unsigned int>(CompilerWrapper::CGetPointerSize(parameters));
+         }
          return Size(CGetType(t));
       }
-      case gimple_call_K:
-      case function_decl_K:
+      case boolean_type_K:
+      case lut_expr_K:
       {
-         return 32ull; // static_cast<unsigned int>(CompilerWrapper::CGetPointerSize(parameters));
+         return 1ull;
       }
+      case void_type_K:
+      {
+         return 8ull;
+      }
+      case CASE_CPP_NODES:
+      case CASE_FAKE_NODES:
+      case CASE_PRAGMA_NODES:
       case array_range_ref_K:
       case binfo_K:
       case block_K:
       case case_label_expr_K:
-      case const_decl_K:
-      case identifier_node_K:
-      case label_decl_K:
-      case lang_type_K:
-      case namespace_decl_K:
-      case offset_type_K:
-      case qual_union_type_K:
-      case set_type_K:
-      case statement_list_K:
-      case target_expr_K:
-      case target_mem_ref_K:
-      case template_type_parm_K:
-      case translation_unit_decl_K:
-      case template_decl_K:
-      case using_decl_K:
-      case tree_list_K:
-      case tree_vec_K:
-      case type_decl_K:
-      case typename_type_K:
-      case CASE_CPP_NODES:
-      case CASE_FAKE_NODES:
+      case error_mark_K:
       case gimple_asm_K:
-      case gimple_assign_K:
       case gimple_bind_K:
       case gimple_cond_K:
       case gimple_for_K:
@@ -341,16 +301,22 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
       case gimple_label_K:
       case gimple_multi_way_if_K:
       case gimple_nop_K:
-      case gimple_phi_K:
       case gimple_pragma_K:
       case gimple_predict_K:
       case gimple_resx_K:
-      case gimple_return_K:
       case gimple_switch_K:
       case gimple_while_K:
-      case CASE_PRAGMA_NODES:
-      case void_cst_K:
-      case error_mark_K:
+      case identifier_node_K:
+      case lang_type_K:
+      case offset_type_K:
+      case qual_union_type_K:
+      case set_type_K:
+      case statement_list_K:
+      case target_expr_K:
+      case template_type_parm_K:
+      case tree_list_K:
+      case tree_vec_K:
+      case typename_type_K:
       default:
       {
          THROW_UNREACHABLE(std::string("Unexpected type pattern ") + t->get_kind_text());
@@ -358,7 +324,7 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
       }
    }
    THROW_UNREACHABLE(std::string("Unexpected type pattern ") + t->get_kind_text());
-   return 0ull;
+   return 0;
 }
 
 std::string tree_helper::GetTemplateTypeName(const tree_nodeConstRef& type)
@@ -2175,9 +2141,29 @@ tree_nodeConstRef tree_helper::CGetType(const tree_nodeConstRef& _node)
          const auto ce = GetPointerS<const call_expr>(node);
          return ce->type;
       }
+      case gimple_assign_K:
+      {
+         const auto gm = GetPointerS<const gimple_assign>(node);
+         return CGetType(gm->op0);
+      }
+      case gimple_phi_K:
+      {
+         const auto gp = GetPointerS<const gimple_phi>(node);
+         return CGetType(gp->res);
+      }
+      case gimple_return_K:
+      {
+         const auto gr = GetPointerS<const gimple_return>(node);
+         return CGetType(gr->op);
+      }
+      case gimple_for_K:
+      case gimple_while_K:
+      {
+         const auto gw = GetPointerS<const gimple_while>(node);
+         return CGetType(gw->op0);
+      }
       case gimple_asm_K:
       case gimple_bind_K:
-      case gimple_return_K:
       case gimple_resx_K:
       case gimple_switch_K:
       case gimple_label_K:
@@ -2197,60 +2183,26 @@ tree_nodeConstRef tree_helper::CGetType(const tree_nodeConstRef& _node)
       case CASE_QUATERNARY_EXPRESSION:
       {
          const auto en = GetPointerS<const expr_node>(node);
-         THROW_ASSERT(en && en->type, std::string("this NODE does not have a type: ") + node->get_kind_text());
+         THROW_ASSERT(en->type, std::string("this NODE does not have a type: ") + node->get_kind_text());
          return en->type;
       }
-      case gimple_phi_K:
-      {
-         const auto gp = GetPointerS<const gimple_phi>(node);
-         return CGetType(gp->res);
-      }
-      case gimple_assign_K:
-      {
-         const auto gm = GetPointerS<const gimple_assign>(node);
-         return CGetType(gm->op0);
-      }
       case integer_cst_K:
-      {
-         const auto ic = GetPointerS<const integer_cst>(node);
-         return ic->type;
-      }
       case real_cst_K:
       {
-         const auto rc = GetPointerS<const real_cst>(node);
-         return rc->type;
+         const auto cn = GetPointerS<const cst_node>(node);
+         return cn->type;
       }
       case string_cst_K:
-      {
-         const auto sc = GetPointerS<const string_cst>(node);
-         return sc->type ? sc->type : _node;
-      }
       case vector_cst_K:
-      {
-         const auto vc = GetPointerS<const vector_cst>(node);
-         return vc->type ? vc->type : _node;
-      }
       case complex_cst_K:
       {
-         const auto cc = GetPointerS<const complex_cst>(node);
-         return cc->type ? cc->type : _node;
+         const auto cn = GetPointerS<const cst_node>(node);
+         return cn->type ? cn->type : _node;
       }
       case constructor_K:
       {
          const auto c = GetPointerS<const constructor>(node);
-         if(c->type)
-         {
-            return c->type;
-         }
-         else
-         {
-            return tree_nodeConstRef();
-         }
-      }
-      case CASE_DECL_NODES:
-      {
-         const auto dn = GetPointerS<const decl_node>(node);
-         return dn->type;
+         return c->type;
       }
       case ssa_name_K:
       {
@@ -2267,30 +2219,29 @@ tree_nodeConstRef tree_helper::CGetType(const tree_nodeConstRef& _node)
          const auto tm = GetPointerS<const target_mem_ref461>(node);
          return tm->type;
       }
-      case gimple_for_K:
-      case gimple_while_K:
+      case CASE_DECL_NODES:
       {
-         const auto gw = GetPointerS<const gimple_while>(node);
-         return CGetType(gw->op0);
+         const auto dn = GetPointerS<const decl_node>(node);
+         return dn->type;
       }
       case CASE_TYPE_NODES:
       {
          return _node;
       }
+      case CASE_CPP_NODES:
+      case CASE_FAKE_NODES:
+      case CASE_PRAGMA_NODES:
       case binfo_K:
       case block_K:
       case case_label_expr_K:
+      case error_mark_K:
       case gimple_predict_K:
       case identifier_node_K:
       case statement_list_K:
       case target_expr_K:
       case tree_list_K:
       case tree_vec_K:
-      case CASE_CPP_NODES:
-      case CASE_FAKE_NODES:
-      case CASE_PRAGMA_NODES:
       case void_cst_K:
-      case error_mark_K:
       default:
       {
          THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, std::string("Node not yet supported ") + node->get_kind_text());
