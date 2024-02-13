@@ -56,8 +56,7 @@ enum RangeType
    Empty,
    Unknown,
    Regular,
-   Anti,
-   Real
+   Anti
 };
 
 class Range
@@ -101,7 +100,6 @@ class Range
    bool isRegular() const;
    bool isAnti() const;
    virtual bool isEmpty() const;
-   virtual bool isReal() const;
    bool operator==(const Range& other) const = delete;
    bool operator!=(const Range& other) const = delete;
    bool isSameType(const RangeConstRef& other) const;
@@ -168,56 +166,5 @@ class Range
 };
 
 std::ostream& operator<<(std::ostream& OS, const Range& R);
-
-class RealRange : public Range
-{
- private:
-   RangeRef sign;
-   RangeRef exponent;
-   RangeRef significand;
-
- public:
-   RealRange(const Range& s, const Range& e, const Range& f);
-   RealRange(const RangeConstRef& s, const RangeConstRef& e, const RangeConstRef& f);
-   explicit RealRange(const RangeConstRef& vc);
-   ~RealRange() override = default;
-   RealRange(const RealRange& other) = default;
-   RealRange(RealRange&&) = default;
-   RealRange& operator=(const RealRange& other) = default;
-   RealRange& operator=(RealRange&&) = default;
-   RangeRef getRange() const;
-
-   RangeRef getSign() const;
-   RangeRef getExponent() const;
-   RangeRef getSignificand() const;
-   std::deque<bit_lattice> getBitValues(bool) const override;
-   RangeRef getAnti() const override;
-   void setSign(const RangeConstRef& s);
-   void setExponent(const RangeConstRef& e);
-   void setSignificand(const RangeConstRef& f);
-   bool isSameRange(const RangeConstRef& other) const override;
-   bool isFullSet() const override;
-   bool isUnknown() const override;
-   void setUnknown() override;
-   bool isSingleElement() const override;
-   bool isConstant() const override;
-   bool isEmpty() const override;
-   bool isReal() const override;
-   Range* clone() const override;
-   void print(std::ostream& OS) const override;
-
-   RangeRef abs() const override;
-   RangeRef negate() const override;
-
-   RangeRef Eq(const RangeConstRef& other, bw_t bw) const override;
-   RangeRef Ne(const RangeConstRef& other, bw_t bw) const override;
-
-   RangeRef intersectWith(const RangeConstRef& other) const override;
-   RangeRef unionWith(const RangeConstRef& other) const override;
-   RangeRef toFloat64() const;
-   RangeRef toFloat32() const;
-
-   static refcount<RealRange> fromBitValues(const std::deque<bit_lattice>& bv);
-};
 
 #endif
