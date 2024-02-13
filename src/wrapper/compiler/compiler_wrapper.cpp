@@ -541,14 +541,14 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       }
    }
 
-   const auto load_plugin = [&](const std::string& plugin_obj) {
+   const auto load_and_run_plugin = [&](const std::string& plugin_obj, const std::string& plugin_name) {
       if(cm & CM_COMPILER_STD)
       {
-         command += this->load_plugin(plugin_obj, compiler_target);
+         command += load_plugin(plugin_obj, compiler_target);
       }
       else
       {
-         command += this->load_plugin_opt(plugin_obj, compiler_target);
+         command += load_plugin_opt(plugin_obj, compiler_target) + add_plugin_prefix(compiler_target) + plugin_name;
       }
    };
    const auto append_arg = [&](const std::string& arg) {
@@ -566,7 +566,7 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       THROW_ASSERT(!(cm & CM_LTO_FLAG), "Internalizing symbols in partial object files is not expected");
       if(compiler.is_clang)
       {
-         load_plugin(compiler.topfname_plugin_obj);
+         load_and_run_plugin(compiler.topfname_plugin_obj, compiler.topfname_plugin_name);
          append_arg("-internalize-outputdir=" + output_temporary_directory);
          append_arg("-panda-TFN=" + top_fnames);
          if(Param->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
@@ -585,7 +585,7 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
          if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 &&
             !compiler.CSROA_plugin_obj.empty() && !compiler.expandMemOps_plugin_obj.empty())
          {
-            load_plugin(compiler.CSROA_plugin_obj);
+            load_and_run_plugin(compiler.CSROA_plugin_obj, compiler.CSROA_plugin_name);
             append_arg("-panda-KN=" + top_fnames);
             if(Param->IsParameter("max-CSROA"))
             {
@@ -608,14 +608,14 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
    {
       if(compiler.is_clang)
       {
-         load_plugin(compiler.expandMemOps_plugin_obj);
+         load_and_run_plugin(compiler.expandMemOps_plugin_obj, compiler.expandMemOps_plugin_name);
       }
    }
    if(cm & CM_OPT_DUMPGIMPLE)
    {
       if(compiler.is_clang)
       {
-         load_plugin(compiler.ssa_plugin_obj);
+         load_and_run_plugin(compiler.ssa_plugin_obj, compiler.ssa_plugin_name);
          append_arg("-panda-outputdir=" + output_temporary_directory);
          append_arg("-panda-infile=" + input_filename);
          append_arg("-panda-cost-table=\"" + costTable + "\"");
