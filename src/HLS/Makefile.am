@@ -929,7 +929,7 @@ SUBDIRS = simulation
 noinst_LTLIBRARIES += lib_HLS.la
 
 lib_HLS_la_CPPFLAGS = \
-   -I$(top_srcdir)/ext/pugixml/src \
+   -isystem $(top_srcdir)/ext/pugixml/src \
    -I$(top_srcdir)/src \
    -I$(top_srcdir)/src/behavior \
    -I$(top_srcdir)/src/design_flows/  \

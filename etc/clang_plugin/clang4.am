@@ -243,10 +243,10 @@ clang4_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimp
 clang4_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -fPIC $(I386_LLVM4_CXXFLAGS) $(WFLAGS) -I. -I$(top_srcdir)/ext/pugixml/src'; \
+	    compile_options=' -fPIC $(I386_LLVM4_CXXFLAGS) $(WFLAGS) -I. -isystem $(top_srcdir)/ext/pugixml/src'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -fPIC $(I386_LLVM4_CXXFLAGS) $(WFLAGS) -I. -I$(top_srcdir)/ext/pugixml/src';; \
+	    compile_options=' -fPIC $(I386_LLVM4_CXXFLAGS) $(WFLAGS) -I. -isystem $(top_srcdir)/ext/pugixml/src';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG4_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clang4_plugin_dumpGimpleSSA.o;\
@@ -256,10 +256,10 @@ clang4_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimple
 clang4_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -fPIC $(I386_LLVM4_CXXFLAGS) $(WFLAGS) -I. -I$(top_srcdir)/ext/pugixml/src -DCPP_LANGUAGE'; \
+	    compile_options=' -fPIC $(I386_LLVM4_CXXFLAGS) $(WFLAGS) -I. -isystem $(top_srcdir)/ext/pugixml/src -DCPP_LANGUAGE'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -fPIC $(I386_LLVM4_CXXFLAGS) $(WFLAGS) -I. -I$(top_srcdir)/ext/pugixml/src -DCPP_LANGUAGE';; \
+	    compile_options=' -fPIC $(I386_LLVM4_CXXFLAGS) $(WFLAGS) -I. -isystem $(top_srcdir)/ext/pugixml/src -DCPP_LANGUAGE';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG4_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clang4_plugin_dumpGimpleSSACpp.o;\
@@ -308,10 +308,10 @@ clang4_plugin_CSROA.o : $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp $(top_sr
 clang4_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -fPIC $(I386_LLVM4_CXXFLAGS) $(WFLAGS) -I. -I$(top_srcdir)/ext/pugixml/src'; \
+	    compile_options=' -fPIC $(I386_LLVM4_CXXFLAGS) $(WFLAGS) -I. -isystem $(top_srcdir)/ext/pugixml/src'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -fPIC $(I386_LLVM4_CXXFLAGS) $(WFLAGS) -I. -I$(top_srcdir)/ext/pugixml/src';; \
+	    compile_options=' -fPIC $(I386_LLVM4_CXXFLAGS) $(WFLAGS) -I. -isystem $(top_srcdir)/ext/pugixml/src';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG4_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clang4_plugin_topfname.o; \
@@ -321,10 +321,10 @@ clang4_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(
 clang4_plugin_ASTAnalyzer.o : $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -fPIC $(I386_LLVM4_CXXFLAGS) $(WFLAGS) -I. -I$(top_srcdir)/ext/pugixml/src'; \
+	    compile_options=' -fPIC $(I386_LLVM4_CXXFLAGS) $(WFLAGS) -I. -isystem $(top_srcdir)/ext/pugixml/src'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -fPIC $(I386_LLVM4_CXXFLAGS) $(WFLAGS) -I. -I$(top_srcdir)/ext/pugixml/src';; \
+	    compile_options=' -fPIC $(I386_LLVM4_CXXFLAGS) $(WFLAGS) -I. -isystem $(top_srcdir)/ext/pugixml/src';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG4_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang4_plugin_ASTAnalyzer.o;\
