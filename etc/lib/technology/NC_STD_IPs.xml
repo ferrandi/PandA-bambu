@@ -623,8 +623,8 @@ end
 
 assign M_Rdata_ram = M_Rdata_ram_next;
 
-reg m_axi_bready_reg, m_axi_bready_old;
-reg m_axi_rready_reg, m_axi_rready_old;
+reg m_axi_bready_reg;
+reg m_axi_rready_reg;
 
 always @(posedge clock 1RESET_EDGE)
 begin
@@ -993,7 +993,6 @@ assign m_axi_wstrb = m_axi_wstrb_reg;
 
 reg [BITSIZE_m_axi_awaddr-1:0] m_axi_awaddr_reg;
 reg [BITSIZE_m_axi_awsize-1:0] m_axi_awsize_reg;
-wire [BITSIZE_m_axi_awsize-1:0] m_axi_awsize_next;
 
 always @(posedge clock 1RESET_EDGE)
 begin
@@ -1041,7 +1040,6 @@ assign m_axi_arvalid = m_axi_arvalid_reg;
 
 reg [BITSIZE_m_axi_araddr-1:0] m_axi_araddr_reg;
 reg [BITSIZE_m_axi_arsize-1:0] m_axi_arsize_reg;
-wire [BITSIZE_m_axi_arsize-1:0] m_axi_arsize_next;
 
 always @(posedge clock 1RESET_EDGE)
 begin
@@ -1077,8 +1075,8 @@ end
 assign M_DataRdy = (m_axi_bvalid &amp;&amp; m_axi_bready) || (m_axi_rvalid &amp;&amp; m_axi_rready) || M_DataRdy_reg;
 assign M_Rdata_ram = m_axi_rdata;
 
-reg m_axi_bready_reg, m_axi_bready_old;
-reg m_axi_rready_reg, m_axi_rready_old;
+reg m_axi_bready_reg;
+reg m_axi_rready_reg;
 
 always @(posedge clock 1RESET_EDGE)
 begin
