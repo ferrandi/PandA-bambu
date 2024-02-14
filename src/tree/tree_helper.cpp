@@ -174,9 +174,10 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
             {
                return static_cast<unsigned long long>(GetConstValue(at->size));
             }
-            return 32ull; // TODO: this should be pointer size?
+            THROW_UNREACHABLE("What should be the size here? " + t->ToString());
+            return 32ull; // TODO: should this be pointer size? or should be zero?
          }
-         break;
+         return 0;
       }
       case enumeral_type_K:
       {
