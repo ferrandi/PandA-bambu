@@ -43,10 +43,10 @@
 
 #include "Range.hpp"
 
+#include "bit_lattice.hpp"
 #include "exceptions.hpp"
 #include "math_function.hpp"
 #include "string_manipulation.hpp"
-#include "tree_node.hpp"
 
 #define CASE_MISCELLANEOUS   \
    aggr_init_expr_K:         \
@@ -384,7 +384,7 @@ RangeRef Range::fromBitValues(const std::deque<bit_lattice>& bv, bw_t bitwidth, 
    auto manip = [&](const std::deque<bit_lattice>& bv_in) {
       if(bv_in.size() < bitwidth)
       {
-         return APInt(bitstring_to_int(BitLatticeManipulator::sign_extend_bitstring(bv_in, isSigned, bitwidth)))
+         return APInt(bitstring_to_int(sign_extend_bitstring(bv_in, isSigned, bitwidth)))
              .extOrTrunc(bitwidth, isSigned);
       }
       return APInt(bitstring_to_int(bv_in)).extOrTrunc(bitwidth, isSigned);
@@ -433,7 +433,7 @@ std::deque<bit_lattice> Range::getBitValues(bool isSigned) const
    auto& shorter = min.size() >= max.size() ? max : min;
    if(shorter.size() < longer.size())
    {
-      shorter = BitLatticeManipulator::sign_extend_bitstring(shorter, isSigned, longer.size());
+      shorter = sign_extend_bitstring(shorter, isSigned, longer.size());
    }
 
    std::deque<bit_lattice> range_bv;
@@ -456,7 +456,7 @@ std::deque<bit_lattice> Range::getBitValues(bool isSigned) const
    {
       range_bv.push_back(bit_lattice::U);
    }
-   BitLatticeManipulator::sign_reduce_bitstring(range_bv, isSigned);
+   sign_reduce_bitstring(range_bv, isSigned);
    return range_bv;
 }
 
@@ -2474,130 +2474,4 @@ std::ostream& operator<<(std::ostream& OS, const Range& R)
 {
    R.print(OS);
    return OS;
-}
-
-RangeRef Range::makeSatisfyingCmpRegion(kind pred, const RangeConstRef& Other)
-{
-   const auto bw = Other->bw;
-   if(Other->isUnknown() || Other->isEmpty())
-   {
-      return RangeRef(Other->clone());
-   }
-   if(Other->isAnti() && pred != eq_expr_K && pred != ne_expr_K && pred != uneq_expr_K)
-   {
-      THROW_UNREACHABLE("Invalid request " + tree_node::GetString(pred) + " " + Other->ToString());
-      return RangeRef(new Range(Empty, bw));
-   }
-
-   switch(pred)
-   {
-      case ge_expr_K:
-         return RangeRef(new Range(Regular, bw, Other->getSignedMax(), APInt::getSignedMaxValue(bw)));
-      case gt_expr_K:
-         return RangeRef(new Range(Regular, bw, Other->getSignedMax() + MinDelta, APInt::getSignedMaxValue(bw)));
-      case le_expr_K:
-         return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw), Other->getSignedMin()));
-      case lt_expr_K:
-         return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw), Other->getSignedMin() - MinDelta));
-      case unge_expr_K:
-         return RangeRef(new Range(Regular, bw, Other->getUnsignedMax(), APInt::getMaxValue(bw)));
-      case ungt_expr_K:
-         return RangeRef(new Range(Regular, bw, Other->getUnsignedMax() + MinDelta, APInt::getMaxValue(bw)));
-      case unle_expr_K:
-         return RangeRef(new Range(Regular, bw, APInt::getMinValue(bw), Other->getUnsignedMin()));
-      case unlt_expr_K:
-         return RangeRef(new Range(Regular, bw, APInt::getMinValue(bw), Other->getUnsignedMin() - MinDelta));
-      case uneq_expr_K:
-      case eq_expr_K:
-         return RangeRef(Other->clone());
-      case ne_expr_K:
-         return Other->getAnti();
-
-      case assert_expr_K:
-      case bit_and_expr_K:
-      case bit_ior_expr_K:
-      case bit_xor_expr_K:
-      case catch_expr_K:
-      case ceil_div_expr_K:
-      case ceil_mod_expr_K:
-      case complex_expr_K:
-      case compound_expr_K:
-      case eh_filter_expr_K:
-      case exact_div_expr_K:
-      case fdesc_expr_K:
-      case floor_div_expr_K:
-      case floor_mod_expr_K:
-      case goto_subroutine_K:
-      case in_expr_K:
-      case init_expr_K:
-      case lrotate_expr_K:
-      case lshift_expr_K:
-      case max_expr_K:
-      case mem_ref_K:
-      case min_expr_K:
-      case minus_expr_K:
-      case modify_expr_K:
-      case mult_expr_K:
-      case mult_highpart_expr_K:
-      case ordered_expr_K:
-      case plus_expr_K:
-      case pointer_plus_expr_K:
-      case postdecrement_expr_K:
-      case postincrement_expr_K:
-      case predecrement_expr_K:
-      case preincrement_expr_K:
-      case range_expr_K:
-      case rdiv_expr_K:
-      case round_div_expr_K:
-      case round_mod_expr_K:
-      case rrotate_expr_K:
-      case rshift_expr_K:
-      case set_le_expr_K:
-      case trunc_div_expr_K:
-      case trunc_mod_expr_K:
-      case truth_and_expr_K:
-      case truth_andif_expr_K:
-      case truth_or_expr_K:
-      case truth_orif_expr_K:
-      case truth_xor_expr_K:
-      case try_catch_expr_K:
-      case try_finally_K:
-      case ltgt_expr_K:
-      case unordered_expr_K:
-      case widen_sum_expr_K:
-      case widen_mult_expr_K:
-      case with_size_expr_K:
-      case vec_lshift_expr_K:
-      case vec_rshift_expr_K:
-      case widen_mult_hi_expr_K:
-      case widen_mult_lo_expr_K:
-      case vec_pack_trunc_expr_K:
-      case vec_pack_sat_expr_K:
-      case vec_pack_fix_trunc_expr_K:
-      case vec_extracteven_expr_K:
-      case vec_extractodd_expr_K:
-      case vec_interleavehigh_expr_K:
-      case vec_interleavelow_expr_K:
-      case extract_bit_expr_K:
-      case sat_plus_expr_K:
-      case sat_minus_expr_K:
-      case extractvalue_expr_K:
-      case extractelement_expr_K:
-      case frem_expr_K:
-      case CASE_UNARY_EXPRESSION:
-      case CASE_TERNARY_EXPRESSION:
-      case CASE_QUATERNARY_EXPRESSION:
-      case CASE_TYPE_NODES:
-      case CASE_CST_NODES:
-      case CASE_DECL_NODES:
-      case CASE_FAKE_NODES:
-      case CASE_GIMPLE_NODES:
-      case CASE_PRAGMA_NODES:
-      case CASE_CPP_NODES:
-      case CASE_MISCELLANEOUS:
-      default:
-         break;
-   }
-   THROW_UNREACHABLE("Unhandled compare operation (" + STR(pred) + ")");
-   return nullptr;
 }

@@ -999,176 +999,132 @@ namespace
       return true;
    }
 
-   tree_nodeConstRef getGIMPLE_Type(const tree_nodeConstRef& tn)
+   RangeRef makeSatisfyingCmpRegion(kind pred, const RangeConstRef& Other)
    {
-      if(tn->get_kind() == tree_reindex_K)
+      const auto bw = Other->getBitWidth();
+      if(Other->isUnknown() || Other->isEmpty())
       {
-         return getGIMPLE_Type(GET_CONST_NODE(tn));
+         return RangeRef(Other->clone());
       }
-      if(const auto* gp = GetPointer<const gimple_phi>(tn))
+      if(Other->isAnti() && pred != eq_expr_K && pred != ne_expr_K && pred != uneq_expr_K)
       {
-         return getGIMPLE_Type(GET_CONST_NODE(gp->res));
+         THROW_UNREACHABLE("Invalid request " + tree_node::GetString(pred) + " " + Other->ToString());
+         return RangeRef(new Range(Empty, bw));
       }
-      if(const auto* gr = GetPointer<const gimple_return>(tn))
+
+      switch(pred)
       {
-         return getGIMPLE_Type(GET_CONST_NODE(gr->op));
+         case ge_expr_K:
+            return RangeRef(new Range(Regular, bw, Other->getSignedMax(), APInt::getSignedMaxValue(bw)));
+         case gt_expr_K:
+            return RangeRef(new Range(Regular, bw, Other->getSignedMax() + Range::MinDelta, APInt::getSignedMaxValue(bw)));
+         case le_expr_K:
+            return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw), Other->getSignedMin()));
+         case lt_expr_K:
+            return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw), Other->getSignedMin() - Range::MinDelta));
+         case unge_expr_K:
+            return RangeRef(new Range(Regular, bw, Other->getUnsignedMax(), APInt::getMaxValue(bw)));
+         case ungt_expr_K:
+            return RangeRef(new Range(Regular, bw, Other->getUnsignedMax() + Range::MinDelta, APInt::getMaxValue(bw)));
+         case unle_expr_K:
+            return RangeRef(new Range(Regular, bw, APInt::getMinValue(bw), Other->getUnsignedMin()));
+         case unlt_expr_K:
+            return RangeRef(new Range(Regular, bw, APInt::getMinValue(bw), Other->getUnsignedMin() - Range::MinDelta));
+         case uneq_expr_K:
+         case eq_expr_K:
+            return RangeRef(Other->clone());
+         case ne_expr_K:
+            return Other->getAnti();
+
+         case assert_expr_K:
+         case bit_and_expr_K:
+         case bit_ior_expr_K:
+         case bit_xor_expr_K:
+         case catch_expr_K:
+         case ceil_div_expr_K:
+         case ceil_mod_expr_K:
+         case complex_expr_K:
+         case compound_expr_K:
+         case eh_filter_expr_K:
+         case exact_div_expr_K:
+         case fdesc_expr_K:
+         case floor_div_expr_K:
+         case floor_mod_expr_K:
+         case goto_subroutine_K:
+         case in_expr_K:
+         case init_expr_K:
+         case lrotate_expr_K:
+         case lshift_expr_K:
+         case max_expr_K:
+         case mem_ref_K:
+         case min_expr_K:
+         case minus_expr_K:
+         case modify_expr_K:
+         case mult_expr_K:
+         case mult_highpart_expr_K:
+         case ordered_expr_K:
+         case plus_expr_K:
+         case pointer_plus_expr_K:
+         case postdecrement_expr_K:
+         case postincrement_expr_K:
+         case predecrement_expr_K:
+         case preincrement_expr_K:
+         case range_expr_K:
+         case rdiv_expr_K:
+         case round_div_expr_K:
+         case round_mod_expr_K:
+         case rrotate_expr_K:
+         case rshift_expr_K:
+         case set_le_expr_K:
+         case trunc_div_expr_K:
+         case trunc_mod_expr_K:
+         case truth_and_expr_K:
+         case truth_andif_expr_K:
+         case truth_or_expr_K:
+         case truth_orif_expr_K:
+         case truth_xor_expr_K:
+         case try_catch_expr_K:
+         case try_finally_K:
+         case ltgt_expr_K:
+         case unordered_expr_K:
+         case widen_sum_expr_K:
+         case widen_mult_expr_K:
+         case with_size_expr_K:
+         case vec_lshift_expr_K:
+         case vec_rshift_expr_K:
+         case widen_mult_hi_expr_K:
+         case widen_mult_lo_expr_K:
+         case vec_pack_trunc_expr_K:
+         case vec_pack_sat_expr_K:
+         case vec_pack_fix_trunc_expr_K:
+         case vec_extracteven_expr_K:
+         case vec_extractodd_expr_K:
+         case vec_interleavehigh_expr_K:
+         case vec_interleavelow_expr_K:
+         case extract_bit_expr_K:
+         case sat_plus_expr_K:
+         case sat_minus_expr_K:
+         case extractvalue_expr_K:
+         case extractelement_expr_K:
+         case frem_expr_K:
+         case CASE_UNARY_EXPRESSION:
+         case CASE_TERNARY_EXPRESSION:
+         case CASE_QUATERNARY_EXPRESSION:
+         case CASE_TYPE_NODES:
+         case CASE_CST_NODES:
+         case CASE_DECL_NODES:
+         case CASE_FAKE_NODES:
+         case CASE_GIMPLE_NODES:
+         case CASE_PRAGMA_NODES:
+         case CASE_CPP_NODES:
+         case CASE_MISCELLANEOUS:
+         default:
+            break;
       }
-      return tree_helper::CGetType(tn);
+      THROW_UNREACHABLE("Unhandled compare operation (" + STR(pred) + ")");
+      return nullptr;
    }
 
-   bw_t getGIMPLE_BW(const tree_nodeConstRef& tn)
-   {
-      const auto type = getGIMPLE_Type(tn);
-      const auto size = BitLatticeManipulator::Size(type);
-      THROW_ASSERT(static_cast<bool>(size),
-                   "Unhandled type (" + type->get_kind_text() + ") for " + tn->get_kind_text() + " " + tn->ToString());
-      return static_cast<bw_t>(size);
-   }
-
-   RangeRef getRangeFor(const tree_nodeConstRef& tn, RangeType rType)
-   {
-      THROW_ASSERT(rType != Anti, "");
-      if(tn->get_kind() == tree_reindex_K)
-      {
-         return getRangeFor(GET_CONST_NODE(tn), rType);
-      }
-
-      const auto type = getGIMPLE_Type(tn);
-      const auto bw = static_cast<bw_t>(BitLatticeManipulator::Size(type));
-      THROW_ASSERT(static_cast<bool>(bw),
-                   "Unhandled type (" + type->get_kind_text() + ") for " + tn->get_kind_text() + " " + tn->ToString());
-
-      return RangeRef(new Range(rType, bw));
-   }
-
-   RangeRef getGIMPLE_range(const tree_nodeConstRef& tn)
-   {
-      if(tn->get_kind() == tree_reindex_K)
-      {
-         return getGIMPLE_range(GET_CONST_NODE(tn));
-      }
-
-      const auto type = getGIMPLE_Type(tn);
-      bw_t bw = static_cast<bw_t>(BitLatticeManipulator::Size(type));
-      THROW_ASSERT(static_cast<bool>(bw) || tn->get_kind() == string_cst_K,
-                   "Unhandled type (" + GET_CONST_NODE(type)->get_kind_text() + ") for " + tn->get_kind_text() + " " +
-                       tn->ToString());
-#ifdef BITVALUE_UPDATE
-      bool sign = false;
-#endif
-      APInt min, max;
-      if(const auto* ic = GetPointer<const integer_cst>(tn))
-      {
-         min = max = tree_helper::get_integer_cst_value(ic);
-         return RangeRef(new Range(Regular, bw, min, max));
-      }
-      else if(const auto* sc = GetPointer<const string_cst>(tn))
-      {
-         bw = 8;
-         RangeRef r(new Range(Regular, bw, 0, 0)); // Zero is the string terminator, thus it should always be included
-         for(const auto& c : sc->strg)
-         {
-            r = r->unionWith(RangeRef(new Range(Regular, bw, c, c)));
-         }
-         return r;
-      }
-      else if(const auto* rc = GetPointer<const real_cst>(tn))
-      {
-         THROW_ASSERT(bw == 64 || bw == 32, "Floating point variable with unhandled bitwidth (" + STR(bw) + ")");
-         if(rc->valx.front() == '-' && rc->valr.front() != rc->valx.front())
-         {
-            return Range::fromBitValues(string_to_bitstring(convert_fp_to_string("-" + rc->valr, bw)), bw, false);
-         }
-         else
-         {
-            return Range::fromBitValues(string_to_bitstring(convert_fp_to_string(rc->valr, bw)), bw, false);
-         }
-      }
-      else if(const auto* vc = GetPointer<const vector_cst>(tn))
-      {
-         const auto el_type = tree_helper::CGetElements(type);
-         const auto el_bw = BitLatticeManipulator::Size(el_type);
-         RangeRef r(new Range(Empty, bw));
-         const auto stride = static_cast<size_t>(bw / el_bw);
-         const auto strides = vc->list_of_valu.size() / stride;
-         THROW_ASSERT(strides * stride == vc->list_of_valu.size(), "");
-         for(size_t i = 0; i < strides; ++i)
-         {
-            auto curr_el = getGIMPLE_range(vc->list_of_valu.at(i * stride));
-            for(size_t j = 1; j < stride; ++j)
-            {
-               curr_el = getGIMPLE_range(vc->list_of_valu.at(i * stride + j))
-                             ->zextOrTrunc(bw)
-                             ->shl(RangeRef(new Range(Regular, bw, el_bw * j, el_bw * j)))
-                             ->Or(curr_el);
-            }
-            r = r->unionWith(curr_el);
-         }
-         return r;
-      }
-      else if(const auto* it = GetPointer<const integer_type>(GET_CONST_NODE(type)))
-      {
-#ifdef BITVALUE_UPDATE
-         sign = !it->unsigned_flag;
-#endif
-         min = it->unsigned_flag ? APInt::getMinValue(bw) : APInt::getSignedMinValue(bw);
-         max = it->unsigned_flag ? APInt::getMaxValue(bw) : APInt::getSignedMaxValue(bw);
-      }
-      else if(const auto* et = GetPointer<const enumeral_type>(GET_CONST_NODE(type)))
-      {
-#ifdef BITVALUE_UPDATE
-         sign = !et->unsigned_flag;
-#endif
-         min = et->unsigned_flag ? APInt::getMinValue(bw) : APInt::getSignedMinValue(bw);
-         max = et->unsigned_flag ? APInt::getMaxValue(bw) : APInt::getSignedMaxValue(bw);
-      }
-      else if(GET_CONST_NODE(type)->get_kind() == boolean_type_K)
-      {
-         min = 0;
-         max = 1;
-         bw = 1;
-      }
-#ifdef INTEGER_PTR
-      else if(GetPointer<const pointer_type>(GET_CONST_NODE(type)) != nullptr)
-      {
-         min = APInt::getMinValue(bw);
-         max = APInt::getMaxValue(bw);
-      }
-#endif
-      else if(GET_CONST_NODE(type)->get_kind() == vector_type_K || GET_CONST_NODE(type)->get_kind() == array_type_K)
-      {
-         bw = static_cast<bw_t>(BitLatticeManipulator::Size(tree_helper::CGetElements(type)));
-         return RangeRef(new Range(Regular, bw));
-      }
-      else if(const auto* rt = GetPointer<const record_type>(GET_CONST_NODE(type)))
-      {
-         THROW_ASSERT(GET_CONST_NODE(rt->size)->get_kind() == integer_cst_K &&
-                          tree_helper::GetConstValue(rt->size) >= 0,
-                      "record_type has no size");
-         bw = static_cast<bw_t>(tree_helper::GetConstValue(rt->size));
-         THROW_ASSERT(bw, "Invalid bitwidth");
-         return RangeRef(new Range(Regular, bw));
-      }
-      else
-      {
-         THROW_UNREACHABLE("Unable to define range for type " + GET_CONST_NODE(type)->get_kind_text() + " of " +
-                           tn->ToString());
-      }
-
-#ifdef BITVALUE_UPDATE
-      if(const auto* ssa = GetPointer<const ssa_name>(tn))
-      {
-         if(!ssa->bit_values.empty())
-         {
-            const auto bvSize = static_cast<bw_t>(ssa->bit_values.size());
-            const auto bvRange = Range::fromBitValues(string_to_bitstring(ssa->bit_values), bvSize, sign);
-            const auto varRange = RangeRef(new Range(Regular, bw, min, max))->truncate(bvSize)->intersectWith(bvRange);
-            return sign ? varRange->sextOrTrunc(bw) : varRange->zextOrTrunc(bw);
-         }
-      }
-#endif
-      return RangeRef(new Range(Regular, bw, min, max));
-   }
 } // namespace
 
 // ========================================================================== //
@@ -1231,7 +1187,7 @@ class VarNode
 
    RangeRef getMaxRange() const
    {
-      return getRangeFor(V, Regular);
+      return tree_helper::TypeRange(V, Regular);
    }
 
    char getAbstractState()
@@ -1254,23 +1210,23 @@ VarNode::VarNode(const tree_nodeConstRef& _V, unsigned int _function_id)
 {
    THROW_ASSERT(_V != nullptr, "Variable cannot be null");
    THROW_ASSERT(_V->get_kind() == tree_reindex_K, "Variable should be a tree_reindex node");
-   interval = getRangeFor(_V, Unknown);
+   interval = tree_helper::TypeRange(_V, Unknown);
 }
 
 /// Initializes the value of the node.
 void VarNode::init(bool outside)
 {
-   THROW_ASSERT(getGIMPLE_BW(V), "Bitwidth not valid");
+   THROW_ASSERT(tree_helper::TypeSize(V), "Bitwidth not valid");
    THROW_ASSERT(interval, "Interval should be initialized during VarNode construction");
    if(interval->isUnknown()) // Ranges already initialized come from user defined hints and shouldn't be overwritten
    {
       if(GetPointer<const cst_node>(GET_CONST_NODE(V)) != nullptr)
       {
-         interval = getGIMPLE_range(V);
+         interval = tree_helper::Range(V);
       }
       else
       {
-         interval = getRangeFor(V, outside ? Regular : Unknown);
+         interval = tree_helper::TypeRange(V, outside ? Regular : Unknown);
       }
    }
 }
@@ -1293,7 +1249,7 @@ int VarNode::updateIR(const tree_managerRef& TM,
 #ifdef BITVALUE_UPDATE
    auto updateBitValue = [&](ssa_name* ssa, const std::deque<bit_lattice>& bv) -> int {
       const auto curr_bv = string_to_bitstring(ssa->bit_values);
-      if(BitLatticeManipulator::isBetter(bitstring_to_string(bv), ssa->bit_values))
+      if(isBetter(bitstring_to_string(bv), ssa->bit_values))
       {
          ssa->bit_values = bitstring_to_string(bv);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -1337,7 +1293,7 @@ int VarNode::updateIR(const tree_managerRef& TM,
          {
             newBW = isSigned ? Range::neededBits(interval->getSignedMin(), interval->getSignedMax(), true) :
                                Range::neededBits(interval->getUnsignedMin(), interval->getUnsignedMax(), false);
-            const auto currentBW = getGIMPLE_BW(V);
+            const auto currentBW = tree_helper::TypeSize(V);
             if(newBW >= currentBW)
             {
                return ut_None;
@@ -1418,8 +1374,7 @@ int VarNode::updateIR(const tree_managerRef& TM,
       if(!bit_values.empty())
       {
          auto range_bv = interval->getBitValues(isSigned);
-         const auto sup_bv = BitLatticeManipulator::sup(bit_values, range_bv, interval->getBitWidth(), isSigned,
-                                                        interval->getBitWidth() == 1);
+         const auto sup_bv = sup(bit_values, range_bv, interval->getBitWidth(), isSigned, interval->getBitWidth() == 1);
          if(bit_values != sup_bv)
          {
             bit_values = sup_bv;
@@ -1831,7 +1786,7 @@ RangeConstRef SymbRange::solveFuture(const VarNode* _bound, const VarNode* _sink
          THROW_UNREACHABLE("Unexpected operation: " + tree_node::GetString(this->getOperation()));
          break;
    }
-   return getRangeFor(_sink->getValue(), Regular);
+   return tree_helper::TypeRange(_sink->getValue(), Regular);
 }
 
 /// Pretty print.
@@ -2330,7 +2285,7 @@ static bool enable_bit_phi = true;
    {                                           \
       return RangeRef(new Range(Regular, bw)); \
    }
-#define RESULT_DISABLED_OPTION(x, var, stdResult) enable_##x ? (stdResult) : getRangeFor(var, Regular)
+#define RESULT_DISABLED_OPTION(x, var, stdResult) enable_##x ? (stdResult) : tree_helper::TypeRange(var, Regular)
 #else
 
 #define OPERATION_OPTION(opts, X) void(0)
@@ -2419,7 +2374,7 @@ PhiOpNode::PhiOpNode(const ValueRangeRef& _intersect, VarNode* _sink, const tree
 RangeRef PhiOpNode::eval() const
 {
    THROW_ASSERT(sources.size() > 0, "Phi operation sources list empty");
-   auto result = getRangeFor(getSink()->getValue(), Empty);
+   auto result = tree_helper::TypeRange(getSink()->getValue(), Empty);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_CONST_NODE(getSink()->getValue())->ToString() + " = PHI");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
@@ -2468,7 +2423,7 @@ PhiOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_
 
       // Create the sink.
       VarNode* sink = NC->addVarNode(phi->res, function_id);
-      auto BI = ValueRangeRef(new ValueRange(getGIMPLE_range(stmt)));
+      auto BI = ValueRangeRef(new ValueRange(tree_helper::Range(stmt)));
       auto* phiOp = new PhiOpNode(BI, sink, stmt);
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
@@ -2498,28 +2453,25 @@ void PhiOpNode::print(std::ostream& OS) const
 
 void PhiOpNode::printDot(std::ostream& OS) const
 {
-   const char* quot = R"(")";
-   OS << " " << quot << this << quot << R"( [label=")";
-   OS << "phi";
-   OS << "\"]\n";
+   OS << " \"" << this << "\" [label=\"phi\"]\n";
    for(const VarNode* varNode : sources)
    {
       const auto& V = varNode->getValue();
       if(GET_CONST_NODE(V)->get_kind() == integer_cst_K)
       {
-         OS << " " << tree_helper::GetConstValue(V) << " -> " << quot << this << quot << "\n";
+         OS << " " << tree_helper::GetConstValue(V) << " -> \"" << this << "\"\n";
       }
       else
       {
-         OS << " " << quot;
+         OS << " \"";
          printVarName(V, OS);
-         OS << quot << " -> " << quot << this << quot << "\n";
+         OS << "\" -> \"" << this << "\"\n";
       }
    }
    const auto& VS = this->getSink()->getValue();
-   OS << " " << quot << this << quot << " -> " << quot;
+   OS << " \"" << this << "\" -> \"";
    printVarName(VS, OS);
-   OS << quot << "\n";
+   OS << "\"\n";
 }
 
 // ========================================================================== //
@@ -2600,9 +2552,9 @@ RangeRef UnaryOpNode::eval() const
 
    const auto bw = getSink()->getBitWidth();
    const auto oprnd = source->getRange();
-   const auto resultType = getGIMPLE_Type(getSink()->getValue());
+   const auto resultType = tree_helper::CGetType(getSink()->getValue());
    const bool oprndSigned = isSignedType(source->getValue());
-   auto result = getRangeFor(getSink()->getValue(), Unknown);
+   auto result = tree_helper::TypeRange(getSink()->getValue(), Unknown);
    if(oprnd->isEmpty())
    {
       result = RangeRef(new Range(Empty, bw));
@@ -2746,7 +2698,7 @@ UnaryOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int functio
          VarNode* sink = NC->addVarNode(assign->op0, function_id);
          VarNode* _source = NC->addVarNode(assign->op1, function_id);
 
-         auto BI = ValueRangeRef(new ValueRange(getGIMPLE_range(stmt)));
+         auto BI = ValueRangeRef(new ValueRange(tree_helper::Range(stmt)));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
                         "---Added assign operation with range " + BI->ToString());
          return new UnaryOpNode(BI, sink, stmt, _source, nop_expr_K);
@@ -2765,7 +2717,7 @@ UnaryOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int functio
       auto* sink = NC->addVarNode(assign->op0, function_id);
       // Create the source.
       auto* _source = NC->addVarNode(un_op->op, function_id);
-      auto BI = ValueRangeRef(new ValueRange(getGIMPLE_range(stmt)));
+      auto BI = ValueRangeRef(new ValueRange(tree_helper::Range(stmt)));
       const auto op_kind = un_op->get_kind();
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
@@ -2782,8 +2734,7 @@ void UnaryOpNode::print(std::ostream& OS) const
 
 void UnaryOpNode::printDot(std::ostream& OS) const
 {
-   const char* quot = R"(")";
-   OS << " " << quot << this << quot << R"( [label=")";
+   OS << " \"" << this << "\" [label=\"";
 
    // Instruction bitwidth
    const auto bw = getSink()->getBitWidth();
@@ -2797,7 +2748,7 @@ void UnaryOpNode::printDot(std::ostream& OS) const
       }
       else
       {
-         if(GET_CONST_NODE(getGIMPLE_Type(getSource()->getValue()))->get_kind() == pointer_type_K)
+         if(tree_helper::IsPointerType(getSource()->getValue()))
          {
             OS << "ptr_cast i" << bw;
          }
@@ -2816,7 +2767,7 @@ void UnaryOpNode::printDot(std::ostream& OS) const
    }
    else if(opcode == fix_trunc_expr_K)
    {
-      const auto type = getGIMPLE_Type(getSink()->getValue());
+      const auto type = tree_helper::CGetType(getSink()->getValue());
       if(const auto* int_type = GetPointer<const integer_type>(GET_CONST_NODE(type)))
       {
          if(int_type->unsigned_flag)
@@ -2844,19 +2795,19 @@ void UnaryOpNode::printDot(std::ostream& OS) const
    const auto& V = this->getSource()->getValue();
    if(GET_CONST_NODE(V)->get_kind() == integer_cst_K)
    {
-      OS << " " << tree_helper::GetConstValue(V) << " -> " << quot << this << quot << "\n";
+      OS << " " << tree_helper::GetConstValue(V) << " -> \"" << this << "\"\n";
    }
    else
    {
-      OS << " " << quot;
+      OS << " \"";
       printVarName(V, OS);
-      OS << quot << " -> " << quot << this << quot << "\n";
+      OS << "\" -> \"" << this << "\"\n";
    }
 
    const auto& VS = this->getSink()->getValue();
-   OS << " " << quot << this << quot << " -> " << quot;
+   OS << " \"" << this << "\" -> \"";
    printVarName(VS, OS);
-   OS << quot << "\n";
+   OS << "\"\n";
 }
 
 // ========================================================================== //
@@ -3014,7 +2965,7 @@ SigmaOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int functio
       }
       else
       {
-         auto BI = ValueRangeRef(new ValueRange(getGIMPLE_range(stmt)));
+         auto BI = ValueRangeRef(new ValueRange(tree_helper::Range(stmt)));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
                         "---Added SigmaOp with range " + BI->ToString());
          return new SigmaOpNode(BI, sink, stmt, source, nullptr, phi->get_kind());
@@ -3030,41 +2981,39 @@ void SigmaOpNode::print(std::ostream& OS) const
 
 void SigmaOpNode::printDot(std::ostream& OS) const
 {
-   const char* quot = R"(")";
-   OS << " " << quot << this << quot << R"( [label=")"
-      << "SigmaOp:";
+   OS << " \"" << this << "\" [label=\"SigmaOp:";
    this->getIntersect()->print(OS);
    OS << "\"]\n";
    const auto& V = this->getSource()->getValue();
    if(GET_CONST_NODE(V)->get_kind() == integer_cst_K)
    {
-      OS << " " << tree_helper::GetConstValue(V) << " -> " << quot << this << quot << "\n";
+      OS << " " << tree_helper::GetConstValue(V) << " -> \"" << this << "\"\n";
    }
    else
    {
-      OS << " " << quot;
+      OS << " \"";
       printVarName(V, OS);
-      OS << quot << " -> " << quot << this << quot << "\n";
+      OS << "\" -> \"" << this << "\"\n";
    }
    if(SymbolicSource)
    {
       const auto& _V = SymbolicSource->getValue();
       if(GET_CONST_NODE(_V)->get_kind() == integer_cst_K)
       {
-         OS << " " << tree_helper::GetConstValue(_V) << " -> " << quot << this << quot << "\n";
+         OS << " " << tree_helper::GetConstValue(_V) << " -> \"" << this << "\"\n";
       }
       else
       {
-         OS << " " << quot;
+         OS << " \"";
          printVarName(_V, OS);
-         OS << quot << " -> " << quot << this << quot << "\n";
+         OS << "\" -> \"" << this << "\"\n";
       }
    }
 
    const auto& VS = this->getSink()->getValue();
-   OS << " " << quot << this << quot << " -> " << quot;
+   OS << " \"" << this << "\" -> \"";
    printVarName(VS, OS);
-   OS << quot << "\n";
+   OS << "\"\n";
 }
 
 // ========================================================================== //
@@ -3339,7 +3288,7 @@ RangeRef BinaryOpNode::eval() const
    const auto op2 = this->getSource2()->getRange();
    // Instruction bitwidth
    const auto sinkBW = getSink()->getBitWidth();
-   auto result = getRangeFor(getSink()->getValue(), Unknown);
+   auto result = tree_helper::TypeRange(getSink()->getValue(), Unknown);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, ToString());
 
@@ -3406,7 +3355,7 @@ RangeRef BinaryOpNode::eval() const
    }
    else if(op1->isEmpty() || op2->isEmpty())
    {
-      result = getRangeFor(getSink()->getValue(), Empty);
+      result = tree_helper::TypeRange(getSink()->getValue(), Empty);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "---" + result->ToString() + " = " + op1->ToString() + " " + tree_node::GetString(this->getOpcode()) +
@@ -3454,7 +3403,7 @@ BinaryOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int functi
       auto* _source1 = NC->addVarNode(bin_op->op0, function_id);
       auto* _source2 = NC->addVarNode(bin_op->op1, function_id);
 
-      auto BI = ValueRangeRef(new ValueRange(getGIMPLE_range(stmt)));
+      auto BI = ValueRangeRef(new ValueRange(tree_helper::Range(stmt)));
 
       // Create the operation using the intersect to constrain sink's interval.
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
@@ -3472,35 +3421,34 @@ void BinaryOpNode::print(std::ostream& OS) const
 
 void BinaryOpNode::printDot(std::ostream& OS) const
 {
-   const char* quot = R"(")";
    std::string opcodeName = tree_node::GetString(opcode);
-   OS << " " << quot << this << quot << R"( [label=")" << opcodeName << "\"]\n";
+   OS << " \"" << this << "\" [label=\"" << opcodeName << "\"]\n";
    const auto& V1 = this->getSource1()->getValue();
    if(GET_CONST_NODE(V1)->get_kind() == integer_cst_K)
    {
-      OS << " " << tree_helper::GetConstValue(V1) << " -> " << quot << this << quot << "\n";
+      OS << " " << tree_helper::GetConstValue(V1) << " -> \"" << this << "\"\n";
    }
    else
    {
-      OS << " " << quot;
+      OS << " \"";
       printVarName(V1, OS);
-      OS << quot << " -> " << quot << this << quot << "\n";
+      OS << "\" -> \"" << this << "\"\n";
    }
    const auto& V2 = this->getSource2()->getValue();
    if(GET_CONST_NODE(V2)->get_kind() == integer_cst_K)
    {
-      OS << " " << tree_helper::GetConstValue(V2) << " -> " << quot << this << quot << "\n";
+      OS << " " << tree_helper::GetConstValue(V2) << " -> \"" << this << "\"\n";
    }
    else
    {
-      OS << " " << quot;
+      OS << " \"";
       printVarName(V2, OS);
-      OS << quot << " -> " << quot << this << quot << "\n";
+      OS << "\" -> \"" << this << "\"\n";
    }
    const auto& VS = this->getSink()->getValue();
-   OS << " " << quot << this << quot << " -> " << quot;
+   OS << " \"" << this << "\" -> \"";
    printVarName(VS, OS);
-   OS << quot << "\n";
+   OS << "\"\n";
 }
 
 unsigned int evaluateBranch(const tree_nodeRef br_op, const blocRef branchBB
@@ -3665,7 +3613,7 @@ RangeRef TernaryOpNode::eval() const
    auto op2 = this->getSource2()->getRange();
    auto op3 = this->getSource3()->getRange();
 
-   auto result = getRangeFor(getSink()->getValue(), Regular);
+   auto result = tree_helper::TypeRange(getSink()->getValue(), Regular);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, ToString());
 
@@ -3721,15 +3669,15 @@ RangeRef TernaryOpNode::eval() const
                         if(GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(opV1) ||
                            GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(opV2))
                         {
-                           const auto CR = getGIMPLE_range(constant);
+                           const auto CR = tree_helper::Range(constant);
                            THROW_ASSERT(CR->isConstant(), "Range from constant should be constant (" +
                                                               GET_CONST_NODE(constant)->ToString() + " => " +
                                                               CR->ToString() + ")");
                            kind pred = isSignedType(CondOp0) ? be->get_kind() : op_unsigned(be->get_kind());
                            kind swappred = op_swap(pred);
 
-                           auto tmpT = (variable == CondOp0) ? Range::makeSatisfyingCmpRegion(pred, CR) :
-                                                               Range::makeSatisfyingCmpRegion(swappred, CR);
+                           auto tmpT = (variable == CondOp0) ? makeSatisfyingCmpRegion(pred, CR) :
+                                                               makeSatisfyingCmpRegion(swappred, CR);
                            THROW_ASSERT(!tmpT->isFullSet(), "");
 
                            if(GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(opV2))
@@ -3753,7 +3701,7 @@ RangeRef TernaryOpNode::eval() const
       {
          if(op1->isEmpty() || op2->isEmpty() || op3->isEmpty())
          {
-            result = getRangeFor(getSink()->getValue(), Empty);
+            result = tree_helper::TypeRange(getSink()->getValue(), Empty);
          }
       }
       //    #ifndef NDEBUG
@@ -3805,7 +3753,7 @@ TernaryOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int funct
       VarNode* _source3 = NC->addVarNode(ter_op->op2, function_id);
 
       // Create the operation using the intersect to constrain sink's interval.
-      auto BI = ValueRangeRef(new ValueRange(getGIMPLE_range(stmt)));
+      auto BI = ValueRangeRef(new ValueRange(tree_helper::Range(stmt)));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
                      "---Added TernaryOp for " + ter_op->get_kind_text() + " with range " + BI->ToString());
       return new TernaryOpNode(BI, sink, stmt, _source1, _source2, _source3, ter_op->get_kind());
@@ -3822,48 +3770,47 @@ void TernaryOpNode::print(std::ostream& OS) const
 
 void TernaryOpNode::printDot(std::ostream& OS) const
 {
-   const char* quot = R"(")";
    std::string opcodeName = tree_node::GetString(this->getOpcode());
-   OS << " " << quot << this << quot << R"( [label=")" << opcodeName << "\"]\n";
+   OS << " \"" << this << "\" [label=\"" << opcodeName << "\"]\n";
 
    const auto& V1 = this->getSource1()->getValue();
    if(GET_CONST_NODE(V1)->get_kind() == integer_cst_K)
    {
-      OS << " " << tree_helper::GetConstValue(V1) << " -> " << quot << this << quot << "\n";
+      OS << " " << tree_helper::GetConstValue(V1) << " -> \"" << this << "\"\n";
    }
    else
    {
-      OS << " " << quot;
+      OS << " \"";
       printVarName(V1, OS);
-      OS << quot << " -> " << quot << this << quot << "\n";
+      OS << "\" -> \"" << this << "\"\n";
    }
    const auto& V2 = this->getSource2()->getValue();
    if(GET_CONST_NODE(V2)->get_kind() == integer_cst_K)
    {
-      OS << " " << tree_helper::GetConstValue(V2) << " -> " << quot << this << quot << "\n";
+      OS << " " << tree_helper::GetConstValue(V2) << " -> \"" << this << "\"\n";
    }
    else
    {
-      OS << " " << quot;
+      OS << " \"";
       printVarName(V2, OS);
-      OS << quot << " -> " << quot << this << quot << "\n";
+      OS << "\" -> \"" << this << "\"\n";
    }
 
    const auto& V3 = this->getSource3()->getValue();
    if(GET_CONST_NODE(V3)->get_kind() == integer_cst_K)
    {
-      OS << " " << tree_helper::GetConstValue(V3) << " -> " << quot << this << quot << "\n";
+      OS << " " << tree_helper::GetConstValue(V3) << " -> \"" << this << "\"\n";
    }
    else
    {
-      OS << " " << quot;
+      OS << " \"";
       printVarName(V3, OS);
-      OS << quot << " -> " << quot << this << quot << "\n";
+      OS << "\" -> \"" << this << "\"\n";
    }
    const auto& VS = this->getSink()->getValue();
-   OS << " " << quot << this << quot << " -> " << quot;
+   OS << " \"" << this << "\" -> \"";
    printVarName(VS, OS);
-   OS << quot << "\n";
+   OS << "\"\n";
 }
 
 // ========================================================================== //
@@ -3955,7 +3902,7 @@ RangeRef LoadOpNode::eval() const
    }
 
    // Iterate over the sources of the load
-   auto result = getRangeFor(getSink()->getValue(), Empty);
+   auto result = tree_helper::TypeRange(getSink()->getValue(), Empty);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    for(const VarNode* varNode : sources)
    {
@@ -4003,7 +3950,7 @@ static RangeRef constructor_range(const tree_managerConstRef TM, const tree_node
       }
       else
       {
-         const auto init_range = getGIMPLE_range(el);
+         const auto init_range = tree_helper::Range(el);
          if(init_range->getBitWidth() > static_cast<Range::bw_t>(elements_bitsize))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
@@ -4043,12 +3990,12 @@ LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
                      "Analysing load operation " + ga->ToString());
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "-->");
-      const auto bw = getGIMPLE_BW(ga->op0);
+      const auto bw = static_cast<bw_t>(tree_helper::TypeSize(ga->op0));
       VarNode* sink = NC->addVarNode(ga->op0, function_id);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
                      "Sink variable is " + GET_CONST_NODE(ga->op0)->get_kind_text() + " (size = " + STR(bw) + ")");
 
-      auto intersection = getRangeFor(sink->getValue(), Empty);
+      auto intersection = tree_helper::TypeRange(sink->getValue(), Empty);
       if(GET_NODE(ga->op1)->get_kind() == array_ref_K || GET_NODE(ga->op1)->get_kind() == mem_ref_K ||
          GET_NODE(ga->op1)->get_kind() == target_mem_ref_K || GET_NODE(ga->op1)->get_kind() == target_mem_ref461_K ||
          GET_NODE(ga->op1)->get_kind() == var_decl_K)
@@ -4067,7 +4014,7 @@ LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function
                }
                else if(GetPointer<const cst_node>(GET_CONST_NODE(vd->init)))
                {
-                  auto init_range = getGIMPLE_range(GET_NODE(vd->init));
+                  auto init_range = tree_helper::Range(vd->init);
                   if(init_range->getBitWidth() != bw)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
@@ -4095,7 +4042,7 @@ LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function
                }
                else if(GetPointer<const cst_node>(GET_CONST_NODE(vd->init)))
                {
-                  auto init_range = getGIMPLE_range(GET_CONST_NODE(vd->init));
+                  auto init_range = tree_helper::Range(vd->init);
                   if(init_range->getBitWidth() != bw)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
@@ -4117,7 +4064,7 @@ LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function
             {
                const auto cur_node = TM->get_tree_node_const(cur_var);
                THROW_ASSERT(cur_node, "");
-               auto init_range = getGIMPLE_range(cur_node);
+               auto init_range = tree_helper::Range(cur_node);
                if(init_range->getBitWidth() != bw)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
@@ -4134,7 +4081,7 @@ LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function
       }
       if(intersection->isEmpty())
       {
-         intersection = getGIMPLE_range(stmt);
+         intersection = tree_helper::Range(stmt);
       }
       THROW_ASSERT(intersection->getBitWidth() <= bw,
                    "Pointed variables range should have bitwidth contained in sink bitwidth");
@@ -4147,7 +4094,7 @@ LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function
 #ifndef NDEBUG
       if(!enable_load)
       {
-         BI = ValueRangeRef(new ValueRange(getGIMPLE_range(stmt)));
+         BI = ValueRangeRef(new ValueRange(tree_helper::Range(stmt)));
       }
 #endif
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
@@ -4163,29 +4110,27 @@ void LoadOpNode::print(std::ostream& OS) const
 
 void LoadOpNode::printDot(std::ostream& OS) const
 {
-   const char* quot = R"(")";
-   OS << " " << quot << this << quot << R"( [label=")";
-   OS << "LoadOp\"]\n";
+   OS << " \"" << this << "\" [label=\"LoadOp\"]\n";
 
    for(auto src : sources)
    {
       const auto& V = src->getValue();
       if(GET_CONST_NODE(V)->get_kind() == integer_cst_K)
       {
-         OS << " " << tree_helper::GetConstValue(V) << " -> " << quot << this << quot << "\n";
+         OS << " " << tree_helper::GetConstValue(V) << " -> \"" << this << "\"\n";
       }
       else
       {
-         OS << " " << quot;
+         OS << " \"";
          printVarName(V, OS);
-         OS << quot << " -> " << quot << this << quot << "\n";
+         OS << "\" -> \"" << this << "\"\n";
       }
    }
 
    const auto& VS = this->getSink()->getValue();
-   OS << " " << quot << this << quot << " -> " << quot;
+   OS << " \"" << this << "\" -> \"";
    printVarName(VS, OS);
-   OS << quot << "\n";
+   OS << "\"\n";
 }
 
 const std::vector<std::function<std::function<OpNode*(NodeContainer*)>(
@@ -5135,24 +5080,24 @@ class ConstraintGraph : public NodeContainer
          {
             const kind pred = isSignedType(variable) ? bin_op->get_kind() : op_unsigned(bin_op->get_kind());
             const kind swappred = op_swap(pred);
-            RangeRef CR = getGIMPLE_range(constant);
+            RangeRef CR = tree_helper::Range(constant);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "Variable bitwidth is " + STR(getGIMPLE_BW(variable)) + " and constant value is " +
+                           "Variable bitwidth is " + STR(tree_helper::TypeSize(variable)) + " and constant value is " +
                                constant->ToString());
 
             auto TValues = (GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(bin_op->op0)) ?
-                               Range::makeSatisfyingCmpRegion(pred, CR) :
-                               Range::makeSatisfyingCmpRegion(swappred, CR);
+                               makeSatisfyingCmpRegion(pred, CR) :
+                               makeSatisfyingCmpRegion(swappred, CR);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Condition is true on " + TValues->ToString());
-            auto FValues = TValues->isFullSet() ? getRangeFor(variable, Empty) : TValues->getAnti();
+            auto FValues = TValues->isFullSet() ? tree_helper::TypeRange(variable, Empty) : TValues->getAnti();
             // When dealing with eq/ne conditions it is safer to propagate only the constant branch value
             if(bin_op->get_kind() == eq_expr_K)
             {
-               FValues = getRangeFor(variable, Regular);
+               FValues = tree_helper::TypeRange(variable, Regular);
             }
             else if(bin_op->get_kind() == ne_expr_K)
             {
-               TValues = getRangeFor(variable, Regular);
+               TValues = tree_helper::TypeRange(variable, Regular);
             }
 
             // Create the interval using the intersection in the branch.
@@ -5198,15 +5143,15 @@ class ConstraintGraph : public NodeContainer
             const kind invSwappred = op_inv(swappred);
 
 #if !defined(NDEBUG) or HAVE_ASSERTS
-            const auto bw0 = getGIMPLE_BW(bin_op->op0);
+            const auto bw0 = tree_helper::TypeSize(bin_op->op0);
 #endif
 #if HAVE_ASSERTS
-            const auto bw1 = getGIMPLE_BW(bin_op->op1);
+            const auto bw1 = tree_helper::TypeSize(bin_op->op1);
             THROW_ASSERT(bw0 == bw1, "Operands of same operation have different bitwidth (Op0 = " + STR(bw0) +
                                          ", Op1 = " + STR(bw1) + ").");
 #endif
 
-            const auto CR = getRangeFor(bin_op->op0, Unknown);
+            const auto CR = tree_helper::TypeRange(bin_op->op0, Unknown);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variables bitwidth is " + STR(bw0));
 
             // Symbolic intervals for op0
@@ -5362,14 +5307,14 @@ class ConstraintGraph : public NodeContainer
             {
                const kind pred = isSignedType(variable) ? cmp_op->get_kind() : op_unsigned(cmp_op->get_kind());
                const kind swappred = op_swap(pred);
-               const auto bw = getGIMPLE_BW(variable);
+               const auto bw = static_cast<bw_t>(tree_helper::TypeSize(variable));
                RangeConstRef CR(new Range(Regular, bw, constant->value, constant->value));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "Variable bitwidth is " + STR(bw) + " and constant value is " + STR(constant->value));
 
                const auto tmpT = (GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(cmp_op->op0)) ?
-                                     Range::makeSatisfyingCmpRegion(pred, CR) :
-                                     Range::makeSatisfyingCmpRegion(swappred, CR);
+                                     makeSatisfyingCmpRegion(pred, CR) :
+                                     makeSatisfyingCmpRegion(swappred, CR);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Condition is true on " + tmpT->ToString());
 
                RangeRef TValues = tmpT->isFullSet() ? RangeRef(new Range(Regular, bw)) : tmpT;
@@ -5411,15 +5356,15 @@ class ConstraintGraph : public NodeContainer
                const kind swappred = op_swap(pred);
 
 #if !defined(NDEBUG) or HAVE_ASSERTS
-               const auto bw0 = getGIMPLE_BW(cmp_op->op0);
+               const auto bw0 = tree_helper::TypeSize(cmp_op->op0);
 #endif
 #if HAVE_ASSERTS
-               const auto bw1 = getGIMPLE_BW(cmp_op->op1);
+               const auto bw1 = tree_helper::TypeSize(cmp_op->op1);
                THROW_ASSERT(bw0 == bw1, "Operands of same operation have different bitwidth (Op0 = " + STR(bw0) +
                                             ", Op1 = " + STR(bw1) + ").");
 #endif
 
-               const auto CR = getRangeFor(cmp_op->op0, Unknown);
+               const auto CR = tree_helper::TypeRange(cmp_op->op0, Unknown);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variables bitwidth is " + STR(bw0));
 
                // Symbolic intervals for op0
@@ -5479,7 +5424,7 @@ class ConstraintGraph : public NodeContainer
       {
          for(auto& varVSM : switchSSAMap)
          {
-            auto elseRange = getRangeFor(varVSM.first, Empty);
+            auto elseRange = tree_helper::TypeRange(varVSM.first, Empty);
             for(const auto& BBIinterval : varVSM.second)
             {
                elseRange = elseRange->unionWith(BBIinterval.second->getRange());
@@ -6247,12 +6192,10 @@ class ConstraintGraph : public NodeContainer
    /// about the dot format, see: http://www.graphviz.org/pdf/dotguide.pdf
    void printDot(std::ostream& OS) const
    {
-      const char* quot = R"(")";
       // Print the header of the .dot file.
-      OS << "digraph dotgraph {\n";
-      OS << R"(label="Constraint Graph for ')";
-      OS << "all\' functions\";\n";
-      OS << "node [shape=record,fontname=\"Times-Roman\",fontsize=14];\n";
+      OS << "digraph dotgraph {\n"
+         << "label=\"Constraint Graph for \'all\' functions\";\n"
+         << "node [shape=record,fontname=\"Times-Roman\",fontsize=14];\n";
 
       // Print the body of the .dot file.
       for(const auto& varNode : getVarNodes())
@@ -6263,11 +6206,11 @@ class ConstraintGraph : public NodeContainer
          }
          else
          {
-            OS << quot;
+            OS << "\"";
             printVarName(varNode.first, OS);
-            OS << quot;
+            OS << "\"";
          }
-         OS << R"( [label=")" << varNode.second << "\"]\n";
+         OS << " [label=\"" << varNode.second << "\"]\n";
       }
 
       for(auto* op : getOpNodes())
@@ -6399,7 +6342,7 @@ static void TopFunctionUserHits(unsigned int function_id, const application_mana
    {
       if(const auto& p = parmBind.at(i))
       {
-         const auto pType = getGIMPLE_Type(p);
+         const auto pType = tree_helper::CGetType(p);
          if(!isValidType(pType))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -6474,7 +6417,7 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
    {
       if(const auto& p = parmBind.at(i))
       {
-         const auto pType = getGIMPLE_Type(p);
+         const auto pType = tree_helper::CGetType(p);
          if(!isValidType(pType))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,

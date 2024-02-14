@@ -174,9 +174,9 @@ void Bit_Value::forward()
                   {
                      THROW_ASSERT(!ssa_use->var || GET_CONST_NODE(ssa_use->var)->get_kind() != parm_decl_K,
                                   "Function parameter bitvalue must be defined before");
-                     current.insert(std::make_pair(
-                         use_node_id, create_bitstring_from_constant(0, BitLatticeManipulator::Size(use_node),
-                                                                     IsSignedIntegerType(use_node))));
+                     current.insert(
+                         std::make_pair(use_node_id, create_bitstring_from_constant(0, tree_helper::TypeSize(use_node),
+                                                                                    IsSignedIntegerType(use_node))));
                   }
                   else
                   {
@@ -258,7 +258,7 @@ void Bit_Value::forward()
                      THROW_ASSERT(!def_ssa->var || GET_CONST_NODE(def_ssa->var)->get_kind() != parm_decl_K,
                                   "Function parameter bitvalue must be defined before");
                      current.insert(
-                         std::make_pair(def_id, create_bitstring_from_constant(0, BitLatticeManipulator::Size(def_node),
+                         std::make_pair(def_id, create_bitstring_from_constant(0, tree_helper::TypeSize(def_node),
                                                                                IsSignedIntegerType(def_edge.first))));
                   }
                   else
@@ -368,7 +368,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
    const auto& lhs = ga->op0;
    const auto& rhs = ga->op1;
    const auto lhs_signed = IsSignedIntegerType(lhs);
-   const auto lhs_size = BitLatticeManipulator::Size(lhs);
+   const auto lhs_size = tree_helper::TypeSize(lhs);
    const auto rhs_kind = GET_CONST_NODE(rhs)->get_kind();
    switch(rhs_kind)
    {
@@ -425,7 +425,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
 
          if(rhs_kind == abs_expr_K)
          {
-            const auto op_size = BitLatticeManipulator::Size(operation->op);
+            const auto op_size = tree_helper::TypeSize(operation->op);
             const auto sign_bit = op_bitstring.front();
             switch(sign_bit)
             {
@@ -990,7 +990,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                   break;
                }
 
-               const auto op0_bitsize = BitLatticeManipulator::Size(operation->op0);
+               const auto op0_bitsize = tree_helper::TypeSize(operation->op0);
                if(lhs_size <= static_cast<size_t>(cst_val))
                {
                   res.push_front(bit_lattice::ZERO);
