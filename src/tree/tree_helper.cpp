@@ -40,35 +40,27 @@
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
  */
-
-/// Header include
 #include "tree_helper.hpp"
 
-/// parser/compiler include
-#include "token_interface.hpp"
-
-/// STL include
-#include <algorithm>
-#include <utility>
-
-/// Tree include
+#include "Range.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
 #include "ext_tree_node.hpp"
 #include "math_function.hpp"
+#include "string_manipulation.hpp"
+#include "token_interface.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-
 #include "var_pp_functor.hpp"
 
-/// Utility include
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
-#include "exceptions.hpp"
-#include "string_manipulation.hpp" // for STR
+#include <algorithm>
 #include <filesystem>
 #include <iostream>
 #include <regex>
 #include <set>
+#include <utility>
 
 /// built in type without parameter
 ///"sc_in_resolved" is not a template and inherits from sc_in<sc_dt::sc_logic>
@@ -108,8 +100,8 @@ tree_helper::tree_helper() = default;
 
 tree_helper::~tree_helper() = default;
 
-/// function slightly different than BitLatticeManipulator::sign_reduce_bitstring
-static std::string sign_reduce_bitstring(std::string bitstring, bool bitstring_is_signed)
+/// function slightly different than sign_reduce_bitstring
+static std::string __sign_reduce_bitstring(std::string bitstring, bool bitstring_is_signed)
 {
    THROW_ASSERT(!bitstring.empty(), "");
    while(bitstring.size() > 1)
@@ -167,7 +159,7 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
                return Size(sa->type);
             }
             const auto signed_p = IsSignedIntegerType(sa->type);
-            const auto bv_test = sign_reduce_bitstring(sa->bit_values, signed_p);
+            const auto bv_test = __sign_reduce_bitstring(sa->bit_values, signed_p);
             return bv_test.size();
          }
          return sa->var ? Size(sa->var) : Size(sa->type);
@@ -325,6 +317,143 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
    }
    THROW_UNREACHABLE(std::string("Unexpected type pattern ") + t->get_kind_text());
    return 0;
+}
+
+unsigned long long tree_helper::TypeSize(const tree_nodeConstRef& tn)
+{
+   return Size(CGetType(tn));
+}
+
+RangeRef tree_helper::Range(const tree_nodeConstRef& _tn)
+{
+   const auto tn = _tn->get_kind() == tree_reindex_K ? GET_CONST_NODE(_tn) : _tn;
+
+   const auto type = CGetType(tn);
+   auto bw = static_cast<Range::bw_t>(Size(type));
+   THROW_ASSERT(static_cast<bool>(bw) || tn->get_kind() == string_cst_K,
+                "Unhandled type (" + GET_CONST_NODE(type)->get_kind_text() + ") for " + tn->get_kind_text() + " " +
+                    tn->ToString());
+   bool sign = false;
+   APInt min, max;
+   if(const auto ic = GetPointer<const integer_cst>(tn))
+   {
+      min = max = tree_helper::get_integer_cst_value(ic);
+      return RangeRef(new class Range(Regular, bw, min, max));
+   }
+   else if(const auto sc = GetPointer<const string_cst>(tn))
+   {
+      bw = 8;
+      RangeRef r(
+          new class Range(Regular, bw, 0, 0)); // Zero is the string terminator, thus it should always be included
+      for(const auto& c : sc->strg)
+      {
+         r = r->unionWith(RangeRef(new class Range(Regular, bw, c, c)));
+      }
+      return r;
+   }
+   else if(const auto* rc = GetPointer<const real_cst>(tn))
+   {
+      THROW_ASSERT(bw == 64 || bw == 32, "Floating point variable with unhandled bitwidth (" + STR(bw) + ")");
+      if(rc->valx.front() == '-' && rc->valr.front() != rc->valx.front())
+      {
+         return Range::fromBitValues(string_to_bitstring(convert_fp_to_string("-" + rc->valr, bw)), bw, false);
+      }
+      else
+      {
+         return Range::fromBitValues(string_to_bitstring(convert_fp_to_string(rc->valr, bw)), bw, false);
+      }
+   }
+   else if(const auto vc = GetPointer<const vector_cst>(tn))
+   {
+      const auto el_type = CGetElements(type);
+      const auto el_bw = Size(el_type);
+      RangeRef r(new class Range(Empty, bw));
+      const auto stride = static_cast<size_t>(bw / el_bw);
+      const auto strides = vc->list_of_valu.size() / stride;
+      THROW_ASSERT(strides * stride == vc->list_of_valu.size(), "");
+      for(size_t i = 0; i < strides; ++i)
+      {
+         auto curr_el = Range(vc->list_of_valu.at(i * stride));
+         for(size_t j = 1; j < stride; ++j)
+         {
+            curr_el = Range(vc->list_of_valu.at(i * stride + j))
+                          ->zextOrTrunc(bw)
+                          ->shl(RangeRef(new class Range(Regular, bw, el_bw * j, el_bw * j)))
+                          ->Or(curr_el);
+         }
+         r = r->unionWith(curr_el);
+      }
+      return r;
+   }
+   else if(const auto it = GetPointer<const integer_type>(GET_CONST_NODE(type)))
+   {
+      sign = !it->unsigned_flag;
+      min = sign ? APInt::getSignedMinValue(bw) : APInt::getMinValue(bw);
+      max = sign ? APInt::getSignedMaxValue(bw) : APInt::getMaxValue(bw);
+   }
+   else if(const auto et = GetPointer<const enumeral_type>(GET_CONST_NODE(type)))
+   {
+      sign = !et->unsigned_flag;
+      min = sign ? APInt::getSignedMinValue(bw) : APInt::getMinValue(bw);
+      max = sign ? APInt::getSignedMaxValue(bw) : APInt::getMaxValue(bw);
+   }
+   else if(GET_CONST_NODE(type)->get_kind() == boolean_type_K)
+   {
+      min = 0;
+      max = 1;
+      bw = 1;
+   }
+   else if(GetPointer<const pointer_type>(GET_CONST_NODE(type)) != nullptr)
+   {
+      min = APInt::getMinValue(bw);
+      max = APInt::getMaxValue(bw);
+   }
+   else if(GET_CONST_NODE(type)->get_kind() == vector_type_K || GET_CONST_NODE(type)->get_kind() == array_type_K)
+   {
+      bw = static_cast<Range::bw_t>(Size(CGetElements(type)));
+      return RangeRef(new class Range(Regular, bw));
+   }
+   else if(const auto* rt = GetPointer<const record_type>(GET_CONST_NODE(type)))
+   {
+      THROW_ASSERT(GET_CONST_NODE(rt->size)->get_kind() == integer_cst_K && GetConstValue(rt->size) >= 0,
+                   "record_type has no size");
+      bw = static_cast<Range::bw_t>(GetConstValue(rt->size));
+      THROW_ASSERT(bw, "Invalid bitwidth");
+      return RangeRef(new class Range(Regular, bw));
+   }
+   else
+   {
+      THROW_UNREACHABLE("Unable to define range for type " + GET_CONST_NODE(type)->get_kind_text() + " of " +
+                        tn->ToString());
+   }
+
+   if(const auto ssa = GetPointer<const ssa_name>(tn))
+   {
+      if(!ssa->bit_values.empty())
+      {
+         const auto bvSize = static_cast<Range::bw_t>(ssa->bit_values.size());
+         const auto bvRange = Range::fromBitValues(string_to_bitstring(ssa->bit_values), bvSize, sign);
+         const auto varRange =
+             RangeRef(new class Range(Regular, bw, min, max))->truncate(bvSize)->intersectWith(bvRange);
+         return sign ? varRange->sextOrTrunc(bw) : varRange->zextOrTrunc(bw);
+      }
+   }
+   return RangeRef(new class Range(Regular, bw, min, max));
+}
+
+RangeRef tree_helper::TypeRange(const tree_nodeConstRef& tn, int _rt)
+{
+   const auto rt = static_cast<RangeType>(_rt);
+   THROW_ASSERT(rt != Anti, "");
+   const auto type = CGetType(tn);
+   const auto bw = static_cast<Range::bw_t>(Size(type));
+   THROW_ASSERT(bw, "Unhandled type (" + type->get_kind_text() + ") for " + tn->get_kind_text() + " " + tn->ToString());
+   return RangeRef(new class Range(rt, bw));
+}
+
+RangeRef tree_helper::TypeRange(const tree_nodeConstRef& tn)
+{
+   return TypeRange(tn, Regular);
 }
 
 std::string tree_helper::GetTemplateTypeName(const tree_nodeConstRef& type)

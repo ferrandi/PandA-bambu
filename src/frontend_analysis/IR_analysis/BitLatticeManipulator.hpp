@@ -31,24 +31,18 @@
  *
  */
 /**
- * @file bit_lattice.hpp
+ * @file BitLatticeManipulator.hpp
  *
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
+#ifndef _BIT_LATTICE_MANIPULATOR_HPP_
+#define _BIT_LATTICE_MANIPULATOR_HPP_
 
-#ifndef _BIT_LATTICE_HPP_
-#define _BIT_LATTICE_HPP_
-
-/// STD include
-#include <string>
-
-/// STL includes
+#include "bit_lattice.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-#include <deque>
-
 #include "panda_types.hpp"
 #include "refcount.hpp"
 
@@ -56,14 +50,6 @@ CONSTREF_FORWARD_DECL(Parameter);
 CONSTREF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_node);
 CONSTREF_FORWARD_DECL(tree_node);
-
-enum class bit_lattice
-{
-   U,
-   ZERO,
-   ONE,
-   X
-};
 
 class BitLatticeManipulator
 {
@@ -169,82 +155,6 @@ class BitLatticeManipulator
    /**
     * Destructor
     */
-   ~BitLatticeManipulator();
-
-   /**
-    * Extends a bitstring
-    * @param bitstring to extend
-    * @param bitstring_is_signed must be true if bitstring is signed
-    * @param final_size desired length of the bitstrign
-    * @return the extended bitstring
-    */
-   static std::deque<bit_lattice> sign_extend_bitstring(const std::deque<bit_lattice>& bitstring,
-                                                        bool bitstring_is_signed, size_t final_size);
-
-   /**
-    * @brief Reduce the size of a bitstring
-    * 	erasing all but one most significant zeros in unsigned bitstring and all
-    * 	but one most significant values in signed bitstrings.
-    * 	@param bitstring bitstring to reduce.
-    * 	@param bitstring_is_signed must be true if bitstring is signed
-    */
-   static void sign_reduce_bitstring(std::deque<bit_lattice>& bitstring, bool bitstring_is_signed);
-
-   static bit_lattice bit_sup(const bit_lattice a, const bit_lattice b);
-
-   static bit_lattice bit_inf(const bit_lattice a, const bit_lattice b);
-
-   static std::deque<bit_lattice> sup(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b,
-                                      const size_t out_type_size, const bool out_is_signed, const bool out_is_bool);
-
-   static std::deque<bit_lattice> inf(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b,
-                                      const size_t out_type_size, const bool out_is_signed, const bool out_is_bool);
-
-   static unsigned long long Size(const tree_nodeConstRef& t);
-
-   static unsigned long long size(const tree_managerConstRef tm, unsigned int index);
-
-   static bool isBetter(const std::string& a_string, const std::string& b_string);
+   virtual ~BitLatticeManipulator();
 };
-
-/**
- * Creates a bitstring containing bits initialized at <U>
- * @param lenght the lenght of the bitstring
- * @return a bitstring of the specified length containing <U> values.
- */
-std::deque<bit_lattice> create_u_bitstring(size_t lenght);
-
-/**
- * Create a bitstring containing bits initialized at <X>
- * @param lenght the lenght of the bitstring
- * @return a bitstring of the specified length containing <X> values.
- */
-std::deque<bit_lattice> create_x_bitstring(size_t lenght);
-
-/**
- * Creates a bitstring from a constant input
- * @param value_int integer constant
- * @param length the length of the bitstring to be generated
- * @param signed_value specified if this bitstring can have negative values
- * @return bitstring generated from the integer constant
- */
-std::deque<bit_lattice> create_bitstring_from_constant(integer_cst_t value_int, unsigned long long length,
-                                                       bool signed_value);
-
-/**
- * Translates a bitstring ( expressed as an std::deque of bit_lattice ) into a string of characters.
- */
-std::string bitstring_to_string(const std::deque<bit_lattice>& bitstring);
-
-/**
- * inverse of bitstring_to_string
- */
-std::deque<bit_lattice> string_to_bitstring(const std::string& s);
-
-/**
- * Checks if a bitstring is constant
- * @param a the bitstring to be checked
- * @return TRUE if the bitstring contains only 1, 0 or X but not U values
- */
-bool bitstring_constant(const std::deque<bit_lattice>& a);
 #endif

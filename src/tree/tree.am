@@ -20,8 +20,23 @@ endif
 if BUILD_LIB_TREE_MANIPULATION
    noinst_LTLIBRARIES += lib_tree_manipulation.la
    noinst_HEADERS += \
-      tree/tree_helper.hpp tree/behavioral_helper.hpp tree/var_pp_functor.hpp tree/tree_manager.hpp tree/tree_manipulation.hpp tree/tree_common.hpp tree/prettyPrintVertex.hpp tree/ext_tree_node.hpp tree/tree_node_mask.hpp \
-      tree/raw_writer.hpp  tree/tree_node_finder.hpp tree/tree_node_factory.hpp tree/tree_nodes_merger.hpp tree/gimple_writer.hpp tree/type_casting.hpp tree/tree_node_dup.hpp tree/function_decl_refs.hpp
+      tree/behavioral_helper.hpp \
+      tree/ext_tree_node.hpp \
+      tree/function_decl_refs.hpp \
+      tree/gimple_writer.hpp \
+      tree/prettyPrintVertex.hpp \
+      tree/raw_writer.hpp \
+      tree/tree_common.hpp \
+      tree/tree_helper.hpp \
+      tree/tree_manager.hpp \
+      tree/tree_manipulation.hpp \
+      tree/tree_node_dup.hpp \
+      tree/tree_node_factory.hpp \
+      tree/tree_node_finder.hpp \
+      tree/tree_node_mask.hpp \
+      tree/tree_nodes_merger.hpp \
+      tree/type_casting.hpp \
+      tree/var_pp_functor.hpp
    lib_tree_manipulation_la_CPPFLAGS =\
       -I$(top_srcdir)/src \
       -I$(top_srcdir)/src/behavior \
@@ -33,7 +48,21 @@ if BUILD_LIB_TREE_MANIPULATION
       -I$(top_srcdir)/src/wrapper/compiler \
       $(AM_CPPFLAGS)
    lib_tree_manipulation_la_SOURCES = \
-     tree/tree_helper.cpp tree/behavioral_helper.cpp tree/var_pp_functor.cpp tree/tree_manager.cpp tree/tree_manipulation.cpp tree/prettyPrintVertex.cpp tree/ext_tree_node.cpp tree/tree_node_mask.cpp tree/raw_writer.cpp tree/tree_node_finder.cpp \
-     tree/tree_node_factory.cpp tree/tree_nodes_merger.cpp tree/gimple_writer.cpp tree/type_casting.cpp tree/tree_node_dup.cpp tree/function_decl_refs.cpp
+      tree/behavioral_helper.cpp \
+      tree/ext_tree_node.cpp \
+      tree/function_decl_refs.cpp \
+      tree/gimple_writer.cpp \
+      tree/prettyPrintVertex.cpp \
+      tree/raw_writer.cpp \
+      tree/tree_helper.cpp \
+      tree/tree_manager.cpp \
+      tree/tree_manipulation.cpp \
+      tree/tree_node_dup.cpp \
+      tree/tree_node_factory.cpp \
+      tree/tree_node_finder.cpp \
+      tree/tree_node_mask.cpp \
+      tree/tree_nodes_merger.cpp \
+      tree/type_casting.cpp \
+      tree/var_pp_functor.cpp
 endif
 

@@ -90,11 +90,11 @@ std::deque<bit_lattice> Bit_Value::backward_chain(const tree_nodeConstRef& ssa_n
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                            "---variable " + STR(GET_CONST_NODE(ga->op0)) + " of type " +
                                STR(tree_helper::CGetType(ga->op0)) + " not considered");
-            user_res = create_u_bitstring(BitLatticeManipulator::Size(ssa_node));
+            user_res = create_u_bitstring(tree_helper::TypeSize(ssa_node));
          }
          else if(ga->predicate && ga->predicate->index == ssa_nid)
          {
-            user_res = create_u_bitstring(BitLatticeManipulator::Size(ssa_node));
+            user_res = create_u_bitstring(tree_helper::TypeSize(ssa_node));
          }
          else
          {
@@ -147,7 +147,7 @@ std::deque<bit_lattice> Bit_Value::backward_chain(const tree_nodeConstRef& ssa_n
                   std::deque<bit_lattice> tmp;
                   if(pd->bit_values.empty())
                   {
-                     tmp = create_u_bitstring(BitLatticeManipulator::Size(parmssa));
+                     tmp = create_u_bitstring(tree_helper::TypeSize(parmssa));
                   }
                   else
                   {
@@ -164,7 +164,7 @@ std::deque<bit_lattice> Bit_Value::backward_chain(const tree_nodeConstRef& ssa_n
       else if(user_kind == gimple_cond_K || user_kind == gimple_multi_way_if_K || user_kind == gimple_switch_K ||
               user_kind == gimple_asm_K)
       {
-         user_res = create_u_bitstring(BitLatticeManipulator::Size(ssa_node));
+         user_res = create_u_bitstring(tree_helper::TypeSize(ssa_node));
       }
       else
       {
@@ -343,7 +343,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
    }
    const auto& lhs = ga->op0;
    const auto lhs_nid = GET_INDEX_CONST_NODE(lhs);
-   const auto lhs_size = BitLatticeManipulator::Size(lhs);
+   const auto lhs_size = tree_helper::TypeSize(lhs);
    const auto lhs_kind = GET_CONST_NODE(lhs)->get_kind();
 
    switch(lhs_kind)
@@ -594,7 +594,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
          {
             const bool lhs_signed = IsSignedIntegerType(lhs);
             const bool op_signed = IsSignedIntegerType(operation->op);
-            const auto op_size = BitLatticeManipulator::Size(operation->op);
+            const auto op_size = tree_helper::TypeSize(operation->op);
             if(op_signed && !lhs_signed)
             {
                /*
@@ -645,7 +645,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
          {
             res = op_bitstring;
             const auto initial_size = op_bitstring.size();
-            auto res_size = BitLatticeManipulator::size(TM, res_nid);
+            auto res_size = tree_helper::TypeSize(TM->CGetTreeNode(res_nid));
             if(lhs_bitstring.front() == bit_lattice::U)
             {
                res_size = std::min(res_size, static_cast<unsigned long long>(lhs_bitstring.size()));
@@ -860,7 +860,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
 
             res = op0_bitstring;
             const auto initial_size = op0_bitstring.size();
-            auto res_size = BitLatticeManipulator::size(TM, res_nid);
+            auto res_size = tree_helper::TypeSize(TM->CGetTreeNode(res_nid));
             if(lhs_bitstring.front() == bit_lattice::U)
             {
                res_size = std::min(res_size, static_cast<unsigned long long>(lhs_bitstring.size()));
@@ -921,7 +921,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
                res.push_back(bit_lattice::X);
             }
 
-            const auto shifted_type_size = BitLatticeManipulator::Size(operation->op0);
+            const auto shifted_type_size = tree_helper::TypeSize(operation->op0);
             while(res.size() > shifted_type_size)
             {
                res.pop_front();
@@ -969,7 +969,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
             {
                res.push_back(bit_lattice::X);
             }
-            const auto shifted_type_size = BitLatticeManipulator::Size(operation->op0);
+            const auto shifted_type_size = tree_helper::TypeSize(operation->op0);
             while(res.size() < shifted_type_size)
             {
                res.push_front(bit_lattice::X);
@@ -1160,7 +1160,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
                res = op2_bitstring;
             }
             const auto initial_size = res.size();
-            auto res_size = BitLatticeManipulator::size(TM, res_nid);
+            auto res_size = tree_helper::TypeSize(TM->CGetTreeNode(res_nid));
             if(lhs_bitstring.front() == bit_lattice::U)
             {
                res_size = std::min(res_size, static_cast<unsigned long long>(lhs_bitstring.size()));
@@ -1227,7 +1227,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
                   std::deque<bit_lattice> tmp;
                   if(pd->bit_values.empty())
                   {
-                     tmp = create_u_bitstring(BitLatticeManipulator::Size(parmssa));
+                     tmp = create_u_bitstring(tree_helper::TypeSize(parmssa));
                   }
                   else
                   {
@@ -1395,7 +1395,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       }
    }
    // TODO: this is because IrLowering is not doing its job, better fix it and remove this
-   const auto res_size = BitLatticeManipulator::Size(TM->CGetTreeNode(res_nid));
+   const auto res_size = tree_helper::TypeSize(TM->CGetTreeNode(res_nid));
    while(res.size() > res_size)
    {
       res.pop_front();

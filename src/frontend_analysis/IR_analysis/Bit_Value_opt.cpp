@@ -45,8 +45,8 @@
 // Header include
 #include "Bit_Value_opt.hpp"
 
+#include "BitLatticeManipulator.hpp"
 #include "Range.hpp"
-#include "bit_lattice.hpp"
 
 /// Autoheader include
 #include "config_HAVE_FROM_DISCREPANCY_BUILT.hpp"
@@ -176,7 +176,7 @@ void Bit_Value_opt::constrainSSA(ssa_name* op_ssa, tree_managerRef TM)
    }
    const auto nbit = op_ssa->bit_values.size();
    THROW_ASSERT(!op_ssa->bit_values.empty(), "unexpected condition");
-   const auto nbitType = BitLatticeManipulator::Size(op_ssa->type);
+   const auto nbitType = tree_helper::TypeSize(op_ssa->type);
    if(nbit != nbitType)
    {
       const bool isSigned = tree_helper::IsSignedIntegerType(op_ssa->type);
@@ -420,7 +420,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            if(GET_NODE(vce->op)->get_kind() == integer_cst_K)
                            {
                               const auto cst_val = tree_helper::GetConstValue(vce->op);
-                              auto bitwidth_op = BitLatticeManipulator::Size(vce->type);
+                              auto bitwidth_op = tree_helper::TypeSize(vce->type);
                               tree_nodeRef val;
                               if(bitwidth_op == 32)
                               {
@@ -553,12 +553,12 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                      if(!is_op0_ssa)
                      {
                         const auto uvalue = tree_helper::GetConstValue(me->op0, false);
-                        s0 = convert_to_binary(uvalue, BitLatticeManipulator::Size(me->op0));
+                        s0 = convert_to_binary(uvalue, tree_helper::TypeSize(me->op0));
                      }
                      if(!is_op1_ssa)
                      {
                         const auto uvalue = tree_helper::GetConstValue(me->op1, false);
-                        s1 = convert_to_binary(uvalue, BitLatticeManipulator::Size(me->op1));
+                        s1 = convert_to_binary(uvalue, tree_helper::TypeSize(me->op1));
                      }
 
                      for(auto s0it = s0.rbegin(), s1it = s1.rbegin(), s0end = s0.rend(), s1end = s1.rend();
@@ -721,8 +721,8 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         const auto op0 = GET_CONST_NODE(me->op0);
                         const auto op1 = GET_CONST_NODE(me->op1);
                         bool squareP = GET_INDEX_CONST_NODE(me->op0) == GET_INDEX_CONST_NODE(me->op1);
-                        const auto data_bitsize_in0 = ceil_pow2(BitLatticeManipulator::Size(op0));
-                        const auto data_bitsize_in1 = ceil_pow2(BitLatticeManipulator::Size(op1));
+                        const auto data_bitsize_in0 = ceil_pow2(tree_helper::TypeSize(op0));
+                        const auto data_bitsize_in1 = ceil_pow2(tree_helper::TypeSize(op1));
                         const auto isSigned = tree_helper::is_int(TM, GET_INDEX_CONST_NODE(ga_op_type));
                         if(!isSigned && GET_CONST_NODE(ga->op1)->get_kind() == mult_expr_K &&
                            (data_bitsize_in0 == 1 || data_bitsize_in1 == 1))
@@ -1490,7 +1490,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                            // TODO: adapt existing operations to real type (zero sign bug to be considered)
                            return;
                         }
-                        const auto op0_size = BitLatticeManipulator::Size(op0);
+                        const auto op0_size = tree_helper::TypeSize(op0);
                         bool is_op1_zero = false;
                         if(GetPointer<const integer_cst>(GET_CONST_NODE(op1)))
                         {
@@ -1509,7 +1509,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         else if(is_op1_zero && GET_CONST_NODE(ga->op1)->get_kind() == ne_expr_K && op0_size == 1)
                         {
                            const auto op0_op_type = tree_helper::CGetType(op0);
-                           const auto data_bitsize = BitLatticeManipulator::Size(op0_op_type);
+                           const auto data_bitsize = tree_helper::TypeSize(op0_op_type);
                            if(data_bitsize == 1)
                            {
                               propagateValue(ssa, TM, ga->op0, me->op0, DEBUG_CALLSITE);
@@ -1614,14 +1614,14 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         {
                            const auto uvalue = tree_helper::GetConstValue(op0, false);
                            is_zero0 = uvalue == 0;
-                           s0 = convert_to_binary(uvalue, BitLatticeManipulator::Size(op0));
+                           s0 = convert_to_binary(uvalue, tree_helper::TypeSize(op0));
                         }
                         bool is_zero1 = s1.find_first_not_of("0X") == std::string::npos;
                         if(!is_op1_ssa)
                         {
                            const auto uvalue = tree_helper::GetConstValue(op1, false);
                            is_zero1 = uvalue == 0;
-                           s1 = convert_to_binary(uvalue, BitLatticeManipulator::Size(op1));
+                           s1 = convert_to_binary(uvalue, tree_helper::TypeSize(op1));
                         }
                         if(is_zero0 || is_zero1)
                         {
@@ -1823,7 +1823,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               THROW_ASSERT(GET_CONST_NODE(op0)->get_kind() == integer_cst_K, "unexpected condition");
                               const auto uvalue = tree_helper::GetConstValue(op0, false);
                               s0_precision =
-                                  uvalue ? tree_helper::Size(GET_CONST_NODE(op0)) : BitLatticeManipulator::Size(op0);
+                                  uvalue ? tree_helper::Size(GET_CONST_NODE(op0)) : tree_helper::TypeSize(op0);
                               s0 = convert_to_binary(uvalue, s0_precision);
                               is_s0_null = uvalue == 0;
                               is_s0_one = uvalue == 1;
@@ -1849,7 +1849,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                               THROW_ASSERT(GET_CONST_NODE(op1)->get_kind() == integer_cst_K, "unexpected condition");
                               const auto uvalue = tree_helper::GetConstValue(op1, false);
                               s1_precision =
-                                  uvalue ? tree_helper::Size(GET_CONST_NODE(op1)) : BitLatticeManipulator::Size(op1);
+                                  uvalue ? tree_helper::Size(GET_CONST_NODE(op1)) : tree_helper::TypeSize(op1);
                               s1 = convert_to_binary(uvalue, s1_precision);
                               is_s1_null = uvalue == 0;
                               is_s1_one = uvalue == 1;
@@ -2124,7 +2124,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                         const auto ebe_op0_ssa = GetPointer<const ssa_name>(GET_CONST_NODE(ebe->op0));
                         if(ebe_op0_ssa)
                         {
-                           if(static_cast<integer_cst_t>(BitLatticeManipulator::Size(ebe->op0)) <= pos_value)
+                           if(static_cast<integer_cst_t>(tree_helper::TypeSize(ebe->op0)) <= pos_value)
                            {
                               const auto right_id = GET_INDEX_CONST_NODE(ebe->op0);
                               const bool right_signed = tree_helper::is_int(TM, right_id);
@@ -2133,7 +2133,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                 "---replace extract_bit_expr usage before: " + stmt->ToString());
                                  const auto new_pos = TM->CreateUniqueIntegerCst(
-                                     static_cast<integer_cst_t>(BitLatticeManipulator::Size(ebe->op0) - 1),
+                                     static_cast<integer_cst_t>(tree_helper::TypeSize(ebe->op0) - 1),
                                      tree_helper::CGetType(ebe->op1));
                                  const auto eb_op = IRman->create_extract_bit_expr(ebe->op0, new_pos, srcp_default);
                                  const auto eb_ga = IRman->CreateGimpleAssign(
@@ -2207,8 +2207,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                        const auto neType_node = tree_helper::CGetType(ne->op);
                                        if(GET_CONST_NODE(neType_node)->get_kind() == integer_type_K)
                                        {
-                                          if(static_cast<integer_cst_t>(BitLatticeManipulator::Size(ne->op)) >
-                                             pos_value)
+                                          if(static_cast<integer_cst_t>(tree_helper::TypeSize(ne->op)) > pos_value)
                                           {
                                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                             "---replace extract_bit_expr usage before: " +
@@ -2245,7 +2244,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                                                "---replace extract_bit_expr usage before: " +
                                                                    stmt->ToString());
                                                 const auto new_pos = TM->CreateUniqueIntegerCst(
-                                                    static_cast<integer_cst_t>(BitLatticeManipulator::Size(ne->op) - 1),
+                                                    static_cast<integer_cst_t>(tree_helper::TypeSize(ne->op) - 1),
                                                     tree_helper::CGetType(ebe->op1));
                                                 const auto eb_op =
                                                     IRman->create_extract_bit_expr(ne->op, new_pos, srcp_default);
@@ -2452,7 +2451,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                             "---replace extract_bit_expr usage before: " +
                                                                 stmt->ToString());
-                                             const auto precision = BitLatticeManipulator::Size(ebe_op0_ssa->type);
+                                             const auto precision = tree_helper::TypeSize(ebe_op0_ssa->type);
                                              unsigned int log2;
                                              for(log2 = 1; precision > (1u << log2); ++log2)
                                              {
@@ -2692,7 +2691,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                                  {
                                     const auto pe = GetPointerS<const plus_expr>(GET_CONST_NODE(prev_ga->op1));
                                     if(GET_CONST_NODE(pe->op1)->get_kind() == integer_cst_K &&
-                                       BitLatticeManipulator::Size(ebe->op0) <= max_lut_size)
+                                       tree_helper::TypeSize(ebe->op0) <= max_lut_size)
                                     {
                                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                       "---replace extract_bit_expr usage before: " + stmt->ToString());
