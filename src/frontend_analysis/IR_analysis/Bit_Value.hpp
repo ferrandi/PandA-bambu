@@ -47,11 +47,10 @@
 
 #ifndef BIT_VALUE_HPP
 #define BIT_VALUE_HPP
-
-#include "bit_lattice.hpp"
+#include "BitLatticeManipulator.hpp"
 #include "function_frontend_flow_step.hpp"
-
 #include "refcount.hpp"
+
 /**
  * @name forward declarations
  */

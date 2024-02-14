@@ -46,7 +46,6 @@
 #include "APInt.hpp"
 #include "bit_lattice.hpp"
 #include "refcount.hpp"
-#include "tree_common.hpp"
 
 REF_FORWARD_DECL(Range);
 CONSTREF_FORWARD_DECL(Range);
@@ -160,7 +159,6 @@ class Range
    static const APInt Min;
    static const APInt Max;
    static const APInt MinDelta;
-   static RangeRef makeSatisfyingCmpRegion(kind pred, const RangeConstRef& Other);
    static bw_t neededBits(const APInt& a, const APInt& b, bool sign);
    static RangeRef fromBitValues(const std::deque<bit_lattice>& bv, bw_t bitwidth, bool isSigned);
 };

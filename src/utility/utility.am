@@ -4,6 +4,7 @@ lib_utility_la_CPPFLAGS =  \
    $(AM_CPPFLAGS)
 noinst_HEADERS += \
    utility/APInt.hpp \
+   utility/bit_lattice.hpp \
    utility/augmented_vector.hpp \
    utility/cpu_stats.hpp \
    utility/cpu_time.hpp \
@@ -19,6 +20,7 @@ noinst_HEADERS += \
    utility/Lexer_utilities.hpp \
    utility/math_function.hpp \
    utility/panda_types.hpp \
+   utility/Range.hpp \
    utility/refcount.hpp \
    utility/simple_indent.hpp \
    utility/Statistics.hpp \
@@ -29,10 +31,12 @@ noinst_HEADERS += \
    utility/xml_helper.hpp
 lib_utility_la_SOURCES = \
    utility/APInt.cpp \
+   utility/bit_lattice.cpp \
    utility/cpu_stats.cpp \
    utility/exceptions.cpp \
    utility/fileIO.cpp \
    utility/indented_output_stream.cpp \
+   utility/Range.cpp \
    utility/simple_indent.cpp \
    utility/Statistics.cpp \
    utility/string_manipulation.cpp \
