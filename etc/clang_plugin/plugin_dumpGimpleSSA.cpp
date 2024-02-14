@@ -144,8 +144,8 @@ namespace llvm
    cl::opt<std::string> outdir_name("panda-outputdir",
                                     cl::desc("Specify the directory where the gimple raw file will be written"),
                                     cl::value_desc("directory path"), cl::Required);
-   cl::opt<std::string> InFile("panda-infile", cl::desc("Specify the name of the compiled source file"),
-                               cl::value_desc("filename path"), cl::OneOrMore);
+   cl::list<std::string> InFile("panda-infile", cl::desc("Specify the name of the compiled source file"),
+                                cl::value_desc("filename path"), cl::OneOrMore, cl::CommaSeparated);
    cl::opt<std::string> CostTable("panda-cost-table", cl::desc("Specify the cost per operation"),
                                   cl::value_desc("cost table"));
 
@@ -205,8 +205,7 @@ namespace llvm
 
          /// load parameter names
          std::map<std::string, std::vector<std::string>> Fun2Params;
-         const auto first_filename =
-             InFile.find(",") != std::string::npos ? InFile.substr(0, InFile.find(",")) : InFile;
+         const auto first_filename = InFile.front();
 
          pugi::xml_document doc;
          const auto arch_filename = outdir_name + "/architecture.xml";
