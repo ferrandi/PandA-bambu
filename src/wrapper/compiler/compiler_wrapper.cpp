@@ -422,16 +422,16 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
    THROW_ASSERT(!isWholeProgram || top_fnames == "main", "Unexpected -fwhole-program with non-main top function.");
 
    std::string real_filename = input_filename;
-   std::string command;
+   std::string load_prefix, command;
    if(cm & CM_COMPILER_OPT)
    {
       THROW_ASSERT(!(cm & CM_ANALYZER_ALL), "Analyzer plugin requires compiler frontend to run");
-      command = compiler.llvm_opt;
+      load_prefix = compiler.llvm_opt;
    }
    else if(cm & CM_COMPILER_LTO)
    {
       THROW_ASSERT(cm == CM_COMPILER_LTO, "Plugins must not be enabled when linker is required");
-      command = compiler.llvm_link;
+      load_prefix = compiler.llvm_link;
    }
    else
    {
@@ -439,11 +439,11 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       if((cm & CM_ANALYZER_ALL) && !compiler.is_clang)
       {
          THROW_ASSERT(!(cm & CM_OPT_ALL), "Optimization must not be performed with analyze compiler");
-         command = GetAnalyzeCompiler();
+         load_prefix = GetAnalyzeCompiler();
       }
       else
       {
-         command = compiler.gcc;
+         load_prefix = compiler.gcc;
       }
       command += " -c";
       command += " -D__NO_INLINE__"; /// needed to avoid problem with glibc inlines
@@ -491,14 +491,14 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       }
       if(compiler.is_clang)
       {
-         command += " " + load_plugin(compiler.empty_plugin_obj, compiler_target) +
-                    " -mllvm -pandaGE-outputdir=" + output_temporary_directory +
-                    " -mllvm -pandaGE-infile=" + real_filename;
+         load_prefix += " " + load_plugin(compiler.empty_plugin_obj, compiler_target);
+         command +=
+             " -mllvm -pandaGE-outputdir=" + output_temporary_directory + " -mllvm -pandaGE-infile=" + real_filename;
       }
       else
       {
-         command += " -fplugin=" + compiler.empty_plugin_obj + " -fplugin-arg-" + compiler.empty_plugin_name +
-                    "-outputdir=" + output_temporary_directory;
+         load_prefix += " -fplugin=" + compiler.empty_plugin_obj;
+         command += " -fplugin-arg-" + compiler.empty_plugin_name + "-outputdir=" + output_temporary_directory;
       }
    }
 
@@ -511,7 +511,7 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
          boost::replace_all(command, "-fhls", "");
          boost::replace_all(command, "-target fpga64-xilinx-linux-gnu", "");
       }
-      command += " -fplugin=" + compiler.ASTAnalyzer_plugin_obj;
+      load_prefix += " -fplugin=" + compiler.ASTAnalyzer_plugin_obj;
       command += " -Xclang -add-plugin -Xclang " + compiler.ASTAnalyzer_plugin_name;
 
       if(cm & CM_ANALYZER_INTERFACE)
@@ -544,11 +544,12 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
    const auto load_and_run_plugin = [&](const std::string& plugin_obj, const std::string& plugin_name) {
       if(cm & CM_COMPILER_STD)
       {
-         command += load_plugin(plugin_obj, compiler_target);
+         load_prefix += load_plugin(plugin_obj, compiler_target);
       }
       else
       {
-         command += load_plugin_opt(plugin_obj, compiler_target) + add_plugin_prefix(compiler_target) + plugin_name;
+         load_prefix += load_plugin_opt(plugin_obj, compiler_target);
+         command += add_plugin_prefix(compiler_target) + plugin_name;
       }
    };
    const auto append_arg = [&](const std::string& arg) {
@@ -566,7 +567,6 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       THROW_ASSERT(!(cm & CM_LTO_FLAG), "Internalizing symbols in partial object files is not expected");
       if(compiler.is_clang)
       {
-         load_and_run_plugin(compiler.topfname_plugin_obj, compiler.topfname_plugin_name);
          append_arg("-internalize-outputdir=" + output_temporary_directory);
          append_arg("-panda-TFN=" + top_fnames);
          if(Param->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
@@ -582,16 +582,17 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
          {
             append_arg("-panda-Internalize");
          }
+         load_and_run_plugin(compiler.topfname_plugin_obj, compiler.topfname_plugin_name);
          if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 &&
             !compiler.CSROA_plugin_obj.empty() && !compiler.expandMemOps_plugin_obj.empty())
          {
-            load_and_run_plugin(compiler.CSROA_plugin_obj, compiler.CSROA_plugin_name);
             append_arg("-panda-KN=" + top_fnames);
             if(Param->IsParameter("max-CSROA"))
             {
                auto max_CSROA = Param->GetParameter<int>("max-CSROA");
                append_arg("-csroa-max-transformations=" + STR(max_CSROA));
             }
+            load_and_run_plugin(compiler.CSROA_plugin_obj, compiler.CSROA_plugin_name);
          }
       }
       else
@@ -599,8 +600,8 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
          if(!isWholeProgram)
          {
             /// LTO not yet supported with GCC
-            command += " -fplugin=" + compiler.topfname_plugin_obj + " -fplugin-arg-" + compiler.topfname_plugin_name +
-                       "-topfname=" + top_fnames;
+            load_prefix += " -fplugin=" + compiler.topfname_plugin_obj;
+            command += " -fplugin-arg-" + compiler.topfname_plugin_name + "-topfname=" + top_fnames;
          }
       }
    }
@@ -611,11 +612,13 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
          load_and_run_plugin(compiler.expandMemOps_plugin_obj, compiler.expandMemOps_plugin_name);
       }
    }
+
+   command += " " + parameters_line;
+
    if(cm & CM_OPT_DUMPGIMPLE)
    {
       if(compiler.is_clang)
       {
-         load_and_run_plugin(compiler.ssa_plugin_obj, compiler.ssa_plugin_name);
          append_arg("-panda-outputdir=" + output_temporary_directory);
          append_arg("-panda-infile=" + input_filename);
          append_arg("-panda-cost-table=\"" + costTable + "\"");
@@ -623,16 +626,15 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
          {
             append_arg("-panda-topfname=" + top_fnames);
          }
+         load_and_run_plugin(compiler.ssa_plugin_obj, compiler.ssa_plugin_name);
          // command += " -emit-llvm";
       }
       else
       {
-         command += " -fplugin=" + compiler.ssa_plugin_obj + " -fplugin-arg-" + compiler.ssa_plugin_name +
-                    "-outputdir=" + output_temporary_directory;
+         load_prefix += " -fplugin=" + compiler.ssa_plugin_obj;
+         command += " -fplugin-arg-" + compiler.ssa_plugin_name + "-outputdir=" + output_temporary_directory;
       }
    }
-
-   command += " " + parameters_line;
 
    const auto _output_filename = output_filename.size() ?
                                      output_filename :
@@ -659,7 +661,7 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
          command += " \"" + src + "\"";
       }
    }
-
+   command = load_prefix + command;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Invoke: " + command);
 #if !NPROFILE
    long int gcc_compilation_time = 0;
@@ -871,9 +873,8 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::vector<std:
       lto_obj = output_temporary_directory + "/" + leaf_name + ".lto-dump.bc";
       THROW_ASSERT(std::filesystem::exists(ext_symbols_filename), "File not found: " + ext_symbols_filename);
       const auto plugin_prefix = add_plugin_prefix(compiler_target);
-      opt_command = " -panda-infile=" + container_to_string(source_files, ",") +
-                    " --internalize-public-api-file=" + ext_symbols_filename + " " + plugin_prefix + "internalize " +
-                    clang_recipes(optimization_set, "") + plugin_prefix + compiler.ssa_plugin_name;
+      opt_command = " --internalize-public-api-file=" + ext_symbols_filename + " " + plugin_prefix + "internalize " +
+                    clang_recipes(optimization_set, "") + " -panda-infile=" + container_to_string(source_files, ",");
       CompileFile(lto_source, lto_obj, opt_command, CM_COMPILER_OPT | CM_OPT_DUMPGIMPLE, costTable);
 
       const auto gimple_obj = output_temporary_directory + "/" + leaf_name + STR_CST_bambu_ir_suffix;
