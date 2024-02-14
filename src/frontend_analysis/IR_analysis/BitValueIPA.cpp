@@ -373,7 +373,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                                        "fu_id: " + STR(fu_id) + " bitstring: " + bitstring_to_string(res));
                         auto res_sup = sup(best.at(fu_id), res_fanout, fu_node);
                         auto res_sup_string = bitstring_to_string(res_sup);
-                        if(BitLatticeManipulator::isBetter(res_sup_string, s->bit_values))
+                        if(isBetter(res_sup_string, s->bit_values))
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                           "" + STR(fu_id) + " " + bitstring_to_string(best.at(fu_id)) +
@@ -511,9 +511,8 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            if(ap_kind == ssa_name_K)
                            {
                               const auto ssa = GetPointerS<const ssa_name>(GET_CONST_NODE(ap_node));
-                              res_tmp = ssa->bit_values.empty() ?
-                                            create_u_bitstring(BitLatticeManipulator::Size(ap_node)) :
-                                            string_to_bitstring(ssa->bit_values);
+                              res_tmp = ssa->bit_values.empty() ? create_u_bitstring(tree_helper::TypeSize(ap_node)) :
+                                                                  string_to_bitstring(ssa->bit_values);
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                              "actual parameter " + STR(ssa) + " id: " + STR(ssa->index) +
                                                  " bitstring: " + bitstring_to_string(res_tmp));
@@ -521,8 +520,8 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            else if(ap_kind == integer_cst_K)
                            {
                               const auto cst_val = tree_helper::GetConstValue(ap_node);
-                              res_tmp = create_bitstring_from_constant(cst_val, BitLatticeManipulator::Size(ap_node),
-                                                                       parm_signed);
+                              res_tmp =
+                                  create_bitstring_from_constant(cst_val, tree_helper::TypeSize(ap_node), parm_signed);
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                              "actual parameter " + STR(ap_node) +
                                                  " is a constant value id: " + STR(GET_INDEX_CONST_NODE(ap_node)) +
@@ -554,9 +553,8 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            if(ap_kind == ssa_name_K)
                            {
                               const auto ssa = GetPointerS<const ssa_name>(GET_CONST_NODE(ap_node));
-                              res_tmp = ssa->bit_values.empty() ?
-                                            create_u_bitstring(BitLatticeManipulator::Size(ap_node)) :
-                                            string_to_bitstring(ssa->bit_values);
+                              res_tmp = ssa->bit_values.empty() ? create_u_bitstring(tree_helper::TypeSize(ap_node)) :
+                                                                  string_to_bitstring(ssa->bit_values);
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                              "actual parameter " + STR(ssa) + " id: " + STR(ssa->index) +
                                                  " bitstring: " + bitstring_to_string(res_tmp));
@@ -564,8 +562,8 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            else if(ap_kind == integer_cst_K)
                            {
                               const auto cst_val = tree_helper::GetConstValue(ap_node);
-                              res_tmp = create_bitstring_from_constant(cst_val, BitLatticeManipulator::Size(ap_node),
-                                                                       parm_signed);
+                              res_tmp =
+                                  create_bitstring_from_constant(cst_val, tree_helper::TypeSize(ap_node), parm_signed);
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                              "actual parameter " + STR(ap_node) +
                                                  " is a constant value id: " + STR(GET_INDEX_CONST_NODE(ap_node)) +
@@ -654,7 +652,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                       "node " + STR(tn_id) + " is " + GET_CONST_NODE(fu_type)->get_kind_text());
          const auto ft = GetPointer<const function_type>(GET_CONST_NODE(fu_type));
          const auto fret_type_node = GET_CONST_NODE(ft->retn);
-         size = BitLatticeManipulator::Size(fret_type_node);
+         size = tree_helper::TypeSize(fret_type_node);
          restart_fun_id = fd->index;
       }
       else if(kind == ssa_name_K)
@@ -662,7 +660,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
          auto pd = GetPointerS<ssa_name>(GET_NODE(tn));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---is a parm_decl: " + STR(pd) + " id: " + STR(pd->index));
          old_bitvalue = &pd->bit_values;
-         size = BitLatticeManipulator::Size(tn);
+         size = tree_helper::TypeSize(tn);
          THROW_ASSERT(pd->var && GET_CONST_NODE(pd->var)->get_kind() == parm_decl_K, "unexpected pattern");
          const auto pdecl = GetPointerS<const parm_decl>(GET_CONST_NODE(pd->var));
          restart_fun_id = GET_INDEX_CONST_NODE(pdecl->scpe);
@@ -676,12 +674,12 @@ DesignFlowStep_Status BitValueIPA::Exec()
       if(old_bitvalue->empty())
       {
          const auto full_bv = bitstring_to_string(create_u_bitstring(size));
-         if(BitLatticeManipulator::isBetter(new_bitvalue, full_bv))
+         if(isBetter(new_bitvalue, full_bv))
          {
             restart = true;
          }
       }
-      else if(BitLatticeManipulator::isBetter(new_bitvalue, *old_bitvalue))
+      else if(isBetter(new_bitvalue, *old_bitvalue))
       {
          restart = true;
       }

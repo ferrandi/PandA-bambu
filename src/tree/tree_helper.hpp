@@ -57,20 +57,21 @@
 #include <vector>
 
 struct binfo;
-struct integer_cst;
 struct function_decl;
+struct integer_cst;
 struct ssa_name;
 struct statement_list;
+class TreeNodeConstSorter;
 template <typename value>
 class TreeNodeMap;
-class TreeNodeConstSorter;
 enum class TreeVocabularyTokenTypes_TokenEnum;
 CONSTREF_FORWARD_DECL(tree_manager);
-REF_FORWARD_DECL(tree_manager);
 CONSTREF_FORWARD_DECL(tree_node);
-REF_FORWARD_DECL(tree_node);
-REF_FORWARD_DECL(bloc);
 CONSTREF_FORWARD_DECL(var_pp_functor);
+REF_FORWARD_DECL(Range);
+REF_FORWARD_DECL(bloc);
+REF_FORWARD_DECL(tree_manager);
+REF_FORWARD_DECL(tree_node);
 
 /**
  * This class collects some utility functions used to extract information from tree-based data structures.
@@ -116,6 +117,29 @@ class tree_helper
     * @return the size of the object
     */
    static unsigned long long Size(const tree_nodeConstRef& tn);
+
+   /**
+    * Return the size of a tree object type
+    * @param tn is the tree object
+    * @return the size of the object
+    */
+   static unsigned long long TypeSize(const tree_nodeConstRef& tn);
+
+   /**
+    * Return the range of a tree object
+    * @param tn is the tree object
+    * @return the range of the object
+    */
+   static RangeRef Range(const tree_nodeConstRef& tn);
+
+   /**
+    * Return the range of a tree object type
+    * @param tn is the tree object
+    * @param rt range type
+    * @return the range of the object
+    */
+   static RangeRef TypeRange(const tree_nodeConstRef& tn, int rt);
+   static RangeRef TypeRange(const tree_nodeConstRef& tn);
 
    /**
     * Return the name of template without parameters. Ex: sc_signal<T> --> sc_signal

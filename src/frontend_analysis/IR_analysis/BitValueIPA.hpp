@@ -46,8 +46,8 @@
 #define BIT_VALUE_IPA_HPP
 
 // include superclass header
+#include "BitLatticeManipulator.hpp"
 #include "application_frontend_flow_step.hpp"
-#include "bit_lattice.hpp"
 
 /**
  * @brief Inter-Procedural extension of the Bit Value analysis as described in

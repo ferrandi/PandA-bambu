@@ -2081,16 +2081,14 @@ src/frontend_analysis/IR_analysis/IR_lowering.hpp
 src/frontend_analysis/IR_analysis/IR_lowering_exec.cpp
 src/frontend_analysis/IR_analysis/NI_SSA_liveness.cpp
 src/frontend_analysis/IR_analysis/NI_SSA_liveness.hpp
-src/frontend_analysis/IR_analysis/Range.cpp
-src/frontend_analysis/IR_analysis/Range.hpp
 src/frontend_analysis/IR_analysis/RangeAnalysis.cpp
 src/frontend_analysis/IR_analysis/RangeAnalysis.hpp
 src/frontend_analysis/IR_analysis/Range_Analysis.cpp
 src/frontend_analysis/IR_analysis/Range_Analysis.hpp
 src/frontend_analysis/IR_analysis/basic_blocks_cfg_computation.cpp
 src/frontend_analysis/IR_analysis/basic_blocks_cfg_computation.hpp
-src/frontend_analysis/IR_analysis/bit_lattice.cpp
-src/frontend_analysis/IR_analysis/bit_lattice.hpp
+src/frontend_analysis/IR_analysis/BitLatticeManipulator.cpp
+src/frontend_analysis/IR_analysis/BitLatticeManipulator.hpp
 src/frontend_analysis/IR_analysis/block_fix.cpp
 src/frontend_analysis/IR_analysis/block_fix.hpp
 src/frontend_analysis/IR_analysis/call_expr_fix.cpp
@@ -2412,6 +2410,8 @@ src/utility/Lexer_utilities.hpp
 src/utility/Statistics.cpp
 src/utility/Statistics.hpp
 src/utility/augmented_vector.hpp
+src/utility/bit_lattice.cpp
+src/utility/bit_lattice.hpp
 src/utility/cpu_stats.cpp
 src/utility/cpu_stats.hpp
 src/utility/cpu_time.hpp
@@ -2431,6 +2431,8 @@ src/utility/math_function.cpp
 src/utility/math_function.hpp
 src/utility/panda_types.hpp
 src/utility/parsing_error.hpp
+src/utility/Range.cpp
+src/utility/Range.hpp
 src/utility/refcount.hpp
 src/utility/simple_indent.cpp
 src/utility/simple_indent.hpp
