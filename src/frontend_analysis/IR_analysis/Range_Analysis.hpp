@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2019-2024 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -51,11 +51,6 @@
 #include "tree_node.hpp"
 
 REF_FORWARD_DECL(ConstraintGraph);
-
-struct tree_reindexCompare
-{
-   bool operator()(const tree_nodeConstRef& lhs, const tree_nodeConstRef& rhs) const;
-};
 
 enum SolverType
 {
