@@ -224,12 +224,6 @@ const CustomOrderedSet<vertex>& liveness::get_state_where_run(vertex op) const
    return running_operations.find(op)->second;
 }
 
-const CustomOrderedSet<vertex>& liveness::get_state_where_start(vertex op) const
-{
-   THROW_ASSERT(starting_operations.find(op) != running_operations.end(), "op never start in a state ");
-   return starting_operations.find(op)->second;
-}
-
 const std::string& liveness::get_name(vertex v) const
 {
    if(v == NULL_VERTEX)
@@ -329,7 +323,12 @@ unsigned liveness::GetStep(vertex v, vertex op, unsigned int var, bool in) const
          auto op_BB_index = vertex_BB.at(op);
          if(def_op_BB_index == op_BB_index)
          {
-            return satStep(def_op_BB_index, get_step(v, op, var, in));
+            auto step = get_step(v, op, var, in);
+            if(is_a_dummy_state(v) && in)
+            {
+               ++step;
+            }
+            return satStep(def_op_BB_index, step);
          }
          else
          {

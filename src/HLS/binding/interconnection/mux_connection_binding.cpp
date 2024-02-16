@@ -158,10 +158,10 @@ DesignFlowStep_Status mux_connection_binding::InternalExec()
    create_connections();
    auto mux = mux_interconnection();
 
-      if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
-      {
-         STOP_TIME(step_time);
-      }
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
+      STOP_TIME(step_time);
+   }
    if(mux)
    {
       if(output_level <= OUTPUT_LEVEL_PEDANTIC)
@@ -211,14 +211,12 @@ void mux_connection_binding::create_single_conn(const vertex& op, generic_objRef
                      (tree_var ? (" for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
                                                 tree_var)) :
                                  ""));
-   if(GetPointer<register_obj>(fu_obj) && !is_not_a_phi &&
-      (state_tgt == NULL_VERTEX || !HLS->Rliv->is_a_dummy_state(state_tgt)))
+   if(GetPointer<register_obj>(fu_obj) && !is_not_a_phi)
    {
       generic_objRef enable_obj = GetPointer<register_obj>(fu_obj)->get_wr_enable();
       GetPointer<commandport_obj>(enable_obj)
-          ->add_activation(commandport_obj::transition(state_src, state_tgt,
-                                                       commandport_obj::data_operation_pair(cur_phi_tree_var, op)));
-      GetPointer<commandport_obj>(enable_obj)->set_phi_write_enable();
+          ->add_activation(commandport_obj::transition(
+              state_src, state_tgt, commandport_obj::data_operation_pair(cur_phi_tree_var, NULL_VERTEX)));
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                     "       - write enable for " + fu_obj->get_string() + " from state " +
                         HLS->Rliv->get_name(state_src) + " to state " +
@@ -741,14 +739,12 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
             }
          }
       }
-      if(GetPointer<register_obj>(fu_obj) && (!reg_obj || reg_obj != fu_obj) &&
-         (state_tgt == NULL_VERTEX || !HLS->Rliv->is_a_dummy_state(state_tgt)))
+      if(GetPointer<register_obj>(fu_obj) && (!reg_obj || reg_obj != fu_obj))
       {
          generic_objRef enable_obj = GetPointer<register_obj>(fu_obj)->get_wr_enable();
          GetPointer<commandport_obj>(enable_obj)
-             ->add_activation(
-                 commandport_obj::transition(state_src, state_tgt, commandport_obj::data_operation_pair(tree_var, op)));
-         GetPointer<commandport_obj>(enable_obj)->set_phi_write_enable();
+             ->add_activation(commandport_obj::transition(state_src, state_tgt,
+                                                          commandport_obj::data_operation_pair(tree_var, NULL_VERTEX)));
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                        "       - write enable for " + fu_obj->get_string() + " from state " +
                            HLS->Rliv->get_name(state_src) + " to state " + HLS->Rliv->get_name(state_tgt));
@@ -811,7 +807,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                else
                {
                   THROW_UNREACHABLE("not expected from " + HLS->Rliv->get_name(state_src) + " to " +
-                                    HLS->Rliv->get_name(state_tgt) + " for operation" + GET_NAME(data, op) + " " +
+                                    HLS->Rliv->get_name(state_tgt) + " " +
                                     HLSMgr->get_tree_manager()->get_tree_node_const(tree_var)->ToString());
                }
             }
@@ -994,17 +990,13 @@ void mux_connection_binding::connect_pipelined_registers(vertex state)
                                 " from state " + HLS->Rliv->get_name(state) + " to state " +
                                 HLS->Rliv->get_name(out_state) + " for " +
                                 HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(var.first));
-                        if(!HLS->Rliv->is_a_dummy_state(out_state))
-                        {
                         generic_objRef enable_obj = GetPointer<register_obj>(next_reg)->get_wr_enable();
                         GetPointer<commandport_obj>(enable_obj)
                             ->add_activation(commandport_obj::transition(
-                                state, out_state, commandport_obj::data_operation_pair(var.first, def_op)));
+                                state, out_state, commandport_obj::data_operation_pair(var.first, NULL_VERTEX)));
                         PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                       "       - write enable for " + next_reg->get_string() + " from " +
-                                             HLS->Rliv->get_name(state) + " to state " +
-                                             HLS->Rliv->get_name(out_state));
-                        }
+                                          HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(out_state));
                      }
                   }
                }
@@ -1037,8 +1029,6 @@ void mux_connection_binding::connect_pipelined_registers(vertex state)
                              " to " + par_reg->get_string() + " port 0:0 from state " + HLS->Rliv->get_name(in_state) +
                              " to state " + HLS->Rliv->get_name(state) + " for " +
                              HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(var.first));
-                     if(!HLS->Rliv->is_a_dummy_state(state))
-                     {
                      generic_objRef enable_obj = GetPointer<register_obj>(par_reg)->get_wr_enable();
                      GetPointer<commandport_obj>(enable_obj)
                          ->add_activation(commandport_obj::transition(
@@ -1052,7 +1042,6 @@ void mux_connection_binding::connect_pipelined_registers(vertex state)
          }
       }
    }
-}
 }
 void mux_connection_binding::add_conversion(unsigned int num, vertex op, unsigned int form_par_type,
                                             unsigned long long form_par_bitsize, unsigned int port_index,
@@ -1297,8 +1286,8 @@ void mux_connection_binding::create_connections()
                               ") Operation: " + std::to_string(data->CGetOpNodeInfo(op)->GetNodeId()));
                }
                GetPointer<commandport_obj>(selector_obj)
-                   ->add_activation(
-                       commandport_obj::transition(rstate, NULL_VERTEX, commandport_obj::data_operation_pair(0, op)));
+                   ->add_activation(commandport_obj::transition(rstate, NULL_VERTEX,
+                                                                commandport_obj::data_operation_pair(0, NULL_VERTEX)));
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                              "       - add activation for " + selector_obj->get_string() + " in state " +
                                  HLS->Rliv->get_name(rstate));
@@ -1585,7 +1574,6 @@ void mux_connection_binding::create_connections()
          }
       }
       const auto& ending_states = HLS->Rliv->get_state_where_end(op);
-      const auto& starting_states = HLS->Rliv->get_state_where_start(op);
       for(const auto estate : ending_states)
       {
          if(GET_TYPE(data, op) & TYPE_PHI)
@@ -1731,19 +1719,16 @@ void mux_connection_binding::create_connections()
                                          " for " +
                                          HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
                                              cur_phi_tree_var));
-                                 if(!HLS->Rliv->is_a_dummy_state(state_out))
-                                 {
                                  generic_objRef enable_obj = GetPointer<register_obj>(tgt_reg_obj)->get_wr_enable();
                                  GetPointer<commandport_obj>(enable_obj)
                                      ->add_activation(commandport_obj::transition(
                                          estate, state_out,
-                                         commandport_obj::data_operation_pair(cur_phi_tree_var, op)));
+                                         commandport_obj::data_operation_pair(cur_phi_tree_var, NULL_VERTEX)));
                                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                                "       - write enable for " + tgt_reg_obj->get_string() + " from " +
                                                    HLS->Rliv->get_name(estate) + " to state " +
                                                    HLS->Rliv->get_name(state_out));
                               }
-                           }
                            }
                            else if(tree_helper::is_int(TreeM, var_written))
                            {
@@ -1789,19 +1774,16 @@ void mux_connection_binding::create_connections()
                                          " for " +
                                          HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
                                              cur_phi_tree_var));
-                                 if(!HLS->Rliv->is_a_dummy_state(*s_out_it))
-                                 {
                                  generic_objRef enable_obj = GetPointer<register_obj>(tgt_reg_obj)->get_wr_enable();
                                  GetPointer<commandport_obj>(enable_obj)
                                      ->add_activation(commandport_obj::transition(
                                          estate, *s_out_it,
-                                         commandport_obj::data_operation_pair(cur_phi_tree_var, op)));
+                                         commandport_obj::data_operation_pair(cur_phi_tree_var, NULL_VERTEX)));
                                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                                "       - write enable for " + tgt_reg_obj->get_string() + " from " +
                                                    HLS->Rliv->get_name(estate) + " to state " +
                                                    HLS->Rliv->get_name(*s_out_it));
                               }
-                           }
                            }
                            else if(tree_helper::is_real(TreeM, var_written))
                            {
@@ -1847,19 +1829,16 @@ void mux_connection_binding::create_connections()
                                          " for " +
                                          HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
                                              cur_phi_tree_var));
-                                 if(!HLS->Rliv->is_a_dummy_state(*s_out_it))
-                                 {
                                  generic_objRef enable_obj = GetPointer<register_obj>(tgt_reg_obj)->get_wr_enable();
                                  GetPointer<commandport_obj>(enable_obj)
                                      ->add_activation(commandport_obj::transition(
                                          estate, *s_out_it,
-                                         commandport_obj::data_operation_pair(cur_phi_tree_var, op)));
+                                         commandport_obj::data_operation_pair(cur_phi_tree_var, NULL_VERTEX)));
                                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                                "       - write enable for " + tgt_reg_obj->get_string() + " from " +
                                                    HLS->Rliv->get_name(estate) + " to state " +
                                                    HLS->Rliv->get_name(*s_out_it));
                               }
-                           }
                            }
                            else
                            {
@@ -1905,12 +1884,11 @@ void mux_connection_binding::create_connections()
                                       " for " +
                                       HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(
                                           cur_phi_tree_var));
-                              if(!HLS->Rliv->is_a_dummy_state(*s_out_it))
-                              {
                               generic_objRef enable_obj = GetPointer<register_obj>(tgt_reg_obj)->get_wr_enable();
                               GetPointer<commandport_obj>(enable_obj)
                                   ->add_activation(commandport_obj::transition(
-                                      estate, *s_out_it, commandport_obj::data_operation_pair(cur_phi_tree_var, op)));
+                                      estate, *s_out_it,
+                                      commandport_obj::data_operation_pair(cur_phi_tree_var, NULL_VERTEX)));
                               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                             "       - write enable for " + tgt_reg_obj->get_string() + " from " +
                                                 HLS->Rliv->get_name(estate) + " to state " +
@@ -1918,7 +1896,6 @@ void mux_connection_binding::create_connections()
                            }
                         }
                      }
-                  }
                   }
                   else
                   {
@@ -1974,8 +1951,8 @@ void mux_connection_binding::create_connections()
                                  TargetPort->get_string() + " in state " + HLS->Rliv->get_name(estate) + " for " +
                                  STR(node_id));
                GetPointer<commandport_obj>(TargetPort)
-                   ->add_activation(commandport_obj::transition(estate, NULL_VERTEX,
-                                                                commandport_obj::data_operation_pair(node_id, op)));
+                   ->add_activation(commandport_obj::transition(
+                       estate, NULL_VERTEX, commandport_obj::data_operation_pair(node_id, NULL_VERTEX)));
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                              "       - add activation for " + TargetPort->get_string() + " in state " +
                                  HLS->Rliv->get_name(estate));
@@ -1999,8 +1976,8 @@ void mux_connection_binding::create_connections()
                                  TargetPort->get_string() + " in state " + HLS->Rliv->get_name(estate) +
                                  "for condition");
                GetPointer<commandport_obj>(TargetPort)
-                   ->add_activation(commandport_obj::transition(estate, NULL_VERTEX,
-                                                                commandport_obj::data_operation_pair(var_written, op)));
+                   ->add_activation(commandport_obj::transition(
+                       estate, NULL_VERTEX, commandport_obj::data_operation_pair(var_written, NULL_VERTEX)));
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                              "       - add activation for " + TargetPort->get_string() + " in state " +
                                  HLS->Rliv->get_name(estate));
@@ -2021,8 +1998,8 @@ void mux_connection_binding::create_connections()
                        " in state " + HLS->Rliv->get_name(estate) + " for " +
                        HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(var_written));
                GetPointer<commandport_obj>(TargetPort)
-                   ->add_activation(commandport_obj::transition(estate, NULL_VERTEX,
-                                                                commandport_obj::data_operation_pair(var_written, op)));
+                   ->add_activation(commandport_obj::transition(
+                       estate, NULL_VERTEX, commandport_obj::data_operation_pair(var_written, NULL_VERTEX)));
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                              "       - add activation for " + TargetPort->get_string() + " in state " +
                                  HLS->Rliv->get_name(estate));
@@ -2036,7 +2013,6 @@ void mux_connection_binding::create_connections()
                   for(auto s_out : states_out)
                   {
                      auto step_write = HLS->Rliv->GetStepWrite(estate, op);
-                     // std::cerr << "step_write: " << step_write << "\n";
                      auto storage_value =
                          HLS->storage_value_information->get_storage_value_index(s_out, var_written, step_write);
                      auto r_index = HLS->Rreg->get_register(storage_value);
@@ -2051,18 +2027,16 @@ void mux_connection_binding::create_connections()
                              tgt_reg_obj->get_string() + " from state " + HLS->Rliv->get_name(estate) + " to state " +
                              HLS->Rliv->get_name(s_out) + " for " +
                              HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(var_written));
-                     /// check if the write is started in this state or before and if the next state is a dummy state
-                     if(!HLS->Rliv->is_a_dummy_state(s_out) || (starting_states.count(estate) == 0))
-                     {
                      generic_objRef enable_obj = GetPointer<register_obj>(tgt_reg_obj)->get_wr_enable();
+                     auto is_VL_op = HLS->Rliv->is_a_dummy_state(estate);
                      GetPointer<commandport_obj>(enable_obj)
                          ->add_activation(commandport_obj::transition(
-                             estate, s_out, commandport_obj::data_operation_pair(var_written, op)));
+                             estate, s_out,
+                             commandport_obj::data_operation_pair(var_written, is_VL_op ? op : NULL_VERTEX)));
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                    "       - write enable for " + tgt_reg_obj->get_string() + " from " +
                                        HLS->Rliv->get_name(estate) + " to state " + HLS->Rliv->get_name(s_out));
                   }
-               }
                }
                else
                {
@@ -2247,9 +2221,8 @@ unsigned int mux_connection_binding::input_logic(const conn_binding::ConnectionS
 
             GetPointer<mux_obj>(mux)->add_bitsize(std::get<1>(*v));
 
-            GetPointer<commandport_obj>(sel_port)->add_activation(
-                commandport_obj::transition(std::get<2>(*v), std::get<3>(*v),
-                                            commandport_obj::data_operation_pair(std::get<0>(*v), std::get<4>(*v))));
+            GetPointer<commandport_obj>(sel_port)->add_activation(commandport_obj::transition(
+                std::get<2>(*v), std::get<3>(*v), commandport_obj::data_operation_pair(std::get<0>(*v), NULL_VERTEX)));
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                           "       - add mux activation for " + sel_port->get_string() + " from state " +
                               HLS->Rliv->get_name(std::get<2>(*v)) + " to state " +

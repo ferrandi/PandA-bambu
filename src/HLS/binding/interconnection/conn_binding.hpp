@@ -67,7 +67,7 @@ class GenericObjUnsignedIntSorter;
 #include "generic_obj.hpp"
 #include "graph.hpp"
 
-/// definition of the data transfer (tree_node, precision, from, to, data_transferred, current_op). Note that from/to
+/// definition of the data transfer (tree_node, precision, from, to, current_op). Note that from/to
 /// can represent either chained vertices or STG states
 using data_transfer = std::tuple<unsigned int, unsigned int, vertex, vertex, vertex>;
 

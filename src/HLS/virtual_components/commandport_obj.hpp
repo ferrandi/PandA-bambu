@@ -100,8 +100,6 @@ class commandport_obj : public generic_obj
    /// It's command type for the port
    unsigned int mode;
 
-   bool is_a_phi_write_enable;
-
    CustomOrderedSet<transition> activations;
 
    /// structural_object associated with the element inside the controller
@@ -114,14 +112,14 @@ class commandport_obj : public generic_obj
     * @param mode is command type
     */
    commandport_obj(const vertex& signal_, unsigned int _mode, const std::string& _name)
-       : generic_obj(COMMAND_PORT, _name), signal(signal_), mode(_mode), is_a_phi_write_enable(false)
+       : generic_obj(COMMAND_PORT, _name), signal(signal_), mode(_mode)
    {
       THROW_ASSERT(mode == OPERATION or mode == CONDITION or mode == SWITCH or mode == MULTIIF or mode == UNBOUNDED,
                    "Command mode not allowed into this constructor");
    }
 
    commandport_obj(generic_objRef _elem, unsigned int _mode, const std::string& _name)
-       : generic_obj(COMMAND_PORT, _name), elem(_elem), mode(_mode), is_a_phi_write_enable(false)
+       : generic_obj(COMMAND_PORT, _name), elem(_elem), mode(_mode)
    {
       THROW_ASSERT(mode == SELECTOR || mode == WRENABLE || mode == ALUSELECTOR or mode == MULTI_UNBOUNDED or
                        mode == MULTI_UNBOUNDED_ENABLE,
@@ -215,16 +213,6 @@ class commandport_obj : public generic_obj
             THROW_ERROR("Command mode not allowed for port");
       }
       return "";
-   }
-
-   void set_phi_write_enable()
-   {
-      is_a_phi_write_enable = true;
-   }
-
-   bool get_phi_write_enable()
-   {
-      return is_a_phi_write_enable;
    }
 };
 

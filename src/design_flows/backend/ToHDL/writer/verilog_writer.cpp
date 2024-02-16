@@ -1460,7 +1460,7 @@ void verilog_writer::write_transition_output_functions(
    }
 
    /// compute the default output
-   std::string default_output;
+   std::vector<std::string> default_output;
    for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
    {
       if(mod->get_out_port(i)->get_id() == PRESENT_STATE_PORT_NAME)
@@ -1471,7 +1471,7 @@ void verilog_writer::write_transition_output_functions(
       {
          continue;
       }
-      default_output += "0";
+      default_output.emplace_back("0");
       if(!single_proc && output_index != i)
       {
          continue;
@@ -1512,7 +1512,8 @@ void verilog_writer::write_transition_output_functions(
       std::string present_state = HDL_manager::convert_to_identifier(this, *it);
       /// get the current output
       ++it;
-      std::string current_output = *it;
+
+      std::vector<std::string> current_output = SplitString(*it, "/");
 
       /// check if we can skip this state
       bool skip_state = !single_proc && output_index != mod->get_out_port_size() &&
@@ -1535,10 +1536,10 @@ void verilog_writer::write_transition_output_functions(
                ++itt;
             }
             ++itt;
-            std::string transition_outputs = *itt;
+            std::vector<std::string> transition_outputs = SplitString(*itt, "/");
             ++itt;
             THROW_ASSERT(itt == transition_tokens.end(), "Bad transition format");
-            if(transition_outputs[output_index] != '-')
+            if(transition_outputs[output_index] != "-")
             {
                skip_state = false;
                skip_state_transition = false;
@@ -1579,51 +1580,48 @@ void verilog_writer::write_transition_output_functions(
             {
                if(single_proc || output_index == i)
                {
-                  switch(current_output[i])
+                  if(current_output[i] == "1")
                   {
-                     case '1':
+                     if(bypass_signals.find(i) == bypass_signals.end() ||
+                        bypass_signals.find(i)->second.find(present_state) == bypass_signals.find(i)->second.end())
                      {
-                        if(bypass_signals.find(i) == bypass_signals.end() ||
-                           bypass_signals.find(i)->second.find(present_state) == bypass_signals.find(i)->second.end())
-                        {
-                           indented_output_stream->Append(port_name + " = 1'b1;\n");
-                        }
-                        else
-                        {
-                           indented_output_stream->Append(port_name + " = ");
-                           for(const auto& stateIns : bypass_signals.find(i)->second)
-                           {
-                              if(stateIns.first != present_state)
-                              {
-                                 continue;
-                              }
-                              bool first_i = true;
-                              for(const auto& in : stateIns.second)
-                              {
-                                 if(first_i)
-                                 {
-                                    first_i = false;
-                                 }
-                                 else
-                                 {
-                                    indented_output_stream->Append(" || ");
-                                 }
-                                 auto in_port_name =
-                                     HDL_manager::convert_to_identifier(this, mod->get_in_port(in)->get_id());
-                                 indented_output_stream->Append(in_port_name);
-                              }
-                           }
-                           indented_output_stream->Append(";\n");
-                        }
-                        break;
+                        indented_output_stream->Append(port_name + " = 1'b1;\n");
                      }
-                     case '2':
-                        indented_output_stream->Append(port_name + " = 1'bX;\n");
-                        break;
-
-                     default:
-                        THROW_ERROR("Unsupported value in current output");
-                        break;
+                     else
+                     {
+                        indented_output_stream->Append(port_name + " = ");
+                        for(const auto& stateIns : bypass_signals.find(i)->second)
+                        {
+                           if(stateIns.first != present_state)
+                           {
+                              continue;
+                           }
+                           bool first_i = true;
+                           for(const auto& in : stateIns.second)
+                           {
+                              if(first_i)
+                              {
+                                 first_i = false;
+                              }
+                              else
+                              {
+                                 indented_output_stream->Append(" || ");
+                              }
+                              auto in_port_name =
+                                  HDL_manager::convert_to_identifier(this, mod->get_in_port(in)->get_id());
+                              indented_output_stream->Append(in_port_name);
+                           }
+                        }
+                        indented_output_stream->Append(";\n");
+                     }
+                  }
+                  else if(current_output[i] == "2")
+                  {
+                     indented_output_stream->Append(port_name + " = 1'bX;\n");
+                  }
+                  else
+                  {
+                     THROW_ERROR("Unsupported value in current output: " + current_output[i]);
                   }
                }
             }
@@ -1654,7 +1652,7 @@ void verilog_writer::write_transition_output_functions(
                }
                std::string next_state = *itt;
                ++itt;
-               std::string transition_outputs = *itt;
+               // std::vector<std::string> transition_outputs = SplitString(*itt, "/");
                ++itt;
                THROW_ASSERT(itt == transition_tokens.end(), "Bad transition format");
                if((i + 1) < state_transitions.size())
@@ -1750,7 +1748,7 @@ void verilog_writer::write_transition_output_functions(
             }
             std::string next_state = *itt;
             ++itt;
-            std::string transition_outputs = *itt;
+            std::vector<std::string> transition_outputs = SplitString(*itt, "/");
             ++itt;
             THROW_ASSERT(itt == transition_tokens.end(), "Bad transition format");
 
@@ -1907,11 +1905,11 @@ void verilog_writer::write_transition_output_functions(
                   continue;
                }
                port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(ind)->get_id());
-               if(transition_outputs[ind] != '-')
+               if(transition_outputs[ind] != "-")
                {
                   if(single_proc || output_index == ind)
                   {
-                     if(transition_outputs[ind] == '2')
+                     if(transition_outputs[ind] == "2")
                      {
                         indented_output_stream->Append(port_name + " = 1'bX;\n");
                      }
@@ -1921,7 +1919,25 @@ void verilog_writer::write_transition_output_functions(
                            bypass_signals.find(ind)->second.find(present_state) ==
                                bypass_signals.find(ind)->second.end())
                         {
-                           indented_output_stream->Append(port_name + " = 1'b" + transition_outputs[ind] + ";\n");
+                           if(transition_outputs[ind] == "0" || transition_outputs[ind] == "1")
+                           {
+                              indented_output_stream->Append(port_name + " = 1'b" + transition_outputs[ind] + ";\n");
+                           }
+                           else
+                           {
+                              auto done_ind = static_cast<unsigned>(std::stoi(transition_outputs[ind]));
+                              THROW_ASSERT(done_ind > 2, "unexpected value");
+                              done_ind -= 3;
+                              if(done_ind < mod->get_in_port_size())
+                              {
+                                 indented_output_stream->Append(port_name + " = " +
+                                                                mod->get_in_port(done_ind)->get_id() + ";\n");
+                              }
+                              else
+                              {
+                                 THROW_ERROR("unexpected output " + transition_outputs[ind]);
+                              }
+                           }
                         }
                         else
                         {

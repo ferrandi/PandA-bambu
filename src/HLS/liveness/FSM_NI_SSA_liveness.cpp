@@ -311,6 +311,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       {
          const CustomSet<unsigned int>& scalar_defs = data->CGetOpNodeInfo(eoc)->GetVariables(
              FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
+
          for(const auto scalar_def : scalar_defs)
          {
             if(HLSMgr->is_register_compatible(scalar_def))
@@ -318,11 +319,8 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                HLS->Rliv->add_op_definition(scalar_def, eoc);
             }
          }
+
          HLS->Rliv->add_state_for_ending_op(eoc, rosl);
-      }
-      for(const auto& so : state_info->starting_operations)
-      {
-         HLS->Rliv->add_state_for_starting_op(so, rosl);
       }
 
       // add dummy state
@@ -330,7 +328,6 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       {
          dummy_states.push_back(rosl);
          HLS->Rliv->add_dummy_state(rosl);
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Is a dummy state");
       }
 
       // add pipelined state
@@ -346,6 +343,12 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
             HLS->Rliv->add_op_step(op.first, op.second);
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Pipelined state");
+         continue;
+      }
+
+      if(state_info->is_dummy)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Is a dummy state");
          continue;
       }
 
@@ -801,41 +804,57 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Adjusting liveness of dummy states");
    for(const auto& ds : dummy_states)
    {
+      const StateInfoConstRef state_info = astg->CGetStateInfo(ds);
+      for(const auto& eo : state_info->executing_operations)
+      {
+         const CustomSet<unsigned int>& scalar_defs = data->CGetOpNodeInfo(eo)->GetVariables(
+             FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
+         for(const auto scalar_def : scalar_defs)
+         {
+            if(HLSMgr->is_register_compatible(scalar_def))
+            {
+               unsigned int step = HLS->Rliv->GetStepWrite(ds, eo);
+               HLS->Rliv->set_live_out(ds, scalar_def, step);
+            }
+         }
+      }
       BOOST_FOREACH(EdgeDescriptor e, boost::in_edges(ds, *astg))
       {
          vertex src_state = boost::source(e, *astg);
-         CustomSet<unsigned int> ending_not_starting;
-         const StateInfoConstRef state_info = astg->CGetStateInfo(src_state);
-         for(const auto& eo : state_info->ending_operations)
-         {
-            if(std::find(state_info->starting_operations.begin(), state_info->starting_operations.end(), eo) ==
-               state_info->starting_operations.end())
-            {
-               const CustomSet<unsigned int>& scalar_defs = data->CGetOpNodeInfo(eo)->GetVariables(
-                   FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
-               ending_not_starting.insert(scalar_defs.begin(), scalar_defs.end());
-            }
-         }
+         // HLS->Rliv->set_live_out(ds, HLS->Rliv->get_live_out(src_state));
 
-         HLS->Rliv->set_live_out(ds, HLS->Rliv->get_live_out(src_state));
-         HLS->Rliv->set_live_in(ds, HLS->Rliv->get_live_in(src_state));
-         HLS->Rliv->set_live_in(ds, HLS->Rliv->get_live_out(src_state));
+         for(const auto& li : HLS->Rliv->get_live_out(src_state))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                           "---" + FB->CGetBehavioralHelper()->PrintVariable(li.first) + "-d-" + STR(li.second));
+            HLS->Rliv->set_live_in(ds, li.first, li.second);
+         }
          /// add all the uses of ds to src_state
-         const StateInfoConstRef ds_state_info = astg->CGetStateInfo(ds);
-         for(const auto& eo : ds_state_info->executing_operations)
+         for(const auto& eo : state_info->executing_operations)
          {
             const CustomSet<unsigned int>& scalar_uses = data->CGetOpNodeInfo(eo)->GetVariables(
                 FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::USE);
             for(const auto scalar_use : scalar_uses)
             {
-               if(HLSMgr->is_register_compatible(scalar_use) &&
-                  ending_not_starting.find(scalar_use) != ending_not_starting.end())
+               if(HLSMgr->is_register_compatible(scalar_use))
                {
-                  unsigned int step = HLS->Rliv->GetStep(ds, eo, scalar_use, true);
-                  HLS->Rliv->set_live_out(src_state, scalar_use, step);
+                  auto step = HLS->Rliv->GetStep(ds, eo, scalar_use, true);
+                  HLS->Rliv->add_state_out_for_var(scalar_use, HLS->Rliv->get_op_where_defined(scalar_use), src_state,
+                                                   ds);
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                  "---" + FB->CGetBehavioralHelper()->PrintVariable(scalar_use) + "-a-" + STR(step));
                   HLS->Rliv->set_live_in(ds, scalar_use, step);
+                  HLS->Rliv->set_live_out(src_state, scalar_use, step);
+                  /// extend the lifetime of used variable to reduce the critical path
+                  BOOST_FOREACH(EdgeDescriptor oe, boost::out_edges(ds, *astg))
+                  {
+                     vertex target_state = boost::target(oe, *astg);
+                     const StateInfoConstRef tgt_state_info = astg->CGetStateInfo(target_state);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                    "---" + FB->CGetBehavioralHelper()->PrintVariable(scalar_use) + "-a-" +
+                                        STR(tgt_state_info->is_pipelined_state ? step : 0));
+                     HLS->Rliv->set_live_in(target_state, scalar_use, tgt_state_info->is_pipelined_state ? step : 0);
+                  }
                }
             }
          }
@@ -926,15 +945,18 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                       (state_info->is_pipelined_state && source_state_info->is_pipelined_state && !same_bb &&
                        source_state_info->is_prologue.count(roc))))
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                    "---Adding state in " + source_state_info->name + " " +
-                                        FB->CGetBehavioralHelper()->PrintVariable(tree_var) + " in state " +
-                                        state_info->name);
                      // THROW_ASSERT((HLS->Rliv->get_live_out(src_state).find(tree_var) !=
                      // HLS->Rliv->get_live_out(src_state).end()), "unexpected live out condition");
                      THROW_ASSERT(src_state != entry_state,
                                   "Source state for phi " + STR(data->CGetOpNodeInfo(roc)->GetNodeId()) + " not found");
-                     HLS->Rliv->add_state_in_for_var(tree_var, roc, rosl, src_state);
+                     if(!state_info->is_pipelined_state || !HLS->Rliv->is_a_dummy_state(src_state))
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                       "---Adding state in " + source_state_info->name + " " +
+                                           FB->CGetBehavioralHelper()->PrintVariable(tree_var) + " in state " +
+                                           state_info->name);
+                        HLS->Rliv->add_state_in_for_var(tree_var, roc, rosl, src_state);
+                     }
 #if HAVE_ASSERTS
                      found_state = true;
 #endif

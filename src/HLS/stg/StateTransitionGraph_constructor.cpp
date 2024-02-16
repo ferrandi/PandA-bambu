@@ -130,8 +130,10 @@ EdgeDescriptor StateTransitionGraph_constructor::connect_state(const vertex& src
       state_transition_graph->GetStateTransitionGraphInfo()->is_a_dag = false;
    }
    // get the vertex iterator
+#if HAVE_ASSERTS
    VertexIterator vIterBeg, vIterEnd;
    boost::tie(vIterBeg, vIterEnd) = boost::vertices(*state_transition_graph);
+#endif
    // check that source and target have been already added
    THROW_ASSERT(std::find(vIterBeg, vIterEnd, src) != vIterEnd, "The source vertex does not belong to the graph");
    THROW_ASSERT(std::find(vIterBeg, vIterEnd, tgt) != vIterEnd, "The target vertex does not belong to the graph");
@@ -151,8 +153,6 @@ EdgeDescriptor StateTransitionGraph_constructor::connect_state(const vertex& src
    {
       state_transition_graphs_collection->AddSelector(e, type);
    }
-   std::cerr << "edge " << state_transition_graph->GetStateInfo(src)->name << "-->"
-             << state_transition_graph->GetStateInfo(tgt)->name << "\n";
    return e;
 }
 

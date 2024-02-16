@@ -136,15 +136,15 @@ DesignFlowStep_Status fsm_controller::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-static std::string input_vector_to_string(const std::vector<long long int>& to_be_printed, bool with_comma)
+static std::string input_vector_to_string(const std::vector<long long int>& to_be_printed)
 {
    std::string output;
    for(unsigned int i = 0; i < to_be_printed.size(); i++)
    {
       output += (to_be_printed[i] == default_COND ? "-" : std::to_string(to_be_printed[i]));
-      if(i != (to_be_printed.size() - 1) && with_comma)
+      if(i != (to_be_printed.size() - 1))
       {
-         output += ",";
+         output += "/";
       }
    }
    return output;
@@ -441,7 +441,7 @@ void fsm_controller::create_state_machine(std::string& parse)
 
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + stg->CGetStateInfo(v)->name);
 
-      parse += stg->CGetStateInfo(v)->name + " 0" + input_vector_to_string(present_state[v], false);
+      parse += stg->CGetStateInfo(v)->name + " 0/" + input_vector_to_string(present_state[v]);
 
       std::list<EdgeDescriptor> sorted;
       EdgeDescriptor default_edge;
@@ -643,7 +643,17 @@ void fsm_controller::create_state_machine(std::string& parse)
                   if(source_activation && (std::get<1>(a) == tgt || std::get<1>(a) == NULL_VERTEX))
                   {
                      THROW_ASSERT(present_state[v][out_ports[s.second]] != 0, "unexpected condition");
-                     transition_outputs[out_ports[s.second]] = 1;
+                     auto data_operation = std::get<2>(a);
+                     if(data_operation.second != NULL_VERTEX)
+                     {
+                        THROW_ASSERT(cond_ports.find(data_operation.second) != cond_ports.end(),
+                                     "unexpected condition");
+                        transition_outputs[out_ports[s.second]] = cond_ports.at(data_operation.second) + 3;
+                     }
+                     else
+                     {
+                        transition_outputs[out_ports[s.second]] = 1;
+                     }
                   }
                }
             }
@@ -677,8 +687,8 @@ void fsm_controller::create_state_machine(std::string& parse)
             }
          }
 
-         parse += " " + stg->CGetStateInfo(next_state)->name + " " + (assert_done_port ? "1" : "-") +
-                  input_vector_to_string(transition_outputs, false);
+         parse += " " + stg->CGetStateInfo(next_state)->name + " " + (assert_done_port ? "1/" : "-/") +
+                  input_vector_to_string(transition_outputs);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
       }
 

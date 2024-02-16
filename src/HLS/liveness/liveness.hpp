@@ -101,9 +101,6 @@ class liveness
    /// store where an operation run and need its input
    std::map<vertex, CustomOrderedSet<vertex>> running_operations;
 
-   /// state where an operation start
-   std::map<vertex, CustomOrderedSet<vertex>> starting_operations;
-
    std::map<vertex, std::map<vertex, unsigned>> vertex_to_op_step_in_map;
    std::map<vertex, std::map<vertex, unsigned>> vertex_to_op_step_out_map;
    std::map<unsigned, unsigned> BB2MaxStep;
@@ -337,22 +334,6 @@ class liveness
    }
 
    /**
-    * return in which support vertex the operation is starting
-    * @param op is the operation
-    */
-   const CustomOrderedSet<vertex>& get_state_where_start(vertex op) const;
-
-   /**
-    * add a starting state for a given operation
-    * @param op is the operation
-    * @param v is the support vertex where the operation starts
-    */
-   void add_state_for_starting_op(vertex op, vertex v)
-   {
-      starting_operations[op].insert(v);
-   }
-
-   /**
     * define the name of a state
     * @param v is state
     * @param name is a string associated with the vertex v
@@ -398,7 +379,7 @@ class liveness
     * @param state is the state checked
     * @return true in case the state is a dummy state, false otherwise
     */
-   bool is_a_dummy_state(vertex state)
+   bool is_a_dummy_state(vertex state) const
    {
       return dummy_states.find(state) != dummy_states.end();
    }
