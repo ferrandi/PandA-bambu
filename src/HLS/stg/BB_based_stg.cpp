@@ -946,12 +946,18 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
 
          if(!isLP)
          {
-            set_edge_condition(cfg_edge_ids, STG_builder, last_operation, s_e);
-            if(call_operations.find(ls) != call_operations.end())
+            if(!cfg_edge_ids.empty())
             {
-               CustomOrderedSet<vertex> ops;
-               ops.insert(call_operations.at(ls).begin(), call_operations.at(ls).end());
-               STG_builder->set_unbounded_condition(s_e, ALL_FINISHED, ops, ls);
+               set_edge_condition(cfg_edge_ids, STG_builder, last_operation, s_e);
+            }
+            else
+            {
+               if(call_operations.find(ls) != call_operations.end())
+               {
+                  CustomOrderedSet<vertex> ops;
+                  ops.insert(call_operations.at(ls).begin(), call_operations.at(ls).end());
+                  STG_builder->set_unbounded_condition(s_e, ALL_FINISHED, ops, ls);
+               }
             }
          }
          if(call_states.find(ls) != call_states.end())
@@ -965,7 +971,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                EdgeDescriptor s_e1 = STG_builder->connect_state(call_set, s_tgt, edge_type);
                if(!isLP)
                {
-                  if(FB_CFG_SELECTOR & fbb->GetSelector(e))
+                  if(!cfg_edge_ids.empty())
                   {
                      set_edge_condition(cfg_edge_ids, STG_builder, last_operation, s_e1);
                   }
