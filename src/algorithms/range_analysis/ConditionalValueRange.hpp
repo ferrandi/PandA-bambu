@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2019-2024 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,7 +31,7 @@
  *
  */
 /**
- * @file eSSA.hpp
+ * @file ConditionalValueRange.hpp
  * @brief
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
@@ -40,53 +40,44 @@
  * Last modified by $Author$
  *
  */
+#ifndef _RANGE_ANALYSIS_CONDITIONAL_VALUE_RANGE_HPP_
+#define _RANGE_ANALYSIS_CONDITIONAL_VALUE_RANGE_HPP_
+#include "refcount.hpp"
 
-#ifndef ESSA_HPP
-#define ESSA_HPP
+#include <map>
 
-#include "basic_block.hpp"
-#include "custom_map.hpp"
-#include "function_frontend_flow_step.hpp"
-#include "tree_node.hpp"
-
-REF_FORWARD_DECL(Operand);
-REF_FORWARD_DECL(tree_node);
 CONSTREF_FORWARD_DECL(tree_node);
-class ValueInfo;
-class DFSInfo;
+REF_FORWARD_DECL(ValueRange);
 
-class eSSA : public FunctionFrontendFlowStep
+class ConditionalValueRange
 {
- public:
-   using ValueInfoLookup = CustomMap<tree_nodeConstRef, unsigned int>;
-
  private:
-   const BBGraphsCollectionRef bbgc;
-   const BBGraphRef DT;
+   const tree_nodeConstRef V;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
-   ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
-
-   bool renameUses(CustomSet<OperandRef>& OpSet, ValueInfoLookup& ValueInfoNums, std::vector<ValueInfo>& ValueInfos,
-                   CustomMap<unsigned int, DFSInfo>& DFSInfos,
-                   CustomSet<std::pair<unsigned int, unsigned int>>& EdgeUsesOnly, statement_list* sl);
+   std::map<unsigned int, ValueRangeRef> bbVR;
 
  public:
-   /**
-    * Constructor.
-    * @param _Param is the set of the parameters
-    * @param _AppM is the application manager
-    * @param function_id is the identifier of the function
-    * @param design_flow_manager is the design flow manager
-    */
-   eSSA(const ParameterConstRef Param, const application_managerRef AM, unsigned int f_id,
-        const DesignFlowManagerConstRef dfm);
+   ConditionalValueRange(const tree_nodeConstRef& _V, const std::map<unsigned int, ValueRangeRef>& _bbVR);
+   ConditionalValueRange(const tree_nodeConstRef& _V, unsigned int TrueBBI, unsigned int FalseBBI,
+                         const ValueRangeRef& TrueVR, const ValueRangeRef& FalseVR);
+
+   inline const std::map<unsigned int, ValueRangeRef>& getVR() const
+   {
+      return bbVR;
+   }
+
+   inline const tree_nodeConstRef& getVar() const
+   {
+      return V;
+   }
 
    /**
-    * compute the e-SSA form
-    * @return the exit status of this step
+    * @brief Add an interval associated to a new basic block
+    *
+    * @param bbi
+    * @param cvr
     */
-   DesignFlowStep_Status InternalExec() override;
+   void addVR(unsigned int bbi, const ValueRangeRef& cvr);
 };
 
-#endif // !ESSA_HPP
+#endif // _RANGE_ANALYSIS_CONDITIONAL_VALUE_RANGE_HPP_

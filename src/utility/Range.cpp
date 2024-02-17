@@ -2191,10 +2191,6 @@ RangeRef Range::zextOrTrunc(bw_t bitwidth) const
 
 RangeRef Range::intersectWith(const RangeConstRef& other) const
 {
-#ifdef DEBUG_RANGE_OP
-   PRINT_MSG("intersectWith-this: " << *this << std::endl << "intersectWith-other: " << *other);
-#endif
-
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
 
@@ -2305,10 +2301,6 @@ RangeRef Range::intersectWith(const RangeConstRef& other) const
 
 RangeRef Range::unionWith(const RangeConstRef& other) const
 {
-#ifdef DEBUG_RANGE_OP
-   PRINT_MSG("unionWith-this: " << *this << std::endl << "unionWith-other: " << *other);
-#endif
-
    if(this->isEmpty() || this->isUnknown())
    {
       return RangeRef(other->clone());

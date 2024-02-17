@@ -1182,12 +1182,12 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
 
 eSSA::eSSA(const ParameterConstRef params, const application_managerRef AM, unsigned int f_id,
            const DesignFlowManagerConstRef dfm)
-    : FunctionFrontendFlowStep(AM, f_id, ESSA, dfm, params)
+    : FunctionFrontendFlowStep(AM, f_id, ESSA, dfm, params),
+      bbgc(new BBGraphsCollection(BBGraphInfoRef(new BBGraphInfo(AppM, function_id)), parameters)),
+      DT(new BBGraph(bbgc, D_SELECTOR))
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
-
-eSSA::~eSSA() = default;
 
 const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 eSSA::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -1219,74 +1219,67 @@ eSSA::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relati
    return relationships;
 }
 
-void eSSA::Initialize()
+static void compute_dominator_tree(const BBGraphRef& DT, const std::map<unsigned int, blocRef>& list_of_bloc,
+                                   const BBGraphsCollectionRef& bbgc, const ParameterConstRef& parameters)
 {
-}
-
-DesignFlowStep_Status eSSA::InternalExec()
-{
-   auto TM = AppM->get_tree_manager();
-   const auto* fd = GetPointer<const function_decl>(TM->get_tree_node_const(function_id));
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
-
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Extended SSA step");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Dominator tree computation...");
-
    /// store the IR BB graph ala boost::graph
-   BBGraphsCollectionRef GCC_bb_graphs_collection(
-       new BBGraphsCollection(BBGraphInfoRef(new BBGraphInfo(AppM, function_id)), parameters));
-   BBGraph GCC_bb_graph(GCC_bb_graphs_collection, CFG_SELECTOR);
-   CustomUnorderedMap<unsigned int, vertex> inverse_vertex_map;
+   auto& inverse_vertex_map = DT->GetBBGraphInfo()->bb_index_map;
+   inverse_vertex_map.clear();
    /// add vertices
-   for(const auto& block : sl->list_of_bloc)
+   for(const auto& block : list_of_bloc)
    {
-      inverse_vertex_map.try_emplace(block.first,
-                                     GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second))));
+      inverse_vertex_map.try_emplace(block.first, bbgc->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second))));
    }
 
    /// add edges
-   for(const auto& curr_bb_pair : sl->list_of_bloc)
+   for(const auto& curr_bb_pair : list_of_bloc)
    {
       unsigned int curr_bb = curr_bb_pair.first;
-      for(const auto& lop : sl->list_of_bloc.at(curr_bb)->list_of_pred)
+      for(const auto& lop : list_of_bloc.at(curr_bb)->list_of_pred)
       {
          THROW_ASSERT(static_cast<bool>(inverse_vertex_map.count(lop)),
                       "BB" + STR(lop) + " (successor of BB" + STR(curr_bb) + ") does not exist");
-         GCC_bb_graphs_collection->AddEdge(inverse_vertex_map.at(lop), inverse_vertex_map.at(curr_bb), CFG_SELECTOR);
+         bbgc->AddEdge(inverse_vertex_map.at(lop), inverse_vertex_map.at(curr_bb), CFG_SELECTOR);
       }
 
-      for(const auto& los : sl->list_of_bloc.at(curr_bb)->list_of_succ)
+      for(const auto& los : list_of_bloc.at(curr_bb)->list_of_succ)
       {
          if(los == bloc::EXIT_BLOCK_ID)
          {
-            GCC_bb_graphs_collection->AddEdge(inverse_vertex_map.at(curr_bb), inverse_vertex_map.at(los), CFG_SELECTOR);
+            bbgc->AddEdge(inverse_vertex_map.at(curr_bb), inverse_vertex_map.at(los), CFG_SELECTOR);
          }
       }
 
-      if(sl->list_of_bloc.at(curr_bb)->list_of_succ.empty())
+      if(list_of_bloc.at(curr_bb)->list_of_succ.empty())
       {
-         GCC_bb_graphs_collection->AddEdge(inverse_vertex_map.at(curr_bb), inverse_vertex_map.at(bloc::EXIT_BLOCK_ID),
-                                           CFG_SELECTOR);
+         bbgc->AddEdge(inverse_vertex_map.at(curr_bb), inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), CFG_SELECTOR);
       }
    }
 
    /// add a connection between entry and exit thus avoiding problems with non terminating code
-   GCC_bb_graphs_collection->AddEdge(inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID),
-                                     inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), CFG_SELECTOR);
+   bbgc->AddEdge(inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID), inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), CFG_SELECTOR);
 
-   dominance<BBGraph> bb_dominators(GCC_bb_graph, inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID),
+   dominance<BBGraph> bb_dominators(BBGraph(bbgc, CFG_SELECTOR), inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID),
                                     inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), parameters);
    bb_dominators.calculate_dominance_info(dominance<BBGraph>::CDI_DOMINATORS);
-
-   DT.reset(new BBGraph(GCC_bb_graphs_collection, D_SELECTOR));
-   for(const auto& it : bb_dominators.get_dominator_map())
+   for(const auto& [child, dom] : bb_dominators.get_dominator_map())
    {
-      if(it.first != inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID))
+      if(child != inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID))
       {
-         GCC_bb_graphs_collection->AddEdge(it.second, it.first, D_SELECTOR);
+         bbgc->AddEdge(dom, child, D_SELECTOR);
       }
    }
-   DT->GetBBGraphInfo()->bb_index_map = std::move(inverse_vertex_map);
+}
+
+DesignFlowStep_Status eSSA::InternalExec()
+{
+   const auto TM = AppM->get_tree_manager();
+   const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function_id));
+   const auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
+
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Extended SSA step");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Dominator tree computation...");
+   compute_dominator_tree(DT, sl->list_of_bloc, bbgc, parameters);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "Dominator tree computation completed (" + STR(DT->num_bblocks()) + " BB generated)");
 
@@ -1348,12 +1341,12 @@ DesignFlowStep_Status eSSA::InternalExec()
 
    while(!workStack.empty())
    {
-      const auto& BB = DT->CGetBBNodeInfo(workStack.top().first)->block;
-      auto ChildRange = workStack.top().second;
+      auto& [V, children] = workStack.top();
+      const auto& BB = DT->CGetBBNodeInfo(V)->block;
 
       // If we visited all of the children of this node, "recurse" back up the
       // stack setting the DFOutNum.
-      if(ChildRange.empty())
+      if(children.empty())
       {
          DFSInfos[BB->number].DFSOut = DFSNum++;
          workStack.pop();
@@ -1361,17 +1354,17 @@ DesignFlowStep_Status eSSA::InternalExec()
       else
       {
          // Otherwise, recursively visit this child.
-         const auto& Child = DT->CGetBBNodeInfo(ChildRange.front())->block;
-         workStack.top().second.pop_front();
+         const auto child_v = children.front();
+         children.pop_front();
+         const auto& child = DT->CGetBBNodeInfo(child_v)->block;
 
-         workStack.push(
-             {ChildRange.front(), boost::make_iterator_range(boost::adjacent_vertices(ChildRange.front(), *DT))});
-         DFSInfos[Child->number].DFSIn = DFSNum++;
+         workStack.push({child_v, boost::make_iterator_range(boost::adjacent_vertices(child_v, *DT))});
+         DFSInfos[child->number].DFSIn = DFSNum++;
 
          // Perform BB analysis for eSSA purpose
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing BB" + STR(Child->number));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing BB" + STR(child->number));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-         BBvisit(Child);
+         BBvisit(child);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
    }
@@ -1385,13 +1378,13 @@ DesignFlowStep_Status eSSA::InternalExec()
                   "Analysis detected " + STR(OpsToRename.size()) + " operations to rename");
    if(OpsToRename.empty())
    {
-      DT.reset();
+      bbgc->clear();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       return DesignFlowStep_Status::UNCHANGED;
    }
 
    const auto modified = renameUses(OpsToRename, ValueInfoNums, ValueInfos, DFSInfos, EdgeUsesOnly, sl);
-   DT.reset();
+   bbgc->clear();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
    modified ? function_behavior->UpdateBBVersion() : 0;

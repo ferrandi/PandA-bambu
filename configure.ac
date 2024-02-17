@@ -299,6 +299,7 @@ panda_USE_LIB_LOOPS=no;
 panda_USE_LIB_PARSER=no;
 panda_USE_LIB_POLIXML=no;
 panda_USE_LIB_PRAGMA=no;
+panda_USE_RANGE_ANALYSIS=no;
 panda_USE_LIB_RTL_CHARACTERIZATION=no;
 panda_USE_LIB_SIMULATION_WRAPPER=no;
 panda_USE_LIB_SYNTHESIS_WRAPPER=no;
@@ -369,6 +370,7 @@ if test "x$panda_USE_BAMBU" = xyes; then
   panda_USE_LIB_HLS=yes;
   panda_USE_LIB_HOST_PROFILING=yes;
   panda_USE_LIB_PRAGMA=yes;
+  panda_USE_RANGE_ANALYSIS=yes;
   panda_USE_LIB_SIMULATION_WRAPPER=yes;
   panda_USE_LIB_SYNTHESIS_WRAPPER=yes;
   panda_USE_LIB_TECHNOLOGY=yes;
@@ -788,8 +790,9 @@ AC_CONFIG_FILES(
 AM_CONDITIONAL(BUILD_LIB_CLIQUECOVER,  test "x$panda_USE_LIB_CLIQUECOVER" = xyes)
 AM_CONDITIONAL(BUILD_LIB_DOMINANCE,  test "x$panda_USE_LIB_DOMINANCE" = xyes)
 AM_CONDITIONAL(BUILD_LIB_LOOPS,  test "x$panda_USE_LIB_LOOPS" = xyes)
+AM_CONDITIONAL(BUILD_LIB_RANGE_ANALYSIS,  test "x$panda_USE_RANGE_ANALYSIS" = xyes)
 
-if test "x$panda_USE_LIB_CLIQUECOVER" = xyes || test "x$panda_USE_LIB_DOMINANCE" = xyes || test "x$panda_USE_LIB_LOOPS" = xyes; then
+if test "x$panda_USE_LIB_CLIQUECOVER" = xyes || test "x$panda_USE_LIB_DOMINANCE" = xyes || test "x$panda_USE_LIB_LOOPS" = xyes || test "x$panda_USE_RANGE_ANALYSIS" = xyes; then
   panda_USE_LIB_ALGORITHMS=yes;
 fi
 AM_CONDITIONAL(BUILD_LIB_ALGORITHMS,  test "x$panda_USE_LIB_ALGORITHMS" = xyes)

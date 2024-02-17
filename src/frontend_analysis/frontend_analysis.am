@@ -240,6 +240,7 @@ if BUILD_BAMBU
       -isystem $(top_srcdir)/ext/mockturtle/lib/percy\
       -isystem $(top_srcdir)/ext/mockturtle/lib/abcsat\
       -isystem $(top_srcdir)/ext/mockturtle/lib/bill\
+      -I$(top_srcdir)/src/algorithms/range_analysis \
       -I$(top_srcdir)/src/circuit \
       -I$(top_srcdir)/src/design_flows/backend/ToHDL \
       -I$(top_srcdir)/src/design_flows/technology \
