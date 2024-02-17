@@ -346,7 +346,8 @@ unsigned liveness::GetStep(vertex v, vertex op, unsigned int var, bool in) const
    }
 }
 
-unsigned liveness::GetStepPhiIn(vertex op, unsigned int var, unsigned BB_src, unsigned int BB_src_state) const
+unsigned liveness::GetStepPhiIn(vertex op, unsigned int var, unsigned BB_src, unsigned int BB_src_state,
+                                vertex src_state) const
 {
    auto def_op = get_op_where_defined(var);
    auto def_op_BB_index = vertex_BB.at(def_op);
@@ -366,7 +367,7 @@ unsigned liveness::GetStepPhiIn(vertex op, unsigned int var, unsigned BB_src, un
          auto offset = (ostep % II == 0 ? II : ostep % II) - (step % II);
          THROW_ASSERT(step + offset >= 1,
                       "unexpected condition ostep=" + STR(ostep) + " II=" + STR(II) + " step=" + STR(step));
-         return step + (offset > 0 ? offset - 1 : 0);
+         return step + (offset > 0 ? offset - 1 : 0) + (is_a_dummy_state(src_state) ? 1 : 0);
       }
       else
       {

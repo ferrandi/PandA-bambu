@@ -949,14 +949,11 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                      // HLS->Rliv->get_live_out(src_state).end()), "unexpected live out condition");
                      THROW_ASSERT(src_state != entry_state,
                                   "Source state for phi " + STR(data->CGetOpNodeInfo(roc)->GetNodeId()) + " not found");
-                     if(!state_info->is_pipelined_state || !HLS->Rliv->is_a_dummy_state(src_state))
-                     {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                       "---Adding state in " + source_state_info->name + " " +
-                                           FB->CGetBehavioralHelper()->PrintVariable(tree_var) + " in state " +
-                                           state_info->name);
-                        HLS->Rliv->add_state_in_for_var(tree_var, roc, rosl, src_state);
-                     }
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                    "---Adding state in " + source_state_info->name + " " +
+                                        FB->CGetBehavioralHelper()->PrintVariable(tree_var) + " in state " +
+                                        state_info->name);
+                     HLS->Rliv->add_state_in_for_var(tree_var, roc, rosl, src_state);
 #if HAVE_ASSERTS
                      found_state = true;
 #endif
