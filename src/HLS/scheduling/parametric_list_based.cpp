@@ -769,7 +769,7 @@ bool parametric_list_based::compute_minmaxII(std::list<vertex>& bb_operations, c
                                GET_NAME(flow_graph_with_feedbacks, tgt) + " " + STR(edge_delay));
             ssspSolver.add_edge(op_varindex, operation_to_varindex.at(tgt), -edge_delay);
          }
-         else if((edge_type & (FB_DFG_SELECTOR | FB_ADG_SELECTOR)))
+         else if((edge_type & (FB_DFG_SELECTOR | FB_ADG_AGG_SELECTOR)))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---feedback edge " + GET_NAME(flow_graph_with_feedbacks, operation) + "-" +
