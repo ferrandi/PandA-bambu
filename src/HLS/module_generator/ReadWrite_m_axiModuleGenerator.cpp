@@ -177,27 +177,15 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_
    out << "localparam BITSIZE_address=BITSIZE_" << _ports_in[i_in4].name << ",\n"
        << "  BITSIZE_bus=" << _ports_out[o_wdata].type_size << ",\n"
        << "  BITSIZE_bus_size=BITSIZE_bus/8,\n"
-       << "  BITSIZE_data=BITSIZE_" << _ports_in[i_in3].name << ",\n"
+       << "  BITSIZE_data=" << _ports_in[i_in3].type_size << ",\n"
        << "  BITSIZE_data_size=BITSIZE_data/8,\n"
+       << "  BITSIZE_log_data_size=" << ceil_log2(_ports_in[i_in3].type_size / 8) << ",\n"
        << "  BITSIZE_awlen=" << _ports_out[o_awlen].type_size << ",\n"
        << "  BITSIZE_arlen=" << _ports_out[o_arlen].type_size << ",\n"
        << "  BITSIZE_awid=" << _ports_out[o_awid].type_size << ",\n"
        << "  BITSIZE_arid=" << _ports_out[o_arid].type_size << ",\n"
        << "  BITSIZE_bid=" << _ports_in[i_bid].type_size << ",\n"
        << "  BITSIZE_rid=" << _ports_in[i_rid].type_size << ";\n\n";
-   out << R"(
-function automatic integer log2;
-  input integer value;
-  `ifdef _SIM_HAVE_CLOG2
-    log2 = $clog2(value);
-  `else
-    automatic integer temp_value = value-1;
-    for (log2=0; temp_value > 0; log2=log2+1)
-      temp_value = temp_value >> 1;
-  `endif
-endfunction
-
-   )";
 
    /* No cache, build the AXI controller */
    std::string ip_components;
@@ -339,7 +327,7 @@ endfunction
       }
 
       ip_components = "IOB_cache_axi";
-      out << "wire [BITSIZE_address-1:log2(BITSIZE_data_size)] addr;\n"
+      out << "wire [BITSIZE_address-1:BITSIZE_log_data_size] addr;\n"
           << "wire [BITSIZE_data_size-1:0] wstrb;\n"
           << "wire [BITSIZE_data-1:0] rdata;\n"
           << "wire ready;\n"
@@ -354,7 +342,7 @@ endfunction
           << "assign " << _ports_out[o_awuser].name << " = 0;\n"
           << "assign " << _ports_out[o_awregion].name << " = 0;\n\n"
           << "assign done_port = state == S_IDLE? ready : !dirty;\n"
-          << "assign addr = " << _ports_in[i_in4].name << "[BITSIZE_address-1:log2(BITSIZE_data_size)];\n"
+          << "assign addr = " << _ports_in[i_in4].name << "[BITSIZE_address-1:BITSIZE_log_data_size];\n"
           << "assign wstrb = " << _ports_in[i_in1].name << " ? (1 << (" << _ports_in[i_in2].name << "/8)) - 1 : 0;\n"
           << "assign " << _ports_out[o_out1].name << " = done_port ? rdata : 0;\n\n"
           << "always @(*) begin\n"
@@ -410,7 +398,7 @@ endfunction
           << "  .CTRL_CACHE(`_CACHE_CNT),\n"
           << "  .CTRL_CNT(`_CACHE_CNT),\n"
           << "  .BURST_TYPE(" << axi_burst_type << "),\n"
-          << "  .BITSIZE_addr(BITSIZE_address-log2(BITSIZE_data_size)),\n"
+          << "  .BITSIZE_addr(BITSIZE_address-BITSIZE_log_data_size),\n"
           << "  .BITSIZE_wdata(BITSIZE_data),\n"
           << "  .BITSIZE_wstrb(BITSIZE_data_size),\n"
           << "  .BITSIZE_rdata(BITSIZE_data),\n"
