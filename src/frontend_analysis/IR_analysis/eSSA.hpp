@@ -44,22 +44,20 @@
 #ifndef ESSA_HPP
 #define ESSA_HPP
 
-#include "basic_block.hpp"
 #include "custom_map.hpp"
+#include "custom_set.hpp"
 #include "function_frontend_flow_step.hpp"
-#include "tree_node.hpp"
 
+#include <map>
+
+REF_FORWARD_DECL(BBGraph);
+REF_FORWARD_DECL(BBGraphsCollection);
 REF_FORWARD_DECL(Operand);
-REF_FORWARD_DECL(tree_node);
-CONSTREF_FORWARD_DECL(tree_node);
-class ValueInfo;
-class DFSInfo;
+struct RenameInfos;
+class statement_list;
 
 class eSSA : public FunctionFrontendFlowStep
 {
- public:
-   using ValueInfoLookup = CustomMap<tree_nodeConstRef, unsigned int>;
-
  private:
    const BBGraphsCollectionRef bbgc;
    const BBGraphRef DT;
@@ -67,9 +65,7 @@ class eSSA : public FunctionFrontendFlowStep
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   bool renameUses(CustomSet<OperandRef>& OpSet, ValueInfoLookup& ValueInfoNums, std::vector<ValueInfo>& ValueInfos,
-                   CustomMap<unsigned int, DFSInfo>& DFSInfos,
-                   CustomSet<std::pair<unsigned int, unsigned int>>& EdgeUsesOnly, statement_list* sl);
+   bool renameUses(RenameInfos& infos, statement_list* sl);
 
  public:
    /**
@@ -82,10 +78,6 @@ class eSSA : public FunctionFrontendFlowStep
    eSSA(const ParameterConstRef Param, const application_managerRef AM, unsigned int f_id,
         const DesignFlowManagerConstRef dfm);
 
-   /**
-    * compute the e-SSA form
-    * @return the exit status of this step
-    */
    DesignFlowStep_Status InternalExec() override;
 };
 
