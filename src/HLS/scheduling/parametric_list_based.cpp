@@ -769,7 +769,7 @@ bool parametric_list_based::compute_minmaxII(std::list<vertex>& bb_operations, c
                                GET_NAME(flow_graph_with_feedbacks, tgt) + " " + STR(edge_delay));
             ssspSolver.add_edge(op_varindex, operation_to_varindex.at(tgt), -edge_delay);
          }
-         if((edge_type & FB_DFG_SELECTOR))
+         else if((edge_type & (FB_DFG_SELECTOR | FB_ADG_SELECTOR)))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---feedback edge " + GET_NAME(flow_graph_with_feedbacks, operation) + "-" +
@@ -2000,6 +2000,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
             THROW_ASSERT(op.first != NULL_VERTEX, "unexpected condition");
             auto first_vertex = op.second;
             auto last_vertex = op.first;
+
             const auto cs_first_vertex = from_strongtype_cast<unsigned>(schedule->get_cstep(first_vertex).second);
             const auto cs_last_vertex = from_strongtype_cast<unsigned>(schedule->get_cstep(last_vertex).second);
             auto last_vertex_n_cycles = (GET_TYPE(flow_graph, last_vertex) & (TYPE_PHI | TYPE_VPHI) ? 0 : 1) +
@@ -2025,6 +2026,10 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                std::list<vertex> phi_list;
                auto latest_cs = computeLatestStep(cs_last_vertex, opDFG, first_vertex, Operations, schedule, 0,
                                                   phi_list, HLS->allocation_information->getConnectionOffset());
+               if(latest_cs >= LP_II + from_strongtype_cast<unsigned>(initialCycle))
+               {
+                  latest_cs = LP_II + from_strongtype_cast<unsigned>(initialCycle) - 1;
+               }
                for(auto p : phi_list)
                {
                   schedule->remove_sched(p);
