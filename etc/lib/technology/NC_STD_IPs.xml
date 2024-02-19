@@ -1377,7 +1377,6 @@ end"/>
           <parameter name="MEM_DUMP">0</parameter>
           <parameter name="MEM_DUMP_FILE">&quot;&quot;memdump.csv&quot;&quot;</parameter>
           <parameter name="QUEUE_SIZE">4</parameter>
-          <parameter name="QUEUE_BITSIZE">2</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -1434,8 +1433,19 @@ end"/>
           </port_o>
           <NP_functionality
             IP_COMPONENT="if_utils"
-            LIBRARY="TestbenchMEMMinimal index MEM_DELAY_READ MEM_DELAY_WRITE base_addr MEM_DUMP MEM_DUMP_FILE QUEUE_SIZE QUEUE_BITSIZE M_DataRdy M_Rdata_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_back_pressure Sout_DataRdy Sout_Rdata_ram S_oe_ram S_we_ram S_addr_ram S_data_ram_size S_Wdata_ram"
+            LIBRARY="TestbenchMEMMinimal index MEM_DELAY_READ MEM_DELAY_WRITE base_addr MEM_DUMP MEM_DUMP_FILE QUEUE_SIZE M_DataRdy M_Rdata_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_back_pressure Sout_DataRdy Sout_Rdata_ram S_oe_ram S_we_ram S_addr_ram S_data_ram_size S_Wdata_ram"
             VERILOG_PROVIDED="
+function automatic integer log2;
+  input integer value;
+  `ifdef _SIM_HAVE_CLOG2
+    log2 = $clog2(value);
+  `else
+    automatic integer temp_value = value-1;
+    for (log2=0; temp_value &gt; 0; log2=log2+1)
+      temp_value = temp_value &gt;&gt; 1;
+  `endif
+endfunction
+
 localparam MEM_DELAY_MAX= MEM_DELAY_READ &gt; MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM_DELAY_WRITE,
   ACTIVE_READ= MEM_DELAY_READ &gt; 1 ? (MEM_DELAY_READ-2) : 0,
   ACTIVE_WRITE= MEM_DELAY_WRITE &gt; 1 ? (MEM_DELAY_WRITE-2) : 0,
@@ -1455,7 +1465,8 @@ localparam MEM_DELAY_MAX= MEM_DELAY_READ &gt; MEM_DELAY_WRITE ? MEM_DELAY_READ :
   OFFSET_Wdata=OFFSET_Wsize+BITSIZE_Wsize,
   BITSIZE_S_Rdata=BITSIZE_Sout_Rdata_ram/BITSIZE_S_oe_ram,
   BITSIZE_S_ready=1,
-  SLAVE_VALID=BITSIZE_Mout_oe_ram == BITSIZE_S_oe_ram;
+  SLAVE_VALID=BITSIZE_Mout_oe_ram == BITSIZE_S_oe_ram,
+  QUEUE_BITSIZE=QUEUE_SIZE > 1 ? log2(QUEUE_SIZE) : 1;
 
 genvar i;
 integer dump_file;

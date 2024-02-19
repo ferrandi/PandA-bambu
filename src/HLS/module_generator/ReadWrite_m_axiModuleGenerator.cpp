@@ -177,15 +177,17 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_
    out << "localparam BITSIZE_address=BITSIZE_" << _ports_in[i_in4].name << ",\n"
        << "  BITSIZE_bus=" << _ports_out[o_wdata].type_size << ",\n"
        << "  BITSIZE_bus_size=BITSIZE_bus/8,\n"
-       << "  BITSIZE_data=" << _ports_in[i_in3].type_size << ",\n"
+       << "  BITSIZE_data=BITSIZE_" << _ports_in[i_in3].name << ",\n"
        << "  BITSIZE_data_size=BITSIZE_data/8,\n"
-       << "  BITSIZE_log_data_size=" << ceil_log2(_ports_in[i_in3].type_size / 8) << ",\n"
        << "  BITSIZE_awlen=" << _ports_out[o_awlen].type_size << ",\n"
        << "  BITSIZE_arlen=" << _ports_out[o_arlen].type_size << ",\n"
        << "  BITSIZE_awid=" << _ports_out[o_awid].type_size << ",\n"
        << "  BITSIZE_arid=" << _ports_out[o_arid].type_size << ",\n"
        << "  BITSIZE_bid=" << _ports_in[i_bid].type_size << ",\n"
        << "  BITSIZE_rid=" << _ports_in[i_rid].type_size << ";\n\n";
+
+   out << "// BITSIZE_log_data_size = log2(BITISZE_in3 >> 3)\n"
+       << "localparam BITSIZE_log_data_size = " << ceil_log2(_ports_in[i_in3].type_size / 8) << ";\n ";
 
    /* No cache, build the AXI controller */
    std::string ip_components;
