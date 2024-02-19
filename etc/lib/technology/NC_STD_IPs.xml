@@ -1373,7 +1373,6 @@ end"/>
           <parameter name="index">0</parameter>
           <parameter name="MEM_DELAY_READ">2</parameter>
           <parameter name="MEM_DELAY_WRITE">1</parameter>
-          <parameter name="PIPELINED">1</parameter>
           <parameter name="base_addr">1073741824</parameter>
           <parameter name="MEM_DUMP">0</parameter>
           <parameter name="MEM_DUMP_FILE">&quot;&quot;memdump.csv&quot;&quot;</parameter>
@@ -1435,7 +1434,7 @@ end"/>
           </port_o>
           <NP_functionality
             IP_COMPONENT="if_utils"
-            LIBRARY="TestbenchMEMMinimal index MEM_DELAY_READ MEM_DELAY_WRITE PIPELINED base_addr MEM_DUMP MEM_DUMP_FILE QUEUE_SIZE QUEUE_BITSIZE M_DataRdy M_Rdata_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_back_pressure Sout_DataRdy Sout_Rdata_ram S_oe_ram S_we_ram S_addr_ram S_data_ram_size S_Wdata_ram"
+            LIBRARY="TestbenchMEMMinimal index MEM_DELAY_READ MEM_DELAY_WRITE base_addr MEM_DUMP MEM_DUMP_FILE QUEUE_SIZE QUEUE_BITSIZE M_DataRdy M_Rdata_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_back_pressure Sout_DataRdy Sout_Rdata_ram S_oe_ram S_we_ram S_addr_ram S_data_ram_size S_Wdata_ram"
             VERILOG_PROVIDED="
 localparam MEM_DELAY_MAX= MEM_DELAY_READ &gt; MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM_DELAY_WRITE,
   ACTIVE_READ= MEM_DELAY_READ &gt; 1 ? (MEM_DELAY_READ-2) : 0,
@@ -1460,7 +1459,7 @@ localparam MEM_DELAY_MAX= MEM_DELAY_READ &gt; MEM_DELAY_WRITE ? MEM_DELAY_READ :
 
 genvar i;
 integer dump_file;
-wire [BITSIZE_M_DataRdy-1:0] _M_DataRdy;
+wire [BITSIZE_M_DataRdy-1:0] _M_DataRdy, _M_DataRdy_reg;
 wire [BITSIZE_M_Rdata_ram-1:0] _M_Rdata_ram;
 
 assign S_oe_ram = Mout_oe_ram;
@@ -1501,13 +1500,31 @@ generate
     ptr_t Waddr, Raddr;
     shortint unsigned Wsize;
     wire [BITSIZE_Wdata-1:0] Wdata;
-    reg [BITSIZE_ready-1:0] Wready, Rready;
+    reg [BITSIZE_ready-1:0] Wready, Rready, Wready_reg;
     reg [BITSIZE_Rdata-1:0] Rdata;
 
     reg [QUEUE_BITSIZE-1:0] queue_counter;
     wire [QUEUE_BITSIZE-1:0] queue_counter_next;
 
-    assign Mout_back_pressure[i] = (queue_counter - _M_DataRdy[BITSIZE_ready*i+:BITSIZE_ready]) == (QUEUE_SIZE - 1);
+    if(MEM_DELAY_WRITE == 1)
+    begin
+      always@(posedge clock)
+      begin
+        Wready_reg &lt;= Wready;
+      end
+    end
+    else
+    begin
+      assign Wready_reg = Wready;
+    end
+    if(QUEUE_SIZE > 1)
+    begin
+      assign Mout_back_pressure[i] = queue_counter == 0 ? 0 : (queue_counter - _M_DataRdy_reg[BITSIZE_ready*i+:BITSIZE_ready]) == (QUEUE_SIZE - 1);
+    end
+    else
+    begin
+      assign Mout_back_pressure[i] = queue_counter &amp;&amp; !_M_DataRdy_reg[BITSIZE_ready*i+:BITSIZE_ready];
+    end
 
     always @(posedge clock)
     begin
@@ -1521,59 +1538,39 @@ generate
       end
     end
 
-    assign queue_counter_next = queue_counter + ((Mout_we_ram[i] || Mout_oe_ram[i]) &amp;&amp; ((queue_counter  - _M_DataRdy[BITSIZE_ready*i+:BITSIZE_ready]) &lt; (QUEUE_SIZE - 1))) - _M_DataRdy[BITSIZE_ready*i+:BITSIZE_ready];
+    if(QUEUE_SIZE > 1)
+    begin
+      assign queue_counter_next = queue_counter + (((Mout_we_ram[i] || Mout_oe_ram[i]) &amp;&amp; !Mout_back_pressure[i] &amp;&amp; base_addr &lt;= Mout_addr_ram[i*BITSIZE_addr +: BITSIZE_addr]) &amp;&amp; (queue_counter == 0 ? 1 : ((queue_counter  - _M_DataRdy_reg[BITSIZE_ready*i+:BITSIZE_ready]) < (QUEUE_SIZE - 1)))) - _M_DataRdy_reg[BITSIZE_ready*i+:BITSIZE_ready];
+    end
+    else
+    begin
+      assign queue_counter_next = ((Mout_we_ram[i] || Mout_oe_ram[i]) &amp;&amp; !Mout_back_pressure[i] &amp;&amp; base_addr &lt;= Mout_addr_ram[i*BITSIZE_addr +: BITSIZE_addr]) || (queue_counter &amp;&amp; !_M_DataRdy_reg[BITSIZE_ready*i+:BITSIZE_ready]);
+    end
 
     
     if(MEM_DELAY_MAX &gt; 1)
     begin : requests_queue
       reg [MEM_DELAY_MAX*BITSIZE_item-1:0] queue;
+      wire [BITSIZE_item-1:0] new_elem;
 
-      if(PIPELINED)
-      begin : pipelined_handler
-        assign queue_next = {queue[(MEM_DELAY_MAX-1)*BITSIZE_item-1:0], {
-            Mout_Wdata_ram[BITSIZE_Wdata*i+:BITSIZE_Wdata], 
-            Mout_data_ram_size[BITSIZE_Wsize*i+:BITSIZE_Wsize],
-            Mout_addr_ram[BITSIZE_addr*i+:BITSIZE_addr],
-            Mout_we_ram[BITSIZE_we*i+:BITSIZE_we],
-            Mout_oe_ram[BITSIZE_oe*i+:BITSIZE_oe]}
-          };
+            assign new_elem = Mout_back_pressure[i] ? {BITSIZE_item{1&apos;b0}} : 
+                        {Mout_Wdata_ram[BITSIZE_Wdata*i+:BITSIZE_Wdata],
+                        Mout_data_ram_size[BITSIZE_Wsize*i+:BITSIZE_Wsize],
+                        Mout_addr_ram[BITSIZE_addr*i+:BITSIZE_addr],
+                        Mout_we_ram[BITSIZE_we*i+:BITSIZE_we],
+                        Mout_oe_ram[BITSIZE_oe*i+:BITSIZE_oe]};
 
-        always@(posedge clock)
+            assign queue_next = {queue[(MEM_DELAY_MAX-1)*BITSIZE_item-1:0],new_elem};
+
+      always@(posedge clock)
+      begin
+        if(1RESET_VALUE)
         begin
-          if(1RESET_VALUE)
-          begin
-            queue &lt;= 0;
-          end
-          else
-          begin
-            queue &lt;= queue_next;
-          end
+          queue &lt;= 0;
         end
-      end
-      else
-      begin : sequential_handler
-        reg tx_active;
-        wire tx_active_next;
-        assign queue_next = {queue[(MEM_DELAY_MAX-1)*BITSIZE_item-1:0],
-              {Mout_Wdata_ram[BITSIZE_Wdata*i+:BITSIZE_Wdata], 
-                Mout_data_ram_size[BITSIZE_Wsize*i+:BITSIZE_Wsize],
-                Mout_addr_ram[BITSIZE_addr*i+:BITSIZE_addr],
-                Mout_we_ram[BITSIZE_we*i+:BITSIZE_we],
-                Mout_oe_ram[BITSIZE_oe*i+:BITSIZE_oe]} &amp; {BITSIZE_item{~tx_active}}
-            };
-        assign  tx_active_next = Mout_oe_ram[BITSIZE_oe*i+:BITSIZE_oe] | Mout_we_ram[BITSIZE_we*i+:BITSIZE_we];
-        always@(posedge clock)
+        else
         begin
-          if(1RESET_VALUE)
-          begin
-            tx_active &lt;= 0;
-            queue &lt;= 0;
-          end
-          else
-          begin
-            tx_active &lt;= tx_active_next;
-            queue &lt;= queue_next;
-          end
+          queue &lt;= queue_next;
         end
       end
     end
@@ -1589,6 +1586,7 @@ generate
     assign oe = queue_next[ACTIVE_READ*BITSIZE_item+OFFSET_oe+:BITSIZE_oe];
     assign Raddr = queue_next[ACTIVE_READ*BITSIZE_item+OFFSET_addr+:BITSIZE_addr];
     assign _M_DataRdy[BITSIZE_ready*i+:BITSIZE_ready] = Wready | Rready | (Sout_DataRdy[BITSIZE_S_ready*i*SLAVE_VALID+:BITSIZE_S_ready] === 1&apos;b1);
+    assign _M_DataRdy_reg[BITSIZE_ready*i+:BITSIZE_ready] = Wready_reg | Rready; // Used to update at posedge clock of the queue_counter;
     assign _M_Rdata_ram[BITSIZE_Rdata*i+:BITSIZE_Rdata] = Rdata | (Sout_Rdata_ram[BITSIZE_S_Rdata*i*SLAVE_VALID+:BITSIZE_S_Rdata] &amp; {BITSIZE_S_Rdata{Sout_DataRdy[BITSIZE_S_ready*i*SLAVE_VALID+:BITSIZE_S_ready] === 1&apos;b1}});
 
     if(MEM_DELAY_READ &gt; 1)
