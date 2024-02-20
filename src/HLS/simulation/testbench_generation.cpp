@@ -276,7 +276,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       }
       if(interface_type == HLSFlowStep_Type::INTERFACE_CS_GENERATION)
       {
-         tb_mem->SetParameter("PIPELINED", "0");
+         tb_mem->SetParameter("QUEUE_SIZE", STR(1));
       }
    }
    else if(interface_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION ||
