@@ -549,6 +549,9 @@ enum ResourceAttribute
    NONE = 0,
    RW_F = 1,
    LOAD_STORE_OP = 2,
+   UNBOUNDED = 4,
+   UNBOUNDED_RW = 8,
+   SEEMULTICYCLE = 16
 };
 
 /// definition of the data structure used to check if a resource is available given a vertex
@@ -769,7 +772,7 @@ bool parametric_list_based::compute_minmaxII(std::list<vertex>& bb_operations, c
                                GET_NAME(flow_graph_with_feedbacks, tgt) + " " + STR(edge_delay));
             ssspSolver.add_edge(op_varindex, operation_to_varindex.at(tgt), -edge_delay);
          }
-         else if((edge_type & (FB_DFG_SELECTOR | FB_ADG_AGG_SELECTOR)))
+         else if((edge_type & (FB_DFG_SELECTOR | FB_ADG_AGG_SELECTOR | FB_ODG_AGG_SELECTOR)))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---feedback edge " + GET_NAME(flow_graph_with_feedbacks, operation) + "-" +
@@ -1018,9 +1021,10 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    CustomUnorderedMap<vertex, unsigned> infeasable_counter;
    while((schedule->num_scheduled() - already_sch) != operations_number)
    {
-      bool unbounded = false;
-      bool unbounded_RW = false;
-      bool seeMulticycle = false;
+      used_resources.init(current_cycle - initialCycle, LP_II);
+      bool unbounded = used_resources.getRefAttribute() & ResourceAttribute::UNBOUNDED;
+      bool unbounded_RW = used_resources.getRefAttribute() & ResourceAttribute::UNBOUNDED_RW;
+      bool seeMulticycle = used_resources.getRefAttribute() & ResourceAttribute::SEEMULTICYCLE;
       unsigned int n_scheduled_ops = 0;
       const auto current_cycle_starting_time = from_strongtype_cast<double>(current_cycle) * clock_cycle;
       const auto current_cycle_ending_time = from_strongtype_cast<double>(current_cycle + 1) * clock_cycle;
@@ -1035,7 +1039,6 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                     "      Scheduling in control step " + STR(current_cycle) +
                         " (Time: " + STR(current_cycle_starting_time) + ")");
-      used_resources.init(current_cycle - initialCycle, LP_II);
 
       /// Operations which can be scheduled in this control step because precedences are satisfied, but they can't be
       /// scheduled in this control step for some reasons Index is the functional unit type
@@ -1049,6 +1052,8 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
          if(ending_time.find(*live_vertex_it)->second > current_cycle_ending_time)
          {
             seeMulticycle = true;
+            auto& attrib = used_resources.getRefAttribute();
+            attrib = attrib | ResourceAttribute::SEEMULTICYCLE;
          }
          if(ending_time.find(*live_vertex_it)->second <= current_cycle_starting_time)
          {
@@ -1727,11 +1732,13 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                                    "\nThis may prevent meeting the timing constraints.\n");
                   }
                   unbounded = true;
+                  attrib_update = attrib_update | ResourceAttribute::UNBOUNDED;
                }
                else if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) &&
                        RW_stmts.find(current_vertex) != RW_stmts.end())
                {
                   unbounded_RW = true;
+                  attrib_update = attrib_update | ResourceAttribute::UNBOUNDED_RW;
                }
                else
                {
@@ -1807,6 +1814,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   ending_time[current_vertex] > current_cycle_ending_time)
                {
                   seeMulticycle = true;
+                  attrib_update = attrib_update | ResourceAttribute::SEEMULTICYCLE;
                }
 
                for(auto edge_connection_pair : local_connection_map)
