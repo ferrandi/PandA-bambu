@@ -2532,7 +2532,13 @@ class ConstraintGraph : public NodeContainer
 
       {
          const auto entryVertex = dt->GetBBGraphInfo()->bb_index_map.at(bloc::ENTRY_BLOCK_ID);
-         IRVisitor bv(infos, this, function_id, AppM, debug_level);
+         IRVisitor bv(infos, this, function_id, AppM,
+#ifndef NDEBUG
+                      debug_level
+#else
+                      0
+#endif
+         );
          std::vector<boost::default_color_type> color_vec(boost::num_vertices(*dt), boost::white_color);
          boost::depth_first_visit(*dt, entryVertex, bv,
                                   boost::make_iterator_property_map(
