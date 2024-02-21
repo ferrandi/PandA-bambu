@@ -95,7 +95,6 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case DEAD_CODE_ELIMINATION:
       case DETERMINE_MEMORY_ACCESSES:
       case DOM_POST_DOM_COMPUTATION:
-      case ESSA:
       case(FANOUT_OPT):
       case MULTIPLE_ENTRY_IF_REDUCTION:
       case EXTRACT_GIMPLE_COND_OP:

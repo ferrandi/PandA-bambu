@@ -49,21 +49,31 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-SigmaOpNode::SigmaOpNode(const ValueRangeRef& _intersect, VarNode* _sink, const tree_nodeConstRef& _inst,
-                         VarNode* _source, VarNode* _SymbolicSource, kind _opcode)
-    : UnaryOpNode(_intersect, _sink, _inst, _source, _opcode), SymbolicSource(_SymbolicSource), unresolved(false)
+SigmaOpNode::SigmaOpNode(VarNode* _sink, VarNode* _source, const tree_nodeConstRef& _inst, kind _opcode)
+    : UnaryOpNode(_sink, _source, _inst, _opcode), SymbolicSource(nullptr), unresolved(false)
 {
 }
 
-OpNode::OperationId SigmaOpNode::getValueId() const
+SigmaOpNode::SigmaOpNode(const ValueRangeRef& _intersect, VarNode* _sink, VarNode* _source,
+                         const tree_nodeConstRef& _inst, kind _opcode)
+    : UnaryOpNode(_sink, _source, _inst, _opcode), SymbolicSource(nullptr), unresolved(false)
 {
-   return OperationId::SigmaOpId;
+   setIntersect(_intersect);
+   if(auto symb = RefcountCast<SymbRange>(_intersect))
+   {
+      SymbolicSource = symb->getBound();
+   }
+}
+
+OpNode::OpNodeType SigmaOpNode::getValueId() const
+{
+   return OpNodeType::OpNodeType_Sigma;
 }
 
 std::vector<VarNode*> SigmaOpNode::getSources() const
 {
    auto s = UnaryOpNode::getSources();
-   if(SymbolicSource != nullptr)
+   if(SymbolicSource)
    {
       s.push_back(SymbolicSource);
    }
@@ -119,8 +129,8 @@ std::function<OpNode*(NodeContainer*)> SigmaOpNode::opCtorGenerator(const tree_n
       const auto& [sourceTN, sourceBBI] = gp->CGetDefEdgesList().front();
 
       // Create the sink.
-      const auto sink = NC->addVarNode(gp->res, function_id, gp->bb_index);
-      const auto source = NC->addVarNode(sourceTN, function_id, sourceBBI);
+      const auto sink = NC->addVarNode(gp->res, function_id);
+      const auto source = NC->addVarNode(sourceTN, function_id);
 
       auto vsmit = NC->getCVR().find(sourceTN);
       if(vsmit == NC->getCVR().end())
@@ -132,22 +142,16 @@ std::function<OpNode*(NodeContainer*)> SigmaOpNode::opCtorGenerator(const tree_n
       if(condRangeIt != vsmit->second.getVR().end())
       {
          const auto& CondRange = condRangeIt->second;
-         VarNode* SymbSrc = nullptr;
-         if(auto symb = RefcountCast<SymbRange>(CondRange))
-         {
-            SymbSrc = symb->getBound();
-         }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
-                        "---Added SigmaOp with " + std::string(SymbSrc ? "symbolic " : "") + "range " +
-                            CondRange->ToString());
-         return new SigmaOpNode(CondRange, sink, stmt, source, SymbSrc, gp->get_kind());
+                        "---Added SigmaOp with " + std::string(RefcountCast<SymbRange>(CondRange) ? "symbolic " : "") +
+                            "range " + CondRange->ToString());
+         return new SigmaOpNode(CondRange, sink, source, stmt, gp->get_kind());
       }
       else
       {
-         auto BI = ValueRangeRef(new ValueRange(tree_helper::Range(stmt)));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
-                        "---Added SigmaOp with range " + BI->ToString());
-         return new SigmaOpNode(BI, sink, stmt, source, nullptr, gp->get_kind());
+                        "---Added SigmaOp with range " + tree_helper::Range(stmt)->ToString());
+         return new SigmaOpNode(sink, source, stmt, gp->get_kind());
       }
    };
 }

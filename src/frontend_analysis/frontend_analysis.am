@@ -163,7 +163,6 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/dead_code_elimination.hpp \
      frontend_analysis/IR_analysis/dead_code_eliminationIPA.hpp \
      frontend_analysis/IR_analysis/determine_memory_accesses.hpp \
-     frontend_analysis/IR_analysis/eSSA.hpp \
      frontend_analysis/IR_analysis/extract_patterns.hpp \
      frontend_analysis/IR_analysis/fanout_opt.hpp\
      frontend_analysis/IR_analysis/hdl_function_decl_fix.hpp \
@@ -209,7 +208,6 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/dead_code_elimination.cpp \
      frontend_analysis/IR_analysis/dead_code_eliminationIPA.cpp \
      frontend_analysis/IR_analysis/determine_memory_accesses.cpp \
-     frontend_analysis/IR_analysis/eSSA.cpp \
      frontend_analysis/IR_analysis/extract_patterns.cpp \
      frontend_analysis/IR_analysis/fanout_opt.cpp\
      frontend_analysis/IR_analysis/hdl_function_decl_fix.cpp \

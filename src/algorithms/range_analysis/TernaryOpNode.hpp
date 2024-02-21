@@ -72,16 +72,18 @@ class TernaryOpNode : public OpNode
    RangeRef eval() const override;
 
  public:
-   TernaryOpNode(const ValueRangeRef& intersect, VarNode* sink, const tree_nodeConstRef& inst, VarNode* source1,
-                 VarNode* source2, VarNode* source3, kind opcode);
+   TernaryOpNode(VarNode* sink, VarNode* source1, VarNode* source2, VarNode* source3, const tree_nodeConstRef& inst,
+                 kind opcode);
    TernaryOpNode(const TernaryOpNode&) = delete;
    TernaryOpNode(TernaryOpNode&&) = delete;
    TernaryOpNode& operator=(const TernaryOpNode&) = delete;
    TernaryOpNode& operator=(TernaryOpNode&&) = delete;
 
-   OperationId getValueId() const override;
+   OpNodeType getValueId() const override;
 
    std::vector<VarNode*> getSources() const override;
+
+   void replaceSource(VarNode* _old, VarNode* _new) override;
 
    void print(std::ostream& OS) const override;
    void printDot(std::ostream& OS) const override;
@@ -113,7 +115,7 @@ class TernaryOpNode : public OpNode
 
    static inline bool classof(OpNode const* BO)
    {
-      return BO->getValueId() == OperationId::TernaryOpId;
+      return BO->getValueId() == OpNodeType::OpNodeType_Ternary;
    }
 
    static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef&,

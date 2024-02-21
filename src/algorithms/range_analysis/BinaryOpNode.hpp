@@ -67,16 +67,17 @@ class BinaryOpNode : public OpNode
    RangeRef eval() const override;
 
  public:
-   BinaryOpNode(const ValueRangeRef& intersect, VarNode* sink, const tree_nodeConstRef& inst, VarNode* source1,
-                VarNode* source2, kind opcode);
+   BinaryOpNode(VarNode* sink, VarNode* source1, VarNode* source2, const tree_nodeConstRef& inst, kind opcode);
    BinaryOpNode(const BinaryOpNode&) = delete;
    BinaryOpNode(BinaryOpNode&&) = delete;
    BinaryOpNode& operator=(const BinaryOpNode&) = delete;
    BinaryOpNode& operator=(BinaryOpNode&&) = delete;
 
-   OperationId getValueId() const override;
+   OpNodeType getValueId() const override;
 
    std::vector<VarNode*> getSources() const override;
+
+   void replaceSource(VarNode* _old, VarNode* _new) override;
 
    void print(std::ostream& OS) const override;
    void printDot(std::ostream& OS) const override;
@@ -103,7 +104,7 @@ class BinaryOpNode : public OpNode
 
    static inline bool classof(OpNode const* BO)
    {
-      return BO->getValueId() == OperationId::BinaryOpId;
+      return BO->getValueId() == OpNodeType::OpNodeType_Binary;
    }
 
    static RangeRef evaluate(kind opcode, Range::bw_t bw, const RangeConstRef& op1, const RangeConstRef& op2,

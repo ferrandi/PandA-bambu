@@ -63,15 +63,17 @@ class PhiOpNode : public OpNode
    RangeRef eval() const override;
 
  public:
-   PhiOpNode(const ValueRangeRef& intersect, VarNode* sink, const tree_nodeConstRef& inst);
+   PhiOpNode(VarNode* sink, const tree_nodeConstRef& inst);
    PhiOpNode(const PhiOpNode&) = delete;
    PhiOpNode(PhiOpNode&&) = delete;
    PhiOpNode& operator=(const PhiOpNode&) = delete;
    PhiOpNode& operator=(PhiOpNode&&) = delete;
 
-   OperationId getValueId() const override;
+   OpNodeType getValueId() const override;
 
    std::vector<VarNode*> getSources() const override;
+
+   void replaceSource(VarNode* _old, VarNode* _new) override;
 
    void print(std::ostream& OS) const override;
    void printDot(std::ostream& OS) const override;
@@ -98,7 +100,7 @@ class PhiOpNode : public OpNode
 
    static inline bool classof(OpNode const* BO)
    {
-      return BO->getValueId() == OperationId::PhiOpId;
+      return BO->getValueId() == OpNodeType::OpNodeType_Phi;
    }
 
    static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt,

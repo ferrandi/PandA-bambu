@@ -43,12 +43,14 @@
 
 #ifndef RANGE_ANALYSIS_HPP
 #define RANGE_ANALYSIS_HPP
-
-#include <iostream>
-
-#include "Range.hpp"
 #include "application_frontend_flow_step.hpp"
-#include "tree_node.hpp"
+
+#include "custom_set.hpp"
+#include "refcount.hpp"
+
+#include <cstdint>
+#include <iostream>
+#include <map>
 
 REF_FORWARD_DECL(ConstraintGraph);
 
@@ -68,7 +70,6 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
 #endif
 
    SolverType solverType;
-   bool requireESSA;
    int execution_mode;
 
    bool finalize(ConstraintGraphRef);
@@ -95,26 +96,12 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
    RangeAnalysis(const application_managerRef AM, const DesignFlowManagerConstRef dfm,
                  const ParameterConstRef parameters);
 
-   /**
-    *  Destructor
-    */
    ~RangeAnalysis() override;
 
-   /**
-    * perform the range analysis
-    * @return the exit status of this step
-    */
    DesignFlowStep_Status Exec() override;
 
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
    void Initialize() override;
 
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
    bool HasToBeExecuted() const override;
 };
 

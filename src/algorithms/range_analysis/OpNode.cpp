@@ -44,14 +44,15 @@
 
 #include "SymbValueRange.hpp"
 #include "dbgPrintHelper.hpp"
+#include "tree_helper.hpp"
 #include "tree_node.hpp"
 
 #ifndef NDEBUG
 int OpNode::debug_level = DEBUG_LEVEL_NONE;
 #endif
 
-OpNode::OpNode(const ValueRangeRef& _intersect, VarNode* _sink, const tree_nodeConstRef& _inst)
-    : intersect(_intersect), sink(_sink), inst(_inst)
+OpNode::OpNode(VarNode* _sink, const tree_nodeConstRef& _inst)
+    : intersect(ValueRangeRef(new ValueRange(tree_helper::Range(_sink->getValue())))), sink(_sink), inst(_inst)
 {
 }
 

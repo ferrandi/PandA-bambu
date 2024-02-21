@@ -60,20 +60,27 @@ bool _ra_enable_zext = true;
 #define RESULT_DISABLED_OPTION(x, var, stdResult) stdResult
 #endif
 
-UnaryOpNode::UnaryOpNode(const ValueRangeRef& _intersect, VarNode* _sink, const tree_nodeConstRef& _inst,
-                         VarNode* _source, kind _opcode)
-    : OpNode(_intersect, _sink, _inst), source(_source), opcode(_opcode)
+UnaryOpNode::UnaryOpNode(VarNode* _sink, VarNode* _source, const tree_nodeConstRef& _inst, kind _opcode)
+    : OpNode(_sink, _inst), source(_source), opcode(_opcode)
 {
 }
 
-OpNode::OperationId UnaryOpNode::getValueId() const
+OpNode::OpNodeType UnaryOpNode::getValueId() const
 {
-   return OperationId::UnaryOpId;
+   return OpNodeType::OpNodeType_Unary;
 }
 
 std::vector<VarNode*> UnaryOpNode::getSources() const
 {
    return {source};
+}
+
+void UnaryOpNode::replaceSource(VarNode* _old, VarNode* _new)
+{
+   if(_old->getId() == source->getId())
+   {
+      source = _new;
+   }
 }
 
 /// Computes the interval of the sink based on the interval of the sources,
@@ -226,14 +233,12 @@ std::function<OpNode*(NodeContainer*)> UnaryOpNode::opCtorGenerator(const tree_n
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
                         "Analysing assign operation " + ga->ToString());
          const auto function_id = GET_INDEX_CONST_NODE(ga->scpe);
+         const auto sink = NC->addVarNode(ga->op0, function_id);
+         const auto _source = NC->addVarNode(ga->op1, function_id);
 
-         const auto sink = NC->addVarNode(ga->op0, function_id, ga->bb_index);
-         const auto _source = NC->addVarNode(ga->op1, function_id, ga->bb_index);
-
-         auto BI = ValueRangeRef(new ValueRange(tree_helper::Range(stmt)));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
-                        "---Added assign operation with range " + BI->ToString());
-         return new UnaryOpNode(BI, sink, stmt, _source, nop_expr_K);
+                        "---Added assign operation with range " + tree_helper::Range(stmt)->ToString());
+         return new UnaryOpNode(sink, _source, stmt, nop_expr_K);
       };
    }
    const auto ue = GetPointer<const unary_expr>(GET_CONST_NODE(ga->op1));
@@ -246,14 +251,14 @@ std::function<OpNode*(NodeContainer*)> UnaryOpNode::opCtorGenerator(const tree_n
                      "Analysing unary operation " + ue->get_kind_text() + " " + ga->ToString());
 
       const auto function_id = GET_INDEX_CONST_NODE(ga->scpe);
-      const auto sink = NC->addVarNode(ga->op0, function_id, ga->bb_index);
-      const auto _source = NC->addVarNode(ue->op, function_id, ga->bb_index);
-      const auto BI = ValueRangeRef(new ValueRange(tree_helper::Range(stmt)));
+      const auto sink = NC->addVarNode(ga->op0, function_id);
+      const auto _source = NC->addVarNode(ue->op, function_id);
       const auto op_kind = ue->get_kind();
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
-                     "---Added UnaryOp for " + ue->get_kind_text() + " with range " + BI->ToString());
-      return new UnaryOpNode(BI, sink, stmt, _source, op_kind);
+                     "---Added UnaryOp for " + ue->get_kind_text() + " with range " +
+                         tree_helper::Range(stmt)->ToString());
+      return new UnaryOpNode(sink, _source, stmt, op_kind);
    };
 }
 

@@ -97,7 +97,7 @@ class NodeContainer
       return _cvrMap;
    }
 
-   VarNode* addVarNode(const tree_nodeConstRef& V, unsigned int function_id, unsigned int use_bbi);
+   VarNode* addVarNode(const tree_nodeConstRef& V, unsigned int function_id);
 
    void addConditionalValueRange(const ConditionalValueRange&& cvr);
 
@@ -110,6 +110,8 @@ class NodeContainer
 #endif
 
  protected:
+   VarNode* addVarNode(const tree_nodeConstRef& V, unsigned int function_id, unsigned int use_bbi);
+
    UseMap& getUses()
    {
       return _useMap;

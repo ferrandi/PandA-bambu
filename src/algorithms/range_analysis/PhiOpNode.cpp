@@ -48,19 +48,29 @@
 #include "tree_helper.hpp"
 #include "tree_reindex.hpp"
 
-PhiOpNode::PhiOpNode(const ValueRangeRef& _intersect, VarNode* _sink, const tree_nodeConstRef& _inst)
-    : OpNode(_intersect, _sink, _inst)
+PhiOpNode::PhiOpNode(VarNode* _sink, const tree_nodeConstRef& _inst) : OpNode(_sink, _inst)
 {
 }
 
-OpNode::OperationId PhiOpNode::getValueId() const
+OpNode::OpNodeType PhiOpNode::getValueId() const
 {
-   return OperationId::PhiOpId;
+   return OpNodeType::OpNodeType_Phi;
 }
 
 std::vector<VarNode*> PhiOpNode::getSources() const
 {
    return sources;
+}
+
+void PhiOpNode::replaceSource(VarNode* _old, VarNode* _new)
+{
+   for(auto& src : sources)
+   {
+      if(_old->getId() == src->getId())
+      {
+         src = _new;
+      }
+   }
 }
 
 /// Computes the interval of the sink based on the interval of the sources.
@@ -115,18 +125,17 @@ std::function<OpNode*(NodeContainer*)> PhiOpNode::opCtorGenerator(const tree_nod
                      "Analysing phi operation " + gp->ToString());
       const auto function_id = GET_INDEX_CONST_NODE(gp->scpe);
       // Create the sink.
-      const auto sink = NC->addVarNode(gp->res, function_id, gp->bb_index);
-      const auto BI = ValueRangeRef(new ValueRange(tree_helper::Range(stmt)));
-      const auto phiOp = new PhiOpNode(BI, sink, stmt);
+      const auto sink = NC->addVarNode(gp->res, function_id);
+      const auto phiOp = new PhiOpNode(sink, stmt);
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
-                     "---Added PhiOp with range " + BI->ToString() + " and " +
+                     "---Added PhiOp with range " + tree_helper::Range(stmt)->ToString() + " and " +
                          std::to_string(gp->CGetDefEdgesList().size()) + " sources");
 
       // Create the sources.
       for(const auto& [var, bbi] : gp->CGetDefEdgesList())
       {
-         const auto source = NC->addVarNode(var, function_id, bbi);
+         const auto source = NC->addVarNode(var, function_id);
          phiOp->addSource(source);
       }
       return phiOp;

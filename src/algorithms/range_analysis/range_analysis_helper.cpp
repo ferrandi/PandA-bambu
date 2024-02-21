@@ -49,6 +49,8 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
+#define INTEGER_PTR // Pointers are considered as integers
+
 kind range_analysis::op_unsigned(kind op)
 {
    switch(op)
@@ -403,42 +405,40 @@ bool range_analysis::isCompare(const struct binary_expr* condition)
    return isCompare(condition->get_kind());
 }
 
-tree_nodeConstRef range_analysis::branchOpRecurse(const tree_nodeConstRef op)
+tree_nodeConstRef range_analysis::branchOpRecurse(const tree_nodeConstRef _op)
 {
-   if(const auto* nop = GetPointer<const nop_expr>(op))
+   const auto op = _op->get_kind() == tree_reindex_K ? GET_CONST_NODE(_op) : _op;
+   if(const auto nop = GetPointer<const nop_expr>(op))
    {
       return branchOpRecurse(nop->op);
    }
-   else if(const auto* ce = GetPointer<const convert_expr>(op))
+   else if(const auto ce = GetPointer<const convert_expr>(op))
    {
       return branchOpRecurse(ce->op);
    }
-   else if(const auto* ssa = GetPointer<const ssa_name>(op))
+   else if(const auto ssa = GetPointer<const ssa_name>(op))
    {
-      const auto DefStmt = GET_CONST_NODE(ssa->CGetDefStmt());
-      if(const auto* gp = GetPointer<const gimple_phi>(DefStmt))
-      {
-         const auto& defEdges = gp->CGetDefEdgesList();
-         THROW_ASSERT(not defEdges.empty(), "Branch variable definition from nowhere");
-         return defEdges.size() > 1 ? DefStmt : branchOpRecurse(defEdges.front().first);
-      }
-      else if(const auto* ga = GetPointer<const gimple_assign>(DefStmt))
+      const auto def_node = ssa->CGetDefStmt();
+      const auto def_stmt = GET_CONST_NODE(def_node);
+      if(const auto ga = GetPointer<const gimple_assign>(def_stmt))
       {
          return branchOpRecurse(ga->op1);
       }
-      else if(GetPointer<const gimple_nop>(DefStmt) != nullptr)
+      else if(const auto gp = GetPointer<const gimple_phi>(def_stmt))
+      {
+         const auto& defEdges = gp->CGetDefEdgesList();
+         THROW_ASSERT(!defEdges.empty(), "Branch variable definition from nowhere");
+         return defEdges.size() > 1 ? def_node : branchOpRecurse(defEdges.front().first);
+      }
+      else if(GetPointer<const gimple_nop>(def_stmt) != nullptr)
       {
          // Branch variable is a function parameter
-         return DefStmt;
+         return def_node;
       }
-      THROW_UNREACHABLE("Branch var definition statement not handled (" + DefStmt->get_kind_text() + " " +
-                        DefStmt->ToString() + ")");
+      THROW_UNREACHABLE("Branch var definition statement not handled (" + def_stmt->get_kind_text() + " " +
+                        def_stmt->ToString() + ")");
    }
-   else if(op->get_kind() == tree_reindex_K)
-   {
-      return branchOpRecurse(GET_CONST_NODE(op));
-   }
-   return op;
+   return _op;
 }
 
 bool range_analysis::isValidType(const tree_nodeConstRef& _tn)

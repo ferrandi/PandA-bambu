@@ -59,14 +59,15 @@ class SigmaOpNode : public UnaryOpNode
    RangeRef eval() const override;
 
  public:
-   SigmaOpNode(const ValueRangeRef& intersect, VarNode* sink, const tree_nodeConstRef& inst, VarNode* source,
-               VarNode* SymbolicSource, kind opcode);
+   SigmaOpNode(VarNode* sink, VarNode* source, const tree_nodeConstRef& inst, kind opcode);
+   SigmaOpNode(const ValueRangeRef& intersect, VarNode* sink, VarNode* source, const tree_nodeConstRef& inst,
+               kind opcode);
    SigmaOpNode(const SigmaOpNode&) = delete;
    SigmaOpNode(SigmaOpNode&&) = delete;
    SigmaOpNode& operator=(const SigmaOpNode&) = delete;
    SigmaOpNode& operator=(SigmaOpNode&&) = delete;
 
-   OperationId getValueId() const override;
+   OpNodeType getValueId() const override;
 
    std::vector<VarNode*> getSources() const override;
 
@@ -95,12 +96,12 @@ class SigmaOpNode : public UnaryOpNode
 
    static inline bool classof(UnaryOpNode const* UO)
    {
-      return UO->getValueId() == OperationId::SigmaOpId;
+      return UO->getValueId() == OpNodeType::OpNodeType_Sigma;
    }
 
    static inline bool classof(OpNode const* BO)
    {
-      return BO->getValueId() == OperationId::SigmaOpId;
+      return BO->getValueId() == OpNodeType::OpNodeType_Sigma;
    }
 
    static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt,

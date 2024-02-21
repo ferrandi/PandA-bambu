@@ -61,15 +61,17 @@ class LoadOpNode : public OpNode
    RangeRef eval() const override;
 
  public:
-   LoadOpNode(const ValueRangeRef& intersect, VarNode* sink, const tree_nodeConstRef& inst);
+   LoadOpNode(VarNode* sink, const tree_nodeConstRef& inst);
    LoadOpNode(const LoadOpNode&) = delete;
    LoadOpNode(LoadOpNode&&) = delete;
    LoadOpNode& operator=(const LoadOpNode&) = delete;
    LoadOpNode& operator=(LoadOpNode&&) = delete;
 
-   OperationId getValueId() const override;
+   OpNodeType getValueId() const override;
 
    std::vector<VarNode*> getSources() const override;
+
+   void replaceSource(VarNode* _old, VarNode* _new) override;
 
    void print(std::ostream& OS) const override;
    void printDot(std::ostream& OS) const override;
@@ -95,7 +97,7 @@ class LoadOpNode : public OpNode
    }
    static inline bool classof(OpNode const* BO)
    {
-      return BO->getValueId() == OperationId::LoadOpId;
+      return BO->getValueId() == OpNodeType::OpNodeType_Load;
    }
 
    static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt,

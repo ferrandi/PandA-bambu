@@ -75,50 +75,21 @@ NodeContainer::~NodeContainer()
    }
 }
 
-VarNode* NodeContainer::addVarNode(const tree_nodeConstRef& V, unsigned int function_id, unsigned int /* use_bbi */)
+VarNode* NodeContainer::addVarNode(const tree_nodeConstRef& V, unsigned int function_id)
+{
+   return addVarNode(V, function_id, BB_ENTRY);
+}
+
+VarNode* NodeContainer::addVarNode(const tree_nodeConstRef& V, unsigned int function_id, unsigned int use_bbi)
 {
    THROW_ASSERT(V, "Can't insert nullptr as variable");
-   // TODO: should fix use_bbi depending on dominator tree which might contain earlier sigma operations
-   // auto vit = _varNodes.find(VarNode::makeId(V, use_bbi));
-   // if(vit != _varNodes.end())
-   // {
-   //    return vit->second;
-   // }
-   //
-   // const auto cvrIt = _cvrMap.find(V);
-   // if(cvrIt != _cvrMap.end())
-   // {
-   //    const auto& bbVR = cvrIt->second.getVR();
-   //    const auto vrIt = bbVR.find(use_bbi);
-   //    if(vrIt != bbVR.end())
-   //    {
-   //       const auto sink = new VarNode(V, function_id, use_bbi);
-   //       _varNodes.insert(std::make_pair(sink->getId(), sink));
-   //       _useMap.insert(std::make_pair(sink->getId(), OpNodes()));
-   //       // TODO: should get source BBI respecting dominator tree (it might be necessary to take another sigma sink
-   //       as
-   //       // source)
-   //       const auto source = addVarNode(V, function_id, BB_ENTRY);
-   //       VarNode* SymbSrc = nullptr;
-   //       if(auto symb = RefcountCast<SymbRange>(CondRange))
-   //       {
-   //          SymbSrc = symb->getBound();
-   //       }
-   //       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
-   //                      "---Added SigmaOp with " + std::string(SymbSrc ? "symbolic " : "") + "range " +
-   //                          CondRange->ToString());
-   //       pushOperation(new SigmaOpNode(vrIt->second, sink, nullptr, source, SymbSrc, gimple_phi_K));
-   //       return sink;
-   //    }
-   // }
-
-   auto vit = _varNodes.find(VarNode::makeId(V, BB_ENTRY));
+   auto vit = _varNodes.find(VarNode::makeId(V, use_bbi));
    if(vit != _varNodes.end())
    {
       return vit->second;
    }
 
-   const auto node = new VarNode(V, function_id, BB_ENTRY);
+   const auto node = new VarNode(V, function_id, use_bbi);
    _varNodes.insert(std::make_pair(node->getId(), node));
    _useMap.insert(std::make_pair(node->getId(), OpNodes()));
    return node;

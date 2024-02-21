@@ -58,19 +58,29 @@
 bool _ra_enable_load = true;
 #endif
 
-LoadOpNode::LoadOpNode(const ValueRangeRef& _intersect, VarNode* _sink, const tree_nodeConstRef& _inst)
-    : OpNode(_intersect, _sink, _inst)
+LoadOpNode::LoadOpNode(VarNode* _sink, const tree_nodeConstRef& _inst) : OpNode(_sink, _inst)
 {
 }
 
-OpNode::OperationId LoadOpNode::getValueId() const
+OpNode::OpNodeType LoadOpNode::getValueId() const
 {
-   return OperationId::LoadOpId;
+   return OpNodeType::OpNodeType_Load;
 }
 
 std::vector<VarNode*> LoadOpNode::getSources() const
 {
    return sources;
+}
+
+void LoadOpNode::replaceSource(VarNode* _old, VarNode* _new)
+{
+   for(auto& src : sources)
+   {
+      if(_old->getId() == src->getId())
+      {
+         src = _new;
+      }
+   }
 }
 
 RangeRef LoadOpNode::eval() const
@@ -182,7 +192,7 @@ std::function<OpNode*(NodeContainer*)> LoadOpNode::opCtorGenerator(const tree_no
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "-->");
       const auto bw = static_cast<Range::bw_t>(tree_helper::TypeSize(ga->op0));
       const auto function_id = GET_INDEX_CONST_NODE(ga->scpe);
-      const auto sink = NC->addVarNode(ga->op0, function_id, ga->bb_index);
+      const auto sink = NC->addVarNode(ga->op0, function_id);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
                      "Sink variable is " + GET_CONST_NODE(ga->op0)->get_kind_text() +
                          " (size = " + std::to_string(+bw) + ")");
@@ -284,16 +294,16 @@ std::function<OpNode*(NodeContainer*)> LoadOpNode::opCtorGenerator(const tree_no
       {
          intersection = intersection->zextOrTrunc(bw);
       }
-      auto BI = ValueRangeRef(new ValueRange(intersection));
+      auto BI =
 #ifndef NDEBUG
-      if(!_ra_enable_load)
-      {
-         BI = ValueRangeRef(new ValueRange(tree_helper::Range(stmt)));
-      }
+          !_ra_enable_load ? ValueRangeRef(new ValueRange(tree_helper::Range(stmt))) :
 #endif
+                             ValueRangeRef(new ValueRange(intersection));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
                      "<--Added LoadOp with range " + BI->ToString());
-      return new LoadOpNode(BI, sink, stmt);
+      auto loadOp = new LoadOpNode(sink, stmt);
+      loadOp->setIntersect(BI);
+      return loadOp;
    };
 }
 

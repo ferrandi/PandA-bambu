@@ -52,42 +52,19 @@ REF_FORWARD_DECL(ValueRange);
 
 class OpNode
 {
- private:
-   /// The range of the operation. Each operation has a range associated to it.
-   /// This range is obtained by inspecting the branches in the source program
-   /// and extracting its condition and intervals.
-   ValueRangeRef intersect;
-   // The target of the operation, that is, the node which
-   // will store the result of the operation.
-   VarNode* sink;
-   // The instruction that originated this op node
-   const tree_nodeConstRef inst;
-
- protected:
-   /// We do not want people creating objects of this class,
-   /// but we want to inherit from it.
-   OpNode(const ValueRangeRef& intersect, VarNode* sink, const tree_nodeConstRef& inst);
-
  public:
-   enum class OperationId
+   enum OpNodeType
    {
-      UnaryOpId,
-      SigmaOpId,
-      BinaryOpId,
-      TernaryOpId,
-      PhiOpId,
-      ControlDepId,
-      LoadOpId,
-      StoreOpId
+      OpNodeType_Unary,
+      OpNodeType_Sigma,
+      OpNodeType_Binary,
+      OpNodeType_Ternary,
+      OpNodeType_Phi,
+      OpNodeType_ControlDep,
+      OpNodeType_Load
    };
 
-#ifndef NDEBUG
-   static int debug_level;
-#endif
-
-   /// The dtor. It's virtual because this is a base class.
    virtual ~OpNode() = default;
-   // We do not want people creating objects of this class.
    OpNode(const OpNode&) = delete;
    OpNode(OpNode&&) = delete;
    OpNode& operator=(const OpNode&) = delete;
@@ -98,7 +75,7 @@ class OpNode
     *
     * @return const tree_nodeConstRef&
     */
-   inline const tree_nodeConstRef& getInstruction() const
+   inline tree_nodeConstRef getInstruction() const
    {
       return inst;
    }
@@ -121,6 +98,11 @@ class OpNode
    inline void setIntersect(const RangeConstRef& newIntersect)
    {
       intersect->setRange(newIntersect);
+   }
+
+   inline void setIntersect(const ValueRangeRef& _intersect)
+   {
+      intersect = _intersect;
    }
 
    /**
@@ -150,6 +132,8 @@ class OpNode
 
    virtual std::vector<VarNode*> getSources() const = 0;
 
+   virtual void replaceSource(VarNode* _old, VarNode* _new) = 0;
+
    /// Prints the content of the operation.
    virtual void print(std::ostream& OS) const = 0;
    virtual void printDot(std::ostream& OS) const = 0;
@@ -161,12 +145,34 @@ class OpNode
       return ss.str();
    }
 
-   virtual OperationId getValueId() const = 0;
+   virtual OpNodeType getValueId() const = 0;
+
+#ifndef NDEBUG
+   static int debug_level;
+#endif
 
    static inline bool classof(OpNode const*)
    {
       return true;
    }
+
+ protected:
+   OpNode(VarNode* sink, const tree_nodeConstRef& inst);
+
+ private:
+   /**
+    * @brief The range of the operation
+    * Each operation has a range associated to it. This range is obtained by inspecting the branches in the source
+    * program and extracting its condition and intervals.
+    */
+   ValueRangeRef intersect;
+
+   // The target of the operation, that is, the node which
+   // will store the result of the operation.
+   VarNode* sink;
+
+   /* The instruction that originated this op node */
+   const tree_nodeConstRef inst;
 };
 
 template <typename T>

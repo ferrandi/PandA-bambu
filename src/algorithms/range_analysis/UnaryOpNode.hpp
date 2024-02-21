@@ -66,16 +66,17 @@ class UnaryOpNode : public OpNode
    RangeRef eval() const override;
 
  public:
-   UnaryOpNode(const ValueRangeRef& intersect, VarNode* sink, const tree_nodeConstRef& inst, VarNode* source,
-               kind opcode);
+   UnaryOpNode(VarNode* sink, VarNode* source, const tree_nodeConstRef& inst, kind opcode);
    UnaryOpNode(const UnaryOpNode&) = delete;
    UnaryOpNode(UnaryOpNode&&) = delete;
    UnaryOpNode& operator=(const UnaryOpNode&) = delete;
    UnaryOpNode& operator=(UnaryOpNode&&) = delete;
 
-   OperationId getValueId() const override;
+   OpNodeType getValueId() const override;
 
    std::vector<VarNode*> getSources() const override;
+
+   void replaceSource(VarNode* _old, VarNode* _new) override;
 
    void print(std::ostream& OS) const override;
    void printDot(std::ostream& OS) const override;
@@ -97,7 +98,7 @@ class UnaryOpNode : public OpNode
 
    static inline bool classof(OpNode const* BO)
    {
-      return BO->getValueId() == OperationId::UnaryOpId || BO->getValueId() == OperationId::SigmaOpId;
+      return BO->getValueId() == OpNodeType::OpNodeType_Unary || BO->getValueId() == OpNodeType::OpNodeType_Sigma;
    }
 
    static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt,

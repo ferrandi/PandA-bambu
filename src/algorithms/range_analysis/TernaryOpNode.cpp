@@ -57,9 +57,9 @@
 bool _ra_enable_ternary = false;
 #endif
 
-TernaryOpNode::TernaryOpNode(const ValueRangeRef& _intersect, VarNode* _sink, const tree_nodeConstRef& _inst,
-                             VarNode* _source1, VarNode* _source2, VarNode* _source3, kind _opcode)
-    : OpNode(_intersect, _sink, _inst), source1(_source1), source2(_source2), source3(_source3), opcode(_opcode)
+TernaryOpNode::TernaryOpNode(VarNode* _sink, VarNode* _source1, VarNode* _source2, VarNode* _source3,
+                             const tree_nodeConstRef& _inst, kind _opcode)
+    : OpNode(_sink, _inst), source1(_source1), source2(_source2), source3(_source3), opcode(_opcode)
 {
 #if HAVE_ASSERTS
    const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(_inst));
@@ -75,14 +75,30 @@ TernaryOpNode::TernaryOpNode(const ValueRangeRef& _intersect, VarNode* _sink, co
 #endif
 }
 
-OpNode::OperationId TernaryOpNode::getValueId() const
+OpNode::OpNodeType TernaryOpNode::getValueId() const
 {
-   return OperationId::TernaryOpId;
+   return OpNodeType::OpNodeType_Ternary;
 }
 
 std::vector<VarNode*> TernaryOpNode::getSources() const
 {
    return {source1, source2, source3};
+}
+
+void TernaryOpNode::replaceSource(VarNode* _old, VarNode* _new)
+{
+   if(_old->getId() == source1->getId())
+   {
+      source1 = _new;
+   }
+   if(_old->getId() == source2->getId())
+   {
+      source2 = _new;
+   }
+   if(_old->getId() == source3->getId())
+   {
+      source3 = _new;
+   }
 }
 
 RangeRef TernaryOpNode::eval() const
@@ -224,18 +240,17 @@ std::function<OpNode*(NodeContainer*)> TernaryOpNode::opCtorGenerator(const tree
                      "Analysing ternary operation " + te->get_kind_text() + " " + ga->ToString());
       const auto function_id = GET_INDEX_CONST_NODE(ga->scpe);
       // Create the sink.
-      const auto sink = NC->addVarNode(ga->op0, function_id, ga->bb_index);
+      const auto sink = NC->addVarNode(ga->op0, function_id);
 
       // Create the sources.
-      const auto _source1 = NC->addVarNode(te->op0, function_id, ga->bb_index);
-      const auto _source2 = NC->addVarNode(te->op1, function_id, ga->bb_index);
-      const auto _source3 = NC->addVarNode(te->op2, function_id, ga->bb_index);
+      const auto _source1 = NC->addVarNode(te->op0, function_id);
+      const auto _source2 = NC->addVarNode(te->op1, function_id);
+      const auto _source3 = NC->addVarNode(te->op2, function_id);
 
-      // Create the operation using the intersect to constrain sink's interval.
-      auto BI = ValueRangeRef(new ValueRange(tree_helper::Range(stmt)));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
-                     "---Added TernaryOp for " + te->get_kind_text() + " with range " + BI->ToString());
-      return new TernaryOpNode(BI, sink, stmt, _source1, _source2, _source3, te->get_kind());
+                     "---Added TernaryOp for " + te->get_kind_text() + " with range " +
+                         tree_helper::Range(stmt)->ToString());
+      return new TernaryOpNode(sink, _source1, _source2, _source3, stmt, te->get_kind());
    };
 }
 

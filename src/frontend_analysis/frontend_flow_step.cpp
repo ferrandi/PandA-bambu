@@ -235,8 +235,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "FanoutOpt";
       case(MULTIPLE_ENTRY_IF_REDUCTION): // modified here
          return "MultipleEntryIfReduction";
-      case ESSA:
-         return "eSSA";
       case(EXTRACT_GIMPLE_COND_OP):
          return "ExtractGimpleCondOp";
 #if HAVE_FROM_PRAGMA_BUILT

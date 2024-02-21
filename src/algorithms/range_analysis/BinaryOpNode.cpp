@@ -75,18 +75,18 @@ bool _ra_enable_max = true;
 #define RETURN_DISABLED_OPTION(x, bw) void(0)
 #endif
 
-BinaryOpNode::BinaryOpNode(const ValueRangeRef& _intersect, VarNode* _sink, const tree_nodeConstRef& _inst,
-                           VarNode* _source1, VarNode* _source2, kind _opcode)
-    : OpNode(_intersect, _sink, _inst), source1(_source1), source2(_source2), opcode(_opcode)
+BinaryOpNode::BinaryOpNode(VarNode* _sink, VarNode* _source1, VarNode* _source2, const tree_nodeConstRef& _inst,
+                           kind _opcode)
+    : OpNode(_sink, _inst), source1(_source1), source2(_source2), opcode(_opcode)
 {
    THROW_ASSERT(range_analysis::isValidType(_sink->getValue()), "Binary operation sink should be of valid type (" +
                                                                     GET_CONST_NODE(_sink->getValue())->ToString() +
                                                                     ")");
 }
 
-OpNode::OperationId BinaryOpNode::getValueId() const
+OpNode::OpNodeType BinaryOpNode::getValueId() const
 {
-   return OperationId::BinaryOpId;
+   return OpNodeType::OpNodeType_Binary;
 }
 
 std::vector<VarNode*> BinaryOpNode::getSources() const
@@ -94,14 +94,24 @@ std::vector<VarNode*> BinaryOpNode::getSources() const
    return {source1, source2};
 }
 
+void BinaryOpNode::replaceSource(VarNode* _old, VarNode* _new)
+{
+   if(_old->getId() == source1->getId())
+   {
+      source1 = _new;
+   }
+   if(_old->getId() == source2->getId())
+   {
+      source2 = _new;
+   }
+}
+
 RangeRef BinaryOpNode::evaluate(kind opcode, Range::bw_t bw, const RangeConstRef& op1, const RangeConstRef& op2,
                                 bool opSigned)
 {
    switch(opcode)
    {
-#ifdef INTEGER_PTR
       case pointer_plus_expr_K:
-#endif
       case plus_expr_K:
          RETURN_DISABLED_OPTION(add, bw);
          return op1->add(op2);
@@ -196,9 +206,6 @@ RangeRef BinaryOpNode::evaluate(kind opcode, Range::bw_t bw, const RangeConstRef
          RETURN_DISABLED_OPTION(sub, bw);
          return opSigned ? op1->sat_sub(op2) : op1->usat_sub(op2);
 
-#ifndef INTEGER_PTR
-      case pointer_plus_expr_K:
-#endif
       case assert_expr_K:
       case catch_expr_K:
       case ceil_div_expr_K:
@@ -395,19 +402,18 @@ std::function<OpNode*(NodeContainer*)> BinaryOpNode::opCtorGenerator(const tree_
       const auto function_id = GET_INDEX_CONST_NODE(ga->scpe);
 
       // Create the sink.
-      const auto sink = NC->addVarNode(ga->op0, function_id, ga->bb_index);
+      const auto sink = NC->addVarNode(ga->op0, function_id);
       const auto op_kind = be->get_kind();
 
       // Create the sources.
-      const auto _source1 = NC->addVarNode(be->op0, function_id, ga->bb_index);
-      const auto _source2 = NC->addVarNode(be->op1, function_id, ga->bb_index);
-
-      auto BI = ValueRangeRef(new ValueRange(tree_helper::Range(stmt)));
+      const auto _source1 = NC->addVarNode(be->op0, function_id);
+      const auto _source2 = NC->addVarNode(be->op1, function_id);
 
       // Create the operation using the intersect to constrain sink's interval.
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
-                     "---Added BinaryOp for " + tree_node::GetString(op_kind) + " with range " + BI->ToString());
-      return static_cast<OpNode*>(new BinaryOpNode(BI, sink, stmt, _source1, _source2, op_kind));
+                     "---Added BinaryOp for " + tree_node::GetString(op_kind) + " with range " +
+                         tree_helper::Range(stmt)->ToString());
+      return new BinaryOpNode(sink, _source1, _source2, stmt, op_kind);
    };
 }
 
