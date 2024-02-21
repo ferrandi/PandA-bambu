@@ -2631,7 +2631,13 @@ class ConstraintGraph : public NodeContainer
             }
 
             convertUsesToDFSOrdered(Op->getOperand(), getUses().at(Op->getOperand()->getId()), OrderedUses, dt,
-                                    DFSInfos, debug_level);
+                                    DFSInfos,
+#ifndef NDEBUG
+                                    debug_level
+#else
+                                    0
+#endif
+                                    );
             // Here we require a stable sort because we do not bother to try to
             // assign an order to the operands the uses represent. Thus, two
             // uses in the same instruction do not have a strict sort order
