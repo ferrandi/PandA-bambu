@@ -819,7 +819,7 @@ bool parametric_list_based::compute_minmaxII(std::list<vertex>& bb_operations, c
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---  minII=" + STR(minII));
 
    std::vector<std::pair<vertex, vertex>> emptyVector;
-   exec<false>(Operations, ctrl_steps, 0, emptyVector);
+   exec<false>(Operations, ctrl_steps, 0, emptyVector, 0);
    auto last_cs = HLS->Rsch->get_csteps();
    maxII = from_strongtype_cast<unsigned>(last_cs - ctrl_steps);
 
@@ -840,7 +840,8 @@ bool parametric_list_based::compute_minmaxII(std::list<vertex>& bb_operations, c
 
 template <bool LPBB_predicate>
 bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep current_cycle, unsigned LP_II,
-                                 const std::vector<std::pair<vertex, vertex>>& toBeScheduled)
+                                 const std::vector<std::pair<vertex, vertex>>& toBeScheduled,
+                                 unsigned max_iteration_latency)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Executing parametric_list_based::exec...");
    THROW_ASSERT(Operations.size(), "At least one vertex is expected");
@@ -1213,7 +1214,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      ++infeasable_counter.at(current_vertex);
                      infeasable_value = infeasable_counter.at(current_vertex);
                   }
-                  if(infeasable_value >= LP_II)
+                  if(infeasable_value >= max_iteration_latency)
                   {
                      return true;
                   }
@@ -1855,7 +1856,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   vertex target = boost::target(*eo, *flow_graph);
                   if(operations.find(target) != operations.end())
                   {
-                     successors.push_back(std::make_pair(GET_NAME(flow_graph, target), target));
+                     successors.emplace_back(GET_NAME(flow_graph, target), target);
                   }
                }
                // successors.sort();
@@ -2567,7 +2568,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
             for(unsigned II = minII; II < maxII; ++II)
             {
                PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "  .trying II=" + STR(II));
-               auto res_sched = exec<true>(operations, ctrl_steps, II, toBeScheduled);
+               auto res_sched = exec<true>(operations, ctrl_steps, II, toBeScheduled, maxII);
                if(res_sched)
                {
                   doLP = true;
@@ -2596,7 +2597,7 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
                INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                               "---  Loop pipelining not possible for loop (BB" + STR(BBI->block->number) + ")");
                std::vector<std::pair<vertex, vertex>> emptyVector;
-               exec<false>(operations, ctrl_steps, 0, emptyVector);
+               exec<false>(operations, ctrl_steps, 0, emptyVector, 0);
             }
          }
          else if(FB->is_function_pipelined())
@@ -2607,14 +2608,14 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
                HLS->Rsch->remove_sched(op);
             }
             std::vector<std::pair<vertex, vertex>> emptyVector;
-            exec<false>(operations, ctrl_steps, 0, emptyVector);
+            exec<false>(operations, ctrl_steps, 0, emptyVector, 0);
             FB->disable_function_pipelining();
          }
       }
       else
       {
          std::vector<std::pair<vertex, vertex>> emptyVector;
-         exec<false>(operations, ctrl_steps, 0, emptyVector);
+         exec<false>(operations, ctrl_steps, 0, emptyVector, 0);
       }
 
       ctrl_steps = HLS->Rsch->get_csteps();

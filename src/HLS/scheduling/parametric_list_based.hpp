@@ -288,7 +288,7 @@ class parametric_list_based : public schedulingBaseStep
     */
    template <bool LPBB_predicate>
    bool exec(const OpVertexSet& operations, ControlStep current_cycle, unsigned II,
-             const std::vector<std::pair<vertex, vertex>>& toBeScheduled);
+             const std::vector<std::pair<vertex, vertex>>& toBeScheduled, unsigned max_iteration_latency);
 
    /**
     * Initialize the step (i.e., like a constructor, but executed just before exec
