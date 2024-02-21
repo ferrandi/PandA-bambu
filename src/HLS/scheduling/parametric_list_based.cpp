@@ -1490,7 +1490,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  continue;
+                  schedulable = false;
                }
                else if(cannotBeChained0)
                {
@@ -1516,7 +1516,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  continue;
+                  schedulable = false;
                }
                else if(cannotBeChained1)
                {
@@ -1600,7 +1600,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  continue;
+                  schedulable = false;
                }
                else if(MultiCond1)
                {
@@ -1612,7 +1612,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  continue;
+                  schedulable = false;
                }
                else if(LoadStoreFunctionConflict)
                {
