@@ -2034,10 +2034,6 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                std::list<vertex> phi_list;
                auto latest_cs = computeLatestStep(cs_last_vertex, opDFG, first_vertex, Operations, schedule, 0,
                                                   phi_list, HLS->allocation_information->getConnectionOffset());
-               if(latest_cs >= LP_II + from_strongtype_cast<unsigned>(initialCycle))
-               {
-                  latest_cs = LP_II + from_strongtype_cast<unsigned>(initialCycle) - 1;
-               }
                for(auto p : phi_list)
                {
                   schedule->remove_sched(p);
