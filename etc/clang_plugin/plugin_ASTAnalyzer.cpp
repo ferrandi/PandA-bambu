@@ -38,7 +38,7 @@
  * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
-// #undef NDEBUG
+//#undef NDEBUG
 #include "plugin_includes.hpp"
 
 #include <clang/AST/AST.h>
@@ -833,10 +833,9 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
             forceNoInline(FD);
             for(auto* stmt : FD->getBody()->children())
             {
-               auto callExpr = dyn_cast<CallExpr>(stmt);
-               if(callExpr)
+               if(auto callExpr = dyn_cast<CallExpr>(stmt))
                {
-                  const auto calleeDecl = dyn_cast<FunctionDecl>(callExpr->getCalleeDecl());
+                  const auto calleeDecl = callExpr->getDirectCallee();
                   if(calleeDecl)
                   {
                      LLVM_DEBUG(dbgs() << " -> " << MangledName(calleeDecl) << "\n");
@@ -845,6 +844,10 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
                      forceNoInline(calleeDecl);
 
                      hasModule = true;
+                  }
+                  else if(callExpr->isTypeDependent())
+                  {
+                     return;
                   }
                }
             }
