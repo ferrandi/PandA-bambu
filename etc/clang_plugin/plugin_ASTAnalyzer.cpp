@@ -421,7 +421,7 @@ class HLSPragmaHandler : public PragmaHandler
       Token Tok{};
 
       PP.Lex(Tok);
-      const auto pragma_class = PP.getSpelling(Tok);
+      const auto pragma_class = to_lower(PP.getSpelling(Tok));
       const auto parser_it = _parsers.find(pragma_class);
       if(parser_it != _parsers.end())
       {
