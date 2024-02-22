@@ -877,6 +877,10 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
 
                      hasModule = true;
                   }
+                  else if(callExpr->isTypeDependent())
+                  {
+                     return;
+                  }
                }
             }
             if(!hasModule)

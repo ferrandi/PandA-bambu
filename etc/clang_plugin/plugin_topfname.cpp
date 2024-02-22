@@ -182,8 +182,8 @@ namespace llvm
          bool changed = false;
          bool hasTopFun = false;
          std::list<std::string> symbolList;
+         std::vector<std::string> Starting_TopFunctionNames;
          std::vector<std::string> TopFunctionNames;
-         std::vector<std::string> RootFunctionNames;
 
          const auto handleFunction = [&](Function* F, const std::string& fsymbol, const std::string& fname) {
             if(!F->isIntrinsic() && !F->isDeclaration())
@@ -195,8 +195,8 @@ namespace llvm
                   LLVM_DEBUG(llvm::dbgs() << "  builtin\n");
                   symbolList.push_back(fsymbol);
                }
-               if(llvm::find(RootFunctionNames, fsymbol) != RootFunctionNames.end() ||
-                  llvm::find(RootFunctionNames, fname) != RootFunctionNames.end())
+               if(llvm::find(TopFunctionNames, fsymbol) != TopFunctionNames.end() ||
+                  llvm::find(TopFunctionNames, fname) != TopFunctionNames.end())
                {
                   LLVM_DEBUG(llvm::dbgs() << "  top function\n");
                   F->addFnAttr(Attribute::NoInline);
@@ -227,6 +227,7 @@ namespace llvm
             it = TopFunctionName_TFP.find(",", last);
             const auto func_symbol = TopFunctionName_TFP.substr(last, it);
             LLVM_DEBUG(dbgs() << " - " << func_symbol << "\n");
+            Starting_TopFunctionNames.push_back(func_symbol);
             TopFunctionNames.push_back(func_symbol);
             RootFunctionNames.push_back(func_symbol);
          }
@@ -247,7 +248,7 @@ namespace llvm
                }
             }
          }
-         if(TopFunctionNames.empty())
+         if(Starting_TopFunctionNames.empty())
          {
             LLVM_DEBUG(llvm::dbgs() << "No top function specified\n");
             return false;
@@ -280,8 +281,8 @@ namespace llvm
             const auto fsymbol = fun->getName().str();
             const auto fname = getDemangled(fsymbol);
             if(!(is_builtin_fn(fsymbol) || is_builtin_fn(fname) ||
-                 llvm::find(TopFunctionNames, fsymbol) != TopFunctionNames.end() ||
-                 llvm::find(TopFunctionNames, fname) != TopFunctionNames.end()))
+                 llvm::find(Starting_TopFunctionNames, fsymbol) != Starting_TopFunctionNames.end() ||
+                 llvm::find(Starting_TopFunctionNames, fname) != Starting_TopFunctionNames.end()))
             {
                continue;
             }
