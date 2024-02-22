@@ -392,7 +392,6 @@ DesignFlowStep_Status create_tree_manager::Exec()
       const auto fnode = TM->GetFunction(symbol);
       if(!fnode)
       {
-         THROW_WARNING("Function specified in architecture XML is missing in the IR: " + symbol);
          continue;
       }
       const auto fd = GetPointer<function_decl>(GET_NODE(fnode));

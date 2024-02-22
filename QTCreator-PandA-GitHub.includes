@@ -85,6 +85,7 @@ ext/or-tools/ortools/base
 ext/or-tools/ortools/graph
 ext/or-tools/ortools/util
 ext/sollya
+ext/pugixml
 src
 src/HLS
 src/HLS/architecture_creation
