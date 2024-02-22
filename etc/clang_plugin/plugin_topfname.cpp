@@ -41,6 +41,7 @@
 // #undef NDEBUG
 #include "plugin_includes.hpp"
 
+#include "llvm/Analysis/CallGraph.h"
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/ADT/StringSet.h>
 #include <llvm/IR/LegacyPassManager.h>
@@ -166,6 +167,7 @@ namespace llvm
       CLANG_VERSION_SYMBOL(_plugin_topfname)
       () : ModulePass(ID)
       {
+         initializeCallGraphWrapperPassPass(*PassRegistry::getPassRegistry());
       }
 
 #if __clang_major__ >= 13
@@ -175,16 +177,57 @@ namespace llvm
       }
 #endif
 
-      bool exec(Module& M)
+      bool exec(Module& M, const CallGraph& CG)
       {
          bool changed = false;
          bool hasTopFun = false;
+         std::list<std::string> symbolList;
+         std::vector<std::string> Starting_TopFunctionNames;
          std::vector<std::string> TopFunctionNames;
+
+         const auto handleFunction = [&](Function* F, const std::string& fsymbol, const std::string& fname) {
+            if(!F->isIntrinsic() && !F->isDeclaration())
+            {
+               LLVM_DEBUG(llvm::dbgs() << "Checking function: " << fsymbol << " | " << fname << " (" << F->getLinkage()
+                                       << ")\n");
+               if(is_builtin_fn(fsymbol) || is_builtin_fn(fname))
+               {
+                  LLVM_DEBUG(llvm::dbgs() << "  builtin\n");
+                  symbolList.push_back(fsymbol);
+               }
+               if(llvm::find(TopFunctionNames, fsymbol) != TopFunctionNames.end() ||
+                  llvm::find(TopFunctionNames, fname) != TopFunctionNames.end())
+               {
+                  LLVM_DEBUG(llvm::dbgs() << "  top function\n");
+                  F->addFnAttr(Attribute::NoInline);
+                  F->setLinkage(GlobalValue::LinkageTypes::ExternalLinkage);
+#if __clang_major__ >= 7
+                  F->setDSOLocal(false);
+#endif
+                  symbolList.push_back(fsymbol);
+                  hasTopFun = true;
+                  /// in case add noalias
+                  if(add_noalias)
+                  {
+                     for(auto& par : F->args())
+                     {
+                        if(!par.hasNoAliasAttr() && par.getType()->isPointerTy())
+                        {
+                           par.addAttr(llvm::Attribute::NoAlias);
+                        }
+                     }
+                  }
+               }
+            }
+         };
+
+         // Initialize top functions list
          for(std::size_t last = 0, it = 0; it < TopFunctionName_TFP.size(); last = it + 1)
          {
             it = TopFunctionName_TFP.find(",", last);
             const auto func_symbol = TopFunctionName_TFP.substr(last, it);
             LLVM_DEBUG(dbgs() << " - " << func_symbol << "\n");
+            Starting_TopFunctionNames.push_back(func_symbol);
             TopFunctionNames.push_back(func_symbol);
          }
          pugi::xml_document doc;
@@ -204,12 +247,12 @@ namespace llvm
                }
             }
          }
-         if(TopFunctionNames.empty())
+         if(Starting_TopFunctionNames.empty())
          {
             LLVM_DEBUG(llvm::dbgs() << "No top function specified\n");
             return false;
          }
-         std::list<std::string> symbolList;
+         // Initialize external symbols list
          if(!ExternSymbolsList.empty())
          {
             std::stringstream ss(ExternSymbolsList);
@@ -221,45 +264,56 @@ namespace llvm
                symbolList.push_back(substr);
             }
          }
-         /// check if the translation unit has the top function name
-         for(auto& fun : M.getFunctionList())
+
+         SmallPtrSet<Function*, 32> Reachable;
+         for(auto&& CGN : CG)
          {
-            if(!fun.isIntrinsic() && !fun.isDeclaration())
+            if(!CGN.second)
             {
-               const auto funName = fun.getName().str();
-               const auto demangled = getDemangled(funName);
-               LLVM_DEBUG(llvm::dbgs() << "Checking function: " << funName << " | " << demangled << " ("
-                                       << fun.getLinkage() << ")\n");
-               if(is_builtin_fn(funName) || is_builtin_fn(demangled))
-               {
-                  LLVM_DEBUG(llvm::dbgs() << "  builtin\n");
-                  symbolList.push_back(funName);
-               }
-               if(llvm::find(TopFunctionNames, funName) != TopFunctionNames.end() ||
-                  llvm::find(TopFunctionNames, demangled) != TopFunctionNames.end())
-               {
-                  LLVM_DEBUG(llvm::dbgs() << "  top function\n");
-                  fun.addFnAttr(Attribute::NoInline);
-                  fun.setLinkage(GlobalValue::LinkageTypes::ExternalLinkage);
-#if __clang_major__ >= 7
-                  fun.setDSOLocal(false);
-#endif
-                  symbolList.push_back(funName);
-                  hasTopFun = true;
-                  /// in case add noalias
-                  if(add_noalias)
-                  {
-                     for(auto& par : fun.args())
-                     {
-                        if(!par.hasNoAliasAttr() && par.getType()->isPointerTy())
-                        {
-                           par.addAttr(llvm::Attribute::NoAlias);
-                        }
-                     }
-                  }
-               }
+               continue;
             }
+            auto fun = CGN.second->getFunction();
+            if(!fun)
+            {
+               continue;
+            }
+            const auto fsymbol = fun->getName().str();
+            const auto fname = getDemangled(fsymbol);
+            if(!(is_builtin_fn(fsymbol) || is_builtin_fn(fname) ||
+                 llvm::find(Starting_TopFunctionNames, fsymbol) != Starting_TopFunctionNames.end() ||
+                 llvm::find(Starting_TopFunctionNames, fname) != Starting_TopFunctionNames.end()))
+            {
+               continue;
+            }
+
+            Reachable.insert(fun);
+            handleFunction(fun, fsymbol, fname);
+
+            SmallVector<const Function*, 8> Tmp({CGN.first});
+            do
+            {
+               auto F = std::move(Tmp.back());
+               Tmp.pop_back();
+
+               for(auto&& N : *CG[F])
+               {
+                  if(!N.second)
+                     continue;
+                  auto funCalled = N.second->getFunction();
+                  if(!funCalled)
+                     continue;
+                  if(Reachable.find(funCalled) != Reachable.end())
+                     continue;
+
+                  Tmp.push_back(funCalled);
+
+                  const auto _fsymbol = funCalled->getName().str();
+                  const auto _fname = getDemangled(_fsymbol);
+                  handleFunction(funCalled, _fsymbol, _fname);
+               }
+            } while(!Tmp.empty());
          }
+
          if(!hasTopFun)
          {
             return changed;
@@ -297,7 +351,18 @@ namespace llvm
 
       bool runOnModule(Module& M) override
       {
-         return exec(M);
+#if __clang_major__ < 13
+
+         CallGraphWrapperPass* CGPass = getAnalysisIfAvailable<CallGraphWrapperPass>();
+         if(!CGPass)
+         {
+            report_fatal_error("not able to retrieve the call graph");
+         }
+         return exec(M, CGPass->getCallGraph());
+#else
+         report_fatal_error("Call to runOnModule not expected with current LLVM version");
+         return false;
+#endif
       }
 
       StringRef getPassName() const override
@@ -307,12 +372,13 @@ namespace llvm
 
       void getAnalysisUsage(AnalysisUsage& AU) const override
       {
+         AU.addRequired<CallGraphWrapperPass>();
       }
 
 #if __clang_major__ >= 13
-      llvm::PreservedAnalyses run(llvm::Module& M, llvm::ModuleAnalysisManager&)
+      llvm::PreservedAnalyses run(llvm::Module& M, llvm::ModuleAnalysisManager& MAM)
       {
-         const auto changed = exec(M);
+         const auto changed = exec(M, MAM.getResult<CallGraphAnalysis>(M));
          return (changed ? llvm::PreservedAnalyses::none() : llvm::PreservedAnalyses::all());
       }
 #endif

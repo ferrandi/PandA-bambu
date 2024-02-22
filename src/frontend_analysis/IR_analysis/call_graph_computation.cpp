@@ -133,10 +133,6 @@ DesignFlowStep_Status call_graph_computation::Exec()
                         "---Root function " + STR(GET_INDEX_CONST_NODE(fnode)) + " - " + symbol);
          functions.insert(GET_INDEX_CONST_NODE(fnode));
       }
-      else
-      {
-         THROW_ERROR("Function " + symbol + " not found in IR");
-      }
    }
    CGM->SetRootFunctions(functions);
 
