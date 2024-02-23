@@ -821,6 +821,10 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
 
    void finalize(FunctionDecl* FD) override
    {
+      if(FD->isDependentContext())
+      {
+         return;
+      }
       const auto functionSym = MangledName(FD);
       if(_func_attributes.find(functionSym) != _func_attributes.end())
       {
@@ -844,10 +848,6 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
                      forceNoInline(calleeDecl);
 
                      hasModule = true;
-                  }
-                  else if(callExpr->isTypeDependent())
-                  {
-                     return;
                   }
                }
             }
