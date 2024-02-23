@@ -182,8 +182,8 @@ namespace llvm
          bool changed = false;
          bool hasTopFun = false;
          std::list<std::string> symbolList;
-         std::vector<std::string> Starting_TopFunctionNames;
          std::vector<std::string> TopFunctionNames;
+         std::vector<std::string> RootFunctionNames;
 
          const auto handleFunction = [&](Function* F, const std::string& fsymbol, const std::string& fname) {
             if(!F->isIntrinsic() && !F->isDeclaration())
@@ -195,8 +195,8 @@ namespace llvm
                   LLVM_DEBUG(llvm::dbgs() << "  builtin\n");
                   symbolList.push_back(fsymbol);
                }
-               if(llvm::find(TopFunctionNames, fsymbol) != TopFunctionNames.end() ||
-                  llvm::find(TopFunctionNames, fname) != TopFunctionNames.end())
+               if(llvm::find(RootFunctionNames, fsymbol) != RootFunctionNames.end() ||
+                  llvm::find(RootFunctionNames, fname) != RootFunctionNames.end())
                {
                   LLVM_DEBUG(llvm::dbgs() << "  top function\n");
                   F->addFnAttr(Attribute::NoInline);
@@ -227,8 +227,8 @@ namespace llvm
             it = TopFunctionName_TFP.find(",", last);
             const auto func_symbol = TopFunctionName_TFP.substr(last, it);
             LLVM_DEBUG(dbgs() << " - " << func_symbol << "\n");
-            Starting_TopFunctionNames.push_back(func_symbol);
             TopFunctionNames.push_back(func_symbol);
+            RootFunctionNames.push_back(func_symbol);
          }
          pugi::xml_document doc;
          const auto arch_filename = outdir_name + "/architecture.xml";
@@ -239,15 +239,15 @@ namespace llvm
                const auto func_symbol = std::string(f.attribute("symbol").value());
                const auto func_name = std::string(f.attribute("name").value());
                const auto is_dataflow = !f.attribute("dataflow").empty();
-               if(is_dataflow && (llvm::find(TopFunctionNames, func_name) == TopFunctionNames.end() ||
-                                  llvm::find(TopFunctionNames, func_symbol) == TopFunctionNames.end()))
+               if(is_dataflow && (llvm::find(RootFunctionNames, func_name) == RootFunctionNames.end() ||
+                                  llvm::find(RootFunctionNames, func_symbol) == RootFunctionNames.end()))
                {
                   LLVM_DEBUG(dbgs() << " - " << func_symbol << "|" << func_name << "\n");
-                  TopFunctionNames.push_back(func_symbol);
+                  RootFunctionNames.push_back(func_symbol);
                }
             }
          }
-         if(Starting_TopFunctionNames.empty())
+         if(TopFunctionNames.empty())
          {
             LLVM_DEBUG(llvm::dbgs() << "No top function specified\n");
             return false;
@@ -280,8 +280,8 @@ namespace llvm
             const auto fsymbol = fun->getName().str();
             const auto fname = getDemangled(fsymbol);
             if(!(is_builtin_fn(fsymbol) || is_builtin_fn(fname) ||
-                 llvm::find(Starting_TopFunctionNames, fsymbol) != Starting_TopFunctionNames.end() ||
-                 llvm::find(Starting_TopFunctionNames, fname) != Starting_TopFunctionNames.end()))
+                 llvm::find(TopFunctionNames, fsymbol) != TopFunctionNames.end() ||
+                 llvm::find(TopFunctionNames, fname) != TopFunctionNames.end()))
             {
                continue;
             }
@@ -319,7 +319,9 @@ namespace llvm
             return changed;
          }
          LLVM_DEBUG(llvm::dbgs() << "Top function symbols: "
-                                 << llvm::join(TopFunctionNames.begin(), TopFunctionNames.end(), ", ") << "\n");
+                                 << llvm::join(TopFunctionNames.begin(), TopFunctionNames.end(), ", ") << "\n"
+                                 << "Root function symbols: "
+                                 << llvm::join(RootFunctionNames.begin(), RootFunctionNames.end(), ", ") << "\n");
          symbolList.push_back("signgam");
 
          if(!Internalize_TFP)
