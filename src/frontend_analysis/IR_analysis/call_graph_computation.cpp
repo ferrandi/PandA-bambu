@@ -115,6 +115,16 @@ DesignFlowStep_Status call_graph_computation::Exec()
    CustomSet<unsigned int> functions;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Top functions passed by user");
    auto function_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
+   ///checking if the top functions are present in the IR
+   for(const auto& symbol : function_symbols)
+   {
+      const auto fnode = TM->GetFunction(symbol);
+      if(!fnode)
+      {
+         THROW_ERROR("Function " + symbol + " not found in IR");
+      }
+   }
+
    for(const auto& [symbol, arch] : *HLSMgr->module_arch)
    {
       THROW_ASSERT(arch, "Expected function architecture for function " + symbol);
