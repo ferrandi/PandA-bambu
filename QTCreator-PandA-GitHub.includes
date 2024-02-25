@@ -121,6 +121,7 @@ src/algorithms/clique_covering
 src/algorithms/dominance
 src/algorithms/graph_helpers
 src/algorithms/loops_detection
+src/algorithms/range_analysis
 src/behavior
 src/circuit
 src/constants

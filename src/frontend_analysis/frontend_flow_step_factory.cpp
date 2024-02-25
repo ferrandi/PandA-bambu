@@ -130,7 +130,6 @@
 #include "host_profiling.hpp"
 #endif
 #include "Range_Analysis.hpp"
-#include "eSSA.hpp"
 #include "rebuild_initializations.hpp"
 #include "remove_clobber_ga.hpp"
 #include "remove_ending_if.hpp"
@@ -213,7 +212,6 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
       case DEAD_CODE_ELIMINATION:
       case DETERMINE_MEMORY_ACCESSES:
       case DOM_POST_DOM_COMPUTATION:
-      case ESSA:
       case(FANOUT_OPT):
       case MULTIPLE_ENTRY_IF_REDUCTION:
       case EXTRACT_GIMPLE_COND_OP:
@@ -417,7 +415,6 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
       case DEAD_CODE_ELIMINATION:
       case DETERMINE_MEMORY_ACCESSES:
       case DOM_POST_DOM_COMPUTATION:
-      case ESSA:
       case(FANOUT_OPT):
       case MULTIPLE_ENTRY_IF_REDUCTION:
       case EXTRACT_GIMPLE_COND_OP:
@@ -612,10 +609,6 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
       {
          return DesignFlowStepRef(
              new dom_post_dom_computation(parameters, AppM, function_id, design_flow_manager.lock()));
-      }
-      case(ESSA):
-      {
-         return DesignFlowStepRef(new eSSA(parameters, AppM, function_id, design_flow_manager.lock()));
       }
       case(FANOUT_OPT):
       {

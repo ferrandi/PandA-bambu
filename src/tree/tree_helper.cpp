@@ -169,13 +169,7 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
          const auto at = GetPointerS<const array_type>(t);
          if(at->size)
          {
-            const auto ic = GetPointer<const integer_cst>(GET_CONST_NODE(at->size));
-            if(ic)
-            {
-               return static_cast<unsigned long long>(GetConstValue(at->size));
-            }
-            THROW_UNREACHABLE("What should be the size here? " + t->ToString());
-            return 32ull; // TODO: should this be pointer size? or should be zero?
+            return static_cast<unsigned long long>(GetConstValue(at->size));
          }
          return 0;
       }

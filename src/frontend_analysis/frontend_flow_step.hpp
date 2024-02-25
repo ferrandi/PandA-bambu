@@ -152,7 +152,6 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
    PRAGMA_ANALYSIS,
 #endif
    PREDICATE_STATEMENTS,
-   ESSA,
    RANGE_ANALYSIS,
    REBUILD_INITIALIZATION,
    REBUILD_INITIALIZATION2,
