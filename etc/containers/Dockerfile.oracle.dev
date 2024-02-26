@@ -16,7 +16,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
       gcc gcc-c++ gcc-gfortran gettext-devel ghostscript git glpk-devel gmp-devel \
       graphviz glibc-devel glibc-devel.i686 indent libicu-devel libstdc++-devel \
       libstdc++-devel.i686 libxml2-devel make mpfr-devel ncurses-libs openblas-devel \
-      pkgconfig redhat-lsb rsync suitesparse-devel texinfo time wget zlib-devel \
+      pkgconfig python3 redhat-lsb rsync suitesparse-devel texinfo time wget zlib-devel \
       devtoolset-8-gcc devtoolset-8-gcc-c++ devtoolset-8-gcc-gfortran \
       glpk-static gmp-static glibc-static libstdc++-static suitesparse-static zlib-static \
    # Missing: texlive-fonts-recommended texlive-latex-extra texlive-latex-recommended
@@ -73,7 +73,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
    # Build and install boost libraries
    && wget https://github.com/boostorg/boost/releases/download/boost-1.82.0/boost-1.82.0.tar.xz -qO- | tar xJ \
    && cd boost-1.82.0 \
-   && ./bootstrap.sh --with-libraries=headers --prefix=/usr \
+   && ./bootstrap.sh --with-libraries=headers,test --prefix=/usr \
    && ./b2 release install \
    && cd .. \
    && rm -rf boost* \
