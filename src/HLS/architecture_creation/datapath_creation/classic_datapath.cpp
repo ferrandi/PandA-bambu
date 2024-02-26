@@ -166,10 +166,11 @@ DesignFlowStep_Status classic_datapath::InternalExec()
       for(unsigned int n = 0; n < GetPointer<module>(datapath_cir)->get_internal_objects_size(); ++n)
       {
          const auto member = GetPointer<module>(datapath_cir)->get_internal_object(n);
-         const auto msymbol = GET_TYPE_NAME(member).substr(1);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Analyze module " + msymbol);
+         const auto mod_id = GET_TYPE_NAME(member);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Analyze module " + mod_id);
+         const auto msymbol = (mod_id.size() && mod_id.front() == '_') ? mod_id.substr(1) : mod_id;
          const auto march = HLSMgr->module_arch->GetArchitecture(msymbol);
-         THROW_ASSERT(march || HLSMgr->get_tree_manager()->GetFunction(msymbol) == nullptr,
+         THROW_ASSERT(march || !HLSMgr->get_tree_manager()->GetFunction(msymbol),
                       "Expected function architecture for function " + msymbol);
          if(march)
          {
