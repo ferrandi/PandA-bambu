@@ -77,6 +77,7 @@
 #define VIVADO_XILINX_OUTPUT "XILINX_OUTPUT"
 #define VIVADO_XILINX_POWER "XILINX_POWER"
 #define VIVADO_XILINX_DESIGN_DELAY "XILINX_DESIGN_DELAY"
+#define VIVADO_XILINX_DRAM "XILINX_DRAM"
 #define VIVADO_XILINX_URAM "XILINX_URAM"
 
 XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name,
@@ -664,6 +665,7 @@ void XilinxBackendFlow::CheckSynthesisResults()
       area_m->set_resource_value(area_info::REGISTERS, design_values[VIVADO_XILINX_SLICE_REGISTERS]);
       area_m->set_resource_value(area_info::DSP, design_values[VIVADO_XILINX_DSPS]);
       area_m->set_resource_value(area_info::BRAM, design_values[VIVADO_XILINX_BLOCK_RAMFIFO]);
+      area_m->set_resource_value(area_info::DRAM, design_values[VIVADO_XILINX_DRAM]);
       area_m->set_resource_value(area_info::POWER, design_values[VIVADO_XILINX_POWER]);
 
       time_m = time_info::factory(Param);
