@@ -36,7 +36,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
    # Built and install boost libraries
    && wget https://github.com/boostorg/boost/releases/download/boost-1.82.0/boost-1.82.0.tar.xz -qO- | tar xJ \
    && cd boost-1.82.0 \
-   && ./bootstrap.sh --with-libraries=headers --prefix=/usr \
+   && ./bootstrap.sh --with-libraries=headers,test --prefix=/usr \
    && ./b2 release install \
    && cd .. \
    && rm -rf boost*
