@@ -429,7 +429,7 @@ class HLSPragmaHandler : public PragmaHandler
          {
             return;
          }
-         pragma_line_t p(&PP, pragmaLoc, PP.getSpelling(Tok), Tok.getLocation());
+         pragma_line_t p(&PP, pragmaLoc, pragma_class, Tok.getLocation());
          for(PP.Lex(Tok); Tok.isNot(tok::eod);)
          {
             if(Tok.isOneOf(tok::identifier, tok::raw_identifier, tok::kw_register))
