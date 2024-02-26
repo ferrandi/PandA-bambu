@@ -609,7 +609,7 @@ bool pred;
       | raw_unit node
       ;
    version : TOK_BISON_COMPILER_VERSION
-             string_id { CompilerWrapper::bambu_ir_info += STOK(TOK_COMPILER_VERSION) + ": \"" + data->curr_string + "\"\n"; }
+             string_id { CompilerWrapper::bambu_ir_info = STOK(TOK_COMPILER_VERSION) + ": \"" + data->curr_string + "\"\n"; }
              TOK_BISON_PLUGIN_VERSION
              string_id
              {
