@@ -37,7 +37,7 @@ void diff_sq_acc(din_t a[N], din_t b[N], dout_t *dout)
 
 	for(i=0; i<N; i++)
 	{
-		#pragma HLS PIPELINE II=1
+		// #pragma HLS PIPELINE II=1
 
 		a_reg  = a[i];
 		b_reg  = b[i];
