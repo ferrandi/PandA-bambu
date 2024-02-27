@@ -67,36 +67,36 @@ float hls_fp_accumulator(float window0[NUM_ELEM])
 
 	L1: for(ap_uint<7> x=0; x.to_uint()<NUM_ELEM/2; x++)
     {
-#pragma HLS PIPELINE
+// #pragma HLS PIPELINE
     	 window1[x] = window0[x] +  window0[NUM_ELEM/2+x];
 	}
 	L2: for(ap_uint<7> x=0; x.to_uint()<NUM_ELEM/4; x++)
     {
-#pragma HLS PIPELINE
+// #pragma HLS PIPELINE
 
     	 window2[x] = window1[x] +  window1[NUM_ELEM/4+x];
 	}
 	L3: for(ap_uint<7> x=0; x.to_uint()<NUM_ELEM/8; x++)
     {
-#pragma HLS PIPELINE
+// #pragma HLS PIPELINE
 
     	 window3[x] = window2[x] +  window2[NUM_ELEM/8+x];
 	}
 	L4: for(ap_uint<7> x=0; x.to_uint()<NUM_ELEM/16; x++)
     {
-#pragma HLS PIPELINE
+// #pragma HLS PIPELINE
 
     	 window4[x] = window3[x] +  window3[NUM_ELEM/16+x];
 	}
 	L5: for(ap_uint<7> x=0; x.to_uint()<NUM_ELEM/32; x++)
     {
-#pragma HLS PIPELINE
+// #pragma HLS PIPELINE
 
     	 window5[x] = window4[x] +  window4[NUM_ELEM/32+x];
 	}
 	L6: for(ap_uint<7> x=0; x.to_uint()<NUM_ELEM/64; x++)
     {
-#pragma HLS PIPELINE
+// #pragma HLS PIPELINE
 
     	 window6[x] = window5[x] +  window5[NUM_ELEM/64+x];
 	}

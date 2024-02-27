@@ -102,7 +102,7 @@ void cordic_atan2(coord_t y0, coord_t x0, phase_t *zn)
 	LOOP1: for (i = 0; i <= ROT; i++)
 	{
 
-	#pragma HLS PIPELINE II=1
+	// #pragma HLS PIPELINE II=1
 
 		//dneg= (mode==1) ? (z<0) : (y>0);
 		dneg = (y > 0);

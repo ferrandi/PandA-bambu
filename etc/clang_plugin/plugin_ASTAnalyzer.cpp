@@ -537,6 +537,29 @@ class HLSPragmaAnalyzer
 
 class PipelineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
 {
+   bool isFunctionScope(const FunctionDecl* FD, const clang::SourceLocation& pragmaLoc) const
+   {
+      for(const auto& stmt : FD->getBody()->children())
+      {
+         const auto endLoc =
+#if __clang_major__ >= 7
+             stmt->getEndLoc();
+#else
+             stmt->getLocEnd();
+#endif
+         if(pragmaLoc < endLoc)
+         {
+            return pragmaLoc <
+#if __clang_major__ >= 7
+                   stmt->getBeginLoc();
+#else
+                   stmt->getLocStart();
+#endif
+         }
+      }
+      return true;
+   }
+
  public:
    PipelineHLSPragmaHandler(ASTContext& ctx, PrintingPolicy& pp, std::map<std::string, func_attr_t>& func_attributes)
        : HLSPragmaAnalyzer(ctx, pp, func_attributes), HLSPragmaParser()
@@ -546,6 +569,11 @@ class PipelineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
 
    void operator()(FunctionDecl* FD, const pragma_line_t& p) override
    {
+      if(!isFunctionScope(FD, p.pragmaLoc))
+      {
+         ReportError(p.pragmaLoc, "Loop pipelining pragma not supported.");
+         return;
+      }
       auto& func_attr = GetFuncAttr(FD).attrs;
       for(const auto& attr : p.attrs)
       {
