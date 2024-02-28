@@ -41,150 +41,11 @@
  * Last modified by $Author$
  *
  */
-
 #ifndef CUSTOM_SET_HPP
 #define CUSTOM_SET_HPP
 
-/// Autoheader include
-#include "config_HAVE_UNORDERED.hpp"
-
-#include <set>
-#include <unordered_set>
-
-template <class _Value, class _Hash = std::hash<_Value>, class _Pred = std::equal_to<_Value>,
-          class _Alloc = std::allocator<_Value>>
-using UnorderedSetStd = std::unordered_set<_Value, _Hash, _Pred, _Alloc>;
-
-template <typename Key, typename Compare = std::less<Key>, typename Alloc = std::allocator<Key>>
-using OrderedSetStd = std::set<Key, Compare, Alloc>;
-
-#if !defined(__clang__) && (__GNUC__ == 4 && __GNUC_MINOR__ <= 8)
-#ifndef NO_ABSEIL_HASH
-#define NO_ABSEIL_HASH 1
-#endif
-#include <algorithm>
-
-template <class _Value, class _Hash = std::hash<_Value>, class _Pred = std::equal_to<_Value>,
-          class _Alloc = std::allocator<_Value>>
-using UnorderedSetStdStable = UnorderedSetStd<_Value, _Hash, _Pred, _Alloc>;
-
-template <class T, class _Hash = std::hash<T>, class _Pred = std::equal_to<T>, class _Alloc = std::allocator<T>>
-class CustomUnorderedSet : public UnorderedSetStd<T, _Hash, _Pred, _Alloc>
-{
- public:
-   void operator+=(const CustomUnorderedSet& other)
-   {
-      typename CustomUnorderedSet<T>::const_iterator other_element, other_element_end = other.end();
-      for(other_element = other.begin(); other_element != other_element_end; ++other_element)
-      {
-         this->insert(*other_element);
-      }
-   }
-
-   void operator-=(const CustomUnorderedSet& other)
-   {
-      typename CustomUnorderedSet<T>::const_iterator other_element, other_element_end = other.end();
-      for(other_element = other.begin(); other_element != other_element_end; ++other_element)
-      {
-         this->erase(*other_element);
-      }
-   }
-
-   CustomUnorderedSet operator-(const CustomUnorderedSet& other) const
-   {
-      CustomUnorderedSet return_value = *this;
-      return_value -= other;
-      return return_value;
-   }
-
-   CustomUnorderedSet Intersect(const CustomUnorderedSet& other) const
-   {
-      CustomUnorderedSet return_value;
-      typename CustomUnorderedSet<T>::const_iterator other_element, other_element_end = other.end();
-      for(other_element = other.begin(); other_element != other_element_end; ++other_element)
-      {
-         if(this->find(*other_element) != this->end())
-         {
-            return_value.insert(*other_element);
-         }
-      }
-      return return_value;
-   }
-};
-
-template <typename Key, typename Compare = std::less<Key>, typename _Alloc = std::allocator<Key>>
-class CustomOrderedSet : public OrderedSetStd<Key, Compare, _Alloc>
-{
- public:
-   void operator+=(const CustomOrderedSet& other)
-   {
-      typename CustomOrderedSet<Key>::const_iterator other_element, other_element_end = other.end();
-      for(other_element = other.begin(); other_element != other_element_end; ++other_element)
-      {
-         this->insert(*other_element);
-      }
-   }
-
-   void operator-=(const CustomOrderedSet& other)
-   {
-      typename CustomOrderedSet<Key>::const_iterator other_element, other_element_end = other.end();
-      for(other_element = other.begin(); other_element != other_element_end; ++other_element)
-      {
-         this->erase(*other_element);
-      }
-   }
-
-   CustomOrderedSet operator-(const CustomOrderedSet& other) const
-   {
-      CustomOrderedSet return_value;
-      std::set_difference(this->begin(), this->end(), other.begin(), other.end(),
-                          std::inserter(return_value, return_value.begin()));
-      return return_value;
-   }
-
-   CustomOrderedSet Intersect(const CustomOrderedSet& other) const
-   {
-      CustomOrderedSet return_value;
-      typename CustomOrderedSet<Key>::const_iterator other_element, other_element_end = other.end();
-      for(other_element = other.begin(); other_element != other_element_end; ++other_element)
-      {
-         if(this->find(*other_element) != this->end())
-         {
-            return_value.insert(*other_element);
-         }
-      }
-      return return_value;
-   }
-};
-
-#if HAVE_UNORDERED
-template <typename T>
-using CustomSet = CustomUnorderedSet<T>;
-#else
-template <typename T>
-using CustomSet = CustomOrderedSet<T>;
-#endif
-
-#else
 #ifndef NO_ABSEIL_HASH
 #define NO_ABSEIL_HASH 0
-#endif
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#pragma GCC diagnostic ignored "-Wconversion"
-#pragma GCC diagnostic ignored "-Wpedantic"
-#pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
-#pragma GCC diagnostic ignored "-Woverflow"
-#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
-#pragma GCC diagnostic ignored "-Wstrict-overflow"
-#else
-#pragma GCC diagnostic warning "-Wsign-conversion"
-#pragma GCC diagnostic warning "-Wconversion"
-#pragma GCC diagnostic warning "-Wpedantic"
-#pragma GCC diagnostic warning "-Wctor-dtor-privacy"
-#pragma GCC diagnostic warning "-Woverflow"
-#pragma GCC diagnostic warning "-Wzero-as-null-pointer-constant"
 #endif
 
 #if defined(__clang__)
@@ -195,114 +56,50 @@ using CustomSet = CustomOrderedSet<T>;
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
 #pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
 #pragma clang diagnostic ignored "-Wextra-semi"
+#else
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wpedantic"
+#pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
+#pragma GCC diagnostic ignored "-Woverflow"
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
 #endif
 
 #include "absl/container/btree_set.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/container/node_hash_set.h"
 #include "absl/hash/hash.h"
-#include <set>
 
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
-#pragma GCC diagnostic pop
-#endif
 #if defined(__clang__)
 #pragma clang diagnostic pop
+#else
+#pragma GCC diagnostic pop
 #endif
 
-template <class _Value, class _Hash = typename absl::node_hash_set<_Value>::hasher,
-          class _Pred = typename absl::node_hash_set<_Value>::key_equal, class _Alloc = std::allocator<_Value>>
-using UnorderedSetStdStable = absl::node_hash_set<_Value, _Hash, _Pred, _Alloc>;
+#include <set>
+#include <unordered_set>
 
-template <class T, class _Hash = typename absl::flat_hash_set<T>::hasher,
-          class _Eq = typename absl::flat_hash_set<T>::key_equal, class _Alloc = std::allocator<T>>
-class CustomUnorderedSet : public absl::flat_hash_set<T, _Hash, _Eq, _Alloc>
-{
- public:
-   void operator+=(const CustomUnorderedSet& other)
-   {
-      typename CustomUnorderedSet<T>::const_iterator other_element, other_element_end = other.end();
-      for(other_element = other.begin(); other_element != other_element_end; ++other_element)
-      {
-         this->insert(*other_element);
-      }
-   }
+#include "config_HAVE_UNORDERED.hpp"
 
-   void operator-=(const CustomUnorderedSet& other)
-   {
-      typename CustomUnorderedSet<T>::const_iterator other_element, other_element_end = other.end();
-      for(other_element = other.begin(); other_element != other_element_end; ++other_element)
-      {
-         this->erase(*other_element);
-      }
-   }
-
-   CustomUnorderedSet operator-(const CustomUnorderedSet& other) const
-   {
-      CustomUnorderedSet return_value = *this;
-      return_value -= other;
-      return return_value;
-   }
-
-   CustomUnorderedSet Intersect(const CustomUnorderedSet& other) const
-   {
-      CustomUnorderedSet return_value;
-      typename CustomUnorderedSet<T>::const_iterator other_element, other_element_end = other.end();
-      for(other_element = other.begin(); other_element != other_element_end; ++other_element)
-      {
-         if(this->find(*other_element) != this->end())
-         {
-            return_value.insert(*other_element);
-         }
-      }
-      return return_value;
-   }
-};
+template <class _Value, class _Hash = std::hash<_Value>, class _Pred = std::equal_to<_Value>,
+          class _Alloc = std::allocator<_Value>>
+using UnorderedSetStd = std::unordered_set<_Value, _Hash, _Pred, _Alloc>;
 
 template <typename Key, typename Compare = std::less<Key>, typename Alloc = std::allocator<Key>>
-class CustomOrderedSet : public absl::btree_set<Key, Compare, Alloc>
-{
- public:
-   void operator+=(const CustomOrderedSet& other)
-   {
-      typename CustomOrderedSet<Key>::const_iterator other_element, other_element_end = other.end();
-      for(other_element = other.begin(); other_element != other_element_end; ++other_element)
-      {
-         this->insert(*other_element);
-      }
-   }
+using OrderedSetStd = std::set<Key, Compare, Alloc>;
 
-   void operator-=(const CustomOrderedSet& other)
-   {
-      typename CustomOrderedSet<Key>::const_iterator other_element, other_element_end = other.end();
-      for(other_element = other.begin(); other_element != other_element_end; ++other_element)
-      {
-         this->erase(*other_element);
-      }
-   }
+template <class T, class Hash = absl::container_internal::hash_default_hash<T>,
+          class Eq = absl::container_internal::hash_default_eq<T>, class Alloc = std::allocator<T>>
+using UnorderedSetStdStable = absl::node_hash_set<T, Hash, Eq, Alloc>;
 
-   CustomOrderedSet operator-(const CustomOrderedSet& other) const
-   {
-      CustomOrderedSet return_value;
-      std::set_difference(this->begin(), this->end(), other.begin(), other.end(),
-                          std::inserter(return_value, return_value.begin()));
-      return return_value;
-   }
+template <class T, class Hash = absl::container_internal::hash_default_hash<T>,
+          class Eq = absl::container_internal::hash_default_eq<T>, class Allocator = std::allocator<T>>
+using CustomUnorderedSet = absl::flat_hash_set<T, Hash, Eq, Allocator>;
 
-   CustomOrderedSet Intersect(const CustomOrderedSet& other) const
-   {
-      CustomOrderedSet return_value;
-      typename CustomOrderedSet<Key>::const_iterator other_element, other_element_end = other.end();
-      for(other_element = other.begin(); other_element != other_element_end; ++other_element)
-      {
-         if(this->find(*other_element) != this->end())
-         {
-            return_value.insert(*other_element);
-         }
-      }
-      return return_value;
-   }
-};
+template <typename Key, typename Compare = std::less<Key>, typename Alloc = std::allocator<Key>>
+using CustomOrderedSet = absl::btree_set<Key, Compare, Alloc>;
 
 #if HAVE_UNORDERED
 template <typename T>
@@ -312,5 +109,4 @@ template <typename T>
 using CustomSet = CustomOrderedSet<T>;
 #endif
 
-#endif
 #endif

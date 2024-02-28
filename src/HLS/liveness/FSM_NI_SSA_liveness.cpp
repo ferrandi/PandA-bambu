@@ -41,45 +41,30 @@
  * Last modified by $Author$
  *
  */
-
-/// Autoheader include
 #include "FSM_NI_SSA_liveness.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// behavior includes
 #include "basic_block.hpp"
+#include "behavioral_helper.hpp"
+#include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
-#include "op_graph.hpp"
-
-/// hls includes
 #include "hls.hpp"
 #include "hls_constraints.hpp"
 #include "hls_manager.hpp"
-
-/// HLS/liveness include
 #include "liveness.hpp"
-
-/// hls/memory include
 #include "memory.hpp"
-
-/// hls/stg includes
+#include "op_graph.hpp"
 #include "state_transition_graph.hpp"
 #include "state_transition_graph_manager.hpp"
-
-/// tree includes
-#include "behavioral_helper.hpp"
+#include "string_manipulation.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 
-/// utility include
-#include "dbgPrintHelper.hpp"
-
-#include "string_manipulation.hpp" // for GET_CLASS
 #include <boost/foreach.hpp>
 #include <boost/range/adaptor/reversed.hpp>
+
+#include <algorithm>
 
 FSM_NI_SSA_liveness::FSM_NI_SSA_liveness(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
                                          unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
@@ -599,29 +584,31 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
             BOOST_FOREACH(EdgeDescriptor oe, boost::out_edges(rosl, *stg))
             {
                vertex tgt_state = boost::target(oe, *stg);
-               const CustomSet<unsigned int>& scalar_defs = data->CGetOpNodeInfo(roc)->GetVariables(
+               const auto& scalar_defs = data->CGetOpNodeInfo(roc)->GetVariables(
                    FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
-               const CustomSet<unsigned int>& cited_variables = data->CGetOpNodeInfo(roc)->cited_variables;
-               const CustomSet<unsigned int> all_but_scalar_defs = cited_variables - scalar_defs;
-               for(const auto all_but_scalar_def : all_but_scalar_defs)
+               for(const auto def : data->CGetOpNodeInfo(roc)->cited_variables)
                {
-                  if(HLSMgr->is_register_compatible(all_but_scalar_def))
+                  if(scalar_defs.count(def))
                   {
-                     HLS->Rliv->add_state_in_for_var(all_but_scalar_def, roc, rosl, tgt_state);
+                     continue;
                   }
-                  else if(HLSMgr->Rmem->has_base_address(all_but_scalar_def) or
-                          tree_helper::is_parameter(HLSMgr->get_tree_manager(), all_but_scalar_def))
+                  if(HLSMgr->is_register_compatible(def))
                   {
-                     HLS->Rliv->add_state_in_for_var(all_but_scalar_def, roc, rosl, tgt_state);
+                     HLS->Rliv->add_state_in_for_var(def, roc, rosl, tgt_state);
                   }
-                  else if(tree_helper::is_ssa_name(HLSMgr->get_tree_manager(), all_but_scalar_def) and
-                          tree_helper::is_virtual(HLSMgr->get_tree_manager(), all_but_scalar_def))
+                  else if(HLSMgr->Rmem->has_base_address(def) ||
+                          tree_helper::is_parameter(HLSMgr->get_tree_manager(), def))
+                  {
+                     HLS->Rliv->add_state_in_for_var(def, roc, rosl, tgt_state);
+                  }
+                  else if(tree_helper::is_ssa_name(HLSMgr->get_tree_manager(), def) &&
+                          tree_helper::is_virtual(HLSMgr->get_tree_manager(), def))
                   {
                      ;
                   }
                   else
                   {
-                     THROW_ERROR("unexpected condition " + STR(all_but_scalar_def));
+                     THROW_ERROR("unexpected condition " + STR(def));
                   }
                }
             }
