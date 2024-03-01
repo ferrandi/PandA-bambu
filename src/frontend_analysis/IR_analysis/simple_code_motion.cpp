@@ -172,15 +172,6 @@ void simple_code_motion::Initialize()
       {
          const auto TM = AppM->get_tree_manager();
          schedule = GetPointerS<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch;
-#if 0
-         tree_nodeRef temp = TM->get_tree_node_const(function_id);
-         function_decl * fd = GetPointer<function_decl>(temp);
-         statement_list * sl = GetPointer<statement_list>(GET_NODE(fd->body));
-         for(const auto block : sl->list_of_bloc)
-         {
-            block.second->schedule = schedule;
-         }
-#endif
       }
    }
 #endif
@@ -488,21 +479,6 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
             auto n_bit_min = std::min(tree_helper::Size(be->op0), tree_helper::Size(be->op1));
             bool is_constant = tree_helper::is_constant(TM, GET_INDEX_NODE(be->op0)) ||
                                tree_helper::is_constant(TM, GET_INDEX_NODE(be->op1));
-#if 0
-            const bool is_gimple_cond_input = [&]()
-            {
-               const auto sn = GetPointer<const ssa_name>(left);
-               if(!sn)
-                  return false;
-               const auto use_stmts = sn->CGetUseStmts();
-               if(use_stmts.size() != 1)
-                  return false;
-               const auto use_stmt = *(use_stmts.begin());
-               if(GET_NODE(use_stmt.first)->get_kind() != gimple_cond_K)
-                  return false;
-               return true;
-            }();
-#endif
             if((n_bit > 9 && !is_constant && n_bit_min != 1) || n_bit > 16)
             {
                zero_delay = false;
@@ -817,63 +793,11 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
       return return_value;
    }();
 
-#if 0
-   const CustomSet<vertex> to_be_parallelized = simd_loop_headers.empty() ? CustomSet<vertex>() : [&] () -> CustomSet<vertex> const
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing loop basic blocks");
-      CustomSet<vertex> return_value;
-      for(const auto simd_loop_header : simd_loop_headers)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing loop basic blocks of Loop " + STR(direct_vertex_map[simd_loop_header]));
-         const auto loop_id = list_of_bloc.at(direct_vertex_map[simd_loop_header)]->loop_id;
-         CustomSet<vertex> already_processed;
-         std::list<vertex> to_be_processed;
-         InEdgeIterator ie, ie_end;
-         for(boost::tie(ie, ie_end) = boost::in_edges(simd_loop_header, *GCC_bb_graph); ie != ie_end; ie++)
-         {
-            const vertex source = boost::source(*ie, *GCC_bb_graph);
-            ///If the loop id is less than the current the source is inside a previous loop, if it is equal it is in the same loop if it is larger is in the nested loop
-            if(list_of_bloc.at(direct_vertex_map[source)]->loop_id >= loop_id)
-            {
-               to_be_processed.push_front(source);
-            }
-         }
-         while(to_be_processed.size())
-         {
-            vertex current = to_be_processed.front();
-            to_be_processed.pop_front();
-            already_processed.insert(current);
-            return_value.insert(current);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Processing BB" + STR(direct_vertex_map[current]));
-            for(boost::tie(ie, ie_end) = boost::in_edges(current, *GCC_bb_graph); ie != ie_end; ie++)
-            {
-               const vertex source = boost::source(*ie, *GCC_bb_graph);
-               if(already_processed.find(source) != already_processed.end() or current == simd_loop_header)
-               {
-                  continue;
-               }
-               const auto source_loop_id = list_of_bloc.at(direct_vertex_map[source)]->loop_id;
-               ///If source loop id is larger than current loop id, the examined edge is a feedback edge of a loop nested in the current one
-               if(source_loop_id > loop_id)
-                  to_be_processed.push_front(source);
-               else
-                  to_be_processed.push_back(source);
-            }
-         }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed loop basic blocks of Loop " + STR(simd_loop_header));
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed loop basic blocks");
-      return return_value;
-   }();
-#else
-   const CustomSet<vertex> to_be_parallelized = CustomSet<vertex>();
-#endif
-   const tree_manipulationConstRef tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters, AppM));
+   const tree_manipulationConstRef tree_man(new tree_manipulation(TM, parameters, AppM));
 
    for(const auto bb_vertex : bb_sorted_vertices)
    {
       const auto curr_bb = direct_vertex_map.at(bb_vertex);
-      bool parallel_bb = to_be_parallelized.find(bb_vertex) != to_be_parallelized.end();
       if(curr_bb == bloc::ENTRY_BLOCK_ID)
       {
          continue;
@@ -882,23 +806,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
       {
          continue;
       }
-#if 0
-      /// skip BB having a pred block with a gimple_multi_way_if statement as last statement
-      bool have_multi_way_if_pred = false;
-      for(const auto pred : list_of_bloc.at(curr_bb)->list_of_pred)
-      {
-         if(!list_of_bloc.at(pred)->list_of_stmt.empty())
-         {
-            tree_nodeRef last = GET_NODE(list_of_bloc.at(pred)->list_of_stmt.back());
-            if(GetPointer<gimple_multi_way_if>(last))
-               have_multi_way_if_pred = true;
-         }
-      }
-      if(have_multi_way_if_pred)
-         continue;
-#endif
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Analyzing BB" + STR(curr_bb) + (parallel_bb ? "(Parallel)" : ""));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(curr_bb));
       bool restart_bb_code_motion = false;
       do
       {
@@ -1228,7 +1136,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             {
                zero_delay_stmts.insert(GET_INDEX_NODE(*statement));
             }
-            if(check_movable == FunctionFrontendFlowStep_Movable::TIMING or (!only_phis && !zero_delay && !parallel_bb))
+            if(check_movable == FunctionFrontendFlowStep_Movable::TIMING or (!only_phis && !zero_delay))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---Going down of one level because of non-zero delay");
@@ -1434,8 +1342,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
          }
          if(restart_bb_code_motion)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Restart Analyzing BB" + STR(curr_bb) + (parallel_bb ? "(Parallel)" : ""));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Restart Analyzing BB" + STR(curr_bb));
          }
       } while(restart_bb_code_motion);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(curr_bb));

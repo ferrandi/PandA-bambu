@@ -62,12 +62,8 @@ GenerateFuList::GenerateFuList(const generic_deviceRef _device, const DesignFlow
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
    if(parameters->getOption<std::string>(OPT_component_name) != "all")
    {
-      auto to_be_splitted(parameters->getOption<std::string>(OPT_component_name));
-      const auto splitted = SplitString(to_be_splitted, ",");
-      for(const auto& component_to_be_characterized : splitted)
-      {
-         components_to_be_characterized.insert(component_to_be_characterized);
-      }
+      components_to_be_characterized = string_to_container<CustomOrderedSet<std::string>>(
+          parameters->getOption<std::string>(OPT_component_name), ",");
    }
 }
 

@@ -137,13 +137,6 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
 {
    unsigned int var1 = get_variable_index(storage_value_index1).first;
    unsigned int var2 = get_variable_index(storage_value_index2).first;
-#if 0
-   if(vw2vertex.find(var1) == vw2vertex.end())
-   {
-      //std::cerr << var1 << std::endl;
-      return 1;
-   }
-#endif
    const tree_managerRef TreeM = HLS_mgr->get_tree_manager();
    if(tree_helper::is_parameter(TreeM, var1))
    {

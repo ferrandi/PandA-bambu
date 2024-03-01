@@ -40,59 +40,45 @@
  * Last modified by $Author$
  *
  */
-
 #include "Range_Analysis.hpp"
 
-#include "config_HAVE_ASSERTS.hpp"
-
-///. include
+#include "Bit_Value_opt.hpp"
 #include "Parameter.hpp"
-
-/// behavior includes
 #include "application_manager.hpp"
 #include "basic_block.hpp"
+#include "bit_lattice.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
-#include "graph.hpp"
-#include "op_graph.hpp"
-#include "var_pp_functor.hpp"
-
+#include "custom_map.hpp"
+#include "dbgPrintHelper.hpp"
+#include "dead_code_elimination.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
+#include "ext_tree_node.hpp"
+#include "function_behavior.hpp"
 #include "function_frontend_flow_step.hpp"
-
-#include "dead_code_elimination.hpp"
-
-/// HLS include
+#include "graph.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
-
-/// HLS/memory include
 #include "memory.hpp"
-
-/// stl
-#include "custom_map.hpp"
-#include <map>
-#include <set>
-#include <sstream>
-#include <vector>
-
-/// Tree includes
-#include "ext_tree_node.hpp"
+#include "op_graph.hpp"
+#include "string_manipulation.hpp"
 #include "token_interface.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_reindex.hpp"
+#include "utility.hpp"
+#include "var_pp_functor.hpp"
 
-#include "Bit_Value_opt.hpp"
-#include "bit_lattice.hpp"
+#include <filesystem>
+#include <map>
+#include <set>
+#include <sstream>
+#include <vector>
 
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
-#include "string_manipulation.hpp" // for GET_CLASS
-#include <filesystem>              // for create_directories
+#include "config_HAVE_ASSERTS.hpp"
 
 #define RA_JUMPSET
 //    #define EARLY_DEAD_CODE_RESTART     // Abort analysis when dead code is detected instead of waiting step's end
@@ -6632,7 +6618,8 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
       execution_mode(RA_EXEC_NORMAL)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
-   const auto opts = SplitString(parameters->getOption<std::string>(OPT_range_analysis_mode), ",");
+   const auto opts =
+       string_to_container<std::vector<std::string>>(parameters->getOption<std::string>(OPT_range_analysis_mode), ",");
    CustomSet<std::string> ra_mode;
    for(const auto& opt : opts)
    {

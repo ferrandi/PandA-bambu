@@ -4296,7 +4296,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          }
          std::string connected_path = conn;
          connected_path = connected_path.substr(scope.size() + 1, connected_path.size());
-         std::vector<std::string> elements = SplitString(connected_path, HIERARCHY_SEPARATOR);
+         const auto elements = string_to_container<std::vector<std::string>>(connected_path, HIERARCHY_SEPARATOR);
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                        "     * Connected to " + connected_path << ": " << elements.size());
          structural_objectRef connnected_object;

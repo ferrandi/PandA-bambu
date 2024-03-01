@@ -53,14 +53,6 @@
 #endif
 
 /**
- * Function which splits a string into tokens
- * @param input is the string to be split
- * @param separators is the set of characters to be used to compute the tokens
- * @return the identified tokens
- */
-const std::vector<std::string> SplitString(const std::string& input, const std::string& separators);
-
-/**
  * Function which adds escape to selected characters
  * @param ioString is the string to be escaped
  * @param to_be_escaped is the list of characters to be escaped
@@ -72,8 +64,6 @@ void add_escape(std::string& ioString, const std::string& to_be_escaped);
  * @param ioString is the string where the escaped character are changed
  */
 void remove_escaped(std::string& ioString);
-
-std::string TrimSpaces(const std::string& value);
 
 std::string cxa_demangle(const std::string& input);
 

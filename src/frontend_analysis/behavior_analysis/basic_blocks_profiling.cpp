@@ -57,6 +57,7 @@
 #include "host_profiling_constants.hpp"
 #include "profiling_information.hpp"
 #include "string_manipulation.hpp"
+#include "utility.hpp"
 
 #include <string>
 #include <utility>
@@ -150,7 +151,7 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Read " + line);
             if(line.size())
             {
-               std::vector<std::string> splitted = SplitString(line, " ");
+               const auto splitted = string_to_container<std::vector<std::string>>(line, " ");
                THROW_ASSERT(splitted.size() == 2, line);
                if(line.find("Function") != std::string::npos)
                {

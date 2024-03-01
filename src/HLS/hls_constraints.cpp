@@ -66,7 +66,7 @@
 /// function used to extract the functional unit name and its library from a string.
 void DECODE_FU_LIB(std::string& fu_name, std::string& fu_library, const std::string& combined)
 {
-   std::vector<std::string> splitted = SplitString(combined, ":");
+   const auto splitted = string_to_container<std::vector<std::string>>(combined, ":");
    fu_name = splitted[0];
    fu_library = splitted[1];
 }
@@ -229,38 +229,6 @@ void HLS_constraints::set_max_registers(unsigned int n_resources)
 {
    registers = n_resources;
 }
-
-#if 0
-/**
- * Check if HLS contraints imposed on high-level synthesis have been respected. It throws an exection if:
- *    - Does not exist a functional unit for an operation to be executed
- *    - Functional units consumption is too high (functional unit power is greater than maximum power per cycle)
- *    - Does not exist enough functional unit for an operation.
- * @param GM is the reference to behavioral_manager class, where all information about graphs are stored
- * @param TM is the rerefence to technology_manager class, where all information about architecture are stored
- */
-void HLS_constraints::check_HLS_constraints(const behavioral_managerRef & GM, const technology_managerRef & TM) const
-{
-  VertexIterator v, v_end;
-  std::string fu_name;
-  bool flag;
-  double fu_max_power;
-  const graph * cfg = GM->CGetOpGraph(behavioral_manager::CFG);
-  HLS_constraints_functor<base_constraints_functor> CF(*this);
-
-  for (boost::tie(v, v_end) = boost::vertices(*cfg); v != v_end; v++)
-  {
-    (void) TM->get_attribute_of_fu_per_op(GET_OP(cfg, *v), technology_manager::min, technology_manager::execution_time, fu_name, flag);
-    if (!flag)
-      THROW_ERROR(std::string("Does not exist a functional unit for operation ") + GET_OP(cfg, *v));
-    fu_max_power = TM->get_attribute_of_fu_per_op(GET_OP(cfg, *v), technology_manager::max, technology_manager::power_consumption, fu_name, flag);
-    if (max_power_per_cycle < fu_max_power)
-      THROW_ERROR(std::string("Functional units consumption is too high ") + GET_OP(cfg, *v));
-    if (!TM->check_technology_constraint(GET_OP(cfg, *v), CF))
-      THROW_ERROR(std::string("Does not exist enough functional unit for operation \"") + GET_OP(cfg, *v) + std::string("\". Check the number of resources that can implement that operation"));
-  }
-}
-#endif
 
 void HLS_constraints::print(std::ostream& os) const
 {

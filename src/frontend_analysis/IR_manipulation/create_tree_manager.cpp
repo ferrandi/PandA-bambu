@@ -63,6 +63,7 @@
 #include "time_info.hpp"
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
+#include "utility.hpp"
 
 #if HAVE_FROM_AADL_ASN_BUILT
 #include "parser_flow_step.hpp"
@@ -185,12 +186,12 @@ void create_tree_manager::createCostTable()
       (!parameters->IsParameter("disable-THR") || parameters->GetParameter<unsigned int>("disable-THR") == 0))
    {
       std::map<std::pair<std::string, std::string>, std::string> default_InstructionLatencyTable;
-      auto latencies = SplitString(STR_cost_latency_table_default, ",");
+      auto latencies = string_to_container<std::vector<std::string>>(STR_cost_latency_table_default, ",");
       for(const auto& el : latencies)
       {
-         auto key_value = SplitString(el, "=");
+         auto key_value = string_to_container<std::vector<std::string>>(el, "=");
          THROW_ASSERT(key_value.size() == 2, "unexpected condition");
-         auto op_bit = SplitString(key_value.at(0), "|");
+         auto op_bit = string_to_container<std::vector<std::string>>(key_value.at(0), "|");
          THROW_ASSERT(op_bit.size() == 2, "unexpected condition");
          default_InstructionLatencyTable[std::make_pair(op_bit.at(0), op_bit.at(1))] = key_value.at(1);
       }

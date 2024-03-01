@@ -216,8 +216,7 @@ int SpiderParameter::Exec()
          }
          case INPUT_OPT_BENCHMARK_BOUNDS:
          {
-            std::string to_be_splitted(optarg);
-            std::vector<std::string> splitted = SplitString(to_be_splitted, ",");
+            const auto splitted = string_to_container<std::vector<std::string>>(optarg, ",");
             if(splitted.size() != 2)
             {
                THROW_ERROR("Error in argument of --benchmark-bounds: " + std::string(optarg));

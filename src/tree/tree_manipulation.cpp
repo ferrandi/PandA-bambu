@@ -2180,13 +2180,6 @@ void tree_manipulation::create_label(const blocRef& block, const unsigned int fu
    tree_nodeRef tr_new_stmt = TreeM->GetTreeReindex(label_expr_nid);
    GetPointer<gimple_node>(GET_NODE(tr_new_stmt))->bb_index = block->number;
    block->PushFront(tr_new_stmt, AppM);
-#if 0
-   static int nid = 0;
-   std::string raw_file_name = STR(nid++) + "create_label.raw";
-   std::ofstream raw_file(raw_file_name.c_str());
-   raw_file << TreeM;
-   raw_file.close();
-#endif
 }
 
 void tree_manipulation::create_goto(const blocRef& block, const unsigned int function_decl_nid,

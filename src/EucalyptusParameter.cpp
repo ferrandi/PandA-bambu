@@ -337,7 +337,7 @@ void EucalyptusParameter::CheckParameters()
       return sorted_paths;
    };
 
-   const auto altera_dirs = SplitString(getOption<std::string>(OPT_altera_root), ":");
+   const auto altera_dirs = getOption<std::vector<std::string>>(OPT_altera_root);
    removeOption(OPT_altera_root);
    const auto search_quartus = [&](const std::string& dir) {
       if(std::filesystem::exists(dir + "/quartus/bin/quartus_sh"))
@@ -380,7 +380,7 @@ void EucalyptusParameter::CheckParameters()
    }
 
    /// Search for lattice tool
-   const auto lattice_dirs = SplitString(getOption<std::string>(OPT_lattice_root), ":");
+   const auto lattice_dirs = getOption<std::vector<std::string>>(OPT_lattice_root);
    removeOption(OPT_lattice_root);
    auto has_lattice = 0; // 0 = not found, 1 = 32-bit version, 2 = 64-bit version
    const auto search_lattice = [&](const std::string& dir) {
@@ -448,7 +448,7 @@ void EucalyptusParameter::CheckParameters()
    }
 
    /// Search for Mentor tools
-   const auto mentor_dirs = SplitString(getOption<std::string>(OPT_mentor_root), ":");
+   const auto mentor_dirs = getOption<std::vector<std::string>>(OPT_mentor_root);
    removeOption(OPT_mentor_root);
    const auto search_mentor = [&](const std::string& dir) {
       if(std::filesystem::exists(dir + "/bin/vsim"))
@@ -472,7 +472,7 @@ void EucalyptusParameter::CheckParameters()
    }
 
    /// Search for NanoXPlore tools
-   const auto nanox_dirs = SplitString(getOption<std::string>(OPT_nanoxplore_root), ":");
+   const auto nanox_dirs = getOption<std::vector<std::string>>(OPT_nanoxplore_root);
    removeOption(OPT_nanoxplore_root);
    const auto search_xmap = [&](const std::string& dir) {
       if(std::filesystem::exists(dir + "/bin/nxpython"))
@@ -497,7 +497,7 @@ void EucalyptusParameter::CheckParameters()
 
    /// Search for Xilinx tools
    const auto target_64 = true;
-   const auto xilinx_dirs = SplitString(getOption<std::string>(OPT_xilinx_root), ":");
+   const auto xilinx_dirs = getOption<std::vector<std::string>>(OPT_xilinx_root);
    removeOption(OPT_xilinx_root);
    const auto search_xilinx = [&](const std::string& dir) {
       if(std::filesystem::exists(dir + "/ISE"))
@@ -633,8 +633,8 @@ void EucalyptusParameter::SetDefaults()
    setOption(OPT_output_level, OUTPUT_LEVEL_MINIMUM);
    setOption(OPT_debug_level, DEBUG_LEVEL_MINIMUM);
 
-   setOption(OPT_altera_root, "/opt/altera:/opt/intelFPGA");
-   setOption(OPT_lattice_root, "/opt/diamond:/usr/local/diamond");
+   setOption(OPT_altera_root, "/opt/altera" STR_CST_string_separator "/opt/intelFPGA");
+   setOption(OPT_lattice_root, "/opt/diamond" STR_CST_string_separator "/usr/local/diamond");
    setOption(OPT_mentor_root, "/opt/mentor");
    setOption(OPT_mentor_optimizer, true);
    setOption(OPT_nanoxplore_root, "/opt/NanoXplore");
@@ -654,7 +654,7 @@ void EucalyptusParameter::SetDefaults()
    setOption(OPT_reset_type, "no");
    setOption(OPT_reg_init_value, false);
 
-   setOption(OPT_output_directory, GetCurrentPath() + "/HLS_output/");
+   setOption(OPT_output_directory, (std::filesystem::current_path() / "HLS_output/").string());
    setOption(OPT_reset_level, false);
    setOption(OPT_mixed_design, true);
 }

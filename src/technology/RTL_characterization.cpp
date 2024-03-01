@@ -1322,9 +1322,9 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
 
 const std::string RTLCharacterization::ComputeComponent(const std::string& input) const
 {
-   std::vector<std::string> component_cell = SplitString(input, ",");
+   const auto component_cell = string_to_container<std::vector<std::string>>(input, ",");
    THROW_ASSERT(component_cell.size() > 0, input);
-   std::vector<std::string> component_or_cell = SplitString(component_cell[0], "-");
+   const auto component_or_cell = string_to_container<std::vector<std::string>>(component_cell[0], "-");
    THROW_ASSERT(component_or_cell.size() == 2, component_or_cell[0]);
    return component_or_cell[0];
 }
@@ -1332,11 +1332,10 @@ const std::string RTLCharacterization::ComputeComponent(const std::string& input
 const CustomSet<std::string> RTLCharacterization::ComputeCells(const std::string& input) const
 {
    CustomSet<std::string> ret;
-   std::vector<std::string> component_cells = SplitString(input, ",");
+   const auto component_cells = string_to_container<std::vector<std::string>>(input, ",");
    for(const auto& component_cell : component_cells)
    {
-      std::vector<std::string> component_or_cell = SplitString(component_cell, "-");
-      ;
+      const auto component_or_cell = string_to_container<std::vector<std::string>>(component_cell, "-");
       THROW_ASSERT(component_or_cell.size() == 2, component_cell);
       THROW_ASSERT(component_or_cell[0] == component, component_or_cell[0] + " vs " + component);
       ret.insert(component_or_cell[1]);

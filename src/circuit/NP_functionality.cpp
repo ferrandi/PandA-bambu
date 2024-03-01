@@ -40,23 +40,22 @@
  * Last modified by $Author$
  *
  */
-
 #include "NP_functionality.hpp"
-#include "exceptions.hpp"                     // for THROW_AS...
-#include "xml_attribute.hpp"                  // for attribut...
-#include "xml_element.hpp"                    // for xml_element
-#include "xml_helper.hpp"                     // for WRITE_XNVM2
-#include <boost/iterator/iterator_facade.hpp> // for operator!=
-#include <boost/token_functions.hpp>          // for char_sep...
-#include <boost/tokenizer.hpp>                // for tokenize...
-#include <list>                               // for _List_co...
-#include <utility>                            // for pair
 
-/// STD include
-#include <iostream>
-
-/// utility include
+#include "exceptions.hpp"
 #include "string_manipulation.hpp"
+#include "utility.hpp"
+#include "xml_attribute.hpp"
+#include "xml_element.hpp"
+#include "xml_helper.hpp"
+
+#include <boost/iterator/iterator_facade.hpp>
+#include <boost/token_functions.hpp>
+#include <boost/tokenizer.hpp>
+
+#include <iostream>
+#include <list>
+#include <utility>
 
 NP_functionality::NP_functionaly_type NP_functionality::to_NP_functionaly_type(const std::string& val)
 {
@@ -183,14 +182,14 @@ void NP_functionality::get_port_list(std::map<unsigned int, std::map<std::string
    {
       return;
    }
-   std::vector<std::string> splitted = SplitString(port_list, ",");
+   const auto splitted = string_to_container<std::vector<std::string>>(port_list, ",");
    for(const auto& port_description : splitted)
    {
       if(port_description.empty())
       {
          continue;
       }
-      std::vector<std::string> ports = SplitString(port_description, ":");
+      const auto ports = string_to_container<std::vector<std::string>>(port_description, ":");
       THROW_ASSERT(ports.size() == 4, "Wrong format for NP_functionality::PORT_LIST functionality");
       if(ports[0] == "I")
       {

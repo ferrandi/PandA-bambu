@@ -58,10 +58,7 @@
 #include <vector>
 
 /// The character used to separate concatenated string
-#define STR_CST_string_separator std::string(1, 31)
-
-/// The character used to separate concatenated string
-#define STR_CST_string_separator_char static_cast<char>(31)
+#define STR_CST_string_separator "\x1f"
 
 /// INT representing infinite
 #define INFINITE_INT (std::numeric_limits<int>::max())

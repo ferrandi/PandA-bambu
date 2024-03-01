@@ -684,12 +684,6 @@ void verilog_writer::write_module_instance_begin(const structural_objectRef& cir
 {
    THROW_ASSERT(cir->get_kind() == component_o_K || cir->get_kind() == channel_o_K,
                 "Expected a component or a channel got something of different");
-#if 0
-   if(module_name.find("widen_mult_expr") != std::string::npos)
-   {
-      indented_output_stream->Append("(* dont_touch = \"true\" *) ");
-   }
-#endif
    indented_output_stream->Append(module_name);
 
    /// check possible module parametrization
