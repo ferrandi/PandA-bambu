@@ -227,7 +227,7 @@ structural_objectRef structural_manager::add_port(const std::string& id, port_o:
                   {
 #if HAVE_TECHNOLOGY_BUILT
                      std::string equation = NPF->get_NP_functionality(NP_functionality::EQUATION);
-                     std::vector<std::string> tokens = SplitString(equation, ";");
+                     const auto tokens = string_to_container<std::vector<std::string>>(equation, ";");
                      for(auto& token : tokens)
                      {
                         if(starts_with(token, id))
@@ -1251,79 +1251,6 @@ static void add_directed_edge_single(
    }
 
    circuit_add_edge(src, tgt, edge_type, *bg, p_obj1, p_obj2, is_critical);
-
-#if 0
-   //try to detect a direction
-   if ((pp1->get_port_direction() == port_o::IN && pp2->get_port_direction() != port_o::IN) ||
-       (pp1->get_port_direction() != port_o::OUT && pp2->get_port_direction() == port_o::OUT)
-       )
-      std::swap(pp1, pp2);
-
-   else
-   {
-      if (owner2 && owner1 == owner2->get_owner())// pp1 is a top port
-      {
-         THROW_ASSERT(module_vertex_rel.find(owner2) != module_vertex_rel.end(), "module not found");
-         v2 = module_vertex_rel.find(owner2)->second;
-         if (pp1->get_port_direction() != port_o::OUT or pp2->get_port_direction() == port_o::IN)
-            v1 = en;
-         else
-         {
-            v1 = ex;
-            std::swap(v1, v2);
-            std::swap(pp1, pp2);
-         }
-      }
-      else if (owner1 && owner2 == owner1->get_owner())// pp2 is a top port
-      {
-         THROW_ASSERT(module_vertex_rel.find(owner1) != module_vertex_rel.end(), "module not found");
-         v1 = module_vertex_rel.find(owner1)->second;
-         if (pp2->get_port_direction() != port_o::OUT or pp1->get_port_direction() == port_o::IN)
-         {
-            v2 = en;
-            std::swap(v1, v2);
-            std::swap(pp1, pp2);
-         }
-         else
-            v2 = ex;
-      }
-      else
-      {
-         THROW_ASSERT(module_vertex_rel.find(owner1) != module_vertex_rel.end(), "module not found");
-         v1 = module_vertex_rel.find(owner1)->second;
-         THROW_ASSERT(module_vertex_rel.find(owner2) != module_vertex_rel.end(), "module not found");
-         v2 = module_vertex_rel.find(owner2)->second;
-      }
-   }
-   //std::cerr << "     connection " << pp1->get_path() << " -> " << pp2->get_path() << std::endl;
-   //in case both ports are IO or GEN two opposite edges are added
-   if ((pp1->get_port_direction() == port_o::IO || pp1->get_port_direction() == port_o::GEN) && (pp2->get_port_direction() == port_o::IO || pp2->get_port_direction() == port_o::GEN))
-   {
-      circuit_add_edge(v1, v2, DATA_SELECTOR, *bg, p1, p2, is_critical);
-      circuit_add_edge(v2, v1, DATA_SELECTOR, *bg, p2, p1, is_critical);
-   }
-   else if ((pp1->get_port_direction() == port_o::IN && pp2->get_port_direction() == port_o::IN  && ((v1 == en && v2 != en) || (v1 != en && v2 == en))) ||
-            (pp1->get_port_direction() == port_o::OUT && pp2->get_port_direction() == port_o::OUT  && ((v1 == ex && v2 != ex) || (v1 != ex && v2 == ex))) ||
-            pp1->get_port_direction() != pp2->get_port_direction()
-            )
-   {
-      structural_objectRef port;
-      if (pp1 != GetPointer<port_o>(p1)) //check possible swap
-      {
-         if (pp1->get_is_clock() || pp2->get_is_clock())
-            circuit_add_edge(v1, v2, CLOCK_SELECTOR, *bg, p2, p1, is_critical);
-         else
-            circuit_add_edge(v1, v2, DATA_SELECTOR, *bg, p2, p1, is_critical);
-      }
-      else
-      {
-         if (pp1->get_is_clock() || pp2->get_is_clock())
-            circuit_add_edge(v1, v2, CLOCK_SELECTOR, *bg, p1, p2, is_critical);
-         else
-            circuit_add_edge(v1, v2, DATA_SELECTOR, *bg, p1, p2, is_critical);
-      }
-   }
-#endif
 }
 
 /**

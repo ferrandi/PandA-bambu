@@ -101,13 +101,13 @@ AllocationInformation::InitializeMuxDB(const AllocationInformationConstRef alloc
       mux_precisions.push_back(16);
       mux_precisions.push_back(32);
       mux_precisions.push_back(64);
-      std::vector<std::string> parameters_split = SplitString(temp_portsize_parameters, "|");
+      const auto parameters_split = string_to_container<std::vector<std::string>>(temp_portsize_parameters, "|");
       THROW_ASSERT(parameters_split.size() > 0, "unexpected portsize_parameter format");
       for(auto module_prec : mux_precisions)
       {
          for(auto& el_indx : parameters_split)
          {
-            std::vector<std::string> parameters_pairs = SplitString(el_indx, ":");
+            const auto parameters_pairs = string_to_container<std::vector<std::string>>(el_indx, ":");
             if(parameters_pairs[0] == "*")
             {
                temp_portsize_parameters = parameters_pairs[1];
@@ -121,7 +121,7 @@ AllocationInformation::InitializeMuxDB(const AllocationInformationConstRef alloc
          }
          THROW_ASSERT(temp_portsize_parameters != "",
                       "expected some portsize0_parameters for the the template operation");
-         std::vector<std::string> portsize_parameters = SplitString(temp_portsize_parameters, ",");
+         const auto portsize_parameters = string_to_container<std::vector<std::string>>(temp_portsize_parameters, ",");
          for(const auto& n_inputs : portsize_parameters)
          {
             const technology_nodeRef fu_cur_obj =
@@ -229,8 +229,8 @@ AllocationInformation::InitializeDSPDB(const AllocationInformationConstRef alloc
          THROW_ASSERT(hls_d->has_parameter("DSPs_y_sizes"), "device description is not complete");
          auto DSPs_x_sizes = hls_d->get_parameter<std::string>("DSPs_x_sizes");
          auto DSPs_y_sizes = hls_d->get_parameter<std::string>("DSPs_y_sizes");
-         std::vector<std::string> DSPs_x_sizes_vec = SplitString(DSPs_x_sizes, ",");
-         std::vector<std::string> DSPs_y_sizes_vec = SplitString(DSPs_y_sizes, ",");
+         const auto DSPs_x_sizes_vec = string_to_container<std::vector<std::string>>(DSPs_x_sizes, ",");
+         const auto DSPs_y_sizes_vec = string_to_container<std::vector<std::string>>(DSPs_y_sizes, ",");
          size_t n_elements = DSPs_x_sizes_vec.size();
          DSP_x_db.resize(n_elements);
          DSP_y_db.resize(n_elements);
@@ -2499,25 +2499,6 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       }
    };
 
-#if 0
-   /// first check for component_timing_alias
-   if(GetPointer<functional_unit>(current_fu)->component_timing_alias != "")
-   {
-      std::string component_name = GetPointer<functional_unit>(current_fu)->component_timing_alias;
-      std::string library = HLS_D->get_technology_manager()->get_library(component_name);
-      technology_nodeRef f_unit_alias = HLS_D->get_technology_manager()->get_fu(component_name, library);
-      THROW_ASSERT(f_unit_alias, "Library miss component: " + component_name);
-      functional_unit * fu_alias = GetPointer<functional_unit>(f_unit_alias);
-      technology_nodeRef op_alias_node = fu_alias->get_operation(operation_name);
-      operation * op_alias = op_alias_node ? GetPointer<operation>(op_alias_node) : GetPointer<operation>(fu_alias->get_operations().front());
-      double alias_exec_time = op_alias->time_m->get_initiation_time() != 0u ? time_m_stage_period(op_alias) : time_m_execution_time(op_alias);
-      functional_unit * fu_cur = GetPointer<functional_unit>(current_fu);
-      technology_nodeRef op_cur_node = fu_cur->get_operation(operation_name);
-      operation * op_cur = GetPointer<operation>(op_cur_node);
-      double cur_exec_time = op_cur->time_m->get_initiation_time() != 0u ? time_m_stage_period(op_cur) : time_m_execution_time(op_cur);
-      res_value += cur_exec_time - alias_exec_time;
-   }
-#endif
    if(memory_type == MEMORY_TYPE_SYNCHRONOUS_UNALIGNED)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -3108,13 +3089,6 @@ CustomSet<unsigned int> AllocationInformation::ComputeRoots(const unsigned int s
             continue;
          }
          const auto current_sn_def = current_sn->CGetDefStmt();
-#if 0
-         if(schedule->is_scheduled(current_sn_def->index) && schedule->get_cstep(current_sn_def->index) != cs && cs.second != AbsControlStep::UNKNOWN)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ignored since defined in different control step " + STR(schedule->get_cstep(current_sn_def->index).second) + " vs. " + STR(cs.second));
-            continue;
-         }
-#endif
          if(cs.second == AbsControlStep::UNKNOWN &&
             cs.first != GetPointer<const gimple_node>(GET_NODE(current_sn_def))->bb_index)
          {
@@ -3644,41 +3618,6 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
             }
          }
       }
-#if 0
-      ///Add delay due to bus
-      if(CanImplementSetNotEmpty(first_operation) && is_indirect_access_memory_unit(GetFuType(first_operation)))
-      {
-         const auto bus_delay = get_setup_hold_time() * 2.5;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bus delay is " + STR(bus_delay));
-         connection_time += bus_delay;
-      }
-#endif
-#if 0
-      const bool is_second_ternary_plus =
-              GetPointer<const gimple_node>(second_operation_tn)->operation == "ternary_plus_expr" ||
-              GetPointer<const gimple_node>(second_operation_tn)->operation == "ternary_pm_expr" ||
-              GetPointer<const gimple_node>(second_operation_tn)->operation == "ternary_mp_expr" ||
-              GetPointer<const gimple_node>(second_operation_tn)->operation == "ternary_mm_expr";
-      if(is_second_ternary_plus)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing connection time " + STR(first_operation) + "-->" + STR(second_operation));
-         auto ret = get_setup_hold_time()/3;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed connection time " + STR(first_operation) + "-->" + STR(second_operation) + ": " + STR(ret));
-         return ret;
-      }
-      const bool is_second_plus_minus = GetPointer<const gimple_node>(second_operation_tn)->operation == "plus_expr" ||  GetPointer<const gimple_node>(second_operation_tn)->operation == "minus_expr";
-      if(is_second_plus_minus)
-      {
-          const auto fu_type = GetFuType(second_operation);
-          if(get_prec(fu_type) > 32)
-          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing connection time " + STR(first_operation) + "-->" + STR(second_operation));
-            auto ret = get_setup_hold_time()/3;
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed connection time " + STR(first_operation) + "-->" + STR(second_operation) + ": " + STR(ret));
-            return ret;
-          }
-      }
-#endif
       if(!CanBeMerged(first_operation, second_operation))
       {
          connection_time = std::max(connection_time, connection_offset);
@@ -3805,9 +3744,6 @@ bool AllocationInformation::CanBeMerged(const unsigned int first_operation, cons
    }
    const auto ga0 = GetPointer<const gimple_assign>(TreeM->CGetTreeNode(first_operation));
    const auto ga1 = GetPointer<const gimple_assign>(TreeM->CGetTreeNode(second_operation));
-#if 0
-   if(ga0 && tree_helper::Size(ga0->op0) == 1 && ga1 && tree_helper::Size(ga1->op1) == 1 && (!CanImplementSetNotEmpty(second_operation) || get_DSPs(GetFuType(second_operation)) == 0.0) && ga0->operation != "plus_expr" && ga0->operation != "minus_expr" && ga0->operation != "ternary_plus_expr" && ga0->operation != "ternary_mm_expr" && ga0->operation != "ternary_mp_expr" && ga0->operation != "ternary_pm_expr")
-#endif
 
    if(ga0 && tree_helper::Size(ga0->op0) == 1 && ga1 && tree_helper::Size(ga1->op1) == 1 &&
       (!CanImplementSetNotEmpty(second_operation) || get_DSPs(GetFuType(second_operation)) == 0.0))
@@ -4054,12 +3990,6 @@ double AllocationInformation::GetToDspRegisterDelay(const unsigned int statement
    double ret = 0.0;
    const auto zero_distance_operations = GetZeroDistanceOperations(statement_index);
    const auto statement_bb_index = GetPointer<const gimple_node>(TreeM->CGetTreeNode(statement_index))->bb_index;
-#if 0
-   const auto fd = GetPointer<const function_decl>(TreeM->CGetTreeNode(function_id));
-   const auto sl = GetPointer<const statement_list>(GET_CONST_NODE(fd->body));
-   const auto blocks = sl->list_of_bloc;
-   const auto statement_bb = blocks.find(statement_bb_index)->second;
-#endif
    const auto tn = TreeM->CGetTreeNode(statement_index);
    const bool is_carry = [&]() -> bool {
       const auto ga = GetPointer<const gimple_assign>(tn);
@@ -4185,12 +4115,6 @@ CustomSet<unsigned int> AllocationInformation::GetZeroDistanceOperations(const u
             {
                continue;
             }
-#if 0
-            if(GetConnectionTime(current_tn_index, use_stmt_index, AbsControlStep(0, AbsControlStep::UNKNOWN)) > 0.0)
-            {
-               continue;
-            }
-#endif
             to_be_analyzed_ops.insert(use_stmt_index);
             zero_distance_ops[statement_index].insert(use_stmt_index);
          }

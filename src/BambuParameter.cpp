@@ -98,11 +98,9 @@
 /// Design Space Exploration
 #define OPT_ACCEPT_NONZERO_RETURN 256
 #define INPUT_OPT_C_NO_PARSE (1 + OPT_ACCEPT_NONZERO_RETURN)
-#define INPUT_OPT_C_PYTHON_NO_PARSE (1 + INPUT_OPT_C_NO_PARSE)
-#define OPT_ACO_FLOW (1 + INPUT_OPT_C_PYTHON_NO_PARSE)
+#define OPT_ACO_FLOW (1 + INPUT_OPT_C_NO_PARSE)
 #define OPT_ACO_GENERATIONS (1 + OPT_ACO_FLOW)
-#define OPT_ADDITIONAL_TOP (1 + OPT_ACO_GENERATIONS)
-#define OPT_ALIGNED_ACCESS_PARAMETER (1 + OPT_ADDITIONAL_TOP)
+#define OPT_ALIGNED_ACCESS_PARAMETER (1 + OPT_ACO_GENERATIONS)
 #define OPT_AREA_WEIGHT (1 + OPT_ALIGNED_ACCESS_PARAMETER)
 #define OPT_BACKEND_SCRIPT_EXTENSIONS_PARAMETER (1 + OPT_AREA_WEIGHT)
 #define OPT_BACKEND_SDC_EXTENSIONS_PARAMETER (1 + OPT_BACKEND_SCRIPT_EXTENSIONS_PARAMETER)
@@ -1052,7 +1050,6 @@ int BambuParameter::Exec()
       {"pragma-parse", no_argument, nullptr, OPT_PRAGMA_PARSE},
       {"generate-interface", required_argument, nullptr, 0},
       {"architecture-xml", required_argument, nullptr, OPT_ARCHITECTURE_XML},
-      {"additional-top", required_argument, nullptr, OPT_ADDITIONAL_TOP},
       {"data-bus-bitsize", required_argument, nullptr, 0},
       {"addr-bus-bitsize", required_argument, nullptr, 0},
       {"generate-tb", required_argument, nullptr, OPT_TESTBENCH},
@@ -1090,7 +1087,6 @@ int BambuParameter::Exec()
       {"memory-banks-number", required_argument, nullptr, OPT_MEMORY_BANKS_NUMBER},
       {"AXI-burst-type", optional_argument, nullptr, OPT_AXI_BURST_TYPE},
       {"C-no-parse", required_argument, nullptr, INPUT_OPT_C_NO_PARSE},
-      {"C-python-no-parse", required_argument, nullptr, INPUT_OPT_C_PYTHON_NO_PARSE},
       {"accept-nonzero-return", no_argument, nullptr, OPT_ACCEPT_NONZERO_RETURN},
 #if !HAVE_UNORDERED
 #ifndef NDEBUG
@@ -1778,7 +1774,7 @@ int BambuParameter::Exec()
          case OPT_TESTBENCH:
          {
             setOption(OPT_generate_testbench, true);
-            auto arg = TrimSpaces(std::string(optarg));
+            std::string arg(optarg);
             std::error_code ec;
             if(starts_with(arg, "elf:"))
             {
@@ -1867,11 +1863,6 @@ int BambuParameter::Exec()
             setOption(OPT_generate_vcd, true);
             break;
          }
-         case OPT_ADDITIONAL_TOP:
-         {
-            setOption(OPT_additional_top, optarg);
-            break;
-         }
          case OPT_ENABLE_FUNCTION_PROXY:
          {
             setOption(OPT_disable_function_proxy, false);
@@ -1949,7 +1940,7 @@ int BambuParameter::Exec()
          case OPT_DISCREPANCY_ONLY:
          {
             setOption(OPT_discrepancy, true);
-            std::vector<std::string> splitted = SplitString(optarg, " ,");
+            auto splitted = string_to_container<std::vector<std::string>>(optarg, " ,");
             std::string discrepancy_functions;
             for(auto& f : splitted)
             {
@@ -2052,24 +2043,12 @@ int BambuParameter::Exec()
             {
                no_parse += getOption<std::string>(OPT_no_parse_files) + STR_CST_string_separator;
             }
-            auto paths = SplitString(optarg, ",");
+            auto paths = string_to_container<std::vector<std::string>>(optarg, ",");
             for(auto& path : paths)
             {
                path = GetPath(path);
             }
             setOption(OPT_no_parse_files, no_parse + container_to_string(paths, STR_CST_string_separator));
-            break;
-         }
-         case INPUT_OPT_C_PYTHON_NO_PARSE:
-         {
-            std::vector<std::string> Splitted = SplitString(optarg, " ,");
-            std::string no_parse_c_python_files;
-            for(auto& i : Splitted)
-            {
-               boost::trim(i);
-               no_parse_c_python_files += GetPath(i) + " ";
-            }
-            setOption(OPT_no_parse_c_python, no_parse_c_python_files);
             break;
          }
 #if !HAVE_UNORDERED
@@ -2522,7 +2501,7 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
          {
             optimizations += STR_CST_string_separator;
          }
-         optimizations += "no-ipa-cp" + STR_CST_string_separator + "no-ipa-cp-clone";
+         optimizations += "no-ipa-cp" STR_CST_string_separator "no-ipa-cp-clone";
       }
       if(optimizations.size())
       {
@@ -2595,7 +2574,7 @@ void BambuParameter::CheckParameters()
       return sorted_paths;
    };
 
-   const auto altera_dirs = SplitString(getOption<std::string>(OPT_altera_root), ":");
+   const auto altera_dirs = getOption<std::vector<std::string>>(OPT_altera_root);
    removeOption(OPT_altera_root);
    const auto search_quartus = [&](const std::string& dir) {
       if(std::filesystem::exists(dir + "/quartus/bin/quartus_sh"))
@@ -2635,7 +2614,7 @@ void BambuParameter::CheckParameters()
    }
 
    /// Search for lattice tool
-   const auto lattice_dirs = SplitString(getOption<std::string>(OPT_lattice_root), ":");
+   const auto lattice_dirs = getOption<std::vector<std::string>>(OPT_lattice_root);
    removeOption(OPT_lattice_root);
    auto has_lattice = 0; // 0 = not found, 1 = 32-bit version, 2 = 64-bit version
    const auto search_lattice = [&](const std::string& dir) {
@@ -2700,7 +2679,7 @@ void BambuParameter::CheckParameters()
    }
 
    /// Search for Mentor tools
-   const auto mentor_dirs = SplitString(getOption<std::string>(OPT_mentor_root), ":");
+   const auto mentor_dirs = getOption<std::vector<std::string>>(OPT_mentor_root);
    removeOption(OPT_mentor_root);
    const auto search_mentor = [&](const std::string& dir) {
       if(std::filesystem::exists(dir + "/bin/vsim"))
@@ -2721,7 +2700,7 @@ void BambuParameter::CheckParameters()
    }
 
    /// Search for NanoXplore tools
-   const auto nanox_dirs = SplitString(getOption<std::string>(OPT_nanoxplore_root), ":");
+   const auto nanox_dirs = getOption<std::vector<std::string>>(OPT_nanoxplore_root);
    removeOption(OPT_nanoxplore_root);
    const auto search_xmap = [&](const std::string& dir) {
       if(std::filesystem::exists(dir + "/bin/nxpython"))
@@ -2743,7 +2722,7 @@ void BambuParameter::CheckParameters()
 
    /// Search for Xilinx tools
    const auto target_64 = true;
-   const auto xilinx_dirs = SplitString(getOption<std::string>(OPT_xilinx_root), ":");
+   const auto xilinx_dirs = getOption<std::vector<std::string>>(OPT_xilinx_root);
    removeOption(OPT_xilinx_root);
    const auto search_xilinx = [&](const std::string& dir) {
       if(std::filesystem::exists(dir + "/ISE"))
@@ -3171,9 +3150,9 @@ void BambuParameter::CheckParameters()
          /// GCC SECTION
          if(CompilerWrapper::isGccCheck(default_compiler))
          {
-            tuning_optimizations += "inline-functions" + STR_CST_string_separator + "gcse-after-reload" +
-                                    STR_CST_string_separator + "ipa-cp-clone" + STR_CST_string_separator +
-                                    "unswitch-loops" + STR_CST_string_separator + "no-tree-loop-ivcanon";
+            tuning_optimizations += "inline-functions" STR_CST_string_separator
+                                    "gcse-after-reload" STR_CST_string_separator "ipa-cp-clone" STR_CST_string_separator
+                                    "unswitch-loops" STR_CST_string_separator "no-tree-loop-ivcanon";
             if(default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49 ||
                default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5 ||
                default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6 ||
@@ -3181,12 +3160,12 @@ void BambuParameter::CheckParameters()
                default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC8)
             {
                tuning_optimizations +=
-                   STR_CST_string_separator + "tree-partial-pre" + STR_CST_string_separator + "disable-tree-bswap";
+                   STR_CST_string_separator "tree-partial-pre" STR_CST_string_separator "disable-tree-bswap";
             }
             if(default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7 ||
                default_compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC8)
             {
-               tuning_optimizations += STR_CST_string_separator + "no-store-merging";
+               tuning_optimizations += STR_CST_string_separator "no-store-merging";
             }
          }
          /// CLANG SECTION
@@ -3209,12 +3188,6 @@ void BambuParameter::CheckParameters()
       {
          setOption(OPT_gcc_optimizations, optimizations);
       }
-#if 0
-      std::string parameters;
-      if(isOption(OPT_gcc_parameters))
-         parameters = getOption<std::string>(OPT_gcc_parameters) + STR_CST_string_separator;
-      setOption(OPT_gcc_parameters, parameters + "max-inline-insns-auto=25");
-#endif
       if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-BALANCED-MP")
       {
          if(!isOption(OPT_channels_type))
@@ -3622,11 +3595,6 @@ void BambuParameter::CheckParameters()
       }
    }
 
-   if(isOption(OPT_no_parse_c_python) && !isOption(OPT_tb_extra_gcc_options))
-   {
-      THROW_ERROR("Include directories and library directories for Python bindings are missing.\n"
-                  "use --tb-extra-gcc-options=\"string\" to provide them");
-   }
    setOption<unsigned int>(OPT_host_compiler, static_cast<unsigned int>(default_compiler));
    if(isOption(OPT_lattice_settings))
    {
@@ -3787,15 +3755,14 @@ void BambuParameter::SetDefaults()
    /// -- Module Interfaces -- //
    setOption(OPT_interface, true);
    setOption(OPT_interface_type, HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION);
-   setOption(OPT_additional_top, "");
 
    /// -- Module Characterization -- //
    setOption(OPT_evaluation, false);
    setOption(OPT_evaluation_mode, Evaluation_Mode::NONE);
    setOption(OPT_evaluation_objectives, "");
 
-   setOption(OPT_altera_root, "/opt/altera:/opt/intelFPGA");
-   setOption(OPT_lattice_root, "/opt/diamond:/usr/local/diamond");
+   setOption(OPT_altera_root, "/opt/altera" STR_CST_string_separator "/opt/intelFPGA");
+   setOption(OPT_lattice_root, "/opt/diamond" STR_CST_string_separator "/usr/local/diamond");
    setOption(OPT_mentor_root, "/opt/mentor");
    setOption(OPT_mentor_optimizer, true);
    setOption(OPT_nanoxplore_root, "/opt/NanoXplore");

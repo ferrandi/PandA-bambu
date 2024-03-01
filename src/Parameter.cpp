@@ -489,7 +489,7 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
 #ifndef NDEBUG
       case OPT_DEBUG_CLASSES:
       {
-         std::vector<std::string> Splitted = SplitString(optarg_param, ",");
+         const auto Splitted = string_to_container<std::vector<std::string>>(optarg_param, ",");
          for(const auto& i : Splitted)
          {
             add_debug_class(i);
@@ -524,11 +524,10 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
       }
       case INPUT_OPT_PANDA_PARAMETER:
       {
-         std::string param_pair(optarg_param);
-         std::vector<std::string> splitted = SplitString(param_pair, "=");
+         const auto splitted = string_to_container<std::vector<std::string>>(optarg_param, "=");
          if(splitted.size() != 2)
          {
-            THROW_ERROR("panda-parameter should be in the form <parameter>=<value>: " + param_pair);
+            THROW_ERROR("panda-parameter should be in the form <parameter>=<value>: " + std::string(optarg_param));
          }
          panda_parameters[splitted[0]] = splitted[1];
          break;

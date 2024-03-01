@@ -93,7 +93,7 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
    {
       std::string supported_types_string;
       LOAD_XVFM(supported_types_string, Enode, supported_types);
-      std::vector<std::string> types = SplitString(supported_types_string, "|");
+      const auto types = string_to_container<std::vector<std::string>>(supported_types_string, "|");
       for(const auto& type : types)
       {
          if(type == "")
@@ -103,7 +103,7 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
          }
          std::string type_name;
          std::vector<unsigned int> type_precs;
-         std::vector<std::string> type_name_to_precs = SplitString(type, ":");
+         const auto type_name_to_precs = string_to_container<std::vector<std::string>>(type, ":");
          if(type_name_to_precs.size() != 2)
          {
             THROW_ERROR("wrong XML syntax for supported_types attribute around \":\" \"" + type + "\" [" +
@@ -118,7 +118,7 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
 
          if(type_name_to_precs[1] != "*")
          {
-            std::vector<std::string> precs = SplitString(type_name_to_precs[1], ",");
+            const auto precs = string_to_container<std::vector<std::string>>(type_name_to_precs[1], ",");
             ;
             for(auto single_prec = precs.begin(); single_prec != precs.end() && *single_prec != ""; ++single_prec)
             {

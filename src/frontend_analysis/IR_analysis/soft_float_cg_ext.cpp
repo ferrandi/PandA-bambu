@@ -38,43 +38,27 @@
  * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
-
-/// Header include
 #include "soft_float_cg_ext.hpp"
 
-/// design_flows include
-#include "design_flow_graph.hpp"
-#include "design_flow_manager.hpp"
-#include "design_flow_step.hpp"
-
-/// frontend_analysis
 #include "FunctionCallOpt.hpp"
-
-/// Behavior include
+#include "Parameter.hpp"
 #include "application_manager.hpp"
+#include "basic_block.hpp"
+#include "basic_blocks_graph_constructor.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
-
-/// Graph include
-#include "basic_block.hpp"
-#include "basic_blocks_graph_constructor.hpp"
-#include "op_graph.hpp"
-
-/// Parameter include
-#include "Parameter.hpp"
-
-/// STL include
 #include "custom_map.hpp"
-#include <algorithm>
-#include <deque>
-#include <list>
-#include <set>
-#include <string>
-
-/// Tree include
+#include "dbgPrintHelper.hpp"
+#include "design_flow_graph.hpp"
+#include "design_flow_manager.hpp"
+#include "design_flow_step.hpp"
+#include "exceptions.hpp"
 #include "ext_tree_node.hpp"
+#include "function_behavior.hpp"
+#include "math.h"
+#include "op_graph.hpp"
+#include "string_manipulation.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
@@ -82,16 +66,17 @@
 #include "tree_node.hpp"
 #include "tree_node_dup.hpp"
 #include "tree_reindex.hpp"
-
+#include "utility.hpp"
 #include "var_pp_functor.hpp"
 
-/// Utility include
-#include "dbgPrintHelper.hpp"
-#include "exceptions.hpp"
-#include "math.h"
-#include "string_manipulation.hpp" // for GET_CLASS
 #include <boost/multiprecision/integer.hpp>
+
+#include <algorithm>
+#include <deque>
+#include <list>
 #include <regex>
+#include <set>
+#include <string>
 
 CustomMap<CallGraph::vertex_descriptor, FunctionVersionRef> soft_float_cg_ext::funcFF;
 CustomMap<unsigned int, std::array<tree_nodeRef, 8>> soft_float_cg_ext::versioning_args;
@@ -223,7 +208,7 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
    if(funcFF.empty() && !parameters->getOption<std::string>(OPT_fp_format).empty())
    {
       const auto CGM = AppM->CGetCallGraphManager();
-      auto opts = SplitString(parameters->getOption<std::string>(OPT_fp_format), ",");
+      auto opts = string_to_container<std::vector<std::string>>(parameters->getOption<std::string>(OPT_fp_format), ",");
       const auto inline_math_it = std::find(opts.begin(), opts.end(), "inline-math");
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Soft-float fp format specialization required:");
       if(inline_math_it != opts.end())
@@ -242,7 +227,7 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->");
       for(const auto& opt : opts)
       {
-         auto format = SplitString(opt, "*");
+         auto format = string_to_container<std::vector<std::string>>(opt, "*");
 
          const auto f_index = [&]() {
             if(format[0] == "@")

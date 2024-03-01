@@ -87,25 +87,6 @@ void remove_escaped(std::string& ioString)
    }
 }
 
-std::string TrimSpaces(const std::string& value)
-{
-   std::string temp;
-   std::vector<std::string> splitted = SplitString(value, " \n\t\r");
-   bool first = true;
-   for(auto& i : splitted)
-   {
-      if(!first and i.size())
-      {
-         temp += " ";
-      }
-      if(i.size())
-      {
-         temp += i;
-         first = false;
-      }
-   }
-   return temp;
-}
 std::string cxa_demangle(const std::string& input)
 {
    int status;
@@ -361,24 +342,6 @@ std::string FixedPointReinterpret(const std::string& FP_vector, const std::strin
       return new_vector;
    }
    return FP_vector;
-}
-
-const std::vector<std::string> SplitString(const std::string&
-#ifndef __clang_analyzer__
-                                               input
-#endif
-                                           ,
-                                           const std::string&
-#ifndef __clang_analyzer__
-                                               separators
-#endif
-)
-{
-   std::vector<std::string> ret_value;
-#ifndef __clang_analyzer__
-   boost::algorithm::split(ret_value, input, boost::algorithm::is_any_of(separators));
-#endif
-   return ret_value;
 }
 
 std::string convert_fp_to_string(std::string num, unsigned long long precision)

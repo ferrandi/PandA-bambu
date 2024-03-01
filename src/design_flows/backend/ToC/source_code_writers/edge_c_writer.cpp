@@ -177,18 +177,6 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
    vertex last_stmt = NULL_VERTEX;
    std::list<vertex>::const_reverse_iterator vRIter, vRIterEnd;
    bool is_there = false;
-#if 0
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Operations of task ");
-   if (debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-      OpVertexSet::const_iterator it, it_end;
-      it_end = local_rec_instructions.end();
-      for(it = local_rec_instructions.begin(); it != it_end; ++it)
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_NAME(cfgGraph, *it));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-   }
-#endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Looking for last statement");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    for(vRIter = bb_node_info->statements_list.rbegin(), vRIterEnd = bb_node_info->statements_list.rend();

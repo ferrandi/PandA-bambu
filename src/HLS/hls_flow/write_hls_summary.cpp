@@ -109,17 +109,6 @@ DesignFlowStep_Status WriteHLSSummary::Exec()
          out_file_name = candidate_out_file_name;
          HLSMgr->Rmem->xwrite(out_file_name);
       }
-#if 0
-      std::string out_file_name = GetPath("hls_summary");
-      unsigned int progressive = 0;
-      std::string candidate_out_file_name;
-      do
-      {
-         candidate_out_file_name = out_file_name + "_" + std::to_string(progressive++) + ".xml";
-      } while (std::filesystem::exists(candidate_out_file_name));
-      out_file_name = candidate_out_file_name;
-      HLSMgr->xwrite(out_file_name);
-#endif
    }
    return DesignFlowStep_Status::UNCHANGED;
 }

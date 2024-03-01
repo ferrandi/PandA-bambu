@@ -1403,19 +1403,6 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             }
          }
       }
-#if 0
-      for(tie(ei, ei_end) = boost::edges(*fsdg); ei != ei_end; ++ei)
-      {
-         vertex src = boost::source(*ei, *fsdg);
-         if(!can_be_clustered(src, fsdg, fu, slack_time, 0)) continue;
-         if(all_candidate_vertices.find(src) == all_candidate_vertices.end()) continue;
-         vertex tgt = boost::target(*ei, *fsdg);
-         if(!can_be_clustered(tgt, fsdg, fu, slack_time, 0)) continue;
-         if(all_candidate_vertices.find(tgt) == all_candidate_vertices.end()) continue;
-         if(!HLS->chaining_information->may_be_chained_ops(src, tgt))
-            hc.add_edge(boost::get(boost::vertex_index, *fsdg, src), boost::get(boost::vertex_index, *fsdg, tgt), 2*get_src_vertex(src, tgt, HLSMgr, HLS->functionId)+(HLS->chaining_information->may_be_chained_ops(src, tgt)?1:0));
-      }
-#endif
 
       hc.exec();
 #endif

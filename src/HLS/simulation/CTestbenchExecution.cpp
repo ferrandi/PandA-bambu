@@ -160,15 +160,6 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
    }
    // setup source files
    std::list<std::string> file_sources = {c_backend_info->src_filename};
-   // add source files to interface with python golden reference, if any
-   if(parameters->isOption(OPT_no_parse_c_python))
-   {
-      const auto no_parse_files = parameters->getOption<CustomSet<std::string>>(OPT_no_parse_c_python);
-      for(const auto& no_parse_file : no_parse_files)
-      {
-         file_sources.push_back(no_parse_file);
-      }
-   }
 
    auto exec_name = std::filesystem::path(c_backend_info->src_filename).replace_extension().string();
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "---create executable: " + exec_name);

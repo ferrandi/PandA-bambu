@@ -683,20 +683,6 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
             next_var_index++;
          }
       }
-#if 0
-      CustomMap<vertex, unsigned> bb_to_begin, bb_to_end;
-      ///Create the variables representing the beginning and the ending of a bb
-      if(!speculation)
-      {
-         for(const auto basic_block : loop_bbs)
-         {
-            bb_to_begin[basic_block] = next_var_index;
-            next_var_index++;
-            bb_to_end[basic_block] = next_var_index;
-            next_var_index++;
-         }
-      }
-#endif
       /// next_var_index has been incremented but the + 1 is the makespan
       const size_t num_variables = next_var_index;
 
@@ -1323,46 +1309,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Forced path end");
-#if 0
-      if(!speculation)
-      {
-         ///Setting beginning of basic block
-         for(const auto basic_block : loop_bbs)
-         {
-            for(const auto operation : basic_block_graph->CGetBBNodeInfo(basic_block)->statements_list)
-            {
-               const auto name = "BB" + STR(basic_block_graph->CGetBBNodeInfo(basic_block)->block->number) + "_Begin_" + GET_NAME(op_graph, operation);
-               std::map<int, double> coeffs;
-               coeffs[static_cast<int>(operation_to_varindex.at(std::make_pair(operation, 0)))] = 1.0;
-               coeffs[static_cast<int>(bb_to_begin.at(basic_block))] = -1.0;
-               solver->add_row(coeffs, 0.0, meilp_solver::G, name);
-            }
-            for(const auto operation : basic_block_graph->CGetBBNodeInfo(basic_block)->statements_list)
-            {
-               const unsigned int source_cycle_latency = allocation_information->GetCycleLatency(operation);
-               const auto name = "BB" + STR(basic_block_graph->CGetBBNodeInfo(basic_block)->block->number) + "_End_" + GET_NAME(op_graph, operation);
-               std::map<int, double> coeffs;
-               coeffs[static_cast<int>(bb_to_end.at(basic_block))] = 1.0;
-               coeffs[static_cast<int>(operation_to_varindex.at(std::make_pair(operation, source_cycle_latency-1)))] = -1.0;
-               solver->add_row(coeffs, 0.0, meilp_solver::G, name);
-            }
-            OutEdgeIterator oe, oe_end;
-            for(boost::tie(oe, oe_end) = boost::out_edges(basic_block, *basic_block_graph); oe != oe_end; oe++)
-            {
-               const auto target = boost::target(*oe, *basic_block_graph);
-               const auto target_bb_node_info = basic_block_graph->CGetBBNodeInfo(target);
-               if(target_bb_node_info->loop_id == loop_id)
-               {
-                  const auto name = "CFG_BB" + STR(basic_block_graph->CGetBBNodeInfo(basic_block)->block->number) + "_" + STR(target_bb_node_info->block->number);
-                  std::map<int, double> coeffs;
-                  coeffs[static_cast<int>(bb_to_begin.at(target))] = 1.0;
-                  coeffs[static_cast<int>(bb_to_end.at(basic_block))] = -1.0;
-                  solver->add_row(coeffs, 0.0, meilp_solver::G, name);
-               }
-            }
-         }
-      }
-#endif
+
       /// Setting objective function
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Setting objective function");
       std::map<int, double> objective_coeffs;

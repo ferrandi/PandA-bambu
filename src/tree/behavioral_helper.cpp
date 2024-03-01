@@ -665,26 +665,6 @@ std::string BehavioralHelper::PrintConstant(const tree_nodeConstRef& _node, cons
          const auto it = GetPointer<const integer_type>(type);
          const auto unsigned_flag = (it && it->unsigned_flag) || type->get_kind() == pointer_type_K ||
                                     type->get_kind() == reference_type_K || type->get_kind() == boolean_type_K;
-#if 0
-         ///check if the IR type is consistent with the type name
-         if (it)
-         {
-            std::string predicted_type;
-            if (it->unsigned_flag)
-               predicted_type += "unsigned ";
-            if (it->algn == 8)
-               predicted_type += "char";
-            else if (it->algn == 16)
-               predicted_type += "short";
-            else if (it->algn == 32)
-               predicted_type += "int";
-            else if (it->algn == 64)
-               predicted_type += "auto  int";
-            std::string actual_type = tree_helper::PrintType(TM, ic->type);
-            if (predicted_type != actual_type && actual_type != "bit_size_type")
-               res = "(" + actual_type + ")";
-         }
-#endif
          THROW_ASSERT(ic, "");
          auto value = tree_helper::GetConstValue(node, !unsigned_flag);
          INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Value is " + STR(value));
@@ -4159,12 +4139,6 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
       case gimple_pragma_K:
       {
          const auto pn = GetPointerS<const gimple_pragma>(node);
-#if 0
-         if(pn->directive && (GetPointer<const omp_for_pragma>(GET_CONST_NODE(pn->directive)) || GetPointer<const omp_simd_pragma>(GET_CONST_NODE(pn->directive))))
-         {
-            break;
-         }
-#endif
          if(pn->is_block && !pn->is_opening)
          {
             res += "\n}";

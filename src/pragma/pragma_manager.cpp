@@ -40,48 +40,26 @@
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  *
  */
-
-/// Autoheader include
-#include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
-#include "config_NPROFILE.hpp"
-
-/// Header include
 #include "pragma_manager.hpp"
 
-/// Behavior include
+#include "Parameter.hpp"
+#include "PragmaParser.hpp"
 #include "application_manager.hpp"
 #include "basic_block.hpp"
 #include "behavioral_helper.hpp"
+#include "cpu_time.hpp"
+#include "custom_map.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
+#include "ext_tree_node.hpp"
 #include "function_behavior.hpp"
+#include "graph.hpp"
 #include "loop.hpp"
 #include "loops.hpp"
 #include "op_graph.hpp"
-
-/// Constants include
 #include "pragma_constants.hpp"
-
-/// Graph include
-#include "graph.hpp"
-
-/// Parameter include
-#include "Parameter.hpp"
-
-/// parser/pragma include
-#include "PragmaParser.hpp"
-
-/// parser/compiler include
+#include "string_manipulation.hpp"
 #include "token_interface.hpp"
-
-/// STD include
-#include <string>
-
-/// STL includes
-#include "custom_map.hpp"
-#include <list>
-#include <vector>
-
-/// Tree include
-#include "ext_tree_node.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
@@ -89,15 +67,17 @@
 #include "tree_reindex.hpp"
 #include "var_pp_functor.hpp"
 
-/// Utility include
-#include "cpu_time.hpp"
-#include "dbgPrintHelper.hpp"
-#include "exceptions.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
 #include <boost/algorithm/string.hpp>
 #include <boost/graph/depth_first_search.hpp>
 #include <boost/graph/reverse_graph.hpp>
+
+#include <list>
 #include <regex>
+#include <string>
+#include <vector>
+
+#include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
+#include "config_NPROFILE.hpp"
 
 const std::string pragma_manager::omp_directive_keywords[pragma_manager::OMP_UNKNOWN] = {
     "atomic",   "barrier",  "critical", "declare simd", "for",    "parallel for", "parallel sections",
@@ -275,7 +255,8 @@ pragma_manager::ExtractClauses(const std::string& clauses_list) const
       }
    }
 
-   std::vector<std::string> splitted = SplitString(trimmed_clauses, " \t\n");
+   std::vector<std::string> splitted;
+   boost::algorithm::split(splitted, trimmed_clauses, boost::algorithm::is_any_of(" \t\n"));
 
    for(const auto& clause : splitted)
    {

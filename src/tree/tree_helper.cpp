@@ -53,6 +53,7 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "utility.hpp"
 #include "var_pp_functor.hpp"
 
 #include <algorithm>
@@ -1091,35 +1092,10 @@ tree_nodeRef tree_helper::find_obj_type_ref_function(const tree_nodeConstRef& tn
    function_type = GET_INDEX_CONST_NODE(t_pt->ptd);
    THROW_ASSERT(GetPointer<const method_type>(GET_CONST_NODE(t_pt->ptd)), "expected a method_type");
    type = GET_CONST_NODE(GetPointer<const method_type>(GET_CONST_NODE(t_pt->ptd))->clas);
-#if 0
-   var_decl* vd = GetPointer<var_decl>(GET_NODE(otr->op1));
-   if(vd)
-      type = vd->type;
-   else
-   {
-      parm_decl* pd = GetPointer<parm_decl>(GET_NODE(otr->op1));
-      if(pd)
-         type = pd->type;
-      else
-         THROW_ERROR(std::string("not supported case for obj_type_ref(") + STR(ind) + std::string(")"));
-   }
-#endif
+
    if(type)
    {
       const auto rt = GetPointer<const record_type>(type);
-#if 0
-      pointer_type* pt = GetPointer<pointer_type>(GET_NODE(type));
-      if(pt)
-         rt = GetPointer<record_type>(GET_NODE(pt->ptd));
-      else
-      {
-         reference_type * Rt = GetPointer<reference_type>(GET_NODE(type));
-         if(Rt)
-            rt = GetPointer<record_type>(GET_NODE(Rt->refd));
-         else
-            THROW_ERROR(std::string("not supported case for obj_type_ref(") + STR(ind) + std::string(")"));
-      }
-#endif
       if(rt)
       {
          for(auto& list_of_fnc : rt->list_of_fncs)
@@ -2657,7 +2633,7 @@ bool tree_helper::HasToBeDeclared(const tree_managerConstRef& TM, const tree_nod
          if(GetPointer<const complex_type>(type))
          {
             const auto name1 = PrintType(TM, type);
-            std::vector<std::string> splitted = SplitString(name1, " ");
+            const auto splitted = string_to_container<std::vector<std::string>>(name1, " ");
             if(splitted.size() > 1 &&
                (splitted[0] == "_Complex" || splitted[0] == "__complex__" || splitted[0] == "complex"))
             {
@@ -2874,12 +2850,6 @@ bool tree_helper::is_channel(const tree_managerConstRef& TM, const unsigned int 
    return false;
 }
 
-#if 0
-rt->get_maybe_name().find("sc_signal<") == 0 ||
-                                rt->get_maybe_name().find("sc_signal_resolved") == 0  ||  // inherit from sc_signal
-                                rt->get_maybe_name().find("sc_signal_rv<") == 0  || // inherit from sc_signal
-                                rt->get_maybe_name().find("sc_buffer") == 0)  // inherit from sc_signal
-#endif
 bool tree_helper::is_signal(const tree_managerConstRef& TM, const unsigned int index)
 {
    THROW_ASSERT(index > 0, "expected positive non zero numbers");
@@ -2941,22 +2911,6 @@ bool tree_helper::is_SC_BIND_PROXY_NIL(const tree_managerConstRef& TM, const uns
    return false;
 }
 
-#if 0
-rt->get_maybe_name().find("sc_in<") == 0 || //inherit from sc_port
-                                rt->get_maybe_name().find("sc_in_rv<") == 0 || //inherit from sc_in
-                                rt->get_maybe_name().find("sc_in_resolved") == 0 || //inherit from sc_in
-                                rt->get_maybe_name().find("sc_in_clk") == 0 || // equal to sc_in<bool>
-                                rt->get_maybe_name().find("sc_out<") == 0 || //inherit from sc_port
-                                rt->get_maybe_name().find("sc_out_rv<") == 0 || //inherit from sc_inout_rv
-                                rt->get_maybe_name().find("sc_out_resolved") == 0 || //inherit from sc_inout_resolved
-                                rt->get_maybe_name().find("sc_out_clk") == 0 || //equal to sc_out<bool>
-                                rt->get_maybe_name().find("sc_inout<") == 0 || //inherit from sc_port
-                                rt->get_maybe_name().find("sc_inout_rv<") == 0 || //inherit from sc_inout
-                                rt->get_maybe_name().find("sc_inout_resolved") == 0 || //inherit from sc_inout
-                                rt->get_maybe_name().find("sc_inout_clk") == 0 || //equal to sc_inout<bool>
-                                rt->get_maybe_name().find("sc_fifo_in<") == 0 || //inherit from sc_port
-                                rt->get_maybe_name().find("sc_fifo_out<") == 0 //inherit from sc_port
-#endif
 bool tree_helper::is_port(const tree_managerConstRef& TM, const unsigned int index)
 {
    THROW_ASSERT(index > 0, "expected positive non zero numbers");
@@ -5363,7 +5317,7 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
                }
                else if(GET_CONST_NODE(td->type)->get_kind() == complex_type_K)
                {
-                  const auto splitted = SplitString(typename_value, " ");
+                  const auto splitted = string_to_container<std::vector<std::string>>(typename_value, " ");
                   if((splitted[0] == "_Complex" || splitted[0] == "__complex__" || splitted[0] == "complex"))
                   {
                      res += "__complex__";

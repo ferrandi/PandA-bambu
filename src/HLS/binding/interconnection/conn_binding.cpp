@@ -715,11 +715,6 @@ void conn_binding::add_datapath_connection(const technology_managerRef TM, const
       {
          std::string library_name = TM->get_library(UUDATA_CONVERTER_STD);
          c_obj = SM->add_module_from_technology_library(name, UUDATA_CONVERTER_STD, library_name, circuit, TM);
-#if 0
-         std::string library_name = TM->get_library(FFDATA_CONVERTER_STD);
-         c_obj = SM->add_module_from_technology_library(name, FFDATA_CONVERTER_STD, library_name, circuit, TM);
-         offset = 2;
-#endif
       }
       else
       {
