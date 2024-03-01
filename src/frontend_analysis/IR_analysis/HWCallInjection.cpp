@@ -136,13 +136,6 @@ DesignFlowStep_Status HWCallInjection::InternalExec()
          {
             const auto FDPtr = GetPointerS<const function_decl>(GET_CONST_NODE(FD));
             result = FDPtr->hwcall_flag;
-            if(!result)
-            {
-               const auto cmdArg = parameters->getOption<std::string>(OPT_additional_top);
-               const auto additionalTops = SplitString(cmdArg, ",");
-               const auto name = tree_helper::print_function_name(TM, FDPtr);
-               result |= std::find(additionalTops.begin(), additionalTops.end(), name) != additionalTops.end();
-            }
          }
          else if(GET_CONST_NODE(FD)->get_kind() == ssa_name_K)
          {

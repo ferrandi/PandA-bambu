@@ -162,11 +162,11 @@ std::vector<std::map<std::string, std::string>> TestVectorParser::ParseUserStrin
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Preprocessed string " + tb_string);
       test_vectors.push_back(std::map<std::string, std::string>());
-      std::vector<std::string> testbench_parameters = SplitString(tb_string, "$");
+      const auto testbench_parameters = string_to_container<std::vector<std::string>>(tb_string, "$");
       for(const auto& parameter : testbench_parameters)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Examining " + parameter);
-         std::vector<std::string> temp = SplitString(parameter, "=");
+         const auto temp = string_to_container<std::vector<std::string>>(parameter, "=");
          if(temp.size() != 2)
          {
             THROW_ERROR("Error in processing --generate-tb arg");

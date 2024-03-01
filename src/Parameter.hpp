@@ -98,10 +98,10 @@ enum class CompilerWrapper_CompilerTarget;
        distram_threshold)(DSP_allocation_coefficient)(DSP_margin_combinational)(DSP_margin_pipelined)(DSP_fracturing)( \
        estimate_logic_and_connections)(evaluation)(evaluation_mode)(evaluation_objectives)(experimental_setup)(        \
        export_core)(export_core_mode)(fsm_encoding)(fu_binding_algorithm)(generate_testbench)(generate_vcd)(hls_flow)( \
-       hls_div)(hls_fpdiv)(interface)(interface_type)(additional_top)(data_bus_bitsize)(addr_bus_bitsize)(             \
-       libm_std_rounding)(liveness_algorithm)(scheduling_mux_margins)(scheduling_priority)(scheduling_algorithm)(      \
-       simulate)(simulator)(simulation_output)(speculative)(pipelining)(storage_value_insertion_algorithm)(stg)(       \
-       stg_algorithm)(register_allocation_algorithm)(register_grouping)(registered_inputs)(resp_model)(                \
+       hls_div)(hls_fpdiv)(interface)(interface_type)(data_bus_bitsize)(addr_bus_bitsize)(libm_std_rounding)(          \
+       liveness_algorithm)(scheduling_mux_margins)(scheduling_priority)(scheduling_algorithm)(simulate)(simulator)(    \
+       simulation_output)(speculative)(pipelining)(storage_value_insertion_algorithm)(stg)(stg_algorithm)(             \
+       register_allocation_algorithm)(register_grouping)(registered_inputs)(resp_model)(                               \
        datapath_interconnection_algorithm)(insert_memory_profile)(top_file)(assert_debug)(                             \
        memory_allocation_algorithm)(memory_allocation_policy)(xml_memory_allocation)(rom_duplication)(base_address)(   \
        reset_type)(reset_level)(reg_init_value)(clock_period_resource_fraction)(channels_type)(channels_number)(       \
@@ -114,11 +114,11 @@ enum class CompilerWrapper_CompilerTarget;
        profiling_output)(disable_bounded_function)(discrepancy)(discrepancy_force)(discrepancy_hw)(                    \
        discrepancy_no_load_pointers)(discrepancy_only)(discrepancy_permissive_ptrs)(generate_taste_architecture)(      \
        initial_internal_address)(mem_delay_read)(mem_delay_write)(tb_queue_size)(memory_banks_number)(mixed_design)(   \
-       no_parse_c_python)(num_accelerators)(technology_file)(tb_extra_gcc_options)(timing_violation_abort)(            \
-       top_design_name)(serialize_output)(use_ALUs)(range_analysis_mode)(fp_format)(fp_format_propagate)(              \
-       fp_format_interface)(fp_rounding_mode)(fp_exception_mode)(parallel_backend)(architecture_xml)(lattice_root)(    \
-       lattice_settings)(lattice_pmi_def)(lattice_inc_dirs)(xilinx_root)(xilinx_settings)(xilinx_vivado_settings)(     \
-       xilinx_glbl)(mentor_root)(mentor_modelsim_bin)(mentor_optimizer)(verilator)(verilator_timescale_override)(      \
+       num_accelerators)(technology_file)(tb_extra_gcc_options)(timing_violation_abort)(top_design_name)(              \
+       serialize_output)(use_ALUs)(range_analysis_mode)(fp_format)(fp_format_propagate)(fp_format_interface)(          \
+       fp_rounding_mode)(fp_exception_mode)(parallel_backend)(architecture_xml)(lattice_root)(lattice_settings)(       \
+       lattice_pmi_def)(lattice_inc_dirs)(xilinx_root)(xilinx_settings)(xilinx_vivado_settings)(xilinx_glbl)(          \
+       mentor_root)(mentor_modelsim_bin)(mentor_optimizer)(verilator)(verilator_timescale_override)(                   \
        verilator_parallel)(altera_root)(quartus_settings)(quartus_13_settings)(quartus_13_64bit)(nanoxplore_root)(     \
        nanoxplore_settings)(nanoxplore_bypass)(shared_input_registers)(inline_functions)(constraints_functions)(       \
        axi_burst_type)

@@ -1151,19 +1151,6 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
                             GET_CONST_NODE(VD.U->getOperand())->ToString() + " in " +
                             GET_CONST_NODE(VD.U->getUser())->ToString());
          const auto* phi = GetPointer<const gimple_phi>(GET_CONST_NODE(Result.Def));
-#if 0
-         if(!valueComesBefore(OI, Result.Def, VD.U->getUser()))
-         {
-            const auto defVertex = DT->CGetBBGraphInfo()->bb_index_map.at(GetPointer<const gimple_node>(GET_CONST_NODE(Result.Def))->bb_index);
-            const auto defBB = DT->CGetBBNodeInfo(defVertex)->block;
-            const auto defBB_succ = defBB->list_of_succ;
-            if(std::find(defBB_succ.begin(), defBB_succ.end(), defBB->number) == defBB_succ.end())
-            {
-               THROW_UNREACHABLE("PredicateInfo def should have dominated this use at least in the CFG");
-            }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---New definition not dominating use in DT, but in CFG only");
-         }
-#endif
          if(not AppM->ApplyNewTransformation())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");

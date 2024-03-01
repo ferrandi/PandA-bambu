@@ -1168,12 +1168,12 @@ void HDL_manager::write_flopoco_module(const structural_objectRef& cir, std::lis
 void HDL_manager::write_behavioral(const language_writerRef writer, const structural_objectRef&,
                                    const std::string& behav) const
 {
-   std::vector<std::string> SplitVec = SplitString(behav, ";");
+   const auto SplitVec = string_to_container<std::vector<std::string>>(behav, ";");
    THROW_ASSERT(SplitVec.size(), "Expected at least one behavioral description");
 
    for(auto& i : SplitVec)
    {
-      std::vector<std::string> SplitVec2 = SplitString(i, "=");
+      const auto SplitVec2 = string_to_container<std::vector<std::string>>(i, "=");
       THROW_ASSERT(SplitVec2.size() == 2, "Expected two operands");
       writer->write_assign(SplitVec2[0], SplitVec2[1]);
    }
@@ -1184,10 +1184,9 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Start writing the FSM...");
 
-   std::string fsm_desc = fsm_desc_i;
-   boost::algorithm::erase_all(fsm_desc, "\n");
+   const auto fsm_desc = boost::algorithm::erase_all_copy(fsm_desc_i, "\n");
 
-   std::vector<std::string> SplitVec = SplitString(fsm_desc, ";");
+   const auto SplitVec = string_to_container<std::vector<std::string>>(fsm_desc, ";", false);
    THROW_ASSERT(SplitVec.size() > 2, "Expected more than one ';' in the FSM specification (the first is the reset)");
 
    using tokenizer = boost::tokenizer<boost::char_separator<char>>;
@@ -1220,18 +1219,18 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
    std::map<unsigned int, std::map<std::string, std::set<unsigned int>>> bypass_signals;
    if(!it->empty())
    {
-      std::vector<std::string> BypassVec = SplitString(*it, ":");
+      const auto BypassVec = string_to_container<std::vector<std::string>>(*it, ":");
       for(const auto& assign : BypassVec)
       {
-         std::vector<std::string> AssignPair = SplitString(assign, "=");
+         const auto AssignPair = string_to_container<std::vector<std::string>>(assign, "=");
          THROW_ASSERT(AssignPair.size() == 2, "malformed FSM description " + STR(AssignPair.size()));
          auto out = static_cast<unsigned>(std::stoul(AssignPair.at(0)));
-         std::vector<std::string> inStateVec = SplitString(AssignPair.at(1), ",");
+         const auto inStateVec = string_to_container<std::vector<std::string>>(AssignPair.at(1), ",");
          for(const auto& inState : inStateVec)
          {
-            std::vector<std::string> StateInsPair = SplitString(inState, ">");
+            const auto StateInsPair = string_to_container<std::vector<std::string>>(inState, ">");
             THROW_ASSERT(StateInsPair.size() == 2, "malformed FSM description " + STR(StateInsPair.size()));
-            std::vector<std::string> inVec = SplitString(StateInsPair.at(1), "<");
+            const auto inVec = string_to_container<std::vector<std::string>>(StateInsPair.at(1), "<");
             for(const auto& in : inVec)
             {
                auto in_val = static_cast<unsigned>(std::stoul(in));

@@ -2119,19 +2119,11 @@ std::string CompilerWrapper::GetAnalyzeCompiler() const
 
 void CompilerWrapper::GetSystemIncludes(std::vector<std::string>& includes) const
 {
-   /// This string contains the path and name of the compiler to be invoked
-   const std::string cpp = GetCompiler().cpp;
-
-   std::string command =
-       cpp + " -v  < /dev/null 2>&1 | grep -v -E \"(#|Configured with|Using built-in|Target|Thread model|gcc "
-             "version|End of "
-             "search list|ignoring nonexistent directory|cc1 -E -quiet|cc1.exe -E "
-             "-quiet|COMPILER_PATH|LIBRARY_PATH|COLLECT_GCC|OFFLOAD_TARGET_NAMES|OFFLOAD_TARGET_DEFAULT|ignoring "
-             "duplicate "
-             "directory|ignoring nonexistent directory|InstalledDir|clang version|Found candidate|Selected GCC "
-             "installation|Candidate multilib|Selected multilib|-cc1)\" | tr '\\n' ' ' | tr '\\r' ' '  | sed "
-             "'s/\\\\/\\//g'";
-   int ret = PandaSystem(Param, command, false, STR_CST_gcc_include);
+   const auto command =
+       GetCompiler().cpp +
+       " -v  < /dev/null 2>&1 | sed -n '/#include </,/> search ends here:/p' | grep -v -E \"(#|End of search "
+       "list.|COMPILER_PATH|LIBRARY_PATH|COLLECT_GCC|OFFLOAD_TARGET_NAMES|OFFLOAD_TARGET_DEFAULT)\" | sed 's/ //'";
+   const auto ret = PandaSystem(Param, command, false, STR_CST_gcc_include);
    PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "");
    if(IsError(ret))
    {
@@ -2139,20 +2131,15 @@ void CompilerWrapper::GetSystemIncludes(std::vector<std::string>& includes) cons
       THROW_ERROR("Error in retrieving gcc system include. Error is " + std::to_string(ret));
    }
 
-   std::string list_of_dirs;
-
    std::ifstream includefile(GetPath(STR_CST_gcc_include));
    if(includefile.is_open())
    {
       std::string line;
-      while(!includefile.eof())
+      while(getline(includefile, line))
       {
-         getline(includefile, line);
-         if(line.size())
-         {
-            list_of_dirs += line;
-         }
+         includes.push_back(line);
       }
+      includefile.close();
    }
    else
    {
@@ -2160,10 +2147,6 @@ void CompilerWrapper::GetSystemIncludes(std::vector<std::string>& includes) cons
    }
 
    std::remove(GetPath(STR_CST_gcc_include).c_str());
-
-   // Ok, now here there are the list of the system paths in which
-   // the system includes are found
-   includes = SplitString(list_of_dirs, " ");
 }
 
 void CompilerWrapper::GetCompilerConfig() const

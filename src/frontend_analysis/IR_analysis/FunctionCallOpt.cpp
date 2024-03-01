@@ -49,20 +49,21 @@
 #include "basic_blocks_graph_constructor.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "ext_tree_node.hpp"
 #include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "string_manipulation.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "utility.hpp"
 
 #include <functional>
 
@@ -175,10 +176,11 @@ void FunctionCallOpt::Initialize()
       }
       if(parameters->isOption(OPT_inline_functions))
       {
-         const auto fnames = SplitString(parameters->getOption<std::string>(OPT_inline_functions), ",");
+         const auto fnames = string_to_container<std::vector<std::string>>(
+             parameters->getOption<std::string>(OPT_inline_functions), ",");
          for(const auto& fname_cond : fnames)
          {
-            const auto toks = SplitString(fname_cond, "=");
+            const auto toks = string_to_container<std::vector<std::string>>(fname_cond, "=");
             const auto& fname = toks.at(0);
             const auto fnode = TM->GetFunction(fname);
             if(fnode)

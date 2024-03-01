@@ -76,13 +76,6 @@ void IndentedOutputStream::Append(const std::string& str)
 
    if(*(str.begin()) == closing_char)
    {
-#if 0
-      if(delta > indent_spaces)
-      {
-         WriteFile("Error");
-         THROW_UNREACHABLE("Indentation becomes negative");
-      }
-#endif
       Deindent();
    }
 

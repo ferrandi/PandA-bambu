@@ -177,12 +177,11 @@ int main(int argc, char* argv[])
              parameters, CompilerWrapper_CompilerTarget::CT_NO_COMPILER, CompilerWrapper_OptimizationSet::O0));
          std::vector<std::string> system_includes;
          compiler_wrapper->GetSystemIncludes(system_includes);
-         std::vector<std::string>::const_iterator system_include, system_include_end = system_includes.end();
-         for(system_include = system_includes.begin(); system_include != system_include_end; ++system_include)
+         for(const auto& i : system_includes)
          {
-            INDENT_OUT_MEX(0, 0, *system_include);
+            INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, i);
          }
-         if(not(parameters->getOption<bool>(OPT_no_clean)))
+         if(!parameters->getOption<bool>(OPT_no_clean))
          {
             std::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
          }

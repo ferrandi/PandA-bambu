@@ -1037,7 +1037,7 @@ void Translator::read_column_formats(const XMLDomParserRef parser, std::list<Lat
          else if(field_element->get_name() == STR_XML_latex_table_comparison)
          {
             const std::string values = field_element->get_attribute(STR_XML_latex_table_value)->get_value();
-            std::vector<std::string> splitted = SplitString(values, ",");
+            const auto splitted = string_to_container<std::vector<std::string>>(values, ",");
             for(const auto& column : splitted)
             {
                latex_column_format.compared_columns.insert(column);

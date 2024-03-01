@@ -211,7 +211,7 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
             {
                fun_pipeline = fun_pipeline.substr(1);
             }
-            const auto splitted = SplitString(fun_pipeline, "=");
+            const auto splitted = string_to_container<std::vector<std::string>>(fun_pipeline, "=");
             if(!splitted.empty() &&
                (fname == splitted.at(0) || (fname.find("__float") == 0 && fname.find(splitted.at(0)) == 0)))
             {

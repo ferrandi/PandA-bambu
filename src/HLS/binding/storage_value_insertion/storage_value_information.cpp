@@ -136,13 +136,6 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
 {
    unsigned int var1 = get_variable_index(storage_value_index1);
    unsigned int var2 = get_variable_index(storage_value_index2);
-#if 0
-   if(vw2vertex.find(var1) == vw2vertex.end())
-   {
-      //std::cerr << var1 << std::endl;
-      return 1;
-   }
-#endif
    THROW_ASSERT(vw2vertex.find(var1) != vw2vertex.end(), "variable not in the map " + STR(var1));
    THROW_ASSERT(vw2vertex.find(var2) != vw2vertex.end(),
                 "variable " + STR(HLS_mgr->get_tree_manager()->CGetTreeNode(var2)) + " not in the map");
