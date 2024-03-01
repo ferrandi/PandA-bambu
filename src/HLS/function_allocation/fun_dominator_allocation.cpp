@@ -179,7 +179,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
          {
             fun_resources = fun_resources.substr(1);
          }
-         const auto splitted = SplitString(fun_resources, "=");
+         const auto splitted = string_to_container<std::vector<std::string>>(fun_resources, "=");
          auto TM = HLSMgr->get_tree_manager();
          for(auto funid : reached_from_all)
          {

@@ -152,13 +152,14 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
 
          if(pipe_parameters_str != "")
          {
-            std::vector<std::string> parameters_split = SplitString(pipe_parameters_str, "|");
+            const auto parameters_split = string_to_container<std::vector<std::string>>(pipe_parameters_str, "|");
             const auto pp_it_end = parameters_split.end();
             for(auto pp_it = parameters_split.begin(); pp_it != pp_it_end; ++pp_it)
             {
-               std::vector<std::string> precision_pipe_param_pair = SplitString(*pp_it, ":");
+               const auto precision_pipe_param_pair = string_to_container<std::vector<std::string>>(*pp_it, ":");
                THROW_ASSERT(precision_pipe_param_pair.size() == 2, "malformed pipe parameter string");
-               std::vector<std::string> pipe_params = SplitString(precision_pipe_param_pair[1], ",");
+               const auto pipe_params =
+                   string_to_container<std::vector<std::string>>(precision_pipe_param_pair[1], ",");
                THROW_ASSERT(pipe_params.size() > 0, "malformed pipe parameter string");
                if(precision_pipe_param_pair[0] == "*")
                {
@@ -210,13 +211,14 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
          std::string portsize_parameters_str = curr_op->portsize_parameters;
          if(portsize_parameters_str != "")
          {
-            std::vector<std::string> parameters_split = SplitString(portsize_parameters_str, "|");
+            const auto parameters_split = string_to_container<std::vector<std::string>>(portsize_parameters_str, "|");
             const auto pp_it_end = parameters_split.end();
             for(auto pp_it = parameters_split.begin(); pp_it != pp_it_end; ++pp_it)
             {
-               std::vector<std::string> precision_portsize_param_pair = SplitString(*pp_it, ":");
+               const auto precision_portsize_param_pair = string_to_container<std::vector<std::string>>(*pp_it, ":");
                THROW_ASSERT(precision_portsize_param_pair.size() == 2, "malformed portsize parameter string");
-               std::vector<std::string> portsize_params = SplitString(precision_portsize_param_pair[1], ",");
+               const auto portsize_params =
+                   string_to_container<std::vector<std::string>>(precision_portsize_param_pair[1], ",");
                THROW_ASSERT(portsize_params.size() > 0, "malformed portsize parameter string");
                if(precision_portsize_param_pair[0] == "*")
                {
@@ -529,8 +531,8 @@ void FunctionalUnitStep::Initialize()
       THROW_ASSERT(device->has_parameter("DSPs_x_sizes"), "device description is not complete");
       auto DSPs_x_sizes = device->get_parameter<std::string>("DSPs_x_sizes");
       auto DSPs_y_sizes = device->get_parameter<std::string>("DSPs_y_sizes");
-      std::vector<std::string> DSPs_x_sizes_vec = SplitString(DSPs_x_sizes, ",");
-      std::vector<std::string> DSPs_y_sizes_vec = SplitString(DSPs_y_sizes, ",");
+      const auto DSPs_x_sizes_vec = string_to_container<std::vector<std::string>>(DSPs_x_sizes, ",");
+      const auto DSPs_y_sizes_vec = string_to_container<std::vector<std::string>>(DSPs_y_sizes, ",");
       for(size_t DSP_index = 0; DSP_index < DSPs_y_sizes_vec.size(); DSP_index++)
       {
          const auto DSPs_x_value = static_cast<unsigned>(std::stoul(DSPs_x_sizes_vec[DSP_index]));

@@ -589,14 +589,6 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
          {
             transformations[tree_node->index] = SCALAR;
          }
-#if 0
-            else if(tree_node->get_kind() == plus_expr_K)
-            {
-               ClassifyTreeNode(loop_id, GET_NODE(be->op0));
-               ClassifyTreeNode(loop_id, GET_NODE(be->op1));
-               transformations[tree_node->index] = SIMD;
-            }
-#endif
          else
          {
             transformations[tree_node->index] = SCALAR;
@@ -2563,20 +2555,6 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                switch(type->get_kind())
                {
                   case pointer_type_K:
-#if 0
-                           {
-                              const pointer_type * pt = GetPointer<const pointer_type>(tn);
-                              tree_node_schema[TOK(TOK_PTD)] = STR(Transform(pt->ptd->index, parallel_degree, 0, new_stmt_list, new_phi_list));
-                              if(type->size)
-                                 tree_node_schema[TOK(TOK_SIZE)] = STR(type->size->index);
-                              if(type->name)
-                                 tree_node_schema[TOK(TOK_NAME)] = STR(Transform(type->name->index, parallel_degree, 0, new_stmt_list, new_phi_list));
-                              unsigned int new_tree_node_id = TM->new_tree_node_id();
-                              TM->create_tree_node(new_tree_node_id, pointer_type_K, tree_node_schema);
-                              return_value = new_tree_node_id;
-                              break;
-                           }
-#endif
                   case boolean_type_K:
                   case integer_type_K:
                   case void_type_K:

@@ -101,12 +101,7 @@ static const std::string& create_project_file(const std::string& project_filenam
          THROW_ERROR("Extension not recognized! " + extension);
       }
       prj_file << " work ";
-      const auto filename = file_path.string();
-      if(filename[0] != '/')
-      {
-         prj_file << std::filesystem::path(GetCurrentPath()).string() << "/";
-      }
-      prj_file << filename << std::endl;
+      prj_file << GetPath(file_path) << std::endl;
    }
    prj_file.close();
    return project_filename;

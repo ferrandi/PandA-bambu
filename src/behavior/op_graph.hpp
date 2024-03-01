@@ -222,18 +222,6 @@ UINT_STRONG_TYPEDEF(MemoryAddress);
  * constant string identifying the operation performed by an assignment.
  */
 #define ASSIGN "ASSIGN"
-#if 0
-/**
-* constant string identifying the operation performed by a store in memory.
-*/
-#define STORE "STORE"
-#define PREDICATED_STORE "PREDICATED_STORE"
-/**
-* constant string identifying the operation performed by a load from memory.
-*/
-#define LOAD "LOAD"
-#define PREDICATED_LOAD "PREDICATED_LOAD"
-#endif
 /**
  * constant string identifying the operation performed by an assignment.
  */

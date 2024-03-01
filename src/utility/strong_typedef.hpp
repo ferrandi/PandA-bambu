@@ -51,14 +51,6 @@ inline Dest from_strongtype_cast(Source source)
    return static_cast<Dest>(source);
 }
 
-#if 0
-template<typename Dest, typename Source>
-inline Dest to_strongtype_cast(Source source)
-{
-   return static_cast<Dest>(source);
-}
-#endif
-
 #else
 #include <boost/functional/hash/hash.hpp>
 template <typename Dest, typename Source>
@@ -66,14 +58,6 @@ inline Dest from_strongtype_cast(Source source)
 {
    return static_cast<Dest>(source.GetContent());
 }
-
-#if 0
-template<typename Dest, typename Source>
-inline Dest to_strongtype_cast(Source source)
-{
-   return Dest(source);
-}
-#endif
 
 #define STRONG_TYPEDEF_FORWARD_DECL(OriginalType, NewType) class NewType
 /// This is quite similar to boost strong typedef, but implicit conversion are disabled

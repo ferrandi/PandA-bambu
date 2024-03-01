@@ -504,10 +504,10 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
       endianess_check->Append("return endianess_check[arg];\n");
       endianess_check->Append("}\n");
 
-      const auto endianess_check_file = tmp_directory + "/" + STR_CST_taste_endianess_check + top_function_name + ".c";
+      const auto endianess_check_file = tmp_directory + "/" STR_CST_taste_endianess_check + top_function_name + ".c";
       endianess_check->WriteFile(endianess_check_file);
       AppM->input_files.push_back(endianess_check_file);
-      new_top_functions += STR_CST_string_separator + STR_CST_taste_endianess_check + top_function_name;
+      new_top_functions += STR_CST_string_separator STR_CST_taste_endianess_check + top_function_name;
 
       if(bambu_address != 0)
       {
@@ -515,19 +515,18 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
          aadl_information->exposed_memory_sizes[top_function_name] = taste_address;
          changed = true;
          const auto address_translation_file =
-             tmp_directory + "/" + STR_CST_taste_address_translation + top_function_name + ".c";
-         const auto memory_enabling_file =
-             tmp_directory + "/" + STR_CST_taste_memory_enabling + top_function_name + ".c";
-         const auto data_size_file = tmp_directory + "/" + STR_CST_taste_data_size + top_function_name + ".c";
+             tmp_directory + "/" STR_CST_taste_address_translation + top_function_name + ".c";
+         const auto memory_enabling_file = tmp_directory + "/" STR_CST_taste_memory_enabling + top_function_name + ".c";
+         const auto data_size_file = tmp_directory + "/" STR_CST_taste_data_size + top_function_name + ".c";
          address_translation->WriteFile(address_translation_file);
          memory_enabling->WriteFile(memory_enabling_file);
          data_size->WriteFile(data_size_file);
          AppM->input_files.push_back(address_translation_file);
          AppM->input_files.push_back(memory_enabling_file);
          AppM->input_files.push_back(data_size_file);
-         new_top_functions += STR_CST_string_separator + STR_CST_taste_address_translation + top_function_name +
-                              STR_CST_string_separator + STR_CST_taste_memory_enabling + top_function_name +
-                              STR_CST_string_separator + STR_CST_taste_data_size + top_function_name;
+         new_top_functions += STR_CST_string_separator STR_CST_taste_address_translation + top_function_name +
+                              STR_CST_string_separator STR_CST_taste_memory_enabling + top_function_name +
+                              STR_CST_string_separator STR_CST_taste_data_size + top_function_name;
       }
       IndentedOutputStreamRef output_multiplexer = IndentedOutputStreamRef(new IndentedOutputStream());
       output_multiplexer->Append("unsigned int " STR_CST_taste_output_multiplexer + top_function_name +
@@ -563,7 +562,7 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
           tmp_directory + "/" + STR_CST_taste_output_multiplexer + top_function_name + ".c";
       output_multiplexer->WriteFile(output_multiplexer_file);
       AppM->input_files.push_back(output_multiplexer_file);
-      new_top_functions += STR_CST_string_separator + STR_CST_taste_output_multiplexer + top_function_name;
+      new_top_functions += STR_CST_string_separator STR_CST_taste_output_multiplexer + top_function_name;
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed function " + top_function_name);
    }
@@ -588,23 +587,11 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
    reg_status->Append("ret = ret | bit3;\n");
    reg_status->Append("return ret;\n");
    reg_status->Append("}\n");
-   const auto reg_status_file = tmp_directory + "/" + STR_CST_taste_reg_status + ".c";
+   const auto reg_status_file = tmp_directory + "/" STR_CST_taste_reg_status ".c";
    reg_status->WriteFile(reg_status_file);
    AppM->input_files.push_back(reg_status_file);
-   new_top_functions += STR_CST_string_separator + STR_CST_taste_reg_status;
-
-#if 0
-   IndentedOutputStreamRef endianess_inversion(new IndentedOutputStream());
-   endianess_inversion->Append("unsigned int " STR_CST_taste_endianess_inversion " (unsigned int input, unsigned int endianess)\n");
-   endianess_inversion->Append("{\n");
-   endianess_inversion->Append("const int inverted = bswap32(input);\n");
-   endianess_inversion->Append("return endianess == 1 ? inverted : input;\n");
-   endianess_inversion->Append("}\n");
-   const auto endianess_inversion_file = tmp_directory + "/" + STR_CST_taste_endianess_inversion + ".c";
-   endianess_inversion->WriteFile(endianess_inversion_file);
-   AppM->input_files.push_back(endianess_inversion_file);
-#endif
-   new_top_functions += STR_CST_string_separator + STR_CST_taste_endianess_inversion;
+   new_top_functions += STR_CST_string_separator STR_CST_taste_reg_status;
+   new_top_functions += STR_CST_string_separator STR_CST_taste_endianess_inversion;
 
    const_cast<Parameter*>(parameters.get())->setOption(OPT_top_functions_names, new_top_functions);
    return changed ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;

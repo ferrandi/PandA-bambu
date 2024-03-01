@@ -307,13 +307,6 @@ DesignFlowStep_Status multi_way_if::InternalExec()
          continue;
       }
       const auto last_curr_stmt = GET_NODE(curr_bb->CGetStmtList().back());
-#if 0
-      if(last_curr_stmt->get_kind() == gimple_multi_way_if_K)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because it contains a multi way if");
-         continue;
-      }
-#endif
       if(last_curr_stmt->get_kind() != gimple_cond_K && last_curr_stmt->get_kind() != gimple_multi_way_if_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
