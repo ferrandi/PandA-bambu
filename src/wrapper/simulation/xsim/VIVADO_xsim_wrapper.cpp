@@ -99,7 +99,8 @@ static void create_project_file(const std::filesystem::path& project_filename, c
       {
          THROW_ERROR("Extension not recognized! " + extension.string());
       }
-      prj_file << " work " << file_path.lexically_proximate(project_filename.parent_path()).string() << std::endl;
+      prj_file << " work ";
+      prj_file << GetPath(file_path) << std::endl;
    }
    prj_file.close();
 }

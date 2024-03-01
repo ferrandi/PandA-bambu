@@ -2035,8 +2035,12 @@ int BambuParameter::Exec()
             {
                no_parse += getOption<std::string>(OPT_no_parse_files) + STR_CST_string_separator;
             }
-            setOption(OPT_no_parse_files,
-                      no_parse + boost::replace_all_copy(std::string(optarg), ",", STR_CST_string_separator));
+            auto paths = string_to_container<std::vector<std::string>>(optarg, ",");
+            for(auto& path : paths)
+            {
+               path = GetPath(path);
+            }
+            setOption(OPT_no_parse_files, no_parse + container_to_string(paths, STR_CST_string_separator));
             break;
          }
 #if !HAVE_UNORDERED
