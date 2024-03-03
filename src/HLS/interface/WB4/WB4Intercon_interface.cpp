@@ -248,8 +248,8 @@ static void buildCircuit(structural_managerRef SM, structural_objectRef wrappedO
    std::vector<structural_objectRef> masters, slaves;
    slaves.push_back(wrappedObj);
 
-   std::string baseAddressFileName = "intercon_" + STR(HLS->functionId) + ".mem";
-   std::ofstream baseAddressFile(GetPath(baseAddressFileName));
+   const auto baseAddressFileName = "intercon_" + STR(HLS->functionId) + ".mem";
+   std::ofstream baseAddressFile(baseAddressFileName);
 
    std::string topFunctionBaseAddress = STR(WB_BASE_ADDRESS) + "_" + topFunctionName;
    wrappedObj->SetParameter(topFunctionBaseAddress, topModuleBaseAddress + " + " + topFunctionBaseAddress);
@@ -349,5 +349,5 @@ static void buildCircuit(structural_managerRef SM, structural_objectRef wrappedO
 
    interconModule->SetParameter("MASTERS", STR(masters.size() + 1));
    interconModule->SetParameter("SLAVES", STR(slaves.size() + 1));
-   interconModule->SetParameter("MEMORY_INIT_file", "\"\"" + GetPath(baseAddressFileName) + "\"\"");
+   interconModule->SetParameter("MEMORY_INIT_file", "\"\"" + baseAddressFileName + "\"\"");
 }

@@ -193,17 +193,17 @@ int EucalyptusParameter::Exec()
          }
          case OPT_ALTERA_ROOT:
          {
-            setOption(OPT_altera_root, GetPath(optarg));
+            setOption(OPT_altera_root, std::string(optarg));
             break;
          }
          case OPT_LATTICE_ROOT:
          {
-            setOption(OPT_lattice_root, GetPath(optarg));
+            setOption(OPT_lattice_root, std::string(optarg));
             break;
          }
          case OPT_MENTOR_ROOT:
          {
-            setOption(OPT_mentor_root, GetPath(optarg));
+            setOption(OPT_mentor_root, std::string(optarg));
             break;
          }
          case OPT_MENTOR_OPTIMIZER:
@@ -213,7 +213,7 @@ int EucalyptusParameter::Exec()
          }
          case OPT_NANOXPLORE_ROOT:
          {
-            setOption(OPT_nanoxplore_root, GetPath(optarg));
+            setOption(OPT_nanoxplore_root, std::string(optarg));
             break;
          }
          case OPT_NANOXPLORE_BYPASS:
@@ -223,7 +223,7 @@ int EucalyptusParameter::Exec()
          }
          case OPT_XILINX_ROOT:
          {
-            setOption(OPT_xilinx_root, GetPath(optarg));
+            setOption(OPT_xilinx_root, std::string(optarg));
             break;
          }
          case OPT_PARALLEL_BACKEND:
@@ -347,7 +347,7 @@ void EucalyptusParameter::CheckParameters()
                        "]; then exit 1; else exit 0; fi\" > /dev/null 2>&1")
                        .c_str()))
          {
-            setOption(OPT_quartus_13_settings, "export PATH=$PATH:" + dir + "/quartus/bin/");
+            setOption(OPT_quartus_13_settings, "export PATH=$PATH:" + dir + "/quartus/bin");
             if(system(STR("bash -c \"" + dir + "/quartus/bin/quartus_sh --help | grep '--64bit'\" > /dev/null 2>&1")
                           .c_str()) == 0)
             {
@@ -360,7 +360,7 @@ void EucalyptusParameter::CheckParameters()
          }
          else
          {
-            setOption(OPT_quartus_settings, "export PATH=$PATH:" + dir + "/quartus/bin/");
+            setOption(OPT_quartus_settings, "export PATH=$PATH:" + dir + "/quartus/bin");
          }
       }
    };
@@ -401,7 +401,7 @@ void EucalyptusParameter::CheckParameters()
       if(std::filesystem::exists(dir + "/cae_library/simulation/verilog/pmi/pmi_dsp_mult.v") &&
          std::filesystem::exists(dir + "/cae_library/simulation/verilog/pmi/pmi_ram_dp_true_be.v"))
       {
-         setOption(OPT_lattice_inc_dirs, dir + "/cae_library/");
+         setOption(OPT_lattice_inc_dirs, dir + "/cae_library");
       }
    };
    for(const auto& lattice_dir : lattice_dirs)
@@ -654,7 +654,7 @@ void EucalyptusParameter::SetDefaults()
    setOption(OPT_reset_type, "no");
    setOption(OPT_reg_init_value, false);
 
-   setOption(OPT_output_directory, (std::filesystem::current_path() / "HLS_output/").string());
+   setOption(OPT_output_directory, "HLS_output");
    setOption(OPT_reset_level, false);
    setOption(OPT_mixed_design, true);
 }

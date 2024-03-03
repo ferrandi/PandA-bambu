@@ -1145,7 +1145,7 @@ int BambuParameter::Exec()
             break;
          }
          case 'o':
-            setOption(OPT_output_file, GetPath(optarg));
+            setOption(OPT_output_file, std::string(optarg));
             break;
          case 'S':
          {
@@ -1159,14 +1159,13 @@ int BambuParameter::Exec()
          }
          case INPUT_OPT_FILE_INPUT_DATA:
          {
-            const auto in_files = string_to_container<std::vector<std::string>>(optarg, ",");
+            const auto in_files = string_to_container<std::vector<std::filesystem::path>>(optarg, ",");
             for(const auto& in_file : in_files)
             {
-               std::filesystem::path file_path(GetPath(in_file));
-               std::filesystem::path local_file(GetPath(file_path.filename().string()));
+               const auto local_file = in_file.filename();
                if(!std::filesystem::exists(local_file))
                {
-                  std::filesystem::create_symlink(file_path.lexically_normal(), local_file);
+                  std::filesystem::create_symlink(in_file.lexically_normal(), local_file);
                }
             }
             break;
@@ -1754,7 +1753,7 @@ int BambuParameter::Exec()
          }
          case OPT_PRETTY_PRINT:
          {
-            std::filesystem::path pp_src(GetPath(optarg));
+            std::filesystem::path pp_src(optarg);
             if(!pp_src.has_extension())
             {
                pp_src.append(".c");
@@ -1778,24 +1777,23 @@ int BambuParameter::Exec()
             std::error_code ec;
             if(starts_with(arg, "elf:"))
             {
-               arg = arg.substr(4);
-               if(std::filesystem::exists(GetPath(arg), ec))
+               if(std::filesystem::exists(arg.substr(4), ec))
                {
-                  setOption(OPT_testbench_input_file, "elf:" + GetPath(arg));
+                  setOption(OPT_testbench_input_file, arg);
                }
                else
                {
                   THROW_ERROR("BadParameters: testbench executable does not exist.");
                }
             }
-            else if(std::filesystem::exists(GetPath(arg), ec))
+            else if(std::filesystem::exists(arg, ec))
             {
                std::string prev;
                if(isOption(OPT_testbench_input_file))
                {
                   prev = getOption<std::string>(OPT_testbench_input_file) + STR_CST_string_separator;
                }
-               setOption(OPT_testbench_input_file, prev + GetPath(arg));
+               setOption(OPT_testbench_input_file, prev + arg);
             }
             else
             {
@@ -2043,12 +2041,8 @@ int BambuParameter::Exec()
             {
                no_parse += getOption<std::string>(OPT_no_parse_files) + STR_CST_string_separator;
             }
-            auto paths = string_to_container<std::vector<std::string>>(optarg, ",");
-            for(auto& path : paths)
-            {
-               path = GetPath(path);
-            }
-            setOption(OPT_no_parse_files, no_parse + container_to_string(paths, STR_CST_string_separator));
+            setOption(OPT_no_parse_files,
+                      no_parse + boost::replace_all_copy(std::string(optarg), ",", STR_CST_string_separator));
             break;
          }
 #if !HAVE_UNORDERED
@@ -2072,8 +2066,8 @@ int BambuParameter::Exec()
          }
          case OPT_ARCHITECTURE_XML:
          {
-            auto XMLfilename = GetPath(optarg);
-            if(!std::filesystem::exists(std::filesystem::path(XMLfilename)))
+            std::string XMLfilename(optarg);
+            if(!std::filesystem::exists(XMLfilename))
             {
                THROW_ERROR("The file " + XMLfilename + " passed to --architecture-xml option does not exist");
             }
@@ -2082,17 +2076,17 @@ int BambuParameter::Exec()
          }
          case OPT_ALTERA_ROOT:
          {
-            setOption(OPT_altera_root, GetPath(optarg));
+            setOption(OPT_altera_root, std::string(optarg));
             break;
          }
          case OPT_LATTICE_ROOT:
          {
-            setOption(OPT_lattice_root, GetPath(optarg));
+            setOption(OPT_lattice_root, std::string(optarg));
             break;
          }
          case OPT_MENTOR_ROOT:
          {
-            setOption(OPT_mentor_root, GetPath(optarg));
+            setOption(OPT_mentor_root, std::string(optarg));
             break;
          }
          case OPT_MENTOR_OPTIMIZER:
@@ -2102,7 +2096,7 @@ int BambuParameter::Exec()
          }
          case OPT_NANOXPLORE_ROOT:
          {
-            setOption(OPT_nanoxplore_root, GetPath(optarg));
+            setOption(OPT_nanoxplore_root, std::string(optarg));
             break;
          }
          case OPT_NANOXPLORE_BYPASS:
@@ -2121,7 +2115,7 @@ int BambuParameter::Exec()
          }
          case OPT_XILINX_ROOT:
          {
-            setOption(OPT_xilinx_root, GetPath(optarg));
+            setOption(OPT_xilinx_root, std::string(optarg));
             break;
          }
          case OPT_SHARED_INPUT_REGISTERS:
@@ -2195,7 +2189,7 @@ int BambuParameter::Exec()
             }
             if(strcmp(long_options[option_index].name, "xml-memory-allocation") == 0)
             {
-               setOption(OPT_xml_memory_allocation, GetPath(optarg));
+               setOption(OPT_xml_memory_allocation, std::string(optarg));
                break;
             }
             if(strcmp(long_options[option_index].name, "memory-allocation-policy") == 0)
@@ -2388,9 +2382,9 @@ int BambuParameter::Exec()
 #if HAVE_EXPERIMENTAL
    if(isOption(OPT_gcc_write_xml))
    {
-      const std::string filenameXML = getOption<std::string>(OPT_gcc_write_xml);
-      write_xml_configuration_file(GetPath(filenameXML));
-      PRINT_MSG("Configuration saved into file \"" + filenameXML + "\"");
+      const auto filenameXML = getOption<std::filesystem::path>(OPT_gcc_write_xml);
+      write_xml_configuration_file(filenameXML);
+      PRINT_MSG("Configuration saved into file \"" + filenameXML.string() + "\"");
       return EXIT_SUCCESS;
    }
 #endif
@@ -2408,7 +2402,7 @@ int BambuParameter::Exec()
 
    while(optind < argc)
    {
-      const auto filename = GetPath(argv[optind]);
+      const std::string filename(argv[optind]);
       const auto file_type = GetFileFormat(filename, true);
       if(file_type == Parameters_FileFormat::FF_XML_CON)
       {
@@ -2419,7 +2413,7 @@ int BambuParameter::Exec()
          const auto tech_files = isOption(OPT_technology_file) ?
                                      getOption<std::string>(OPT_technology_file) + STR_CST_string_separator :
                                      "";
-         setOption(OPT_technology_file, tech_files + argv[optind]);
+         setOption(OPT_technology_file, tech_files + filename);
       }
 #if HAVE_FROM_AADL_ASN_BUILT
       else if(file_type == Parameters_FileFormat::FF_AADL)
@@ -2449,7 +2443,7 @@ int BambuParameter::Exec()
          setOption(OPT_input_format, static_cast<int>(Parameters_FileFormat::FF_RAW));
          if(!isOption(OPT_pretty_print))
          {
-            setOption(OPT_pretty_print, GetPath("_a.c"));
+            setOption(OPT_pretty_print, "_a.c");
          }
       }
       else
@@ -2584,7 +2578,7 @@ void BambuParameter::CheckParameters()
                        "]; then exit 1; else exit 0; fi\" > /dev/null 2>&1")
                        .c_str()))
          {
-            setOption(OPT_quartus_13_settings, "export PATH=$PATH:" + dir + "/quartus/bin/");
+            setOption(OPT_quartus_13_settings, "export PATH=$PATH:" + dir + "/quartus/bin");
             if(system(STR("bash -c \"" + dir + "/quartus/bin/quartus_sh --help | grep '--64bit'\" > /dev/null 2>&1")
                           .c_str()) == 0)
             {
@@ -2597,7 +2591,7 @@ void BambuParameter::CheckParameters()
          }
          else
          {
-            setOption(OPT_quartus_settings, "export PATH=$PATH:" + dir + "/quartus/bin/");
+            setOption(OPT_quartus_settings, "export PATH=$PATH:" + dir + "/quartus/bin");
          }
       }
    };
@@ -2635,7 +2629,7 @@ void BambuParameter::CheckParameters()
       if(std::filesystem::exists(dir + "/cae_library/simulation/verilog/pmi/pmi_dsp_mult.v") &&
          std::filesystem::exists(dir + "/cae_library/simulation/verilog/pmi/pmi_ram_dp_true_be.v"))
       {
-         setOption(OPT_lattice_inc_dirs, dir + "/cae_library/");
+         setOption(OPT_lattice_inc_dirs, dir + "/cae_library");
       }
    };
    for(const auto& lattice_dir : lattice_dirs)
@@ -2932,7 +2926,7 @@ void BambuParameter::CheckParameters()
             if(!getOption<bool>(OPT_generate_testbench))
             {
                setOption(OPT_generate_testbench, true);
-               setOption(OPT_testbench_input_file, GetPath("test.xml"));
+               setOption(OPT_testbench_input_file, "test.xml");
             }
             if(getOption<std::list<std::string>>(OPT_top_functions_names).size() > 1)
             {
@@ -3214,16 +3208,15 @@ void BambuParameter::CheckParameters()
          if(source_files.size() > 1 && isOption(OPT_input_format) &&
             getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C)
          {
-            auto concat_filename = std::filesystem::path(getOption<std::string>(OPT_output_temporary_directory) + "/" +
-                                                         unique_path(std::string(STR_CST_concat_c_file)).string())
-                                       .string();
-            std::ofstream filestream(concat_filename.c_str());
+            const auto concat_filename =
+                getOption<std::filesystem::path>(OPT_output_temporary_directory) / unique_path(STR_CST_concat_c_file);
+            std::ofstream filestream(concat_filename);
             for(const auto& source_file : source_files)
             {
                filestream << "#include \"" << source_file << "\"\n";
             }
             filestream.close();
-            setOption(OPT_input_file, concat_filename);
+            setOption(OPT_input_file, concat_filename.string());
          }
       }
       if(!isOption(OPT_disable_function_proxy))
@@ -3633,13 +3626,13 @@ void BambuParameter::SetDefaults()
 {
    // ---------- general options ----------- //
    /// Revision
-   setOption(OPT_dot_directory, GetPath("./HLS_output/dot/"));
-   setOption(OPT_output_directory, GetPath("./HLS_output/"));
-   setOption(OPT_simulation_output, GetPath("results.txt"));
-   setOption(OPT_profiling_output, GetPath("profiling_results.txt"));
-   /// TODO this is a temporary hack. Before starting anything, the directory HLS_output/simulation/ needs to be
-   /// removed.
-   auto sim_dir = getOption<std::string>(OPT_output_directory) + "/simulation/";
+   setOption(OPT_dot_directory, "HLS_output/dot");
+   setOption(OPT_output_directory, "HLS_output");
+   setOption(OPT_simulation_output, "results.txt");
+   setOption(OPT_profiling_output, "profiling_results.txt");
+   // TODO: this is a temporary hack. Before starting anything, the directory HLS_output/simulation/ needs to be
+   // removed.
+   auto sim_dir = getOption<std::filesystem::path>(OPT_output_directory) / "simulation";
    if(std::filesystem::exists(sim_dir))
    {
       std::filesystem::remove_all(sim_dir);

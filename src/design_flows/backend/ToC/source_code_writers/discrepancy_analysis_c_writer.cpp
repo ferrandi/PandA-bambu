@@ -881,8 +881,7 @@ long long unsigned int __bambu_discrepancy_temp_check_int_ssa = 0;
       indented_output_stream->Append("fputs(\"DISCREPANCY REPORT\\n\", stdout);\n");
       if(Param->isOption(OPT_cat_args))
       {
-         indented_output_stream->Append("fputs(\"" + Param->getOption<std::string>(OPT_program_name) +
-                                        " executed with: " + Param->getOption<std::string>(OPT_cat_args) +
+         indented_output_stream->Append("fputs(\"Bambu executed with: " + Param->getOption<std::string>(OPT_cat_args) +
                                         "\\n\", stdout);\n");
       }
       indented_output_stream->Append("fprintf(stdout, "

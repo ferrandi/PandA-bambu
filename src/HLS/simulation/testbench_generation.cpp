@@ -95,7 +95,7 @@ TestbenchGeneration::TestbenchGeneration(const ParameterConstRef _parameters, co
                                             _HLSMgr->get_HLS_device()->get_technology_manager(), _parameters)),
       cir(nullptr),
       mod(nullptr),
-      output_directory(parameters->getOption<std::string>(OPT_output_directory) + "/simulation/"),
+      output_directory(parameters->getOption<std::filesystem::path>(OPT_output_directory) / "simulation"),
       c_testbench_basename(STR_CST_testbench_generation_basename)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
@@ -145,7 +145,7 @@ void TestbenchGeneration::ComputeRelationships(DesignFlowStepSet& design_flow_st
              GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
 
          design_flow_step_set.insert(c_backend_factory->CreateCBackendStep(CBackendInformationConstRef(
-             new CBackendInformation(CBackendInformation::CB_HLS, output_directory + c_testbench_basename + ".c"))));
+             new CBackendInformation(CBackendInformation::CB_HLS, output_directory / (c_testbench_basename + ".c")))));
          break;
       }
       case PRECEDENCE_RELATIONSHIP:
@@ -668,7 +668,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating testbench HDL...");
-   const auto tb_filename = output_directory + CST_STR_BAMBU_TESTBENCH;
+   const auto tb_filename = output_directory / CST_STR_BAMBU_TESTBENCH;
    const auto is_sim_verilator = parameters->getOption<std::string>(OPT_simulator) == "VERILATOR";
    HDL_manager HDLMgr(HLSMgr, HLSMgr->get_HLS_device(), parameters);
    std::list<std::string> hdl_files, aux_files;
@@ -730,8 +730,8 @@ typedef int unsigned ptr_t;
       /// VCD output generation (optional)
       tb_writer->write("`ifndef VERILATOR\n");
       tb_writer->write_comment("VCD file generation\n");
-      const auto vcd_output_filename = output_directory + "test.vcd";
-      tb_writer->write("$dumpfile(\"" + vcd_output_filename + "\");\n");
+      const auto vcd_output_filename = output_directory / "test.vcd";
+      tb_writer->write("$dumpfile(\"" + vcd_output_filename.string() + "\");\n");
       const auto dumpvars_discrepancy =
           parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy);
       if(dumpvars_discrepancy)
@@ -826,7 +826,7 @@ typedef int unsigned ptr_t;
 
 std::string TestbenchGeneration::write_verilator_testbench() const
 {
-   const std::string filename = output_directory + "bambu_testbench.cpp";
+   const auto filename = output_directory / "bambu_testbench.cpp";
    std::ofstream os(filename, std::ios::out);
    simple_indent PP('{', '}', 3);
 
@@ -864,7 +864,7 @@ std::string TestbenchGeneration::write_verilator_testbench() const
    PP(os, "top->trace (tfp.get(), 99);\n");
    PP(os, "tfp->set_time_unit(\"p\");\n");
    PP(os, "tfp->set_time_resolution(\"p\");\n");
-   PP(os, "tfp->open (\"" + output_directory + "test.vcd\");\n");
+   PP(os, "tfp->open (\"" + output_directory.string() + "/test.vcd\");\n");
    PP(os, "#endif\n");
    PP(os, "top->" CLOCK_PORT_NAME " = 1;\n");
    PP(os, "while (!Verilated::gotFinish())\n");
@@ -885,7 +885,7 @@ std::string TestbenchGeneration::write_verilator_testbench() const
    PP(os, "return 0;\n");
    PP(os, "}");
 
-   return filename;
+   return filename.string();
 }
 
 std::vector<std::string> TestbenchGeneration::print_var_init(const tree_managerConstRef TM, unsigned int var,

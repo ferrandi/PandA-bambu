@@ -794,7 +794,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       }
 #endif
       const std::string init_filename = "epp_control_flow_trace_scope__" + STR(scope_id) + ".mem";
-      std::ofstream init_file(GetPath(init_filename));
+      std::ofstream init_file(init_filename);
 
       for(const auto& id : i.second)
       {
@@ -821,7 +821,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       }
       init_file << NumberToBinaryString(invalid_epp_id, data_word_size) << std::endl;
       init_file.close();
-      GetPointer<module>(curr_module)->SetParameter("MEMORY_INIT_file", "\"\"" + GetPath(init_filename) + "\"\"");
+      GetPointer<module>(curr_module)->SetParameter("MEMORY_INIT_file", "\"\"" + init_filename + "\"\"");
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Initialized checker for scope " + i.first);
       scope_id++;
    }

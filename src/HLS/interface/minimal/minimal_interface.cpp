@@ -396,8 +396,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             unsigned long long int n_bytes = HLSMgr->Rmem->get_memory_address() - base_address;
             unsigned long long int vec_size = n_bytes / (bus_data_bitsize / 8);
             std::string init_filename = "shared_memory.mem";
-            std::ofstream init_file_a(GetPath(init_filename));
-            std::ofstream init_file_b(GetPath("0_" + init_filename));
+            std::ofstream init_file_a(init_filename);
+            std::ofstream init_file_b("0_" + init_filename);
 
             auto* shared_memory_module = GetPointer<module>(shared_memory);
             shared_memory_module->SetParameter("address_space_begin", STR(base_address));
@@ -412,13 +412,12 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             }
             if(is_memory_splitted)
             {
-               shared_memory_module->SetParameter("MEMORY_INIT_file_a", "\"\"" + GetPath(init_filename) + "\"\"");
-               shared_memory_module->SetParameter("MEMORY_INIT_file_b",
-                                                  "\"\"" + GetPath("0_" + init_filename) + "\"\"");
+               shared_memory_module->SetParameter("MEMORY_INIT_file_a", "\"\"" + init_filename + "\"\"");
+               shared_memory_module->SetParameter("MEMORY_INIT_file_b", "\"\"0_" + init_filename + "\"\"");
             }
             else
             {
-               shared_memory_module->SetParameter("MEMORY_INIT_file", "\"\"" + GetPath(init_filename) + "\"\"");
+               shared_memory_module->SetParameter("MEMORY_INIT_file", "\"\"" + init_filename + "\"\"");
             }
             shared_memory_module->SetParameter("n_elements", STR(vec_size));
             shared_memory_module->SetParameter("data_size", STR(bus_data_bitsize));

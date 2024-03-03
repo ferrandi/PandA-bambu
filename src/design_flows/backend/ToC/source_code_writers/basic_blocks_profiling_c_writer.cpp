@@ -128,7 +128,7 @@ void BasicBlocksProfilingCWriter::WriteGlobalDeclarations()
    indented_output_stream->Append("{\n");
    indented_output_stream->Append("FILE* h_file = fopen(\"" +
                                   Param->getOption<std::string>(OPT_output_temporary_directory) +
-                                  STR_CST_host_profiling_data + "\", \"w\");\n");
+                                  "/" STR_CST_host_profiling_data "\", \"w\");\n");
    indented_output_stream->Append("int i = 0;\n");
    for(const auto function : functions)
    {

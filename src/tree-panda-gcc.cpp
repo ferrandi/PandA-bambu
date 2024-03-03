@@ -201,10 +201,7 @@ int main(int argc, char* argv_orig[])
              Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
          CompilerWrapperRef Wrap = CompilerWrapperRef(new CompilerWrapper(Param, compiler_target, optimization_set));
 
-         auto input_files = [&]() {
-            const auto flist = Param->getOption<std::list<std::string>>(OPT_input_file);
-            return std::vector<std::string>(flist.begin(), flist.end());
-         }();
+         auto input_files = Param->getOption<std::vector<std::string>>(OPT_input_file);
 
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                        "Created list of files: " + std::to_string(input_files.size()) +
@@ -245,31 +242,40 @@ int main(int argc, char* argv_orig[])
          if(Param->isOption(OPT_archive_files))
          {
             const auto archive_files = Param->getOption<CustomSet<std::string>>(OPT_archive_files);
+            const auto output_temporary_directory =
+                Param->getOption<std::filesystem::path>(OPT_output_temporary_directory);
+            const auto temp_path = output_temporary_directory / "archives";
+            std::filesystem::create_directories(temp_path);
+            std::string command;
             for(const auto& archive_file : archive_files)
             {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reading " + archive_file);
                if(!std::filesystem::exists(archive_file))
                {
                   THROW_ERROR("File " + archive_file + " does not exist");
                }
-               const auto temp_path = unique_path(Param->getOption<std::string>(OPT_output_temporary_directory) +
-                                                  "/temp-archive-dir-%%%%-%%%%-%%%%-%%%%");
-               std::filesystem::create_directories(temp_path);
-               const auto local_archive_file = GetPath(archive_file);
 
-               const auto command = "cd " + temp_path.string() + "; ar x " + local_archive_file;
-               if(IsError(PandaSystem(Param, command)))
+               command += " ar --output=" + temp_path.string() + " x " + archive_file + " &\n";
+            }
+            command += " wait";
+            if(IsError(PandaSystem(Param, command)))
+            {
+               THROW_ERROR("ar returns an error during archive extraction.");
+            }
+            for(const auto& archive : std::filesystem::directory_iterator{temp_path})
+            {
+               const auto fileExtension = archive.path().extension().string();
+               if(fileExtension != ".o" && fileExtension != ".O")
                {
-                  THROW_ERROR("ar returns an error during archive extraction ");
+                  continue;
                }
-               for(const auto& entry : std::filesystem::directory_iterator{temp_path})
-               {
-                  const tree_managerRef TM_new = ParseTreeFile(Param, entry.path().string());
-                  TM->merge_tree_managers(TM_new);
-               }
-               if(!Param->getOption<bool>(OPT_no_clean))
-               {
-                  std::filesystem::remove_all(temp_path);
-               }
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--Loading " + archive.path().string());
+               const auto TM_new = ParseTreeFile(Param, archive.path().string());
+               TM->merge_tree_managers(TM_new);
+            }
+            if(!Param->getOption<bool>(OPT_no_clean))
+            {
+               std::filesystem::remove_all(temp_path);
             }
          }
          STOP_TIME(tree_time);

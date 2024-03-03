@@ -113,9 +113,9 @@ DesignFlowStep_Status virtual_phi_nodes_split::InternalExec()
    if(debug_level >= DEBUG_LEVEL_PEDANTIC && !tree_dumped)
    {
       tree_dumped = true;
-      std::string raw_file_name =
-          parameters->getOption<std::string>(OPT_output_temporary_directory) + "before_virtual_phi_nodes_split.raw";
-      std::ofstream raw_file(raw_file_name.c_str());
+      const auto raw_file_name = parameters->getOption<std::filesystem::path>(OPT_output_temporary_directory) /
+                                 "before_virtual_phi_nodes_split.raw";
+      std::ofstream raw_file(raw_file_name);
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Tree-Manager dumped for debug purpose");
       raw_file << TM;
       raw_file.close();
@@ -141,9 +141,9 @@ DesignFlowStep_Status virtual_phi_nodes_split::InternalExec()
 
    if(debug_level >= DEBUG_LEVEL_PEDANTIC)
    {
-      std::string raw_file_name =
-          parameters->getOption<std::string>(OPT_output_temporary_directory) + "after_virtual_phi_nodes_split.raw";
-      std::ofstream raw_file(raw_file_name.c_str());
+      const auto raw_file_name = parameters->getOption<std::filesystem::path>(OPT_output_temporary_directory) /
+                                 "after_virtual_phi_nodes_split.raw";
+      std::ofstream raw_file(raw_file_name);
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Tree-Manager dumped for debug purpose");
       raw_file << TM;
       raw_file.close();

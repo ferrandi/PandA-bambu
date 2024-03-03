@@ -42,18 +42,17 @@
  */
 #ifndef _APPLICATION_MANAGER_HPP_
 #define _APPLICATION_MANAGER_HPP_
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "graph.hpp"
+#include "refcount.hpp"
+#include "tree_node.hpp"
+
+#include <cstddef>
+#include <string>
 
 #include "config_HAVE_FROM_DISCREPANCY_BUILT.hpp"
 #include "config_HAVE_PRAGMA_BUILT.hpp"
-
-#include <cstddef> // for size_t
-#include <string>  // for string
-
-#include "custom_map.hpp" // for CustomMap
-#include "custom_set.hpp" // for CustomSet
-#include "graph.hpp"      // for vertex
-#include "refcount.hpp"   // for REF_FORWARD_DECL
-#include "tree_node.hpp"
 
 CONSTREF_FORWARD_DECL(ActorGraphManager);
 REF_FORWARD_DECL(ActorGraphManager);

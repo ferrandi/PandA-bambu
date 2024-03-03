@@ -459,9 +459,9 @@ void XilinxBackendFlow::parse_timing(const std::string& log_file)
                time_m->set_execution_time(std::stod(tk));
                if(std::stod(tk) > Param->getOption<double>(OPT_clock_period))
                {
-                  CopyFile(Param->getOption<std::string>(OPT_output_directory) + "/Synthesis/xst/" +
-                               actual_parameters->component_name + ".log",
-                           Param->getOption<std::string>(OPT_output_directory) + "/" + flow_name + "/" +
+                  CopyFile(Param->getOption<std::filesystem::path>(OPT_output_directory) / "Synthesis/xst" /
+                               (actual_parameters->component_name + ".log"),
+                           Param->getOption<std::filesystem::path>(OPT_output_directory) / flow_name /
                                STR_CST_synthesis_timing_violation_report);
                }
             }
@@ -678,7 +678,7 @@ void XilinxBackendFlow::CheckSynthesisResults()
             std::filesystem::exists(actual_parameters->parameter_values.find(PARAM_vivado_timing_report)->second))
          {
             CopyFile(actual_parameters->parameter_values[PARAM_vivado_timing_report],
-                     Param->getOption<std::string>(OPT_output_directory) + "/" + flow_name + "/" +
+                     Param->getOption<std::filesystem::path>(OPT_output_directory) / flow_name /
                          STR_CST_synthesis_timing_violation_report);
          }
       }

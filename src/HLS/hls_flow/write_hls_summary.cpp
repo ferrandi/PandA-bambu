@@ -99,7 +99,7 @@ DesignFlowStep_Status WriteHLSSummary::Exec()
       top_HLS->PrintResources();
       if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
       {
-         std::string out_file_name = GetPath("memory_allocation");
+         std::string out_file_name = "memory_allocation";
          unsigned int progressive = 0;
          std::string candidate_out_file_name;
          do

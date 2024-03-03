@@ -671,10 +671,10 @@ void Loops::WriteDot(const std::string& file_name
 #endif
 ) const
 {
-   auto output_directory = Param->getOption<std::string>(OPT_dot_directory);
-   output_directory += FB->CGetBehavioralHelper()->get_function_name() + "/";
+   const auto output_directory =
+       Param->getOption<std::filesystem::path>(OPT_dot_directory) / FB->CGetBehavioralHelper()->get_function_name();
    const BBGraphRef cfg = FB->GetBBGraph(FunctionBehavior::BB);
-   std::ofstream dot((output_directory + file_name).c_str());
+   std::ofstream dot(output_directory / file_name);
    dot << "digraph LoopForest {" << std::endl;
    for(const auto& loop : const_loops_list)
    {

@@ -182,11 +182,11 @@ void generic_device::load_devices()
          CustomSet<XMLDomParserRef> ret;
          if(Param->isOption(OPT_target_device_file))
          {
-            const auto file_devices = Param->getOption<std::list<std::string>>(OPT_target_device_file);
+            const auto file_devices = Param->getOption<std::vector<std::string>>(OPT_target_device_file);
             for(const auto& file_device : file_devices)
             {
                PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Imported user data from file " + file_device);
-               ret.insert(XMLDomParserRef(new XMLDomParser(GetPath(file_device))));
+               ret.insert(XMLDomParserRef(new XMLDomParser(file_device)));
             }
          }
          else

@@ -129,7 +129,7 @@ int tree_panda_gcc_parameter::Exec()
       switch(next_option)
       {
          case 'o':
-            setOption(OPT_output_file, GetPath(optarg));
+            setOption(OPT_output_file, std::string(optarg));
             break;
          case 'S':
          {
@@ -324,7 +324,7 @@ int tree_panda_gcc_parameter::Exec()
 #if !RELEASE
    if(isOption(OPT_write_parameter_xml))
    {
-      const auto file_name = getOption<std::string>(OPT_write_parameter_xml);
+      const auto file_name = getOption<std::filesystem::path>(OPT_write_parameter_xml);
       write_xml_configuration_file(file_name);
       return EXIT_SUCCESS;
    }
@@ -338,7 +338,7 @@ int tree_panda_gcc_parameter::Exec()
          {
             object_files = getOption<std::string>(OPT_obj_files) + STR_CST_string_separator;
          }
-         setOption(OPT_obj_files, object_files + GetPath(argv[optind]));
+         setOption(OPT_obj_files, object_files + std::string(argv[optind]));
       }
       else if(std::filesystem::path(argv[optind]).extension() == ".a")
       {
@@ -347,7 +347,7 @@ int tree_panda_gcc_parameter::Exec()
          {
             archive_files = getOption<std::string>(OPT_archive_files) + STR_CST_string_separator;
          }
-         setOption(OPT_archive_files, archive_files + GetPath(argv[optind]));
+         setOption(OPT_archive_files, archive_files + std::string(argv[optind]));
       }
       else
       {
@@ -356,7 +356,7 @@ int tree_panda_gcc_parameter::Exec()
          {
             input_file = getOption<std::string>(OPT_input_file) + STR_CST_string_separator;
          }
-         setOption(OPT_input_file, input_file + GetPath(argv[optind]));
+         setOption(OPT_input_file, input_file + std::string(argv[optind]));
       }
       optind++;
    }

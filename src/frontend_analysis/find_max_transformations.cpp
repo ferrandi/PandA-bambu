@@ -39,13 +39,15 @@
  *
  */
 #include "find_max_transformations.hpp"
-#include "Parameter.hpp"           // for Parameter, OPT_output_tem...
-#include "dbgPrintHelper.hpp"      // for INDENT_OUT_MEX, OUTPUT_LE...
-#include "exceptions.hpp"          // for IsError, THROW_ASSERT
-#include "fileIO.hpp"              // for PandaSystem
-#include "hash_helper.hpp"         // for hash
-#include "string_manipulation.hpp" // for STR GET_CLASS
-#include <filesystem>              // for create_directory, exists
+
+#include "Parameter.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
+#include "fileIO.hpp"
+#include "hash_helper.hpp"
+#include "string_manipulation.hpp"
+
+#include <filesystem>
 
 FindMaxTransformations::FindMaxTransformations(const application_managerRef _AppM,
                                                const DesignFlowManagerConstRef _design_flow_manager,
@@ -95,15 +97,15 @@ bool FindMaxTransformations::ExecuteBambu(const size_t max_transformations) cons
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Executing with max transformations " + STR(max_transformations));
    const auto arg_string = ComputeArgString(max_transformations);
-   const auto temp_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
-   const auto new_directory = temp_directory + "/" + STR(max_transformations);
+   const auto new_directory =
+       parameters->getOption<std::filesystem::path>(OPT_output_temporary_directory) / STR(max_transformations);
    if(std::filesystem::exists(new_directory))
    {
       std::filesystem::remove_all(new_directory);
    }
    std::filesystem::create_directory(new_directory);
-   const auto ret = PandaSystem(parameters, "cd " + new_directory + "; " + arg_string, false,
-                                new_directory + "/bambu_execution_output");
+   const auto ret = PandaSystem(parameters, "cd " + new_directory.string() + "; " + arg_string, false,
+                                new_directory / "bambu_execution_output");
    std::filesystem::remove_all(new_directory);
    if(IsError(ret))
    {

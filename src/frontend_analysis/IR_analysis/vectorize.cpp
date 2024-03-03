@@ -239,9 +239,9 @@ DesignFlowStep_Status Vectorize::InternalExec()
             {
                if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
                {
-                  const std::string file_name = parameters->getOption<std::string>(OPT_output_temporary_directory) +
-                                                "before_" + STR(statement->index) + "_expansion.gimple";
-                  std::ofstream gimple_file(file_name.c_str());
+                  const auto file_name = parameters->getOption<std::filesystem::path>(OPT_output_temporary_directory) /
+                                         ("before_" + STR(statement->index) + "_expansion.gimple");
+                  std::ofstream gimple_file(file_name);
                   TM->PrintGimple(gimple_file, false);
                   gimple_file.close();
                }
@@ -251,9 +251,9 @@ DesignFlowStep_Status Vectorize::InternalExec()
                transformations[new_statement] = INC;
                if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
                {
-                  const std::string file_name = parameters->getOption<std::string>(OPT_output_temporary_directory) +
-                                                "after_" + STR(statement->index) + "_expansion.gimple";
-                  std::ofstream gimple_file(file_name.c_str());
+                  const auto file_name = parameters->getOption<std::filesystem::path>(OPT_output_temporary_directory) /
+                                         ("after_" + STR(statement->index) + "_expansion.gimple");
+                  std::ofstream gimple_file(file_name);
                   TM->PrintGimple(gimple_file, false);
                   gimple_file.close();
                }

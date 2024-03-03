@@ -246,7 +246,7 @@ class CompilerWrapper
     */
    const std::string AddSourceCodeIncludes(const std::list<std::string>& source_files) const;
 
-   std::string readExternalSymbols(const std::string& filename) const;
+   std::string readExternalSymbols(const std::filesystem::path& filename) const;
 
    std::string clang_recipes(const CompilerWrapper_OptimizationSet optimization_level, const std::string& fname) const;
 

@@ -426,7 +426,7 @@ class Parameter
     * Write an XML configuration file with the parameters actually stored
     * @param filename is the configuration file name where parameters have to be written
     */
-   void write_xml_configuration_file(const std::string& filename);
+   void write_xml_configuration_file(const std::filesystem::path& filename);
 
    /**
     * Execute parameter parsing. It has to be specialized

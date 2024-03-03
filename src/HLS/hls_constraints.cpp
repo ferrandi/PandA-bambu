@@ -178,7 +178,7 @@ HLS_constraints::HLS_constraints(const ParameterConstRef& _Param, std::string _f
    // ---------- Save XML file ------------ //
    if(debug_level >= DEBUG_LEVEL_PEDANTIC)
    {
-      write_HLS_constraints_File(GetPath("HLS_constraints.out.xml"));
+      write_HLS_constraints_File("HLS_constraints.out.xml");
    }
 }
 

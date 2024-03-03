@@ -276,14 +276,12 @@ void BashBackendFlow::CheckSynthesisResults()
 
 void BashBackendFlow::WriteFlowConfiguration(std::ostream& script)
 {
-   script << "export PANDA_DATA_INSTALLDIR=" << relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/"))
-          << "\n";
-   script << "export CURR_WORKDIR=" << GetCurrentPath() << "\n";
+   script << "export PANDA_DATA_INSTALLDIR=" << relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/") << "\n"
+          << "export CURR_WORKDIR=" << std::filesystem::current_path() << "\n";
 
    for(const auto& pair : device->get_device_bash_vars())
    {
-      script << ": ${" << pair.first << ":=" << pair.second << "}"
-             << "\n";
-      script << "export " << pair.first << "\n";
+      script << ": ${" << pair.first << ":=" << pair.second << "}\n"
+             << "export " << pair.first << "\n";
    }
 }

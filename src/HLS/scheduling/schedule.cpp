@@ -211,22 +211,19 @@ class ScheduleWriter : public GraphWriter
    }
 };
 
-void Schedule::WriteDot(const std::string& file_name, OpGraphConstRef sub_op_graph, OpVertexSet* opSet) const
+void Schedule::WriteDot(const std::filesystem::path& file_name, OpGraphConstRef sub_op_graph, OpVertexSet* opSet) const
 {
    auto local_op_graph = sub_op_graph ? sub_op_graph : op_graph;
    const BehavioralHelperConstRef helper = local_op_graph->CGetOpGraphInfo()->BH;
-   std::string output_directory =
-       parameters->getOption<std::string>(OPT_dot_directory) + "/" + helper->get_function_name() + "/";
-   if(!std::filesystem::exists(output_directory))
-   {
-      std::filesystem::create_directories(output_directory);
-   }
+   const auto output_directory =
+       parameters->getOption<std::filesystem::path>(OPT_dot_directory) / helper->get_function_name();
+   std::filesystem::create_directories(output_directory);
    const VertexWriterConstRef op_label_writer(new OpWriter(local_op_graph.get(), 0));
    const EdgeWriterConstRef op_edge_property_writer(new OpEdgeWriter(local_op_graph.get()));
    const GraphWriterConstRef graph_writer(
        new ScheduleWriter(local_op_graph, ScheduleConstRef(this, null_deleter()), opSet));
    local_op_graph->InternalWriteDot<const OpWriter, const OpEdgeWriter, const ScheduleWriter>(
-       output_directory + file_name, op_label_writer, op_edge_property_writer, graph_writer);
+       output_directory / file_name, op_label_writer, op_edge_property_writer, graph_writer);
 }
 
 void Schedule::set_execution(const vertex& op, ControlStep c_step)

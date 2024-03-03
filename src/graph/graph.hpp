@@ -40,24 +40,13 @@
  */
 #ifndef GRAPH_HPP
 #define GRAPH_HPP
-
-/// Graph include
+#include "custom_set.hpp"
 #include "edge_info.hpp"
+#include "exceptions.hpp"
 #include "graph_info.hpp"
 #include "node_info.hpp"
-
-/// STD include
-#include <fstream>
-#include <ostream>
-
-/// STL include
-#include "custom_set.hpp"
-#include <deque>
-#include <list>
-
-/// Utility include
-#include "exceptions.hpp"
 #include "refcount.hpp"
+
 #include <boost/config.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/breadth_first_search.hpp>
@@ -67,6 +56,12 @@
 #include <boost/graph/strong_components.hpp>
 #include <boost/graph/topological_sort.hpp>
 #include <boost/version.hpp>
+
+#include <deque>
+#include <filesystem>
+#include <fstream>
+#include <list>
+#include <ostream>
 #include <utility>
 
 /**
@@ -1073,10 +1068,10 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
     * @param edge_writer is the functor used to print the edge labels
     */
    template <typename VertexWriterTemplate, typename EdgeWriterTemplate>
-   void InternalWriteDot(const std::string& file_name, const VertexWriterConstRef vertex_writer,
+   void InternalWriteDot(const std::filesystem::path& file_name, const VertexWriterConstRef vertex_writer,
                          const EdgeWriterConstRef edge_writer) const
    {
-      std::ofstream file_stream(file_name.c_str());
+      std::ofstream file_stream(file_name);
       boost::write_graphviz(file_stream, *this, *(GetPointer<VertexWriterTemplate>(vertex_writer)),
                             *(GetPointer<EdgeWriterTemplate>(edge_writer)));
    }

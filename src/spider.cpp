@@ -184,14 +184,13 @@ int main(int argc, char* argv[])
                case(Parameters_FileFormat::FF_TEX):
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Input: xml - Output: tex");
-                  tr->write_to_latex(results, input_format,
-                                     GetPath(parameters->getOption<std::string>(OPT_output_file)));
+                  tr->write_to_latex(results, input_format, parameters->getOption<std::string>(OPT_output_file));
                   break;
                }
                case(Parameters_FileFormat::FF_CSV):
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Input: XML - Output: CSV");
-                  tr->write_to_csv(results, GetPath(parameters->getOption<std::string>(OPT_output_file)));
+                  tr->write_to_csv(results, parameters->getOption<std::string>(OPT_output_file));
                   break;
                }
 #if HAVE_FROM_AADL_ASN_BUILT
