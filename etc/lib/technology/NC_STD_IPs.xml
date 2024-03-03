@@ -33,13 +33,13 @@ localparam BITSIZE_strobe=log2(BITSIZE_data) &gt; 3 ? (1&lt;&lt;(log2(BITSIZE_da
 
 function automatic [BITSIZE_data-1:0] read();
   automatic reg [4095:0] _data = 0;
-  m_read(ID, _data, BITSIZE_data, 0, 0);
+  void'(m_read(ID, _data, BITSIZE_data, 0, 0));
   return _data[BITSIZE_data-1:0];
 endfunction
 
 function automatic [BITSIZE_data-1:0] read_a(input ptr_t addr);
   automatic reg [4095:0] _data = 0;
-  m_read(ID, _data, BITSIZE_data, addr, 0);
+  void'(m_read(ID, _data, BITSIZE_data, addr, 0));
   return _data[BITSIZE_data-1:0];
 endfunction
 
