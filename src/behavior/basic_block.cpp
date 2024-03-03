@@ -45,19 +45,21 @@
  */
 #include "basic_block.hpp"
 
-#include "Parameter.hpp"                         // for OPT_dot_directory
-#include "application_manager.hpp"               // for FunctionBehaviorCon...
-#include "behavioral_helper.hpp"                 // for BehavioralHelper
-#include "behavioral_writer_helper.hpp"          // for BBWriter, BBEdgeWriter
-#include "function_behavior.hpp"                 // for BBGraphsCollectionRef
-#include "graph.hpp"                             // for vertex, EdgeDescriptor
-#include "tree_basic_block.hpp"                  // for bloc, blocRef
-#include <boost/graph/adjacency_list.hpp>        // for adjacency_list, source
-#include <boost/graph/detail/adjacency_list.hpp> // for num_vertices, adj_l...
-#include <boost/graph/detail/edge.hpp>           // for operator!=, operator==
-#include <boost/graph/filtered_graph.hpp>        // for source, target
-#include <boost/iterator/iterator_facade.hpp>    // for operator!=, operator++
-#include <filesystem>                            // for create_directories
+#include "Parameter.hpp"
+#include "application_manager.hpp"
+#include "behavioral_helper.hpp"
+#include "behavioral_writer_helper.hpp"
+#include "function_behavior.hpp"
+#include "graph.hpp"
+#include "tree_basic_block.hpp"
+
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/detail/adjacency_list.hpp>
+#include <boost/graph/detail/edge.hpp>
+#include <boost/graph/filtered_graph.hpp>
+#include <boost/iterator/iterator_facade.hpp>
+
+#include <filesystem>
 #include <utility>
 
 BBNodeInfo::BBNodeInfo() : loop_id(0), cer(0)
@@ -150,25 +152,23 @@ BBGraph::BBGraph(const BBGraphsCollectionRef _g, int _selector, CustomUnorderedS
 {
 }
 
-void BBGraph::WriteDot(const std::string& file_name, const int detail_level) const
+void BBGraph::WriteDot(const std::filesystem::path& file_name, const int detail_level) const
 {
    const CustomUnorderedSet<vertex> annotated = CustomUnorderedSet<vertex>();
    WriteDot(file_name, annotated, detail_level);
 }
 
-void BBGraph::WriteDot(const std::string& file_name, const CustomUnorderedSet<vertex>& annotated, const int) const
+void BBGraph::WriteDot(const std::filesystem::path& file_name, const CustomUnorderedSet<vertex>& annotated,
+                       const int) const
 {
    const auto bb_graph_info = CGetBBGraphInfo();
    const auto function_name = bb_graph_info->AppM->CGetFunctionBehavior(bb_graph_info->function_index)
                                   ->CGetBehavioralHelper()
                                   ->get_function_name();
-   std::string output_directory =
-       collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + function_name + "/";
-   if(not std::filesystem::exists(output_directory))
-   {
-      std::filesystem::create_directories(output_directory);
-   }
-   const std::string full_name = output_directory + file_name;
+   const auto output_directory =
+       collection->parameters->getOption<std::filesystem::path>(OPT_dot_directory) / function_name;
+   std::filesystem::create_directories(output_directory);
+   const auto full_name = output_directory / file_name;
    const VertexWriterConstRef bb_writer(new BBWriter(this, annotated));
    const EdgeWriterConstRef bb_edge_writer(new BBEdgeWriter(this));
    InternalWriteDot<const BBWriter, const BBEdgeWriter>(full_name, bb_writer, bb_edge_writer);

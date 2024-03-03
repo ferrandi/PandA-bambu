@@ -748,7 +748,7 @@ DesignFlowStep_Status ControlFlowChecker::InternalExec()
    GetPointer<module>(checker_circuit)->AddParameter("STATE_BITSIZE", STR(state_bitsize));
    GetPointer<module>(checker_circuit)->AddParameter("EPP_TRACE_BITSIZE", STR(epp_trace_bitsize));
    GetPointer<module>(checker_circuit)->AddParameter("EPP_TRACE_METADATA_BITSIZE", "0");
-   GetPointer<module>(checker_circuit)->AddParameter("MEMORY_INIT_file", GetPath("trace.mem"));
+   GetPointer<module>(checker_circuit)->AddParameter("MEMORY_INIT_file", "trace.mem");
    GetPointer<module>(checker_circuit)->AddParameter("EPP_TRACE_LENGTH", "0");
    GetPointer<module>(checker_circuit)->AddParameter("EPP_MISMATCH_ID", "0");
    GetPointer<module>(checker_circuit)->AddParameter("EPP_TRACE_INITIAL_METADATA", "0");

@@ -452,7 +452,7 @@ struct StateTransitionGraph : public graph
     * @param file_name is the file where the graph has to be printed
     * @param detail_level is the detail level of the printed graph
     */
-   void WriteDot(const std::string& file_name, const int detail_level = 0) const;
+   void WriteDot(const std::filesystem::path& file_name, const int detail_level = 0) const;
 };
 /// refcount definition of the class
 using StateTransitionGraphRef = refcount<StateTransitionGraph>;

@@ -62,7 +62,7 @@ DesignFlowStep_Status WriteTechnology::Exec()
    {
       const auto output_file = parameters->isOption(OPT_output_file) ?
                                    parameters->getOption<std::string>(OPT_output_file) :
-                                   GetPath("technology_out.xml");
+                                   "technology_out.xml";
       const auto libraries = TM->get_library_list();
       xml_document document;
       xml_element* nodeRoot = document.create_root_node("target");

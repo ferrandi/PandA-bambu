@@ -240,7 +240,7 @@ class Schedule
     * Function that writes the dot file of the scheduling by using the AT&T direct graph representation.
     * @param file_name is the file name
     */
-   void WriteDot(const std::string& file_name, OpGraphConstRef sub_op_graph = OpGraphConstRef(),
+   void WriteDot(const std::filesystem::path& file_name, OpGraphConstRef sub_op_graph = OpGraphConstRef(),
                  OpVertexSet* opSet = nullptr) const;
 
    /**

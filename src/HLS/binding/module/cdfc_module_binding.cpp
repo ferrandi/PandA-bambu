@@ -784,17 +784,14 @@ CdfcGraph::CdfcGraph(const CdfcGraphsCollectionRef cdfc_graphs_collection, const
 
 CdfcGraph::~CdfcGraph() = default;
 
-void CdfcGraph::WriteDot(const std::string& file_name, const int) const
+void CdfcGraph::WriteDot(const std::filesystem::path& file_name, const int) const
 {
    const auto* cdfc_graph_info = GetPointer<const CdfcGraphInfo>(CGetGraphInfo());
    const BehavioralHelperConstRef behavioral_helper = cdfc_graph_info->operation_graph->CGetOpGraphInfo()->BH;
-   const std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" +
-                                        behavioral_helper->get_function_name() + "/";
-   if(!std::filesystem::exists(output_directory))
-   {
-      std::filesystem::create_directories(output_directory);
-   }
-   const std::string full_name = output_directory + file_name;
+   const auto output_directory = collection->parameters->getOption<std::filesystem::path>(OPT_dot_directory) /
+                                 behavioral_helper->get_function_name();
+   std::filesystem::create_directories(output_directory);
+   const auto full_name = output_directory / file_name;
    const VertexWriterConstRef cdfc_writer(new CdfcWriter(this));
    const EdgeWriterConstRef cdfc_edge_writer(new CdfcEdgeWriter(this));
    InternalWriteDot<const CdfcWriter, const CdfcEdgeWriter>(full_name, cdfc_writer, cdfc_edge_writer);
@@ -2038,13 +2035,10 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             if(parameters->getOption<bool>(OPT_print_dot))
             {
                const auto output_directory =
-                   parameters->getOption<std::string>(OPT_dot_directory) + "/" + functionName + "/";
-               if(!std::filesystem::exists(output_directory))
-               {
-                  std::filesystem::create_directories(output_directory);
-               }
+                   parameters->getOption<std::filesystem::path>(OPT_dot_directory) / functionName;
+               std::filesystem::create_directories(output_directory);
                const auto file_name =
-                   output_directory + "MB_" + allocation_information->get_string_name(partition.first) + ".dot";
+                   output_directory / ("MB_" + allocation_information->get_string_name(partition.first) + ".dot");
                module_clique->writeDot(file_name);
             }
 

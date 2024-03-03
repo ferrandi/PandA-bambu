@@ -41,6 +41,7 @@
 #include "hls_step.hpp"
 #include "refcount.hpp"
 
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -74,7 +75,7 @@ class TestbenchGeneration
    const module* mod;
 
    /// output directory
-   const std::string output_directory;
+   const std::filesystem::path output_directory;
 
    const std::string c_testbench_basename;
 

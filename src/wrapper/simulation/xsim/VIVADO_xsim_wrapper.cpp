@@ -66,7 +66,7 @@ VIVADO_xsim_wrapper::VIVADO_xsim_wrapper(const ParameterConstRef& _Param, const 
     : SimulationTool(_Param, _top_fname, _inc_dirs), suffix(_suffix)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the XSIM wrapper...");
-   std::filesystem::create_directory(XSIM_SUBDIR + suffix + "/");
+   std::filesystem::create_directory(XSIM_SUBDIR + suffix);
 }
 
 // destructor
@@ -87,7 +87,7 @@ static const std::string& create_project_file(const std::string& project_filenam
          continue;
       }
       std::filesystem::path file_path(file);
-      const auto extension = file_path.extension().string();
+      const auto extension = file_path.extension();
       if(extension == ".vhd" || extension == ".vhdl" || extension == ".VHD" || extension == ".VHDL")
       {
          prj_file << "VHDL";
@@ -98,10 +98,9 @@ static const std::string& create_project_file(const std::string& project_filenam
       }
       else
       {
-         THROW_ERROR("Extension not recognized! " + extension);
+         THROW_ERROR("Extension not recognized! " + extension.string());
       }
-      prj_file << " work ";
-      prj_file << GetPath(file_path) << std::endl;
+      prj_file << " work " << file_path.string() << std::endl;
    }
    prj_file.close();
    return project_filename;

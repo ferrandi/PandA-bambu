@@ -349,7 +349,7 @@ void RTLCharacterization::fix_proxies_execution_time_std()
 
 void RTLCharacterization::xwrite_device_file()
 {
-   const auto file_name = GetPath("characterization.xml");
+   const auto file_name = "characterization.xml";
    try
    {
       xml_document document;
@@ -879,8 +879,8 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
              (channels_type.find(CHANNELS_TYPE_MEM_ACC_N1) != std::string::npos &&
               channels_type.find(CHANNELS_TYPE_MEM_ACC_11) == std::string::npos)))
          {
-            std::ofstream init_file_a(GetPath("a_" + init_filename));
-            std::ofstream init_file_b(GetPath("b_" + init_filename));
+            std::ofstream init_file_a(init_filename);
+            std::ofstream init_file_b("0_" + init_filename);
             bool is_even = true;
             for(unsigned int i = 0; i < vec_size; ++i)
             {
@@ -916,7 +916,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
          }
          else
          {
-            std::ofstream init_file(GetPath(init_filename));
+            std::ofstream init_file(init_filename);
             for(unsigned int i = 0; i < vec_size; ++i)
             {
                for(unsigned int j = 0; j < elts_size; ++j)
@@ -941,12 +941,12 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
              (channels_type.find(CHANNELS_TYPE_MEM_ACC_N1) != std::string::npos &&
               channels_type.find(CHANNELS_TYPE_MEM_ACC_11) == std::string::npos)))
          {
-            spec_module->SetParameter("MEMORY_INIT_file_a", "\"\"" + GetPath("a_" + init_filename) + "\"\"");
-            spec_module->SetParameter("MEMORY_INIT_file_b", "\"\"" + GetPath("b_" + init_filename) + "\"\"");
+            spec_module->SetParameter("MEMORY_INIT_file_a", "\"\"" + init_filename + "\"\"");
+            spec_module->SetParameter("MEMORY_INIT_file_b", "\"\"0_" + init_filename + "\"\"");
          }
          else
          {
-            spec_module->SetParameter("MEMORY_INIT_file", "\"\"" + GetPath(init_filename) + "\"\"");
+            spec_module->SetParameter("MEMORY_INIT_file", "\"\"" + init_filename + "\"\"");
          }
          spec_module->SetParameter("n_elements", STR(vec_size));
          spec_module->SetParameter("data_size", STR(elts_size));

@@ -71,13 +71,13 @@ void CInitializationParser::Parse(CInitializationParserFunctorRef c_initializati
    {
       std::string seed_name = "_cip";
       auto output_parameter_initialization_filename =
-          parameters->getOption<std::string>(OPT_output_directory) + "/simulation/";
+          parameters->getOption<std::filesystem::path>(OPT_output_directory) / "simulation";
       unsigned int progressive = 0;
-      std::string candidate_out_file_name;
+      std::filesystem::path candidate_out_file_name;
       do
       {
          candidate_out_file_name =
-             output_parameter_initialization_filename + seed_name + "_" + std::to_string(progressive++) + ".data";
+             output_parameter_initialization_filename / (seed_name + "_" + std::to_string(progressive++) + ".data");
       } while(std::filesystem::exists(candidate_out_file_name));
       c_initialization_parser_functor->ActivateFileInit(candidate_out_file_name);
    }

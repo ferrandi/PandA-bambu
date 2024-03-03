@@ -393,9 +393,9 @@ StateTransitionGraph::StateTransitionGraph(const StateTransitionGraphsCollection
 
 StateTransitionGraph::~StateTransitionGraph() = default;
 
-void StateTransitionGraph::WriteDot(const std::string& file_name, const int detail_level) const
+void StateTransitionGraph::WriteDot(const std::filesystem::path& file_name, const int detail_level) const
 {
-   const auto output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory);
+   const auto output_directory = collection->parameters->getOption<std::filesystem::path>(OPT_dot_directory);
    CustomSet<unsigned int> critical_paths;
    VertexIterator state, state_end;
    for(boost::tie(state, state_end) = boost::vertices(*this); state != state_end; state++)
@@ -405,20 +405,13 @@ void StateTransitionGraph::WriteDot(const std::string& file_name, const int deta
           si->HLSMgr.lock()->get_HLS(si->funId)->Rsch->ComputeCriticalPath(CGetStateInfo(*state));
       critical_paths.insert(critical_path.begin(), critical_path.end());
    }
-   if(!std::filesystem::exists(output_directory))
-   {
-      std::filesystem::create_directories(output_directory);
-   }
+   std::filesystem::create_directories(output_directory);
    const OpGraphConstRef op_function_graph = CGetStateTransitionGraphInfo()->op_function_graph;
-   const std::string function_name = op_function_graph->CGetOpGraphInfo()->BH->get_function_name();
-   const std::string complete_file_name = output_directory + function_name + "/";
-   if(!std::filesystem::exists(complete_file_name))
-   {
-      std::filesystem::create_directories(complete_file_name);
-   }
+   const auto complete_file_name = output_directory / op_function_graph->CGetOpGraphInfo()->BH->get_function_name();
+   std::filesystem::create_directories(complete_file_name);
    const VertexWriterConstRef state_writer(new StateWriter(this, op_function_graph, detail_level));
    const EdgeWriterConstRef transition_writer(new TransitionWriter(this, op_function_graph, detail_level));
-   InternalWriteDot<const StateWriter, const TransitionWriter>(complete_file_name + file_name, state_writer,
+   InternalWriteDot<const StateWriter, const TransitionWriter>(complete_file_name / file_name, state_writer,
                                                                transition_writer);
 }
 

@@ -120,32 +120,6 @@ inline void CopyStdout(const std::string& filename)
    fclose(filese);
 }
 
-inline std::string GetCurrentPath()
-{
-   std::string current_dir;
-   if(getenv("OWD"))
-   {
-      current_dir = getenv("OWD");
-   }
-   else
-   {
-      current_dir = std::filesystem::current_path().string();
-   }
-#ifdef _WIN32
-   boost::replace_all(current_dir, "\\", "/");
-#endif
-   return current_dir;
-}
-
-inline std::string GetPath(std::filesystem::path path)
-{
-   if(path.is_relative())
-   {
-      path = std::filesystem::path(GetCurrentPath()) / path;
-   }
-   return path.string();
-}
-
 inline std::string relocate_compiler_path(const std::string& path, bool resolve_path = false)
 {
    if(getenv("MINGW_INST_DIR"))
@@ -189,7 +163,7 @@ inline void CopyFile(std::filesystem::path file_source, std::filesystem::path fi
    if(file_source.string() == "-")
    {
       std::string line;
-      std::ofstream new_file(file_target.string().c_str());
+      std::ofstream new_file(file_target);
       while(std::cin)
       {
          std::getline(std::cin, line);
@@ -215,7 +189,7 @@ inline void CopyFile(std::filesystem::path file_source, std::filesystem::path fi
  * @return the value returned by the shell
  */
 int PandaSystem(const ParameterConstRef Param, const std::string& system_command, bool host_exec = true,
-                const std::string& output = "", const unsigned int type = 3, const bool background = false,
+                const std::filesystem::path& output = "", const unsigned int type = 3, const bool background = false,
                 const size_t timeout = 0);
 
 bool NaturalVersionOrder(const std::filesystem::path& _x, const std::filesystem::path& _y);

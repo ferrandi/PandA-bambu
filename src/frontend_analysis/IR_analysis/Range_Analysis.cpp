@@ -6165,12 +6165,9 @@ class ConstraintGraph : public NodeContainer
 #ifndef NDEBUG
    std::string printToFile(const std::string& file_name, const ParameterConstRef parameters) const
    {
-      std::string output_directory = parameters->getOption<std::string>(OPT_dot_directory) + "RangeAnalysis/";
-      if(!std::filesystem::exists(output_directory))
-      {
-         std::filesystem::create_directories(output_directory);
-      }
-      const std::string full_name = output_directory + file_name;
+      const auto output_directory = parameters->getOption<std::filesystem::path>(OPT_dot_directory) / "RangeAnalysis";
+      std::filesystem::create_directories(output_directory);
+      const auto full_name = output_directory / file_name;
       std::ofstream file(full_name);
       printDot(file);
       return full_name;

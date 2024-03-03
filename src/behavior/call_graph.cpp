@@ -44,17 +44,19 @@
  */
 #include "call_graph.hpp"
 
-#include "Parameter.hpp"         // for OPT_dot_directory
-#include "behavioral_helper.hpp" // for BehavioralHelper
+#include "Parameter.hpp"
+#include "behavioral_helper.hpp"
+#include "exceptions.hpp"
+#include "function_behavior.hpp"
+#include "graph.hpp"
+#include "loops.hpp"
+#include "string_manipulation.hpp"
+
+#include <filesystem>
+#include <ostream>
+#include <utility>
+
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-#include "exceptions.hpp"          // for THROW_ASSERT, THROW...
-#include "function_behavior.hpp"   // for FunctionBehavior
-#include "graph.hpp"               // for graph, Cget_edge_info
-#include "loops.hpp"               // for FunctionBehaviorRef
-#include "string_manipulation.hpp" // for add_escape
-#include <filesystem>              // for create_directories
-#include <ostream>                 // for operator<<, ostream
-#include <utility>                 // for pair
 
 FunctionInfo::FunctionInfo() : nodeID(0)
 {
@@ -85,10 +87,7 @@ CallGraph::~CallGraph() = default;
 void CallGraph::WriteDot(const std::string& file_name) const
 {
    const auto output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory);
-   if(!std::filesystem::exists(output_directory))
-   {
-      std::filesystem::create_directories(output_directory);
-   }
+   std::filesystem::create_directories(output_directory);
    const std::string full_name = output_directory + file_name;
    const VertexWriterConstRef function_writer(new FunctionWriter(this));
    const EdgeWriterConstRef function_edge_writer(new FunctionEdgeWriter(this));

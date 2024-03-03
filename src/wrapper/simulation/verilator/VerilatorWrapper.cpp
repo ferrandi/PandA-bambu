@@ -56,7 +56,7 @@
 #include <unistd.h>
 #include <utility>
 
-#define SIM_SUBDIR (Param->getOption<std::string>(OPT_output_directory) + std::string("/verilator"))
+#define SIM_SUBDIR (Param->getOption<std::string>(OPT_output_directory) + "/verilator")
 
 // constructor
 VerilatorWrapper::VerilatorWrapper(const ParameterConstRef& _Param, const std::string& _suffix,
@@ -64,12 +64,12 @@ VerilatorWrapper::VerilatorWrapper(const ParameterConstRef& _Param, const std::s
     : SimulationTool(_Param, _top_fname, _inc_dirs), suffix(_suffix)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating the VERILATOR wrapper...");
-   std::string verilator_beh_dir = SIM_SUBDIR + suffix;
+   const auto verilator_beh_dir = Param->getOption<std::string>(OPT_output_directory) + "/verilator" + suffix;
    if(std::filesystem::exists(verilator_beh_dir))
    {
       std::filesystem::remove_all(verilator_beh_dir);
    }
-   std::filesystem::create_directory(verilator_beh_dir + "/");
+   std::filesystem::create_directory(verilator_beh_dir);
 }
 
 // destructor
@@ -95,7 +95,7 @@ std::string VerilatorWrapper::GenerateScript(std::ostream& script, const std::st
    const auto output_directory = Param->getOption<std::string>(OPT_output_directory);
    log_file = "${BEH_DIR}/" + top_filename + "_verilator.log";
    script << "export VM_PARALLEL_BUILDS=1" << std::endl
-          << "BEH_DIR=\"" << SIM_SUBDIR << suffix << "\"" << std::endl
+          << "BEH_DIR=\"" << output_directory << "/verilator" << suffix << "\"" << std::endl
           << "BEH_CC=\"${CC}\"" << std::endl
           << "obj_dir=\"${BEH_DIR}/verilator_obj\"" << std::endl
           << std::endl;
@@ -179,7 +179,8 @@ std::string VerilatorWrapper::GenerateScript(std::ostream& script, const std::st
           << "if [ $? -ne 0 ]; then exit 1; fi" << std::endl
           << std::endl
           << std::endl
-          << "ln -sf " + output_directory + " ${obj_dir}\n";
+          << "ln -sf ../../ "
+          << "${obj_dir}/" << output_directory << "\n";
 
    const auto nThreadsMake =
        Param->isOption(OPT_verilator_parallel) ? Param->getOption<int>(OPT_verilator_parallel) : 1;

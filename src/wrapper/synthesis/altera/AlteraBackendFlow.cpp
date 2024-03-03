@@ -262,8 +262,8 @@ void AlteraBackendFlow::CheckSynthesisResults()
    time_m->set_execution_time(combinational_delay);
    if(combinational_delay > Param->getOption<double>(OPT_clock_period))
    {
-      CopyFile(GetPath(actual_parameters->parameter_values[PARAM_top_id] + ".sta.rpt"),
-               Param->getOption<std::string>(OPT_output_directory) + "/" + flow_name + "/" +
+      CopyFile(actual_parameters->parameter_values[PARAM_top_id] + ".sta.rpt",
+               Param->getOption<std::filesystem::path>(OPT_output_directory) / flow_name /
                    STR_CST_synthesis_timing_violation_report);
    }
 }

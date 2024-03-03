@@ -41,16 +41,19 @@
  *
  */
 #include "design_flow_graph.hpp"
-#include "Parameter.hpp"                      // for OPT_dot_directory
-#include "custom_map.hpp"                     // for _Rb_tree_const_iter...
-#include "design_flow_step.hpp"               // for DesignFlowStep_Status
-#include "exceptions.hpp"                     // for THROW_UNREACHABLE
-#include <boost/graph/adjacency_list.hpp>     // for adjacency_list, source
-#include <boost/graph/filtered_graph.hpp>     // for source, target
-#include <boost/iterator/iterator_facade.hpp> // for operator!=, operator++
-#include <filesystem>                         // for create_directories
-#include <ostream>                            // for operator<<, ostream
-#include <utility>                            // for pair
+
+#include "Parameter.hpp"
+#include "custom_map.hpp"
+#include "design_flow_step.hpp"
+#include "exceptions.hpp"
+
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/filtered_graph.hpp>
+#include <boost/iterator/iterator_facade.hpp>
+
+#include <filesystem>
+#include <ostream>
+#include <utility>
 
 DesignFlowStepInfo::DesignFlowStepInfo(const DesignFlowStepRef _design_flow_step, const bool _unnecessary)
     : design_flow_step(_design_flow_step),
@@ -115,15 +118,12 @@ vertex DesignFlowGraph::GetDesignFlowStep(const std::string& signature) const
    return dynamic_cast<DesignFlowGraphsCollection*>(collection)->GetDesignFlowStep(signature);
 }
 
-void DesignFlowGraph::WriteDot(const std::string& file_name, const int) const
+void DesignFlowGraph::WriteDot(const std::filesystem::path& file_name, const int) const
 {
-   const std::string output_directory =
-       collection->parameters->getOption<std::string>(OPT_dot_directory) + "/design_flow/";
-   if(!std::filesystem::exists(output_directory))
-   {
-      std::filesystem::create_directories(output_directory);
-   }
-   const std::string full_name = output_directory + file_name + ".dot";
+   const auto output_directory =
+       collection->parameters->getOption<std::filesystem::path>(OPT_dot_directory) / "design_flow";
+   std::filesystem::create_directories(output_directory);
+   const auto full_name = (output_directory / file_name).concat(".dot");
    VertexWriterConstRef design_flow_step_writer(new DesignFlowStepWriter(this));
    EdgeWriterConstRef design_flow_edge_writer(new DesignFlowEdgeWriter(this));
    InternalWriteDot<const DesignFlowStepWriter, const DesignFlowEdgeWriter>(full_name, design_flow_step_writer,
@@ -131,19 +131,16 @@ void DesignFlowGraph::WriteDot(const std::string& file_name, const int) const
 }
 
 #ifndef NDEBUG
-void DesignFlowGraph::WriteDot(const std::string& file_name,
+void DesignFlowGraph::WriteDot(const std::filesystem::path& file_name,
                                const CustomMap<size_t, CustomMap<vertex, DesignFlowStep_Status>>& vertex_history,
                                const CustomMap<size_t, CustomUnorderedMapStable<EdgeDescriptor, int>>& edge_history,
                                const CustomMap<vertex, std::string>& vertex_names,
                                const size_t writing_step_counter) const
 {
-   const std::string output_directory =
-       collection->parameters->getOption<std::string>(OPT_dot_directory) + "/design_flow/";
-   if(!std::filesystem::exists(output_directory))
-   {
-      std::filesystem::create_directories(output_directory);
-   }
-   const std::string full_name = output_directory + file_name + ".dot";
+   const auto output_directory =
+       collection->parameters->getOption<std::filesystem::path>(OPT_dot_directory) / "design_flow";
+   std::filesystem::create_directories(output_directory);
+   const auto full_name = (output_directory / file_name).concat(".dot");
    VertexWriterConstRef design_flow_step_writer(
        new DesignFlowStepWriter(this, vertex_history.find(writing_step_counter)->second, vertex_names));
    EdgeWriterConstRef design_flow_edge_writer(new DesignFlowEdgeWriter(

@@ -280,10 +280,10 @@ int SpiderParameter::Exec()
       {
          input_file = getOption<std::string>(OPT_input_file) + STR_CST_string_separator;
       }
-      setOption(OPT_input_file, input_file + GetPath(argv[optind]));
+      setOption(OPT_input_file, input_file + std::string(argv[optind]));
       optind++;
    }
-   setOption(OPT_output_file, GetPath(argv[optind]));
+   setOption(OPT_output_file, std::string(argv[optind]));
 
    CheckParameters();
 
@@ -306,7 +306,7 @@ void SpiderParameter::SetDefaults()
    setOption(OPT_max_bound, INFINITE_LONG_DOUBLE);
    setOption(OPT_min_bound, 0);
    setOption(OPT_normalization_sequences, "S");
-   setOption(OPT_output_directory, GetPath("."));
+   setOption(OPT_output_directory, ".");
    /// Output level
 #if RELEASE
    setOption(OPT_output_level, OUTPUT_LEVEL_NONE);
@@ -326,9 +326,8 @@ void SpiderParameter::CheckParameters()
    {
       Parameters_FileFormat input_format = Parameters_FileFormat::FF_UNKNOWN, temp = Parameters_FileFormat::FF_UNKNOWN;
       const auto input_files = getOption<CustomSet<std::string>>(OPT_input_file);
-      for(auto input_file : input_files)
+      for(const auto& input_file : input_files)
       {
-         input_file = GetPath(input_file);
          temp = GetFileFormat(input_file, true);
          switch(temp)
          {

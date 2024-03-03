@@ -46,9 +46,6 @@
 /// The suffix of gcc initial dump
 #define STR_CST_gcc_empty_suffix ".001t.tu"
 
-/// The temporary directory used by compiler
-#define STR_CST_gcc_include "__include"
-
 /// The output file for tree-panda-gcc
 #define STR_CST_gcc_obj_file "run-%%%%-%%%%-%%%%-%%%%.o"
 
