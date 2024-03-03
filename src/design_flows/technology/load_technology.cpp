@@ -103,9 +103,9 @@ DesignFlowStep_Status LoadTechnology::Exec()
 
 void LoadTechnology::PrintFinalIR() const
 {
-   const std::string file_name =
-       parameters->getOption<std::string>(OPT_output_temporary_directory) + "after_" + GetName() + ".tm";
-   std::ofstream raw_file(file_name.c_str());
+   const auto file_name =
+       parameters->getOption<std::filesystem::path>(OPT_output_temporary_directory) / ("after_" + GetName() + ".tm");
+   std::ofstream raw_file(file_name);
    TM->print(raw_file);
    raw_file.close();
 }

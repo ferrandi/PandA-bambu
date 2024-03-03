@@ -46,14 +46,16 @@
 #include "Parameter.hpp"
 #include "behavioral_helper.hpp"
 #include "behavioral_writer_helper.hpp"
-#include "exceptions.hpp" // for THROW_ASSERT, THROW...
+#include "exceptions.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include <boost/tuple/tuple.hpp> // for tie
-#include <filesystem>            // for create_directories
+
+#include <boost/tuple/tuple.hpp>
+
+#include <filesystem>
 #include <fstream>
-#include <utility> // for pair
+#include <utility>
 
 /// Utility include
 
@@ -332,16 +334,13 @@ OpGraph::OpGraph(const OpGraphsCollectionRef _op_graphs_collection, int _selecto
 
 OpGraph::~OpGraph() = default;
 
-void OpGraph::WriteDot(const std::string& file_name, const int detail_level) const
+void OpGraph::WriteDot(const std::filesystem::path& file_name, const int detail_level) const
 {
    const BehavioralHelperConstRef helper = CGetOpGraphInfo()->BH;
-   std::string output_directory =
-       collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + helper->get_function_name() + "/";
-   if(!std::filesystem::exists(output_directory))
-   {
-      std::filesystem::create_directories(output_directory);
-   }
-   const std::string full_name = output_directory + file_name;
+   const auto output_directory =
+       collection->parameters->getOption<std::filesystem::path>(OPT_dot_directory) / helper->get_function_name();
+   std::filesystem::create_directories(output_directory);
+   const auto full_name = output_directory / file_name;
    const VertexWriterConstRef op_label_writer(new OpWriter(this, detail_level));
    const EdgeWriterConstRef op_edge_property_writer(new OpEdgeWriter(this));
    InternalWriteDot<const OpWriter, const OpEdgeWriter>(full_name, op_label_writer, op_edge_property_writer);
@@ -418,17 +417,14 @@ OpEdgeSet OpGraph::CGetOutEdges(const vertex v) const
 #endif
 
 #if HAVE_HLS_BUILT
-void OpGraph::WriteDot(const std::string& file_name, const hlsConstRef HLS,
+void OpGraph::WriteDot(const std::filesystem::path& file_name, const hlsConstRef HLS,
                        const CustomSet<unsigned int> critical_paths) const
 {
    const BehavioralHelperConstRef helper = CGetOpGraphInfo()->BH;
-   std::string output_directory =
-       collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + helper->get_function_name() + "/";
-   if(!std::filesystem::exists(output_directory))
-   {
-      std::filesystem::create_directories(output_directory);
-   }
-   const std::string full_name = output_directory + file_name;
+   const auto output_directory =
+       collection->parameters->getOption<std::filesystem::path>(OPT_dot_directory) / helper->get_function_name();
+   std::filesystem::create_directories(output_directory);
+   const auto full_name = output_directory / file_name;
    const VertexWriterConstRef op_label_writer(new TimedOpWriter(this, HLS, critical_paths));
    const EdgeWriterConstRef op_edge_property_writer(new TimedOpEdgeWriter(this, HLS, critical_paths));
    InternalWriteDot<const TimedOpWriter, const TimedOpEdgeWriter>(full_name, op_label_writer, op_edge_property_writer);

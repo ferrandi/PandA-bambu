@@ -59,6 +59,7 @@
 #include "string_manipulation.hpp"
 #include "utility.hpp"
 
+#include <cerrno>
 #include <string>
 #include <utility>
 #include <vector>
@@ -103,13 +104,13 @@ void BasicBlocksProfiling::Initialize()
 
 DesignFlowStep_Status BasicBlocksProfiling::Exec()
 {
-   std::filesystem::path temporary_path(parameters->getOption<std::string>(OPT_output_temporary_directory));
+   const auto temporary_path = parameters->getOption<std::filesystem::path>(OPT_output_temporary_directory);
 
-   std::filesystem::path run_name = temporary_path / ("run.tmp");
-   std::filesystem::path profile_data_name = temporary_path / STR_CST_host_profiling_data;
+   const auto run_name = temporary_path / "run.tmp";
+   const auto profile_data_name = temporary_path / STR_CST_host_profiling_data;
 
    const CompilerWrapperConstRef compiler_wrapper(
-       new CompilerWrapper(this->parameters, parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_host_compiler),
+       new CompilerWrapper(parameters, parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_host_compiler),
                            CompilerWrapper_OptimizationSet::O1));
    CustomSet<std::string> tp_files;
    tp_files.insert(profiling_source_file);
@@ -130,16 +131,16 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
       std::filesystem::remove(profile_data_name);
 
       const auto command = change_directory + "\"" + run_name.string() + "\" " + exec_argv + " ";
-      const auto ret = PandaSystem(parameters, command, false, temporary_path.string() + STR_CST_host_profiling_output);
+      const auto ret = PandaSystem(parameters, command, false, temporary_path / STR_CST_host_profiling_output);
       if(IsError(ret))
       {
-         if(errno and not parameters->getOption<bool>(OPT_no_return_zero))
+         if(errno && !parameters->getOption<bool>(OPT_no_return_zero))
          {
-            THROW_ERROR_CODE(PROFILING_EC, "Error " + std::to_string(errno) + " during dynamic profiling");
+            THROW_ERROR_CODE(PROFILING_EC, "Error " + std::string(strerror(errno)) + " during dynamic profiling");
          }
       }
 
-      std::ifstream profilefile(profile_data_name.string().c_str());
+      std::ifstream profilefile(profile_data_name);
       if(profilefile.is_open())
       {
          std::string line;

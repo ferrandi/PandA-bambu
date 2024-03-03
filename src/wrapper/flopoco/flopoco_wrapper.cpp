@@ -1079,7 +1079,7 @@ int flopoco_wrapper::InternalWriteVHDL(const std::string& FU_name, const unsigne
 int flopoco_wrapper::writeVHDL(const std::string& FU_name, const unsigned int FU_prec_in,
                                const unsigned int FU_prec_out, std::string pipe_parameter, std::string& filename)
 {
-   filename = GetPath(ENCODE_NAME(FU_name, FU_prec_in, FU_prec_out, pipe_parameter) + FILE_EXT);
+   filename = ENCODE_NAME(FU_name, FU_prec_in, FU_prec_out, pipe_parameter) + FILE_EXT;
    return this->InternalWriteVHDL(FU_name, FU_prec_in, FU_prec_out, filename, pipe_parameter);
 }
 
@@ -1090,8 +1090,8 @@ std::string flopoco_wrapper::writeVHDLcommon()
    {
       return "";
    }
-   std::string filename = GetPath("FloPoCo_common" FILE_EXT);
-   std::ofstream file(filename.c_str());
+   const std::string filename = "FloPoCo_common" FILE_EXT;
+   std::ofstream file(filename);
    if(!file.is_open())
    {
       THROW_UNREACHABLE("Something went wrong in file creation");

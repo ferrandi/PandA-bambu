@@ -245,9 +245,9 @@ DesignFlowStep_Status GenerateTasteHDLArchitecture::Exec()
       counter++;
    }
    writer->write("end;\n");
-   writer->WriteFile(GetPath("architecture_top.vhd"));
-   HLSMgr->hdl_files.push_back(GetPath("top.vhd"));
-   HLSMgr->hdl_files.push_back(GetPath("architecture_top.vhd"));
+   writer->WriteFile("architecture_top.vhd");
+   HLSMgr->hdl_files.push_back("top.vhd");
+   HLSMgr->hdl_files.push_back("architecture_top.vhd");
 
    /// Write configuration file
    language_writerRef config_writer = language_writer::create_writer(HDLWriter_Language::VHDL, TM, parameters);
@@ -297,8 +297,8 @@ DesignFlowStep_Status GenerateTasteHDLArchitecture::Exec()
    config_writer->write("   type octStr_24 is array (0 to 23) of std_logic_vector(7 downto 0);\n");
    config_writer->write("end;\n");
 
-   config_writer->WriteFile(GetPath("architecture_config.vhd"));
-   HLSMgr->hdl_files.push_back(GetPath("architecture_config.vhd"));
+   config_writer->WriteFile("architecture_config.vhd");
+   HLSMgr->hdl_files.push_back("architecture_config.vhd");
 
    return DesignFlowStep_Status::SUCCESS;
 }

@@ -133,58 +133,48 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&,
    const auto ret = CreateScripts(actual_parameters);
 
    /// Copying GRLIB
-
-   const auto cp_ret = PandaSystem(Param, "cp -r " + relocate_compiler_path(GRLIB_DIR) + " " + GetCurrentPath());
-   if(IsError(cp_ret))
+   std::error_code ec;
+   std::filesystem::copy(relocate_compiler_path(GRLIB_DIR, true),
+                         std::filesystem::current_path() / std::filesystem::path(GRLIB_DIR).filename(),
+                         std::filesystem::copy_options::recursive, ec);
+   if(ec)
    {
-      THROW_ERROR("copy of GRLIB returns an error");
+      THROW_ERROR("Error copying GRLIB: " + ec.message());
    }
 
    /// Modifying xst project adding grlib files
    if(actual_parameters->parameter_values.find(PARAM_xst_prj_file) != actual_parameters->parameter_values.end())
    {
       const auto output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
-      std::ofstream temp_file(output_temporary_directory + "/temp_xst_prj_file0");
-      temp_file << "vhdl grlib GRLIB/grlib/stdlib/version.vhd" << std::endl;
-      temp_file << "vhdl grlib GRLIB/grlib/stdlib/stdlib.vhd" << std::endl;
-      temp_file << "vhdl grlib GRLIB/grlib/amba/amba.vhd" << std::endl;
-      temp_file << "vhdl techmap GRLIB/techmap/gencomp/gencomp.vhd" << std::endl;
-      temp_file << "vhdl grlib GRLIB/grlib/amba/devices.vhd" << std::endl;
-      temp_file << "vhdl techmap GRLIB/techmap/unisim/pads_unisim.vhd" << std::endl;
-      temp_file << "vhdl techmap GRLIB/techmap/maps/allpads.vhd" << std::endl;
-      temp_file << "vhdl gaisler GRLIB/gaisler/misc/misc.vhd" << std::endl;
-      temp_file << "vhdl techmap GRLIB/techmap/unisim/clkgen_unisim.vhd" << std::endl;
-      temp_file << "vhdl techmap GRLIB/techmap/maps/toutpad.vhd" << std::endl;
-      temp_file << "vhdl techmap GRLIB/techmap/maps/outpad.vhd" << std::endl;
-      temp_file << "vhdl techmap GRLIB/techmap/maps/odpad.vhd" << std::endl;
-      temp_file << "vhdl techmap GRLIB/techmap/maps/iopad.vhd" << std::endl;
-      temp_file << "vhdl techmap GRLIB/techmap/maps/iodpad.vhd" << std::endl;
-      temp_file << "vhdl techmap GRLIB/techmap/maps/inpad.vhd" << std::endl;
-      temp_file << "vhdl techmap GRLIB/techmap/maps/allclkgen.vhd" << std::endl;
-      temp_file << "vhdl gaisler GRLIB/gaisler/pci/pci.vhd" << std::endl;
-      temp_file << "vhdl gaisler GRLIB/gaisler/misc/ahbmst.vhd" << std::endl;
-      temp_file << "vhdl techmap GRLIB/techmap/maps/clkpad.vhd" << std::endl;
-      temp_file << "vhdl techmap GRLIB/techmap/maps/clkgen.vhd" << std::endl;
-      temp_file << "vhdl grlib GRLIB/grlib/amba/apbctrl.vhd" << std::endl;
-      temp_file << "vhdl grlib GRLIB/grlib/amba/ahbctrl.vhd" << std::endl;
-      temp_file << "vhdl gaisler GRLIB/gaisler/pci/pci_target.vhd" << std::endl;
-      temp_file << "vhdl gaisler GRLIB/gaisler/pci/pcipads.vhd" << std::endl;
-      temp_file << "vhdl gaisler GRLIB/gaisler/misc/rstgen.vhd" << std::endl;
-      temp_file.close();
-      const auto xst_prj_file = GetPath(actual_parameters->parameter_values.at(PARAM_xst_prj_file));
-      const auto cat_ret =
-          PandaSystem(Param, "cat " + output_temporary_directory + "/temp_xst_prj_file0 " + xst_prj_file, true,
-                      output_temporary_directory + "/temp_xst_prj_file1");
-      if(IsError(cat_ret))
-      {
-         THROW_ERROR("cat of " + xst_prj_file + " failed");
-      }
-      const auto mv_ret =
-          PandaSystem(Param, "mv " + output_temporary_directory + "/temp_xst_prj_file1 " + xst_prj_file);
-      if(IsError(mv_ret))
-      {
-         THROW_ERROR("mv to " + xst_prj_file + " failed");
-      }
+      std::stringstream new_prj_stream;
+      new_prj_stream << "vhdl grlib GRLIB/grlib/stdlib/version.vhd\n"
+                        "vhdl grlib GRLIB/grlib/stdlib/stdlib.vhd\n"
+                        "vhdl grlib GRLIB/grlib/amba/amba.vhd\n"
+                        "vhdl techmap GRLIB/techmap/gencomp/gencomp.vhd\n"
+                        "vhdl grlib GRLIB/grlib/amba/devices.vhd\n"
+                        "vhdl techmap GRLIB/techmap/unisim/pads_unisim.vhd\n"
+                        "vhdl techmap GRLIB/techmap/maps/allpads.vhd\n"
+                        "vhdl gaisler GRLIB/gaisler/misc/misc.vhd\n"
+                        "vhdl techmap GRLIB/techmap/unisim/clkgen_unisim.vhd\n"
+                        "vhdl techmap GRLIB/techmap/maps/toutpad.vhd\n"
+                        "vhdl techmap GRLIB/techmap/maps/outpad.vhd\n"
+                        "vhdl techmap GRLIB/techmap/maps/odpad.vhd\n"
+                        "vhdl techmap GRLIB/techmap/maps/iopad.vhd\n"
+                        "vhdl techmap GRLIB/techmap/maps/iodpad.vhd\n"
+                        "vhdl techmap GRLIB/techmap/maps/inpad.vhd\n"
+                        "vhdl techmap GRLIB/techmap/maps/allclkgen.vhd\n"
+                        "vhdl gaisler GRLIB/gaisler/pci/pci.vhd\n"
+                        "vhdl gaisler GRLIB/gaisler/misc/ahbmst.vhd\n"
+                        "vhdl techmap GRLIB/techmap/maps/clkpad.vhd\n"
+                        "vhdl techmap GRLIB/techmap/maps/clkgen.vhd\n"
+                        "vhdl grlib GRLIB/grlib/amba/apbctrl.vhd\n"
+                        "vhdl grlib GRLIB/grlib/amba/ahbctrl.vhd\n"
+                        "vhdl gaisler GRLIB/gaisler/pci/pci_target.vhd\n"
+                        "vhdl gaisler GRLIB/gaisler/pci/pcipads.vhd\n"
+                        "vhdl gaisler GRLIB/gaisler/misc/rstgen.vhd\n";
+      const auto xst_prj_file = actual_parameters->parameter_values.at(PARAM_xst_prj_file);
+      new_prj_stream << std::ifstream(xst_prj_file).rdbuf();
+      std::ofstream(xst_prj_file, std::ios_base::trunc) << new_prj_stream.rdbuf();
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Generated synthesis scripts");
@@ -195,83 +185,76 @@ void XilinxTasteBackendFlow::create_cf(const DesignParametersRef dp, bool xst)
 {
    std::string ucf_filename = UCF_SUBDIR + dp->component_name + (xst ? ".xcf" : ".ucf");
    std::ofstream UCF_file(ucf_filename);
-   UCF_file << "CONFIG STEPPING=\"0\";" << std::endl;
-   UCF_file << "" << std::endl;
-   UCF_file << "NET resetn TIG ;" << std::endl;
-   UCF_file << "" << std::endl;
-   UCF_file << "NET \"clk\" PERIOD = 20.000 ;" << std::endl;
-   UCF_file << "" << std::endl;
-   UCF_file << "NET \"pci_clk\" PERIOD = 30.000 ;" << std::endl;
-   UCF_file << "OFFSET = OUT : 11.000 : AFTER pci_clk ;" << std::endl;
-   UCF_file << "OFFSET = IN : 7.000 : BEFORE pci_clk ;" << std::endl;
-   UCF_file << "" << std::endl;
-   UCF_file << R"(NET "clk"     LOC = "P20"  | IOSTANDARD=LVTTL;)" << std::endl;
-   UCF_file << R"(NET "pci_clk" LOC = "AK19" | IOSTANDARD=LVTTL;)" << std::endl;
-   UCF_file << "" << std::endl;
-   UCF_file << R"(NET "pllref"  LOC = "J19"  | IOSTANDARD=LVTTL;)" << std::endl;
-   UCF_file << "" << std::endl;
-   UCF_file << R"(NET "resetn" LOC = "G38" | IOSTANDARD=LVTTL;)" << std::endl;
-   UCF_file << "" << std::endl;
-   UCF_file << R"(NET "pci_ad<0>"  LOC = "AW16" | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<1>"  LOC = "AV17" | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<2>"  LOC = "AW15" | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<3>"  LOC = "AV15" | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<4>"  LOC = "AU18" | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<5>"  LOC = "AW17" | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<6>"  LOC = "AT18" | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<7>"  LOC = "AP16" | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<8>"  LOC = "AU17" | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<9>"  LOC = "AT16" | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<10>" LOC = "AU16" | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<11>" LOC = "AT15" | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<12>" LOC = "AU15" | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<13>" LOC = "AR14" | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<14>" LOC = "AT14" | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<15>" LOC = "AU13" | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<16>" LOC = "AT8"  | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<17>" LOC = "AU8"  | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<18>" LOC = "AT9"  | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<19>" LOC = "AU6"  | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<20>" LOC = "AR8"  | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<21>" LOC = "AU7"  | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<22>" LOC = "AU5"  | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<23>" LOC = "AR7"  | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<24>" LOC = "AW7"  | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<25>" LOC = "AV7"  | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<26>" LOC = "AW6"  | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<27>" LOC = "AW5"  | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<28>" LOC = "AV5"  | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<29>" LOC = "AW4"  | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<30>" LOC = "AV4"  | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_ad<31>" LOC = "AV3"  | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_cbe<0>" LOC = "AT13" | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_cbe<1>" LOC = "AU12" | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_cbe<2>" LOC = "AR13" | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_cbe<3>" LOC = "AR12" | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << "" << std::endl;
-   UCF_file << R"(NET "pci_66"      LOC = "AW14" | IOSTANDARD=LVTTL;)" << std::endl;
-   UCF_file << R"(NET "pci_host"    LOC = "AV14" | IOSTANDARD=LVTTL;)" << std::endl;
-   UCF_file << R"(NET "pci_devsel"  LOC = "AV10" | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this devseln)"
-            << std::endl;
-   UCF_file << R"(NET "pci_frame"   LOC = "AR9"  | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this framen)"
-            << std::endl;
-   UCF_file << R"(NET "pci_gnt"     LOC = "AV13" | IOSTANDARD=LVTTL; # the PCI spec calls this gntn)" << std::endl;
-   UCF_file << R"(NET "pci_req"     LOC = "AW12" | IOSTANDARD=LVTTL; # the PCI spec calls this reqn)" << std::endl;
-   UCF_file << "" << std::endl;
-   UCF_file << R"(NET "pci_idsel"   LOC = "AV9"  | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_irdy"    LOC = "AW9"  | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this" irdyn)"
-            << std::endl;
-   UCF_file << R"(NET "pci_lock"    LOC = "AU11" | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this" lockn)"
-            << std::endl;
-   UCF_file << R"(NET "pci_par"     LOC = "AW11" | IOSTANDARD=PCI33_3 | BYPASS;)" << std::endl;
-   UCF_file << R"(NET "pci_perr"    LOC = "AW10" | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this perrn)"
-            << std::endl;
-   UCF_file << R"(NET "pci_rst"     LOC = "AV8"  | IOSTANDARD=LVTTL; # the PCI spec calls this rstn)" << std::endl;
-   UCF_file << R"(NET "pci_serr"    LOC = "AT11" | IOSTANDARD=PCI33_3; # the PCI spec calls this serrn)" << std::endl;
-   UCF_file << R"(NET "pci_stop"    LOC = "AV12" | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this stopn)"
-            << std::endl;
-   UCF_file << R"(NET "pci_trdy"    LOC = "AU10" | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this trdyn)"
-            << std::endl;
+   UCF_file << R"(CONFIG STEPPING="0";
+   
+NET resetn TIG ;
+
+NET "clk" PERIOD = 20.000 ;
+
+NET "pci_clk" PERIOD = 30.000 ;
+OFFSET = OUT : 11.000 : AFTER pci_clk ;
+OFFSET = IN : 7.000 : BEFORE pci_clk ;
+
+NET "clk"        LOC = "P20"  | IOSTANDARD=LVTTL;
+NET "pci_clk"    LOC = "AK19" | IOSTANDARD=LVTTL;
+
+NET "pllref"     LOC = "J19"  | IOSTANDARD=LVTTL;
+
+NET "resetn"     LOC = "G38"  | IOSTANDARD=LVTTL;
+
+NET "pci_ad<0>"  LOC = "AW16" | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<1>"  LOC = "AV17" | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<2>"  LOC = "AW15" | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<3>"  LOC = "AV15" | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<4>"  LOC = "AU18" | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<5>"  LOC = "AW17" | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<6>"  LOC = "AT18" | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<7>"  LOC = "AP16" | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<8>"  LOC = "AU17" | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<9>"  LOC = "AT16" | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<10>" LOC = "AU16" | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<11>" LOC = "AT15" | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<12>" LOC = "AU15" | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<13>" LOC = "AR14" | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<14>" LOC = "AT14" | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<15>" LOC = "AU13" | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<16>" LOC = "AT8"  | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<17>" LOC = "AU8"  | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<18>" LOC = "AT9"  | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<19>" LOC = "AU6"  | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<20>" LOC = "AR8"  | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<21>" LOC = "AU7"  | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<22>" LOC = "AU5"  | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<23>" LOC = "AR7"  | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<24>" LOC = "AW7"  | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<25>" LOC = "AV7"  | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<26>" LOC = "AW6"  | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<27>" LOC = "AW5"  | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<28>" LOC = "AV5"  | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<29>" LOC = "AW4"  | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<30>" LOC = "AV4"  | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_ad<31>" LOC = "AV3"  | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_cbe<0>" LOC = "AT13" | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_cbe<1>" LOC = "AU12" | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_cbe<2>" LOC = "AR13" | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_cbe<3>" LOC = "AR12" | IOSTANDARD=PCI33_3 | BYPASS;
+
+NET "pci_66"     LOC = "AW14" | IOSTANDARD=LVTTL;
+NET "pci_host"   LOC = "AV14" | IOSTANDARD=LVTTL;
+NET "pci_devsel" LOC = "AV10" | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this devseln
+NET "pci_frame"  LOC = "AR9"  | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this framen
+NET "pci_gnt"    LOC = "AV13" | IOSTANDARD=LVTTL; # the PCI spec calls this gntn
+NET "pci_req"    LOC = "AW12" | IOSTANDARD=LVTTL; # the PCI spec calls this reqn
+   
+NET "pci_idsel"  LOC = "AV9"  | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_irdy"   LOC = "AW9"  | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this" irdyn
+NET "pci_lock"   LOC = "AU11" | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this" lockn
+NET "pci_par"    LOC = "AW11" | IOSTANDARD=PCI33_3 | BYPASS;
+NET "pci_perr"   LOC = "AW10" | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this perrn
+NET "pci_rst"    LOC = "AV8"  | IOSTANDARD=LVTTL; # the PCI spec calls this rstn
+NET "pci_serr"   LOC = "AT11" | IOSTANDARD=PCI33_3; # the PCI spec calls this serrn
+NET "pci_stop"   LOC = "AV12" | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this stopn
+NET "pci_trdy"   LOC = "AU10" | IOSTANDARD=PCI33_3 | BYPASS; # the PCI spec calls this trdyn)";
    UCF_file.close();
    if(xst)
    {

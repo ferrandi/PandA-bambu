@@ -223,7 +223,7 @@ void NanoXploreBackendFlow::xparse_utilization(const std::string& fn)
 void NanoXploreBackendFlow::CheckSynthesisResults()
 {
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Analyzing NanoXplore synthesis results");
-   const auto report_filename = GetPath(actual_parameters->parameter_values[PARAM_nxpython_report]);
+   const auto report_filename = actual_parameters->parameter_values[PARAM_nxpython_report];
    xparse_utilization(report_filename);
 
    THROW_ASSERT(design_values.find(NANOXPLORE_FE) != design_values.end(), "Missing logic elements");
@@ -256,9 +256,9 @@ void NanoXploreBackendFlow::CheckSynthesisResults()
        (Param->IsParameter("DumpingTimingReport") && Param->GetParameter<int>("DumpingTimingReport"))) &&
       ((actual_parameters->parameter_values.find(PARAM_nxpython_timing_report) !=
             actual_parameters->parameter_values.end() &&
-        std::filesystem::exists(GetPath(actual_parameters->parameter_values.at(PARAM_nxpython_timing_report))))))
+        std::filesystem::exists(actual_parameters->parameter_values.at(PARAM_nxpython_timing_report)))))
    {
-      CopyStdout(GetPath(actual_parameters->parameter_values.at(PARAM_nxpython_timing_report)));
+      CopyStdout(actual_parameters->parameter_values.at(PARAM_nxpython_timing_report));
    }
 }
 

@@ -75,12 +75,11 @@ PragmaParser::~PragmaParser() = default;
 std::string PragmaParser::substitutePragmas(const std::string& input_filename)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Substituting pragma in " + input_filename);
-   THROW_ASSERT(std::filesystem::exists(std::filesystem::path(input_filename)),
-                "Input file \"" + input_filename + "\" does not exist");
+   THROW_ASSERT(std::filesystem::exists(input_filename), "Input file \"" + input_filename + "\" does not exist");
 
-   const auto temp_path = Param->getOption<std::string>(OPT_output_temporary_directory) + "pragma";
+   const auto temp_path = Param->getOption<std::filesystem::path>(OPT_output_temporary_directory) / "pragma";
    std::filesystem::create_directories(temp_path);
-   const auto output_filename = temp_path + "/" + std::filesystem::path(input_filename).filename().string();
+   const auto output_filename = temp_path / std::filesystem::path(input_filename).filename();
    std::ofstream fileOutput(output_filename, std::ios::out);
 
    level = 0;

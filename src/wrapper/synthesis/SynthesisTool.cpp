@@ -171,7 +171,7 @@ void SynthesisTool::create_output_directory(const std::string& sub_dir)
    {
       general_output_dir += "/" + sub_dir;
    }
-   output_dir = general_output_dir + std::string("/") + output_dir;
+   output_dir = general_output_dir + "/" + output_dir;
 
    std::string candidate_dir;
    if(std::filesystem::exists(output_dir))
@@ -183,7 +183,6 @@ void SynthesisTool::create_output_directory(const std::string& sub_dir)
       } while(std::filesystem::exists(candidate_dir));
       output_dir = candidate_dir;
    }
-   std::filesystem::create_directories(output_dir);
    std::filesystem::create_directories(output_dir + "/input");
    std::filesystem::create_directories(output_dir + "/output");
 }

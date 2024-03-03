@@ -97,7 +97,7 @@ DesignFlowStep_Status PragmaSubstitution::Exec()
    for(auto& input_file : AppM->input_files)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Patching file " + input_file);
-      if(!std::filesystem::exists(std::filesystem::path(input_file)))
+      if(!std::filesystem::exists(input_file))
       {
          THROW_ERROR("File " + input_file + " does not exist");
       }

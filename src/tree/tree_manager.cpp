@@ -412,7 +412,7 @@ void tree_manager::collapse_into(const unsigned int& funID,
    if(debug_level >= DEBUG_LEVEL_PARANOIC)
    {
       const std::string gimple_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) +
-                                           "collapse_into_" + STR(collapse_into_counter) + "_before_" +
+                                           "/collapse_into_" + STR(collapse_into_counter) + "_before_" +
                                            STR(GET_INDEX_NODE(tn)) + ".gimple";
       collapse_into_counter++;
       std::ofstream gimple_file(gimple_file_name.c_str());
@@ -932,13 +932,13 @@ void tree_manager::collapse_into(const unsigned int& funID,
    if(debug_level >= DEBUG_LEVEL_PARANOIC)
    {
       const std::string raw_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) +
-                                        "collapse_into_" + STR(collapse_into_counter) + "_after_" +
+                                        "/collapse_into_" + STR(collapse_into_counter) + "_after_" +
                                         STR(tree_node_index) + ".raw";
       std::ofstream raw_file(raw_file_name.c_str());
       raw_file << *this;
       raw_file.close();
       const std::string gimple_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) +
-                                           "collapse_into_" + STR(collapse_into_counter) + "_after_" +
+                                           "/collapse_into_" + STR(collapse_into_counter) + "_after_" +
                                            STR(tree_node_index) + ".gimple";
       collapse_into_counter++;
       std::ofstream gimple_file(gimple_file_name.c_str());
@@ -1845,8 +1845,8 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
    tree_managerRef TM_this(this, nullDel);
    if(debug_level >= DEBUG_LEVEL_PARANOIC)
    {
-      std::string raw_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + "before_tree_merge_" +
-                                  STR(get_next_available_tree_node_id()) + ".raw";
+      std::string raw_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) +
+                                  "/before_tree_merge_" + STR(get_next_available_tree_node_id()) + ".raw";
       std::ofstream raw_file(raw_file_name.c_str());
       raw_file << TM_this;
       raw_file.close();
@@ -2462,7 +2462,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
    }
    if(debug_level >= DEBUG_LEVEL_PARANOIC)
    {
-      std::string raw_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + "after_" +
+      std::string raw_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + "/after_" +
                                   STR(get_next_available_tree_node_id()) + ".raw";
       std::cerr << raw_file_name << std::endl;
       std::ofstream raw_file(raw_file_name.c_str());

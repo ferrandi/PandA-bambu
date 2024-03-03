@@ -276,25 +276,25 @@ DesignFlowStep_Status create_tree_manager::Exec()
    if(parameters->isOption(OPT_archive_files))
    {
       const auto archive_files = parameters->getOption<CustomSet<std::string>>(OPT_archive_files);
-      const auto output_temporary_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
-      const auto temp_path = output_temporary_directory + "archives";
+      const auto output_temporary_directory =
+          parameters->getOption<std::filesystem::path>(OPT_output_temporary_directory);
+      const auto temp_path = output_temporary_directory / "archives";
       std::filesystem::create_directories(temp_path);
-      std::string command = "cd " + temp_path + "\n";
+      std::string command;
       for(const auto& archive_file : archive_files)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reading " + archive_file);
-         if(!std::filesystem::exists(std::filesystem::path(archive_file)))
+         if(!std::filesystem::exists(archive_file))
          {
             THROW_ERROR("File " + archive_file + " does not exist");
          }
-         const auto local_archive_file = GetPath(archive_file);
 
-         command += " ar x " + local_archive_file + " &\n";
+         command += " ar --output=" + temp_path.string() + " x " + archive_file + " &\n";
       }
       command += " wait";
       if(IsError(PandaSystem(parameters, command)))
       {
-         THROW_ERROR("ar returns an error during archive extraction ");
+         THROW_ERROR("ar returns an error during archive extraction.");
       }
       for(const auto& archive : std::filesystem::directory_iterator{temp_path})
       {
@@ -371,9 +371,9 @@ DesignFlowStep_Status create_tree_manager::Exec()
 
       if(debug_level >= DEBUG_LEVEL_PEDANTIC)
       {
-         std::string raw_file_name =
-             parameters->getOption<std::string>(OPT_output_temporary_directory) + "after_raw_merge.raw";
-         std::ofstream raw_file(raw_file_name.c_str());
+         const auto raw_file_name =
+             parameters->getOption<std::filesystem::path>(OPT_output_temporary_directory) / "after_raw_merge.raw";
+         std::ofstream raw_file(raw_file_name);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Tree-Manager dumped for debug purpose");
          raw_file << TM;
          raw_file.close();

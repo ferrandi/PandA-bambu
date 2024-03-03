@@ -314,11 +314,11 @@ void CBackend::Initialize()
 {
    writer->Initialize();
    std::filesystem::path src_filename(c_backend_info->src_filename);
-   std::filesystem::create_directories(src_filename.parent_path());
-   if(std::filesystem::exists(c_backend_info->src_filename))
+   if(src_filename.has_parent_path())
    {
-      std::filesystem::remove_all(c_backend_info->src_filename);
+      std::filesystem::create_directories(src_filename.parent_path());
    }
+   std::filesystem::remove(c_backend_info->src_filename);
    already_visited.clear();
    if(c_backend_info->type != CBackendInformation::CB_HLS)
    {
@@ -339,8 +339,8 @@ DesignFlowStep_Status CBackend::Exec()
    indented_output_stream->Append("\n");
    if(parameters->isOption(OPT_cat_args))
    {
-      indented_output_stream->Append(" * " + parameters->getOption<std::string>(OPT_program_name) +
-                                     " executed with: " + parameters->getOption<std::string>(OPT_cat_args) + "\n");
+      indented_output_stream->Append(" * Bambu executed with: " + parameters->getOption<std::string>(OPT_cat_args) +
+                                     "\n");
    }
    indented_output_stream->Append(" */\n");
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--written panda header");

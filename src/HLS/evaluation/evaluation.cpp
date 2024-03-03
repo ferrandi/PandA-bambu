@@ -365,7 +365,7 @@ DesignFlowStep_Status Evaluation::Exec()
       std::string candidate_out_file_name;
       do
       {
-         candidate_out_file_name = GetPath("bambu_results_" + STR(progressive++) + ".xml");
+         candidate_out_file_name = "bambu_results_" + STR(progressive++) + ".xml";
       } while(std::filesystem::exists(candidate_out_file_name));
       return candidate_out_file_name;
    }();

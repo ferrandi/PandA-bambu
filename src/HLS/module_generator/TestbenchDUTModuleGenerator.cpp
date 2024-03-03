@@ -44,6 +44,7 @@
 #include "TestbenchDUTModuleGenerator.hpp"
 
 #include "Parameter.hpp"
+#include "VHDL_writer.hpp"
 #include "behavioral_helper.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
@@ -78,15 +79,22 @@ void TestbenchDUTModuleGenerator::InternalExec(std::ostream& out, structural_obj
    const auto top_mod = GetPointer<module>(top_cir);
    THROW_ASSERT(top_mod, "");
    const auto parameters = HLSMgr->get_parameter();
+   const auto top_language = static_cast<HDLWriter_Language>(parameters->getOption<unsigned int>(OPT_writer_language));
    const auto interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);
    const auto memory_mapped_top = parameters->getOption<bool>(OPT_memory_mapped_top);
 
    std::string signals, modules;
    std::set<std::string> internal_ports;
-   const auto escape_keyword = [&](const std::string& str) -> std::string {
-      if(verilog_writer::check_keyword_verilog(str))
+   const auto escape_keyword = [&](const std::string& str,
+                                   const HDLWriter_Language w = HDLWriter_Language::VERILOG) -> std::string {
+      if(w == HDLWriter_Language::VERILOG && verilog_writer::check_keyword_verilog(str))
       {
          return "\\" + str + " ";
+      }
+      else if(w == HDLWriter_Language::VHDL && (str.find("__") != std::string::npos || str.front() == '_' ||
+                                                str.back() == '_' || VHDL_writer::check_keyword_vhdl(str)))
+      {
+         return "\\" + str + "\\";
       }
       return str;
    };
@@ -114,7 +122,7 @@ void TestbenchDUTModuleGenerator::InternalExec(std::ostream& out, structural_obj
                                    structural_type_descriptorRef(new structural_type_descriptor("bool", 0)));
    }
 
-   const auto mod_id = escape_keyword(top_mod->get_id());
+   const auto mod_id = escape_keyword(top_mod->get_id(), top_language);
    std::string dut_body = mod_id + " top(";
    const auto port_count = top_mod->get_num_ports();
    for(auto i = 0U; i < port_count; ++i)

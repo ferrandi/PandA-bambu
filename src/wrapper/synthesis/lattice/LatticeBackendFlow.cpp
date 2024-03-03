@@ -204,7 +204,7 @@ void LatticeBackendFlow::xparse_utilization(const std::string& fn)
 void LatticeBackendFlow::CheckSynthesisResults()
 {
    PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Analyzing Lattice synthesis results");
-   std::string report_filename = GetPath(actual_parameters->parameter_values[PARAM_lattice_report]);
+   const auto report_filename = actual_parameters->parameter_values[PARAM_lattice_report];
    xparse_utilization(report_filename);
 
    THROW_ASSERT(design_values.find(LATTICE_SLICE) != design_values.end(), "Missing logic elements");
