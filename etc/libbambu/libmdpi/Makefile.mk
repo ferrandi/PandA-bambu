@@ -67,7 +67,8 @@ $(call check_defined, COSIM_SRC)  # PandA Bambu HLS generated co-simulation sour
 
 ### Environment below is automatically populated, do not override
 
-override SRCS := $(filter-out %.bambuir, $(SRCS))
+override SRCS := $(abspath $(filter-out %.bambuir, $(SRCS)))
+override TB_SRCS := $(abspath $(TB_SRCS))
 SRC_DIR := $(shell echo "$(SRCS)" | sed 's/ /\n/g' | sed -e '$$!{N;s/^\(.*\).*\n\1.*$$/\1\n\1/;D;}' | sed 's/\(.*\)\/.*/\1/')
 TB_SRC_DIR := $(shell echo "$(TB_SRCS)" | sed 's/ /\n/g' | sed -e '$$!{N;s/^\(.*\).*\n\1.*$$/\1\n\1/;D;}' | sed 's/\(.*\)\/.*/\1/')
 BUILD_DIR := $(SIM_DIR)/build

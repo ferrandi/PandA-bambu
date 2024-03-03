@@ -153,13 +153,9 @@ DesignFlowStep_Status weighted_clique_register::RegisterBinding()
       if(parameters->getOption<bool>(OPT_print_dot))
       {
          const auto functionName = FB->CGetBehavioralHelper()->get_function_name();
-         const auto output_directory = parameters->getOption<std::string>(OPT_dot_directory) + "/" + functionName + "/";
-         if(!std::filesystem::exists(output_directory))
-         {
-            std::filesystem::create_directories(output_directory);
-         }
-         const auto file_name = output_directory + "HLS_RegisterBinding.dot";
-         register_clique->writeDot(file_name);
+         const auto output_directory = parameters->getOption<std::filesystem::path>(OPT_dot_directory) / functionName;
+         std::filesystem::create_directories(output_directory);
+         register_clique->writeDot(output_directory / "HLS_RegisterBinding.dot");
       }
       /// performing clique covering
       no_check_clique<CG_vertex_descriptor> cq;

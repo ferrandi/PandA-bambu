@@ -248,7 +248,7 @@ class DesignFlowGraph : public graph
     * @param file_name is the file where the graph has to be printed
     * @param detail_level is the detail level of the printed graph
     */
-   void WriteDot(const std::string& file_name, const int detail_level = 0) const;
+   void WriteDot(const std::filesystem::path& file_name, const int detail_level = 0) const;
 
 #ifndef NDEBUG
    /**
@@ -258,7 +258,7 @@ class DesignFlowGraph : public graph
     * @param edge_history tells which edges are present in each iteration
     * @param vertex_names is the name of each vertex (name of old vertices could be not more computable)
     */
-   void WriteDot(const std::string& file_name,
+   void WriteDot(const std::filesystem::path& file_name,
                  const CustomMap<size_t, CustomMap<vertex, DesignFlowStep_Status>>& vertex_history,
                  const CustomMap<size_t, CustomUnorderedMapStable<EdgeDescriptor, int>>& edge_history,
                  const CustomMap<vertex, std::string>& vertex_names, const size_t writing_step_counter) const;

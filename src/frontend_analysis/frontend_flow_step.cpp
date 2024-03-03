@@ -382,7 +382,7 @@ void FrontendFlowStep::PrintTreeManager(const bool before) const
    const tree_managerConstRef tree_manager = AppM->get_tree_manager();
    const std::string prefix = before ? "before" : "after";
    const std::string file_name =
-       parameters->getOption<std::string>(OPT_output_temporary_directory) + prefix + "_" + GetName();
+       parameters->getOption<std::string>(OPT_output_temporary_directory) + "/" + prefix + "_" + GetName();
    const std::string suffix = print_counter == 0 ? "" : "_" + STR(print_counter);
    const std::string raw_file_name = file_name + suffix + ".raw";
    std::ofstream raw_file(raw_file_name.c_str());

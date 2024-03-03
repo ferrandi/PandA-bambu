@@ -3164,8 +3164,8 @@ void allocation::IntegrateTechnologyLibraries()
 
 void allocation::PrintInitialIR() const
 {
-   const std::string file_name =
-       parameters->getOption<std::string>(OPT_output_temporary_directory) + "before_" + GetName() + ".tm";
+   const auto file_name =
+       parameters->getOption<std::filesystem::path>(OPT_output_temporary_directory) / ("before_" + GetName() + ".tm");
    std::ofstream raw_file(file_name);
    TechM->print(raw_file);
    raw_file.close();

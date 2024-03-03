@@ -461,7 +461,7 @@ size_t i;
    indented_output_stream->Append("static __m_memmap_t memmap_init[] = {\n");
    if(mem_vars.size())
    {
-      const auto output_directory = Param->getOption<std::string>(OPT_output_directory) + "/simulation/";
+      const auto output_directory = Param->getOption<std::filesystem::path>(OPT_output_directory) / "simulation";
       for(const auto& mem_var : mem_vars)
       {
          const auto var_id = mem_var.first;
@@ -471,12 +471,12 @@ size_t i;
             const auto var_name = BH->PrintVariable(var_id);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing initialization for " + var_name);
             const auto var_addr = HLSMgr->Rmem->get_external_base_address(var_id);
-            const auto var_init_dat = output_directory + "mem_" + STR(var_id) + "." + var_name + ".dat";
+            const auto var_init_dat = output_directory / ("mem_" + STR(var_id) + "." + var_name + ".dat");
             const auto byte_count = TestbenchGeneration::generate_init_file(var_init_dat, TM, var_id, HLSMgr->Rmem);
-            indented_output_stream->Append("  {\"" + boost::replace_all_copy(var_init_dat, "\"", "\\\"") + "\", " +
-                                           STR(byte_count) + ", " + STR(var_addr) + ", NULL},\n");
+            indented_output_stream->Append("  {\"" + boost::replace_all_copy(var_init_dat.string(), "\"", "\\\"") +
+                                           "\", " + STR(byte_count) + ", " + STR(var_addr) + ", NULL},\n");
             base_addr = std::max(base_addr, var_addr + byte_count);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Init file   : '" + var_init_dat + "'");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Init file   : '" + var_init_dat.string() + "'");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Memory usage: " + STR(byte_count) + " bytes");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Base address: " + STR(var_addr));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");

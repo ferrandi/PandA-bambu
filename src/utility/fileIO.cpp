@@ -76,17 +76,19 @@ fileIO_istreamRef fileIO_istream_open(const std::string& name)
 }
 
 int PandaSystem(const ParameterConstRef Param, const std::string& system_command, bool host_exec,
-                const std::string& output, const unsigned int type, const bool background, const size_t timeout)
+                const std::filesystem::path& output, const unsigned int type, const bool background,
+                const size_t timeout)
 {
    static size_t counter = 0;
-   const std::string actual_output = output == "" ? Param->getOption<std::string>(OPT_output_temporary_directory) +
-                                                        STR_CST_file_IO_shell_output_file + "_" + STR(counter) :
-                                                    GetPath(output);
-   const std::string script_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) +
-                                        STR_CST_file_IO_shell_script + "_" + STR(counter++);
-   counter++;
-   std::ofstream script_file(script_file_name.c_str());
-   script_file << "#!/bin/bash" << std::endl;
+   const auto run_index = counter++;
+   const auto script_path = Param->getOption<std::filesystem::path>(OPT_output_temporary_directory) /
+                            (STR_CST_file_IO_shell_script "_" + STR(run_index));
+   const auto actual_output = output.empty() ? Param->getOption<std::filesystem::path>(OPT_output_temporary_directory) /
+                                                   (STR_CST_file_IO_shell_output_file "_" + STR(run_index)) :
+                                               output;
+   std::ofstream script_file(script_path);
+   script_file << "#!/bin/bash\n"
+               << "ulimit -s 131072\n";
    if(host_exec)
    {
       script_file << "if [ ! -z \"$APPDIR\" ]; then\n"
@@ -95,9 +97,7 @@ int PandaSystem(const ParameterConstRef Param, const std::string& system_command
                   << "  export PERLLIB=$(sed -E 's/\\/tmp\\/.mount[^\\:]+\\://g' <<< $PERLLIB)\n"
                   << "fi\n";
    }
-   script_file << "ulimit -s 131072" << std::endl;
-   script_file << "cd " << GetCurrentPath() << std::endl;
-   THROW_ASSERT(not background or timeout == 0, "Background and timeout cannot be specified at the same time");
+   THROW_ASSERT(!background || timeout == 0, "Background and timeout cannot be specified at the same time");
    if(background)
    {
       script_file << "(";
@@ -170,24 +170,22 @@ int PandaSystem(const ParameterConstRef Param, const std::string& system_command
    script_file << std::endl;
    if(Param->getOption<unsigned int>(OPT_output_level) >= OUTPUT_LEVEL_PEDANTIC)
    {
-      script_file << "exit ${PIPESTATUS[0]}" << std::endl;
+      script_file << "exit ${PIPESTATUS[0]}\n";
    }
    script_file.close();
    if(timeout != 0)
    {
-      const std::string timeout_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) +
-                                            STR_CST_file_IO_shell_script + "_" + STR(counter++);
-      counter++;
-      std::ofstream timeout_file(timeout_file_name.c_str());
-      timeout_file << "#!/bin/bash" << std::endl;
-      timeout_file << "timeout --foreground " << STR(timeout) << "m bash -f " << script_file_name << std::endl;
+      const auto timeout_path = Param->getOption<std::filesystem::path>(OPT_output_temporary_directory) /
+                                (STR_CST_file_IO_shell_script "_" + STR(counter++));
+      std::ofstream timeout_file(timeout_path);
+      timeout_file << "#!/bin/bash\ntimeout --foreground " << timeout << "m bash -f " << script_path.filename() << "\n";
       timeout_file.close();
-      const std::string command = "bash -f " + timeout_file_name + "";
+      const std::string command = "bash -f " + timeout_path.string();
       return system(command.c_str());
    }
    else
    {
-      const std::string command = "bash -f " + script_file_name + "";
+      const std::string command = "bash -f " + script_path.string();
       return system(command.c_str());
    }
 }

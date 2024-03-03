@@ -251,15 +251,19 @@ TestVectorParser::ParseXMLFile(const std::filesystem::path& input_xml_filename) 
                }
                else if((Enode)->get_attribute(param + ":init_file"))
                {
-                  const auto input_file_name = GetPath(input_xml_filename.parent_path()) + "/" +
-                                               Enode->get_attribute(param + ":init_file")->get_value();
-                  if(ends_with(input_file_name, ".dat"))
+                  auto init_file = std::filesystem::path(Enode->get_attribute(param + ":init_file")->get_value());
+                  if(init_file.is_relative())
                   {
-                     test_vector[param] = input_file_name;
+                     init_file = (input_xml_filename.parent_path() / init_file)
+                                     .lexically_relative(std::filesystem::current_path());
+                  }
+                  if(init_file.extension() == ".dat")
+                  {
+                     test_vector[param] = init_file.string();
                   }
                   else
                   {
-                     const auto input_file = fileIO_istream_open(input_file_name);
+                     const auto input_file = fileIO_istream_open(init_file.string());
                      test_vector[param] =
                          std::string(std::istreambuf_iterator<char>(*input_file), std::istreambuf_iterator<char>());
                   }

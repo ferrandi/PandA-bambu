@@ -428,8 +428,8 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
 
       memory->SetParameter("n_elements", STR(n_elements));
 
-      std::string init_filename_a = GetPath(function_name + "_a.data");
-      std::string init_filename_b = GetPath(function_name + "_b.data");
+      const auto init_filename_a = function_name + "_a.data";
+      const auto init_filename_b = function_name + "_b.data";
       std::ofstream init_file_a(init_filename_a);
       std::ofstream init_file_b(init_filename_b);
 

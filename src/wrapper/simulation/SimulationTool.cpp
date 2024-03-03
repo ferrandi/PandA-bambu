@@ -143,8 +143,9 @@ void SimulationTool::Simulate(unsigned long long int& accum_cycles, unsigned lon
       std::filesystem::remove_all(profiling_result_file);
    }
    ToolManagerRef tool(new ToolManager(Param));
-   tool->configure(generated_script, "");
+   tool->configure("./" + generated_script, "");
    std::vector<std::string> parameters, input_files, output_files;
+   // TODO: Shouldn't we populate input_files and output_files with something meaningful?
    if(Param->isOption(OPT_testbench_argv))
    {
       const auto tb_argv = Param->getOption<std::string>(OPT_testbench_argv);
@@ -280,7 +281,7 @@ void SimulationTool::DetermineCycles(unsigned long long int& accum_cycles, unsig
 std::string SimulationTool::GenerateSimulationScript(const std::string& top_filename, std::list<std::string> file_list)
 {
    // Create the simulation script
-   generated_script = GetPath("./simulate_" + top_filename + ".sh");
+   generated_script = "simulate_" + top_filename + ".sh";
    std::ofstream script(generated_script);
    std::filesystem::permissions(generated_script,
                                 std::filesystem::perms::owner_exec | std::filesystem::perms::group_exec |
@@ -292,7 +293,8 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
           << "##########################################################\n"
           << "# Simulation script for COMPONENT: " << top_filename << "\n"
           << "set -e\n"
-          << "cd " << GetCurrentPath() << "\n"
+          << "SWD=\"$(dirname $(readlink -e $0))\"\n"
+          << "cd ${SWD}\n"
           << "if [ ! -z \"$APPDIR\" ]; then LD_LIBRARY_PATH=\"\"; fi\n";
 
    file_list.push_back(relocate_compiler_path(PANDA_DATA_INSTALLDIR) + "/panda/libmdpi/mdpi.c");
@@ -302,7 +304,7 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
    const auto default_compiler = Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
    const auto opt_set = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_gcc_optimization_set);
    const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(Param, default_compiler, opt_set));
-   const auto sim_dir = Param->getOption<std::string>(OPT_output_directory) + "/simulation/";
+   const auto sim_dir = Param->getOption<std::filesystem::path>(OPT_output_directory) / "simulation";
    auto compiler_env = std::regex_replace("\n" + compiler_wrapper->GetCompiler().gcc,
                                           std::regex("([\\w\\d]+=(\".*\"|[^\\s]+))\\s*"), "export $1\n");
    boost::replace_last(compiler_env, "\n", "\nCC=\"");
@@ -316,10 +318,10 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
    }
    else
    {
-      script << "SYS_ELF=\"" << sim_dir << "/testbench\"\n";
+      script << "SYS_ELF=" << (sim_dir / "testbench") << "\n";
    }
 
-   script << "SIM_DIR=\"" << sim_dir << "\"\n"
+   script << "SIM_DIR=" << sim_dir << "\n"
           << "OUT_LVL=\"" << Param->getOption<int>(OPT_output_level) << "\"\n\n"
           << "### Do not edit below\n\n"
           << "M_IPC_FILENAME=\"${SIM_DIR}/panda_sock\"\n";
@@ -446,7 +448,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, con
    const auto tb_extra_cflags =
        Param->isOption(OPT_tb_extra_gcc_options) ? Param->getOption<std::string>(OPT_tb_extra_gcc_options) : "";
 
-   script << "make -C " << relocate_compiler_path(PANDA_DATA_INSTALLDIR) << "/panda/libmdpi \\\n"
+   script << "make -f " << relocate_compiler_path(PANDA_DATA_INSTALLDIR) << "/panda/libmdpi/Makefile.mk \\\n"
           << "  SIM_DIR=\"${SIM_DIR}\" BEH_DIR=\"" << beh_dir << "\" \\\n"
           << "  TOP_FNAME=\"" << top_fname << "\" \\\n"
           << "  MTOP_FNAME=\"" << m_top_fname << "\" \\\n"
@@ -460,7 +462,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, con
           << "  COSIM_SRC=\"" << cosim_src << "\" \\\n"
           << "  PP_SRC=\"" << pp_srcs << "\" \\\n"
           << "  TB_SRCS=\"" << tb_srcs << "\" \\\n"
-          << "  -j " << std::thread::hardware_concurrency() << " -f Makefile.mk\n\n";
+          << "  -j " << std::thread::hardware_concurrency() << "\n\n";
 
    return cflags;
 }

@@ -2198,7 +2198,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                   {
                      auto index = data->CGetOpNodeInfo(mapped_operation)->GetNodeId();
                      const auto parameterAddressFileName = "function_addresses_" + STR(index) + ".mem";
-                     std::ofstream parameterAddressFile(GetPath(parameterAddressFileName));
+                     std::ofstream parameterAddressFile(parameterAddressFileName);
 
                      const auto call = TreeM->CGetTreeNode(index);
                      const auto& calledFunction = GetPointerS<const gimple_call>(call)->args[0];
@@ -2230,7 +2230,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                         parameterAddressFile << str_address << "\n";
                      }
                      parameterAddressFile.close();
-                     fu_module->SetParameter("MEMORY_INIT_file", "\"\"" + GetPath(parameterAddressFileName) + "\"\"");
+                     fu_module->SetParameter("MEMORY_INIT_file", "\"\"" + parameterAddressFileName + "\"\"");
                   }
                }
             }
@@ -2389,11 +2389,11 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
    /// array ref initialization
    THROW_ASSERT(ar, "expected a real tree node index");
    const auto init_filename = "array_ref_" + STR(ar) + ".mem";
-   std::ofstream init_file_a(GetPath(init_filename));
+   std::ofstream init_file_a(init_filename);
    std::ofstream init_file_b;
    if(is_memory_splitted)
    {
-      init_file_b.open(GetPath("0_" + init_filename));
+      init_file_b.open("0_" + init_filename);
    }
    unsigned long long vec_size = 0, elts_size = 0;
    const auto bitsize_align = is_sds ? 0ULL : std::stoull(fu_module->GetParameter("BRAM_BITSIZE"));
@@ -2406,12 +2406,12 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
    }
    if(is_memory_splitted)
    {
-      fu_module->SetParameter("MEMORY_INIT_file_a", "\"\"" + GetPath(init_filename) + "\"\"");
-      fu_module->SetParameter("MEMORY_INIT_file_b", "\"\"" + GetPath("0_" + init_filename) + "\"\"");
+      fu_module->SetParameter("MEMORY_INIT_file_a", "\"\"" + init_filename + "\"\"");
+      fu_module->SetParameter("MEMORY_INIT_file_b", "\"\"0_" + init_filename + "\"\"");
    }
    else
    {
-      fu_module->SetParameter("MEMORY_INIT_file", "\"\"" + GetPath(init_filename) + "\"\"");
+      fu_module->SetParameter("MEMORY_INIT_file", "\"\"" + init_filename + "\"\"");
    }
 
    /// specialize the number of elements in the array

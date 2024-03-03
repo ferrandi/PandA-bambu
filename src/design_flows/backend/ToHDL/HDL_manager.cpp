@@ -132,18 +132,17 @@ std::string HDL_manager::write_components(const std::string& filename, HDLWriter
 {
    language_writerRef writer = language_writer::create_writer(language, TM, parameters);
 
-   writer->write_comment(std::string("\n"));
-   writer->write_comment(std::string("Politecnico di Milano\n"));
-   writer->write_comment(std::string("Code created using ") + PACKAGE_NAME + " - " + parameters->PrintVersion() +
-                         std::string(" - Date " + TimeStamp::GetCurrentTimeStamp()) + "\n");
+   writer->write_comment("\n");
+   writer->write_comment("Politecnico di Milano\n");
+   writer->write_comment("Code created using " PACKAGE_NAME " - " + parameters->PrintVersion() + " - Date " +
+                         TimeStamp::GetCurrentTimeStamp() + "\n");
    if(parameters->isOption(OPT_cat_args))
    {
-      writer->write_comment(parameters->getOption<std::string>(OPT_program_name) +
-                            " executed with: " + parameters->getOption<std::string>(OPT_cat_args) + "\n");
+      writer->write_comment("Bambu executed with: " + parameters->getOption<std::string>(OPT_cat_args) + "\n");
    }
 
    writer->write_comment("\n");
-   writer->write_comment(std::string("Send any bug to: ") + PACKAGE_BUGREPORT + "\n");
+   writer->write_comment("Send any bug to: " PACKAGE_BUGREPORT "\n");
    writer->WriteLicense();
 
    /// write the header of the file
@@ -159,13 +158,13 @@ std::string HDL_manager::write_components(const std::string& filename, HDLWriter
          write_module(writer, c, aux_files);
          continue;
       }
-      else if(npf and (npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED) != "" ||
-                       npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED) != ""))
+      else if(npf && (npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED) != "" ||
+                      npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED) != ""))
       {
          if(npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED) != "" &&
             language == HDLWriter_Language::VERILOG)
          {
-            std::string filename_HDL = GetPath(npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED));
+            std::string filename_HDL = npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED);
             if(std::find(aux_files.begin(), aux_files.end(), filename_HDL) == aux_files.end())
             {
                aux_files.push_back(filename_HDL);
@@ -174,7 +173,7 @@ std::string HDL_manager::write_components(const std::string& filename, HDLWriter
          else if(npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED) != "" &&
                  language == HDLWriter_Language::VHDL)
          {
-            std::string filename_HDL = GetPath(npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED));
+            std::string filename_HDL = npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED);
             if(std::find(aux_files.begin(), aux_files.end(), filename_HDL) == aux_files.end())
             {
                aux_files.push_back(filename_HDL);
@@ -182,7 +181,7 @@ std::string HDL_manager::write_components(const std::string& filename, HDLWriter
          }
          else if(npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED) != "")
          {
-            std::string filename_HDL = GetPath(npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED));
+            std::string filename_HDL = npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED);
             if(std::find(aux_files.begin(), aux_files.end(), filename_HDL) == aux_files.end())
             {
                aux_files.push_back(filename_HDL);
@@ -190,7 +189,7 @@ std::string HDL_manager::write_components(const std::string& filename, HDLWriter
          }
          else if(npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED) != "")
          {
-            std::string filename_HDL = GetPath(npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED));
+            std::string filename_HDL = npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED);
             if(std::find(aux_files.begin(), aux_files.end(), filename_HDL) == aux_files.end())
             {
                aux_files.push_back(filename_HDL);
@@ -228,7 +227,7 @@ std::string HDL_manager::write_components(const std::string& filename, HDLWriter
       write_module(writer, obj, aux_files);
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written components");
-   auto filename_ext = GetPath(filename + writer->get_extension());
+   const auto filename_ext = filename + writer->get_extension();
    writer->WriteFile(filename_ext);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written " + filename_ext);
    return filename_ext;
@@ -363,7 +362,7 @@ void HDL_manager::write_components(const std::string& filename, const std::list<
             std::list<structural_objectRef> singletonList;
             singletonList.push_back(c);
             std::string mod_name = convert_to_identifier(writer.get(), GET_TYPE_NAME(c));
-            std::string generated_filename = write_components(GetPath(mod_name), l->first, singletonList, aux_files);
+            std::string generated_filename = write_components(mod_name, l->first, singletonList, aux_files);
             aux_files.push_back(generated_filename);
          }
       }
@@ -389,7 +388,7 @@ void HDL_manager::write_components(const std::string& filename, const std::list<
          {
             mod_name = filename;
          }
-         std::string generated_filename = write_components(GetPath(mod_name), language, singletonList, aux_files);
+         std::string generated_filename = write_components(mod_name, language, singletonList, aux_files);
          if(counter == 0)
          {
             hdl_files.push_back(generated_filename);

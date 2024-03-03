@@ -85,7 +85,7 @@ modelsimWrapper::modelsimWrapper(const ParameterConstRef& _Param, const std::str
       THROW_WARNING("Mentor license file has not been specified. User must set LM_LICENSE_FILE variable to point to "
                     "the license file location.");
    }
-   std::filesystem::create_directory(SIM_SUBDIR + suffix + "/");
+   std::filesystem::create_directory(SIM_SUBDIR + suffix);
 }
 
 // destructor

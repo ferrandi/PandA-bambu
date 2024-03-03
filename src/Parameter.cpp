@@ -146,10 +146,7 @@ void Parameter::CheckParameters()
    std::filesystem::create_directory(temporary_directory);
    /// Output directory is not removed since it can be the current one
    const auto output_directory = getOption<std::string>(OPT_output_directory);
-   if(!std::filesystem::exists(output_directory))
-   {
-      std::filesystem::create_directory(output_directory);
-   }
+   std::filesystem::create_directory(output_directory);
    if(!std::filesystem::exists(output_directory))
    {
       THROW_ERROR("not able to create directory " + output_directory);
@@ -263,7 +260,7 @@ void Parameter::load_xml_configuration_file(const std::string& filename)
    }
 }
 
-void Parameter::write_xml_configuration_file(const std::string& filename)
+void Parameter::write_xml_configuration_file(const std::filesystem::path& filename)
 {
    xml_document document;
 
@@ -281,11 +278,9 @@ void Parameter::write_xml_configuration_file(const std::string& filename)
 void Parameter::SetCommonDefaults()
 {
    setOption(STR_OPT_benchmark_fake_parameters, "<none>");
-   std::string current_dir = GetCurrentPath();
-   std::string temporary_directory = current_dir + "/" STR_CST_temporary_directory;
 
-   setOption(OPT_dot_directory, current_dir + "/dot/");
-   setOption(OPT_output_temporary_directory, temporary_directory + "/");
+   setOption(OPT_dot_directory, "dot");
+   setOption(OPT_output_temporary_directory, STR_CST_temporary_directory);
    setOption(OPT_print_dot, false);
 
    setOption(OPT_gcc_openmp_simd, 0);
@@ -515,11 +510,10 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
       }
       case OPT_OUTPUT_TEMPORARY_DIRECTORY:
       {
-         /// If the path is not absolute, make it into absolute
          const auto path =
-             unique_path(GetPath(std::string(optarg_param)) + "/" STR_CST_temporary_directory "-%%%%-%%%%-%%%%-%%%%");
+             std::filesystem::path(optarg_param) / unique_path(STR_CST_temporary_directory "-%%%%-%%%%-%%%%-%%%%");
          std::filesystem::create_directories(path);
-         setOption(OPT_output_temporary_directory, path.string() + "/");
+         setOption(OPT_output_temporary_directory, path.string());
          break;
       }
       case INPUT_OPT_PANDA_PARAMETER:
@@ -636,12 +630,12 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       }
       case 'I':
       {
-         std::string includes = "-I " + GetPath(std::string(optarg));
+         std::string includes;
          if(isOption(OPT_gcc_includes))
          {
-            includes = getOption<std::string>(OPT_gcc_includes) + " " + includes;
+            includes = getOption<std::string>(OPT_gcc_includes) + " ";
          }
-         setOption(OPT_gcc_includes, includes);
+         setOption(OPT_gcc_includes, includes + "-I " + std::string(optarg));
          break;
       }
       case 'l':
@@ -661,7 +655,7 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
          {
             library_directories = getOption<std::string>(OPT_gcc_library_directories) + STR_CST_string_separator;
          }
-         setOption(OPT_gcc_library_directories, library_directories + GetPath(optarg_param));
+         setOption(OPT_gcc_library_directories, library_directories + std::string(optarg_param));
          break;
       }
       case 'O':
@@ -906,7 +900,7 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       }
       case INPUT_OPT_READ_GCC_XML:
       {
-         setOption(OPT_gcc_read_xml, GetPath(optarg));
+         setOption(OPT_gcc_read_xml, std::string(optarg));
          break;
       }
       case INPUT_OPT_STD:
@@ -921,7 +915,7 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       }
       case INPUT_OPT_WRITE_GCC_XML:
       {
-         setOption(OPT_gcc_write_xml, GetPath(optarg));
+         setOption(OPT_gcc_write_xml, std::string(optarg));
          break;
       }
       default:

@@ -404,7 +404,7 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
 
    const auto compiler = GetCompiler();
    const auto output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
-   const auto compiler_output_filename = output_temporary_directory + STR_CST_gcc_output;
+   const auto compiler_output_filename = output_temporary_directory + "/" STR_CST_gcc_output;
 
    const auto isWholeProgram =
        Param->isOption(OPT_gcc_optimizations) &&
@@ -638,9 +638,7 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
 
    const auto _output_filename = output_filename.size() ?
                                      output_filename :
-                                     std::filesystem::path(output_temporary_directory + "/" +
-                                                           unique_path(std::string(STR_CST_gcc_obj_file)).string())
-                                         .string();
+                                     (output_temporary_directory + "/" + unique_path(STR_CST_gcc_obj_file).string());
    command += " -o " + _output_filename;
 
    if(real_filename == "-" || real_filename == "/dev/null")
@@ -858,7 +856,7 @@ void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::vector<std:
    if(enable_LTO)
    {
       const auto leaf_name = std::filesystem::path(source_files.front()).filename().string();
-      const auto ext_symbols_filename = output_temporary_directory + "external-symbols.txt";
+      const auto ext_symbols_filename = output_temporary_directory + "/external-symbols.txt";
       std::string lto_source = container_to_string(obj_files, STR_CST_string_separator);
       std::string lto_obj = output_temporary_directory + "/" + leaf_name + ".lto.bc";
       CompileFile(lto_source, lto_obj, "", CM_COMPILER_LTO, "");
@@ -2119,11 +2117,12 @@ std::string CompilerWrapper::GetAnalyzeCompiler() const
 
 void CompilerWrapper::GetSystemIncludes(std::vector<std::string>& includes) const
 {
+   const auto include_file = Param->getOption<std::filesystem::path>(OPT_output_temporary_directory) / "__include";
    const auto command =
        GetCompiler().cpp +
        " -v  < /dev/null 2>&1 | sed -n '/#include </,/> search ends here:/p' | grep -v -E \"(#|End of search "
        "list.|COMPILER_PATH|LIBRARY_PATH|COLLECT_GCC|OFFLOAD_TARGET_NAMES|OFFLOAD_TARGET_DEFAULT)\" | sed 's/ //'";
-   const auto ret = PandaSystem(Param, command, false, STR_CST_gcc_include);
+   const auto ret = PandaSystem(Param, command, false, include_file);
    PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "");
    if(IsError(ret))
    {
@@ -2131,7 +2130,7 @@ void CompilerWrapper::GetSystemIncludes(std::vector<std::string>& includes) cons
       THROW_ERROR("Error in retrieving gcc system include. Error is " + std::to_string(ret));
    }
 
-   std::ifstream includefile(GetPath(STR_CST_gcc_include));
+   std::ifstream includefile(include_file);
    if(includefile.is_open())
    {
       std::string line;
@@ -2146,7 +2145,7 @@ void CompilerWrapper::GetSystemIncludes(std::vector<std::string>& includes) cons
       THROW_ERROR("Error in retrieving gcc system include");
    }
 
-   std::remove(GetPath(STR_CST_gcc_include).c_str());
+   std::filesystem::remove(include_file);
 }
 
 void CompilerWrapper::GetCompilerConfig() const
@@ -2156,10 +2155,9 @@ void CompilerWrapper::GetCompilerConfig() const
 
 void CompilerWrapper::QueryCompilerConfig(const std::string& compiler_option) const
 {
-   const std::string gcc = GetCompiler().gcc;
-   const std::string command = gcc + " " + compiler_option;
-   const std::string output_file_name =
-       Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_output_file;
+   const auto command = GetCompiler().gcc + " " + compiler_option;
+   const auto output_file_name =
+       Param->getOption<std::filesystem::path>(OPT_output_temporary_directory) / STR_CST_file_IO_shell_output_file;
    int ret = PandaSystem(Param, command, false, output_file_name);
    if(IsError(ret))
    {
@@ -2240,7 +2238,7 @@ void CompilerWrapper::CreateExecutable(const std::list<std::string>& file_names,
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Compilation command is " + command);
    const auto compiler_output_filename =
-       Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
+       Param->getOption<std::filesystem::path>(OPT_output_temporary_directory) / STR_CST_gcc_output;
 
    int ret = PandaSystem(Param, command, false, compiler_output_filename);
    if(IsError(ret))
@@ -3385,23 +3383,21 @@ std::string CompilerWrapper::getCompilerVersion(int pc)
    return "";
 }
 
-std::string CompilerWrapper::readExternalSymbols(const std::string& filename) const
+std::string CompilerWrapper::readExternalSymbols(const std::filesystem::path& filename) const
 {
    std::string extern_symbols;
    const auto XMLfilename = [&]() -> std::string {
       if(Param->isOption(OPT_xml_memory_allocation))
       {
-         return Param->getOption<std::string>(OPT_xml_memory_allocation);
+         return Param->getOption<std::filesystem::path>(OPT_xml_memory_allocation);
       }
       /// load xml memory allocation file
-      const auto output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
-      const auto leaf_name = std::filesystem::path(filename).filename().string();
-      const auto generate_xml = output_temporary_directory + "/" + leaf_name + ".memory_allocation.xml";
-      if((std::filesystem::exists(std::filesystem::path(generate_xml))))
+      const auto generate_xml = Param->getOption<std::filesystem::path>(OPT_output_temporary_directory) / filename.filename().concat(".memory_allocation.xml");
+      if((std::filesystem::exists(generate_xml)))
       {
          return generate_xml;
       }
-      return std::string("");
+      return std::filesystem::path("");
    }();
    if(XMLfilename.size())
    {

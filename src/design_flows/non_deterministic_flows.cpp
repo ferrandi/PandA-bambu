@@ -37,14 +37,15 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
 #include "non_deterministic_flows.hpp"
-#include "Parameter.hpp"           // for Parameter, OPT_output_tem...
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_VERY_PEDANTIC
-#include "exceptions.hpp"          // for IsError, THROW_ASSERT
-#include "fileIO.hpp"              // for PandaSystem
-#include "string_manipulation.hpp" // for STR
-#include <filesystem>              // for create_directory, exists
+
+#include "Parameter.hpp"
+#include "dbgPrintHelper.hpp"
+#include "exceptions.hpp"
+#include "fileIO.hpp"
+#include "string_manipulation.hpp"
+
+#include <filesystem>
 
 const std::string NonDeterministicFlows::ComputeArgString(const size_t seed) const
 {
@@ -76,15 +77,14 @@ bool NonDeterministicFlows::ExecuteTool(const size_t seed) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Executing with seed " + STR(seed));
    const auto arg_string = ComputeArgString(seed);
-   const auto temp_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
-   const auto new_directory = temp_directory + "/" + STR(seed);
+   const auto new_directory = parameters->getOption<std::filesystem::path>(OPT_output_temporary_directory) / STR(seed);
    if(std::filesystem::exists(new_directory))
    {
       std::filesystem::remove_all(new_directory);
    }
    std::filesystem::create_directory(new_directory);
-   const auto ret = PandaSystem(parameters, "cd " + new_directory + "; " + arg_string, false,
-                                new_directory + "/tool_execution_output");
+   const auto ret = PandaSystem(parameters, "cd " + new_directory.string() + "; " + arg_string, false,
+                                new_directory / "tool_execution_output");
    if(IsError(ret))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Failure");
