@@ -19,9 +19,6 @@
       <cmd name="  set BRAMFIFO18_star 0"/>
       <cmd name="  set BRAM18 0"/>
       <cmd name="  set BRAMFIFO 0"/>
-      <cmd name="  set RAMS32 0"/>
-      <cmd name="  set RAMD32 0"/>
-      <cmd name="  set RAMD64E 0"/>
       <cmd name="  set DRAM 0"/>
       <cmd name="  set BIOB 0"/>
       <cmd name="  set DSPs 0"/>
@@ -31,7 +28,7 @@
       <cmd name="  set design_slack 0"/>
       <cmd name="  set design_req 0"/>
       <cmd name="  set design_delay 0"/>
-      <cmd name="  regexp --  {\s*CLB LUTs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore CLBLUTs"/>
+      <cmd name="  regexp --  {\s*LUT as Logic\s*\|\s*([^[:blank:]]+)} $util_rpt ignore CLBLUTs"/>
       <cmd name="  regexp --  {\s*CLB Registers\s*\|\s*([^[:blank:]]+)} $util_rpt ignore CLBRegisters"/>
       <cmd name="  regexp --  {\s*CLB\s*\|\s*([^[:blank:]]+)} $util_rpt ignore CLBs"/>
       <cmd name="  regexp --  {\s*RAMB36/FIFO36\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO36"/>
@@ -40,10 +37,7 @@
       <cmd name="  regexp --  {\s*RAMB18/FIFO\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO18_star"/>
       <cmd name="  regexp --  {\s*RAMB18\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAM18"/>
       <cmd name="  set BRAMFIFO [expr {(2 *$BRAMFIFO36) + $BRAMFIFO18 + (2*$BRAMFIFO36_star) + $BRAMFIFO18_star + $BRAM18}]"/>
-      <cmd name="  regexp --  {\s*RAMS32\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMS32"/>
-      <cmd name="  regexp --  {\s*RAMD32\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMD32"/>
-      <cmd name="  regexp --  {\s*RAMD64E\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMD64E"/>
-      <cmd name="  set DRAM [expr {$RAMS32 + $RAMD32 + $RAMD64E}]"/>
+      <cmd name="  regexp --  {\s*LUT as Memory\s*\|\s*([^[:blank:]]+)} $util_rpt ignore DRAM"/>
       <cmd name="  regexp --  {\s*Bonded IOB\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BIOB"/>
       <cmd name="  regexp --  {\s*DSPs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore DSPs"/>
       <cmd name="  set power_rpt [report_power -return_string]"/>
@@ -147,9 +141,6 @@
       <cmd name="  set BRAMFIFO18_star 0"/>
       <cmd name="  set BRAM18 0"/>
       <cmd name="  set BRAMFIFO 0"/>
-      <cmd name="  set RAMS32 0"/>
-      <cmd name="  set RAMD32 0"/>
-      <cmd name="  set RAMD64E 0"/>
       <cmd name="  set DRAM 0"/>
       <cmd name="  set BIOB 0"/>
       <cmd name="  set DSPs 0"/>
@@ -157,7 +148,7 @@
       <cmd name="  set design_slack 0"/>
       <cmd name="  set design_req 0"/>
       <cmd name="  set design_delay 0"/>
-      <cmd name="  regexp --  {\s*CLB LUTs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore CLBLUTs"/>
+      <cmd name="  regexp --  {\s*LUT as Logic\s*\|\s*([^[:blank:]]+)} $util_rpt ignore CLBLUTs"/>
       <cmd name="  regexp --  {\s*CLB Registers\s*\|\s*([^[:blank:]]+)} $util_rpt ignore CLBRegisters"/>
       <cmd name="  regexp --  {\s*CLB\s*\|\s*([^[:blank:]]+)} $util_rpt ignore CLBs"/>
       <cmd name="  regexp --  {\s*RAMB36/FIFO36\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO36"/>
@@ -166,10 +157,7 @@
       <cmd name="  regexp --  {\s*RAMB18/FIFO\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO18_star"/>
       <cmd name="  regexp --  {\s*RAMB18\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAM18"/>
       <cmd name="  set BRAMFIFO [expr {(2 *$BRAMFIFO36) + $BRAMFIFO18 + (2*$BRAMFIFO36_star) + $BRAMFIFO18_star + $BRAM18}]"/>
-      <cmd name="  regexp --  {\s*RAMS32\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMS32"/>
-      <cmd name="  regexp --  {\s*RAMD32\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMD32"/>
-      <cmd name="  regexp --  {\s*RAMD64E\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMD64E"/>
-      <cmd name="  set DRAM [expr {$RAMS32 + $RAMD32 + $RAMD64E}]"/>
+      <cmd name="  regexp --  {\s*LUT as Memory\s*\|\s*([^[:blank:]]+)} $util_rpt ignore DRAM"/>
       <cmd name="  regexp --  {\s*Bonded IOB\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BIOB"/>
       <cmd name="  regexp --  {\s*DSPs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore DSPs"/>
       <cmd name="  set power_rpt [report_power -return_string]"/>

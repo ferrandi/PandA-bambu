@@ -10,20 +10,15 @@
       <!--Create the design setup -->
       <cmd name="proc dump_statistics {  } {"/>
       <cmd name="  set util_rpt [report_utilization -return_string]"/>
-      <cmd name="  set LUTFFPairs 0"/>
       <cmd name="  set SliceRegisters 0"/>
       <cmd name="  set Slice 0"/>
       <cmd name="  set SliceLUTs 0"/>
-      <cmd name="  set SliceLUTs1 0"/>
       <cmd name="  set BRAMFIFO36 0"/>
       <cmd name="  set BRAMFIFO18 0"/>
       <cmd name="  set BRAMFIFO36_star 0"/>
       <cmd name="  set BRAMFIFO18_star 0"/>
       <cmd name="  set BRAM18 0"/>
       <cmd name="  set BRAMFIFO 0"/>
-      <cmd name="  set RAMS32 0"/>
-      <cmd name="  set RAMD32 0"/>
-      <cmd name="  set RAMD64E 0"/>
       <cmd name="  set DRAM 0"/>
       <cmd name="  set BIOB 0"/>
       <cmd name="  set DSPs 0"/>
@@ -31,30 +26,16 @@
       <cmd name="  set design_slack 0"/>
       <cmd name="  set design_req 0"/>
       <cmd name="  set design_delay 0"/>
-      <cmd name="  regexp --  {\s*LUT Flip Flop Pairs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore LUTFFPairs"/>
       <cmd name="  regexp --  {\s*Slice Registers\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceRegisters"/>
       <cmd name="  regexp --  {\s*Slice\s*\|\s*([^[:blank:]]+)} $util_rpt ignore Slice"/>
-      <cmd name="  regexp --  {\s*Slice LUTs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceLUTs"/>
-      <cmd name="  regexp --  {\s*Slice LUTs\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceLUTs1"/>
-      <cmd name="  if { [expr {$SliceLUTs1 == 0}] } {"/>
-      <cmd name="    set SliceLUTs1 $SliceLUTs"/>
-      <cmd name="  }"/>
-      <cmd name="  if { [expr {$LUTFFPairs == 0}] } {"/>
-      <cmd name="    set LUTFFPairs $SliceLUTs1"/>
-      <cmd name="  }"/>
-      <cmd name="  if { [expr {$SliceLUTs == 0}] } {"/>
-      <cmd name="    set SliceLUTs $SliceLUTs1"/>
-      <cmd name="  }"/>
+      <cmd name="  regexp --  {\s*LUT as Logic\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceLUTs"/>
       <cmd name="  regexp --  {\s*RAMB36/FIFO36\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO36"/>
       <cmd name="  regexp --  {\s*RAMB18/FIFO18\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO18"/>
       <cmd name="  regexp --  {\s*RAMB36/FIFO\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO36_star"/>
       <cmd name="  regexp --  {\s*RAMB18/FIFO\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO18_star"/>
       <cmd name="  regexp --  {\s*RAMB18\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAM18"/>
       <cmd name="  set BRAMFIFO [expr {(2 *$BRAMFIFO36) + $BRAMFIFO18 + (2*$BRAMFIFO36_star) + $BRAMFIFO18_star + $BRAM18}]"/>
-      <cmd name="  regexp --  {\s*RAMS32\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMS32"/>
-      <cmd name="  regexp --  {\s*RAMD32\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMD32"/>
-      <cmd name="  regexp --  {\s*RAMD64E\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMD64E"/>
-      <cmd name="  set DRAM [expr {$RAMS32 + $RAMD32 + $RAMD64E}]"/>
+      <cmd name="  regexp --  {\s*LUT as Memory\s*\|\s*([^[:blank:]]+)} $util_rpt ignore DRAM"/>
       <cmd name="  regexp --  {\s*Bonded IOB\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BIOB"/>
       <cmd name="  regexp --  {\s*DSPs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore DSPs"/>
       <cmd name="  set power_rpt [report_power -return_string]"/>
@@ -124,20 +105,15 @@
       <!--Create the design setup -->
       <cmd name="proc dump_statistics {  } {"/>
       <cmd name="  set util_rpt [report_utilization -return_string]"/>
-      <cmd name="  set LUTFFPairs 0"/>
       <cmd name="  set SliceRegisters 0"/>
       <cmd name="  set Slice 0"/>
       <cmd name="  set SliceLUTs 0"/>
-      <cmd name="  set SliceLUTs1 0"/>
       <cmd name="  set BRAMFIFO36 0"/>
       <cmd name="  set BRAMFIFO18 0"/>
       <cmd name="  set BRAMFIFO36_star 0"/>
       <cmd name="  set BRAMFIFO18_star 0"/>
       <cmd name="  set BRAM18 0"/>
       <cmd name="  set BRAMFIFO 0"/>
-      <cmd name="  set RAMS32 0"/>
-      <cmd name="  set RAMD32 0"/>
-      <cmd name="  set RAMD64E 0"/>
       <cmd name="  set DRAM 0"/>
       <cmd name="  set BIOB 0"/>
       <cmd name="  set DSPs 0"/>
@@ -145,31 +121,16 @@
       <cmd name="  set design_slack 0"/>
       <cmd name="  set design_req 0"/>
       <cmd name="  set design_delay 0"/>
-      <cmd name="  regexp --  {\s*LUT Flip Flop Pairs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore LUTFFPairs"/>
       <cmd name="  regexp --  {\s*Slice Registers\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceRegisters"/>
       <cmd name="  regexp --  {\s*Slice\s*\|\s*([^[:blank:]]+)} $util_rpt ignore Slice"/>
-      <cmd name="  regexp --  {\s*Slice LUTs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceLUTs"/>
-      <cmd name="  regexp --  {\s*Slice LUTs\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceLUTs1"/>
-      <cmd name="  if { [expr {$SliceLUTs1 == 0}] } {"/>
-      <cmd name="    set SliceLUTs1 $SliceLUTs"/>
-      <cmd name="  }"/>
-      <cmd name="  if { [expr {$LUTFFPairs == 0}] } {"/>
-      <cmd name="    set LUTFFPairs $SliceLUTs1"/>
-      <cmd name="    puts $SliceLUTs1"/>
-      <cmd name="  }"/>
-      <cmd name="  if { [expr {$SliceLUTs == 0}] } {"/>
-      <cmd name="    set SliceLUTs $SliceLUTs1"/>
-      <cmd name="  }"/>
+      <cmd name="  regexp --  {\s*LUT as Logic\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceLUTs"/>
       <cmd name="  regexp --  {\s*RAMB36/FIFO36\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO36"/>
       <cmd name="  regexp --  {\s*RAMB18/FIFO18\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO18"/>
       <cmd name="  regexp --  {\s*RAMB36/FIFO\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO36_star"/>
       <cmd name="  regexp --  {\s*RAMB18/FIFO\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAMFIFO18_star"/>
       <cmd name="  regexp --  {\s*RAMB18\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BRAM18"/>
       <cmd name="  set BRAMFIFO [expr {(2 *$BRAMFIFO36) + $BRAMFIFO18 + (2*$BRAMFIFO36_star) + $BRAMFIFO18_star + $BRAM18}]"/>
-      <cmd name="  regexp --  {\s*RAMS32\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMS32"/>
-      <cmd name="  regexp --  {\s*RAMD32\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMD32"/>
-      <cmd name="  regexp --  {\s*RAMD64E\s*\|\s*([^[:blank:]]+)} $util_rpt ignore RAMD64E"/>
-      <cmd name="  set DRAM [expr {$RAMS32 + $RAMD32 + $RAMD64E}]"/>
+      <cmd name="  regexp --  {\s*LUT as Memory\s*\|\s*([^[:blank:]]+)} $util_rpt ignore DRAM"/>
       <cmd name="  regexp --  {\s*Bonded IOB\s*\|\s*([^[:blank:]]+)} $util_rpt ignore BIOB"/>
       <cmd name="  regexp --  {\s*DSPs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore DSPs"/>
       <cmd name="  set power_rpt [report_power -return_string]"/>
@@ -195,7 +156,6 @@
       <cmd name="  puts $ofile_report &quot;&lt;document&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;  &lt;application&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;    &lt;section stringID=\\&quot;XILINX_SYNTHESIS_SUMMARY\\&quot;&gt;&quot;"/>
-      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_LUT_FLIP_FLOP_PAIRS_USED\\&quot; value=\\&quot;$LUTFFPairs\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE\\&quot; value=\\&quot;$Slice\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE_REGISTERS\\&quot; value=\\&quot;$SliceRegisters\\&quot;/&gt;&quot;"/>
       <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;XILINX_SLICE_LUTS\\&quot; value=\\&quot;$SliceLUTs\\&quot;/&gt;&quot;"/>
