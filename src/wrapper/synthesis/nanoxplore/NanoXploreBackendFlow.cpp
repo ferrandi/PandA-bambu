@@ -308,8 +308,8 @@ void NanoXploreBackendFlow::InitDesignParameters()
    actual_parameters->parameter_values[PARAM_target_device] = device_string;
    actual_parameters->parameter_values[PARAM_target_family] = family;
 
-   std::string HDL_files = actual_parameters->parameter_values[PARAM_HDL_files];
-   std::vector<std::string> file_list = string_to_container<std::vector<std::string>>(HDL_files, ";");
+   const auto file_list =
+       string_to_container<std::vector<std::string>>(actual_parameters->parameter_values[PARAM_HDL_files], ";");
    std::string sources_macro_list;
    for(unsigned int v = 0; v < file_list.size(); v++)
    {
