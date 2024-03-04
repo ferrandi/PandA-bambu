@@ -67,7 +67,6 @@
 #define XST_NUMBER_OF_LUT_FLIP_FLOP_PAIRS_USED "XST_NUMBER_OF_LUT_FLIP_FLOP_PAIRS_USED"
 #define XST_NUMBER_OF_BLOCK_RAMFIFO "XST_NUMBER_OF_BLOCK_RAMFIFO"
 
-#define VIVADO_XILINX_LUT_FLIP_FLOP_PAIRS_USED "XILINX_LUT_FLIP_FLOP_PAIRS_USED"
 #define VIVADO_XILINX_SLICE "XILINX_SLICE"
 #define VIVADO_XILINX_SLICE_REGISTERS "XILINX_SLICE_REGISTERS"
 #define VIVADO_XILINX_SLICE_LUTS "XILINX_SLICE_LUTS"
@@ -651,10 +650,6 @@ void XilinxBackendFlow::CheckSynthesisResults()
       vivado_xparse_utilization(report_filename);
       area_m = area_info::factory(Param);
       area_m->set_area_value(design_values[VIVADO_XILINX_SLICE_LUTS]);
-      if(design_values[VIVADO_XILINX_LUT_FLIP_FLOP_PAIRS_USED] != 0.0)
-      {
-         area_m->set_resource_value(area_info::LUT_FF_PAIRS, design_values[VIVADO_XILINX_LUT_FLIP_FLOP_PAIRS_USED]);
-      }
 
       if(design_values[VIVADO_XILINX_SLICE_LUTS] != 0.0)
       {
