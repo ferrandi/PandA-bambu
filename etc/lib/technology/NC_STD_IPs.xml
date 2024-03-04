@@ -1651,7 +1651,7 @@ generate
         Wready &lt;= 0;
         if(we &amp;&amp; base_addr &lt;= Waddr)
         begin
-          m_utils.write_sa(Wdata, Wsize, Waddr);
+          void'(m_utils.write_sa(Wdata, Wsize, Waddr));
           Wready &lt;= 1;
           if(MEM_DUMP)
           begin
@@ -1667,7 +1667,7 @@ generate
         Wready &lt;= 0;
         if(we &amp;&amp; base_addr &lt;= Waddr)
         begin
-          m_utils.write_sa(Wdata, Wsize, Waddr);
+          void'(m_utils.write_sa(Wdata, Wsize, Waddr));
           Wready &lt;= 1;
           if(MEM_DUMP)
           begin
@@ -1824,7 +1824,7 @@ begin
     automatic ptr_t ptr_addr = addr;
     if(queue_next[1])
     begin
-      m_utils.write_strobe(Wdata, sel_om, ptr_addr);
+      void'(m_utils.write_strobe(Wdata, sel_om, ptr_addr));
     end
     else
     begin
@@ -2704,7 +2704,7 @@ generate
         if(queue_next[(WRITE_DELAY-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_ce+:BITSIZE_ce] === 1&apos;b1
           &amp;&amp; queue_next[(WRITE_DELAY-1)*BITSIZE_chunk+BITSIZE_item*i+OFFSET_we+:BITSIZE_we] === 1&apos;b1)
         begin
-          m_utils.write_a(data, address);
+          void'(m_utils.write_a(data, address));
         end
       end
     end
@@ -2716,7 +2716,7 @@ generate
         automatic reg [BITSIZE_d-1:0] data = current[BITSIZE_item*i+OFFSET_data+BITSIZE_d-1:BITSIZE_item*i+OFFSET_data];
         if(current[BITSIZE_item*i+OFFSET_ce+:BITSIZE_ce] === 1&apos;b1 &amp;&amp; current[BITSIZE_item*i+OFFSET_we+:BITSIZE_we] === 1&apos;b1)
         begin
-          m_utils.write_a(data, address);
+          void'(m_utils.write_a(data, address));
         end
       end
     end
