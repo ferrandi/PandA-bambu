@@ -232,7 +232,7 @@ jobs:
 
   gcc_regression_simple:
     needs: [build, specific-test]
-    runs-on: [self-hosted, mentor]
+    runs-on: [self-hosted, mentor, xilinx]
     env:
       outname: ${{matrix.setup}}_regression_simple
     strategy:
@@ -247,7 +247,7 @@ jobs:
             args: -c=--compiler=I386_CLANG4 -c=--simulator=MODELSIM 
           - setup: clang-6.0
             script: generic_gcc_regression_simple_bambu.sh
-            args: -c=--compiler=I386_CLANG6 -c=--simulator=MODELSIM 
+            args: -c=--compiler=I386_CLANG6 -c=--simulator=XSIM 
           - setup: clang-7
             script: generic_gcc_regression_simple_bambu.sh
             args: -c=--compiler=I386_CLANG7 -c=--simulator=VERILATOR -c=--verilator-parallel=4
@@ -747,21 +747,21 @@ jobs:
             args: ""
           - compiler: I386_GCC7
             script: generic_CHStone-memarch1.sh
-            args: -c=-wH
+            args: -c=-wH -c=--simulator=MODELSIM
           - compiler: I386_CLANG13
             script: generic_CHStone-memarch2.sh
             args: ""
           - compiler: I386_CLANG13
             script: generic_CHStone-memarch2.sh
-            args: -c=-wH
+            args: -c=-wH -c=--simulator=XSIM
           - compiler: I386_CLANG11
             script: generic_gcc-memarch3.sh
             args: ""
           - compiler: I386_CLANG11
             script: generic_gcc-memarch3.sh
-            args: -c=-wH
+            args: -c=-wH -c=--simulator=XSIM
     env:
-      args: -c=--simulator=MODELSIM  -c=--compiler=${{matrix.compiler}} ${{matrix.args}}
+      args: -c=--compiler=${{matrix.compiler}} ${{matrix.args}}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

@@ -83,12 +83,11 @@ jobs:
 
   regressions:
     needs: [setup]
-    runs-on: [self-hosted, long]
+    runs-on: [self-hosted, long, xilinx]
     env:
-      args: -c=--simulator=MODELSIM -c=-wH
+      args: -c=--simulator=XSIM -c=-wH
     strategy:
       fail-fast: false
-      max-parallel: 2
       matrix: ${{fromJson(needs.setup.outputs.grs-matrix)}}
     steps:
       - name: Checkout repository
@@ -137,14 +136,13 @@ jobs:
 
   libm:
     needs: [setup, regressions]
-    runs-on: [self-hosted, long]
+    runs-on: [self-hosted, long, xilinx]
     strategy:
       fail-fast: false
-      max-parallel: 2
       matrix: ${{fromJson(needs.setup.outputs.libm-matrix)}}
     env:
       script: generic_libm-tests.sh
-      args: -c=--simulator=MODELSIM -c=-wH
+      args: -c=--simulator=XSIM -c=-wH
       basename: libm-vhdl
     steps:
       - name: Checkout repository
