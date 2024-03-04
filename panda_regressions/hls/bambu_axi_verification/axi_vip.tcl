@@ -3,9 +3,9 @@ create_project -force axi_vip
 set top_fname $::env(TOP_FNAME)
 set vip_name ${top_fname}_VIP
 # Add top-level design and bambu simulation design
-add_file -norecurse $::env(OUT_DIR)/${top_fname}.v
-add_file -fileset sim_1 -norecurse $::env(OUT_DIR)/HLS_output/simulation/bambu_testbench.v
-set_property file_type SystemVerilog [get_files $::env(OUT_DIR)/HLS_output/simulation/bambu_testbench.v]
+add_file -norecurse ${top_fname}.v
+add_file -fileset sim_1 -norecurse HLS_output/simulation/bambu_testbench.v
+set_property file_type SystemVerilog [get_files HLS_output/simulation/bambu_testbench.v]
 # Create Vivado IP Integrator design
 create_bd_design $vip_name
 update_compile_order -fileset sources_1
@@ -49,7 +49,8 @@ set_property -name {xsim.elaborate.debug_level} -value {off} -objects [get_files
 set_property -name {xsim.elaborate.relax} -value {false} -objects [get_filesets sim_1]
 set_property -name {xsim.elaborate.mt_level} -value {off} -objects [get_filesets sim_1]
 set_property -name {xsim.elaborate.xelab.more_options} -value "-sv_root $::env(OUT_DIR)/HLS_output/xsim_beh -sv_lib libmdpi -define M64" -objects [get_filesets sim_1]
-set __testbench_pid [exec bash -c "LD_LIBRARY_PATH=\"\" $::env(OUT_DIR)/HLS_output/simulation/testbench |& tee $::env(OUT_DIR)/HLS_output/simulation/testbench.log" &]
+exec mkdir -p axi_vip.sim/sim_1/behav/xsim/HLS_output/simulation
+set __testbench_pid [exec bash -c "cd axi_vip.sim/sim_1/behav/xsim; LD_LIBRARY_PATH=\"\" $::env(OUT_DIR)/HLS_output/simulation/testbench |& tee HLS_output/simulation/testbench.log" &]
 launch_simulation
 set finished [catch {exec ps -p ${__testbench_pid} >/dev/null}]
 close_sim
