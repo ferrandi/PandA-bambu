@@ -152,7 +152,7 @@
       <cmd name="    return timing_table['Setup/Recovery'][:-2]"/>
 
       <cmd name="dir = os.getcwd()"/>
-      <cmd name="outdir = '${__nxpython_outdir__}/output'"/>
+      <cmd name="outdir = os.path.abspath('${__nxpython_outdir__}/output')"/>
       <cmd name="if path.exists(os.path.join(dir, 'pads.py')): os.remove(os.path.join(dir, 'pads.py'))" condition="!${__connect_iob__}"/>
       <cmd name="sys.path.append(dir)"/>
       <cmd name="project = createProject(outdir)"/>
@@ -160,8 +160,8 @@
       <cmd name="project.setVariantName('${__target_family__}-EMBEDDED')" condition="!${__connect_iob__}"/>
       <cmd name="project.setVariantName('${__target_family__}')" condition="${__connect_iob__}"/>
       <cmd name="project.setTopCellName('${__top_id__}')"/>
-      <cmd name="project.addFiles('${__VHDL_library__}', [${__nxpython_sources_macro_list__}])" condition="${__has_VHDL_library__}"/>
-      <cmd name="project.addFiles([${__nxpython_sources_macro_list__}])" condition="!${__has_VHDL_library__}"/>
+      <cmd name="project.addFiles('${__VHDL_library__}', list(map(lambda f: os.path.join(dir, f), [${__nxpython_sources_macro_list__}])))" condition="${__has_VHDL_library__}"/>
+      <cmd name="project.addFiles(list(map(lambda f: os.path.join(dir, f), [${__nxpython_sources_macro_list__}])))" condition="!${__has_VHDL_library__}"/>
       <cmd name="project.setOptions({'ManageAsynchronousReadPort': 'Yes', 'ManageUnconnectedOutputs': 'Ground', 'ManageUnconnectedSignals': 'Ground','DefaultRAMMapping': 'RAM', 'MaxRegisterCount': '12500'})"/>
       <cmd name="project.setOptions({'MappingEffort': 'High', 'TimingDriven': 'Yes'})"/>
       <cmd name="if nx_suite_version &gt;= 3: project.setOptions({'MappingEffort': 'High', 'TimingDriven': 'Yes', 'DensityEffort': 'Medium', 'BypassingEffort': 'High', 'PartitioningEffort': 'High', 'PolishingEffort': 'High', 'RoutingEffort': 'High'})"/>
@@ -206,7 +206,7 @@
       <cmd name="freq_mhz = 1000.0/(clock_period_ns - float(design_slack_ns))"/>
       <cmd name="power_W = power_estimation('${__target_family__}', 25, freq_mhz, int(LUTs), int(TotalRegisters), int(TotalMemBlocks), int(TotalDSPs))"/>
 
-      <cmd name="fw = open('/${__nxpython_report__}', &quot;w&quot;)"/>
+      <cmd name="fw = open(os.path.join(dir, '${__nxpython_report__}'), &quot;w&quot;)"/>
       <cmd name="fw.write('&lt;?xml version=\\&quot;1.0\\&quot;?&gt;\\n')"/>
       <cmd name="fw.write('&lt;document&gt;\\n')"/>
       <cmd name="fw.write('  &lt;application&gt;\\n')"/>
