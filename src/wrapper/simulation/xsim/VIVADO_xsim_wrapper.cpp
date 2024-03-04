@@ -76,8 +76,7 @@ void VIVADO_xsim_wrapper::CheckExecution()
 {
 }
 
-static const std::string& create_project_file(const std::string& project_filename,
-                                              const std::list<std::string>& file_list)
+static void create_project_file(const std::filesystem::path& project_filename, const std::list<std::string>& file_list)
 {
    std::ofstream prj_file(project_filename);
    for(auto const& file : file_list)
@@ -100,10 +99,9 @@ static const std::string& create_project_file(const std::string& project_filenam
       {
          THROW_ERROR("Extension not recognized! " + extension.string());
       }
-      prj_file << " work " << file_path.string() << std::endl;
+      prj_file << " work " << file_path.lexically_proximate(project_filename.parent_path()).string() << std::endl;
    }
    prj_file.close();
-   return project_filename;
 }
 
 std::string VIVADO_xsim_wrapper::GenerateScript(std::ostream& script, const std::string& top_filename,
@@ -151,7 +149,8 @@ std::string VIVADO_xsim_wrapper::GenerateScript(std::ostream& script, const std:
       }
       return flags;
    }();
-   const auto prj_file = create_project_file(XSIM_SUBDIR + suffix + "/" + top_filename + ".prj", file_list);
+   const auto prj_file = XSIM_SUBDIR + suffix + "/" + top_filename + ".prj";
+   create_project_file(prj_file, file_list);
 
    std::string sim_cmd =
        "rm -rf xsim.* xelab.*; " XSIM_XELAB " -sv_root ${BEH_DIR} -sv_lib libmdpi " + vflags + " -prj " + prj_file;
