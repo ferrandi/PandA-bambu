@@ -454,7 +454,7 @@ begin: write_seq
     test_data <= next_awqueue[OFFSET_data+:BITSIZE_data];
     bid <= next_awqueue[OFFSET_id+:BITSIZE_id];
     write_done <= 1;
-    m_utils.write_strobe(next_awqueue[OFFSET_data+:BITSIZE_data], next_awqueue[OFFSET_wstrb+:BITSIZE_wstrb], currAddr);
+    void'(m_utils.write_strobe(next_awqueue[OFFSET_data+:BITSIZE_data], next_awqueue[OFFSET_wstrb+:BITSIZE_wstrb], currAddr));
   end
 end
 )";
