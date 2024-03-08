@@ -9495,6 +9495,220 @@ begin
       </circuit>
     </cell>
     <cell>
+      <name>STD_SP_BRAM_BE</name>
+      <circuit>
+        <component_o id="STD_SP_BRAM_BE">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2024-2024 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="STD_SP_BRAM_BE"/>
+          <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
+          <parameter name="n_elements">32</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
+          <parameter name="HIGH_LATENCY">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="write_enable" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="data_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="address_inr" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="address_inw" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="data_out" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="STD_SP_BRAM_BE write_enable data_in address_inr address_inw data_out MEMORY_INIT_file n_elements READ_ONLY_MEMORY HIGH_LATENCY" VERILOG_PROVIDED="
+wire [BITSIZE_address_inr-1:0] address_inr_mem;
+reg [BITSIZE_address_inr-1:0] address_inr1;
+wire [BITSIZE_address_inw-1:0] address_inw_mem;
+reg [BITSIZE_address_inw-1:0] address_inw1;
+
+wire [BITSIZE_write_enable-1:0] write_enable_mem;
+reg [BITSIZE_write_enable-1:0] write_enable1;
+
+reg [BITSIZE_data_out-1:0] data_out_mem;
+reg [BITSIZE_data_out-1:0] data_out1;
+
+wire [BITSIZE_data_in-1:0] data_in_mem;
+reg [BITSIZE_data_in-1:0] data_in1;
+integer index;
+
+reg [BITSIZE_data_out-1:0] memory [0:n_elements-1]/* synthesis syn_ramstyle =  &quot;no_rw_check&quot; */;
+
+initial
+begin
+  if (MEMORY_INIT_file != &quot;&quot;)
+    $readmemb(MEMORY_INIT_file, memory, 0, n_elements-1);
+  else
+  begin
+    for(index=0; index&lt;n_elements; index=index+1)
+    begin
+      memory[index] = 0;
+    end
+  end
+end
+
+always @(posedge clock)
+begin
+  if(READ_ONLY_MEMORY==0)
+  begin
+    for (i11=0; (i11*8)&lt;BITSIZE_data_out; i11=i11+1)
+    begin : L11_write_a
+      if(HIGH_LATENCY==0||HIGH_LATENCY==1)
+      begin
+        if(write_enable_mem[i11])
+          memory[address_inw_mem][i11*8+:8] &lt;= data_in_mem[i11*8+:8];
+      end
+      else
+      begin
+        if(write_enable_mem[i11])
+          memory[address_inw_mem][i11*8+:8] &lt;= data_in_mem[i11*8+:8];
+      end
+    end
+  end
+  data_out_mem &lt;= memory[address_inr_mem];
+end
+
+assign data_out = HIGH_LATENCY==0 ? data_out_mem : data_out1;
+always @(posedge clock)
+  data_out1 &lt;= data_out_mem;
+
+
+generate
+  if(HIGH_LATENCY==2)
+  begin
+    always @ (posedge clock)
+    begin
+       address_inr1 &lt;= address_inr;
+       address_inw1 &lt;= address_inw;
+       write_enable1 &lt;= write_enable;
+       data_in1 &lt;= data_in;
+    end
+    assign address_inr_mem = address_inr1;
+    assign address_inw_mem = address_inw1;
+    assign write_enable_mem = write_enable1;
+    assign data_in_mem = data_in1;
+  end
+  else
+  begin
+    assign address_inr_mem = address_inr;
+    assign address_inw_mem = address_inw;
+    assign write_enable_mem = write_enable;
+    assign data_in_mem = data_in;
+  end
+endgenerate
+" VHDL_PROVIDED="
+  signal address_inr_mem : std_logic_vector(BITSIZE_address_inr-1 downto 0);
+  signal address_inr1 : std_logic_vector(BITSIZE_address_inr-1 downto 0);
+  signal address_inw_mem : std_logic_vector(BITSIZE_address_inw-1 downto 0);
+  signal address_inw1 : std_logic_vector(BITSIZE_address_inw-1 downto 0);
+
+
+  signal write_enable_mem : std_logic_vector(BITSIZE_write_enable-1 downto 0);
+  signal write_enable1 : std_logic_vector(BITSIZE_write_enable-1 downto 0);
+
+  signal data_out_mem : std_logic_vector(BITSIZE_data_out-1 downto 0);
+  signal data_out1 : std_logic_vector(BITSIZE_data_out-1 downto 0);
+
+  signal data_in_mem : std_logic_vector(BITSIZE_data_in-1 downto 0);
+  signal data_in1 : std_logic_vector(BITSIZE_data_in-1 downto 0);
+
+  type mem_type is array (n_elements-1 downto 0) of std_logic_vector(BITSIZE_data_out-1 downto 0);
+
+  impure function InitMemFromFile (MemFileName : in string) return mem_type is
+    FILE memfile : text open READ_MODE is MemFileName;
+    variable MemFileLine : line;
+    variable mem : mem_type;
+    begin
+       for i in 0 to n_elements-1 loop
+        readline(memfile, MemFileLine);
+        read(MemFileLine, mem(i));
+      end loop;
+      return mem;
+  end function;
+
+  shared variable mem : mem_type := InitMemFromFile(MEMORY_INIT_file);
+
+begin
+
+  DelayProcess : process(clock)
+  begin
+    if (clock&apos;event and clock=&apos;1&apos;) then
+       if(HIGH_LATENCY=2) then
+         address_inr1 &lt;= address_inr;
+         address_inw1 &lt;= address_inw;
+         write_enable1 &lt;= write_enable;
+         data_in1 &lt;= data_in;
+       end if;
+    end if;
+  end process;
+
+  address_inr_mem &lt;= address_inr1 when (HIGH_LATENCY=2) else address_inr;
+  address_inw_mem &lt;= address_inw1 when (HIGH_LATENCY=2) else address_inw;
+  write_enable_mem &lt;= write_enable1 when (HIGH_LATENCY=2) else write_enable;
+  data_in_mem &lt;= data_in1 when (HIGH_LATENCY=2) else data_in;
+
+  data_out &lt;= data_out_mem when (HIGH_LATENCY=0) else data_out1;
+
+  L1_registering : process(clock)
+  begin
+    if (clock&apos;event and clock=&apos;1&apos;) then
+      data_out1 &lt;= data_out_mem;
+    end if;
+  end process;
+
+  L1_single_proc : process(clock)
+  begin
+    if (clock&apos;event and clock=&apos;1&apos;) then
+      if(READ_ONLY_MEMORY=0) then
+        for index1 in 0 to n_byte_on_databus/8-1 loop
+           if(HIGH_LATENCY= 0 or HIGH_LATENCY = 1) then
+              if(write_enable_mem(index1)=&apos;1&apos;) then
+-- synthesis translate_off
+                 if (to_integer(unsigned(address_inw_mem)) &lt; n_elements) then
+-- synthesis translate_on
+                    memory(to_integer(unsigned(address_inw_mem)))((index1+1)*8-1 downto index1*8) := data_in_mem((index1+1)*8-1 downto index1*8);
+-- synthesis translate_off
+                 end if;
+-- synthesis translate_on
+              end if;
+           else
+              if(write_enable_mem(index1)=&apos;1&apos;) then
+-- synthesis translate_off
+                 if (to_integer(unsigned(address_inw_mem)) &lt; n_elements) then
+-- synthesis translate_on
+                    memory(to_integer(unsigned(address_inw_mem)))((index1+1)*8-1 downto index1*8) := data_in_mem((index1+1)*8-1 downto index1*8);
+-- synthesis translate_off
+                 end if;
+-- synthesis translate_on
+              end if;
+           end if;
+        end loop;
+      end if;
+-- synthesis translate_off
+      if (to_integer(unsigned(address_inr_mem)) &lt; n_elements) then
+-- synthesis translate_on
+        data_out_mem &lt;= mem(to_integer(unsigned(address_inr_mem)));
+-- synthesis translate_off
+      else
+        data_out_mem &lt;= (others =&gt; &apos;X&apos;);
+      end if;
+-- synthesis translate_on
+    end if;
+  end process;
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
       <name>STD_SP_BRAMFW</name>
       <circuit>
         <component_o id="STD_SP_BRAMFW">
@@ -9573,6 +9787,142 @@ begin
 end
 
 assign data_out_mem = write_enable_mem1 &amp;&amp; (address_inr_mem1 == address_inw_mem1) ? data_in_mem1 : data_out_mem_temp;
+
+assign data_out = HIGH_LATENCY==0 ? data_out_mem : data_out1;
+always @(posedge clock)
+  data_out1 &lt;= data_out_mem;
+
+always @ (posedge clock)
+begin
+  address_inr_mem1 &lt;= address_inr_mem;
+  address_inw_mem1 &lt;= address_inw_mem;
+  write_enable_mem1 &lt;= write_enable_mem;
+  data_in_mem1 &lt;= data_in_mem;
+end
+
+generate
+  if(HIGH_LATENCY==2)
+  begin
+    always @ (posedge clock)
+    begin
+       address_inr1 &lt;= address_inr;
+       address_inw1 &lt;= address_inw;
+       write_enable1 &lt;= write_enable;
+       data_in1 &lt;= data_in;
+    end
+    assign address_inr_mem = address_inr1;
+    assign address_inw_mem = address_inw1;
+    assign write_enable_mem = write_enable1;
+    assign data_in_mem = data_in1;
+  end
+  else
+  begin
+    assign address_inr_mem = address_inr;
+    assign address_inw_mem = address_inw;
+    assign write_enable_mem = write_enable;
+    assign data_in_mem = data_in;
+  end
+endgenerate
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>STD_SP_BRAMFW_BE</name>
+      <circuit>
+        <component_o id="STD_SP_BRAMFW_BE">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2020-2024 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="STD_SP_BRAMFW_BE"/>
+          <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
+          <parameter name="n_elements">32</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
+          <parameter name="HIGH_LATENCY">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="write_enable" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="data_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="address_inr" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="address_inw" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="data_out" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="STD_SP_BRAMFW_BE write_enable data_in address_inr address_inw data_out MEMORY_INIT_file n_elements READ_ONLY_MEMORY HIGH_LATENCY" VERILOG_PROVIDED="
+wire [BITSIZE_address_inr-1:0] address_inr_mem;
+reg [BITSIZE_address_inr-1:0] address_inr1;
+reg [BITSIZE_address_inr-1:0] address_inr_mem1;
+wire [BITSIZE_address_inw-1:0] address_inw_mem;
+reg [BITSIZE_address_inw-1:0] address_inw1;
+reg [BITSIZE_address_inw-1:0] address_inw_mem1;
+
+wire [BITSIZE_write_enable-1:0] write_enable_mem;
+reg [BITSIZE_write_enable-1:0] write_enable1;
+reg [BITSIZE_write_enable-1:0] write_enable_mem1;
+
+reg [BITSIZE_data_out-1:0] data_out_mem_temp;
+reg [BITSIZE_data_out-1:0] data_out1;
+reg [BITSIZE_data_out-1:0] data_out_mem;
+
+wire [BITSIZE_data_in-1:0] data_in_mem;
+reg [BITSIZE_data_in-1:0] data_in1;
+reg [BITSIZE_data_in-1:0] data_in_mem1;
+
+integer index;
+
+reg [BITSIZE_data_out-1:0] memory [0:n_elements-1]/* synthesis syn_ramstyle =  &quot;no_rw_check&quot; */;
+
+initial
+begin
+  if (MEMORY_INIT_file != &quot;&quot;)
+    $readmemb(MEMORY_INIT_file, memory, 0, n_elements-1);
+  else
+  begin
+    for(index=0; index&lt;n_elements; index=index+1)
+    begin
+      memory[index] = 0;
+    end
+  end
+end
+
+always @(posedge clock)
+begin
+  if(READ_ONLY_MEMORY==0)
+  begin
+    for (i11=0; (i11*8)&lt;BITSIZE_data_out; i11=i11+1)
+    begin : L11_write_a
+      if(HIGH_LATENCY==0||HIGH_LATENCY==1)
+      begin
+        if(write_enable_mem[i11])
+          memory[address_inw_mem][i11*8+:8] &lt;= data_in_mem[i11*8+:8];
+      end
+      else
+      begin
+        if(write_enable_mem[i11])
+          memory[address_inw_mem][i11*8+:8] &lt;= data_in_mem[i11*8+:8];
+      end
+    end
+  end
+  data_out_mem_temp &lt;= memory[address_inr_mem];
+end
+
+always @(*)
+begin
+  for (i12=0; (i12*8)&lt;BITSIZE_data_out; i12=i12+1)
+  begin : L12_select
+    data_out_mem[i12*8+:8] = write_enable_mem1[i12] &amp;&amp; (address_inr_mem1 == address_inw_mem1) ? data_in_mem1[i12*8+:8] : data_out_mem_temp[i12*8+:8];
+  end
+end
 
 assign data_out = HIGH_LATENCY==0 ? data_out_mem : data_out1;
 always @(posedge clock)
@@ -10585,6 +10935,88 @@ endgenerate"/>
       </circuit>
     </cell>
     <cell>
+      <name>STD_NR_BRAM_BE</name>
+      <circuit>
+        <component_o id="STD_NR_BRAM_BE">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2024-2024 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="STD_NR_BRAM_BE"/>
+          <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
+          <parameter name="n_elements">32</parameter>
+          <parameter name="forwarding">0</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
+          <parameter name="HIGH_LATENCY">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="write_enable" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_vector_o id="address_inr" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_o id="address_inw" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="data_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_vector_o id="data_out" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="STD_NR_BRAM_BE write_enable address_inr address_inw data_in data_out MEMORY_INIT_file n_elements forwarding READ_ONLY_MEMORY HIGH_LATENCY" IP_COMPONENT="STD_SP_BRAM_BE,STD_SP_BRAMFW_BE" VERILOG_PROVIDED="
+generate
+genvar i1;
+  for (i1=0; i1&lt;PORTSIZE_address_inr; i1=i1+1)
+  begin : L1
+    if(forwarding)
+    begin
+      STD_SP_BRAMFW_BE #(
+        .BITSIZE_address_inr(BITSIZE_address_inr),
+        .BITSIZE_address_inw(BITSIZE_address_inw),
+        .BITSIZE_data_in(BITSIZE_data_in),
+        .BITSIZE_data_out(BITSIZE_data_out),
+        .MEMORY_INIT_file(MEMORY_INIT_file),
+        .n_elements(n_elements),
+        .READ_ONLY_MEMORY(READ_ONLY_MEMORY),
+        .HIGH_LATENCY(HIGH_LATENCY)
+        )
+      STD_SP_BRAMFW_instance (
+        .clock(clock),
+        .write_enable(write_enable),
+        .address_inr(address_inr[(i1+1)*BITSIZE_address_inr-1:i1*BITSIZE_address_inr]),
+        .address_inw(address_inw),
+        .data_in(data_in),
+        .data_out(data_out[(i1+1)*BITSIZE_data_out-1:i1*BITSIZE_data_out]));
+    end
+    else
+    begin
+      STD_SP_BRAM_BE #(
+        .BITSIZE_address_inr(BITSIZE_address_inr),
+        .BITSIZE_address_inw(BITSIZE_address_inw),
+        .BITSIZE_data_in(BITSIZE_data_in),
+        .BITSIZE_data_out(BITSIZE_data_out),
+        .MEMORY_INIT_file(MEMORY_INIT_file),
+        .n_elements(n_elements),
+        .READ_ONLY_MEMORY(READ_ONLY_MEMORY),
+        .HIGH_LATENCY(HIGH_LATENCY)
+        )
+      STD_SP_BRAM_instance (
+        .clock(clock),
+        .write_enable(write_enable),
+        .address_inr(address_inr[(i1+1)*BITSIZE_address_inr-1:i1*BITSIZE_address_inr]),
+        .address_inw(address_inw),
+        .data_in(data_in),
+        .data_out(data_out[(i1+1)*BITSIZE_data_out-1:i1*BITSIZE_data_out]));
+    end
+  end
+endgenerate"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
       <name>STD_NRNW_BRAM</name>
       <circuit>
         <component_o id="STD_NRNW_BRAM">
@@ -10860,6 +11292,193 @@ genvar ii1;
     STD_NR_BRAM_instance (
       .clock(clock),
       .write_enable(write_enable_mem1[ii1]),
+      .address_inr(address_inr_mem),
+      .address_inw(address_inw_mem1[ii1*BITSIZE_address_inw+:BITSIZE_address_inw]),
+      .data_in(WriteFeedBackData[ii1*BITSIZE_data_in+:BITSIZE_data_in]),
+      .data_out(ReadDataOut[ii1*BITSIZE_dout_value*(PORTSIZE_address_inr)+:BITSIZE_dout_value*(PORTSIZE_address_inr)]));
+  end
+endgenerate
+integer i1,i2,i3;
+always @(*)
+begin
+  for(i1=0;i1&lt;PORTSIZE_address_inr;i1=i1+1)
+  begin
+    ReadData[i1*BITSIZE_dout_value+:BITSIZE_dout_value] = ReadDataOut[i1*BITSIZE_dout_value+:BITSIZE_dout_value];
+    for(i2=1;i2&lt;PORTSIZE_address_inw;i2=i2+1)
+    begin
+      ReadData[i1*BITSIZE_dout_value+:BITSIZE_dout_value] = ReadData[i1*BITSIZE_dout_value+:BITSIZE_dout_value]^ReadDataOut[(i2*PORTSIZE_address_inw+i1)*BITSIZE_dout_value+:BITSIZE_dout_value];
+    end
+  end
+  for(i1=0;i1&lt;PORTSIZE_address_inw;i1=i1+1)
+    WriteFeedBackData[i1*BITSIZE_data_in+:BITSIZE_data_in] = data_in_mem1[i1*BITSIZE_data_in+:BITSIZE_data_in];
+  for(i1=0;i1&lt;PORTSIZE_address_inw;i1=i1+1)
+  begin
+    i3 = 0;
+    for(i2=0;i2&lt;PORTSIZE_address_inw-1;i2=i2+1)
+    begin
+      i3=i3+(i2==i1);
+      ReadFeedBackAddr[(i1*(PORTSIZE_address_inw-1)+i2)*BITSIZE_address_inw+:BITSIZE_address_inw] = address_inw_mem[i3*BITSIZE_address_inw+:BITSIZE_address_inw];
+      WriteFeedBackData[i3*BITSIZE_data_in+:BITSIZE_data_in] = WriteFeedBackData[i3*BITSIZE_data_in+:BITSIZE_data_in]^ReadFeedBackData[(i1*(PORTSIZE_address_inw-1)+i2)*BITSIZE_data_in+:BITSIZE_data_in];
+      i3=i3+1;
+    end
+  end
+end
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>STD_NRNW_BRAM_XOR_BE</name>
+      <circuit>
+        <component_o id="STD_NRNW_BRAM_XOR_BE">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2023-2024 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="STD_NRNW_BRAM_XOR_BE"/>
+          <parameter name="MEMORY_INIT_file">&quot;&quot;array_a.mem&quot;&quot;</parameter>
+          <parameter name="n_elements">32</parameter>
+          <parameter name="READ_ONLY_MEMORY">0</parameter>
+          <parameter name="HIGH_LATENCY">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_vector_o id="write_enable" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="address_inr" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="address_inw" dir="IN" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="data_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <port_vector_o id="dout_value" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="STD_NRNW_BRAM_XOR_BE write_enable address_inr address_inw data_in dout_value MEMORY_INIT_file n_elements READ_ONLY_MEMORY HIGH_LATENCY"
+            IP_COMPONENT="STD_NR_BRAM_BE"
+            VERILOG_PROVIDED="
+`ifndef _SIM_HAVE_CLOG2
+  function integer log2;
+     input integer value;
+     integer temp_value;
+    begin
+      temp_value = value-1;
+      for (log2=0; temp_value&gt;0; log2=log2+1)
+        temp_value = temp_value&gt;&gt;1;
+    end
+  endfunction
+`endif
+`ifdef _SIM_HAVE_CLOG2
+  localparam nbit_write = PORTSIZE_address_inw == 1 ? 1 : $clog2(PORTSIZE_address_inw);
+`else
+  localparam nbit_write = PORTSIZE_address_inw == 1 ? 1 : log2(PORTSIZE_address_inw);
+`endif
+
+reg [PORTSIZE_data_in*BITSIZE_data_in-1:0] WriteFeedBackData;
+wire [BITSIZE_dout_value*(PORTSIZE_address_inw*(PORTSIZE_address_inw-1))-1:0] ReadFeedBackData;
+reg [BITSIZE_address_inw*(PORTSIZE_address_inw*(PORTSIZE_address_inw-1))-1:0] ReadFeedBackAddr;
+reg [BITSIZE_dout_value*PORTSIZE_dout_value-1:0] ReadData;
+wire [BITSIZE_dout_value*PORTSIZE_dout_value*PORTSIZE_address_inw-1:0] ReadDataOut;
+
+wire [PORTSIZE_write_enable*BITSIZE_write_enable-1:0] write_enable_mem;
+wire [PORTSIZE_address_inw*BITSIZE_address_inw-1:0] address_inw_mem;
+wire [PORTSIZE_address_inr*BITSIZE_address_inr-1:0] address_inr_mem;
+wire [PORTSIZE_data_in*BITSIZE_data_in-1:0] data_in_mem;
+wire [PORTSIZE_dout_value*BITSIZE_dout_value-1:0] dout_value_mem;
+reg [PORTSIZE_dout_value*BITSIZE_dout_value-1:0] dout_value_mem1;
+
+reg [PORTSIZE_write_enable*BITSIZE_write_enable-1:0] write_enable_mem1;
+reg [PORTSIZE_address_inw*BITSIZE_address_inw-1:0] address_inw_mem1;
+reg [PORTSIZE_data_in*BITSIZE_data_in-1:0] data_in_mem1;
+
+reg [PORTSIZE_write_enable*BITSIZE_write_enable-1:0] write_enable1;
+reg [PORTSIZE_address_inw*BITSIZE_address_inw-1:0] address_inw1;
+reg [PORTSIZE_address_inr*BITSIZE_address_inr-1:0] address_inr1;
+reg [PORTSIZE_data_in*BITSIZE_data_in-1:0] data_in1;
+
+assign dout_value = HIGH_LATENCY==0 ? dout_value_mem : dout_value_mem1;
+always @(posedge clock)
+  dout_value_mem1 &lt;= dout_value_mem;
+
+
+generate
+  if(HIGH_LATENCY==2)
+  begin
+    always @ (posedge clock)
+    begin
+       address_inr1 &lt;= address_inr;
+       address_inw1 &lt;= address_inw;
+       write_enable1 &lt;= write_enable;
+       data_in1 &lt;= data_in;
+    end
+    assign address_inr_mem = address_inr1;
+    assign address_inw_mem = address_inw1;
+    assign write_enable_mem = write_enable1;
+    assign data_in_mem = data_in1;
+  end
+  else
+  begin
+    assign address_inr_mem = address_inr;
+    assign address_inw_mem = address_inw;
+    assign write_enable_mem = write_enable;
+    assign data_in_mem = data_in;
+  end
+endgenerate
+
+always @(posedge clock)
+begin
+  write_enable_mem1 &lt;= write_enable_mem;
+  address_inw_mem1 &lt;= address_inw_mem;
+  data_in_mem1 &lt;= data_in_mem;
+end
+
+assign dout_value_mem = ReadData;
+
+generate
+genvar ii1;
+  for (ii1=0; ii1&lt;PORTSIZE_address_inw; ii1=ii1+1)
+  begin : L1
+    STD_NR_BRAM_BE #(
+      .PORTSIZE_address_inr(PORTSIZE_address_inw-1),
+      .BITSIZE_address_inr(BITSIZE_address_inr),
+      .BITSIZE_address_inw(BITSIZE_address_inw),
+      .BITSIZE_data_in(BITSIZE_data_in),
+      .BITSIZE_data_out(BITSIZE_dout_value),
+      .PORTSIZE_data_out(PORTSIZE_address_inw-1),
+      .MEMORY_INIT_file(ii1 == 0 ? MEMORY_INIT_file : &quot;&quot;),
+      .n_elements(n_elements),
+      .forwarding(1),
+      .READ_ONLY_MEMORY(READ_ONLY_MEMORY),
+      .HIGH_LATENCY(0)
+    )
+    STD_NR_BRAM_FB_instance (
+      .clock(clock),
+      .write_enable(write_enable_mem1[ii1*BITSIZE_write_enable+:BITSIZE_write_enable]),
+      .address_inr(ReadFeedBackAddr[ii1*(BITSIZE_address_inw*(PORTSIZE_address_inw-1))+:(BITSIZE_address_inw*(PORTSIZE_address_inw-1))]),
+      .address_inw(address_inw_mem1[ii1*BITSIZE_address_inw+:BITSIZE_address_inw]),
+      .data_in(WriteFeedBackData[ii1*BITSIZE_data_in+:BITSIZE_data_in]),
+      .data_out(ReadFeedBackData[ii1*BITSIZE_dout_value*(PORTSIZE_address_inw-1)+:BITSIZE_dout_value*(PORTSIZE_address_inw-1)]));
+
+    STD_NR_BRAM_BE #(
+      .PORTSIZE_address_inr(PORTSIZE_address_inr),
+      .BITSIZE_address_inr(BITSIZE_address_inr),
+      .BITSIZE_address_inw(BITSIZE_address_inw),
+      .BITSIZE_data_in(BITSIZE_data_in),
+      .BITSIZE_data_out(BITSIZE_dout_value),
+      .PORTSIZE_data_out(PORTSIZE_address_inr),
+      .MEMORY_INIT_file(ii1 == 0 ? MEMORY_INIT_file : &quot;&quot;),
+      .n_elements(n_elements),
+      .forwarding(1),
+      .READ_ONLY_MEMORY(READ_ONLY_MEMORY),
+      .HIGH_LATENCY(0)
+    )
+    STD_NR_BRAM_instance (
+      .clock(clock),
+      .write_enable(write_enable_mem1[ii1*BITSIZE_write_enable+:BITSIZE_write_enable]),
       .address_inr(address_inr_mem),
       .address_inw(address_inw_mem1[ii1*BITSIZE_address_inw+:BITSIZE_address_inw]),
       .data_in(WriteFeedBackData[ii1*BITSIZE_data_in+:BITSIZE_data_in]),
