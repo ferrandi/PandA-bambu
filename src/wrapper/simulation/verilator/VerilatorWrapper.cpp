@@ -115,7 +115,7 @@ std::string VerilatorWrapper::GenerateScript(std::ostream& script, const std::st
       {
          flags += " +define+__M64";
       }
-      const auto inc_dir_list = string_to_container<std::vector<std::string>>(inc_dirs, ",");
+      const auto inc_dir_list = string_to_container<std::vector<std::string>>(inc_dirs, ";");
       for(const auto& inc : inc_dir_list)
       {
          flags += " +incdir+" + inc;
