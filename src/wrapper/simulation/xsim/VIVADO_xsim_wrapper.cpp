@@ -142,6 +142,7 @@ std::string VIVADO_xsim_wrapper::GenerateScript(std::ostream& script, const std:
       {
          flags += " -define GENERATE_VCD_DISCREPANCY";
       }
+      flags += "  -define __BAMBU_SIM__";
       const auto inc_dir_list = string_to_container<std::vector<std::string>>(inc_dirs, ";");
       for(const auto& inc : inc_dir_list)
       {

@@ -125,6 +125,7 @@ std::string modelsimWrapper::GenerateScript(std::ostream& script, const std::str
       {
          flags += " +define+GENERATE_VCD_DISCREPANCY";
       }
+      flags += " +define+__BAMBU_SIM__";
       const auto inc_dir_list = string_to_container<std::vector<std::string>>(inc_dirs, ";");
       for(const auto& inc : inc_dir_list)
       {
