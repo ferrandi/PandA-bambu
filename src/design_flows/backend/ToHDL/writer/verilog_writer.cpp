@@ -484,6 +484,15 @@ std::string verilog_writer::may_slice_string(const structural_objectRef& cir)
    return "";
 }
 
+static std::string generateShortIdentifier(const std::string& input_string)
+{
+   std::hash<std::string> hasher;
+   size_t hash_value = hasher(input_string);
+   std::string short_identifier = std::to_string(hash_value);
+   short_identifier = short_identifier.substr(0, 10);
+   return "_D" + short_identifier;
+}
+
 void verilog_writer::write_library_declaration(const structural_objectRef& cir)
 {
    THROW_ASSERT(cir->get_kind() == component_o_K || cir->get_kind() == channel_o_K,
@@ -495,7 +504,35 @@ void verilog_writer::write_library_declaration(const structural_objectRef& cir)
       const auto IP_includes_list = string_to_container<std::vector<std::string>>(IP_includes, ";");
       for(const auto& inc : IP_includes_list)
       {
-         indented_output_stream->Append("`include \"" + inc + "\"\n");
+         std::string include_string;
+         std::string include_condition;
+         const auto pairs = string_to_container<std::vector<std::string>>(inc, ":");
+         if(pairs.size() == 1)
+         {
+            include_string = pairs.at(0);
+         }
+         else if(pairs.size() == 2)
+         {
+            include_condition = pairs.at(0);
+            include_string = pairs.at(1);
+         }
+         else
+         {
+            THROW_ERROR("wrong format for the include dirs");
+         }
+         auto unique_id = generateShortIdentifier(include_string);
+         if(!include_condition.empty())
+         {
+            indented_output_stream->Append("`ifdef " + include_condition + "\n");
+         }
+         indented_output_stream->Append("`ifndef " + unique_id + "\n");
+         indented_output_stream->Append("`define " + unique_id + "\n");
+         indented_output_stream->Append("`include \"" + include_string + "\"\n");
+         indented_output_stream->Append("`endif //" + unique_id + "\n");
+         if(!include_condition.empty())
+         {
+            indented_output_stream->Append("`endif //" + include_condition + "\n");
+         }
       }
    }
 }

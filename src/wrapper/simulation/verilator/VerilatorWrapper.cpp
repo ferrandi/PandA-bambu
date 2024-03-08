@@ -120,6 +120,7 @@ std::string VerilatorWrapper::GenerateScript(std::ostream& script, const std::st
       {
          flags += " +incdir+" + inc;
       }
+      flags += " +define+__BAMBU_SIM__";
       return flags;
    }();
 
