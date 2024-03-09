@@ -9559,7 +9559,8 @@ end
 always @(posedge clock)
 begin
   if(READ_ONLY_MEMORY==0)
-  begin
+  begin : memory_logic
+    integer i11;
     for (i11=0; (i11*8)&lt;BITSIZE_data_out; i11=i11+1)
     begin : L11_write_a
       if(HIGH_LATENCY==0||HIGH_LATENCY==1)
@@ -9898,7 +9899,8 @@ end
 always @(posedge clock)
 begin
   if(READ_ONLY_MEMORY==0)
-  begin
+  begin : memory_logic
+    integer i11;
     for (i11=0; (i11*8)&lt;BITSIZE_data_out; i11=i11+1)
     begin : L11_write_a
       if(HIGH_LATENCY==0||HIGH_LATENCY==1)
