@@ -1939,9 +1939,9 @@ end"/>
       <name>IOB_regfile_sp</name>
       <circuit>
         <component_o id="IOB_regfile_sp">
-          <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
-          <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
+          <description>Simple register file, part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2024-2024 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_regfile_sp"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -1963,35 +1963,29 @@ end"/>
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="IOB_regfile_sp addr w_data r_data" VERILOG_PROVIDED="
-localparam ADDR_W = BITSIZE_addr;
-localparam DATA_W = BITSIZE_w_data;
+integer index;
+localparam n_elements = 2**BITSIZE_addr;
 
-reg [DATA_W-1:0] reg_file [2**ADDR_W-1:0];
+reg [BITSIZE_w_data-1:0] memory [n_elements-1:0];
 
-//read
-assign r_data = reg_file[addr];
-
-//write
-genvar i;
-generate
-  for (i=0; i &lt; 2**ADDR_W; i=i+1) 
-  begin: register_file
-    always @(posedge clock)
-    begin
-      if(reset)
-      begin
-        reg_file[i] &lt;= {DATA_W{1&apos;b0}};
-      end
-      else if(we)
-      begin
-        if (addr == i)
-        begin
-          reg_file[i] &lt;= w_data;
-        end
-      end
-    end
+initial
+begin
+  for(index=0; index&lt;n_elements; index=index+1)
+  begin
+    memory[index] = 0;
   end
-endgenerate"/>
+end
+
+assign r_data = memory[addr];
+
+always @(posedge clock)
+begin
+  if (we)
+  begin
+    memory[addr] &lt;= w_data;
+  end
+end
+"/>
         </component_o>
       </circuit>
     </cell>
