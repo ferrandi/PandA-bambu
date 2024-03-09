@@ -1803,7 +1803,7 @@ iob_ram_2p_asym0 (.clock(clock),
         <component_o id="IOB_gen_sp_ram">
           <description>This component is based on the work available at https://github.com/IObundle/iob-cache and it is part of the BAMBU/PANDA IP LIBRARY</description>
           <copyright>Copyright (C) 2022-2024 Politecnico di Milano</copyright>
-          <authors>Claudio Barone &lt;claudio.barone@polimi.it&gt;</authors>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="IOB_gen_sp_ram"/>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -1824,22 +1824,33 @@ iob_ram_2p_asym0 (.clock(clock),
           <port_o id="data_in" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="IOB_gen_sp_ram we addr data_out data_in" IP_COMPONENT="IOB_ram_sp" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="IOB_gen_sp_ram we addr data_out data_in" IP_COMPONENT="STD_SP_BRAM_BE" VERILOG_PROVIDED="
 localparam ADDR_W = BITSIZE_addr;
-localparam DATA_W = BITSIZE_data_out;
+wire [BITSIZE_we-1:0] we1;
+
+STD_SP_BRAM_BE #(
+  .MEMORY_INIT_file(&quot;&quot;),
+  .n_elements(2**ADDR_W),
+  .READ_ONLY_MEMORY(0),
+  .HIGH_LATENCY(0),
+  .BITSIZE_write_enable(BITSIZE_we),
+  .BITSIZE_data_in(BITSIZE_data_in),
+  .BITSIZE_address_inr(BITSIZE_addr),
+  .BITSIZE_address_inw(BITSIZE_addr),
+  .BITSIZE_data_out(BITSIZE_data_out))
+iob_cache_mem (
+  .clock(clock),
+  .write_enable(we1),
+  .data_in(data_in),
+  .address_inr(addr),
+  .address_inw(addr),
+  .data_out(data_out));
+
 genvar i;
 generate
-  for (i = 0; i &lt; (DATA_W/8); i = i + 1)
-  begin : ram
-    IOB_ram_sp #(.BITSIZE_addr(ADDR_W),
-          .BITSIZE_dout(8),
-          .BITSIZE_din(8))
-    iob_cache_mem (.clock(clock),
-        .en(en),
-        .we(we[i]),
-        .addr(addr),
-        .dout(data_out[8*i +: 8]),
-        .din (data_in [8*i +: 8]));
+  for (i = 0; i &lt; BITSIZE_we; i = i + 1)
+  begin : we_loop
+    assign we1[i] = en &amp; we[i];
   end
 endgenerate"/>
         </component_o>
@@ -2681,12 +2692,12 @@ generate
       for(j = 0; j &lt; 2**LINE2MEM_W; j=j+1) 
       begin : line2mem_block
         for(i = 0; i &lt; BE_DATA_W/FE_DATA_W; i=i+1) 
-        begin : BE_FE_block
+        begin : BE_FE_block_LINE_OFF_W_GT_0_WRITE_BACK
           IOB_gen_sp_ram #(.BITSIZE_we(FE_DATA_W / 8),
             .BITSIZE_addr(LINE_OFF_W),
             .BITSIZE_data_out(FE_DATA_W),
             .BITSIZE_data_in(FE_DATA_W)) 
-          cache_memory (.clock(clock),
+          cache_memory_ram (.clock(clock),
             .en(valid || flush),
             .we({FE_NBYTES{way_hit[k]}} &amp; line_wstrb[(j*(BE_DATA_W/FE_DATA_W)+i)*FE_NBYTES +: FE_NBYTES]),
             .addr(flush ? flush_addr[LINE_OFF_W - 1 : 0] : (write_access &amp; way_hit[k] &amp; ((j*(BE_DATA_W/FE_DATA_W)+i) == offset))? index_reg : index),
@@ -2704,7 +2715,7 @@ generate
       for(j = 0; j &lt; 2**LINE2MEM_W; j=j+1) 
       begin : line2mem_block
         for(i = 0; i &lt; BE_DATA_W/FE_DATA_W; i=i+1) 
-        begin : BE_FE_block
+        begin : BE_FE_block_LINE_OFF_W_GT_0
           IOB_gen_sp_ram #(.BITSIZE_we(FE_DATA_W / 8),
             .BITSIZE_addr(LINE_OFF_W),
             .BITSIZE_data_out(FE_DATA_W),
@@ -2727,7 +2738,7 @@ generate
       for(j = 0; j &lt; 2**LINE2MEM_W; j=j+1) 
       begin : line2mem_block
         for(i = 0; i &lt; BE_DATA_W/FE_DATA_W; i=i+1) 
-        begin : BE_FE_block
+        begin : BE_FE_block_WRITE_BACK
           IOB_gen_sp_ram_no_addr #(.BITSIZE_we(FE_DATA_W / 8),
             .BITSIZE_data_out(FE_DATA_W),
             .BITSIZE_data_in(FE_DATA_W)) 
@@ -2749,7 +2760,7 @@ generate
       for(j = 0; j &lt; 2**LINE2MEM_W; j=j+1) 
       begin : line2mem_block
         for(i = 0; i &lt; BE_DATA_W/FE_DATA_W; i=i+1) 
-        begin : BE_FE_block
+        begin : BE_FE_block_ELSE
           IOB_gen_sp_ram_no_addr #(.BITSIZE_we(FE_DATA_W / 8),
             .BITSIZE_data_out(FE_DATA_W),
             .BITSIZE_data_in(FE_DATA_W)) 
