@@ -9561,18 +9561,10 @@ begin
   if(READ_ONLY_MEMORY==0)
   begin : memory_logic
     integer i11;
-    for (i11=0; (i11*8)&lt;BITSIZE_data_out; i11=i11+1)
+    for (i11=0; i11&lt;BITSIZE_write_enable; i11=i11+1)
     begin : L11_write_a
-      if(HIGH_LATENCY==0||HIGH_LATENCY==1)
-      begin
-        if(write_enable_mem[i11])
-          memory[address_inw_mem][i11*8+:8] &lt;= data_in_mem[i11*8+:8];
-      end
-      else
-      begin
-        if(write_enable_mem[i11])
-          memory[address_inw_mem][i11*8+:8] &lt;= data_in_mem[i11*8+:8];
-      end
+      if(write_enable_mem[i11])
+        memory[address_inw_mem][i11*8+:8] &lt;= data_in_mem[i11*8+:8];
     end
   end
   data_out_mem &lt;= memory[address_inr_mem];
@@ -9581,7 +9573,6 @@ end
 assign data_out = HIGH_LATENCY==0 ? data_out_mem : data_out1;
 always @(posedge clock)
   data_out1 &lt;= data_out_mem;
-
 
 generate
   if(HIGH_LATENCY==2)
@@ -9671,27 +9662,15 @@ begin
     if (clock&apos;event and clock=&apos;1&apos;) then
       if(READ_ONLY_MEMORY=0) then
         for index1 in 0 to n_byte_on_databus/8-1 loop
-           if(HIGH_LATENCY= 0 or HIGH_LATENCY = 1) then
-              if(write_enable_mem(index1)=&apos;1&apos;) then
+          if(write_enable_mem(index1)=&apos;1&apos;) then
 -- synthesis translate_off
-                 if (to_integer(unsigned(address_inw_mem)) &lt; n_elements) then
+            if (to_integer(unsigned(address_inw_mem)) &lt; n_elements) then
 -- synthesis translate_on
-                    memory(to_integer(unsigned(address_inw_mem)))((index1+1)*8-1 downto index1*8) := data_in_mem((index1+1)*8-1 downto index1*8);
+              memory(to_integer(unsigned(address_inw_mem)))((index1+1)*8-1 downto index1*8) := data_in_mem((index1+1)*8-1 downto index1*8);
 -- synthesis translate_off
-                 end if;
+            end if;
 -- synthesis translate_on
-              end if;
-           else
-              if(write_enable_mem(index1)=&apos;1&apos;) then
--- synthesis translate_off
-                 if (to_integer(unsigned(address_inw_mem)) &lt; n_elements) then
--- synthesis translate_on
-                    memory(to_integer(unsigned(address_inw_mem)))((index1+1)*8-1 downto index1*8) := data_in_mem((index1+1)*8-1 downto index1*8);
--- synthesis translate_off
-                 end if;
--- synthesis translate_on
-              end if;
-           end if;
+          end if;
         end loop;
       end if;
 -- synthesis translate_off
@@ -9901,26 +9880,18 @@ begin
   if(READ_ONLY_MEMORY==0)
   begin : memory_logic
     integer i11;
-    for (i11=0; (i11*8)&lt;BITSIZE_data_out; i11=i11+1)
+    for (i11=0; i11&lt;BITSIZE_write_enable; i11=i11+1)
     begin : L11_write_a
-      if(HIGH_LATENCY==0||HIGH_LATENCY==1)
-      begin
-        if(write_enable_mem[i11])
-          memory[address_inw_mem][i11*8+:8] &lt;= data_in_mem[i11*8+:8];
-      end
-      else
-      begin
-        if(write_enable_mem[i11])
-          memory[address_inw_mem][i11*8+:8] &lt;= data_in_mem[i11*8+:8];
-      end
+      if(write_enable_mem[i11])
+        memory[address_inw_mem][i11*8+:8] &lt;= data_in_mem[i11*8+:8];
     end
   end
-  data_out_mem_temp &lt;= memory[address_inr_mem];
+  data_out_mem &lt;= memory[address_inr_mem];
 end
 
 always @(*)
 begin
-  for (i12=0; (i12*8)&lt;BITSIZE_data_out; i12=i12+1)
+  for (i12=0; i12&lt;BITSIZE_write_enable; i12=i12+1)
   begin : L12_select
     data_out_mem[i12*8+:8] = write_enable_mem1[i12] &amp;&amp; (address_inr_mem1 == address_inw_mem1) ? data_in_mem1[i12*8+:8] : data_out_mem_temp[i12*8+:8];
   end
