@@ -131,7 +131,7 @@ std::string VerilatorWrapper::GenerateScript(std::ostream& script, const std::st
    script << "verilator"
 #endif
           << " --cc --exe --Mdir ${obj_dir} -Wno-fatal -Wno-lint -sv " << vflags
-          << " ${BEH_DIR}/libmdpi.so -O3  --output-split-cfuncs 3000  --output-split-ctrace 3000";
+          << " ${BEH_DIR}/libmdpi.so -O3 --unroll-count 10000 --output-split-cfuncs 3000  --output-split-ctrace 3000";
    if(!generate_vcd_output)
    {
       script << " --x-assign fast --x-initial fast --noassert";
