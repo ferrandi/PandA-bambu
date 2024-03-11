@@ -744,11 +744,18 @@ void HLSCWriter::WriteMainTestbench()
                }
                else
                {
+                  const auto ptd_type = tree_helper::CGetPointedType(arg_type);
                   const auto array_size = [&]() {
-                     const auto ptd_type = tree_helper::CGetPointedType(arg_type);
                      return tree_helper::IsArrayType(ptd_type) ? tree_helper::GetArrayTotalSize(ptd_type) : 1ULL;
                   }();
-                  arg_size = "sizeof(*" + arg_name + ") * " + std::to_string(array_size);
+                  if(tree_helper::IsVoidType(ptd_type))
+                  {
+                     arg_size = std::to_string(array_size);
+                  }
+                  else
+                  {
+                     arg_size = "sizeof(*" + arg_name + ") * " + std::to_string(array_size);
+                  }
                }
             }
          }
@@ -818,6 +825,7 @@ void HLSCWriter::WriteMainTestbench()
 #ifdef __cplusplus
 template <typename T> struct __m_type { typedef T type; };
 template <typename T> struct __m_type<T*> { typedef typename __m_type<T>::type type; };
+template <> struct __m_type<void*> { typedef typename __m_type<unsigned char>::type type; };
 #define m_getptrt(val) __m_type<typeof(val)>::type*
 #define m_getvalt(val) __m_type<typeof(val)>::type
 template <typename T> T* m_getptr(T& obj) { return &obj; }
@@ -834,7 +842,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
 #endif
 
 #define m_cmpval(ptra, ptrb) *(ptra) != *(ptrb)
-#define m_cmpmem(ptra, ptrb) memcmp(ptra, ptrb, sizeof(*ptrb))
+#define m_cmpmem(ptra, ptrb) memcmp(ptra, ptrb, sizeof(m_getvalt(ptrb)))
 #define m_cmpflt(ptra, ptrb) __m_float_distance(*(ptra), *(ptrb)) > max_ulp
 #define m_cmpflts(ptra, ptrb) __m_floats_distance(*(ptra), *(ptrb)) > max_ulp
 
@@ -847,7 +855,7 @@ template <typename T> T* m_getptr(T* obj) { return obj; }
    const size_t P##idx##_count_##suffix = P##idx##_size_##suffix / sizeof(m_getvalt(P##idx));                 \
    for(i = 0; i < P##idx##_count_##suffix; ++i)                                                               \
    {                                                                                                          \
-      if(m_cmp##cmp((m_getptrt(P##idx))P##idx##_##suffix + i, &m_getptr(P##idx)[i]))                          \
+      if(m_cmp##cmp((m_getptrt(P##idx))P##idx##_##suffix + i, (m_getptrt(P##idx))m_getptr(P##idx) + i))       \
       {                                                                                                       \
          error("Memory parameter %u (%zu/%zu) mismatch with respect to " #suffix " reference.\n", idx, i + 1, \
                P##idx##_count_##suffix);                                                                      \
