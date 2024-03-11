@@ -9540,6 +9540,7 @@ reg [BITSIZE_data_out-1:0] data_out1;
 wire [BITSIZE_data_in-1:0] data_in_mem;
 reg [BITSIZE_data_in-1:0] data_in1;
 integer index;
+integer i11;
 
 reg [BITSIZE_data_out-1:0] memory [0:n_elements-1]/* synthesis syn_ramstyle =  &quot;no_rw_check&quot; */;
 
@@ -9559,12 +9560,13 @@ end
 always @(posedge clock)
 begin
   if(READ_ONLY_MEMORY==0)
-  begin : memory_logic
-    integer i11;
+  begin
     for (i11=0; i11&lt;BITSIZE_write_enable; i11=i11+1)
     begin : L11_write_a
       if(write_enable_mem[i11])
+      begin
         memory[address_inw_mem][i11*8+:8] &lt;= data_in_mem[i11*8+:8];
+      end
     end
   end
   data_out_mem &lt;= memory[address_inr_mem];
@@ -9859,6 +9861,7 @@ reg [BITSIZE_data_in-1:0] data_in1;
 reg [BITSIZE_data_in-1:0] data_in_mem1;
 
 integer index;
+integer i11;
 
 reg [BITSIZE_data_out-1:0] memory [0:n_elements-1]/* synthesis syn_ramstyle =  &quot;no_rw_check&quot; */;
 
@@ -9878,8 +9881,7 @@ end
 always @(posedge clock)
 begin
   if(READ_ONLY_MEMORY==0)
-  begin : memory_logic
-    integer i11;
+  begin
     for (i11=0; i11&lt;BITSIZE_write_enable; i11=i11+1)
     begin : L11_write_a
       if(write_enable_mem[i11])
