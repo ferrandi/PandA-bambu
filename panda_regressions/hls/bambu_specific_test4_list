@@ -1,3 +1,5 @@
 bambu_specific_test4/dataflow.cpp --top-fname=dataflow_top --generate-tb=BENCHMARKS_ROOT/bambu_specific_test4/tb_dataflow.cpp
 bambu_specific_test4/duplicate.cpp --top-fname=dataflow_top --generate-tb=BENCHMARKS_ROOT/bambu_specific_test4/tb_dataflow.cpp
 bambu_specific_test4/multipath.cpp --top-fname=dataflow_top --generate-tb=BENCHMARKS_ROOT/bambu_specific_test4/tb_dataflow2.cpp
+bambu_specific_test4/multipath2.cpp --top-fname=dataflow_top --generate-tb=BENCHMARKS_ROOT/bambu_specific_test4/tb_dataflow2.cpp
+bambu_specific_test4/multipath3.cpp --top-fname=dataflow_top --generate-tb=BENCHMARKS_ROOT/bambu_specific_test4/tb_dataflow2.cpp

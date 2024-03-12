@@ -3057,7 +3057,8 @@ bool tree_helper::IsVariableType(const tree_nodeConstRef& node)
    return true;
 }
 
-static tree_nodeConstRef check_for_simple_pointer_arithmetic(const tree_nodeConstRef& node)
+static tree_nodeConstRef check_for_simple_pointer_arithmetic(const tree_nodeConstRef& node,
+                                                             std::vector<tree_nodeConstRef>* field_offset)
 {
    switch(GET_CONST_NODE(node)->get_kind())
    {
@@ -3069,32 +3070,36 @@ static tree_nodeConstRef check_for_simple_pointer_arithmetic(const tree_nodeCons
             const auto ae = GetPointer<const addr_expr>(GET_CONST_NODE(ga->op1));
             if(ae)
             {
-               return check_for_simple_pointer_arithmetic(ae->op);
+               return check_for_simple_pointer_arithmetic(ae->op, field_offset);
             }
             else
             {
                const auto ppe = GetPointer<const pointer_plus_expr>(GET_CONST_NODE(ga->op1));
                if(ppe)
                {
-                  return check_for_simple_pointer_arithmetic(ppe->op0);
+                  if(field_offset)
+                  {
+                     field_offset->push_back(ppe->op1);
+                  }
+                  return check_for_simple_pointer_arithmetic(ppe->op0, field_offset);
                }
                else
                {
                   const auto ne = GetPointer<const nop_expr>(GET_CONST_NODE(ga->op1));
                   if(ne)
                   {
-                     return check_for_simple_pointer_arithmetic(ne->op);
+                     return check_for_simple_pointer_arithmetic(ne->op, field_offset);
                   }
                   else
                   {
                      const auto vce = GetPointer<const view_convert_expr>(GET_CONST_NODE(ga->op1));
                      if(vce)
                      {
-                        return check_for_simple_pointer_arithmetic(vce->op);
+                        return check_for_simple_pointer_arithmetic(vce->op, field_offset);
                      }
                      else
                      {
-                        return check_for_simple_pointer_arithmetic(ga->op1);
+                        return check_for_simple_pointer_arithmetic(ga->op1, field_offset);
                      }
                   }
                }
@@ -3103,78 +3108,71 @@ static tree_nodeConstRef check_for_simple_pointer_arithmetic(const tree_nodeCons
          else if(GetPointer<const pointer_plus_expr>(GET_CONST_NODE(ga->op1)))
          {
             const auto ppe = GetPointer<const pointer_plus_expr>(GET_CONST_NODE(ga->op1));
-            return check_for_simple_pointer_arithmetic(ppe->op0);
+            if(field_offset)
+            {
+               field_offset->push_back(ppe->op1);
+            }
+            return check_for_simple_pointer_arithmetic(ppe->op0, field_offset);
          }
          else if(GetPointer<const nop_expr>(GET_CONST_NODE(ga->op1)))
          {
             const auto ne = GetPointer<const nop_expr>(GET_CONST_NODE(ga->op1));
-            return check_for_simple_pointer_arithmetic(ne->op);
+            return check_for_simple_pointer_arithmetic(ne->op, field_offset);
          }
          else if(GetPointer<const view_convert_expr>(GET_CONST_NODE(ga->op1)))
          {
             const auto vce = GetPointer<const view_convert_expr>(GET_CONST_NODE(ga->op1));
-            return check_for_simple_pointer_arithmetic(vce->op);
+            return check_for_simple_pointer_arithmetic(vce->op, field_offset);
          }
          else
          {
-            return tree_nodeConstRef();
+            return {};
          }
       }
       case mem_ref_K:
       {
          const auto mr = GetPointer<const mem_ref>(GET_CONST_NODE(node));
-         return check_for_simple_pointer_arithmetic(mr->op0);
-      }
-      case target_mem_ref461_K:
-      {
-         const auto tmr = GetPointer<const target_mem_ref461>(GET_CONST_NODE(node));
-         return check_for_simple_pointer_arithmetic(tmr->base);
-      }
-      case component_ref_K:
-      {
-         const auto cr = GetPointer<const component_ref>(GET_CONST_NODE(node));
-         return check_for_simple_pointer_arithmetic(cr->op0);
-      }
-      case realpart_expr_K:
-      {
-         const auto rpe = GetPointer<const realpart_expr>(GET_CONST_NODE(node));
-         return check_for_simple_pointer_arithmetic(rpe->op);
-      }
-      case imagpart_expr_K:
-      {
-         const auto rpe = GetPointer<const imagpart_expr>(GET_CONST_NODE(node));
-         return check_for_simple_pointer_arithmetic(rpe->op);
-      }
-      case bit_field_ref_K:
-      {
-         const auto bfr = GetPointer<const bit_field_ref>(GET_CONST_NODE(node));
-         return check_for_simple_pointer_arithmetic(bfr->op0);
+         if(field_offset)
+         {
+            field_offset->push_back(mr->op1);
+         }
+         return check_for_simple_pointer_arithmetic(mr->op0, field_offset);
       }
       case pointer_plus_expr_K:
       {
          const auto ppe = GetPointer<const pointer_plus_expr>(GET_CONST_NODE(node));
-         return check_for_simple_pointer_arithmetic(ppe->op0);
+         if(field_offset)
+         {
+            field_offset->push_back(ppe->op1);
+         }
+         return check_for_simple_pointer_arithmetic(ppe->op0, field_offset);
       }
       case view_convert_expr_K:
       {
          const auto vce = GetPointer<const view_convert_expr>(GET_CONST_NODE(node));
-         return check_for_simple_pointer_arithmetic(vce->op);
+         return check_for_simple_pointer_arithmetic(vce->op, field_offset);
       }
       case addr_expr_K:
       {
          const auto ae = GetPointer<const addr_expr>(GET_CONST_NODE(node));
-         return check_for_simple_pointer_arithmetic(ae->op);
-      }
-      case array_ref_K:
-      {
-         const auto ar = GetPointer<const array_ref>(GET_CONST_NODE(node));
-         return check_for_simple_pointer_arithmetic(ar->op0);
+         if(GET_NODE(ae->op)->get_kind() != mem_ref_K && GET_NODE(ae->op)->get_kind() != var_decl_K &&
+            GET_NODE(ae->op)->get_kind() != function_decl_K)
+         {
+            THROW_ERROR("unexpected condition");
+         }
+         return check_for_simple_pointer_arithmetic(ae->op, field_offset);
       }
       case parm_decl_K:
       case var_decl_K:
       case ssa_name_K:
          return node;
 
+      case target_mem_ref461_K:
+      case component_ref_K:
+      case realpart_expr_K:
+      case imagpart_expr_K:
+      case bit_field_ref_K:
+      case array_ref_K:
       case binfo_K:
       case block_K:
       case call_expr_K:
@@ -3356,7 +3354,7 @@ static tree_nodeConstRef check_for_simple_pointer_arithmetic(const tree_nodeCons
       case insertelement_expr_K:
       case frem_expr_K:
       {
-         return tree_nodeConstRef();
+         return {};
       }
       default:
          THROW_UNREACHABLE("");
@@ -3372,7 +3370,8 @@ unsigned int tree_helper::get_base_index(const tree_managerConstRef& TM, const u
    return var ? GET_INDEX_CONST_NODE(var) : 0;
 }
 
-tree_nodeConstRef tree_helper::GetBaseVariable(const tree_nodeConstRef& _node)
+tree_nodeConstRef tree_helper::GetBaseVariable(const tree_nodeConstRef& _node,
+                                               std::vector<tree_nodeConstRef>* field_offset)
 {
    THROW_ASSERT(_node && _node->get_kind() == tree_reindex_K, "expected valid tree node reindex");
    const auto node = GET_CONST_NODE(_node);
@@ -3389,13 +3388,22 @@ tree_nodeConstRef tree_helper::GetBaseVariable(const tree_nodeConstRef& _node)
             }
             else
             {
-               return GetBaseVariable(sn->use_set->variables.front());
+               return GetBaseVariable(sn->use_set->variables.front(), field_offset);
             }
          }
-         const auto base = check_for_simple_pointer_arithmetic(sn->CGetDefStmt());
+         std::vector<tree_nodeConstRef> local_field_offset;
+         const auto base =
+             check_for_simple_pointer_arithmetic(sn->CGetDefStmt(), field_offset ? &local_field_offset : nullptr);
          if(base)
          {
-            return GetBaseVariable(base);
+            if(field_offset && !local_field_offset.empty())
+            {
+               for(const auto& fld : local_field_offset)
+               {
+                  field_offset->push_back(fld);
+               }
+            }
+            return GetBaseVariable(base, field_offset);
          }
 
          if(sn->var)
@@ -3406,7 +3414,7 @@ tree_nodeConstRef tree_helper::GetBaseVariable(const tree_nodeConstRef& _node)
             }
             else
             {
-               return GetBaseVariable(sn->var);
+               return GetBaseVariable(sn->var, field_offset);
             }
          }
          else
@@ -3425,57 +3433,65 @@ tree_nodeConstRef tree_helper::GetBaseVariable(const tree_nodeConstRef& _node)
       case indirect_ref_K:
       {
          const auto ir = GetPointerS<const indirect_ref>(node);
-         return GetBaseVariable(ir->op);
+         return GetBaseVariable(ir->op, field_offset);
       }
       case misaligned_indirect_ref_K:
       {
          const auto mir = GetPointerS<const misaligned_indirect_ref>(node);
-         return GetBaseVariable(mir->op);
+         return GetBaseVariable(mir->op, field_offset);
       }
       case mem_ref_K:
       {
          const auto mr = GetPointerS<const mem_ref>(node);
-         return GetBaseVariable(mr->op0);
+         auto baseVar = GetBaseVariable(mr->op0, field_offset);
+         if(baseVar && field_offset && IsStructType(baseVar))
+         {
+            return baseVar;
+         }
+         else
+         {
+            return baseVar;
+         }
       }
       case array_ref_K:
       {
          const auto ar = GetPointerS<const array_ref>(node);
-         return GetBaseVariable(ar->op0);
+         return GetBaseVariable(ar->op0, field_offset);
       }
       case component_ref_K:
       {
          const auto cr = GetPointerS<const component_ref>(node);
-         return GetBaseVariable(cr->op0);
+         return GetBaseVariable(cr->op0, field_offset);
       }
       case realpart_expr_K:
       {
          const auto rpe = GetPointerS<const realpart_expr>(node);
-         return GetBaseVariable(rpe->op);
+         return GetBaseVariable(rpe->op, field_offset);
       }
       case imagpart_expr_K:
       {
          const auto rpe = GetPointerS<const imagpart_expr>(node);
-         return GetBaseVariable(rpe->op);
+         return GetBaseVariable(rpe->op, field_offset);
       }
       case bit_field_ref_K:
       {
          const auto bfr = GetPointerS<const bit_field_ref>(node);
-         return GetBaseVariable(bfr->op0);
+         return GetBaseVariable(bfr->op0, field_offset);
       }
       case target_mem_ref_K:
       {
          const auto tmr = GetPointerS<const target_mem_ref>(node);
          if(tmr->symbol)
          {
-            return GetBaseVariable(tmr->symbol);
+            return GetBaseVariable(tmr->symbol, field_offset);
          }
          else if(tmr->base)
          {
-            return GetBaseVariable(tmr->base);
+            return GetBaseVariable(tmr->base, field_offset);
          }
          else if(tmr->idx)
          {
-            return GetBaseVariable(tmr->idx);
+            return GetBaseVariable(tmr->idx, field_offset);
          }
          else
          {
@@ -3490,15 +3506,15 @@ tree_nodeConstRef tree_helper::GetBaseVariable(const tree_nodeConstRef& _node)
          const auto tmr = GetPointerS<const target_mem_ref461>(node);
          if(tmr->base)
          {
-            return GetBaseVariable(tmr->base);
+            return GetBaseVariable(tmr->base, field_offset);
          }
          else if(tmr->idx)
          {
-            return GetBaseVariable(tmr->idx);
+            return GetBaseVariable(tmr->idx, field_offset);
          }
          else if(tmr->idx2)
          {
-            return GetBaseVariable(tmr->idx2);
+            return GetBaseVariable(tmr->idx2, field_offset);
          }
          else
          {
@@ -3910,7 +3926,7 @@ bool tree_helper::IsPointerResolved(const tree_nodeConstRef& _node, CustomOrdere
          }
          else
          {
-            const auto base = check_for_simple_pointer_arithmetic(sn->CGetDefStmt());
+            const auto base = check_for_simple_pointer_arithmetic(sn->CGetDefStmt(), nullptr);
             if(base)
             {
                return IsPointerResolved(base, res_set);

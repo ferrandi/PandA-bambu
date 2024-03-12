@@ -257,9 +257,10 @@ static std::vector<tree_nodeRef> GetCallArgs(tree_nodeRef stmt)
 }
 
 static tree_nodeConstRef ResolvePointerAlias(const CallGraphManagerConstRef& CGM, const tree_managerConstRef& TM,
-                                             const tree_nodeConstRef& var, unsigned int fid)
+                                             const tree_nodeConstRef& var, unsigned int fid,
+                                             std::vector<tree_nodeConstRef>* field_offset)
 {
-   const auto base_var = tree_helper::GetBaseVariable(var);
+   const auto base_var = tree_helper::GetBaseVariable(var, field_offset);
    if(const auto pd = GetPointer<const parm_decl>(GET_CONST_NODE(base_var)))
    {
       const auto [caller_id, call_id] = GetCallStmt(CGM, fid);
@@ -275,7 +276,7 @@ static tree_nodeConstRef ResolvePointerAlias(const CallGraphManagerConstRef& CGM
          const auto call_args = GetCallArgs(TM->CGetTreeReindex(call_id));
          THROW_ASSERT(call_args.size() == fd->list_of_args.size(),
                       "Expected formal and actual parameters' count match.");
-         return ResolvePointerAlias(CGM, TM, call_args.at(parm_idx), caller_id);
+         return ResolvePointerAlias(CGM, TM, call_args.at(parm_idx), caller_id, field_offset);
       }
    }
    return base_var;
@@ -462,7 +463,26 @@ DesignFlowStep_Status InterfaceInfer::Exec()
          {
             if(tree_helper::IsPointerType(arg))
             {
-               const auto base_var = ResolvePointerAlias(CGM, TM, arg, caller_id);
+               std::vector<tree_nodeConstRef> field_offset;
+               unsigned int offset = 0;
+               const auto base_var = ResolvePointerAlias(CGM, TM, arg, caller_id, &field_offset);
+               if(!field_offset.empty())
+               {
+                  for(const auto& fld : field_offset)
+                  {
+                     auto offsetNode = GET_CONST_NODE(fld);
+                     if(offsetNode->get_kind() == integer_cst_K)
+                     {
+                        auto offsetValue = GetPointerS<const integer_cst>(offsetNode);
+                        offset += static_cast<unsigned>(offsetValue->value);
+                     }
+                     else
+                     {
+                        THROW_ERROR("Non-constant-offset for DATAFLOW bundle");
+                     }
+                  }
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Offset equal to " + STR(offset));
+               }
                const auto parm_attr = std::find_if(func_arch->parms.begin(), func_arch->parms.end(), [&](auto& it) {
                   return it.second.at(FunctionArchitecture::parm_index) == std::to_string(idx);
                });
@@ -488,7 +508,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                }
                else if(const auto dn = GetPointer<const decl_node>(GET_CONST_NODE(base_var)))
                {
-                  bundle_name = "DF_bambu_" + std::to_string(GET_INDEX_CONST_NODE(base_var));
+                  bundle_name = "DF_bambu_" + std::to_string(GET_INDEX_CONST_NODE(base_var)) + "FO" + STR(offset);
                }
                else
                {

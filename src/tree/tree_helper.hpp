@@ -814,7 +814,8 @@ class tree_helper
     * @param mem is the node of the memory access
     * @return the base variable of a memory access
     */
-   static tree_nodeConstRef GetBaseVariable(const tree_nodeConstRef& mem);
+   static tree_nodeConstRef GetBaseVariable(const tree_nodeConstRef& mem,
+                                            std::vector<tree_nodeConstRef>* field_offset = nullptr);
 
    static
        /// FIXME: to be remove after substitution with IsPointerResolved
