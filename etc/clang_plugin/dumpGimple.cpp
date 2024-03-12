@@ -37,6 +37,7 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
+// #undef NDEBUG
 #include "plugin_includes.hpp"
 
 #if HAVE_LIBBDD
@@ -562,6 +563,8 @@ namespace llvm
                   case llvm::Intrinsic::lifetime_start:
                   case llvm::Intrinsic::lifetime_end:
                   case llvm::Intrinsic::dbg_value:
+                  case llvm::Intrinsic::stacksave:
+                  case llvm::Intrinsic::stackrestore:
 #ifdef VVD
                   case llvm::Intrinsic::directive_scope_entry:
                   case llvm::Intrinsic::directive_scope_exit:
@@ -749,7 +752,6 @@ namespace llvm
             fd->print(llvm::errs());
             report_fatal_error("Plugin Error");
          }
-
          case llvm::Intrinsic::memset:
          {
             auto funType = cast<llvm::FunctionType>(fd->getValueType());
@@ -883,6 +885,14 @@ namespace llvm
                return "fmaxl";
             fd->print(llvm::errs());
             report_fatal_error("Plugin Error");
+         }
+         case llvm::Intrinsic::stacksave:
+         {
+            return "_llvm_stacksave_p0";
+         }
+         case llvm::Intrinsic::stackrestore:
+         {
+            return "_llvm_stackrestore_p0";
          }
 #ifdef VVD
          case llvm::Intrinsic::directive_scope_entry:
@@ -5529,25 +5539,27 @@ namespace llvm
       switch(id)
       {
          case llvm::Intrinsic::fabs:
-         case llvm::Intrinsic::sqrt:
-         case llvm::Intrinsic::memcpy:
-         case llvm::Intrinsic::memset:
-         case llvm::Intrinsic::memmove:
-         case llvm::Intrinsic::trap:
-         case llvm::Intrinsic::rint:
          case llvm::Intrinsic::fmuladd:
-         case llvm::Intrinsic::minnum:
          case llvm::Intrinsic::maxnum:
+         case llvm::Intrinsic::memcpy:
+         case llvm::Intrinsic::memmove:
+         case llvm::Intrinsic::memset:
+         case llvm::Intrinsic::minnum:
+         case llvm::Intrinsic::rint:
+         case llvm::Intrinsic::sqrt:
+         case llvm::Intrinsic::stackrestore:
+         case llvm::Intrinsic::stacksave:
+         case llvm::Intrinsic::trap:
 #if __clang_major__ > 7
          case llvm::Intrinsic::sadd_sat:
-         case llvm::Intrinsic::uadd_sat:
          case llvm::Intrinsic::ssub_sat:
+         case llvm::Intrinsic::uadd_sat:
          case llvm::Intrinsic::usub_sat:
 #endif
 #if __clang_major__ > 11
+         case llvm::Intrinsic::abs:
          case llvm::Intrinsic::fshl:
          case llvm::Intrinsic::fshr:
-         case llvm::Intrinsic::abs:
          case llvm::Intrinsic::smax:
          case llvm::Intrinsic::smin:
          case llvm::Intrinsic::umax:
@@ -5571,9 +5583,11 @@ namespace llvm
       switch(id)
       {
          case llvm::Intrinsic::dbg_value:
-         case llvm::Intrinsic::vastart:
-         case llvm::Intrinsic::vaend:
+         case llvm::Intrinsic::stackrestore:
+         case llvm::Intrinsic::stacksave:
          case llvm::Intrinsic::vacopy:
+         case llvm::Intrinsic::vaend:
+         case llvm::Intrinsic::vastart:
             return true;
          default:
             return false;
@@ -6295,6 +6309,17 @@ namespace llvm
                {
                   auto& ci = cast<llvm::CallInst>(*curInstIterator);
                   llvm::Function* Callee = ci.getCalledFunction();
+                  LLVM_DEBUG({
+                     llvm::dbgs() << "Intrinsic call:";
+                     ci.print(llvm::dbgs());
+                     llvm::dbgs() << "\n";
+                     if(Callee)
+                     {
+                        llvm::dbgs() << " callee(" << llvm::Intrinsic::getName(Callee->getIntrinsicID()) << "):\n";
+                        Callee->print(llvm::dbgs());
+                        llvm::dbgs() << "\n";
+                     }
+                  });
                   if(Callee && Callee->isIntrinsic() &&
                      (!skipIntrinsic(Callee->getIntrinsicID()) || fname == getIntrinsicName(Callee)))
                   {
