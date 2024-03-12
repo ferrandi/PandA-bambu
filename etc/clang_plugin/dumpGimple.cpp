@@ -2868,9 +2868,13 @@ namespace llvm
             return TYPE_SIZE(TREE_TYPE(t));
          else
          {
-            llvm::errs() << "Size type " << ValueTyNames[arraySize->getValueID()] << "\n";
+            llvm::errs() << "Dynamic size alloca instruction: ";
+            av->alloc_inst->print(llvm::errs());
+            llvm::errs() << "\n  Size value: ";
+            arraySize->print(llvm::errs());
+            llvm::errs() << "\n";
             stream.close();
-            report_fatal_error("Plugin error");
+            report_fatal_error("Unsupported dynamic memory allocation");
          }
       }
       else if(TREE_CODE(t) == GT(ORIGVAR_DECL))
