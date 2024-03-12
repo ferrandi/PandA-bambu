@@ -3172,11 +3172,13 @@ static tree_nodeConstRef check_for_simple_pointer_arithmetic(const tree_nodeCons
          }
          return check_for_simple_pointer_arithmetic(ae->op, field_offset);
       }
+      case array_ref_K:
+      {
+         const auto ar = GetPointer<const array_ref>(GET_CONST_NODE(node));
+         return check_for_simple_pointer_arithmetic(ar->op0);
+      }
       case parm_decl_K:
       case var_decl_K:
-      {
-         return node;
-      }
       case ssa_name_K:
       {
          auto ssa = GetPointerS<const ssa_name>(GET_CONST_NODE(node));
