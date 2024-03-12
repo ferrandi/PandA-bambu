@@ -79,18 +79,19 @@
 class PreserveSymbolList
 {
  public:
-   PreserveSymbolList()
+   void addSymbol(const llvm::StringRef& symbol)
    {
+      ExternalNames.insert(symbol);
    }
 
-   explicit PreserveSymbolList(const std::list<std::string>& symbolList)
+   llvm::StringSet<>::iterator begin()
    {
-      ExternalNames.insert(symbolList.begin(), symbolList.end());
+      return ExternalNames.begin();
    }
 
-   void addSymbols(const std::list<std::string>& symbolList)
+   llvm::StringSet<>::iterator end()
    {
-      ExternalNames.insert(symbolList.begin(), symbolList.end());
+      return ExternalNames.end();
    }
 
    bool operator()(const llvm::GlobalValue& GV)
@@ -102,7 +103,9 @@ class PreserveSymbolList
    // Contains the set of symbols loaded to preserve
    static llvm::StringSet<> ExternalNames;
 };
+
 llvm::StringSet<> PreserveSymbolList::ExternalNames;
+
 static PreserveSymbolList preservedSyms;
 
 #define DEF_BUILTIN(X, N, C, T, LT, B, F, NA, AT, IM, COND) N,
@@ -193,7 +196,7 @@ namespace llvm
                if(is_builtin_fn(fsymbol) || is_builtin_fn(fname))
                {
                   LLVM_DEBUG(llvm::dbgs() << "  builtin\n");
-                  symbolList.push_back(fsymbol);
+                  preservedSyms.addSymbol(fsymbol);
                }
                if(llvm::find(RootFunctionNames, fsymbol) != RootFunctionNames.end() ||
                   llvm::find(RootFunctionNames, fname) != RootFunctionNames.end())
@@ -204,7 +207,7 @@ namespace llvm
 #if __clang_major__ >= 7
                   F->setDSOLocal(false);
 #endif
-                  symbolList.push_back(fsymbol);
+                  preservedSyms.addSymbol(fsymbol);
                   hasTopFun = true;
                   /// in case add noalias
                   if(add_noalias)
@@ -261,7 +264,7 @@ namespace llvm
             {
                std::string substr;
                std::getline(ss, substr, ',');
-               symbolList.push_back(substr);
+               preservedSyms.addSymbol(substr);
             }
          }
 
@@ -322,17 +325,8 @@ namespace llvm
                                  << llvm::join(TopFunctionNames.begin(), TopFunctionNames.end(), ", ") << "\n"
                                  << "Root function symbols: "
                                  << llvm::join(RootFunctionNames.begin(), RootFunctionNames.end(), ", ") << "\n");
-         symbolList.push_back("signgam");
+         preservedSyms.addSymbol("signgam");
 
-         if(!Internalize_TFP)
-         {
-            for(auto& globalVar : M.getGlobalList())
-            {
-               const auto varName = globalVar.getName().str();
-               symbolList.push_back(varName);
-            }
-         }
-         preservedSyms.addSymbols(symbolList);
          if(!outdir_name.empty())
          {
             std::error_code EC;
@@ -342,9 +336,9 @@ namespace llvm
 #else
             llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
 #endif
-            for(auto symb : symbolList)
+            for(const auto& symb : preservedSyms)
             {
-               stream << symb << "\n";
+               stream << symb.getKey() << "\n";
             }
          }
 
@@ -402,7 +396,10 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_topfname)()
    return {LLVM_PLUGIN_API_VERSION, CLANG_VERSION_STRING(_plugin_topfname), "v0.12", [](llvm::PassBuilder& PB) {
               const auto load = [](llvm::ModulePassManager& MPM) {
                  MPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)());
-                 MPM.addPass(llvm::InternalizePass(preservedSyms));
+                 if(llvm::Internalize_TFP)
+                 {
+                    MPM.addPass(llvm::InternalizePass(preservedSyms));
+                 }
                  return true;
               };
               PB.registerPipelineParsingCallback([&](llvm::StringRef Name, llvm::ModulePassManager& MPM,
@@ -434,7 +431,10 @@ extern "C" ::llvm::PassPluginLibraryInfo LLVM_ATTRIBUTE_WEAK llvmGetPassPluginIn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)());
-   PM.add(llvm::createInternalizePass(preservedSyms));
+   if(llvm::Internalize_TFP)
+   {
+      PM.add(llvm::createInternalizePass(preservedSyms));
+   }
 }
 
 // These constructors add our pass to a list of global extensions.
