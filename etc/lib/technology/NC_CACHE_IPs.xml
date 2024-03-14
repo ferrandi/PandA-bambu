@@ -1846,13 +1846,8 @@ iob_cache_mem (
   .address_inw(addr),
   .data_out(data_out));
 
-genvar i;
-generate
-  for (i = 0; i &lt; BITSIZE_we; i = i + 1)
-  begin : we_loop
-    assign we1[i] = en &amp; we[i];
-  end
-endgenerate"/>
+assign we1 = {BITSIZE_we{en}} &amp; we;
+"/>
         </component_o>
       </circuit>
     </cell>
