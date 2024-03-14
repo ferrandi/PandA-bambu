@@ -3392,7 +3392,8 @@ std::string CompilerWrapper::readExternalSymbols(const std::filesystem::path& fi
          return Param->getOption<std::filesystem::path>(OPT_xml_memory_allocation);
       }
       /// load xml memory allocation file
-      const auto generate_xml = Param->getOption<std::filesystem::path>(OPT_output_temporary_directory) / filename.filename().concat(".memory_allocation.xml");
+      const auto generate_xml = Param->getOption<std::filesystem::path>(OPT_output_temporary_directory) /
+                                filename.filename().concat(".memory_allocation.xml");
       if((std::filesystem::exists(generate_xml)))
       {
          return generate_xml;
