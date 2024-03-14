@@ -3179,6 +3179,9 @@ static tree_nodeConstRef check_for_simple_pointer_arithmetic(const tree_nodeCons
       }
       case parm_decl_K:
       case var_decl_K:
+      {
+         return node;
+      }
       case ssa_name_K:
       {
          auto ssa = GetPointerS<const ssa_name>(GET_CONST_NODE(node));
