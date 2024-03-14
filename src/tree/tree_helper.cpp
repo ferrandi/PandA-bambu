@@ -3124,6 +3124,16 @@ static tree_nodeConstRef check_for_simple_pointer_arithmetic(const tree_nodeCons
             const auto vce = GetPointer<const view_convert_expr>(GET_CONST_NODE(ga->op1));
             return check_for_simple_pointer_arithmetic(vce->op, field_offset);
          }
+         else if(GetPointer<const addr_expr>(GET_CONST_NODE(ga->op1)))
+         {
+            const auto ae = GetPointer<const addr_expr>(GET_CONST_NODE(ga->op1));
+            if(GET_NODE(ae->op)->get_kind() != mem_ref_K && GET_NODE(ae->op)->get_kind() != var_decl_K &&
+               GET_NODE(ae->op)->get_kind() != function_decl_K)
+            {
+               THROW_ERROR("unexpected condition");
+            }
+            return check_for_simple_pointer_arithmetic(ae->op, field_offset);
+         }
          else
          {
             return {};
@@ -3164,8 +3174,19 @@ static tree_nodeConstRef check_for_simple_pointer_arithmetic(const tree_nodeCons
       }
       case parm_decl_K:
       case var_decl_K:
-      case ssa_name_K:
+      {
          return node;
+      }
+      case ssa_name_K:
+      {
+         auto ssa = GetPointerS<const ssa_name>(GET_CONST_NODE(node));
+         auto defStmt = ssa->CGetDefStmt();
+         if(GET_CONST_NODE(defStmt)->get_kind() == gimple_nop_K)
+         {
+            return node;
+         }
+         return check_for_simple_pointer_arithmetic(ssa->CGetDefStmt(), field_offset);
+      }
 
       case target_mem_ref461_K:
       case component_ref_K:
@@ -3380,7 +3401,7 @@ tree_nodeConstRef tree_helper::GetBaseVariable(const tree_nodeConstRef& _node,
       case ssa_name_K:
       {
          const auto sn = GetPointerS<const ssa_name>(node);
-         if(sn->use_set->is_a_singleton())
+         if(field_offset == nullptr && sn->use_set->is_a_singleton())
          {
             if(GET_CONST_NODE(sn->use_set->variables.front())->get_kind() == function_decl_K)
             {
