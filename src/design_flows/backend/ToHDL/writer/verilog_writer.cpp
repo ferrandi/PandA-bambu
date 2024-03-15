@@ -1544,7 +1544,7 @@ void verilog_writer::write_transition_output_functions(
       /// get the current output
       ++it;
 
-      std::vector<std::string> current_output = SplitString(*it, "/");
+      const auto current_output = string_to_container<std::vector<std::string>>(*it, "/");
 
       /// check if we can skip this state
       bool skip_state = !single_proc && output_index != mod->get_out_port_size() &&
@@ -1567,7 +1567,7 @@ void verilog_writer::write_transition_output_functions(
                ++itt;
             }
             ++itt;
-            std::vector<std::string> transition_outputs = SplitString(*itt, "/");
+            const auto transition_outputs = string_to_container<std::vector<std::string>>(*itt, "/");
             ++itt;
             THROW_ASSERT(itt == transition_tokens.end(), "Bad transition format");
             if(transition_outputs[output_index] != "-")
@@ -1683,7 +1683,6 @@ void verilog_writer::write_transition_output_functions(
                }
                std::string next_state = *itt;
                ++itt;
-               // std::vector<std::string> transition_outputs = SplitString(*itt, "/");
                ++itt;
                THROW_ASSERT(itt == transition_tokens.end(), "Bad transition format");
                if((i + 1) < state_transitions.size())
@@ -1779,7 +1778,7 @@ void verilog_writer::write_transition_output_functions(
             }
             std::string next_state = *itt;
             ++itt;
-            std::vector<std::string> transition_outputs = SplitString(*itt, "/");
+            const auto transition_outputs = string_to_container<std::vector<std::string>>(*itt, "/");
             ++itt;
             THROW_ASSERT(itt == transition_tokens.end(), "Bad transition format");
 

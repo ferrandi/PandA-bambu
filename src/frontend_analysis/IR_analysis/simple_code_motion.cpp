@@ -792,12 +792,13 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Found " + STR(return_value.size()) + " simd pragmas");
       return return_value;
    }();
-
+   const CustomSet<vertex> to_be_parallelized = CustomSet<vertex>();
    const tree_manipulationConstRef tree_man(new tree_manipulation(TM, parameters, AppM));
 
    for(const auto bb_vertex : bb_sorted_vertices)
    {
       const auto curr_bb = direct_vertex_map.at(bb_vertex);
+      bool parallel_bb = to_be_parallelized.find(bb_vertex) != to_be_parallelized.end();
       if(curr_bb == bloc::ENTRY_BLOCK_ID)
       {
          continue;
@@ -806,7 +807,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
       {
          continue;
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(curr_bb));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Analyzing BB" + STR(curr_bb) + (parallel_bb ? "(Parallel)" : ""));
       bool restart_bb_code_motion = false;
       do
       {
@@ -1136,7 +1138,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             {
                zero_delay_stmts.insert(GET_INDEX_NODE(*statement));
             }
-            if(check_movable == FunctionFrontendFlowStep_Movable::TIMING or (!only_phis && !zero_delay))
+            if(check_movable == FunctionFrontendFlowStep_Movable::TIMING or (!only_phis && !zero_delay && !parallel_bb))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---Going down of one level because of non-zero delay");
@@ -1342,7 +1344,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
          }
          if(restart_bb_code_motion)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Restart Analyzing BB" + STR(curr_bb));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Restart Analyzing BB" + STR(curr_bb) + (parallel_bb ? "(Parallel)" : ""));
          }
       } while(restart_bb_code_motion);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(curr_bb));

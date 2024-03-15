@@ -1596,7 +1596,7 @@ void VHDL_writer::write_transition_output_functions(
       std::string present_state = HDL_manager::convert_to_identifier(this, *its);
       /// get the current output
       ++its;
-      std::vector<std::string> current_output = SplitString(*its, "/");
+      const auto current_output = string_to_container<std::vector<std::string>>(*its, "/");
 
       /// check if we can skip this state or transitions
       bool skip_state = !single_proc && output_index != mod->get_out_port_size() &&
@@ -1620,7 +1620,7 @@ void VHDL_writer::write_transition_output_functions(
                ++itt;
             }
             ++itt;
-            std::vector<std::string> transition_outputs = SplitString(*itt, "/");
+            const auto transition_outputs = string_to_container<std::vector<std::string>>(*itt, "/");
             ++itt;
             THROW_ASSERT(itt == transition_tokens.end(), "Bad transition format");
             if(transition_outputs[output_index] != "-")
@@ -1759,7 +1759,7 @@ void VHDL_writer::write_transition_output_functions(
             std::string next_state = HDL_manager::convert_to_identifier(this, *itt);
             ++itt;
             THROW_ASSERT(itt != transition_tokens.end(), "");
-            std::vector<std::string> transition_outputs = SplitString(*itt, "/");
+            const auto transition_outputs = string_to_container<std::vector<std::string>>(*itt, "/");
             ++itt;
             THROW_ASSERT(itt == transition_tokens.end(), "Bad transition format");
 

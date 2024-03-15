@@ -128,21 +128,16 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
       }
 #endif
       const auto nexit = loop->num_exits();
-      if(nexit != 1)
+      if(nexit == 0)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Multiple exits loop");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No loop");
          continue;
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Single exit loop considered");
-      loop->loop_type |= SINGLE_EXIT_LOOP;
-      const auto exit_vertex = *loop->exit_block_iter_begin();
-      if(nexit != 1)
+      if(nexit == 1)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Multiple exits loop");
-         continue;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Single exit loop considered");
+         loop->loop_type |= SINGLE_EXIT_LOOP;
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Single exit loop considered");
-      loop->loop_type |= SINGLE_EXIT;
       const auto exit_vertex = *loop->exit_block_iter_begin();
       bool do_while = false;
       if(exit_vertex == header && loop->num_blocks() != 1)
@@ -158,6 +153,12 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
          loop->loop_type |= DO_WHILE_LOOP;
          do_while = true;
       }
+      /// very simple condition
+      if(do_while && loop->is_innermost() && loop->num_blocks() == 1)
+      {
+         loop->loop_type |= PIPELINABLE_LOOP;
+      }
+
       /// Get exit condition of the loop
       const tree_nodeRef last_stmt = GET_NODE(fbb->CGetBBNodeInfo(exit_vertex)->block->CGetStmtList().back());
       if(last_stmt->get_kind() != gimple_cond_K)
@@ -334,7 +335,6 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
                      "---Comparison is " + STR(cond) + " (" + cond->get_kind_text() + ")");
       if(GET_NODE(init)->get_kind() == integer_cst_K && GET_NODE(cond_be->op1)->get_kind() == integer_cst_K)
       {
-         const auto cond_type = cond_be->get_kind();
          loop->lower_bound = tree_helper::GetConstValue(init);
          loop->upper_bound = tree_helper::GetConstValue(cond_be->op1);
          const auto cond_type = cond_be->get_kind();
@@ -352,11 +352,6 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bound " + GET_NODE(loop->upper_bound_tn)->ToString());
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "---Increment " + GET_NODE(loop->increment_tn)->ToString());
-      /// very simple condition
-      if(do_while && loop->is_innermost() && loop->num_blocks() == 1)
-      {
-         loop->loop_type |= PIPELINABLE_LOOP;
-      }
 
       return_value = DesignFlowStep_Status::SUCCESS;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed loop " + STR(loop->GetId()));
