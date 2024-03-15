@@ -98,9 +98,9 @@ enum class CompilerWrapper_CompilerTarget;
        distram_threshold)(DSP_allocation_coefficient)(DSP_margin_combinational)(DSP_margin_pipelined)(DSP_fracturing)( \
        estimate_logic_and_connections)(evaluation)(evaluation_mode)(evaluation_objectives)(experimental_setup)(        \
        export_core)(export_core_mode)(fsm_encoding)(fu_binding_algorithm)(generate_testbench)(generate_vcd)(hls_flow)( \
-       hls_div)(hls_fpdiv)(interface)(interface_type)(data_bus_bitsize)(addr_bus_bitsize)(             \
-       libm_std_rounding)(liveness_algorithm)(scheduling_mux_margins)(scheduling_priority)(scheduling_algorithm)(      \
-       simulate)(simulator)(simulation_output)(pipelining)(storage_value_insertion_algorithm)(stg)(stg_algorithm)(     \
+       hls_div)(hls_fpdiv)(interface)(interface_type)(data_bus_bitsize)(addr_bus_bitsize)(libm_std_rounding)(          \
+       liveness_algorithm)(scheduling_mux_margins)(scheduling_priority)(scheduling_algorithm)(simulate)(simulator)(    \
+       simulation_output)(pipelining)(storage_value_insertion_algorithm)(stg)(stg_algorithm)(                          \
        register_allocation_algorithm)(register_grouping)(registered_inputs)(resp_model)(                               \
        datapath_interconnection_algorithm)(insert_memory_profile)(top_file)(assert_debug)(                             \
        memory_allocation_algorithm)(memory_allocation_policy)(xml_memory_allocation)(rom_duplication)(base_address)(   \
