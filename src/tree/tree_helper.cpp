@@ -3175,7 +3175,7 @@ static tree_nodeConstRef check_for_simple_pointer_arithmetic(const tree_nodeCons
       case array_ref_K:
       {
          const auto ar = GetPointer<const array_ref>(GET_CONST_NODE(node));
-         return check_for_simple_pointer_arithmetic(ar->op0);
+         return check_for_simple_pointer_arithmetic(ar->op0, field_offset);
       }
       case parm_decl_K:
       case var_decl_K:
@@ -3198,7 +3198,6 @@ static tree_nodeConstRef check_for_simple_pointer_arithmetic(const tree_nodeCons
       case realpart_expr_K:
       case imagpart_expr_K:
       case bit_field_ref_K:
-      case array_ref_K:
       case binfo_K:
       case block_K:
       case call_expr_K:
