@@ -29,7 +29,7 @@ class SubSystem
    ac_channel<int> x, y, z;
 
  public:
-   void sub_module(ac_channel<int>& in1, ac_channel<int>& in2, ac_channel<int>& out)
+   void compute(ac_channel<int>& in1, ac_channel<int>& in2, ac_channel<int>& out)
    {
 #pragma HLS dataflow
       a5.compute(in1, x);
@@ -46,11 +46,10 @@ class SimpleSystem
 {
    AddBlock<5> a5;
    AddBlock<7> a7;
-   SumBlock<int> s1;
    MulBlock m1;
    SubSystem s2;
 
-   ac_channel<int> x, y, z, k;
+   ac_channel<int> x, y, z;
 
  public:
    void top(ac_channel<int>& in1, ac_channel<int>& in2, ac_channel<int>& out)
@@ -61,9 +60,7 @@ class SimpleSystem
 
       a7.compute(in2, z);
 
-      s2.sub_module(z, x, k);
-
-      s1.compute(y, k, out);
+      s2.compute(y, z, out);
    }
 };
 
