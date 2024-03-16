@@ -144,9 +144,9 @@ DesignFlowStep_Status classic_datapath::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
 
    const auto func_arch = HLSMgr->module_arch->GetArchitecture(fsymbol);
-   const auto is_dataflow_top = func_arch &&
-                                func_arch->attrs.find(FunctionArchitecture::func_dataflow) != func_arch->attrs.end() &&
-                                func_arch->attrs.find(FunctionArchitecture::func_dataflow)->second == "top";
+   const auto is_dataflow_top =
+       func_arch && func_arch->attrs.find(FunctionArchitecture::func_dataflow_top) != func_arch->attrs.end() &&
+       func_arch->attrs.find(FunctionArchitecture::func_dataflow_top)->second == "1";
    if(is_dataflow_top)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding dataflow module interfaces");

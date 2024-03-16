@@ -118,9 +118,9 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
    const auto HLSMgr = GetPointer<HLS_manager>(AppM);
    const auto fsymbol = function_behavior->CGetBehavioralHelper()->GetMangledFunctionName();
    const auto func_arch = HLSMgr->module_arch->GetArchitecture(fsymbol);
-   const auto is_dataflow_top = func_arch &&
-                                func_arch->attrs.find(FunctionArchitecture::func_dataflow) != func_arch->attrs.end() &&
-                                func_arch->attrs.find(FunctionArchitecture::func_dataflow)->second == "top";
+   const auto is_dataflow_top =
+       func_arch && func_arch->attrs.find(FunctionArchitecture::func_dataflow_top) != func_arch->attrs.end() &&
+       func_arch->attrs.find(FunctionArchitecture::func_dataflow_top)->second == "1";
    if(!is_dataflow_top)
    {
       return DesignFlowStep_Status::UNCHANGED;
@@ -137,12 +137,13 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
    std::vector<unsigned int> new_modules;
    BOOST_FOREACH(EdgeDescriptor ie, boost::out_edges(f_v, *CG))
    {
-      const auto target_id = CGM->get_function(boost::target(ie, *CG));
+      auto tgt = boost::target(ie, *CG);
+      const auto target_id = CGM->get_function(tgt);
       const auto tsymbol = AppM->CGetFunctionBehavior(target_id)->CGetBehavioralHelper()->GetMangledFunctionName();
       const auto tarch = HLSMgr->module_arch->GetArchitecture(tsymbol);
-      const auto is_dataflow_module = tarch &&
-                                      tarch->attrs.find(FunctionArchitecture::func_dataflow) != tarch->attrs.end() &&
-                                      tarch->attrs.find(FunctionArchitecture::func_dataflow)->second == "module";
+      const auto is_dataflow_module =
+          tarch && tarch->attrs.find(FunctionArchitecture::func_dataflow_module) != tarch->attrs.end() &&
+          tarch->attrs.find(FunctionArchitecture::func_dataflow_module)->second == "1";
       if(!is_dataflow_module)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Function " + tsymbol + " is not a dataflow module");
@@ -155,7 +156,9 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
       }
 
       const auto fnode = TM->CGetTreeReindex(function_id);
-      std::vector<unsigned int> call_points(++call_info->direct_call_points.begin(),
+      std::vector<unsigned int> call_points(boost::in_degree(tgt, *CG) == 1 ?
+                                                (++call_info->direct_call_points.begin()) :
+                                                call_info->direct_call_points.begin(),
                                             call_info->direct_call_points.end());
       {
          const auto first_call = TM->CGetTreeReindex(*call_info->direct_call_points.begin());
@@ -180,6 +183,10 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+   if(debug_level >= DEBUG_LEVEL_PEDANTIC || parameters->getOption<bool>(OPT_print_dot))
+   {
+      CGM->CGetCallGraph()->WriteDot("DFcall_graph.dot");
+   }
 
    if(new_modules.size())
    {
