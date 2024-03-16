@@ -33,6 +33,22 @@ EXTRA_DIST= \
    %D%/bambu_specific_test2.sh \
    %D%/bambu_specific_test3_list \
    %D%/bambu_specific_test3.sh \
+   %D%/bambu_specific_test4/AddBlock.hpp \
+   %D%/bambu_specific_test4/dataflow.cpp \
+   %D%/bambu_specific_test4/duplicate.cpp \
+   %D%/bambu_specific_test4/multipath2.cpp \
+   %D%/bambu_specific_test4/multipath4.cpp \
+   %D%/bambu_specific_test4/SimpleSystem.hpp \
+   %D%/bambu_specific_test4/tb_dataflow2.cpp \
+   %D%/bambu_specific_test4/dataflow2.hpp \
+   %D%/bambu_specific_test4/dataflow.hpp \
+   %D%/bambu_specific_test4/MulBlock.hpp \
+   %D%/bambu_specific_test4/multipath3.cpp \
+   %D%/bambu_specific_test4/multipath.cpp \
+   %D%/bambu_specific_test4/SumBlock.hpp \
+   %D%/bambu_specific_test4/tb_dataflow.cpp \
+   %D%/bambu_specific_test4_list \
+   %D%/bambu_specific_test4.sh \
    %D%/bambu_interface_test/2mm.c \
    %D%/bambu_interface_test/axi_small_write.c \
    %D%/bambu_interface_test/axi_different_write.c \
