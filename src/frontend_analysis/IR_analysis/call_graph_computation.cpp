@@ -128,8 +128,8 @@ DesignFlowStep_Status call_graph_computation::Exec()
    for(const auto& [symbol, arch] : *HLSMgr->module_arch)
    {
       THROW_ASSERT(arch, "Expected function architecture for function " + symbol);
-      const auto dataflow_attr = arch->attrs.find(FunctionArchitecture::func_dataflow);
-      if(dataflow_attr != arch->attrs.end() && dataflow_attr->second == "module")
+      const auto dataflow_attr = arch->attrs.find(FunctionArchitecture::func_dataflow_module);
+      if(dataflow_attr != arch->attrs.end() && dataflow_attr->second == "1")
       {
          function_symbols.push_back(symbol);
       }

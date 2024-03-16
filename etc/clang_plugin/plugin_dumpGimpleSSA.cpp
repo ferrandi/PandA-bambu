@@ -215,7 +215,7 @@ namespace llvm
             {
                const auto func_symbol = std::string(f.attribute("symbol").value());
                const auto func_name = std::string(f.attribute("name").value());
-               const auto is_dataflow = !f.attribute("dataflow").empty();
+               const auto is_dataflow = !f.attribute("dataflow_top").empty() || !f.attribute("dataflow_module").empty();
                if(is_dataflow && (llvm::find(TopFunctionNames, func_name) == TopFunctionNames.end() ||
                                   llvm::find(TopFunctionNames, func_symbol) == TopFunctionNames.end()))
                {
