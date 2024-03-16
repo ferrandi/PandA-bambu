@@ -448,8 +448,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
 
       const tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
       const auto is_dataflow_module =
-          func_arch->attrs.find(FunctionArchitecture::func_dataflow) != func_arch->attrs.end() &&
-          func_arch->attrs.find(FunctionArchitecture::func_dataflow)->second == "module";
+          func_arch->attrs.find(FunctionArchitecture::func_dataflow_module) != func_arch->attrs.end() &&
+          (func_arch->attrs.find(FunctionArchitecture::func_dataflow_module)->second == "1");
       if(is_dataflow_module)
       {
          const auto [caller_id, call_id] = GetCallStmt(CGM, root_id);
@@ -633,7 +633,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
 
                if(!isRead && !isWrite)
                {
-                  if(interface_type == "m_axi")
+                  if(interface_type == "m_axi" || interface_type == "fifo")
                   {
                      continue;
                   }

@@ -1793,8 +1793,8 @@ void fu_binding::manage_extern_global_port(const HLS_managerRef HLSMgr, const hl
           HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()->GetMangledFunctionName();
       const auto func_arch = HLSMgr->module_arch->GetArchitecture(fsymbol);
       const auto is_dataflow_top =
-          func_arch && func_arch->attrs.find(FunctionArchitecture::func_dataflow) != func_arch->attrs.end() &&
-          func_arch->attrs.find(FunctionArchitecture::func_dataflow)->second == "top";
+          func_arch && func_arch->attrs.find(FunctionArchitecture::func_dataflow_top) != func_arch->attrs.end() &&
+          func_arch->attrs.find(FunctionArchitecture::func_dataflow_top)->second == "1";
       if(is_dataflow_top && starts_with(port_name, "_DF_bambu"))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Stop interface propagation at dataflow top module");

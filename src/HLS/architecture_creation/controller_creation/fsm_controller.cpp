@@ -159,9 +159,9 @@ void fsm_controller::create_state_machine(std::string& parse)
    const auto data = FB->CGetOpGraph(FunctionBehavior::CFG);
    const auto fsymbol = FB->CGetBehavioralHelper()->GetMangledFunctionName();
    const auto func_arch = HLSMgr->module_arch->GetArchitecture(fsymbol);
-   const auto is_dataflow_top = func_arch &&
-                                func_arch->attrs.find(FunctionArchitecture::func_dataflow) != func_arch->attrs.end() &&
-                                func_arch->attrs.find(FunctionArchitecture::func_dataflow)->second == "top";
+   const auto is_dataflow_top =
+       func_arch && func_arch->attrs.find(FunctionArchitecture::func_dataflow_top) != func_arch->attrs.end() &&
+       func_arch->attrs.find(FunctionArchitecture::func_dataflow_top)->second == "1";
    const auto is_function_pipelined = FB->is_function_pipelined();
 
    const auto entry = HLS->STG->get_entry_state();

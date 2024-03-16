@@ -844,7 +844,7 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
       {
          ReportError(attr.first.loc, "Unexpected attribute");
       }
-      GetFuncAttr(FD).attrs.emplace(key_loc_t(p.id, p.loc), "top");
+      GetFuncAttr(FD).attrs.emplace(key_loc_t("dataflow_top", p.loc), "1");
    }
 
    void finalize(FunctionDecl* FD) override
@@ -857,8 +857,8 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
       if(_func_attributes.find(functionSym) != _func_attributes.end())
       {
          auto& attrs = _func_attributes.find(functionSym)->second.attrs;
-         if(attrs.find(key_loc_t("dataflow", SourceLocation())) != attrs.end() &&
-            attrs.find(key_loc_t("dataflow", SourceLocation()))->second == "top")
+         if(attrs.find(key_loc_t("dataflow_top", SourceLocation())) != attrs.end() &&
+            attrs.find(key_loc_t("dataflow_top", SourceLocation()))->second == "1")
          {
             bool hasModule = false;
             LLVM_DEBUG(dbgs() << "DATAFLOW: " << functionSym << "\n");
@@ -871,7 +871,7 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
                   if(calleeDecl)
                   {
                      LLVM_DEBUG(dbgs() << " -> " << MangledName(calleeDecl) << "\n");
-                     GetFuncAttr(calleeDecl).attrs[key_loc_t("dataflow", SourceLocation())] = "module";
+                     GetFuncAttr(calleeDecl).attrs[key_loc_t("dataflow_module", SourceLocation())] = "1";
                      GetFuncAttr(calleeDecl).attrs[key_loc_t("inline", SourceLocation())] = "off";
                      forceNoInline(calleeDecl);
 
