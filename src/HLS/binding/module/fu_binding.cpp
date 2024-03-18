@@ -95,6 +95,7 @@
 #include <algorithm>
 #include <fstream>
 #include <limits>
+#include <regex>
 #include <string>
 #include <utility>
 #include <vector>
@@ -1795,10 +1796,20 @@ void fu_binding::manage_extern_global_port(const HLS_managerRef HLSMgr, const hl
       const auto is_dataflow_top =
           func_arch && func_arch->attrs.find(FunctionArchitecture::func_dataflow_top) != func_arch->attrs.end() &&
           func_arch->attrs.find(FunctionArchitecture::func_dataflow_top)->second == "1";
-      if(is_dataflow_top && starts_with(port_name, "_DF_bambu"))
+      if(is_dataflow_top)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Stop interface propagation at dataflow top module");
-         return;
+         const std::regex regx(R"(_DF_bambu_(\d+)_\d+FO\d+_.*)");
+         std::cmatch what;
+         if(std::regex_search(port_name.data(), what, regx))
+         {
+            const auto owner_id = what[1].str();
+            if(std::to_string(HLS->functionId) == owner_id)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---Stop interface propagation at dataflow top module");
+               return;
+            }
+         }
       }
       THROW_ASSERT(!ext_port || GetPointer<port_o>(ext_port), "should be a port or null");
       if(ext_port && GetPointer<port_o>(ext_port)->get_port_direction() != dir)

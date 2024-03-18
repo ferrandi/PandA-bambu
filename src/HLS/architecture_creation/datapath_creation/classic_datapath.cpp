@@ -73,6 +73,7 @@
 #include "tree_reindex.hpp"
 
 #include <list>
+#include <regex>
 #include <string>
 
 classic_datapath::classic_datapath(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
@@ -152,14 +153,23 @@ DesignFlowStep_Status classic_datapath::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding dataflow module interfaces");
       const auto CGM = HLSMgr->CGetCallGraphManager();
       const auto dataflow_module_ids = CGM->get_called_by(funId);
+      const auto funIdStr = std::to_string(funId);
       std::map<std::string, const FunctionArchitecture::iface_attrs*> iface_attrs;
       std::map<std::string, std::vector<structural_objectRef>> iface_ports;
       const auto manage_port = [&](const structural_objectRef& port) {
          const auto port_name = port->get_id();
-         if(starts_with(port_name, "_DF_bambu_"))
+         const std::regex regx(R"(_(DF_bambu_(\d+)_\d+FO\d+)_.*)");
+         std::cmatch what;
+         if(std::regex_search(port_name.data(), what, regx))
          {
-            const auto bundle_id = port_name.substr(1, port_name.find('_', 11) - 1);
-            iface_ports[bundle_id].push_back(port);
+            const auto owner_id = what[2].str();
+            if(funIdStr == owner_id)
+            {
+               const auto bundle_id = what[1].str();
+               iface_ports[bundle_id].push_back(port);
+               GetPointer<port_o>(port)->set_is_extern(false);
+               GetPointer<port_o>(port)->set_is_global(false);
+            }
          }
       };
       // Gather dataflow module ports grouped by interface bundle

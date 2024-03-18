@@ -256,9 +256,10 @@ static std::vector<tree_nodeRef> GetCallArgs(tree_nodeRef stmt)
    return std::vector<tree_nodeRef>();
 }
 
-static tree_nodeConstRef ResolvePointerAlias(const CallGraphManagerConstRef& CGM, const tree_managerConstRef& TM,
-                                             const tree_nodeConstRef& var, unsigned int fid,
-                                             std::vector<tree_nodeConstRef>* field_offset)
+static std::pair<tree_nodeConstRef, unsigned int> ResolvePointerAlias(const CallGraphManagerConstRef& CGM,
+                                                                      const tree_managerConstRef& TM,
+                                                                      const tree_nodeConstRef& var, unsigned int fid,
+                                                                      std::vector<tree_nodeConstRef>* field_offset)
 {
    const auto base_var = tree_helper::GetBaseVariable(var, field_offset);
    if(const auto pd = GetPointer<const parm_decl>(GET_CONST_NODE(base_var)))
@@ -276,10 +277,15 @@ static tree_nodeConstRef ResolvePointerAlias(const CallGraphManagerConstRef& CGM
          const auto call_args = GetCallArgs(TM->CGetTreeReindex(call_id));
          THROW_ASSERT(call_args.size() == fd->list_of_args.size(),
                       "Expected formal and actual parameters' count match.");
-         return ResolvePointerAlias(CGM, TM, call_args.at(parm_idx), caller_id, field_offset);
+         auto retVal = ResolvePointerAlias(CGM, TM, call_args.at(parm_idx), caller_id, field_offset);
+         if(parm_idx == 0)
+         {
+            retVal.second = fid;
+         }
+         return retVal;
       }
    }
-   return base_var;
+   return {base_var, fid};
 }
 
 InterfaceInfer::InterfaceInfer(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager,
@@ -465,7 +471,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             {
                std::vector<tree_nodeConstRef> field_offset;
                unsigned int offset = 0;
-               const auto base_var = ResolvePointerAlias(CGM, TM, arg, caller_id, &field_offset);
+               const auto [base_var, owner_id] = ResolvePointerAlias(CGM, TM, arg, caller_id, &field_offset);
                if(!field_offset.empty())
                {
                   for(const auto& fld : field_offset)
@@ -508,7 +514,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                }
                else if(const auto dn = GetPointer<const decl_node>(GET_CONST_NODE(base_var)))
                {
-                  bundle_name = "DF_bambu_" + std::to_string(GET_INDEX_CONST_NODE(base_var)) + "FO" + STR(offset);
+                  bundle_name = "DF_bambu_" + std::to_string(owner_id) + "_" +
+                                std::to_string(GET_INDEX_CONST_NODE(base_var)) + "FO" + STR(offset);
                }
                else
                {
