@@ -156,21 +156,17 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
       }
 
       const auto fnode = TM->CGetTreeReindex(function_id);
-      std::vector<unsigned int> call_points(boost::in_degree(tgt, *CG) == 1 ?
-                                                (++call_info->direct_call_points.begin()) :
-                                                call_info->direct_call_points.begin(),
+      auto is_single_call = boost::in_degree(tgt, *CG) == 1;
+      std::vector<unsigned int> call_points(is_single_call ? ++(call_info->direct_call_points.begin()) :
+                                                             call_info->direct_call_points.begin(),
                                             call_info->direct_call_points.end());
-      {
-         const auto first_call = TM->CGetTreeReindex(*call_info->direct_call_points.begin());
-         CleanVirtuals(TM, first_call);
-      }
+
       for(auto call_id : call_points)
       {
          const auto call_node = TM->CGetTreeReindex(call_id);
          const auto module_suffix = "_" + std::to_string(call_id);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Clone module " + tsymbol + " -> " + tsymbol + module_suffix);
-         CleanVirtuals(TM, call_node);
          tree_man.VersionFunctionCall(call_node, fnode, module_suffix);
          const auto version_symbol = tsymbol + module_suffix;
          const auto version_fnode = TM->GetFunction(version_symbol);
@@ -182,6 +178,17 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
          HLSMgr->module_arch->AddArchitecture(version_symbol, march);
       }
    }
+   BOOST_FOREACH(EdgeDescriptor ie, boost::out_edges(f_v, *CG))
+   {
+      const auto call_info = CG->CGetFunctionEdgeInfo(ie);
+      std::vector<unsigned int> call_points(call_info->direct_call_points.begin(), call_info->direct_call_points.end());
+      for(auto call_id : call_points)
+      {
+         const auto call_node = TM->CGetTreeReindex(call_id);
+         CleanVirtuals(TM, call_node);
+      }
+   }
+
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    if(debug_level >= DEBUG_LEVEL_PEDANTIC || parameters->getOption<bool>(OPT_print_dot))
    {
