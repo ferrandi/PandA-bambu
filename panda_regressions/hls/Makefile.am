@@ -38,6 +38,7 @@ EXTRA_DIST= \
    %D%/bambu_specific_test4/duplicate.cpp \
    %D%/bambu_specific_test4/multipath2.cpp \
    %D%/bambu_specific_test4/multipath4.cpp \
+   %D%/bambu_specific_test4/multipath5.cpp \
    %D%/bambu_specific_test4/SimpleSystem.hpp \
    %D%/bambu_specific_test4/tb_dataflow2.cpp \
    %D%/bambu_specific_test4/dataflow2.hpp \
