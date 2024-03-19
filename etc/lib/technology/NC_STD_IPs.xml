@@ -2089,7 +2089,7 @@ begin
   end
   else if(done_next)
   begin
-    m_utils.write(Sout_Rdata_ram[BITSIZE_Rdata-1:0]);
+    void'(m_utils.write(Sout_Rdata_ram[BITSIZE_Rdata-1:0]));
   end
 end
 
@@ -2441,7 +2441,7 @@ begin
   done &lt;= ack &amp; cyc_next;
   if(ack &amp; cyc_next)
   begin
-    m_utils.write(dat_os);
+    void'(m_utils.write(dat_os));
   end
 end
 
@@ -2601,7 +2601,7 @@ always @(posedge clock)
 begin
   if(done_port)
   begin
-    m_utils.write(val_port);
+    void'(m_utils.write(val_port));
   end
 end"/>
         </component_o>

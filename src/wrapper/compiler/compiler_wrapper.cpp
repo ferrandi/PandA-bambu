@@ -1581,7 +1581,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
 #else
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
 #endif
-         compiler.extra_options += " -msse2 -mfpmath=sse";
+         compiler.extra_options += " -msse2";
       }
       else
       {
@@ -1611,7 +1611,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
 #else
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
 #endif
-         compiler.extra_options += " -msse2 -mfpmath=sse";
+         compiler.extra_options += " -msse2";
       }
       else
       {
@@ -1642,7 +1642,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
 #else
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
 #endif
-         compiler.extra_options += " -msse2 -mfpmath=sse";
+         compiler.extra_options += " -msse2";
       }
       else
       {
@@ -1673,7 +1673,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
 #else
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
 #endif
-         compiler.extra_options += " -msse2 -mfpmath=sse";
+         compiler.extra_options += " -msse2";
       }
       else
       {
@@ -1704,7 +1704,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
 #else
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
 #endif
-         compiler.extra_options += " -msse2 -mfpmath=sse";
+         compiler.extra_options += " -msse2";
       }
       else
       {

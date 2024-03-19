@@ -38,6 +38,8 @@
  * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
+#ifndef _TESTBENCH_GENERATION_HPP_
+#define _TESTBENCH_GENERATION_HPP_
 #include "hls_step.hpp"
 #include "refcount.hpp"
 
@@ -77,8 +79,6 @@ class TestbenchGeneration
    /// output directory
    const std::filesystem::path output_directory;
 
-   const std::string c_testbench_basename;
-
    /// testbench basename
    std::string hdl_testbench_basename;
 
@@ -90,18 +90,8 @@ class TestbenchGeneration
     */
    bool printCacheStats(const module* rootMod) const;
 
-   /**
-    * Write the verilator testbench.
-    *
-    * @param input_file Filename of the stimuli file.
-    */
-   std::string write_verilator_testbench() const;
-
    const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
    ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
-
-   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
-                             const DesignFlowStep::RelationshipType relationship_type) override;
 
  public:
    /**
@@ -125,3 +115,4 @@ class TestbenchGeneration
    static unsigned long long generate_init_file(const std::string& dat_filename, const tree_managerConstRef TreeM,
                                                 unsigned int var, const memoryRef mem);
 };
+#endif

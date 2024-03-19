@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2024 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,35 +31,39 @@
  *
  */
 /**
- * @file modelsimWrapper.hpp
- * @brief Wrapper to modelsim.
+ * @file mdpi_wrapper_c_writer.hpp
+ * @brief
  *
- * A object used to invoke the modelsim compiler and simulator
  *
- * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
+ * $Revision$
  * $Date$
  * Last modified by $Author$
  *
  */
-#ifndef MODELSIMWRAPPER_HPP
-#define MODELSIMWRAPPER_HPP
-#include "SimulationTool.hpp"
+#ifndef MDPI_WRAPPER_CWRITER_HPP
+#define MDPI_WRAPPER_CWRITER_HPP
+#include "c_writer.hpp"
 
-/**
- * @class modelsimWrapper
- * Main class for wrapping the modesilm compiler and simulator.
- */
-class modelsimWrapper : public SimulationTool
+class MdpiWrapperCWriter : public CWriter
 {
-   std::string GenerateScript(std::ostream& script, const std::string& top_filename,
-                              const std::list<std::string>& file_list) override;
+   void WriteSimulatorInitMemory(const unsigned int function_id);
+
+   void WriteFunctionImplementation(unsigned int) override;
+
+   void WriteBuiltinWaitCall() override;
+
+   void InternalInitialize() override;
+
+   void InternalWriteHeader() override;
+
+   void InternalWriteGlobalDeclarations() override;
+
+   void InternalWriteFile() override;
 
  public:
-   /**
-    * Constructor
-    * @param Param is the set of parameters
-    */
-   modelsimWrapper(const ParameterConstRef& Param, const std::string& top_fname, const std::string& inc_dirs);
+   MdpiWrapperCWriter(const HLS_managerConstRef HLSMgr, const InstructionWriterRef instruction_writer,
+                      const IndentedOutputStreamRef indented_output_stream);
 };
 
-#endif
+#endif // MDPI_WRAPPER_CWRITER_HPP

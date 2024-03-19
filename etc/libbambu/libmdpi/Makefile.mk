@@ -52,13 +52,13 @@ $(call check_defined, TOP_FNAME)  # top function mangled name
 $(call check_defined, MTOP_FNAME) # top function mangled name with __m_ prefix
 $(call check_defined, SIM_DIR)    # HLS_output/simulation absolute path
 $(call check_defined, BEH_DIR)    # HLS_output/<sim_id>_beh absolute path
-$(call check_defined, COSIM_SRC)  # PandA Bambu HLS generated co-simulation source files
+$(call check_defined, WRAPPER_SRC)  # PandA Bambu HLS generated co-simulation source files
 
 ###
 # The following variables may also be defined:
 #   SRCS       : PandA Bambu HLS input source files
 #   BEH_CC     : alternative compiler for libmdpi compilation
-#   CFLAGS     : compilation flags for SRCS, COSIM_SRCS, and TB_SRCS
+#   CFLAGS     : compilation flags for SRCS, WRAPPER_SRCS, and TB_SRCS
 #   BEH_CFLAGS : includes and defines for svdpi.h
 #   TB_CFLAGS  : additional compilation flags for TB_SRCS
 #   TB_SRCS    : additional testbench source files
@@ -82,7 +82,7 @@ MDPI_SRCS := $(libmdpi_root)/mdpi.c
 OBJS := $(patsubst $(SRC_DIR)/%,$(OBJ_DIR)/%.o, $(SRCS))
 TB_OBJS := $(patsubst $(TB_SRC_DIR)/%,$(TB_OBJ_DIR)/%.o, $(TB_SRCS))
 DRIVER_OBJ := $(patsubst %,$(MDPI_OBJ_DIR)/%.o, $(notdir $(DRIVER_SRC)))
-COSIM_OBJ := $(patsubst %,$(MDPI_OBJ_DIR)/%.o, $(notdir $(COSIM_SRC)))
+WRAPPER_OBJ := $(patsubst %,$(MDPI_OBJ_DIR)/%.o, $(notdir $(WRAPPER_SRC)))
 
 override TB_CFLAGS := $(patsubst -fno-exceptions,,$(CFLAGS)) $(TB_CFLAGS) -I$(libmdpi_root)/include
 MDPI_CFLAGS := $(BEH_CFLAGS) -D_GNU_SOURCE # $(shell echo "$(CFLAGS)" | grep -oE '(-mx?[0-9]+)' | sed -E 's/-mx?/-DM/' | tr '[:lower:]' '[:upper:]')
@@ -93,15 +93,15 @@ endif
 DRIVER_CFLAGS := $(shell echo "$(TB_CFLAGS)" | grep -oE '(-mx?[0-9]+)')
 DRIVER_CFLAGS += $(shell echo "$(TB_CFLAGS)" | grep -oE '( (-I|-isystem) ?[^ ]+)' | tr '\n' ' ')
 DRIVER_CFLAGS += $(shell echo "$(TB_CFLAGS)" | grep -oE '( -D(\\.|[^ ])+)' | tr '\n' ' ')
-DRIVER_CFLAGS += $(MDPI_CFLAGS) -std=c++11 -DMDPI_PARALLEL_VERIFICATION -I$(libmdpi_root)/../ac_types/include
+DRIVER_CFLAGS += $(MDPI_CFLAGS) -std=c++11 -fno-exceptions -DMDPI_PARALLEL_VERIFICATION -I$(libmdpi_root)/../ac_types/include
 
-COSIM_CFLAGS := $(MDPI_CFLAGS) $(CFLAGS) -DLIBMDPI_DRIVER
+WRAPPER_CFLAGS := $(MDPI_CFLAGS) -std=c++11 -fno-exceptions $(shell echo "$(CFLAGS)" | sed -E 's/(-{1,2}std=(c|gnu)([0-9]+|\+\+(0|9)([0-9]|x)))//g') -DLIBMDPI_DRIVER -I$(libmdpi_root)/../ac_types/include
 ifdef PP_SRC
 	ifneq ($(TOP_FNAME),main)
 		ifndef MPPTOP_FNAME
 			$(error Undefined MPPTOP_FNAME)
 		endif
-		COSIM_CFLAGS += -DPP_VERIFICATION
+		WRAPPER_CFLAGS += -DPP_VERIFICATION
 		PP_OBJ := $(patsubst %,$(OBJ_DIR)/%.pp.o,$(notdir $(PP_SRC)))
 	endif
 endif
@@ -112,7 +112,9 @@ PP_CFLAGS += $(shell if [ ! -z "$$(basename $(CC) | grep clang)" ]; then echo "-
 DRIVER_LDFLAGS := $(shell echo "$(TB_CFLAGS)" | grep -oE '(-mx?[0-9]+)')
 DRIVER_LDFLAGS += $(shell echo " $(TB_CFLAGS)" | grep -oE '( -(L|l|Wl)(\\.|[^ ])+)' | tr '\n' ' ')
 DRIVER_LDFLAGS += $(shell echo :$$LD_LIBRARY_PATH | sed 's/:$$//' | sed 's/:/ -L/g')
-DRIVER_LDFLAGS += -lpthread -lstdc++ -lm
+DRIVER_LDFLAGS += $(shell if basename $(CC) | grep -v '++' | grep -q 'clang'; then echo --driver-mode=g++; fi)
+DRIVER_LDFLAGS += $(shell if basename $(CC) | grep -v '++' | grep -qv 'clang'; then echo -lstdc++; fi)
+DRIVER_LDFLAGS += -lpthread -lm
 
 LIB_LDFLAGS := 
 ifeq ($(BEH_CC),xsc)
@@ -170,22 +172,22 @@ $(PP_OBJ): $(PP_SRC)
 	@objcopy --keep-global-symbol $(TOP_FNAME) $$(nm $@ | grep -o '[^[:space:]]*get_pc_thunk[^[:space:]]*' | sed 's/^/--keep-global-symbol /' | tr '\n' ' ') $@
 	@objcopy --redefine-sym $(TOP_FNAME)=$(MPPTOP_FNAME) $@
 
-$(COSIM_OBJ): $(COSIM_SRC)
+$(WRAPPER_OBJ): $(WRAPPER_SRC)
 	@echo "Compiling $(notdir $<)"
 	@mkdir -p $$(dirname $@)
-	@$(CC) $(COSIM_CFLAGS) -fPIC -c -o $@ $<
+	@$(CC) $(WRAPPER_CFLAGS) -fPIC -c -o $@ $<
 
 $(DRIVER_OBJ): $(DRIVER_SRC)
 	@echo "Compiling $(notdir $<)"
 	@mkdir -p $$(dirname $@)
 	@$(CC) $(DRIVER_CFLAGS) -fPIC -c -o $@ $<
 
-$(DRIVER_LIB): $(OBJS) $(DRIVER_OBJ) $(COSIM_OBJ) $(PP_OBJ)
+$(DRIVER_LIB): $(OBJS) $(DRIVER_OBJ) $(WRAPPER_OBJ) $(PP_OBJ)
 	@echo "Linking $(notdir $@)"
 	@$(CC) -shared -o $@ $^ $(DRIVER_LDFLAGS)
 	@objcopy $(REDEFINE_SYS) $@
 
-$(TB_TARGET): $(TB_OBJS) $(OBJS) $(DRIVER_OBJ) $(COSIM_OBJ) $(PP_OBJ)
+$(TB_TARGET): $(TB_OBJS) $(OBJS) $(DRIVER_OBJ) $(WRAPPER_OBJ) $(PP_OBJ)
 ifdef TB_SRCS
 	@echo "Linking $(notdir $@)"
 	@$(CC) -o $@ $^ $(DRIVER_LDFLAGS)
