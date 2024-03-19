@@ -44,7 +44,6 @@
  * Last modified by $Author$
  *
  */
-
 #ifndef CWRITER_HPP
 #define CWRITER_HPP
 
@@ -90,6 +89,21 @@ class dominance;
  */
 class CWriter
 {
+   void AnalyzeInclude(const tree_nodeConstRef& tn, const BehavioralHelperConstRef& BH,
+                       CustomOrderedSet<std::string>& includes_to_write, CustomSet<unsigned int>& already_visited);
+
+   /**
+    * Writes the header of the file
+    */
+   void WriteHeader();
+
+   /**
+    * Writes the global declarations
+    */
+   void WriteGlobalDeclarations();
+
+   void WriteImplementations();
+
  protected:
    /// the hls manager
    const HLS_managerConstRef HLSMgr;
@@ -100,13 +114,17 @@ class CWriter
    /// Represents the stream we are currently writing to
    const IndentedOutputStreamRef indented_output_stream;
 
+   /// Contains the class used to write instructions
+   const InstructionWriterRef instrWriter;
+
+   CustomOrderedSet<unsigned int> declared_functions;
+
+   CustomOrderedSet<unsigned int> defined_functions;
+
    /// This set contains the list of the non built_in types already declared in the global scope
    CustomSet<std::string> globally_declared_types;
 
    CustomSet<unsigned int> globallyDeclVars;
-
-   /// Contains the class used to write instructions
-   const InstructionWriterRef instrWriter;
 
    /// Counter of the invocations of writeRoutineInstructions; this counter allows to print different labels in differnt
    /// tasks to avoid problem due to multiple tasks inlineing
@@ -147,6 +165,21 @@ class CWriter
    BBGraphConstRef local_rec_bb_fcfgGraph;
    OpGraphConstRef local_rec_cfgGraph;
    BehavioralHelperConstRef local_rec_behavioral_helper;
+
+   std::vector<std::string> additionalIncludes;
+   CustomOrderedSet<std::string> writtenIncludes;
+
+   /**
+    * Constructor of the class
+    * @param HLSMgr is the hls manager
+    * @param instruction_writer is the instruction writer to use to print the single instruction
+    * @param indented_output_stream is the stream where code has to be printed
+    */
+   CWriter(const HLS_managerConstRef _HLSMgr, const InstructionWriterRef instruction_writer,
+           const IndentedOutputStreamRef indented_output_stream);
+
+   virtual void InternalInitialize();
+
    /**
     * Write recursively instructions belonging to a basic block of task or of a function
     * @param current_vertex is the basic block which is being printed
@@ -156,39 +189,10 @@ class CWriter
    void writeRoutineInstructions_rec(vertex current_vertex, bool bracket, const unsigned int function_index);
 
    /**
-    * Write additional information on the given statement vertex, before the
-    * statement itself.
-    * The default for this function is to do nothing, but every derived class
-    * can specify its own additional information to print
-    */
-   virtual void writePreInstructionInfo(const FunctionBehaviorConstRef, const vertex);
-
-   /**
-    * Write additional information on the given statement vertex, after the
-    * statements itself.
-    * The default for this function is to do nothing, but every derived class
-    * can specify its own additional information to print
-    */
-   virtual void writePostInstructionInfo(const FunctionBehaviorConstRef, const vertex);
-
-   /**
-    * Write the instructions belonging to a body loop
-    * @param function_index is the identifier of the function to which instructions belong
-    * @param loop_id is the index of the loop to be printed
-    * @param current_vertex is the first basic block of the loop
-    * @param bracket tells if bracket should be added before and after this basic block
-    */
-   virtual void WriteBodyLoop(const unsigned int function_index, const unsigned int, vertex current_vertex,
-                              bool bracket);
-
-   /**
     * Determines the instructions coming out from phi-node splitting
     */
    void compute_phi_nodes(const FunctionBehaviorConstRef function_behavior, const OpVertexSet& instructions,
                           var_pp_functorConstRef variableFunctor);
-
-   std::vector<std::string> additionalIncludes;
-   CustomOrderedSet<std::string> writtenIncludes;
 
    /**
     * Compute the copy assignments needed by the phi nodes destruction
@@ -237,9 +241,30 @@ class CWriter
    void pop_stack(std::list<unsigned int>& pushed, std::map<unsigned int, std::deque<std::string>>& array_of_stacks);
 
    /**
-    * Write the implementation of a hash table with long long int as key and long long int as value
+    * Write additional information on the given statement vertex, before the
+    * statement itself.
+    * The default for this function is to do nothing, but every derived class
+    * can specify its own additional information to print
     */
-   void WriteHashTableImplementation();
+   virtual void writePreInstructionInfo(const FunctionBehaviorConstRef, const vertex);
+
+   /**
+    * Write additional information on the given statement vertex, after the
+    * statements itself.
+    * The default for this function is to do nothing, but every derived class
+    * can specify its own additional information to print
+    */
+   virtual void writePostInstructionInfo(const FunctionBehaviorConstRef, const vertex);
+
+   /**
+    * Write the instructions belonging to a body loop
+    * @param function_index is the identifier of the function to which instructions belong
+    * @param loop_id is the index of the loop to be printed
+    * @param current_vertex is the first basic block of the loop
+    * @param bracket tells if bracket should be added before and after this basic block
+    */
+   virtual void WriteBodyLoop(const unsigned int function_index, const unsigned int, vertex current_vertex,
+                              bool bracket);
 
    /*
     * writes code at the beginning of the basic block denoted by the
@@ -249,51 +274,17 @@ class CWriter
     */
    virtual void WriteBBHeader(const unsigned int bb_number, const unsigned int function_index);
 
- protected:
-   /**
-    * Constructor of the class
-    * @param HLSMgr is the hls manager
-    * @param instruction_writer is the instruction writer to use to print the single instruction
-    * @param indented_output_stream is the stream where code has to be printed
-    * @param Param is the set of parameters
-    * @param verbose tells if annotations
-    */
-   CWriter(const HLS_managerConstRef _HLSMgr, const InstructionWriterRef instruction_writer,
-           const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef Param, bool verbose = true);
-
- public:
-   virtual ~CWriter();
-
-   /**
-    * Factory method
-    * @param c_backend_information is the information about the backend we are creating
-    * @param hls_man is the hls manager
-    * @param indented_output_stream is the output stream
-    * @param parameters is the set of input parameters
-    * @param verbose tells if produced source code has to be commented
-    */
-   static CWriterRef CreateCWriter(const CBackendInformationConstRef c_backend_information,
-                                   const HLS_managerConstRef hls_man,
-                                   const IndentedOutputStreamRef indented_output_stream,
-                                   const ParameterConstRef parameters, const bool verbose);
-
-   /**
-    * Initialize data structure
-    */
-   virtual void Initialize();
-
-   /**
-    * Returns the instruction writer
-    * @return the instruction writer
-    */
-   const InstructionWriterRef getInstructionWriter() const;
-
    /**
     * Compute the local variables of a function
     * @param function_id is the index of a function
     * @return the local variables of a function
     */
    const CustomSet<unsigned int> GetLocalVariables(const unsigned int function_id) const;
+
+   /**
+    * Initialize data structure
+    */
+   virtual void Initialize();
 
    /**
     * Write function implementation
@@ -330,21 +321,6 @@ class CWriter
    virtual void writeRoutineInstructions(const unsigned int function_index, const OpVertexSet& instructions,
                                          var_pp_functorConstRef variableFunctor, vertex bb_start = NULL_VERTEX,
                                          CustomOrderedSet<vertex> bb_end = CustomOrderedSet<vertex>());
-
-   /**
-    * Writes the declaration of the function whose id in the tree is funId
-    */
-   virtual void WriteFunctionDeclaration(const unsigned int funId);
-
-   /**
-    * Writes the header of the file
-    */
-   virtual void WriteHeader();
-
-   /**
-    * Writes the global declarations
-    */
-   virtual void WriteGlobalDeclarations();
 
    /**
     * Writes an include directive
@@ -408,17 +384,45 @@ class CWriter
    virtual void DeclareFunctionTypes(const tree_nodeConstRef& tn);
 
    /**
-    * Writes the final C file
-    * @param file_name is the name of the file to be generated
+    * Writes the declaration of the function whose id in the tree is funId
     */
-   virtual void WriteFile(const std::string& file_name);
+   virtual void WriteFunctionDeclaration(const unsigned int funId);
+
+   /**
+    * Writes the header of the file
+    */
+   virtual void InternalWriteHeader();
+
+   /**
+    * Writes the global declarations
+    */
+   virtual void InternalWriteGlobalDeclarations();
 
    /**
     * Writes implementation of __builtin_wait_call
     */
    virtual void WriteBuiltinWaitCall();
+
+   virtual void InternalWriteFile();
+
+ public:
+   virtual ~CWriter();
+
+   /**
+    * Factory method
+    * @param c_backend_information is the information about the backend we are creating
+    * @param hls_man is the hls manager
+    * @param indented_output_stream is the output stream
+    */
+   static CWriterRef CreateCWriter(const CBackendInformationConstRef c_backend_information,
+                                   const HLS_managerConstRef hls_man,
+                                   const IndentedOutputStreamRef indented_output_stream);
+
+   /**
+    * Writes the final C file
+    * @param file_name is the name of the file to be generated
+    */
+   void WriteFile(const std::string& file_name);
 };
-
 using CWriterRef = refcount<CWriter>;
-
 #endif

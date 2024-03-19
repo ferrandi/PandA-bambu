@@ -88,15 +88,17 @@ SimulationTool::SimulationTool(const ParameterConstRef& _Param, const std::strin
       debug_level(Param->getOption<int>(OPT_debug_level)),
       output_level(Param->getOption<unsigned int>(OPT_output_level)),
       top_fname(_top_fname),
-      inc_dirs(_inc_dirs)
+      inc_dirs(_inc_dirs),
+      beh_dir(Param->getOption<std::filesystem::path>(OPT_output_directory) / "beh_sim")
 {
+   Clean();
+   std::filesystem::create_directory(beh_dir);
 }
 
 SimulationTool::~SimulationTool() = default;
 
 SimulationToolRef SimulationTool::CreateSimulationTool(type_t type, const ParameterConstRef& _Param,
-                                                       const std::string& suffix, const std::string& top_fname,
-                                                       const std::string& inc_dirs)
+                                                       const std::string& top_fname, const std::string& inc_dirs)
 {
    switch(type)
    {
@@ -104,13 +106,13 @@ SimulationToolRef SimulationTool::CreateSimulationTool(type_t type, const Parame
          THROW_ERROR("Simulation tool not specified");
          break;
       case MODELSIM:
-         return SimulationToolRef(new modelsimWrapper(_Param, suffix, top_fname, inc_dirs));
+         return SimulationToolRef(new modelsimWrapper(_Param, top_fname, inc_dirs));
          break;
       case XSIM:
-         return SimulationToolRef(new VIVADO_xsim_wrapper(_Param, suffix, top_fname, inc_dirs));
+         return SimulationToolRef(new VIVADO_xsim_wrapper(_Param, top_fname, inc_dirs));
          break;
       case VERILATOR:
-         return SimulationToolRef(new VerilatorWrapper(_Param, suffix, top_fname, inc_dirs));
+         return SimulationToolRef(new VerilatorWrapper(_Param, top_fname, inc_dirs));
          break;
       default:
          THROW_ERROR("Simulation tool currently not supported");
@@ -324,6 +326,7 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
    script << "SIM_DIR=" << sim_dir << "\n"
           << "OUT_LVL=\"" << Param->getOption<int>(OPT_output_level) << "\"\n\n"
           << "### Do not edit below\n\n"
+          << "BEH_DIR=" << beh_dir << "\n"
           << "M_IPC_FILENAME=\"${SIM_DIR}/panda_sock\"\n";
 
    auto sim_cmd = GenerateScript(script, top_filename, file_list);
@@ -350,22 +353,16 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
    return generated_script;
 }
 
-std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, const std::string& beh_dir,
-                                                       std::string& beh_cflags) const
+std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, std::string& beh_cflags) const
 {
    const auto default_compiler = Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
    const auto opt_set = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_gcc_optimization_set);
    const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(Param, default_compiler, opt_set));
 
    const auto extra_compiler_flags = [&]() {
-      std::string flags = " -fwrapv -ffloat-store -flax-vector-conversions -msse2 -mfpmath=sse -fno-strict-aliasing "
+      std::string flags = " -fwrapv -flax-vector-conversions -msse2 -fno-strict-aliasing "
                           "-D__builtin_bambu_time_start\\(\\)= -D__builtin_bambu_time_stop\\(\\)= -D__BAMBU_SIM__";
       flags += " -isystem " + relocate_compiler_path(PANDA_DATA_INSTALLDIR) + "/panda/libmdpi/include";
-      if(!Param->isOption(OPT_input_format) ||
-         Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C)
-      {
-         flags += " -fexcess-precision=standard";
-      }
       if(Param->isOption(OPT_gcc_optimizations))
       {
          const auto gcc_parameters = Param->getOption<CustomSet<std::string>>(OPT_gcc_optimizations);
@@ -409,7 +406,6 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, con
        Param->getOption<Parameters_FileFormat>(OPT_input_format) != Parameters_FileFormat::FF_RAW ?
            boost::replace_all_copy(Param->getOption<std::string>(OPT_input_file), STR_CST_string_separator, " ") :
            "";
-   const std::string cosim_src = "${SIM_DIR}/" STR_CST_testbench_generation_basename ".c";
    const auto pp_srcs = Param->isOption(OPT_pretty_print) ? Param->getOption<std::string>(OPT_pretty_print) : "";
    const auto tb_srcs = [&]() {
       std::string files;
@@ -424,7 +420,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, con
          {
             if(ends_with(filename, ".xml"))
             {
-               files += cosim_src + " ";
+               files += "${SIM_DIR}/generated_tb.c ";
             }
             else
             {
@@ -434,7 +430,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, con
       }
       else if(Param->isOption(OPT_testbench_input_string))
       {
-         files += cosim_src + " ";
+         files += "${SIM_DIR}/generated_tb.c ";
       }
       if(Param->isOption(OPT_no_parse_files))
       {
@@ -449,7 +445,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, con
        Param->isOption(OPT_tb_extra_gcc_options) ? Param->getOption<std::string>(OPT_tb_extra_gcc_options) : "";
 
    script << "make -f " << relocate_compiler_path(PANDA_DATA_INSTALLDIR) << "/panda/libmdpi/Makefile.mk \\\n"
-          << "  SIM_DIR=\"${SIM_DIR}\" BEH_DIR=\"" << beh_dir << "\" \\\n"
+          << "  SIM_DIR=\"${SIM_DIR}\" BEH_DIR=\"${BEH_DIR}\" \\\n"
           << "  TOP_FNAME=\"" << top_fname << "\" \\\n"
           << "  MTOP_FNAME=\"" << m_top_fname << "\" \\\n"
           << "  MPPTOP_FNAME=\"" << m_pp_top_fname << "\" \\\n"
@@ -459,7 +455,7 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, con
           << "  BEH_CFLAGS=\"" << beh_cflags << "\" \\\n"
           << "  TB_CFLAGS=\"" << tb_extra_cflags << "\" \\\n"
           << "  SRCS=\"" << srcs << "\" \\\n"
-          << "  COSIM_SRC=\"" << cosim_src << "\" \\\n"
+          << "  WRAPPER_SRC=\"${SIM_DIR}/mdpi_wrapper.cpp\" \\\n"
           << "  PP_SRC=\"" << pp_srcs << "\" \\\n"
           << "  TB_SRCS=\"" << tb_srcs << "\" \\\n"
           << "  -j " << std::thread::hardware_concurrency() << "\n\n";
@@ -469,4 +465,8 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, con
 
 void SimulationTool::Clean() const
 {
+   if(std::filesystem::exists(beh_dir))
+   {
+      std::filesystem::remove_all(beh_dir);
+   }
 }

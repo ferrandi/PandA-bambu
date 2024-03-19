@@ -59,11 +59,8 @@
 #include "tree_reindex.hpp"
 
 EdgeCWriter::EdgeCWriter(const HLS_managerConstRef _HLSMgr, const InstructionWriterRef _instruction_writer,
-                         const IndentedOutputStreamRef _indented_output_stream, const ParameterConstRef _Param,
-                         bool _verbose)
-    : CWriter(_HLSMgr, _instruction_writer, _indented_output_stream, _Param, _verbose),
-      dumped_edges(ltedge<BBGraph>(nullptr)),
-      counter(0)
+                         const IndentedOutputStreamRef _indented_output_stream)
+    : CWriter(_HLSMgr, _instruction_writer, _indented_output_stream), dumped_edges(ltedge<BBGraph>(nullptr)), counter(0)
 {
    debug_level = Param->get_class_debug_level(GET_CLASS(*this));
 }
@@ -1515,7 +1512,7 @@ const std::map<unsigned int, std::map<unsigned int, unsigned int>>& EdgeCWriter:
    return fun_loop_to_index;
 }
 
-void EdgeCWriter::WriteHeader()
+void EdgeCWriter::InternalWriteHeader()
 {
    indented_output_stream->Append("void __builtin_bambu_time_start(){}\n");
    indented_output_stream->Append("void __builtin_bambu_time_stop(){}\n\n");

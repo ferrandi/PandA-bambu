@@ -39,42 +39,28 @@
  */
 #ifndef GENERATE_SIMULATION_SCRIPTS_HPP
 #define GENERATE_SIMULATION_SCRIPTS_HPP
-
-/// superclass include
 #include "hls_step.hpp"
+
+#include <filesystem>
 
 class GenerateSimulationScripts : public HLS_step
 {
- protected:
-   /**
-    * Return the set of analyses in relationship with this design step
-    * @param relationship_type is the type of relationship to be considered
-    */
+   const std::filesystem::path _c_testbench;
+
+   const std::filesystem::path _c_driver_wrapper;
+
    const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
    ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
+   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
+
  public:
-   /**
-    * Constructor.
-    */
    GenerateSimulationScripts(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr,
                              const DesignFlowManagerConstRef design_flow_manager);
 
-   /**
-    * Destructor.
-    */
-   ~GenerateSimulationScripts() override;
-
-   /**
-    * Execute the step
-    * @return the exit status of this step
-    */
    DesignFlowStep_Status Exec() override;
 
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
    bool HasToBeExecuted() const override;
 };
 #endif

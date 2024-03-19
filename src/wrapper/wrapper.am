@@ -32,47 +32,12 @@ if BUILD_LIB_FROM_C
 endif
 
 if BUILD_SIMULATION
-  noinst_LTLIBRARIES += lib_verilatorwrapper.la
-  lib_verilatorwrapper_la_CPPFLAGS = \
-    -I$(top_srcdir)/src \
-    -I$(top_srcdir)/src/constants \
-    -I$(top_srcdir)/src/parser/polixml \
-    -I$(top_srcdir)/src/polixml \
-    -I$(top_srcdir)/src/tree \
-    -I$(top_srcdir)/src/utility \
-    -I$(top_srcdir)/src/wrapper/simulation \
-    $(AM_CPPFLAGS)
-  noinst_HEADERS += wrapper/simulation/verilator/VerilatorWrapper.hpp
-  lib_verilatorwrapper_la_SOURCES = wrapper/simulation/verilator/VerilatorWrapper.cpp
-
-  noinst_LTLIBRARIES += lib_xsimwrapper.la
-  lib_xsimwrapper_la_CPPFLAGS = \
-    -I$(top_srcdir)/src \
-    -I$(top_srcdir)/src/constants \
-    -I$(top_srcdir)/src/parser/polixml \
-    -I$(top_srcdir)/src/polixml \
-    -I$(top_srcdir)/src/utility \
-    -I$(top_srcdir)/src/wrapper \
-    -I$(top_srcdir)/src/wrapper/simulation \
-    $(AM_CPPFLAGS)
-  noinst_HEADERS += wrapper/simulation/xsim/VIVADO_xsim_wrapper.hpp
-  lib_xsimwrapper_la_SOURCES = wrapper/simulation/xsim/VIVADO_xsim_wrapper.cpp
-
-  noinst_LTLIBRARIES += lib_modelsimwrapper.la
-  lib_modelsimwrapper_la_CPPFLAGS = \
-    -I$(top_srcdir)/src \
-    -I$(top_srcdir)/src/constants \
-    -I$(top_srcdir)/src/wrapper/simulation \
-    -I$(top_srcdir)/src/design_flows/backend/ToHDL \
-    -I$(top_srcdir)/src/utility \
-    $(AM_CPPFLAGS)
-  noinst_HEADERS += wrapper/simulation/modelsim/modelsimWrapper.hpp
-  lib_modelsimwrapper_la_SOURCES = wrapper/simulation/modelsim/modelsimWrapper.cpp
-
   noinst_LTLIBRARIES += lib_simulation.la
   lib_simulation_la_CPPFLAGS = \
     -I$(top_srcdir)/src \
+    -I$(top_srcdir)/src/circuit \
     -I$(top_srcdir)/src/constants \
+    -I$(top_srcdir)/src/design_flows/backend/ToHDL \
     -I$(top_srcdir)/src/utility \
     -I$(top_srcdir)/src/wrapper \
     -I$(top_srcdir)/src/wrapper/compiler/\
@@ -81,14 +46,17 @@ if BUILD_SIMULATION
     -I$(top_srcdir)/src/wrapper/simulation/xsim \
     -I$(top_srcdir)/src/wrapper/simulation/verilator \
     $(AM_CPPFLAGS)
-  noinst_HEADERS += wrapper/simulation/SimulationTool.hpp
-  lib_simulation_la_SOURCES = wrapper/simulation/SimulationTool.cpp
-  lib_simulation_la_LIBADD = \
-    lib_verilatorwrapper.la \
-    lib_xsimwrapper.la \
-    lib_modelsimwrapper.la
+  noinst_HEADERS += \
+    wrapper/simulation/SimulationTool.hpp \
+    wrapper/simulation/modelsim/modelsimWrapper.hpp \
+    wrapper/simulation/verilator/VerilatorWrapper.hpp \
+    wrapper/simulation/xsim/VIVADO_xsim_wrapper.hpp
+  lib_simulation_la_SOURCES = \
+    wrapper/simulation/SimulationTool.cpp \
+    wrapper/simulation/modelsim/modelsimWrapper.cpp \
+    wrapper/simulation/verilator/VerilatorWrapper.cpp \
+    wrapper/simulation/xsim/VIVADO_xsim_wrapper.cpp
   lib_wrapper_la_LIBADD += lib_simulation.la
-
 endif
 
 if BUILD_SYNTHESIS

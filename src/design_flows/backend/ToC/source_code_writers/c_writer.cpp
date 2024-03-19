@@ -48,11 +48,6 @@
  */
 #include "c_writer.hpp"
 
-#include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-#include "config_PACKAGE_NAME.hpp"
-#include "config_PACKAGE_VERSION.hpp"
-#include "config_RELEASE.hpp"
-
 #include "Dominance.hpp"
 #include "Parameter.hpp"
 #include "actor_graph_backend.hpp"
@@ -63,29 +58,34 @@
 #include "c_backend_information.hpp"
 #include "c_backend_step_factory.hpp"
 #include "call_graph_manager.hpp"
+#include "discrepancy_analysis_c_writer.hpp"
+#include "discrepancy_instruction_writer.hpp"
 #include "ext_tree_node.hpp"
 #include "function_behavior.hpp"
+#include "hls_c_writer.hpp"
+#include "hls_instruction_writer.hpp"
 #include "hls_manager.hpp"
 #include "indented_output_stream.hpp"
 #include "instruction_writer.hpp"
 #include "loop.hpp"
 #include "loops.hpp"
+#include "mdpi_wrapper_c_writer.hpp"
 #include "op_graph.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
+#include "utility.hpp"
 #include "var_pp_functor.hpp"
+
+#include <boost/range/adaptor/reversed.hpp>
+
+#include "config_HAVE_HOST_PROFILING_BUILT.hpp"
+#include "config_PACKAGE_NAME.hpp"
 
 #if HAVE_HOST_PROFILING_BUILT
 #include "basic_blocks_profiling_c_writer.hpp"
 #endif
-#include "discrepancy_analysis_c_writer.hpp"
-#include "discrepancy_instruction_writer.hpp"
-#include "hls_c_writer.hpp"
-#include "hls_instruction_writer.hpp"
-
-#include <boost/range/adaptor/reversed.hpp>
 
 #if HAVE_UNORDERED
 #include <boost/functional/hash/hash.hpp>
@@ -138,16 +138,18 @@ class TreeNodesPairSet : public OrderedSetStd<std::pair<tree_nodeRef, tree_nodeR
 #endif
 
 CWriter::CWriter(const HLS_managerConstRef _HLSMgr, const InstructionWriterRef _instruction_writer,
-                 const IndentedOutputStreamRef _indented_output_stream, const ParameterConstRef _Param, bool _verbose)
+                 const IndentedOutputStreamRef _indented_output_stream)
     : HLSMgr(_HLSMgr),
       TM(_HLSMgr->get_tree_manager()),
       indented_output_stream(_indented_output_stream),
       instrWriter(_instruction_writer),
+      declared_functions(),
+      defined_functions(),
       bb_label_counter(0),
-      verbose(_verbose),
-      Param(_Param),
-      debug_level(_Param->get_class_debug_level("CWriter")),
-      output_level(_Param->getOption<int>(OPT_output_level)),
+      verbose(_HLSMgr->get_parameter()->getOption<int>(OPT_debug_level) >= DEBUG_LEVEL_VERBOSE),
+      Param(_HLSMgr->get_parameter()),
+      debug_level(_HLSMgr->get_parameter()->get_class_debug_level("CWriter")),
+      output_level(_HLSMgr->get_parameter()->getOption<int>(OPT_output_level)),
       fake_max_tree_node_id(0),
       dominators(nullptr),
       post_dominators(nullptr)
@@ -157,49 +159,55 @@ CWriter::CWriter(const HLS_managerConstRef _HLSMgr, const InstructionWriterRef _
 CWriter::~CWriter() = default;
 
 CWriterRef CWriter::CreateCWriter(const CBackendInformationConstRef c_backend_info, const HLS_managerConstRef hls_man,
-                                  const IndentedOutputStreamRef indented_output_stream,
-                                  const ParameterConstRef parameters, const bool verbose)
+                                  const IndentedOutputStreamRef indented_output_stream)
 {
    const auto app_man = RefcountCast<const application_manager>(hls_man);
    switch(c_backend_info->type)
    {
-#if HAVE_HOST_PROFILING_BUILT
       case(CBackendInformation::CB_BBP):
       {
+#if HAVE_HOST_PROFILING_BUILT
          const auto instruction_writer = InstructionWriter::CreateInstructionWriter(
-             ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, parameters);
-         return CWriterRef(
-             new BasicBlocksProfilingCWriter(hls_man, instruction_writer, indented_output_stream, parameters, verbose));
-      }
+             ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, hls_man->get_parameter());
+         return CWriterRef(new BasicBlocksProfilingCWriter(hls_man, instruction_writer, indented_output_stream));
+#else
+         break;
 #endif
+      }
 #if HAVE_HLS_BUILT
       case(CBackendInformation::CB_DISCREPANCY_ANALYSIS):
       {
          const InstructionWriterRef instruction_writer(
-             new discrepancy_instruction_writer(app_man, indented_output_stream, parameters));
+             new discrepancy_instruction_writer(app_man, indented_output_stream, hls_man->get_parameter()));
 
-         return CWriterRef(new DiscrepancyAnalysisCWriter(c_backend_info, hls_man, instruction_writer,
-                                                          indented_output_stream, parameters, verbose));
+         return CWriterRef(
+             new DiscrepancyAnalysisCWriter(c_backend_info, hls_man, instruction_writer, indented_output_stream));
       }
 #endif
       case(CBackendInformation::CB_HLS):
       {
          const InstructionWriterRef instruction_writer(
-             new HLSInstructionWriter(app_man, indented_output_stream, parameters));
-         return CWriterRef(
-             new HLSCWriter(c_backend_info, hls_man, instruction_writer, indented_output_stream, parameters, verbose));
+             new HLSInstructionWriter(app_man, indented_output_stream, hls_man->get_parameter()));
+         return CWriterRef(new HLSCWriter(c_backend_info, hls_man, instruction_writer, indented_output_stream));
       }
       case(CBackendInformation::CB_SEQUENTIAL):
       {
          const auto instruction_writer = InstructionWriter::CreateInstructionWriter(
-             ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, parameters);
-         return CWriterRef(new CWriter(hls_man, instruction_writer, indented_output_stream, parameters, verbose));
+             ActorGraphBackend_Type::BA_NONE, app_man, indented_output_stream, hls_man->get_parameter());
+         return CWriterRef(new CWriter(hls_man, instruction_writer, indented_output_stream));
+      }
+      case(CBackendInformation::CB_MDPI_WRAPPER):
+      {
+         const InstructionWriterRef instruction_writer(
+             new HLSInstructionWriter(app_man, indented_output_stream, hls_man->get_parameter()));
+         return CWriterRef(new MdpiWrapperCWriter(hls_man, instruction_writer, indented_output_stream));
       }
       default:
       {
-         THROW_UNREACHABLE("");
+         break;
       }
    }
+   THROW_UNREACHABLE("");
    return CWriterRef();
 }
 
@@ -225,6 +233,12 @@ void CWriter::declare_cast_types(unsigned int funId, CustomSet<std::string>& loc
    }
 }
 
+void CWriter::InternalInitialize()
+{
+   declared_functions = HLSMgr->get_functions_without_body();
+   defined_functions = HLSMgr->get_functions_with_body();
+}
+
 void CWriter::Initialize()
 {
    fake_max_tree_node_id = TM->get_next_available_tree_node_id();
@@ -233,6 +247,7 @@ void CWriter::Initialize()
    globallyDeclVars.clear();
    additionalIncludes.clear();
    writtenIncludes.clear();
+   InternalInitialize();
 }
 
 void CWriter::WriteBodyLoop(const unsigned int function_index, const unsigned int, vertex current_vertex, bool bracket)
@@ -262,7 +277,45 @@ void CWriter::WriteFunctionImplementation(unsigned int function_id)
    EndFunctionBody(function_id);
 }
 
-void CWriter::WriteHeader()
+void CWriter::AnalyzeInclude(const tree_nodeConstRef& tn, const BehavioralHelperConstRef& BH,
+                             CustomOrderedSet<std::string>& includes_to_write, CustomSet<unsigned int>& already_visited)
+{
+   if(already_visited.count(tn->index))
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Skipped already analyzed " + STR(tn->index));
+      return;
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "-->Computing include for " + STR(tn->index) + " " +
+                      (tree_helper::IsFunctionDeclaration(tn) ? "" : STR(tn)));
+   already_visited.insert(tn->index);
+   bool is_system;
+   const auto decl = std::get<0>(tree_helper::GetSourcePath(tn, is_system));
+   if(!decl.empty() && decl != "<built-in>" && is_system && !tree_helper::IsInLibbambu(tn))
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding " + decl + " to the list of includes");
+      includes_to_write.insert(decl);
+   }
+   else
+   {
+      const auto type = tree_helper::CGetType(tn);
+      const auto types_to_be_declared_before =
+          tree_helper::GetTypesToBeDeclaredBefore(type, Param->getOption<bool>(OPT_without_transformation));
+      for(const auto& type_to_be_declared : types_to_be_declared_before)
+      {
+         AnalyzeInclude(type_to_be_declared, BH, includes_to_write, already_visited);
+      }
+      const auto types_to_be_declared_after =
+          tree_helper::GetTypesToBeDeclaredAfter(type, Param->getOption<bool>(OPT_without_transformation));
+      for(const auto& type_to_be_declared : types_to_be_declared_after)
+      {
+         AnalyzeInclude(type_to_be_declared, BH, includes_to_write, already_visited);
+      }
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed");
+}
+
+void CWriter::InternalWriteHeader()
 {
    indented_output_stream->Append(R"(
 #ifdef __cplusplus
@@ -274,9 +327,9 @@ typedef bool _Bool;
 
    bool is_readc_needed = false;
    bool is_builtin_cond_expr32 = false;
-   for(auto extfun : HLSMgr->get_functions_without_body())
+   for(const auto fid : declared_functions)
    {
-      const BehavioralHelperConstRef BH = HLSMgr->CGetFunctionBehavior(extfun)->CGetBehavioralHelper();
+      const auto BH = HLSMgr->CGetFunctionBehavior(fid)->CGetBehavioralHelper();
       if(BH->get_function_name() == "__bambu_readc" || BH->get_function_name() == "__bambu_read4c")
       {
          is_readc_needed = true;
@@ -304,15 +357,95 @@ typedef bool _Bool;
    // TODO: add bambu param manager implementation
 }
 
-void CWriter::WriteGlobalDeclarations()
+void CWriter::WriteHeader()
 {
+   indented_output_stream->Append("/*\n");
+   indented_output_stream->Append(" * Politecnico di Milano\n");
+   indented_output_stream->Append(" * Code created using " PACKAGE_NAME " - " + Param->PrintVersion());
+   indented_output_stream->Append(" - Date " + TimeStamp::GetCurrentTimeStamp());
+   indented_output_stream->Append("\n");
+   if(Param->isOption(OPT_cat_args))
+   {
+      indented_output_stream->Append(" * Bambu executed with: " + Param->getOption<std::string>(OPT_cat_args) + "\n");
+   }
+   indented_output_stream->Append(" */\n");
+
+   InternalWriteHeader();
+
+   CustomOrderedSet<std::string> includes_to_write;
+   CustomSet<unsigned int> already_visited;
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing includes for external functions");
+   for(const auto f_id : defined_functions)
+   {
+      const auto FB = HLSMgr->CGetFunctionBehavior(f_id);
+      const auto BH = FB->CGetBehavioralHelper();
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing includes for " + BH->get_function_name());
+      AnalyzeInclude(TM->CGetTreeReindex(f_id), BH, includes_to_write, already_visited);
+
+      TreeNodeConstSet decl_nodes;
+      const auto& tmp_vars = GetLocalVariables(f_id);
+      for(const auto& tmp_var : tmp_vars)
+      {
+         decl_nodes.insert(TM->CGetTreeReindex(tmp_var));
+      }
+      const auto funParams = BH->GetParameters();
+      decl_nodes.insert(funParams.begin(), funParams.end());
+      const auto& vars = HLSMgr->GetGlobalVariables();
+      decl_nodes.insert(vars.begin(), vars.end());
+
+      for(const auto& v : decl_nodes)
+      {
+         const auto variable_type = tree_helper::CGetType(v);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "-->Analyzing includes for variable " + BH->PrintVariable(v->index) + " of type " +
+                            STR(variable_type));
+         AnalyzeInclude(variable_type, BH, includes_to_write, already_visited);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                        "<--Analyzed includes for variable " + BH->PrintVariable(v->index) + " of type " +
+                            STR(variable_type));
+      }
+
+      const auto op_graph = FB->CGetOpGraph(FunctionBehavior::DFG);
+      VertexIterator v, vEnd;
+      for(boost::tie(v, vEnd) = boost::vertices(*op_graph); v != vEnd; v++)
+      {
+         const auto& node = op_graph->CGetOpNodeInfo(*v)->node;
+         if(node)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing includes for operation " + STR(node));
+            TreeNodeConstSet types;
+            BH->GetTypecast(node, types);
+            for(const auto& type : types)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing includes for type " + STR(type));
+               AnalyzeInclude(type, BH, includes_to_write, already_visited);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed includes for type " + STR(type));
+            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed includes for operation " + STR(node));
+         }
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed includes for " + BH->get_function_name());
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Computed includes for external functions");
+
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing includes");
+   for(const auto& s : includes_to_write)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Writing: " + s);
+      writeInclude(s);
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written includes");
+}
+
+void CWriter::InternalWriteGlobalDeclarations()
+{
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing global declarations");
    /// Writing auxiliary variables used by instruction writer
    instrWriter->write_declarations();
 
    /// Writing declarations of global variables
-   CustomOrderedSet<unsigned int> functions = HLSMgr->get_functions_with_body();
-   THROW_ASSERT(functions.size() > 0, "at least one function is expected");
-   unsigned int first_fun = *functions.begin();
+   THROW_ASSERT(defined_functions.size() > 0, "at least one function is expected");
+   unsigned int first_fun = *defined_functions.begin();
    const auto BH = HLSMgr->CGetFunctionBehavior(first_fun)->CGetBehavioralHelper();
 
    const auto& gblVariables = HLSMgr->GetGlobalVariables();
@@ -326,8 +459,53 @@ void CWriter::WriteGlobalDeclarations()
    if(HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction())
    {
       indented_output_stream->Append("#include <stdarg.h>\n\n");
-      indented_output_stream->Append("void " + STR(BUILTIN_WAIT_CALL) + "(void * ptr, ...);\n");
+      indented_output_stream->Append("void " BUILTIN_WAIT_CALL "(void * ptr, ...);\n");
    }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written global declarations");
+}
+
+void CWriter::WriteGlobalDeclarations()
+{
+   InternalWriteGlobalDeclarations();
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing function prototypes");
+   for(const auto fid : declared_functions)
+   {
+      const auto f_bh = HLSMgr->CGetFunctionBehavior(fid)->CGetBehavioralHelper();
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Writing external function prototype: " + f_bh->get_function_name());
+      if(f_bh->function_has_to_be_printed(fid))
+      {
+         DeclareFunctionTypes(TM->CGetTreeReindex(fid));
+         WriteFunctionDeclaration(fid);
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "<--Written external function prototype: " + f_bh->get_function_name());
+   }
+
+   for(const auto fid : defined_functions)
+   {
+      const auto f_bh = HLSMgr->CGetFunctionBehavior(fid)->CGetBehavioralHelper();
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "-->Writing function prototype of " + f_bh->get_function_name());
+
+      if(Param->isOption(OPT_pretty_print))
+      {
+         const auto f_name = f_bh->get_function_name();
+         if(starts_with(f_name, "__builtin_"))
+         {
+            indented_output_stream->Append("#define " + f_name + " _bambu_" + f_name + "\n");
+         }
+      }
+
+      if(f_bh->function_has_to_be_printed(fid))
+      {
+         DeclareFunctionTypes(TM->CGetTreeReindex(fid));
+         WriteFunctionDeclaration(fid);
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                     "<--Written function prototype of " + f_bh->get_function_name());
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written function prototypes");
 }
 
 void CWriter::DeclareFunctionTypes(const tree_nodeConstRef& tn)
@@ -1375,11 +1553,6 @@ void CWriter::DeclareVariable(const tree_nodeConstRef& curVar, CustomSet<unsigne
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Declared variable " + STR(curVar));
 }
 
-const InstructionWriterRef CWriter::getInstructionWriter() const
-{
-   return instrWriter;
-}
-
 void CWriter::writeInclude(const std::string& file_name)
 {
    if(file_name.find(".h") == std::string::npos || writtenIncludes.find(file_name) != writtenIncludes.end())
@@ -1675,248 +1848,41 @@ void CWriter::pop_stack(std::list<unsigned int>& pushed,
    pushed.clear();
 }
 
-void CWriter::WriteHashTableImplementation()
+void CWriter::InternalWriteFile()
 {
-   indented_output_stream->Append("#define NIL(type)    ((type *) 0)\n");
-   indented_output_stream->Append("typedef struct st_table_entry st_table_entry;\n");
-   indented_output_stream->Append("struct st_table_entry\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("unsigned long long key;\n");
-   indented_output_stream->Append("unsigned long long record;\n");
-   indented_output_stream->Append("st_table_entry *next;\n");
-   indented_output_stream->Append("};\n");
-   indented_output_stream->Append("\n");
-   indented_output_stream->Append("typedef struct st_table st_table;\n");
-   indented_output_stream->Append("struct st_table\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("int num_bins;\n");
-   indented_output_stream->Append("int num_entries;\n");
-   indented_output_stream->Append("int max_density;\n");
-   indented_output_stream->Append("int reorder_flag;\n");
-   indented_output_stream->Append("double grow_factor;\n");
-   indented_output_stream->Append("st_table_entry **bins;\n");
-   indented_output_stream->Append("};\n");
-   indented_output_stream->Append("typedef struct st_generator st_generator;\n");
-   indented_output_stream->Append("struct st_generator\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("st_table *table;\n");
-   indented_output_stream->Append("st_table_entry *entry;\n");
-   indented_output_stream->Append("int index;\n");
-   indented_output_stream->Append("};\n");
-   indented_output_stream->Append("#define ST_DEFAULT_MAX_DENSITY 5\n");
-   indented_output_stream->Append("#define ST_DEFAULT_INIT_TABLE_SIZE 11\n");
-   indented_output_stream->Append("#define ST_DEFAULT_GROW_FACTOR 2.0\n");
-   indented_output_stream->Append("#define ST_DEFAULT_REORDER_FLAG 0\n");
-   indented_output_stream->Append("#define ST_OUT_OF_MEM -10000\n");
-   indented_output_stream->Append("#define FREE(obj) ((obj) ? (free((char *) (obj)), (obj) = 0) : 0)\n");
-   indented_output_stream->Append("#define ALLOC(type, num) ((type *) malloc(sizeof(type) * (num)))\n");
-   indented_output_stream->Append("#if SIZEOF_VOID_P == 8\n");
-   indented_output_stream->Append("#define st_shift 3\n");
-   indented_output_stream->Append("#else\n");
-   indented_output_stream->Append("#define st_shift 2\n");
-   indented_output_stream->Append("#endif\n");
-   indented_output_stream->Append("#define ST_PTRHASH(x,size) ((unsigned int)((unsigned long)(x)>>st_shift)%size)\n");
-   indented_output_stream->Append("\n");
-   indented_output_stream->Append("static int rehash(st_table *table)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("st_table_entry *ptr, *next, **old_bins;\n");
-   indented_output_stream->Append("int i, old_num_bins, hash_val, old_num_entries;\n");
-   indented_output_stream->Append("/* save old values */\n");
-   indented_output_stream->Append("old_bins = table->bins;\n");
-   indented_output_stream->Append("old_num_bins = table->num_bins;\n");
-   indented_output_stream->Append("old_num_entries = table->num_entries;\n");
-   indented_output_stream->Append("/* rehash */\n");
-   indented_output_stream->Append("table->num_bins = (int) (table->grow_factor * old_num_bins);\n");
-   indented_output_stream->Append("if (table->num_bins % 2 == 0)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("table->num_bins += 1;\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("table->num_entries = 0;\n");
-   indented_output_stream->Append("table->bins = ALLOC(st_table_entry *, table->num_bins);\n");
-   indented_output_stream->Append("if (table->bins == NIL(st_table_entry *))\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("table->bins = old_bins;\n");
-   indented_output_stream->Append("table->num_bins = old_num_bins;\n");
-   indented_output_stream->Append("table->num_entries = old_num_entries;\n");
-   indented_output_stream->Append("return ST_OUT_OF_MEM;\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("/* initialize */\n");
-   indented_output_stream->Append("for (i = 0; i < table->num_bins; i++)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("table->bins[i] = 0;\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("/* copy data over */\n");
-   indented_output_stream->Append("for (i = 0; i < old_num_bins; i++)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("ptr = old_bins[i];\n");
-   indented_output_stream->Append("while (ptr != NIL(st_table_entry))\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("next = ptr->next;\n");
-   indented_output_stream->Append("hash_val = ptr->key%table->num_bins;\n");
-   indented_output_stream->Append("ptr->next = table->bins[hash_val];\n");
-   indented_output_stream->Append("table->bins[hash_val] = ptr;\n");
-   indented_output_stream->Append("table->num_entries++;\n");
-   indented_output_stream->Append("ptr = next;\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("FREE(old_bins);\n");
-   indented_output_stream->Append("return 1;\n");
-   indented_output_stream->Append("} /* rehash */\n");
-   indented_output_stream->Append("\n");
-   indented_output_stream->Append("st_table * st_init_table_with_params(\n");
-   indented_output_stream->Append("int size,\n");
-   indented_output_stream->Append("int density,\n");
-   indented_output_stream->Append("double grow_factor,\n");
-   indented_output_stream->Append("int reorder_flag)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("int i;\n");
-   indented_output_stream->Append("st_table *newt;\n");
-   indented_output_stream->Append("newt = ALLOC(st_table, 1);\n");
-   indented_output_stream->Append("if (newt == NIL(st_table)) \n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("return NIL(st_table);\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("newt->num_entries = 0;\n");
-   indented_output_stream->Append("newt->max_density = density;\n");
-   indented_output_stream->Append("newt->grow_factor = grow_factor;\n");
-   indented_output_stream->Append("newt->reorder_flag = reorder_flag;\n");
-   indented_output_stream->Append("if (size <= 0)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("size = 1;\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("newt->num_bins = size;\n");
-   indented_output_stream->Append("newt->bins = ALLOC(st_table_entry *, size);\n");
-   indented_output_stream->Append("if (newt->bins == NIL(st_table_entry *))\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("FREE(newt);\n");
-   indented_output_stream->Append("return NIL(st_table);\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("for(i = 0; i < size; i++)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("newt->bins[i] = 0;\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("return newt;\n");
-   indented_output_stream->Append("} /* st_init_table_with_params */\n");
-   indented_output_stream->Append("\n");
-   indented_output_stream->Append("st_table * st_init_table()\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("return st_init_table_with_params(ST_DEFAULT_INIT_TABLE_SIZE,\n");
-   indented_output_stream->Append("ST_DEFAULT_MAX_DENSITY,\n");
-   indented_output_stream->Append("ST_DEFAULT_GROW_FACTOR,\n");
-   indented_output_stream->Append("ST_DEFAULT_REORDER_FLAG);\n");
-   indented_output_stream->Append("} /* st_init_table */\n");
-   indented_output_stream->Append("\n");
-   indented_output_stream->Append("st_generator *\n");
-   indented_output_stream->Append("st_init_gen(st_table *table)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("st_generator *gen;\n");
-   indented_output_stream->Append("gen = ALLOC(st_generator, 1);\n");
-   indented_output_stream->Append("if (gen == NIL(st_generator))\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("return NIL(st_generator);\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("gen->table = table;\n");
-   indented_output_stream->Append("gen->entry = NIL(st_table_entry);\n");
-   indented_output_stream->Append("gen->index = 0;\n");
-   indented_output_stream->Append("return gen;\n");
-   indented_output_stream->Append("} /* st_init_gen */\n");
-   indented_output_stream->Append("\n");
-   indented_output_stream->Append(
-       "int st_gen_int(st_generator *gen, unsigned long long * key_p, unsigned long long * value_p)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("int i;\n");
-   indented_output_stream->Append("if (gen->entry == NIL(st_table_entry))\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("/* try to find next entry */\n");
-   indented_output_stream->Append("for(i = gen->index; i < gen->table->num_bins; i++)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("if (gen->table->bins[i] != NIL(st_table_entry))\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("gen->index = i+1;\n");
-   indented_output_stream->Append("gen->entry = gen->table->bins[i];\n");
-   indented_output_stream->Append("break;\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("if (gen->entry == NIL(st_table_entry))\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("return 0;     /* that's all folks ! */\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("*key_p = gen->entry->key;\n");
-   indented_output_stream->Append("if (value_p != NIL(unsigned long long))\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("*value_p = gen->entry->record;\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("gen->entry = gen->entry->next;\n");
-   indented_output_stream->Append("return 1;\n");
-   indented_output_stream->Append("} /* st_gen_int */\n");
-   indented_output_stream->Append("\n");
-   indented_output_stream->Append("void st_free_gen(st_generator *gen)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("FREE(gen);\n");
-   indented_output_stream->Append("} /* st_free_gen */\n");
-   indented_output_stream->Append("\n");
-   indented_output_stream->Append(
-       "int st_find_or_add(st_table *table, unsigned long long key, unsigned long long ** slot)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("int hash_val;\n");
-   indented_output_stream->Append("st_table_entry *newt, *ptr, **last;\n");
-   indented_output_stream->Append("hash_val = key%table->num_bins;\n");
-   indented_output_stream->Append("last = &(table)->bins[hash_val];\n");
-   indented_output_stream->Append("ptr = *(last);\n");
-   indented_output_stream->Append("while (ptr != NIL(st_table_entry) && ptr->key != key)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("last = &(ptr)->next;\n");
-   indented_output_stream->Append("ptr = *(last);\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("if (ptr != NIL(st_table_entry) && (table)->reorder_flag)\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("*(last) = (ptr)->next;\n");
-   indented_output_stream->Append("(ptr)->next = (table)->bins[hash_val];\n");
-   indented_output_stream->Append("(table)->bins[hash_val] = (ptr);\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("if (ptr == NIL(st_table_entry)) \n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("if (table->num_entries / table->num_bins >= table->max_density) \n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("if (rehash(table) == ST_OUT_OF_MEM) \n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("return ST_OUT_OF_MEM;\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("hash_val = key%table->num_bins;\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("newt = ALLOC(st_table_entry, 1);\n");
-   indented_output_stream->Append("if (newt == NIL(st_table_entry)) \n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("return ST_OUT_OF_MEM;\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("newt->key = key;\n");
-   indented_output_stream->Append("newt->record = 0;\n");
-   indented_output_stream->Append("newt->next = table->bins[hash_val];\n");
-   indented_output_stream->Append("table->bins[hash_val] = newt;\n");
-   indented_output_stream->Append("table->num_entries++;\n");
-   indented_output_stream->Append("if (slot != NIL(void)) \n");
-   indented_output_stream->Append("*slot = &newt->record;\n");
-   indented_output_stream->Append("return 0;\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("else\n");
-   indented_output_stream->Append("{\n");
-   indented_output_stream->Append("if (slot != NIL(void)) \n");
-   indented_output_stream->Append("*slot = &ptr->record;\n");
-   indented_output_stream->Append("return 1;\n");
-   indented_output_stream->Append("}\n");
-   indented_output_stream->Append("} /* st_find_or_add */\n");
-   indented_output_stream->Append("#define st_foreach_item_int(table, gen, key, value) for(gen=st_init_gen(table); "
-                                  "st_gen_int(gen,key,value) || (st_free_gen(gen),0);)\n");
 }
 
 void CWriter::WriteFile(const std::string& file_name)
 {
+   Initialize();
+   WriteHeader();
+   WriteGlobalDeclarations();
+   WriteImplementations();
+   InternalWriteFile();
    indented_output_stream->WriteFile(file_name);
 }
 
 void CWriter::WriteBBHeader(const unsigned int, const unsigned int)
 {
+}
+
+void CWriter::WriteImplementations()
+{
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing implementations");
+   // First of all I declare the functions and then the tasks
+   for(const auto fid : defined_functions)
+   {
+      const auto BH = HLSMgr->CGetFunctionBehavior(fid)->CGetBehavioralHelper();
+      if(BH->function_has_to_be_printed(fid))
+      {
+         WriteFunctionImplementation(fid);
+      }
+   }
+   if(HLSMgr->CGetCallGraphManager()->ExistsAddressedFunction())
+   {
+      WriteBuiltinWaitCall();
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written implementations");
 }
 
 void CWriter::WriteBuiltinWaitCall()

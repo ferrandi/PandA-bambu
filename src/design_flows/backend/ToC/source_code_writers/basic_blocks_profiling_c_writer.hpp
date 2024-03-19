@@ -81,21 +81,18 @@ class BasicBlocksProfilingCWriter final : public EdgeCWriter
     */
    void print_loop_switching(EdgeDescriptor e) final;
 
+   void InternalWriteGlobalDeclarations() final;
+
  public:
    /**
     * Constructor of the class
     * @param HLSMgr is the hls manager
     * @param instruction_writer is the instruction writer to use to print the single instruction
     * @param indented_output_stream is the output stream
-    * @param Param is the set of parameters
-    * @param verbose tells if annotations
     */
    BasicBlocksProfilingCWriter(const HLS_managerConstRef _HLSMgr, const InstructionWriterRef instruction_writer,
-                               const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef Param,
-                               bool verbose = true);
+                               const IndentedOutputStreamRef indented_output_stream);
 
    ~BasicBlocksProfilingCWriter() final;
-
-   void WriteGlobalDeclarations() final;
 };
 #endif

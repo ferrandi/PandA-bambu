@@ -55,11 +55,10 @@
 
 BasicBlocksProfilingCWriter::BasicBlocksProfilingCWriter(const HLS_managerConstRef _HLSMgr,
                                                          const InstructionWriterRef _instruction_writer,
-                                                         const IndentedOutputStreamRef _indented_output_stream,
-                                                         const ParameterConstRef _Param, bool _verbose)
-    : EdgeCWriter(_HLSMgr, _instruction_writer, _indented_output_stream, _Param, _verbose)
+                                                         const IndentedOutputStreamRef _indented_output_stream)
+    : EdgeCWriter(_HLSMgr, _instruction_writer, _indented_output_stream)
 {
-   debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
+   debug_level = _HLSMgr->get_parameter()->get_class_debug_level(GET_CLASS(*this));
 }
 
 BasicBlocksProfilingCWriter::~BasicBlocksProfilingCWriter() = default;
@@ -92,9 +91,9 @@ void BasicBlocksProfilingCWriter::print_loop_switching(EdgeDescriptor e)
    print_edge(e, 0);
 }
 
-void BasicBlocksProfilingCWriter::WriteGlobalDeclarations()
+void BasicBlocksProfilingCWriter::InternalWriteGlobalDeclarations()
 {
-   CWriter::WriteGlobalDeclarations();
+   CWriter::InternalWriteGlobalDeclarations();
    indented_output_stream->Append("#include <stdlib.h>\n");
    indented_output_stream->Append("#include <stdio.h>\n");
    indented_output_stream->Append("\n");

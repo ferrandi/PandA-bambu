@@ -46,13 +46,8 @@
 #include "Parameter.hpp"
 #include "SimulationInformation.hpp"
 #include "behavioral_helper.hpp"
-#include "c_backend.hpp"
-#include "c_backend_information.hpp"
-#include "c_backend_step_factory.hpp"
 #include "call_graph_manager.hpp"
 #include "copyrights_strings.hpp"
-#include "design_flow_graph.hpp"
-#include "design_flow_manager.hpp"
 #include "fu_binding.hpp"
 #include "function_behavior.hpp"
 #include "hls.hpp"
@@ -95,8 +90,7 @@ TestbenchGeneration::TestbenchGeneration(const ParameterConstRef _parameters, co
                                             _HLSMgr->get_HLS_device()->get_technology_manager(), _parameters)),
       cir(nullptr),
       mod(nullptr),
-      output_directory(parameters->getOption<std::filesystem::path>(OPT_output_directory) / "simulation"),
-      c_testbench_basename(STR_CST_testbench_generation_basename)
+      output_directory(parameters->getOption<std::filesystem::path>(OPT_output_directory) / "simulation")
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -130,38 +124,6 @@ TestbenchGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipT
          THROW_UNREACHABLE("");
    }
    return ret;
-}
-
-void TestbenchGeneration::ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
-                                               const DesignFlowStep::RelationshipType relationship_type)
-{
-   HLS_step::ComputeRelationships(design_flow_step_set, relationship_type);
-
-   switch(relationship_type)
-   {
-      case DEPENDENCE_RELATIONSHIP:
-      {
-         const auto c_backend_factory =
-             GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
-
-         design_flow_step_set.insert(c_backend_factory->CreateCBackendStep(CBackendInformationConstRef(
-             new CBackendInformation(CBackendInformation::CB_HLS, output_directory / (c_testbench_basename + ".c")))));
-         break;
-      }
-      case PRECEDENCE_RELATIONSHIP:
-      {
-         break;
-      }
-      case INVALIDATION_RELATIONSHIP:
-      {
-         break;
-      }
-      default:
-      {
-         THROW_UNREACHABLE("");
-         break;
-      }
-   }
 }
 
 bool TestbenchGeneration::HasToBeExecuted() const
@@ -819,77 +781,8 @@ typedef int unsigned ptr_t;
    std::filesystem::remove(HLSMgr->RSim->filename_bench);
    std::filesystem::rename(HLSMgr->RSim->filename_bench + ".dpi", HLSMgr->RSim->filename_bench);
 
-   if(parameters->getOption<std::string>(OPT_simulator) == "VERILATOR")
-   {
-      HLSMgr->aux_files.push_back(write_verilator_testbench());
-   }
-
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--");
    return DesignFlowStep_Status::SUCCESS;
-}
-
-std::string TestbenchGeneration::write_verilator_testbench() const
-{
-   const auto filename = output_directory / "bambu_testbench.cpp";
-   std::ofstream os(filename, std::ios::out);
-   simple_indent PP('{', '}', 3);
-
-   std::string top_fname = mod->get_typeRef()->id_type;
-   PP(os, "#include <memory>\n");
-   PP(os, "\n");
-   PP(os, "#include <verilated.h>\n");
-   PP(os, "\n");
-   PP(os, "#if VM_TRACE\n");
-   PP(os, "# include <verilated_vcd_c.h>\n");
-   PP(os, "#endif\n");
-   PP(os, "\n");
-   PP(os, "#include \"Vbambu_testbench.h\"\n");
-   PP(os, "\n");
-   PP(os, "\n");
-   PP(os, "static vluint64_t CLOCK_PERIOD = 2;\n");
-   PP(os, "static vluint64_t HALF_CLOCK_PERIOD = CLOCK_PERIOD/2;\n");
-   PP(os, "\n");
-   PP(os, "vluint64_t main_time = 0;\n");
-   PP(os, "\n");
-   PP(os, "double sc_time_stamp ()  {return main_time;}\n");
-   PP(os, "\n");
-   PP(os, "int main (int argc, char **argv, char **env)\n");
-   PP(os, "{\n");
-   PP(os, "Verilated::commandArgs(argc, argv);\n");
-   PP(os, "Verilated::debug(0);\n");
-   PP(os,
-      "const std::unique_ptr<Vbambu_testbench> top{new Vbambu_testbench{\"clocked_" CST_STR_BAMBU_TESTBENCH "\"}};");
-   PP(os, "\n");
-   PP(os, "\n");
-   PP(os, "main_time=0;\n");
-   PP(os, "#if VM_TRACE\n");
-   PP(os, "Verilated::traceEverOn(true);\n");
-   PP(os, "const std::unique_ptr<VerilatedVcdC> tfp{new VerilatedVcdC};\n");
-   PP(os, "top->trace (tfp.get(), 99);\n");
-   PP(os, "tfp->set_time_unit(\"p\");\n");
-   PP(os, "tfp->set_time_resolution(\"p\");\n");
-   PP(os, "tfp->open (\"" + output_directory.string() + "/test.vcd\");\n");
-   PP(os, "#endif\n");
-   PP(os, "top->" CLOCK_PORT_NAME " = 1;\n");
-   PP(os, "while (!Verilated::gotFinish())\n");
-   PP(os, "{\n");
-   PP(os, "top->" CLOCK_PORT_NAME " = !top->" CLOCK_PORT_NAME ";\n");
-   PP(os, "top->eval();\n");
-   PP(os, "#if VM_TRACE\n");
-   PP(os, "tfp->dump (main_time);\n");
-   PP(os, "#endif\n");
-   PP(os, "main_time += HALF_CLOCK_PERIOD;\n");
-   PP(os, "}\n");
-   PP(os, "#if VM_TRACE\n");
-   PP(os, "tfp->dump (main_time);\n");
-   PP(os, "tfp->close();\n");
-   PP(os, "#endif\n");
-   PP(os, "top->final();\n");
-   PP(os, "\n");
-   PP(os, "return 0;\n");
-   PP(os, "}");
-
-   return filename.string();
 }
 
 std::vector<std::string> TestbenchGeneration::print_var_init(const tree_managerConstRef TM, unsigned int var,

@@ -101,11 +101,13 @@ endif
 
 if BUILD_BAMBU
   noinst_HEADERS += \
+    design_flows/backend/ToC/source_code_writers/mdpi_wrapper_c_writer.hpp \
     design_flows/backend/ToC/source_code_writers/hls_c_writer.hpp \
     design_flows/backend/ToC/source_code_writers/hls_instruction_writer.hpp\
     design_flows/backend/ToC/source_code_writers/discrepancy_analysis_c_writer.hpp\
     design_flows/backend/ToC/source_code_writers/discrepancy_instruction_writer.hpp
   lib_source_code_writers_la_SOURCES += \
+    design_flows/backend/ToC/source_code_writers/mdpi_wrapper_c_writer.cpp \
     design_flows/backend/ToC/source_code_writers/hls_c_writer.cpp \
     design_flows/backend/ToC/source_code_writers/hls_instruction_writer.cpp\
     design_flows/backend/ToC/source_code_writers/discrepancy_analysis_c_writer.cpp\

@@ -86,9 +86,9 @@ CallGraph::~CallGraph() = default;
 
 void CallGraph::WriteDot(const std::string& file_name) const
 {
-   const auto output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory);
+   const auto output_directory = collection->parameters->getOption<std::filesystem::path>(OPT_dot_directory);
    std::filesystem::create_directories(output_directory);
-   const std::string full_name = output_directory + file_name;
+   const auto full_name = output_directory / file_name;
    const VertexWriterConstRef function_writer(new FunctionWriter(this));
    const EdgeWriterConstRef function_edge_writer(new FunctionEdgeWriter(this));
    InternalWriteDot<const FunctionWriter, const FunctionEdgeWriter>(full_name, function_writer, function_edge_writer);
