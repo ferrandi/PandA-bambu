@@ -167,8 +167,6 @@ DesignFlowStep_Status classic_datapath::InternalExec()
             {
                const auto bundle_id = what[1].str();
                iface_ports[bundle_id].push_back(port);
-               GetPointer<port_o>(port)->set_is_extern(false);
-               GetPointer<port_o>(port)->set_is_global(false);
             }
          }
       };
