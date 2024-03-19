@@ -640,7 +640,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
 
                if(!isRead && !isWrite)
                {
-                  if(interface_type == "m_axi" || interface_type == "fifo")
+                  if(interface_type == "m_axi" || starts_with(arg_name, "DF_bambu_"))
                   {
                      continue;
                   }
