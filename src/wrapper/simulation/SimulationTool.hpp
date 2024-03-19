@@ -41,9 +41,9 @@
  */
 #ifndef _SIMULATION_TOOL_HPP_
 #define _SIMULATION_TOOL_HPP_
-
 #include "refcount.hpp"
 
+#include <filesystem>
 #include <list>
 #include <string>
 #include <vector>
@@ -79,30 +79,22 @@ class SimulationTool
    /// comma separated list of include dirs
    const std::string inc_dirs;
 
+   const std::filesystem::path beh_dir;
+
    /**
     * Performs the actual writing
     */
    virtual std::string GenerateScript(std::ostream& script, const std::string& top_filename,
                                       const std::list<std::string>& file_list) = 0;
 
-   std::string GenerateLibraryBuildScript(std::ostream& script, const std::string& libtb_filename,
-                                          std::string& beh_cflags) const;
+   std::string GenerateLibraryBuildScript(std::ostream& script, std::string& beh_cflags) const;
 
  public:
-   /**
-    * Constructor
-    */
    explicit SimulationTool(const ParameterConstRef& Param, const std::string& top_fname, const std::string& inc_dirs);
 
-   /**
-    * Destructor
-    */
    virtual ~SimulationTool();
 
-   /**
-    * Factory method
-    */
-   static SimulationToolRef CreateSimulationTool(type_t type, const ParameterConstRef& Param, const std::string& suffix,
+   static SimulationToolRef CreateSimulationTool(type_t type, const ParameterConstRef& Param,
                                                  const std::string& top_fname, const std::string& inc_dirs);
 
    /**
@@ -129,7 +121,6 @@ class SimulationTool
 
    /**
     * Remove files created during simulation
-    * FIXME: this should become pure virtual
     */
    virtual void Clean() const;
 };

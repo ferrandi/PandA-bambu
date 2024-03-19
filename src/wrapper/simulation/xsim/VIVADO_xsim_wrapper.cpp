@@ -50,8 +50,6 @@
 #include "fileIO.hpp"
 #include "utility.hpp"
 
-#include <boost/algorithm/string.hpp>
-#include <filesystem>
 #include <fstream>
 #include <utility>
 
@@ -61,19 +59,11 @@
 #define XSIM_XSC "xsc"
 
 // constructor
-VIVADO_xsim_wrapper::VIVADO_xsim_wrapper(const ParameterConstRef& _Param, const std::string& _suffix,
-                                         const std::string& _top_fname, const std::string& _inc_dirs)
-    : SimulationTool(_Param, _top_fname, _inc_dirs), suffix(_suffix)
+VIVADO_xsim_wrapper::VIVADO_xsim_wrapper(const ParameterConstRef& _Param, const std::string& _top_fname,
+                                         const std::string& _inc_dirs)
+    : SimulationTool(_Param, _top_fname, _inc_dirs)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating the XSIM wrapper...");
-   std::filesystem::create_directory(XSIM_SUBDIR + suffix);
-}
-
-// destructor
-VIVADO_xsim_wrapper::~VIVADO_xsim_wrapper() = default;
-
-void VIVADO_xsim_wrapper::CheckExecution()
-{
 }
 
 static void create_project_file(const std::filesystem::path& project_filename, const std::list<std::string>& file_list)
@@ -99,7 +89,7 @@ static void create_project_file(const std::filesystem::path& project_filename, c
       {
          THROW_ERROR("Extension not recognized! " + extension.string());
       }
-      prj_file << " work " << file_path.lexically_proximate(project_filename.parent_path()).string() << std::endl;
+      prj_file << " work " << file_path.lexically_proximate(project_filename.parent_path()).string() << "\n";
    }
    prj_file.close();
 }
@@ -107,19 +97,19 @@ static void create_project_file(const std::filesystem::path& project_filename, c
 std::string VIVADO_xsim_wrapper::GenerateScript(std::ostream& script, const std::string& top_filename,
                                                 const std::list<std::string>& file_list)
 {
-   script << "#configuration" << std::endl;
+   script << "#configuration\n";
    const auto setupscr =
        Param->isOption(OPT_xilinx_vivado_settings) ? Param->getOption<std::string>(OPT_xilinx_vivado_settings) : "";
    if(!setupscr.empty())
    {
-      script << ". " << setupscr << " >& /dev/null;" << std::endl << std::endl;
+      script << ". " << setupscr << " >& /dev/null;\n\n";
    }
-   script << "BEH_DIR=\"" << XSIM_SUBDIR << suffix << "\"" << std::endl << "BEH_CC=\"${CC}\"" << std::endl << std::endl;
+   script << "BEH_CC=\"${CC}\"\n\n";
    log_file = "${BEH_DIR}/" + top_filename + "_xsim.log";
    const auto xilinx_root = Param->isOption(OPT_xilinx_root) ? Param->getOption<std::string>(OPT_xilinx_root) : "";
    std::string beh_cflags =
        "-DXILINX_SIMULATOR " + (xilinx_root.size() ? ("-isystem " + xilinx_root + "/data/xsim/include") : "");
-   const auto cflags = GenerateLibraryBuildScript(script, "${BEH_DIR}", beh_cflags);
+   const auto cflags = GenerateLibraryBuildScript(script, beh_cflags);
    const auto vflags = [&]() {
       std::string flags;
       if(cflags.find("-m32") != std::string::npos)
@@ -150,11 +140,11 @@ std::string VIVADO_xsim_wrapper::GenerateScript(std::ostream& script, const std:
       }
       return flags;
    }();
-   const auto prj_file = XSIM_SUBDIR + suffix + "/" + top_filename + ".prj";
+   const auto prj_file = beh_dir / (top_filename + ".prj");
    create_project_file(prj_file, file_list);
 
-   std::string sim_cmd =
-       "rm -rf xsim.* xelab.*; " XSIM_XELAB " -sv_root ${BEH_DIR} -sv_lib libmdpi " + vflags + " -prj " + prj_file;
+   std::string sim_cmd = "rm -rf xsim.* xelab.*; " XSIM_XELAB " -sv_root ${BEH_DIR} -sv_lib libmdpi " + vflags +
+                         " -prj " + prj_file.string();
    if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
    {
       sim_cmd += " --debug all --rangecheck -O2";
@@ -167,8 +157,4 @@ std::string VIVADO_xsim_wrapper::GenerateScript(std::ostream& script, const std:
               "tb_behav work.clocked_bambu_testbench -nolog -stat -R";
    sim_cmd += " 2>&1 | tee " + log_file;
    return sim_cmd;
-}
-
-void VIVADO_xsim_wrapper::Clean() const
-{
 }

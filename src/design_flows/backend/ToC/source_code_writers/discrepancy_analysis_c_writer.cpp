@@ -102,15 +102,19 @@ static inline bool is_large_integer(const tree_nodeConstRef& _tn)
 DiscrepancyAnalysisCWriter::DiscrepancyAnalysisCWriter(const CBackendInformationConstRef _c_backend_information,
                                                        const HLS_managerConstRef _HLSMgr,
                                                        const InstructionWriterRef _instruction_writer,
-                                                       const IndentedOutputStreamRef _indented_output_stream,
-                                                       const ParameterConstRef _parameters, bool _verbose)
-    : HLSCWriter(_c_backend_information, _HLSMgr, _instruction_writer, _indented_output_stream, _parameters, _verbose),
+                                                       const IndentedOutputStreamRef _indented_output_stream)
+    : HLSCWriter(_c_backend_information, _HLSMgr, _instruction_writer, _indented_output_stream),
       Discrepancy(_HLSMgr->RDiscr)
 {
    THROW_ASSERT((Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) ||
                     (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw)),
                 "Step " + STR(__PRETTY_FUNCTION__) + " should not be added without discrepancy");
    THROW_ASSERT(Discrepancy, "Discrepancy data structure is not correctly initialized");
+}
+
+void DiscrepancyAnalysisCWriter::InternalInitialize()
+{
+   CWriter::InternalInitialize();
 }
 
 void DiscrepancyAnalysisCWriter::WriteTestbenchHelperFunctions()
@@ -262,7 +266,7 @@ exit(1);
 )");
 }
 
-void DiscrepancyAnalysisCWriter::WriteMainTestbench()
+void DiscrepancyAnalysisCWriter::InternalWriteFile()
 {
    const auto top_symbols = Param->getOption<std::vector<std::string>>(OPT_top_functions_names);
    THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
@@ -271,6 +275,8 @@ void DiscrepancyAnalysisCWriter::WriteMainTestbench()
    const auto top_bh = top_fb->CGetBehavioralHelper();
    const auto top_fname = top_bh->get_function_name();
    const auto return_type = tree_helper::GetFunctionReturnType(top_fnode);
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
+                  "-->Discrepancy analysis testbench generation for function " + top_fname);
 
    const auto& test_vectors = HLSMgr->RSim->test_vectors;
 
@@ -317,6 +323,7 @@ void DiscrepancyAnalysisCWriter::WriteMainTestbench()
    indented_output_stream->Append("__standard_exit = 1;\n");
    indented_output_stream->Append("exit(0);\n");
    indented_output_stream->Append("}\n");
+   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--Prepared testbench");
 }
 
 void DiscrepancyAnalysisCWriter::writePreInstructionInfo(const FunctionBehaviorConstRef FB, const vertex statement)
@@ -377,7 +384,6 @@ void DiscrepancyAnalysisCWriter::writePreInstructionInfo(const FunctionBehaviorC
          }
       }
    }
-   return;
 }
 
 void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehaviorConstRef fun_behavior,
@@ -830,9 +836,9 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
    }
 }
 
-void DiscrepancyAnalysisCWriter::WriteGlobalDeclarations()
+void DiscrepancyAnalysisCWriter::InternalWriteGlobalDeclarations()
 {
-   CWriter::WriteGlobalDeclarations();
+   CWriter::InternalWriteGlobalDeclarations();
    WriteTestbenchHelperFunctions();
    const bool is_hw_discrepancy = Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw);
 

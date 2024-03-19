@@ -43,17 +43,10 @@
  */
 #ifndef XILINX_VIVADO_XSIM_WRAPPER_HPP
 #define XILINX_VIVADO_XSIM_WRAPPER_HPP
-
 #include "SimulationTool.hpp"
-#include "refcount.hpp"
-CONSTREF_FORWARD_DECL(Parameter);
-class xml_element;
 
-#include "custom_map.hpp"
+#include <list>
 #include <string>
-#include <vector>
-
-#define XSIM_SUBDIR (Param->getOption<std::string>(OPT_output_directory) + std::string("/xsim"))
 
 /**
  * @class VIVADO_xsim_wrapper
@@ -61,10 +54,6 @@ class xml_element;
  */
 class VIVADO_xsim_wrapper : public SimulationTool
 {
- private:
-   /// suffix added to the XSIM dir
-   std::string suffix;
-
    /**
     * @brief create the project file for VIVADO xelab
     * @param top_filename top entity/filename
@@ -73,9 +62,6 @@ class VIVADO_xsim_wrapper : public SimulationTool
     */
    std::string create_project_script(const std::string& top_filename, const std::list<std::string>& file_list);
 
-   /**
-    * Generates the proper simulation script
-    */
    std::string GenerateScript(std::ostream& script, const std::string& top_filename,
                               const std::list<std::string>& file_list) override;
 
@@ -84,25 +70,7 @@ class VIVADO_xsim_wrapper : public SimulationTool
     * Constructor
     * @param Param is the set of parameters
     */
-   VIVADO_xsim_wrapper(const ParameterConstRef& Param, const std::string& suffix, const std::string& top_fname,
-                       const std::string& inc_dirs);
-
-   /**
-    * Destructor
-    */
-   ~VIVADO_xsim_wrapper() override;
-
-   /**
-    * Checks if the current specification can be executed or not
-    */
-   void CheckExecution() override;
-
-   /**
-    * Remove files created during simulation
-    */
-   void Clean() const override;
+   VIVADO_xsim_wrapper(const ParameterConstRef& Param, const std::string& top_fname, const std::string& inc_dirs);
 };
-/// Refcount definition for the class
-using VIVADO_xsim_wrapperRef = refcount<VIVADO_xsim_wrapper>;
 
 #endif

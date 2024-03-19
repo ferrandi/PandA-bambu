@@ -116,21 +116,9 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
                             CompilerWrapper_OptimizationSet::O2;
    const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(parameters, default_compiler, opt_set));
    const auto is_clang = CompilerWrapper::isClangCheck(default_compiler);
-   std::string compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -fno-strict-aliasing "
+   std::string compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -fno-strict-aliasing "
                                 "-D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
-   if(!is_clang)
-   {
-      compiler_flags += "-ffloat-store ";
-   }
 
-   if(!parameters->isOption(OPT_input_format) ||
-      parameters->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C)
-   {
-      if(!is_clang)
-      {
-         compiler_flags += "-fexcess-precision=standard ";
-      }
-   }
    if(parameters->isOption(OPT_tb_extra_gcc_options))
    {
       compiler_flags += parameters->getOption<std::string>(OPT_tb_extra_gcc_options) + " ";

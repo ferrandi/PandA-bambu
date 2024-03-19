@@ -43,21 +43,18 @@
  */
 #include "c_backend_information.hpp"
 
-CBackendInformation::CBackendInformation(Type _type, const std::string& _src_filename, const std::string& _out_filename)
+CBackendInformation::CBackendInformation(Type _type, const std::filesystem::path& _src_filename,
+                                         const std::filesystem::path& _out_filename)
     : type(_type), src_filename(_src_filename), out_filename(_out_filename)
 {
 }
-
-CBackendInformation::~CBackendInformation() = default;
 
 std::string CBackendInformation::GetKindText() const
 {
    switch(type)
    {
-#if HAVE_HOST_PROFILING_BUILT
       case(CBackendInformation::CB_BBP):
          return "BasicBlocksProfiling";
-#endif
 #if HAVE_HLS_BUILT
       case(CBackendInformation::CB_DISCREPANCY_ANALYSIS):
          return "DiscrepancyAnalysis";
@@ -66,6 +63,8 @@ std::string CBackendInformation::GetKindText() const
          return "HighLevelSynthesis";
       case(CBackendInformation::CB_SEQUENTIAL):
          return "Sequential";
+      case(CBackendInformation::CB_MDPI_WRAPPER):
+         return "MDPIWrapper";
       default:
       {
          THROW_UNREACHABLE("");

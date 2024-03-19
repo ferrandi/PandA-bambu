@@ -143,24 +143,21 @@ class EdgeCWriter : public CWriter
                                  const var_pp_functorConstRef variableFunctor, vertex bb_start = NULL_VERTEX,
                                  CustomOrderedSet<vertex> bb_end = CustomOrderedSet<vertex>()) override;
 
+   virtual void Initialize() override;
+
+   virtual void InternalWriteHeader() override;
+
  public:
    /**
     * Constructor of the class
     * @param HLSMgr is the hls manager
     * @param instruction_writer is the instruction writer to use to print the single instruction
     * @param indented_output_stream is the output stream
-    * @param Param is the set of parameters
-    * @param verbose tells if annotations
     */
    EdgeCWriter(const HLS_managerConstRef _HLSMgr, const InstructionWriterRef instruction_writer,
-               const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef Param,
-               bool verbose = true);
+               const IndentedOutputStreamRef indented_output_stream);
 
    virtual ~EdgeCWriter() override;
-
-   virtual void Initialize() override;
-
-   virtual void WriteHeader() override;
 
    /**
     * Returns the map which associates to each loop a unique id

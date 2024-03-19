@@ -136,7 +136,8 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&,
    std::error_code ec;
    std::filesystem::copy(relocate_compiler_path(GRLIB_DIR, true),
                          std::filesystem::current_path() / std::filesystem::path(GRLIB_DIR).filename(),
-                         std::filesystem::copy_options::recursive, ec);
+                         std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing,
+                         ec);
    if(ec)
    {
       THROW_ERROR("Error copying GRLIB: " + ec.message());

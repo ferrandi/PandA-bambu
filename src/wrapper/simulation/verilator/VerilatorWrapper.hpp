@@ -42,12 +42,9 @@
  */
 #ifndef VERILATOR_WRAPPER_HPP
 #define VERILATOR_WRAPPER_HPP
-
 #include "SimulationTool.hpp"
-#include "refcount.hpp"
-CONSTREF_FORWARD_DECL(Parameter);
 
-#include <string>
+#include <filesystem>
 
 /**
  * @class VerilatorWrapper
@@ -55,12 +52,8 @@ CONSTREF_FORWARD_DECL(Parameter);
  */
 class VerilatorWrapper : public SimulationTool
 {
-   /// suffix added to the SIM dir
-   std::string suffix;
+   void GenerateVerilatorMain(const std::filesystem::path& filename) const;
 
-   /**
-    * Generates the proper simulation script
-    */
    std::string GenerateScript(std::ostream& script, const std::string& top_filename,
                               const std::list<std::string>& file_list) override;
 
@@ -69,25 +62,7 @@ class VerilatorWrapper : public SimulationTool
     * Constructor
     * @param Param is the set of parameters
     */
-   VerilatorWrapper(const ParameterConstRef& Param, const std::string& suffix, const std::string& top_fname,
-                    const std::string& inc_dirs);
-
-   /**
-    * Destructor
-    */
-   ~VerilatorWrapper() override;
-
-   /**
-    * Checks if the current specification can be executed or not
-    */
-   void CheckExecution() override;
-
-   /**
-    * Remove files created during simulation
-    */
-   void Clean() const override;
+   VerilatorWrapper(const ParameterConstRef& Param, const std::string& top_fname, const std::string& inc_dirs);
 };
-/// Refcount definition for the VerilatorWrapper class
-using VerilatorWrapperRef = refcount<VerilatorWrapper>;
 
 #endif

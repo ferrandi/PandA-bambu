@@ -46,11 +46,11 @@
 #define C_BACKEND_INFORMATION_HPP
 
 #include "config_HAVE_HLS_BUILT.hpp"
-#include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 
 #include "hls_step.hpp"
 #include "refcount.hpp"
 
+#include <filesystem>
 #include <string>
 
 /// Base class to pass information to a c backend
@@ -58,9 +58,7 @@ class CBackendInformation : public HLSFlowStepSpecialization
 {
  public:
    using Type = enum {
-#if HAVE_HOST_PROFILING_BUILT
-      CB_BBP, /** Sequential c with instrumentation for basic block profiling */
-#endif
+      CB_BBP, /* Sequential c with instrumentation for basic block profiling */
 #if HAVE_HLS_BUILT
       /**
        * Sequential C code instrumented to dump information on the state
@@ -68,19 +66,19 @@ class CBackendInformation : public HLSFlowStepSpecialization
        */
       CB_DISCREPANCY_ANALYSIS,
 #endif
-      CB_HLS,        /** Sequential c code for HLS testing */
-      CB_SEQUENTIAL, /**< Sequential c without instrumentation */
+      CB_HLS,         /* Sequential c code for HLS testing */
+      CB_SEQUENTIAL,  /* Sequential c without instrumentation */
+      CB_MDPI_WRAPPER /* MDPI simulation wrapper */
    };
 
    Type type;
 
-   std::string src_filename;
+   std::filesystem::path src_filename;
 
-   std::string out_filename;
+   std::filesystem::path out_filename;
 
-   CBackendInformation(Type type, const std::string& src_filename, const std::string& out_filename = "");
-
-   virtual ~CBackendInformation();
+   CBackendInformation(Type type, const std::filesystem::path& src_filename,
+                       const std::filesystem::path& out_filename = "");
 
    std::string GetKindText() const override;
 

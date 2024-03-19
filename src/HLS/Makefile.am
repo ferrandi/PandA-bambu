@@ -137,6 +137,7 @@ lib_hls_backend_la_CPPFLAGS = \
    -I$(top_srcdir)/src/circuit \
    -I$(top_srcdir)/src/constants \
    -I$(top_srcdir)/src/design_flows \
+   -I$(top_srcdir)/src/design_flows/backend/ToC \
    -I$(top_srcdir)/src/design_flows/backend/ToHDL \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/HLS \
