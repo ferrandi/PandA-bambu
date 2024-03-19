@@ -48,35 +48,78 @@
 #include "exceptions.hpp"
 #include "fileIO.hpp"
 #include "file_IO_constants.hpp"
+#include "simple_indent.hpp"
+#include "structural_objects.hpp"
 #include "utility.hpp"
 
-#include <cerrno>
-#include <filesystem>
 #include <fstream>
-#include <unistd.h>
 #include <utility>
 
-#define SIM_SUBDIR (Param->getOption<std::string>(OPT_output_directory) + "/verilator")
-
 // constructor
-VerilatorWrapper::VerilatorWrapper(const ParameterConstRef& _Param, const std::string& _suffix,
-                                   const std::string& _top_fname, const std::string& _inc_dirs)
-    : SimulationTool(_Param, _top_fname, _inc_dirs), suffix(_suffix)
+VerilatorWrapper::VerilatorWrapper(const ParameterConstRef& _Param, const std::string& _top_fname,
+                                   const std::string& _inc_dirs)
+    : SimulationTool(_Param, _top_fname, _inc_dirs)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating the VERILATOR wrapper...");
-   const auto verilator_beh_dir = Param->getOption<std::string>(OPT_output_directory) + "/verilator" + suffix;
-   if(std::filesystem::exists(verilator_beh_dir))
-   {
-      std::filesystem::remove_all(verilator_beh_dir);
-   }
-   std::filesystem::create_directory(verilator_beh_dir);
 }
 
-// destructor
-VerilatorWrapper::~VerilatorWrapper() = default;
-
-void VerilatorWrapper::CheckExecution()
+void VerilatorWrapper::GenerateVerilatorMain(const std::filesystem::path& filename) const
 {
+   std::ofstream os(filename, std::ios::out);
+   simple_indent PP('{', '}', 3);
+
+   PP(os, "#include <memory>\n");
+   PP(os, "\n");
+   PP(os, "#include <verilated.h>\n");
+   PP(os, "\n");
+   PP(os, "#if VM_TRACE\n");
+   PP(os, "# include <verilated_vcd_c.h>\n");
+   PP(os, "#endif\n");
+   PP(os, "\n");
+   PP(os, "#include \"Vbambu_testbench.h\"\n");
+   PP(os, "\n");
+   PP(os, "\n");
+   PP(os, "static vluint64_t CLOCK_PERIOD = 2;\n");
+   PP(os, "static vluint64_t HALF_CLOCK_PERIOD = CLOCK_PERIOD/2;\n");
+   PP(os, "\n");
+   PP(os, "vluint64_t main_time = 0;\n");
+   PP(os, "\n");
+   PP(os, "double sc_time_stamp ()  {return main_time;}\n");
+   PP(os, "\n");
+   PP(os, "int main (int argc, char **argv, char **env)\n");
+   PP(os, "{\n");
+   PP(os, "Verilated::commandArgs(argc, argv);\n");
+   PP(os, "Verilated::debug(0);\n");
+   PP(os, "const std::unique_ptr<Vbambu_testbench> top{new Vbambu_testbench{\"clocked_bambu_testbench\"}};");
+   PP(os, "\n");
+   PP(os, "\n");
+   PP(os, "main_time=0;\n");
+   PP(os, "#if VM_TRACE\n");
+   PP(os, "Verilated::traceEverOn(true);\n");
+   PP(os, "const std::unique_ptr<VerilatedVcdC> tfp{new VerilatedVcdC};\n");
+   PP(os, "top->trace (tfp.get(), 99);\n");
+   PP(os, "tfp->set_time_unit(\"p\");\n");
+   PP(os, "tfp->set_time_resolution(\"p\");\n");
+   PP(os, "tfp->open (\"" + beh_dir.string() + "/test.vcd\");\n");
+   PP(os, "#endif\n");
+   PP(os, "top->" CLOCK_PORT_NAME " = 1;\n");
+   PP(os, "while (!Verilated::gotFinish())\n");
+   PP(os, "{\n");
+   PP(os, "top->" CLOCK_PORT_NAME " = !top->" CLOCK_PORT_NAME ";\n");
+   PP(os, "top->eval();\n");
+   PP(os, "#if VM_TRACE\n");
+   PP(os, "tfp->dump (main_time);\n");
+   PP(os, "#endif\n");
+   PP(os, "main_time += HALF_CLOCK_PERIOD;\n");
+   PP(os, "}\n");
+   PP(os, "#if VM_TRACE\n");
+   PP(os, "tfp->dump (main_time);\n");
+   PP(os, "tfp->close();\n");
+   PP(os, "#endif\n");
+   PP(os, "top->final();\n");
+   PP(os, "\n");
+   PP(os, "return 0;\n");
+   PP(os, "}");
 }
 
 std::string VerilatorWrapper::GenerateScript(std::ostream& script, const std::string& top_filename,
@@ -92,15 +135,14 @@ std::string VerilatorWrapper::GenerateScript(std::ostream& script, const std::st
    const auto generate_vcd_output = (Param->isOption(OPT_generate_vcd) && Param->getOption<bool>(OPT_generate_vcd)) ||
                                     (Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) ||
                                     (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw));
-   const auto output_directory = Param->getOption<std::string>(OPT_output_directory);
+   const auto main_filename = beh_dir / "sim_main.cpp";
+   GenerateVerilatorMain(main_filename);
    log_file = "${BEH_DIR}/" + top_filename + "_verilator.log";
-   script << "export VM_PARALLEL_BUILDS=1" << std::endl
-          << "BEH_DIR=\"" << output_directory << "/verilator" << suffix << "\"" << std::endl
-          << "BEH_CC=\"${CC}\"" << std::endl
-          << "obj_dir=\"${BEH_DIR}/verilator_obj\"" << std::endl
-          << std::endl;
+   script << "export VM_PARALLEL_BUILDS=1\n"
+          << "BEH_CC=\"${CC}\"\n"
+          << "obj_dir=\"${BEH_DIR}/verilator_obj\"\n\n";
    std::string beh_cflags = "-DVERILATOR -isystem $(dirname $(which verilator))/../share/verilator/include/vltstd";
-   const auto cflags = GenerateLibraryBuildScript(script, "${BEH_DIR}", beh_cflags);
+   const auto cflags = GenerateLibraryBuildScript(script, beh_cflags);
    const auto vflags = [&]() {
       std::string flags;
       if(cflags.find("-m32") != std::string::npos)
@@ -176,27 +218,19 @@ std::string VerilatorWrapper::GenerateScript(std::ostream& script, const std::st
          script << " " << file;
       }
    }
-   script << " --top-module bambu_testbench" << std::endl
-          << "if [ $? -ne 0 ]; then exit 1; fi" << std::endl
-          << std::endl
-          << std::endl
-          << "ln -sf ../../ "
-          << "${obj_dir}/" << output_directory << "\n";
+   script << " " << main_filename.string() << " --top-module bambu_testbench\n"
+          << "if [ $? -ne 0 ]; then exit 1; fi\n\n"
+          << "ln -sf ../../ ${obj_dir}/" << Param->getOption<std::string>(OPT_output_directory) << " || true\n";
 
    const auto nThreadsMake =
        Param->isOption(OPT_verilator_parallel) ? Param->getOption<int>(OPT_verilator_parallel) : 1;
-   script << "make -C ${obj_dir}"
-          << " -j " << nThreadsMake << " OPT=\"-fstrict-aliasing\""
-          << " -f Vbambu_testbench.mk Vbambu_testbench";
+   script << "make -C ${obj_dir}  -j " << nThreadsMake
+          << " OPT=\"-fstrict-aliasing\" -f Vbambu_testbench.mk Vbambu_testbench";
 #ifdef _WIN32
    /// VM_PARALLEL_BUILDS=1 removes the dependency from perl
    script << " VM_PARALLEL_BUILDS=1 CFG_CXXFLAGS_NO_UNUSED=\"\"";
 #endif
-   script << std::endl << std::endl;
+   script << "\n\n";
 
    return "${obj_dir}/Vbambu_testbench 2>&1 | tee " + log_file;
-}
-
-void VerilatorWrapper::Clean() const
-{
 }

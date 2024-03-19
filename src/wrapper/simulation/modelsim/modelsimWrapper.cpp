@@ -52,7 +52,6 @@
 #include "language_writer.hpp"
 #include "utility.hpp"
 
-#include <boost/algorithm/string.hpp>
 #include <cerrno>
 #include <cstdlib>
 #include <filesystem>
@@ -71,38 +70,27 @@
 #define MODELSIM_VLOG (MODELSIM_BIN + "vlog")
 #define MODELSIM_VSIM (MODELSIM_BIN + "vsim")
 
-#define SIM_SUBDIR (Param->getOption<std::string>(OPT_output_directory) + std::string("/modelsim"))
-
 // constructor
-modelsimWrapper::modelsimWrapper(const ParameterConstRef& _Param, const std::string& _suffix,
-                                 const std::string& _top_fname, const std::string& _inc_dirs)
-    : SimulationTool(_Param, _top_fname, _inc_dirs), suffix(_suffix)
+modelsimWrapper::modelsimWrapper(const ParameterConstRef& _Param, const std::string& _top_fname,
+                                 const std::string& _inc_dirs)
+    : SimulationTool(_Param, _top_fname, _inc_dirs)
 {
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating the modelsim wrapper...");
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Creating the MODELSIM wrapper...");
    const auto lic_path = std::getenv("LM_LICENSE_FILE");
    if(!lic_path || std::string(lic_path) == "")
    {
       THROW_WARNING("Mentor license file has not been specified. User must set LM_LICENSE_FILE variable to point to "
                     "the license file location.");
    }
-   std::filesystem::create_directory(SIM_SUBDIR + suffix);
-}
-
-// destructor
-modelsimWrapper::~modelsimWrapper() = default;
-
-void modelsimWrapper::CheckExecution()
-{
 }
 
 std::string modelsimWrapper::GenerateScript(std::ostream& script, const std::string& top_filename,
                                             const std::list<std::string>& file_list)
 {
    THROW_ASSERT(!file_list.empty(), "File list is empty");
-   script << "BEH_DIR=\"" << SIM_SUBDIR << suffix << "\"" << std::endl;
    const auto modelsim_bin = MODELSIM_BIN;
    std::string beh_cflags = "-DMODEL_TECH " + (modelsim_bin.size() ? ("-isystem " + modelsim_bin + "../include") : "");
-   const auto cflags = GenerateLibraryBuildScript(script, "${BEH_DIR}", beh_cflags);
+   const auto cflags = GenerateLibraryBuildScript(script, beh_cflags);
    const auto vflags = [&]() {
       std::string flags;
       if(cflags.find("-m32") != std::string::npos)
@@ -139,27 +127,27 @@ std::string modelsimWrapper::GenerateScript(std::ostream& script, const std::str
    {
       MODELSIM_OPTIMIZER_FLAGS_DEF = "-O5";
    }
-   script << "work_dir=\"${BEH_DIR}/modelsim_work\"" << std::endl;
-   script << "if [ ! -d ${BEH_DIR} ]; then" << std::endl;
-   script << "   mkdir -p ${BEH_DIR}" << std::endl;
-   script << "fi" << std::endl << std::endl;
+   script << "work_dir=\"${BEH_DIR}/modelsim_work\"\n";
+   script << "if [ ! -d ${BEH_DIR} ]; then\n";
+   script << "   mkdir -p ${BEH_DIR}\n";
+   script << "fi\n\n";
 
    log_file = "${BEH_DIR}/" + top_filename + "_modelsim.log";
 
-   script << "if [ -d ${work_dir} ]; then" << std::endl;
-   script << "  " << MODELSIM_VDEL << " -all -lib ${work_dir}" << std::endl;
-   script << "fi" << std::endl << std::endl;
+   script << "if [ -d ${work_dir} ]; then\n";
+   script << "  " << MODELSIM_VDEL << " -all -lib ${work_dir}\n";
+   script << "fi\n\n";
 
    script << MODELSIM_VLIB << " ${work_dir}";
    if(output_level < OUTPUT_LEVEL_VERY_PEDANTIC)
    {
       script << " > /dev/null 2>&1 ";
    }
-   script << std::endl << std::endl;
+   script << "\n\n";
 
-   script << MODELSIM_VMAP << " work ${work_dir}" << std::endl << std::endl;
+   script << MODELSIM_VMAP << " work ${work_dir}\n\n";
 
-   script << "sed -i 's/; AssertionFailAction = 1/AssertionFailAction = 2/g' modelsim.ini" << std::endl << std::endl;
+   script << "sed -i 's/; AssertionFailAction = 1/AssertionFailAction = 2/g' modelsim.ini\n\n";
 
    /// prepare input files
    for(const auto& file : file_list)
@@ -174,7 +162,7 @@ std::string modelsimWrapper::GenerateScript(std::ostream& script, const std::str
          {
             script << " -lint -check_synthesis -fsmsingle -fsmverbose w";
          }
-         script << " -work work -2008 " << file << std::endl;
+         script << " -work work -2008 " << file << "\n";
       }
       else if(extension == ".v" || extension == ".V" || extension == ".sv" || extension == ".SV")
       {
@@ -183,18 +171,18 @@ std::string modelsimWrapper::GenerateScript(std::ostream& script, const std::str
          {
             script << " -lint -fsmsingle -hazards -pedanticerrors -fsmverbose w";
          }
-         script << " -work work " << file << std::endl;
+         script << " -work work " << file << "\n";
       }
       else if(extension == ".c" || extension == ".cpp")
       {
          script << MODELSIM_VLOG << " " << MODELSIM_OPTIMIZER_FLAGS_DEF << " -sv -ccflags \"" << beh_cflags
-                << "\" -work work " << file << std::endl;
+                << "\" -work work " << file << "\n";
       }
       else
       {
          THROW_UNREACHABLE("Extension not recognized! " + file_path.string());
       }
-      script << "if [ $? -ne 0 ]; then exit 1; fi" << std::endl << std::endl;
+      script << "if [ $? -ne 0 ]; then exit 1; fi\n\n";
    }
 
    std::string sim_cmd = MODELSIM_VSIM + " " + vflags + " -noautoldlibpath";
@@ -212,12 +200,4 @@ std::string modelsimWrapper::GenerateScript(std::ostream& script, const std::str
               "-code 1;}; run -all; exit -f;\"  work.clocked_bambu_testbench 2>&1 | tee " +
               log_file;
    return sim_cmd;
-}
-
-void modelsimWrapper::Clean() const
-{
-   if(std::filesystem::exists(SIM_SUBDIR + suffix))
-   {
-      std::filesystem::remove_all(SIM_SUBDIR + suffix);
-   }
 }

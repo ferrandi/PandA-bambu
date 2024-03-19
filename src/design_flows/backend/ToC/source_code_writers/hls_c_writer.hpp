@@ -40,11 +40,8 @@
 
 #ifndef HLS_C_WRITER_HPP
 #define HLS_C_WRITER_HPP
-
-/// Superclass include
 #include "c_writer.hpp"
 
-/// utility include
 #include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(HLSCBackendInformation);
@@ -80,41 +77,36 @@ class HLSCWriter : public CWriter
    void WriteTestbenchFunctionCall(const BehavioralHelperConstRef behavioral_helper);
 
    /**
-    * Write some print statements used to dump the values used by the HDL to
-    * initialize the memory before the simulation.
-    * (This function actually also reserves memory out of the top function to
-    * be tested, if needed. This should not be done here, but in a separate
-    * memory allocation step, and will be moved soon).
-    */
-   void WriteSimulatorInitMemory(const unsigned int function_id);
-
-   /**
     * Write additional initialization code needed by subclasses
     */
    virtual void WriteExtraInitCode();
 
    virtual void WriteExtraCodeBeforeEveryMainCall();
 
-   /**
-    * Writes the main() of the testbench C program
-    */
-   virtual void WriteMainTestbench();
+   virtual void InternalInitialize() override;
 
    /**
     * Writes the global declarations
     */
-   void WriteGlobalDeclarations() override;
+   virtual void InternalWriteGlobalDeclarations() override;
 
    /**
     * Write function implementation
     * @param function_id is the index of the function to be written
     */
-   void WriteFunctionImplementation(unsigned int function_index) override;
+   virtual void WriteFunctionImplementation(unsigned int function_index) override;
 
    /**
     * Writes implementation of __builtin_wait_call
     */
-   void WriteBuiltinWaitCall() override;
+   virtual void WriteBuiltinWaitCall() override;
+
+   void InternalWriteHeader() override;
+
+   /**
+    * Writes the main() of the testbench C program
+    */
+   virtual void InternalWriteFile() override;
 
  public:
    /**
@@ -123,24 +115,10 @@ class HLSCWriter : public CWriter
     * @param HLSMgr is the hls manager
     * @param instruction_writer is the instruction writer to use to print the single instruction
     * @param indented_output_stream is the stream where code has to be printed
-    * @param Param is the set of parameters
-    * @param verbose tells if annotations
     */
    HLSCWriter(const CBackendInformationConstRef hls_c_backend_information, const HLS_managerConstRef _HLSMgr,
-              const InstructionWriterRef instruction_writer, const IndentedOutputStreamRef indented_output_stream,
-              const ParameterConstRef _parameters, bool verbose = true);
+              const InstructionWriterRef instruction_writer, const IndentedOutputStreamRef indented_output_stream);
 
    virtual ~HLSCWriter();
-
-   /**
-    * Writes the final C file
-    * @param file_name is the name of the file to be generated
-    */
-   void WriteFile(const std::string& file_name) override;
-
-   /**
-    * Writes the header of the file
-    */
-   void WriteHeader() override;
 };
 #endif

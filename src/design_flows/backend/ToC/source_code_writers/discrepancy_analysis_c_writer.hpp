@@ -45,15 +45,16 @@ REF_FORWARD_DECL(Discrepancy);
 
 class DiscrepancyAnalysisCWriter : public HLSCWriter
 {
+   const DiscrepancyRef Discrepancy;
+
    void WriteTestbenchHelperFunctions();
 
- protected:
-   const DiscrepancyRef Discrepancy;
+   void InternalInitialize() override;
 
    /**
     * Writes the global declarations
     */
-   void WriteGlobalDeclarations() override;
+   void InternalWriteGlobalDeclarations() override;
 
    /**
     * Write additional initialization code needed by subclasses
@@ -82,14 +83,7 @@ class DiscrepancyAnalysisCWriter : public HLSCWriter
     */
    void WriteFunctionImplementation(unsigned int function_index) override;
 
- public:
-   /**
-    * Constructor
-    */
-   DiscrepancyAnalysisCWriter(const CBackendInformationConstRef _c_backend_information,
-                              const HLS_managerConstRef _HLSMgr, const InstructionWriterRef _instruction_writer,
-                              const IndentedOutputStreamRef _indented_output_stream,
-                              const ParameterConstRef _parameters, bool _verbose);
+   void WriteBuiltinWaitCall() override;
 
    /**
     * Declares the local variable; in case the variable used in the initialization of
@@ -107,11 +101,11 @@ class DiscrepancyAnalysisCWriter : public HLSCWriter
 
    void WriteFunctionDeclaration(const unsigned int funId) override;
 
-   /**
-    * Writes implementation of __builtin_wait_call
-    */
-   void WriteBuiltinWaitCall() override;
+   void InternalWriteFile() override;
 
-   void WriteMainTestbench() override;
+ public:
+   DiscrepancyAnalysisCWriter(const CBackendInformationConstRef _c_backend_information,
+                              const HLS_managerConstRef _HLSMgr, const InstructionWriterRef _instruction_writer,
+                              const IndentedOutputStreamRef _indented_output_stream);
 };
 #endif
