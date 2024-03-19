@@ -711,7 +711,7 @@ std::tuple<std::string, unsigned int, unsigned int> tree_helper::GetSourcePath(c
          include_name = canon_path.string();
       }
    }
-   return std::tuple<std::string, unsigned int, unsigned int>(include_name, line_number, column_number);
+   return {include_name, line_number, column_number};
 }
 
 void tree_helper::get_used_variables(bool first_level_only, const tree_nodeConstRef& tRI,
@@ -1117,7 +1117,7 @@ tree_nodeRef tree_helper::find_obj_type_ref_function(const tree_nodeConstRef& tn
       THROW_ERROR(std::string("not supported case for obj_type_ref(") + STR(ind) + std::string(")"));
    }
    THROW_ERROR(std::string("obj_type_ref Function not found (") + STR(ind) + std::string(")"));
-   return tree_nodeRef();
+   return {};
 }
 
 bool tree_helper::is_system(const tree_managerConstRef& TM, const unsigned int index)
@@ -1621,11 +1621,11 @@ tree_nodeConstRef tree_helper::GetFunctionReturnType(const tree_nodeConstRef& _t
       }
       else
       {
-         return tree_nodeConstRef();
+         return {};
       }
    }
    THROW_UNREACHABLE("Not supported tree node type " + tn->get_kind_text());
-   return tree_nodeConstRef();
+   return {};
 }
 
 unsigned int tree_helper::get_pointed_type(const tree_managerConstRef& TM, const int unsigned index)
@@ -1794,7 +1794,7 @@ tree_nodeConstRef tree_helper::CGetPointedType(const tree_nodeConstRef& _pointer
          THROW_UNREACHABLE(STR(pointer) + ":" + pointer->get_kind_text() + " does not correspond to a pointer type");
       }
    }
-   return tree_nodeConstRef();
+   return {};
 }
 
 unsigned int tree_helper::GetElements(const tree_managerConstRef& TM, const unsigned int index)
@@ -1816,7 +1816,7 @@ tree_nodeConstRef tree_helper::CGetElements(const tree_nodeConstRef& _type)
       return vt->elts;
    }
    THROW_UNREACHABLE("Tree node of type " + type->get_kind_text());
-   return tree_nodeConstRef();
+   return {};
 }
 
 std::string tree_helper::get_type_name(const tree_managerConstRef& TM, const unsigned int index)
@@ -2280,7 +2280,7 @@ tree_nodeConstRef tree_helper::CGetType(const tree_nodeConstRef& _node)
       case gimple_multi_way_if_K:
       case gimple_pragma_K:
       {
-         return tree_nodeConstRef();
+         return {};
       }
       case lut_expr_K:
       case CASE_UNARY_EXPRESSION:
@@ -3383,9 +3383,9 @@ static tree_nodeConstRef check_for_simple_pointer_arithmetic(const tree_nodeCons
       }
       default:
          THROW_UNREACHABLE("");
-         return tree_nodeConstRef();
+         return {};
    }
-   return tree_nodeConstRef();
+   return {};
 }
 
 unsigned int tree_helper::get_base_index(const tree_managerConstRef& TM, const unsigned int index)
@@ -3685,7 +3685,7 @@ tree_nodeConstRef tree_helper::GetBaseVariable(const tree_nodeConstRef& _node,
                const auto sn = GetPointerS<const ssa_name>(GET_CONST_NODE(vc->op));
                if(!sn->var)
                {
-                  return tree_nodeConstRef();
+                  return {};
                }
                const auto pd = GetPointer<const parm_decl>(GET_CONST_NODE(sn->var));
                if(pd)
@@ -3922,7 +3922,7 @@ tree_nodeConstRef tree_helper::GetBaseVariable(const tree_nodeConstRef& _node,
          THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "tree_helper::GetBaseVariable - variable type is not supported: " +
                                                          STR(node) + "-" + std::string(_node->get_kind_text()));
    }
-   return tree_nodeConstRef();
+   return {};
 }
 
 bool tree_helper::is_fully_resolved(const tree_managerConstRef& TM, const unsigned int index,
@@ -6246,7 +6246,7 @@ tree_nodeConstRef tree_helper::GetFormalIth(const tree_nodeConstRef& _obj, unsig
          const auto ft = GetPointer<const function_type>(GET_CONST_NODE(pt->ptd));
          if(ft && ft->varargs_flag)
          {
-            return tree_nodeConstRef();
+            return {};
          }
          else if(ft && ft->prms)
          {
@@ -6267,7 +6267,7 @@ tree_nodeConstRef tree_helper::GetFormalIth(const tree_nodeConstRef& _obj, unsig
                }
             }
             THROW_ERROR("unexpected pattern");
-            return tree_nodeConstRef();
+            return {};
          }
          else
          {
@@ -6283,7 +6283,7 @@ tree_nodeConstRef tree_helper::GetFormalIth(const tree_nodeConstRef& _obj, unsig
       else
       {
          THROW_ERROR("unexpected pattern");
-         return tree_nodeConstRef();
+         return {};
       }
    }
    else if(obj->get_kind() == gimple_assign_K)
@@ -6302,7 +6302,7 @@ tree_nodeConstRef tree_helper::GetFormalIth(const tree_nodeConstRef& _obj, unsig
          const auto ft = GetPointer<const function_type>(GET_CONST_NODE(pt->ptd));
          if(ft && ft->varargs_flag)
          {
-            return tree_nodeConstRef();
+            return {};
          }
          else if(ft && ft->prms)
          {
@@ -6322,7 +6322,7 @@ tree_nodeConstRef tree_helper::GetFormalIth(const tree_nodeConstRef& _obj, unsig
                }
             }
             THROW_ERROR("unexpected pattern");
-            return tree_nodeConstRef();
+            return {};
          }
          else
          {
@@ -6338,7 +6338,7 @@ tree_nodeConstRef tree_helper::GetFormalIth(const tree_nodeConstRef& _obj, unsig
       else
       {
          THROW_ERROR("unexpected pattern");
-         return tree_nodeConstRef();
+         return {};
       }
    }
    else if(obj->get_kind() == function_decl_K)
@@ -6354,7 +6354,7 @@ tree_nodeConstRef tree_helper::GetFormalIth(const tree_nodeConstRef& _obj, unsig
          ++ith;
       }
    }
-   return tree_nodeConstRef();
+   return {};
 }
 
 unsigned int tree_helper::get_formal_ith(const tree_managerConstRef& TM, unsigned int index_obj,
