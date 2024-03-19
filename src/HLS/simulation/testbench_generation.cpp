@@ -520,10 +520,12 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
    {
       const auto has_dataflow =
           std::any_of(HLSMgr->module_arch->begin(), HLSMgr->module_arch->end(), [](const auto& fsymbol_arch) {
-             return fsymbol_arch.second->attrs.find(FunctionArchitecture::func_dataflow_top) !=
-                        fsymbol_arch.second->attrs.end() ||
-                    fsymbol_arch.second->attrs.find(FunctionArchitecture::func_dataflow_module) !=
-                        fsymbol_arch.second->attrs.end();
+             return (fsymbol_arch.second->attrs.find(FunctionArchitecture::func_dataflow_top) !=
+                         fsymbol_arch.second->attrs.end() &&
+                     fsymbol_arch.second->attrs.find(FunctionArchitecture::func_dataflow_top)->second == "1") ||
+                    (fsymbol_arch.second->attrs.find(FunctionArchitecture::func_dataflow_module) !=
+                         fsymbol_arch.second->attrs.end() &&
+                     fsymbol_arch.second->attrs.find(FunctionArchitecture::func_dataflow_module)->second == "1");
           });
       if(has_dataflow)
       {
