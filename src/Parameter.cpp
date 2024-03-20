@@ -172,7 +172,7 @@ void Parameter::CheckParameters()
       const auto default_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
       if(mopt == "-m32" && CompilerWrapper::hasCompilerGCCM32(default_compiler))
       {
-         setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
+         setOption(OPT_gcc_m32_mx32, "-m32");
       }
       else if((mopt == "-m32" && !CompilerWrapper::hasCompilerCLANGM32(default_compiler)) ||
               (mopt == "-mx32" && !CompilerWrapper::hasCompilerMX32(default_compiler)) ||
