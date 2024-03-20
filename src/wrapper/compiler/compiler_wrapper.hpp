@@ -358,9 +358,8 @@ class CompilerWrapper
    static int getDefaultCompiler();
    static std::string getCompilerSuffix(CompilerWrapper_CompilerTarget pc);
    static bool hasCompilerM64(CompilerWrapper_CompilerTarget ct);
+   static bool hasCompilerM32(CompilerWrapper_CompilerTarget ct);
    static bool hasCompilerMX32(CompilerWrapper_CompilerTarget ct);
-   static bool hasCompilerGCCM32(CompilerWrapper_CompilerTarget ct);
-   static bool hasCompilerCLANGM32(CompilerWrapper_CompilerTarget ct);
    static std::string getCompilerVersion(int ct);
 };
 

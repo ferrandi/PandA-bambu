@@ -166,17 +166,13 @@ void Parameter::CheckParameters()
    }
 
 #if HAVE_FROM_C_BUILT
-   if(isOption(OPT_gcc_m32_mx32))
+   if(isOption(OPT_gcc_m_env))
    {
-      const auto mopt = getOption<std::string>(OPT_gcc_m32_mx32);
+      const auto mopt = getOption<std::string>(OPT_gcc_m_env);
       const auto default_compiler = getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
-      if(mopt == "-m32" && CompilerWrapper::hasCompilerGCCM32(default_compiler))
-      {
-         setOption(OPT_gcc_m32_mx32, "-m32");
-      }
-      else if((mopt == "-m32" && !CompilerWrapper::hasCompilerCLANGM32(default_compiler)) ||
-              (mopt == "-mx32" && !CompilerWrapper::hasCompilerMX32(default_compiler)) ||
-              (mopt == "-m64" && !CompilerWrapper::hasCompilerM64(default_compiler)))
+      if((mopt == "-m32" && !CompilerWrapper::hasCompilerM32(default_compiler)) ||
+         (mopt == "-mx32" && !CompilerWrapper::hasCompilerMX32(default_compiler)) ||
+         (mopt == "-m64" && !CompilerWrapper::hasCompilerM64(default_compiler)))
       {
          THROW_ERROR("Option " + mopt + " not supported by " + CompilerWrapper::getCompilerSuffix(default_compiler) +
                      " compiler.");
@@ -597,18 +593,22 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       {
          if(optarg_param)
          {
-            const std::string opt_level = std::string(optarg_param);
+            const std::string opt_level(optarg_param);
             if(opt_level == "32")
             {
-               setOption(OPT_gcc_m32_mx32, "-m32");
+               setOption(OPT_gcc_m_env, "-m32");
             }
             else if(opt_level == "x32")
             {
-               setOption(OPT_gcc_m32_mx32, "-mx32");
+               setOption(OPT_gcc_m_env, "-mx32");
             }
             else if(opt_level == "64")
             {
-               setOption(OPT_gcc_m32_mx32, "-m64");
+               setOption(OPT_gcc_m_env, "-m64");
+            }
+            else
+            {
+               THROW_ERROR("Unknown environment bitsize: -m" + opt_level);
             }
          }
          break;

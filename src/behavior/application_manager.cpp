@@ -76,10 +76,9 @@ application_manager::application_manager(const FunctionExpanderConstRef function
     : TM(new tree_manager(_Param)),
       call_graph_manager(new CallGraphManager(function_expander, _allow_recursive_functions, TM, _Param)),
       Param(_Param),
-      address_bitsize(
-          _Param->isOption(OPT_addr_bus_bitsize) ?
-              _Param->getOption<unsigned int>(OPT_addr_bus_bitsize) :
-              (_Param->getOption<std::string>(OPT_gcc_m32_mx32).find("-m64") != std::string::npos ? 64 : 32)),
+      address_bitsize(_Param->isOption(OPT_addr_bus_bitsize) ?
+                          _Param->getOption<unsigned int>(OPT_addr_bus_bitsize) :
+                          (_Param->getOption<std::string>(OPT_gcc_m_env).find("-m64") != std::string::npos ? 64 : 32)),
 #if HAVE_PRAGMA_BUILT
       PM(new pragma_manager(application_managerRef(this, null_deleter()), _Param)),
 #endif
