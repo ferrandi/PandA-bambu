@@ -154,7 +154,7 @@ void HLSFunctionBitValue::ComputeRelationships(DesignFlowStepSet& relationship,
 DesignFlowStep_Status HLSFunctionBitValue::InternalExec()
 {
    const auto curr_address_bitsize = HLSMgr->get_address_bitsize();
-   auto m64P = parameters->getOption<std::string>(OPT_gcc_m32_mx32).find("-m64") != std::string::npos;
+   auto m64P = parameters->getOption<std::string>(OPT_gcc_m_env).find("-m64") != std::string::npos;
    const auto default_address_bitsize = parameters->isOption(OPT_addr_bus_bitsize) ?
                                             parameters->getOption<unsigned int>(OPT_addr_bus_bitsize) :
                                             (m64P ? 64 : 32);

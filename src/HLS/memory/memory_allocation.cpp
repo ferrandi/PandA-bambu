@@ -213,7 +213,7 @@ void memory_allocation::finalize_memory_allocation()
    THROW_ASSERT(func_list.size(), "Empty list of functions to be analyzed");
    bool use_unknown_address = false;
    bool has_unaligned_accesses = false;
-   auto m64P = parameters->getOption<std::string>(OPT_gcc_m32_mx32).find("-m64") != std::string::npos;
+   auto m64P = parameters->getOption<std::string>(OPT_gcc_m_env).find("-m64") != std::string::npos;
    bool assume_aligned_access_p =
        parameters->isOption(OPT_aligned_access) && parameters->getOption<bool>(OPT_aligned_access);
    const auto TreeM = HLSMgr->get_tree_manager();

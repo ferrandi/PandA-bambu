@@ -1579,13 +1579,13 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
 #if HAVE_I386_GCC49_MX32
          compiler.extra_options += " -mx32";
 #else
-         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
 #endif
          compiler.extra_options += " -msse2";
       }
       else
       {
-         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
       }
       compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC49_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC49_EMPTY_PLUGIN;
@@ -1609,13 +1609,13 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
 #if HAVE_I386_GCC5_MX32
          compiler.extra_options += " -mx32";
 #else
-         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
 #endif
          compiler.extra_options += " -msse2";
       }
       else
       {
-         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
       }
       compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC5_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC5_EMPTY_PLUGIN;
@@ -1640,13 +1640,13 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
 #if HAVE_I386_GCC6_MX32
          compiler.extra_options += " -mx32";
 #else
-         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
 #endif
          compiler.extra_options += " -msse2";
       }
       else
       {
-         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
       }
       compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC6_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC6_EMPTY_PLUGIN;
@@ -1671,13 +1671,13 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
 #if HAVE_I386_GCC7_MX32
          compiler.extra_options += " -mx32";
 #else
-         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
 #endif
          compiler.extra_options += " -msse2";
       }
       else
       {
-         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
       }
       compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC7_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC7_EMPTY_PLUGIN;
@@ -1702,13 +1702,13 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
 #if HAVE_I386_GCC8_MX32
          compiler.extra_options += " -mx32";
 #else
-         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
 #endif
          compiler.extra_options += " -msse2";
       }
       else
       {
-         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+         compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
       }
       compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC8_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC8_EMPTY_PLUGIN;
@@ -1728,7 +1728,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP4_EXE) : relocate_compiler_path(I386_CLANG4_EXE);
       compiler.cpp = relocate_compiler_path(I386_CLANG_CPP4_EXE);
       compiler.extra_options = gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
-      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
       compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG4_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANG4_EMPTY_PLUGIN;
       compiler.ssa_plugin_obj =
@@ -1756,7 +1756,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP5_EXE) : relocate_compiler_path(I386_CLANG5_EXE);
       compiler.cpp = relocate_compiler_path(I386_CLANG_CPP5_EXE);
       compiler.extra_options = gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
-      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
       compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG5_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANG5_EMPTY_PLUGIN;
       compiler.ssa_plugin_obj =
@@ -1784,7 +1784,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP6_EXE) : relocate_compiler_path(I386_CLANG6_EXE);
       compiler.cpp = relocate_compiler_path(I386_CLANG_CPP6_EXE);
       compiler.extra_options = gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
-      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
       compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG6_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANG6_EMPTY_PLUGIN;
       compiler.ssa_plugin_obj =
@@ -1812,7 +1812,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP7_EXE) : relocate_compiler_path(I386_CLANG7_EXE);
       compiler.cpp = relocate_compiler_path(I386_CLANG_CPP7_EXE);
       compiler.extra_options = gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
-      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
       compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG7_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANG7_EMPTY_PLUGIN;
       compiler.ssa_plugin_obj =
@@ -1840,7 +1840,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP8_EXE) : relocate_compiler_path(I386_CLANG8_EXE);
       compiler.cpp = relocate_compiler_path(I386_CLANG_CPP8_EXE);
       compiler.extra_options = gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
-      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
       compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG8_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANG8_EMPTY_PLUGIN;
       compiler.ssa_plugin_obj =
@@ -1868,7 +1868,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP9_EXE) : relocate_compiler_path(I386_CLANG9_EXE);
       compiler.cpp = relocate_compiler_path(I386_CLANG_CPP9_EXE);
       compiler.extra_options = gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
-      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
       compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG9_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANG9_EMPTY_PLUGIN;
       compiler.ssa_plugin_obj =
@@ -1896,7 +1896,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP10_EXE) : relocate_compiler_path(I386_CLANG10_EXE);
       compiler.cpp = relocate_compiler_path(I386_CLANG_CPP10_EXE);
       compiler.extra_options = gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
-      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
       compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG10_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANG10_EMPTY_PLUGIN;
       compiler.ssa_plugin_obj =
@@ -1924,7 +1924,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP11_EXE) : relocate_compiler_path(I386_CLANG11_EXE);
       compiler.cpp = relocate_compiler_path(I386_CLANG_CPP11_EXE);
       compiler.extra_options = gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
-      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
       compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG11_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANG11_EMPTY_PLUGIN;
       compiler.ssa_plugin_obj =
@@ -1952,7 +1952,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP12_EXE) : relocate_compiler_path(I386_CLANG12_EXE);
       compiler.cpp = relocate_compiler_path(I386_CLANG_CPP12_EXE);
       compiler.extra_options = gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
-      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
       compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG12_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANG12_EMPTY_PLUGIN;
       compiler.ssa_plugin_obj =
@@ -1980,7 +1980,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP13_EXE) : relocate_compiler_path(I386_CLANG13_EXE);
       compiler.cpp = relocate_compiler_path(I386_CLANG_CPP13_EXE);
       compiler.extra_options = gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
-      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
       compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG13_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANG13_EMPTY_PLUGIN;
       compiler.ssa_plugin_obj =
@@ -2008,7 +2008,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP16_EXE) : relocate_compiler_path(I386_CLANG16_EXE);
       compiler.cpp = relocate_compiler_path(I386_CLANG_CPP16_EXE);
       compiler.extra_options = gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
-      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
       compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG16_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANG16_EMPTY_PLUGIN;
       compiler.ssa_plugin_obj =
@@ -2036,7 +2036,7 @@ CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPPVVD_EXE) : relocate_compiler_path(I386_CLANGVVD_EXE);
       compiler.cpp = relocate_compiler_path(I386_CLANG_CPPVVD_EXE);
       compiler.extra_options = " -D__VIVADO__ " + gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
-      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m_env);
       compiler.extra_options += " -target fpga64-xilinx-linux-gnu";
       compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANGVVD_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANGVVD_EMPTY_PLUGIN;
@@ -2871,22 +2871,18 @@ std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet
 
 size_t CompilerWrapper::CGetPointerSize(const ParameterConstRef parameters)
 {
-   const auto gcc_m32_mx32 = parameters->getOption<std::string>(OPT_gcc_m32_mx32);
-   if(gcc_m32_mx32 == "-m32" || gcc_m32_mx32 == "-m32")
+   const auto gcc_m_env = parameters->getOption<std::string>(OPT_gcc_m_env);
+   if(gcc_m_env == "-m32" || gcc_m_env == "-mx32")
    {
       return 32;
    }
-   else if(gcc_m32_mx32 == "-mx32")
-   {
-      return 32;
-   }
-   else if(gcc_m32_mx32 == "-m64")
+   else if(gcc_m_env == "-m64")
    {
       return 64;
    }
    else
    {
-      THROW_ERROR("-m parameter not supported: " + gcc_m32_mx32);
+      THROW_ERROR("-m parameter not supported: " + gcc_m_env);
    }
    return 0;
 }
@@ -3187,7 +3183,7 @@ bool CompilerWrapper::hasCompilerMX32(CompilerWrapper_CompilerTarget ct)
        ;
 }
 
-bool CompilerWrapper::hasCompilerGCCM32(CompilerWrapper_CompilerTarget ct)
+bool CompilerWrapper::hasCompilerM32(CompilerWrapper_CompilerTarget ct)
 {
    return false
 #if(HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M32)
@@ -3205,12 +3201,6 @@ bool CompilerWrapper::hasCompilerGCCM32(CompilerWrapper_CompilerTarget ct)
 #if(HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M32)
           || ct == CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
-       ;
-}
-
-bool CompilerWrapper::hasCompilerCLANGM32(CompilerWrapper_CompilerTarget ct)
-{
-   return false
 #if(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32)
           || ct == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
