@@ -1140,6 +1140,7 @@ end
           <parameter name="RESFILE">&quot;&quot;results.txt&quot;&quot;</parameter>
           <parameter name="RESET_ACTIVE">0</parameter>
           <parameter name="RESET_CYCLES">1</parameter>
+          <parameter name="RESET_ALWAYS">0</parameter>
           <parameter name="CLOCK_PERIOD">2.0</parameter>
           <parameter name="MAX_SIM_CYCLES">200000000</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -1157,7 +1158,7 @@ end
           <port_o id="start_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="TestbenchFSM RESFILE RESET_ACTIVE RESET_CYCLES CLOCK_PERIOD MAX_SIM_CYCLES" VERILOG_PROVIDED="`ifdef VERILATOR
+          <NP_functionality LIBRARY="TestbenchFSM RESFILE RESET_ACTIVE RESET_CYCLES RESET_ALWAYS CLOCK_PERIOD MAX_SIM_CYCLES" VERILOG_PROVIDED="`ifdef VERILATOR
 timeunit 1ps;
 timeprecision 1ps;
 `endif
@@ -1198,8 +1199,8 @@ begin
   state_succ_next = STATE_READY;
   rst = RESET_ACTIVE;
   rst_next = RESET_ACTIVE;
-  rst_count = RESET_CYCLES - 1;
-  rst_count_next = RESET_CYCLES - 1;
+  rst_count = RESET_CYCLES;
+  rst_count_next = RESET_CYCLES;
   setup = 0;
   setup_next = 0;
   start = 0;
@@ -1250,7 +1251,7 @@ begin
   STATE_RUNNING:
     begin
       automatic time curr_cycle = $rtoi($time/CLOCK_PERIOD);
-      if(curr_cycle >= over_time)
+      if(curr_cycle &gt;= over_time)
       begin
         automatic integer res_file;
         res_file = $fopen(RESFILE, &quot;a&quot;);
@@ -1312,22 +1313,34 @@ begin
       state_next = state_succ;
       if(state_succ == STATE_SETUP)
       begin
-        rst_next = RESET_ACTIVE;
-        rst_count_next = RESET_CYCLES - 1;
+        if(RESET_ALWAYS || rst_count &gt; 0)
+        begin
+          rst_next = RESET_ACTIVE;
+          rst_count_next = RESET_CYCLES;
+        end
+        else
+        begin
+          rst_count_next = 1;
+        end
       end
     end
   STATE_SETUP:
     begin
-      if(rst_count >= 0)
+      if(rst_count &gt; 1)
       begin
         setup_next = rst_count == 0;
-        rst_next = rst_count > 0 ? RESET_ACTIVE : ~RESET_ACTIVE;
+        rst_next = RESET_ACTIVE;
         rst_count_next = rst_count - 1;
+      end
+      else if(rst_count == 1)
+      begin
+        setup_next = 1;
+        rst_next = ~RESET_ACTIVE;
+        rst_count_next = 0;
       end
       else
       begin
         state_next = STATE_RUNNING;
-        rst_next = ~RESET_ACTIVE;
         setup_next = 0;
         start_next = 1;
       end
