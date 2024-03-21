@@ -77,3 +77,22 @@ A Google Colab notebook with many examples to play with Bambu is available. [![O
 # Contacts
 Issues, patches, and pull requests are welcome at https://github.com/ferrandi/PandA-bambu.<br>
 For further information send an e-mail to panda-info@polimi.it, visit [PandA website](https://panda.dei.polimi.it/) or the Google [group page](https://groups.google.com/forum/#!forum/panda-project-discussions-questions).
+
+<br>
+
+# Acknowledgements
+Bambu has been supported throughout its history by the following projects.
+
+European Union projects:
+ - Grant agreement ID 004452 ICODES – Interface and Communication based Design of Embedded Systems
+ - Grant agreement ID 035143 hArtes – Holistic Approach to Reconfigurable Real-Time Embedded Systems
+ - Grant agreement ID 248538 Synaptic – SYNthesis using Advanced Process Technology Integrated in regular Cells, IPs, architectures, and design platforms
+ - Grant agreement ID 287804 Faster – Facilitating Analysis and Synthesis Technologies for Effective Reconfiguration
+ - Grant agreement ID 101004203 HERMES – qualification of High pErformance pRogrammable Microprocessor and dEvelopment of Software ecosystem
+ - Grant agreement ID 957269 EVEREST – dEsign enVironmEnt foR Extreme-Scale big data analytics on heterogeneous platforms
+
+European Space Agency contracts:
+ - ESA/ESTEC/Contract N. 4000100797 – Development of methodologies and tools for predictable, real-time LEON-DSP-based embedded systems.
+ - ESA/ESTEC/Contract No. 22167/09/NL/JK. Cache Optimization for LEON Analysis (COLA).
+ - ESA/ESTEC/Contract Call-Off Order 4 “Multicore and Schedulability Analysis” for TASTE project.
+ - ESA/ESTEC/Contract No. 4000121154/17/NL/LF Compact Reconfigurable Avionics Model-Based Avionic Design (CORA-MBAD)
