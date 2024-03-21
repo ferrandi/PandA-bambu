@@ -283,7 +283,7 @@ void SimulationTool::DetermineCycles(unsigned long long int& accum_cycles, unsig
 std::string SimulationTool::GenerateSimulationScript(const std::string& top_filename, std::list<std::string> file_list)
 {
    // Create the simulation script
-   generated_script = GetPath("./simulate_" + top_filename + ".sh");
+   generated_script = "simulate_" + top_filename + ".sh";
    std::ofstream script(generated_script);
    std::filesystem::permissions(generated_script,
                                 std::filesystem::perms::owner_exec | std::filesystem::perms::group_exec |

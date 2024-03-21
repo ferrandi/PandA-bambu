@@ -2117,11 +2117,12 @@ std::string CompilerWrapper::GetAnalyzeCompiler() const
 
 void CompilerWrapper::GetSystemIncludes(std::vector<std::string>& includes) const
 {
+   const auto include_file = Param->getOption<std::filesystem::path>(OPT_output_temporary_directory) / "__include";
    const auto command =
        GetCompiler().cpp +
        " -v  < /dev/null 2>&1 | sed -n '/#include </,/> search ends here:/p' | grep -v -E \"(#|End of search "
        "list.|COMPILER_PATH|LIBRARY_PATH|COLLECT_GCC|OFFLOAD_TARGET_NAMES|OFFLOAD_TARGET_DEFAULT)\" | sed 's/ //'";
-   const auto ret = PandaSystem(Param, command, false, STR_CST_gcc_include);
+   const auto ret = PandaSystem(Param, command, false, include_file);
    PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "");
    if(IsError(ret))
    {
@@ -2129,7 +2130,7 @@ void CompilerWrapper::GetSystemIncludes(std::vector<std::string>& includes) cons
       THROW_ERROR("Error in retrieving gcc system include. Error is " + std::to_string(ret));
    }
 
-   std::ifstream includefile(GetPath(STR_CST_gcc_include));
+   std::ifstream includefile(include_file);
    if(includefile.is_open())
    {
       std::string line;
@@ -2144,7 +2145,7 @@ void CompilerWrapper::GetSystemIncludes(std::vector<std::string>& includes) cons
       THROW_ERROR("Error in retrieving gcc system include");
    }
 
-   std::remove(GetPath(STR_CST_gcc_include).c_str());
+   std::filesystem::remove(include_file);
 }
 
 void CompilerWrapper::GetCompilerConfig() const
