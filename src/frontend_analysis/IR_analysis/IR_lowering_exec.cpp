@@ -1745,7 +1745,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            const auto element_size = tree_helper::Size(element_type);
                            const auto vector_size = tree_helper::Size(lhs_type);
                            const auto num_elements = vector_size / element_size;
-                           return tree_man->CreateVectorBooleanType(num_elements);
+                           return tree_man->CreateVectorType(tree_man->GetBooleanType(), num_elements);
                         }();
                         GetPointer<binary_expr>(GET_NODE(ga->op1))->type = new_left_type;
                         const auto lt_ga = tree_man->CreateGimpleAssign(new_left_type, nullptr, nullptr, ga->op1,

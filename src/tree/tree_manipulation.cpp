@@ -2749,13 +2749,13 @@ tree_nodeRef tree_manipulation::CreateGimpleAssignAddrExpr(const tree_nodeConstR
    return assign_node;
 }
 
-tree_nodeRef tree_manipulation::CreateVectorBooleanType(const unsigned long long number_of_elements) const
+tree_nodeRef tree_manipulation::CreateVectorType(const tree_nodeConstRef& elt_type,
+                                                 integer_cst_t number_of_elements) const
 {
-   const auto boolean_type = GetBooleanType();
-   const auto size = TreeM->CreateUniqueIntegerCst(static_cast<long long>(number_of_elements), GetSizeType());
+   const auto size = TreeM->CreateUniqueIntegerCst(number_of_elements, GetSizeType());
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
-   IR_schema[TOK(TOK_ELTS)] = STR(boolean_type->index);
+   IR_schema[TOK(TOK_ELTS)] = STR(elt_type->index);
    IR_schema[TOK(TOK_SIZE)] = STR(size->index);
 
    auto vector_type_id = TreeM->find(vector_type_K, IR_schema);
