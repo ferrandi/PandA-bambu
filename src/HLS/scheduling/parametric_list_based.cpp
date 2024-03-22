@@ -392,12 +392,13 @@ void parametric_list_based::CheckSchedulabilityConditions(
     double& current_starting_time, double& current_ending_time, double& current_stage_period,
     CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map, double current_cycle_starting_time,
     double current_cycle_ending_time, double setup_hold_time, double& phi_extra_time, double scheduling_mux_margins,
-    bool unbounded, bool RWFunctions, bool LoadStoreOp, const std::set<std::string>& proxy_functions_used,
-    bool cstep_has_RET_conflict, unsigned int fu_type, const vertex2obj<ControlStep>& current_ASAP,
-    const fu_bindingRef res_binding, const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond,
-    bool& cannotBeChained0, bool& chainingRetCond, bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2,
-    bool& cannotBeChained3, bool& MultiCond0, bool& MultiCond1, bool& LoadStoreFunctionConflict,
-    bool& FunctionLoadStoreConflict, bool& proxyFunCond, bool unbounded_RW, bool seeMulticycle)
+    bool unbounded, bool unbounded_chaining, bool RWFunctions, bool LoadStoreOp,
+    const std::set<std::string>& proxy_functions_used, bool cstep_has_RET_conflict, unsigned int fu_type,
+    const vertex2obj<ControlStep>& current_ASAP, const fu_bindingRef res_binding, const ScheduleRef schedule,
+    bool& predecessorsCond, bool& pipeliningCond, bool& cannotBeChained0, bool& chainingRetCond, bool& cannotBeChained1,
+    bool& asyncCond, bool& cannotBeChained2, bool& cannotBeChained3, bool& MultiCond0, bool& MultiCond1,
+    bool& LoadStoreFunctionConflict, bool& FunctionLoadStoreConflict, bool& proxyFunCond, bool unbounded_RW,
+    bool seeMulticycle)
 {
    predecessorsCond = current_ASAP.find(current_vertex) != current_ASAP.end() and
                       current_ASAP.find(current_vertex)->second > current_cycle;
@@ -415,7 +416,7 @@ void parametric_list_based::CheckSchedulabilityConditions(
                     ((current_stage_period + current_starting_time + setup_hold_time + phi_extra_time +
                               (complex_op ? scheduling_mux_margins : 0) >
                           (current_cycle_ending_time) ||
-                      unbounded));
+                      unbounded_chaining));
    if(pipeliningCond)
    {
       return;
@@ -431,7 +432,7 @@ void parametric_list_based::CheckSchedulabilityConditions(
    {
       return;
    }
-   chainingRetCond = (unbounded || cstep_has_RET_conflict) && (curr_vertex_type & TYPE_RET);
+   chainingRetCond = (unbounded_chaining || cstep_has_RET_conflict) && (curr_vertex_type & TYPE_RET);
    if(chainingRetCond)
    {
       return;
@@ -1076,7 +1077,9 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
       used_resources.init(current_cycle - initialCycle, LP_II);
       unsigned int cstep_vuses_ARRAYs = used_resources.getRefAttribute() & ResourceAttribute::cstep_vuses_ARRAYs;
       bool unbounded = used_resources.getRefAttribute() & ResourceAttribute::UNBOUNDED;
+      bool unbounded_chaining = false;
       bool unbounded_RW = used_resources.getRefAttribute() & ResourceAttribute::UNBOUNDED_RW;
+      bool unbounded_RW_chaining = false;
       bool seeMulticycle = used_resources.getRefAttribute() & ResourceAttribute::SEEMULTICYCLE;
       unsigned int n_scheduled_ops = 0;
       const auto current_cycle_starting_time = from_strongtype_cast<double>(current_cycle) * clock_cycle;
@@ -1349,9 +1352,12 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
 
                bool is_live = check_if_is_live_in_next_cycle(live_vertices, current_cycle, starting_time, ending_time,
                                                              clock_cycle, LPBB_predicate, HLS);
+               bool is_live_chaining = check_if_is_live_in_next_cycle(live_vertices, current_cycle, starting_time,
+                                                                      ending_time, clock_cycle, false, HLS);
                THROW_ASSERT(!(curr_vertex_type & (TYPE_WHILE | TYPE_FOR)), "not expected operation type");
                /// put these type of operations as last operation scheduled for the basic block
-               if((curr_vertex_type & (TYPE_RET | TYPE_GOTO)) && (unbounded || unbounded_RW || is_live))
+               if((curr_vertex_type & (TYPE_RET | TYPE_GOTO)) &&
+                  (unbounded_chaining || unbounded_RW_chaining || is_live_chaining))
                {
                   if(black_list.find(fu_type) == black_list.end())
                   {
@@ -1360,10 +1366,10 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   black_list.at(fu_type).insert(current_vertex);
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "            Scheduling of Control Vertex " + GET_NAME(flow_graph, current_vertex) +
-                                    " postponed to the next cycle");
+                                    " postponed to the next cycle(1)");
                   continue;
                }
-               else if((curr_vertex_type & (TYPE_IF | TYPE_SWITCH | TYPE_MULTIIF)) && is_live)
+               else if((curr_vertex_type & (TYPE_IF | TYPE_SWITCH | TYPE_MULTIIF)) && is_live_chaining)
                {
                   if(black_list.find(fu_type) == black_list.end())
                   {
@@ -1372,7 +1378,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   black_list.at(fu_type).insert(current_vertex);
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "            Scheduling of Control Vertex " + GET_NAME(flow_graph, current_vertex) +
-                                    " postponed to the next cycle");
+                                    " postponed to the next cycle(2)");
                   continue;
                }
                else if(((!LPBB_predicate && (curr_vertex_type & (TYPE_IF | TYPE_MULTIIF))) ||
@@ -1517,10 +1523,10 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                CheckSchedulabilityConditions(
                    operations, current_vertex, current_cycle, current_starting_time, current_ending_time,
                    current_stage_period, local_connection_map, current_cycle_starting_time, current_cycle_ending_time,
-                   setup_hold_time, phi_extra_time, scheduling_mux_margins, unbounded, RWFunctions, LoadStoreOp,
-                   proxy_functions_used, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule,
-                   predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond, cannotBeChained1, asyncCond,
-                   cannotBeChained2, cannotBeChained3, MultiCond0, MultiCond1, LoadStoreFunctionConflict,
+                   setup_hold_time, phi_extra_time, scheduling_mux_margins, unbounded, unbounded_chaining, RWFunctions,
+                   LoadStoreOp, proxy_functions_used, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding,
+                   schedule, predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond, cannotBeChained1,
+                   asyncCond, cannotBeChained2, cannotBeChained3, MultiCond0, MultiCond1, LoadStoreFunctionConflict,
                    FunctionLoadStoreConflict, proxyFunCond, unbounded_RW, seeMulticycle);
 
                /// checking if predecessors have finished
@@ -1566,7 +1572,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   PRINT_DBG_MEX(
                       DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                       "                  Chaining of return expression operation is not allowed by construction" +
-                          (unbounded ? std::string("(unbounded)") : std::string("(bounded)")));
+                          (unbounded_chaining ? std::string("(unbounded)") : std::string("(bounded)")));
                   if(black_list.find(fu_type) == black_list.end())
                   {
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
@@ -1788,12 +1794,14 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                                    "\nThis may prevent meeting the timing constraints.\n");
                   }
                   unbounded = true;
+                  unbounded_chaining = true;
                   attrib_update = attrib_update | ResourceAttribute::UNBOUNDED;
                }
                else if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) &&
                        RW_stmts.find(current_vertex) != RW_stmts.end())
                {
                   unbounded_RW = true;
+                  unbounded_RW_chaining = true;
                   attrib_update = attrib_update | ResourceAttribute::UNBOUNDED_RW;
                }
                else
@@ -2542,8 +2550,10 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    }
    if(FB->is_function_pipelined() && vertices.size() != 3)
    {
-      THROW_ERROR(
-          "Function pipelining is not possible when one or more loops are present or code predication is not possible");
+      FB->disable_function_pipelining();
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                     "Disabled function pipelining\n    Function pipelining is not possible when one or more loops are "
+                     "present or code predication is not possible");
    }
    if(FB->is_function_pipelined())
    {
