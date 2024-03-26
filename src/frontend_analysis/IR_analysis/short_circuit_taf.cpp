@@ -188,7 +188,7 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
    const auto TM = AppM->get_tree_manager();
    const auto temp = TM->CGetTreeNode(function_id);
    const auto fd = GetPointer<const function_decl>(temp);
-   const auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   const auto sl = GetPointer<statement_list>(fd->body);
 
    /// compute merging candidates
    CustomUnorderedSet<unsigned int> merging_candidates;
@@ -469,7 +469,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    {
       for(const auto& phi : list_of_bloc.at(merging_candidate)->CGetPhiList())
       {
-         const auto mc_phi = GetPointer<gimple_phi>(GET_NODE(phi));
+         const auto mc_phi = GetPointer<gimple_phi>(phi);
          std::pair<tree_nodeRef, unsigned int> def_edge_to_be_removed(tree_nodeRef(), 0);
          std::pair<tree_nodeRef, unsigned int> def_edge_to_be_updated(tree_nodeRef(), 0);
          for(const auto& def_edge : mc_phi->CGetDefEdgesList())
@@ -532,7 +532,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
 
    const auto second_stmt = list_of_stmt_cond2.front();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Second gimple cond is " + STR(second_stmt));
-   auto ce2 = GetPointer<gimple_cond>(GET_NODE(second_stmt));
+   auto ce2 = GetPointer<gimple_cond>(second_stmt);
    auto cond2 = ce2->op0;
 
    /// create the assignment between condition for bb2 and the new ssa var
@@ -608,7 +608,7 @@ void short_circuit_taf::restructure_CFG(unsigned int bb1, unsigned int bb2, unsi
       const auto list_of_pred_stmt = list_of_bloc.at(pred)->CGetStmtList();
       const auto cond_statement =
           list_of_pred_stmt.begin() != list_of_pred_stmt.end() ? list_of_pred_stmt.back() : tree_nodeRef();
-      const auto cond_statement_node = cond_statement ? GET_NODE(cond_statement) : cond_statement;
+      const auto cond_statement_node = cond_statement ? cond_statement : cond_statement;
       if(cond_statement_node && GetPointer<gimple_multi_way_if>(cond_statement_node))
       {
          const auto gmwi = GetPointerS<gimple_multi_way_if>(cond_statement_node);

@@ -340,18 +340,12 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
  * @return the pointer to t
  */
 #ifndef NDEBUG
-#define GET_NODE(t)                                                                                \
-   ((t) ? ((t)->get_kind() != tree_reindex_K ?                                                     \
-               t :                                                                                 \
-               throw_error(t, #t " is a tree reindex", __PRETTY_FUNCTION__, __FILE__, __LINE__)) : \
-          throw_error(t, #t " is nullptr", __PRETTY_FUNCTION__, __FILE__, __LINE__))
 #define GET_CONST_NODE(t)                                                                          \
    ((t) ? ((t)->get_kind() != tree_reindex_K ?                                                     \
                t :                                                                                 \
                throw_error(t, #t " is a tree reindex", __PRETTY_FUNCTION__, __FILE__, __LINE__)) : \
           throw_error(t, #t " is nullptr", __PRETTY_FUNCTION__, __FILE__, __LINE__))
 #else
-#define GET_NODE(t) t
 #define GET_CONST_NODE(t) t
 #endif
 #define GET_PTD_NODE(t) \

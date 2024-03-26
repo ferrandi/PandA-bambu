@@ -256,9 +256,9 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    const auto TM = AppM->get_tree_manager();
    const auto fnode = TM->CGetTreeNode(function_id);
-   const auto fd = GetPointerS<function_decl>(GET_NODE(fnode));
+   const auto fd = GetPointerS<function_decl>(fnode);
    THROW_ASSERT(fd->body, "");
-   const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+   const auto sl = GetPointerS<statement_list>(fd->body);
    bool modified = false;
    const auto opt_stmts = opt_call.find(function_id);
    if(opt_stmts != opt_call.end())

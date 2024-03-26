@@ -57,22 +57,20 @@ static tree_nodeRef getFunctionPointerType(tree_nodeRef fptr);
 void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Update recursively node: " + STR(GET_NODE(TN)) + " id: " + STR(GET_INDEX_NODE(TN)));
+                  "-->Update recursively node: " + STR(TN) + " id: " + STR(GET_INDEX_NODE(TN)));
 
    const tree_managerRef TM = AppM->get_tree_manager();
-   const tree_nodeRef currentTreeNode = GET_NODE(TN);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + currentTreeNode->get_kind_text());
-   switch(currentTreeNode->get_kind())
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + TN->get_kind_text());
+   switch(TN->get_kind())
    {
       case call_expr_K:
       case aggr_init_expr_K:
       {
-         const call_expr* CE = GetPointer<call_expr>(currentTreeNode);
+         const call_expr* CE = GetPointer<call_expr>(TN);
 
-         tree_nodeRef FN =
-             GetPointer<addr_expr>(GET_NODE(CE->fn)) ? GetPointer<addr_expr>(GET_NODE(CE->fn))->op : CE->fn;
+         tree_nodeRef FN = GetPointer<addr_expr>(CE->fn) ? GetPointer<addr_expr>(CE->fn)->op : CE->fn;
          THROW_ASSERT(FN, "Address expression with null op");
-         if(GET_NODE(FN)->get_kind() == function_decl_K)
+         if(FN->get_kind() == function_decl_K)
          {
             unsigned int functionDeclIdx = FN->index;
             std::string funName = tree_helper::name_function(TM, functionDeclIdx);
@@ -80,8 +78,8 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
             {
                const std::vector<tree_nodeRef>& args = CE->args;
                tree_nodeRef builtinArgZero =
-                   GetPointer<addr_expr>(GET_NODE(args[0])) ? GetPointer<addr_expr>(GET_NODE(args[0]))->op : args[0];
-               if(GET_NODE(builtinArgZero)->get_kind() == function_decl_K)
+                   GetPointer<addr_expr>(args[0]) ? GetPointer<addr_expr>(args[0])->op : args[0];
+               if(builtinArgZero->get_kind() == function_decl_K)
                {
                   unsigned int calledFunctionId = builtinArgZero->index;
                   CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, calledFunctionId,
@@ -89,9 +87,9 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
                                                           FunctionEdgeInfo::CallType::indirect_call, debug_level);
                   modified = true;
                }
-               else if(GET_NODE(builtinArgZero)->get_kind() == ssa_name_K)
+               else if(builtinArgZero->get_kind() == ssa_name_K)
                {
-                  tree_nodeRef funPtrType = getFunctionPointerType(GET_NODE(builtinArgZero));
+                  tree_nodeRef funPtrType = getFunctionPointerType(builtinArgZero);
                   ExtendCallGraph(function_id, funPtrType, CE->index);
                }
             }
@@ -100,21 +98,20 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
       }
       case gimple_call_K:
       {
-         const gimple_call* CE = GetPointer<gimple_call>(currentTreeNode);
+         const gimple_call* CE = GetPointer<gimple_call>(TN);
 
-         tree_nodeRef FN =
-             GetPointer<addr_expr>(GET_NODE(CE->fn)) ? GetPointer<addr_expr>(GET_NODE(CE->fn))->op : CE->fn;
+         tree_nodeRef FN = GetPointer<addr_expr>(CE->fn) ? GetPointer<addr_expr>(CE->fn)->op : CE->fn;
          THROW_ASSERT(FN, "Address expression with null op");
-         if(GET_NODE(FN)->get_kind() == function_decl_K)
+         if(FN->get_kind() == function_decl_K)
          {
-            unsigned int functionDeclIdx = GET_NODE(FN)->index;
+            unsigned int functionDeclIdx = GET_INDEX_NODE(FN);
             std::string funName = tree_helper::name_function(TM, functionDeclIdx);
             if(funName == BUILTIN_WAIT_CALL)
             {
                const std::vector<tree_nodeRef>& args = CE->args;
                tree_nodeRef builtinArgZero =
-                   GetPointer<addr_expr>(GET_NODE(args[0])) ? GetPointer<addr_expr>(GET_NODE(args[0]))->op : args[0];
-               if(GET_NODE(builtinArgZero)->get_kind() == function_decl_K)
+                   GetPointer<addr_expr>(args[0]) ? GetPointer<addr_expr>(args[0])->op : args[0];
+               if(builtinArgZero->get_kind() == function_decl_K)
                {
                   unsigned int calledFunctionId = builtinArgZero->index;
                   CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, calledFunctionId,
@@ -122,10 +119,10 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
                                                           FunctionEdgeInfo::CallType::indirect_call, debug_level);
                   modified = true;
                }
-               else if(GET_NODE(builtinArgZero)->get_kind() == ssa_name_K)
+               else if(builtinArgZero->get_kind() == ssa_name_K)
                {
                   // Function pointers case.
-                  tree_nodeRef funPtrType = getFunctionPointerType(GET_NODE(builtinArgZero));
+                  tree_nodeRef funPtrType = getFunctionPointerType(builtinArgZero);
                   ExtendCallGraph(function_id, funPtrType, CE->index);
                }
             }
@@ -134,10 +131,10 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
       }
       case gimple_assign_K:
       {
-         auto* gm = GetPointer<gimple_assign>(currentTreeNode);
-         if(GetPointer<call_expr>(GET_NODE(gm->op1)))
+         auto* gm = GetPointer<gimple_assign>(TN);
+         if(GetPointer<call_expr>(gm->op1))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---call_expr " + STR(GET_NODE(gm->op1)));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---call_expr " + STR(gm->op1));
             lookForBuiltinCall(gm->op1);
          }
          break;
@@ -295,9 +292,8 @@ DesignFlowStep_Status CallGraphBuiltinCall::InternalExec()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->BuiltinWaitCall Analysis");
    tree_managerRef TM = AppM->get_tree_manager();
-   const tree_nodeRef currentTreeNode = TM->GetTreeNode(function_id);
-   auto* functionDecl = GetPointer<function_decl>(currentTreeNode);
-   auto* stmtList = GetPointer<statement_list>(GET_NODE(functionDecl->body));
+   auto* functionDecl = GetPointer<function_decl>(TM->GetTreeNode(function_id));
+   auto* stmtList = GetPointer<statement_list>(functionDecl->body);
 
    if(parameters->getOption<bool>(OPT_print_dot) && DEBUG_LEVEL_PEDANTIC <= debug_level &&
       (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
@@ -313,7 +309,7 @@ DesignFlowStep_Status CallGraphBuiltinCall::InternalExec()
    {
       for(const auto& stmt : block.second->CGetStmtList())
       {
-         if(GET_NODE(stmt)->get_kind() == gimple_call_K or GET_NODE(stmt)->get_kind() == gimple_assign_K)
+         if(stmt->get_kind() == gimple_call_K or stmt->get_kind() == gimple_assign_K)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing stmt " + stmt->ToString());
             lookForBuiltinCall(stmt);
@@ -339,18 +335,17 @@ static tree_nodeRef getFunctionPointerType(tree_nodeRef fptr)
    pointer_type* pt;
    if(sa->var)
    {
-      auto* var = GetPointer<decl_node>(GET_NODE(sa->var));
+      auto* var = GetPointer<decl_node>(sa->var);
       THROW_ASSERT(var, "Call expression does not point to a declaration node");
-      pt = GetPointer<pointer_type>(GET_NODE(var->type));
+      pt = GetPointer<pointer_type>(var->type);
    }
    else
    {
-      pt = GetPointer<pointer_type>(GET_NODE(sa->type));
+      pt = GetPointer<pointer_type>(sa->type);
    }
 
    THROW_ASSERT(pt, "Declaration node has not information about pointer_type");
-   THROW_ASSERT(GetPointer<function_type>(GET_NODE(pt->ptd)),
-                "Pointer type has not information about pointed function_type");
+   THROW_ASSERT(GetPointer<function_type>(pt->ptd), "Pointer type has not information about pointed function_type");
 
-   return GET_NODE(pt->ptd);
+   return pt->ptd;
 }

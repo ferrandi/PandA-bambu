@@ -769,23 +769,23 @@ void tree_node_dup::operator()(const attr* obj, unsigned int& mask)
 #undef ATTR_SEQ
 }
 
-#define SET_NODE_ID(field, type)                                                         \
-   if(GetPointer<type>(source_tn)->field)                                                \
-   {                                                                                     \
-      unsigned int node_id = GET_INDEX_NODE(GetPointer<type>(source_tn)->field);         \
-      if(remap.find(node_id) != remap.end())                                             \
-      {                                                                                  \
-         node_id = remap.find(node_id)->second;                                          \
-      }                                                                                  \
-      else                                                                               \
-      {                                                                                  \
-         tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;                       \
-         tree_nodeRef saved_source_tn = source_tn;                                       \
-         node_id = create_tree_node(GET_NODE(GetPointer<type>(source_tn)->field), mode); \
-         curr_tree_node_ptr = saved_curr_tree_node_ptr;                                  \
-         source_tn = saved_source_tn;                                                    \
-      }                                                                                  \
-      dynamic_cast<type*>(curr_tree_node_ptr)->field = TM->GetTreeNode(node_id);         \
+#define SET_NODE_ID(field, type)                                                 \
+   if(GetPointer<type>(source_tn)->field)                                        \
+   {                                                                             \
+      unsigned int node_id = GET_INDEX_NODE(GetPointer<type>(source_tn)->field); \
+      if(remap.find(node_id) != remap.end())                                     \
+      {                                                                          \
+         node_id = remap.find(node_id)->second;                                  \
+      }                                                                          \
+      else                                                                       \
+      {                                                                          \
+         tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;               \
+         tree_nodeRef saved_source_tn = source_tn;                               \
+         node_id = create_tree_node(GetPointer<type>(source_tn)->field, mode);   \
+         curr_tree_node_ptr = saved_curr_tree_node_ptr;                          \
+         source_tn = saved_source_tn;                                            \
+      }                                                                          \
+      dynamic_cast<type*>(curr_tree_node_ptr)->field = TM->GetTreeNode(node_id); \
    }
 
 #define SEQ_SET_NODE_ID(list_field, type)                                                         \
@@ -800,7 +800,7 @@ void tree_node_dup::operator()(const attr* obj, unsigned int& mask)
          {                                                                                        \
             tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;                             \
             tree_nodeRef saved_source_tn = source_tn;                                             \
-            node_id = create_tree_node(GET_NODE(field), mode);                                    \
+            node_id = create_tree_node(field, mode);                                              \
             curr_tree_node_ptr = saved_curr_tree_node_ptr;                                        \
             source_tn = saved_source_tn;                                                          \
          }                                                                                        \
@@ -820,7 +820,7 @@ void tree_node_dup::operator()(const attr* obj, unsigned int& mask)
          {                                                                                     \
             tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;                          \
             tree_nodeRef saved_source_tn = source_tn;                                          \
-            node_id = create_tree_node(GET_NODE(i), mode);                                     \
+            node_id = create_tree_node(i, mode);                                               \
             curr_tree_node_ptr = saved_curr_tree_node_ptr;                                     \
             source_tn = saved_source_tn;                                                       \
          }                                                                                     \
@@ -841,7 +841,7 @@ void tree_node_dup::operator()(const attr* obj, unsigned int& mask)
          {                                                                                                             \
             tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;                                                  \
             tree_nodeRef saved_source_tn = source_tn;                                                                  \
-            node_id = create_tree_node(GET_NODE(*i), mode);                                                            \
+            node_id = create_tree_node(*i, mode);                                                                      \
             curr_tree_node_ptr = saved_curr_tree_node_ptr;                                                             \
             source_tn = saved_source_tn;                                                                               \
          }                                                                                                             \
@@ -1146,7 +1146,7 @@ void tree_node_dup::operator()(const constructor* obj, unsigned int& mask)
          {
             tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;
             tree_nodeRef saved_source_tn = source_tn;
-            node_id1 = create_tree_node(GET_NODE(i->first), mode);
+            node_id1 = create_tree_node(i->first, mode);
             curr_tree_node_ptr = saved_curr_tree_node_ptr;
             source_tn = saved_source_tn;
          }
@@ -1159,7 +1159,7 @@ void tree_node_dup::operator()(const constructor* obj, unsigned int& mask)
          {
             tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;
             tree_nodeRef saved_source_tn = source_tn;
-            node_id2 = create_tree_node(GET_NODE(i->second), mode);
+            node_id2 = create_tree_node(i->second, mode);
             curr_tree_node_ptr = saved_curr_tree_node_ptr;
             source_tn = saved_source_tn;
          }
@@ -1401,7 +1401,7 @@ void tree_node_dup::operator()(const gimple_phi* obj, unsigned int& mask)
          {
             tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;
             tree_nodeRef saved_source_tn = source_tn;
-            node_id = create_tree_node(GET_NODE(def_edge.first), mode);
+            node_id = create_tree_node(def_edge.first, mode);
             curr_tree_node_ptr = saved_curr_tree_node_ptr;
             source_tn = saved_source_tn;
          }
@@ -1548,7 +1548,7 @@ void tree_node_dup::operator()(const ssa_name* obj, unsigned int& mask)
          {
             const auto saved_curr_tree_node_ptr = curr_tree_node_ptr;
             const auto saved_source_tn = source_tn;
-            node_id = create_tree_node(GET_NODE(def_stmt), mode);
+            node_id = create_tree_node(def_stmt, mode);
             curr_tree_node_ptr = saved_curr_tree_node_ptr;
             source_tn = saved_source_tn;
          }
@@ -1831,7 +1831,7 @@ void tree_node_dup::operator()(const bloc* obj, unsigned int& mask)
             tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;
             tree_nodeRef saved_source_tn = source_tn;
             bloc* saved_curr_bloc = curr_bloc;
-            node_id = create_tree_node(GET_NODE(phi), mode);
+            node_id = create_tree_node(phi, mode);
             curr_tree_node_ptr = saved_curr_tree_node_ptr;
             source_tn = saved_source_tn;
             curr_bloc = saved_curr_bloc;
@@ -1859,7 +1859,7 @@ void tree_node_dup::operator()(const bloc* obj, unsigned int& mask)
             const auto saved_curr_tree_node_ptr = curr_tree_node_ptr;
             const auto saved_source_tn = source_tn;
             const auto saved_curr_bloc = curr_bloc;
-            node_id = create_tree_node(GET_NODE(stmt), mode);
+            node_id = create_tree_node(stmt, mode);
             curr_tree_node_ptr = saved_curr_tree_node_ptr;
             source_tn = saved_source_tn;
             curr_bloc = saved_curr_bloc;
@@ -1912,7 +1912,7 @@ void tree_node_dup::operator()(const gimple_multi_way_if* obj, unsigned int& mas
                {
                   tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;
                   tree_nodeRef saved_source_tn = source_tn;
-                  node_id = create_tree_node(GET_NODE(cond.first), mode);
+                  node_id = create_tree_node(cond.first, mode);
                   curr_tree_node_ptr = saved_curr_tree_node_ptr;
                   source_tn = saved_source_tn;
                }

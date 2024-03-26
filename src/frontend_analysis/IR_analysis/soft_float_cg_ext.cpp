@@ -391,8 +391,7 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
                                                 _version->userRequired->exp_bits + _version->userRequired->frac_bits),
                       true) :
                   nullptr;
-   int_ptr_type =
-       int_type ? tree_man->GetPointerType(int_type, GetPointer<integer_type>(GET_NODE(int_type))->algn) : nullptr;
+   int_ptr_type = int_type ? tree_man->GetPointerType(int_type, GetPointer<integer_type>(int_type)->algn) : nullptr;
 }
 
 soft_float_cg_ext::~soft_float_cg_ext() = default;
@@ -501,7 +500,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                   "---IO interface is " + STR((_version->ieee_format() || _version->internal) ? "not " : "") +
                       "necessary");
 
-   const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+   const auto sl = GetPointerS<statement_list>(fd->body);
    bool modified = false;
 
    for(const auto& block : sl->list_of_bloc)
@@ -546,7 +545,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                 tree_man->create_unary_operation(ssa->type, ssa_ridx, BUILTIN_SRCP, view_convert_expr_K);
             const auto vc_stmt = tree_man->CreateGimpleAssign(ssa->type, tree_nodeRef(), tree_nodeRef(), arg_vc,
                                                               function_id, BUILTIN_SRCP);
-            const auto vc_ssa = GetPointerS<gimple_assign>(GET_NODE(vc_stmt))->op0;
+            const auto vc_ssa = GetPointerS<gimple_assign>(vc_stmt)->op0;
             call_bb->PushBefore(vc_stmt, call_stmt, AppM);
             TreeM->ReplaceTreeNode(call_stmt, ssa_ridx, vc_ssa);
             if(out_ssa)
@@ -587,7 +586,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          const auto if_info = inputInterface.find(ssa);
          if(if_info != inputInterface.end())
          {
-            const auto new_ssa = GetPointer<ssa_name>(GET_NODE(vc_ssa));
+            const auto new_ssa = GetPointer<ssa_name>(vc_ssa);
             THROW_ASSERT(std::get<0>(if_info->second), "");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Input interface " + std::get<0>(if_info->second)->ToString() + " moved");
@@ -637,9 +636,9 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                const auto parm_type = int_type_for(parmSSA->type, false);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "Lowering top function parameter type of " + parmSSA->ToString() + ": " +
-                                  GET_NODE(parmSSA->type)->ToString() + " -> " + GET_NODE(parm_type)->ToString());
+                                  parmSSA->type->ToString() + " -> " + parm_type->ToString());
                tree_nodeRef vc_stmt;
-               if(GET_NODE(parm_type)->get_kind() == pointer_type_K)
+               if(parm_type->get_kind() == pointer_type_K)
                {
                   vc_stmt = tree_man->CreateNopExpr(parm_ridx, parm_type, tree_nodeRef(), tree_nodeRef(), function_id);
                }
@@ -653,7 +652,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                   {
                      const auto ssa_ff = tree_helper::Size(parmSSA->type) == 32 ? float32FF : float64FF;
                      const auto ientry = inputInterface.insert(
-                         {GetPointerS<ssa_name>(GET_CONST_NODE(GetPointerS<gimple_assign>(GET_NODE(vc_stmt))->op0)),
+                         {GetPointerS<ssa_name>(GET_CONST_NODE(GetPointerS<gimple_assign>(vc_stmt)->op0)),
                           {ssa_ff, std::vector<unsigned int>()}});
                      THROW_ASSERT(ientry.second, "");
                      const auto oentry = outputInterface.find(parmSSA);
@@ -672,9 +671,8 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                   }
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Lowering statement added to BB" + STR(first_bb->number) + ": " +
-                                  GET_NODE(vc_stmt)->ToString());
-               const auto lowered_parm = GetPointerS<gimple_assign>(GET_NODE(vc_stmt))->op0;
+                              "---Lowering statement added to BB" + STR(first_bb->number) + ": " + vc_stmt->ToString());
+               const auto lowered_parm = GetPointerS<gimple_assign>(vc_stmt)->op0;
                const auto parm_uses = parmSSA->CGetUseStmts();
                for(const auto& stmt_uses : parm_uses)
                {
@@ -689,13 +687,13 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
       paramBinding.clear();
       for(const auto& ret_stmt : topReturn)
       {
-         const auto gr = GetPointerS<gimple_return>(GET_NODE(ret_stmt));
-         const auto ret_ssa = GetPointerS<ssa_name>(GET_NODE(gr->op));
+         const auto gr = GetPointerS<gimple_return>(ret_stmt);
+         const auto ret_ssa = GetPointerS<ssa_name>(gr->op);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "Return value type restore added for variable " + ret_ssa->ToString());
          const auto bb = sl->list_of_bloc.at(gr->bb_index);
          tree_nodeRef vc_stmt;
-         if(GET_NODE(ret_ssa->type)->get_kind() == pointer_type_K)
+         if(ret_ssa->type->get_kind() == pointer_type_K)
          {
             vc_stmt = tree_man->CreateNopExpr(gr->op, ret_ssa->type, tree_nodeRef(), tree_nodeRef(), function_id);
          }
@@ -712,7 +710,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                               "---Output interface required for current variable use");
             }
          }
-         const auto lowered_ret = GetPointerS<gimple_assign>(GET_NODE(vc_stmt))->op0;
+         const auto lowered_ret = GetPointerS<gimple_assign>(vc_stmt)->op0;
          bb->PushBefore(vc_stmt, ret_stmt, AppM);
          TreeM->ReplaceTreeNode(ret_stmt, gr->op, lowered_ret);
       }
@@ -746,8 +744,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "Lowering type of " + parmSSA->ToString() + " bound to paremeter " + pd->ToString() +
-                                     ": " + GET_NODE(parmSSA->type)->ToString() + " -> " +
-                                     GET_NODE(pd->type)->ToString());
+                                     ": " + parmSSA->type->ToString() + " -> " + pd->type->ToString());
                   parmSSA->type = pd->type;
 
                   // Remove ssa variable associated to function parameter to avoid multiple type replacement
@@ -786,19 +783,19 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
       for(const auto& vcStmt : nopConvert)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Before lowering - " + GET_NODE(vcStmt)->ToString());
-         const auto ga = GetPointerS<gimple_assign>(GET_NODE(vcStmt));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Before lowering - " + vcStmt->ToString());
+         const auto ga = GetPointerS<gimple_assign>(vcStmt);
          THROW_ASSERT(ga, "");
-         const auto vc = GetPointerS<view_convert_expr>(GET_NODE(ga->op1));
+         const auto vc = GetPointerS<view_convert_expr>(ga->op1);
          THROW_ASSERT(vc, "");
          THROW_ASSERT(GET_CONST_NODE(tree_helper::CGetType(vc->op))->get_kind() == integer_type_K,
-                      "At this point " + GET_NODE(vc->op)->ToString() + " should be of integer type.");
+                      "At this point " + vc->op->ToString() + " should be of integer type.");
          const auto resType = tree_helper::CGetType(ga->op0);
          THROW_ASSERT(GET_CONST_NODE(resType)->get_kind() == integer_type_K,
                       "Destination variable should of integer type (" + GET_CONST_NODE(resType)->get_kind_text() + ")");
          const auto nop = tree_man->create_unary_operation(resType, vc->op, BUILTIN_SRCP, nop_expr_K);
          TreeM->ReplaceTreeNode(vcStmt, ga->op1, nop);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---After lowering - " + GET_NODE(vcStmt)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---After lowering - " + vcStmt->ToString());
       }
       modified = true;
       nopConvert.clear();
@@ -823,7 +820,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
             std::transform(oentry_list.begin(), oentry_list.end(), std::back_inserter(exclude),
                            [&](const tree_nodeRef& tn) {
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                             "---Skipping replacement for statement " + GET_NODE(tn)->ToString());
+                                             "---Skipping replacement for statement " + tn->ToString());
                               return tn->index;
                            });
             outputInterface.erase(oentry);
@@ -839,7 +836,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          }
 
          auto defStmt = SSA->CGetDefStmt();
-         const auto def = GetPointerS<gimple_node>(GET_NODE(defStmt));
+         const auto def = GetPointerS<gimple_node>(defStmt);
          blocRef bb;
          if(def->get_kind() == gimple_assign_K)
          {
@@ -874,8 +871,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          const auto convertedSSA_type = tree_helper::CGetType(convertedSSA);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "-->Interface from " + std::get<0>(if_info.second)->ToString() + " to " +
-                            _version->userRequired->ToString() + " generated output " +
-                            GET_NODE(convertedSSA)->ToString());
+                            _version->userRequired->ToString() + " generated output " + convertedSSA->ToString());
 
          for(const auto& ssaUse : ssaUses)
          {
@@ -883,7 +879,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
             if(std::find(exclude.begin(), exclude.end(), GET_INDEX_NODE(useStmt)) != exclude.end())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Skipping replacement for statement " + GET_NODE(useStmt)->ToString());
+                              "---Skipping replacement for statement " + useStmt->ToString());
                continue;
             }
             TreeM->ReplaceTreeNode(useStmt, ssa, convertedSSA);
@@ -891,14 +887,13 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
             if(ga)
             {
                // Unary and binary expression have already been lowered to function calls
-               auto* te = GetPointer<ternary_expr>(GET_NODE(ga->op1));
+               auto* te = GetPointer<ternary_expr>(ga->op1);
                if(te)
                {
                   te->type = TreeM->GetTreeNode(convertedSSA_type->index);
                }
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Replaced in statement " + GET_NODE(useStmt)->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced in statement " + useStmt->ToString());
             modified = true;
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -919,7 +914,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          const auto& useStmts = std::get<1>(if_info.second);
 
          auto defStmt = SSA->CGetDefStmt();
-         const auto gn = GetPointerS<gimple_node>(GET_NODE(defStmt));
+         const auto gn = GetPointerS<gimple_node>(defStmt);
          THROW_ASSERT(sl->list_of_bloc.count(gn->bb_index),
                       "BB" + STR(gn->bb_index) + " not present in current function.");
          auto bb = sl->list_of_bloc.at(gn->bb_index);
@@ -938,12 +933,11 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          const auto convertedSSA =
              generate_interface(bb, defStmt, ssa, _version->userRequired, std::get<0>(if_info.second));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "Interface generated output " + GET_NODE(convertedSSA)->ToString());
+                        "Interface generated output " + convertedSSA->ToString());
          for(const auto& stmt : useStmts)
          {
             TreeM->ReplaceTreeNode(stmt, ssa, convertedSSA);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Replaced in statement " + GET_NODE(stmt)->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced in statement " + stmt->ToString());
             modified = true;
          }
       }
@@ -996,21 +990,20 @@ bool soft_float_cg_ext::signature_lowering(function_decl* f_decl) const
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing function signature " + f_name);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    bool changed_parm = false, changed_type = false;
-   const auto decl_type = GET_NODE(f_decl->type);
+   const auto decl_type = f_decl->type;
    const auto is_ptr_type = decl_type->get_kind() == pointer_type_K;
    // Tree node decoupling is necessary when directly modifying a type node
    CustomUnorderedMapStable<unsigned int, unsigned int> remapping;
-   const auto dup_ft =
-       tree_node_dup(remapping, AppM)
-           .create_tree_node(is_ptr_type ? GET_NODE(GetPointerS<pointer_type>(decl_type)->ptd) : decl_type,
-                             tree_node_dup_mode::RENAME);
+   const auto dup_ft = tree_node_dup(remapping, AppM)
+                           .create_tree_node(is_ptr_type ? GetPointerS<pointer_type>(decl_type)->ptd : decl_type,
+                                             tree_node_dup_mode::RENAME);
    const auto f_type = TreeM->CGetTreeNode(dup_ft);
 
    tree_list* prms = nullptr;
    if(tree_helper::IsFunctionType(f_type))
    {
-      const auto ft = GetPointerS<function_type>(GET_NODE(f_type));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing return type " + GET_NODE(ft->retn)->ToString());
+      const auto ft = GetPointerS<function_type>(f_type);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing return type " + ft->retn->ToString());
       if(tree_helper::IsRealType(ft->retn))
       {
          const auto int_ret = int_type_for(ft->retn, _version->internal);
@@ -1023,12 +1016,12 @@ bool soft_float_cg_ext::signature_lowering(function_decl* f_decl) const
          ft->size = ret_type->size;
          changed_type = true;
       }
-      prms = ft->prms ? GetPointerS<tree_list>(GET_NODE(ft->prms)) : nullptr;
+      prms = ft->prms ? GetPointerS<tree_list>(ft->prms) : nullptr;
    }
 
    for(const auto& arg : f_decl->list_of_args)
    {
-      const auto pd = GetPointerS<parm_decl>(GET_NODE(arg));
+      const auto pd = GetPointerS<parm_decl>(arg);
       const auto& parm_type = pd->type;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "Analysing parameter " + pd->ToString() + " of type " + STR(parm_type));
@@ -1051,7 +1044,7 @@ bool soft_float_cg_ext::signature_lowering(function_decl* f_decl) const
                             STR(tree_helper::Size(int_parm_type)));
          changed_parm = true;
       }
-      prms = prms ? (prms->chan ? GetPointerS<tree_list>(GET_NODE(prms->chan)) : nullptr) : nullptr;
+      prms = prms ? (prms->chan ? GetPointerS<tree_list>(prms->chan) : nullptr) : nullptr;
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    if(changed_type)
@@ -1070,10 +1063,10 @@ void soft_float_cg_ext::ssa_lowering(ssa_name* ssa, bool internal_type) const
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Lowering " + ssa->ToString() + " type to " + STR(vc_type));
 
    const auto defStmt = ssa->CGetDefStmt();
-   const auto def = GetPointer<gimple_assign>(GET_NODE(defStmt));
+   const auto def = GetPointer<gimple_assign>(defStmt);
    if(def)
    {
-      const auto ue = GetPointer<unary_expr>(GET_NODE(def->op1));
+      const auto ue = GetPointer<unary_expr>(def->op1);
       if(ue)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Definition statement before - " + def->ToString());
@@ -1085,14 +1078,14 @@ void soft_float_cg_ext::ssa_lowering(ssa_name* ssa, bool internal_type) const
          else if(ue->get_kind() == imagpart_expr_K || ue->get_kind() == realpart_expr_K)
          {
             const auto ssa_ridx = TreeM->CGetTreeNode(ssa->index);
-            const auto def_bb = GetPointerS<statement_list>(GET_NODE(fd->body))->list_of_bloc.at(def->bb_index);
+            const auto def_bb = GetPointerS<statement_list>(fd->body)->list_of_bloc.at(def->bb_index);
             const auto vc = tree_man->create_unary_operation(vc_type, ssa_ridx, BUILTIN_SRCP, view_convert_expr_K);
             const auto vc_stmt =
                 tree_man->CreateGimpleAssign(vc_type, tree_nodeRef(), tree_nodeRef(), vc, function_id, BUILTIN_SRCP);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Inserting view-convert operation after complex part expression - " +
-                               GET_NODE(vc_stmt)->ToString());
-            const auto lowered_ssa = GetPointerS<gimple_assign>(GET_NODE(vc_stmt))->op0;
+                               vc_stmt->ToString());
+            const auto lowered_ssa = GetPointerS<gimple_assign>(vc_stmt)->op0;
 
             const auto ssa_uses = ssa->CGetUseStmts();
             for(const auto& stmt_uses : ssa_uses)
@@ -1115,26 +1108,26 @@ void soft_float_cg_ext::ssa_lowering(ssa_name* ssa, bool internal_type) const
    }
 
    ssa->type = vc_type;
-   if(ssa->var && GET_NODE(ssa->var)->get_kind() != parm_decl_K)
+   if(ssa->var && ssa->var->get_kind() != parm_decl_K)
    {
-      const auto vd = GetPointer<var_decl>(GET_NODE(ssa->var));
+      const auto vd = GetPointer<var_decl>(ssa->var);
       THROW_ASSERT(vd, "SSA name associated variable is espected to be a variable declaration " +
-                           GET_NODE(ssa->var)->get_kind_text() + " " + GET_NODE(ssa->var)->ToString());
+                           ssa->var->get_kind_text() + " " + ssa->var->ToString());
       if(GET_INDEX_NODE(vd->type) != GET_INDEX_NODE(ssa->type))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Variable declaration before - " + vd->ToString() + " " + GET_NODE(vd->type)->ToString());
-         const auto var_int_type = GetPointerS<type_node>(GET_NODE(vc_type));
+                        "---Variable declaration before - " + vd->ToString() + " " + vd->type->ToString());
+         const auto var_int_type = GetPointerS<type_node>(vc_type);
          vd->algn = var_int_type->algn;
          vd->packed_flag = var_int_type->packed_flag;
          vd->type = vc_type;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Variable declaration after - " + vd->ToString() + " " + GET_NODE(vd->type)->ToString());
+                        "---Variable declaration after - " + vd->ToString() + " " + vd->type->ToString());
       }
       else
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Variable declaration - " + vd->ToString() + " " + GET_NODE(vd->type)->ToString());
+                        "---Variable declaration - " + vd->ToString() + " " + vd->type->ToString());
       }
    }
 
@@ -1144,7 +1137,7 @@ void soft_float_cg_ext::ssa_lowering(ssa_name* ssa, bool internal_type) const
       if(ga)
       {
          // Unary and binary expression have already been lowered to function calls
-         auto* te = GetPointer<ternary_expr>(GET_NODE(ga->op1));
+         auto* te = GetPointer<ternary_expr>(ga->op1);
          if(te)
          {
             te->type = vc_type;
@@ -1527,7 +1520,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
    THROW_ASSERT((type_interface & 3) == INTERFACE_TYPE_NONE || (type_interface & 3) == INTERFACE_TYPE_INPUT ||
                     (type_interface & 3) == INTERFACE_TYPE_OUTPUT,
                 "Required interface type must be unique (" + STR(type_interface) + ")");
-   const auto curr_tn = GET_NODE(current_tree_node);
+   const auto curr_tn = current_tree_node;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Update recursively (ti=" + STR(type_interface) + ") (" + STR(current_tree_node->index) + " " +
                       curr_tn->get_kind_text() + ") " + STR(current_tree_node));
@@ -1543,7 +1536,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
    const auto is_internal_call = [&](const tree_nodeRef& fn) -> bool {
       static const auto mcpy_node = TreeM->GetFunction(MEMCPY);
       static const auto mset_node = TreeM->GetFunction(MEMSET);
-      const auto fn_fd = GetPointerS<function_decl>(GET_NODE(fn));
+      const auto fn_fd = GetPointerS<function_decl>(fn);
       if(!fn_fd->body)
       {
          if(!_version->ieee_format() && tree_helper::print_function_name(TreeM, fn_fd) == BUILTIN_WAIT_CALL)
@@ -1568,7 +1561,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
       return false;
    };
    const auto ExaminateFunctionCall = [&](tree_nodeRef fn) -> int {
-      const auto ae = GetPointer<addr_expr>(GET_NODE(fn));
+      const auto ae = GetPointer<addr_expr>(fn);
       if(ae)
       {
          fn = ae->op;
@@ -1635,10 +1628,10 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
       case gimple_assign_K:
       {
          const auto ga = GetPointerS<const gimple_assign>(curr_tn);
-         const auto rhs_type = GET_NODE(ga->op1)->get_kind();
+         const auto rhs_type = ga->op1->get_kind();
          if(rhs_type == call_expr_K || rhs_type == aggr_init_expr_K)
          {
-            const auto ce = GetPointerS<const call_expr>(GET_NODE(ga->op1));
+            const auto ce = GetPointerS<const call_expr>(ga->op1);
             const auto fn = GetPointer<const addr_expr>(GET_CONST_NODE(ce->fn)) ?
                                 GetPointerS<const addr_expr>(GET_CONST_NODE(ce->fn))->op :
                                 ce->fn;
@@ -2525,8 +2518,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
          const auto re = GetPointerS<gimple_return>(curr_tn);
          if(re->op)
          {
-            if(isTopFunction && GET_NODE(re->op)->get_kind() == ssa_name_K &&
-               lowering_needed(GetPointerS<ssa_name>(GET_NODE(re->op))))
+            if(isTopFunction && re->op->get_kind() == ssa_name_K && lowering_needed(GetPointerS<ssa_name>(re->op)))
             {
                topReturn.push_back(current_statement);
             }
@@ -2614,8 +2606,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
             TreeM->ReplaceTreeNode(current_statement, current_tree_node, int_cst);
             modified = true;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Real type constant " + curr_tn->ToString() + " converted to " +
-                               GET_NODE(int_cst)->ToString());
+                           "---Real type constant " + curr_tn->ToString() + " converted to " + int_cst->ToString());
          }
          break;
       }
@@ -2631,7 +2622,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
       //             ? float32_ptr_type : float64_ptr_type); TreeM->ReplaceTreeNode(current_statement,
       //             current_tree_node, int_ptr_cst); INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Real
       //             pointer type constant " + curr_tn->ToString() + " converted to " +
-      //             GET_NODE(int_ptr_cst)->ToString());
+      //             int_ptr_cst->ToString());
       //          }
       //       }
       //       break;

@@ -110,7 +110,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
 
    tree_nodeRef temp = TM->CGetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(temp);
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto* sl = GetPointer<statement_list>(fd->body);
    const bool is_single_write_memory =
        GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->IsSingleWriteMemory();
 
@@ -128,7 +128,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
       for(const auto& stmt : block.second->CGetStmtList())
       {
          /// skip all non-clobber gimple_assign
-         tree_nodeRef tn = GET_NODE(stmt);
+         tree_nodeRef tn = stmt;
          auto* ga = GetPointer<gimple_assign>(tn);
          if(!ga || !ga->clobber)
          {
@@ -158,7 +158,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
          }
          for(const auto& phi : block.second->CGetPhiList())
          {
-            auto* gp = GetPointer<gimple_phi>(GET_NODE(phi));
+            auto* gp = GetPointer<gimple_phi>(phi);
             if(gp->virtual_flag)
             {
                for(const auto& def_edge : gp->CGetDefEdgesList())
@@ -170,12 +170,10 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
                      {
                         res = var_substitution_table.find(GET_INDEX_NODE(res))->second;
                      }
-                     THROW_ASSERT(
-                         !(GetPointer<ssa_name>(GET_NODE(res)) &&
-                           GetPointer<gimple_assign>(GET_NODE(GetPointer<ssa_name>(GET_NODE(res))->CGetDefStmt())) &&
-                           GetPointer<gimple_assign>(GET_NODE(GetPointer<ssa_name>(GET_NODE(res))->CGetDefStmt()))
-                               ->clobber),
-                         "unexpected condition");
+                     THROW_ASSERT(!(GetPointer<ssa_name>(res) &&
+                                    GetPointer<gimple_assign>(GetPointer<ssa_name>(res)->CGetDefStmt()) &&
+                                    GetPointer<gimple_assign>(GetPointer<ssa_name>(res)->CGetDefStmt())->clobber),
+                                  "unexpected condition");
                      gp->ReplaceDefEdge(TM, def_edge,
                                         gimple_phi::DefEdge(TM->GetTreeNode(GET_INDEX_NODE(res)), def_edge.second));
                   }
@@ -185,7 +183,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
          for(const auto& stmt : block.second->CGetStmtList())
          {
             /// consider only gimple statements using virtual operands
-            tree_nodeRef tn = GET_NODE(stmt);
+            tree_nodeRef tn = stmt;
             auto* gn = GetPointer<gimple_node>(tn);
             THROW_ASSERT(gn, "unexpected condition");
             if(!gn->memuse)

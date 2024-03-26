@@ -178,8 +178,7 @@ void BBWriter::operator()(std::ostream& out, const vertex& v) const
             }
 #endif
             res += " -> " + helper->PrintNode(statement, nullptr, svpf);
-            const tree_nodeRef node = GET_NODE(statement);
-            switch(node->get_kind())
+            switch(statement->get_kind())
             {
                case gimple_assign_K:
                case gimple_call_K:

@@ -1580,8 +1580,8 @@ void CWriter::DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declare
          return false;
       }
       auto* sa = GetPointer<ssa_name>(node);
-      if(sa && (sa->volatile_flag || (GET_NODE(sa->CGetDefStmt())->get_kind() == gimple_nop_K)) && sa->var &&
-         (GET_NODE(sa->var)->get_kind() == parm_decl_K))
+      if(sa && (sa->volatile_flag || (sa->CGetDefStmt()->get_kind() == gimple_nop_K)) && sa->var &&
+         (sa->var->get_kind() == parm_decl_K))
       {
          return false;
       }
@@ -1664,7 +1664,7 @@ void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const
          {
             continue;
          }
-         auto* pn = GetPointer<gimple_phi>(GET_NODE(phi_op));
+         auto* pn = GetPointer<gimple_phi>(phi_op);
          tree_nodeRef dest = pn->res;
          unsigned int dest_i = GET_INDEX_NODE(pn->res);
          bool is_virtual = pn->virtual_flag;
@@ -1706,11 +1706,10 @@ void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const
       TreeNodesPairSet worklist_restart;
       do
       {
-         for(auto& wl : worklist)
+         for(auto& [src, dest] : worklist)
          {
-            tree_nodeRef src = GET_NODE(wl.first);
-            unsigned int src_i = GET_INDEX_NODE(wl.first);
-            unsigned int dest_i = GET_INDEX_NODE(wl.second);
+            unsigned int src_i = GET_INDEX_NODE(src);
+            unsigned int dest_i = GET_INDEX_NODE(dest);
             /// if dest \belongs live\_out(b)
             /// wrt the original algorithm an optimization has been added: in case b does not dominate any other node we
             /// can skip the creation of t

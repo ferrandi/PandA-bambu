@@ -447,8 +447,8 @@ DesignFlowStep_Status BitValueIPA::Exec()
                THROW_ASSERT(IsHandledByBitvalue(parmssa),
                             "param \"" + STR(pd) + "\" id: " + STR(pd_id) + " not handled by bitvalue");
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                              "-->Propagating bitvalue through parameter " + STR(GET_NODE(pd)) + " of function " +
-                                  fu_name + " parm id: " + STR(pd_id));
+                              "-->Propagating bitvalue through parameter " + STR(pd) + " of function " + fu_name +
+                                  " parm id: " + STR(pd_id));
 
                /*
                 * for root functions, don't perform forward propagation from actual
@@ -639,7 +639,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
       auto restart_fun_id = 0u;
       if(kind == function_decl_K)
       {
-         auto fd = GetPointerS<function_decl>(GET_NODE(tn));
+         auto fd = GetPointerS<function_decl>(tn);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                         "---is a function_decl: " +
                             AppM->CGetFunctionBehavior(fd->index)->CGetBehavioralHelper()->get_function_name() +
@@ -657,7 +657,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
       }
       else if(kind == ssa_name_K)
       {
-         auto pd = GetPointerS<ssa_name>(GET_NODE(tn));
+         auto pd = GetPointerS<ssa_name>(tn);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---is a parm_decl: " + STR(pd) + " id: " + STR(pd->index));
          old_bitvalue = &pd->bit_values;
          size = tree_helper::TypeSize(tn);

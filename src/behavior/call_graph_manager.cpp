@@ -681,7 +681,7 @@ void CallGraphManager::expandCallGraphFromFunction(CustomUnorderedSet<unsigned i
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, DL, "---Analyze body of " + tree_helper::name_function(TM, f_id));
       const auto fun = TM->CGetTreeNode(f_id);
       const auto fd = GetPointerS<const function_decl>(fun);
-      const auto sl = GetPointerS<const statement_list>(GET_NODE(fd->body));
+      const auto sl = GetPointerS<const statement_list>(fd->body);
       if(sl->list_of_bloc.empty())
       {
          THROW_ERROR("We can only work on CFG provided by GCC/CLANG");
@@ -717,9 +717,8 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
                                                         unsigned int node_stmt,
                                                         enum FunctionEdgeInfo::CallType call_type, int DL)
 {
-   const tree_nodeRef& curr_tn = GET_NODE(tn);
    unsigned int ind = GET_INDEX_NODE(tn);
-   if(curr_tn->get_kind() != function_decl_K)
+   if(tn->get_kind() != function_decl_K)
    {
       if(AV.find(ind) != AV.end())
       {
@@ -731,10 +730,10 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, DL,
-                  "-->Recursive analysis of " + STR(ind) + " of type " + curr_tn->get_kind_text() + "(statement is " +
+                  "-->Recursive analysis of " + STR(ind) + " of type " + tn->get_kind_text() + "(statement is " +
                       tn->ToString() + ")");
 
-   switch(curr_tn->get_kind())
+   switch(tn->get_kind())
    {
       case function_decl_K:
       {
@@ -746,7 +745,7 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
          /// check for nested function
          const tree_nodeRef fun = TM->CGetTreeNode(ind);
          const auto* fd = GetPointer<const function_decl>(fun);
-         if(fd->scpe && GET_NODE(fd->scpe)->get_kind() == function_decl_K)
+         if(fd->scpe && fd->scpe->get_kind() == function_decl_K)
          {
             THROW_ERROR_CODE(NESTED_FUNCTIONS_EC, "Nested functions not yet supported " + STR(ind));
             THROW_ERROR("Nested functions not yet supported " + STR(ind));
@@ -766,7 +765,7 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
       }
       case gimple_return_K:
       {
-         auto* re = GetPointer<gimple_return>(curr_tn);
+         auto* re = GetPointer<gimple_return>(tn);
          if(re->op)
          {
             call_graph_computation_recursive(AV, AM, current, TM, re->op, node_stmt, call_type, DL);
@@ -775,7 +774,7 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
       }
       case gimple_assign_K:
       {
-         auto* me = GetPointer<gimple_assign>(curr_tn);
+         auto* me = GetPointer<gimple_assign>(tn);
 
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, DL, "---Analyzing left part");
          call_graph_computation_recursive(AV, AM, current, TM, me->op0, node_stmt, call_type, DL);
@@ -795,8 +794,8 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
       case aggr_init_expr_K:
       case call_expr_K:
       {
-         auto* ce = GetPointer<call_expr>(curr_tn);
-         tree_nodeRef fun_node = GET_NODE(ce->fn);
+         auto* ce = GetPointer<call_expr>(tn);
+         tree_nodeRef fun_node = ce->fn;
          if(fun_node->get_kind() == addr_expr_K)
          {
             auto* ue = GetPointer<unary_expr>(fun_node);
@@ -805,10 +804,6 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
          else if(fun_node->get_kind() == obj_type_ref_K)
          {
             fun_node = tree_helper::find_obj_type_ref_function(ce->fn);
-         }
-         else
-         {
-            fun_node = ce->fn;
          }
 
          call_graph_computation_recursive(AV, AM, current, TM, fun_node, node_stmt,
@@ -821,8 +816,8 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
       }
       case gimple_call_K:
       {
-         auto* ce = GetPointer<gimple_call>(curr_tn);
-         tree_nodeRef fun_node = GET_NODE(ce->fn);
+         auto* ce = GetPointer<gimple_call>(tn);
+         tree_nodeRef fun_node = ce->fn;
          if(fun_node->get_kind() == addr_expr_K)
          {
             auto* ue = GetPointer<unary_expr>(fun_node);
@@ -831,10 +826,6 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
          else if(fun_node->get_kind() == obj_type_ref_K)
          {
             fun_node = tree_helper::find_obj_type_ref_function(ce->fn);
-         }
-         else
-         {
-            fun_node = ce->fn;
          }
          call_graph_computation_recursive(AV, AM, current, TM, fun_node, node_stmt,
                                           FunctionEdgeInfo::CallType::direct_call, DL);
@@ -846,7 +837,7 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
       }
       case cond_expr_K:
       {
-         auto* ce = GetPointer<cond_expr>(curr_tn);
+         auto* ce = GetPointer<cond_expr>(tn);
          call_graph_computation_recursive(AV, AM, current, TM, ce->op0, node_stmt, call_type, DL);
          call_graph_computation_recursive(AV, AM, current, TM, ce->op1, node_stmt, call_type, DL);
          call_graph_computation_recursive(AV, AM, current, TM, ce->op2, node_stmt, call_type, DL);
@@ -854,20 +845,20 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
       }
       case gimple_cond_K:
       {
-         auto* gc = GetPointer<gimple_cond>(curr_tn);
+         auto* gc = GetPointer<gimple_cond>(tn);
          call_graph_computation_recursive(AV, AM, current, TM, gc->op0, node_stmt, call_type, DL);
          break;
       }
       /* Unary expressions.  */
       case CASE_UNARY_EXPRESSION:
       {
-         auto* ue = GetPointer<unary_expr>(curr_tn);
+         auto* ue = GetPointer<unary_expr>(tn);
          call_graph_computation_recursive(AV, AM, current, TM, ue->op, node_stmt, call_type, DL);
          break;
       }
       case CASE_BINARY_EXPRESSION:
       {
-         auto* be = GetPointer<binary_expr>(curr_tn);
+         auto* be = GetPointer<binary_expr>(tn);
          call_graph_computation_recursive(AV, AM, current, TM, be->op0, node_stmt, call_type, DL);
          call_graph_computation_recursive(AV, AM, current, TM, be->op1, node_stmt, call_type, DL);
          break;
@@ -875,13 +866,13 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
       /*ternary expressions*/
       case gimple_switch_K:
       {
-         auto* se = GetPointer<gimple_switch>(curr_tn);
+         auto* se = GetPointer<gimple_switch>(tn);
          call_graph_computation_recursive(AV, AM, current, TM, se->op0, node_stmt, call_type, DL);
          break;
       }
       case gimple_multi_way_if_K:
       {
-         auto* gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
+         auto* gmwi = GetPointer<gimple_multi_way_if>(tn);
          for(const auto& cond : gmwi->list_of_cond)
          {
             if(cond.first)
@@ -915,7 +906,7 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
       case insertelement_expr_K:
       case bit_ior_concat_expr_K:
       {
-         auto* te = GetPointer<ternary_expr>(curr_tn);
+         auto* te = GetPointer<ternary_expr>(tn);
          call_graph_computation_recursive(AV, AM, current, TM, te->op0, node_stmt, call_type, DL);
          call_graph_computation_recursive(AV, AM, current, TM, te->op1, node_stmt, call_type, DL);
          if(te->op2)
@@ -926,7 +917,7 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
-         auto* qe = GetPointer<quaternary_expr>(curr_tn);
+         auto* qe = GetPointer<quaternary_expr>(tn);
          call_graph_computation_recursive(AV, AM, current, TM, qe->op0, node_stmt, call_type, DL);
          call_graph_computation_recursive(AV, AM, current, TM, qe->op1, node_stmt, call_type, DL);
          if(qe->op2)
@@ -941,7 +932,7 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
       }
       case lut_expr_K:
       {
-         auto* le = GetPointer<lut_expr>(curr_tn);
+         auto* le = GetPointer<lut_expr>(tn);
          call_graph_computation_recursive(AV, AM, current, TM, le->op0, node_stmt, call_type, DL);
          call_graph_computation_recursive(AV, AM, current, TM, le->op1, node_stmt, call_type, DL);
          if(le->op2)
@@ -976,7 +967,7 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
       }
       case constructor_K:
       {
-         auto* c = GetPointer<constructor>(curr_tn);
+         auto* c = GetPointer<constructor>(tn);
          for(const auto& i : c->list_of_idx_valu)
          {
             call_graph_computation_recursive(AV, AM, current, TM, i.second, node_stmt, call_type, DL);
@@ -986,7 +977,7 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
       case var_decl_K:
       {
          /// var decl performs an assignment when init is not null
-         auto* vd = GetPointer<var_decl>(curr_tn);
+         auto* vd = GetPointer<var_decl>(tn);
          if(vd->init)
          {
             call_graph_computation_recursive(AV, AM, current, TM, vd->init, node_stmt, call_type, DL);
@@ -1038,7 +1029,7 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
       case target_expr_K:
       case CASE_TYPE_NODES:
       {
-         THROW_ERROR(std::string("Node not supported (") + STR(ind) + std::string("): ") + curr_tn->get_kind_text());
+         THROW_ERROR(std::string("Node not supported (") + STR(ind) + std::string("): ") + tn->get_kind_text());
          break;
       }
       default:

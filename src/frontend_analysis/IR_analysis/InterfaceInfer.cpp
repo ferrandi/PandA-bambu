@@ -526,7 +526,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                func_arch->ifaces.erase(current_bundle);
                current_bundle = bundle_name;
                THROW_ASSERT(fd->list_of_args.size() > idx, "Unexpected function parameters count");
-               auto pd = GetPointerS<parm_decl>(GET_NODE(fd->list_of_args.at(idx)));
+               auto pd = GetPointerS<parm_decl>(fd->list_of_args.at(idx));
                pd->name = tree_man->create_identifier_node(bundle_name);
                INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                               "---Parameter " + parm_attr->second.at(FunctionArchitecture::parm_port) +
@@ -541,7 +541,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
 
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Generating control flow loop for dataflow module");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-         const auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
+         const auto sl = GetPointer<statement_list>(fd->body);
          THROW_ASSERT(sl->list_of_bloc.count(BB_ENTRY) && sl->list_of_bloc.count(BB_EXIT),
                       "Expected entry and exit basic blocks for function " + fsymbol);
          const auto& bb_entry = sl->list_of_bloc.at(BB_ENTRY);
@@ -1263,7 +1263,7 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
                                       tree_nodeConstRef interface_datatype, const tree_manipulationRef tree_man,
                                       const tree_managerRef TM)
 {
-   const auto gn = GetPointerS<gimple_node>(GET_NODE(stmt));
+   const auto gn = GetPointerS<gimple_node>(stmt);
    THROW_ASSERT(gn->scpe && GET_CONST_NODE(gn->scpe)->get_kind() == function_decl_K, "expected a function_decl scope");
    const auto fd = GetPointerS<function_decl>(GET_CONST_NODE(gn->scpe));
    const auto fname = tree_helper::GetMangledFunctionName(fd);
@@ -1271,11 +1271,11 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---BEFORE: " + stmt->ToString());
 
    THROW_ASSERT(fd->body, "expected a body");
-   const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+   const auto sl = GetPointerS<statement_list>(fd->body);
    const auto curr_bb = sl->list_of_bloc.at(gn->bb_index);
-   const auto ret_call = GET_NODE(stmt)->get_kind() == gimple_assign_K &&
-                         GET_NODE(GetPointerS<gimple_assign>(GET_NODE(stmt))->op1)->get_kind() == call_expr_K;
-   const auto ref_call = GET_NODE(stmt)->get_kind() == gimple_call_K;
+   const auto ret_call =
+       stmt->get_kind() == gimple_assign_K && GetPointerS<gimple_assign>(stmt)->op1->get_kind() == call_expr_K;
+   const auto ref_call = stmt->get_kind() == gimple_call_K;
    if(ret_call || ref_call)
    {
       bool valid_var;
@@ -1374,21 +1374,21 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
          {
             auto newSSAVdef = tree_man->create_ssa_name(tree_nodeRef(), tree_helper::CGetType(vdef), tree_nodeRef(),
                                                         tree_nodeRef(), false, true);
-            GetPointerS<gimple_assign>(GET_NODE(ga_store))->SetVdef(newSSAVdef);
-            for(const auto& vuse : GetPointerS<gimple_assign>(GET_NODE(stmt))->vuses)
+            GetPointerS<gimple_assign>(ga_store)->SetVdef(newSSAVdef);
+            for(const auto& vuse : GetPointerS<gimple_assign>(stmt)->vuses)
             {
-               if(GetPointerS<gimple_node>(GET_NODE(ga_store))->AddVuse(vuse))
+               if(GetPointerS<gimple_node>(ga_store)->AddVuse(vuse))
                {
-                  GetPointerS<ssa_name>(GET_NODE(vuse))->AddUseStmt(ga_store);
+                  GetPointerS<ssa_name>(vuse)->AddUseStmt(ga_store);
                }
             }
-            THROW_ASSERT(GET_NODE(vdef)->get_kind() == ssa_name_K, "unexpected condition");
-            auto vdef_ssa = GetPointerS<ssa_name>(GET_NODE(vdef));
+            THROW_ASSERT(vdef->get_kind() == ssa_name_K, "unexpected condition");
+            auto vdef_ssa = GetPointerS<ssa_name>(vdef);
             for(const auto& usingStmt : vdef_ssa->CGetUseStmts())
             {
-               if(GetPointerS<gimple_node>(GET_NODE(usingStmt.first))->AddVuse(newSSAVdef))
+               if(GetPointerS<gimple_node>(usingStmt.first)->AddVuse(newSSAVdef))
                {
-                  GetPointerS<ssa_name>(GET_NODE(newSSAVdef))->AddUseStmt(usingStmt.first);
+                  GetPointerS<ssa_name>(newSSAVdef)->AddUseStmt(usingStmt.first);
                }
             }
             curr_bb->PushBefore(ga_store, stmt, AppM);
@@ -1425,10 +1425,10 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
          curr_bb->Replace(stmt, ga_valid_store, true, AppM);
          if(!ret_call)
          {
-            auto ssaDef = GetPointerS<gimple_assign>(GET_NODE(last_stmt))->vdef;
-            if(GetPointerS<gimple_node>(GET_NODE(ga_valid_store))->AddVuse(ssaDef))
+            auto ssaDef = GetPointerS<gimple_assign>(last_stmt)->vdef;
+            if(GetPointerS<gimple_node>(ga_valid_store)->AddVuse(ssaDef))
             {
-               GetPointerS<ssa_name>(GET_NODE(ssaDef))->AddUseStmt(ga_valid_store);
+               GetPointerS<ssa_name>(ssaDef)->AddUseStmt(ga_valid_store);
             }
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- VALID STORE: " + ga_valid_store->ToString());
@@ -1440,9 +1440,9 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
    }
    else
    {
-      THROW_ASSERT(stmt && GET_NODE(stmt)->get_kind() == gimple_assign_K, "unexpected condition");
-      const auto ga = GetPointerS<gimple_assign>(GET_NODE(stmt));
-      THROW_ASSERT(GET_NODE(ga->op1)->get_kind() == mem_ref_K, "unexpected condition");
+      THROW_ASSERT(stmt && stmt->get_kind() == gimple_assign_K, "unexpected condition");
+      const auto ga = GetPointerS<gimple_assign>(stmt);
+      THROW_ASSERT(ga->op1->get_kind() == mem_ref_K, "unexpected condition");
 
       /// create the function_decl
       const auto actual_type = tree_helper::CGetType(ga->op0);
@@ -1518,7 +1518,7 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
                                        tree_nodeConstRef interface_datatype, const tree_manipulationRef tree_man,
                                        const tree_managerRef TM)
 {
-   const auto gn = GetPointerS<gimple_node>(GET_NODE(stmt));
+   const auto gn = GetPointerS<gimple_node>(stmt);
    THROW_ASSERT(gn->scpe && GET_CONST_NODE(gn->scpe)->get_kind() == function_decl_K, "expected a function_decl scope");
    const auto fd = GetPointerS<function_decl>(GET_CONST_NODE(gn->scpe));
    const auto fname = tree_helper::GetMangledFunctionName(fd);
@@ -1526,11 +1526,11 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---BEFORE: " + stmt->ToString());
 
    THROW_ASSERT(fd->body, "expected a body");
-   const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+   const auto sl = GetPointerS<statement_list>(fd->body);
    const auto curr_bb = sl->list_of_bloc.at(gn->bb_index);
-   const auto ret_call = GET_NODE(stmt)->get_kind() == gimple_assign_K &&
-                         GET_NODE(GetPointerS<gimple_assign>(GET_NODE(stmt))->op1)->get_kind() == call_expr_K;
-   const auto ref_call = GET_NODE(stmt)->get_kind() == gimple_call_K;
+   const auto ret_call =
+       stmt->get_kind() == gimple_assign_K && GetPointerS<gimple_assign>(stmt)->op1->get_kind() == call_expr_K;
+   const auto ref_call = stmt->get_kind() == gimple_call_K;
    if(ret_call || ref_call)
    {
       tree_nodeRef data_obj;
@@ -1642,9 +1642,9 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
    }
    else
    {
-      THROW_ASSERT(stmt && GET_NODE(stmt)->get_kind() == gimple_assign_K, "unexpected condition");
-      const auto ga = GetPointerS<gimple_assign>(GET_NODE(stmt));
-      THROW_ASSERT(GET_NODE(ga->op0)->get_kind() == mem_ref_K, "unexpected condition");
+      THROW_ASSERT(stmt && stmt->get_kind() == gimple_assign_K, "unexpected condition");
+      const auto ga = GetPointerS<gimple_assign>(stmt);
+      THROW_ASSERT(ga->op0->get_kind() == mem_ref_K, "unexpected condition");
 
       auto value_node = ga->op1;
       auto actual_type = tree_helper::CGetType(value_node);

@@ -1587,7 +1587,7 @@ void Bit_Value::initialize()
                      tree_man->ReplaceTreeNode(stmt_use.first, ssa_node, cst_value);
                   }
                   AppM->RegisterTransformation(GetName(), ssa_node);
-                  use_node = GET_NODE(cst_value);
+                  use_node = cst_value;
                   node_id = GET_INDEX_NODE(cst_value);
                }
             }
@@ -1630,7 +1630,7 @@ void Bit_Value::initialize()
          {
             const auto res_nid = GET_INDEX_CONST_NODE(pn->res);
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---LHS: " + STR(res_nid));
-            auto ssa = GetPointer<ssa_name>(GET_NODE(pn->res));
+            auto ssa = GetPointer<ssa_name>(pn->res);
             THROW_ASSERT(ssa, "unexpected condition");
             if(!IsHandledByBitvalue(pn->res))
             {
@@ -1697,17 +1697,16 @@ void Bit_Value::initialize()
             const auto ga = GetPointerS<const gimple_assign>(stmt_node);
             THROW_ASSERT(!ga->clobber, "");
 
-            const auto lhs = GET_NODE(ga->op0);
             // handle lhs
-            if(lhs->get_kind() == ssa_name_K)
+            if(ga->op0->get_kind() == ssa_name_K)
             {
-               auto lhs_ssa = GetPointerS<ssa_name>(lhs);
+               auto lhs_ssa = GetPointerS<ssa_name>(ga->op0);
                const auto lhs_nid = GET_INDEX_CONST_NODE(ga->op0);
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->LHS: " + STR(lhs_ssa));
-               if(!IsHandledByBitvalue(lhs))
+               if(!IsHandledByBitvalue(ga->op0))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                 "---variable " + STR(lhs_ssa) + " of type " + STR(tree_helper::CGetType(lhs)) +
+                                 "---variable " + STR(lhs_ssa) + " of type " + STR(tree_helper::CGetType(ga->op0)) +
                                      " not considered");
                }
                else
@@ -1717,7 +1716,7 @@ void Bit_Value::initialize()
                      lhs_ssa->bit_values.clear();
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---bit_values cleared : " + STR(lhs_ssa));
                   }
-                  const auto lhs_signed = tree_helper::IsSignedIntegerType(lhs);
+                  const auto lhs_signed = tree_helper::IsSignedIntegerType(ga->op0);
                   if(lhs_signed)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---is signed");
@@ -1746,7 +1745,7 @@ void Bit_Value::initialize()
                      if(var && hm && hm->Rmem && hm->Rmem->get_enable_hls_bit_value() &&
                   function_behavior->is_variable_mem(var)) best[lhs_nid] = create_u_bitstring(pointer_resizing(AppM,
                   lhs_nid, function_behavior, function_id, not_frontend, parameters)); else best[lhs_nid] =
-                  create_u_bitstring (tree_helper::TypeSize(GET_NODE(ga->op0)));
+                  create_u_bitstring (tree_helper::TypeSize(ga->op0));
                   }*/
                   else if(ga_op1_kind == call_expr_K || ga_op1_kind == aggr_init_expr_K)
                   {
@@ -1776,7 +1775,7 @@ void Bit_Value::initialize()
                            }
                            else
                            {
-                              best[lhs_nid] = sup(new_bitvalue, best[lhs_nid], lhs);
+                              best[lhs_nid] = sup(new_bitvalue, best[lhs_nid], ga->op0);
                            }
                         }
                      }
@@ -1798,7 +1797,7 @@ void Bit_Value::initialize()
                   {
                      if(lhs_ssa->bit_values.empty())
                      {
-                        auto u_string = create_u_bitstring(tree_helper::TypeSize(lhs));
+                        auto u_string = create_u_bitstring(tree_helper::TypeSize(ga->op0));
                         if(lhs_signed && tree_helper::is_natural(TM, GET_INDEX_CONST_NODE(ga->op0)))
                         {
                            u_string.pop_front();

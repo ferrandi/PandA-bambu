@@ -213,7 +213,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "-->Subgraph dominated by BB" + STR(basic_block_id) + " has to be restructured");
             const auto fd = GetPointerS<function_decl>(TM->GetTreeNode(function_id));
-            auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+            auto sl = GetPointerS<statement_list>(fd->body);
             const blocRef new_block(new bloc(sl->list_of_bloc.rbegin()->first + 1));
             new_block->SetSSAUsesComputed();
             sl->list_of_bloc[new_block->number] = new_block;
@@ -295,7 +295,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
             end_if_block->list_of_pred.push_back(new_block->number);
 
             THROW_ASSERT(bb_node_info->CGetStmtList().size(), "");
-            const auto gc = GetPointer<const gimple_cond>(GET_NODE(bb_node_info->CGetStmtList().back()));
+            const auto gc = GetPointer<const gimple_cond>(bb_node_info->CGetStmtList().back());
             THROW_ASSERT(gc, "");
             const auto srcp = gc->include_name + ":" + STR(gc->line_number) + ":" + STR(gc->column_number);
             const auto not_cond = tree_man->CreateNotExpr(gc->op0, new_block, function_id);
@@ -310,7 +310,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
             /// Fix the phi in end if and create the phi in new block
             for(const auto& phi : end_if_block->CGetPhiList())
             {
-               const auto gp = GetPointerS<gimple_phi>(GET_NODE(phi));
+               const auto gp = GetPointerS<gimple_phi>(phi);
                gimple_phi::DefEdgeList end_if_new_def_edge_list;
 
                const auto type = tree_helper::CGetType(gp->res);
@@ -322,9 +322,9 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                ssa_schema[TOK(TOK_VERS)] = STR(ssa_vers);
                ssa_schema[TOK(TOK_VOLATILE)] = STR(false);
                ssa_schema[TOK(TOK_VIRTUAL)] = STR(gp->virtual_flag);
-               if(GetPointer<ssa_name>(GET_NODE(gp->res))->var)
+               if(GetPointer<ssa_name>(gp->res)->var)
                {
-                  ssa_schema[TOK(TOK_VAR)] = STR(GetPointer<ssa_name>(GET_NODE(gp->res))->var->index);
+                  ssa_schema[TOK(TOK_VAR)] = STR(GetPointer<ssa_name>(gp->res)->var->index);
                }
                TM->create_tree_node(ssa_node_nid, ssa_name_K, ssa_schema);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,

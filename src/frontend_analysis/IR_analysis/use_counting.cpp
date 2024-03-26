@@ -111,7 +111,7 @@ DesignFlowStep_Status use_counting::InternalExec()
          const auto ssa_uses = tree_helper::ComputeSsaUses(statement_node);
          for(const auto& ssa_use : ssa_uses)
          {
-            const auto sn = GetPointerS<ssa_name>(GET_NODE(ssa_use.first));
+            const auto sn = GetPointerS<ssa_name>(ssa_use.first);
             for(auto uses = ssa_use.second; uses; --uses)
             {
                sn->AddUseStmt(statement_node);
@@ -123,13 +123,13 @@ DesignFlowStep_Status use_counting::InternalExec()
          const auto ssa_uses = tree_helper::ComputeSsaUses(phi_node);
          for(const auto& ssa_use : ssa_uses)
          {
-            const auto sn = GetPointerS<ssa_name>(GET_NODE(ssa_use.first));
+            const auto sn = GetPointerS<ssa_name>(ssa_use.first);
             for(auto uses = ssa_use.second; uses; --uses)
             {
                sn->AddUseStmt(phi_node);
             }
          }
-         GetPointerS<gimple_phi>(GET_NODE(phi_node))->SetSSAUsesComputed();
+         GetPointerS<gimple_phi>(phi_node)->SetSSAUsesComputed();
       }
       bb->SetSSAUsesComputed();
    }

@@ -142,7 +142,7 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
    const auto curr_tn = TreeM->GetTreeNode(function_id);
    const auto fname = tree_helper::GetFunctionName(TreeM, curr_tn);
    const auto fd = GetPointerS<function_decl>(curr_tn);
-   const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+   const auto sl = GetPointerS<statement_list>(fd->body);
 
    THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_device(), "unexpected condition");
    const auto hls_d = GetPointer<const HLS_manager>(AppM)->get_HLS_device();
@@ -171,10 +171,10 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
       for(const auto& stmt : BB->CGetStmtList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Examine " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
+                        "-->Examine " + STR(GET_INDEX_NODE(stmt)) + " " + stmt->ToString());
          modified |= recursive_examinate(stmt, stmt, tree_man);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "<--Examined " + STR(GET_INDEX_NODE(stmt)) + " " + GET_NODE(stmt)->ToString());
+                        "<--Examined " + STR(GET_INDEX_NODE(stmt)) + " " + stmt->ToString());
       }
    }
 
@@ -190,7 +190,7 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                                          const tree_manipulationRef tree_man)
 {
    bool modified = false;
-   const tree_nodeRef curr_tn = GET_NODE(current_tree_node);
+   const tree_nodeRef curr_tn = current_tree_node;
    const auto get_current_srcp = [curr_tn]() -> std::string {
       const auto srcp_tn = GetPointer<const srcp>(curr_tn);
       if(srcp_tn)
@@ -222,9 +222,8 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
          tree_nodeRef current = current_tree_node;
          while(current)
          {
-            modified |=
-                recursive_examinate(GetPointer<tree_list>(GET_NODE(current))->valu, current_statement, tree_man);
-            current = GetPointer<tree_list>(GET_NODE(current))->chan;
+            modified |= recursive_examinate(GetPointer<tree_list>(current)->valu, current_statement, tree_man);
+            current = GetPointer<tree_list>(current)->chan;
          }
          break;
       }

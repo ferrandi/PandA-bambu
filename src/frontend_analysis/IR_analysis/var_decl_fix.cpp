@@ -106,7 +106,7 @@ DesignFlowStep_Status VarDeclFix::InternalExec()
    const tree_managerRef TM = AppM->get_tree_manager();
    const tree_nodeRef curr_tn = TM->GetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(curr_tn);
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto* sl = GetPointer<statement_list>(fd->body);
    /// Already considered decl_node
    CustomUnorderedSet<unsigned int> already_examinated_decls;
    modified = false;
@@ -147,7 +147,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
                                      CustomUnorderedSet<unsigned int>& already_visited_ae)
 {
    const tree_managerRef TM = AppM->get_tree_manager();
-   const tree_nodeRef curr_tn = GET_NODE(tn);
+   const tree_nodeRef curr_tn = tn;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Analyzing recursively " + curr_tn->get_kind_text() + " " + STR(GET_INDEX_NODE(tn)) + ": " +
                       curr_tn->ToString());
@@ -202,7 +202,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
          if(already_examinated_decls.find(GET_INDEX_NODE(tn)) == already_examinated_decls.end())
          {
             already_examinated_decls.insert(GET_INDEX_NODE(tn));
-            auto* dn = GetPointer<decl_node>(GET_NODE(tn));
+            auto* dn = GetPointer<decl_node>(tn);
             recursive_examinate(dn->type, already_examinated_decls, already_examinated_names,
                                 already_examinated_type_names, already_visited_ae);
             if(dn->name)
@@ -215,12 +215,12 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
                   {
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                    "Found a static variable with identifier <" +
-                                       GetPointer<identifier_node>(GET_NODE(dn->name))->strg + "> within function #" +
+                                       GetPointer<identifier_node>(dn->name)->strg + "> within function #" +
                                        STR(function_id));
                   }
                }
 
-               std::string original_name = Normalize(GetPointer<identifier_node>(GET_NODE(dn->name))->strg);
+               std::string original_name = Normalize(GetPointer<identifier_node>(dn->name)->strg);
                std::string name_id = tree_helper::NormalizeTypename(original_name);
                if(already_examinated_names.find(original_name) == already_examinated_names.end())
                {
@@ -265,9 +265,9 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
          tree_nodeRef current = tn;
          while(current)
          {
-            recursive_examinate(GetPointer<tree_list>(GET_NODE(current))->valu, already_examinated_decls,
+            recursive_examinate(GetPointer<tree_list>(current)->valu, already_examinated_decls,
                                 already_examinated_names, already_examinated_type_names, already_visited_ae);
-            current = GetPointer<tree_list>(GET_NODE(current))->chan;
+            current = GetPointer<tree_list>(current)->chan;
          }
          break;
       }
@@ -450,16 +450,16 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
          if(already_examinated_decls.find(GET_INDEX_NODE(tn)) == already_examinated_decls.end())
          {
             already_examinated_decls.insert(GET_INDEX_NODE(tn));
-            auto* ty = GetPointer<type_node>(GET_NODE(tn));
-            if(ty && ty->name && GET_NODE(ty->name)->get_kind() == type_decl_K)
+            auto* ty = GetPointer<type_node>(tn);
+            if(ty && ty->name && ty->name->get_kind() == type_decl_K)
             {
                recursive_examinate(ty->name, already_examinated_decls, already_examinated_names,
                                    already_examinated_type_names, already_visited_ae);
             }
-            else if(ty and (not ty->system_flag) and ty->name and
-                    (GET_NODE(ty->name)->get_kind() == identifier_node_K) and (ty->get_kind() != integer_type_K))
+            else if(ty and (not ty->system_flag) and ty->name and (ty->name->get_kind() == identifier_node_K) and
+                    (ty->get_kind() != integer_type_K))
             {
-               std::string name_id = GetPointer<identifier_node>(GET_NODE(ty->name))->strg;
+               std::string name_id = GetPointer<identifier_node>(ty->name)->strg;
                if(already_examinated_type_names.find(name_id) == already_examinated_type_names.end())
                {
                   already_examinated_type_names.insert(name_id);
@@ -489,11 +489,11 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
       }
       case type_decl_K:
       {
-         auto* td = GetPointer<type_decl>(GET_NODE(tn));
+         auto* td = GetPointer<type_decl>(tn);
          if(td and td->name and td->include_name != "<built-in>" and (not td->operating_system_flag) and
             (not td->library_system_flag))
          {
-            std::string name_id = GetPointer<identifier_node>(GET_NODE(td->name))->strg;
+            std::string name_id = GetPointer<identifier_node>(td->name)->strg;
             if(already_examinated_type_names.find(name_id) == already_examinated_type_names.end())
             {
                already_examinated_type_names.insert(name_id);

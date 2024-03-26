@@ -98,17 +98,16 @@ bool dataflow_cg_ext::HasToBeExecuted() const
 
 static void CleanVirtuals(const tree_managerRef& TM, const tree_nodeRef& call_stmt)
 {
-   const auto gn = GetPointerS<gimple_node>(GET_NODE(call_stmt));
+   const auto gn = GetPointerS<gimple_node>(call_stmt);
    if(gn->vdef)
    {
       dead_code_elimination::kill_vdef(TM, gn->vdef);
       gn->vdef = nullptr;
    }
-   std::for_each(gn->vuses.begin(), gn->vuses.end(),
-                 [&](auto& it) { GetPointer<ssa_name>(GET_NODE(it))->RemoveUse(call_stmt); });
+   std::for_each(gn->vuses.begin(), gn->vuses.end(), [&](auto& it) { GetPointer<ssa_name>(it)->RemoveUse(call_stmt); });
    gn->vuses.clear();
    std::for_each(gn->vovers.begin(), gn->vovers.end(),
-                 [&](auto& it) { GetPointer<ssa_name>(GET_NODE(it))->RemoveUse(call_stmt); });
+                 [&](auto& it) { GetPointer<ssa_name>(it)->RemoveUse(call_stmt); });
    gn->vovers.clear();
    THROW_ASSERT(!gn->memdef && !gn->memuse, "Unexpected condition");
 }

@@ -1054,8 +1054,7 @@ bool vcd_utility::detect_regular_mismatch(const vcd_trace_head& t, const std::st
    }
    else // is an integer
    {
-      std::string bitvalue =
-          GetPointer<const ssa_name>(GET_NODE(TM->CGetTreeNode(t.op_info.ssa_name_node_id)))->bit_values;
+      std::string bitvalue = GetPointer<const ssa_name>(TM->CGetTreeNode(t.op_info.ssa_name_node_id))->bit_values;
       auto first_not_x_pos = bitvalue.find_first_not_of("xX");
       if(first_not_x_pos == std::string::npos)
       {
@@ -1113,11 +1112,11 @@ void vcd_utility::print_discrepancy(const DiscrepancyLog& l, bool one_hot_encodi
                          compute_fsm_state_from_vcd_string(l.op_start_state, one_hot_encoding) +
                          "\n"
                          "|  assigned ssa id " +
-                         STR(GetPointer<const ssa_name>(GET_NODE(TM->CGetTreeNode(l.ssa_id)))) +
+                         STR(GetPointer<const ssa_name>(TM->CGetTreeNode(l.ssa_id))) +
                          "\n"
                          "|  bitvalue string for ssa id is " +
-                         STR(l.ssa_id) + " " +
-                         GetPointer<const ssa_name>(GET_NODE(TM->CGetTreeNode(l.ssa_id)))->bit_values + "\n";
+                         STR(l.ssa_id) + " " + GetPointer<const ssa_name>(TM->CGetTreeNode(l.ssa_id))->bit_values +
+                         "\n";
 
    if(l.type & DISCR_ADDR)
    {

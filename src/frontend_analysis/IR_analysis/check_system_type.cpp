@@ -193,7 +193,7 @@ DesignFlowStep_Status CheckSystemType::InternalExec()
 {
    const auto curr_tn = TM->GetTreeNode(function_id);
    const auto fd = GetPointerS<function_decl>(curr_tn);
-   const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+   const auto sl = GetPointerS<statement_list>(fd->body);
 
    CustomUnorderedSet<unsigned int> already_visited;
    recursive_examinate(curr_tn, function_id, already_visited);
@@ -222,7 +222,7 @@ DesignFlowStep_Status CheckSystemType::InternalExec()
 void CheckSystemType::recursive_examinate(const tree_nodeRef& tn,
                                           CustomUnorderedSet<unsigned int>& already_visited) const
 {
-   recursive_examinate(GET_NODE(tn), GET_INDEX_NODE(tn), already_visited);
+   recursive_examinate(tn, GET_INDEX_NODE(tn), already_visited);
 }
 
 void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const unsigned int index,
@@ -330,16 +330,16 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
             if(fd->type && fd->undefined_flag && !fd->operating_system_flag && !fd->library_system_flag &&
                sr->include_name != "<built-in>")
             {
-               const auto ft = GetPointerS<function_type>(GET_NODE(fd->type));
-               if(!ft->prms && ft->retn && GetPointer<integer_type>(GET_NODE(ft->retn)))
+               const auto ft = GetPointerS<function_type>(fd->type);
+               if(!ft->prms && ft->retn && GetPointer<integer_type>(ft->retn))
                {
-                  const auto it = GetPointerS<integer_type>(GET_NODE(ft->retn));
-                  if(it->name && GetPointer<type_decl>(GET_NODE(it->name)))
+                  const auto it = GetPointerS<integer_type>(ft->retn);
+                  if(it->name && GetPointer<type_decl>(it->name))
                   {
-                     const auto td = GetPointerS<type_decl>(GET_NODE(it->name));
-                     if(td->name && GetPointer<identifier_node>(GET_NODE(td->name)))
+                     const auto td = GetPointerS<type_decl>(it->name);
+                     if(td->name && GetPointer<identifier_node>(td->name))
                      {
-                        const auto in = GetPointerS<identifier_node>(GET_NODE(td->name));
+                        const auto in = GetPointerS<identifier_node>(td->name);
                         if(in->strg == "int")
                         {
                            fd->include_name = "<built-in>";
@@ -348,9 +348,9 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
                   }
                }
             }
-            if(fd->name && GET_NODE(fd->name)->get_kind() == identifier_node_K)
+            if(fd->name && fd->name->get_kind() == identifier_node_K)
             {
-               const auto in = GetPointerS<identifier_node>(GET_NODE(fd->name));
+               const auto in = GetPointerS<identifier_node>(fd->name);
                if(rename_function.count(in->strg))
                {
                   in->strg = rename_function.at(in->strg);
@@ -361,9 +361,9 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
          if(curr_tn->get_kind() == type_decl_K)
          {
             const auto td = GetPointerS<type_decl>(curr_tn);
-            if(td->name && GET_NODE(td->name)->get_kind() == identifier_node_K)
+            if(td->name && td->name->get_kind() == identifier_node_K)
             {
-               const auto in = GetPointerS<identifier_node>(GET_NODE(td->name));
+               const auto in = GetPointerS<identifier_node>(td->name);
                if(rename_types.count(in->strg))
                {
                   in->strg = rename_types.at(in->strg);
@@ -414,7 +414,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
             current = GetPointerS<tree_list>(current)->chan;
             if(current)
             {
-               current = GET_NODE(current);
+               current = current;
             }
          }
          break;
@@ -598,12 +598,12 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
             {
                //_Bool is C99: we replace it for MAGIC compatibility
                const auto bt = GetPointerS<boolean_type>(curr_tn);
-               if(bt->name && GetPointer<type_decl>(GET_NODE(bt->name)))
+               if(bt->name && GetPointer<type_decl>(bt->name))
                {
-                  const auto td = GetPointerS<type_decl>(GET_NODE(bt->name));
-                  if(td->name && GetPointer<identifier_node>(GET_NODE(td->name)))
+                  const auto td = GetPointerS<type_decl>(bt->name);
+                  if(td->name && GetPointer<identifier_node>(td->name))
                   {
-                     const auto in = GetPointerS<identifier_node>(GET_NODE(td->name));
+                     const auto in = GetPointerS<identifier_node>(td->name);
                      if(parameters->isOption(OPT_gcc_standard) &&
                         parameters->getOption<std::string>(OPT_gcc_standard) == "c99" && in->strg == "_Bool")
                      {
@@ -708,9 +708,9 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
             case integer_type_K:
             {
                const auto it = GetPointerS<integer_type>(curr_tn);
-               if(it->name && GetPointer<identifier_node>(GET_NODE(it->name)))
+               if(it->name && GetPointer<identifier_node>(it->name))
                {
-                  const auto in = GetPointerS<identifier_node>(GET_NODE(it->name));
+                  const auto in = GetPointerS<identifier_node>(it->name);
                   if(in->strg == "sizetype")
                   {
                      const std::string INT = "unsigned long";

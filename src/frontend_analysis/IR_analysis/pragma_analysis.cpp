@@ -129,23 +129,23 @@ std::string PragmaAnalysis::get_call_parameter(unsigned int tree_node, unsigned 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not found");
       return "";
    }
-   const tree_nodeConstRef arg = GET_NODE(ce->args[idx]);
+   const tree_nodeConstRef arg = ce->args[idx];
    const auto* ae = GetPointer<const addr_expr>(arg);
    THROW_ASSERT(ae, "Argument of call is not addr_expr: " + arg->get_kind_text());
-   const tree_nodeConstRef ae_arg = GET_NODE(ae->op);
+   const tree_nodeConstRef ae_arg = ae->op;
    std::string string_arg;
    if(ae_arg->get_kind() == var_decl_K)
    {
       auto vd = GetPointer<const var_decl>(ae_arg);
       THROW_ASSERT(vd, "unexpected condition");
       THROW_ASSERT(vd->init, "unexpected condition");
-      auto vd_init = GET_NODE(vd->init);
+      auto vd_init = vd->init;
       if(vd_init->get_kind() == constructor_K)
       {
          const auto* co = GetPointer<const constructor>(vd_init);
          for(const auto& idx_valu : co->list_of_idx_valu)
          {
-            THROW_ASSERT(GET_NODE(idx_valu.second)->get_kind() == integer_cst_K, "unexpected condition");
+            THROW_ASSERT(idx_valu.second->get_kind() == integer_cst_K, "unexpected condition");
             const auto cst_val = tree_helper::GetConstValue(idx_valu.second);
             char val = static_cast<char>(cst_val);
             if(!val)
@@ -163,7 +163,7 @@ std::string PragmaAnalysis::get_call_parameter(unsigned int tree_node, unsigned 
    else
    {
       const auto* sc = GetPointer<const string_cst>(
-          ae_arg->get_kind() == string_cst_K ? ae_arg : GET_NODE(GetPointer<const array_ref>(ae_arg)->op0));
+          ae_arg->get_kind() == string_cst_K ? ae_arg : GetPointer<const array_ref>(ae_arg)->op0);
       string_arg = sc->strg;
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parameter is " + string_arg);
@@ -178,9 +178,9 @@ void PragmaAnalysis::create_omp_pragma(const unsigned int tree_node) const
    const auto* gc = GetPointer<const gimple_call>(curr_tn);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Creating openmp pragma starting from " + curr_tn->ToString());
-   const tree_nodeRef& tn = GET_NODE(gc->fn);
-   const tree_nodeRef& fn = GET_NODE(GetPointer<addr_expr>(tn)->op);
-   const tree_nodeRef& name = GET_NODE(GetPointer<function_decl>(fn)->name);
+   const tree_nodeRef& tn = gc->fn;
+   const tree_nodeRef& fn = GetPointer<addr_expr>(tn)->op;
+   const tree_nodeRef& name = GetPointer<function_decl>(fn)->name;
    const std::string& function_name = GetPointer<identifier_node>(name)->strg;
 
    const pragma_manager::OmpPragmaType directive = pragma_manager::GetOmpPragmaType(get_call_parameter(tree_node, 1));
@@ -460,9 +460,9 @@ void PragmaAnalysis::create_map_pragma(const unsigned int node_id) const
    const tree_nodeRef curr_tn = TM->CGetTreeNode(node_id);
    const auto* gc = GetPointer<const gimple_call>(curr_tn);
 #if HAVE_ASSERTS
-   const tree_nodeRef& tn = GET_NODE(gc->fn);
-   const tree_nodeRef& fn = GET_NODE(GetPointer<addr_expr>(tn)->op);
-   const tree_nodeRef& name = GET_NODE(GetPointer<function_decl>(fn)->name);
+   const tree_nodeRef& tn = gc->fn;
+   const tree_nodeRef& fn = GetPointer<addr_expr>(tn)->op;
+   const tree_nodeRef& name = GetPointer<function_decl>(fn)->name;
    const std::string& function_name = GetPointer<identifier_node>(name)->strg;
 #endif
 
@@ -523,7 +523,7 @@ DesignFlowStep_Status PragmaAnalysis::Exec()
          continue;
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining function " + STR(function));
-      auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+      auto* sl = GetPointer<statement_list>(fd->body);
       std::map<unsigned int, blocRef>& blocks = sl->list_of_bloc;
       std::map<unsigned int, blocRef>::iterator it, it_end;
       it_end = blocks.end();
@@ -536,16 +536,16 @@ DesignFlowStep_Status PragmaAnalysis::Exec()
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "-->Examining statement " + std::to_string(GET_INDEX_NODE(*it2)));
-            const tree_nodeRef& TN = GET_NODE(*it2);
+            const tree_nodeRef& TN = *it2;
             if(TN->get_kind() == gimple_call_K)
             {
-               const tree_nodeRef& tn = GET_NODE(GetPointer<gimple_call>(TN)->fn);
+               const tree_nodeRef& tn = GetPointer<gimple_call>(TN)->fn;
                if(tn and tn->get_kind() == addr_expr_K)
                {
-                  const tree_nodeRef& fn = GET_NODE(GetPointer<addr_expr>(tn)->op);
+                  const tree_nodeRef& fn = GetPointer<addr_expr>(tn)->op;
                   if(fn)
                   {
-                     const tree_nodeRef& name = GET_NODE(GetPointer<function_decl>(fn)->name);
+                     const tree_nodeRef& name = GetPointer<function_decl>(fn)->name;
                      const std::string& function_name = GetPointer<identifier_node>(name)->strg;
                      if(function_name.find(STR_CST_pragma_prefix) == std::string::npos)
                      {
@@ -589,7 +589,7 @@ DesignFlowStep_Status PragmaAnalysis::Exec()
                         decltype(it2) next;
                         for(next = it2; next != list_of_stmt.end(); next++)
                         {
-                           auto* en = GetPointer<gimple_node>(GET_NODE(*next));
+                           auto* en = GetPointer<gimple_node>(*next);
                            if(en)
                            {
                               en->pragmas.push_back(*it2);

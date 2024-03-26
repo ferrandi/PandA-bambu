@@ -126,15 +126,12 @@ fanout_opt::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType 
 
 bool fanout_opt::is_dest_relevant(tree_nodeRef t, bool)
 {
-   if(GET_NODE(t)->get_kind() == gimple_assign_K)
+   if(t->get_kind() == gimple_assign_K)
    {
-      auto* temp_assign = GetPointer<gimple_assign>(GET_NODE(t));
-      if(GET_NODE(temp_assign->op1)->get_kind() == mult_expr_K ||
-         GET_NODE(temp_assign->op1)->get_kind() == widen_mult_expr_K ||
-         GET_NODE(temp_assign->op1)->get_kind() == ternary_plus_expr_K ||
-         GET_NODE(temp_assign->op1)->get_kind() == ternary_mm_expr_K ||
-         GET_NODE(temp_assign->op1)->get_kind() == ternary_pm_expr_K ||
-         GET_NODE(temp_assign->op1)->get_kind() == ternary_mp_expr_K)
+      auto* temp_assign = GetPointer<gimple_assign>(t);
+      if(temp_assign->op1->get_kind() == mult_expr_K || temp_assign->op1->get_kind() == widen_mult_expr_K ||
+         temp_assign->op1->get_kind() == ternary_plus_expr_K || temp_assign->op1->get_kind() == ternary_mm_expr_K ||
+         temp_assign->op1->get_kind() == ternary_pm_expr_K || temp_assign->op1->get_kind() == ternary_mp_expr_K)
       {
          return true;
       }
@@ -152,7 +149,7 @@ DesignFlowStep_Status fanout_opt::InternalExec()
 
    tree_nodeRef temp = TM->CGetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(temp);
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto* sl = GetPointer<statement_list>(fd->body);
    const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
 
    for(const auto& block : sl->list_of_bloc)
@@ -164,20 +161,20 @@ DesignFlowStep_Status fanout_opt::InternalExec()
          {
             break;
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(stmt)->ToString());
-         if(GET_NODE(stmt)->get_kind() == gimple_assign_K)
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + stmt->ToString());
+         if(stmt->get_kind() == gimple_assign_K)
          {
-            auto* ga = GetPointer<gimple_assign>(GET_NODE(stmt));
+            auto* ga = GetPointer<gimple_assign>(stmt);
             const std::string srcp_default =
                 ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
-            if(GET_NODE(ga->op0)->get_kind() == ssa_name_K)
+            if(ga->op0->get_kind() == ssa_name_K)
             {
-               auto* ssa_defined = GetPointer<ssa_name>(GET_NODE(ga->op0));
+               auto* ssa_defined = GetPointer<ssa_name>(ga->op0);
                if(ssa_defined->CGetNumberUses() > 1)
                {
                   const auto assigned_ssa_type_node = tree_helper::CGetType(ga->op0);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---the assigned ssa_name " + STR(GET_NODE(ga->op0)) + " has type " +
+                                 "---the assigned ssa_name " + STR(ga->op0) + " has type " +
                                      STR(assigned_ssa_type_node));
                   bool is_first_stmt = true;
                   std::list<tree_nodeRef> list_of_dest_statements;
@@ -200,10 +197,10 @@ DesignFlowStep_Status fanout_opt::InternalExec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "---create a temporary assignment " + temp_assign->ToString());
                      block.second->PushAfter(temp_assign, stmt, AppM);
-                     tree_nodeRef temp_ssa_var = GetPointer<gimple_assign>(GET_NODE(temp_assign))->op0;
-                     GetPointer<gimple_assign>(GET_NODE(temp_assign))->keep = true;
-                     GetPointer<gimple_assign>(GET_NODE(temp_assign))->temporary_address = ga->temporary_address;
-                     GetPointer<ssa_name>(GET_NODE(temp_ssa_var))->SetDefStmt(temp_assign);
+                     tree_nodeRef temp_ssa_var = GetPointer<gimple_assign>(temp_assign)->op0;
+                     GetPointer<gimple_assign>(temp_assign)->keep = true;
+                     GetPointer<gimple_assign>(temp_assign)->temporary_address = ga->temporary_address;
+                     GetPointer<ssa_name>(temp_ssa_var)->SetDefStmt(temp_assign);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "---dest statement before replacement " + dest_statement->ToString());
                      TM->ReplaceTreeNode(dest_statement, ga->op0, temp_ssa_var);
@@ -214,7 +211,7 @@ DesignFlowStep_Status fanout_opt::InternalExec()
                }
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Statement examined " + GET_NODE(stmt)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Statement examined " + stmt->ToString());
       }
 #if 1
       /// fanout duplication may prevent openmp simd detection
@@ -222,8 +219,8 @@ DesignFlowStep_Status fanout_opt::InternalExec()
       {
          for(const auto& phi : block.second->CGetPhiList())
          {
-            auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
-            auto* ssa_defined = GetPointer<ssa_name>(GET_NODE(gp->res));
+            auto gp = GetPointer<gimple_phi>(phi);
+            auto* ssa_defined = GetPointer<ssa_name>(gp->res);
 
             if(ssa_defined->CGetNumberUses() > 1)
             {
@@ -252,13 +249,13 @@ DesignFlowStep_Status fanout_opt::InternalExec()
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---starting from phi " + phi->ToString());
                   auto new_phi =
                       tree_man->create_phi_node(new_res_var, list_of_def_edge, GET_INDEX_CONST_NODE(gp->scpe));
-                  auto new_res_var_ssa = GetPointer<ssa_name>(GET_NODE(new_res_var));
+                  auto new_res_var_ssa = GetPointer<ssa_name>(new_res_var);
                   new_res_var_ssa->min = ssa_defined->min;
                   new_res_var_ssa->max = ssa_defined->max;
-                  GetPointer<gimple_phi>(GET_NODE(new_phi))->SetSSAUsesComputed();
+                  GetPointer<gimple_phi>(new_phi)->SetSSAUsesComputed();
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---created a new phi " + new_phi->ToString());
                   block.second->AddPhi(new_phi);
-                  GetPointer<gimple_phi>(GET_NODE(new_phi))->keep = true;
+                  GetPointer<gimple_phi>(new_phi)->keep = true;
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---dest statement before replacement " + dest_statement->ToString());
                   TM->ReplaceTreeNode(dest_statement, gp->res, new_res_var);

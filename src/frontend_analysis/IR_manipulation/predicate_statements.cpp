@@ -127,14 +127,14 @@ DesignFlowStep_Status PredicateStatements::InternalExec()
 
    bool bb_modified = false;
    const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function_id));
-   const auto sl = GetPointer<const statement_list>(GET_NODE(fd->body));
+   const auto sl = GetPointer<const statement_list>(fd->body);
    for(const auto& block : sl->list_of_bloc)
    {
       for(const auto& stmt : block.second->CGetStmtList())
       {
-         const auto ga = GetPointer<gimple_assign>(GET_NODE(stmt));
+         const auto ga = GetPointer<gimple_assign>(stmt);
          if(behavioral_helper->CanBeSpeculated(stmt->index) || !ga ||
-            (GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K))
+            (ga->op1->get_kind() == call_expr_K || ga->op1->get_kind() == aggr_init_expr_K))
          {
             continue;
          }

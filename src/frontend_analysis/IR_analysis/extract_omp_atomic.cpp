@@ -124,10 +124,10 @@ DesignFlowStep_Status ExtractOmpAtomic::InternalExec()
       tree_nodeRef gimple_to_be_removed;
       for(const auto& stmt : block->CGetStmtList())
       {
-         const auto* pn = GetPointer<gimple_pragma>(GET_NODE(stmt));
-         if(pn && pn->scope && GetPointer<omp_pragma>(GET_NODE(pn->scope)))
+         const auto* pn = GetPointer<gimple_pragma>(stmt);
+         if(pn && pn->scope && GetPointer<omp_pragma>(pn->scope))
          {
-            const auto oa = GetPointer<omp_atomic_pragma>(GET_NODE(pn->directive));
+            const auto oa = GetPointer<omp_atomic_pragma>(pn->directive);
             if(oa)
             {
                if(block->list_of_pred.size() == 1 && block->list_of_pred.front() == BB_ENTRY &&

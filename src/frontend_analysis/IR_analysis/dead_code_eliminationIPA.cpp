@@ -234,7 +234,7 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
       for(const auto& idx : unused_parm_indices)
       {
          const auto arg_it = std::next(arg_list.begin(), idx);
-         auto ssa = GetPointer<ssa_name>(GET_NODE(*arg_it));
+         auto ssa = GetPointer<ssa_name>(*arg_it);
          if(ssa)
          {
             THROW_ASSERT(ssa->CGetUseStmts().count(call_stmt),
@@ -242,7 +242,7 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
 
             if(ssa->virtual_flag)
             {
-               const auto gn = GetPointerS<gimple_node>(GET_NODE(call_stmt));
+               const auto gn = GetPointerS<gimple_node>(call_stmt);
                if(gn->vuses.erase(*arg_it))
                {
                   ssa->RemoveUse(call_stmt);
@@ -286,8 +286,7 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
                  tree_helper::GetMangledFunctionName(GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
          for(const auto& call_id : fei->direct_call_points)
          {
-            auto call_rdx = TM->GetTreeNode(call_id);
-            auto call_stmt = GET_NODE(call_rdx);
+            const auto call_stmt = TM->GetTreeNode(call_id);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Before: " + call_stmt->ToString());
             tree_nodeRef fn;
             if(call_stmt->get_kind() == gimple_call_K)
@@ -295,22 +294,22 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
                auto gc = GetPointerS<gimple_call>(call_stmt);
                THROW_ASSERT(gc->args.size() == parms.size(), "");
                fn = gc->fn;
-               arg_eraser(gc->args, call_rdx);
+               arg_eraser(gc->args, call_stmt);
             }
             else if(call_stmt->get_kind() == gimple_assign_K)
             {
                const auto ga = GetPointerS<const gimple_assign>(call_stmt);
-               auto ce = GetPointer<call_expr>(GET_NODE(ga->op1));
+               auto ce = GetPointer<call_expr>(ga->op1);
                fn = ce->fn;
-               THROW_ASSERT(ce, "Unexpected call expression: " + GET_NODE(ga->op1)->get_kind_text());
+               THROW_ASSERT(ce, "Unexpected call expression: " + ga->op1->get_kind_text());
                THROW_ASSERT(ce->args.size() == parms.size(), "");
-               arg_eraser(ce->args, call_rdx);
+               arg_eraser(ce->args, call_stmt);
             }
             else
             {
                THROW_UNREACHABLE("Call point statement not handled: " + call_stmt->get_kind_text());
             }
-            auto ae = GetPointer<addr_expr>(GET_NODE(fn));
+            auto ae = GetPointer<addr_expr>(fn);
             if(ae)
             {
                ae->type = ftype_ptr;
@@ -340,9 +339,9 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
       for(auto i : unused_parm_indices)
       {
          const auto& pnode = fd->list_of_args.at(i);
-         const auto pname = GetPointer<parm_decl>(GET_NODE(pnode))->name;
+         const auto pname = GetPointer<parm_decl>(pnode)->name;
          THROW_ASSERT(pname, "Expected parameter name.");
-         const auto pname_str = GetPointer<identifier_node>(GET_NODE(pname))->strg;
+         const auto pname_str = GetPointer<identifier_node>(pname)->strg;
          func_arch->parms.erase(pname_str);
       }
    }

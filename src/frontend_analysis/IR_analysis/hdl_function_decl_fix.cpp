@@ -104,7 +104,7 @@ DesignFlowStep_Status HDLFunctionDeclFix::Exec()
       {
          continue;
       }
-      auto in = GetPointer<identifier_node>(GET_NODE(fd->name));
+      auto in = GetPointer<identifier_node>(fd->name);
       const auto identifier =
           hdl_writer_type == HDLWriter_Language::VHDL ? boost::to_upper_copy<std::string>(in->strg) : in->strg;
       if(found_names.find(identifier) != found_names.end())

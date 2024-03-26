@@ -134,7 +134,7 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
             THROW_ASSERT(!ga->clobber, "");
             if(code1 == call_expr_K || code1 == aggr_init_expr_K)
             {
-               const auto ce = GetPointerS<call_expr>(GET_NODE(ga->op1));
+               const auto ce = GetPointerS<call_expr>(ga->op1);
                if(GET_CONST_NODE(ce->fn)->get_kind() == addr_expr_K)
                {
                   const auto addr_node = GET_CONST_NODE(ce->fn);
@@ -200,7 +200,7 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
          }
          else if(GET_CONST_NODE(stmt)->get_kind() == gimple_call_K)
          {
-            const auto gc = GetPointerS<gimple_call>(GET_NODE(stmt));
+            const auto gc = GetPointerS<gimple_call>(stmt);
             if(GET_CONST_NODE(gc->fn)->get_kind() == addr_expr_K)
             {
                const auto addr_node = GET_CONST_NODE(gc->fn);

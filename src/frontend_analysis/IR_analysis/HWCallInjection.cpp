@@ -102,7 +102,7 @@ DesignFlowStep_Status HWCallInjection::InternalExec()
    const auto TM = AppM->get_tree_manager();
    const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function_id));
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
-   const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+   const auto sl = GetPointerS<statement_list>(fd->body);
    THROW_ASSERT(sl, "Body is not a statement_list");
 
    const auto isHardwareCall = [&](const tree_nodeRef& expr) -> bool {
@@ -155,7 +155,7 @@ DesignFlowStep_Status HWCallInjection::InternalExec()
       {
          stmt++;
          const auto& cur_stmt = *std::prev(stmt);
-         if(isHardwareCall(GET_NODE(cur_stmt)))
+         if(isHardwareCall(cur_stmt))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Transforming call " + STR(cur_stmt));
             buildBuiltinCall(block.second, cur_stmt);
@@ -169,7 +169,7 @@ DesignFlowStep_Status HWCallInjection::InternalExec()
 
 void HWCallInjection::buildBuiltinCall(const blocRef& block, const tree_nodeRef& stmt)
 {
-   const auto stmt_kind = GET_NODE(stmt)->get_kind();
+   const auto stmt_kind = stmt->get_kind();
    const auto TM = AppM->get_tree_manager();
    const auto IRman = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
 
@@ -200,7 +200,7 @@ void HWCallInjection::buildBuiltinCall(const blocRef& block, const tree_nodeRef&
       attr_map.clear();
    }
 
-   const auto gn = GetPointerS<gimple_node>(GET_NODE(stmt));
+   const auto gn = GetPointerS<gimple_node>(stmt);
    const auto srcp_str = gn->include_name + ":" + STR(gn->line_number) + ":" + STR(gn->column_number);
 
    const auto builtin_stmt_idx = TM->new_tree_node_id();
@@ -217,12 +217,12 @@ void HWCallInjection::buildBuiltinCall(const blocRef& block, const tree_nodeRef&
       attr_map[TOK(TOK_FN)] = STR(addr_expr_idx);
       if(stmt_kind == gimple_call_K)
       {
-         const auto GC = GetPointerS<const gimple_call>(GET_NODE(stmt));
+         const auto GC = GetPointerS<const gimple_call>(stmt);
          attr_map[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(GC->scpe));
       }
       else if(stmt_kind == gimple_assign_K)
       {
-         const auto GA = GetPointerS<const gimple_assign>(GET_NODE(stmt));
+         const auto GA = GetPointerS<const gimple_assign>(stmt);
          attr_map[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(GA->scpe));
       }
       attr_map[TOK(TOK_SRCP)] = srcp_str;
@@ -230,11 +230,11 @@ void HWCallInjection::buildBuiltinCall(const blocRef& block, const tree_nodeRef&
    }
 
    const auto builtin_stmt = TM->GetTreeNode(builtin_stmt_idx);
-   const auto builtin_call = GetPointerS<gimple_call>(GET_NODE(builtin_stmt));
+   const auto builtin_call = GetPointerS<gimple_call>(builtin_stmt);
    tree_nodeRef retVar = nullptr;
    if(stmt_kind == gimple_call_K)
    {
-      const auto GC = GetPointerS<gimple_call>(GET_NODE(stmt));
+      const auto GC = GetPointerS<gimple_call>(stmt);
       builtin_call->AddArg(GC->fn);
 
       const auto has_return = TM->CreateUniqueIntegerCst(0, IRman->GetSignedIntegerType());
@@ -262,8 +262,8 @@ void HWCallInjection::buildBuiltinCall(const blocRef& block, const tree_nodeRef&
    }
    else if(stmt_kind == gimple_assign_K)
    {
-      const auto GA = GetPointerS<gimple_assign>(GET_NODE(stmt));
-      if(GET_NODE(GA->op1)->get_kind() == call_expr_K || GET_NODE(GA->op1)->get_kind() == aggr_init_expr_K)
+      const auto GA = GetPointerS<gimple_assign>(stmt);
+      if(GA->op1->get_kind() == call_expr_K || GA->op1->get_kind() == aggr_init_expr_K)
       {
          const auto CE = GetPointerS<const call_expr>(GET_CONST_NODE(GA->op1));
          builtin_call->AddArg(CE->fn);

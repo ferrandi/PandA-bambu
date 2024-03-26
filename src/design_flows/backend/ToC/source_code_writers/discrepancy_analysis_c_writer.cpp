@@ -349,7 +349,7 @@ void DiscrepancyAnalysisCWriter::writePreInstructionInfo(const FunctionBehaviorC
       const auto called_id = *node_info->called.begin();
       const tree_nodeConstRef called_fun_decl_node = TM->CGetTreeNode(called_id);
       const auto* fu_dec = GetPointer<const function_decl>(called_fun_decl_node);
-      if(GetPointer<const identifier_node>(GET_NODE(fu_dec->name))->strg == BUILTIN_WAIT_CALL)
+      if(GetPointer<const identifier_node>(fu_dec->name)->strg == BUILTIN_WAIT_CALL)
       {
          /*
           * This operation calls a function with a function pointer, which is
@@ -369,8 +369,7 @@ void DiscrepancyAnalysisCWriter::writePreInstructionInfo(const FunctionBehaviorC
    else if(kind == gimple_assign_K)
    {
       const auto* g_as_node = GetPointer<const gimple_assign>(curr_tn);
-      tree_nodeRef rhs = GET_NODE(g_as_node->op1);
-      if(rhs->get_kind() == call_expr_K || rhs->get_kind() == aggr_init_expr_K)
+      if(g_as_node->op1->get_kind() == call_expr_K || g_as_node->op1->get_kind() == aggr_init_expr_K)
       {
          THROW_ASSERT(!node_info->called.empty(), "rhs of gimple_assign node " + STR(st_tn_id) +
                                                       " is a call_expr but does not actually call a function");
@@ -453,7 +452,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
        */
       indented_output_stream->Append("__bambu_discrepancy_tot_assigned_ssa++;\n");
       const auto* ssaname = GetPointerS<const ssa_name>(GET_CONST_NODE(ssa));
-      bool is_temporary = ssaname->var ? GetPointer<const decl_node>(GET_NODE(ssaname->var))->artificial_flag : true;
+      bool is_temporary = ssaname->var ? GetPointer<const decl_node>(ssaname->var)->artificial_flag : true;
       bool is_discrepancy_address = Discrepancy->address_ssa.count(ssa);
       bool is_lost = Discrepancy->ssa_to_skip.count(ssa);
       bool has_no_meaning_in_software = is_discrepancy_address && Discrepancy->ssa_to_skip_if_address.count(ssa);

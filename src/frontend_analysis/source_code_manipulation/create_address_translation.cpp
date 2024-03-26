@@ -302,11 +302,10 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
          {
             ComputeAddress(field.second, tree_helper::CGetType(tree_fields[tree_field_index])->index, bambu_address,
                            taste_address, registers, false, little_endianess);
-            THROW_ASSERT(tree_helper::GetConstValue(
-                             GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index]))->bpos) >= 0,
-                         "");
-            const auto field_bpos = static_cast<unsigned long long>(tree_helper::GetConstValue(
-                GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index]))->bpos));
+            THROW_ASSERT(
+                tree_helper::GetConstValue(GetPointer<const field_decl>(tree_fields[tree_field_index])->bpos) >= 0, "");
+            const auto field_bpos = static_cast<unsigned long long>(
+                tree_helper::GetConstValue(GetPointer<const field_decl>(tree_fields[tree_field_index])->bpos));
             THROW_ASSERT(field_bpos % 8 == 0, "Bitfield not supported");
             const auto current_field_beginning = field_bpos / 8;
             const auto next_field_beginning = [&]() -> unsigned long long int {
@@ -317,12 +316,11 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
                else
                {
                   THROW_ASSERT(tree_helper::GetConstValue(
-                                   GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index + 1]))->bpos) >=
-                                   0,
+                                   GetPointer<const field_decl>(tree_fields[tree_field_index + 1])->bpos) >= 0,
                                "");
                   return static_cast<unsigned long long>(
                       tree_helper::GetConstValue(
-                          GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index + 1]))->bpos) /
+                          GetPointer<const field_decl>(tree_fields[tree_field_index + 1])->bpos) /
                       8);
                }
             }();
@@ -355,11 +353,10 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
          {
             ComputeAddress(field.second, tree_helper::CGetType(tree_fields[tree_field_index])->index, bambu_address,
                            taste_address, registers, false, little_endianess);
-            THROW_ASSERT(tree_helper::GetConstValue(
-                             GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index]))->bpos) >= 0,
-                         "");
-            const auto field_bpos = static_cast<unsigned long long>(tree_helper::GetConstValue(
-                GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index]))->bpos));
+            THROW_ASSERT(
+                tree_helper::GetConstValue(GetPointer<const field_decl>(tree_fields[tree_field_index])->bpos) >= 0, "");
+            const auto field_bpos = static_cast<unsigned long long>(
+                tree_helper::GetConstValue(GetPointer<const field_decl>(tree_fields[tree_field_index])->bpos));
             THROW_ASSERT(field_bpos % 8 == 0, "Bitfield not supported");
             const auto current_field_beginning = field_bpos / 8;
             const auto next_field_beginning = [&]() -> unsigned long long {
@@ -370,12 +367,11 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
                else
                {
                   THROW_ASSERT(tree_helper::GetConstValue(
-                                   GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index + 1]))->bpos) >=
-                                   0,
+                                   GetPointer<const field_decl>(tree_fields[tree_field_index + 1])->bpos) >= 0,
                                "");
                   return static_cast<unsigned long long>(
                       tree_helper::GetConstValue(
-                          GetPointer<const field_decl>(GET_NODE(tree_fields[tree_field_index + 1]))->bpos) /
+                          GetPointer<const field_decl>(tree_fields[tree_field_index + 1])->bpos) /
                       8);
                }
             }();
@@ -448,12 +444,12 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
       const auto fd = GetPointer<const function_decl>(GET_CONST_NODE(function_node));
       for(const auto& arg : fd->list_of_args)
       {
-         const auto pd = GetPointer<const parm_decl>(GET_NODE(arg));
-         const auto id = GetPointer<const identifier_node>(GET_NODE(pd->name));
+         const auto pd = GetPointer<const parm_decl>(arg);
+         const auto id = GetPointer<const identifier_node>(pd->name);
          const auto param_name = id->strg;
          parameter_to_type[param_name] = tree_helper::CGetType(arg)->index;
       }
-      const auto ft = GetPointer<const function_type>(GET_NODE(fd->type));
+      const auto ft = GetPointer<const function_type>(fd->type);
       if(ft->retn)
       {
          parameter_to_type["return"] = ft->retn->index;
