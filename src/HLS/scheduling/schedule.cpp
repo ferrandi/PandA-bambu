@@ -429,7 +429,7 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter");
          continue;
       }
-      if(def_gn->get_kind() == gimple_assign_K and GetPointer<const gimple_assign>(GET_NODE(def))->clobber)
+      if(def_gn->get_kind() == gimple_assign_K and GetPointer<const gimple_assign>(def)->clobber)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Clobber");
          continue;
@@ -574,7 +574,7 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operations have to be rescheduled");
          const auto current_cs = op_starting_cycle.at(operation_index);
          const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function_index));
-         const auto sl = GetPointer<const statement_list>(GET_NODE(fd->body));
+         const auto sl = GetPointer<const statement_list>(fd->body);
          for(const auto& stmt : sl->list_of_bloc.at(gn->bb_index)->CGetStmtList())
          {
             if(op_starting_cycle.at(stmt->index) >= current_cs and stmt->index != operation_index and
@@ -644,7 +644,7 @@ FunctionFrontendFlowStep_Movable Schedule::CanBeMoved(const unsigned int stateme
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "---Considering used ssa " + STR(ssa_use->index) + " - " + ssa_use->ToString());
-      const auto def = GET_NODE(ssa_use->CGetDefStmt());
+      const auto def = ssa_use->CGetDefStmt();
       const auto gn = GetPointer<const gimple_node>(def);
       if(gn->bb_index != basic_block_index)
       {
@@ -727,7 +727,7 @@ bool Schedule::EvaluateCondsMerging(const unsigned statement_index, const unsign
        std::max(GetReadyTime(first_condition, statement->bb_index),
                 GetReadyTime(second_condition, statement->bb_index)) +
        allocation_information
-           ->GetTimeLatency(GetPointer<const ssa_name>(GET_NODE(or_result))->CGetDefStmt()->index, fu_binding::UNKNOWN)
+           ->GetTimeLatency(GetPointer<const ssa_name>(or_result)->CGetDefStmt()->index, fu_binding::UNKNOWN)
            .first;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "---Checking if merging of conditions can be put at then end BB" + STR(statement->bb_index) +
@@ -743,7 +743,7 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
    const auto basic_block_graph =
        hls_manager.lock()->CGetFunctionBehavior(function_index)->CGetBBGraph(FunctionBehavior::FBB);
    const auto list_of_block =
-       GetPointer<statement_list>(GET_NODE(GetPointer<const function_decl>(TM->CGetTreeNode(function_index))->body))
+       GetPointer<statement_list>(GetPointer<const function_decl>(TM->CGetTreeNode(function_index))->body)
            ->list_of_bloc;
    const auto first_statement = TM->CGetTreeNode(first_statement_index);
    const auto second_statement = TM->CGetTreeNode(second_statement_index);
@@ -755,12 +755,12 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
       if(first_statement->get_kind() == gimple_cond_K and second_statement->get_kind() == gimple_cond_K)
       {
          const auto first_gc = GetPointer<const gimple_cond>(first_statement);
-         const auto first_gc_op = GET_NODE(first_gc->op0);
+         const auto first_gc_op = first_gc->op0;
          THROW_ASSERT(first_gc_op->get_kind() == ssa_name_K,
                       "Condition of the first gimple cond is " + first_gc_op->ToString());
          const auto first_gc_input_delay = GetReadyTime(first_gc_op->index, first_gc->bb_index);
          const auto second_gc = GetPointer<const gimple_cond>(second_statement);
-         const auto second_gc_op = GET_NODE(second_gc->op0);
+         const auto second_gc_op = second_gc->op0;
          THROW_ASSERT(second_gc_op->get_kind() == ssa_name_K,
                       "Condition of the first gimple cond is " + second_gc_op->ToString());
          const auto second_gc_input_delay = GetReadyTime(second_gc_op->index, second_gc->bb_index);
@@ -803,7 +803,7 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
          const auto second_gmwi = GetPointer<const gimple_multi_way_if>(second_statement);
          if(first_block->true_edge == second_basic_block)
          {
-            const auto first_gc_op = GET_NODE(first_gc->op0);
+            const auto first_gc_op = first_gc->op0;
             THROW_ASSERT(first_gc_op->get_kind() == ssa_name_K,
                          "Condition of the first gimple cond is " + first_gc_op->ToString());
             const auto first_gc_input_delay = GetReadyTime(first_gc_op->index, first_gc->bb_index);
@@ -819,8 +819,8 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
                       cond_delay +
                       allocation_information->GetTimeLatency(not_operation->index, fu_binding::UNKNOWN).first;
                   const auto and_operation = tree_man->CreateAndExpr(
-                      GetPointer<const gimple_assign>(GET_NODE(current_condition))->op0,
-                      GetPointer<const gimple_assign>(GET_NODE(not_operation))->op0, blocRef(), function_decl_nid);
+                      GetPointer<const gimple_assign>(current_condition)->op0,
+                      GetPointer<const gimple_assign>(not_operation)->op0, blocRef(), function_decl_nid);
                   current_condition = and_operation;
                   current_ending_time =
                       std::max(not_ending_time, current_ending_time) +
@@ -831,7 +831,7 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
          }
          else if(first_block->false_edge == second_basic_block)
          {
-            const auto first_gc_op = GET_NODE(first_gc->op0);
+            const auto first_gc_op = first_gc->op0;
             THROW_ASSERT(first_gc_op->get_kind() == ssa_name_K,
                          "Condition of the first gimple cond is " + first_gc_op->ToString());
             auto current_ending_time = 0.0;
@@ -841,9 +841,8 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
                 allocation_information->GetTimeLatency(not_operation->index, fu_binding::UNKNOWN).first;
             for(const auto& cond : second_gmwi->list_of_cond)
             {
-               const auto and_operation =
-                   tree_man->CreateAndExpr(GetPointer<const gimple_assign>(GET_NODE(not_operation))->op0, cond.first,
-                                           blocRef(), function_decl_nid);
+               const auto and_operation = tree_man->CreateAndExpr(GetPointer<const gimple_assign>(not_operation)->op0,
+                                                                  cond.first, blocRef(), function_decl_nid);
                const auto and_ending_time =
                    std::max(not_ending_time, GetReadyTime(cond.first->index, first_basic_block)) +
                    allocation_information->GetTimeLatency(and_operation->index, fu_binding::UNKNOWN).first;
@@ -861,7 +860,7 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
       {
          const auto first_gmwi = GetPointer<const gimple_multi_way_if>(first_statement);
          const auto second_gc = GetPointer<const gimple_cond>(second_statement);
-         const auto second_gc_op = GET_NODE(second_gc->op0);
+         const auto second_gc_op = second_gc->op0;
 
          /// The basic block on the default cond edge
          const auto default_basic_block = first_gmwi->list_of_cond.back().second;
@@ -875,9 +874,8 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
                   auto const not_ending_time =
                       GetReadyTime(second_gc_op->index, first_basic_block) +
                       allocation_information->GetTimeLatency(not_operation->index, fu_binding::UNKNOWN).first;
-                  const auto and_operation =
-                      tree_man->CreateAndExpr(GetPointer<const gimple_assign>(GET_NODE(not_operation))->op0, cond.first,
-                                              blocRef(), function_decl_nid);
+                  const auto and_operation = tree_man->CreateAndExpr(
+                      GetPointer<const gimple_assign>(not_operation)->op0, cond.first, blocRef(), function_decl_nid);
                   const auto and_ending_time =
                       std::max(not_ending_time, GetReadyTime(cond.first->index, first_basic_block)) +
                       allocation_information->GetTimeLatency(and_operation->index, fu_binding::UNKNOWN).first;
@@ -944,10 +942,9 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
                         const auto not_ending_time =
                             cond_delay +
                             allocation_information->GetTimeLatency(not_operation->index, fu_binding::UNKNOWN).first;
-                        const auto and_operation =
-                            tree_man->CreateAndExpr(GetPointer<const gimple_assign>(GET_NODE(current_condition))->op0,
-                                                    GetPointer<const gimple_assign>(GET_NODE(not_operation))->op0,
-                                                    blocRef(), function_decl_nid);
+                        const auto and_operation = tree_man->CreateAndExpr(
+                            GetPointer<const gimple_assign>(current_condition)->op0,
+                            GetPointer<const gimple_assign>(not_operation)->op0, blocRef(), function_decl_nid);
                         current_condition = and_operation;
                         current_ending_time =
                             std::max(not_ending_time, current_ending_time) +
@@ -971,8 +968,8 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
                   const auto not_ending_time = GetReadyTime(cond.first->index, first_basic_block);
                   const auto and_operation =
                       current_condition ?
-                          tree_man->CreateAndExpr(GetPointer<const gimple_assign>(GET_NODE(current_condition))->op0,
-                                                  cond.first, blocRef(), function_decl_nid) :
+                          tree_man->CreateAndExpr(GetPointer<const gimple_assign>(current_condition)->op0, cond.first,
+                                                  blocRef(), function_decl_nid) :
                           not_operation;
                   const auto and_ending_time =
                       current_condition ?
@@ -988,8 +985,8 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
                if(cond.first)
                {
                   const auto and_operation =
-                      tree_man->CreateAndExpr(GetPointer<const gimple_assign>(GET_NODE(current_condition))->op0,
-                                              cond.first, blocRef(), function_decl_nid);
+                      tree_man->CreateAndExpr(GetPointer<const gimple_assign>(current_condition)->op0, cond.first,
+                                              blocRef(), function_decl_nid);
                   const auto and_ending_time =
                       std::max(current_ending_time, GetReadyTime(cond.first->index, first_basic_block)) +
                       allocation_information->GetTimeLatency(and_operation->index, fu_binding::UNKNOWN).first;
@@ -1014,7 +1011,7 @@ double Schedule::GetReadyTime(const unsigned int tree_node_index, const unsigned
 {
    const auto sn = GetPointer<const ssa_name>(TM->CGetTreeNode(tree_node_index));
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing ready time of " + sn->ToString());
-   const auto def = GetPointer<gimple_node>(GET_NODE(sn->CGetDefStmt()));
+   const auto def = GetPointer<gimple_node>(sn->CGetDefStmt());
    if(def->get_kind() == gimple_phi_K)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--0.0");
@@ -1043,10 +1040,10 @@ double Schedule::GetBBEndingTime(const unsigned int basic_block_index) const
    const auto margin = allocation_information->GetClockPeriodMargin();
    const auto tn = TM->CGetTreeNode(function_index);
    const auto fd = GetPointer<const function_decl>(tn);
-   THROW_ASSERT(GetPointer<statement_list>(GET_NODE(fd->body))->list_of_bloc.find(basic_block_index) !=
-                    GetPointer<statement_list>(GET_NODE(fd->body))->list_of_bloc.end(),
+   THROW_ASSERT(GetPointer<statement_list>(fd->body)->list_of_bloc.find(basic_block_index) !=
+                    GetPointer<statement_list>(fd->body)->list_of_bloc.end(),
                 "BB" + STR(basic_block_index) + " not found");
-   const auto block = GetPointer<statement_list>(GET_NODE(fd->body))->list_of_bloc.at(basic_block_index);
+   const auto block = GetPointer<statement_list>(fd->body)->list_of_bloc.at(basic_block_index);
    const auto stmt_list = block->CGetStmtList();
    if(stmt_list.size() == 0)
    {
@@ -1266,7 +1263,7 @@ CustomSet<unsigned int> Schedule::ComputeCriticalPath(const StateInfoConstRef st
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Virtual SSAs are not considered");
             continue;
          }
-         const auto def = GET_NODE(ssa_use->CGetDefStmt());
+         const auto def = ssa_use->CGetDefStmt();
          const auto def_gn = GetPointer<const gimple_node>(def);
          if(def_gn->get_kind() == gimple_nop_K)
          {

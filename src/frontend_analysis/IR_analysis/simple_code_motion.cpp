@@ -194,7 +194,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Checking if " + STR(ga->index) + " - " + ga->ToString() + " can be moved in BB" + STR(bb_index));
-   tree_nodeRef left = GET_NODE(ga->op0);
+   tree_nodeRef left = ga->op0;
    if(!GetPointer<ssa_name>(left))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -202,7 +202,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       return FunctionFrontendFlowStep_Movable::UNMOVABLE;
    }
    /// FIXME: already added in master?
-   if(GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K)
+   if(ga->op1->get_kind() == call_expr_K || ga->op1->get_kind() == aggr_init_expr_K)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because of call_expr in right part");
       return FunctionFrontendFlowStep_Movable::UNMOVABLE;
@@ -212,19 +212,19 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because right part is constant");
       return FunctionFrontendFlowStep_Movable::MOVABLE;
    }
-   if(GET_NODE(ga->op0)->get_kind() == ssa_name_K && GET_NODE(ga->op1)->get_kind() == constructor_K)
+   if(ga->op0->get_kind() == ssa_name_K && ga->op1->get_kind() == constructor_K)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because it is an assignment with a constructor");
       return FunctionFrontendFlowStep_Movable::MOVABLE;
    }
-   if(GET_NODE(ga->op0)->get_kind() == ssa_name_K && GET_NODE(ga->op1)->get_kind() == ssa_name_K)
+   if(ga->op0->get_kind() == ssa_name_K && ga->op1->get_kind() == ssa_name_K)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because it is an assignment");
       return FunctionFrontendFlowStep_Movable::MOVABLE;
    }
    CustomOrderedSet<const ssa_name*> rhs_ssa_uses;
    tree_helper::compute_ssa_uses_rec_ptr(ga->op1, rhs_ssa_uses);
-   tree_nodeRef right = GET_NODE(ga->op1);
+   tree_nodeRef right = ga->op1;
 
    if(rhs_ssa_uses.empty() && right->get_kind() != call_expr_K && right->get_kind() != aggr_init_expr_K &&
       right->get_kind() != var_decl_K && right->get_kind() != mem_ref_K)
@@ -323,7 +323,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
          auto* be = GetPointer<binary_expr>(right);
          if(tree_helper::IsConstant(be->op1))
          {
-            const auto ic = GetPointer<integer_cst>(GET_NODE(be->op1));
+            const auto ic = GetPointer<integer_cst>(be->op1);
             if(ic)
             {
                const auto v = tree_helper::GetConstValue(be->op1);
@@ -497,7 +497,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
          auto* be = GetPointer<binary_expr>(right);
          if(tree_helper::IsConstant(be->op1))
          {
-            auto ic = GetPointer<integer_cst>(GET_NODE(be->op1));
+            auto ic = GetPointer<integer_cst>(be->op1);
             if(ic)
             {
                const auto v = tree_helper::GetConstValue(be->op1);
@@ -730,9 +730,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(block.first));
          for(const auto& statement : block.second->CGetStmtList())
          {
-            const auto* gp = GetPointer<const gimple_pragma>(GET_NODE(statement));
-            if(gp && GetPointer<const omp_pragma>(GET_NODE(gp->scope)) &&
-               GetPointer<const omp_simd_pragma>(GET_NODE(gp->directive)))
+            const auto* gp = GetPointer<const gimple_pragma>(statement);
+            if(gp && GetPointer<const omp_pragma>(gp->scope) && GetPointer<const omp_simd_pragma>(gp->directive))
             {
                THROW_ASSERT(boost::out_degree(inverse_vertex_map[block.first], *GCC_bb_graph) == 1,
                             "OpenMP simd pragma block has more than one successor");
@@ -784,7 +783,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + (*statement)->ToString());
             /// skip gimple statements defining or using virtual operands
-            tree_nodeRef tn = GET_NODE(*statement);
+            tree_nodeRef tn = *statement;
             auto* gn = GetPointer<gimple_node>(tn);
 
             THROW_ASSERT(gn, "unexpected condition");
@@ -815,7 +814,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             for(auto stmt0 = list_of_stmt.begin(); stmt0 != list_of_stmt.end() && *stmt0 != *statement && gn->vdef;
                 stmt0++)
             {
-               tree_nodeRef tn0 = GET_NODE(*stmt0);
+               tree_nodeRef tn0 = *stmt0;
                const auto gn0 = GetPointerS<gimple_node>(tn0);
                if(gn0->vuses.find(gn->vdef) != gn0->vuses.end())
                {
@@ -830,12 +829,12 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---for variable " + sn->ToString());
                for(auto const& def_stmt : sn->CGetDefStmts())
                {
-                  auto* def_gn = GetPointer<gimple_node>(GET_NODE(def_stmt));
+                  auto* def_gn = GetPointer<gimple_node>(def_stmt);
                   THROW_ASSERT(def_gn->get_kind() == gimple_nop_K or def_gn->index,
                                sn->ToString() + " is defined in entry");
                   THROW_ASSERT(def_gn->get_kind() == gimple_nop_K or
                                    (def_gn->get_kind() == gimple_assign_K &&
-                                    GetPointer<const gimple_assign>(GET_NODE(def_stmt))->clobber) or
+                                    GetPointer<const gimple_assign>(def_stmt)->clobber) or
                                    def_gn->bb_index or sn->virtual_flag,
                                "Definition " + def_gn->ToString() + " of " + sn->ToString() + " is in BB" +
                                    STR(def_gn->bb_index));
@@ -876,9 +875,9 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                               "<--Skipped because uses ssa defined in the same block");
                continue;
             }
-            if((gn->vuses.size() || (GetPointer<gimple_assign>(tn) &&
-                                     (GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == call_expr_K ||
-                                      GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K))) &&
+            if((gn->vuses.size() ||
+                (GetPointer<gimple_assign>(tn) && (GetPointer<gimple_assign>(tn)->op1->get_kind() == call_expr_K ||
+                                                   GetPointer<gimple_assign>(tn)->op1->get_kind() == mem_ref_K))) &&
                !isFunctionPipelined)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of vuses");
@@ -889,14 +888,13 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             auto dest_bb_index = curr_bb;
             auto prev_dest_bb_index = curr_bb;
             if(gn->vdef || gn->vuses.size() ||
-               (tn->get_kind() == gimple_assign_K &&
-                GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K))
+               (tn->get_kind() == gimple_assign_K && GetPointer<gimple_assign>(tn)->op1->get_kind() == mem_ref_K))
             {
                if(list_of_bloc.at(curr_bb)->list_of_pred.size() == 1 &&
                   list_of_bloc.at(curr_bb)->list_of_pred.front() != bloc::ENTRY_BLOCK_ID &&
                   ((tn->get_kind() == gimple_assign_K &&
-                    (GET_NODE(GetPointer<gimple_assign>(tn)->op0)->get_kind() == mem_ref_K ||
-                     GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K)) ||
+                    (GetPointer<gimple_assign>(tn)->op0->get_kind() == mem_ref_K ||
+                     GetPointer<gimple_assign>(tn)->op1->get_kind() == mem_ref_K)) ||
                    tn->get_kind() == gimple_nop_K) &&
                   list_of_bloc.at(list_of_bloc.at(curr_bb)->list_of_pred.front())->loop_id ==
                       list_of_bloc.at(curr_bb)->loop_id)
@@ -985,15 +983,15 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                else
                {
                   auto last_statement = sl->list_of_bloc.at(*Lop_it)->CGetStmtList().back();
-                  if(GET_NODE(last_statement)->get_kind() == gimple_cond_K)
+                  if(last_statement->get_kind() == gimple_cond_K)
                   {
-                     auto* gc = GetPointer<gimple_cond>(GET_NODE(last_statement));
-                     if(GET_NODE(gc->op0)->get_kind() != integer_cst_K)
+                     auto* gc = GetPointer<gimple_cond>(last_statement);
+                     if(gc->op0->get_kind() != integer_cst_K)
                      {
                         is_controlling_condition_constant = false;
                      }
                   }
-                  else if(GET_NODE(last_statement)->get_kind() == gimple_multi_way_if_K)
+                  else if(last_statement->get_kind() == gimple_multi_way_if_K)
                   {
                      is_controlling_condition_constant = false;
                   }
@@ -1030,7 +1028,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking definition of " + sn->ToString());
                for(auto const& def_stmt : sn->CGetDefStmts())
                {
-                  auto* def_gn = GetPointer<gimple_node>(GET_NODE(def_stmt));
+                  auto* def_gn = GetPointer<gimple_node>(def_stmt);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checked definition " + def_gn->ToString());
                   if(def_gn->bb_index == dest_bb_index && def_gn->get_kind() != gimple_phi_K &&
                      zero_delay_stmts.find(def_stmt->index) == zero_delay_stmts.end())
@@ -1063,9 +1061,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             AppM->RegisterTransformation(GetName(), *statement);
 
             /// add predication in case is required
-            if(tn->get_kind() == gimple_assign_K &&
-               (GET_NODE(GetPointer<gimple_assign>(tn)->op0)->get_kind() == mem_ref_K ||
-                GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K))
+            if(tn->get_kind() == gimple_assign_K && (GetPointer<gimple_assign>(tn)->op0->get_kind() == mem_ref_K ||
+                                                     GetPointer<gimple_assign>(tn)->op1->get_kind() == mem_ref_K))
             {
                if(list_of_bloc.at(dest_bb_index)->CGetStmtList().empty())
                {
@@ -1074,11 +1071,11 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                else
                {
                   const auto& lastStmt = *(list_of_bloc.at(dest_bb_index)->CGetStmtList().rbegin());
-                  auto lastStmtNode = GET_NODE(lastStmt);
+                  auto lastStmtNode = lastStmt;
                   auto ga = GetPointer<gimple_assign>(tn);
                   if(lastStmtNode->get_kind() == gimple_cond_K)
                   {
-                     if(ga->predicate && GET_NODE(ga->predicate)->get_kind() == integer_cst_K)
+                     if(ga->predicate && ga->predicate->get_kind() == integer_cst_K)
                      {
                         auto cond = tree_helper::GetConstValue(ga->predicate);
                         if(cond != 0)
@@ -1147,7 +1144,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                                  }
                               }
                               Cur = tree_man->CreateNotExpr(Cur, list_of_bloc.at(dest_bb_index), function_id);
-                              if(ga->predicate && GET_NODE(ga->predicate)->get_kind() == integer_cst_K)
+                              if(ga->predicate && ga->predicate->get_kind() == integer_cst_K)
                               {
                                  const auto cond = tree_helper::GetConstValue(ga->predicate);
                                  if(cond != 0)
@@ -1164,7 +1161,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                            }
                            else
                            {
-                              if(ga->predicate && GET_NODE(ga->predicate)->get_kind() == integer_cst_K)
+                              if(ga->predicate && ga->predicate->get_kind() == integer_cst_K)
                               {
                                  const auto cond = tree_helper::GetConstValue(ga->predicate);
                                  if(cond != 0)

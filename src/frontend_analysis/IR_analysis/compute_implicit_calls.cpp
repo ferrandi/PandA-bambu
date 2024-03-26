@@ -152,7 +152,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
 
    unsigned int max_loop_id = 0;
 
-   const auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   const auto sl = GetPointer<statement_list>(fd->body);
    THROW_ASSERT(sl, "Body is not a statement_list");
    for(const auto& bb : sl->list_of_bloc)
    {
@@ -165,17 +165,16 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       const std::list<tree_nodeRef> const_sl = bb.second->CGetStmtList();
       for(const auto& stmt : const_sl)
       {
-         const auto tn = GET_NODE(stmt);
-         if(tn->get_kind() == gimple_assign_K)
+         if(stmt->get_kind() == gimple_assign_K)
          {
-            const auto gm = GetPointer<gimple_assign>(tn);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing node " + tn->ToString());
+            const auto gm = GetPointer<gimple_assign>(stmt);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing node " + stmt->ToString());
 
             /// check for implicit memset/memcpy calls
-            const auto op0 = GET_NODE(gm->op0);
-            const auto op1 = GET_NODE(gm->op1);
-            const auto op0_type = tree_helper::CGetType(op0);
-            const auto op1_type = tree_helper::CGetType(op1);
+            const auto op0 = gm->op0;
+            const auto op1 = gm->op1;
+            const auto op0_type = tree_helper::CGetType(gm->op0);
+            const auto op1_type = tree_helper::CGetType(gm->op1);
 
             bool is_a_vector_bitfield = false;
             if(op1->get_kind() == bit_field_ref_K)
@@ -194,7 +193,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
                                   op1->get_kind() == target_mem_ref461_K;
             if(op1->get_kind() == realpart_expr_K || op1->get_kind() == imagpart_expr_K)
             {
-               const auto code1 = GET_NODE(GetPointer<unary_expr>(op1)->op)->get_kind();
+               const auto code1 = GetPointer<unary_expr>(op1)->op->get_kind();
                if((code1 == bit_field_ref_K && !is_a_vector_bitfield) || code1 == component_ref_K ||
                   code1 == indirect_ref_K || code1 == bit_field_ref_K || code1 == misaligned_indirect_ref_K ||
                   code1 == mem_ref_K || code1 == array_ref_K || code1 == target_mem_ref_K ||
@@ -213,7 +212,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
                                    op0->get_kind() == target_mem_ref_K || op0->get_kind() == target_mem_ref461_K;
             if(op0->get_kind() == realpart_expr_K || op0->get_kind() == imagpart_expr_K)
             {
-               const auto code0 = GET_NODE(GetPointer<unary_expr>(op0)->op)->get_kind();
+               const auto code0 = GetPointer<unary_expr>(op0)->op->get_kind();
                if(code0 == component_ref_K || code0 == indirect_ref_K || code0 == bit_field_ref_K ||
                   code0 == misaligned_indirect_ref_K || code0 == mem_ref_K || code0 == array_ref_K ||
                   code0 == target_mem_ref_K || code0 == target_mem_ref461_K)
@@ -301,7 +300,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Empty struct assignement removed");
                }
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed node " + tn->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed node " + stmt->ToString());
          }
       }
    }
@@ -364,7 +363,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
          /// Update all the phis
          for(const auto& phi : succ_block->CGetPhiList())
          {
-            auto gp = GetPointerS<gimple_phi>(GET_NODE(phi));
+            auto gp = GetPointerS<gimple_phi>(phi);
             for(const auto& def_edge : gp->CGetDefEdgesList())
             {
                if(def_edge.second == BB1_block->number)
@@ -376,8 +375,8 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       }
 
       /// retrieve the starting variable
-      const auto ga = GetPointerS<gimple_assign>(GET_NODE(stmt_bb_pair.first));
-      const auto mr = GetPointerS<mem_ref>(GET_NODE(ga->op0));
+      const auto ga = GetPointerS<gimple_assign>(stmt_bb_pair.first);
+      const auto mr = GetPointerS<mem_ref>(ga->op0);
       const auto var = TM->CGetTreeNode(tree_helper::GetBaseVariable(mr->op0)->index);
       auto init_var = mr->op0;
       const auto srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
@@ -395,9 +394,9 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       const auto nop_init_var = tree_man->create_unary_operation(pt, init_var, srcp_default, nop_expr_K);
       const auto nop_init_var_ga =
           tree_man->CreateGimpleAssign(pt, tree_nodeRef(), tree_nodeRef(), nop_init_var, function_id, srcp_default);
-      init_var = GetPointerS<gimple_assign>(GET_NODE(nop_init_var_ga))->op0;
+      init_var = GetPointerS<gimple_assign>(nop_init_var_ga)->op0;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "---Created cast statement " + GET_NODE(nop_init_var_ga)->ToString());
+                     "---Created cast statement " + nop_init_var_ga->ToString());
 
       /// Create phi for the induction variable of BBN1
       tree_nodeRef new_induction_var;
@@ -405,10 +404,10 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       std::vector<std::pair<tree_nodeRef, unsigned int>> list_of_def_edge;
       list_of_def_edge.push_back(std::make_pair(init_var, BB1_block->number));
       const auto phi = tree_man->create_phi_node(new_induction_var, list_of_def_edge, function_id);
-      const auto gp = GetPointerS<gimple_phi>(GET_NODE(phi));
+      const auto gp = GetPointerS<gimple_phi>(phi);
       const auto phi_res_use_set = PointToSolutionRef(new PointToSolution());
       phi_res_use_set->Add(var);
-      GetPointerS<ssa_name>(GET_NODE(gp->res))->use_set = phi_res_use_set;
+      GetPointerS<ssa_name>(gp->res)->use_set = phi_res_use_set;
       BBN1_block->AddPhi(phi);
 
       /// compute the size of memory to be set with memset
@@ -424,26 +423,26 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
           tree_man->create_binary_operation(pt, init_var, copy_byte_size_node, srcp_default, pointer_plus_expr_K);
       const auto pp_ga =
           tree_man->CreateGimpleAssign(pt, tree_nodeRef(), tree_nodeRef(), pp, function_id, srcp_default);
-      GetPointerS<gimple_assign>(GET_NODE(pp_ga))->temporary_address = true;
-      const auto vd_limit = GetPointerS<gimple_assign>(GET_NODE(pp_ga))->op0;
+      GetPointerS<gimple_assign>(pp_ga)->temporary_address = true;
+      const auto vd_limit = GetPointerS<gimple_assign>(pp_ga)->op0;
       const auto vd_limit_use_set = PointToSolutionRef(new PointToSolution());
       vd_limit_use_set->Add(var);
-      GetPointerS<ssa_name>(GET_NODE(vd_limit))->use_set = vd_limit_use_set;
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Create statement " + GET_NODE(pp_ga)->ToString());
+      GetPointerS<ssa_name>(vd_limit)->use_set = vd_limit_use_set;
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Create statement " + pp_ga->ToString());
 
       const auto size_node =
           TM->CreateUniqueIntegerCst(static_cast<long long int>(tree_helper::SizeAlloc(type_node1) / 8), offset_type);
       const auto pp_ind = tree_man->create_binary_operation(pt, gp->res, size_node, srcp_default, pointer_plus_expr_K);
       const auto pp_ga_ind =
           tree_man->CreateGimpleAssign(pt, tree_nodeRef(), tree_nodeRef(), pp_ind, function_id, srcp_default);
-      GetPointerS<gimple_assign>(GET_NODE(pp_ga_ind))->temporary_address = true;
-      const auto vd_ind = GetPointerS<gimple_assign>(GET_NODE(pp_ga_ind))->op0;
+      GetPointerS<gimple_assign>(pp_ga_ind)->temporary_address = true;
+      const auto vd_ind = GetPointerS<gimple_assign>(pp_ga_ind)->op0;
       const auto vd_ind_use_set = PointToSolutionRef(new PointToSolution());
       vd_ind_use_set->Add(var);
-      GetPointerS<ssa_name>(GET_NODE(vd_ind))->use_set = vd_ind_use_set;
+      GetPointerS<ssa_name>(vd_ind)->use_set = vd_ind_use_set;
       gp->AddDefEdge(TM, gimple_phi::DefEdge(vd_ind, BBN1_block->number));
       BBN1_block->PushBack(pp_ga_ind, AppM);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Create statement " + GET_NODE(pp_ga_ind)->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Create statement " + pp_ga_ind->ToString());
 
       /// the comparison
       const auto boolean_type = tree_man->GetBooleanType();
@@ -456,7 +455,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Create comparison " + STR(comp_ga));
 
       /// the gimple cond
-      const auto comp_res = GetPointerS<gimple_assign>(GET_NODE(comp_ga))->op0;
+      const auto comp_res = GetPointerS<gimple_assign>(comp_ga)->op0;
       const auto gc = tree_man->create_gimple_cond(comp_res, function_id, srcp_default);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Create branch condition " + STR(gc));
 

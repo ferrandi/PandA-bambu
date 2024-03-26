@@ -183,7 +183,7 @@ std::deque<bit_lattice> BitLatticeManipulator::constructor_bitstring(const tree_
       else if(el->get_kind() == constructor_K &&
               GetPointer<const array_type>(GET_CONST_NODE(GetPointerS<const constructor>(el)->type)))
       {
-         THROW_ASSERT(array_dims.size() > 1 || GET_NODE(c->type)->get_kind() == record_type_K,
+         THROW_ASSERT(array_dims.size() > 1 || c->type->get_kind() == record_type_K,
                       "invalid nested constructors:" + ctor_tn->ToString() + " " + STR(array_dims.size()));
          cur_bitstring = constructor_bitstring(el, ssa_node_id);
       }

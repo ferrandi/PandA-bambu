@@ -303,10 +303,9 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string& filename) cons
    const auto fd = GetPointer<const function_decl>(function_tree_node);
    const auto sl = GetPointer<const statement_list>(GET_CONST_NODE(fd->body));
    /// add vertices
-   for(const auto& block : sl->list_of_bloc)
+   for(const auto& [bbi, bb] : sl->list_of_bloc)
    {
-      inverse_vertex_map[block.first] =
-          GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)));
+      inverse_vertex_map[bbi] = GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(bb)));
    }
    /// Set entry and exit
    if(inverse_vertex_map.find(bloc::ENTRY_BLOCK_ID) == inverse_vertex_map.end())
@@ -321,24 +320,22 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string& filename) cons
    bb_graph_info->exit_vertex = inverse_vertex_map[bloc::EXIT_BLOCK_ID];
 
    /// add edges
-   for(const auto& block : sl->list_of_bloc)
+   for(const auto& [bbi, bb] : sl->list_of_bloc)
    {
-      for(const auto pred : block.second->list_of_pred)
+      for(const auto pred : bb->list_of_pred)
       {
          if(pred == bloc::ENTRY_BLOCK_ID)
          {
-            GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[pred], inverse_vertex_map[block.first], CFG_SELECTOR);
+            GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[pred], inverse_vertex_map[bbi], CFG_SELECTOR);
          }
       }
-      for(const auto succ : block.second->list_of_succ)
+      for(const auto succ : bb->list_of_succ)
       {
-         THROW_ASSERT(inverse_vertex_map.find(block.first) != inverse_vertex_map.end(),
-                      "BB" + STR(block.first) + " does not exist");
+         THROW_ASSERT(inverse_vertex_map.find(bbi) != inverse_vertex_map.end(), "BB" + STR(bbi) + " does not exist");
          THROW_ASSERT(inverse_vertex_map.find(succ) != inverse_vertex_map.end(), "BB" + STR(succ) + " does not exist");
-         if(block.second->CGetStmtList().size() and
-            GET_NODE(block.second->CGetStmtList().back())->get_kind() == gimple_multi_way_if_K)
+         if(bb->CGetStmtList().size() and bb->CGetStmtList().back()->get_kind() == gimple_multi_way_if_K)
          {
-            const auto gmwi = GetPointer<const gimple_multi_way_if>(GET_NODE(block.second->CGetStmtList().back()));
+            const auto gmwi = GetPointer<const gimple_multi_way_if>(bb->CGetStmtList().back());
             CustomSet<unsigned int> conds;
             for(const auto& gmwi_cond : gmwi->list_of_cond)
             {
@@ -361,17 +358,17 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string& filename) cons
             {
                GetPointer<BBEdgeInfo>(edge_info)->add_nodeID(cond, CFG_SELECTOR);
             }
-            GCC_bb_graphs_collection->InternalAddEdge(inverse_vertex_map[block.first], inverse_vertex_map[succ],
-                                                      CFG_SELECTOR, edge_info);
+            GCC_bb_graphs_collection->InternalAddEdge(inverse_vertex_map[bbi], inverse_vertex_map[succ], CFG_SELECTOR,
+                                                      edge_info);
          }
          else
          {
-            GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[block.first], inverse_vertex_map[succ], CFG_SELECTOR);
+            GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[bbi], inverse_vertex_map[succ], CFG_SELECTOR);
          }
       }
-      if(block.second->list_of_succ.empty())
+      if(bb->list_of_succ.empty())
       {
-         GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[block.first], inverse_vertex_map[bloc::EXIT_BLOCK_ID],
+         GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[bbi], inverse_vertex_map[bloc::EXIT_BLOCK_ID],
                                            CFG_SELECTOR);
       }
    }
@@ -383,13 +380,13 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string& filename) cons
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written " + filename);
    /// add edges
 #ifndef NDEBUG
-   for(const auto& block : sl->list_of_bloc)
+   for(const auto& [bbi, bb] : sl->list_of_bloc)
    {
-      for(const auto& phi : block.second->CGetPhiList())
+      for(const auto& phi : bb->CGetPhiList())
       {
-         const auto gp = GetPointer<const gimple_phi>(GET_CONST_NODE(phi));
-         THROW_ASSERT(gp->CGetDefEdgesList().size() == block.second->list_of_pred.size(),
-                      "BB" + STR(block.second->number) + " has " + STR(block.second->list_of_pred.size()) +
+         const auto gp = GetPointer<const gimple_phi>(phi);
+         THROW_ASSERT(gp->CGetDefEdgesList().size() == bb->list_of_pred.size(),
+                      "BB" + STR(bb->number) + " has " + STR(bb->list_of_pred.size()) +
                           " incoming edges but contains " + STR(phi));
       }
    }

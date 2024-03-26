@@ -116,7 +116,7 @@ void BasicBlocksProfilingCWriter::InternalWriteGlobalDeclarations()
       const auto function_behavior = HLSMgr->CGetFunctionBehavior(function);
       const auto function_name = function_behavior->CGetBehavioralHelper()->get_function_name();
       const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function));
-      const auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
+      const auto sl = GetPointer<statement_list>(fd->body);
       const auto biggest_bb_number = sl->list_of_bloc.rbegin()->first;
       indented_output_stream->Append("for(i = 0; i < " + STR(biggest_bb_number + 1) + "; i++)\n");
       indented_output_stream->Append("   " + function_name + "_counter[i] = 0;\n");
@@ -134,7 +134,7 @@ void BasicBlocksProfilingCWriter::InternalWriteGlobalDeclarations()
       const auto function_behavior = HLSMgr->CGetFunctionBehavior(function);
       const auto function_name = function_behavior->CGetBehavioralHelper()->get_function_name();
       const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function));
-      const auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
+      const auto sl = GetPointer<statement_list>(fd->body);
       const auto biggest_bb_number = sl->list_of_bloc.rbegin()->first;
       indented_output_stream->Append(R"(fprintf(h_file, "Function %d\n", )" + STR(function) + ");\n");
       indented_output_stream->Append("for(i = 0; i < " + STR(biggest_bb_number + 1) + "; i++)\n");

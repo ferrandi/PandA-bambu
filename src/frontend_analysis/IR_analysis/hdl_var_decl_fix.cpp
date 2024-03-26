@@ -99,17 +99,15 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
 
    for(const auto& arg : fd->list_of_args)
    {
-      auto a = GetPointer<parm_decl>(GET_NODE(arg));
-      auto argName = GET_NODE(a->name);
-      THROW_ASSERT(GetPointer<identifier_node>(argName), "unexpected condition");
-      const std::string parm_name = GetPointer<identifier_node>(argName)->strg;
+      auto a = GetPointer<parm_decl>(arg);
+      THROW_ASSERT(GetPointer<identifier_node>(a->name), "unexpected condition");
+      const std::string parm_name = GetPointer<identifier_node>(a->name)->strg;
       recursive_examinate(arg, already_examinated_decls, already_examinated_names, already_examinated_type_names,
                           already_visited_ae);
       if(HLSMgr)
       {
-         argName = GET_NODE(a->name);
-         THROW_ASSERT(GetPointer<identifier_node>(argName), "unexpected condition");
-         const std::string parm_name_new = GetPointer<identifier_node>(argName)->strg;
+         THROW_ASSERT(GetPointer<identifier_node>(a->name), "unexpected condition");
+         const std::string parm_name_new = GetPointer<identifier_node>(a->name)->strg;
          const auto func_arch = HLSMgr->module_arch->GetArchitecture(fname);
          if(func_arch && parm_name != parm_name_new)
          {

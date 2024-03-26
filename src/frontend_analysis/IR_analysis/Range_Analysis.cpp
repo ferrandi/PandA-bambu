@@ -1226,7 +1226,7 @@ int VarNode::updateIR(const tree_managerRef& TM,
                       application_managerRef AppM)
 {
    const auto ssa_node = TM->GetTreeNode(GET_INDEX_CONST_NODE(V));
-   auto* SSA = GetPointer<ssa_name>(GET_NODE(ssa_node));
+   auto* SSA = GetPointer<ssa_name>(ssa_node);
    if(SSA == nullptr || interval->isUnknown())
    {
       return ut_None;
@@ -1392,7 +1392,7 @@ int VarNode::updateIR(const tree_managerRef& TM,
                          ": " + bitstring_to_string(bit_values) + " <= " + SSA->bit_values);
    }
 
-   if(const auto* gp = GetPointer<const gimple_phi>(GET_NODE(SSA->CGetDefStmt())))
+   if(const auto* gp = GetPointer<const gimple_phi>(SSA->CGetDefStmt()))
    {
       if(gp->CGetDefEdgesList().size() == 1)
       {
@@ -3982,9 +3982,9 @@ LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function
                      "Sink variable is " + GET_CONST_NODE(ga->op0)->get_kind_text() + " (size = " + STR(bw) + ")");
 
       auto intersection = tree_helper::TypeRange(sink->getValue(), Empty);
-      if(GET_NODE(ga->op1)->get_kind() == array_ref_K || GET_NODE(ga->op1)->get_kind() == mem_ref_K ||
-         GET_NODE(ga->op1)->get_kind() == target_mem_ref_K || GET_NODE(ga->op1)->get_kind() == target_mem_ref461_K ||
-         GET_NODE(ga->op1)->get_kind() == var_decl_K)
+      if(ga->op1->get_kind() == array_ref_K || ga->op1->get_kind() == mem_ref_K ||
+         ga->op1->get_kind() == target_mem_ref_K || ga->op1->get_kind() == target_mem_ref461_K ||
+         ga->op1->get_kind() == var_decl_K)
       {
          auto base_index = tree_helper::get_base_index(TM, GET_INDEX_NODE(ga->op1));
          const auto* hm = GetPointer<HLS_manager>(AppM);
@@ -3994,7 +3994,7 @@ LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function
             const auto* vd = GetPointer<const var_decl>(TM->CGetTreeNode(base_index));
             if(vd && vd->init)
             {
-               if(GET_NODE(vd->init)->get_kind() == constructor_K)
+               if(vd->init->get_kind() == constructor_K)
                {
                   intersection = constructor_range(TM, GET_CONST_NODE(vd->init), intersection);
                }
@@ -4004,12 +4004,12 @@ LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function
                   if(init_range->getBitWidth() != bw)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
-                                    "---Initializer value not compliant " + GET_NODE(vd->init)->ToString());
+                                    "---Initializer value not compliant " + vd->init->ToString());
                   }
                   else
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
-                                    "---Initializer value is " + GET_NODE(vd->init)->ToString());
+                                    "---Initializer value is " + vd->init->ToString());
                      intersection = init_range;
                   }
                }
@@ -4022,7 +4022,7 @@ LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function
             const auto* vd = GetPointer<const var_decl>(TM->CGetTreeNode(base_index));
             if(vd && vd->init)
             {
-               if(GET_NODE(vd->init)->get_kind() == constructor_K)
+               if(vd->init->get_kind() == constructor_K)
                {
                   intersection = constructor_range(TM, GET_CONST_NODE(vd->init), intersection);
                }
@@ -4032,12 +4032,12 @@ LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function
                   if(init_range->getBitWidth() != bw)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
-                                    "---Initializer value not compliant " + GET_NODE(vd->init)->ToString());
+                                    "---Initializer value not compliant " + vd->init->ToString());
                   }
                   else
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
-                                    "---Initializer value is " + GET_NODE(vd->init)->ToString());
+                                    "---Initializer value is " + vd->init->ToString());
                      intersection = init_range;
                   }
                }
@@ -5847,12 +5847,12 @@ class ConstraintGraph : public NodeContainer
 
       if(fun_node)
       {
-         if(GET_NODE(fun_node)->get_kind() == addr_expr_K)
+         if(fun_node->get_kind() == addr_expr_K)
          {
-            const auto* ue = GetPointer<const unary_expr>(GET_NODE(fun_node));
+            const auto* ue = GetPointer<const unary_expr>(fun_node);
             fun_node = ue->op;
          }
-         else if(GET_NODE(fun_node)->get_kind() == obj_type_ref_K)
+         else if(fun_node->get_kind() == obj_type_ref_K)
          {
             fun_node = tree_helper::find_obj_type_ref_function(fun_node);
          }
@@ -5996,7 +5996,7 @@ class ConstraintGraph : public NodeContainer
                   if(!storeFunctionCall(stmt))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "Skipping " + GET_NODE(stmt)->get_kind_text() + " " + GET_NODE(stmt)->ToString());
+                                    "Skipping " + stmt->get_kind_text() + " " + stmt->ToString());
                   }
                   continue;
                }

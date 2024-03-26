@@ -820,14 +820,12 @@ std::string fsm_controller::get_guard_value(const tree_managerRef TM, const unsi
       THROW_ASSERT(node->get_kind() == case_label_expr_K, "case_label_expr expected " + GET_NAME(data, op));
       auto cle = GetPointer<case_label_expr>(node);
       THROW_ASSERT(cle->op0, "guard expected in a case_label_expr");
-      THROW_ASSERT(GetPointer<integer_cst>(GET_NODE(cle->op0)),
-                   "expected integer_cst object as guard in a case_label_expr");
+      THROW_ASSERT(GetPointer<integer_cst>(cle->op0), "expected integer_cst object as guard in a case_label_expr");
       const auto low_result = tree_helper::GetConstValue(cle->op0);
       integer_cst_t high_result = 0;
       if(cle->op1)
       {
-         THROW_ASSERT(GetPointer<integer_cst>(GET_NODE(cle->op1)),
-                      "expected integer_cst object as guard in a case_label_expr");
+         THROW_ASSERT(GetPointer<integer_cst>(cle->op1), "expected integer_cst object as guard in a case_label_expr");
          high_result = tree_helper::GetConstValue(cle->op1);
       }
       if(high_result == 0)

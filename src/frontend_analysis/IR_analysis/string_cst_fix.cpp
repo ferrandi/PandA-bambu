@@ -121,7 +121,7 @@ DesignFlowStep_Status string_cst_fix::Exec()
    {
       const auto curr_tn = TM->GetTreeNode(function_id);
       const auto fd = GetPointerS<function_decl>(curr_tn);
-      const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+      const auto sl = GetPointerS<statement_list>(fd->body);
       const std::string srcp_default = fd->include_name + ":" + STR(fd->line_number) + ":" + STR(fd->column_number);
 
       for(auto& arg : fd->list_of_args)
@@ -153,7 +153,7 @@ DesignFlowStep_Status string_cst_fix::Exec()
 void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& srcp)
 {
    const tree_managerRef TM = AppM->get_tree_manager();
-   const tree_nodeRef curr_tn = GET_NODE(tn);
+   const tree_nodeRef curr_tn = tn;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Analyzing recursively " + curr_tn->get_kind_text() + " " + STR(GET_INDEX_NODE(tn)) + ": " +
                       curr_tn->ToString());
@@ -183,10 +183,10 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
          auto* gm = GetPointer<gimple_assign>(curr_tn);
          if(!gm->clobber)
          {
-            if(GET_NODE(gm->op0)->get_kind() == var_decl_K &&
-               (GET_NODE(gm->op1)->get_kind() == string_cst_K || GET_NODE(gm->op1)->get_kind() == constructor_K))
+            if(gm->op0->get_kind() == var_decl_K &&
+               (gm->op1->get_kind() == string_cst_K || gm->op1->get_kind() == constructor_K))
             {
-               auto* vd = GetPointer<var_decl>(GET_NODE(gm->op0));
+               auto* vd = GetPointer<var_decl>(gm->op0);
                THROW_ASSERT(vd, "not valid variable");
                if(vd->readonly_flag)
                {
@@ -195,20 +195,20 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
                   /// So the solution for bambu is to not synthesize them.
                }
             }
-            else if(GET_NODE(gm->op0)->get_kind() == var_decl_K && GET_NODE(gm->op1)->get_kind() == var_decl_K &&
-                    GetPointer<var_decl>(GET_NODE(gm->op1))->init && GetPointer<var_decl>(GET_NODE(gm->op1))->used == 0)
+            else if(gm->op0->get_kind() == var_decl_K && gm->op1->get_kind() == var_decl_K &&
+                    GetPointer<var_decl>(gm->op1)->init && GetPointer<var_decl>(gm->op1)->used == 0)
             {
-               auto* vd = GetPointer<var_decl>(GET_NODE(gm->op0));
+               auto* vd = GetPointer<var_decl>(gm->op0);
                THROW_ASSERT(vd, "not valid variable");
                if(vd->readonly_flag)
                {
-                  vd->init = GetPointer<var_decl>(GET_NODE(gm->op1))->init;
+                  vd->init = GetPointer<var_decl>(gm->op1)->init;
                   gm->init_assignment = true;
                }
                else
                {
                   /// makes the var_decl visible
-                  auto* vd1 = GetPointer<var_decl>(GET_NODE(gm->op1));
+                  auto* vd1 = GetPointer<var_decl>(gm->op1);
                   vd1->include_name = gm->include_name;
                   vd1->line_number = gm->line_number;
                   vd1->column_number = gm->column_number;
@@ -216,10 +216,10 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
             }
             if(!gm->init_assignment)
             {
-               if(GET_NODE(gm->op0)->get_kind() == var_decl_K &&
-                  GetPointer<var_decl>(GET_NODE(gm->op0))->readonly_flag && GET_NODE(gm->op1)->get_kind() == ssa_name_K)
+               if(gm->op0->get_kind() == var_decl_K && GetPointer<var_decl>(gm->op0)->readonly_flag &&
+                  gm->op1->get_kind() == ssa_name_K)
                {
-                  GetPointer<var_decl>(GET_NODE(gm->op0))->readonly_flag = false;
+                  GetPointer<var_decl>(gm->op0)->readonly_flag = false;
                }
                recursive_analysis(gm->op0, srcp);
                recursive_analysis(gm->op1, srcp);
@@ -254,8 +254,8 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
          tree_nodeRef current = tn;
          while(current)
          {
-            recursive_analysis(GetPointer<tree_list>(GET_NODE(current))->valu, srcp);
-            current = GetPointer<tree_list>(GET_NODE(current))->chan;
+            recursive_analysis(GetPointer<tree_list>(current)->valu, srcp);
+            current = GetPointer<tree_list>(current)->chan;
          }
          break;
       }
@@ -459,7 +459,7 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
          {
             auto* sc = GetPointer<string_cst>(curr_tn);
             const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
-            const auto* type_sc = GetPointer<const type_node>(GET_NODE(sc->type));
+            const auto* type_sc = GetPointer<const type_node>(sc->type);
             const std::string local_var_name = "__bambu_artificial_var_string_cst_" + STR(GET_INDEX_NODE(tn));
             auto local_var_identifier = tree_man->create_identifier_node(local_var_name);
             auto global_scpe = tree_man->create_translation_unit_decl();

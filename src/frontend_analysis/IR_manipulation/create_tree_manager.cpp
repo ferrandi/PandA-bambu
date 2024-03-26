@@ -399,7 +399,7 @@ DesignFlowStep_Status create_tree_manager::Exec()
          }
          continue;
       }
-      const auto fd = GetPointer<function_decl>(GET_NODE(fnode));
+      const auto fd = GetPointer<function_decl>(fnode);
       for(auto& [attr, val] : arch->attrs)
       {
          if(attr == FunctionArchitecture::func_pipeline_style)

@@ -208,7 +208,7 @@ void Bit_Value::forward()
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                               "---Inputs not fully analyzed by the forward Bit Value Analysis. Operation  " +
-                                  GET_NODE(ga->op0)->ToString() + " postponed");
+                                  ga->op0->ToString() + " postponed");
                push_back(stmt_node);
             }
          }
@@ -305,7 +305,7 @@ void Bit_Value::forward()
                               "---current updated: " + bitstring_to_string(current.at(output_nid)));
                for(const auto& next_node : ssa->CGetUseStmts())
                {
-                  push_back(GET_NODE(next_node.first));
+                  push_back(next_node.first);
                }
             }
          }

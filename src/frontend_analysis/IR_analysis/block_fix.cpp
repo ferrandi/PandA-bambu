@@ -107,7 +107,7 @@ DesignFlowStep_Status BlockFix::InternalExec()
    const tree_managerRef TM = AppM->get_tree_manager();
    tree_nodeRef temp = TM->CGetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(temp);
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto* sl = GetPointer<statement_list>(fd->body);
 
    std::map<unsigned int, blocRef>& list_of_bloc = sl->list_of_bloc;
    std::map<unsigned int, blocRef>::iterator it3, it3_end = list_of_bloc.end();
@@ -144,21 +144,20 @@ DesignFlowStep_Status BlockFix::InternalExec()
    {
       for(const auto& statement : block.second->CGetStmtList())
       {
-         const auto* gg = GetPointer<const gimple_goto>(GET_NODE(statement));
+         const auto* gg = GetPointer<const gimple_goto>(statement);
          if(gg)
          {
-            THROW_ASSERT(gg->op and GetPointer<const label_decl>(GET_NODE(gg->op)),
-                         "Unexpexted condition :" + gg->ToString());
+            THROW_ASSERT(gg->op and GetPointer<const label_decl>(gg->op), "Unexpexted condition :" + gg->ToString());
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found a reachable label " + gg->op->ToString());
             reachable_labels.insert(GET_INDEX_NODE(gg->op));
          }
-         const auto gs = GetPointer<const gimple_switch>(GET_NODE(statement));
+         const auto gs = GetPointer<const gimple_switch>(statement);
          if(gs)
          {
-            for(const auto& vec_op : GetPointer<const tree_vec>(GET_NODE(gs->op1))->list_of_op)
+            for(const auto& vec_op : GetPointer<const tree_vec>(gs->op1)->list_of_op)
             {
-               const auto cle = GetPointer<const case_label_expr>(GET_NODE(vec_op));
-               if(cle->got and GetPointer<const label_decl>(GET_NODE(cle->got)))
+               const auto cle = GetPointer<const case_label_expr>(vec_op);
+               if(cle->got and GetPointer<const label_decl>(cle->got))
                {
                   reachable_labels.insert(cle->got->index);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -173,10 +172,10 @@ DesignFlowStep_Status BlockFix::InternalExec()
    {
       for(const auto& statement : block.second->CGetStmtList())
       {
-         const auto* gl = GetPointer<const gimple_label>(GET_NODE(statement));
+         const auto* gl = GetPointer<const gimple_label>(statement);
          if(gl)
          {
-            const auto* ld = GetPointer<const label_decl>(GET_NODE(gl->op));
+            const auto* ld = GetPointer<const label_decl>(gl->op);
             if(ld and reachable_labels.find(ld->index) == reachable_labels.end())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,

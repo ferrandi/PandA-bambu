@@ -135,7 +135,7 @@ DesignFlowStep_Status SplitReturn::InternalExec()
    const auto f_node = TM->CGetTreeNode(function_id);
    const auto ret_type = tree_helper::GetFunctionReturnType(f_node);
    const auto fd = GetPointerS<const function_decl>(f_node);
-   const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+   const auto sl = GetPointerS<statement_list>(fd->body);
 
    const auto create_return_and_fix_cfg = [&](const tree_nodeRef& new_gr, const blocRef& pred_block,
                                               const blocRef& curr_bb) -> void {
@@ -178,7 +178,7 @@ DesignFlowStep_Status SplitReturn::InternalExec()
          /// Fix gimple_multi_way_if
          if(pred_block->CGetStmtList().size())
          {
-            const auto pred_last_stmt = GET_NODE(pred_block->CGetStmtList().back());
+            const auto pred_last_stmt = pred_block->CGetStmtList().back();
             if(pred_last_stmt->get_kind() == gimple_multi_way_if_K)
             {
                const auto gmwi = GetPointerS<gimple_multi_way_if>(pred_last_stmt);
@@ -236,7 +236,7 @@ DesignFlowStep_Status SplitReturn::InternalExec()
                for(const auto& def_edge : gp->CGetDefEdgesList())
                {
                   const auto new_gr = tree_man->create_gimple_return(ret_type, gr->op, function_id, BUILTIN_SRCP);
-                  GetPointerS<gimple_return>(GET_NODE(new_gr))->AddVuse(def_edge.first);
+                  GetPointerS<gimple_return>(new_gr)->AddVuse(def_edge.first);
                   const auto& pred_block = sl->list_of_bloc.at(def_edge.second);
                   create_return_and_fix_cfg(new_gr, pred_block, bb);
                }

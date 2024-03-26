@@ -274,12 +274,12 @@ DesignFlowStep_Status CSE::InternalExec()
          {
             break;
          }
-         const auto eq_tn = hash_check(GET_NODE(stmt), bb, sl, unique_table);
+         const auto eq_tn = hash_check(stmt, bb, sl, unique_table);
          if(eq_tn)
          {
             const auto ref_ga = GetPointerS<gimple_assign>(eq_tn);
             const auto dead_ga = GetPointerS<const gimple_assign>(GET_CONST_NODE(stmt));
-            const auto ref_ssa = GetPointerS<ssa_name>(GET_NODE(ref_ga->op0));
+            const auto ref_ssa = GetPointerS<ssa_name>(ref_ga->op0);
             const auto dead_ssa = GetPointerS<const ssa_name>(GET_CONST_NODE(dead_ga->op0));
 
             if(ref_ssa->min)

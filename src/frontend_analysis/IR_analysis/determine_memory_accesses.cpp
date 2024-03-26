@@ -399,7 +399,7 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
                const auto vd = GetPointerS<const var_decl>(GET_CONST_NODE(ue->op));
                bool address_externally_used = false;
                function_behavior->add_function_mem(GET_INDEX_NODE(ue->op));
-               if((((!vd->scpe || GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K) && !vd->static_flag) ||
+               if((((!vd->scpe || vd->scpe->get_kind() == translation_unit_decl_K) && !vd->static_flag) ||
                    tree_helper::IsVolatile(tn)))
                {
                   if(parameters->isOption(OPT_expose_globals) && parameters->getOption<bool>(OPT_expose_globals))
@@ -518,8 +518,7 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
             {
                THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC,
                                 "determine_memory_accesses addressing currently not supported: " +
-                                    GET_NODE(ue->op)->get_kind_text() + " @" + STR(node_id) + " in function " +
-                                    function_name);
+                                    ue->op->get_kind_text() + " @" + STR(node_id) + " in function " + function_name);
             }
          }
          else if(tn_kind == view_convert_expr_K)
@@ -594,7 +593,7 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Static variable");
                         return true;
                      }
-                     if(!vd->scpe or GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K)
+                     if(!vd->scpe or vd->scpe->get_kind() == translation_unit_decl_K)
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not local");
                         return true;
@@ -609,7 +608,7 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Volatile");
                         return true;
                      }
-                     const auto type_kind = GET_NODE(vd->type)->get_kind();
+                     const auto type_kind = vd->type->get_kind();
                      /*
                       * TODO: the following if should look like this
                       *     if (type_kind == array_type_K or type_kind == record_type_K or type_kind == union_type_K)
@@ -793,7 +792,7 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
             function_behavior->set_unaligned_accesses(true);
          }
          const auto fd = GetPointer<function_decl>(GET_CONST_NODE(ae->op));
-         bool is_var_args_p = GetPointer<function_type>(GET_NODE(fd->type))->varargs_flag;
+         bool is_var_args_p = GetPointer<function_type>(fd->type)->varargs_flag;
          THROW_ASSERT(fd, "expected a function_decl");
          bool has_pointers_as_actual_parameters = false;
          for(const auto& arg : ce->args)
@@ -1037,7 +1036,7 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
             AppM->add_written_object(node_id);
          }
 
-         bool is_var_args_p = GetPointer<function_type>(GET_NODE(fd->type))->varargs_flag;
+         bool is_var_args_p = GetPointer<function_type>(fd->type)->varargs_flag;
          THROW_ASSERT(fd, "expected a function_decl");
          bool has_pointers_as_actual_parameters = false;
          for(const auto& arg : ce->args)
@@ -1301,8 +1300,8 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
       case parm_decl_K:
       {
          const auto pd = GetPointerS<const parm_decl>(tn);
-         if(GET_NODE(pd->type)->get_kind() == record_type_K || // records have to be allocated
-            GET_NODE(pd->type)->get_kind() == union_type_K     // unions have to be allocated
+         if(pd->type->get_kind() == record_type_K || // records have to be allocated
+            pd->type->get_kind() == union_type_K     // unions have to be allocated
          )
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -1323,8 +1322,8 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
       case result_decl_K:
       {
          const auto rd = GetPointerS<const result_decl>(tn);
-         if(GET_NODE(rd->type)->get_kind() == record_type_K || // records have to be allocated
-            GET_NODE(rd->type)->get_kind() == union_type_K     // unions have to be allocated
+         if(rd->type->get_kind() == record_type_K || // records have to be allocated
+            rd->type->get_kind() == union_type_K     // unions have to be allocated
          )
          {
             THROW_ERROR_CODE(C_EC, "structs or unions returned by copy are not yet supported: @" + STR(node_id) +
@@ -1352,8 +1351,8 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
          {
             THROW_ERROR_CODE(C_EC, "Extern symbols not yet supported " + behavioral_helper->PrintVariable(node_id));
          }
-         if(!vd->scpe || GET_NODE(vd->scpe)->get_kind() ==
-                             translation_unit_decl_K) // memory has to be allocated in case of global variables
+         if(!vd->scpe ||
+            vd->scpe->get_kind() == translation_unit_decl_K) // memory has to be allocated in case of global variables
          {
             function_behavior->add_function_mem(node_id);
             bool address_externally_used = false;
@@ -1396,11 +1395,11 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
          else
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Local variable");
-            THROW_ASSERT(GET_NODE(vd->scpe)->get_kind() != translation_unit_decl_K,
+            THROW_ASSERT(vd->scpe->get_kind() != translation_unit_decl_K,
                          "translation_unit_decl not expected a translation unit in this point @" + STR(node_id));
-            if(vd->static_flag ||             // memory has to be allocated in case of local static variables
-               tree_helper::IsVolatile(tn) || // volatile vars have to be allocated
-               GET_NODE(vd->type)->get_kind() == array_type_K || // arrays have to be allocated
+            if(vd->static_flag ||                      // memory has to be allocated in case of local static variables
+               tree_helper::IsVolatile(tn) ||          // volatile vars have to be allocated
+               vd->type->get_kind() == array_type_K || // arrays have to be allocated
                /*
                 * TODO: initially complexes were like structs and so they were allocated
                 * this should not happen anymore but removing the next line
@@ -1408,9 +1407,9 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& _tn, bool 
                 * components in the technology library.
                 * This issue should be further investigated.
                 */
-               GET_NODE(vd->type)->get_kind() == complex_type_K ||
-               GET_NODE(vd->type)->get_kind() == record_type_K || // records have to be allocated
-               GET_NODE(vd->type)->get_kind() == union_type_K)
+               vd->type->get_kind() == complex_type_K ||
+               vd->type->get_kind() == record_type_K || // records have to be allocated
+               vd->type->get_kind() == union_type_K)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---It has to be allocated");
                bool address_externally_used = false;

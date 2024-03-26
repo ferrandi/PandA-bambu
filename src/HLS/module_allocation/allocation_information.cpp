@@ -692,7 +692,7 @@ double AllocationInformation::GetStatementArea(const unsigned int statement_inde
       }
       else if(op1_kind == cond_expr_K || op1_kind == vec_cond_expr_K)
       {
-         THROW_ASSERT(tree_helper::Size(GetPointerS<const cond_expr>(GET_NODE(ga->op1))->op0) == 1,
+         THROW_ASSERT(tree_helper::Size(GetPointerS<const cond_expr>(ga->op1)->op0) == 1,
                       "Cond expr not allocated " + ga->op1->ToString());
          /// Computing time of cond_expr as time of cond_expr_FU - setup_time
          const auto data_bitsize = tree_helper::Size(ga->op0);
@@ -2061,9 +2061,9 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
          unsigned res = 0;
          auto tn = TreeM->CGetTreeNode(time_operation_index);
          const auto ga = GetPointer<const gimple_assign>(tn);
-         if(ga && GET_NODE(ga->op1)->get_kind() == lut_expr_K)
+         if(ga && ga->op1->get_kind() == lut_expr_K)
          {
-            auto le = GetPointer<lut_expr>(GET_NODE(ga->op1));
+            auto le = GetPointer<lut_expr>(ga->op1);
             if(le->op8)
             {
                res = 8;
@@ -2288,15 +2288,15 @@ double AllocationInformation::GetPhiConnectionLatency(const unsigned int stateme
          return 0;
       }
       const auto ga = GetPointer<const gimple_assign>(tn);
-      if(GET_NODE(ga->op0)->get_kind() != ssa_name_K)
+      if(ga->op0->get_kind() != ssa_name_K)
       {
          return 0;
       }
-      const auto sn = GetPointer<const ssa_name>(GET_NODE(ga->op0));
+      const auto sn = GetPointer<const ssa_name>(ga->op0);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing uses of " + sn->ToString());
       for(const auto& use : sn->CGetUseStmts())
       {
-         const auto target = GET_NODE(use.first);
+         const auto target = use.first;
          if(target->get_kind() == gimple_phi_K)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Phi: " + target->ToString());
@@ -3091,24 +3091,23 @@ CustomSet<unsigned int> AllocationInformation::ComputeRoots(const unsigned int s
             continue;
          }
          const auto current_sn_def = current_sn->CGetDefStmt();
-         if(cs.second == AbsControlStep::UNKNOWN &&
-            cs.first != GetPointer<const gimple_node>(GET_NODE(current_sn_def))->bb_index)
+         if(cs.second == AbsControlStep::UNKNOWN && cs.first != GetPointer<const gimple_node>(current_sn_def)->bb_index)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ignored since defined in different basic block");
             continue;
          }
-         const auto current_def_ga = GetPointer<const gimple_assign>(GET_NODE(current_sn_def));
+         const auto current_def_ga = GetPointer<const gimple_assign>(current_sn_def);
          if(not current_def_ga)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Adding as root " + current_sn->ToString());
             roots.insert(current_tn_index);
             continue;
          }
-         const auto be = GetPointer<const binary_expr>(GET_NODE(current_def_ga->op1));
+         const auto be = GetPointer<const binary_expr>(current_def_ga->op1);
          if(be &&
             (be->get_kind() == rshift_expr_K || be->get_kind() == lshift_expr_K || be->get_kind() == bit_and_expr_K))
          {
-            if(GET_NODE(be->op1)->get_kind() != integer_cst_K)
+            if(be->op1->get_kind() != integer_cst_K)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "<--Adding as root " + current_sn->ToString() +
@@ -3143,7 +3142,7 @@ CustomSet<unsigned int> AllocationInformation::ComputeRoots(const unsigned int s
             }
             continue;
          }
-         const auto ue = GetPointer<const unary_expr>(GET_NODE(current_def_ga->op1));
+         const auto ue = GetPointer<const unary_expr>(current_def_ga->op1);
          if(ue && (ue->get_kind() == truth_not_expr_K || ue->get_kind() == nop_expr_K))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Defined in not or nop");
@@ -3153,7 +3152,7 @@ CustomSet<unsigned int> AllocationInformation::ComputeRoots(const unsigned int s
             }
             continue;
          }
-         const auto ce = GetPointer<const cond_expr>(GET_NODE(current_def_ga->op1));
+         const auto ce = GetPointer<const cond_expr>(current_def_ga->op1);
          if(ce)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Defined in cond expr");
@@ -3217,17 +3216,17 @@ CustomSet<unsigned int> AllocationInformation::ComputeDrivenCondExpr(const unsig
          for(const auto& use_stmt : current_sn->CGetUseStmts())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering use in " + STR(use_stmt.first));
-            if(GET_NODE(use_stmt.first)->get_kind() != gimple_assign_K)
+            if(use_stmt.first->get_kind() != gimple_assign_K)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipping since not gimple assignment");
                continue;
             }
-            const auto current_use_ga = GetPointer<const gimple_assign>(GET_NODE(use_stmt.first));
-            const auto be = GetPointer<const binary_expr>(GET_NODE(current_use_ga->op1));
+            const auto current_use_ga = GetPointer<const gimple_assign>(use_stmt.first);
+            const auto be = GetPointer<const binary_expr>(current_use_ga->op1);
             if(be &&
                (be->get_kind() == rshift_expr_K || be->get_kind() == lshift_expr_K || be->get_kind() == bit_and_expr_K))
             {
-               if(GET_NODE(be->op1)->get_kind() != integer_cst_K)
+               if(be->op1->get_kind() != integer_cst_K)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "<--Used in a shift by a variable or in an and with a variable");
@@ -3256,7 +3255,7 @@ CustomSet<unsigned int> AllocationInformation::ComputeDrivenCondExpr(const unsig
                }
                continue;
             }
-            const auto ue = GetPointer<const unary_expr>(GET_NODE(current_use_ga->op1));
+            const auto ue = GetPointer<const unary_expr>(current_use_ga->op1);
             if(ue && ue->get_kind() == truth_not_expr_K)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Used in not");
@@ -3275,9 +3274,9 @@ CustomSet<unsigned int> AllocationInformation::ComputeDrivenCondExpr(const unsig
                }
                continue;
             }
-            if(GET_NODE(current_use_ga->op1)->get_kind() == cond_expr_K)
+            if(current_use_ga->op1->get_kind() == cond_expr_K)
             {
-               const auto ce = GetPointer<const cond_expr>(GET_NODE(current_use_ga->op1));
+               const auto ce = GetPointer<const cond_expr>(current_use_ga->op1);
                if(ce->op0->index != current_tn_index)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -3395,7 +3394,7 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
                          STR(second_operation));
       for(const auto& used_ssa : tree_helper::ComputeSsaUses(TreeM->CGetTreeNode(second_operation)))
       {
-         const auto used_ssa_sn = GetPointer<const ssa_name>(GET_NODE(used_ssa.first));
+         const auto used_ssa_sn = GetPointer<const ssa_name>(used_ssa.first);
          if(used_ssa_sn && used_ssa_sn->CGetDefStmt()->index == first_operation)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Transferred data is " + STR(used_ssa.first));
@@ -3411,7 +3410,7 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
                for(const auto cond_expr_ga_index : cond_expr_ga_indices)
                {
                   const auto current_ga = GetPointer<const gimple_assign>(TreeM->CGetTreeNode(cond_expr_ga_index));
-                  const auto cond_def_sn = GetPointer<const ssa_name>(GET_NODE(current_ga->op0));
+                  const auto cond_def_sn = GetPointer<const ssa_name>(current_ga->op0);
                   const auto local_fo = tree_helper::Size(current_ga->op0) * cond_def_sn->CGetNumberUses();
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Incrementing fan out of " + STR(local_fo) + " because of " +

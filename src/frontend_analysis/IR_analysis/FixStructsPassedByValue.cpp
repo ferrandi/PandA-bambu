@@ -71,7 +71,7 @@ static bool cannot_have_struct_parameters(const function_decl* const fd, const f
       // if the function_type takes void argument there's nothing to do
       THROW_ASSERT(fd->list_of_args.empty(), "function " + tree_helper::GetMangledFunctionName(fd) +
                                                  " has void parameter type but has a parm_decl " +
-                                                 STR(GET_NODE(fd->list_of_args.front())));
+                                                 STR(fd->list_of_args.front()));
       return true;
    }
    if(p_type_head && fd->list_of_args.empty())
@@ -207,10 +207,10 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                   for(const auto& stmt : block.second->CGetStmtList())
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "-->Examining statement " + GET_NODE(stmt)->ToString());
+                                    "-->Examining statement " + stmt->ToString());
                      TM->ReplaceTreeNode(stmt, p_decl, new_local_var_decl);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "<--Examined statement " + GET_NODE(stmt)->ToString());
+                                    "<--Examined statement " + stmt->ToString());
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined BB" + STR(block.first));
                }
@@ -228,8 +228,8 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "-->Substituting type of parameter " + STR(p_decl));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Changing type from " + STR(p_type) + " to " + STR(GET_NODE(ptr_type)));
-               GetPointerS<tree_list>(GET_NODE(p_type_head))->valu = ptr_type;
+                              "---Changing type from " + STR(p_type) + " to " + STR(ptr_type));
+               GetPointerS<tree_list>(p_type_head)->valu = ptr_type;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "<--Substituted type of parameter " + STR(p_decl));
             }
@@ -255,10 +255,10 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                   }
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Changing parm_decl from " + STR(p_decl) + " to " + STR(GET_NODE(ptr_p_decl)));
+                              "---Changing parm_decl from " + STR(p_decl) + " to " + STR(ptr_p_decl));
                *p_decl_it = ptr_p_decl;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "<--Substituted parm_decl of " + STR(p_decl) + " with " + STR(GET_NODE(*p_decl_it)));
+                              "<--Substituted parm_decl of " + STR(p_decl) + " with " + STR(*p_decl_it));
             }
 
             /*
@@ -295,7 +295,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                 // sizeof(var_decl)
                 TM->CreateUniqueIntegerCst(static_cast<long long>(ptd_type_size), formal_type_node)};
             const auto gimple_call_memcpy = tree_man->create_gimple_call(memcpy_function, args, function_id, srcp);
-            auto gn = GetPointer<gimple_node>(GET_NODE(gimple_call_memcpy));
+            auto gn = GetPointer<gimple_node>(gimple_call_memcpy);
             /*
              * the call is artificial. this is necessary because this memcpy
              * should not be moved around by code motion or other steps. this
@@ -309,7 +309,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
              */
             gn->artificial = true;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "<--Created new call to memcpy: " + STR(GET_NODE(gimple_call_memcpy)));
+                           "<--Created new call to memcpy: " + STR(gimple_call_memcpy));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Updating basic block");
             first_block->PushFront(gimple_call_memcpy, AppM);
             changed = true;
@@ -332,8 +332,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
          for(const auto& stmt : block.second->CGetStmtList())
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "-->Examining statement " + GET_NODE(stmt)->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + stmt->ToString());
             const auto gn = GetPointer<const gimple_node>(GET_CONST_NODE(stmt));
             const auto srcp_default = gn->include_name + ":" + STR(gn->line_number) + ":" + STR(gn->column_number);
             const auto stmt_kind = GET_CONST_NODE(stmt)->get_kind();
@@ -354,15 +353,15 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                      continue;
                   }
 
-                  auto ce = GetPointer<call_expr>(GET_NODE(ga->op1));
-                  called_node = GET_NODE(ce->fn);
+                  auto ce = GetPointer<call_expr>(ga->op1);
+                  called_node = ce->fn;
                   arguments = &ce->args;
                   call_tree_node_id = ce->index;
                }
-               else // GET_NODE(stmt)->get_kind() == gimple_call_K
+               else // stmt->get_kind() == gimple_call_K
                {
-                  auto gc = GetPointer<gimple_call>(GET_NODE(stmt));
-                  called_node = GET_NODE(gc->fn);
+                  auto gc = GetPointer<gimple_call>(stmt);
+                  called_node = gc->fn;
                   arguments = &gc->args;
                   call_tree_node_id = gc->index;
                }
@@ -412,7 +411,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                         auto new_ga_node =
                             tree_man->CreateGimpleAssignAddrExpr(actual_argument_node, function_id, srcp_default);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---Changing parameter: creating pointer " + STR(GET_NODE(new_ga_node)));
+                                       "---Changing parameter: creating pointer " + STR(new_ga_node));
                         block.second->PushBefore(new_ga_node, stmt, AppM);
                         const auto new_ga = GetPointer<const gimple_assign>(GET_CONST_NODE(new_ga_node));
                         arguments->at(param_n) = new_ga->op0;
@@ -424,14 +423,13 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "<--Analyzed indirect call to ssa " + called_ssa_name);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "<--Examined statement " + GET_NODE(stmt)->ToString());
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + stmt->ToString());
                   continue;
                }
                THROW_ASSERT(called_node->get_kind() == addr_expr_K,
                             "called_node = " + STR(called_node) + " is a " + called_node->get_kind_text());
                const auto ae = GetPointer<const addr_expr>(called_node);
-               const auto called_fu_decl_node = GET_NODE(ae->op);
+               const auto called_fu_decl_node = ae->op;
                THROW_ASSERT(called_fu_decl_node->get_kind() == function_decl_K,
                             "node  " + STR(called_fu_decl_node) + " is not function_decl but " +
                                 called_fu_decl_node->get_kind_text());
@@ -500,7 +498,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                      const auto new_ga_node =
                          tree_man->CreateGimpleAssignAddrExpr(actual_argument_node, function_id, srcp_default);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---Changing parameter: creating pointer " + STR(GET_NODE(new_ga_node)));
+                                    "---Changing parameter: creating pointer " + STR(new_ga_node));
                      block.second->PushBefore(new_ga_node, stmt, AppM);
                      const auto* new_ga = GetPointer<const gimple_assign>(GET_CONST_NODE(new_ga_node));
                      arguments->at(param_n) = new_ga->op0;
@@ -510,8 +508,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                                  "<--Analyzed parameter " + STR(p_decl) + " with type " + STR(p_type));
                }
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "<--Examined statement " + GET_NODE(stmt)->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + stmt->ToString());
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined BB" + STR(block.first));
       }

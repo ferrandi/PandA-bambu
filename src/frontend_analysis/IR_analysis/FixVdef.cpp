@@ -147,8 +147,8 @@ DesignFlowStep_Status FixVdef::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(block.first));
       for(const auto& s : block.second->CGetStmtList())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing statement " + GET_NODE(s)->ToString());
-         const auto gn = GetPointerS<gimple_node>(GET_NODE(s));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing statement " + s->ToString());
+         const auto gn = GetPointerS<gimple_node>(s);
          if(isSingleMem)
          {
             gn->vdef = gn->memdef;

@@ -388,9 +388,8 @@ void memory_allocation::finalize_memory_allocation()
                parameters->getOption<bool>(OPT_expose_globals))
             {
                const auto vd = GetPointer<const var_decl>(GET_CONST_NODE(var));
-               if(vd &&
-                  (((!vd->scpe || GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K) && !vd->static_flag) ||
-                   tree_helper::IsVolatile(var) || call_graph_manager->ExistsAddressedFunction()))
+               if(vd && (((!vd->scpe || vd->scpe->get_kind() == translation_unit_decl_K) && !vd->static_flag) ||
+                         tree_helper::IsVolatile(var) || call_graph_manager->ExistsAddressedFunction()))
                {
                   has_intern_shared_data =
                       true; /// an external component can access the var possibly (global and volatile vars)

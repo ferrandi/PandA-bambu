@@ -213,7 +213,7 @@ tree_nodeRef tree_manipulation::create_unary_operation(const tree_nodeConstRef& 
 
    const auto tn = TreeM->create_tree_node(node_nid, operation_kind, IR_schema);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + GET_NODE(tn)->get_kind_text() + ")");
+                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + tn->get_kind_text() + ")");
    return tn;
 }
 
@@ -344,7 +344,7 @@ tree_nodeRef tree_manipulation::create_binary_operation(const tree_nodeConstRef&
 
    const auto tn = TreeM->create_tree_node(node_nid, operation_kind, IR_schema);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + GET_NODE(tn)->get_kind_text() + ")");
+                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + tn->get_kind_text() + ")");
    return tn;
 }
 
@@ -480,7 +480,7 @@ tree_nodeRef tree_manipulation::create_ternary_operation(const tree_nodeConstRef
 
    const auto tn = TreeM->create_tree_node(node_nid, operation_kind, IR_schema);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + GET_NODE(tn)->get_kind_text() + ")");
+                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + tn->get_kind_text() + ")");
    return tn;
 }
 
@@ -603,7 +603,7 @@ tree_nodeRef tree_manipulation::create_quaternary_operation(const tree_nodeConst
 
    const auto tn = TreeM->create_tree_node(node_nid, operation_kind, IR_schema);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + GET_NODE(tn)->get_kind_text() + ")");
+                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + tn->get_kind_text() + ")");
    return tn;
 }
 
@@ -653,7 +653,7 @@ tree_nodeRef tree_manipulation::create_lut_expr(const tree_nodeConstRef& type, c
 
    const auto tn = TreeM->create_tree_node(node_nid, lut_expr_K, IR_schema);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + GET_NODE(tn)->get_kind_text() + ")");
+                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + tn->get_kind_text() + ")");
    return tn;
 }
 
@@ -672,7 +672,7 @@ tree_nodeRef tree_manipulation::create_extract_bit_expr(const tree_nodeRef& op0,
 
    const auto tn = TreeM->create_tree_node(node_nid, extract_bit_expr_K, IR_schema);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + GET_NODE(tn)->get_kind_text() + ")");
+                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + tn->get_kind_text() + ")");
    return tn;
 }
 /// CONST_OBJ_TREE_NODES
@@ -693,15 +693,14 @@ tree_nodeRef tree_manipulation::CreateIntegerCst(const tree_nodeConstRef& type, 
    // {
    node_ref = TreeM->create_tree_node(integer_cst_nid, integer_cst_K, IR_schema);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(node_ref)) + " (" + GET_NODE(node_ref)->get_kind_text() +
-                     ")");
+                 "Created node " + STR(GET_INDEX_CONST_NODE(node_ref)) + " (" + node_ref->get_kind_text() + ")");
    // }
    // else
    // {
    //    node_ref = TreeM->GetTreeNode(node_nid);
    //    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
    //                  "Found   node " + STR(GET_INDEX_CONST_NODE(node_ref)) + " (" +
-   //                  GET_NODE(node_ref)->get_kind_text() + ")");
+   //                  node_ref->get_kind_text() + ")");
    // }
    return node_ref;
 }
@@ -725,15 +724,15 @@ tree_nodeRef tree_manipulation::create_identifier_node(const std::string& strg) 
       node_nid = this->TreeM->new_tree_node_id();
       node_ref = TreeM->create_tree_node(node_nid, identifier_node_K, IR_schema);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Created node " + STR(GET_INDEX_CONST_NODE(node_ref)) + " (" + GET_NODE(node_ref)->get_kind_text() +
-                        " " + strg + ")");
+                    "Created node " + STR(GET_INDEX_CONST_NODE(node_ref)) + " (" + node_ref->get_kind_text() + " " +
+                        strg + ")");
    }
    else
    {
       node_ref = TreeM->GetTreeNode(node_nid);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Found   node " + STR(GET_INDEX_CONST_NODE(node_ref)) + " (" + GET_NODE(node_ref)->get_kind_text() +
-                        " " + strg + ")");
+                    "Found   node " + STR(GET_INDEX_CONST_NODE(node_ref)) + " (" + node_ref->get_kind_text() + " " +
+                        strg + ")");
    }
    return node_ref;
 }
@@ -786,7 +785,7 @@ tree_nodeRef tree_manipulation::create_var_decl(
 
    const auto tn = TreeM->create_tree_node(node_nid, var_decl_K, IR_schema);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + GET_NODE(tn)->get_kind_text() + ")");
+                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + tn->get_kind_text() + ")");
    return tn;
 }
 
@@ -803,14 +802,14 @@ tree_nodeRef tree_manipulation::create_translation_unit_decl() const
           TreeM->create_tree_node(translation_unit_decl_nid, translation_unit_decl_K, IR_schema);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                     "Created node " + STR(GET_INDEX_CONST_NODE(translation_unit_decl_node)) + " (" +
-                        GET_NODE(translation_unit_decl_node)->get_kind_text() + ")");
+                        translation_unit_decl_node->get_kind_text() + ")");
    }
    else
    {
       translation_unit_decl_node = TreeM->GetTreeNode(translation_unit_decl_nid);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                     "Found   node " + STR(GET_INDEX_CONST_NODE(translation_unit_decl_node)) + " (" +
-                        GET_NODE(translation_unit_decl_node)->get_kind_text() + ")");
+                        translation_unit_decl_node->get_kind_text() + ")");
    }
    return translation_unit_decl_node;
 }
@@ -851,7 +850,7 @@ tree_nodeRef tree_manipulation::create_result_decl(const tree_nodeRef& name, con
 
    const auto tn = TreeM->create_tree_node(node_nid, result_decl_K, IR_schema);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + GET_NODE(tn)->get_kind_text() + ")");
+                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + tn->get_kind_text() + ")");
    return tn;
 }
 
@@ -935,15 +934,15 @@ tree_nodeRef tree_manipulation::GetVoidType() const
       void_node = TreeM->create_tree_node(type_decl_nid, type_decl_K, IR_schema);
       tree_reindex_remove(*TreeM).operator()(vt);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Created node " + STR(GET_INDEX_CONST_NODE(void_node)) + " (" +
-                        GET_NODE(void_node)->get_kind_text() + " void)");
+                    "Created node " + STR(GET_INDEX_CONST_NODE(void_node)) + " (" + void_node->get_kind_text() +
+                        " void)");
    }
    else
    {
       void_node = TreeM->GetTreeNode(void_type_nid);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Found   node " + STR(GET_INDEX_CONST_NODE(void_node)) + " (" +
-                        GET_NODE(void_node)->get_kind_text() + " void)");
+                    "Found   node " + STR(GET_INDEX_CONST_NODE(void_node)) + " (" + void_node->get_kind_text() +
+                        " void)");
    }
    return void_node;
 }
@@ -987,8 +986,8 @@ tree_nodeRef tree_manipulation::GetBitsizeType() const
       IR_schema[TOK(TOK_MAX)] = STR(max_node_nid);
       bit_size_node = TreeM->create_tree_node(bit_size_type_nid, integer_type_K, IR_schema);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Created node " + STR(GET_INDEX_CONST_NODE(bit_size_node)) + " (" +
-                        GET_NODE(bit_size_node)->get_kind_text() + " bit_size)");
+                    "Created node " + STR(GET_INDEX_CONST_NODE(bit_size_node)) + " (" + bit_size_node->get_kind_text() +
+                        " bit_size)");
 
       ///@33    integer_cst      type: @18      low : 64
       CreateIntegerCst(bit_size_node, SIZE_VALUE_BIT_SIZE, size_node_nid);
@@ -1005,8 +1004,8 @@ tree_nodeRef tree_manipulation::GetBitsizeType() const
    {
       bit_size_node = TreeM->GetTreeNode(bit_size_type_nid);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Found   node " + STR(GET_INDEX_CONST_NODE(bit_size_node)) + " (" +
-                        GET_NODE(bit_size_node)->get_kind_text() + " bit_size)");
+                    "Found   node " + STR(GET_INDEX_CONST_NODE(bit_size_node)) + " (" + bit_size_node->get_kind_text() +
+                        " bit_size)");
    }
    return bit_size_node;
 }
@@ -1055,8 +1054,8 @@ tree_nodeRef tree_manipulation::GetSizeType() const
       IR_schema[TOK(TOK_MAX)] = STR(max_node_nid);
       size_node = TreeM->create_tree_node(size_type_nid, integer_type_K, IR_schema);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Created node " + STR(GET_INDEX_CONST_NODE(size_node)) + " (" +
-                        GET_NODE(size_node)->get_kind_text() + " bit_size)");
+                    "Created node " + STR(GET_INDEX_CONST_NODE(size_node)) + " (" + size_node->get_kind_text() +
+                        " bit_size)");
 
       ///@34    integer_cst      type: @18      low : 0
       CreateIntegerCst(size_node, integer_cst_t(MIN_VALUE_BIT_SIZE), min_node_nid);
@@ -1070,8 +1069,8 @@ tree_nodeRef tree_manipulation::GetSizeType() const
    {
       size_node = TreeM->GetTreeNode(size_type_nid);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Found   node " + STR(GET_INDEX_CONST_NODE(size_node)) + " (" +
-                        GET_NODE(size_node)->get_kind_text() + " bit_size)");
+                    "Found   node " + STR(GET_INDEX_CONST_NODE(size_node)) + " (" + size_node->get_kind_text() +
+                        " bit_size)");
    }
    return size_node;
 }
@@ -1119,7 +1118,7 @@ tree_nodeRef tree_manipulation::GetBooleanType() const
       tree_reindex_remove(*TreeM).operator()(td);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                     "Created node " + STR(GET_INDEX_CONST_NODE(boolean_type_node)) + " (" +
-                        GET_NODE(boolean_type_node)->get_kind_text() + " boolean)");
+                        boolean_type_node->get_kind_text() + " boolean)");
    }
    else
    {
@@ -1137,7 +1136,7 @@ tree_nodeRef tree_manipulation::GetBooleanType() const
       boolean_type_node = TreeM->GetTreeNode(boolean_type_nid);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                     "Found   node " + STR(GET_INDEX_CONST_NODE(boolean_type_node)) + " (" +
-                        GET_NODE(boolean_type_node)->get_kind_text() + " boolean)");
+                        boolean_type_node->get_kind_text() + " boolean)");
    }
    return boolean_type_node;
 }
@@ -1198,7 +1197,7 @@ tree_nodeRef tree_manipulation::GetUnsignedIntegerType() const
       trr(td);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                     "Created node " + STR(GET_INDEX_CONST_NODE(integer_type_node)) + " (" +
-                        GET_NODE(integer_type_node)->get_kind_text() + " unsigned_int)");
+                        integer_type_node->get_kind_text() + " unsigned_int)");
 
       ///@21     integer_cst      type: @8       low : 0
       CreateIntegerCst(integer_type_node, MIN_VALUE_UNSIGNED_INT, min_node_nid);
@@ -1224,7 +1223,7 @@ tree_nodeRef tree_manipulation::GetUnsignedIntegerType() const
       integer_type_node = TreeM->GetTreeNode(integer_type_nid);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                     "Found   node " + STR(GET_INDEX_CONST_NODE(integer_type_node)) + " (" +
-                        GET_NODE(integer_type_node)->get_kind_text() + " unsigned int)");
+                        integer_type_node->get_kind_text() + " unsigned int)");
    }
    return integer_type_node;
 }
@@ -1269,7 +1268,7 @@ tree_nodeRef tree_manipulation::GetUnsignedLongLongType() const
       trr(td);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                     "Created node " + STR(GET_INDEX_CONST_NODE(integer_type_node)) + " (" +
-                        GET_NODE(integer_type_node)->get_kind_text() + " unsigned long long int int)");
+                        integer_type_node->get_kind_text() + " unsigned long long int int)");
 
       ///@21     integer_cst      type: @8       low : 0
       CreateIntegerCst(integer_type_node, integer_cst_t(MIN_VALUE_UNSIGNED_LONG_LONG_INT), min_node_nid);
@@ -1295,7 +1294,7 @@ tree_nodeRef tree_manipulation::GetUnsignedLongLongType() const
       integer_type_node = TreeM->GetTreeNode(integer_type_nid);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "Found  node " + STR(GET_INDEX_CONST_NODE(integer_type_node)) + " (" +
-                         GET_NODE(integer_type_node)->get_kind_text() + " unsigned long long int)");
+                         integer_type_node->get_kind_text() + " unsigned long long int)");
    }
    return integer_type_node;
 }
@@ -1358,7 +1357,7 @@ tree_nodeRef tree_manipulation::GetSignedIntegerType() const
       trr(td);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                     "Created node " + STR(GET_INDEX_CONST_NODE(integer_type_node)) + " (" +
-                        GET_NODE(integer_type_node)->get_kind_text() + " int)");
+                        integer_type_node->get_kind_text() + " int)");
 
       ///@20     integer_cst      type: @8       high: -1  low : -2147483648
       CreateIntegerCst(integer_type_node, MIN_VALUE_INT, min_node_nid);
@@ -1386,7 +1385,7 @@ tree_nodeRef tree_manipulation::GetSignedIntegerType() const
 
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                     "Found   node " + STR(GET_INDEX_CONST_NODE(integer_type_node)) + " (" +
-                        GET_NODE(integer_type_node)->get_kind_text() + " int)");
+                        integer_type_node->get_kind_text() + " int)");
    }
    return integer_type_node;
 }
@@ -1458,11 +1457,11 @@ tree_nodeRef tree_manipulation::GetCustomIntegerType(unsigned long long prec, bo
 
       tree_reindex_remove(*TreeM).operator()(integer_type_node);
 
-      if(auto& it_name = GetPointerS<integer_type>(GET_NODE(integer_type_node))->name)
+      if(auto& it_name = GetPointerS<integer_type>(integer_type_node)->name)
       {
-         if(GET_NODE(it_name)->get_kind() == identifier_node_K)
+         if(it_name->get_kind() == identifier_node_K)
          {
-            auto in = GetPointerS<identifier_node>(GET_NODE(it_name));
+            auto in = GetPointerS<identifier_node>(it_name);
             if(in->strg == "sizetype")
             {
                it_name = create_identifier_node("unsigned long");
@@ -1695,8 +1694,7 @@ tree_nodeRef tree_manipulation::create_gimple_cond(const tree_nodeRef& expr, uns
    IR_schema[TOK(TOK_SRCP)] = srcp;
    const auto node_ref = TreeM->create_tree_node(gimple_cond_name_nid, gimple_cond_K, IR_schema);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(node_ref)) + " (" + GET_NODE(node_ref)->get_kind_text() +
-                     ")");
+                 "Created node " + STR(GET_INDEX_CONST_NODE(node_ref)) + " (" + node_ref->get_kind_text() + ")");
    return node_ref;
 }
 
@@ -1728,7 +1726,7 @@ tree_nodeRef tree_manipulation::create_gimple_return(const tree_nodeConstRef& ty
    const auto node_nid = TreeM->new_tree_node_id();
    const auto node_ref = TreeM->create_tree_node(node_nid, gimple_return_K, IR_schema);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(node_nid) + " (" + GET_NODE(node_ref)->get_kind_text() + ")");
+                 "Created node " + STR(node_nid) + " (" + node_ref->get_kind_text() + ")");
    return node_ref;
 }
 
@@ -1742,14 +1740,14 @@ tree_manipulation::create_phi_node(tree_nodeRef& ssa_res,
 {
    auto iterator = list_of_def_edge.begin();
    tree_nodeRef ssa_ref = iterator->first;
-   auto* sn_ref = GetPointer<ssa_name>(GET_NODE(ssa_ref));
+   auto* sn_ref = GetPointer<ssa_name>(ssa_ref);
    for(++iterator; iterator != list_of_def_edge.end(); ++iterator)
    {
       tree_nodeRef tn = iterator->first;
-      if(!sn_ref && GetPointer<ssa_name>(GET_NODE(tn)))
+      if(!sn_ref && GetPointer<ssa_name>(tn))
       {
          ssa_ref = tn;
-         sn_ref = GetPointer<ssa_name>(GET_NODE(ssa_ref));
+         sn_ref = GetPointer<ssa_name>(ssa_ref);
       }
    }
    if(sn_ref)
@@ -1774,7 +1772,7 @@ tree_manipulation::create_phi_node(tree_nodeRef& ssa_res,
    IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    const auto phi_stmt = TreeM->create_tree_node(phi_node_nid, gimple_phi_K, IR_schema);
 
-   auto* pn = GetPointer<gimple_phi>(GET_NODE(phi_stmt));
+   auto* pn = GetPointer<gimple_phi>(phi_stmt);
    pn->virtual_flag = virtual_flag;
 
    for(const auto& def_edge : list_of_def_edge)
@@ -1789,8 +1787,7 @@ tree_manipulation::create_phi_node(tree_nodeRef& ssa_res,
    }
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(phi_stmt)) + " (" + GET_NODE(phi_stmt)->get_kind_text() +
-                     ")");
+                 "Created node " + STR(GET_INDEX_CONST_NODE(phi_stmt)) + " (" + phi_stmt->get_kind_text() + ")");
    return phi_stmt;
 }
 
@@ -1837,7 +1834,7 @@ tree_nodeRef tree_manipulation::create_function_decl(const std::string& function
    IR_schema.clear();
 
    /// add parm_decl to the function_decl
-   auto fd = GetPointerS<function_decl>(GET_NODE(function_decl_res));
+   auto fd = GetPointerS<function_decl>(function_decl_res);
    unsigned int Pindex = 0;
    for(const auto& par_type : argsT)
    {
@@ -1852,7 +1849,7 @@ tree_nodeRef tree_manipulation::create_function_decl(const std::string& function
    {
       fd->undefined_flag = true;
    }
-   TreeM->add_function(function_decl_id, GET_NODE(function_decl_res));
+   TreeM->add_function(function_decl_id, function_decl_res);
    return function_decl_res;
 }
 
@@ -1864,17 +1861,17 @@ tree_nodeRef tree_manipulation::CreateOrExpr(const tree_nodeConstRef& first_cond
    {
       for(const auto& statement : block->CGetStmtList())
       {
-         const auto ga = GetPointer<const gimple_assign>(GET_NODE(statement));
+         const auto ga = GetPointer<const gimple_assign>(statement);
          if(ga)
          {
-            const auto toe = GetPointer<const truth_or_expr>(GET_NODE(ga->op1));
+            const auto toe = GetPointer<const truth_or_expr>(ga->op1);
             if(toe and ((GET_INDEX_CONST_NODE(toe->op0) == GET_INDEX_CONST_NODE(first_condition) and
                          GET_INDEX_CONST_NODE(toe->op1) == GET_INDEX_CONST_NODE(second_condition)) or
                         (GET_INDEX_CONST_NODE(toe->op0) == GET_INDEX_CONST_NODE(second_condition) and
                          GET_INDEX_CONST_NODE(toe->op1) == GET_INDEX_CONST_NODE(first_condition))))
             {
-               THROW_ASSERT(GET_NODE(ga->op0)->get_kind() == ssa_name_K, "unexpected condition");
-               auto ssa0 = GetPointerS<ssa_name>(GET_NODE(ga->op0));
+               THROW_ASSERT(ga->op0->get_kind() == ssa_name_K, "unexpected condition");
+               auto ssa0 = GetPointerS<ssa_name>(ga->op0);
                ssa0->bit_values = "U";
                return ga->op0;
             }
@@ -1898,7 +1895,7 @@ tree_nodeRef tree_manipulation::CreateOrExpr(const tree_nodeConstRef& first_cond
    {
       block->PushBack(ga, AppM);
    }
-   return GetPointer<gimple_assign>(GET_NODE(ga))->op0;
+   return GetPointer<gimple_assign>(ga)->op0;
 }
 
 tree_nodeRef tree_manipulation::CreateAndExpr(const tree_nodeConstRef& first_condition,
@@ -1909,17 +1906,17 @@ tree_nodeRef tree_manipulation::CreateAndExpr(const tree_nodeConstRef& first_con
    {
       for(const auto& statement : block->CGetStmtList())
       {
-         const auto ga = GetPointer<const gimple_assign>(GET_NODE(statement));
+         const auto ga = GetPointer<const gimple_assign>(statement);
          if(ga)
          {
-            const auto toe = GetPointer<const truth_and_expr>(GET_NODE(ga->op1));
+            const auto toe = GetPointer<const truth_and_expr>(ga->op1);
             if(toe and ((GET_INDEX_CONST_NODE(toe->op0) == GET_INDEX_CONST_NODE(first_condition) and
                          GET_INDEX_CONST_NODE(toe->op1) == GET_INDEX_CONST_NODE(second_condition)) or
                         (GET_INDEX_CONST_NODE(toe->op0) == GET_INDEX_CONST_NODE(second_condition) and
                          GET_INDEX_CONST_NODE(toe->op1) == GET_INDEX_CONST_NODE(first_condition))))
             {
-               THROW_ASSERT(GET_NODE(ga->op0)->get_kind() == ssa_name_K, "unexpected condition");
-               auto ssa0 = GetPointerS<ssa_name>(GET_NODE(ga->op0));
+               THROW_ASSERT(ga->op0->get_kind() == ssa_name_K, "unexpected condition");
+               auto ssa0 = GetPointerS<ssa_name>(ga->op0);
                ssa0->bit_values = "U";
                return ga->op0;
             }
@@ -1942,7 +1939,7 @@ tree_nodeRef tree_manipulation::CreateAndExpr(const tree_nodeConstRef& first_con
    {
       block->PushBack(ga, AppM);
    }
-   return GetPointer<gimple_assign>(GET_NODE(ga))->op0;
+   return GetPointer<gimple_assign>(ga)->op0;
 }
 
 tree_nodeRef tree_manipulation::CreateNotExpr(const tree_nodeConstRef& condition, const blocRef& block,
@@ -1952,14 +1949,14 @@ tree_nodeRef tree_manipulation::CreateNotExpr(const tree_nodeConstRef& condition
    {
       for(const auto& statement : block->CGetStmtList())
       {
-         const auto ga = GetPointer<const gimple_assign>(GET_NODE(statement));
+         const auto ga = GetPointer<const gimple_assign>(statement);
          if(ga)
          {
-            const auto tne = GetPointer<const truth_not_expr>(GET_NODE(ga->op1));
+            const auto tne = GetPointer<const truth_not_expr>(ga->op1);
             if(tne and GET_INDEX_CONST_NODE(tne->op) == GET_INDEX_CONST_NODE(condition))
             {
-               THROW_ASSERT(GET_NODE(ga->op0)->get_kind() == ssa_name_K, "unexpected condition");
-               auto ssa0 = GetPointerS<ssa_name>(GET_NODE(ga->op0));
+               THROW_ASSERT(ga->op0->get_kind() == ssa_name_K, "unexpected condition");
+               auto ssa0 = GetPointerS<ssa_name>(ga->op0);
                ssa0->bit_values = "U";
                return ga->op0;
             }
@@ -1981,7 +1978,7 @@ tree_nodeRef tree_manipulation::CreateNotExpr(const tree_nodeConstRef& condition
    {
       block->PushBack(ga, AppM);
    }
-   return GetPointer<gimple_assign>(GET_NODE(ga))->op0;
+   return GetPointer<gimple_assign>(ga)->op0;
 }
 
 tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef& condition, const blocRef& block,
@@ -1993,7 +1990,7 @@ tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef& condition, 
    const auto gc = GetPointer<const gimple_cond>(GET_CONST_NODE(condition));
    THROW_ASSERT(gc, "Trying to extract condition from " + condition->ToString());
    if(tree_helper::IsBooleanType(gc->op0) &&
-      (GET_NODE(gc->op0)->get_kind() == ssa_name_K || GetPointer<const cst_node>(GET_CONST_NODE(gc->op0)) != nullptr))
+      (gc->op0->get_kind() == ssa_name_K || GetPointer<const cst_node>(GET_CONST_NODE(gc->op0)) != nullptr))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "<--Condition already available as " + gc->op0->ToString());
@@ -2009,8 +2006,8 @@ tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef& condition, 
             if(ga && GET_INDEX_CONST_NODE(ga->op1) == GET_INDEX_CONST_NODE(condition) &&
                tree_helper::IsBooleanType(ga->op0))
             {
-               THROW_ASSERT(GET_NODE(ga->op0)->get_kind() == ssa_name_K, "unexpected condition");
-               auto ssa0 = GetPointerS<ssa_name>(GET_NODE(ga->op0));
+               THROW_ASSERT(ga->op0->get_kind() == ssa_name_K, "unexpected condition");
+               auto ssa0 = GetPointerS<ssa_name>(ga->op0);
                ssa0->bit_values = "U";
                return ga->op0;
             }
@@ -2078,7 +2075,7 @@ tree_nodeRef tree_manipulation::CreateNopExpr(const tree_nodeConstRef& operand, 
    const auto ga = CreateGimpleAssign(type, min, max, ne, function_decl_nid, BUILTIN_SRCP);
    if(ssa_operand)
    {
-      GetPointerS<ssa_name>(GET_NODE(GetPointerS<gimple_assign>(GET_NODE(ga))->op0))->use_set = ssa_operand->use_set;
+      GetPointerS<ssa_name>(GetPointerS<gimple_assign>(ga)->op0)->use_set = ssa_operand->use_set;
    }
    return ga;
 }
@@ -2180,17 +2177,17 @@ tree_nodeRef tree_manipulation::CreateEqExpr(const tree_nodeConstRef& first_oper
    {
       for(const auto& statement : block->CGetStmtList())
       {
-         const auto ga = GetPointer<const gimple_assign>(GET_NODE(statement));
+         const auto ga = GetPointer<const gimple_assign>(statement);
          if(ga)
          {
-            const auto ee = GetPointer<const eq_expr>(GET_NODE(ga->op1));
+            const auto ee = GetPointer<const eq_expr>(ga->op1);
             if(ee and ((GET_INDEX_CONST_NODE(ee->op0) == GET_INDEX_CONST_NODE(first_operand) and
                         GET_INDEX_CONST_NODE(ee->op1) == GET_INDEX_CONST_NODE(second_operand)) or
                        (GET_INDEX_CONST_NODE(ee->op0) == GET_INDEX_CONST_NODE(second_operand) and
                         GET_INDEX_CONST_NODE(ee->op1) == GET_INDEX_CONST_NODE(first_operand))))
             {
-               THROW_ASSERT(GET_NODE(ga->op0)->get_kind() == ssa_name_K, "unexpected condition");
-               auto ssa0 = GetPointerS<ssa_name>(GET_NODE(ga->op0));
+               THROW_ASSERT(ga->op0->get_kind() == ssa_name_K, "unexpected condition");
+               auto ssa0 = GetPointerS<ssa_name>(ga->op0);
                ssa0->bit_values = "U";
                return ga->op0;
             }
@@ -2214,7 +2211,7 @@ tree_nodeRef tree_manipulation::CreateEqExpr(const tree_nodeConstRef& first_oper
    {
       block->PushBack(ga, AppM);
    }
-   return GetPointer<gimple_assign>(GET_NODE(ga))->op0;
+   return GetPointer<gimple_assign>(ga)->op0;
 }
 
 tree_nodeRef tree_manipulation::CreateCallExpr(const tree_nodeConstRef& called_function,
@@ -2267,10 +2264,10 @@ tree_nodeRef tree_manipulation::CreateGimpleAssignAddrExpr(const tree_nodeConstR
                                                            const std::string& srcp) const
 {
    auto addr_tn = CreateAddrExpr(tn, srcp);
-   const auto ptr_type = GetPointer<addr_expr>(GET_NODE(addr_tn))->type;
+   const auto ptr_type = GetPointer<addr_expr>(addr_tn)->type;
    auto assign_node = CreateGimpleAssign(ptr_type, tree_nodeRef(), tree_nodeRef(), addr_tn, function_decl_nid, srcp);
-   auto ga = GetPointer<gimple_assign>(GET_NODE(assign_node));
-   auto ssa = GetPointer<ssa_name>(GET_NODE(ga->op0));
+   auto ga = GetPointer<gimple_assign>(assign_node);
+   auto ssa = GetPointer<ssa_name>(ga->op0);
    ssa->use_set = PointToSolutionRef(new PointToSolution());
    ssa->use_set->Add(TreeM->CGetTreeNode(GET_INDEX_CONST_NODE(tn)));
    return assign_node;
@@ -2320,7 +2317,7 @@ tree_nodeRef tree_manipulation::CloneFunction(const tree_nodeRef& tn, const std:
       const auto clone_mngl = create_identifier_node(fmngl + fsuffix);
       remapping[GET_INDEX_CONST_NODE(fd->mngl)] = GET_INDEX_CONST_NODE(clone_mngl);
    }
-   const auto clone_fd = tnd.create_tree_node(GET_NODE(tn), tree_node_dup_mode::FUNCTION);
+   const auto clone_fd = tnd.create_tree_node(tn, tree_node_dup_mode::FUNCTION);
    return TreeM->GetTreeNode(clone_fd);
 }
 
@@ -2354,8 +2351,8 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_node
    THROW_ASSERT(GET_CONST_NODE(fn)->get_kind() == function_decl_K,
                 "Call statement should address a function declaration");
 
-   const auto fd = GetPointer<function_decl>(GET_NODE(caller_node));
-   auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+   const auto fd = GetPointer<function_decl>(caller_node);
+   auto sl = GetPointerS<statement_list>(fd->body);
    const auto& block = sl->list_of_bloc.at(GetPointer<const gimple_node>(call_stmt)->bb_index);
    const auto splitBBI = sl->list_of_bloc.rbegin()->first + 1;
    THROW_ASSERT(!sl->list_of_bloc.count(splitBBI), "");
@@ -2378,7 +2375,7 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_node
       const auto& bb = sl->list_of_bloc.at(bbi);
       for(const auto& phi : bb->CGetPhiList())
       {
-         auto gp = GetPointerS<gimple_phi>(GET_NODE(phi));
+         auto gp = GetPointerS<gimple_phi>(phi);
          const auto defFrom = std::find_if(gp->CGetDefEdgesList().begin(), gp->CGetDefEdgesList().end(),
                                            [&](const gimple_phi::DefEdge& de) { return de.second == block->number; });
          if(defFrom != gp->CGetDefEdgesList().end())
@@ -2423,7 +2420,7 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_node
       remapping.insert(std::make_pair(GET_INDEX_CONST_NODE(tn), GET_INDEX_CONST_NODE(tn)));
    });
    tree_node_dup tnd(remapping, AppM, splitBBI + 1, max_loop_id + 1, true);
-   const auto dup_sl_id = tnd.create_tree_node(GET_NODE(inline_fd->body), tree_node_dup_mode::RENAME);
+   const auto dup_sl_id = tnd.create_tree_node(inline_fd->body, tree_node_dup_mode::RENAME);
    const auto dup_sl = GetPointer<const statement_list>(TreeM->CGetTreeNode(dup_sl_id));
    THROW_ASSERT(dup_sl, "");
 
@@ -2526,7 +2523,7 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_node
       THROW_ASSERT(!list_of_def_edge.empty(), "");
       tree_nodeRef phi_res;
       const auto ret_phi = create_phi_node(phi_res, list_of_def_edge, fd->index);
-      auto gp = GetPointer<gimple_phi>(GET_NODE(ret_phi));
+      auto gp = GetPointer<gimple_phi>(ret_phi);
       gp->artificial = true;
       gp->SetSSAUsesComputed();
       splitBB->AddPhi(ret_phi);
@@ -2603,9 +2600,9 @@ bool tree_manipulation::VersionFunctionCall(const tree_nodeRef& call_node, const
    else
    {
       const auto version_call = create_gimple_call(version_fn, *args, caller_id, BUILTIN_SRCP);
-      const auto caller_fd = GetPointer<function_decl>(GET_NODE(caller_node));
+      const auto caller_fd = GetPointer<function_decl>(caller_node);
       const auto call_bbi = GetPointer<gimple_node>(call_stmt)->bb_index;
-      const auto& call_bb = GetPointer<statement_list>(GET_NODE(caller_fd->body))->list_of_bloc.at(call_bbi);
+      const auto& call_bb = GetPointer<statement_list>(caller_fd->body)->list_of_bloc.at(call_bbi);
       call_bb->Replace(call_node, version_call, true, AppM);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call after versioning  : " + STR(version_call));
    }

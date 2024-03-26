@@ -125,7 +125,7 @@ DesignFlowStep_Status parm2ssa::InternalExec()
 
    const auto curr_tn = TM->GetTreeNode(function_id);
    const auto fd = GetPointer<function_decl>(curr_tn);
-   const auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   const auto sl = GetPointer<statement_list>(fd->body);
    const std::string srcp_default = fd->include_name + ":" + STR(fd->line_number) + ":" + STR(fd->column_number);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Analyzing function " + STR(function_id) + ": " + tree_helper::GetMangledFunctionName(fd));
@@ -152,7 +152,7 @@ DesignFlowStep_Status parm2ssa::InternalExec()
    {
       if(!AppM->getSSAFromParm(function_id, GET_INDEX_CONST_NODE(arg)))
       {
-         const auto pd = GetPointer<const parm_decl>(GET_NODE(arg));
+         const auto pd = GetPointer<const parm_decl>(arg);
          const auto ssa_par = IRman->create_ssa_name(arg, pd->type, tree_nodeRef(), tree_nodeRef());
          AppM->setSSAFromParm(function_id, GET_INDEX_CONST_NODE(arg), GET_INDEX_CONST_NODE(ssa_par));
       }
@@ -173,7 +173,7 @@ void parm2ssa::recursive_analysis(const tree_nodeRef& tn, const std::string& src
                                   CustomUnorderedSet<unsigned int>& already_visited_ae)
 {
    const auto TM = AppM->get_tree_manager();
-   const auto curr_tn = GET_NODE(tn);
+   const auto curr_tn = tn;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Analyzing recursively " + curr_tn->get_kind_text() + " " + STR(GET_INDEX_NODE(tn)) + ": " +
                       curr_tn->ToString());
@@ -230,7 +230,7 @@ void parm2ssa::recursive_analysis(const tree_nodeRef& tn, const std::string& src
          if(sn->var)
          {
             const auto defStmt = sn->CGetDefStmt();
-            if(GET_NODE(sn->var)->get_kind() == parm_decl_K && GET_NODE(defStmt)->get_kind() == gimple_nop_K)
+            if(sn->var->get_kind() == parm_decl_K && defStmt->get_kind() == gimple_nop_K)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---Setting " + STR(GET_INDEX_NODE(sn->var)) + "-> " + STR(GET_INDEX_NODE(tn)) + " " +
@@ -246,8 +246,8 @@ void parm2ssa::recursive_analysis(const tree_nodeRef& tn, const std::string& src
          auto current = tn;
          while(current)
          {
-            recursive_analysis(GetPointerS<tree_list>(GET_NODE(current))->valu, srcp, already_visited_ae);
-            current = GetPointerS<tree_list>(GET_NODE(current))->chan;
+            recursive_analysis(GetPointerS<tree_list>(current)->valu, srcp, already_visited_ae);
+            current = GetPointerS<tree_list>(current)->chan;
          }
          break;
       }

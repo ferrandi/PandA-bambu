@@ -300,12 +300,12 @@ bool pragma_manager::CheckOmpFor(const application_managerConstRef app_man, cons
       const BBNodeInfoConstRef info = bb_cfg->CGetBBNodeInfo(current);
       for(const auto& stmt : info->block->CGetStmtList())
       {
-         if(GET_NODE(stmt)->get_kind() == gimple_pragma_K)
+         if(stmt->get_kind() == gimple_pragma_K)
          {
-            auto* pn = GetPointer<gimple_pragma>(GET_NODE(stmt));
-            if(pn->scope && GetPointer<omp_pragma>(GET_NODE(pn->scope)))
+            auto* pn = GetPointer<gimple_pragma>(stmt);
+            if(pn->scope && GetPointer<omp_pragma>(pn->scope))
             {
-               auto* fp = GetPointer<omp_for_pragma>(GET_NODE(pn->directive));
+               auto* fp = GetPointer<omp_for_pragma>(pn->directive);
                if(fp)
                {
                   return true;
@@ -336,12 +336,12 @@ void pragma_manager::CheckAddOmpFor(const unsigned int function_index, const ver
       for(const auto& stmt : info->block->CGetStmtList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analzying " + STR(stmt));
-         if(GET_NODE(stmt)->get_kind() == gimple_pragma_K)
+         if(stmt->get_kind() == gimple_pragma_K)
          {
-            const auto pn = GetPointerS<gimple_pragma>(GET_NODE(stmt));
-            if(pn->scope && GetPointer<omp_pragma>(GET_NODE(pn->scope)))
+            const auto pn = GetPointerS<gimple_pragma>(stmt);
+            if(pn->scope && GetPointer<omp_pragma>(pn->scope))
             {
-               const auto fp = GetPointer<omp_for_pragma>(GET_NODE(pn->directive));
+               const auto fp = GetPointer<omp_for_pragma>(pn->directive);
                if(fp)
                {
                   info->block->RemoveStmt(stmt, AppM);
@@ -384,23 +384,23 @@ void pragma_manager::CheckAddOmpSimd(const unsigned int function_index, const ve
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing BB" + STR(info->block->number));
       for(const auto& stmt : info->block->CGetStmtList())
       {
-         if(GET_NODE(stmt)->get_kind() == gimple_pragma_K)
+         if(stmt->get_kind() == gimple_pragma_K)
          {
-            const auto pn = GetPointerS<gimple_pragma>(GET_NODE(stmt));
-            if(pn->scope && GetPointer<omp_pragma>(GET_NODE(pn->scope)))
+            const auto pn = GetPointerS<gimple_pragma>(stmt);
+            if(pn->scope && GetPointer<omp_pragma>(pn->scope))
             {
-               const auto sp = GetPointer<omp_simd_pragma>(GET_NODE(pn->directive));
+               const auto sp = GetPointer<omp_simd_pragma>(pn->directive);
                if(sp)
                {
                   info->block->RemoveStmt(stmt, AppM);
                   if(pn->vdef)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing vdef " + STR(pn->vdef));
-                     const auto ssa_vdef = GetPointerS<ssa_name>(GET_NODE(pn->vdef));
+                     const auto ssa_vdef = GetPointerS<ssa_name>(pn->vdef);
                      const auto vdef_uses = ssa_vdef->CGetUseStmts();
                      for(const auto& stmt_uses : vdef_uses)
                      {
-                        const auto gn = GetPointerS<gimple_node>(GET_NODE(stmt_uses.first));
+                        const auto gn = GetPointerS<gimple_node>(stmt_uses.first);
                         if(gn->memuse && GET_INDEX_NODE(gn->memuse) == GET_INDEX_NODE(pn->vdef))
                         {
                            ssa_vdef->RemoveUse(stmt_uses.first);

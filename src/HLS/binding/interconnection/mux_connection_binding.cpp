@@ -1480,7 +1480,7 @@ void mux_connection_binding::create_connections()
                {
                   size_var = std::get<0>(var_read[0]);
                   tn = tree_helper::CGetType(TreeM->CGetTreeNode(size_var));
-                  var_node = GET_NODE(gm->op0);
+                  var_node = gm->op0;
                   var_node_idx = GET_INDEX_NODE(gm->op0);
 
                   if(size_var)
@@ -1553,7 +1553,7 @@ void mux_connection_binding::create_connections()
                {
                   size_var = HLSMgr->get_produced_value(HLS->functionId, op);
                   tn = tree_helper::CGetType(TreeM->CGetTreeNode(size_var));
-                  var_node = GET_NODE(gm->op1);
+                  var_node = gm->op1;
                   var_node_idx = GET_INDEX_NODE(gm->op1);
                }
 #ifndef NDEBUG

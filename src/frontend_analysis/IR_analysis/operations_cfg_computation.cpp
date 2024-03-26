@@ -185,9 +185,9 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
       if(block->CGetStmtList().size())
       {
          auto front = block->CGetStmtList().front();
-         if(GET_NODE(front)->get_kind() == gimple_label_K)
+         if(front->get_kind() == gimple_label_K)
          {
-            auto* le = GetPointer<gimple_label>(GET_NODE(front));
+            auto* le = GetPointer<gimple_label>(front);
             THROW_ASSERT(le->op, "Label expr without object");
             res = get_first_node(front, f_name);
             label_decl_map[GET_INDEX_NODE(le->op)] = res;
@@ -234,7 +234,7 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
       if(block->CGetStmtList().size())
       {
          const auto front = block->CGetStmtList().front();
-         if(GET_NODE(front)->get_kind() == gimple_label_K)
+         if(front->get_kind() == gimple_label_K)
          {
             actual_name = get_first_node(front, f_name);
             THROW_ASSERT(actual_name == first_statement[block->number],
@@ -311,7 +311,7 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
       {
          last_instruction = block->CGetStmtList().back();
       }
-      if(last_instruction && GET_NODE(last_instruction)->get_kind() != gimple_switch_K)
+      if(last_instruction && last_instruction->get_kind() != gimple_switch_K)
       {
          init_start_nodes(get_first_node(last_instruction, f_name));
       }
@@ -357,8 +357,7 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
                                "First statement of successor BB" + STR(successor) + " not found");
                   connect_start_nodes(ogc, first_statement[successor], false, true);
                }
-               else if(last_instruction && GetPointer<gimple_goto>(GET_NODE(last_instruction)) &&
-                       block->list_of_succ.size() > 1)
+               else if(last_instruction && GetPointer<gimple_goto>(last_instruction) && block->list_of_succ.size() > 1)
                {
                   connect_start_nodes(ogc, first_statement[successor], true, true, successor);
                }
@@ -389,7 +388,7 @@ std::string operations_cfg_computation::get_first_node(const tree_nodeRef& tn, c
    tree_nodeRef curr_tn;
    if(tn->get_kind() == tree_reindex_K)
    {
-      curr_tn = GET_NODE(tn);
+      curr_tn = tn;
    }
    else
    {
@@ -497,7 +496,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
                                                            const tree_nodeRef tn, const std::string& f_name,
                                                            unsigned int bb_index)
 {
-   const auto curr_tn = GET_NODE(tn);
+   const auto curr_tn = tn;
    const auto ind = GET_INDEX_NODE(tn);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Building CFG of node " + STR(ind) + " of type " + curr_tn->get_kind_text());
@@ -512,8 +511,8 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
       case gimple_assign_K:
       {
          const auto me = GetPointerS<const gimple_assign>(curr_tn);
-         const auto op0_kind = GET_NODE(me->op0)->get_kind();
-         const auto op1_kind = GET_NODE(me->op1)->get_kind();
+         const auto op0_kind = me->op0->get_kind();
+         const auto op1_kind = me->op1->get_kind();
          const auto op0_type = tree_helper::CGetType(me->op0);
          const auto op1_type = tree_helper::CGetType(me->op1);
          const auto& fun_mem_data = function_behavior->get_function_mem();

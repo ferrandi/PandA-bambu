@@ -70,7 +70,7 @@ class Operand
  public:
    Operand(const tree_nodeRef _operand, tree_nodeRef stmt) : operand(_operand), user_stmt(stmt)
    {
-      THROW_ASSERT(GetPointer<gimple_node>(GET_NODE(stmt)), "stmt should be a gimple_node");
+      THROW_ASSERT(GetPointer<gimple_node>(stmt), "stmt should be a gimple_node");
    }
 
    const tree_nodeRef getOperand() const
@@ -86,11 +86,11 @@ class Operand
    bool set(tree_nodeRef new_ssa, tree_managerRef TM)
    {
       const auto* ssaOperand = GetPointer<const ssa_name>(GET_CONST_NODE(operand));
-      THROW_ASSERT(GET_NODE(new_ssa)->get_kind() == ssa_name_K, "New variable should be an ssa_name");
+      THROW_ASSERT(new_ssa->get_kind() == ssa_name_K, "New variable should be an ssa_name");
       THROW_ASSERT(ssaOperand, "Old variable should be an ssa_name");
       THROW_ASSERT(TM, "Null reference to tree manager");
 
-      if(auto* gp = GetPointer<gimple_phi>(GET_NODE(user_stmt)))
+      if(auto* gp = GetPointer<gimple_phi>(user_stmt))
       {
          const auto& deList = gp->CGetDefEdgesList();
          std::vector<gimple_phi::DefEdge> validDE;
@@ -341,7 +341,7 @@ void processBranch(tree_nodeConstRef bi, CustomSet<OperandRef>& OpsToRename, eSS
             continue;
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        GET_NODE(Op)->ToString() + " eligible for renaming in BB" + STR(Succ->number));
+                        Op->ToString() + " eligible for renaming in BB" + STR(Succ->number));
 
          PredicateBase* PB = new PredicateWithEdge(gimple_cond_K, Op, BranchBB->number, Succ->number);
          addInfoFor(OperandRef(new Operand(Op, cond_stmt)), PB, OpsToRename, ValueInfoNums, ValueInfos);
@@ -895,7 +895,7 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
                }
 
                // Fix multi_way_if routes
-               if(auto* mwi = GetPointer<gimple_multi_way_if>(GET_NODE(FromBB->CGetStmtList().back())))
+               if(auto* mwi = GetPointer<gimple_multi_way_if>(FromBB->CGetStmtList().back()))
                {
                   for(auto& cond : mwi->list_of_cond)
                   {
@@ -909,7 +909,7 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
                // Fix destination BB phis
                for(const auto& phi : ToBB->CGetPhiList())
                {
-                  auto* gp = GetPointer<gimple_phi>(GET_NODE(phi));
+                  auto* gp = GetPointer<gimple_phi>(phi);
                   const auto defFrom =
                       std::find_if(gp->CGetDefEdgesList().begin(), gp->CGetDefEdgesList().end(),
                                    [&](const gimple_phi::DefEdge& de) { return de.second == FromBB->number; });
@@ -922,7 +922,7 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
 
             // Insert required sigma operation into the intermediate basic block
             pic = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, function_id);
-            const auto gp = GetPointer<gimple_phi>(GET_NODE(pic));
+            const auto gp = GetPointer<gimple_phi>(pic);
             gp->SetSSAUsesComputed();
             gp->artificial = true;
             interBB->AddPhi(pic);
@@ -933,7 +933,7 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
          {
             // Insert required sigma operation into the destination basic block
             pic = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, function_id);
-            const auto gp = GetPointer<gimple_phi>(GET_NODE(pic));
+            const auto gp = GetPointer<gimple_phi>(pic);
             gp->SetSSAUsesComputed();
             gp->artificial = true;
             ToBB->AddPhi(pic);
@@ -941,7 +941,7 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
 
          // Clone renamed ssa properties
          const auto* op = GetPointer<const ssa_name>(GET_CONST_NODE(Op));
-         auto* newSSA = GetPointer<ssa_name>(GET_NODE(new_ssa_var));
+         auto* newSSA = GetPointer<ssa_name>(new_ssa_var);
          newSSA->bit_values = op->bit_values;
          newSSA->range = RangeRef(op->range ? op->range->clone() : nullptr);
          newSSA->min = op->min;
@@ -1213,7 +1213,7 @@ DesignFlowStep_Status eSSA::InternalExec()
 {
    auto TM = AppM->get_tree_manager();
    const auto* fd = GetPointer<const function_decl>(TM->CGetTreeNode(function_id));
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto* sl = GetPointer<statement_list>(fd->body);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Extended SSA step");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Dominator tree computation...");
@@ -1302,8 +1302,7 @@ DesignFlowStep_Status eSSA::InternalExec()
       }
 
       const auto terminator = stmt_list.back();
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "Block terminates with " + GET_NODE(terminator)->get_kind_text());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Block terminates with " + terminator->get_kind_text());
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
       if(GET_CONST_NODE(terminator)->get_kind() == gimple_cond_K)
       {

@@ -159,7 +159,7 @@ DesignFlowStep_Status extract_patterns::InternalExec()
    // tree_nodeRef Scpe = TM->GetTreeNode(function_id);
    const auto fd = GetPointer<const function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
-   auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto sl = GetPointer<statement_list>(fd->body);
    THROW_ASSERT(sl, "Body is not a statement_list");
 
    /// for each basic block B in CFG do > Consider all blocks successively
@@ -201,7 +201,7 @@ DesignFlowStep_Status extract_patterns::InternalExec()
                      const auto statement_node = ssa_defined->CGetUseStmts().begin()->first;
                      if(GET_CONST_NODE(statement_node)->get_kind() == gimple_assign_K)
                      {
-                        auto ga_dest = GetPointerS<gimple_assign>(GET_NODE(statement_node));
+                        auto ga_dest = GetPointerS<gimple_assign>(statement_node);
                         const auto code_dest0 = GET_CONST_NODE(ga_dest->op0)->get_kind();
                         const auto code_dest1 = GET_CONST_NODE(ga_dest->op1)->get_kind();
                         const auto ssa_dest0_size = tree_helper::Size(tree_helper::CGetType(ga_dest->op0));
@@ -230,7 +230,7 @@ DesignFlowStep_Status extract_patterns::InternalExec()
                               TM->ReplaceTreeNode(statement_node, ga_dest->op1, ternary_op);
                            }
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                          "<--Statement removed " + GET_NODE(*it_los)->ToString());
+                                          "<--Statement removed " + (*it_los)->ToString());
                            B->RemoveStmt(*it_los, AppM);
                            it_los = list_of_stmt.begin();
                            it_los_end = list_of_stmt.end();

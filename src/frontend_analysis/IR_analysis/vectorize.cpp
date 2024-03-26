@@ -245,7 +245,7 @@ DesignFlowStep_Status Vectorize::InternalExec()
                   TM->PrintGimple(gimple_file, false);
                   gimple_file.close();
                }
-               const auto new_statement = DuplicateIncrement(bb_node_info->loop_id, GET_NODE(statement));
+               const auto new_statement = DuplicateIncrement(bb_node_info->loop_id, statement);
                block->PushBefore(TM->GetTreeNode(new_statement), statement, AppM);
                ClassifyTreeNode(bb_node_info->loop_id, TM->CGetTreeNode(new_statement));
                transformations[new_statement] = INC;
@@ -498,11 +498,11 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
       {
          const auto* ga = GetPointer<const gimple_assign>(tree_node);
          const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
-         ClassifyTreeNode(loop_id, GET_NODE(ga->op0));
-         ClassifyTreeNode(loop_id, GET_NODE(ga->op1));
+         ClassifyTreeNode(loop_id, ga->op0);
+         ClassifyTreeNode(loop_id, ga->op1);
          if(ga->vdef)
          {
-            ClassifyTreeNode(loop_id, GET_NODE(ga->vdef));
+            ClassifyTreeNode(loop_id, ga->vdef);
          }
 
          /// Check if the statement is the increment operation of an outer loop
@@ -536,7 +536,7 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
          const auto* sa = GetPointer<const ssa_name>(tree_node);
          THROW_ASSERT(sa->CGetDefStmts().size() == 1,
                       "Not in ssa form: " + STR(sa->CGetDefStmts().size()) + " definitions");
-         const auto bb_index = GetPointer<const gimple_node>(GET_NODE(sa->CGetDefStmt()))->bb_index;
+         const auto bb_index = GetPointer<const gimple_node>(sa->CGetDefStmt())->bb_index;
          const BBGraphConstRef bb_fcfg = function_behavior->CGetBBGraph(FunctionBehavior::FBB);
          const auto loop_index =
              bb_fcfg->CGetBBNodeInfo(bb_fcfg->CGetBBGraphInfo()->bb_index_map.find(bb_index)->second)->loop_id;
@@ -561,7 +561,7 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
       case CASE_UNARY_EXPRESSION:
       {
          const auto* ue = GetPointer<const unary_expr>(tree_node);
-         ClassifyTreeNode(loop_id, GET_NODE(ue->op));
+         ClassifyTreeNode(loop_id, ue->op);
          if(tree_node->get_kind() == nop_expr_K or tree_node->get_kind() == convert_expr_K or
             tree_node->get_kind() == abs_expr_K)
          {
@@ -585,15 +585,15 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
          }
          /// FIXME: C backend for vec_lshift_expr is wrong
          else if(tree_node->get_kind() == rshift_expr_K or tree_node->get_kind() == lshift_expr_K or
-                 tree_node->get_kind() == le_expr_K /*) and (GET_NODE(be->op0)->get_kind() == integer_cst_K)*/)
+                 tree_node->get_kind() == le_expr_K /*) and (be->op0->get_kind() == integer_cst_K)*/)
          {
             transformations[tree_node->index] = SCALAR;
          }
          else
          {
             transformations[tree_node->index] = SCALAR;
-            ClassifyTreeNode(loop_id, GET_NODE(be->op0));
-            ClassifyTreeNode(loop_id, GET_NODE(be->op1));
+            ClassifyTreeNode(loop_id, be->op0);
+            ClassifyTreeNode(loop_id, be->op1);
             transformations[tree_node->index] = SIMD;
          }
          break;
@@ -607,16 +607,15 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
          const auto* gp = GetPointer<const gimple_phi>(tree_node);
          for(const auto& def_edge : gp->CGetDefEdgesList())
          {
-            ClassifyTreeNode(loop_id, GET_NODE(def_edge.first));
-            THROW_ASSERT(GET_NODE(def_edge.first)->get_kind() != var_decl_K,
-                         "Unsupported pattern - Phi is" + STR(tree_node));
+            ClassifyTreeNode(loop_id, def_edge.first);
+            THROW_ASSERT(def_edge.first->get_kind() != var_decl_K, "Unsupported pattern - Phi is" + STR(tree_node));
             if(def_edge.first->get_kind() == var_decl_K)
             {
                THROW_ERROR("Unsupported pattern");
             }
             transformations[tree_node->index] = SIMD;
          }
-         ClassifyTreeNode(loop_id, GET_NODE(gp->res));
+         ClassifyTreeNode(loop_id, gp->res);
          /// Check if the phi is the init operation of an outer loop
          if(loop->init_gimple_id == tree_node->index and simd_loop_type[loop->GetId()] == SIMD_OUTER)
          {
@@ -647,7 +646,7 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
                {
                   if(def_edge.second != previous_id)
                   {
-                     const tree_nodeRef loop_ssa = GET_NODE(def_edge.first);
+                     const tree_nodeRef loop_ssa = def_edge.first;
                      if(loop_ssa->get_kind() != ssa_name_K)
                      {
                         THROW_ASSERT(false, "Unsupported pattern - Operand of ssa is " + loop_ssa->ToString());
@@ -659,14 +658,14 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
                         THROW_ASSERT(false, sn->ToString() + " has not a single definition");
                         THROW_ERROR("Unsupported pattern");
                      }
-                     const auto* ga = GetPointer<const gimple_assign>(GET_NODE(sn->CGetDefStmt()));
+                     const auto* ga = GetPointer<const gimple_assign>(sn->CGetDefStmt());
                      if(!ga)
                      {
                         THROW_ASSERT(false, sn->ToString() + " is not defined in a gimple assignment but in " +
                                                 sn->CGetDefStmt()->ToString());
                         THROW_ERROR("Unsupported pattern");
                      }
-                     const auto* pe = GetPointer<const plus_expr>(GET_NODE(ga->op1));
+                     const auto* pe = GetPointer<const plus_expr>(ga->op1);
                      if(!pe)
                      {
                         THROW_ASSERT(false, "Unexpected pattern: " + ga->op1->ToString());
@@ -677,7 +676,7 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
                         THROW_ASSERT(false, "Unexpected pattern: " + pe->op0->ToString());
                         THROW_ERROR("Unsupported pattern");
                      }
-                     const auto* ic = GetPointer<const integer_cst>(GET_NODE(pe->op1));
+                     const auto* ic = GetPointer<const integer_cst>(pe->op1);
                      if(!ic)
                      {
                         THROW_ASSERT(false, "Unexpected pattern: " + pe->op1->ToString());
@@ -703,23 +702,23 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
          const auto* tmr = GetPointer<const target_mem_ref461>(tree_node);
          if(tmr->base)
          {
-            ClassifyTreeNode(loop_id, GET_NODE(tmr->base));
+            ClassifyTreeNode(loop_id, tmr->base);
          }
          if(tmr->offset)
          {
-            ClassifyTreeNode(loop_id, GET_NODE(tmr->offset));
+            ClassifyTreeNode(loop_id, tmr->offset);
          }
          if(tmr->idx)
          {
-            ClassifyTreeNode(loop_id, GET_NODE(tmr->idx));
+            ClassifyTreeNode(loop_id, tmr->idx);
          }
          if(tmr->step)
          {
-            ClassifyTreeNode(loop_id, GET_NODE(tmr->step));
+            ClassifyTreeNode(loop_id, tmr->step);
          }
          if(tmr->idx2)
          {
-            ClassifyTreeNode(loop_id, GET_NODE(tmr->idx2));
+            ClassifyTreeNode(loop_id, tmr->idx2);
          }
          transformations[tree_node->index] = SCALAR;
          break;
@@ -736,7 +735,7 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
          const auto basic_block_index = gc->bb_index;
          const BBGraphConstRef fbb = function_behavior->CGetBBGraph(FunctionBehavior::FBB);
          const auto basic_block = fbb->CGetBBGraphInfo()->bb_index_map.find(basic_block_index)->second;
-         ClassifyTreeNode(loop_id, GET_NODE(gc->op0));
+         ClassifyTreeNode(loop_id, gc->op0);
          bool divergent = false;
          if(std::find(loop->exit_block_iter_begin(), loop->exit_block_iter_end(), basic_block) ==
             loop->exit_block_iter_end())
@@ -768,24 +767,24 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
       case cond_expr_K:
       {
          const auto* ce = GetPointer<const cond_expr>(tree_node);
-         ClassifyTreeNode(loop_id, GET_NODE(ce->op0));
-         ClassifyTreeNode(loop_id, GET_NODE(ce->op1));
-         ClassifyTreeNode(loop_id, GET_NODE(ce->op2));
+         ClassifyTreeNode(loop_id, ce->op0);
+         ClassifyTreeNode(loop_id, ce->op1);
+         ClassifyTreeNode(loop_id, ce->op2);
          transformations[tree_node->index] = SIMD;
          break;
       }
       case array_ref_K:
       {
          const auto* ar = GetPointer<const array_ref>(tree_node);
-         ClassifyTreeNode(loop_id, GET_NODE(ar->op0));
-         ClassifyTreeNode(loop_id, GET_NODE(ar->op1));
+         ClassifyTreeNode(loop_id, ar->op0);
+         ClassifyTreeNode(loop_id, ar->op1);
          if(ar->op2)
          {
-            ClassifyTreeNode(loop_id, GET_NODE(ar->op2));
+            ClassifyTreeNode(loop_id, ar->op2);
          }
          if(ar->op3)
          {
-            ClassifyTreeNode(loop_id, GET_NODE(ar->op3));
+            ClassifyTreeNode(loop_id, ar->op3);
          }
          transformations[tree_node->index] = SCALAR;
          break;
@@ -794,9 +793,9 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
       case aggr_init_expr_K:
       {
          const auto* ce = GetPointer<const call_expr>(tree_node);
-         const auto* ae = GetPointer<const addr_expr>(GET_NODE(ce->fn));
-         const auto* fd = GetPointer<const function_decl>(GET_NODE(ae->op));
-         const auto* in = GetPointer<const identifier_node>(GET_NODE(fd->name));
+         const auto* ae = GetPointer<const addr_expr>(ce->fn);
+         const auto* fd = GetPointer<const function_decl>(ae->op);
+         const auto* in = GetPointer<const identifier_node>(fd->name);
          const std::string function_name = in->strg;
          transformations[tree_node->index] = TM->GetFunction("parallel_" + function_name) ? SIMD : SCALAR;
          break;
@@ -811,40 +810,40 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
       case insertvalue_expr_K:
       {
          const auto te = GetPointer<const ternary_expr>(tree_node);
-         ClassifyTreeNode(loop_id, GET_NODE(te->op0));
-         ClassifyTreeNode(loop_id, GET_NODE(te->op1));
-         ClassifyTreeNode(loop_id, GET_NODE(te->op2));
+         ClassifyTreeNode(loop_id, te->op0);
+         ClassifyTreeNode(loop_id, te->op1);
+         ClassifyTreeNode(loop_id, te->op2);
          transformations[tree_node->index] = SCALAR;
          break;
       }
       case lut_expr_K:
       {
          auto* le = GetPointer<const lut_expr>(tree_node);
-         ClassifyTreeNode(loop_id, GET_NODE(le->op0));
-         ClassifyTreeNode(loop_id, GET_NODE(le->op1));
+         ClassifyTreeNode(loop_id, le->op0);
+         ClassifyTreeNode(loop_id, le->op1);
          if(le->op2)
          {
-            ClassifyTreeNode(loop_id, GET_NODE(le->op2));
+            ClassifyTreeNode(loop_id, le->op2);
          }
          if(le->op3)
          {
-            ClassifyTreeNode(loop_id, GET_NODE(le->op3));
+            ClassifyTreeNode(loop_id, le->op3);
          }
          if(le->op4)
          {
-            ClassifyTreeNode(loop_id, GET_NODE(le->op4));
+            ClassifyTreeNode(loop_id, le->op4);
          }
          if(le->op5)
          {
-            ClassifyTreeNode(loop_id, GET_NODE(le->op5));
+            ClassifyTreeNode(loop_id, le->op5);
          }
          if(le->op6)
          {
-            ClassifyTreeNode(loop_id, GET_NODE(le->op6));
+            ClassifyTreeNode(loop_id, le->op6);
          }
          if(le->op7)
          {
-            ClassifyTreeNode(loop_id, GET_NODE(le->op7));
+            ClassifyTreeNode(loop_id, le->op7);
          }
          if(le->op8)
          {
@@ -930,7 +929,7 @@ unsigned int Vectorize::DuplicateIncrement(const unsigned int loop_id, const tre
    transformations[statement->index] = SIMD;
 
    /// First create the new ssa_name
-   const auto* sa = GetPointer<const ssa_name>(GET_NODE(ga->op0));
+   const auto* sa = GetPointer<const ssa_name>(ga->op0);
    const auto ssa_tree_node =
        tree_man->create_ssa_name(sa->var, sa->type, sa->min, sa->max, sa->volatile_flag, sa->virtual_flag);
 
@@ -958,10 +957,10 @@ unsigned int Vectorize::DuplicateIncrement(const unsigned int loop_id, const tre
    THROW_ASSERT(loop->num_exits() == 1, "Loop with not a single exit");
    const auto stmt_list = bb_graph->GetBBNodeInfo(*(loop->exit_block_iter_begin()))->block->CGetStmtList();
    THROW_ASSERT(stmt_list.size(), "Empty loop exit");
-   THROW_ASSERT(stmt_list.size() and GetPointer<gimple_cond>(GET_NODE(stmt_list.back())),
+   THROW_ASSERT(stmt_list.size() and GetPointer<gimple_cond>(stmt_list.back()),
                 "Loop exit is not a cond_expr: " + stmt_list.back()->ToString());
    const auto gimple_cond_stmt = stmt_list.back();
-   auto* gc = GetPointer<gimple_cond>(GET_NODE(gimple_cond_stmt));
+   auto* gc = GetPointer<gimple_cond>(gimple_cond_stmt);
    const auto condition_to_be_duplicated = gc->op0;
    auto* cond_op = GetPointer<ssa_name>(GET_CONST_NODE(condition_to_be_duplicated));
    THROW_ASSERT(cond_op, "Cond expression operand is " + STR(condition_to_be_duplicated));
@@ -976,7 +975,7 @@ unsigned int Vectorize::DuplicateIncrement(const unsigned int loop_id, const tre
       // cppcheck-suppress unreadVariable
       remapping[cond_op->index] = GET_INDEX_CONST_NODE(dup_op_cond);
       /// Duplicate computation of condition
-      const auto new_cond_computation = tnd.create_tree_node(GET_NODE(def_statement));
+      const auto new_cond_computation = tnd.create_tree_node(def_statement);
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "---Created " + STR(TM->CGetTreeNode(new_cond_computation)));
@@ -1217,7 +1216,7 @@ void Vectorize::AddGuards()
             const auto control_id = control_bb_node_info->number;
             const auto control_list_of_stmt = control_bb_node_info->CGetStmtList();
             THROW_ASSERT(control_list_of_stmt.size(), "");
-            const auto gc = GetPointer<gimple_cond>(GET_NODE(control_list_of_stmt.back()));
+            const auto gc = GetPointer<gimple_cond>(control_list_of_stmt.back());
             THROW_ASSERT(gc, "");
             const auto control_condition = guards.find(control_id)->second;
             const auto edge_condition = gc->op0;
@@ -1230,13 +1229,11 @@ void Vectorize::AddGuards()
                     edge_condition;
             if(control_condition->index != true_value->index)
             {
-               bb_node_info->block->PushFront(GetPointer<const ssa_name>(GET_NODE(combined_condition))->CGetDefStmt(),
-                                              AppM);
+               bb_node_info->block->PushFront(GetPointer<const ssa_name>(combined_condition)->CGetDefStmt(), AppM);
             }
             if(edge_condition != gc->op0)
             {
-               bb_node_info->block->PushFront(GetPointer<const ssa_name>(GET_NODE(edge_condition))->CGetDefStmt(),
-                                              AppM);
+               bb_node_info->block->PushFront(GetPointer<const ssa_name>(edge_condition)->CGetDefStmt(), AppM);
             }
             condition_guards[controller] = combined_condition;
             guards[basic_block_id] = combined_condition;
@@ -1257,9 +1254,9 @@ void Vectorize::AddGuards()
                {
                   THROW_ASSERT(guards.find(target_id) != guards.end(), "");
                   const auto guard = guards.find(target_id)->second;
-                  const auto sn = GetPointer<ssa_name>(GET_NODE(guard));
+                  const auto sn = GetPointer<ssa_name>(guard);
                   THROW_ASSERT(sn, "");
-                  auto gp = GetPointer<gimple_phi>(GET_NODE(sn->CGetDefStmt()));
+                  auto gp = GetPointer<gimple_phi>(sn->CGetDefStmt());
                   THROW_ASSERT(gp, "");
                   gp->AddDefEdge(TM, gimple_phi::DefEdge(guards.find(basic_block_id)->second, basic_block_id));
                }
@@ -1280,13 +1277,13 @@ void Vectorize::AddGuards()
                      {
                         THROW_ASSERT(guards.find(target_id) != guards.end(), "");
                         const auto guard = guards.find(target_id)->second;
-                        const auto sn = GetPointer<ssa_name>(GET_NODE(guard));
+                        const auto sn = GetPointer<ssa_name>(guard);
                         THROW_ASSERT(sn, "");
-                        auto gp = GetPointer<gimple_phi>(GET_NODE(sn->CGetDefStmt()));
+                        auto gp = GetPointer<gimple_phi>(sn->CGetDefStmt());
                         THROW_ASSERT(gp, "");
                         const auto list_of_stmt = bb_node_info->block->CGetStmtList();
                         THROW_ASSERT(list_of_stmt.size(), "");
-                        const auto gc = GetPointer<gimple_cond>(GET_NODE(list_of_stmt.back()));
+                        const auto gc = GetPointer<gimple_cond>(list_of_stmt.back());
                         THROW_ASSERT(gc, "");
                         const auto current_condition = guards.find(basic_block_id)->second;
                         const auto feedback_condition = gc->op0;
@@ -1392,7 +1389,7 @@ void Vectorize::FixPhis()
       {
          CustomMap<unsigned int, tree_nodeRef> new_defs;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fixing phi " + STR(phi));
-         auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
+         auto gp = GetPointer<gimple_phi>(phi);
          const auto type = tree_helper::CGetType(gp->res);
          THROW_ASSERT(type, "");
          for(const auto source : phi_inputs)
@@ -1442,11 +1439,10 @@ void Vectorize::FixPhis()
 
             /// Create the ssa with the new input of the phi
             tree_nodeRef var;
-            if(GET_NODE(from_source.first)->get_kind() == ssa_name_K and
-               GET_NODE(from_dominator)->get_kind() == ssa_name_K)
+            if(from_source.first->get_kind() == ssa_name_K and from_dominator->get_kind() == ssa_name_K)
             {
-               const auto sn1 = GetPointer<const ssa_name>(GET_NODE(from_source.first));
-               const auto sn2 = GetPointer<const ssa_name>(GET_NODE(from_dominator));
+               const auto sn1 = GetPointer<const ssa_name>(from_source.first);
+               const auto sn2 = GetPointer<const ssa_name>(from_dominator);
                if(sn1->var and sn2->var and sn1->var->index == sn2->var->index)
                {
                   var = sn1->var;
@@ -1490,11 +1486,11 @@ void Vectorize::SetPredication()
                         "-->Considering statements of BB" + STR(basic_block_index));
          for(const auto& stmt : bb_node_info->block->CGetStmtList())
          {
-            auto ga = GetPointer<gimple_assign>(GET_NODE(stmt));
+            auto ga = GetPointer<gimple_assign>(stmt);
             if(ga && ga->predicate)
             {
                ga->predicate = guards.at(basic_block_index);
-               const auto sn = GetPointer<ssa_name>(GET_NODE(ga->predicate));
+               const auto sn = GetPointer<ssa_name>(ga->predicate);
                if(sn)
                {
                   sn->AddUseStmt(stmt);
@@ -1591,7 +1587,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             const auto second_condition = conditions.front();
             conditions.pop_front();
             const auto new_cond = tree_man->CreateOrExpr(first_condition, second_condition, blocRef(), function_id);
-            new_stmt_list.push_back(GetPointer<const ssa_name>(GET_NODE(new_cond))->CGetDefStmt());
+            new_stmt_list.push_back(GetPointer<const ssa_name>(new_cond)->CGetDefStmt());
             conditions.push_back(new_cond);
          }
          std::string include_name = GetPointer<const srcp>(tn)->include_name;
@@ -1634,9 +1630,9 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
          {
             if(def_edge.second == previous_id)
             {
-               if(GET_NODE(def_edge.first)->get_kind() == integer_cst_K)
+               if(def_edge.first->get_kind() == integer_cst_K)
                {
-                  const auto* ic = GetPointer<const integer_cst>(GET_NODE(def_edge.first));
+                  const auto* ic = GetPointer<const integer_cst>(def_edge.first);
                   tree_node_schema[TOK(TOK_TYPE)] =
                       STR(Transform(ic->type->index, parallel_degree, 0, new_stmt_list, new_phi_list));
                   /// The current init
@@ -1655,7 +1651,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   }
                   new_gp->AddDefEdge(TM, gimple_phi::DefEdge(TM->GetTreeNode(new_tn->index), def_edge.second));
                }
-               else if(GET_NODE(def_edge.first)->get_kind() == ssa_name_K)
+               else if(def_edge.first->get_kind() == ssa_name_K)
                {
                   CustomMap<size_t, unsigned int> version_to_ssa;
                   for(size_t i = 1; i <= parallel_degree; i++)
@@ -1675,8 +1671,8 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      unsigned int plus_tree_node_index = TM->new_tree_node_id();
                      TM->create_tree_node(plus_tree_node_index, plus_expr_K, plus_tree_node_schema);
 
-                     THROW_ASSERT(GET_NODE(def_edge.first)->get_kind() == ssa_name_K, "");
-                     const auto* sa = GetPointer<const ssa_name>(GET_NODE(def_edge.first));
+                     THROW_ASSERT(def_edge.first->get_kind() == ssa_name_K, "");
+                     const auto* sa = GetPointer<const ssa_name>(def_edge.first);
                      if(sa->type)
                      {
                         ssa_tree_node_schema[TOK(TOK_TYPE)] = STR(sa->type->index);
@@ -1716,7 +1712,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      TM->create_tree_node(gimple_tree_node_index, gimple_assign_K, gimple_tree_node_schema);
 
                      THROW_ASSERT(previous_list_of_stmt.empty() or
-                                      GET_NODE((*(previous_list_of_stmt.begin())))->get_kind() != gimple_cond_K,
+                                      (*(previous_list_of_stmt.begin()))->get_kind() != gimple_cond_K,
                                   "");
                      previous_block->PushBack(TM->GetTreeNode(gimple_tree_node_index), AppM);
                   }
@@ -1734,7 +1730,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      constr->add_idx_valu(new_ic, TM->GetTreeNode(version_to_ssa[scalar]));
                   }
 
-                  const auto* sa = GetPointer<const ssa_name>(GET_NODE(def_edge.first));
+                  const auto* sa = GetPointer<const ssa_name>(def_edge.first);
                   if(sa->type)
                   {
                      ssa_tree_node_schema[TOK(TOK_TYPE)] =
@@ -1819,7 +1815,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             bit_field_ref_tree_node_schema[TOK(TOK_OP2)] = STR(offset->index);
             TM->create_tree_node(bit_field_ref_index, bit_field_ref_K, bit_field_ref_tree_node_schema);
 
-            const auto* sa = GetPointer<const ssa_name>(GET_NODE(gp->res));
+            const auto* sa = GetPointer<const ssa_name>(gp->res);
             if(sa->type)
             {
                ssa_tree_node_schema[TOK(TOK_TYPE)] = STR(sa->type->index);
@@ -1868,7 +1864,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Inc");
          THROW_ASSERT(tn->get_kind() == gimple_assign_K, "Increment is " + tn->get_kind_text());
          const auto* ga = GetPointer<const gimple_assign>(tn);
-         const auto increment = tree_helper::GetConstValue(GetPointer<binary_expr>(GET_NODE(ga->op1))->op1);
+         const auto increment = tree_helper::GetConstValue(GetPointer<binary_expr>(ga->op1)->op1);
          std::string include_name = GetPointer<const srcp>(tn)->include_name;
          unsigned int line_number = GetPointer<const srcp>(tn)->line_number;
          unsigned int column_number = GetPointer<const srcp>(tn)->column_number;
@@ -1883,11 +1879,10 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
          unsigned int new_tree_node_index = TM->new_tree_node_id();
          TM->create_tree_node(new_tree_node_index, gimple_assign_K, tree_node_schema);
          auto* new_ga = GetPointer<gimple_assign>(TM->CGetTreeNode(new_tree_node_index));
-         THROW_ASSERT(GET_NODE(new_ga->op1)->get_kind() == plus_expr_K or
-                          GET_NODE(new_ga->op1)->get_kind() == minus_expr_K,
+         THROW_ASSERT(new_ga->op1->get_kind() == plus_expr_K or new_ga->op1->get_kind() == minus_expr_K,
                       "Loop increment operation is not a plus expression nor a minus expression");
-         auto* be = GetPointer<binary_expr>(GET_NODE(new_ga->op1));
-         THROW_ASSERT(GET_NODE(be->op1)->get_kind() == vector_cst_K, "Increment is not constant");
+         auto* be = GetPointer<binary_expr>(new_ga->op1);
+         THROW_ASSERT(be->op1->get_kind() == vector_cst_K, "Increment is not constant");
          const auto type = GetPointer<const vector_type>(GET_CONST_NODE(tree_helper::CGetType(be->op1)))->elts;
          const auto new_increment = increment * static_cast<integer_cst_t>(parallel_degree);
          const auto new_ic = TM->CreateUniqueIntegerCst(new_increment, type);
@@ -1934,7 +1929,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             bit_field_ref_tree_node_schema[TOK(TOK_OP2)] = STR(offset->index);
             TM->create_tree_node(bit_field_ref_index, bit_field_ref_K, bit_field_ref_tree_node_schema);
 
-            const auto* sa = GetPointer<const ssa_name>(GET_NODE(ga->op0));
+            const auto* sa = GetPointer<const ssa_name>(ga->op0);
             if(sa->type)
             {
                ssa_tree_node_schema[TOK(TOK_TYPE)] = STR(sa->type->index);
@@ -2035,13 +2030,13 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   {
                      new_ga->vdef = TM->GetTreeNode(
                          Transform(ga->vdef->index, parallel_degree, scalar, new_stmt_list, new_phi_list));
-                     const auto old_vdef = GetPointer<const ssa_name>(GET_NODE(ga->vdef));
+                     const auto old_vdef = GetPointer<const ssa_name>(ga->vdef);
                      for(const auto& use_stmt : old_vdef->CGetUseStmts())
                      {
                         const auto stmt = use_stmt.first;
                         if(transformations.find(stmt->index) == transformations.end())
                         {
-                           const auto gn = GetPointerS<gimple_node>(GET_NODE(stmt));
+                           const auto gn = GetPointerS<gimple_node>(stmt);
                            const auto vuse_it = gn->vuses.find(ga->vdef);
                            if(vuse_it != gn->vuses.end())
                            {
@@ -2445,7 +2440,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                new_ga->use_set = ga->use_set;
                new_ga->clobbered_set = ga->clobbered_set;
                return_value = new_tree_node_index;
-               THROW_ASSERT(GET_NODE(new_ga->op0)->get_kind() == ssa_name_K, "Left operand is not ssa");
+               THROW_ASSERT(new_ga->op0->get_kind() == ssa_name_K, "Left operand is not ssa");
                new_stmt_list.push_back(TM->GetTreeNode(return_value));
                for(size_t scalar = 1; scalar <= parallel_degree; scalar++)
                {
@@ -2574,9 +2569,9 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      return_value = new_tree_node_id;
                      /// Workaround due to cycle in the tree between void_type and type_decl
                      auto* new_type_node = GetPointer<type_node>(TM->CGetTreeNode(new_tree_node_id));
-                     if(new_type_node->name and GET_NODE(new_type_node->name)->get_kind() == type_decl_K)
+                     if(new_type_node->name and new_type_node->name->get_kind() == type_decl_K)
                      {
-                        auto* td = GetPointer<type_decl>(GET_NODE(new_type_node->name));
+                        auto* td = GetPointer<type_decl>(new_type_node->name);
                         td->type = TM->GetTreeNode(new_tree_node_id);
                      }
                      break;
@@ -2913,9 +2908,8 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   std::string include_name = GetPointer<const srcp>(tn)->include_name;
                   auto line_number = GetPointer<const srcp>(tn)->line_number;
                   auto column_number = GetPointer<const srcp>(tn)->column_number;
-                  THROW_ASSERT(GET_NODE(be->op1)->get_kind() == ssa_name_K,
-                               "Unexpected operand " + GET_NODE(be->op1)->get_kind_text());
-                  const auto* sa = GetPointer<const ssa_name>(GET_NODE(be->op1));
+                  THROW_ASSERT(be->op1->get_kind() == ssa_name_K, "Unexpected operand " + be->op1->get_kind_text());
+                  const auto* sa = GetPointer<const ssa_name>(be->op1);
                   if(sa->type)
                   {
                      ssa_tree_node_schema[TOK(TOK_TYPE)] =

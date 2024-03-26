@@ -136,7 +136,7 @@ DesignFlowStep_Status UpdateSchedule::InternalExec()
 {
    const auto TM = AppM->get_tree_manager();
    auto* fd = GetPointer<function_decl>(TM->CGetTreeNode(function_id));
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto* sl = GetPointer<statement_list>(fd->body);
    for(const auto& block : sl->list_of_bloc)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->BB" + STR(block.first));

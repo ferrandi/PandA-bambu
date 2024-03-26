@@ -160,7 +160,7 @@ DesignFlowStep_Status call_graph_computation::Exec()
       // avoid nested functions
       const auto fun = TM->CGetTreeNode(f_id);
       const auto fd = GetPointerS<const function_decl>(fun);
-      if(fd->scpe && GET_NODE(fd->scpe)->get_kind() == function_decl_K)
+      if(fd->scpe && fd->scpe->get_kind() == function_decl_K)
       {
          THROW_ERROR_CODE(NESTED_FUNCTIONS_EC, "Nested functions not yet supported " + STR(f_id));
       }

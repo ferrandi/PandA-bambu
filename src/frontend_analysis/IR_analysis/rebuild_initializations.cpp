@@ -101,7 +101,7 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
    tree_nodeRef tn = TM->CGetTreeNode(function_id);
    auto* fd = GetPointerS<function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
-   auto* sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+   auto* sl = GetPointerS<statement_list>(fd->body);
    THROW_ASSERT(sl, "Body is not a statement_list");
    auto B_it_end = sl->list_of_bloc.end();
 
@@ -117,14 +117,13 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
       auto it_los = list_of_stmt.begin();
       while(it_los != it_los_end)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Examining statement " + GET_NODE(*it_los)->ToString());
-         if(GET_NODE(*it_los)->get_kind() == gimple_assign_K)
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + (*it_los)->ToString());
+         if((*it_los)->get_kind() == gimple_assign_K)
          {
-            auto* ga = GetPointerS<gimple_assign>(GET_NODE(*it_los));
-            enum kind code0 = GET_NODE(ga->op0)->get_kind();
+            auto* ga = GetPointerS<gimple_assign>(*it_los);
+            enum kind code0 = ga->op0->get_kind();
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "Left part of assignment " + GET_NODE(ga->op0)->get_kind_text() +
+                           "Left part of assignment " + ga->op0->get_kind_text() +
                                (code0 == array_ref_K ?
                                     " - Type is " + GET_CONST_NODE(tree_helper::CGetType(ga->op0))->get_kind_text() :
                                     ""));
@@ -136,16 +135,16 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                              "check for an initialization such as var[const_index] = const_value; " +
                                  STR(GET_INDEX_NODE(ga->op0)));
-               auto* ar = GetPointerS<array_ref>(GET_NODE(ga->op0));
-               if(GET_NODE(ar->op0)->get_kind() == var_decl_K && GET_NODE(ar->op1)->get_kind() == integer_cst_K)
+               auto* ar = GetPointerS<array_ref>(ga->op0);
+               if(ar->op0->get_kind() == var_decl_K && ar->op1->get_kind() == integer_cst_K)
                {
-                  auto* vd = GetPointerS<var_decl>(GET_NODE(ar->op0));
+                  auto* vd = GetPointerS<var_decl>(ar->op0);
                   if(vd->readonly_flag)
                   {
                      THROW_ASSERT(!vd->init, "Writing element of read only array already initialized: " + STR(ga->op0));
                      inits[ar->op0][tree_helper::GetConstValue(ar->op1)] = ga->op1;
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "<--Statement removed " + GET_NODE(*it_los)->ToString());
+                                    "<--Statement removed " + (*it_los)->ToString());
                      if(ga->memdef)
                      {
                         const auto gimple_nop_id = TM->new_tree_node_id();
@@ -153,7 +152,7 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
                         gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                         gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
                         TM->create_tree_node(gimple_nop_id, gimple_nop_K, gimple_nop_schema);
-                        GetPointerS<ssa_name>(GET_NODE(ga->memdef))->SetDefStmt(TM->GetTreeNode(gimple_nop_id));
+                        GetPointerS<ssa_name>(ga->memdef)->SetDefStmt(TM->GetTreeNode(gimple_nop_id));
                      }
                      if(ga->vdef)
                      {
@@ -162,7 +161,7 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
                         gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                         gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
                         TM->create_tree_node(gimple_nop_id, gimple_nop_K, gimple_nop_schema);
-                        GetPointerS<ssa_name>(GET_NODE(ga->vdef))->SetDefStmt(TM->GetTreeNode(gimple_nop_id));
+                        GetPointerS<ssa_name>(ga->vdef)->SetDefStmt(TM->GetTreeNode(gimple_nop_id));
                      }
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + STR(*it_los));
                      B->RemoveStmt(*it_los, AppM);
@@ -173,8 +172,7 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
                }
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "<--Examined statement " + GET_NODE(*it_los)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + (*it_los)->ToString());
          ++it_los;
       }
 
@@ -209,7 +207,7 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
             constr->add_idx_valu(TM->CreateUniqueIntegerCst(index, integer_type), default_value);
          }
       }
-      GetPointerS<var_decl>(GET_NODE(init.first))->init = TM->GetTreeNode(constructor_index);
+      GetPointerS<var_decl>(init.first)->init = TM->GetTreeNode(constructor_index);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Rebuilt init of " + STR(init.first));
    }
    return DesignFlowStep_Status::SUCCESS;
@@ -255,7 +253,7 @@ static tree_nodeRef extractOp1(tree_nodeRef opSSA)
    }
    THROW_ASSERT(opSSA->get_kind() == ssa_name_K, "unexpected condition:" + opSSA->ToString());
    auto* ssa_opSSA = GetPointerS<ssa_name>(opSSA);
-   auto opSSA_def_stmt = GET_NODE(ssa_opSSA->CGetDefStmt());
+   auto opSSA_def_stmt = ssa_opSSA->CGetDefStmt();
    if(opSSA_def_stmt->get_kind() == gimple_nop_K || opSSA_def_stmt->get_kind() == gimple_phi_K)
    {
       return tree_nodeRef();
@@ -263,14 +261,14 @@ static tree_nodeRef extractOp1(tree_nodeRef opSSA)
    THROW_ASSERT(opSSA_def_stmt->get_kind() == gimple_assign_K,
                 "unexpected condition: " + opSSA_def_stmt->get_kind_text());
    auto* opSSA_assign = GetPointerS<gimple_assign>(opSSA_def_stmt);
-   return GET_NODE(opSSA_assign->op1);
+   return opSSA_assign->op1;
 }
 
 static bool varFound(tree_nodeRef node, unsigned& vd_index, tree_nodeRef& vd_node)
 {
    THROW_ASSERT(node->get_kind() == addr_expr_K, "unexpected condition");
    auto* ae = GetPointerS<addr_expr>(node);
-   auto ae_op = GET_NODE(ae->op);
+   auto ae_op = ae->op;
    if(ae_op->get_kind() == parm_decl_K)
    {
       return false;
@@ -296,7 +294,7 @@ bool rebuild_initialization2::extract_var_decl_ppe(tree_nodeRef addr_assign_op1,
                                                    tree_nodeRef& vd_node)
 {
    auto* ppe = GetPointerS<pointer_plus_expr>(addr_assign_op1);
-   auto ppe_op0 = GET_NODE(ppe->op0);
+   auto ppe_op0 = ppe->op0;
    auto addr2_assign_op1 = extractOp1(ppe_op0);
    if(!addr2_assign_op1)
    {
@@ -305,7 +303,7 @@ bool rebuild_initialization2::extract_var_decl_ppe(tree_nodeRef addr_assign_op1,
    if(addr2_assign_op1->get_kind() == view_convert_expr_K || addr2_assign_op1->get_kind() == nop_expr_K)
    {
       auto* ue = GetPointerS<unary_expr>(addr2_assign_op1);
-      auto ue_op = GET_NODE(ue->op);
+      auto ue_op = ue->op;
       auto addr3_assign_op1 = extractOp1(ue_op);
       if(!addr3_assign_op1)
       {
@@ -315,7 +313,7 @@ bool rebuild_initialization2::extract_var_decl_ppe(tree_nodeRef addr_assign_op1,
       {
          return varFound(addr3_assign_op1, vd_index, vd_node);
       }
-      else if(GET_NODE(ppe->op1)->get_kind() == integer_cst_K && tree_helper::GetConstValue(ppe->op1) == 0)
+      else if(ppe->op1->get_kind() == integer_cst_K && tree_helper::GetConstValue(ppe->op1) == 0)
       {
          if(addr3_assign_op1->get_kind() == ssa_name_K)
          {
@@ -392,7 +390,7 @@ bool rebuild_initialization2::extract_var_decl_ppe(tree_nodeRef addr_assign_op1,
          else if(addr4_assign_op1->get_kind() == nop_expr_K)
          {
             auto* ne1 = GetPointerS<nop_expr>(addr4_assign_op1);
-            auto ne1_op = GET_NODE(ne1->op);
+            auto ne1_op = ne1->op;
             auto addr5_assign_op1 = extractOp1(ne1_op);
             if(!addr5_assign_op1)
             {
@@ -412,7 +410,7 @@ bool rebuild_initialization2::extract_var_decl_ppe(tree_nodeRef addr_assign_op1,
       else if(addr3_assign_op1->get_kind() == view_convert_expr_K)
       {
          auto* ue1 = GetPointerS<unary_expr>(addr3_assign_op1);
-         auto ue1_op = GET_NODE(ue1->op);
+         auto ue1_op = ue1->op;
          if(ue1_op->get_kind() == ssa_name_K)
          {
             auto addr4_assign_op1 = extractOp1(ue1_op);
@@ -468,7 +466,7 @@ bool rebuild_initialization2::extract_var_decl_ppe(tree_nodeRef addr_assign_op1,
       }
       if(addr3_assign_op1->get_kind() == pointer_plus_expr_K)
       {
-         if(GET_NODE(ppe->op1)->get_kind() == integer_cst_K && tree_helper::GetConstValue(ppe->op1) == 0)
+         if(ppe->op1->get_kind() == integer_cst_K && tree_helper::GetConstValue(ppe->op1) == 0)
          {
             addr_assign_op1 = addr3_assign_op1;
             return extract_var_decl_ppe(addr_assign_op1, vd_index, vd_node);
@@ -512,10 +510,10 @@ bool rebuild_initialization2::extract_var_decl_ppe(tree_nodeRef addr_assign_op1,
 bool rebuild_initialization2::extract_var_decl(const mem_ref* me, unsigned& vd_index, tree_nodeRef& vd_node,
                                                tree_nodeRef& addr_assign_op1)
 {
-   auto me_op1 = GET_NODE(me->op1);
+   auto me_op1 = me->op1;
    THROW_ASSERT(me_op1->get_kind() == integer_cst_K, "unexpected condition");
    THROW_ASSERT(tree_helper::GetConstValue(me->op1) == 0, "unexpected condition");
-   auto me_op0 = GET_NODE(me->op0);
+   auto me_op0 = me->op0;
    addr_assign_op1 = extractOp1(me_op0);
    if(!addr_assign_op1)
    {
@@ -535,7 +533,7 @@ bool rebuild_initialization2::extract_var_decl(const mem_ref* me, unsigned& vd_i
       if(addr2_assign_op1->get_kind() == nop_expr_K)
       {
          auto* ne = GetPointerS<nop_expr>(addr2_assign_op1);
-         auto ne_op = GET_NODE(ne->op);
+         auto ne_op = ne->op;
          auto addr3_assign_op1 = extractOp1(ne_op);
          if(!addr3_assign_op1)
          {
@@ -569,7 +567,7 @@ bool rebuild_initialization2::extract_var_decl(const mem_ref* me, unsigned& vd_i
            addr_assign_op1->get_kind() == convert_expr_K)
    {
       auto* ue = GetPointerS<unary_expr>(addr_assign_op1);
-      auto ue_op = GET_NODE(ue->op);
+      auto ue_op = ue->op;
       auto addr1_assign_op1 = extractOp1(ue_op);
       if(!addr1_assign_op1)
       {
@@ -596,7 +594,7 @@ bool rebuild_initialization2::extract_var_decl(const mem_ref* me, unsigned& vd_i
       else if(addr1_assign_op1->get_kind() == nop_expr_K)
       {
          auto* ne1 = GetPointerS<unary_expr>(addr1_assign_op1);
-         auto ne1_op = GET_NODE(ne1->op);
+         auto ne1_op = ne1->op;
          auto addr2_assign_op1 = extractOp1(ne1_op);
          if(!addr2_assign_op1)
          {
@@ -672,7 +670,7 @@ tree_nodeRef getAssign(tree_nodeRef SSAop, unsigned vd_index, CustomOrderedSet<u
 {
    THROW_ASSERT(SSAop->get_kind() == ssa_name_K, "unexpected condition");
    auto* ssa_var = GetPointerS<ssa_name>(SSAop);
-   auto ssa_def_stmt = GET_NODE(ssa_var->CGetDefStmt());
+   auto ssa_def_stmt = ssa_var->CGetDefStmt();
    if(ssa_def_stmt->get_kind() == gimple_nop_K || ssa_def_stmt->get_kind() == gimple_phi_K)
    {
       nonConstantVars.insert(vd_index);
@@ -685,7 +683,7 @@ tree_nodeRef getAssign(tree_nodeRef SSAop, unsigned vd_index, CustomOrderedSet<u
       THROW_ASSERT(ssa_def_stmt->get_kind() == gimple_assign_K,
                    "unexpected condition: " + ssa_def_stmt->get_kind_text());
       auto* assign = GetPointerS<gimple_assign>(ssa_def_stmt);
-      return GET_NODE(assign->op1);
+      return assign->op1;
    }
 }
 
@@ -696,7 +694,7 @@ bool rebuild_initialization2::look_for_ROMs()
    tree_nodeRef tn = TM->CGetTreeNode(function_id);
    auto* fd = GetPointerS<function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
-   auto* sl = GetPointerS<statement_list>(GET_NODE(fd->body));
+   auto* sl = GetPointerS<statement_list>(fd->body);
    THROW_ASSERT(sl, "Body is not a statement_list");
    bool not_supported = false;
    std::map<unsigned, unsigned> var_writing_BB_relation;
@@ -717,9 +715,9 @@ bool rebuild_initialization2::look_for_ROMs()
       const auto& list_of_stmt = B->CGetStmtList();
       for(const auto& inst : list_of_stmt)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(inst)->ToString());
-         auto gn = GetPointerS<gimple_node>(GET_NODE(inst));
-         auto stmt_kind = GET_NODE(inst)->get_kind();
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + inst->ToString());
+         auto gn = GetPointerS<gimple_node>(inst);
+         auto stmt_kind = inst->get_kind();
          if(gn->vdef && stmt_kind != gimple_assign_K)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement: pattern not supported");
@@ -728,9 +726,9 @@ bool rebuild_initialization2::look_for_ROMs()
          }
          if(stmt_kind == gimple_assign_K && gn->vdef)
          {
-            auto ga = GetPointerS<gimple_assign>(GET_NODE(inst));
-            auto op0 = GET_NODE(ga->op0);
-            auto op1 = GET_NODE(ga->op1);
+            auto ga = GetPointerS<gimple_assign>(inst);
+            auto op0 = ga->op0;
+            auto op1 = ga->op1;
             if(op0->get_kind() == mem_ref_K)
             {
                unsigned vd_index = 0;
@@ -761,14 +759,14 @@ bool rebuild_initialization2::look_for_ROMs()
                      else if(var_writing_BB_relation.find(vd_index) == var_writing_BB_relation.end())
                      {
                         /// first check if the variable is initialized
-                        auto* vd = GetPointerS<var_decl>(GET_NODE(vd_node));
+                        auto* vd = GetPointerS<var_decl>(vd_node);
                         if(vd->init)
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                           "---variable is initialized: " + TM->CGetTreeNode(vd_index)->ToString());
                            foundNonConstant(vd_index);
                         }
-                        else if(not vd->scpe or GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K)
+                        else if(not vd->scpe or vd->scpe->get_kind() == translation_unit_decl_K)
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                           "---variable is not local: " + TM->CGetTreeNode(vd_index)->ToString());
@@ -821,7 +819,7 @@ bool rebuild_initialization2::look_for_ROMs()
                         if(addr_assign_op1->get_kind() == pointer_plus_expr_K)
                         {
                            auto* ppe = GetPointerS<pointer_plus_expr>(addr_assign_op1);
-                           auto ppe_op1 = GET_NODE(ppe->op1);
+                           auto ppe_op1 = ppe->op1;
                            if(ppe_op1->get_kind() == ssa_name_K)
                            {
                               auto offset_assign_op1 = getAssign(ppe_op1, vd_index, nonConstantVars, inits, TM);
@@ -836,7 +834,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                  if(offset_assign_op1->get_kind() == lshift_expr_K)
                                  {
                                     auto* ls = GetPointerS<lshift_expr>(offset_assign_op1);
-                                    auto ls_op1 = GET_NODE(ls->op1);
+                                    auto ls_op1 = ls->op1;
                                     if(ls_op1->get_kind() == integer_cst_K)
                                     {
                                        THROW_ASSERT(tree_helper::GetConstValue(ls->op1) >= 0, "");
@@ -856,7 +854,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                        }
                                        else
                                        {
-                                          auto ls_op0 = GET_NODE(ls->op0);
+                                          auto ls_op0 = ls->op0;
                                           if(ls_op0->get_kind() == ssa_name_K)
                                           {
                                              auto nop_assign_op1 =
@@ -872,7 +870,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                                 if(nop_assign_op1->get_kind() == nop_expr_K)
                                                 {
                                                    auto* ne = GetPointerS<nop_expr>(nop_assign_op1);
-                                                   auto ne_op = GET_NODE(ne->op);
+                                                   auto ne_op = ne->op;
                                                    if(ne_op->get_kind() == integer_cst_K)
                                                    {
                                                       /// index is constant
@@ -930,7 +928,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                        if(offset_assign1_op1->get_kind() == nop_expr_K)
                                        {
                                           auto* ne = GetPointerS<nop_expr>(offset_assign1_op1);
-                                          auto ne_op = GET_NODE(ne->op);
+                                          auto ne_op = ne->op;
                                           if(ne_op->get_kind() == integer_cst_K)
                                           {
                                              inits[vd_node][tree_helper::GetConstValue(ne->op)] = ga->op1;
@@ -972,7 +970,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                  else if(offset_assign_op1->get_kind() == nop_expr_K)
                                  {
                                     auto* ne = GetPointerS<nop_expr>(offset_assign_op1);
-                                    auto ne_op = GET_NODE(ne->op);
+                                    auto ne_op = ne->op;
                                     if(ne_op->get_kind() == ssa_name_K)
                                     {
                                        auto offset_assign3_op1 = getAssign(ne_op, vd_index, nonConstantVars, inits, TM);
@@ -1069,8 +1067,8 @@ bool rebuild_initialization2::look_for_ROMs()
          }
          else if(stmt_kind == gimple_assign_K && !gn->vuses.empty())
          {
-            auto ga = GetPointerS<gimple_assign>(GET_NODE(inst));
-            auto op1 = GET_NODE(ga->op1);
+            auto ga = GetPointerS<gimple_assign>(inst);
+            auto op1 = ga->op1;
             if(op1->get_kind() == mem_ref_K)
             {
                unsigned vd_index = 0;
@@ -1175,13 +1173,13 @@ bool rebuild_initialization2::look_for_ROMs()
       const auto& list_of_stmt = B->CGetStmtList();
       for(const auto& inst : list_of_stmt)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(inst)->ToString());
-         auto gn = GetPointerS<gimple_node>(GET_NODE(inst));
-         auto stmt_kind = GET_NODE(inst)->get_kind();
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + inst->ToString());
+         auto gn = GetPointerS<gimple_node>(inst);
+         auto stmt_kind = inst->get_kind();
          if(stmt_kind == gimple_assign_K && !gn->vuses.empty())
          {
-            auto ga = GetPointerS<gimple_assign>(GET_NODE(inst));
-            auto op1 = GET_NODE(ga->op1);
+            auto ga = GetPointerS<gimple_assign>(inst);
+            auto op1 = ga->op1;
             if(op1->get_kind() == mem_ref_K)
             {
                unsigned vd_index = 0;
@@ -1286,13 +1284,13 @@ bool rebuild_initialization2::look_for_ROMs()
       while(it_los != it_los_end)
       {
          auto& inst = *it_los;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(inst)->ToString());
-         auto gn = GetPointerS<gimple_node>(GET_NODE(inst));
-         auto stmt_kind = GET_NODE(inst)->get_kind();
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + inst->ToString());
+         auto gn = GetPointerS<gimple_node>(inst);
+         auto stmt_kind = inst->get_kind();
          if(stmt_kind == gimple_assign_K && gn->vdef)
          {
-            auto ga = GetPointerS<gimple_assign>(GET_NODE(inst));
-            auto op0 = GET_NODE(ga->op0);
+            auto ga = GetPointerS<gimple_assign>(inst);
+            auto op0 = ga->op0;
             if(op0->get_kind() == mem_ref_K)
             {
                unsigned vd_index = 0;
@@ -1309,7 +1307,7 @@ bool rebuild_initialization2::look_for_ROMs()
                      gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                      gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
                      TM->create_tree_node(gimple_nop_id, gimple_nop_K, gimple_nop_schema);
-                     GetPointerS<ssa_name>(GET_NODE(ga->memdef))->SetDefStmt(TM->GetTreeNode(gimple_nop_id));
+                     GetPointerS<ssa_name>(ga->memdef)->SetDefStmt(TM->GetTreeNode(gimple_nop_id));
                   }
                   if(ga->vdef)
                   {
@@ -1318,7 +1316,7 @@ bool rebuild_initialization2::look_for_ROMs()
                      gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                      gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
                      TM->create_tree_node(gimple_nop_id, gimple_nop_K, gimple_nop_schema);
-                     GetPointerS<ssa_name>(GET_NODE(ga->vdef))->SetDefStmt(TM->GetTreeNode(gimple_nop_id));
+                     GetPointerS<ssa_name>(ga->vdef)->SetDefStmt(TM->GetTreeNode(gimple_nop_id));
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + STR(*it_los));
                   B->RemoveStmt(*it_los, AppM);
@@ -1364,7 +1362,7 @@ bool rebuild_initialization2::look_for_ROMs()
             constr->add_idx_valu(TM->CreateUniqueIntegerCst(index, integer_type), default_value);
          }
       }
-      GetPointerS<var_decl>(GET_NODE(init.first))->init = TM->GetTreeNode(constructor_index);
+      GetPointerS<var_decl>(init.first)->init = TM->GetTreeNode(constructor_index);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Rebuilt init of " + STR(init.first));
    }
 

@@ -570,7 +570,7 @@ std::string PointToSolution::ToString() const
    }
    for(const auto& var : variables)
    {
-      res += GET_NODE(var)->ToString() + " ";
+      res += var->ToString() + " ";
    }
    return res;
 }
@@ -1000,7 +1000,7 @@ void gimple_phi::AddDefEdge(const tree_managerRef& TM, const DefEdge& def_edge)
    list_of_def_edge.push_back(def_edge);
    if(updated_ssa_uses && bb_index != 0)
    {
-      const auto sn = GetPointer<ssa_name>(GET_NODE(def_edge.first));
+      const auto sn = GetPointer<ssa_name>(def_edge.first);
       if(sn)
       {
          sn->AddUseStmt(TM->CGetTreeNode(index));
@@ -1021,7 +1021,7 @@ void gimple_phi::ReplaceDefEdge(const tree_managerRef& TM, const DefEdge& old_de
       {
          if(updated_ssa_uses && bb_index != 0)
          {
-            auto sn = GetPointer<ssa_name>(GET_NODE(def_edge.first));
+            auto sn = GetPointer<ssa_name>(def_edge.first);
             if(sn)
             {
                sn->RemoveUse(TM->GetTreeNode(index));
@@ -1030,7 +1030,7 @@ void gimple_phi::ReplaceDefEdge(const tree_managerRef& TM, const DefEdge& old_de
          def_edge = new_def_edge;
          if(updated_ssa_uses && bb_index != 0)
          {
-            auto sn = GetPointer<ssa_name>(GET_NODE(def_edge.first));
+            auto sn = GetPointer<ssa_name>(def_edge.first);
             if(sn)
             {
                sn->AddUseStmt(TM->GetTreeNode(index));
@@ -1064,7 +1064,7 @@ void gimple_phi::RemoveDefEdge(const tree_managerRef& TM, const DefEdge& to_be_r
       {
          if(updated_ssa_uses && bb_index != 0)
          {
-            const auto sn = GetPointer<ssa_name>(GET_NODE(to_be_removed.first));
+            const auto sn = GetPointer<ssa_name>(to_be_removed.first);
             if(sn)
             {
                sn->RemoveUse(TM->GetTreeNode(index));
@@ -1138,14 +1138,14 @@ std::string record_type::get_maybe_name() const
    type_decl* td = nullptr;
    if(name)
    {
-      td = GetPointer<type_decl>(GET_NODE(name));
+      td = GetPointer<type_decl>(name);
    }
    if(td)
    {
       identifier_node* in = nullptr;
       if(td->name)
       {
-         in = GetPointer<identifier_node>(GET_NODE(td->name));
+         in = GetPointer<identifier_node>(td->name);
       }
       if(in)
       {
@@ -1162,7 +1162,7 @@ tree_nodeRef record_type::get_field(integer_cst_t offset)
    field_decl* fd;
    for(i = 0; i < list_of_flds.size(); i++)
    {
-      fd = GetPointer<field_decl>(GET_NODE(list_of_flds[i]));
+      fd = GetPointer<field_decl>(list_of_flds[i]);
       if(fd)
       {
          fld_offset = fd->offset();

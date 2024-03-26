@@ -128,7 +128,7 @@ DesignFlowStep_Status SDCCodeMotion::InternalExec()
 
    const tree_managerRef TM = AppM->get_tree_manager();
    auto* fd = GetPointer<function_decl>(TM->CGetTreeNode(function_id));
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto* sl = GetPointer<statement_list>(fd->body);
    std::map<unsigned int, blocRef>& list_of_bloc = sl->list_of_bloc;
 
    /// Retrieve result of sdc scheduling

@@ -202,7 +202,7 @@ tree_nodeRef tree_manager::GetFunction(const std::string& function_name) const
       }
       if(fd->mngl)
       {
-         tree_nodeRef mangled_id_name = GET_NODE(fd->mngl);
+         tree_nodeRef mangled_id_name = fd->mngl;
          if(mangled_id_name->get_kind() == identifier_node_K)
          {
             auto* in = GetPointer<identifier_node>(mangled_id_name);
@@ -243,7 +243,7 @@ unsigned int tree_manager::function_index_mngl(const std::string& function_name)
    {
       tree_nodeRef curr_tn = function_decl_node.second;
       auto* fd = GetPointer<function_decl>(curr_tn);
-      tree_nodeRef id_name = GET_NODE(fd->name);
+      tree_nodeRef id_name = fd->name;
       std::string simple_name, mangled_name;
       if(id_name->get_kind() == identifier_node_K)
       {
@@ -255,7 +255,7 @@ unsigned int tree_manager::function_index_mngl(const std::string& function_name)
       }
       if(fd->mngl)
       {
-         tree_nodeRef mangled_id_name = GET_NODE(fd->mngl);
+         tree_nodeRef mangled_id_name = fd->mngl;
          if(mangled_id_name->get_kind() == identifier_node_K)
          {
             auto* in = GetPointer<identifier_node>(mangled_id_name);
@@ -396,10 +396,9 @@ unsigned int tree_manager::find(enum kind tree_node_type,
 
 void tree_manager::ReplaceTreeNode(const tree_nodeRef& stmt, const tree_nodeRef& old_node, const tree_nodeRef& new_node)
 {
-   THROW_ASSERT(GetPointer<const gimple_node>(GET_NODE(stmt)), "Replacing ssa name starting from " + stmt->ToString());
-   THROW_ASSERT(!GetPointer<const gimple_node>(GET_NODE(new_node)), "new node cannot be a gimple_node");
-   THROW_ASSERT(!GetPointer<const gimple_node>(GET_NODE(old_node)),
-                "old node cannot be a gimple_node: " + STR(old_node));
+   THROW_ASSERT(GetPointer<const gimple_node>(stmt), "Replacing ssa name starting from " + stmt->ToString());
+   THROW_ASSERT(!GetPointer<const gimple_node>(new_node), "new node cannot be a gimple_node");
+   THROW_ASSERT(!GetPointer<const gimple_node>(old_node), "old node cannot be a gimple_node: " + STR(old_node));
    /// Temporary variable used to pass first argument of RecursiveReplaceTreeNode by reference. Since it is a
    /// gimple_node it has not to be replaced
    tree_nodeRef temp = stmt;
@@ -409,19 +408,19 @@ void tree_manager::ReplaceTreeNode(const tree_nodeRef& stmt, const tree_nodeRef&
 void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef old_node, const tree_nodeRef& new_node,
                                             const tree_nodeRef& stmt, const bool definition) // NOLINT
 {
-   tree_nodeRef curr_tn = GET_NODE(tn);
+   tree_nodeRef curr_tn = tn;
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param),
-                  "-->Replacing " + old_node->ToString() + " (" + GET_NODE(old_node)->get_kind_text() + ") with " +
-                      new_node->ToString() + "(" + GET_NODE(new_node)->get_kind_text() +
-                      ") starting from node: " + tn->ToString() + "(" + GET_NODE(tn)->get_kind_text() + ")");
+                  "-->Replacing " + old_node->ToString() + " (" + old_node->get_kind_text() + ") with " +
+                      new_node->ToString() + "(" + new_node->get_kind_text() +
+                      ") starting from node: " + tn->ToString() + "(" + tn->get_kind_text() + ")");
    if(GET_INDEX_NODE(tn) == GET_INDEX_NODE(old_node))
    {
       /// Check if we need to update uses or definitions
-      const auto gn = GetPointer<const gimple_node>(GET_NODE(stmt));
+      const auto gn = GetPointer<const gimple_node>(stmt);
       if(gn)
       {
-         const auto ga = GetPointer<const gimple_assign>(GET_NODE(stmt));
-         const auto gp = GetPointer<const gimple_phi>(GET_NODE(stmt));
+         const auto ga = GetPointer<const gimple_assign>(stmt);
+         const auto gp = GetPointer<const gimple_phi>(stmt);
          // Not in a assign and not in a phi or in right part of a phi or in right part of assign
          if(!definition)
          {
@@ -431,7 +430,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
             {
                for(decltype(used_ssa.second) counter = 0; counter < used_ssa.second; counter++)
                {
-                  GetPointerS<ssa_name>(GET_NODE(used_ssa.first))->RemoveUse(stmt);
+                  GetPointerS<ssa_name>(used_ssa.first)->RemoveUse(stmt);
                }
             }
 #ifndef NDEBUG
@@ -442,7 +441,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
             {
                for(decltype(new_used_ssa.second) counter = 0; counter < new_used_ssa.second; counter++)
                {
-                  GetPointerS<ssa_name>(GET_NODE(new_used_ssa.first))->AddUseStmt(stmt);
+                  GetPointerS<ssa_name>(new_used_ssa.first)->AddUseStmt(stmt);
                }
             }
          }
@@ -450,17 +449,17 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
          {
             if(gn->vdef && gn->vdef->index == old_node->index)
             {
-               const auto vssa = GetPointerS<ssa_name>(GET_NODE(new_node));
+               const auto vssa = GetPointerS<ssa_name>(new_node);
                vssa->SetDefStmt(stmt);
             }
             if(gn->memdef && gn->memdef->index == old_node->index)
             {
-               const auto vssa = GetPointerS<ssa_name>(GET_NODE(new_node));
+               const auto vssa = GetPointerS<ssa_name>(new_node);
                vssa->SetDefStmt(stmt);
             }
-            if(ga && ga->op0->index == old_node->index && GET_NODE(old_node)->get_kind() == ssa_name_K)
+            if(ga && ga->op0->index == old_node->index && old_node->get_kind() == ssa_name_K)
             {
-               GetPointerS<ssa_name>(GET_NODE(new_node))->SetDefStmt(stmt);
+               GetPointerS<ssa_name>(new_node)->SetDefStmt(stmt);
             }
             if(gp && gp->res->index == old_node->index && !GetPointer<cst_node>(GET_CONST_NODE(new_node)))
             {
@@ -468,15 +467,14 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
                             GET_CONST_NODE(new_node)->get_kind_text());
                INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param),
                               "---Setting " + STR(stmt) + " as new define statement of " + STR(new_node));
-               GetPointerS<ssa_name>(GET_NODE(new_node))->SetDefStmt(stmt);
+               GetPointerS<ssa_name>(new_node)->SetDefStmt(stmt);
             }
          }
       }
       tn = new_node;
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param),
-                     "<--Replaced " + old_node->ToString() + " (" + GET_NODE(old_node)->get_kind_text() + ") with " +
-                         new_node->ToString() + "(" + GET_NODE(new_node)->get_kind_text() +
-                         ") New statement: " + tn->ToString());
+                     "<--Replaced " + old_node->ToString() + " (" + old_node->get_kind_text() + ") with " +
+                         new_node->ToString() + "(" + new_node->get_kind_text() + ") New statement: " + tn->ToString());
       return;
    }
    const auto gn = GetPointer<gimple_node>(curr_tn);
@@ -495,11 +493,11 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
       if(vuse_it != gn->vuses.end())
       {
          gn->vuses.erase(vuse_it);
-         const auto old_vssa = GetPointerS<ssa_name>(GET_NODE(old_node));
+         const auto old_vssa = GetPointerS<ssa_name>(old_node);
          old_vssa->RemoveUse(stmt);
          if(gn->AddVuse(new_node))
          {
-            const auto new_vssa = GetPointerS<ssa_name>(GET_NODE(new_node));
+            const auto new_vssa = GetPointerS<ssa_name>(new_node);
             new_vssa->AddUseStmt(stmt);
          }
       }
@@ -507,11 +505,11 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
       if(vover_it != gn->vovers.end())
       {
          gn->vovers.erase(vover_it);
-         const auto old_vssa = GetPointerS<ssa_name>(GET_NODE(old_node));
+         const auto old_vssa = GetPointerS<ssa_name>(old_node);
          old_vssa->RemoveUse(stmt);
          if(gn->AddVover(new_node))
          {
-            const auto new_vssa = GetPointerS<ssa_name>(GET_NODE(new_node));
+            const auto new_vssa = GetPointerS<ssa_name>(new_node);
             new_vssa->AddUseStmt(stmt);
          }
       }
@@ -526,7 +524,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
       case gimple_assign_K:
       {
          const auto gm = GetPointerS<gimple_assign>(curr_tn);
-         RecursiveReplaceTreeNode(gm->op0, old_node, new_node, stmt, GET_NODE(new_node)->get_kind() == ssa_name_K);
+         RecursiveReplaceTreeNode(gm->op0, old_node, new_node, stmt, new_node->get_kind() == ssa_name_K);
          RecursiveReplaceTreeNode(gm->op1, old_node, new_node, stmt, false);
          for(auto& use : gm->use_set->variables)
          {
@@ -776,7 +774,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
             {
                RecursiveReplaceTreeNode(tl->valu, old_node, new_node, stmt, false);
             }
-            tl = tl->chan ? GetPointerS<tree_list>(GET_NODE(tl->chan)) : nullptr;
+            tl = tl->chan ? GetPointerS<tree_list>(tl->chan) : nullptr;
          }
          break;
       }
@@ -810,17 +808,16 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
                      curr_tn->get_kind_text());
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param),
-                  "<--Replaced " + old_node->ToString() + " (" + GET_NODE(old_node)->get_kind_text() + ") with " +
-                      new_node->ToString() + "(" + GET_NODE(new_node)->get_kind_text() +
-                      ") New statement: " + tn->ToString());
+                  "<--Replaced " + old_node->ToString() + " (" + old_node->get_kind_text() + ") with " +
+                      new_node->ToString() + "(" + new_node->get_kind_text() + ") New statement: " + tn->ToString());
 }
 
 void tree_manager::erase_usage_info(const tree_nodeRef& tn, const tree_nodeRef& stmt)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                  "-->Erase usage into node " + STR(GET_INDEX_NODE(tn)) + " (" + GET_NODE(tn)->get_kind_text() +
-                      "). Statement: " + STR(GET_INDEX_NODE(stmt)) + " (" + GET_NODE(stmt)->get_kind_text() + ")");
-   tree_nodeRef curr_tn = GET_NODE(tn);
+                  "-->Erase usage into node " + STR(GET_INDEX_NODE(tn)) + " (" + tn->get_kind_text() +
+                      "). Statement: " + STR(GET_INDEX_NODE(stmt)) + " (" + stmt->get_kind_text() + ")");
+   tree_nodeRef curr_tn = tn;
    switch(curr_tn->get_kind())
    {
       case gimple_assign_K:
@@ -1023,16 +1020,16 @@ void tree_manager::erase_usage_info(const tree_nodeRef& tn, const tree_nodeRef& 
                      curr_tn->get_kind_text());
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                  "<--Erased usage into node " + STR(GET_INDEX_NODE(tn)) + " (" + GET_NODE(tn)->get_kind_text() +
-                      "). Statement: " + STR(GET_INDEX_NODE(stmt)) + " (" + GET_NODE(stmt)->get_kind_text() + ")");
+                  "<--Erased usage into node " + STR(GET_INDEX_NODE(tn)) + " (" + tn->get_kind_text() +
+                      "). Statement: " + STR(GET_INDEX_NODE(stmt)) + " (" + stmt->get_kind_text() + ")");
 }
 
 void tree_manager::insert_usage_info(const tree_nodeRef& tn, const tree_nodeRef& stmt)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                  "-->Insert usage info into node " + STR(GET_INDEX_NODE(tn)) + " (" + GET_NODE(tn)->get_kind_text() +
-                      "). Statement: " + STR(GET_INDEX_NODE(stmt)) + " (" + GET_NODE(stmt)->get_kind_text() + ")");
-   tree_nodeRef curr_tn = GET_NODE(tn);
+                  "-->Insert usage info into node " + STR(GET_INDEX_NODE(tn)) + " (" + tn->get_kind_text() +
+                      "). Statement: " + STR(GET_INDEX_NODE(stmt)) + " (" + stmt->get_kind_text() + ")");
+   tree_nodeRef curr_tn = tn;
    switch(curr_tn->get_kind())
    {
       case gimple_assign_K:
@@ -1226,8 +1223,8 @@ void tree_manager::insert_usage_info(const tree_nodeRef& tn, const tree_nodeRef&
                      curr_tn->get_kind_text());
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                  "<--Inserted usage info into node " + STR(GET_INDEX_NODE(tn)) + " (" + GET_NODE(tn)->get_kind_text() +
-                      "). Statement: " + STR(GET_INDEX_NODE(stmt)) + " (" + GET_NODE(stmt)->get_kind_text() + ")");
+                  "<--Inserted usage info into node " + STR(GET_INDEX_NODE(tn)) + " (" + tn->get_kind_text() +
+                      "). Statement: " + STR(GET_INDEX_NODE(stmt)) + " (" + stmt->get_kind_text() + ")");
 }
 
 void tree_manager::add_parallel_loop()
@@ -1896,11 +1893,11 @@ bool tree_manager::check_for_decl(const tree_nodeRef& tn, const tree_managerRef&
    {
       return true;
    }
-   if(GET_NODE(dn->name)->get_kind() == identifier_node_K)
+   if(dn->name->get_kind() == identifier_node_K)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                     "---check_for_decl is considering: " + GetPointer<identifier_node>(GET_NODE(dn->name))->strg +
-                         ":" + dn->include_name);
+                     "---check_for_decl is considering: " + GetPointer<identifier_node>(dn->name)->strg + ":" +
+                         dn->include_name);
    }
    /// check for memory_tag, parm_decl, result_decl
    if(GetPointer<memory_tag>(tn) || dn->get_kind() == parm_decl_K || dn->get_kind() == result_decl_K)
@@ -1908,30 +1905,30 @@ bool tree_manager::check_for_decl(const tree_nodeRef& tn, const tree_managerRef&
       return true;
    }
    /// check for scope
-   if(dn->scpe and GET_NODE(dn->scpe)->get_kind() == function_decl_K)
+   if(dn->scpe and dn->scpe->get_kind() == function_decl_K)
    {
       return true;
    }
    const function_decl* fd = GetPointer<function_decl>(tn);
-   if(!fd and dn->scpe and GetPointer<type_node>(GET_NODE(dn->scpe)) and
-      (!GetPointer<type_node>(GET_NODE(dn->scpe))->name and
+   if(!fd and dn->scpe and GetPointer<type_node>(dn->scpe) and
+      (!GetPointer<type_node>(dn->scpe)->name and
        global_type_unql_symbol_table.find(GET_INDEX_NODE(dn->scpe)) == global_type_unql_symbol_table.end()))
    {
       return true;
    }
    if(dn->mngl)
    {
-      THROW_ASSERT(GET_NODE(dn->mngl)->get_kind() == identifier_node_K,
-                   "expected an identifier_node: " + STR(GET_NODE(dn->mngl)->get_kind_text()));
+      THROW_ASSERT(dn->mngl->get_kind() == identifier_node_K,
+                   "expected an identifier_node: " + STR(dn->mngl->get_kind_text()));
       if(dn->name)
       {
-         THROW_ASSERT(GET_NODE(dn->name)->get_kind() == identifier_node_K,
-                      "expected an identifier_node: " + STR(GET_NODE(dn->name)->get_kind_text()) + " " + STR(node_id));
+         THROW_ASSERT(dn->name->get_kind() == identifier_node_K,
+                      "expected an identifier_node: " + STR(dn->name->get_kind_text()) + " " + STR(node_id));
          if(fd)
          {
             if(fd->builtin_flag)
             {
-               symbol_name = GetPointer<identifier_node>(GET_NODE(dn->name))->strg;
+               symbol_name = GetPointer<identifier_node>(dn->name)->strg;
                if(starts_with(symbol_name, "__builtin_"))
                {
                   symbol_name = symbol_name.substr(strlen("__builtin_"));
@@ -1941,24 +1938,24 @@ bool tree_manager::check_for_decl(const tree_nodeRef& tn, const tree_managerRef&
             }
             else
             {
-               symbol_name = GetPointer<identifier_node>(GET_NODE(dn->mngl))->strg;
+               symbol_name = GetPointer<identifier_node>(dn->mngl)->strg;
             }
          }
          else
          {
-            symbol_name = GetPointer<identifier_node>(GET_NODE(dn->mngl))->strg;
+            symbol_name = GetPointer<identifier_node>(dn->mngl)->strg;
          }
       }
       else
       {
-         symbol_name = GetPointer<identifier_node>(GET_NODE(dn->mngl))->strg;
+         symbol_name = GetPointer<identifier_node>(dn->mngl)->strg;
       }
    }
    else
    {
-      THROW_ASSERT(GET_NODE(dn->name)->get_kind() == identifier_node_K,
-                   "expected an identifier_node: " + STR(GET_NODE(dn->name)->get_kind_text()) + " " + STR(node_id));
-      symbol_name = GetPointer<identifier_node>(GET_NODE(dn->name))->strg;
+      THROW_ASSERT(dn->name->get_kind() == identifier_node_K,
+                   "expected an identifier_node: " + STR(dn->name->get_kind_text()) + " " + STR(node_id));
+      symbol_name = GetPointer<identifier_node>(dn->name)->strg;
       if(starts_with(symbol_name, "__builtin_"))
       {
          symbol_name = symbol_name.substr(strlen("__builtin_"));
@@ -1966,26 +1963,26 @@ bool tree_manager::check_for_decl(const tree_nodeRef& tn, const tree_managerRef&
       //      if(fd && fd->undefined_flag && fd->builtin_flag && symbol_name.find("__builtin_") == std::string::npos)
       //            symbol_name = "__builtin_" + symbol_name;
    }
-   if(dn->scpe and GetPointer<type_node>(GET_NODE(dn->scpe)) and GetPointer<type_node>(GET_NODE(dn->scpe))->name)
+   if(dn->scpe and GetPointer<type_node>(dn->scpe) and GetPointer<type_node>(dn->scpe)->name)
    {
-      auto* type = GetPointer<type_node>(GET_NODE(dn->scpe));
-      THROW_ASSERT(type, "expected a type_node: " + std::string(GET_NODE(dn->scpe)->get_kind_text()));
+      auto* type = GetPointer<type_node>(dn->scpe);
+      THROW_ASSERT(type, "expected a type_node: " + std::string(dn->scpe->get_kind_text()));
       /// declaration with type_node local to a function are not considered
-      if(type->scpe and GET_NODE(type->scpe)->get_kind() == function_decl_K)
+      if(type->scpe and type->scpe->get_kind() == function_decl_K)
       {
          return true;
       }
       const auto quals = type->qual;
       std::string type_name;
-      if(GET_NODE(type->name)->get_kind() == identifier_node_K)
+      if(type->name->get_kind() == identifier_node_K)
       {
-         type_name = GetPointer<identifier_node>(GET_NODE(type->name))->strg;
+         type_name = GetPointer<identifier_node>(type->name)->strg;
       }
       else
       {
          type_name = tree_helper::get_type_name(TM_this, GET_INDEX_NODE(type->name));
       }
-      if(type->name and (GET_NODE(type->name)->get_kind() == type_decl_K))
+      if(type->name and (type->name->get_kind() == type_decl_K))
       {
          if(quals != TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN)
          {
@@ -2005,8 +2002,7 @@ bool tree_manager::check_for_decl(const tree_nodeRef& tn, const tree_managerRef&
          symbol_scope = symbol_scope + "#F";
       }
    }
-   else if(dn->scpe and GetPointer<type_node>(GET_NODE(dn->scpe)) and
-           !GetPointer<type_node>(GET_NODE(dn->scpe))->name and
+   else if(dn->scpe and GetPointer<type_node>(dn->scpe) and !GetPointer<type_node>(dn->scpe)->name and
            global_type_unql_symbol_table.find(GET_INDEX_NODE(dn->scpe)) != global_type_unql_symbol_table.end())
    {
       symbol_scope = global_type_unql_symbol_table.find(GET_INDEX_NODE(dn->scpe))->second;
@@ -2041,22 +2037,22 @@ bool tree_manager::check_for_type(const tree_nodeRef& tn, const tree_managerRef&
    { /// integer_type and real_type have some duplication
       return true;
    }
-   if(type->scpe and ((GET_NODE(type->scpe)->get_kind() == function_decl_K)))
+   if(type->scpe and ((type->scpe->get_kind() == function_decl_K)))
    {
       return true;
    }
    const auto quals = type->qual;
    std::string type_name;
-   THROW_ASSERT(GET_NODE(type->name), "wrong");
-   if(GET_NODE(type->name)->get_kind() == identifier_node_K)
+   THROW_ASSERT(type->name, "wrong");
+   if(type->name->get_kind() == identifier_node_K)
    {
-      type_name = GetPointer<identifier_node>(GET_NODE(type->name))->strg;
+      type_name = GetPointer<identifier_node>(type->name)->strg;
    }
    else
    {
       type_name = tree_helper::get_type_name(TM, GET_INDEX_NODE(type->name));
    }
-   if(type->name and (GET_NODE(type->name)->get_kind() == type_decl_K || type->unql))
+   if(type->name and (type->name->get_kind() == type_decl_K || type->unql))
    {
       if(quals != TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN)
       {
@@ -2259,7 +2255,7 @@ bool tree_manager::is_top_function(const function_decl* fd) const
 {
    if(fd->name)
    {
-      tree_nodeRef id_name = GET_NODE(fd->name);
+      tree_nodeRef id_name = fd->name;
       std::string simple_name;
       if(id_name->get_kind() == identifier_node_K)
       {
@@ -2299,7 +2295,7 @@ bool tree_manager::check_ssa_uses(unsigned int fun_id) const
 {
    tree_nodeRef fd_node = GetTreeNode(fun_id);
    auto* fd = GetPointer<function_decl>(fd_node);
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto* sl = GetPointer<statement_list>(fd->body);
 
    for(const auto& bb : sl->list_of_bloc)
    {
@@ -2314,7 +2310,7 @@ bool tree_manager::check_ssa_uses(unsigned int fun_id) const
          TreeNodeMap<size_t> ssas = tree_helper::ComputeSsaUses(statement_node);
          for(auto& ssa : ssas)
          {
-            tree_nodeRef tn = GET_NODE(ssa.first);
+            tree_nodeRef tn = ssa.first;
             if(tn->get_kind() == ssa_name_K)
             {
                auto* sn = GetPointer<ssa_name>(tn);
