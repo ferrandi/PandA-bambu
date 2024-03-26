@@ -315,24 +315,24 @@ gimple_node::gimple_node(unsigned int i)
 
 void gimple_node::SetVdef(const tree_nodeRef& _vdef)
 {
-   THROW_ASSERT(!GET_CONST_NODE(_vdef) || (GET_CONST_NODE(_vdef)->get_kind() == ssa_name_K &&
-                                           GetPointerS<const ssa_name>(GET_CONST_NODE(_vdef))->virtual_flag),
+   THROW_ASSERT(!GET_CONST_PTD_NODE(_vdef) || (GET_CONST_NODE(_vdef)->get_kind() == ssa_name_K &&
+                                               GetPointerS<const ssa_name>(GET_CONST_NODE(_vdef))->virtual_flag),
                 "");
    vdef = _vdef;
 }
 
 bool gimple_node::AddVuse(const tree_nodeRef& vuse)
 {
-   THROW_ASSERT(!GET_CONST_NODE(vuse) || (GET_CONST_NODE(vuse)->get_kind() == ssa_name_K &&
-                                          GetPointerS<const ssa_name>(GET_CONST_NODE(vuse))->virtual_flag),
+   THROW_ASSERT(!GET_CONST_PTD_NODE(vuse) || (GET_CONST_NODE(vuse)->get_kind() == ssa_name_K &&
+                                              GetPointerS<const ssa_name>(GET_CONST_NODE(vuse))->virtual_flag),
                 "");
    return vuses.insert(vuse).second;
 }
 
 bool gimple_node::AddVover(const tree_nodeRef& vover)
 {
-   THROW_ASSERT(!GET_CONST_NODE(vover) || (GET_CONST_NODE(vover)->get_kind() == ssa_name_K &&
-                                           GetPointerS<const ssa_name>(GET_CONST_NODE(vover))->virtual_flag),
+   THROW_ASSERT(!GET_CONST_PTD_NODE(vover) || (GET_CONST_NODE(vover)->get_kind() == ssa_name_K &&
+                                               GetPointerS<const ssa_name>(GET_CONST_NODE(vover))->virtual_flag),
                 "");
    return vovers.insert(vover).second;
 }
@@ -1003,7 +1003,7 @@ void gimple_phi::AddDefEdge(const tree_managerRef& TM, const DefEdge& def_edge)
       const auto sn = GetPointer<ssa_name>(GET_NODE(def_edge.first));
       if(sn)
       {
-         sn->AddUseStmt(TM->GetTreeReindex(index));
+         sn->AddUseStmt(TM->CGetTreeNode(index));
       }
    }
 }
@@ -1024,7 +1024,7 @@ void gimple_phi::ReplaceDefEdge(const tree_managerRef& TM, const DefEdge& old_de
             auto sn = GetPointer<ssa_name>(GET_NODE(def_edge.first));
             if(sn)
             {
-               sn->RemoveUse(TM->GetTreeReindex(index));
+               sn->RemoveUse(TM->GetTreeNode(index));
             }
          }
          def_edge = new_def_edge;
@@ -1033,7 +1033,7 @@ void gimple_phi::ReplaceDefEdge(const tree_managerRef& TM, const DefEdge& old_de
             auto sn = GetPointer<ssa_name>(GET_NODE(def_edge.first));
             if(sn)
             {
-               sn->AddUseStmt(TM->GetTreeReindex(index));
+               sn->AddUseStmt(TM->GetTreeNode(index));
             }
          }
          break;
@@ -1067,7 +1067,7 @@ void gimple_phi::RemoveDefEdge(const tree_managerRef& TM, const DefEdge& to_be_r
             const auto sn = GetPointer<ssa_name>(GET_NODE(to_be_removed.first));
             if(sn)
             {
-               sn->RemoveUse(TM->GetTreeReindex(index));
+               sn->RemoveUse(TM->GetTreeNode(index));
             }
          }
          list_of_def_edge.erase(def_edge);
@@ -1253,7 +1253,7 @@ void ssa_name::visit(tree_node_visitor* const v) const
    VISIT_MEMBER(mask, use_set, visit(v));
 }
 
-const tree_nodeRef ssa_name::CGetDefStmt() const
+tree_nodeRef ssa_name::CGetDefStmt() const
 {
 #if HAVE_ASSERTS
    if(def_stmts.size() != 1)
@@ -1271,7 +1271,7 @@ const tree_nodeRef ssa_name::CGetDefStmt() const
    return *(def_stmts.begin());
 }
 
-const TreeNodeSet ssa_name::CGetDefStmts() const
+TreeNodeSet ssa_name::CGetDefStmts() const
 {
    return def_stmts;
 }

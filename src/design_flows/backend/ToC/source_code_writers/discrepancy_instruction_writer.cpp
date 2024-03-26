@@ -63,7 +63,7 @@ void discrepancy_instruction_writer::declareFunction(const unsigned int function
    const auto BH = FB->CGetBehavioralHelper();
    const auto funName = BH->get_function_name();
    const auto TM = AppM->get_tree_manager();
-   const auto node_fun = TM->CGetTreeReindex(function_id);
+   const auto node_fun = TM->CGetTreeNode(function_id);
    THROW_ASSERT(GetPointer<function_decl>(GET_NODE(node_fun)), "expected a function decl");
    const auto prepend_static =
        !tree_helper::IsStaticDeclaration(node_fun) && !tree_helper::IsExternDeclaration(node_fun) && funName != "main";

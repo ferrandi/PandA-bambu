@@ -172,7 +172,6 @@ DesignFlowStep_Status parm2ssa::InternalExec()
 void parm2ssa::recursive_analysis(const tree_nodeRef& tn, const std::string& srcp,
                                   CustomUnorderedSet<unsigned int>& already_visited_ae)
 {
-   THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    const auto TM = AppM->get_tree_manager();
    const auto curr_tn = GET_NODE(tn);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,

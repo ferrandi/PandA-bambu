@@ -340,27 +340,33 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
  * @return the pointer to t
  */
 #ifndef NDEBUG
-#define GET_NODE(t)                                                                                           \
-   ((t) ? ((t)->get_kind() == tree_reindex_K ? (GetPointerS<tree_reindex>(t))->actual_tree_node :             \
-                                               throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__)) : \
-          throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__))
-#define GET_CONST_NODE(t)                                                                                     \
-   ((t) ? ((t)->get_kind() == tree_reindex_K ? (GetPointerS<const tree_reindex>(t))->actual_tree_node :       \
-                                               throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__)) : \
-          throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__))
+#define GET_NODE(t)                                                                                \
+   ((t) ? ((t)->get_kind() != tree_reindex_K ?                                                     \
+               t :                                                                                 \
+               throw_error(t, #t " is a tree reindex", __PRETTY_FUNCTION__, __FILE__, __LINE__)) : \
+          throw_error(t, #t " is nullptr", __PRETTY_FUNCTION__, __FILE__, __LINE__))
+#define GET_CONST_NODE(t)                                                                          \
+   ((t) ? ((t)->get_kind() != tree_reindex_K ?                                                     \
+               t :                                                                                 \
+               throw_error(t, #t " is a tree reindex", __PRETTY_FUNCTION__, __FILE__, __LINE__)) : \
+          throw_error(t, #t " is nullptr", __PRETTY_FUNCTION__, __FILE__, __LINE__))
 #else
-#define GET_NODE(t) (GetPointerS<tree_reindex>(t))->actual_tree_node
-#define GET_CONST_NODE(t) (GetPointerS<const tree_reindex>(t))->actual_tree_node
+#define GET_NODE(t) t
+#define GET_CONST_NODE(t) t
 #endif
+#define GET_PTD_NODE(t) \
+   (((t) && (t)->get_kind() == tree_reindex_K) ? GetPointerS<tree_reindex>(t)->actual_tree_node : (t))
+#define GET_CONST_PTD_NODE(t) \
+   (((t) && (t)->get_kind() == tree_reindex_K) ? GetPointerS<const tree_reindex>(t)->actual_tree_node : (t))
 
 /**
  * Macro used to hide implementation details when accessing a tree_node from another tree_node
  * @param t is the tree_nodeRef to access
  * @return the index of t in tree_manager
  */
-#define GET_INDEX_NODE(t) (GET_NODE(t))->index
+#define GET_INDEX_NODE(t) (t)->index
 // unsigned int GET_INDEX_NODE(const tree_nodeRef& t);
-#define GET_INDEX_CONST_NODE(t) (GET_CONST_NODE(t))->index
+#define GET_INDEX_CONST_NODE(t) (t)->index
 // unsigned int GET_INDEX_CONST_NODE(const tree_nodeConstRef& t);
 
 /**
@@ -3745,6 +3751,7 @@ struct gimple_phi : public gimple_node
    friend class tree_manager;
    friend class string_cst_fix;
    friend class parm2ssa;
+   friend class tree_reindex_remove;
 
    /// The type of the def edge
    using DefEdge = std::pair<tree_nodeRef, unsigned int>;
@@ -4631,13 +4638,13 @@ struct ssa_name : public tree_node
     * Return the def stmt (checking that is unique)
     * @return the definition statement
     */
-   const tree_nodeRef CGetDefStmt() const;
+   tree_nodeRef CGetDefStmt() const;
 
    /**
     * Return the set of definition statements
     * @return the definition statements
     */
-   const TreeNodeSet CGetDefStmts() const;
+   TreeNodeSet CGetDefStmts() const;
 
    /// visitor enum
    enum
@@ -5737,13 +5744,13 @@ struct var_decl : public decl_node, public attr
    tree_nodeRef smt_ann;
 
    /// The set of gimple node which writes this variable
-   CustomUnorderedSet<tree_nodeRef> defs;
+   TreeNodeSet defs;
 
    /// The set of gimple node which read this variable
-   CustomUnorderedSet<tree_nodeRef> uses;
+   TreeNodeSet uses;
 
    /// The set of gimple node which addresses this variable
-   CustomUnorderedSet<tree_nodeRef> addressings;
+   TreeNodeSet addressings;
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(var_decl)

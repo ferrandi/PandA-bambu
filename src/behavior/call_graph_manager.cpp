@@ -717,7 +717,6 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
                                                         unsigned int node_stmt,
                                                         enum FunctionEdgeInfo::CallType call_type, int DL)
 {
-   THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    const tree_nodeRef& curr_tn = GET_NODE(tn);
    unsigned int ind = GET_INDEX_NODE(tn);
    if(curr_tn->get_kind() != function_decl_K)
@@ -745,7 +744,7 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
             ind = impl;
          }
          /// check for nested function
-         const tree_nodeRef fun = TM->get_tree_node_const(ind);
+         const tree_nodeRef fun = TM->CGetTreeNode(ind);
          const auto* fd = GetPointer<const function_decl>(fun);
          if(fd->scpe && GET_NODE(fd->scpe)->get_kind() == function_decl_K)
          {

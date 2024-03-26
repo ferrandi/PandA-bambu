@@ -396,7 +396,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
 
       const auto volatile_sn = tree_man->create_ssa_name(sn->var, tree_helper::CGetType(virtual_ssa_definition.first),
                                                          nullptr, nullptr, true, true);
-      GetPointerS<ssa_name>(GET_NODE(volatile_sn))->SetDefStmt(TM->GetTreeReindex(nop_id));
+      GetPointerS<ssa_name>(GET_NODE(volatile_sn))->SetDefStmt(TM->GetTreeNode(nop_id));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created volatile ssa " + STR(volatile_sn));
 
       /// Set of basic blocks belonging to the loop

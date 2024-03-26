@@ -261,7 +261,7 @@ bool FunctionCallTypeCleanup::ParametersTypeCleanup(const tree_managerRef& TM, c
       if((GET_CONST_NODE(*arg_it)->get_kind() == integer_cst_K || GET_CONST_NODE(*arg_it)->get_kind() == ssa_name_K) &&
          !tree_helper::IsSameType(formal_type, actual_type))
       {
-         ga_cleanup = tree_man->CreateNopExpr(*arg_it, TM->CGetTreeReindex(formal_type->index), tree_nodeRef(),
+         ga_cleanup = tree_man->CreateNopExpr(*arg_it, TM->CGetTreeNode(formal_type->index), tree_nodeRef(),
                                               tree_nodeRef(), function_id);
       }
       else if(GET_CONST_NODE(*arg_it)->get_kind() == addr_expr_K || GET_CONST_NODE(*arg_it)->get_kind() == nop_expr_K ||

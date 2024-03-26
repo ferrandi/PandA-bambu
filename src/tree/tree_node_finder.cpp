@@ -41,14 +41,15 @@
  *
  */
 #include "tree_node_finder.hpp"
-#include "exceptions.hpp"         // for THROW_ASSERT
-#include "token_interface.hpp"    // for TOK, STOK, TreeV...
-#include <boost/lexical_cast.hpp> // for lexical_cast
 
+#include "exceptions.hpp"
 #include "ext_tree_node.hpp"
+#include "token_interface.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+
+#include <boost/lexical_cast.hpp>
 
 template <class type>
 static bool check_value_opt(const std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>::const_iterator& it_element,

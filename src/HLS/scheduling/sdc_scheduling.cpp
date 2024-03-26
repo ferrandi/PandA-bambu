@@ -574,7 +574,7 @@ bool SDCScheduling::HasToBeExecuted() const
 DesignFlowStep_Status SDCScheduling::InternalExec()
 {
    const auto TM = HLSMgr->get_tree_manager();
-   auto fnode = TM->get_tree_node_const(funId);
+   auto fnode = TM->CGetTreeNode(funId);
    auto fd = GetPointer<function_decl>(fnode);
    const auto fname = tree_helper::GetMangledFunctionName(fd);
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);

@@ -367,8 +367,8 @@ bool StorageValueInformation::are_value_bitsize_compatible(unsigned int storage_
    const auto var1_nid = get_variable_index(storage_value_index1);
    const auto var2_nid = get_variable_index(storage_value_index2);
    const auto TM = HLS_mgr->get_tree_manager();
-   const auto var1 = TM->CGetTreeReindex(var1_nid);
-   const auto var2 = TM->CGetTreeReindex(var2_nid);
+   const auto var1 = TM->CGetTreeNode(var1_nid);
+   const auto var2 = TM->CGetTreeNode(var2_nid);
    const auto isInt1 = tree_helper::IsSignedIntegerType(var1);
    const auto isInt2 = tree_helper::IsSignedIntegerType(var2);
    const auto isReal1 = tree_helper::IsRealType(var1);

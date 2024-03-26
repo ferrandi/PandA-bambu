@@ -303,7 +303,7 @@ DesignFlowStep_Status create_tree_manager::Exec()
          {
             continue;
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--Loading " + archive.path().string());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Loading " + archive.path().string());
          const auto TM_new = ParseTreeFile(parameters, archive.path().string());
          TM->merge_tree_managers(TM_new);
       }

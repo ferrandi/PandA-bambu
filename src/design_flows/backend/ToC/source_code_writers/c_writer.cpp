@@ -380,13 +380,13 @@ void CWriter::WriteHeader()
       const auto FB = HLSMgr->CGetFunctionBehavior(f_id);
       const auto BH = FB->CGetBehavioralHelper();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing includes for " + BH->get_function_name());
-      AnalyzeInclude(TM->CGetTreeReindex(f_id), BH, includes_to_write, already_visited);
+      AnalyzeInclude(TM->CGetTreeNode(f_id), BH, includes_to_write, already_visited);
 
       TreeNodeConstSet decl_nodes;
       const auto& tmp_vars = GetLocalVariables(f_id);
       for(const auto& tmp_var : tmp_vars)
       {
-         decl_nodes.insert(TM->CGetTreeReindex(tmp_var));
+         decl_nodes.insert(TM->CGetTreeNode(tmp_var));
       }
       const auto funParams = BH->GetParameters();
       decl_nodes.insert(funParams.begin(), funParams.end());
@@ -475,7 +475,7 @@ void CWriter::WriteGlobalDeclarations()
                      "-->Writing external function prototype: " + f_bh->get_function_name());
       if(f_bh->function_has_to_be_printed(fid))
       {
-         DeclareFunctionTypes(TM->CGetTreeReindex(fid));
+         DeclareFunctionTypes(TM->CGetTreeNode(fid));
          WriteFunctionDeclaration(fid);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -499,7 +499,7 @@ void CWriter::WriteGlobalDeclarations()
 
       if(f_bh->function_has_to_be_printed(fid))
       {
-         DeclareFunctionTypes(TM->CGetTreeReindex(fid));
+         DeclareFunctionTypes(TM->CGetTreeNode(fid));
          WriteFunctionDeclaration(fid);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -994,7 +994,7 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Operation is a multiif");
             unsigned int node_id = local_rec_cfgGraph->CGetOpNodeInfo(last_stmt)->GetNodeId();
-            const tree_nodeRef node = TM->get_tree_node_const(node_id);
+            const tree_nodeRef node = TM->CGetTreeNode(node_id);
             THROW_ASSERT(node->get_kind() == gimple_multi_way_if_K, "unexpected node");
             auto* gmwi = GetPointer<gimple_multi_way_if>(node);
             std::map<unsigned int, bool> add_elseif_to_goto;
@@ -1108,7 +1108,7 @@ void CWriter::writeRoutineInstructions_rec(vertex current_vertex, bool bracket, 
                      }
 
                      indented_output_stream->Append(
-                         "case " + local_rec_behavioral_helper->PrintConstant(TM->CGetTreeReindex(*eIdBeg)));
+                         "case " + local_rec_behavioral_helper->PrintConstant(TM->CGetTreeNode(*eIdBeg)));
                   }
                   indented_output_stream->Append(":\n");
                }
@@ -1525,8 +1525,7 @@ void CWriter::DeclareVariable(const tree_nodeConstRef& curVar, CustomSet<unsigne
                         "For variable " + STR(curVar) + " recursing on " + STR(initVar));
          if(!already_declared_variables.count(initVar) && !globallyDeclVars.count(initVar))
          {
-            DeclareVariable(TM->CGetTreeReindex(initVar), already_declared_variables, locally_declared_types, BH,
-                            varFunc);
+            DeclareVariable(TM->CGetTreeNode(initVar), already_declared_variables, locally_declared_types, BH, varFunc);
          }
       }
    }
@@ -1575,7 +1574,7 @@ void CWriter::DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declare
       {
          return false;
       }
-      const tree_nodeRef node = TreeMan->get_tree_node_const(obj);
+      const tree_nodeRef node = TreeMan->CGetTreeNode(obj);
       if(node->get_kind() == parm_decl_K)
       {
          return false;
@@ -1595,7 +1594,7 @@ void CWriter::DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declare
    {
       if(is_to_declare(var))
       {
-         DeclareVariable(TM->CGetTreeReindex(var), already_declared_variables, already_declared_types, BH, varFunc);
+         DeclareVariable(TM->CGetTreeNode(var), already_declared_variables, already_declared_types, BH, varFunc);
       }
    }
    var_pp_functorRef variableFunctor(new std_var_pp_functor(BH));
@@ -1931,7 +1930,7 @@ void CWriter::WriteBuiltinWaitCall()
       {
          indented_output_stream->Append(I.first + " " + I.second + " = va_arg(ap, " + I.first + ");\n");
       }
-      const auto returnType_node = tree_helper::GetFunctionReturnType(TM->CGetTreeReindex(id));
+      const auto returnType_node = tree_helper::GetFunctionReturnType(TM->CGetTreeNode(id));
       std::string returnType;
       if(returnType_node)
       {

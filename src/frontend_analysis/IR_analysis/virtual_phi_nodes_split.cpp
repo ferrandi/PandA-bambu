@@ -124,7 +124,7 @@ DesignFlowStep_Status virtual_phi_nodes_split::InternalExec()
    /// replace[source, target] has been inserted
    std::map<std::pair<unsigned int, unsigned int>, unsigned int> replace;
 
-   tree_nodeRef temp = TM->get_tree_node_const(function_id);
+   tree_nodeRef temp = TM->CGetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(temp);
    auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
    std::map<unsigned int, blocRef>& list_of_bloc = sl->list_of_bloc;

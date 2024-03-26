@@ -529,13 +529,13 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
       for(const auto& ssa_uses : hwParam)
       {
          const auto ssa = ssa_uses.first;
-         const auto ssa_ridx = TreeM->GetTreeReindex(ssa->index);
+         const auto ssa_ridx = TreeM->GetTreeNode(ssa->index);
          const auto out_int = outputInterface.find(ssa);
          std::vector<tree_nodeRef>* out_ssa =
              out_int != outputInterface.end() ? &std::get<1>(out_int->second) : nullptr;
          for(const auto& call_stmt_idx : ssa_uses.second)
          {
-            const auto call_stmt = TreeM->CGetTreeReindex(call_stmt_idx);
+            const auto call_stmt = TreeM->CGetTreeNode(call_stmt_idx);
             const auto call_node = GetPointerS<const gimple_node>(GET_CONST_NODE(call_stmt));
             const auto& call_bb = sl->list_of_bloc.at(call_node->bb_index);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -574,7 +574,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "-->View-convert for " + ssa->ToString() + " in BB" + STR(call_bb->number) + " " +
                             def_node->ToString());
-         const auto ssa_ridx = TreeM->GetTreeReindex(ssa->index);
+         const auto ssa_ridx = TreeM->GetTreeNode(ssa->index);
          // Hardware calls are for sure dealing with standard IEEE formats only
          const auto int_ret_type = tree_helper::Size(ssa->type) == 32 ? float32_type : float64_type;
          const auto ret_vc =
@@ -633,7 +633,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
             const auto parmSSA = GetPointerS<ssa_name>(parm);
             if(lowering_needed(parmSSA))
             {
-               const auto parm_ridx = TreeM->CGetTreeReindex(parmSSA->index);
+               const auto parm_ridx = TreeM->CGetTreeNode(parmSSA->index);
                const auto parm_type = int_type_for(parmSSA->type, false);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "Lowering top function parameter type of " + parmSSA->ToString() + ": " +
@@ -814,7 +814,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
       {
          const auto* SSA = if_info.first;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Input interface for " + SSA->ToString());
-         const auto ssa = TreeM->GetTreeReindex(SSA->index);
+         const auto ssa = TreeM->GetTreeNode(SSA->index);
          auto& exclude = std::get<1>(if_info.second);
          const auto oentry = outputInterface.find(if_info.first);
          if(oentry != outputInterface.end())
@@ -915,7 +915,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
       for(const auto& if_info : outputInterface)
       {
          const auto* SSA = if_info.first;
-         const auto ssa = TreeM->GetTreeReindex(SSA->index);
+         const auto ssa = TreeM->GetTreeNode(SSA->index);
          const auto& useStmts = std::get<1>(if_info.second);
 
          auto defStmt = SSA->CGetDefStmt();
@@ -1004,7 +1004,7 @@ bool soft_float_cg_ext::signature_lowering(function_decl* f_decl) const
        tree_node_dup(remapping, AppM)
            .create_tree_node(is_ptr_type ? GET_NODE(GetPointerS<pointer_type>(decl_type)->ptd) : decl_type,
                              tree_node_dup_mode::RENAME);
-   const auto f_type = TreeM->CGetTreeReindex(dup_ft);
+   const auto f_type = TreeM->CGetTreeNode(dup_ft);
 
    tree_list* prms = nullptr;
    if(tree_helper::IsFunctionType(f_type))
@@ -1084,7 +1084,7 @@ void soft_float_cg_ext::ssa_lowering(ssa_name* ssa, bool internal_type) const
          }
          else if(ue->get_kind() == imagpart_expr_K || ue->get_kind() == realpart_expr_K)
          {
-            const auto ssa_ridx = TreeM->CGetTreeReindex(ssa->index);
+            const auto ssa_ridx = TreeM->CGetTreeNode(ssa->index);
             const auto def_bb = GetPointerS<statement_list>(GET_NODE(fd->body))->list_of_bloc.at(def->bb_index);
             const auto vc = tree_man->create_unary_operation(vc_type, ssa_ridx, BUILTIN_SRCP, view_convert_expr_K);
             const auto vc_stmt =
@@ -1524,7 +1524,6 @@ void soft_float_cg_ext::replaceWithCall(const FloatFormatRef& specFF, const std:
 bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement, const tree_nodeRef& current_tree_node,
                                            int type_interface)
 {
-   THROW_ASSERT(current_tree_node->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    THROW_ASSERT((type_interface & 3) == INTERFACE_TYPE_NONE || (type_interface & 3) == INTERFACE_TYPE_INPUT ||
                     (type_interface & 3) == INTERFACE_TYPE_OUTPUT,
                 "Required interface type must be unique (" + STR(type_interface) + ")");

@@ -698,7 +698,7 @@ void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    }
 
    const auto TM = HLSMgr->get_tree_manager();
-   auto fnode = TM->get_tree_node_const(funId);
+   auto fnode = TM->CGetTreeNode(funId);
    auto fd = GetPointer<function_decl>(fnode);
    const auto fname = tree_helper::GetMangledFunctionName(fd);
    CustomUnorderedSet<vertex> RW_stmts;

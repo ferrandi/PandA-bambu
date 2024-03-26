@@ -56,7 +56,6 @@
 static tree_nodeRef getFunctionPointerType(tree_nodeRef fptr);
 void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
 {
-   THROW_ASSERT(TN->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Update recursively node: " + STR(GET_NODE(TN)) + " id: " + STR(GET_INDEX_NODE(TN)));
 
@@ -270,7 +269,7 @@ void CallGraphBuiltinCall::buildTypeToDeclaration()
       function_decl_refs fdr_visitor(allFunctions);
       for(const auto root_function : root_functions)
       {
-         tree_nodeRef rf = TM->get_tree_node_const(root_function);
+         tree_nodeRef rf = TM->CGetTreeNode(root_function);
          rf->visit(&fdr_visitor);
       }
       for(unsigned int allFunction : allFunctions)
@@ -278,7 +277,7 @@ void CallGraphBuiltinCall::buildTypeToDeclaration()
          std::string functionName = tree_helper::name_function(TM, allFunction);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Analyzing function " + STR(allFunction) + " " + functionName);
-         tree_nodeRef function = TM->get_tree_node_const(allFunction);
+         tree_nodeRef function = TM->CGetTreeNode(allFunction);
          auto* funDecl = GetPointer<function_decl>(function);
          std::string type = tree_helper::print_type(TM, GET_INDEX_NODE(funDecl->type));
          if(funDecl->body && functionName != "__start_pragma__" && functionName != "__close_pragma__" &&

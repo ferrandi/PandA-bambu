@@ -189,7 +189,6 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
 bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement,
                                          const tree_manipulationRef tree_man)
 {
-   THROW_ASSERT(current_tree_node->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    bool modified = false;
    const tree_nodeRef curr_tn = GET_NODE(current_tree_node);
    const auto get_current_srcp = [curr_tn]() -> std::string {

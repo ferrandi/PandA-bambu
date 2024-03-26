@@ -73,8 +73,6 @@ class tree_reindex : public tree_node
     */
    const tree_nodeRef& actual_tree_node;
 
-   static bool html;
-
    ~tree_reindex() override;
 
    /**
@@ -91,17 +89,6 @@ class tree_reindex : public tree_node
     */
    GET_KIND(tree_reindex)
 
-   /**
-    * Switch the print function to the html format
-    */
-   static void enable_html()
-   {
-      html = true;
-   }
-   static void enable_raw()
-   {
-      html = false;
-   }
    /**
     * virtual function used to traverse the tree_node data structure.
     * @param v is a reference to the tree_node visitor class

@@ -349,8 +349,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                   if((GET_TYPE(dfgRef, *obo_it) & TYPE_PHI) != 0)
                   {
                      for(const auto& def_edge :
-                         GetPointer<const gimple_phi>(HLSMgr->get_tree_manager()->get_tree_node_const(
-                                                          dfgRef->CGetOpNodeInfo(*obo_it)->GetNodeId()))
+                         GetPointer<const gimple_phi>(
+                             HLSMgr->get_tree_manager()->CGetTreeNode(dfgRef->CGetOpNodeInfo(*obo_it)->GetNodeId()))
                              ->CGetDefEdgesList())
                      {
                         if(!def_edge.first)

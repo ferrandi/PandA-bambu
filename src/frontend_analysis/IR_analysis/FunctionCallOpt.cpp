@@ -255,7 +255,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    const auto TM = AppM->get_tree_manager();
-   const auto fnode = TM->CGetTreeReindex(function_id);
+   const auto fnode = TM->CGetTreeNode(function_id);
    const auto fd = GetPointerS<function_decl>(GET_NODE(fnode));
    THROW_ASSERT(fd->body, "");
    const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
@@ -270,7 +270,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
       {
          const auto& stmt_id = std::get<0>(stmt_opt);
          const auto& opt_type = std::get<1>(stmt_opt);
-         const auto stmt = TM->CGetTreeReindex(stmt_id);
+         const auto stmt = TM->CGetTreeNode(stmt_id);
          if(stmt)
          {
             const auto gn = GetPointerS<const gimple_node>(GET_CONST_NODE(stmt));
@@ -488,7 +488,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                             "---Inlining of functions with internal loops disabled with OpenMP, skipping...");
                      }
                   }
-                  const auto all_const_args = HasConstantArgs(TM->CGetTreeReindex(call_id));
+                  const auto all_const_args = HasConstantArgs(TM->CGetTreeNode(call_id));
                   if(all_const_args && loop_count == 0)
                   {
                      opt_call[caller_id].insert(std::make_pair(call_id, FunctionOptType::VERSION));

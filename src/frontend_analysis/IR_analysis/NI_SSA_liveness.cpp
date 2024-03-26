@@ -202,7 +202,7 @@ void NI_SSA_liveness::Up_and_Mark(blocRef B, tree_nodeRef v, statement_list* sl)
 DesignFlowStep_Status NI_SSA_liveness::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
-   tree_nodeRef tn = TM->get_tree_node_const(function_id);
+   tree_nodeRef tn = TM->CGetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
    auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
@@ -292,7 +292,7 @@ void NI_SSA_liveness::Initialize()
    if(bb_version != 0 and bb_version != function_behavior->GetBBVersion())
    {
       const auto TM = AppM->get_tree_manager();
-      auto tn = TM->get_tree_node_const(function_id);
+      auto tn = TM->CGetTreeNode(function_id);
       auto fd = GetPointer<function_decl>(tn);
       THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
       auto sl = GetPointer<statement_list>(GET_NODE(fd->body));

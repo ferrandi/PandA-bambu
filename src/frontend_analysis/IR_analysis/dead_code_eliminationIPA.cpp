@@ -286,7 +286,7 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
                  tree_helper::GetMangledFunctionName(GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
          for(const auto& call_id : fei->direct_call_points)
          {
-            auto call_rdx = TM->GetTreeReindex(call_id);
+            auto call_rdx = TM->GetTreeNode(call_id);
             auto call_stmt = GET_NODE(call_rdx);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Before: " + call_stmt->ToString());
             tree_nodeRef fn;

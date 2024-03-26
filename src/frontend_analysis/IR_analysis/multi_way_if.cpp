@@ -412,7 +412,7 @@ void multi_way_if::MergeCondMulti(const blocRef& pred_bb, const blocRef& curr_bb
    IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    IR_schema[TOK(TOK_SCPE)] = STR(function_id);
    TM->create_tree_node(gimple_multi_way_if_id, gimple_multi_way_if_K, IR_schema);
-   auto new_gwi = GetPointerS<gimple_multi_way_if>(TM->get_tree_node_const(gimple_multi_way_if_id));
+   auto new_gwi = GetPointerS<gimple_multi_way_if>(TM->CGetTreeNode(gimple_multi_way_if_id));
    new_gwi->bb_index = pred_bb->number;
 
    const auto old_gwi = GetPointerS<const gimple_multi_way_if>(GET_CONST_NODE(curr_bb->CGetStmtList().back()));
@@ -464,7 +464,7 @@ void multi_way_if::MergeCondMulti(const blocRef& pred_bb, const blocRef& curr_bb
          new_gwi->add_cond(new_cond, old_cond.second);
       }
    }
-   pred_bb->PushBack(TM->GetTreeReindex(gimple_multi_way_if_id), AppM);
+   pred_bb->PushBack(TM->GetTreeNode(gimple_multi_way_if_id), AppM);
    pred_bb->false_edge = 0;
    pred_bb->true_edge = 0;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + new_gwi->ToString());
@@ -478,7 +478,7 @@ void multi_way_if::MergeMultiMulti(const blocRef& pred_bb, const blocRef& curr_b
    IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    IR_schema[TOK(TOK_SCPE)] = STR(function_id);
    TM->create_tree_node(gimple_multi_way_if_id, gimple_multi_way_if_K, IR_schema);
-   auto new_gwi = GetPointerS<gimple_multi_way_if>(TM->get_tree_node_const(gimple_multi_way_if_id));
+   auto new_gwi = GetPointerS<gimple_multi_way_if>(TM->CGetTreeNode(gimple_multi_way_if_id));
    new_gwi->bb_index = pred_bb->number;
 
    const auto old_gwi1 = GetPointerS<const gimple_multi_way_if>(GET_CONST_NODE(pred_bb->CGetStmtList().back()));
@@ -588,7 +588,7 @@ void multi_way_if::MergeMultiMulti(const blocRef& pred_bb, const blocRef& curr_b
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "<--Considered condition " + (old_cond1.first ? old_cond1.first->ToString() : " default"));
    }
-   pred_bb->PushBack(TM->GetTreeReindex(gimple_multi_way_if_id), AppM);
+   pred_bb->PushBack(TM->GetTreeNode(gimple_multi_way_if_id), AppM);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + new_gwi->ToString());
 }
 
@@ -600,7 +600,7 @@ void multi_way_if::MergeMultiCond(const blocRef& pred_bb, const blocRef& curr_bb
    IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    IR_schema[TOK(TOK_SCPE)] = STR(function_id);
    TM->create_tree_node(gimple_multi_way_if_id, gimple_multi_way_if_K, IR_schema);
-   auto new_gwi = GetPointerS<gimple_multi_way_if>(TM->get_tree_node_const(gimple_multi_way_if_id));
+   auto new_gwi = GetPointerS<gimple_multi_way_if>(TM->CGetTreeNode(gimple_multi_way_if_id));
    new_gwi->bb_index = pred_bb->number;
 
    const auto old_gwi = GetPointerS<const gimple_multi_way_if>(GET_CONST_NODE(pred_bb->CGetStmtList().back()));
@@ -666,7 +666,7 @@ void multi_way_if::MergeMultiCond(const blocRef& pred_bb, const blocRef& curr_bb
          new_gwi->add_cond(tree_nodeRef(), old_cond.second);
       }
    }
-   pred_bb->PushBack(TM->GetTreeReindex(gimple_multi_way_if_id), AppM);
+   pred_bb->PushBack(TM->GetTreeNode(gimple_multi_way_if_id), AppM);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + new_gwi->ToString());
 }
 
@@ -693,7 +693,7 @@ void multi_way_if::MergeCondCond(const blocRef& pred_bb, const blocRef& curr_bb)
    IR_schema[TOK(TOK_SCPE)] = STR(function_id);
    TM->create_tree_node(gimple_multi_way_if_id, gimple_multi_way_if_K, IR_schema);
    IR_schema.clear();
-   const auto gimple_multi_way_if_stmt = TM->GetTreeReindex(gimple_multi_way_if_id);
+   const auto gimple_multi_way_if_stmt = TM->GetTreeNode(gimple_multi_way_if_id);
    auto* gmwi = GetPointerS<gimple_multi_way_if>(GET_NODE(gimple_multi_way_if_stmt));
    gmwi->bb_index = pred_bb->number;
    if(pred_bb->false_edge == curr_bb->number)

@@ -146,7 +146,6 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
                                      CustomUnorderedSet<std::string>& already_examinated_type_names,
                                      CustomUnorderedSet<unsigned int>& already_visited_ae)
 {
-   THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    const tree_managerRef TM = AppM->get_tree_manager();
    const tree_nodeRef curr_tn = GET_NODE(tn);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -242,7 +241,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
                   unsigned int var_decl_name_nid = TM->new_tree_node_id();
                   TM->create_tree_node(var_decl_name_nid, identifier_node_K, IR_schema);
                   IR_schema.clear();
-                  tree_nodeRef tr_new_id = TM->GetTreeReindex(var_decl_name_nid);
+                  tree_nodeRef tr_new_id = TM->GetTreeNode(var_decl_name_nid);
                   dn->name = tr_new_id;
                   function_behavior->GetBehavioralHelper()->InvaildateVariableName(dn->index);
                   modified = true;
@@ -480,7 +479,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
                   unsigned int var_decl_name_nid = TM->new_tree_node_id();
                   TM->create_tree_node(var_decl_name_nid, identifier_node_K, IR_schema);
                   IR_schema.clear();
-                  tree_nodeRef tr_new_id = TM->GetTreeReindex(var_decl_name_nid);
+                  tree_nodeRef tr_new_id = TM->GetTreeNode(var_decl_name_nid);
                   ty->name = tr_new_id;
                   modified = true;
                }
@@ -514,7 +513,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
                unsigned int var_decl_name_nid = TM->new_tree_node_id();
                TM->create_tree_node(var_decl_name_nid, identifier_node_K, IR_schema);
                IR_schema.clear();
-               tree_nodeRef tr_new_id = TM->GetTreeReindex(var_decl_name_nid);
+               tree_nodeRef tr_new_id = TM->GetTreeNode(var_decl_name_nid);
                td->name = tr_new_id;
                modified = true;
             }

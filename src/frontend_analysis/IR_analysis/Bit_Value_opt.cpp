@@ -159,7 +159,7 @@ DesignFlowStep_Status Bit_Value_opt::InternalExec()
    const auto IRman = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
 
    const auto tn = TM->CGetTreeNode(function_id);
-   // tree_nodeRef Scpe = TM->GetTreeReindex(function_id);
+   // tree_nodeRef Scpe = TM->GetTreeNode(function_id);
    const auto fd = GetPointerS<const function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
    modified = false;
@@ -297,7 +297,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
       if(tree_helper::is_real(TM, p_decl_id) || tree_helper::is_a_complex(TM, p_decl_id))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Parameter not supported " + TM->get_tree_node_const(p_decl_id)->ToString());
+                        "---Parameter not supported " + TM->CGetTreeNode(p_decl_id)->ToString());
          continue;
       }
       if(AppM->ApplyNewTransformation())
@@ -311,7 +311,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
          {
             const auto ull_value = convert_bitvalue_to_integer_cst(p->bit_values, TM, p_decl_id);
             const auto val = TM->CreateUniqueIntegerCst(ull_value, parm_type);
-            propagateValue(p, TM, TM->CGetTreeReindex(p_decl_id), val, DEBUG_CALLSITE);
+            propagateValue(p, TM, TM->CGetTreeNode(p_decl_id), val, DEBUG_CALLSITE);
          }
       }
    }
@@ -505,7 +505,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                }
                auto ga_BVO = [&] {
                   const auto ga_op_type = tree_helper::CGetType(ga->op0);
-                  const auto Scpe = TM->GetTreeReindex(function_id);
+                  const auto Scpe = TM->GetTreeNode(function_id);
                   const auto& bit_values = ssa->bit_values;
                   auto is_constant = is_bit_values_constant(bit_values) && !tree_helper::IsPointerType(ga->op1);
                   auto rel_expr_BVO = [&] {
@@ -2919,7 +2919,7 @@ void Bit_Value_opt::optimize(const function_decl* fd, tree_managerRef TM, tree_m
                   propagateValue(ssa, TM, pn->res, val, DEBUG_CALLSITE);
                   if(AppM->ApplyNewTransformation())
                   {
-                     pn->res = TM->GetTreeReindex(ssa->index);
+                     pn->res = TM->GetTreeNode(ssa->index);
                      THROW_ASSERT(ssa->CGetUseStmts().empty(), "unexpected case");
                      AppM->RegisterTransformation(GetName(), phi);
                   }

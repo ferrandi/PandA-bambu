@@ -302,7 +302,7 @@ void Bit_Value::backward()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing argument " + STR(parm_decl_node));
       const auto parmssa_id = AppM->getSSAFromParm(function_id, GET_INDEX_CONST_NODE(parm_decl_node));
-      const auto parmssa = TM->CGetTreeReindex(parmssa_id);
+      const auto parmssa = TM->CGetTreeNode(parmssa_id);
       if(!IsHandledByBitvalue(parmssa))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,

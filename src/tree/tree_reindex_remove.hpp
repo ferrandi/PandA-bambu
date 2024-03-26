@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2024 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,39 +31,48 @@
  *
  */
 /**
- * @file tree_reindex.cpp
- * @brief Class implementation of the tree_reindex support class.
+ * @file tree_reindex_remove.hpp
+ * @brief tree reindex remove class
  *
- * This class is used during the tree walking to store the NODE_ID value.
- *
- * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * @version $Revision$
- * @date $Date$
- * @warning This file is still in a work in progress state
- * @warning Last modified by $Author$
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
+ * $Revision$
+ * $Date$
+ * Last modified by $Author$
  *
  */
-#include "tree_reindex.hpp"
+#ifndef TREE_REINDEX_REMOVE_HPP
+#define TREE_REINDEX_REMOVE_HPP
 
-tree_reindex::tree_reindex(const unsigned int i, const tree_nodeRef& tn) : tree_node(i), actual_tree_node(tn)
+#include "refcount.hpp"
+#include "tree_node_mask.hpp"
+
+#include <boost/preprocessor/facilities/empty.hpp>
+#include <boost/preprocessor/seq/for_each.hpp>
+
+class tree_manager;
+REF_FORWARD_DECL(tree_node);
+
+struct tree_reindex_remove : public tree_node_mask
 {
-}
+   /**
+    * @brief Construct a new tree node dup object
+    *
+    * @param TM the tree manager instance
+    */
+   tree_reindex_remove(const tree_manager& TM);
 
-tree_reindex::~tree_reindex() = default;
+   /// tree_node visitors
+   BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO_DECL, BOOST_PP_EMPTY, OBJ_SPECIALIZED_SEQ)
+   BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO, BOOST_PP_EMPTY, OBJ_NOT_SPECIALIZED_SEQ)
 
-void tree_reindex::print(std::ostream& os) const
-{
-   os << "@" << index;
-}
+   void operator()(const tree_nodeRef& tn);
 
-void tree_reindex::visit(tree_node_visitor* const v) const
-{
-   unsigned int mask = ALL_VISIT;
-   (*v)(this, mask);
-   VISIT_MEMBER(mask, actual_tree_node, visit(v));
-}
+ private:
+   const tree_manager& TM;
+   tree_nodeRef source_tn;
+   CustomUnorderedSet<unsigned int> already_visited;
 
-bool lt_tree_reindex::operator()(const tree_nodeRef& x, const tree_nodeRef& y) const
-{
-   return GET_INDEX_NODE(x) < GET_INDEX_NODE(y);
-}
+   void fix_reference(tree_nodeRef& tn) const;
+};
+
+#endif

@@ -60,7 +60,7 @@ const unsigned int bloc::ENTRY_BLOCK_ID = BB_ENTRY;
 const unsigned int bloc::EXIT_BLOCK_ID = BB_EXIT;
 
 bloc::bloc(unsigned int _number)
-    : removed_phi(0), updated_ssa_uses(false), number(_number), loop_id(0), hpl(0), true_edge(0), false_edge(0)
+    : updated_ssa_uses(false), number(_number), loop_id(0), hpl(0), true_edge(0), false_edge(0)
 {
 }
 
@@ -221,58 +221,56 @@ void bloc::manageCallGraph(const application_managerRef& AppM, const tree_nodeRe
 
 void bloc::update_new_stmt(const application_managerRef& AppM, const tree_nodeRef& new_stmt)
 {
-   /// This check is necessary since during parsing of statement list statement has not yet been filled
-   if(GET_NODE(new_stmt))
+   THROW_ASSERT(GET_NODE(new_stmt), "");
+   if(AppM)
    {
-      if(AppM)
-      {
-         manageCallGraph(AppM, new_stmt);
-      }
-      const auto gn = GetPointer<gimple_node>(GET_NODE(new_stmt));
-      THROW_ASSERT(gn, "");
-      gn->bb_index = number;
+      manageCallGraph(AppM, new_stmt);
+   }
+   const auto gn = GetPointer<gimple_node>(new_stmt);
+   THROW_ASSERT(gn, "");
+   gn->bb_index = number;
 
-      if(gn->vdef)
-      {
-         THROW_ASSERT(GET_NODE(gn->vdef)->get_kind() == ssa_name_K, "");
-         GetPointerS<ssa_name>(GET_NODE(gn->vdef))->SetDefStmt(new_stmt);
-      }
+   if(GET_PTD_NODE(gn->vdef))
+   {
+      THROW_ASSERT(GET_PTD_NODE(gn->vdef)->get_kind() == ssa_name_K, "");
+      GetPointerS<ssa_name>(GET_PTD_NODE(gn->vdef))->SetDefStmt(new_stmt);
+   }
 
-      if(gn->memdef)
-      {
-         THROW_ASSERT(GET_NODE(gn->memdef)->get_kind() == ssa_name_K, "");
-         GetPointerS<ssa_name>(GET_NODE(gn->memdef))->SetDefStmt(new_stmt);
-      }
+   if(GET_PTD_NODE(gn->memdef))
+   {
+      THROW_ASSERT(GET_PTD_NODE(gn->memdef)->get_kind() == ssa_name_K, "");
+      GetPointerS<ssa_name>(GET_PTD_NODE(gn->memdef))->SetDefStmt(new_stmt);
+   }
 
-      if(GET_NODE(new_stmt)->get_kind() == gimple_assign_K)
+   if(new_stmt->get_kind() == gimple_assign_K)
+   {
+      const auto ga = GetPointerS<gimple_assign>(new_stmt);
+      if(GET_PTD_NODE(ga->op0) && GET_PTD_NODE(ga->op0)->get_kind() == ssa_name_K)
       {
-         const auto ga = GetPointerS<gimple_assign>(GET_NODE(new_stmt));
-         if(GET_NODE(ga->op0) && GET_NODE(ga->op0)->get_kind() == ssa_name_K)
+         GetPointerS<ssa_name>(GET_PTD_NODE(ga->op0))->SetDefStmt(new_stmt);
+      }
+   }
+   else if(new_stmt->get_kind() == gimple_phi_K)
+   {
+      const auto gp = GetPointerS<gimple_phi>(new_stmt);
+      if(GET_PTD_NODE(gp->res) && GET_PTD_NODE(gp->res)->get_kind() == ssa_name_K)
+      {
+         GetPointerS<ssa_name>(GET_PTD_NODE(gp->res))->SetDefStmt(new_stmt);
+      }
+   }
+
+   if(updated_ssa_uses)
+   {
+      const auto& uses = tree_helper::ComputeSsaUses(new_stmt);
+      for(const auto& [var, counter] : uses)
+      {
+         for(size_t i = 0; i < counter; ++i)
          {
-            GetPointerS<ssa_name>(GET_NODE(ga->op0))->SetDefStmt(new_stmt);
-         }
-      }
-      else if(GET_NODE(new_stmt)->get_kind() == gimple_phi_K)
-      {
-         const auto gp = GetPointerS<gimple_phi>(GET_NODE(new_stmt));
-         if(GET_NODE(gp->res) && GET_NODE(gp->res)->get_kind() == ssa_name_K)
-         {
-            GetPointerS<ssa_name>(GET_NODE(gp->res))->SetDefStmt(new_stmt);
-         }
-      }
-
-      if(updated_ssa_uses)
-      {
-         const auto& uses = tree_helper::ComputeSsaUses(new_stmt);
-         for(const auto& use : uses)
-         {
-            for(size_t counter = 0; counter < use.second; counter++)
-            {
-               GetPointerS<ssa_name>(GET_NODE(use.first))->AddUseStmt(new_stmt);
-            }
+            GetPointerS<ssa_name>(GET_NODE(var))->AddUseStmt(new_stmt);
          }
       }
    }
+
    if(schedule)
    {
       schedule->UpdateTime(new_stmt->index);
@@ -339,26 +337,24 @@ void bloc::PushFront(const tree_nodeRef statement, const application_managerRef 
 
 void bloc::PushBack(const tree_nodeRef statement, const application_managerRef AppM)
 {
-   THROW_ASSERT(number, "Trying to add " + statement->ToString() + " to entry");
-   THROW_ASSERT((!GET_NODE(statement)) || (GET_NODE(statement)->get_kind() != gimple_phi_K),
-                "Adding phi " + statement->ToString() + " to statements list");
-   if(list_of_stmt.empty())
+   THROW_ASSERT(number, "Trying to add statement to entry");
+   THROW_ASSERT(!GET_PTD_NODE(statement) || GET_PTD_NODE(statement)->get_kind() != gimple_phi_K,
+                "Adding phi " + GET_PTD_NODE(statement)->ToString() + " to statements list");
+   if(list_of_stmt.size() && GET_PTD_NODE(list_of_stmt.back()) && tree_helper::LastStatement(list_of_stmt.back()))
    {
-      list_of_stmt.push_back(statement);
+      THROW_ASSERT(!GET_PTD_NODE(statement) || !tree_helper::LastStatement(GET_PTD_NODE(statement)),
+                   "Expected one last statement only: last: " + STR(list_of_stmt.back()) +
+                       " | curr: " + STR(statement));
+      list_of_stmt.insert(std::prev(list_of_stmt.end()), statement);
    }
    else
    {
-      const auto& current_last_stmt = list_of_stmt.back();
-      if(tree_helper::LastStatement(current_last_stmt))
-      {
-         list_of_stmt.insert(std::prev(list_of_stmt.end()), statement);
-      }
-      else
-      {
-         list_of_stmt.push_back(statement);
-      }
+      list_of_stmt.push_back(statement);
    }
-   update_new_stmt(AppM, statement);
+   if(GET_PTD_NODE(statement))
+   {
+      update_new_stmt(AppM, GET_PTD_NODE(statement));
+   }
 }
 
 void bloc::Replace(const tree_nodeRef old_stmt, const tree_nodeRef new_stmt, const bool move_virtuals,
@@ -500,7 +496,10 @@ const std::list<tree_nodeRef>& bloc::CGetPhiList() const
 void bloc::AddPhi(const tree_nodeRef phi)
 {
    list_of_phi.push_back(phi);
-   update_new_stmt(nullptr, phi);
+   if(GET_PTD_NODE(phi))
+   {
+      update_new_stmt(nullptr, GET_PTD_NODE(phi));
+   }
 }
 
 void bloc::RemovePhi(const tree_nodeRef phi)
@@ -517,7 +516,6 @@ void bloc::RemovePhi(const tree_nodeRef phi)
       }
    }
    GetPointerS<gimple_node>(GET_NODE(phi))->bb_index = 0;
-   removed_phi++;
    THROW_ASSERT(original_size != list_of_phi.size(), "Phi" + phi->ToString() + " not removed");
    if(updated_ssa_uses)
    {
@@ -531,11 +529,6 @@ void bloc::RemovePhi(const tree_nodeRef phi)
       }
    }
    // TODO: fix memdef and vdef
-}
-
-size_t bloc::CGetNumberRemovedPhi() const
-{
-   return removed_phi;
 }
 
 void bloc::SetSSAUsesComputed()
