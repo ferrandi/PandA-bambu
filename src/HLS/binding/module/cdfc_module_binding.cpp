@@ -2280,7 +2280,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                      {
                         INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
                                        "---" + GET_NAME(sdg, current_vert) + "(" +
-                                           TreeM->get_tree_node_const(node_id)->ToString() + ") bound to " +
+                                           TreeM->CGetTreeNode(node_id)->ToString() + ") bound to " +
                                            allocation_information->get_string_name(fu_unit) + "(" +
                                            STR(numModule[fu_unit]) + ")");
                      }
@@ -2300,7 +2300,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                      {
                         INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
                                        "---" + GET_NAME(sdg, current_vert) + "(" +
-                                           TreeM->get_tree_node_const(node_id)->ToString() + ") bound to " +
+                                           TreeM->CGetTreeNode(node_id)->ToString() + ") bound to " +
                                            allocation_information->get_string_name(fu_unit) + "(" + STR(num) + ")");
                      }
                   }

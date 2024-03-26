@@ -214,7 +214,7 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
    static size_t counter = 0;
 
    const tree_manipulationConstRef tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters, AppM));
-   auto* fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
+   auto* fd = GetPointer<function_decl>(TM->CGetTreeNode(function_id));
    auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
    for(const auto& block : sl->list_of_bloc)
    {

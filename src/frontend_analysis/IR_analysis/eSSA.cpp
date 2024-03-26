@@ -1212,7 +1212,7 @@ void eSSA::Initialize()
 DesignFlowStep_Status eSSA::InternalExec()
 {
    auto TM = AppM->get_tree_manager();
-   const auto* fd = GetPointer<const function_decl>(TM->get_tree_node_const(function_id));
+   const auto* fd = GetPointer<const function_decl>(TM->CGetTreeNode(function_id));
    auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Extended SSA step");

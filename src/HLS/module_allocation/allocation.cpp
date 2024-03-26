@@ -1879,7 +1879,7 @@ DesignFlowStep_Status allocation::InternalExec()
          unsigned int out_var = HLSMgr->get_produced_value(HLS->functionId, v);
          if(out_var)
          {
-            const auto type = tree_helper::CGetType(TM->CGetTreeReindex(out_var));
+            const auto type = tree_helper::CGetType(TM->CGetTreeNode(out_var));
             if(tree_helper::IsVectorType(type))
             {
                const auto element_type = tree_helper::CGetElements(type);
@@ -1933,7 +1933,7 @@ DesignFlowStep_Status allocation::InternalExec()
                const auto out_var = HLSMgr->get_produced_value(HLS->functionId, v);
                if(out_var)
                {
-                  const auto type = tree_helper::CGetType(TM->CGetTreeReindex(out_var));
+                  const auto type = tree_helper::CGetType(TM->CGetTreeNode(out_var));
                   if(tree_helper::IsVectorType(type))
                   {
                      const auto element_type = tree_helper::CGetElements(type);
@@ -1970,7 +1970,7 @@ DesignFlowStep_Status allocation::InternalExec()
             unsigned int out_var = HLSMgr->get_produced_value(HLS->functionId, v);
             if(out_var)
             {
-               const auto type = tree_helper::CGetType(TM->CGetTreeReindex(out_var));
+               const auto type = tree_helper::CGetType(TM->CGetTreeNode(out_var));
                if(tree_helper::IsVectorType(type))
                {
                   const auto element_type = tree_helper::CGetElements(type);
@@ -2929,7 +2929,7 @@ void allocation::IntegrateTechnologyLibraries()
                    "Something of wrong happened");
       allocation_information->vars_to_memory_units[var] = current_size;
       allocation_information->memory_units[current_size] = var;
-      allocation_information->memory_units_sizes[current_size] = tree_helper::SizeAlloc(TM->CGetTreeReindex(var)) / 8;
+      allocation_information->memory_units_sizes[current_size] = tree_helper::SizeAlloc(TM->CGetTreeNode(var)) / 8;
       allocation_information->precision_map[current_size] = 0;
       /// check clock constraints compatibility
       auto* fu_br = GetPointer<functional_unit>(current_fu);

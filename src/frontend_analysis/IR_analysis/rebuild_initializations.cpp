@@ -98,7 +98,7 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
    const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
    tree_managerRef TM = AppM->get_tree_manager();
    tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
-   tree_nodeRef tn = TM->get_tree_node_const(function_id);
+   tree_nodeRef tn = TM->CGetTreeNode(function_id);
    auto* fd = GetPointerS<function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
    auto* sl = GetPointerS<statement_list>(GET_NODE(fd->body));
@@ -153,7 +153,7 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
                         gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                         gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
                         TM->create_tree_node(gimple_nop_id, gimple_nop_K, gimple_nop_schema);
-                        GetPointerS<ssa_name>(GET_NODE(ga->memdef))->SetDefStmt(TM->GetTreeReindex(gimple_nop_id));
+                        GetPointerS<ssa_name>(GET_NODE(ga->memdef))->SetDefStmt(TM->GetTreeNode(gimple_nop_id));
                      }
                      if(ga->vdef)
                      {
@@ -162,7 +162,7 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
                         gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                         gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
                         TM->create_tree_node(gimple_nop_id, gimple_nop_K, gimple_nop_schema);
-                        GetPointerS<ssa_name>(GET_NODE(ga->vdef))->SetDefStmt(TM->GetTreeReindex(gimple_nop_id));
+                        GetPointerS<ssa_name>(GET_NODE(ga->vdef))->SetDefStmt(TM->GetTreeNode(gimple_nop_id));
                      }
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + STR(*it_los));
                      B->RemoveStmt(*it_los, AppM);
@@ -209,7 +209,7 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
             constr->add_idx_valu(TM->CreateUniqueIntegerCst(index, integer_type), default_value);
          }
       }
-      GetPointerS<var_decl>(GET_NODE(init.first))->init = TM->GetTreeReindex(constructor_index);
+      GetPointerS<var_decl>(GET_NODE(init.first))->init = TM->GetTreeNode(constructor_index);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Rebuilt init of " + STR(init.first));
    }
    return DesignFlowStep_Status::SUCCESS;
@@ -652,12 +652,12 @@ bool rebuild_initialization2::extract_var_decl(const mem_ref* me, unsigned& vd_i
    }
 }
 
-#define foundNonConstant(VD)              \
-   do                                     \
-   {                                      \
-      nonConstantVars.insert(VD);         \
-      auto key = TM->CGetTreeReindex(VD); \
-      inits.erase(key);                   \
+#define foundNonConstant(VD)           \
+   do                                  \
+   {                                   \
+      nonConstantVars.insert(VD);      \
+      auto key = TM->CGetTreeNode(VD); \
+      inits.erase(key);                \
    } while(0)
 
 #if REBUILD2_DEVEL
@@ -676,7 +676,7 @@ tree_nodeRef getAssign(tree_nodeRef SSAop, unsigned vd_index, CustomOrderedSet<u
    if(ssa_def_stmt->get_kind() == gimple_nop_K || ssa_def_stmt->get_kind() == gimple_phi_K)
    {
       nonConstantVars.insert(vd_index);
-      auto key = TM->CGetTreeReindex(vd_index);
+      auto key = TM->CGetTreeNode(vd_index);
       inits.erase(key);
       return tree_nodeRef();
    }
@@ -693,7 +693,7 @@ bool rebuild_initialization2::look_for_ROMs()
 {
    tree_managerRef TM = AppM->get_tree_manager();
    tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
-   tree_nodeRef tn = TM->get_tree_node_const(function_id);
+   tree_nodeRef tn = TM->CGetTreeNode(function_id);
    auto* fd = GetPointerS<function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
    auto* sl = GetPointerS<statement_list>(GET_NODE(fd->body));
@@ -742,12 +742,12 @@ bool rebuild_initialization2::look_for_ROMs()
                {
                   THROW_ASSERT(vd_index && vd_node, "unexpected condition");
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---variable written: " + TM->get_tree_node_const(vd_index)->ToString());
+                                 "---variable written: " + TM->CGetTreeNode(vd_index)->ToString());
                   /// are we writing a constant value
                   if(!GetPointer<cst_node>(op1))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---variable is not constant(1): " + TM->get_tree_node_const(vd_index)->ToString());
+                                    "---variable is not constant(1): " + TM->CGetTreeNode(vd_index)->ToString());
                      foundNonConstant(vd_index);
                   }
                   if(nonConstantVars.find(vd_index) == nonConstantVars.end())
@@ -755,8 +755,7 @@ bool rebuild_initialization2::look_for_ROMs()
                      if(VarsReadSeen.find(vd_index) != VarsReadSeen.end())
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---variable is not constant(2): " +
-                                           TM->get_tree_node_const(vd_index)->ToString());
+                                       "---variable is not constant(2): " + TM->CGetTreeNode(vd_index)->ToString());
                         foundNonConstant(vd_index);
                      }
                      else if(var_writing_BB_relation.find(vd_index) == var_writing_BB_relation.end())
@@ -766,14 +765,13 @@ bool rebuild_initialization2::look_for_ROMs()
                         if(vd->init)
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                          "---variable is initialized: " +
-                                              TM->get_tree_node_const(vd_index)->ToString());
+                                          "---variable is initialized: " + TM->CGetTreeNode(vd_index)->ToString());
                            foundNonConstant(vd_index);
                         }
                         else if(not vd->scpe or GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K)
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                          "---variable is not local: " + TM->get_tree_node_const(vd_index)->ToString());
+                                          "---variable is not local: " + TM->CGetTreeNode(vd_index)->ToString());
                            foundNonConstant(vd_index);
                         }
                         else
@@ -797,7 +795,7 @@ bool rebuild_initialization2::look_for_ROMs()
                               {
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                 "---variable is not constant(3): " +
-                                                    TM->get_tree_node_const(vd_index)->ToString());
+                                                    TM->CGetTreeNode(vd_index)->ToString());
                                  foundNonConstant(vd_index);
                               }
                            }
@@ -805,7 +803,7 @@ bool rebuild_initialization2::look_for_ROMs()
                            {
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                              "---variable is currently classified as non-constant: " +
-                                                 TM->get_tree_node_const(vd_index)->ToString());
+                                                 TM->CGetTreeNode(vd_index)->ToString());
                               foundNonConstant(vd_index);
                            }
                         }
@@ -813,8 +811,7 @@ bool rebuild_initialization2::look_for_ROMs()
                      else if(var_writing_BB_relation.find(vd_index)->second != B->number)
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---variable is not constant(4): " +
-                                           TM->get_tree_node_const(vd_index)->ToString());
+                                       "---variable is not constant(4): " + TM->CGetTreeNode(vd_index)->ToString());
                         foundNonConstant(vd_index);
                      }
                      /// if it is still a good candidate
@@ -832,7 +829,7 @@ bool rebuild_initialization2::look_for_ROMs()
                               {
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                 "---variable is not constant(9): " +
-                                                    TM->get_tree_node_const(vd_index)->ToString());
+                                                    TM->CGetTreeNode(vd_index)->ToString());
                               }
                               else
                               {
@@ -854,7 +851,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                        {
                                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                          "---variable is not constant(9c): " +
-                                                             TM->get_tree_node_const(vd_index)->ToString());
+                                                             TM->CGetTreeNode(vd_index)->ToString());
                                           foundNonConstant(vd_index);
                                        }
                                        else
@@ -868,7 +865,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                              {
                                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                                "---variable is not constant(9): " +
-                                                                   TM->get_tree_node_const(vd_index)->ToString());
+                                                                   TM->CGetTreeNode(vd_index)->ToString());
                                              }
                                              else
                                              {
@@ -885,7 +882,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                                    {
                                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                                      "---variable is not constant(5a): " +
-                                                                         TM->get_tree_node_const(vd_index)->ToString());
+                                                                         TM->CGetTreeNode(vd_index)->ToString());
                                                       foundNonConstant(vd_index);
                                                    }
                                                 }
@@ -898,7 +895,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                                 {
                                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                                   "---variable is not constant(5b): " +
-                                                                      TM->get_tree_node_const(vd_index)->ToString());
+                                                                      TM->CGetTreeNode(vd_index)->ToString());
                                                    foundNonConstant(vd_index);
                                                 }
                                                 else
@@ -926,7 +923,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                     {
                                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                       "---variable is not constant(9): " +
-                                                          TM->get_tree_node_const(vd_index)->ToString());
+                                                          TM->CGetTreeNode(vd_index)->ToString());
                                     }
                                     else
                                     {
@@ -946,7 +943,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                              {
                                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                                "---variable is not constant(5c): " +
-                                                                   TM->get_tree_node_const(vd_index)->ToString());
+                                                                   TM->CGetTreeNode(vd_index)->ToString());
                                              }
                                              else if(offset_assign2_op1->get_kind() == integer_cst_K)
                                              {
@@ -957,7 +954,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                              {
                                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                                "---variable is not constant(5c): " +
-                                                                   TM->get_tree_node_const(vd_index)->ToString());
+                                                                   TM->CGetTreeNode(vd_index)->ToString());
                                                 foundNonConstant(vd_index);
                                              }
                                           }
@@ -983,7 +980,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                        {
                                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                          "---variable is not constant(9): " +
-                                                             TM->get_tree_node_const(vd_index)->ToString());
+                                                             TM->CGetTreeNode(vd_index)->ToString());
                                        }
                                        else
                                        {
@@ -1200,8 +1197,7 @@ bool rebuild_initialization2::look_for_ROMs()
                      if(GCC_bb_graph->IsReachable(inverse_vertex_map[BB_written], inverse_vertex_map[B->number]))
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---variable is not constant(6): " +
-                                           TM->get_tree_node_const(vd_index)->ToString());
+                                       "---variable is not constant(6): " + TM->CGetTreeNode(vd_index)->ToString());
                         foundNonConstant(vd_index);
                      }
                   }
@@ -1257,14 +1253,14 @@ bool rebuild_initialization2::look_for_ROMs()
    {
       if(nonConstantVars.find(vars.first) == nonConstantVars.end())
       {
-         auto key = TM->CGetTreeReindex(vars.first);
+         auto key = TM->CGetTreeNode(vars.first);
          auto initIt = inits.find(key);
          THROW_ASSERT(initIt != inits.end(), "unexpected condition");
          THROW_ASSERT(var_writing_size_relation.find(vars.first) != var_writing_size_relation.end(),
                       "unexpected condition");
          if(initIt->second.size() == var_writing_size_relation.find(vars.first)->second)
          {
-            auto vd_node = TM->get_tree_node_const(vars.first);
+            auto vd_node = TM->CGetTreeNode(vars.first);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Constant variable: " + vd_node->ToString());
             ConstantVars.insert(vars.first);
             GetPointerS<var_decl>(vd_node)->readonly_flag = true;
@@ -1313,7 +1309,7 @@ bool rebuild_initialization2::look_for_ROMs()
                      gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                      gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
                      TM->create_tree_node(gimple_nop_id, gimple_nop_K, gimple_nop_schema);
-                     GetPointerS<ssa_name>(GET_NODE(ga->memdef))->SetDefStmt(TM->GetTreeReindex(gimple_nop_id));
+                     GetPointerS<ssa_name>(GET_NODE(ga->memdef))->SetDefStmt(TM->GetTreeNode(gimple_nop_id));
                   }
                   if(ga->vdef)
                   {
@@ -1322,7 +1318,7 @@ bool rebuild_initialization2::look_for_ROMs()
                      gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                      gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
                      TM->create_tree_node(gimple_nop_id, gimple_nop_K, gimple_nop_schema);
-                     GetPointerS<ssa_name>(GET_NODE(ga->vdef))->SetDefStmt(TM->GetTreeReindex(gimple_nop_id));
+                     GetPointerS<ssa_name>(GET_NODE(ga->vdef))->SetDefStmt(TM->GetTreeNode(gimple_nop_id));
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing " + STR(*it_los));
                   B->RemoveStmt(*it_los, AppM);
@@ -1368,7 +1364,7 @@ bool rebuild_initialization2::look_for_ROMs()
             constr->add_idx_valu(TM->CreateUniqueIntegerCst(index, integer_type), default_value);
          }
       }
-      GetPointerS<var_decl>(GET_NODE(init.first))->init = TM->GetTreeReindex(constructor_index);
+      GetPointerS<var_decl>(GET_NODE(init.first))->init = TM->GetTreeNode(constructor_index);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Rebuilt init of " + STR(init.first));
    }
 

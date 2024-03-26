@@ -598,8 +598,7 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
 FunctionFrontendFlowStep_Movable Schedule::CanBeMoved(const unsigned int statement_index,
                                                       const unsigned int basic_block_index) const
 {
-   THROW_ASSERT(basic_block_index,
-                "Trying to move " + TM->get_tree_node_const(statement_index)->ToString() + " to BB0");
+   THROW_ASSERT(basic_block_index, "Trying to move " + TM->CGetTreeNode(statement_index)->ToString() + " to BB0");
    const auto hls = hls_manager.lock()->get_HLS(function_index);
    const FunctionBehaviorConstRef FB = hls_manager.lock()->CGetFunctionBehavior(hls->functionId);
    const auto behavioral_helper = FB->CGetBehavioralHelper();
@@ -613,8 +612,8 @@ FunctionFrontendFlowStep_Movable Schedule::CanBeMoved(const unsigned int stateme
    const auto clock_period_margin = allocation_information->GetClockPeriodMargin();
    double bb_ending_time = GetBBEndingTime(basic_block_index);
    auto current_cs = ControlStep(static_cast<unsigned int>(floor(bb_ending_time / clock_period)));
-   const auto ga = GetPointer<const gimple_assign>(TM->get_tree_node_const(statement_index));
-   THROW_ASSERT(ga, "Asking if " + TM->get_tree_node_const(statement_index)->ToString() + " can be moved");
+   const auto ga = GetPointer<const gimple_assign>(TM->CGetTreeNode(statement_index));
+   THROW_ASSERT(ga, "Asking if " + TM->CGetTreeNode(statement_index)->ToString() + " can be moved");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking if " + ga->ToString() + " can be moved");
    if(behavioral_helper->IsLoad(statement_index))
    {
@@ -721,9 +720,9 @@ bool Schedule::EvaluateCondsMerging(const unsigned statement_index, const unsign
    {
       return true;
    }
-   const auto statement = GetPointer<const gimple_node>(TM->get_tree_node_const(statement_index));
-   const auto or_result = tree_man->CreateOrExpr(TM->GetTreeReindex(first_condition),
-                                                 TM->GetTreeReindex(second_condition), blocRef(), function_decl_nid);
+   const auto statement = GetPointer<const gimple_node>(TM->CGetTreeNode(statement_index));
+   const auto or_result = tree_man->CreateOrExpr(TM->GetTreeNode(first_condition), TM->GetTreeNode(second_condition),
+                                                 blocRef(), function_decl_nid);
    const auto or_ending_time =
        std::max(GetReadyTime(first_condition, statement->bb_index),
                 GetReadyTime(second_condition, statement->bb_index)) +
@@ -744,11 +743,10 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
    const auto basic_block_graph =
        hls_manager.lock()->CGetFunctionBehavior(function_index)->CGetBBGraph(FunctionBehavior::FBB);
    const auto list_of_block =
-       GetPointer<statement_list>(
-           GET_NODE(GetPointer<const function_decl>(TM->get_tree_node_const(function_index))->body))
+       GetPointer<statement_list>(GET_NODE(GetPointer<const function_decl>(TM->CGetTreeNode(function_index))->body))
            ->list_of_bloc;
-   const auto first_statement = TM->get_tree_node_const(first_statement_index);
-   const auto second_statement = TM->get_tree_node_const(second_statement_index);
+   const auto first_statement = TM->CGetTreeNode(first_statement_index);
+   const auto second_statement = TM->CGetTreeNode(second_statement_index);
    const auto first_basic_block = GetPointer<const gimple_node>(first_statement)->bb_index;
    const auto first_block = list_of_block.at(first_basic_block);
    const auto second_basic_block = GetPointer<const gimple_node>(second_statement)->bb_index;
@@ -1014,7 +1012,7 @@ bool Schedule::EvaluateMultiWayIfsMerging(const unsigned int first_statement_ind
 
 double Schedule::GetReadyTime(const unsigned int tree_node_index, const unsigned int basic_block_index) const
 {
-   const auto sn = GetPointer<const ssa_name>(TM->get_tree_node_const(tree_node_index));
+   const auto sn = GetPointer<const ssa_name>(TM->CGetTreeNode(tree_node_index));
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing ready time of " + sn->ToString());
    const auto def = GetPointer<gimple_node>(GET_NODE(sn->CGetDefStmt()));
    if(def->get_kind() == gimple_phi_K)
@@ -1043,7 +1041,7 @@ double Schedule::GetBBEndingTime(const unsigned int basic_block_index) const
    const auto hls = hls_manager.lock()->get_HLS(function_index);
    const auto clock_period = hls->HLS_C->get_clock_period() * hls->HLS_C->get_clock_period_resource_fraction();
    const auto margin = allocation_information->GetClockPeriodMargin();
-   const auto tn = TM->get_tree_node_const(function_index);
+   const auto tn = TM->CGetTreeNode(function_index);
    const auto fd = GetPointer<const function_decl>(tn);
    THROW_ASSERT(GetPointer<statement_list>(GET_NODE(fd->body))->list_of_bloc.find(basic_block_index) !=
                     GetPointer<statement_list>(GET_NODE(fd->body))->list_of_bloc.end(),
@@ -1153,7 +1151,7 @@ CustomSet<unsigned int> Schedule::ComputeCriticalPath(const StateInfoConstRef st
       {
          continue;
       }
-      const auto stmt = TM->get_tree_node_const(node_id);
+      const auto stmt = TM->CGetTreeNode(node_id);
       if(stmt->get_kind() == gimple_phi_K)
       {
          continue;
@@ -1186,7 +1184,7 @@ CustomSet<unsigned int> Schedule::ComputeCriticalPath(const StateInfoConstRef st
       {
          continue;
       }
-      const auto stmt = TM->get_tree_node_const(node_id);
+      const auto stmt = TM->CGetTreeNode(node_id);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "---Stmt " + stmt->ToString() + " ends at " + STR(ending_times.at(stmt->index)));
       const bool found = std::find(state_info->ending_operations.begin(), state_info->ending_operations.end(),
@@ -1209,7 +1207,7 @@ CustomSet<unsigned int> Schedule::ComputeCriticalPath(const StateInfoConstRef st
       const auto last = *(to_be_processed.rbegin());
       const auto starting_time = starting_times.at(last);
       to_be_processed.erase(last);
-      const auto stmt_tn = TM->get_tree_node_const(last);
+      const auto stmt_tn = TM->CGetTreeNode(last);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Processing " + stmt_tn->ToString());
       const auto gn = GetPointer<const gimple_node>(stmt_tn);
       CustomOrderedSet<const ssa_name*> rhs_ssa_uses;

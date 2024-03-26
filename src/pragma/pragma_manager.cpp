@@ -200,7 +200,7 @@ unsigned int pragma_manager::AddOmpSimdPragma(const std::string& line, unsigned 
 
    unsigned int simd_id = TM->new_tree_node_id();
    TM->create_tree_node(simd_id, omp_simd_pragma_K, simd_tree_node_schema);
-   auto* osp = GetPointer<omp_simd_pragma>(TM->get_tree_node_const(simd_id));
+   auto* osp = GetPointer<omp_simd_pragma>(TM->CGetTreeNode(simd_id));
    if(line != "#pragma omp declare simd")
    {
       osp->clauses = ExtractClauses(line.substr(line.find("#pragma omp declare simd ")));

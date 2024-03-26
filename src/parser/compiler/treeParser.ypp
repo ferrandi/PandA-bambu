@@ -49,12 +49,10 @@
 */
 //#define YYDEBUG 1
 
-///Autoheader include
 #include "config_HAVE_BISON_2_7_OR_GREATER.hpp"
 
 #define YYLTYPE_IS_TRIVIAL 0
 
-///Utility include
 #include "refcount.hpp"
 
 ///NOTE: forward declarations of BisonParserData and TreeFlexLexer are in this point since they will be used in treeParser.h
@@ -62,7 +60,6 @@ REF_FORWARD_DECL(BisonParserData);
 struct info_map;
 REF_FORWARD_DECL(TreeFlexLexer);
 
-#include "APInt.hpp"
 
 ///Header include
 #if HAVE_BISON_2_7_OR_GREATER
@@ -70,34 +67,27 @@ REF_FORWARD_DECL(TreeFlexLexer);
 #else
 #include "treeParser.h"
 #endif
-///Lexer include
-#include "treeLexer.hpp"
 
-#include "token_interface.hpp"
-
-///Parameter include
+#include "APInt.hpp"
 #include "Parameter.hpp"
-
-///STD include
-#include <cstdio>
-#include <cstring>
-#include <fstream>
-#include <string>
-#include <iosfwd>
-
-///Tree include
+#include "compiler_wrapper.hpp"
+#include "exceptions.hpp"
+#include "ext_tree_node.hpp"
+#include "fileIO.hpp"
+#include "token_interface.hpp"
+#include "treeLexer.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "ext_tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "tree_reindex_remove.hpp"
 
-///Utiliy include
-#include "exceptions.hpp"
-#include "fileIO.hpp"
+#include <cstdio>
+#include <cstring>
+#include <fstream>
+#include <iosfwd>
+#include <string>
 
-///Wrapper include
-#include "compiler_wrapper.hpp"
 /**
 * Defines
 */
@@ -260,22 +250,18 @@ REF_FORWARD_DECL(TreeFlexLexer);
 #define ADD_ACCESS_BINF(obj_node, add_function) \
   add_access_binf(data->curr_tree_nodeRef, data->curr_NODE_ID, data->curr_token_enum, data->current_TM);
 
-
 struct BisonParserData
 {
-   BisonParserData(const ParameterConstRef _Param, int _debug_level) :
-      Param(_Param),
-      debug_level(_debug_level),
-      curr_NODE_ID(0),
-      curr_NODE_ID_BIS(0),
-      implement_node(false),
-      id(0)
+   BisonParserData(const ParameterConstRef _Param, size_t _max_tree_node_count, int _debug_level)
+         : Param(_Param), max_tree_node_count(_max_tree_node_count), debug_level(_debug_level), curr_NODE_ID(0), curr_NODE_ID_BIS(0), implement_node(false), id(0)
    {
    }
-   //the set of parameter
+   // the set of parameter
    const ParameterConstRef Param;
 
-   ///debug level
+   const size_t max_tree_node_count;
+
+   /// debug level
    int debug_level;
 
    /// Current tree_node reference
@@ -305,10 +291,10 @@ struct BisonParserData
    /// Store the current id of the node. Used by node to identify the id of the current node.
    int id;
 
-   ///merge all the raw read
+   /// merge all the raw read
    tree_managerRef final_TM;
 
-   ///current tree manager
+   /// current tree manager
    tree_managerRef current_TM;
 
    /// unique version identifier used for SSA_NAMEs objects
@@ -318,135 +304,127 @@ struct BisonParserData
 unsigned int BisonParserData::global_uniq_vers_id = 1;
 
 /**
-* Local Data Structures
-*/
+ * Local Data Structures
+ */
 
 /**
-* Global Data Structures
-*/
+ * Global Data Structures
+ */
 
 /**
-* Function Prototypes
-*/
-extern int yylex(YYSTYPE *lvalp, const TreeFlexLexerRef lexer);
-extern void yyerror(const BisonParserDataRef data, const TreeFlexLexerRef lexer, const char *s);
+ * Function Prototypes
+ */
+extern int yylex(YYSTYPE * lvalp, const TreeFlexLexerRef lexer);
+extern void yyerror(const BisonParserDataRef data, const TreeFlexLexerRef lexer, const char* s);
 
 /**
-* Templates
-*/
-template<class obj_node, class TRef, class value_t>
-inline
-void assign_value_to_member(const TRef &curr, value_t obj_node::* field, const value_t value)
-  {
-    THROW_ASSERT(curr, "");
-    ((dynamic_cast<obj_node*>(curr.get())) ->* field) = value;
-  }
-
-template<class obj_node, class TRef>
-inline
-void assign_tree_reindex_to_member(const TRef &curr, tree_nodeRef obj_node::* field, const unsigned int tree_index, const tree_managerRef TM)
-  {
-    THROW_ASSERT(curr, "");
-((dynamic_cast<obj_node*>(curr.get())) ->* field) = TM->GetTreeReindex(tree_index);
-  }
-
-inline
-void create_Ref_bloc( refcount<bloc> BisonParserData::* field, const BisonParserDataRef data, unsigned int number_value)
-  {
-   (*data .* field) = refcount<bloc>(new bloc(number_value));
-  }
-
-template<class obj_node>
-inline
-void create_Ref_id(const BisonParserDataRef data, tree_nodeRef BisonParserData::* field)
+ * Templates
+ */
+template <class obj_node, class TRef, class value_t>
+inline void assign_value_to_member(const TRef& curr, value_t obj_node::*field, const value_t value)
 {
-    (*data .* field) = tree_nodeRef(new obj_node(data->id));
+   THROW_ASSERT(curr, "");
+   ((dynamic_cast<obj_node*>(curr.get()))->*field) = value;
 }
 
-template<class constructor_parameter_type>
-inline
-void create_Ref_identifier(tree_nodeRef BisonParserData::* field, const BisonParserDataRef data, constructor_parameter_type par, tree_managerRef const &Root)
+template <class obj_node, class TRef>
+inline void assign_tree_reindex_to_member(const TRef& curr, tree_nodeRef obj_node::*field,
+                                          const unsigned int tree_index, const tree_managerRef TM)
 {
-    (*data .* field) = tree_nodeRef(new identifier_node(data->id,par,Root.get()));
+   THROW_ASSERT(curr, "");
+   ((dynamic_cast<obj_node*>(curr.get()))->*field) = TM->GetTreeReindex(tree_index);
 }
 
-template<class attr>
-inline
-void add_attr(const tree_nodeRef &curr, const TreeVocabularyTokenTypes_TokenEnum &token_i)
-  {
-    (dynamic_cast<attr*>(curr.get()))->add(token_i);
-  }
-
-template<class attr>
-inline
-void add_attr_node(const tree_nodeRef &curr, const unsigned int tree_index, const tree_managerRef TM)
-  {
-    (dynamic_cast<attr*>(curr.get()))->add(TM->GetTreeReindex(tree_index));
-  }
-
-template<class function_decl>
-inline
-void add_op_name(const tree_nodeRef &curr, const std::string& token_s)
-  {
-    (dynamic_cast<function_decl*>(curr.get()))->add(token_s);
-  }
-
-template<class obj_node, class TRef, typename R>
-inline
-void  addv(const TRef &curr, R (obj_node::*add_function)(const tree_nodeRef&), const unsigned int tree_index, const tree_managerRef TM)
-  {
-((dynamic_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index));
-  }
-
-template<class obj_node, class TRef, typename R>
-inline
-void  addv2(const TRef &curr, R (obj_node::*add_function)(const tree_nodeRef&, const tree_nodeRef&), const unsigned int tree_index_1, const unsigned int tree_index_2, const tree_managerRef TM)
+inline void create_Ref_bloc(refcount<bloc> BisonParserData::*field, const BisonParserDataRef data,
+                              unsigned int number_value)
 {
-((dynamic_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index_1), TM->GetTreeReindex(tree_index_2));
+   (*data.*field) = refcount<bloc>(new bloc(number_value));
 }
 
-template<class obj_node, class TRef, typename R>
-inline
-void  addv3(const TRef &curr, R (obj_node::*add_function)(const tree_nodeRef&, int), const unsigned int tree_index, const int value, const tree_managerRef TM)
+template <class obj_node>
+inline void create_Ref_id(const BisonParserDataRef data, tree_nodeRef BisonParserData::*field)
 {
-((dynamic_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index), value);
+   (*data.*field) = tree_nodeRef(new obj_node(data->id));
 }
 
-template<class obj_node, class TRef, typename R>
-inline
-void  add_unsigned(const TRef &curr, R (obj_node::*add_function)(const tree_nodeRef&, unsigned int), const unsigned int tree_index, const unsigned int value, const tree_managerRef TM)
+template <class constructor_parameter_type>
+inline void create_Ref_identifier(tree_nodeRef BisonParserData::*field, const BisonParserDataRef data,
+                                    constructor_parameter_type par, tree_managerRef const& Root)
+{
+   (*data.*field) = tree_nodeRef(new identifier_node(data->id, par, Root.get()));
+}
+
+template <class attr>
+inline void add_attr(const tree_nodeRef& curr, const TreeVocabularyTokenTypes_TokenEnum& token_i)
+{
+   (dynamic_cast<attr*>(curr.get()))->add(token_i);
+}
+
+template <class attr>
+inline void add_attr_node(const tree_nodeRef& curr, const unsigned int tree_index, const tree_managerRef TM)
+{
+   (dynamic_cast<attr*>(curr.get()))->add(TM->GetTreeReindex(tree_index));
+}
+
+template <class function_decl>
+inline void add_op_name(const tree_nodeRef& curr, const std::string& token_s)
+{
+   (dynamic_cast<function_decl*>(curr.get()))->add(token_s);
+}
+
+template <class obj_node, class TRef, typename R>
+inline void addv(const TRef& curr, R (obj_node::*add_function)(const tree_nodeRef&), const unsigned int tree_index,
+                  const tree_managerRef TM)
+{
+   ((dynamic_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index));
+}
+
+template <class obj_node, class TRef, typename R>
+inline void addv2(const TRef& curr, R (obj_node::*add_function)(const tree_nodeRef&, const tree_nodeRef&),
+                  const unsigned int tree_index_1, const unsigned int tree_index_2, const tree_managerRef TM)
+{
+   ((dynamic_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index_1),
+                                                            TM->GetTreeReindex(tree_index_2));
+}
+
+template <class obj_node, class TRef, typename R>
+inline void addv3(const TRef& curr, R (obj_node::*add_function)(const tree_nodeRef&, int),
+                  const unsigned int tree_index, const int value, const tree_managerRef TM)
 {
    ((dynamic_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index), value);
 }
 
+template <class obj_node, class TRef, typename R>
+inline void add_unsigned(const TRef& curr, R (obj_node::*add_function)(const tree_nodeRef&, unsigned int),
+                           const unsigned int tree_index, const unsigned int value, const tree_managerRef TM)
+{
+   ((dynamic_cast<obj_node*>(curr.get()))->*add_function)(TM->GetTreeReindex(tree_index), value);
+}
 
-template<class obj_node, class TRefCurr, class TRef, typename R>
-inline
-void  addo(const TRefCurr &curr, R (obj_node::*add_function)(const TRef&), const TRef & obj)
-  {
-    ((dynamic_cast<obj_node*>(curr.get()))->*add_function)(obj);
-  }
+template <class obj_node, class TRefCurr, class TRef, typename R>
+inline void addo(const TRefCurr& curr, R (obj_node::*add_function)(const TRef&), const TRef& obj)
+{
+   ((dynamic_cast<obj_node*>(curr.get()))->*add_function)(obj);
+}
 
-inline
-void add_access_binf(const tree_nodeRef & curr, const unsigned int binf_index, const TreeVocabularyTokenTypes_TokenEnum enum_access, const tree_managerRef TM)
+inline void add_access_binf(const tree_nodeRef& curr, const unsigned int binf_index,
+                              const TreeVocabularyTokenTypes_TokenEnum enum_access, const tree_managerRef TM)
 {
    (dynamic_cast<binfo*>(curr.get()))->add_access_binf(TM->GetTreeReindex(binf_index), enum_access);
 }
 
+inline void do_fun_decl(const bool& in, const int& cnib, const int& cni, const BisonParserDataRef data,
+                        const tree_managerRef TM)
+{
+   TM->add_function(cni, data->curr_tree_nodeRef);
+}
 
-inline
-void do_fun_decl(const bool &in, const int & cnib, const int & cni, const BisonParserDataRef data, const tree_managerRef TM)
-  {
-    TM->add_function(cni, data->curr_tree_nodeRef);
-  }
-
-template<class type_node>
-inline
-void do_qual(const tree_nodeRef &curr, const int & value)
-  {
-    THROW_ASSERT(curr, "");
-    ((dynamic_cast<type_node*>(curr.get()))->qual) = static_cast<TreeVocabularyTokenTypes_TokenEnum>(value);
-  }
+template <class type_node>
+inline void do_qual(const tree_nodeRef& curr, const int& value)
+{
+   THROW_ASSERT(curr, "");
+   ((dynamic_cast<type_node*>(curr.get()))->qual) = static_cast<TreeVocabularyTokenTypes_TokenEnum>(value);
+}
 
 #ifndef __clang_analyzer__
 
@@ -619,6 +597,9 @@ bool pred;
                 else if(data->current_TM)
                    data->final_TM = data->current_TM;
                 data->current_TM = tree_managerRef(new tree_manager(data->Param));
+                
+                // TODO: add token with total nodes count to avoid reading the file two times to count lines
+                data->current_TM->add_reserve(data->max_tree_node_count);
              }
              ;
 
@@ -2758,34 +2739,49 @@ bool pred;
 %%
 #endif
 /**
-* EPILOGUE
-*/
+ * EPILOGUE
+ */
 
 extern tree_managerRef tree_parseY(const ParameterConstRef Param, std::string fn)
 {
-    fileIO_istreamRef sname = fileIO_istream_open(fn);
-    if(sname->fail()) THROW_ERROR(std::string("FILE does not exist: ")+fn);
-    const TreeFlexLexerRef lexer(new TreeFlexLexer(sname.get(), nullptr));
-    const BisonParserDataRef data(new BisonParserData(Param, Param->get_class_debug_level("tree_parse")));
-    data->final_TM = tree_managerRef();
-    data->current_TM = tree_managerRef();
+   fileIO_istreamRef sname = fileIO_istream_open(fn);
+   if(sname->fail())
+      THROW_ERROR(std::string("FILE does not exist: ") + fn);
+   
+   // TODO: remove this and add a token at the beginning of the file to tell how many tree nodes are there
+   const auto max_tree_node_count = 
+      std::count(std::istreambuf_iterator<char>(*sname), std::istreambuf_iterator<char>(), '\n');
+   sname = fileIO_istream_open(fn);
+
+   const TreeFlexLexerRef lexer(new TreeFlexLexer(sname.get(), nullptr));
+   const BisonParserDataRef data(new BisonParserData(Param, max_tree_node_count, Param->get_class_debug_level("tree_parse")));
+   data->final_TM = tree_managerRef();
+   data->current_TM = tree_managerRef();
 #if YYDEBUG
-    yydebug = 1;
+   yydebug = 1;
 #endif
-    yyparse(data, lexer);
-    if(data->final_TM)
+   yyparse(data, lexer);
+
+   data->current_TM->FixTreeReindex();
+
+   if(data->final_TM)
+   {
       data->final_TM->merge_tree_managers(data->current_TM);
-    else
+   }
+   else
+   {
       data->final_TM = data->current_TM;
-    return data->final_TM;
+   }
+   return data->final_TM;
 }
 
-void yyerror(const BisonParserDataRef data, const TreeFlexLexerRef lexer, const char *msg)
+void yyerror(const BisonParserDataRef data, const TreeFlexLexerRef lexer, const char* msg)
 {
-  lexer->yyerror(msg);
+   lexer->yyerror(msg);
 }
-int yylex(YYSTYPE *lvalp, const TreeFlexLexerRef lexer)
+
+int yylex(YYSTYPE* lvalp, const TreeFlexLexerRef lexer)
 {
-  lexer->lvalp=lvalp;
-  return lexer->yylex();
+   lexer->lvalp = lvalp;
+   return lexer->yylex();
 }

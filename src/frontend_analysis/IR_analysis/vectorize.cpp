@@ -246,8 +246,8 @@ DesignFlowStep_Status Vectorize::InternalExec()
                   gimple_file.close();
                }
                const auto new_statement = DuplicateIncrement(bb_node_info->loop_id, GET_NODE(statement));
-               block->PushBefore(TM->GetTreeReindex(new_statement), statement, AppM);
-               ClassifyTreeNode(bb_node_info->loop_id, TM->get_tree_node_const(new_statement));
+               block->PushBefore(TM->GetTreeNode(new_statement), statement, AppM);
+               ClassifyTreeNode(bb_node_info->loop_id, TM->CGetTreeNode(new_statement));
                transformations[new_statement] = INC;
                if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
                {
@@ -285,13 +285,13 @@ DesignFlowStep_Status Vectorize::InternalExec()
          std::vector<tree_nodeRef> new_phi_list;
          for(const auto& statement : block->CGetStmtList())
          {
-            TM->GetTreeReindex(Transform(statement->index, loop_parallel_degree[bb_node_info->loop_id], 0,
-                                         new_statement_list, new_phi_list));
+            TM->GetTreeNode(Transform(statement->index, loop_parallel_degree[bb_node_info->loop_id], 0,
+                                      new_statement_list, new_phi_list));
          }
          for(const auto& phi : block->CGetPhiList())
          {
-            TM->GetTreeReindex(Transform(phi->index, loop_parallel_degree[bb_node_info->loop_id], 0, new_statement_list,
-                                         new_phi_list));
+            TM->GetTreeNode(Transform(phi->index, loop_parallel_degree[bb_node_info->loop_id], 0, new_statement_list,
+                                      new_phi_list));
          }
          /// Remove old statements
          const auto& old_statement_list = block->CGetStmtList();
@@ -941,7 +941,7 @@ unsigned int Vectorize::DuplicateIncrement(const unsigned int loop_id, const tre
    /// Duplicate increment
    const auto new_gimple = tnd.create_tree_node(statement);
 #ifndef NDEBUG
-   auto* new_ga = GetPointer<gimple_assign>(TM->get_tree_node_const(new_gimple));
+   auto* new_ga = GetPointer<gimple_assign>(TM->CGetTreeNode(new_gimple));
 #endif
    const BBGraphRef bb_graph = function_behavior->GetBBGraph(FunctionBehavior::FBB);
    LoopRef loop = function_behavior->GetLoops()->GetLoop(loop_id);
@@ -1022,14 +1022,14 @@ unsigned int Vectorize::DuplicateIncrement(const unsigned int loop_id, const tre
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Replaced condition in feedback guard computation " + STR(feedback_condition_def_stmt));
          bb_graph->GetBBNodeInfo(*(loop->exit_block_iter_begin()))
-             ->block->PushBefore(TM->GetTreeReindex(new_cond_computation), feedback_condition_sn->CGetDefStmt(), AppM);
+             ->block->PushBefore(TM->GetTreeNode(new_cond_computation), feedback_condition_sn->CGetDefStmt(), AppM);
       }
       else
       {
          bb_graph->GetBBNodeInfo(*(loop->exit_block_iter_begin()))
-             ->block->PushBack(TM->GetTreeReindex(new_cond_computation), AppM);
+             ->block->PushBack(TM->GetTreeNode(new_cond_computation), AppM);
       }
-      ClassifyTreeNode(loop_id, TM->get_tree_node_const(new_cond_computation));
+      ClassifyTreeNode(loop_id, TM->CGetTreeNode(new_cond_computation));
    }
    else
    {
@@ -1170,7 +1170,7 @@ void Vectorize::AddGuards()
          gimple_phi_schema[TOK(TOK_TYPE)] = STR(boolean_type->index);
          gimple_phi_schema[TOK(TOK_RES)] = STR(ssa_node_nid);
          TM->create_tree_node(gimple_phi_id, gimple_phi_K, gimple_phi_schema);
-         auto gp = GetPointer<gimple_phi>(TM->get_tree_node_const(gimple_phi_id));
+         auto gp = GetPointer<gimple_phi>(TM->CGetTreeNode(gimple_phi_id));
          gp->SetSSAUsesComputed();
          THROW_ASSERT(gp, "");
          InEdgeIterator ie, ie_end;
@@ -1185,7 +1185,7 @@ void Vectorize::AddGuards()
             gp->AddDefEdge(TM, gimple_phi::DefEdge(guards.find(source_id)->second, source_id));
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(TM->CGetTreeNode(gimple_phi_id)));
-         bb_node_info->block->AddPhi(TM->GetTreeReindex(gimple_phi_id));
+         bb_node_info->block->AddPhi(TM->GetTreeNode(gimple_phi_id));
          boost::tie(ie, ie_end) = boost::in_edges(basic_block, *cdg_bb_graph);
          auto edge_labels = cdg_bb_graph->CGetBBEdgeInfo(*ie)->get_labels(CDG_SELECTOR);
          auto source = boost::source(*ie, *cdg_bb_graph);
@@ -1513,12 +1513,11 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                                   std::vector<tree_nodeRef>& new_phi_list)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Transforming " + TM->get_tree_node_const(tree_node_index)->get_kind_text() + " " +
-                      STR(tree_node_index) +
-                      ((TM->get_tree_node_const(tree_node_index)->get_kind() != function_decl_K) ?
-                           ": " + TM->get_tree_node_const(tree_node_index)->ToString() :
+                  "-->Transforming " + TM->CGetTreeNode(tree_node_index)->get_kind_text() + " " + STR(tree_node_index) +
+                      ((TM->CGetTreeNode(tree_node_index)->get_kind() != function_decl_K) ?
+                           ": " + TM->CGetTreeNode(tree_node_index)->ToString() :
                            ""));
-   const tree_nodeConstRef tn = TM->get_tree_node_const(tree_node_index);
+   const tree_nodeConstRef tn = TM->CGetTreeNode(tree_node_index);
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> tree_node_schema;
    unsigned int return_value = 0;
    const auto transformation = [&]() -> Transformation {
@@ -1557,25 +1556,23 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
              STR(Transform(gc->op0->index, parallel_degree, 1, new_stmt_list, new_phi_list));
          unsigned int new_tree_node_index = TM->new_tree_node_id();
          TM->create_tree_node(new_tree_node_index, gimple_cond_K, tree_node_schema);
-         auto* new_gc = GetPointer<gimple_cond>(TM->get_tree_node_const(new_tree_node_index));
+         auto* new_gc = GetPointer<gimple_cond>(TM->CGetTreeNode(new_tree_node_index));
          new_gc->memuse = gc->memuse;
          new_gc->memdef = gc->memdef;
          for(const auto& vuse : gc->vuses)
          {
-            new_gc->AddVuse(
-                TM->GetTreeReindex(Transform(vuse->index, parallel_degree, 1, new_stmt_list, new_phi_list)));
+            new_gc->AddVuse(TM->GetTreeNode(Transform(vuse->index, parallel_degree, 1, new_stmt_list, new_phi_list)));
          }
          if(gc->vdef)
          {
-            new_gc->vdef =
-                TM->GetTreeReindex(Transform(gc->vdef->index, parallel_degree, 1, new_stmt_list, new_phi_list));
+            new_gc->vdef = TM->GetTreeNode(Transform(gc->vdef->index, parallel_degree, 1, new_stmt_list, new_phi_list));
          }
          new_gc->vovers = gc->vovers;
          new_gc->pragmas = gc->pragmas;
          new_gc->use_set = gc->use_set;
          new_gc->clobbered_set = gc->clobbered_set;
          return_value = new_tree_node_index;
-         new_stmt_list.push_back(TM->GetTreeReindex(new_tree_node_index));
+         new_stmt_list.push_back(TM->GetTreeNode(new_tree_node_index));
          break;
       }
       case(COND_DIV):
@@ -1584,7 +1581,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
          const auto* gc = GetPointer<const gimple_cond>(tn);
          for(size_t parallel_index = 1; parallel_index <= parallel_degree; parallel_index++)
          {
-            conditions.push_back(TM->GetTreeReindex(
+            conditions.push_back(TM->GetTreeNode(
                 Transform(gc->op0->index, parallel_degree, parallel_index, new_stmt_list, new_phi_list)));
          }
          while(conditions.size() > 1)
@@ -1606,7 +1603,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
          unsigned int new_tree_node_index = TM->new_tree_node_id();
          TM->create_tree_node(new_tree_node_index, gimple_cond_K, tree_node_schema);
          return_value = new_tree_node_index;
-         new_stmt_list.push_back(TM->GetTreeReindex(new_tree_node_index));
+         new_stmt_list.push_back(TM->GetTreeNode(new_tree_node_index));
          break;
       }
       case(INIT):
@@ -1624,7 +1621,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
          tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + STR(line_number) + ":" + STR(column_number);
          unsigned int new_tree_node_id = TM->new_tree_node_id();
          TM->create_tree_node(new_tree_node_id, gimple_phi_K, tree_node_schema);
-         auto* new_gp = GetPointer<gimple_phi>(TM->get_tree_node_const(new_tree_node_id));
+         auto* new_gp = GetPointer<gimple_phi>(TM->CGetTreeNode(new_tree_node_id));
          InEdgeIterator ie, ie_end;
          const BBGraphRef bb_graph = function_behavior->GetBBGraph(FunctionBehavior::BB);
          const vertex header = bb_graph->CGetBBGraphInfo()->bb_index_map.find(gp->bb_index)->second;
@@ -1654,9 +1651,9 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   {
                      const auto local_init = original_init + increment * static_cast<long long>(i);
                      const auto new_ic = TM->CreateUniqueIntegerCst(local_init, ic->type);
-                     new_tn->list_of_valu.push_back(TM->GetTreeReindex(new_ic->index));
+                     new_tn->list_of_valu.push_back(TM->GetTreeNode(new_ic->index));
                   }
-                  new_gp->AddDefEdge(TM, gimple_phi::DefEdge(TM->GetTreeReindex(new_tn->index), def_edge.second));
+                  new_gp->AddDefEdge(TM, gimple_phi::DefEdge(TM->GetTreeNode(new_tn->index), def_edge.second));
                }
                else if(GET_NODE(def_edge.first)->get_kind() == ssa_name_K)
                {
@@ -1721,7 +1718,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      THROW_ASSERT(previous_list_of_stmt.empty() or
                                       GET_NODE((*(previous_list_of_stmt.begin())))->get_kind() != gimple_cond_K,
                                   "");
-                     previous_block->PushBack(TM->GetTreeReindex(gimple_tree_node_index), AppM);
+                     previous_block->PushBack(TM->GetTreeNode(gimple_tree_node_index), AppM);
                   }
                   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> constructor_tree_node_schema,
                       gimple_tree_node_schema, ssa_tree_node_schema;
@@ -1729,12 +1726,12 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                       tree_helper::CGetType(gp->res)->index, parallel_degree, 0, new_stmt_list, new_phi_list));
                   unsigned int constructor_index = TM->new_tree_node_id();
                   TM->create_tree_node(constructor_index, constructor_K, constructor_tree_node_schema);
-                  auto* constr = GetPointer<constructor>(TM->get_tree_node_const(constructor_index));
+                  auto* constr = GetPointer<constructor>(TM->CGetTreeNode(constructor_index));
                   for(size_t scalar = 1; scalar <= parallel_degree; scalar++)
                   {
                      const auto new_ic = TM->CreateUniqueIntegerCst(static_cast<long long int>(scalar - 1),
                                                                     tree_man->GetUnsignedIntegerType());
-                     constr->add_idx_valu(new_ic, TM->GetTreeReindex(version_to_ssa[scalar]));
+                     constr->add_idx_valu(new_ic, TM->GetTreeNode(version_to_ssa[scalar]));
                   }
 
                   const auto* sa = GetPointer<const ssa_name>(GET_NODE(def_edge.first));
@@ -1777,8 +1774,8 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   gimple_tree_node_schema[TOK(TOK_OP0)] = STR(ssa_tree_node_index);
                   unsigned int gimple_tree_node_index = TM->new_tree_node_id();
                   TM->create_tree_node(gimple_tree_node_index, gimple_assign_K, gimple_tree_node_schema);
-                  previous_block->PushBack(TM->GetTreeReindex(gimple_tree_node_index), AppM);
-                  new_gp->AddDefEdge(TM, gimple_phi::DefEdge(TM->GetTreeReindex(ssa_tree_node_index), def_edge.second));
+                  previous_block->PushBack(TM->GetTreeNode(gimple_tree_node_index), AppM);
+                  new_gp->AddDefEdge(TM, gimple_phi::DefEdge(TM->GetTreeNode(ssa_tree_node_index), def_edge.second));
                }
                else
                {
@@ -1790,14 +1787,14 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                THROW_ASSERT(transformations.find(def_edge.first->index) == transformations.end() or
                                 transformations.find(def_edge.first->index)->second == SIMD,
                             "");
-               new_gp->AddDefEdge(
-                   TM, gimple_phi::DefEdge(TM->GetTreeReindex(Transform(def_edge.first->index, parallel_degree, 0,
-                                                                        new_stmt_list, new_phi_list)),
-                                           def_edge.second));
+               new_gp->AddDefEdge(TM,
+                                  gimple_phi::DefEdge(TM->GetTreeNode(Transform(def_edge.first->index, parallel_degree,
+                                                                                0, new_stmt_list, new_phi_list)),
+                                                      def_edge.second));
             }
          }
          return_value = new_tree_node_id;
-         new_phi_list.push_back(TM->GetTreeReindex(return_value));
+         new_phi_list.push_back(TM->GetTreeNode(return_value));
          /// Creating scalar from simd
          for(size_t scalar = 1; scalar <= parallel_degree; scalar++)
          {
@@ -1862,7 +1859,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             unsigned int gimple_new_tree_node_index = TM->new_tree_node_id();
             TM->create_tree_node(gimple_new_tree_node_index, gimple_assign_K, gimple_assign_tree_node_schema);
             /// Split of phi node goes to the beginning of the list of statement
-            new_stmt_list.push_front(TM->GetTreeReindex(gimple_new_tree_node_index));
+            new_stmt_list.push_front(TM->GetTreeNode(gimple_new_tree_node_index));
          }
          break;
       }
@@ -1885,7 +1882,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
              STR(Transform(ga->op1->index, parallel_degree, 0, new_stmt_list, new_phi_list));
          unsigned int new_tree_node_index = TM->new_tree_node_id();
          TM->create_tree_node(new_tree_node_index, gimple_assign_K, tree_node_schema);
-         auto* new_ga = GetPointer<gimple_assign>(TM->get_tree_node_const(new_tree_node_index));
+         auto* new_ga = GetPointer<gimple_assign>(TM->CGetTreeNode(new_tree_node_index));
          THROW_ASSERT(GET_NODE(new_ga->op1)->get_kind() == plus_expr_K or
                           GET_NODE(new_ga->op1)->get_kind() == minus_expr_K,
                       "Loop increment operation is not a plus expression nor a minus expression");
@@ -1894,25 +1891,23 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
          const auto type = GetPointer<const vector_type>(GET_CONST_NODE(tree_helper::CGetType(be->op1)))->elts;
          const auto new_increment = increment * static_cast<integer_cst_t>(parallel_degree);
          const auto new_ic = TM->CreateUniqueIntegerCst(new_increment, type);
-         be->op1 = TM->GetTreeReindex(Transform(new_ic->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+         be->op1 = TM->GetTreeNode(Transform(new_ic->index, parallel_degree, 0, new_stmt_list, new_phi_list));
          new_ga->memuse = ga->memuse;
          new_ga->memdef = ga->memdef;
          for(const auto& vuse : ga->vuses)
          {
-            new_ga->AddVuse(
-                TM->GetTreeReindex(Transform(vuse->index, parallel_degree, 0, new_stmt_list, new_phi_list)));
+            new_ga->AddVuse(TM->GetTreeNode(Transform(vuse->index, parallel_degree, 0, new_stmt_list, new_phi_list)));
          }
          if(ga->vdef)
          {
-            new_ga->vdef =
-                TM->GetTreeReindex(Transform(ga->vdef->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+            new_ga->vdef = TM->GetTreeNode(Transform(ga->vdef->index, parallel_degree, 0, new_stmt_list, new_phi_list));
          }
          new_ga->vovers = ga->vovers;
          new_ga->pragmas = ga->pragmas;
          new_ga->use_set = ga->use_set;
          new_ga->clobbered_set = ga->clobbered_set;
          return_value = new_tree_node_index;
-         new_stmt_list.push_back(TM->GetTreeReindex(new_tree_node_index));
+         new_stmt_list.push_back(TM->GetTreeNode(new_tree_node_index));
 
          /// Creating scalar from simd
 
@@ -1978,7 +1973,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                 STR(Transform(ga->op0->index, parallel_degree, scalar, new_stmt_list, new_phi_list));
             unsigned int gimple_new_tree_node_index = TM->new_tree_node_id();
             TM->create_tree_node(gimple_new_tree_node_index, gimple_assign_K, gimple_assign_tree_node_schema);
-            new_stmt_list.push_back(TM->GetTreeReindex(gimple_new_tree_node_index));
+            new_stmt_list.push_back(TM->GetTreeNode(gimple_new_tree_node_index));
             scalar_to_scalar[tree_node_index][scalar] = ssa_tree_node_index;
          }
          break;
@@ -1989,13 +1984,13 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             scalar_to_scalar.find(tn->index)->second.find(scalar_index) !=
                 scalar_to_scalar.find(tn->index)->second.end())
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "<--Already transformed " + STR(tree_node_index) +
-                               ((TM->get_tree_node_const(tree_node_index)->get_kind() != function_decl_K) ?
-                                    ": " + TM->get_tree_node_const(
-                                                 scalar_to_scalar.find(tn->index)->second.find(scalar_index)->second)
-                                               ->ToString() :
-                                    ""));
+            INDENT_DBG_MEX(
+                DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                "<--Already transformed " + STR(tree_node_index) +
+                    ((TM->CGetTreeNode(tree_node_index)->get_kind() != function_decl_K) ?
+                         ": " + TM->CGetTreeNode(scalar_to_scalar.find(tn->index)->second.find(scalar_index)->second)
+                                    ->ToString() :
+                         ""));
             return scalar_to_scalar.find(tn->index)->second.find(scalar_index)->second;
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Scalar");
@@ -2028,17 +2023,17 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
 
                   unsigned int new_tree_node_index = TM->new_tree_node_id();
                   TM->create_tree_node(new_tree_node_index, gimple_assign_K, tree_node_schema);
-                  auto* new_ga = GetPointer<gimple_assign>(TM->get_tree_node_const(new_tree_node_index));
+                  auto* new_ga = GetPointer<gimple_assign>(TM->CGetTreeNode(new_tree_node_index));
                   new_ga->memuse = ga->memuse;
                   new_ga->memdef = ga->memdef;
                   for(const auto& vuse : ga->vuses)
                   {
-                     new_ga->AddVuse(TM->GetTreeReindex(
-                         Transform(vuse->index, parallel_degree, scalar, new_stmt_list, new_phi_list)));
+                     new_ga->AddVuse(
+                         TM->GetTreeNode(Transform(vuse->index, parallel_degree, scalar, new_stmt_list, new_phi_list)));
                   }
                   if(ga->vdef)
                   {
-                     new_ga->vdef = TM->GetTreeReindex(
+                     new_ga->vdef = TM->GetTreeNode(
                          Transform(ga->vdef->index, parallel_degree, scalar, new_stmt_list, new_phi_list));
                      const auto old_vdef = GetPointer<const ssa_name>(GET_NODE(ga->vdef));
                      for(const auto& use_stmt : old_vdef->CGetUseStmts())
@@ -2060,7 +2055,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   new_ga->pragmas = ga->pragmas;
                   new_ga->use_set = ga->use_set;
                   new_ga->clobbered_set = ga->clobbered_set;
-                  new_stmt_list.push_back(TM->GetTreeReindex(new_tree_node_index));
+                  new_stmt_list.push_back(TM->GetTreeNode(new_tree_node_index));
                   scalar_to_ssa[scalar] = new_ga->op0->index;
                   return_value = new_tree_node_index;
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + new_ga->ToString());
@@ -2078,12 +2073,12 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                       tree_helper::CGetType(ga->op0)->index, parallel_degree, 0, new_stmt_list, new_phi_list));
                   unsigned int constructor_index = TM->new_tree_node_id();
                   TM->create_tree_node(constructor_index, constructor_K, constructor_tree_node_schema);
-                  auto* constr = GetPointer<constructor>(TM->get_tree_node_const(constructor_index));
+                  auto* constr = GetPointer<constructor>(TM->CGetTreeNode(constructor_index));
                   for(size_t scalar = 1; scalar <= parallel_degree; scalar++)
                   {
                      const auto new_ic = TM->CreateUniqueIntegerCst(static_cast<long long int>(scalar - 1),
                                                                     tree_man->GetUnsignedIntegerType());
-                     constr->add_idx_valu(new_ic, TM->GetTreeReindex(scalar_to_ssa[scalar]));
+                     constr->add_idx_valu(new_ic, TM->GetTreeNode(scalar_to_ssa[scalar]));
                   }
 
                   std::string include_name = GetPointer<const srcp>(tn)->include_name;
@@ -2098,7 +2093,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                       STR(Transform(ga->op0->index, parallel_degree, 0, new_stmt_list, new_phi_list));
                   unsigned int new_tree_node_index = TM->new_tree_node_id();
                   TM->create_tree_node(new_tree_node_index, gimple_assign_K, tree_node_schema);
-                  new_stmt_list.push_back(TM->GetTreeReindex(new_tree_node_index));
+                  new_stmt_list.push_back(TM->GetTreeNode(new_tree_node_index));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Built constructor for left part");
                }
                break;
@@ -2334,10 +2329,10 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                tree_node_schema[TOK(TOK_FN)] = STR(ce->fn->index);
                unsigned int call_expr_tree_node_index = TM->new_tree_node_id();
                TM->create_tree_node(call_expr_tree_node_index, call_expr_K, tree_node_schema);
-               auto* new_ce = GetPointer<call_expr>(TM->get_tree_node_const(call_expr_tree_node_index));
+               auto* new_ce = GetPointer<call_expr>(TM->CGetTreeNode(call_expr_tree_node_index));
                for(const auto& arg : ce->args)
                {
-                  new_ce->AddArg(TM->GetTreeReindex(
+                  new_ce->AddArg(TM->GetTreeNode(
                       Transform(arg->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list)));
                }
                return_value = call_expr_tree_node_index;
@@ -2404,8 +2399,8 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "<--Already transformed " + STR(tree_node_index) +
-                               ((TM->get_tree_node_const(tree_node_index)->get_kind() != function_decl_K) ?
-                                    ": " + TM->get_tree_node_const(tree_node_index)->ToString() :
+                               ((TM->CGetTreeNode(tree_node_index)->get_kind() != function_decl_K) ?
+                                    ": " + TM->CGetTreeNode(tree_node_index)->ToString() :
                                     ""));
             return scalar_to_vector.find(tree_node_index)->second;
          }
@@ -2432,18 +2427,18 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                    STR(Transform(ga->op0->index, parallel_degree, 0, new_stmt_list, new_phi_list));
                unsigned int new_tree_node_index = TM->new_tree_node_id();
                TM->create_tree_node(new_tree_node_index, gimple_assign_K, tree_node_schema);
-               auto* new_ga = GetPointer<gimple_assign>(TM->get_tree_node_const(new_tree_node_index));
+               auto* new_ga = GetPointer<gimple_assign>(TM->CGetTreeNode(new_tree_node_index));
                new_ga->memuse = ga->memuse;
                new_ga->memdef = ga->memdef;
                for(const auto& vuse : ga->vuses)
                {
                   new_ga->AddVuse(
-                      TM->GetTreeReindex(Transform(vuse->index, parallel_degree, 0, new_stmt_list, new_phi_list)));
+                      TM->GetTreeNode(Transform(vuse->index, parallel_degree, 0, new_stmt_list, new_phi_list)));
                }
                if(new_ga->vdef)
                {
                   new_ga->vdef =
-                      TM->GetTreeReindex(Transform(ga->vdef->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+                      TM->GetTreeNode(Transform(ga->vdef->index, parallel_degree, 0, new_stmt_list, new_phi_list));
                }
                new_ga->vovers = ga->vovers;
                new_ga->pragmas = ga->pragmas;
@@ -2451,7 +2446,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                new_ga->clobbered_set = ga->clobbered_set;
                return_value = new_tree_node_index;
                THROW_ASSERT(GET_NODE(new_ga->op0)->get_kind() == ssa_name_K, "Left operand is not ssa");
-               new_stmt_list.push_back(TM->GetTreeReindex(return_value));
+               new_stmt_list.push_back(TM->GetTreeNode(return_value));
                for(size_t scalar = 1; scalar <= parallel_degree; scalar++)
                {
                   /// Build bit_field_ref to extract the scalar
@@ -2485,8 +2480,8 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   unsigned int gimple_new_tree_node_index = TM->new_tree_node_id();
                   TM->create_tree_node(gimple_new_tree_node_index, gimple_assign_K, gimple_assign_tree_node_schema);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Adding " + TM->get_tree_node_const(gimple_new_tree_node_index)->ToString());
-                  new_stmt_list.push_back(TM->GetTreeReindex(gimple_new_tree_node_index));
+                                 "---Adding " + TM->CGetTreeNode(gimple_new_tree_node_index)->ToString());
+                  new_stmt_list.push_back(TM->GetTreeNode(gimple_new_tree_node_index));
                   scalar_to_scalar[tree_node_index][scalar] = return_value;
                }
                break;
@@ -2578,11 +2573,11 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      TM->create_tree_node(new_tree_node_id, vector_type_K, tree_node_schema);
                      return_value = new_tree_node_id;
                      /// Workaround due to cycle in the tree between void_type and type_decl
-                     auto* new_type_node = GetPointer<type_node>(TM->get_tree_node_const(new_tree_node_id));
+                     auto* new_type_node = GetPointer<type_node>(TM->CGetTreeNode(new_tree_node_id));
                      if(new_type_node->name and GET_NODE(new_type_node->name)->get_kind() == type_decl_K)
                      {
                         auto* td = GetPointer<type_decl>(GET_NODE(new_type_node->name));
-                        td->type = TM->GetTreeReindex(new_tree_node_id);
+                        td->type = TM->GetTreeNode(new_tree_node_id);
                      }
                      break;
                   }
@@ -2759,7 +2754,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      if(vd->size)
                      {
                         /// Size of new type
-                        const auto* type = GetPointer<const type_node>(TM->get_tree_node_const(
+                        const auto* type = GetPointer<const type_node>(TM->CGetTreeNode(
                             Transform(dn->type->index, parallel_degree, 0, new_stmt_list, new_phi_list)));
                         tree_node_schema[TOK(TOK_SIZE)] = STR(type->size->index);
                      }
@@ -2907,12 +2902,12 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                       STR(Transform(be->type->index, parallel_degree, 0, new_stmt_list, new_phi_list));
                   auto constructor_index = TM->new_tree_node_id();
                   TM->create_tree_node(constructor_index, constructor_K, constructor_tree_node_schema);
-                  auto* constr = GetPointer<constructor>(TM->get_tree_node_const(constructor_index));
+                  auto* constr = GetPointer<constructor>(TM->CGetTreeNode(constructor_index));
                   for(size_t scalar = 1; scalar <= parallel_degree; scalar++)
                   {
                      const auto new_ic = TM->CreateUniqueIntegerCst(static_cast<long long int>(scalar - 1),
                                                                     tree_man->GetUnsignedIntegerType());
-                     constr->add_idx_valu(new_ic, TM->GetTreeReindex(be->op1->index));
+                     constr->add_idx_valu(new_ic, TM->GetTreeNode(be->op1->index));
                   }
 
                   std::string include_name = GetPointer<const srcp>(tn)->include_name;
@@ -2963,8 +2958,8 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                       tree_helper::CGetType(be->op1)->index, parallel_degree, 0, new_stmt_list, new_phi_list));
                   auto temp_tree_node_index = TM->new_tree_node_id();
                   TM->create_tree_node(temp_tree_node_index, gimple_assign_K, temp_tree_node_schema);
-                  auto* new_ga = GetPointer<gimple_assign>(TM->get_tree_node_const(temp_tree_node_index));
-                  new_stmt_list.push_back(TM->GetTreeReindex(temp_tree_node_index));
+                  auto* new_ga = GetPointer<gimple_assign>(TM->CGetTreeNode(temp_tree_node_index));
+                  new_stmt_list.push_back(TM->GetTreeNode(temp_tree_node_index));
                   tree_node_schema[TOK(TOK_OP1)] = STR(new_ga->op0->index);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Built constructor for second operand");
                }
@@ -3006,10 +3001,10 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                    STR(Transform(cn->type->index, parallel_degree, 0, new_stmt_list, new_phi_list));
                auto new_tree_node_id = TM->new_tree_node_id();
                TM->create_tree_node(new_tree_node_id, vector_cst_K, tree_node_schema);
-               auto* new_tn = GetPointer<vector_cst>(TM->get_tree_node_const(new_tree_node_id));
+               auto* new_tn = GetPointer<vector_cst>(TM->CGetTreeNode(new_tree_node_id));
                for(size_t i = 0; i < parallel_degree; i++)
                {
-                  new_tn->list_of_valu.push_back(TM->GetTreeReindex(tn->index));
+                  new_tn->list_of_valu.push_back(TM->GetTreeNode(tn->index));
                }
                return_value = new_tree_node_id;
                break;
@@ -3029,7 +3024,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                tree_node_schema[TOK(TOK_SCPE)] = STR(function_id);
                auto new_tree_node_id = TM->new_tree_node_id();
                TM->create_tree_node(new_tree_node_id, gimple_phi_K, tree_node_schema);
-               auto* new_gp = GetPointer<gimple_phi>(TM->get_tree_node_const(new_tree_node_id));
+               auto* new_gp = GetPointer<gimple_phi>(TM->CGetTreeNode(new_tree_node_id));
                new_gp->SetSSAUsesComputed();
                for(const auto& def_edge : gp->CGetDefEdgesList())
                {
@@ -3041,18 +3036,18 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      transformations.find(def_edge.first->index)->second == SIMD)
                   {
                      new_gp->AddDefEdge(
-                         TM, gimple_phi::DefEdge(TM->GetTreeReindex(Transform(def_edge.first->index, parallel_degree, 0,
-                                                                              new_stmt_list, new_phi_list)),
+                         TM, gimple_phi::DefEdge(TM->GetTreeNode(Transform(def_edge.first->index, parallel_degree, 0,
+                                                                           new_stmt_list, new_phi_list)),
                                                  def_edge.second));
                   }
                   else
                   {
-                     new_gp->AddDefEdge(
-                         TM, gimple_phi::DefEdge(TM->GetTreeReindex(def_edge.first->index), def_edge.second));
+                     new_gp->AddDefEdge(TM,
+                                        gimple_phi::DefEdge(TM->GetTreeNode(def_edge.first->index), def_edge.second));
                   }
                }
                return_value = new_tree_node_id;
-               new_phi_list.push_back(TM->GetTreeReindex(return_value));
+               new_phi_list.push_back(TM->GetTreeNode(return_value));
                if(!gp->virtual_flag)
                {
                   /// Creating scalar from simd
@@ -3073,11 +3068,11 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                                                                   tree_man->GetUnsignedIntegerType());
                      const auto bit_field_ref_node = tree_man->create_ternary_operation(
                          element_type,
-                         TM->GetTreeReindex(Transform(gp->res->index, parallel_degree, 0, new_stmt_list, new_phi_list)),
+                         TM->GetTreeNode(Transform(gp->res->index, parallel_degree, 0, new_stmt_list, new_phi_list)),
                          size, offset, new_srcp, bit_field_ref_K);
 
                      const auto gimple_new_tree_node = tree_man->create_gimple_modify_stmt(
-                         TM->GetTreeReindex(
+                         TM->GetTreeNode(
                              Transform(gp->res->index, parallel_degree, scalar, new_stmt_list, new_phi_list)),
                          bit_field_ref_node, function_id, new_srcp);
                      /// Split of phi node goes to the beginning of the list of statement
@@ -3196,10 +3191,9 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "<--Transformed " + TM->get_tree_node_const(tree_node_index)->get_kind_text() + " " +
-                      STR(tree_node_index) +
-                      ((TM->get_tree_node_const(return_value)->get_kind() != function_decl_K) ?
-                           ": " + TM->get_tree_node_const(return_value)->ToString() :
+                  "<--Transformed " + TM->CGetTreeNode(tree_node_index)->get_kind_text() + " " + STR(tree_node_index) +
+                      ((TM->CGetTreeNode(return_value)->get_kind() != function_decl_K) ?
+                           ": " + TM->CGetTreeNode(return_value)->ToString() :
                            ""));
    return return_value;
 }

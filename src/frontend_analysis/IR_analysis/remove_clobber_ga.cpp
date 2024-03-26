@@ -108,7 +108,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
    std::map<unsigned int, tree_nodeRef> var_substitution_table;
    std::map<unsigned int, CustomOrderedSet<tree_nodeRef>> stmt_to_be_removed;
 
-   tree_nodeRef temp = TM->get_tree_node_const(function_id);
+   tree_nodeRef temp = TM->CGetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(temp);
    auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
    const bool is_single_write_memory =
@@ -177,7 +177,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
                                ->clobber),
                          "unexpected condition");
                      gp->ReplaceDefEdge(TM, def_edge,
-                                        gimple_phi::DefEdge(TM->GetTreeReindex(GET_INDEX_NODE(res)), def_edge.second));
+                                        gimple_phi::DefEdge(TM->GetTreeNode(GET_INDEX_NODE(res)), def_edge.second));
                   }
                }
             }
@@ -195,7 +195,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
             if(var_substitution_table.find(GET_INDEX_NODE(gn->memuse)) != var_substitution_table.end())
             {
                gn->memuse =
-                   TM->GetTreeReindex(GET_INDEX_NODE(var_substitution_table.find(GET_INDEX_NODE(gn->memuse))->second));
+                   TM->GetTreeNode(GET_INDEX_NODE(var_substitution_table.find(GET_INDEX_NODE(gn->memuse))->second));
             }
          }
       }

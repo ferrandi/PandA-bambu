@@ -92,7 +92,7 @@ BehavioralHelper::BehavioralHelper(const application_managerRef _AppM, unsigned 
       Param(_parameters),
       debug_level(Param->get_class_debug_level("BehavioralHelper", DEBUG_LEVEL_NONE)),
       function_index(_index),
-      function_name(tree_helper::GetFunctionName(TM, TM->CGetTreeReindex(function_index))),
+      function_name(tree_helper::GetFunctionName(TM, TM->CGetTreeNode(function_index))),
       body(_body),
       opaque(!_body)
 {
@@ -104,7 +104,7 @@ std::tuple<std::string, unsigned int, unsigned int> BehavioralHelper::get_defini
                                                                                      bool& is_system) const
 {
    THROW_ASSERT(index, "expected a meaningful index");
-   return tree_helper::GetSourcePath(TM->CGetTreeReindex(index), is_system);
+   return tree_helper::GetSourcePath(TM->CGetTreeNode(index), is_system);
 }
 
 std::string BehavioralHelper::print_vertex(const OpGraphConstRef g, const vertex v, const var_pp_functorConstRef vppf,
@@ -1006,7 +1006,7 @@ std::string BehavioralHelper::PrintConstant(const tree_nodeConstRef& _node, cons
 
 unsigned long long BehavioralHelper::get_size(unsigned int var) const
 {
-   return tree_helper::Size(TM->CGetTreeReindex(var));
+   return tree_helper::Size(TM->CGetTreeNode(var));
 }
 
 std::string BehavioralHelper::get_function_name() const
@@ -1026,7 +1026,7 @@ unsigned int BehavioralHelper::get_function_index() const
 
 unsigned int BehavioralHelper::GetFunctionReturnType(unsigned int function) const
 {
-   const auto return_type = tree_helper::GetFunctionReturnType(TM->CGetTreeReindex(function));
+   const auto return_type = tree_helper::GetFunctionReturnType(TM->CGetTreeNode(function));
    if(return_type)
    {
       return return_type->index;
@@ -1136,12 +1136,12 @@ unsigned int BehavioralHelper::get_type(const unsigned int var) const
 
 unsigned int BehavioralHelper::get_pointed_type(const unsigned int type) const
 {
-   return tree_helper::CGetPointedType(TM->CGetTreeReindex(type))->index;
+   return tree_helper::CGetPointedType(TM->CGetTreeNode(type))->index;
 }
 
 unsigned int BehavioralHelper::GetElements(const unsigned int type) const
 {
-   return tree_helper::CGetElements(TM->CGetTreeReindex(type))->index;
+   return tree_helper::CGetElements(TM->CGetTreeNode(type))->index;
 }
 
 std::string BehavioralHelper::PrintVarDeclaration(unsigned int var, var_pp_functorConstRef vppf,
@@ -1183,7 +1183,7 @@ std::string BehavioralHelper::PrintVarDeclaration(unsigned int var, var_pp_funct
       }
       if(init && init_has_to_be_printed)
       {
-         return_value += " = " + PrintInit(TM->CGetTreeReindex(init), vppf);
+         return_value += " = " + PrintInit(TM->CGetTreeNode(init), vppf);
       }
    }
    return return_value;
@@ -1191,7 +1191,7 @@ std::string BehavioralHelper::PrintVarDeclaration(unsigned int var, var_pp_funct
 
 bool BehavioralHelper::is_var_args() const
 {
-   tree_nodeRef tn = TM->get_tree_node_const(function_index);
+   tree_nodeRef tn = TM->GetTreeNode(function_index);
    THROW_ASSERT(tn->get_kind() == function_decl_K, "function_index is not a function decl");
    tn = GET_NODE(GetPointer<function_decl>(tn)->type);
    return GetPointer<function_type>(tn)->varargs_flag;
@@ -4822,7 +4822,7 @@ std::string BehavioralHelper::print_type_declaration(unsigned int type) const
             for(auto& list_of_fld : rt->list_of_flds)
             {
                auto field = GET_INDEX_NODE(list_of_fld);
-               const auto fld_node = TM->CGetTreeReindex(field);
+               const auto fld_node = TM->CGetTreeNode(field);
                if(GET_CONST_NODE(fld_node)->get_kind() == type_decl_K)
                {
                   continue;
@@ -5380,7 +5380,7 @@ bool BehavioralHelper::is_a_constant(unsigned int obj) const
 
 bool BehavioralHelper::is_a_result_decl(unsigned int obj) const
 {
-   const tree_nodeRef node = TM->get_tree_node_const(obj);
+   const tree_nodeRef node = TM->GetTreeNode(obj);
    if(node->get_kind() == result_decl_K)
    {
       return true;
@@ -5393,7 +5393,7 @@ bool BehavioralHelper::is_a_result_decl(unsigned int obj) const
 
 bool BehavioralHelper::is_a_realpart_expr(unsigned int obj) const
 {
-   const tree_nodeRef temp = TM->get_tree_node_const(obj);
+   const tree_nodeRef temp = TM->GetTreeNode(obj);
    if(temp->get_kind() == realpart_expr_K)
    {
       return true;
@@ -5406,7 +5406,7 @@ bool BehavioralHelper::is_a_realpart_expr(unsigned int obj) const
 
 bool BehavioralHelper::is_a_imagpart_expr(unsigned int obj) const
 {
-   const tree_nodeRef temp = TM->get_tree_node_const(obj);
+   const tree_nodeRef temp = TM->GetTreeNode(obj);
    if(temp->get_kind() == imagpart_expr_K)
    {
       return true;
@@ -5419,7 +5419,7 @@ bool BehavioralHelper::is_a_imagpart_expr(unsigned int obj) const
 
 bool BehavioralHelper::is_operating_system_function(const unsigned int obj) const
 {
-   const tree_nodeRef curr_tn = TM->get_tree_node_const(obj);
+   const tree_nodeRef curr_tn = TM->GetTreeNode(obj);
    const function_decl* fd = GetPointer<function_decl>(curr_tn);
    if(!fd)
    {
@@ -5431,7 +5431,7 @@ bool BehavioralHelper::is_operating_system_function(const unsigned int obj) cons
 unsigned int BehavioralHelper::get_indirect_ref_var(unsigned int obj) const
 {
    THROW_ASSERT(is_an_indirect_ref(obj), "obj assumed to be an inderect_ref object");
-   const tree_nodeRef temp = TM->get_tree_node_const(obj);
+   const tree_nodeRef temp = TM->GetTreeNode(obj);
    auto ir = GetPointer<indirect_ref>(temp);
    if(ir)
    {
@@ -5444,7 +5444,7 @@ unsigned int BehavioralHelper::get_indirect_ref_var(unsigned int obj) const
 unsigned int BehavioralHelper::get_array_ref_array(unsigned int obj) const
 {
    THROW_ASSERT(is_an_array_ref(obj), "obj assumed to be an array_ref object");
-   const tree_nodeRef temp = TM->get_tree_node_const(obj);
+   const tree_nodeRef temp = TM->GetTreeNode(obj);
    auto ar = GetPointer<array_ref>(temp);
    return GET_INDEX_NODE(ar->op0);
 }
@@ -5452,7 +5452,7 @@ unsigned int BehavioralHelper::get_array_ref_array(unsigned int obj) const
 unsigned int BehavioralHelper::get_array_ref_index(unsigned int obj) const
 {
    THROW_ASSERT(is_an_array_ref(obj), "obj assumed to be an array_ref object");
-   const tree_nodeRef temp = TM->get_tree_node_const(obj);
+   const tree_nodeRef temp = TM->GetTreeNode(obj);
    auto ar = GetPointer<array_ref>(temp);
    return GET_INDEX_NODE(ar->op1);
 }
@@ -5460,7 +5460,7 @@ unsigned int BehavioralHelper::get_array_ref_index(unsigned int obj) const
 unsigned int BehavioralHelper::get_component_ref_record(unsigned int obj) const
 {
    THROW_ASSERT(is_a_component_ref(obj), "obj assumed to be a component_ref object");
-   const tree_nodeRef temp = TM->get_tree_node_const(obj);
+   const tree_nodeRef temp = TM->GetTreeNode(obj);
    auto cr = GetPointer<component_ref>(temp);
    return GET_INDEX_NODE(cr->op0);
 }
@@ -5468,7 +5468,7 @@ unsigned int BehavioralHelper::get_component_ref_record(unsigned int obj) const
 unsigned int BehavioralHelper::get_component_ref_field(unsigned int obj) const
 {
    THROW_ASSERT(is_a_component_ref(obj), "obj assumed to be a component_ref object");
-   const tree_nodeRef temp = TM->get_tree_node_const(obj);
+   const tree_nodeRef temp = TM->GetTreeNode(obj);
    auto cr = GetPointer<component_ref>(temp);
    return GET_INDEX_NODE(cr->op1);
 }
@@ -5476,7 +5476,7 @@ unsigned int BehavioralHelper::get_component_ref_field(unsigned int obj) const
 unsigned int BehavioralHelper::get_mem_ref_base(unsigned int obj) const
 {
    THROW_ASSERT(is_a_mem_ref(obj), "obj assumed to be a mem_ref object");
-   const tree_nodeRef temp = TM->get_tree_node_const(obj);
+   const tree_nodeRef temp = TM->GetTreeNode(obj);
    auto mr = GetPointer<mem_ref>(temp);
    return GET_INDEX_NODE(mr->op0);
 }
@@ -5484,7 +5484,7 @@ unsigned int BehavioralHelper::get_mem_ref_base(unsigned int obj) const
 unsigned int BehavioralHelper::get_mem_ref_offset(unsigned int obj) const
 {
    THROW_ASSERT(is_a_mem_ref(obj), "obj assumed to be a mem_ref object");
-   const tree_nodeRef temp = TM->get_tree_node_const(obj);
+   const tree_nodeRef temp = TM->GetTreeNode(obj);
    auto mr = GetPointer<mem_ref>(temp);
    return GET_INDEX_NODE(mr->op1);
 }
@@ -5493,14 +5493,14 @@ unsigned int BehavioralHelper::get_operand_from_unary_expr(unsigned int obj) con
 {
    THROW_ASSERT(is_an_addr_expr(obj) || is_a_realpart_expr(obj) || is_a_imagpart_expr(obj),
                 "obj assumed to be an addr_expr, a realpart_expr or an imagpart_expr object. obj is " + STR(obj));
-   const tree_nodeRef temp = TM->get_tree_node_const(obj);
+   const tree_nodeRef temp = TM->GetTreeNode(obj);
    auto ue = GetPointer<unary_expr>(temp);
    return GET_INDEX_NODE(ue->op);
 }
 
 unsigned int BehavioralHelper::GetVarFromSsa(unsigned int index) const
 {
-   const tree_nodeRef temp = TM->get_tree_node_const(index);
+   const tree_nodeRef temp = TM->GetTreeNode(index);
    auto sn = GetPointer<ssa_name>(temp);
    if(sn)
    {
@@ -5514,7 +5514,7 @@ unsigned int BehavioralHelper::GetVarFromSsa(unsigned int index) const
 
 unsigned int BehavioralHelper::get_intermediate_var(unsigned int obj) const
 {
-   const tree_nodeRef node = TM->get_tree_node_const(obj);
+   const tree_nodeRef node = TM->GetTreeNode(obj);
    switch(node->get_kind())
    {
       case modify_expr_K:
@@ -5750,7 +5750,7 @@ TreeNodeConstSet BehavioralHelper::GetParameterTypes() const
 unsigned int BehavioralHelper::is_named_pointer(const unsigned int index) const
 {
    THROW_ASSERT(index, "this index does not exist: " + STR(index));
-   const auto type = TM->CGetTreeReindex(index);
+   const auto type = TM->CGetTreeNode(index);
    THROW_ASSERT(type, "this index does not exist: " + STR(type));
    const auto Type_node = tree_helper::CGetType(type);
    THROW_ASSERT(Type_node, "this index does not exist: " + STR(type));
@@ -5776,7 +5776,7 @@ bool BehavioralHelper::is_va_start_call(unsigned int stm) const
 {
    if(is_var_args())
    {
-      const tree_nodeRef node = TM->get_tree_node_const(stm);
+      const tree_nodeRef node = TM->GetTreeNode(stm);
       if(node->get_kind() == gimple_call_K)
       {
          auto ce = GetPointer<gimple_call>(node);
@@ -5812,7 +5812,7 @@ bool BehavioralHelper::is_va_start_call(unsigned int stm) const
 
 bool BehavioralHelper::has_bit_field(unsigned int variable) const
 {
-   const tree_nodeRef node = TM->get_tree_node_const(variable);
+   const tree_nodeRef node = TM->GetTreeNode(variable);
    if(node->get_kind() == field_decl_K)
    {
       auto fd = GetPointer<field_decl>(node);
@@ -5833,7 +5833,7 @@ bool BehavioralHelper::has_bit_field(unsigned int variable) const
 
 unsigned int BehavioralHelper::get_attributes(unsigned int var) const
 {
-   const tree_nodeRef node = TM->get_tree_node_const(var);
+   const tree_nodeRef node = TM->GetTreeNode(var);
    switch(node->get_kind())
    {
       case parm_decl_K:
@@ -5899,7 +5899,7 @@ unsigned int BehavioralHelper::GetInit(unsigned int var, CustomUnorderedSet<unsi
       {
          init = initializations.find(init)->second;
       }
-      if(TM->get_tree_node_const(init)->get_kind() == var_decl_K)
+      if(TM->GetTreeNode(init)->get_kind() == var_decl_K)
       {
          list_of_variables.insert(init);
          const auto init_of_init = GetInit(init, list_of_variables);
@@ -5912,7 +5912,7 @@ unsigned int BehavioralHelper::GetInit(unsigned int var, CustomUnorderedSet<unsi
          return init;
       }
    }
-   const tree_nodeRef node = TM->get_tree_node_const(var);
+   const tree_nodeRef node = TM->GetTreeNode(var);
    switch(node->get_kind())
    {
       case ssa_name_K:
@@ -5945,7 +5945,7 @@ unsigned int BehavioralHelper::GetInit(unsigned int var, CustomUnorderedSet<unsi
       }
       case constructor_K:
       {
-         auto co = GetPointerS<const constructor>(TM->get_tree_node_const(var));
+         auto co = GetPointerS<const constructor>(TM->GetTreeNode(var));
          auto vend = co->list_of_idx_valu.end();
          for(auto i = co->list_of_idx_valu.begin(); i != vend; ++i)
          {
@@ -6037,7 +6037,7 @@ unsigned int BehavioralHelper::start_with_a_label(const blocRef& block) const
 
 const std::string BehavioralHelper::get_label_name(unsigned int label_expr_nid) const
 {
-   tree_nodeRef tn = TM->get_tree_node_const(label_expr_nid);
+   tree_nodeRef tn = TM->GetTreeNode(label_expr_nid);
    auto le = GetPointer<gimple_label>(tn);
    THROW_ASSERT(le->op && GET_NODE(le->op)->get_kind() == label_decl_K, "label decl expected");
    auto ld = GetPointer<label_decl>(GET_NODE(le->op));
@@ -6193,8 +6193,8 @@ std::string BehavioralHelper::print_type(unsigned int type, bool global, bool pr
                                          unsigned int var, const var_pp_functorConstRef vppf, const std::string& prefix,
                                          const std::string& tail) const
 {
-   return tree_helper::PrintType(TM, TM->CGetTreeReindex(type), global, print_qualifiers, print_storage,
-                                 var ? TM->CGetTreeReindex(var) : nullptr, vppf, prefix, tail);
+   return tree_helper::PrintType(TM, TM->CGetTreeNode(type), global, print_qualifiers, print_storage,
+                                 var ? TM->CGetTreeNode(var) : nullptr, vppf, prefix, tail);
 }
 
 void BehavioralHelper::rename_a_variable(unsigned int var, const std::string& new_name)
@@ -6215,26 +6215,26 @@ void BehavioralHelper::GetTypecast(const tree_nodeConstRef& tn, TreeNodeConstSet
 
 bool BehavioralHelper::IsDefaultSsaName(const unsigned int ssa_name_index) const
 {
-   const auto sn = GetPointer<const ssa_name>(TM->get_tree_node_const(ssa_name_index));
+   const auto sn = GetPointer<const ssa_name>(TM->GetTreeNode(ssa_name_index));
    return sn && sn->default_flag;
 }
 
 #if HAVE_FROM_PRAGMA_BUILT
 size_t BehavioralHelper::GetOmpForDegree() const
 {
-   const auto fd = GetPointerS<const function_decl>(TM->get_tree_node_const(function_index));
+   const auto fd = GetPointerS<const function_decl>(TM->GetTreeNode(function_index));
    return fd->omp_for_wrapper;
 }
 
 bool BehavioralHelper::IsOmpFunctionAtomic() const
 {
-   const auto fd = GetPointerS<const function_decl>(TM->get_tree_node_const(function_index));
+   const auto fd = GetPointerS<const function_decl>(TM->GetTreeNode(function_index));
    return fd->omp_atomic;
 }
 
 bool BehavioralHelper::IsOmpBodyLoop() const
 {
-   const auto fd = GetPointerS<const function_decl>(TM->get_tree_node_const(function_index));
+   const auto fd = GetPointerS<const function_decl>(TM->GetTreeNode(function_index));
    return fd->omp_body_loop;
 }
 #endif
@@ -6242,7 +6242,7 @@ bool BehavioralHelper::IsOmpBodyLoop() const
 #if HAVE_FROM_PRAGMA_BUILT
 bool BehavioralHelper::IsOmpAtomic() const
 {
-   const auto fd = GetPointerS<const function_decl>(TM->get_tree_node_const(function_index));
+   const auto fd = GetPointerS<const function_decl>(TM->GetTreeNode(function_index));
    return fd->omp_atomic;
 }
 #endif
@@ -6534,18 +6534,18 @@ bool BehavioralHelper::CanBeMoved(const unsigned int node_index) const
 bool BehavioralHelper::IsStore(const unsigned int statement_index) const
 {
    const auto& fun_mem_data = AppM->CGetFunctionBehavior(function_index)->get_function_mem();
-   return tree_helper::IsStore(TM->CGetTreeReindex(statement_index), fun_mem_data);
+   return tree_helper::IsStore(TM->CGetTreeNode(statement_index), fun_mem_data);
 }
 
 bool BehavioralHelper::IsLoad(const unsigned int statement_index) const
 {
    const auto& fun_mem_data = AppM->CGetFunctionBehavior(function_index)->get_function_mem();
-   return tree_helper::IsLoad(TM->CGetTreeReindex(statement_index), fun_mem_data);
+   return tree_helper::IsLoad(TM->CGetTreeNode(statement_index), fun_mem_data);
 }
 
 bool BehavioralHelper::IsLut(const unsigned int statement_index) const
 {
-   return tree_helper::IsLut(TM->CGetTreeReindex(statement_index));
+   return tree_helper::IsLut(TM->CGetTreeNode(statement_index));
 }
 
 void BehavioralHelper::InvaildateVariableName(const unsigned int index)

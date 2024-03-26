@@ -1579,7 +1579,7 @@ void Bit_Value::initialize()
                if(AppM->ApplyNewTransformation())
                {
                   const auto tree_man = AppM->get_tree_manager();
-                  const auto ssa_node = tree_man->GetTreeReindex(node_id);
+                  const auto ssa_node = tree_man->GetTreeNode(node_id);
                   const auto cst_value = tree_man->CreateUniqueIntegerCst(0, ssa->type);
                   const auto uses = ssa->CGetUseStmts();
                   for(const auto& stmt_use : uses)

@@ -155,7 +155,7 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
          THROW_ERROR("Address/indirect function calls not supported in dataflow.");
       }
 
-      const auto fnode = TM->CGetTreeReindex(function_id);
+      const auto fnode = TM->CGetTreeNode(function_id);
       auto is_single_call = boost::in_degree(tgt, *CG) == 1;
       std::vector<unsigned int> call_points(is_single_call ? ++(call_info->direct_call_points.begin()) :
                                                              call_info->direct_call_points.begin(),
@@ -163,7 +163,7 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
 
       for(auto call_id : call_points)
       {
-         const auto call_node = TM->CGetTreeReindex(call_id);
+         const auto call_node = TM->CGetTreeNode(call_id);
          const auto module_suffix = "_" + std::to_string(call_id);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Clone module " + tsymbol + " -> " + tsymbol + module_suffix);
@@ -184,7 +184,7 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
       std::vector<unsigned int> call_points(call_info->direct_call_points.begin(), call_info->direct_call_points.end());
       for(auto call_id : call_points)
       {
-         const auto call_node = TM->CGetTreeReindex(call_id);
+         const auto call_node = TM->CGetTreeNode(call_id);
          CleanVirtuals(TM, call_node);
       }
    }

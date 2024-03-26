@@ -152,7 +152,6 @@ DesignFlowStep_Status string_cst_fix::Exec()
 
 void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& srcp)
 {
-   THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    const tree_managerRef TM = AppM->get_tree_manager();
    const tree_nodeRef curr_tn = GET_NODE(tn);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -464,11 +463,10 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
             const std::string local_var_name = "__bambu_artificial_var_string_cst_" + STR(GET_INDEX_NODE(tn));
             auto local_var_identifier = tree_man->create_identifier_node(local_var_name);
             auto global_scpe = tree_man->create_translation_unit_decl();
-            auto new_var_decl =
-                tree_man->create_var_decl(local_var_identifier, TM->CGetTreeReindex(GET_INDEX_NODE(sc->type)),
-                                          global_scpe, TM->CGetTreeReindex(GET_INDEX_NODE(type_sc->size)),
-                                          tree_nodeRef(), TM->CGetTreeReindex(GET_INDEX_NODE(tn)), srcp, type_sc->algn,
-                                          1, true, -1, false, false, true, false, true);
+            auto new_var_decl = tree_man->create_var_decl(
+                local_var_identifier, TM->CGetTreeNode(GET_INDEX_NODE(sc->type)), global_scpe,
+                TM->CGetTreeNode(GET_INDEX_NODE(type_sc->size)), tree_nodeRef(), TM->CGetTreeNode(GET_INDEX_NODE(tn)),
+                srcp, type_sc->algn, 1, true, -1, false, false, true, false, true);
             string_cst_map[GET_INDEX_NODE(tn)] = new_var_decl;
             tn = new_var_decl;
          }

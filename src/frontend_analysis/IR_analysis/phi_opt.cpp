@@ -785,7 +785,7 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
          gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
          const auto gimple_node_id = TM->new_tree_node_id();
          TM->create_tree_node(gimple_node_id, gimple_nop_K, gimple_nop_schema);
-         gimple_node = TM->GetTreeReindex(gimple_node_id);
+         gimple_node = TM->GetTreeNode(gimple_node_id);
          const auto gn = GetPointer<gimple_nop>(GET_NODE(gimple_node));
          gn->SetVdef(ssa_node);
          gn->AddVuse(true_value);
@@ -1007,7 +1007,7 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
             gn->SetVdef(gp->res);
             gn->AddVuse(true_value);
             gn->AddVuse(false_value);
-            succ_block->PushFront(TM->GetTreeReindex(gimple_node_id), AppM);
+            succ_block->PushFront(TM->GetTreeNode(gimple_node_id), AppM);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Created " + gn->ToString());
          }
          else
@@ -1136,7 +1136,7 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
       {
          if(second_condition.first)
          {
-            new_list_of_cond.push_front(gimple_phi::DefEdge(TM->GetTreeReindex(new_cond), succ_block->number));
+            new_list_of_cond.push_front(gimple_phi::DefEdge(TM->GetTreeNode(new_cond), succ_block->number));
          }
          else
          {
@@ -1210,7 +1210,7 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
          gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
          const auto gimple_node_id = TM->new_tree_node_id();
          TM->create_tree_node(gimple_node_id, gimple_nop_K, gimple_nop_schema);
-         gimple_node = TM->GetTreeReindex(gimple_node_id);
+         gimple_node = TM->GetTreeNode(gimple_node_id);
          auto gn = GetPointer<gimple_nop>(GET_NODE(gimple_node));
          gn->SetVdef(ssa_node);
          gn->AddVuse(first_value);
@@ -1254,7 +1254,7 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
    /// Readding gimple multi way if it has more than two exits
    if(gmwi->list_of_cond.size() >= 2)
    {
-      pred_block->PushBack(TM->GetTreeReindex(gmwi->index), AppM);
+      pred_block->PushBack(TM->GetTreeNode(gmwi->index), AppM);
    }
 
    /// Refactoring of the cfg - updating the predecessor
@@ -1460,7 +1460,7 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
             gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
             gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
             TM->create_tree_node(gimple_node_id, gimple_nop_K, gimple_nop_schema);
-            new_gimple_node = TM->GetTreeReindex(gimple_node_id);
+            new_gimple_node = TM->GetTreeNode(gimple_node_id);
             const auto gn = GetPointerS<gimple_nop>(GET_NODE(new_gimple_node));
             gn->SetVdef(gp->res);
             gn->AddVuse(first_value);
@@ -1497,7 +1497,7 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
    /// Readd multi way if
    if(gmwi->list_of_cond.size() >= 2)
    {
-      pred_block->PushBack(TM->GetTreeReindex(gmwi->index), AppM);
+      pred_block->PushBack(TM->GetTreeNode(gmwi->index), AppM);
    }
 
    while(succ_block->CGetPhiList().size())

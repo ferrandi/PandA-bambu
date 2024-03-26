@@ -85,6 +85,7 @@ struct bloc
 {
  private:
    friend class use_counting;
+   friend class tree_reindex_remove;
 
    /// Already visited tree node (used to avoid infinite recursion)
    CustomUnorderedSet<unsigned int> already_visited;
@@ -94,9 +95,6 @@ struct bloc
 
    /// list_of_stmt is the list of statements stored in the basic block.
    std::list<tree_nodeRef> list_of_stmt;
-
-   /// Number of removed phi
-   size_t removed_phi;
 
    /// consistency of ssa uses
    bool updated_ssa_uses;
@@ -240,11 +238,6 @@ struct bloc
     * Return the list of stmt
     */
    const std::list<tree_nodeRef>& CGetStmtList() const;
-
-   /**
-    * Return the number of removed phi
-    */
-   size_t CGetNumberRemovedPhi() const;
 
    /// constant identifying the entry basic block
    static const unsigned int ENTRY_BLOCK_ID;

@@ -668,7 +668,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   alignment = (1ull << n_last_zerobits) * 8;
                   const auto var_read = HLSMgr->get_required_values(fun_id, v);
                   const auto size_var = std::get<0>(var_read[0]);
-                  const auto size_type = tree_helper::CGetType(TM->CGetTreeReindex(size_var));
+                  const auto size_type = tree_helper::CGetType(TM->CGetTreeNode(size_var));
                   value_bitsize = tree_helper::SizeAlloc(size_type);
                   const auto fd = GetPointer<const field_decl>(GET_CONST_NODE(size_type));
                   if(!fd || !fd->is_bitfield())
@@ -722,7 +722,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   }
                   alignment = (1ull << n_last_zerobits) * 8;
                   const auto size_var = HLSMgr->get_produced_value(fun_id, v);
-                  const auto size_type = tree_helper::CGetType(TM->CGetTreeReindex(size_var));
+                  const auto size_type = tree_helper::CGetType(TM->CGetTreeNode(size_var));
                   value_bitsize = tree_helper::SizeAlloc(size_type);
                   const auto fd = GetPointer<const field_decl>(GET_CONST_NODE(size_type));
                   if(!fd || !fd->is_bitfield())
@@ -733,7 +733,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
 
                if(var_size.find(var) == var_size.end())
                {
-                  const auto type_node = tree_helper::CGetType(TM->CGetTreeReindex(var));
+                  const auto type_node = tree_helper::CGetType(TM->CGetTreeNode(var));
                   const auto is_a_struct_union =
                       ((tree_helper::IsStructType(type_node) || tree_helper::IsUnionType(type_node)) &&
                        !tree_helper::IsArrayEquivType(type_node)) ||
@@ -993,7 +993,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
          THROW_ASSERT(var_id, "null var index unexpected");
          const auto& uses = var_uses.second;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Finding common dominator for " + STR(TM->CGetTreeReindex(var_id)) + " (id: " + STR(var_id) +
+                        "-->Finding common dominator for " + STR(TM->CGetTreeNode(var_id)) + " (id: " + STR(var_id) +
                             ", uses: " + STR(uses.size()) + ")");
          CustomSet<unsigned int> filtered_top_functions;
          for(const auto& reachable_vertex : reachable_vertices)
@@ -1121,7 +1121,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "<--Found common dominator for " +
                             HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name() + " -> " +
-                            STR(TM->CGetTreeReindex(var_id)) + " (scope: " + (is_internal ? "internal" : "external") +
+                            STR(TM->CGetTreeNode(var_id)) + " (scope: " + (is_internal ? "internal" : "external") +
                             ")");
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
@@ -1269,7 +1269,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                THROW_ASSERT(var_id, "null var index unexpected");
                if(pair.second && (!HLSMgr->Rmem->is_private_memory(var_id) || null_pointer_check))
                {
-                  const auto curr_size = compute_n_bytes(tree_helper::SizeAlloc(TM->CGetTreeReindex(var_id)));
+                  const auto curr_size = compute_n_bytes(tree_helper::SizeAlloc(TM->CGetTreeNode(var_id)));
                   max_byte_size = std::max(static_cast<unsigned long long>(curr_size), max_byte_size);
                }
             }
@@ -1296,7 +1296,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
          {
             const auto var_id = mem_map.first;
             THROW_ASSERT(var_id, "null var index unexpected");
-            const auto var_node = TM->CGetTreeReindex(var_id);
+            const auto var_node = TM->CGetTreeNode(var_id);
             const auto is_internal = mem_map.second;
             auto is_dynamic_address_used = false;
 

@@ -1190,7 +1190,7 @@ void raw_writer::operator()(const var_decl* obj, unsigned int& mask)
       WRITE_NFIELD(os, STOK(TOK_BIT_VALUES), obj->bit_values);
    }
    write_when_not_null(STOK(TOK_SMT_ANN), obj->smt_ann);
-   CustomUnorderedSet<tree_nodeRef>::const_iterator var, var_end;
+   TreeNodeSet::const_iterator var, var_end;
    var_end = obj->defs.end();
    for(var = obj->defs.begin(); var != var_end; ++var)
    {

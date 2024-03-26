@@ -290,7 +290,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--");
       }
 
-      const auto return_type = tree_helper::GetFunctionReturnType(HLSMgr->get_tree_manager()->CGetTreeReindex(top_id));
+      const auto return_type = tree_helper::GetFunctionReturnType(HLSMgr->get_tree_manager()->CGetTreeNode(top_id));
       if(return_type)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Return value port");
@@ -789,7 +789,7 @@ std::vector<std::string> TestbenchGeneration::print_var_init(const tree_managerC
                                                              const memoryRef mem)
 {
    std::vector<std::string> init_els;
-   const auto tn = TM->CGetTreeReindex(var);
+   const auto tn = TM->CGetTreeNode(var);
    const auto init_node = [&]() -> tree_nodeRef {
       const auto vd = GetPointer<const var_decl>(GET_CONST_NODE(tn));
       if(vd && vd->init)
@@ -834,7 +834,7 @@ unsigned long long TestbenchGeneration::generate_init_file(const std::string& da
    std::stringstream init_bits;
    std::ofstream useless;
    unsigned long long vec_size = 0, elts_size = 0;
-   const auto var_type = tree_helper::CGetType(TM->CGetTreeReindex(var));
+   const auto var_type = tree_helper::CGetType(TM->CGetTreeNode(var));
    const auto bitsize_align = GetPointer<const type_node>(GET_CONST_NODE(var_type))->algn;
    THROW_ASSERT((bitsize_align % 8) == 0, "Alignment is not byte aligned.");
    fu_binding::fill_array_ref_memory(init_bits, useless, var, vec_size, elts_size, mem, TM, false, bitsize_align);

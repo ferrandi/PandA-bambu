@@ -337,7 +337,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                gimple_phi_schema[TOK(TOK_TYPE)] = STR(GET_CONST_NODE(type));
                gimple_phi_schema[TOK(TOK_RES)] = STR(ssa_node_nid);
                TM->create_tree_node(gimple_phi_id, gimple_phi_K, gimple_phi_schema);
-               auto new_gp = GetPointer<gimple_phi>(TM->get_tree_node_const(gimple_phi_id));
+               auto new_gp = GetPointer<gimple_phi>(TM->CGetTreeNode(gimple_phi_id));
                new_gp->SetSSAUsesComputed();
 
                const auto zero = [&]() -> tree_nodeRef {
@@ -374,7 +374,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                      end_if_new_def_edge_list.push_back(def_edge);
                   }
                }
-               new_block->AddPhi(TM->GetTreeReindex(gimple_phi_id));
+               new_block->AddPhi(TM->GetTreeNode(gimple_phi_id));
                gp->SetDefEdgeList(TM, end_if_new_def_edge_list);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "<--Added phi " + STR(TM->CGetTreeNode(gimple_phi_id)) + " - Fixed phi " +

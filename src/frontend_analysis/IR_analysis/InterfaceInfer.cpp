@@ -282,7 +282,7 @@ static std::pair<tree_nodeConstRef, unsigned int> ResolvePointerAlias(const Call
                               return GET_INDEX_CONST_NODE(tn) == GET_INDEX_CONST_NODE(base_var);
                            })));
          THROW_ASSERT(parm_idx < fd->list_of_args.size(), "Parameter not found.");
-         const auto call_args = GetCallArgs(TM->CGetTreeReindex(call_id));
+         const auto call_args = GetCallArgs(TM->CGetTreeNode(call_id));
          THROW_ASSERT(call_args.size() == fd->list_of_args.size(),
                       "Expected formal and actual parameters' count match.");
          auto retVal = ResolvePointerAlias(CGM, TM, call_args.at(parm_idx), caller_id, field_offset);
@@ -391,7 +391,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
 
    for(const auto root_id : sorted_roots)
    {
-      const auto fnode = TM->CGetTreeReindex(root_id);
+      const auto fnode = TM->CGetTreeNode(root_id);
       const auto fd = GetPointer<const function_decl>(GET_CONST_NODE(fnode));
       const auto fsymbol = tree_helper::GetMangledFunctionName(fd);
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Analyzing function " + fsymbol);
@@ -468,7 +468,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
       {
          const auto [caller_id, call_id] = GetCallStmt(CGM, root_id);
          THROW_ASSERT(call_id, "Expected unique call point for dataflow module " + fsymbol + ".");
-         const auto call_stmt = TM->CGetTreeReindex(call_id);
+         const auto call_stmt = TM->CGetTreeNode(call_id);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Call point " + STR(call_stmt));
          const auto& args = GetCallArgs(call_stmt);
 
@@ -617,7 +617,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
          else if(interface_type != "default")
          {
             const auto arg_ssa_id = AppM->getSSAFromParm(root_id, arg_id);
-            const auto arg_ssa = TM->GetTreeReindex(arg_ssa_id);
+            const auto arg_ssa = TM->GetTreeNode(arg_ssa_id);
             THROW_ASSERT(GET_CONST_NODE(arg_ssa)->get_kind() == ssa_name_K, "");
             bool unused_port = false;
             if(GetPointerS<const ssa_name>(GET_CONST_NODE(arg_ssa))->CGetUseStmts().empty())
@@ -989,7 +989,7 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
                         THROW_ASSERT(call_args.size() >= 2, "unexpected condition");
                         auto first_arg = call_args.at(0);
                         THROW_ASSERT(tree_helper::IsPointerType(first_arg), "unexpected condition");
-                        ssa_var = TM->CGetTreeReindex(tree_helper::GetBaseVariable(first_arg)->index);
+                        ssa_var = TM->CGetTreeNode(tree_helper::GetBaseVariable(first_arg)->index);
                         THROW_ASSERT(ssa_var != first_arg, "unexpected condition");
                      }
                   }
@@ -1016,7 +1016,7 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
                   if(tree_helper::IsPointerType(call_fd->list_of_args.at(1)))
                   {
                      auto second_arg = call_args.at(1);
-                     ssa_var = TM->CGetTreeReindex(tree_helper::GetBaseVariable(second_arg)->index);
+                     ssa_var = TM->CGetTreeNode(tree_helper::GetBaseVariable(second_arg)->index);
                      THROW_ASSERT(ssa_var != second_arg, "unexpected condition");
                   }
                   else
@@ -1054,7 +1054,7 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
          const auto called_param = call_fd->list_of_args.at(par_index);
 
          const auto call_arg_ssa_id = AppM->getSSAFromParm(call_fd->index, GET_INDEX_CONST_NODE(called_param));
-         const auto call_arg_ssa = TM->CGetTreeReindex(call_arg_ssa_id);
+         const auto call_arg_ssa = TM->CGetTreeNode(call_arg_ssa_id);
          THROW_ASSERT(GET_CONST_NODE(call_arg_ssa)->get_kind() == ssa_name_K, "");
          if(GetPointerS<const ssa_name>(GET_CONST_NODE(call_arg_ssa))->CGetUseStmts().size())
          {
@@ -1316,7 +1316,7 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
          auto first_arg = gc->args.at(0);
          THROW_ASSERT(tree_helper::IsPointerType(first_arg), "unexpected condition");
          data_ptr = first_arg;
-         auto data_obj = TM->CGetTreeReindex(tree_helper::GetBaseVariable(first_arg)->index);
+         auto data_obj = TM->CGetTreeNode(tree_helper::GetBaseVariable(first_arg)->index);
          THROW_ASSERT(data_obj != first_arg, "unexpected condition");
          data_type = tree_helper::CGetType(data_obj);
          if(valid_var)
@@ -1557,7 +1557,7 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
          if(tree_helper::IsPointerType(data_obj))
          {
             data_ptr = data_obj;
-            data_obj = TM->CGetTreeReindex(tree_helper::GetBaseVariable(data_obj)->index);
+            data_obj = TM->CGetTreeNode(tree_helper::GetBaseVariable(data_obj)->index);
             THROW_ASSERT(data_obj != data_ptr, "unexpected condition");
             isAStruct = true;
          }
@@ -1572,7 +1572,7 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
          if(tree_helper::IsPointerType(data_obj))
          {
             data_ptr = data_obj;
-            data_obj = TM->CGetTreeReindex(tree_helper::GetBaseVariable(data_obj)->index);
+            data_obj = TM->CGetTreeNode(tree_helper::GetBaseVariable(data_obj)->index);
             THROW_ASSERT(data_obj != data_ptr, "unexpected condition");
             isAStruct = true;
          }

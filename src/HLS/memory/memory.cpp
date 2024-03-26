@@ -154,7 +154,7 @@ std::map<unsigned int, memory_symbolRef> memory::get_ext_memory_variables() cons
 unsigned long long int memory::compute_next_base_address(unsigned long long int address, unsigned int var,
                                                          unsigned long long int alignment) const
 {
-   const auto node = TreeM->CGetTreeReindex(var);
+   const auto node = TreeM->CGetTreeNode(var);
    unsigned long long size = 0;
 
    // The __builtin_wait_call associate an address to the call site to
@@ -256,7 +256,7 @@ void memory::add_internal_symbol(unsigned int funID_scope, unsigned int var, con
 
    if(is_private_memory(var))
    {
-      const unsigned long long allocated_memory = compute_n_bytes(tree_helper::SizeAlloc(TreeM->CGetTreeReindex(var)));
+      const unsigned long long allocated_memory = compute_n_bytes(tree_helper::SizeAlloc(TreeM->CGetTreeNode(var)));
       rangesize[var] = align(allocated_memory, internal_base_address_alignment);
       total_amount_of_private_memory += allocated_memory;
       maximum_private_memory_size = std::max(maximum_private_memory_size, allocated_memory);
@@ -524,7 +524,7 @@ unsigned long long int memory::get_last_address(unsigned int funId, const applic
          if(!is_private_memory(var) && !has_parameter_base_address(var, funId) && has_base_address(var))
          {
             maxAddress = std::max(maxAddress, internalVar.second->get_address() +
-                                                  tree_helper::SizeAlloc(TreeM->CGetTreeReindex(var)) / 8);
+                                                  tree_helper::SizeAlloc(TreeM->CGetTreeNode(var)) / 8);
          }
       }
    }
@@ -535,7 +535,7 @@ unsigned long long int memory::get_last_address(unsigned int funId, const applic
       {
          const auto& var = itr.first;
          maxAddress =
-             std::max(maxAddress, itr.second->get_address() + tree_helper::SizeAlloc(TreeM->CGetTreeReindex(var)) / 8);
+             std::max(maxAddress, itr.second->get_address() + tree_helper::SizeAlloc(TreeM->CGetTreeNode(var)) / 8);
       }
    }
    const auto calledSet = AppMgr->CGetCallGraphManager()->get_called_by(funId);

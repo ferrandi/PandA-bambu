@@ -122,7 +122,7 @@ std::string PragmaAnalysis::get_call_parameter(unsigned int tree_node, unsigned 
    const tree_managerRef TM = AppM->get_tree_manager();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Asking parameter " + std::to_string(idx) + " " + STR(tree_node));
-   auto tn = TM->get_tree_node_const(tree_node);
+   auto tn = TM->CGetTreeNode(tree_node);
    const gimple_call* ce = GetPointer<gimple_call>(tn);
    if(idx >= ce->args.size())
    {
@@ -174,7 +174,7 @@ void PragmaAnalysis::create_omp_pragma(const unsigned int tree_node) const
 {
    const tree_managerRef TM = AppM->get_tree_manager();
    const pragma_managerRef PM = AppM->get_pragma_manager();
-   const tree_nodeRef curr_tn = TM->get_tree_node_const(tree_node);
+   const tree_nodeRef curr_tn = TM->CGetTreeNode(tree_node);
    const auto* gc = GetPointer<const gimple_call>(curr_tn);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Creating openmp pragma starting from " + curr_tn->ToString());
@@ -186,9 +186,9 @@ void PragmaAnalysis::create_omp_pragma(const unsigned int tree_node) const
    const pragma_manager::OmpPragmaType directive = pragma_manager::GetOmpPragmaType(get_call_parameter(tree_node, 1));
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> tree_node_schema;
-   std::string include_name = GetPointer<srcp>(TM->get_tree_node_const(tree_node))->include_name;
-   unsigned int line_number = GetPointer<srcp>(TM->get_tree_node_const(tree_node))->line_number;
-   unsigned int column_number = GetPointer<srcp>(TM->get_tree_node_const(tree_node))->column_number;
+   std::string include_name = GetPointer<srcp>(TM->CGetTreeNode(tree_node))->include_name;
+   unsigned int line_number = GetPointer<srcp>(TM->CGetTreeNode(tree_node))->line_number;
+   unsigned int column_number = GetPointer<srcp>(TM->CGetTreeNode(tree_node))->column_number;
    tree_node_schema[TOK(TOK_SRCP)] =
        include_name + ":" + std::to_string(line_number) + ":" + std::to_string(column_number);
 
@@ -225,7 +225,7 @@ void PragmaAnalysis::create_omp_pragma(const unsigned int tree_node) const
          {
             directive_idx = TM->new_tree_node_id();
             TM->create_tree_node(directive_idx, omp_critical_pragma_K, tree_node_schema);
-            auto* pn = GetPointer<omp_critical_pragma>(TM->get_tree_node_const(directive_idx));
+            auto* pn = GetPointer<omp_critical_pragma>(TM->CGetTreeNode(directive_idx));
             pn->clauses = PM->ExtractClauses(get_call_parameter(tree_node, 2));
             break;
          }
@@ -233,7 +233,7 @@ void PragmaAnalysis::create_omp_pragma(const unsigned int tree_node) const
          {
             directive_idx = TM->new_tree_node_id();
             TM->create_tree_node(directive_idx, omp_parallel_pragma_K, tree_node_schema);
-            auto* pn = GetPointer<omp_parallel_pragma>(TM->get_tree_node_const(directive_idx));
+            auto* pn = GetPointer<omp_parallel_pragma>(TM->CGetTreeNode(directive_idx));
             pn->clauses = PM->ExtractClauses(get_call_parameter(tree_node, 2));
             break;
          }
@@ -243,7 +243,7 @@ void PragmaAnalysis::create_omp_pragma(const unsigned int tree_node) const
             local_tn_schema1[TOK(TOK_PRAGMA_OMP_SHORTCUT)] = STR(true);
             unsigned int node_parallel = TM->new_tree_node_id();
             TM->create_tree_node(node_parallel, omp_parallel_pragma_K, local_tn_schema1);
-            auto* pn = GetPointer<omp_parallel_pragma>(TM->get_tree_node_const(node_parallel));
+            auto* pn = GetPointer<omp_parallel_pragma>(TM->CGetTreeNode(node_parallel));
             pn->clauses = PM->ExtractClauses(get_call_parameter(tree_node, 2));
 
             unsigned int node_sections = TM->new_tree_node_id();
@@ -254,7 +254,7 @@ void PragmaAnalysis::create_omp_pragma(const unsigned int tree_node) const
             directive_idx = TM->new_tree_node_id();
             TM->create_tree_node(directive_idx, omp_parallel_sections_pragma_K, tree_node_schema);
 
-            OpenParallelSections.push_back(TM->get_tree_node_const(directive_idx));
+            OpenParallelSections.push_back(TM->CGetTreeNode(directive_idx));
             break;
          }
          case(pragma_manager::OMP_SECTION):
@@ -273,7 +273,7 @@ void PragmaAnalysis::create_omp_pragma(const unsigned int tree_node) const
          {
             directive_idx = TM->new_tree_node_id();
             TM->create_tree_node(directive_idx, omp_task_pragma_K, tree_node_schema);
-            auto* pn = GetPointer<omp_task_pragma>(TM->get_tree_node_const(directive_idx));
+            auto* pn = GetPointer<omp_task_pragma>(TM->CGetTreeNode(directive_idx));
             pn->clauses = PM->ExtractClauses(get_call_parameter(tree_node, 2));
             break;
          }
@@ -311,7 +311,7 @@ void PragmaAnalysis::create_omp_pragma(const unsigned int tree_node) const
             std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> local_tree_node_schema;
             directive_idx = TM->new_tree_node_id();
             TM->create_tree_node(directive_idx, omp_critical_pragma_K, local_tree_node_schema);
-            auto* pn = GetPointer<omp_critical_pragma>(TM->get_tree_node_const(directive_idx));
+            auto* pn = GetPointer<omp_critical_pragma>(TM->CGetTreeNode(directive_idx));
             pn->clauses = PM->ExtractClauses(get_call_parameter(tree_node, 2));
             break;
          }
@@ -383,7 +383,7 @@ void PragmaAnalysis::create_omp_pragma(const unsigned int tree_node) const
          {
             directive_idx = TM->new_tree_node_id();
             TM->create_tree_node(directive_idx, omp_for_pragma_K, tree_node_schema);
-            auto* fp = GetPointer<omp_for_pragma>(TM->get_tree_node_const(directive_idx));
+            auto* fp = GetPointer<omp_for_pragma>(TM->CGetTreeNode(directive_idx));
             fp->clauses = PM->ExtractClauses(get_call_parameter(tree_node, 2));
             break;
          }
@@ -391,7 +391,7 @@ void PragmaAnalysis::create_omp_pragma(const unsigned int tree_node) const
          {
             directive_idx = TM->new_tree_node_id();
             TM->create_tree_node(directive_idx, omp_declare_simd_pragma_K, tree_node_schema);
-            auto* sp = GetPointer<omp_declare_simd_pragma>(TM->get_tree_node_const(directive_idx));
+            auto* sp = GetPointer<omp_declare_simd_pragma>(TM->CGetTreeNode(directive_idx));
             sp->clauses = PM->ExtractClauses(get_call_parameter(tree_node, 2));
             break;
          }
@@ -399,7 +399,7 @@ void PragmaAnalysis::create_omp_pragma(const unsigned int tree_node) const
          {
             directive_idx = TM->new_tree_node_id();
             TM->create_tree_node(directive_idx, omp_simd_pragma_K, tree_node_schema);
-            auto* sp = GetPointer<omp_simd_pragma>(TM->get_tree_node_const(directive_idx));
+            auto* sp = GetPointer<omp_simd_pragma>(TM->CGetTreeNode(directive_idx));
             sp->clauses = PM->ExtractClauses(get_call_parameter(tree_node, 2));
             break;
          }
@@ -407,7 +407,7 @@ void PragmaAnalysis::create_omp_pragma(const unsigned int tree_node) const
          {
             directive_idx = TM->new_tree_node_id();
             TM->create_tree_node(directive_idx, omp_target_pragma_K, tree_node_schema);
-            auto* tp = GetPointer<omp_target_pragma>(TM->get_tree_node_const(directive_idx));
+            auto* tp = GetPointer<omp_target_pragma>(TM->CGetTreeNode(directive_idx));
             tp->clauses = PM->ExtractClauses(get_call_parameter(tree_node, 2));
             break;
          }
@@ -447,8 +447,8 @@ void PragmaAnalysis::create_omp_pragma(const unsigned int tree_node) const
       tree_node_schema[TOK(TOK_MEMDEF)] = std::to_string(GET_INDEX_NODE(gc->memdef));
    }
    TM->create_tree_node(tree_node, gimple_pragma_K, tree_node_schema);
-   GetPointer<gimple_pragma>(TM->get_tree_node_const(tree_node))->vuses = gc->vuses;
-   GetPointer<gimple_pragma>(TM->get_tree_node_const(tree_node))->vdef = gc->vdef;
+   GetPointer<gimple_pragma>(TM->CGetTreeNode(tree_node))->vuses = gc->vuses;
+   GetPointer<gimple_pragma>(TM->CGetTreeNode(tree_node))->vdef = gc->vdef;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Created openmp pragma");
 }
 
@@ -457,7 +457,7 @@ void PragmaAnalysis::create_map_pragma(const unsigned int node_id) const
    const tree_managerRef TM = AppM->get_tree_manager();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Creating mapping pragma starting from tree node " + std::to_string(node_id));
-   const tree_nodeRef curr_tn = TM->get_tree_node_const(node_id);
+   const tree_nodeRef curr_tn = TM->CGetTreeNode(node_id);
    const auto* gc = GetPointer<const gimple_call>(curr_tn);
 #if HAVE_ASSERTS
    const tree_nodeRef& tn = GET_NODE(gc->fn);
@@ -466,9 +466,9 @@ void PragmaAnalysis::create_map_pragma(const unsigned int node_id) const
    const std::string& function_name = GetPointer<identifier_node>(name)->strg;
 #endif
 
-   std::string include_name = GetPointer<srcp>(TM->get_tree_node_const(node_id))->include_name;
-   unsigned int line_number = GetPointer<srcp>(TM->get_tree_node_const(node_id))->line_number;
-   unsigned int column_number = GetPointer<srcp>(TM->get_tree_node_const(node_id))->column_number;
+   std::string include_name = GetPointer<srcp>(TM->CGetTreeNode(node_id))->include_name;
+   unsigned int line_number = GetPointer<srcp>(TM->CGetTreeNode(node_id))->line_number;
+   unsigned int column_number = GetPointer<srcp>(TM->CGetTreeNode(node_id))->column_number;
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> scope_tn_schema;
    unsigned int directive_idx = TM->new_tree_node_id(), scope_idx = TM->new_tree_node_id();
@@ -516,7 +516,7 @@ DesignFlowStep_Status PragmaAnalysis::Exec()
    const CustomUnorderedSet<unsigned int>& functions = TM->GetAllFunctions();
    for(const auto function : functions)
    {
-      const tree_nodeRef curr_tn = TM->get_tree_node_const(function);
+      const tree_nodeRef curr_tn = TM->CGetTreeNode(function);
       auto* fd = GetPointer<function_decl>(curr_tn);
       if(not fd->body)
       {
@@ -584,7 +584,7 @@ DesignFlowStep_Status PragmaAnalysis::Exec()
                         num = num.substr(0, num.find('_'));
                         std::string string_base = PM->getGenericPragma(static_cast<unsigned>(std::stoul(num)));
                         string_base = string_base.substr(string_base.find("#pragma") + 8, string_base.size());
-                        auto* el = GetPointer<gimple_pragma>(TM->get_tree_node_const(GET_INDEX_NODE(*it2)));
+                        auto* el = GetPointer<gimple_pragma>(TM->CGetTreeNode(GET_INDEX_NODE(*it2)));
                         el->line = string_base;
                         decltype(it2) next;
                         for(next = it2; next != list_of_stmt.end(); next++)

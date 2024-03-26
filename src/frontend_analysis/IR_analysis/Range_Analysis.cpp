@@ -145,8 +145,7 @@ union vcDouble
 
 bool tree_reindexCompare::operator()(const tree_nodeConstRef& lhs, const tree_nodeConstRef& rhs) const
 {
-   return static_cast<const tree_reindex*>(lhs.get())->actual_tree_node->index <
-          static_cast<const tree_reindex*>(rhs.get())->actual_tree_node->index;
+   return GET_INDEX_CONST_NODE(lhs) < GET_INDEX_CONST_NODE(rhs);
 }
 
 namespace
@@ -1197,7 +1196,6 @@ VarNode::VarNode(const tree_nodeConstRef& _V, unsigned int _function_id)
     : V(_V), function_id(_function_id), abstractState(0)
 {
    THROW_ASSERT(_V != nullptr, "Variable cannot be null");
-   THROW_ASSERT(_V->get_kind() == tree_reindex_K, "Variable should be a tree_reindex node");
    interval = tree_helper::TypeRange(_V, Unknown);
 }
 
@@ -1227,7 +1225,7 @@ int VarNode::updateIR(const tree_managerRef& TM,
                       ,
                       application_managerRef AppM)
 {
-   const auto ssa_node = TM->GetTreeReindex(GET_INDEX_CONST_NODE(V));
+   const auto ssa_node = TM->GetTreeNode(GET_INDEX_CONST_NODE(V));
    auto* SSA = GetPointer<ssa_name>(GET_NODE(ssa_node));
    if(SSA == nullptr || interval->isUnknown())
    {
@@ -3993,7 +3991,7 @@ LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function
          if(base_index && AppM->get_written_objects().find(base_index) == AppM->get_written_objects().end() && hm &&
             hm->Rmem && FB->is_variable_mem(base_index) && hm->Rmem->is_sds_var(base_index))
          {
-            const auto* vd = GetPointer<const var_decl>(TM->get_tree_node_const(base_index));
+            const auto* vd = GetPointer<const var_decl>(TM->CGetTreeNode(base_index));
             if(vd && vd->init)
             {
                if(GET_NODE(vd->init)->get_kind() == constructor_K)
@@ -4021,7 +4019,7 @@ LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function
             hm->Rmem && hm->Rmem->get_enable_hls_bit_value() && FB->is_variable_mem(base_index) &&
             hm->Rmem->is_private_memory(base_index) && hm->Rmem->is_sds_var(base_index))
          {
-            const auto* vd = GetPointer<const var_decl>(TM->get_tree_node_const(base_index));
+            const auto* vd = GetPointer<const var_decl>(TM->CGetTreeNode(base_index));
             if(vd && vd->init)
             {
                if(GET_NODE(vd->init)->get_kind() == constructor_K)
@@ -4050,7 +4048,7 @@ LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function
             }
             for(const auto& cur_var : hm->Rmem->get_source_values(base_index))
             {
-               const auto cur_node = TM->get_tree_node_const(cur_var);
+               const auto cur_node = TM->CGetTreeNode(cur_var);
                THROW_ASSERT(cur_node, "");
                auto init_range = tree_helper::Range(cur_node);
                if(init_range->getBitWidth() != bw)
@@ -5917,7 +5915,7 @@ class ConstraintGraph : public NodeContainer
    {
       const auto TM = AppM->get_tree_manager();
       const auto FB = AppM->CGetFunctionBehavior(function_id);
-      const auto* FD = GetPointer<const function_decl>(TM->get_tree_node_const(function_id));
+      const auto* FD = GetPointer<const function_decl>(TM->CGetTreeNode(function_id));
       const auto* SL = GetPointer<const statement_list>(GET_CONST_NODE(FD->body));
 #ifndef NDEBUG
       std::string fn_name =
@@ -6314,7 +6312,7 @@ static void TopFunctionUserHits(unsigned int function_id, const application_mana
 )
 {
    const auto TM = AppM->get_tree_manager();
-   const auto fd = TM->get_tree_node_const(function_id);
+   const auto fd = TM->CGetTreeNode(function_id);
    const auto* FD = GetPointer<const function_decl>(fd);
 
    const auto& parmMap = CG->getParmMap();
@@ -6366,7 +6364,7 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
 )
 {
    const auto TM = AppM->get_tree_manager();
-   const auto fd = TM->get_tree_node_const(function_id);
+   const auto fd = TM->CGetTreeNode(function_id);
    const auto* FD = GetPointer<const function_decl>(fd);
 #if !defined(NDEBUG) or HAVE_ASSERTS
    std::string fn_name = tree_helper::print_type(

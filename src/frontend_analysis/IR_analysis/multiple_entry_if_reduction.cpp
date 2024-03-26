@@ -548,7 +548,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                const auto new_stmt = tree_node_dups[copy.second]->create_tree_node(GET_NODE(gimple));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---New statement (" + STR(new_stmt) + ") is " + STR(TM->CGetTreeNode(new_stmt)));
-               sl->list_of_bloc.at(copy.second)->PushBack(TM->GetTreeReindex(new_stmt), AppM);
+               sl->list_of_bloc.at(copy.second)->PushBack(TM->GetTreeNode(new_stmt), AppM);
             }
          }
          else if(GET_CONST_NODE(gimple)->get_kind() == gimple_multi_way_if_K ||
@@ -580,7 +580,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                const auto new_stmt = tree_node_dups[copy.second]->create_tree_node(GET_NODE(gimple));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---New statement is " + STR(TM->CGetTreeNode(new_stmt)));
-               sl->list_of_bloc.at(copy.second)->PushBack(TM->GetTreeReindex(new_stmt), AppM);
+               sl->list_of_bloc.at(copy.second)->PushBack(TM->GetTreeNode(new_stmt), AppM);
             }
          }
          else
@@ -630,7 +630,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                                  "---Removing " + STR(defined_sn) + " from vuses of " + gn->ToString());
                   for(const auto& copy : copy_ids)
                   {
-                     if(gn->AddVuse(TM->GetTreeReindex(remaps[copy.second][sn->index])))
+                     if(gn->AddVuse(TM->GetTreeNode(remaps[copy.second][sn->index])))
                      {
                         const auto vssa = GetPointerS<ssa_name>(TM->GetTreeNode(remaps[copy.second][sn->index]));
                         vssa->AddUseStmt(use_stmt.first);
@@ -857,7 +857,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                         const auto phi_gimple_stmt =
                             tree_man->create_phi_node(phi_def_ssa_node, def_edges, function_id, sn->virtual_flag);
                         THROW_ASSERT(tree_helper::CGetType(phi_def_ssa_node)->index ==
-                                         tree_helper::CGetType(TM->CGetTreeReindex(sn->index))->index,
+                                         tree_helper::CGetType(TM->CGetTreeNode(sn->index))->index,
                                      "");
                         auto new_gp = GetPointerS<gimple_phi>(GET_NODE(phi_gimple_stmt));
                         new_gp->SetSSAUsesComputed();
@@ -874,7 +874,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing " + STR(local_phi));
                      auto uses = tree_helper::ComputeSsaUses(local_phi);
-                     if(uses.find(TM->GetTreeReindex(sn->index)) != uses.end())
+                     if(uses.find(TM->GetTreeNode(sn->index)) != uses.end())
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Uses the ssa");
                         gimple_phi::DefEdgeList new_def_edge_list;
@@ -926,7 +926,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "---Replacing " + STR(sn) + " with " + STR(reaching_defs[current_id]) + " in " +
                                            STR(stmt));
-                        TM->ReplaceTreeNode(stmt, TM->GetTreeReindex(sn->index), reaching_defs[current_id]);
+                        TM->ReplaceTreeNode(stmt, TM->GetTreeNode(sn->index), reaching_defs[current_id]);
                      }
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -1009,7 +1009,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                                         STR(old_def_edge.first->index) + " " +
                                             STR(TM->CGetTreeNode(old_def_edge.first->index)));
                            new_def_edge_list.push_back(gimple_phi::DefEdge(
-                               TM->GetTreeReindex(remaps[copy.second][old_def_edge.first->index]), copy.second));
+                               TM->GetTreeNode(remaps[copy.second][old_def_edge.first->index]), copy.second));
                         }
                      }
                   }

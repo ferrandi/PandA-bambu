@@ -271,7 +271,7 @@ void VcdSignalSelection::SelectInitialSsa(
          {
             continue;
          }
-         const tree_nodeRef assigned_ssa_tree_node = TM->get_tree_node_const(assigned_tree_node_id);
+         const tree_nodeRef assigned_ssa_tree_node = TM->CGetTreeNode(assigned_tree_node_id);
          if(assigned_ssa_tree_node->get_kind() != ssa_name_K)
          {
             continue;
@@ -331,16 +331,12 @@ void VcdSignalSelection::SingleStepPropagateParamToSsa(const TreeNodeMap<size_t>
    const auto ssause_end = used_ssa.end();
    for(; ssause_it != ssause_end; ++ssause_it)
    {
-      THROW_ASSERT(ssause_it->first->get_kind() == tree_reindex_K,
-                   ssause_it->first->ToString() + " is of kind " + tree_node::GetString(ssause_it->first->get_kind()));
       const tree_nodeRef ssa_node = GET_NODE(ssause_it->first);
       const auto* ssa = GetPointer<const ssa_name>(ssa_node);
       if(!ssa->var)
       {
          continue;
       }
-      THROW_ASSERT(ssa->var->get_kind() == tree_reindex_K,
-                   ssa->var->ToString() + " is of kind " + tree_node::GetString(ssa->var->get_kind()));
       if(address_parameters.find(ssa->var) != address_parameters.end())
       {
          const auto def = ssa->CGetDefStmts();
@@ -399,8 +395,6 @@ void VcdSignalSelection::PropagateAddrParamToSsa(
 
 void VcdSignalSelection::SingleStepPropagateAddrSsa(const tree_nodeRef& curr_tn)
 {
-   THROW_ASSERT(curr_tn->get_kind() == tree_reindex_K,
-                curr_tn->ToString() + " is of kind " + tree_node::GetString(curr_tn->get_kind()));
    const tree_nodeConstRef tn = GET_NODE(curr_tn);
    if(tn->get_kind() == gimple_assign_K)
    {

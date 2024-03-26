@@ -198,7 +198,6 @@ void dead_code_elimination::fix_sdc_motion(tree_nodeRef removedStmt) const
 
 void dead_code_elimination::kill_uses(const tree_managerRef& TM, const tree_nodeRef& op0) const
 {
-   THROW_ASSERT(op0->get_kind() == tree_reindex_K, "expected a tree_reindex object");
    THROW_ASSERT(GET_NODE(op0)->get_kind() == ssa_name_K, "expected a ssa_name object");
    const auto ssa = GetPointerS<ssa_name>(GET_NODE(op0));
    THROW_ASSERT(ssa->CGetDefStmts().size() == 1, "unexpected condition");
@@ -217,12 +216,12 @@ void dead_code_elimination::kill_uses(const tree_managerRef& TM, const tree_node
          const auto utype = tree_man->GetUnsignedIntegerType();
          const auto zeroVal = TM->CreateUniqueIntegerCst(0LL, utype);
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ne_schema;
-         ne_schema[TOK(TOK_TYPE)] = STR(ssa_type->index);
+         ne_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(ssa_type));
          ne_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-         ne_schema[TOK(TOK_OP)] = STR(zeroVal->index);
+         ne_schema[TOK(TOK_OP)] = STR(GET_INDEX_CONST_NODE(zeroVal));
          const auto ne_id = TM->new_tree_node_id();
          TM->create_tree_node(ne_id, nop_expr_K, ne_schema);
-         val = TM->GetTreeReindex(ne_id);
+         val = TM->GetTreeNode(ne_id);
       }
       else
       {
@@ -252,7 +251,7 @@ tree_nodeRef dead_code_elimination::kill_vdef(const tree_managerRef& TM, const t
       gimple_nop_schema[TOK(TOK_SCPE)] = STR(function_id);
       TM->create_tree_node(gimple_nop_id, gimple_nop_K, gimple_nop_schema);
    }
-   const auto nop_stmt = TM->GetTreeReindex(gimple_nop_id);
+   const auto nop_stmt = TM->GetTreeNode(gimple_nop_id);
    GetPointerS<gimple_node>(GET_NODE(nop_stmt))->vdef = vdef;
    v_ssa->SetDefStmt(nop_stmt);
    return nop_stmt;
@@ -271,7 +270,7 @@ tree_nodeRef dead_code_elimination::add_gimple_nop(const tree_managerRef& TM, co
       gimple_nop_IR_schema[TOK(TOK_SCPE)] = STR(function_id);
       TM->create_tree_node(nop_stmt_id, gimple_nop_K, gimple_nop_IR_schema);
    }
-   const auto nop_stmt = TM->GetTreeReindex(nop_stmt_id);
+   const auto nop_stmt = TM->GetTreeNode(nop_stmt_id);
    const auto new_gn = GetPointerS<gimple_node>(GET_NODE(nop_stmt));
    if(gn->vdef)
    {
@@ -524,7 +523,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                            THROW_ASSERT(GET_NODE(mr->op0)->get_kind() == ssa_name_K,
                                         "unexpected condition" + ga->ToString());
                            auto derefVar = GetPointerS<ssa_name>(GET_NODE(mr->op0));
-                           auto& defStmts = derefVar->CGetDefStmts();
+                           auto defStmts = derefVar->CGetDefStmts();
                            if(defStmts.size() == 1)
                            {
                               auto defStmt = *defStmts.begin();

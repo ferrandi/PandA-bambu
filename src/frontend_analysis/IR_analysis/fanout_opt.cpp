@@ -126,7 +126,6 @@ fanout_opt::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType 
 
 bool fanout_opt::is_dest_relevant(tree_nodeRef t, bool)
 {
-   THROW_ASSERT(t->get_kind() == tree_reindex_K, "t is not a tree_reindex node");
    if(GET_NODE(t)->get_kind() == gimple_assign_K)
    {
       auto* temp_assign = GetPointer<gimple_assign>(GET_NODE(t));
@@ -151,7 +150,7 @@ DesignFlowStep_Status fanout_opt::InternalExec()
    }
    bool IR_changed = false;
 
-   tree_nodeRef temp = TM->get_tree_node_const(function_id);
+   tree_nodeRef temp = TM->CGetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(temp);
    auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
    const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));

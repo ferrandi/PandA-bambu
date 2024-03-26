@@ -816,7 +816,7 @@ std::string fsm_controller::get_guard_value(const tree_managerRef TM, const unsi
    }
    else
    {
-      tree_nodeRef node = TM->get_tree_node_const(index);
+      tree_nodeRef node = TM->CGetTreeNode(index);
       THROW_ASSERT(node->get_kind() == case_label_expr_K, "case_label_expr expected " + GET_NAME(data, op));
       auto cle = GetPointer<case_label_expr>(node);
       THROW_ASSERT(cle->op0, "guard expected in a case_label_expr");

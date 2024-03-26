@@ -251,7 +251,7 @@ unsigned int fu_binding::get_assign(vertex const& v) const
 unsigned int fu_binding::get_assign(const unsigned int statement_index) const
 {
    THROW_ASSERT(op_binding.find(statement_index) != op_binding.end(),
-                "Operation " + TreeM->get_tree_node_const(statement_index)->ToString() + " not assigned");
+                "Operation " + TreeM->CGetTreeNode(statement_index)->ToString() + " not assigned");
    THROW_ASSERT(GetPointer<funit_obj>(op_binding.find(statement_index)->second), "");
    return GetPointer<funit_obj>(op_binding.at(statement_index))->get_fu();
 }
@@ -609,9 +609,9 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          SM->add_connection(dest_sign, out_port);
          SM->add_connection(dest, dest_sign);
          const auto n = curr_gate_m->find_member("len", port_o_K, curr_gate);
-         const auto n_obj =
-             SM->add_constant("constant_len_" + STR(function_parameter), circuit, n->get_typeRef(),
-                              STR(tree_helper::SizeAlloc(TreeM->CGetTreeReindex(function_parameter)) / 8));
+         const auto n_obj = SM->add_constant(
+             "constant_len_" + STR(function_parameter), circuit, n->get_typeRef(),
+             STR(tree_helper::SizeAlloc(tree_helper::CGetType(TreeM->CGetTreeNode(function_parameter))) / 8));
          SM->add_connection(n, n_obj);
          THROW_ASSERT(in_chain, "missing in chain element");
          const auto start_obj = curr_gate_m->find_member(START_PORT_NAME, port_o_K, curr_gate);
@@ -1918,7 +1918,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       bool has_misaligned_indirect_ref = false;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Ar is true");
       {
-         const auto type_node = tree_helper::CGetType(TreeM->CGetTreeReindex(ar));
+         const auto type_node = tree_helper::CGetType(TreeM->CGetTreeNode(ar));
          const auto elmt_bitsize = tree_helper::AccessedMaximumBitsize(type_node, 1);
 
          if(allocation_information->is_direct_access_memory_unit(fu))
@@ -1953,8 +1953,9 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
             if(GET_TYPE(data, mapped_operation) & TYPE_STORE)
             {
                THROW_ASSERT(std::get<0>(vars[0]), "Expected a tree node in case of a value to store");
-               required_variables[0] = std::max(required_variables[0],
-                                                tree_helper::SizeAlloc(TreeM->CGetTreeReindex(std::get<0>(vars[0]))));
+               required_variables[0] =
+                   std::max(required_variables[0],
+                            tree_helper::SizeAlloc(tree_helper::CGetType(TreeM->CGetTreeNode(std::get<0>(vars[0])))));
                if(tree_helper::is_a_misaligned_vector(TreeM, std::get<0>(vars[0])))
                {
                   has_misaligned_indirect_ref = true;
@@ -1963,8 +1964,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
             else if(GET_TYPE(data, mapped_operation) & TYPE_LOAD)
             {
                THROW_ASSERT(out_var, "Expected a tree node in case of a value to load");
-               produced_variables =
-                   std::max(produced_variables, tree_helper::SizeAlloc(TreeM->CGetTreeReindex(out_var)));
+               produced_variables = std::max(
+                   produced_variables, tree_helper::SizeAlloc(tree_helper::CGetType(TreeM->CGetTreeNode(out_var))));
                if(tree_helper::is_a_misaligned_vector(TreeM, out_var))
                {
                   has_misaligned_indirect_ref = true;
@@ -2008,7 +2009,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                         "---Considering operation " +
                             HLSMgr->get_tree_manager()
-                                ->get_tree_node_const(data->CGetOpNodeInfo(mapped_operation)->GetNodeId())
+                                ->CGetTreeNode(data->CGetOpNodeInfo(mapped_operation)->GetNodeId())
                                 ->ToString());
          const auto out_var = HLSMgr->get_produced_value(HLS->functionId, mapped_operation);
          const auto fun_unit = GetPointerS<functional_unit>(fu_tech_obj);
@@ -2023,12 +2024,14 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
             {
                THROW_ASSERT(std::get<0>(vars[0]), "Expected a tree node in case of a value to store");
                mem_var_size_in =
-                   std::max(mem_var_size_in, tree_helper::SizeAlloc(TreeM->CGetTreeReindex(std::get<0>(vars[0]))));
+                   std::max(mem_var_size_in,
+                            tree_helper::SizeAlloc(tree_helper::CGetType(TreeM->CGetTreeNode(std::get<0>(vars[0])))));
             }
             else if(GET_TYPE(data, mapped_operation) & TYPE_LOAD)
             {
                THROW_ASSERT(out_var, "Expected a tree node in case of a value to load");
-               mem_var_size_out = std::max(mem_var_size_out, tree_helper::SizeAlloc(TreeM->CGetTreeReindex(out_var)));
+               mem_var_size_out = std::max(mem_var_size_out,
+                                           tree_helper::SizeAlloc(tree_helper::CGetType(TreeM->CGetTreeNode(out_var))));
             }
             /// specializing MEMORY_STD ports
             required_variables.insert(std::make_pair(0, 0));
@@ -2062,7 +2065,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                   continue;
                }
                required_variables.insert(std::make_pair(i, 0));
-               const auto var_node = TreeM->CGetTreeReindex(tree_var);
+               const auto var_node = TreeM->CGetTreeNode(tree_var);
                if(tree_helper::IsVectorType(var_node))
                {
                   const auto type = tree_helper::CGetType(var_node);
@@ -2111,7 +2114,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                      auto op0_tree_var = std::get<0>(vars[0]);
                      if(op0_tree_var)
                      {
-                        const auto var = tree_helper::GetBaseVariable(TreeM->CGetTreeReindex(op0_tree_var));
+                        const auto var = tree_helper::GetBaseVariable(TreeM->CGetTreeNode(op0_tree_var));
                         if(var && FB->is_variable_mem(GET_INDEX_CONST_NODE(var)) &&
                            HLSMgr->Rmem->is_sds_var(GET_INDEX_CONST_NODE(var)))
                         {
@@ -2147,8 +2150,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                            }
                         }
                      }
-                     auto op0 = TreeM->get_tree_node_const(op0_tree_var);
-                     auto op1 = TreeM->get_tree_node_const(std::get<0>(vars[1]));
+                     auto op0 = TreeM->CGetTreeNode(op0_tree_var);
+                     auto op1 = TreeM->CGetTreeNode(std::get<0>(vars[1]));
                      if(op0->get_kind() == ssa_name_K)
                      {
                         auto ssa_var0 = GetPointer<ssa_name>(op0);
@@ -2485,7 +2488,7 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
    const auto is_memory_splitted = init_file_b.good();
    init_file_b.seekp(std::ios_base::beg);
 
-   const auto ar_node = TM->CGetTreeReindex(ar);
+   const auto ar_node = TM->CGetTreeNode(ar);
    tree_nodeRef init_node;
    const auto vd = GetPointer<const var_decl>(GET_CONST_NODE(ar_node));
    if(vd && vd->init)
@@ -2780,7 +2783,6 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                             std::vector<std::string>& init_file, const memoryRef mem, unsigned long long element_align)
 {
    std::string trimmed_value;
-   THROW_ASSERT(!var_node || var_node->get_kind() == tree_reindex_K, "");
    const auto init_node = GET_CONST_NODE(_init_node);
    switch(init_node->get_kind())
    {

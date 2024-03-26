@@ -289,7 +289,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
             const auto formal_type_node = tree_helper::GetFormalIth(memcpy_function, 2);
             const std::vector<tree_nodeRef> args = {
                 // & new_local_var_decl
-                tree_man->CreateAddrExpr(GET_NODE(new_local_var_decl), srcp),
+                tree_man->CreateAddrExpr(new_local_var_decl, srcp),
                 // src is the new pointer-to-struct parm_decl
                 tree_man->create_ssa_name(*p_decl_it, ptr_type, tree_nodeRef(), tree_nodeRef()),
                 // sizeof(var_decl)

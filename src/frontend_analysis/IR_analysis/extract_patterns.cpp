@@ -156,7 +156,7 @@ DesignFlowStep_Status extract_patterns::InternalExec()
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, " --------- EXTRACT_PATTERNS ---------- ");
    const auto TM = AppM->get_tree_manager();
    const auto tn = TM->CGetTreeNode(function_id);
-   // tree_nodeRef Scpe = TM->GetTreeReindex(function_id);
+   // tree_nodeRef Scpe = TM->GetTreeNode(function_id);
    const auto fd = GetPointer<const function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
    auto sl = GetPointer<statement_list>(GET_NODE(fd->body));

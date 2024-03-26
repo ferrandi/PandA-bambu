@@ -269,7 +269,7 @@ int main(int argc, char* argv_orig[])
                {
                   continue;
                }
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--Loading " + archive.path().string());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Loading " + archive.path().string());
                const auto TM_new = ParseTreeFile(Param, archive.path().string());
                TM->merge_tree_managers(TM_new);
             }

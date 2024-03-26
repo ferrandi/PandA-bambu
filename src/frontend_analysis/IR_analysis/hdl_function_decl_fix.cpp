@@ -99,7 +99,7 @@ DesignFlowStep_Status HDLFunctionDeclFix::Exec()
 
    for(const auto function : TM->GetAllFunctions())
    {
-      auto fd = GetPointer<function_decl>(TM->get_tree_node_const(function));
+      auto fd = GetPointer<function_decl>(TM->CGetTreeNode(function));
       if(not fd->name)
       {
          continue;

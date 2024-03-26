@@ -493,7 +493,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                    TestbenchGeneration::print_var_init(HLSMgr->get_tree_manager(), m->first, HLSMgr->Rmem);
                unsigned int byte_allocated = 0;
                unsigned long long int actual_byte =
-                   tree_helper::SizeAlloc(HLSMgr->get_tree_manager()->CGetTreeReindex(m->first)) / 8;
+                   tree_helper::SizeAlloc(HLSMgr->get_tree_manager()->CGetTreeNode(m->first)) / 8;
                std::vector<std::string> eightbit_string;
                for(const auto& i : splitted)
                {
@@ -1105,7 +1105,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                const auto tnIndex = int_port->get_typeRef()->treenode;
                if(tnIndex > 0)
                {
-                  const auto tn = HLSMgr->get_tree_manager()->CGetTreeReindex(tnIndex);
+                  const auto tn = HLSMgr->get_tree_manager()->CGetTreeNode(tnIndex);
                   if(tree_helper::IsPointerType(tn))
                   {
                      const auto pt_type = tree_helper::CGetPointedType(tree_helper::CGetType(tn));

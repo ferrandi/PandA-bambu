@@ -1343,9 +1343,9 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       {
          first_valid_id = id;
       }
-      if(current_op == "cond_expr" && id && !tree_helper::IsConstant(TreeM->CGetTreeReindex(id)))
+      if(current_op == "cond_expr" && id && !tree_helper::IsConstant(TreeM->CGetTreeNode(id)))
       {
-         if(tree_helper::Size(TreeM->CGetTreeReindex(id)) == 1)
+         if(tree_helper::Size(TreeM->CGetTreeNode(id)) == 1)
          {
             is_cond_expr_bool_test = true;
          }
@@ -1358,7 +1358,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       { /// no constant characterization for cond expr
          is_second_constant = true;
       }
-      if(id == 0 || ((tree_helper::IsConstant(TreeM->CGetTreeReindex(id)) ||
+      if(id == 0 || ((tree_helper::IsConstant(TreeM->CGetTreeNode(id)) ||
                       tree_helper::is_concat_bit_ior_expr(TreeM, g->CGetOpNodeInfo(node)->GetNodeId())) &&
                      !is_constrained && !is_second_constant && vars_read.size() != 1 && current_op != "mult_expr" &&
                      current_op != "widen_mult_expr" && current_op != "insertelement_expr" &&
@@ -1372,7 +1372,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          constant_id = *itr;
          if(id)
          {
-            const auto var_node = TreeM->CGetTreeReindex(id);
+            const auto var_node = TreeM->CGetTreeNode(id);
             type = tree_helper::CGetType(var_node);
             if(tree_helper::IsVectorType(type))
             {
@@ -1392,7 +1392,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       }
       else
       {
-         const auto var_node = TreeM->CGetTreeReindex(id);
+         const auto var_node = TreeM->CGetTreeNode(id);
          type = tree_helper::CGetType(var_node);
          if(tree_helper::IsArrayType(type) || tree_helper::IsStructType(type) ||
             tree_helper::IsUnionType(type) /*|| tree_helper::IsComplexType(type)*/)
@@ -1444,7 +1444,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
    }
    else
    {
-      type = tree_helper::CGetType(TreeM->CGetTreeReindex(first_valid_id));
+      type = tree_helper::CGetType(TreeM->CGetTreeNode(first_valid_id));
       is_a_pointer = tree_helper::IsPointerType(type);
    }
    if(is_a_pointer || tree_helper::IsArrayType(type) || tree_helper::IsStructType(type) ||
@@ -1510,7 +1510,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
    if(current_op == "widen_mult_expr" || current_op == "mult_expr")
    {
       const auto nodeOutput_id = hls_manager->get_produced_value(function_index, node);
-      const auto out_node = TreeM->CGetTreeReindex(nodeOutput_id);
+      const auto out_node = TreeM->CGetTreeNode(nodeOutput_id);
       type = tree_helper::CGetType(out_node);
       if(tree_helper::IsVectorType(type))
       {
@@ -1593,7 +1593,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       auto nodeOutput_id = hls_manager->get_produced_value(function_index, node);
       if(nodeOutput_id)
       {
-         const auto out_node = TreeM->CGetTreeReindex(nodeOutput_id);
+         const auto out_node = TreeM->CGetTreeNode(nodeOutput_id);
          type = tree_helper::CGetType(out_node);
          if(tree_helper::IsArrayType(type) || tree_helper::IsStructType(type) ||
             tree_helper::IsUnionType(type) /*|| tree_helper::IsComplexType(type)*/)
@@ -1647,7 +1647,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
    {
       auto nodeOutput_id = hls_manager->get_produced_value(function_index, node);
       THROW_ASSERT(nodeOutput_id, "unexpected condition");
-      const auto out_node = TreeM->CGetTreeReindex(nodeOutput_id);
+      const auto out_node = TreeM->CGetTreeNode(nodeOutput_id);
       type = tree_helper::CGetType(out_node);
       auto out_prec = tree_helper::Size(out_node);
       if(tree_helper::IsVectorType(type))
@@ -1703,7 +1703,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
    {
       auto nodeOutput_id = hls_manager->get_produced_value(function_index, node);
       THROW_ASSERT(nodeOutput_id, "unexpected condition");
-      const auto out_node = TreeM->CGetTreeReindex(nodeOutput_id);
+      const auto out_node = TreeM->CGetTreeNode(nodeOutput_id);
       type = tree_helper::CGetType(out_node);
       info->output_prec = resize_1_8_pow2(tree_helper::Size(out_node));
       if(tree_helper::IsVectorType(type))
@@ -2337,7 +2337,7 @@ double AllocationInformation::GetPhiConnectionLatency(const unsigned int stateme
 
 double AllocationInformation::GetCondExprTimeLatency(const unsigned int operation_index) const
 {
-   const auto tn = TreeM->CGetTreeReindex(operation_index);
+   const auto tn = TreeM->CGetTreeNode(operation_index);
    const auto gp = GetPointer<const gimple_phi>(GET_CONST_NODE(tn));
    THROW_ASSERT(gp, "Tree node is " + STR(tn));
    /// Computing time of cond_expr as time of cond_expr_FU - setup_time
@@ -2570,7 +2570,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       }
       is_single_variable = single_var_lambda(var);
 
-      const auto type_node = tree_helper::CGetType(TreeM->CGetTreeReindex(var));
+      const auto type_node = tree_helper::CGetType(TreeM->CGetTreeNode(var));
       elmt_bitsize = tree_helper::AccessedMaximumBitsize(type_node, 1);
 #if ARRAY_CORRECTION
       if(tree_helper::IsArrayEquivType(type_node))
@@ -2611,7 +2611,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       unsigned var = get_memory_var(fu);
       is_single_variable = single_var_lambda(var);
 
-      const auto type_node = tree_helper::CGetType(TreeM->CGetTreeReindex(var));
+      const auto type_node = tree_helper::CGetType(TreeM->CGetTreeNode(var));
       elmt_bitsize = tree_helper::AccessedMaximumBitsize(type_node, 1);
 #if ARRAY_CORRECTION
       if(tree_helper::IsArrayEquivType(type_node))
@@ -2714,7 +2714,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
             }
          }
 
-         const auto type_node = tree_helper::CGetType(TreeM->CGetTreeReindex(var));
+         const auto type_node = tree_helper::CGetType(TreeM->CGetTreeNode(var));
          elmt_bitsize = tree_helper::AccessedMaximumBitsize(type_node, 1);
       }
       else
@@ -2736,7 +2736,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       res_value = res_value + cur_exec_delta;
 
 #if ARRAY_CORRECTION
-      const auto type_node = tree_helper::CGetType(TreeM->CGetTreeReindex(var));
+      const auto type_node = tree_helper::CGetType(TreeM->CGetTreeNode(var));
       if(tree_helper::IsArrayEquivType(type_node))
       {
          const auto dims = tree_helper::GetArrayDimensions(type_node);
@@ -3393,7 +3393,7 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "-->Computing connection time due to fanout " + STR(first_operation) + "-->" +
                          STR(second_operation));
-      for(const auto& used_ssa : tree_helper::ComputeSsaUses(TreeM->CGetTreeReindex(second_operation)))
+      for(const auto& used_ssa : tree_helper::ComputeSsaUses(TreeM->CGetTreeNode(second_operation)))
       {
          const auto used_ssa_sn = GetPointer<const ssa_name>(GET_NODE(used_ssa.first));
          if(used_ssa_sn && used_ssa_sn->CGetDefStmt()->index == first_operation)
@@ -3635,7 +3635,7 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
 bool AllocationInformation::can_be_asynchronous_ram(tree_managerConstRef TM, unsigned int var, unsigned int threshold,
                                                     bool is_read_only_variable, unsigned channel_number)
 {
-   tree_nodeRef var_node = TM->get_tree_node_const(var);
+   tree_nodeRef var_node = TM->CGetTreeNode(var);
    auto* vd = GetPointer<const var_decl>(var_node);
    auto var_bitsize = tree_helper::Size(var_node);
    const auto hls_d = hls_manager->get_HLS_device();

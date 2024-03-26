@@ -134,8 +134,7 @@ DesignFlowStep_Status ExtractOmpAtomic::InternalExec()
                   stmt == block->CGetStmtList().front())
                {
                   gimple_to_be_removed = stmt;
-                  GetPointer<function_decl>(AppM->get_tree_manager()->get_tree_node_const(function_id))->omp_atomic =
-                      true;
+                  GetPointer<function_decl>(AppM->get_tree_manager()->CGetTreeNode(function_id))->omp_atomic = true;
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found Atomic Omp function");
                   changed = true;
                }

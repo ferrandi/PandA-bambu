@@ -229,7 +229,7 @@ void HWCallInjection::buildBuiltinCall(const blocRef& block, const tree_nodeRef&
       TM->create_tree_node(builtin_stmt_idx, gimple_call_K, attr_map);
    }
 
-   const auto builtin_stmt = TM->GetTreeReindex(builtin_stmt_idx);
+   const auto builtin_stmt = TM->GetTreeNode(builtin_stmt_idx);
    const auto builtin_call = GetPointerS<gimple_call>(GET_NODE(builtin_stmt));
    tree_nodeRef retVar = nullptr;
    if(stmt_kind == gimple_call_K)
@@ -315,7 +315,7 @@ void HWCallInjection::buildBuiltinCall(const blocRef& block, const tree_nodeRef&
             addrExprReturnValueMap[TOK(TOK_SRCP)] = srcp_str;
             TM->create_tree_node(addrExprReturnValue, addr_expr_K, addrExprReturnValueMap);
          }
-         builtin_call->AddArg(TM->GetTreeReindex(addrExprReturnValue));
+         builtin_call->AddArg(TM->GetTreeNode(addrExprReturnValue));
 
          builtin_call->memdef = GA->memdef;
          builtin_call->memuse = GA->memuse;

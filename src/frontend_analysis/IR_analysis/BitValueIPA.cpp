@@ -212,7 +212,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
       const auto fu_name = AppM->CGetFunctionBehavior(fu_id)->CGetBehavioralHelper()->get_function_name();
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                      "-->Analyzing function \"" + fu_name + "\": id = " + STR(fu_id));
-      const auto fu_node = TM->CGetTreeReindex(fu_id);
+      const auto fu_node = TM->CGetTreeNode(fu_id);
       const auto fd = GetPointer<function_decl>(GET_CONST_NODE(fu_node));
       THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
       const auto fu_type = tree_helper::CGetType(fu_node);
@@ -278,7 +278,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                      "-->Analyzing function \"" + fu_name + "\": id = " + STR(fu_id));
 
-      const auto fu_node = TM->CGetTreeReindex(fu_id);
+      const auto fu_node = TM->CGetTreeNode(fu_id);
       const auto fd = GetPointer<const function_decl>(GET_CONST_NODE(fu_node));
       THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
       const auto fu_type = tree_helper::CGetType(fu_node);
@@ -630,7 +630,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
       const auto new_bitvalue = bitstring_to_string(b.second);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                      "---updating node id: " + STR(tn_id) + " bitstring: " + new_bitvalue);
-      const auto tn = TM->CGetTreeReindex(tn_id);
+      const auto tn = TM->CGetTreeNode(tn_id);
       const auto kind = GET_CONST_NODE(tn)->get_kind();
 
       std::string null_string = "";

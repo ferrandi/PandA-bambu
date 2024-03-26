@@ -102,7 +102,7 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
    const auto TreeM = AppM->get_tree_manager();
    const auto tree_man = tree_manipulationRef(new tree_manipulation(TreeM, parameters, AppM));
    const auto curr_tn = TreeM->CGetTreeNode(function_id);
-   const auto Scpe = TreeM->CGetTreeReindex(function_id);
+   const auto Scpe = TreeM->CGetTreeNode(function_id);
    const auto fd = GetPointerS<const function_decl>(curr_tn);
    const auto sl = GetPointerS<const statement_list>(GET_CONST_NODE(fd->body));
    for(const auto& block : sl->list_of_bloc)

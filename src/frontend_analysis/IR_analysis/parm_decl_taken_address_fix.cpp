@@ -130,7 +130,7 @@ DesignFlowStep_Status parm_decl_taken_address_fix::InternalExec()
    }
    for(auto par_index : parm_decl_addr)
    {
-      auto par = TM->CGetTreeReindex(par_index);
+      auto par = TM->CGetTreeNode(par_index);
       const auto* pd = GetPointer<const parm_decl>(GET_NODE(par));
       THROW_ASSERT(pd, "unexpected condition");
       const auto& p_type = pd->type;
@@ -169,12 +169,12 @@ DesignFlowStep_Status parm_decl_taken_address_fix::InternalExec()
       const auto first_block = sl->list_of_bloc.at(bb_index);
       for(auto par_index : parm_decl_addr)
       {
-         auto par = TM->CGetTreeReindex(par_index);
+         auto par = TM->CGetTreeNode(par_index);
          auto vd = parm_decl_var_decl_rel.at(par_index);
          const auto* pd = GetPointer<const parm_decl>(GET_NODE(par));
          THROW_ASSERT(pd, "unexpected condition");
          const std::string srcp_default = pd->include_name + ":" + STR(pd->line_number) + ":" + STR(pd->column_number);
-         auto new_ga_expr = IRman->CreateGimpleAssignAddrExpr(GET_NODE(vd), function_id, srcp_default);
+         auto new_ga_expr = IRman->CreateGimpleAssignAddrExpr(vd, function_id, srcp_default);
          first_block->PushFront(new_ga_expr, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---New statement statement " + GET_NODE(new_ga_expr)->ToString());

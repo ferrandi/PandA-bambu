@@ -105,7 +105,7 @@ BlockFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType re
 DesignFlowStep_Status BlockFix::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
-   tree_nodeRef temp = TM->get_tree_node_const(function_id);
+   tree_nodeRef temp = TM->CGetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(temp);
    auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
 

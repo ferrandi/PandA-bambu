@@ -179,8 +179,8 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
          auto gn = GetPointer<gimple_nop>(TM->GetTreeNode(new_tree_node_id));
          gn->bb_index = block->number;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Created gimple_nop " + TM->get_tree_node_const(new_tree_node_id)->ToString());
-         block->PushBack(TM->GetTreeReindex(new_tree_node_id), AppM);
+                        "---Created gimple_nop " + TM->CGetTreeNode(new_tree_node_id)->ToString());
+         block->PushBack(TM->GetTreeNode(new_tree_node_id), AppM);
       }
       if(block->CGetStmtList().size())
       {

@@ -879,7 +879,7 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Operation is a multiif");
             unsigned int node_id = cfgGraph->CGetOpNodeInfo(last_stmt)->GetNodeId();
-            const tree_nodeRef node = TM->get_tree_node_const(node_id);
+            const tree_nodeRef node = TM->CGetTreeNode(node_id);
             THROW_ASSERT(node->get_kind() == gimple_multi_way_if_K, "unexpected node");
             auto* gmwi = GetPointer<gimple_multi_way_if>(node);
             std::map<unsigned int, bool> add_elseif_to_goto;
@@ -1127,7 +1127,7 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                      }
 
                      indented_output_stream->Append("case " +
-                                                    behavioral_helper->PrintConstant(TM->CGetTreeReindex(*eIdBeg)));
+                                                    behavioral_helper->PrintConstant(TM->CGetTreeNode(*eIdBeg)));
                   }
                   indented_output_stream->Append(":\n");
                }
