@@ -492,8 +492,7 @@ void processMultiWayIf(tree_nodeConstRef mwii, CustomSet<OperandRef>& OpsToRenam
 // Perform a strict weak ordering on instructions and arguments.
 bool valueComesBefore(OrderedInstructions& OI, tree_nodeConstRef A, tree_nodeConstRef B)
 {
-   return OI.dominates(GetPointer<const gimple_node>(GET_CONST_NODE(A)),
-                       GetPointer<const gimple_node>(GET_CONST_NODE(B)));
+   return OI.dominates(GET_CONST_NODE(A), GET_CONST_NODE(B));
 }
 
 // Given a predicate info that is a type of branching terminator, get the

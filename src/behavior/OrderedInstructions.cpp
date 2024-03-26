@@ -49,9 +49,9 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-bool OrderedBasicBlock::instComesBefore(const struct gimple_node* A, const struct gimple_node* B)
+bool OrderedBasicBlock::instComesBefore(const tree_nodeConstRef& A, const tree_nodeConstRef& B)
 {
-   const struct gimple_node* Inst = nullptr;
+   unsigned int idx = 0;
    THROW_ASSERT(!(LastInstFound == BBInst.end() && NextInstPos != 0), "Instruction supposed to be in NumberedInsts");
 
    // Start the search with the instruction found in the last lookup round.
@@ -65,18 +65,18 @@ bool OrderedBasicBlock::instComesBefore(const struct gimple_node* A, const struc
    // Number all instructions up to the point where we find 'A' or 'B'.
    for(; II != IE; ++II)
    {
-      Inst = GetPointer<const gimple_node>(GET_CONST_NODE(*II));
-      NumberedInsts[Inst] = NextInstPos++;
-      if(Inst == A || Inst == B)
+      idx = GET_INDEX_CONST_NODE(*II);
+      NumberedInsts[idx] = NextInstPos++;
+      if(idx == GET_INDEX_CONST_NODE(A) || idx == GET_INDEX_CONST_NODE(B))
       {
          break;
       }
    }
 
    THROW_ASSERT(II != IE, "Instruction not found?");
-   THROW_ASSERT((Inst == A || Inst == B), "Should find A or B");
+   THROW_ASSERT((idx == GET_INDEX_CONST_NODE(A) || idx == GET_INDEX_CONST_NODE(B)), "Should find A or B");
    LastInstFound = II;
-   return Inst != B;
+   return idx != GET_INDEX_CONST_NODE(B);
 }
 
 OrderedBasicBlock::OrderedBasicBlock(const blocRef& BasicB)
@@ -85,21 +85,24 @@ OrderedBasicBlock::OrderedBasicBlock(const blocRef& BasicB)
    unsigned int phiPos = 0U;
    for(const auto& gp : BasicB->CGetPhiList())
    {
-      NumberedInsts.insert({GetPointer<const gimple_node>(GET_CONST_NODE(gp)), phiPos++});
+      NumberedInsts.insert({GET_INDEX_CONST_NODE(gp), phiPos++});
    }
 }
 
-bool OrderedBasicBlock::dominates(const struct gimple_node* A, const struct gimple_node* B)
+bool OrderedBasicBlock::dominates(const tree_nodeConstRef& A, const tree_nodeConstRef& B)
 {
-   THROW_ASSERT(A->bb_index == B->bb_index, "Instructions must be in the same basic block!");
-   THROW_ASSERT(A->bb_index == BB->number, "Instructions must be in the tracked block!");
+   THROW_ASSERT(GetPointer<const gimple_node>(GET_CONST_NODE(A))->bb_index ==
+                    GetPointer<const gimple_node>(GET_CONST_NODE(B))->bb_index,
+                "Instructions must be in the same basic block!");
+   THROW_ASSERT(GetPointer<const gimple_node>(GET_CONST_NODE(A))->bb_index == BB->number,
+                "Instructions must be in the tracked block!");
 
    // Phi statements always comes before non-phi statements
-   if(A->get_kind() == gimple_phi_K && B->get_kind() != gimple_phi_K)
+   if(GET_CONST_NODE(A)->get_kind() == gimple_phi_K && GET_CONST_NODE(B)->get_kind() != gimple_phi_K)
    {
       return true;
    }
-   else if(A->get_kind() != gimple_phi_K && B->get_kind() == gimple_phi_K)
+   else if(GET_CONST_NODE(A)->get_kind() != gimple_phi_K && GET_CONST_NODE(B)->get_kind() == gimple_phi_K)
    {
       return false;
    }
@@ -110,22 +113,23 @@ bool OrderedBasicBlock::dominates(const struct gimple_node* A, const struct gimp
    // have numbered NB as well if it didn't. The same is true for NB. If it
    // exists, but NA does not, NA must come after it. If neither exist, we need
    // to number the block and cache the results instComesBefore.
-   const auto NAI = NumberedInsts.find(A);
-   const auto NBI = NumberedInsts.find(B);
+   const auto NAI = NumberedInsts.find(GET_INDEX_CONST_NODE(A));
+   const auto NBI = NumberedInsts.find(GET_INDEX_CONST_NODE(B));
    if(NAI != NumberedInsts.end() && NBI != NumberedInsts.end())
    {
       return NAI->second < NBI->second;
    }
    if(NAI != NumberedInsts.end())
    {
-      return B->get_kind() !=
+      return GET_CONST_NODE(B)->get_kind() !=
              gimple_phi_K; // Not found phi nodes have been just added from this step in front of all other phis
    }
    if(NBI != NumberedInsts.end())
    {
       return false;
    }
-   THROW_ASSERT(A->get_kind() != gimple_phi_K, "Non dato, not given, nicht gegeben, pas donné, no dado, non detur");
+   THROW_ASSERT(GET_CONST_NODE(A)->get_kind() != gimple_phi_K,
+                "Non dato, not given, nicht gegeben, pas donné, no dado, non detur");
 
    return instComesBefore(A, B);
 }
@@ -177,13 +181,13 @@ bool OrderedInstructions::dominates(const unsigned int BBIA, const unsigned int 
    return false;
 }
 
-bool OrderedInstructions::dominates(const struct gimple_node* InstA, const struct gimple_node* InstB) const
+bool OrderedInstructions::dominates(const tree_nodeConstRef& InstA, const tree_nodeConstRef& InstB) const
 {
    THROW_ASSERT(InstA, "Instruction A cannot be null");
    THROW_ASSERT(InstB, "Instruction B cannot be null");
 
-   const auto BBIA = InstA->bb_index;
-   const auto BBIB = InstB->bb_index;
+   const auto BBIA = GetPointer<const gimple_node>(GET_CONST_NODE(InstA))->bb_index;
+   const auto BBIB = GetPointer<const gimple_node>(GET_CONST_NODE(InstB))->bb_index;
 
    // Use ordered basic block to do dominance check in case the 2 instructions
    // are in the same basic block.
