@@ -415,7 +415,7 @@ void multi_way_if::MergeCondMulti(const blocRef& pred_bb, const blocRef& curr_bb
    auto new_gwi = GetPointerS<gimple_multi_way_if>(TM->CGetTreeNode(gimple_multi_way_if_id));
    new_gwi->bb_index = pred_bb->number;
 
-   const auto old_gwi = GetPointerS<const gimple_multi_way_if>(GET_CONST_NODE(curr_bb->CGetStmtList().back()));
+   const auto old_gwi = GetPointerS<const gimple_multi_way_if>(curr_bb->CGetStmtList().back());
 
    /// Create ce_condition
    const auto ce_cond = tree_man->ExtractCondition(pred_bb->CGetStmtList().back(), pred_bb, function_id);
@@ -481,8 +481,8 @@ void multi_way_if::MergeMultiMulti(const blocRef& pred_bb, const blocRef& curr_b
    auto new_gwi = GetPointerS<gimple_multi_way_if>(TM->CGetTreeNode(gimple_multi_way_if_id));
    new_gwi->bb_index = pred_bb->number;
 
-   const auto old_gwi1 = GetPointerS<const gimple_multi_way_if>(GET_CONST_NODE(pred_bb->CGetStmtList().back()));
-   const auto old_gwi2 = GetPointerS<const gimple_multi_way_if>(GET_CONST_NODE(curr_bb->CGetStmtList().back()));
+   const auto old_gwi1 = GetPointerS<const gimple_multi_way_if>(pred_bb->CGetStmtList().back());
+   const auto old_gwi2 = GetPointerS<const gimple_multi_way_if>(curr_bb->CGetStmtList().back());
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---First gimple multi way if is " + old_gwi1->ToString());
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Second gimple multi way if is " + old_gwi2->ToString());
 
@@ -603,7 +603,7 @@ void multi_way_if::MergeMultiCond(const blocRef& pred_bb, const blocRef& curr_bb
    auto new_gwi = GetPointerS<gimple_multi_way_if>(TM->CGetTreeNode(gimple_multi_way_if_id));
    new_gwi->bb_index = pred_bb->number;
 
-   const auto old_gwi = GetPointerS<const gimple_multi_way_if>(GET_CONST_NODE(pred_bb->CGetStmtList().back()));
+   const auto old_gwi = GetPointerS<const gimple_multi_way_if>(pred_bb->CGetStmtList().back());
    const auto old_ce = curr_bb->CGetStmtList().back();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Gimple multi way if is " + old_gwi->ToString());
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Gimple cond " + old_ce->ToString());
@@ -674,14 +674,14 @@ void multi_way_if::MergeCondCond(const blocRef& pred_bb, const blocRef& curr_bb)
 {
    /// identify the first gimple_cond
    const auto list_of_stmt_cond1 = pred_bb->CGetStmtList();
-   THROW_ASSERT(GET_CONST_NODE(list_of_stmt_cond1.back())->get_kind() == gimple_cond_K, "a gimple_cond is expected");
+   THROW_ASSERT(list_of_stmt_cond1.back()->get_kind() == gimple_cond_K, "a gimple_cond is expected");
    const auto cond1_statement = list_of_stmt_cond1.back();
    pred_bb->RemoveStmt(cond1_statement, AppM);
    const auto ssa1_node = tree_man->ExtractCondition(cond1_statement, pred_bb, function_id);
 
    /// identify the second gimple_cond
    const auto list_of_stmt_cond2 = curr_bb->CGetStmtList();
-   THROW_ASSERT(GET_CONST_NODE(list_of_stmt_cond2.back())->get_kind() == gimple_cond_K, "a gimple_cond is expected");
+   THROW_ASSERT(list_of_stmt_cond2.back()->get_kind() == gimple_cond_K, "a gimple_cond is expected");
    const auto cond2_statement = list_of_stmt_cond2.back();
    curr_bb->RemoveStmt(cond2_statement, AppM);
    const auto ssa2_node = tree_man->ExtractCondition(cond2_statement, pred_bb, function_id);

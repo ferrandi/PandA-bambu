@@ -139,64 +139,61 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
          }
          break;
       }
-      case gimple_nop_K:
-      case var_decl_K:
-      case parm_decl_K:
-      case ssa_name_K:
-      case tree_list_K:
-      case CASE_UNARY_EXPRESSION:
       case CASE_BINARY_EXPRESSION:
-      case CASE_TERNARY_EXPRESSION:
-      case CASE_QUATERNARY_EXPRESSION:
-      case lut_expr_K:
-      case constructor_K:
-      case gimple_cond_K:
-      case gimple_switch_K:
-      case gimple_multi_way_if_K:
-      case gimple_return_K:
-      case gimple_for_K:
-      case gimple_while_K:
-      case CASE_TYPE_NODES:
-      case type_decl_K:
-      case target_expr_K:
-      case target_mem_ref_K:
-      case target_mem_ref461_K:
-      case real_cst_K:
-      case complex_cst_K:
-      case string_cst_K:
-      case integer_cst_K:
-      case field_decl_K:
-      case function_decl_K:
-      case label_decl_K:
-      case result_decl_K:
-      case vector_cst_K:
-      case void_cst_K:
-      case tree_vec_K:
-      case case_label_expr_K:
-      case gimple_label_K:
-      case gimple_asm_K:
-      case gimple_goto_K:
+      case CASE_CPP_NODES:
+      case CASE_FAKE_NODES:
       case CASE_PRAGMA_NODES:
+      case CASE_QUATERNARY_EXPRESSION:
+      case CASE_TERNARY_EXPRESSION:
+      case CASE_TYPE_NODES:
+      case CASE_UNARY_EXPRESSION:
       case binfo_K:
       case block_K:
+      case case_label_expr_K:
+      case complex_cst_K:
       case const_decl_K:
-      case CASE_CPP_NODES:
+      case constructor_K:
+      case error_mark_K:
+      case field_decl_K:
+      case function_decl_K:
+      case gimple_asm_K:
       case gimple_bind_K:
+      case gimple_cond_K:
+      case gimple_for_K:
+      case gimple_goto_K:
+      case gimple_label_K:
+      case gimple_multi_way_if_K:
+      case gimple_nop_K:
       case gimple_phi_K:
       case gimple_pragma_K:
       case gimple_predict_K:
       case gimple_resx_K:
+      case gimple_return_K:
+      case gimple_switch_K:
+      case gimple_while_K:
       case identifier_node_K:
-      case last_tree_K:
+      case integer_cst_K:
+      case label_decl_K:
+      case lut_expr_K:
       case namespace_decl_K:
-      case none_K:
-      case placeholder_expr_K:
+      case parm_decl_K:
+      case real_cst_K:
+      case result_decl_K:
+      case ssa_name_K:
       case statement_list_K:
-      case translation_unit_decl_K:
-      case error_mark_K:
-      case using_decl_K:
+      case string_cst_K:
+      case target_expr_K:
+      case target_mem_ref461_K:
+      case target_mem_ref_K:
       case template_decl_K:
-      case tree_reindex_K:
+      case translation_unit_decl_K:
+      case tree_list_K:
+      case tree_vec_K:
+      case type_decl_K:
+      case using_decl_K:
+      case var_decl_K:
+      case vector_cst_K:
+      case void_cst_K:
       default:
       {
          THROW_UNREACHABLE("");

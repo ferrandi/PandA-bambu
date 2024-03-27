@@ -166,7 +166,7 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long
    if(tree_helper::IsRealType(node_type))
    {
       THROW_ASSERT(tree_helper::Size(node_type) == precision, "real precision mismatch");
-      const auto rc = GetPointerS<const real_cst>(GET_CONST_NODE(node));
+      const auto rc = GetPointerS<const real_cst>(node);
       std::string C_value = rc->valr;
       if(C_value == "Inf")
       {
@@ -180,7 +180,7 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long
    }
    else if(tree_helper::IsVectorType(node_type))
    {
-      const auto vc = GetPointerS<const vector_cst>(GET_CONST_NODE(node));
+      const auto vc = GetPointerS<const vector_cst>(node);
       auto n_elm = static_cast<unsigned int>(vc->list_of_valu.size());
       auto elm_prec = precision / n_elm;
       trimmed_value = "";
@@ -191,8 +191,8 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long
    }
    else if(tree_helper::IsComplexType(node_type))
    {
-      const auto cc = GetPointerS<const complex_cst>(GET_CONST_NODE(node));
-      const auto rcc = GetPointer<const real_cst>(GET_CONST_NODE(cc->real));
+      const auto cc = GetPointerS<const complex_cst>(node);
+      const auto rcc = GetPointer<const real_cst>(cc->real);
       std::string trimmed_value_r;
       if(rcc)
       {
@@ -207,7 +207,7 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long
       {
          trimmed_value_r = convert_to_binary(tree_helper::GetConstValue(cc->real), precision / 2);
       }
-      const auto icc = GetPointer<const real_cst>(GET_CONST_NODE(cc->imag));
+      const auto icc = GetPointer<const real_cst>(cc->imag);
       std::string trimmed_value_i;
       if(icc)
       {

@@ -91,18 +91,16 @@ OrderedBasicBlock::OrderedBasicBlock(const blocRef& BasicB)
 
 bool OrderedBasicBlock::dominates(const tree_nodeConstRef& A, const tree_nodeConstRef& B)
 {
-   THROW_ASSERT(GetPointer<const gimple_node>(GET_CONST_NODE(A))->bb_index ==
-                    GetPointer<const gimple_node>(GET_CONST_NODE(B))->bb_index,
+   THROW_ASSERT(GetPointer<const gimple_node>(A)->bb_index == GetPointer<const gimple_node>(B)->bb_index,
                 "Instructions must be in the same basic block!");
-   THROW_ASSERT(GetPointer<const gimple_node>(GET_CONST_NODE(A))->bb_index == BB->number,
-                "Instructions must be in the tracked block!");
+   THROW_ASSERT(GetPointer<const gimple_node>(A)->bb_index == BB->number, "Instructions must be in the tracked block!");
 
    // Phi statements always comes before non-phi statements
-   if(GET_CONST_NODE(A)->get_kind() == gimple_phi_K && GET_CONST_NODE(B)->get_kind() != gimple_phi_K)
+   if(A->get_kind() == gimple_phi_K && B->get_kind() != gimple_phi_K)
    {
       return true;
    }
-   else if(GET_CONST_NODE(A)->get_kind() != gimple_phi_K && GET_CONST_NODE(B)->get_kind() == gimple_phi_K)
+   else if(A->get_kind() != gimple_phi_K && B->get_kind() == gimple_phi_K)
    {
       return false;
    }
@@ -121,15 +119,14 @@ bool OrderedBasicBlock::dominates(const tree_nodeConstRef& A, const tree_nodeCon
    }
    if(NAI != NumberedInsts.end())
    {
-      return GET_CONST_NODE(B)->get_kind() !=
+      return B->get_kind() !=
              gimple_phi_K; // Not found phi nodes have been just added from this step in front of all other phis
    }
    if(NBI != NumberedInsts.end())
    {
       return false;
    }
-   THROW_ASSERT(GET_CONST_NODE(A)->get_kind() != gimple_phi_K,
-                "Non dato, not given, nicht gegeben, pas donné, no dado, non detur");
+   THROW_ASSERT(A->get_kind() != gimple_phi_K, "Non dato, not given, nicht gegeben, pas donné, no dado, non detur");
 
    return instComesBefore(A, B);
 }
@@ -186,8 +183,8 @@ bool OrderedInstructions::dominates(const tree_nodeConstRef& InstA, const tree_n
    THROW_ASSERT(InstA, "Instruction A cannot be null");
    THROW_ASSERT(InstB, "Instruction B cannot be null");
 
-   const auto BBIA = GetPointer<const gimple_node>(GET_CONST_NODE(InstA))->bb_index;
-   const auto BBIB = GetPointer<const gimple_node>(GET_CONST_NODE(InstB))->bb_index;
+   const auto BBIA = GetPointer<const gimple_node>(InstA)->bb_index;
+   const auto BBIB = GetPointer<const gimple_node>(InstB)->bb_index;
 
    // Use ordered basic block to do dominance check in case the 2 instructions
    // are in the same basic block.

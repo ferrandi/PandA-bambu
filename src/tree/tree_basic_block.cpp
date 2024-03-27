@@ -83,7 +83,7 @@ bool bloc::check_function_call(const tree_nodeRef& statement, gimple_assign* ga,
       const auto ce = GetPointerS<const call_expr>(ga->op1);
       if(ce->fn->get_kind() == addr_expr_K)
       {
-         const auto fn = GetPointerS<const addr_expr>(GET_CONST_NODE(ce->fn))->op;
+         const auto fn = GetPointerS<const addr_expr>(ce->fn)->op;
          if(fn->get_kind() == function_decl_K)
          {
             called_function_id = GET_INDEX_CONST_NODE(fn);
@@ -96,7 +96,7 @@ bool bloc::check_function_call(const tree_nodeRef& statement, gimple_assign* ga,
       const auto gc = GetPointerS<gimple_call>(statement);
       if(gc->fn->get_kind() == addr_expr_K)
       {
-         const auto fn = GetPointerS<const addr_expr>(GET_CONST_NODE(gc->fn))->op;
+         const auto fn = GetPointerS<const addr_expr>(gc->fn)->op;
          if(fn->get_kind() == function_decl_K)
          {
             called_function_id = GET_INDEX_NODE(fn);

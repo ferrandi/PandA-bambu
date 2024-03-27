@@ -100,7 +100,7 @@ DesignFlowStep_Status use_counting::InternalExec()
 {
    const auto TM = AppM->get_tree_manager();
    const auto fd = GetPointerS<const function_decl>(TM->CGetTreeNode(function_id));
-   const auto sl = GetPointerS<const statement_list>(GET_CONST_NODE(fd->body));
+   const auto sl = GetPointerS<const statement_list>(fd->body);
    const auto th_debug = tree_helper::debug_level;
    tree_helper::debug_level = debug_level;
    for(const auto& bbi_bb : sl->list_of_bloc)

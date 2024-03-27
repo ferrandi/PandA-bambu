@@ -71,7 +71,7 @@
       {                                                     \
          TM->add_function(node_id, cur);                    \
       }                                                     \
-      TM->AddTreeNode(node_id, cur);                        \
+      TM->AddTreeNode(cur);                                 \
       curr_tree_node_ptr = tnn;                             \
       source_tn = tn;                                       \
       tnn->visit(this);                                     \
@@ -531,8 +531,8 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, int _mode)
       case var_decl_K:
       {
          const auto vd = GetPointerS<const var_decl>(tn);
-         if(mode >= DECLARATION && (!vd->scpe || (GET_CONST_NODE(vd->scpe)->get_kind() != translation_unit_decl_K &&
-                                                  GET_CONST_NODE(vd->scpe)->get_kind() != namespace_decl_K)))
+         if(mode >= DECLARATION && (!vd->scpe || (vd->scpe->get_kind() != translation_unit_decl_K &&
+                                                  vd->scpe->get_kind() != namespace_decl_K)))
          {
             if(vd->static_flag)
             {
@@ -545,7 +545,7 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, int _mode)
                   node_id = tn->index;
                }
                const auto new_tn = GetPointerS<var_decl>(TM->GetTreeNode(node_id));
-               new_tn->scpe = GetPointerS<const decl_node>(GET_CONST_NODE(new_tn->scpe))->scpe;
+               new_tn->scpe = GetPointerS<const decl_node>(new_tn->scpe)->scpe;
                break;
             }
             else

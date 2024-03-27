@@ -315,24 +315,24 @@ gimple_node::gimple_node(unsigned int i)
 
 void gimple_node::SetVdef(const tree_nodeRef& _vdef)
 {
-   THROW_ASSERT(!GET_CONST_PTD_NODE(_vdef) || (GET_CONST_NODE(_vdef)->get_kind() == ssa_name_K &&
-                                               GetPointerS<const ssa_name>(GET_CONST_NODE(_vdef))->virtual_flag),
+   THROW_ASSERT(!GET_CONST_PTD_NODE(_vdef) ||
+                    (_vdef->get_kind() == ssa_name_K && GetPointerS<const ssa_name>(_vdef)->virtual_flag),
                 "");
    vdef = _vdef;
 }
 
 bool gimple_node::AddVuse(const tree_nodeRef& vuse)
 {
-   THROW_ASSERT(!GET_CONST_PTD_NODE(vuse) || (GET_CONST_NODE(vuse)->get_kind() == ssa_name_K &&
-                                              GetPointerS<const ssa_name>(GET_CONST_NODE(vuse))->virtual_flag),
+   THROW_ASSERT(!GET_CONST_PTD_NODE(vuse) ||
+                    (vuse->get_kind() == ssa_name_K && GetPointerS<const ssa_name>(vuse)->virtual_flag),
                 "");
    return vuses.insert(vuse).second;
 }
 
 bool gimple_node::AddVover(const tree_nodeRef& vover)
 {
-   THROW_ASSERT(!GET_CONST_PTD_NODE(vover) || (GET_CONST_NODE(vover)->get_kind() == ssa_name_K &&
-                                               GetPointerS<const ssa_name>(GET_CONST_NODE(vover))->virtual_flag),
+   THROW_ASSERT(!GET_CONST_PTD_NODE(vover) ||
+                    (vover->get_kind() == ssa_name_K && GetPointerS<const ssa_name>(vover)->virtual_flag),
                 "");
    return vovers.insert(vover).second;
 }
@@ -1282,15 +1282,15 @@ void ssa_name::AddUseStmt(const tree_nodeRef& use_stmt)
    size_t vuse_count = 0;
    if(virtual_flag)
    {
-      const auto gn = GetPointerS<const gimple_node>(GET_CONST_NODE(use_stmt));
+      const auto gn = GetPointerS<const gimple_node>(use_stmt);
       vuse_count += static_cast<size_t>(std::count_if(gn->vuses.begin(), gn->vuses.end(),
                                                       [&](const tree_nodeRef& tn) { return tn->index == index; }));
       vuse_count += static_cast<size_t>(std::count_if(gn->vovers.begin(), gn->vovers.end(),
                                                       [&](const tree_nodeRef& tn) { return tn->index == index; }));
       vuse_count += static_cast<size_t>(gn->memuse && gn->memuse->index == index);
-      if(GET_CONST_NODE(use_stmt)->get_kind() == gimple_phi_K)
+      if(use_stmt->get_kind() == gimple_phi_K)
       {
-         const auto gp = GetPointerS<const gimple_phi>(GET_CONST_NODE(use_stmt));
+         const auto gp = GetPointerS<const gimple_phi>(use_stmt);
          vuse_count += static_cast<size_t>(
              std::count_if(gp->CGetDefEdgesList().begin(), gp->CGetDefEdgesList().end(),
                            [&](const gimple_phi::DefEdge& de) { return de.first->index == index; }));
@@ -1302,29 +1302,28 @@ void ssa_name::AddUseStmt(const tree_nodeRef& use_stmt)
    if(virtual_flag && use_stmts.count(use_stmt) > vuse_count)
    {
       std::cout << "vssa: " << ToString() << std::endl;
-      const auto gn = GetPointerS<const gimple_node>(GET_CONST_NODE(use_stmt));
+      const auto gn = GetPointerS<const gimple_node>(use_stmt);
       if(gn->vdef)
       {
-         std::cout << "vdef: " << GET_CONST_NODE(gn->vdef)->ToString() << std::endl;
+         std::cout << "vdef: " << gn->vdef->ToString() << std::endl;
       }
       for(const auto& vuse : gn->vuses)
       {
-         std::cout << "vuse: " << GET_CONST_NODE(vuse)->ToString() << std::endl;
+         std::cout << "vuse: " << vuse->ToString() << std::endl;
       }
       for(const auto& vover : gn->vovers)
       {
-         std::cout << "vover: " << GET_CONST_NODE(vover)->ToString() << std::endl;
+         std::cout << "vover: " << vover->ToString() << std::endl;
       }
       if(gn->memdef)
       {
-         std::cout << "memdef: " << GET_CONST_NODE(gn->memdef)->ToString() << std::endl;
+         std::cout << "memdef: " << gn->memdef->ToString() << std::endl;
       }
       if(gn->memuse)
       {
-         std::cout << "memuse: " << GET_CONST_NODE(gn->memuse)->ToString() << std::endl;
+         std::cout << "memuse: " << gn->memuse->ToString() << std::endl;
       }
-      THROW_UNREACHABLE("Virtual ssa used more than " + STR(vuse_count) + " time - " +
-                        GET_CONST_NODE(use_stmt)->ToString());
+      THROW_UNREACHABLE("Virtual ssa used more than " + STR(vuse_count) + " time - " + use_stmt->ToString());
    }
 #endif
 }

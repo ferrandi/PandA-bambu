@@ -54,7 +54,7 @@
    {                                                        \
       auto tnn = new tree_node_name(node_id);               \
       cur = tree_nodeRef(tnn);                              \
-      TM.AddTreeNode(node_id, cur);                         \
+      TM.AddTreeNode(cur);                                  \
       curr_tree_node_ptr = tnn;                             \
       tnn->visit(this);                                     \
       curr_tree_node_ptr = nullptr;                         \
@@ -563,7 +563,7 @@ tree_nodeRef tree_node_factory::create_tree_node(unsigned int node_id, enum kind
          {
             THROW_ERROR("Incorrect schema for identifier_node: no TOK_STRG nor TOK_OPERATOR");
          }
-         TM.AddTreeNode(node_id, cur);
+         TM.AddTreeNode(cur);
          break;
       }
       case widen_sum_expr_K:

@@ -301,7 +301,7 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string& filename) cons
    CustomUnorderedMap<unsigned int, vertex> inverse_vertex_map;
    const tree_nodeConstRef function_tree_node = AppM->get_tree_manager()->CGetTreeNode(function_id);
    const auto fd = GetPointer<const function_decl>(function_tree_node);
-   const auto sl = GetPointer<const statement_list>(GET_CONST_NODE(fd->body));
+   const auto sl = GetPointer<const statement_list>(fd->body);
    /// add vertices
    for(const auto& [bbi, bb] : sl->list_of_bloc)
    {

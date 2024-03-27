@@ -138,7 +138,7 @@ DesignFlowStep_Status FixVdef::InternalExec()
    const auto tn = TM->CGetTreeNode(function_id);
    const auto fd = GetPointer<const function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
-   const auto sl = GetPointer<const statement_list>(GET_CONST_NODE(fd->body));
+   const auto sl = GetPointer<const statement_list>(fd->body);
    THROW_ASSERT(sl, "Body is not a statement_list");
    THROW_ASSERT(GetPointer<const HLS_manager>(AppM), "unexpected condition");
    const auto isSingleMem = GetPointerS<const HLS_manager>(AppM)->IsSingleWriteMemory();

@@ -434,7 +434,7 @@ void VcdSignalSelection::SingleStepPropagateAddrSsa(const tree_nodeRef& curr_tn)
          if(rhs_kind == view_convert_expr_K)
          {
             const auto* vc = GetPointer<const view_convert_expr>(rhs);
-            const auto vc_kind = GET_CONST_NODE(tree_helper::CGetType(vc->op))->get_kind();
+            const auto vc_kind = tree_helper::CGetType(vc->op)->get_kind();
             if(vc_kind == record_type_K || vc_kind == union_type_K)
             {
                rhs_is_load_candidate = true;

@@ -105,7 +105,7 @@ DesignFlowStep_Status parm_decl_taken_address_fix::InternalExec()
    const auto* sl = GetPointer<const statement_list>(fd->body);
    THROW_ASSERT(sl, "Body is not a statement_list");
    const std::string fu_name = tree_helper::name_function(TM, function_id);
-   THROW_ASSERT(!GetPointer<const function_type>(GET_CONST_NODE(tree_helper::CGetType(tn)))->varargs_flag,
+   THROW_ASSERT(!GetPointer<const function_type>(tree_helper::CGetType(tn))->varargs_flag,
                 "function " + fu_name + " is varargs");
    // compute the set of parm_decl for which an address is taken
    CustomOrderedSet<unsigned int> parm_decl_addr;

@@ -1572,7 +1572,7 @@ DesignFlowStep_Status allocation::InternalExec()
          if(current_op == ASSIGN)
          {
             const auto& modify_node = g->CGetOpNodeInfo(v)->node;
-            const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
+            const auto gms = GetPointerS<const gimple_assign>(modify_node);
             const auto left_type = tree_helper::CGetType(gms->op0);
             if(tree_helper::IsComplexType(left_type))
             {
@@ -1610,7 +1610,7 @@ DesignFlowStep_Status allocation::InternalExec()
          else if(current_op == ASSERT_EXPR)
          {
             const auto& modify_node = g->CGetOpNodeInfo(v)->node;
-            const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
+            const auto gms = GetPointerS<const gimple_assign>(modify_node);
             const auto left_type = tree_helper::CGetType(gms->op0);
             if(tree_helper::IsSignedIntegerType(left_type))
             {
@@ -1628,8 +1628,8 @@ DesignFlowStep_Status allocation::InternalExec()
          else if(current_op == EXTRACT_BIT_EXPR)
          {
             const auto& modify_node = g->CGetOpNodeInfo(v)->node;
-            const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
-            const auto ebe = GetPointerS<const extract_bit_expr>(GET_CONST_NODE(gms->op1));
+            const auto gms = GetPointerS<const gimple_assign>(modify_node);
+            const auto ebe = GetPointerS<const extract_bit_expr>(gms->op1);
             const auto intOP0 = tree_helper::IsSignedIntegerType(ebe->op0);
             if(intOP0)
             {
@@ -1651,8 +1651,8 @@ DesignFlowStep_Status allocation::InternalExec()
          else if(current_op == NOP_EXPR)
          {
             const auto modify_node = g->CGetOpNodeInfo(v)->node;
-            const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
-            const auto ne = GetPointerS<const nop_expr>(GET_CONST_NODE(gms->op1));
+            const auto gms = GetPointerS<const gimple_assign>(modify_node);
+            const auto ne = GetPointerS<const nop_expr>(gms->op1);
             const auto left_type = tree_helper::CGetType(gms->op0);
             const auto right_type = tree_helper::CGetType(ne->op);
 
@@ -1758,8 +1758,8 @@ DesignFlowStep_Status allocation::InternalExec()
          else if(current_op == CONVERT_EXPR)
          {
             const auto modify_node = g->CGetOpNodeInfo(v)->node;
-            const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
-            const auto ce = GetPointerS<const convert_expr>(GET_CONST_NODE(gms->op1));
+            const auto gms = GetPointerS<const gimple_assign>(modify_node);
+            const auto ce = GetPointerS<const convert_expr>(gms->op1);
             const auto left_type = tree_helper::CGetType(gms->op0);
             const auto right_type = tree_helper::CGetType(ce->op);
 
@@ -1841,8 +1841,8 @@ DesignFlowStep_Status allocation::InternalExec()
          else if(current_op == VIEW_CONVERT_EXPR)
          {
             const auto& modify_node = g->CGetOpNodeInfo(v)->node;
-            const auto gms = GetPointerS<const gimple_assign>(GET_CONST_NODE(modify_node));
-            const auto vce = GetPointerS<const view_convert_expr>(GET_CONST_NODE(gms->op1));
+            const auto gms = GetPointerS<const gimple_assign>(modify_node);
+            const auto vce = GetPointerS<const view_convert_expr>(gms->op1);
             const auto right_type = tree_helper::CGetType(vce->op);
             if(tree_helper::IsSignedIntegerType(right_type))
             {

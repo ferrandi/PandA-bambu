@@ -81,7 +81,7 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, structural
       THROW_ASSERT(gc->args.size() >= 2, "Expected at least two arguments for the builtin wait call.");
       const auto called_addr = gc->args.at(0);
       const auto called_hasreturn = gc->args.at(1);
-      THROW_ASSERT(GET_CONST_NODE(called_hasreturn)->get_kind() == integer_cst_K, "");
+      THROW_ASSERT(called_hasreturn->get_kind() == integer_cst_K, "");
       if(tree_helper::GetConstValue(called_hasreturn))
       {
          const auto fpointer_type = tree_helper::CGetType(called_addr);

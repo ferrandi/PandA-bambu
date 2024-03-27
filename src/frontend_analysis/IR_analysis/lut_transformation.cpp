@@ -149,7 +149,7 @@ bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int m
       return false;
    }
    bool is_simple_case = [&]() -> bool {
-      if(GET_CONST_NODE(be->op1)->get_kind() != integer_cst_K)
+      if(be->op1->get_kind() != integer_cst_K)
       {
          return false;
       }
@@ -755,7 +755,7 @@ tree_nodeRef lut_transformation::CreateBitSelectionNodeOrCast(const tree_nodeRef
        tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType),
                                     TM->CreateUniqueIntegerCst(1, boolType), eb_op, function_id, srcp_default);
    prev_stmts_to_add.push_back(eb_ga);
-   return GetPointer<const gimple_assign>(GET_CONST_NODE(eb_ga))->op0;
+   return GetPointer<const gimple_assign>(eb_ga)->op0;
 }
 
 static klut_network_fn_v GetIntegerNodeCreationFunction(enum kind code)
@@ -1885,7 +1885,7 @@ DesignFlowStep_Status lut_transformation::InternalExec()
    }
    const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function_id));
    THROW_ASSERT(fd && fd->body, "Node is not a function or it has not a body");
-   const auto sl = GetPointer<const statement_list>(GET_CONST_NODE(fd->body));
+   const auto sl = GetPointer<const statement_list>(fd->body);
    THROW_ASSERT(sl, "Body is not a statement list");
 
    bool modified = false;

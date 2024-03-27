@@ -166,8 +166,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
       }
       /// NOTE: here cfg_bb_graph is correct
       if(boost::out_degree(basic_block, *cfg_bb_graph) == 2 &&
-         GET_CONST_NODE(cfg_bb_graph->CGetBBNodeInfo(basic_block)->block->CGetStmtList().back())->get_kind() ==
-             gimple_cond_K)
+         cfg_bb_graph->CGetBBNodeInfo(basic_block)->block->CGetStmtList().back()->get_kind() == gimple_cond_K)
       {
          OutEdgeIterator oe, oe_end;
          vertex true_vertex = NULL_VERTEX, false_vertex = NULL_VERTEX;
@@ -196,13 +195,13 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
          {
             std::swap(bb_node_info->true_edge, bb_node_info->false_edge);
             const auto last_stmt = bb_node_info->CGetStmtList().back();
-            const auto gc = GetPointer<const gimple_cond>(GET_CONST_NODE(last_stmt));
+            const auto gc = GetPointer<const gimple_cond>(last_stmt);
             THROW_ASSERT(gc, "");
             const auto srcp = gc->include_name + ":" + STR(gc->line_number) + ":" + STR(gc->column_number);
             const auto not_cond = tree_man->CreateNotExpr(gc->op0, bb_node_info, function_id);
             const auto ga_cond = tree_man->CreateGimpleAssign(tree_helper::CGetType(gc->op0), nullptr, nullptr,
                                                               not_cond, function_id, srcp);
-            const auto new_cond = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_cond))->op0;
+            const auto new_cond = GetPointerS<const gimple_assign>(ga_cond)->op0;
             bb_node_info->PushBefore(ga_cond, last_stmt, AppM);
             TM->ReplaceTreeNode(last_stmt, gc->op0, new_cond);
             bb_modified = true;
@@ -302,7 +301,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
             const auto ga_cond = tree_man->CreateGimpleAssign(tree_helper::CGetType(gc->op0), nullptr, nullptr,
                                                               not_cond, function_id, srcp);
             new_block->PushBack(ga_cond, AppM);
-            const auto new_cond = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_cond))->op0;
+            const auto new_cond = GetPointerS<const gimple_assign>(ga_cond)->op0;
             const auto new_tree_node = tree_man->create_gimple_cond(new_cond, function_id, srcp);
             new_block->PushBack(new_tree_node, AppM);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Fixed basic blocks connections");
@@ -334,14 +333,14 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                const auto gimple_phi_id = TM->new_tree_node_id();
                gimple_phi_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                gimple_phi_schema[TOK(TOK_SCPE)] = STR(function_id);
-               gimple_phi_schema[TOK(TOK_TYPE)] = STR(GET_CONST_NODE(type));
+               gimple_phi_schema[TOK(TOK_TYPE)] = STR(type);
                gimple_phi_schema[TOK(TOK_RES)] = STR(ssa_node_nid);
                TM->create_tree_node(gimple_phi_id, gimple_phi_K, gimple_phi_schema);
                auto new_gp = GetPointer<gimple_phi>(TM->CGetTreeNode(gimple_phi_id));
                new_gp->SetSSAUsesComputed();
 
                const auto zero = [&]() -> tree_nodeRef {
-                  if(GET_CONST_NODE(type)->get_kind() == integer_type_K)
+                  if(type->get_kind() == integer_type_K)
                   {
                      return TM->CreateUniqueIntegerCst(0, type);
                   }
@@ -387,7 +386,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
       else if(boost::out_degree(basic_block, *cfg_bb_graph) >= 2)
       {
 #if HAVE_ASSERTS
-         const auto last_stmt = GET_CONST_NODE(cfg_bb_graph->CGetBBNodeInfo(basic_block)->block->CGetStmtList().back());
+         const auto last_stmt = cfg_bb_graph->CGetBBNodeInfo(basic_block)->block->CGetStmtList().back();
          const auto gmwi = GetPointer<const gimple_multi_way_if>(last_stmt);
          THROW_ASSERT(gmwi, last_stmt->get_kind_text());
          vertex previous_basic_block = NULL_VERTEX;

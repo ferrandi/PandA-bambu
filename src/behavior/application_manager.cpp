@@ -188,9 +188,8 @@ unsigned int application_manager::get_produced_value(const tree_nodeRef& tn) con
    return node ? GET_INDEX_CONST_NODE(node) : 0;
 }
 
-tree_nodeConstRef application_manager::GetProducedValue(const tree_nodeConstRef& _tn) const
+tree_nodeConstRef application_manager::GetProducedValue(const tree_nodeConstRef& tn) const
 {
-   const auto tn = _tn->get_kind() == tree_reindex_K ? GET_CONST_NODE(_tn) : _tn;
    switch(tn->get_kind())
    {
       case gimple_while_K:
@@ -226,7 +225,7 @@ tree_nodeConstRef application_manager::GetProducedValue(const tree_nodeConstRef&
       case gimple_assign_K:
       {
          const auto gm = GetPointerS<const gimple_assign>(tn);
-         const auto op0 = GET_CONST_NODE(gm->op0);
+         const auto op0 = gm->op0;
          if(gm->init_assignment || gm->clobber)
          {
             break;
@@ -266,7 +265,7 @@ tree_nodeConstRef application_manager::GetProducedValue(const tree_nodeConstRef&
          const auto ga = GetPointerS<const gimple_asm>(tn);
          if(ga->out)
          {
-            const auto tl = GetPointerS<const tree_list>(GET_CONST_NODE(ga->out));
+            const auto tl = GetPointerS<const tree_list>(ga->out);
             /// only the first output and so only single output gimple_asm are supported
             if(tl->valu)
             {
@@ -355,17 +354,16 @@ void application_manager::RegisterTransformation(const std::string&
                                                  ,
                                                  const tree_nodeConstRef
 #ifndef NDEBUG
-                                                     new_tn
+                                                     tn
 #endif
 )
 {
 #ifndef NDEBUG
    std::string tn_str = "";
-   if(new_tn)
+   if(tn)
    {
-      const auto tn = new_tn->get_kind() == tree_reindex_K ? GET_CONST_NODE(new_tn) : new_tn;
       tn_str = tn->get_kind() == function_decl_K ?
-                   ("@" + STR(new_tn->index) +
+                   ("@" + STR(tn->index) +
                     tree_helper::print_function_name(get_tree_manager(), GetPointerS<const function_decl>(tn))) :
                    tn->ToString();
    }

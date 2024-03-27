@@ -441,7 +441,7 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
       /// Build the map between parameter name and index type
       CustomMap<std::string, unsigned int> parameter_to_type;
       THROW_ASSERT(function_node, "Function " + top_function_name + " not found in tree");
-      const auto fd = GetPointer<const function_decl>(GET_CONST_NODE(function_node));
+      const auto fd = GetPointer<const function_decl>(function_node);
       for(const auto& arg : fd->list_of_args)
       {
          const auto pd = GetPointer<const parm_decl>(arg);

@@ -387,7 +387,7 @@ void memory_allocation::finalize_memory_allocation()
                !HLSMgr->Rmem->is_private_memory(var->index) && parameters->isOption(OPT_expose_globals) &&
                parameters->getOption<bool>(OPT_expose_globals))
             {
-               const auto vd = GetPointer<const var_decl>(GET_CONST_NODE(var));
+               const auto vd = GetPointer<const var_decl>(var);
                if(vd && (((!vd->scpe || vd->scpe->get_kind() == translation_unit_decl_K) && !vd->static_flag) ||
                          tree_helper::IsVolatile(var) || call_graph_manager->ExistsAddressedFunction()))
                {
@@ -438,13 +438,13 @@ void memory_allocation::finalize_memory_allocation()
                   const auto var_node = TreeM->CGetTreeNode(var);
                   const auto type_node = tree_helper::CGetType(var_node);
                   tree_nodeRef type_node_ptd;
-                  if(GET_CONST_NODE(type_node)->get_kind() == pointer_type_K)
+                  if(type_node->get_kind() == pointer_type_K)
                   {
-                     type_node_ptd = GetPointerS<const pointer_type>(GET_CONST_NODE(type_node))->ptd;
+                     type_node_ptd = GetPointerS<const pointer_type>(type_node)->ptd;
                   }
-                  else if(GET_CONST_NODE(type_node)->get_kind() == reference_type_K)
+                  else if(type_node->get_kind() == reference_type_K)
                   {
-                     type_node_ptd = GetPointerS<const reference_type>(GET_CONST_NODE(type_node))->refd;
+                     type_node_ptd = GetPointerS<const reference_type>(type_node)->refd;
                   }
                   else
                   {

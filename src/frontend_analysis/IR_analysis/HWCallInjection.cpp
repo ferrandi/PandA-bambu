@@ -106,25 +106,19 @@ DesignFlowStep_Status HWCallInjection::InternalExec()
    THROW_ASSERT(sl, "Body is not a statement_list");
 
    const auto isHardwareCall = [&](const tree_nodeRef& expr) -> bool {
-      THROW_ASSERT(expr->get_kind() != tree_reindex_K, "");
       tree_nodeRef FD;
       if(expr->get_kind() == gimple_call_K)
       {
          const auto GC = GetPointerS<gimple_call>(expr);
-         FD = GetPointer<const addr_expr>(GET_CONST_NODE(GC->fn)) ?
-                  GetPointerS<const addr_expr>(GET_CONST_NODE(GC->fn))->op :
-                  GC->fn;
+         FD = GetPointer<const addr_expr>(GC->fn) ? GetPointerS<const addr_expr>(GC->fn)->op : GC->fn;
       }
       else if(expr->get_kind() == gimple_assign_K)
       {
          const auto GA = GetPointerS<const gimple_assign>(expr);
-         if(GET_CONST_NODE(GA->op1)->get_kind() == call_expr_K ||
-            GET_CONST_NODE(GA->op1)->get_kind() == aggr_init_expr_K)
+         if(GA->op1->get_kind() == call_expr_K || GA->op1->get_kind() == aggr_init_expr_K)
          {
-            const auto CE = GetPointerS<const call_expr>(GET_CONST_NODE(GA->op1));
-            FD = GetPointer<const addr_expr>(GET_CONST_NODE(CE->fn)) ?
-                     GetPointerS<const addr_expr>(GET_CONST_NODE(CE->fn))->op :
-                     CE->fn;
+            const auto CE = GetPointerS<const call_expr>(GA->op1);
+            FD = GetPointer<const addr_expr>(CE->fn) ? GetPointerS<const addr_expr>(CE->fn)->op : CE->fn;
          }
       }
 
@@ -132,12 +126,12 @@ DesignFlowStep_Status HWCallInjection::InternalExec()
       bool result = false;
       if(FD)
       {
-         if(GET_CONST_NODE(FD)->get_kind() == function_decl_K)
+         if(FD->get_kind() == function_decl_K)
          {
-            const auto FDPtr = GetPointerS<const function_decl>(GET_CONST_NODE(FD));
+            const auto FDPtr = GetPointerS<const function_decl>(FD);
             result = FDPtr->hwcall_flag;
          }
-         else if(GET_CONST_NODE(FD)->get_kind() == ssa_name_K)
+         else if(FD->get_kind() == ssa_name_K)
          {
             // This is the case for function pointers call.
             result = true;
@@ -265,7 +259,7 @@ void HWCallInjection::buildBuiltinCall(const blocRef& block, const tree_nodeRef&
       const auto GA = GetPointerS<gimple_assign>(stmt);
       if(GA->op1->get_kind() == call_expr_K || GA->op1->get_kind() == aggr_init_expr_K)
       {
-         const auto CE = GetPointerS<const call_expr>(GET_CONST_NODE(GA->op1));
+         const auto CE = GetPointerS<const call_expr>(GA->op1);
          builtin_call->AddArg(CE->fn);
 
          const auto has_return = TM->CreateUniqueIntegerCst(1, IRman->GetSignedIntegerType());
@@ -276,22 +270,22 @@ void HWCallInjection::buildBuiltinCall(const blocRef& block, const tree_nodeRef&
             builtin_call->AddArg(arg);
          }
 
-         if(const auto ssaRet = GetPointer<const ssa_name>(GET_CONST_NODE(GA->op0)))
+         if(const auto ssaRet = GetPointer<const ssa_name>(GA->op0))
          {
             tree_nodeRef ret_var_type, ret_var_size;
             unsigned int ret_var_algn;
             if(ssaRet->type)
             {
                ret_var_type = ssaRet->type;
-               ret_var_size = GetPointerS<const type_node>(GET_CONST_NODE(ssaRet->type))->size;
-               ret_var_algn = GetPointerS<const type_node>(GET_CONST_NODE(ssaRet->type))->algn;
+               ret_var_size = GetPointerS<const type_node>(ssaRet->type)->size;
+               ret_var_algn = GetPointerS<const type_node>(ssaRet->type)->algn;
             }
             else
             {
-               const auto vd = GetPointerS<const var_decl>(GET_CONST_NODE(ssaRet->var));
+               const auto vd = GetPointerS<const var_decl>(ssaRet->var);
                ret_var_type = vd->type;
-               ret_var_size = GetPointerS<const type_node>(GET_CONST_NODE(vd->type))->size;
-               ret_var_algn = GetPointerS<const type_node>(GET_CONST_NODE(vd->type))->algn;
+               ret_var_size = GetPointerS<const type_node>(vd->type)->size;
+               ret_var_algn = GetPointerS<const type_node>(vd->type)->algn;
             }
             retVar = IRman->create_var_decl(
                 IRman->create_identifier_node("__return_value"), ret_var_type, GA->scpe, ret_var_size, nullptr, nullptr,
