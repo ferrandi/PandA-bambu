@@ -460,7 +460,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                            if(ce->fn->get_kind() == addr_expr_K)
                            {
                               const auto ae = GetPointerS<const addr_expr>(ce->fn);
-                              const auto fu_decl_node = GET_CONST_NODE(ae->op);
+                              const auto fu_decl_node = ae->op;
                               THROW_ASSERT(fu_decl_node->get_kind() == function_decl_K,
                                            "node  " + STR(fu_decl_node) + " is not function_decl but " +
                                                fu_decl_node->get_kind_text());
@@ -1111,16 +1111,16 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          const function_decl* fdCalled = nullptr;
          if(stmt_kind == gimple_assign_K)
          {
-            const auto ga = GetPointerS<const gimple_assign>(GET_CONST_NODE(*stmt));
-            const auto rhs_kind = GET_CONST_NODE(ga->op1)->get_kind();
+            const auto ga = GetPointerS<const gimple_assign>(*stmt);
+            const auto rhs_kind = ga->op1->get_kind();
             if(rhs_kind == call_expr_K || rhs_kind == aggr_init_expr_K)
             {
-               const auto ce = GetPointerS<const call_expr>(GET_CONST_NODE(ga->op1));
-               if(GET_CONST_NODE(ce->fn)->get_kind() == addr_expr_K)
+               const auto ce = GetPointerS<const call_expr>(ga->op1);
+               if(ce->fn->get_kind() == addr_expr_K)
                {
-                  const auto addr_node = GET_CONST_NODE(ce->fn);
+                  const auto addr_node = ce->fn;
                   const auto ae = GetPointerS<const addr_expr>(addr_node);
-                  const auto fu_decl_node = GET_CONST_NODE(ae->op);
+                  const auto fu_decl_node = ae->op;
                   THROW_ASSERT(fu_decl_node->get_kind() == function_decl_K, "node  " + STR(fu_decl_node) +
                                                                                 " is not function_decl but " +
                                                                                 fu_decl_node->get_kind_text());
@@ -1130,17 +1130,17 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          }
          else if(stmt_kind == gimple_call_K)
          {
-            const auto gc = GetPointerS<const gimple_call>(GET_CONST_NODE(*stmt));
-            const auto op_kind = GET_CONST_NODE(gc->fn)->get_kind();
+            const auto gc = GetPointerS<const gimple_call>(*stmt);
+            const auto op_kind = gc->fn->get_kind();
             if(op_kind == addr_expr_K)
             {
-               const auto ue = GetPointerS<const unary_expr>(GET_CONST_NODE(gc->fn));
-               fdCalled = GetPointer<const function_decl>(GET_CONST_NODE(ue->op));
+               const auto ue = GetPointerS<const unary_expr>(gc->fn);
+               fdCalled = GetPointer<const function_decl>(ue->op);
             }
             else if(op_kind == obj_type_ref_K)
             {
                const auto obj_ref = tree_helper::find_obj_type_ref_function(gc->fn);
-               fdCalled = GetPointer<const function_decl>(GET_CONST_NODE(obj_ref));
+               fdCalled = GetPointer<const function_decl>(obj_ref);
             }
          }
          if(fdCalled)
@@ -1201,9 +1201,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
       for(auto stmt = stmt_list.rbegin(); stmt != stmt_list.rend(); stmt++)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + (*stmt)->ToString());
-         const auto gn = GetPointerS<const gimple_node>(GET_CONST_NODE(*stmt));
+         const auto gn = GetPointerS<const gimple_node>(*stmt);
 
-         if(!gn->vuses.empty() && GET_CONST_NODE(*stmt)->get_kind() != gimple_return_K)
+         if(!gn->vuses.empty() && (*stmt)->get_kind() != gimple_return_K)
          {
             fd->reading_memory = true;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- reading_memory (1)");
@@ -1213,17 +1213,16 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             fd->writing_memory = true;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- writing_memory (3)");
          }
-         else if(const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(*stmt)))
+         else if(const auto ga = GetPointer<const gimple_assign>(*stmt))
          {
-            if(GET_CONST_NODE(ga->op1)->get_kind() == call_expr_K ||
-               GET_CONST_NODE(ga->op1)->get_kind() == aggr_init_expr_K)
+            if(ga->op1->get_kind() == call_expr_K || ga->op1->get_kind() == aggr_init_expr_K)
             {
-               const auto ce = GetPointerS<const call_expr>(GET_CONST_NODE(ga->op1));
-               if(GET_CONST_NODE(ce->fn)->get_kind() == addr_expr_K)
+               const auto ce = GetPointerS<const call_expr>(ga->op1);
+               if(ce->fn->get_kind() == addr_expr_K)
                {
-                  const auto addr_node = GET_CONST_NODE(ce->fn);
+                  const auto addr_node = ce->fn;
                   const auto ae = GetPointerS<const addr_expr>(addr_node);
-                  const auto fu_decl_node = GET_CONST_NODE(ae->op);
+                  const auto fu_decl_node = ae->op;
                   THROW_ASSERT(fu_decl_node->get_kind() == function_decl_K, "node  " + STR(fu_decl_node) +
                                                                                 " is not function_decl but " +
                                                                                 fu_decl_node->get_kind_text());
@@ -1247,18 +1246,18 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                }
             }
          }
-         else if(const auto gc = GetPointer<const gimple_call>(GET_CONST_NODE(*stmt)))
+         else if(const auto gc = GetPointer<const gimple_call>(*stmt))
          {
             const function_decl* fdCalled = nullptr;
-            if(GET_CONST_NODE(gc->fn)->get_kind() == addr_expr_K)
+            if(gc->fn->get_kind() == addr_expr_K)
             {
-               const auto ue = GetPointerS<const unary_expr>(GET_CONST_NODE(gc->fn));
-               fdCalled = GetPointer<const function_decl>(GET_CONST_NODE(ue->op));
+               const auto ue = GetPointerS<const unary_expr>(gc->fn);
+               fdCalled = GetPointer<const function_decl>(ue->op);
             }
-            else if(GET_CONST_NODE(gc->fn)->get_kind() == obj_type_ref_K)
+            else if(gc->fn->get_kind() == obj_type_ref_K)
             {
                const auto obj_ref = tree_helper::find_obj_type_ref_function(gc->fn);
-               fdCalled = GetPointerS<const function_decl>(GET_CONST_NODE(gc->fn));
+               fdCalled = GetPointerS<const function_decl>(gc->fn);
             }
             if(fdCalled)
             {
@@ -1280,7 +1279,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- reading_memory+writing_memory (10)");
             }
          }
-         else if(GetPointer<const gimple_asm>(GET_CONST_NODE(*stmt)))
+         else if(GetPointer<const gimple_asm>(*stmt))
          {
             fd->writing_memory = true; /// more conservative than really needed
             fd->reading_memory = true;

@@ -2262,8 +2262,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                      const auto call = TreeM->CGetTreeNode(index);
                      const auto& calledFunction = GetPointerS<const gimple_call>(call)->args[0];
                      const auto& hasreturn_node = GetPointerS<const gimple_call>(call)->args[1];
-                     const auto hasreturn_value = tree_helper::get_integer_cst_value(
-                         GetPointerS<const integer_cst>(GET_CONST_NODE(hasreturn_node)));
+                     const auto hasreturn_value =
+                         tree_helper::get_integer_cst_value(GetPointerS<const integer_cst>(hasreturn_node));
                      const auto addrExpr = calledFunction;
                      const auto functionType = getFunctionType(addrExpr);
                      const auto alignment = HLSMgr->Rmem->get_parameter_alignment();
@@ -2272,8 +2272,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                      auto paramList = GetPointerS<const function_type>(functionType)->prms;
                      while(paramList)
                      {
-                        const auto node = GetPointerS<const tree_list>(GET_CONST_NODE(paramList));
-                        if(GET_CONST_NODE(node->valu)->get_kind() != void_type_K)
+                        const auto node = GetPointerS<const tree_list>(paramList);
+                        if(node->valu->get_kind() != void_type_K)
                         {
                            const auto str_address = convert_to_binary(address, HLSMgr->get_address_bitsize());
                            parameterAddressFile << str_address << "\n";
@@ -2283,7 +2283,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                         paramList = node->chan;
                      }
                      const auto return_type = GetPointerS<const function_type>(functionType)->retn;
-                     if(return_type && GET_CONST_NODE(return_type)->get_kind() != void_type_K && hasreturn_value)
+                     if(return_type && return_type->get_kind() != void_type_K && hasreturn_value)
                      {
                         const auto str_address = convert_to_binary(address, HLSMgr->get_address_bitsize());
                         parameterAddressFile << str_address << "\n";
@@ -2490,12 +2490,12 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
 
    const auto ar_node = TM->CGetTreeNode(ar);
    tree_nodeRef init_node;
-   const auto vd = GetPointer<const var_decl>(GET_CONST_NODE(ar_node));
+   const auto vd = GetPointer<const var_decl>(ar_node);
    if(vd && vd->init)
    {
       init_node = vd->init;
    }
-   else if(GetPointer<const string_cst>(GET_CONST_NODE(ar_node)))
+   else if(GetPointer<const string_cst>(ar_node))
    {
       init_node = ar_node;
    }
@@ -2509,10 +2509,10 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
       vec_size = std::accumulate(dims.begin(), dims.end(), 1ULL,
                                  [](unsigned long long a, unsigned long long b) { return a * b; });
    }
-   else if(GetPointer<const integer_type>(GET_CONST_NODE(array_type_node)) ||
-           tree_helper::IsRealType(array_type_node) || tree_helper::IsEnumType(array_type_node) ||
-           tree_helper::IsPointerType(array_type_node) || tree_helper::IsStructType(array_type_node) ||
-           tree_helper::IsUnionType(array_type_node) || tree_helper::IsComplexType(array_type_node))
+   else if(GetPointer<const integer_type>(array_type_node) || tree_helper::IsRealType(array_type_node) ||
+           tree_helper::IsEnumType(array_type_node) || tree_helper::IsPointerType(array_type_node) ||
+           tree_helper::IsStructType(array_type_node) || tree_helper::IsUnionType(array_type_node) ||
+           tree_helper::IsComplexType(array_type_node))
    {
       elts_size = tree_helper::SizeAlloc(array_type_node);
       vec_size = 1;
@@ -2531,7 +2531,7 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
    }
    else
    {
-      THROW_ERROR("Type not supported: " + GET_CONST_NODE(array_type_node)->get_kind_text());
+      THROW_ERROR("Type not supported: " + array_type_node->get_kind_text());
    }
    THROW_ASSERT(elts_size && vec_size, "");
    if(is_sds)
@@ -2782,7 +2782,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                             std::vector<std::string>& init_file, const memoryRef mem, unsigned long long element_align)
 {
    std::string trimmed_value;
-   const auto init_node = GET_CONST_NODE(_init_node);
+   const auto init_node = _init_node;
    switch(init_node->get_kind())
    {
       case real_cst_K:
@@ -3005,7 +3005,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             }
          }
          const auto type_n = tree_helper::CGetType(var_node);
-         if(GetPointer<const array_type>(GET_CONST_NODE(type_n)))
+         if(GetPointer<const array_type>(type_n))
          {
             unsigned long long size_of_data;
             std::vector<unsigned long long> dims;
@@ -3078,7 +3078,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          init_file.push_back(std::string(elmt_bitsize, '0'));
 
          const auto type_n = tree_helper::CGetType(var_node);
-         THROW_ASSERT(GetPointer<const array_type>(GET_CONST_NODE(type_n)), "expected an array_type");
+         THROW_ASSERT(GetPointer<const array_type>(type_n), "expected an array_type");
          dims.clear();
          unsigned long long size_of_data;
          tree_helper::get_array_dim_and_bitsize(TreeM, type_n->index, dims, size_of_data);
@@ -3217,14 +3217,14 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                   {
                      THROW_ASSERT(tree_helper::GetConstValue(mr->op1) >= 0, "");
                      const auto offset = static_cast<unsigned long long>(tree_helper::GetConstValue(mr->op1));
-                     if(GET_CONST_NODE(mr->op0)->get_kind() == var_decl_K)
+                     if(mr->op0->get_kind() == var_decl_K)
                      {
                         ull_value = mem->get_base_address(GET_INDEX_CONST_NODE(mr->op0), 0) + offset;
                      }
-                     else if(GET_CONST_NODE(mr->op0)->get_kind() == addr_expr_K)
+                     else if(mr->op0->get_kind() == addr_expr_K)
                      {
-                        const auto base = GetPointerS<addr_expr>(GET_CONST_NODE(mr->op0))->op;
-                        if(GET_CONST_NODE(base)->get_kind() == var_decl_K)
+                        const auto base = GetPointerS<addr_expr>(mr->op0)->op;
+                        if(base->get_kind() == var_decl_K)
                         {
                            ull_value = mem->get_base_address(GET_INDEX_CONST_NODE(base), 0) + offset;
                         }

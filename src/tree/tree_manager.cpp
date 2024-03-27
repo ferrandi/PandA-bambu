@@ -123,17 +123,16 @@ unsigned int tree_manager::get_implementation_node(unsigned int decl_node) const
    }
 }
 
-void tree_manager::AddTreeNode(unsigned int i, const tree_nodeRef& curr)
+void tree_manager::AddTreeNode(const tree_nodeRef& curr)
 {
-   THROW_ASSERT(i > 0, "Expected a positive index");
-   THROW_ASSERT(curr, "Invalid tree node: " + STR(i));
-   THROW_ASSERT(curr->get_kind() != tree_reindex_K, "No no no, va in mona... Cortesia, simpatia...");
-   // THROW_ASSERT(i == curr->index, "Index is " + STR(i) + " while tree_node index is " + STR(curr->index));
-   if(i >= last_node_id)
+   THROW_ASSERT(curr && curr->get_kind() != tree_reindex_K,
+                "Invalid tree node: " + (curr ? curr->get_kind_text() : "nullptr"));
+   THROW_ASSERT(curr->index > 0, "Expected a positive index.");
+   if(curr->index >= last_node_id)
    {
-      last_node_id = i + 1;
+      last_node_id = curr->index + 1;
    }
-   tree_nodes[i] = curr;
+   tree_nodes[curr->index] = curr;
 }
 
 tree_nodeRef tree_manager::GetTreeReindex(unsigned int index)
@@ -190,7 +189,7 @@ tree_nodeRef tree_manager::GetFunction(const std::string& function_name) const
    for(const auto& [idx, fdecl] : function_decl_nodes)
    {
       const auto fd = GetPointerS<const function_decl>(fdecl);
-      const auto id_name = GET_CONST_NODE(fd->name);
+      const auto id_name = fd->name;
       std::string simple_name, mangled_name;
       if(id_name->get_kind() == identifier_node_K)
       {
@@ -461,10 +460,9 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
             {
                GetPointerS<ssa_name>(new_node)->SetDefStmt(stmt);
             }
-            if(gp && gp->res->index == old_node->index && !GetPointer<cst_node>(GET_CONST_NODE(new_node)))
+            if(gp && gp->res->index == old_node->index && !GetPointer<cst_node>(new_node))
             {
-               THROW_ASSERT(GET_CONST_NODE(new_node)->get_kind() == ssa_name_K,
-                            GET_CONST_NODE(new_node)->get_kind_text());
+               THROW_ASSERT(new_node->get_kind() == ssa_name_K, new_node->get_kind_text());
                INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param),
                               "---Setting " + STR(stmt) + " as new define statement of " + STR(new_node));
                GetPointerS<ssa_name>(new_node)->SetDefStmt(stmt);

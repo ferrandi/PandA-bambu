@@ -1466,8 +1466,8 @@ void CWriter::DeclareType(const tree_nodeConstRef& varType, const BehavioralHelp
 
    // Check that the variable really needs the declaration of a new type
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Declaration of type " + type_name + " (" + GET_CONST_NODE(varType)->ToString() + " - " +
-                      GET_CONST_NODE(real_var_type)->ToString() + ") in function " + routine_name);
+                  "-->Declaration of type " + type_name + " (" + varType->ToString() + " - " +
+                      real_var_type->ToString() + ") in function " + routine_name);
 
    if(!globally_declared_types.count(type_name) && !locally_declared_types.count(type_name))
    {
@@ -1502,7 +1502,7 @@ void CWriter::DeclareType(const tree_nodeConstRef& varType, const BehavioralHelp
          DeclareType(type_to_be_declared, BH, locally_declared_types);
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Declared type " + GET_CONST_NODE(varType)->ToString());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Declared type " + varType->ToString());
 }
 
 void CWriter::DeclareVariable(const tree_nodeConstRef& curVar, CustomSet<unsigned int>& already_declared_variables,
@@ -1539,7 +1539,7 @@ void CWriter::DeclareVariable(const tree_nodeConstRef& curVar, CustomSet<unsigne
          indented_output_stream->Append("//declaring variable " + STR(curVar) + " - type: " + STR(variable_type) +
                                         "\n");
       }
-      if(GetPointer<const function_decl>(GET_CONST_NODE(curVar)))
+      if(GetPointer<const function_decl>(curVar))
       {
          instrWriter->declareFunction(curVar->index);
          indented_output_stream->Append(";\n");

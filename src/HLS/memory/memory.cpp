@@ -159,7 +159,7 @@ unsigned long long int memory::compute_next_base_address(unsigned long long int 
 
    // The __builtin_wait_call associate an address to the call site to
    // identify it.  For this case we are allocating a word.
-   if(GetPointer<const gimple_call>(GET_CONST_NODE(node)))
+   if(GetPointer<const gimple_call>(node))
    {
       size = compute_n_bytes(bus_addr_bitsize);
    }

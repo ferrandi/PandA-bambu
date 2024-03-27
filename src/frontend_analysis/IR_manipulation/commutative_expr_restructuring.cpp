@@ -148,14 +148,14 @@ commutative_expr_restructuring::~commutative_expr_restructuring() = default;
 
 bool commutative_expr_restructuring::IsCommExprGimple(const tree_nodeConstRef tn) const
 {
-   const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(tn));
+   const auto ga = GetPointer<const gimple_assign>(tn);
    if(!ga)
    {
       return false;
    }
    auto opKind = ga->op1->get_kind();
    auto Type = tree_helper::CGetType(ga->op0);
-   if(!GetPointer<const integer_type>(GET_CONST_NODE(Type)))
+   if(!GetPointer<const integer_type>(Type))
    {
       return false;
    }
@@ -167,7 +167,7 @@ bool commutative_expr_restructuring::IsCommExprGimple(const tree_nodeConstRef tn
 tree_nodeRef commutative_expr_restructuring::IsCommExprChain(const tree_nodeConstRef tn, const bool first,
                                                              bool is_third_node) const
 {
-   const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(tn));
+   const auto ga = GetPointer<const gimple_assign>(tn);
    const auto be = GetPointer<const binary_expr>(ga->op1);
    const auto operand = first ? be->op0 : be->op1;
    const auto other_operand = first ? be->op1 : be->op0;
@@ -368,13 +368,12 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          }
          const auto first_ga_op0 = GetPointer<ssa_name>(first_ga->op0);
          const auto ssa_node = tree_man->create_ssa_name(var, type_node, first_ga_op0->min, first_ga_op0->max);
-         GetPointer<ssa_name>(GET_CONST_NODE(ssa_node))->bit_values = first_ga_op0->bit_values;
+         GetPointer<ssa_name>(ssa_node)->bit_values = first_ga_op0->bit_values;
 
          /// Create the assign
          const auto gimple_assign_node =
              tree_man->create_gimple_modify_stmt(ssa_node, comm_expr_node, function_id, BUILTIN_SRCP);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Created " + GET_CONST_NODE(gimple_assign_node)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + gimple_assign_node->ToString());
          /// Set the bit value for the intermediate ssa to correctly update execution time
          block.second->PushBefore(gimple_assign_node, *stmt, AppM);
          new_tree_nodes.push_back(gimple_assign_node);
@@ -387,14 +386,13 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          /// Create the assign
          const auto root_gimple_node =
              tree_man->create_gimple_modify_stmt(first_ga->op0, root_comm_expr, function_id, BUILTIN_SRCP);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Created " + GET_CONST_NODE(root_gimple_node)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + root_gimple_node->ToString());
          block.second->Replace(*stmt, root_gimple_node, true, AppM);
          new_tree_nodes.push_back(root_gimple_node);
          AppM->RegisterTransformation(GetName(), root_gimple_node);
 
          /// Check that the second commutative expression is actually dead
-         THROW_ASSERT(GetPointer<const ssa_name>(GET_CONST_NODE(second_ga->op0))->CGetUseStmts().size() == 0, "");
+         THROW_ASSERT(GetPointer<const ssa_name>(second_ga->op0)->CGetUseStmts().size() == 0, "");
 
          /// Remove the intermediate commutative expression
          block.second->RemoveStmt(second_stmt, AppM);

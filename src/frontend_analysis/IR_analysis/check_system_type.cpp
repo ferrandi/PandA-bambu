@@ -234,7 +234,6 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
       return;
    }
    already_visited.insert(index);
-   THROW_ASSERT(curr_tn->get_kind() != tree_reindex_K, "Passed tree_reindex instead of real node");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking @" + STR(index));
    switch(curr_tn->get_kind())
    {
@@ -794,8 +793,8 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
          if((include.find("etc/libbambu") != std::string::npos) ||
             (include.find(PANDA_DATA_INSTALLDIR "/panda/ac_types/include") != std::string::npos) ||
             (include.find(PANDA_DATA_INSTALLDIR "/panda/ac_math/include") != std::string::npos) ||
-            (ty->name && GetPointer<const type_decl>(GET_CONST_NODE(ty->name)) &&
-             GetPointerS<const type_decl>(GET_CONST_NODE(ty->name))->libbambu_flag))
+            (ty->name && GetPointer<const type_decl>(ty->name) &&
+             GetPointerS<const type_decl>(ty->name)->libbambu_flag))
          {
             ty->libbambu_flag = true;
          }

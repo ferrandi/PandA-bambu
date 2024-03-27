@@ -401,7 +401,7 @@ bool ParallelMemoryFuBinding::manage_module_ports(const HLS_managerRef HLSMgr, c
    const auto fu_node = TM->GetFunction(curr_gate->get_typeRef()->id_type);
    if(fu_node)
    {
-      const auto fd = GetPointerS<const function_decl>(GET_CONST_NODE(fu_node));
+      const auto fd = GetPointerS<const function_decl>(fu_node);
       if(fd->omp_atomic)
       {
          const auto access_allowed = curr_gate->find_member("access_allowed", port_o_K, curr_gate);

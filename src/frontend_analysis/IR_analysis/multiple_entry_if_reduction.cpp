@@ -265,13 +265,13 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
       const bool vdef_op = [&]() -> bool {
          for(const auto& stmt : block->CGetStmtList())
          {
-            const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
+            const auto ga = GetPointer<const gimple_assign>(stmt);
             if(ga && ga->temporary_address)
             {
                return true;
             }
             /// We skip basic block containing gimple_call since it would require modification of the call graph
-            if(GET_CONST_NODE(stmt)->get_kind() == gimple_call_K)
+            if(stmt->get_kind() == gimple_call_K)
             {
                return true;
             }
@@ -401,8 +401,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                if(def_edge.second == block->number)
                {
                   const auto sn = GetPointer<const ssa_name>(def_edge.first);
-                  if(!sn ||
-                     GetPointerS<const gimple_node>(GET_CONST_NODE(sn->CGetDefStmt()))->bb_index != block->number)
+                  if(!sn || GetPointerS<const gimple_node>(sn->CGetDefStmt())->bb_index != block->number)
                   {
                      for(const auto& copy_id : copy_ids)
                      {
@@ -468,15 +467,15 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
          /// Cache of created phi - first key is the used ssa - second key is the basic block where is created
          CustomMap<vertex, tree_nodeRef> added_phis;
 
-         const auto vdef = GetPointer<const gimple_node>(GET_CONST_NODE(gimple))->vdef;
+         const auto vdef = GetPointer<const gimple_node>(gimple)->vdef;
          if(vdef)
          {
             defined_sns.insert(vdef);
          }
 
-         if(GET_CONST_NODE(gimple)->get_kind() == gimple_phi_K)
+         if(gimple->get_kind() == gimple_phi_K)
          {
-            const auto old_gp = GetPointerS<const gimple_phi>(GET_CONST_NODE(gimple));
+            const auto old_gp = GetPointerS<const gimple_phi>(gimple);
             defined_sns.insert(old_gp->res);
             for(const auto& def_edge : old_gp->CGetDefEdgesList())
             {
@@ -486,17 +485,16 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                remaps[copy_ids[def_edge.second]][old_gp->res->index] = def_edge.first->index;
             }
          }
-         else if(GET_CONST_NODE(gimple)->get_kind() == gimple_assign_K)
+         else if(gimple->get_kind() == gimple_assign_K)
          {
-            const auto old_ga = GetPointerS<const gimple_assign>(GET_CONST_NODE(gimple));
+            const auto old_ga = GetPointerS<const gimple_assign>(gimple);
             if(old_ga->op0->get_kind() == ssa_name_K)
             {
                defined_sns.insert(old_ga->op0);
             }
          }
-         else if(GET_CONST_NODE(gimple)->get_kind() == gimple_multi_way_if_K ||
-                 GET_CONST_NODE(gimple)->get_kind() == gimple_cond_K ||
-                 GET_CONST_NODE(gimple)->get_kind() == gimple_return_K)
+         else if(gimple->get_kind() == gimple_multi_way_if_K || gimple->get_kind() == gimple_cond_K ||
+                 gimple->get_kind() == gimple_return_K)
          {
          }
          else
@@ -504,19 +502,18 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
             THROW_UNREACHABLE(STR(gimple));
          }
          /// Duplicating statement
-         if(GET_CONST_NODE(gimple)->get_kind() == gimple_phi_K)
+         if(gimple->get_kind() == gimple_phi_K)
          {
          }
-         else if(GET_CONST_NODE(gimple)->get_kind() == gimple_assign_K)
+         else if(gimple->get_kind() == gimple_assign_K)
          {
-            const auto ga = GetPointerS<const gimple_assign>(GET_CONST_NODE(gimple));
+            const auto ga = GetPointerS<const gimple_assign>(gimple);
             const auto ssa_uses = tree_helper::ComputeSsaUses(ga->op1);
             for(const auto& ssa_use : ssa_uses)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering use " + STR(ssa_use.first));
-               if(GetPointerS<const gimple_node>(
-                      GET_CONST_NODE(GetPointerS<const ssa_name>(GET_CONST_NODE(ssa_use.first))->CGetDefStmt()))
-                      ->bb_index == block->number)
+               if(GetPointerS<const gimple_node>(GetPointerS<const ssa_name>(ssa_use.first)->CGetDefStmt())->bb_index ==
+                  block->number)
                {
 #if HAVE_ASSERTS
                   for(const auto& copy : copy_ids)
@@ -529,17 +526,17 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
             }
             for(const auto& copy : copy_ids)
             {
-               if(GET_CONST_NODE(ga->op0)->get_kind() == ssa_name_K)
+               if(ga->op0->get_kind() == ssa_name_K)
                {
-                  const auto ssa0 = GetPointerS<const ssa_name>(GET_CONST_NODE(ga->op0));
+                  const auto ssa0 = GetPointerS<const ssa_name>(ga->op0);
                   const auto new_ssa = tree_man->create_ssa_name(nullptr, ssa0->type, ssa0->min, ssa0->max);
                   remaps[copy.second][ga->op0->index] = new_ssa->index;
                   reaching_defs[copy.second] = new_ssa;
                }
                if(ga->vdef)
                {
-                  const auto new_ssa = tree_man->create_ssa_name(
-                      nullptr, GetPointerS<const ssa_name>(GET_CONST_NODE(ga->vdef))->type, nullptr, nullptr);
+                  const auto new_ssa =
+                      tree_man->create_ssa_name(nullptr, GetPointerS<const ssa_name>(ga->vdef)->type, nullptr, nullptr);
                   GetPointerS<ssa_name>(new_ssa)->virtual_flag = true;
                   remaps[copy.second][ga->vdef->index] = new_ssa->index;
                   reaching_defs[copy.second] = new_ssa;
@@ -550,9 +547,8 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                sl->list_of_bloc.at(copy.second)->PushBack(TM->GetTreeNode(new_stmt), AppM);
             }
          }
-         else if(GET_CONST_NODE(gimple)->get_kind() == gimple_multi_way_if_K ||
-                 GET_CONST_NODE(gimple)->get_kind() == gimple_cond_K ||
-                 GET_CONST_NODE(gimple)->get_kind() == gimple_return_K)
+         else if(gimple->get_kind() == gimple_multi_way_if_K || gimple->get_kind() == gimple_cond_K ||
+                 gimple->get_kind() == gimple_return_K)
          {
             const auto ssa_uses = tree_helper::ComputeSsaUses(gimple);
             for(const auto& ssa_use : ssa_uses)
@@ -560,8 +556,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering use " + STR(ssa_use.first));
                for(const auto& copy : copy_ids)
                {
-                  if((GetPointerS<const gimple_node>(
-                          GET_CONST_NODE(GetPointerS<const ssa_name>(GET_CONST_NODE(ssa_use.first))->CGetDefStmt()))
+                  if((GetPointerS<const gimple_node>(GetPointerS<const ssa_name>(ssa_use.first)->CGetDefStmt())
                           ->bb_index != block->number))
                   {
                      /// Defined in a different basic block
@@ -596,7 +591,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "-->Considering use in " + STR(use_stmt.first->index) + " " + STR(use_stmt.first));
-               const auto use_bb_index = GetPointerS<const gimple_node>(GET_CONST_NODE(use_stmt.first))->bb_index;
+               const auto use_bb_index = GetPointerS<const gimple_node>(use_stmt.first)->bb_index;
                if(bb_index_map.find(use_bb_index) == bb_index_map.end())
                {
                   THROW_ASSERT(sn->virtual_flag, "");
@@ -861,8 +856,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                         auto new_gp = GetPointerS<gimple_phi>(phi_gimple_stmt);
                         new_gp->SetSSAUsesComputed();
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---Created ssa_" +
-                                           STR(GetPointer<const ssa_name>(GET_CONST_NODE(phi_def_ssa_node))->vers));
+                                       "---Created ssa_" + STR(GetPointer<const ssa_name>(phi_def_ssa_node)->vers));
                         bb_cfg->GetBBNodeInfo(current)->block->AddPhi(phi_gimple_stmt);
                         reaching_defs[current_id] = phi_def_ssa_node;
                         added_phis[current] = phi_gimple_stmt;

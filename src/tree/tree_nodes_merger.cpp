@@ -856,7 +856,7 @@ void tree_node_reached::operator()(const statistical_profiling* obj, unsigned in
       {                                                     \
          TM->add_function(node_id, cur);                    \
       }                                                     \
-      TM->AddTreeNode(node_id, cur);                        \
+      TM->AddTreeNode(cur);                                 \
       curr_tree_node_ptr = tnn;                             \
       source_tn = tn;                                       \
       tnn->visit(this);                                     \
@@ -1364,7 +1364,7 @@ void tree_node_index_factory::create_tree_node(const unsigned int node_id, const
          {
             cur = tree_nodeRef(new identifier_node(node_id, GetPointer<identifier_node>(tn)->strg, TM.get()));
          }
-         TM->AddTreeNode(node_id, cur);
+         TM->AddTreeNode(cur);
          break;
       }
       case widen_sum_expr_K:

@@ -128,7 +128,7 @@ using namespace __AC_NAMESPACE;
    const auto top_symbols = Param->getOption<std::vector<std::string>>(OPT_top_functions_names);
    THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
    const auto top_fnode = TM->GetFunction(top_symbols.front());
-   const auto fd = GetPointerS<const function_decl>(GET_CONST_NODE(top_fnode));
+   const auto fd = GetPointerS<const function_decl>(top_fnode);
    const auto top_fname = tree_helper::GetMangledFunctionName(fd);
    const auto& parms = HLSMgr->module_arch->GetArchitecture(top_fname)->parms;
 
@@ -227,7 +227,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
       }();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing initialization of " + param);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "---Type: " + GET_CONST_NODE(parm_type)->get_kind_text() + " - " + STR(parm_type));
+                     "---Type: " + parm_type->get_kind_text() + " - " + STR(parm_type));
       const auto init_it = curr_test_vector.find(param);
       if(init_it == curr_test_vector.end())
       {
@@ -291,7 +291,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
          const auto arg_channel = std::regex_search(var_ptdtype, std::regex("(ac_channel|stream|hls::stream)<(.*)>"));
          const auto ptd_type = tree_helper::GetRealType(tree_helper::CGetPointedType(parm_type));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Pointed type: " + GET_CONST_NODE(ptd_type)->get_kind_text() + " - " + STR(ptd_type));
+                        "---Pointed type: " + ptd_type->get_kind_text() + " - " + STR(ptd_type));
 
          std::string param_size;
          if(is_binary_init)

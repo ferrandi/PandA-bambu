@@ -204,11 +204,11 @@ DesignFlowStep_Status SplitReturn::InternalExec()
                          STR(bb->CGetStmtList().size()));
       if(bb->list_of_pred.size() > 1 && bb->CGetPhiList().size() == 1 && bb->CGetStmtList().size() == 1)
       {
-         const auto stmt = GET_CONST_NODE(bb->CGetStmtList().front());
+         const auto stmt = bb->CGetStmtList().front();
          if(stmt->get_kind() == gimple_return_K)
          {
             const auto bb_index = bb->number;
-            const auto gp = GetPointerS<const gimple_phi>(GET_CONST_NODE(bb->CGetPhiList().front()));
+            const auto gp = GetPointerS<const gimple_phi>(bb->CGetPhiList().front());
             const auto gr = GetPointerS<const gimple_return>(stmt);
             if(gr->op && GET_INDEX_NODE(gp->res) == GET_INDEX_NODE(gr->op))
             {
@@ -251,7 +251,7 @@ DesignFlowStep_Status SplitReturn::InternalExec()
       else if(bb->list_of_pred.size() > 1 && bb->CGetPhiList().size() == 0 && bb->CGetStmtList().size() == 1)
       {
          const auto bb_index = bb->number;
-         const auto stmt = GET_CONST_NODE(bb->CGetStmtList().front());
+         const auto stmt = bb->CGetStmtList().front();
          if(stmt->get_kind() == gimple_return_K)
          {
             const auto gr = GetPointerS<const gimple_return>(stmt);

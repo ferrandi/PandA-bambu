@@ -273,7 +273,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
          const auto stmt = TM->CGetTreeNode(stmt_id);
          if(stmt)
          {
-            const auto gn = GetPointerS<const gimple_node>(GET_CONST_NODE(stmt));
+            const auto gn = GetPointerS<const gimple_node>(stmt);
             const auto bb_it = sl->list_of_bloc.find(gn->bb_index);
             if(gn->bb_index != 0 && bb_it != sl->list_of_bloc.end())
             {
@@ -291,7 +291,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                   if(opt_type == FunctionOptType::INLINE)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "Inlining required for call statement " + GET_CONST_NODE(stmt)->ToString());
+                                    "Inlining required for call statement " + stmt->ToString());
                      tree_man->InlineFunctionCall(stmt, fnode);
                      AppM->RegisterTransformation(GetName(), nullptr);
                      modified = true;
@@ -299,9 +299,9 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                   else if(opt_type == FunctionOptType::VERSION)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "Versioning required for call statement " + GET_CONST_NODE(stmt)->ToString());
+                                    "Versioning required for call statement " + stmt->ToString());
                      const auto version_suffix = [&]() -> std::string {
-                        const auto call_stmt = GET_CONST_NODE(stmt);
+                        const auto call_stmt = stmt;
                         if(call_stmt->get_kind() == gimple_call_K)
                         {
                            const auto gc = GetPointerS<const gimple_call>(call_stmt);
@@ -310,7 +310,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                         else if(call_stmt->get_kind() == gimple_assign_K)
                         {
                            const auto ga = GetPointerS<const gimple_assign>(call_stmt);
-                           const auto ce = GetPointer<const call_expr>(GET_CONST_NODE(ga->op1));
+                           const auto ce = GetPointer<const call_expr>(ga->op1);
                            return __arg_suffix(ce->args);
                         }
                         THROW_UNREACHABLE("Unsupported call statement: " + call_stmt->get_kind_text() + " " +
@@ -414,7 +414,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                THROW_ASSERT(caller_node->get_kind() == function_decl_K, "");
                const auto caller_fd = GetPointerS<const function_decl>(caller_node);
                THROW_ASSERT(caller_fd->body, "");
-               const auto caller_sl = GetPointerS<const statement_list>(GET_CONST_NODE(caller_fd->body));
+               const auto caller_sl = GetPointerS<const statement_list>(caller_fd->body);
                if(omp_simd_enabled)
                {
                   const auto caller_has_simd = tree_helper::has_omp_simd(caller_sl);
@@ -453,10 +453,9 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                            for(const auto& tn : bb->CGetStmtList())
                            {
                               if(tn->index != call_gn->index &&
-                                 (GET_CONST_NODE(tn)->get_kind() == gimple_call_K ||
-                                  (GET_CONST_NODE(tn)->get_kind() == gimple_assign_K &&
-                                   GET_CONST_NODE(GetPointerS<const gimple_assign>(GET_CONST_NODE(tn))->op1)
-                                           ->get_kind() == call_expr_K)))
+                                 (tn->get_kind() == gimple_call_K ||
+                                  (tn->get_kind() == gimple_assign_K &&
+                                   GetPointerS<const gimple_assign>(tn)->op1->get_kind() == call_expr_K)))
                               {
                                  return false;
                               }
@@ -529,12 +528,12 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
 void FunctionCallOpt::RequestCallOpt(const tree_nodeConstRef& call_stmt, unsigned int caller_id, FunctionOptType opt)
 {
 #if HAVE_ASSERTS
-   const auto stmt_kind = GET_CONST_NODE(call_stmt)->get_kind();
+   const auto stmt_kind = call_stmt->get_kind();
    bool is_call = stmt_kind == gimple_call_K;
    if(stmt_kind == gimple_assign_K)
    {
-      const auto rhs = GetPointerS<const gimple_assign>(GET_CONST_NODE(call_stmt))->op1;
-      const auto rhs_kind = GET_CONST_NODE(rhs)->get_kind();
+      const auto rhs = GetPointerS<const gimple_assign>(call_stmt)->op1;
+      const auto rhs_kind = rhs->get_kind();
       is_call |= rhs_kind == call_expr_K || rhs_kind == aggr_init_expr_K;
    }
 #endif
@@ -554,17 +553,17 @@ bool FunctionCallOpt::HasConstantArgs(const tree_nodeConstRef& call_stmt)
       }
       return true;
    };
-   const auto call_kind = GET_CONST_NODE(call_stmt)->get_kind();
+   const auto call_kind = call_stmt->get_kind();
    if(call_kind == gimple_call_K)
    {
-      const auto gc = GetPointerS<const gimple_call>(GET_CONST_NODE(call_stmt));
+      const auto gc = GetPointerS<const gimple_call>(call_stmt);
       return all_constant(gc->args);
    }
    else if(call_kind == gimple_assign_K)
    {
-      const auto ga = GetPointerS<const gimple_assign>(GET_CONST_NODE(call_stmt));
-      THROW_ASSERT(GET_CONST_NODE(ga->op1)->get_kind() == call_expr_K, "");
-      const auto ce = GetPointerS<const call_expr>(GET_CONST_NODE(ga->op1));
+      const auto ga = GetPointerS<const gimple_assign>(call_stmt);
+      THROW_ASSERT(ga->op1->get_kind() == call_expr_K, "");
+      const auto ce = GetPointerS<const call_expr>(ga->op1);
       return all_constant(ce->args);
    }
    THROW_UNREACHABLE("Expected call statement: " + tree_node::GetString(call_kind) + " - " + STR(call_stmt));
@@ -579,11 +578,11 @@ size_t FunctionCallOpt::compute_cost(const statement_list* body, bool& has_simd)
    {
       for(const auto& stmt_rdx : bb.second->CGetStmtList())
       {
-         const auto stmt = GET_CONST_NODE(stmt_rdx);
+         const auto stmt = stmt_rdx;
          if(stmt->get_kind() == gimple_assign_K)
          {
             const auto ga = GetPointerS<const gimple_assign>(stmt);
-            const auto op_kind = GET_CONST_NODE(ga->op1)->get_kind();
+            const auto op_kind = ga->op1->get_kind();
             const auto op_cost = op_costs.find(op_kind);
             if(op_cost != op_costs.end())
             {
@@ -594,7 +593,7 @@ size_t FunctionCallOpt::compute_cost(const statement_list* body, bool& has_simd)
                if(op_kind == lshift_expr_K || op_kind == rshift_expr_K || op_kind == bit_and_expr_K ||
                   op_kind == bit_ior_expr_K)
                {
-                  total_cost += !tree_helper::IsConstant(GetPointerS<const binary_expr>(GET_CONST_NODE(ga->op1))->op1);
+                  total_cost += !tree_helper::IsConstant(GetPointerS<const binary_expr>(ga->op1)->op1);
                }
                else
                {
@@ -619,9 +618,9 @@ size_t FunctionCallOpt::compute_cost(const statement_list* body, bool& has_simd)
          else if(stmt->get_kind() == gimple_pragma_K)
          {
             const auto gp = GetPointerS<const gimple_pragma>(stmt);
-            if(gp->scope && GetPointer<const omp_pragma>(GET_CONST_NODE(gp->scope)))
+            if(gp->scope && GetPointer<const omp_pragma>(gp->scope))
             {
-               const auto sp = GetPointer<const omp_simd_pragma>(GET_CONST_NODE(gp->directive));
+               const auto sp = GetPointer<const omp_simd_pragma>(gp->directive);
                if(sp)
                {
                   has_simd = true;

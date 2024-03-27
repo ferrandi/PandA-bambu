@@ -476,42 +476,39 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
          }
          break;
       }
-      case real_cst_K:
+      case CASE_PRAGMA_NODES:
+      case case_label_expr_K:
       case complex_cst_K:
-      case integer_cst_K:
       case field_decl_K:
       case function_decl_K:
-      case label_decl_K:
-      case result_decl_K:
-      case template_decl_K:
-      case vector_cst_K:
-      case void_cst_K:
-      case tree_vec_K:
-      case case_label_expr_K:
-      case gimple_label_K:
       case gimple_asm_K:
       case gimple_goto_K:
+      case gimple_label_K:
       case gimple_pragma_K:
       case gimple_resx_K:
-      case CASE_PRAGMA_NODES:
+      case integer_cst_K:
+      case label_decl_K:
+      case real_cst_K:
+      case result_decl_K:
+      case template_decl_K:
+      case tree_vec_K:
+      case vector_cst_K:
+      case void_cst_K:
          break;
+      case CASE_CPP_NODES:
+      case CASE_FAKE_NODES:
       case binfo_K:
       case block_K:
       case const_decl_K:
-      case CASE_CPP_NODES:
+      case error_mark_K:
       case gimple_bind_K:
       case gimple_predict_K:
       case identifier_node_K:
-      case last_tree_K:
       case namespace_decl_K:
-      case none_K:
-      case placeholder_expr_K:
       case statement_list_K:
-      case translation_unit_decl_K:
-      case error_mark_K:
-      case using_decl_K:
-      case tree_reindex_K:
       case target_expr_K:
+      case translation_unit_decl_K:
+      case using_decl_K:
       {
          THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Not supported node: " + std::string(curr_tn->get_kind_text()));
          break;

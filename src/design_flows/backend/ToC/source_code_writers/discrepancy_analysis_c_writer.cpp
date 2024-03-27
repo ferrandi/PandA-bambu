@@ -80,9 +80,8 @@
  * This function is used to detect when an integer variable (non-vector)
  * is actually handled as a vector from bambu
  */
-static inline bool is_large_integer(const tree_nodeConstRef& _tn)
+static inline bool is_large_integer(const tree_nodeConstRef& tn)
 {
-   const auto tn = _tn->get_kind() == tree_reindex_K ? GET_CONST_NODE(_tn) : _tn;
    const auto type = GetPointer<const type_node>(tn);
    THROW_ASSERT(type, "type_id " + STR(tn->index) + " is not a type");
    if(tn->get_kind() != integer_type_K)
@@ -445,13 +444,13 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
       is_virtual = g_phi_node->virtual_flag;
    }
 
-   if(ssa && GET_CONST_NODE(ssa)->get_kind() == ssa_name_K && !is_virtual)
+   if(ssa && ssa->get_kind() == ssa_name_K && !is_virtual)
    {
       /*
        * print statements that increase the counters used for coverage statistics
        */
       indented_output_stream->Append("__bambu_discrepancy_tot_assigned_ssa++;\n");
-      const auto* ssaname = GetPointerS<const ssa_name>(GET_CONST_NODE(ssa));
+      const auto* ssaname = GetPointerS<const ssa_name>(ssa);
       bool is_temporary = ssaname->var ? GetPointer<const decl_node>(ssaname->var)->artificial_flag : true;
       bool is_discrepancy_address = Discrepancy->address_ssa.count(ssa);
       bool is_lost = Discrepancy->ssa_to_skip.count(ssa);
@@ -675,7 +674,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
       /// check if we need to add a check for floating operation correctness
       if(g_as_node)
       {
-         const auto rhs = GET_CONST_NODE(g_as_node->op1);
+         const auto rhs = g_as_node->op1;
          if(rhs->get_kind() == call_expr_K || rhs->get_kind() == aggr_init_expr_K)
          {
             indented_output_stream->Append("//" + oper->get_name() + "\n");
@@ -690,11 +689,11 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
             {
                const auto ce = GetPointerS<const call_expr>(rhs);
                const auto& actual_args = ce->args;
-               const auto op0 = GET_CONST_NODE(ce->fn);
+               const auto op0 = ce->fn;
                if(op0->get_kind() == addr_expr_K && (actual_args.size() == 1 || actual_args.size() == 2))
                {
                   const auto ue = GetPointerS<const unary_expr>(op0);
-                  const auto fn = GET_CONST_NODE(ue->op);
+                  const auto fn = ue->op;
                   THROW_ASSERT(fn->get_kind() == function_decl_K,
                                "tree node not currently supported " + fn->get_kind_text());
                   const auto fd = GetPointerS<const function_decl>(fn);

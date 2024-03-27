@@ -203,10 +203,10 @@ static const std::regex signature_param_typename("((?:\\w+\\s*)+(?:<[^>]*>)?\\s*
 
 static std::string get_decl_name(tree_nodeRef tn)
 {
-   const auto dn = GetPointer<const decl_node>(GET_CONST_NODE(tn));
+   const auto dn = GetPointer<const decl_node>(tn);
    THROW_ASSERT(dn, "Expected decl_node.");
    THROW_ASSERT(dn->name, "Expected declaration name.");
-   return GetPointer<const identifier_node>(GET_CONST_NODE(dn->name))->strg;
+   return GetPointer<const identifier_node>(dn->name)->strg;
 }
 
 static std::vector<unsigned int> GetSortedRoots(const CallGraphManagerConstRef& CGM)
@@ -251,12 +251,12 @@ static std::tuple<unsigned int, unsigned int> GetCallStmt(const CallGraphManager
 
 static std::vector<tree_nodeRef> GetCallArgs(tree_nodeRef stmt)
 {
-   if(const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt)))
+   if(const auto ga = GetPointer<const gimple_assign>(stmt))
    {
-      const auto ce = GetPointer<const call_expr>(GET_CONST_NODE(ga->op1));
+      const auto ce = GetPointer<const call_expr>(ga->op1);
       return ce->args;
    }
-   else if(const auto gc = GetPointer<const gimple_call>(GET_CONST_NODE(stmt)))
+   else if(const auto gc = GetPointer<const gimple_call>(stmt))
    {
       return gc->args;
    }
@@ -270,7 +270,7 @@ static std::pair<tree_nodeConstRef, unsigned int> ResolvePointerAlias(const Call
                                                                       std::vector<tree_nodeConstRef>* field_offset)
 {
    const auto base_var = tree_helper::GetBaseVariable(var, field_offset);
-   if(const auto pd = GetPointer<const parm_decl>(GET_CONST_NODE(base_var)))
+   if(const auto pd = GetPointer<const parm_decl>(base_var))
    {
       const auto [caller_id, call_id] = GetCallStmt(CGM, fid);
       if(caller_id)
@@ -386,13 +386,13 @@ DesignFlowStep_Status InterfaceInfer::Exec()
 
    std::set<unsigned int> modified;
    const auto add_to_modified = [&](const tree_nodeRef& tn) {
-      modified.insert(GET_INDEX_CONST_NODE(GetPointer<gimple_node>(GET_CONST_NODE(tn))->scpe));
+      modified.insert(GET_INDEX_CONST_NODE(GetPointer<gimple_node>(tn)->scpe));
    };
 
    for(const auto root_id : sorted_roots)
    {
       const auto fnode = TM->CGetTreeNode(root_id);
-      const auto fd = GetPointer<const function_decl>(GET_CONST_NODE(fnode));
+      const auto fd = GetPointer<const function_decl>(fnode);
       const auto fsymbol = tree_helper::GetMangledFunctionName(fd);
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Analyzing function " + fsymbol);
 
@@ -484,7 +484,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                {
                   for(const auto& fld : field_offset)
                   {
-                     auto offsetNode = GET_CONST_NODE(fld);
+                     auto offsetNode = fld;
                      if(offsetNode->get_kind() == integer_cst_K)
                      {
                         auto offsetValue = GetPointerS<const integer_cst>(offsetNode);
@@ -503,7 +503,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                THROW_ASSERT(parm_attr != func_arch->parms.end(), "Expected parameter index " + std::to_string(idx));
                auto& current_bundle = parm_attr->second.at(FunctionArchitecture::parm_bundle);
                std::string bundle_name;
-               if(GET_CONST_NODE(base_var)->get_kind() == parm_decl_K)
+               if(base_var->get_kind() == parm_decl_K)
                {
                   func_arch->ifaces[current_bundle].at(FunctionArchitecture::iface_mode) = "default";
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
@@ -512,7 +512,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   ++idx;
                   continue;
                }
-               else if(GetPointer<const cst_node>(GET_CONST_NODE(base_var)))
+               else if(GetPointer<const cst_node>(base_var))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Parameter " + parm_attr->second.at(FunctionArchitecture::parm_port) +
@@ -520,7 +520,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   ++idx;
                   continue;
                }
-               else if(const auto dn = GetPointer<const decl_node>(GET_CONST_NODE(base_var)))
+               else if(const auto dn = GetPointer<const decl_node>(base_var))
                {
                   bundle_name = "DF_bambu_" + std::to_string(owner_id) + "_" +
                                 std::to_string(GET_INDEX_CONST_NODE(base_var)) + "FO" + STR(offset);
@@ -566,7 +566,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                bb->list_of_succ.push_back(bb_first->number);
                bb_first->list_of_pred.push_back(bbi);
                const auto return_stmt = bb->CGetStmtList().back();
-               THROW_ASSERT(GetPointer<const gimple_return>(GET_CONST_NODE(return_stmt)),
+               THROW_ASSERT(GetPointer<const gimple_return>(return_stmt),
                             "Expected return statement as last statement");
                bb->RemoveStmt(return_stmt, AppM);
             }
@@ -618,9 +618,9 @@ DesignFlowStep_Status InterfaceInfer::Exec()
          {
             const auto arg_ssa_id = AppM->getSSAFromParm(root_id, arg_id);
             const auto arg_ssa = TM->GetTreeNode(arg_ssa_id);
-            THROW_ASSERT(GET_CONST_NODE(arg_ssa)->get_kind() == ssa_name_K, "");
+            THROW_ASSERT(arg_ssa->get_kind() == ssa_name_K, "");
             bool unused_port = false;
-            if(GetPointerS<const ssa_name>(GET_CONST_NODE(arg_ssa))->CGetUseStmts().empty())
+            if(GetPointerS<const ssa_name>(arg_ssa)->CGetUseStmts().empty())
             {
                THROW_WARNING("Parameter '" + arg_name + "' not used by any statement");
                if(tree_helper::IsPointerType(arg_type))
@@ -791,7 +791,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                const auto store_vdef = [&](const tree_nodeRef& stmt) {
                   if(require_flush)
                   {
-                     const auto& vdef = GetPointerS<const gimple_node>(GET_CONST_NODE(stmt))->vdef;
+                     const auto& vdef = GetPointerS<const gimple_node>(stmt)->vdef;
                      if(vdef)
                      {
                         bundle_vdefs[bundle_name].insert(vdef);
@@ -860,7 +860,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             args.push_back(TM->CreateUniqueIntegerCst(1, argsT.at(0)));
             args.push_back(TM->CreateUniqueIntegerCst(0, argsT.at(1)));
             const auto fini_call = tree_man->create_gimple_call(fini_fd, args, GET_INDEX_NODE(fd->scpe), BUILTIN_SRCP);
-            const auto fini_node = GetPointerS<gimple_node>(GET_CONST_NODE(fini_call));
+            const auto fini_node = GetPointerS<gimple_node>(fini_call);
             for(const auto& vdef : vdefs)
             {
                fini_node->AddVuse(vdef);
@@ -868,7 +868,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             return fini_call;
          };
 
-         const auto sl = GetPointerS<const statement_list>(GET_CONST_NODE(fd->body));
+         const auto sl = GetPointerS<const statement_list>(fd->body);
          for(const auto& bbi_bb : sl->list_of_bloc)
          {
             const auto& bb = bbi_bb.second;
@@ -878,7 +878,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                const auto fini_call = generate_fini_call();
                THROW_ASSERT(bb->CGetStmtList().size(), "BB" + STR(bb->number) + " should not be empty");
                const auto last_stmt = bb->CGetStmtList().back();
-               if(GetPointer<const gimple_return>(GET_CONST_NODE(last_stmt)))
+               if(GetPointer<const gimple_return>(last_stmt))
                {
                   bb->PushBefore(fini_call, last_stmt, AppM);
                }
@@ -942,15 +942,14 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
       THROW_ASSERT(arg_var && fd_node, "unexpected condition");
       ssa_var = arg_var;
       const auto call_fd = [&]() {
-         const auto fd_kind = GET_CONST_NODE(fd_node)->get_kind();
+         const auto fd_kind = fd_node->get_kind();
          auto& fn = fd_node;
          if(fd_kind == addr_expr_K)
          {
-            fn = GetPointerS<const addr_expr>(GET_CONST_NODE(fd_node))->op;
+            fn = GetPointerS<const addr_expr>(fd_node)->op;
          }
-         THROW_ASSERT(GET_CONST_NODE(fn)->get_kind() == function_decl_K,
-                      "unexpected condition: " + GET_CONST_NODE(fn)->get_kind_text());
-         return GetPointerS<const function_decl>(GET_CONST_NODE(fn));
+         THROW_ASSERT(fn->get_kind() == function_decl_K, "unexpected condition: " + fn->get_kind_text());
+         return GetPointerS<const function_decl>(fn);
       }();
       if(!call_fd->body)
       {
@@ -975,11 +974,11 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
             {
                if(call_fd->list_of_args.size() >= 1 && call_fd->list_of_args.size() <= 3)
                {
-                  auto ret_type = GET_CONST_NODE(call_fd->type);
+                  auto ret_type = call_fd->type;
                   if(ret_type->get_kind() == function_type_K || ret_type->get_kind() == method_type_K)
                   {
                      const auto ft = GetPointerS<const function_type>(ret_type);
-                     if(GET_CONST_NODE(ft->retn)->get_kind() != void_type_K)
+                     if(ft->retn->get_kind() != void_type_K)
                      {
                         ssa_var = ft->retn;
                      }
@@ -1008,7 +1007,7 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
             {
                if(call_fd->list_of_args.size() == 2)
                {
-                  auto ret_type = GET_CONST_NODE(call_fd->type);
+                  auto ret_type = call_fd->type;
                   if(ret_type->get_kind() == void_type_K)
                   {
                      THROW_ERROR("unexpected condition");
@@ -1055,8 +1054,8 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
 
          const auto call_arg_ssa_id = AppM->getSSAFromParm(call_fd->index, GET_INDEX_CONST_NODE(called_param));
          const auto call_arg_ssa = TM->CGetTreeNode(call_arg_ssa_id);
-         THROW_ASSERT(GET_CONST_NODE(call_arg_ssa)->get_kind() == ssa_name_K, "");
-         if(GetPointerS<const ssa_name>(GET_CONST_NODE(call_arg_ssa))->CGetUseStmts().size())
+         THROW_ASSERT(call_arg_ssa->get_kind() == ssa_name_K, "");
+         if(GetPointerS<const ssa_name>(call_arg_ssa)->CGetUseStmts().size())
          {
             forwardInterface(fd_node, called_param, info);
 
@@ -1099,20 +1098,20 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
    while(chase_ssa.size())
    {
       ssa_node = chase_ssa.front();
-      const auto ssa_var = GetPointer<const ssa_name>(GET_CONST_NODE(ssa_node));
+      const auto ssa_var = GetPointer<const ssa_name>(ssa_node);
       chase_ssa.pop();
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                      "-->SSA VARIABLE: " + ssa_var->ToString() + " with " + STR(ssa_var->CGetUseStmts().size()) +
                          " use statements");
       for(const auto& stmt_count : ssa_var->CGetUseStmts())
       {
-         const auto use_stmt = GET_CONST_NODE(stmt_count.first);
+         const auto use_stmt = stmt_count.first;
          const auto& use_count = stmt_count.second;
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---STMT: " + use_stmt->ToString());
          if(const auto ga = GetPointer<const gimple_assign>(use_stmt))
          {
-            const auto op0_kind = GET_CONST_NODE(ga->op0)->get_kind();
-            const auto op1_kind = GET_CONST_NODE(ga->op1)->get_kind();
+            const auto op0_kind = ga->op0->get_kind();
+            const auto op1_kind = ga->op1->get_kind();
             if(op0_kind == mem_ref_K)
             {
                if(op1_kind == mem_ref_K)
@@ -1121,10 +1120,8 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
                }
                else
                {
-                  THROW_ASSERT(op1_kind == ssa_name_K || GetPointer<const cst_node>(GET_CONST_NODE(ga->op1)),
-                               "unexpected condition");
-                  if(GetPointer<const cst_node>(GET_CONST_NODE(ga->op1)) ||
-                     GetPointer<const ssa_name>(GET_CONST_NODE(ga->op1)) != ssa_var)
+                  THROW_ASSERT(op1_kind == ssa_name_K || GetPointer<const cst_node>(ga->op1), "unexpected condition");
+                  if(GetPointer<const cst_node>(ga->op1) || GetPointer<const ssa_name>(ga->op1) != ssa_var)
                   {
                      push_stmt(stmt_count.first, call_type::ct_write, ga->op1);
                   }
@@ -1141,7 +1138,7 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
             }
             else if(op1_kind == call_expr_K)
             {
-               const auto ce = GetPointerS<const call_expr>(GET_CONST_NODE(ga->op1));
+               const auto ce = GetPointerS<const call_expr>(ga->op1);
                const auto return_type = tree_helper::CGetType(ga->op0);
                if(tree_helper::IsPointerType(return_type))
                {
@@ -1155,20 +1152,20 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
                     op1_kind == ge_expr_K || op1_kind == le_expr_K)
             {
                THROW_WARNING("Pattern potentially not supported: pointer parameter is used in a compare statement: " +
-                             use_stmt->ToString() + ":" + GET_CONST_NODE(ga->op1)->get_kind_text());
+                             use_stmt->ToString() + ":" + ga->op1->get_kind_text());
             }
             else
             {
                if(!tree_helper::IsPointerType(ga->op0))
                {
                   THROW_WARNING("Pattern potentially not supported: parameter converted to non-pointer type: " +
-                                use_stmt->ToString() + ":" + GET_CONST_NODE(ga->op1)->get_kind_text());
+                                use_stmt->ToString() + ":" + ga->op1->get_kind_text());
                }
                else if(op1_kind != nop_expr_K && op1_kind != view_convert_expr_K && op1_kind != ssa_name_K &&
                        op1_kind != pointer_plus_expr_K && op1_kind != cond_expr_K)
                {
                   THROW_WARNING("Pattern potentially not supported: parameter used in a non-supported statement: " +
-                                use_stmt->ToString() + ":" + GET_CONST_NODE(ga->op1)->get_kind_text());
+                                use_stmt->ToString() + ":" + ga->op1->get_kind_text());
                }
                ChasePointerInterfaceRecurse(Visited, ga->op0, writeStmt, readStmt, info);
             }
@@ -1176,11 +1173,11 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
          else if(const auto gc = GetPointer<const gimple_call>(use_stmt))
          {
             THROW_ASSERT(gc->fn, "unexpected condition");
-            const auto fn_node = GET_CONST_NODE(gc->fn);
+            const auto fn_node = gc->fn;
             if(fn_node->get_kind() == addr_expr_K)
             {
                const auto ae = GetPointerS<const addr_expr>(fn_node);
-               const auto ae_op = GET_CONST_NODE(ae->op);
+               const auto ae_op = ae->op;
                if(ae_op->get_kind() == function_decl_K)
                {
                   tree_nodeRef ssa_val;
@@ -1228,7 +1225,7 @@ void InterfaceInfer::ChasePointerInterface(tree_nodeRef ssa_node, std::list<tree
 void InterfaceInfer::forwardInterface(const tree_nodeRef& fnode, const tree_nodeRef& parm_node,
                                       const interface_info& info)
 {
-   const auto fd = GetPointer<const function_decl>(GET_CONST_NODE(fnode));
+   const auto fd = GetPointer<const function_decl>(fnode);
    const auto fsymbol = tree_helper::GetMangledFunctionName(fd);
    const auto func_arch = GetPointerS<HLS_manager>(AppM)->module_arch->GetArchitecture(fsymbol);
    if(func_arch)
@@ -1274,8 +1271,8 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
                                       const tree_managerRef TM)
 {
    const auto gn = GetPointerS<gimple_node>(stmt);
-   THROW_ASSERT(gn->scpe && GET_CONST_NODE(gn->scpe)->get_kind() == function_decl_K, "expected a function_decl scope");
-   const auto fd = GetPointerS<function_decl>(GET_CONST_NODE(gn->scpe));
+   THROW_ASSERT(gn->scpe && gn->scpe->get_kind() == function_decl_K, "expected a function_decl scope");
+   const auto fd = GetPointerS<function_decl>(gn->scpe);
    const auto fname = tree_helper::GetMangledFunctionName(fd);
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->LOAD from " + fname + ":");
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---BEFORE: " + stmt->ToString());
@@ -1295,9 +1292,9 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
       tree_nodeRef data_ptr;
       if(ret_call)
       {
-         const auto ga = GetPointerS<const gimple_assign>(GET_CONST_NODE(stmt));
+         const auto ga = GetPointerS<const gimple_assign>(stmt);
          stmt_op0 = ga->op0;
-         const auto ce = GetPointerS<const call_expr>(GET_CONST_NODE(ga->op1));
+         const auto ce = GetPointerS<const call_expr>(ga->op1);
          valid_var = ce->args.size() == 2;
          data_type = tree_helper::CGetType(ga->op0);
          if(valid_var)
@@ -1311,7 +1308,7 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
       }
       else
       {
-         const auto gc = GetPointerS<const gimple_call>(GET_CONST_NODE(stmt));
+         const auto gc = GetPointerS<const gimple_call>(stmt);
          valid_var = gc->args.size() == 3;
          auto first_arg = gc->args.at(0);
          THROW_ASSERT(tree_helper::IsPointerType(first_arg), "unexpected condition");
@@ -1351,18 +1348,18 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- AFTER: " + new_call->ToString());
 
       // Mask and cast read data
-      const auto retval = GetPointerS<const gimple_assign>(GET_CONST_NODE(new_call))->op0;
+      const auto retval = GetPointerS<const gimple_assign>(new_call)->op0;
       auto ga_mask = tree_man->CreateNopExpr(retval, interface_datatype, nullptr, nullptr, fd->index);
       curr_bb->PushBefore(ga_mask, stmt, AppM);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  MASK: " + ga_mask->ToString());
-      auto data_mask = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_mask))->op0;
+      auto data_mask = GetPointerS<const gimple_assign>(ga_mask)->op0;
       if(tree_helper::IsRealType(data_type))
       {
          const auto vc = tree_man->create_unary_operation(data_type, data_mask, BUILTIN_SRCP, view_convert_expr_K);
          ga_mask = tree_man->CreateGimpleAssign(data_type, nullptr, nullptr, vc, fd->index, BUILTIN_SRCP);
          curr_bb->PushBefore(ga_mask, stmt, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  VIEW: " + ga_mask->ToString());
-         data_mask = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_mask))->op0;
+         data_mask = GetPointerS<const gimple_assign>(ga_mask)->op0;
       }
 
       tree_nodeRef last_stmt;
@@ -1419,13 +1416,13 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
              tree_man->CreateGimpleAssign(ret_type, nullptr, nullptr, be_vshift, fd->index, BUILTIN_SRCP);
          curr_bb->PushBefore(ga_vshift, stmt, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---VSHIFT: " + ga_vshift->ToString());
-         const auto v_shift = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_vshift))->op0;
+         const auto v_shift = GetPointerS<const gimple_assign>(ga_vshift)->op0;
          const auto valid_ptd_type = tree_man->GetBooleanType();
          const auto valid_type = tree_man->GetPointerType(valid_ptd_type);
          const auto ga_valid = tree_man->CreateNopExpr(v_shift, valid_ptd_type, nullptr, nullptr, fd->index);
          curr_bb->PushBefore(ga_valid, stmt, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- VALID: " + ga_valid->ToString());
-         const auto valid_ref = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_valid))->op0;
+         const auto valid_ref = GetPointerS<const gimple_assign>(ga_valid)->op0;
          const auto valid_memref = tree_man->create_binary_operation(
              valid_ptd_type, valid_ptr, TM->CreateUniqueIntegerCst(0, valid_type), BUILTIN_SRCP, mem_ref_K);
          const auto ga_valid_store =
@@ -1483,8 +1480,8 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
          args.push_back(data_value);
       }
 
-      THROW_ASSERT(GET_CONST_NODE(ga->op1)->get_kind() == mem_ref_K, "unexpected condition");
-      const auto mr = GetPointerS<const mem_ref>(GET_CONST_NODE(ga->op1));
+      THROW_ASSERT(ga->op1->get_kind() == mem_ref_K, "unexpected condition");
+      const auto mr = GetPointerS<const mem_ref>(ga->op1);
       args.push_back(mr->op0);
 
       const auto ce = tree_man->CreateCallExpr(fdecl_node, args, BUILTIN_SRCP);
@@ -1527,8 +1524,8 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
                                        const tree_managerRef TM)
 {
    const auto gn = GetPointerS<gimple_node>(stmt);
-   THROW_ASSERT(gn->scpe && GET_CONST_NODE(gn->scpe)->get_kind() == function_decl_K, "expected a function_decl scope");
-   const auto fd = GetPointerS<function_decl>(GET_CONST_NODE(gn->scpe));
+   THROW_ASSERT(gn->scpe && gn->scpe->get_kind() == function_decl_K, "expected a function_decl scope");
+   const auto fd = GetPointerS<function_decl>(gn->scpe);
    const auto fname = tree_helper::GetMangledFunctionName(fd);
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->STORE from " + fname + ":");
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---BEFORE: " + stmt->ToString());
@@ -1548,8 +1545,8 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
       bool isAStruct = false;
       if(ret_call)
       {
-         const auto ga = GetPointerS<const gimple_assign>(GET_CONST_NODE(stmt));
-         const auto ce = GetPointerS<const call_expr>(GET_CONST_NODE(ga->op1));
+         const auto ga = GetPointerS<const gimple_assign>(stmt);
+         const auto ce = GetPointerS<const call_expr>(ga->op1);
          THROW_ASSERT(ce->args.size() == 2, "unexpected condition");
          data_obj = ce->args.at(1);
          if(tree_helper::IsPointerType(data_obj))
@@ -1564,7 +1561,7 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
       }
       else
       {
-         const auto gc = GetPointerS<const gimple_call>(GET_CONST_NODE(stmt));
+         const auto gc = GetPointerS<const gimple_call>(stmt);
          THROW_ASSERT(gc->args.size() == 2, "unexpected condition");
          data_obj = gc->args.at(1);
          if(tree_helper::IsPointerType(data_obj))
@@ -1596,14 +1593,14 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
          const auto ga_ptr = tree_man->CreateNopExpr(data_ptr, out_ptr_type, nullptr, nullptr, fd->index);
          curr_bb->PushBefore(ga_ptr, stmt, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- PCAST: " + ga_ptr->ToString());
-         const auto out_data_ptr = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_ptr))->op0;
+         const auto out_data_ptr = GetPointerS<const gimple_assign>(ga_ptr)->op0;
          const auto data_ref = tree_man->create_binary_operation(
              interface_datatype, out_data_ptr, TM->CreateUniqueIntegerCst(0, out_ptr_type), BUILTIN_SRCP, mem_ref_K);
          const auto ga_load =
              tree_man->CreateGimpleAssign(interface_datatype, nullptr, nullptr, data_ref, fd->index, BUILTIN_SRCP);
          curr_bb->Replace(stmt, ga_load, true, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  LOAD: " + ga_load->ToString());
-         data_obj = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_load))->op0;
+         data_obj = GetPointerS<const gimple_assign>(ga_load)->op0;
          lastStmt = ga_load;
       }
       else if(tree_helper::IsRealType(data_type))
@@ -1613,7 +1610,7 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
              tree_man->CreateGimpleAssign(interface_datatype, nullptr, nullptr, vc, fd->index, BUILTIN_SRCP);
          curr_bb->PushBefore(ga_vc, stmt, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  VIEW: " + ga_vc->ToString());
-         data_obj = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_vc))->op0;
+         data_obj = GetPointerS<const gimple_assign>(ga_vc)->op0;
       }
 
       std::vector<tree_nodeRef> args;
@@ -1621,7 +1618,7 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
       args.push_back(data_obj);
       if(valid_var)
       {
-         const auto ga_stmt = GetPointerS<const gimple_assign>(GET_CONST_NODE(stmt));
+         const auto ga_stmt = GetPointerS<const gimple_assign>(stmt);
          const auto ce = tree_man->CreateCallExpr(fdecl_node, args, BUILTIN_SRCP);
          const auto ga_call = tree_man->create_gimple_modify_stmt(ga_stmt->op0, ce, fd->index, BUILTIN_SRCP);
          if(isAStruct)
@@ -1670,7 +1667,7 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
          {
             nop = tree_man->CreateNopExpr(value_node, interface_datatype, nullptr, nullptr,
                                           GET_INDEX_CONST_NODE(ga->scpe));
-            value_node = GetPointerS<const gimple_assign>(GET_CONST_NODE(nop))->op0;
+            value_node = GetPointerS<const gimple_assign>(nop)->op0;
          }
          curr_bb->PushBefore(nop, stmt, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---   NOP: " + nop->ToString());
@@ -1702,7 +1699,7 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
       }
       args.push_back(TM->CreateUniqueIntegerCst(static_cast<long long>(tree_helper::Size(actual_type)), bit_size_type));
       args.push_back(value_node);
-      const auto mr = GetPointerS<const mem_ref>(GET_CONST_NODE(ga->op0));
+      const auto mr = GetPointerS<const mem_ref>(ga->op0);
       args.push_back(mr->op0);
 
       const auto gc = tree_man->create_gimple_call(fdecl_node, args, GET_INDEX_NODE(ga->scpe), BUILTIN_SRCP);

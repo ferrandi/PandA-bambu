@@ -605,7 +605,7 @@ bool pred;
 
    node : NODE_ID {data->curr_NODE_ID=data->id=$1;}
           node_d  {
-                      data->current_TM->AddTreeNode(data->id, data->curr_tree_nodeRef);
+                      data->current_TM->AddTreeNode(data->curr_tree_nodeRef);
                       data->curr_tree_nodeRef=tree_nodeRef();
                   };
 

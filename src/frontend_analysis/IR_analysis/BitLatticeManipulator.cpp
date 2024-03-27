@@ -77,8 +77,7 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>
 
    // extend the shorter of the two bitstrings
    // compute the underlying type size
-   const auto kind =
-       out_node->get_kind() == tree_reindex_K ? GET_CONST_NODE(out_node)->get_kind() : out_node->get_kind();
+   const auto kind = out_node->get_kind();
    const auto node_type = tree_helper::CGetType(out_node);
    size_t out_type_size = 0;
    if(kind == ssa_name_K || kind == parm_decl_K || kind == integer_cst_K)
@@ -87,10 +86,9 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>
    }
    else if(kind == function_decl_K)
    {
-      THROW_ASSERT(GET_CONST_NODE(node_type)->get_kind() == function_type_K ||
-                       GET_CONST_NODE(node_type)->get_kind() == method_type_K,
+      THROW_ASSERT(node_type->get_kind() == function_type_K || node_type->get_kind() == method_type_K,
                    "node " + STR(out_node) + " is " + node_type->get_kind_text());
-      const auto ft = GetPointerS<const function_type>(GET_CONST_NODE(node_type));
+      const auto ft = GetPointerS<const function_type>(node_type);
       out_type_size = static_cast<size_t>(tree_helper::TypeSize(ft->retn));
    }
    else
@@ -115,8 +113,7 @@ std::deque<bit_lattice> BitLatticeManipulator::inf(const std::deque<bit_lattice>
 {
    THROW_ASSERT(!(a.empty() && b.empty()), "a.size() = " + STR(a.size()) + " b.size() = " + STR(b.size()));
 
-   const auto kind =
-       out_node->get_kind() == tree_reindex_K ? GET_CONST_NODE(out_node)->get_kind() : out_node->get_kind();
+   const auto kind = out_node->get_kind();
    const auto node_type = tree_helper::CGetType(out_node);
    size_t out_type_size = 0;
    if(kind == ssa_name_K || kind == parm_decl_K || kind == integer_cst_K)
@@ -125,10 +122,9 @@ std::deque<bit_lattice> BitLatticeManipulator::inf(const std::deque<bit_lattice>
    }
    else if(kind == function_decl_K)
    {
-      THROW_ASSERT(GET_CONST_NODE(node_type)->get_kind() == function_type_K ||
-                       GET_CONST_NODE(node_type)->get_kind() == method_type_K,
+      THROW_ASSERT(node_type->get_kind() == function_type_K || node_type->get_kind() == method_type_K,
                    "node " + STR(out_node) + " is " + node_type->get_kind_text());
-      const auto ft = GetPointerS<const function_type>(GET_CONST_NODE(node_type));
+      const auto ft = GetPointerS<const function_type>(node_type);
       out_type_size = static_cast<size_t>(tree_helper::TypeSize(ft->retn));
    }
    else
@@ -157,7 +153,7 @@ std::deque<bit_lattice> BitLatticeManipulator::constructor_bitstring(const tree_
    std::deque<bit_lattice> cur_bitstring;
    for(const auto& i : c->list_of_idx_valu)
    {
-      const auto el = GET_CONST_NODE(i.second);
+      const auto el = i.second;
       THROW_ASSERT(el, "unexpected condition");
 
       if(el->get_kind() == integer_cst_K)
@@ -180,8 +176,7 @@ std::deque<bit_lattice> BitLatticeManipulator::constructor_bitstring(const tree_
          }
          sign_reduce_bitstring(cur_bitstring, ssa_is_signed);
       }
-      else if(el->get_kind() == constructor_K &&
-              GetPointer<const array_type>(GET_CONST_NODE(GetPointerS<const constructor>(el)->type)))
+      else if(el->get_kind() == constructor_K && GetPointer<const array_type>(GetPointerS<const constructor>(el)->type))
       {
          THROW_ASSERT(array_dims.size() > 1 || c->type->get_kind() == record_type_K,
                       "invalid nested constructors:" + ctor_tn->ToString() + " " + STR(array_dims.size()));

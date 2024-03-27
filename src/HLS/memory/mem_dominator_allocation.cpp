@@ -123,7 +123,7 @@ bool mem_dominator_allocation::is_internal_obj(unsigned int var_id, unsigned int
          case MemoryAllocation_Policy::LSS:
          {
             const auto vd = GetPointer<const var_decl>(tn);
-            if(vd && (vd->static_flag || (vd->scpe && GET_CONST_NODE(vd->scpe)->get_kind() != translation_unit_decl_K)))
+            if(vd && (vd->static_flag || (vd->scpe && vd->scpe->get_kind() != translation_unit_decl_K)))
             {
                is_internal = true;
             }
@@ -140,7 +140,7 @@ bool mem_dominator_allocation::is_internal_obj(unsigned int var_id, unsigned int
          case MemoryAllocation_Policy::GSS:
          {
             const auto vd = GetPointer<const var_decl>(tn);
-            if(vd && (vd->static_flag || !vd->scpe || GET_CONST_NODE(vd->scpe)->get_kind() == translation_unit_decl_K))
+            if(vd && (vd->static_flag || !vd->scpe || vd->scpe->get_kind() == translation_unit_decl_K))
             {
                is_internal = true;
             }
@@ -632,7 +632,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                      THROW_ASSERT(tree_helper::GetConstValue(mr->op1) == 0, "unexpected condition");
                      if(mr->op0->get_kind() == ssa_name_K)
                      {
-                        const auto ssa_addr = GetPointer<const ssa_name>(GET_CONST_NODE(mr->op0));
+                        const auto ssa_addr = GetPointer<const ssa_name>(mr->op0);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "---STORE SSA pointer " + mr->op0->ToString() +
                                            " bit_values=" + ssa_addr->bit_values);
@@ -662,15 +662,14 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   }
                   else
                   {
-                     THROW_ERROR("unexpected condition" + GET_CONST_NODE(gm->op0)->get_kind_text() + " " +
-                                 gm->ToString());
+                     THROW_ERROR("unexpected condition" + gm->op0->get_kind_text() + " " + gm->ToString());
                   }
                   alignment = (1ull << n_last_zerobits) * 8;
                   const auto var_read = HLSMgr->get_required_values(fun_id, v);
                   const auto size_var = std::get<0>(var_read[0]);
                   const auto size_type = tree_helper::CGetType(TM->CGetTreeNode(size_var));
                   value_bitsize = tree_helper::SizeAlloc(size_type);
-                  const auto fd = GetPointer<const field_decl>(GET_CONST_NODE(size_type));
+                  const auto fd = GetPointer<const field_decl>(size_type);
                   if(!fd || !fd->is_bitfield())
                   {
                      value_bitsize = std::max(8ull, value_bitsize);
@@ -680,14 +679,14 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                else
                {
                   auto n_last_zerobits = 0u;
-                  if(GET_CONST_NODE(gm->op1)->get_kind() == mem_ref_K)
+                  if(gm->op1->get_kind() == mem_ref_K)
                   {
-                     const auto mr = GetPointer<const mem_ref>(GET_CONST_NODE(gm->op1));
-                     THROW_ASSERT(GetPointer<const integer_cst>(GET_CONST_NODE(mr->op1)), "unexpected condition");
+                     const auto mr = GetPointer<const mem_ref>(gm->op1);
+                     THROW_ASSERT(GetPointer<const integer_cst>(mr->op1), "unexpected condition");
                      THROW_ASSERT(tree_helper::GetConstValue(mr->op1) == 0, "unexpected condition");
-                     if(GET_CONST_NODE(mr->op0)->get_kind() == ssa_name_K)
+                     if(mr->op0->get_kind() == ssa_name_K)
                      {
-                        const auto ssa_addr = GetPointer<const ssa_name>(GET_CONST_NODE(mr->op0));
+                        const auto ssa_addr = GetPointer<const ssa_name>(mr->op0);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "---LOAD SSA pointer " + mr->op0->ToString() +
                                            " bit_values=" + ssa_addr->bit_values);
@@ -717,14 +716,13 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   }
                   else
                   {
-                     THROW_ERROR("unexpected condition " + GET_CONST_NODE(gm->op1)->get_kind_text() + " " +
-                                 gm->ToString());
+                     THROW_ERROR("unexpected condition " + gm->op1->get_kind_text() + " " + gm->ToString());
                   }
                   alignment = (1ull << n_last_zerobits) * 8;
                   const auto size_var = HLSMgr->get_produced_value(fun_id, v);
                   const auto size_type = tree_helper::CGetType(TM->CGetTreeNode(size_var));
                   value_bitsize = tree_helper::SizeAlloc(size_type);
-                  const auto fd = GetPointer<const field_decl>(GET_CONST_NODE(size_type));
+                  const auto fd = GetPointer<const field_decl>(size_type);
                   if(!fd || !fd->is_bitfield())
                   {
                      value_bitsize = std::max(8ull, value_bitsize);
@@ -1317,8 +1315,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                                  "---Analyzing function " +
                                      cur_function_behavior->CGetBehavioralHelper()->get_function_name());
                   if(cur_function_behavior->get_dynamic_address().count(var_id) ||
-                     (GetPointer<const var_decl>(GET_CONST_NODE(var_node)) &&
-                      GetPointerS<const var_decl>(GET_CONST_NODE(var_node))->addr_taken))
+                     (GetPointer<const var_decl>(var_node) && GetPointerS<const var_decl>(var_node)->addr_taken))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, dbg_lvl,
                                     "---Found dynamic use of variable: " +
@@ -1385,8 +1382,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                Rmem->add_external_variable(var_id, BH->PrintVariable(var_id));
                is_dynamic_address_used = true;
             }
-            const auto is_packed =
-                GetPointer<const decl_node>(GET_CONST_NODE(var_node)) && tree_helper::IsPackedType(var_node);
+            const auto is_packed = GetPointer<const decl_node>(var_node) && tree_helper::IsPackedType(var_node);
             Rmem->set_packed_vars(is_packed);
 
             INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl, "---Id: " + STR(var_id));
@@ -1426,7 +1422,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             {
                INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
                               "---The variable is always accessed with the same data size");
-               const auto vd = GetPointer<const var_decl>(GET_CONST_NODE(var_node));
+               const auto vd = GetPointer<const var_decl>(var_node);
                if(vd && vd->bit_values.size() != 0)
                {
                   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,

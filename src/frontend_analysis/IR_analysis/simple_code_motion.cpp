@@ -652,7 +652,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
    restart_ifmwi_opt = false;
 
    const auto fd = GetPointerS<const function_decl>(TM->CGetTreeNode(function_id));
-   const auto sl = GetPointerS<const statement_list>(GET_CONST_NODE(fd->body));
+   const auto sl = GetPointerS<const statement_list>(fd->body);
 
    const auto isFunctionPipelined = AppM->CGetFunctionBehavior(function_id)->is_simple_pipeline();
 

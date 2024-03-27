@@ -414,7 +414,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                tree_nodeRef cond = nullptr;
                for(const auto& case_label : case_labels.at(GET_INDEX_CONST_NODE(gl->op)))
                {
-                  const auto cle = GetPointer<const case_label_expr>(GET_CONST_NODE(case_label));
+                  const auto cle = GetPointer<const case_label_expr>(case_label);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering case " + cle->ToString());
                   if(cle->op0)
                   {

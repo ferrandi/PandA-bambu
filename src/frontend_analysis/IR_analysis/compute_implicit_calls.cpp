@@ -226,18 +226,18 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
             }
             if(!gm->clobber && !gm->init_assignment && op0_type && op1_type && op1->get_kind() != insertvalue_expr_K &&
                op1->get_kind() != extractvalue_expr_K &&
-               ((GET_CONST_NODE(op0_type)->get_kind() == record_type_K &&
-                 GET_CONST_NODE(op1_type)->get_kind() == record_type_K && op1->get_kind() != view_convert_expr_K) ||
-                (GET_CONST_NODE(op0_type)->get_kind() == union_type_K &&
-                 GET_CONST_NODE(op1_type)->get_kind() == union_type_K && op1->get_kind() != view_convert_expr_K) ||
-                (GET_CONST_NODE(op0_type)->get_kind() == array_type_K) || (store_candidate && load_candidate)))
+               ((op0_type->get_kind() == record_type_K && op1_type->get_kind() == record_type_K &&
+                 op1->get_kind() != view_convert_expr_K) ||
+                (op0_type->get_kind() == union_type_K && op1_type->get_kind() == union_type_K &&
+                 op1->get_kind() != view_convert_expr_K) ||
+                (op0_type->get_kind() == array_type_K) || (store_candidate && load_candidate)))
             {
                changed = true;
                const auto mr = GetPointer<mem_ref>(op0);
                THROW_ASSERT(mr, "unexpected condition " + gm->ToString());
                /// compute the size of memory to be set with memset
                const auto dst_type = tree_helper::CGetType(mr->op0);
-               const auto dst_ptr_t = GetPointer<const pointer_type>(GET_CONST_NODE(dst_type));
+               const auto dst_ptr_t = GetPointer<const pointer_type>(dst_type);
                THROW_ASSERT(dst_ptr_t, "unexpected condition");
                const auto dst_size = tree_helper::SizeAlloc(dst_ptr_t->ptd);
                if(dst_size)
@@ -254,7 +254,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
                         if(do_lowering)
                         {
                            const auto element_type = tree_helper::CGetElements(type_node);
-                           const auto element_type_kind = GET_CONST_NODE(element_type)->get_kind();
+                           const auto element_type_kind = element_type->get_kind();
                            if(!(element_type_kind == boolean_type_K || element_type_kind == CharType_K ||
                                 element_type_kind == enumeral_type_K || element_type_kind == integer_type_K ||
                                 element_type_kind == pointer_type_K or element_type_kind == record_type_K))
@@ -280,7 +280,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
                      }
                      else
                      {
-                        THROW_ASSERT(GetPointerS<const function_decl>(GET_CONST_NODE(TM->GetFunction(MEMSET)))->body,
+                        THROW_ASSERT(GetPointerS<const function_decl>(TM->GetFunction(MEMSET))->body,
                                      "inconsistent behavioral helper");
                         replace_with_memset(stmt, sl, tree_man);
                         update_bb_ver = true;
@@ -288,7 +288,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
                   }
                   else
                   {
-                     THROW_ASSERT(GetPointerS<const function_decl>(GET_CONST_NODE(TM->GetFunction(MEMCPY)))->body,
+                     THROW_ASSERT(GetPointerS<const function_decl>(TM->GetFunction(MEMCPY))->body,
                                   "inconsistent behavioral helper");
                      replace_with_memcpy(stmt, sl, tree_man);
                      update_bb_ver = true;
@@ -381,9 +381,9 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       auto init_var = mr->op0;
       const auto srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
       auto type_node1 = tree_helper::CGetType(var);
-      const auto algn = GetPointerS<const type_node>(GET_CONST_NODE(type_node1))->algn;
-      THROW_ASSERT(GET_CONST_NODE(type_node1)->get_kind() == array_type_K, "unexpected condition");
-      while(GET_CONST_NODE(type_node1)->get_kind() == array_type_K)
+      const auto algn = GetPointerS<const type_node>(type_node1)->algn;
+      THROW_ASSERT(type_node1->get_kind() == array_type_K, "unexpected condition");
+      while(type_node1->get_kind() == array_type_K)
       {
          type_node1 = tree_helper::CGetElements(type_node1);
       }
@@ -412,7 +412,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
 
       /// compute the size of memory to be set with memset
       const auto dst_type = tree_helper::CGetType(mr->op0);
-      const auto dst_ptr_t = GetPointer<const pointer_type>(GET_CONST_NODE(dst_type));
+      const auto dst_ptr_t = GetPointer<const pointer_type>(dst_type);
       THROW_ASSERT(dst_ptr_t, "unexpected condition");
       const auto dst_size = tree_helper::SizeAlloc(dst_ptr_t->ptd);
       THROW_ASSERT(dst_size % 8 == 0, "unexpected condition");
@@ -523,21 +523,20 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
 void compute_implicit_calls::replace_with_memcpy(tree_nodeRef stmt, const statement_list* sl,
                                                  tree_manipulationRef tree_man) const
 {
-   const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
-   const auto lhs_node = GET_CONST_NODE(ga->op0);
+   const auto ga = GetPointer<const gimple_assign>(stmt);
+   const auto lhs_node = ga->op0;
    THROW_ASSERT(
        lhs_node->get_kind() == mem_ref_K,
        "unexpected condition: " + AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name() +
            " calls function " + MEMCPY + " in operation " + ga->ToString() + " but lhs " + lhs_node->ToString() +
            " is not a mem_ref: it's a " + lhs_node->get_kind_text());
    const auto mr_lhs = GetPointer<const mem_ref>(lhs_node);
-   THROW_ASSERT(GetPointer<const ssa_name>(GET_CONST_NODE(mr_lhs->op0)), "");
-   THROW_ASSERT(
-       GET_CONST_NODE(mr_lhs->op1)->get_kind() == integer_cst_K && tree_helper::GetConstValue(mr_lhs->op1) == 0, "");
-   const auto rhs_node = GET_CONST_NODE(ga->op1);
+   THROW_ASSERT(GetPointer<const ssa_name>(mr_lhs->op0), "");
+   THROW_ASSERT(mr_lhs->op1->get_kind() == integer_cst_K && tree_helper::GetConstValue(mr_lhs->op1) == 0, "");
+   const auto rhs_node = ga->op1;
    const auto rhs_kind = rhs_node->get_kind();
 
-   const auto s = GetPointer<const srcp>(GET_CONST_NODE(stmt));
+   const auto s = GetPointer<const srcp>(stmt);
    const std::string current_srcp =
        s ? (s->include_name + ":" + STR(s->line_number) + ":" + STR(s->column_number)) : "";
 
@@ -554,9 +553,8 @@ void compute_implicit_calls::replace_with_memcpy(tree_nodeRef stmt, const statem
    if(rhs_kind == mem_ref_K)
    {
       const auto mr_rhs = GetPointer<const mem_ref>(rhs_node);
-      THROW_ASSERT(GetPointer<const ssa_name>(GET_CONST_NODE(mr_rhs->op0)), "");
-      THROW_ASSERT(
-          GET_CONST_NODE(mr_rhs->op1)->get_kind() == integer_cst_K && tree_helper::GetConstValue(mr_rhs->op1) == 0, "");
+      THROW_ASSERT(GetPointer<const ssa_name>(mr_rhs->op0), "");
+      THROW_ASSERT(mr_rhs->op1->get_kind() == integer_cst_K && tree_helper::GetConstValue(mr_rhs->op1) == 0, "");
 
       // src
       args.push_back(mr_rhs->op0);
@@ -564,8 +562,8 @@ void compute_implicit_calls::replace_with_memcpy(tree_nodeRef stmt, const statem
       // compute the size in bytes of the copied memory
       const auto dst_type = tree_helper::CGetType(mr_lhs->op0);
       const auto src_type = tree_helper::CGetType(mr_rhs->op0);
-      const auto dst_ptr_t = GetPointer<const pointer_type>(GET_CONST_NODE(dst_type));
-      const auto src_ptr_t = GetPointer<const pointer_type>(GET_CONST_NODE(src_type));
+      const auto dst_ptr_t = GetPointer<const pointer_type>(dst_type);
+      const auto src_ptr_t = GetPointer<const pointer_type>(src_type);
       unsigned long long dst_size;
       if(dst_ptr_t)
       {
@@ -573,7 +571,7 @@ void compute_implicit_calls::replace_with_memcpy(tree_nodeRef stmt, const statem
       }
       else
       {
-         const auto dst_rptr_t = GetPointer<const reference_type>(GET_CONST_NODE(dst_type));
+         const auto dst_rptr_t = GetPointer<const reference_type>(dst_type);
          dst_size = tree_helper::SizeAlloc(dst_rptr_t->refd);
       }
       unsigned long long src_size;
@@ -583,7 +581,7 @@ void compute_implicit_calls::replace_with_memcpy(tree_nodeRef stmt, const statem
       }
       else
       {
-         const auto src_rptr_t = GetPointer<const reference_type>(GET_CONST_NODE(src_type));
+         const auto src_rptr_t = GetPointer<const reference_type>(src_type);
          src_size = tree_helper::SizeAlloc(src_rptr_t->refd);
       }
       if(src_size != dst_size)
@@ -604,12 +602,12 @@ void compute_implicit_calls::replace_with_memcpy(tree_nodeRef stmt, const statem
       const auto block = sl->list_of_bloc.at(ga->bb_index);
       block->PushBefore(memcpy_src_ga, stmt, AppM);
       // push back src param
-      const auto new_ga = GetPointer<const gimple_assign>(GET_CONST_NODE(memcpy_src_ga));
+      const auto new_ga = GetPointer<const gimple_assign>(memcpy_src_ga);
       args.push_back(new_ga->op0);
 
       // compute the size in bytes of the copied memory
       const auto dst_type = tree_helper::CGetType(mr_lhs->op0);
-      const auto dst_ptr_t = GetPointer<const pointer_type>(GET_CONST_NODE(dst_type));
+      const auto dst_ptr_t = GetPointer<const pointer_type>(dst_type);
       THROW_ASSERT(dst_ptr_t, "");
       const auto dst_bitsize = tree_helper::SizeAlloc(dst_ptr_t->ptd);
       THROW_ASSERT(dst_bitsize % 8U == 0, "");
@@ -633,13 +631,13 @@ void compute_implicit_calls::replace_with_memcpy(tree_nodeRef stmt, const statem
       const auto block = sl->list_of_bloc.at(ga->bb_index);
       block->PushBefore(memcpy_src_ga, stmt, AppM);
       // push back src param
-      const auto new_ga = GetPointer<const gimple_assign>(GET_CONST_NODE(memcpy_src_ga));
+      const auto new_ga = GetPointer<const gimple_assign>(memcpy_src_ga);
       args.push_back(new_ga->op0);
 
       // compute the size in bytes of the copied memory
       const auto dst_type = tree_helper::CGetType(mr_lhs->op0);
-      const auto src_type = GET_CONST_NODE(tree_man->GetPointerType(tree_helper::CGetType(rhs_node), 8));
-      const auto dst_ptr_t = GetPointer<const pointer_type>(GET_CONST_NODE(dst_type));
+      const auto src_type = tree_man->GetPointerType(tree_helper::CGetType(rhs_node), 8);
+      const auto dst_ptr_t = GetPointer<const pointer_type>(dst_type);
       const auto src_ptr_t = GetPointer<const pointer_type>(src_type);
       THROW_ASSERT(dst_ptr_t, "");
       THROW_ASSERT(src_ptr_t, "");
@@ -675,19 +673,18 @@ void compute_implicit_calls::replace_with_memcpy(tree_nodeRef stmt, const statem
 void compute_implicit_calls::replace_with_memset(tree_nodeRef stmt, const statement_list* sl,
                                                  tree_manipulationRef tree_man) const
 {
-   const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
-   const auto lhs_node = GET_CONST_NODE(ga->op0);
+   const auto ga = GetPointer<const gimple_assign>(stmt);
+   const auto lhs_node = ga->op0;
    THROW_ASSERT(
        lhs_node->get_kind() == mem_ref_K,
        "unexpected condition: " + AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name() +
            " calls function " + MEMSET + " in operation " + ga->ToString() + " but lhs " + lhs_node->ToString() +
            " is not a mem_ref: it's a " + lhs_node->get_kind_text());
    const auto mr_lhs = GetPointer<const mem_ref>(lhs_node);
-   THROW_ASSERT(GetPointer<const ssa_name>(GET_CONST_NODE(mr_lhs->op0)), "");
-   THROW_ASSERT(
-       GET_CONST_NODE(mr_lhs->op1)->get_kind() == integer_cst_K && tree_helper::GetConstValue(mr_lhs->op1) == 0, "");
+   THROW_ASSERT(GetPointer<const ssa_name>(mr_lhs->op0), "");
+   THROW_ASSERT(mr_lhs->op1->get_kind() == integer_cst_K && tree_helper::GetConstValue(mr_lhs->op1) == 0, "");
 
-   const auto s = GetPointer<const srcp>(GET_CONST_NODE(stmt));
+   const auto s = GetPointer<const srcp>(stmt);
    const auto current_srcp = s ? (s->include_name + ":" + STR(s->line_number) + ":" + STR(s->column_number)) : "";
 
    unsigned long int copy_byte_size = 0U;
@@ -695,7 +692,7 @@ void compute_implicit_calls::replace_with_memset(tree_nodeRef stmt, const statem
    // dst is always the ssa on the rhs
    std::vector<tree_nodeRef> args = {mr_lhs->op0};
 
-   THROW_ASSERT(GetPointer<const constructor>(GET_CONST_NODE(ga->op1))->list_of_idx_valu.empty(), "");
+   THROW_ASSERT(GetPointer<const constructor>(ga->op1)->list_of_idx_valu.empty(), "");
    const auto memset_fu_node = TM->GetFunction(MEMSET);
 
    // create the second argument of memset
@@ -704,7 +701,7 @@ void compute_implicit_calls::replace_with_memset(tree_nodeRef stmt, const statem
 
    // compute the size of memory to be set with memset
    const auto dst_type = tree_helper::CGetType(mr_lhs->op0);
-   const auto dst_ptr_t = GetPointer<const pointer_type>(GET_CONST_NODE(dst_type));
+   const auto dst_ptr_t = GetPointer<const pointer_type>(dst_type);
    THROW_ASSERT(dst_ptr_t, "");
    const auto dst_size = tree_helper::SizeAlloc(dst_ptr_t->ptd);
    THROW_ASSERT(dst_size % 8U == 0, "");

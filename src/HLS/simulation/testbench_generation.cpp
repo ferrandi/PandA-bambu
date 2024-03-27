@@ -791,7 +791,7 @@ std::vector<std::string> TestbenchGeneration::print_var_init(const tree_managerC
    std::vector<std::string> init_els;
    const auto tn = TM->CGetTreeNode(var);
    const auto init_node = [&]() -> tree_nodeRef {
-      const auto vd = GetPointer<const var_decl>(GET_CONST_NODE(tn));
+      const auto vd = GetPointer<const var_decl>(tn);
       if(vd && vd->init)
       {
          return vd->init;
@@ -799,17 +799,16 @@ std::vector<std::string> TestbenchGeneration::print_var_init(const tree_managerC
       return nullptr;
    }();
 
-   if(init_node && (!GetPointer<const constructor>(GET_CONST_NODE(init_node)) ||
-                    GetPointerS<const constructor>(GET_CONST_NODE(init_node))->list_of_idx_valu.size()))
+   if(init_node &&
+      (!GetPointer<const constructor>(init_node) || GetPointerS<const constructor>(init_node)->list_of_idx_valu.size()))
    {
       fu_binding::write_init(TM, tn, init_node, init_els, mem, 0);
    }
-   else if(GET_CONST_NODE(tn)->get_kind() == string_cst_K || GET_CONST_NODE(tn)->get_kind() == integer_cst_K ||
-           GET_CONST_NODE(tn)->get_kind() == real_cst_K)
+   else if(tn->get_kind() == string_cst_K || tn->get_kind() == integer_cst_K || tn->get_kind() == real_cst_K)
    {
       fu_binding::write_init(TM, tn, tn, init_els, mem, 0);
    }
-   else if(!GetPointer<gimple_call>(GET_CONST_NODE(tn)))
+   else if(!GetPointer<gimple_call>(tn))
    {
       if(tree_helper::IsArrayType(tn))
       {
@@ -835,7 +834,7 @@ unsigned long long TestbenchGeneration::generate_init_file(const std::string& da
    std::ofstream useless;
    unsigned long long vec_size = 0, elts_size = 0;
    const auto var_type = tree_helper::CGetType(TM->CGetTreeNode(var));
-   const auto bitsize_align = GetPointer<const type_node>(GET_CONST_NODE(var_type))->algn;
+   const auto bitsize_align = GetPointer<const type_node>(var_type)->algn;
    THROW_ASSERT((bitsize_align % 8) == 0, "Alignment is not byte aligned.");
    fu_binding::fill_array_ref_memory(init_bits, useless, var, vec_size, elts_size, mem, TM, false, bitsize_align);
 

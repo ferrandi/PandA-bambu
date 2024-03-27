@@ -1759,8 +1759,7 @@ tree_nodeRef IR_lowering::array_ref_lowering(array_ref* AR, const std::string& s
       offset_node = AR->op1;
    }
    const auto ar_op0_type_node = tree_helper::CGetType(AR->op0);
-   THROW_ASSERT(GET_CONST_NODE(ar_op0_type_node)->get_kind() == array_type_K,
-                "array_type expected: @" + STR(ar_op0_type_node->index));
+   THROW_ASSERT(ar_op0_type_node->get_kind() == array_type_K, "array_type expected: @" + STR(ar_op0_type_node->index));
    auto data_bitsize = tree_helper::GetArrayElementSize(ar_op0_type_node);
    auto n_byte = compute_n_bytes(data_bitsize);
    const auto dims = tree_helper::GetArrayDimensions(ar_op0_type_node);
@@ -1791,11 +1790,11 @@ bool IR_lowering::reached_max_transformation_limit(const tree_nodeRef& stmt)
 {
    if(stmt)
    {
-      const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
+      const auto ga = GetPointer<const gimple_assign>(stmt);
       if(ga)
       {
-         const auto op0 = GET_CONST_NODE(ga->op0);
-         const auto op1 = GET_CONST_NODE(ga->op1);
+         const auto op0 = ga->op0;
+         const auto op1 = ga->op1;
          if(op1->get_kind() == cond_expr_K)
          {
             return false;

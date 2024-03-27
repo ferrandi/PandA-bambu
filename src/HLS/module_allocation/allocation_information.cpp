@@ -69,7 +69,7 @@
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
-#include "tree_node.hpp" // for GET_NODE, GET_CONST_NODE, TreeNo...
+#include "tree_node.hpp"
 #include "tree_reindex.hpp"
 #include "typed_node_info.hpp" // for GET_NAME
 #include <algorithm>
@@ -679,14 +679,14 @@ double AllocationInformation::GetStatementArea(const unsigned int statement_inde
    if(stmt_kind == gimple_assign_K)
    {
       const auto ga = GetPointerS<const gimple_assign>(stmt);
-      const auto op1_kind = GET_CONST_NODE(ga->op1)->get_kind();
+      const auto op1_kind = ga->op1->get_kind();
       if(op1_kind == ssa_name_K || op1_kind == integer_cst_K || op1_kind == convert_expr_K || op1_kind == nop_expr_K ||
          op1_kind == bit_ior_concat_expr_K || op1_kind == extract_bit_expr_K)
       {
          return 0.0;
       }
       else if((op1_kind == rshift_expr_K || op1_kind == lshift_expr_K) &&
-              GET_CONST_NODE(GetPointerS<const binary_expr>(GET_CONST_NODE(ga->op1))->op1)->get_kind() == integer_cst_K)
+              GetPointerS<const binary_expr>(ga->op1)->op1->get_kind() == integer_cst_K)
       {
          return 0.0;
       }
@@ -714,22 +714,22 @@ double AllocationInformation::GetStatementArea(const unsigned int statement_inde
       {
          fu_name = tree_node::GetString(op1_kind) + "_FU";
       }
-      else if(GetPointer<const unary_expr>(GET_CONST_NODE(ga->op1)))
+      else if(GetPointer<const unary_expr>(ga->op1))
       {
          fu_name = tree_node::GetString(op1_kind) + "_FU_" + STR(fu_prec) + "_" + STR(fu_prec);
       }
-      else if(GetPointer<const binary_expr>(GET_CONST_NODE(ga->op1)))
+      else if(GetPointer<const binary_expr>(ga->op1))
       {
          fu_name = tree_node::GetString(op1_kind) + "_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec);
       }
-      else if(GetPointer<const ternary_expr>(GET_CONST_NODE(ga->op1)))
+      else if(GetPointer<const ternary_expr>(ga->op1))
       {
          fu_name = tree_node::GetString(op1_kind) + "_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) +
                    "_" + STR(fu_prec);
       }
       else
       {
-         THROW_UNREACHABLE("Unhandled operation (" + GET_CONST_NODE(ga->op1)->get_kind_text() + ")" + STR(stmt));
+         THROW_UNREACHABLE("Unhandled operation (" + ga->op1->get_kind_text() + ")" + STR(stmt));
       }
       const auto new_stmt_temp = HLS_D->get_technology_manager()->get_fu(fu_name, LIBRARY_STD_FU);
       THROW_ASSERT(new_stmt_temp, "Functional unit '" + fu_name + "' not found");
@@ -854,15 +854,15 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index) const
    /// currently all the operations introduced after the allocation has been performed are bounded
    if(ga)
    {
-      const auto right_kind = GET_CONST_NODE(ga->op1)->get_kind();
+      const auto right_kind = ga->op1->get_kind();
       /// currently all the operations introduced after the allocation has been performed are bounded
       // BEAWARE: when adding operations here, check they are correctly handled by GetTimeLatency and GetCycleLatency
-      THROW_ASSERT(GetPointer<const cst_node>(GET_CONST_NODE(ga->op1)) || right_kind == ssa_name_K ||
-                       right_kind == cond_expr_K || right_kind == vec_cond_expr_K || right_kind == convert_expr_K ||
-                       right_kind == nop_expr_K || right_kind == bit_ior_concat_expr_K ||
-                       right_kind == extract_bit_expr_K || right_kind == lut_expr_K || right_kind == truth_not_expr_K ||
-                       right_kind == bit_not_expr_K || right_kind == negate_expr_K || right_kind == bit_xor_expr_K ||
-                       right_kind == bit_ior_expr_K || right_kind == bit_and_expr_K || right_kind == truth_and_expr_K ||
+      THROW_ASSERT(GetPointer<const cst_node>(ga->op1) || right_kind == ssa_name_K || right_kind == cond_expr_K ||
+                       right_kind == vec_cond_expr_K || right_kind == convert_expr_K || right_kind == nop_expr_K ||
+                       right_kind == bit_ior_concat_expr_K || right_kind == extract_bit_expr_K ||
+                       right_kind == lut_expr_K || right_kind == truth_not_expr_K || right_kind == bit_not_expr_K ||
+                       right_kind == negate_expr_K || right_kind == bit_xor_expr_K || right_kind == bit_ior_expr_K ||
+                       right_kind == bit_and_expr_K || right_kind == truth_and_expr_K ||
                        right_kind == truth_or_expr_K || right_kind == truth_xor_expr_K || right_kind == lshift_expr_K ||
                        right_kind == rshift_expr_K || right_kind == widen_mult_expr_K || right_kind == mult_expr_K ||
                        right_kind == plus_expr_K || right_kind == minus_expr_K || right_kind == ternary_plus_expr_K ||
@@ -1953,7 +1953,7 @@ unsigned int AllocationInformation::GetCycleLatency(const unsigned int operation
    const auto ga = GetPointer<const gimple_assign>(tn);
    if(ga)
    {
-      const auto right_kind = GET_CONST_NODE(ga->op1)->get_kind();
+      const auto right_kind = ga->op1->get_kind();
       if(right_kind == widen_mult_expr_K || right_kind == mult_expr_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -2158,7 +2158,7 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
       if(op_stmt_kind == gimple_assign_K)
       {
          const auto ga = GetPointerS<const gimple_assign>(op_stmt);
-         const auto op1_kind = GET_CONST_NODE(ga->op1)->get_kind();
+         const auto op1_kind = ga->op1->get_kind();
          if(op1_kind == ssa_name_K || op1_kind == integer_cst_K || op1_kind == convert_expr_K ||
             op1_kind == nop_expr_K || op1_kind == addr_expr_K || op1_kind == bit_ior_concat_expr_K ||
             op1_kind == extract_bit_expr_K)
@@ -2167,15 +2167,14 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
             return std::make_pair(0.0, 0.0);
          }
          else if((op1_kind == rshift_expr_K || op1_kind == lshift_expr_K) &&
-                 GET_CONST_NODE(GetPointerS<const binary_expr>(GET_CONST_NODE(ga->op1))->op1)->get_kind() ==
-                     integer_cst_K)
+                 GetPointerS<const binary_expr>(ga->op1)->op1->get_kind() == integer_cst_K)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Time is 0.0,0.0");
             return std::make_pair(0.0, 0.0);
          }
          else if(op1_kind == cond_expr_K || op1_kind == vec_cond_expr_K)
          {
-            THROW_ASSERT(tree_helper::Size(GetPointerS<const ternary_expr>(GET_CONST_NODE(ga->op1))->op0) == 1,
+            THROW_ASSERT(tree_helper::Size(GetPointerS<const ternary_expr>(ga->op1)->op0) == 1,
                          "Cond expr not allocated " + ga->op1->ToString());
             /// Computing time of cond_expr as time of cond_expr_FU - setup_time
             const auto data_bitsize = tree_helper::Size(ga->op0);
@@ -2226,15 +2225,15 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
          {
             fu_name = tree_node::GetString(op1_kind) + "_FU";
          }
-         else if(GetPointer<const unary_expr>(GET_CONST_NODE(ga->op1)))
+         else if(GetPointer<const unary_expr>(ga->op1))
          {
             fu_name = tree_node::GetString(op1_kind) + "_FU_" + STR(fu_prec) + "_" + STR(fu_prec);
          }
-         else if(GetPointer<const binary_expr>(GET_CONST_NODE(ga->op1)))
+         else if(GetPointer<const binary_expr>(ga->op1))
          {
             fu_name = tree_node::GetString(op1_kind) + "_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec);
          }
-         else if(GetPointer<const ternary_expr>(GET_CONST_NODE(ga->op1)))
+         else if(GetPointer<const ternary_expr>(ga->op1))
          {
             fu_name = tree_node::GetString(op1_kind) + "_FU_" + STR(fu_prec) + "_" + STR(fu_prec) + "_" + STR(fu_prec) +
                       "_" + STR(fu_prec);
@@ -2338,7 +2337,7 @@ double AllocationInformation::GetPhiConnectionLatency(const unsigned int stateme
 double AllocationInformation::GetCondExprTimeLatency(const unsigned int operation_index) const
 {
    const auto tn = TreeM->CGetTreeNode(operation_index);
-   const auto gp = GetPointer<const gimple_phi>(GET_CONST_NODE(tn));
+   const auto gp = GetPointer<const gimple_phi>(tn);
    THROW_ASSERT(gp, "Tree node is " + STR(tn));
    /// Computing time of cond_expr as time of cond_expr_FU - setup_time
    /// In this way we are correctly estimating only phi with two inputs
@@ -3538,7 +3537,7 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
       {
          const auto first_operation_tn = TreeM->CGetTreeNode(first_operation);
          const auto ga = GetPointer<const gimple_assign>(first_operation_tn);
-         const auto ne = GetPointer<const nop_expr>(GET_CONST_NODE(ga->op1));
+         const auto ne = GetPointer<const nop_expr>(ga->op1);
          if(ne)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing connection time due to conversion");
@@ -3551,8 +3550,8 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not expr with signed input in right part");
                const auto output_sn =
-                   GetPointer<const ssa_name>(GET_CONST_NODE(GetPointer<const gimple_assign>(first_operation_tn)->op0));
-               const auto input_sn = GetPointer<const ssa_name>(GET_CONST_NODE(ne->op));
+                   GetPointer<const ssa_name>(GetPointer<const gimple_assign>(first_operation_tn)->op0);
+               const auto input_sn = GetPointer<const ssa_name>(ne->op);
                if(output_sn && input_sn && tree_helper::Size(ga->op0) > tree_helper::Size(ne->op))
                {
                   fanout = (tree_helper::Size(ga->op0) - tree_helper::Size(ne->op) + 1) * output_sn->CGetNumberUses();
@@ -3582,7 +3581,7 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
       if(first_operation != ENTRY_ID && TreeM->CGetTreeNode(first_operation)->get_kind() == gimple_assign_K)
       {
          const auto first_operation_tn = TreeM->CGetTreeNode(first_operation);
-         const auto op1_kind = GET_CONST_NODE(GetPointer<const gimple_assign>(first_operation_tn)->op1)->get_kind();
+         const auto op1_kind = GetPointer<const gimple_assign>(first_operation_tn)->op1->get_kind();
          if(op1_kind == plus_expr_K || op1_kind == minus_expr_K || op1_kind == ternary_plus_expr_K ||
             op1_kind == ternary_pm_expr_K || op1_kind == ternary_mp_expr_K || op1_kind == ternary_mm_expr_K ||
             op1_kind == eq_expr_K || op1_kind == ne_expr_K || op1_kind == gt_expr_K || op1_kind == ge_expr_K ||
@@ -3649,7 +3648,7 @@ bool AllocationInformation::can_be_asynchronous_ram(tree_managerConstRef TM, uns
    if(vd)
    {
       const auto array_type_node = tree_helper::CGetType(var_node);
-      if(GetPointer<const array_type>(GET_CONST_NODE(array_type_node)))
+      if(GetPointer<const array_type>(array_type_node))
       {
          std::vector<unsigned long long> dims;
          unsigned long long elts_size;
@@ -3998,7 +3997,7 @@ double AllocationInformation::GetToDspRegisterDelay(const unsigned int statement
       {
          return false;
       }
-      const auto op1_kind = GET_CONST_NODE(ga->op1)->get_kind();
+      const auto op1_kind = ga->op1->get_kind();
       if(op1_kind == plus_expr_K || op1_kind == minus_expr_K || op1_kind == ternary_plus_expr_K ||
          op1_kind == ternary_pm_expr_K || op1_kind == ternary_mp_expr_K || op1_kind == ternary_mm_expr_K ||
          op1_kind == eq_expr_K || op1_kind == ne_expr_K || op1_kind == gt_expr_K || op1_kind == ge_expr_K ||
@@ -4087,7 +4086,7 @@ CustomSet<unsigned int> AllocationInformation::GetZeroDistanceOperations(const u
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not continuing since not gimple_assign ");
             continue;
          }
-         const auto current_sn = GetPointer<const ssa_name>(GET_CONST_NODE(current_ga->op0));
+         const auto current_sn = GetPointer<const ssa_name>(current_ga->op0);
          if(!current_sn)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not continuing since not ssa");

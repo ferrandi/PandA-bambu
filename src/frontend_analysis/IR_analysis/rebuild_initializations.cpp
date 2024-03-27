@@ -122,15 +122,14 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
          {
             auto* ga = GetPointerS<gimple_assign>(*it_los);
             enum kind code0 = ga->op0->get_kind();
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "Left part of assignment " + ga->op0->get_kind_text() +
-                               (code0 == array_ref_K ?
-                                    " - Type is " + GET_CONST_NODE(tree_helper::CGetType(ga->op0))->get_kind_text() :
-                                    ""));
+            INDENT_DBG_MEX(
+                DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                "Left part of assignment " + ga->op0->get_kind_text() +
+                    (code0 == array_ref_K ? " - Type is " + tree_helper::CGetType(ga->op0)->get_kind_text() : ""));
 
             /// NOTE: the check has to be performed on the type of the elements of the array and not on the constant in
             /// the right part to avoid rebuilding of array of pointers
-            if(code0 == array_ref_K && GET_CONST_NODE(tree_helper::CGetType(ga->op0))->get_kind() == integer_type_K)
+            if(code0 == array_ref_K && tree_helper::CGetType(ga->op0)->get_kind() == integer_type_K)
             {
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                              "check for an initialization such as var[const_index] = const_value; " +
@@ -201,8 +200,7 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
          }
          else
          {
-            THROW_ASSERT(GET_CONST_NODE(element_type)->get_kind() == integer_type_K,
-                         "Type not supported " + STR(element_type));
+            THROW_ASSERT(element_type->get_kind() == integer_type_K, "Type not supported " + STR(element_type));
             const auto default_value = TM->CreateUniqueIntegerCst(0, element_type);
             constr->add_idx_valu(TM->CreateUniqueIntegerCst(index, integer_type), default_value);
          }
@@ -774,7 +772,7 @@ bool rebuild_initialization2::look_for_ROMs()
                         }
                         else
                         {
-                           auto Type = GET_CONST_NODE(vd->type);
+                           auto Type = vd->type;
                            /// then we check if the variable is an array
                            if(Type->get_kind() == array_type_K)
                            {
@@ -1356,8 +1354,7 @@ bool rebuild_initialization2::look_for_ROMs()
          }
          else
          {
-            THROW_ASSERT(GET_CONST_NODE(element_type)->get_kind() == integer_type_K,
-                         "Type not supported " + STR(element_type));
+            THROW_ASSERT(element_type->get_kind() == integer_type_K, "Type not supported " + STR(element_type));
             const auto default_value = TM->CreateUniqueIntegerCst(0, element_type);
             constr->add_idx_valu(TM->CreateUniqueIntegerCst(index, integer_type), default_value);
          }

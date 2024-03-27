@@ -423,7 +423,7 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
          continue;
       }
       const auto def = ssa_use->CGetDefStmt();
-      const auto def_gn = GetPointer<const gimple_node>(GET_CONST_NODE(def));
+      const auto def_gn = GetPointer<const gimple_node>(def);
       if(def_gn->get_kind() == gimple_nop_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter");

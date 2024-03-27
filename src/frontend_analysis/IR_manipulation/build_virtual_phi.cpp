@@ -238,7 +238,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       const auto sn = GetPointerS<ssa_name>(virtual_ssa_definition.first);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "---Defined in " + virtual_ssa_definition.second->ToString());
-      const auto definition = GetPointerS<const gimple_node>(GET_CONST_NODE(virtual_ssa_definition.second));
+      const auto definition = GetPointerS<const gimple_node>(virtual_ssa_definition.second);
       THROW_ASSERT(definition, STR(sn->CGetDefStmt()));
       const auto definition_bb_index = definition->bb_index;
       const auto& definition_bb = bb_index_map.at(definition_bb_index);
@@ -758,7 +758,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
          const auto& block = basic_block_graph->CGetBBNodeInfo(*basic_block)->block;
          for(const auto& phi : block->CGetPhiList())
          {
-            const auto gp = GetPointerS<const gimple_phi>(GET_CONST_NODE(phi));
+            const auto gp = GetPointerS<const gimple_phi>(phi);
             if(gp->virtual_flag)
             {
                THROW_ASSERT(gp->CGetDefEdgesList().size() == boost::in_degree(*basic_block, *basic_block_graph),

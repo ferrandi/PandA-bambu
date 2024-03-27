@@ -132,8 +132,8 @@ Vectorize::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType r
          relationships.insert(std::make_pair(BB_ORDER_COMPUTATION, SAME_FUNCTION));
          relationships.insert(std::make_pair(BB_REACHABILITY_COMPUTATION, SAME_FUNCTION));
          relationships.insert(std::make_pair(PREDICATE_STATEMENTS, SAME_FUNCTION));
-         const auto is_simd = tree_helper::has_omp_simd(GetPointerS<const statement_list>(
-             GET_CONST_NODE(GetPointerS<const function_decl>(TM->CGetTreeNode(function_id))->body)));
+         const auto is_simd = tree_helper::has_omp_simd(
+             GetPointerS<const statement_list>(GetPointerS<const function_decl>(TM->CGetTreeNode(function_id))->body));
          if(is_simd)
          {
             relationships.insert(std::make_pair(SERIALIZE_MUTUAL_EXCLUSIONS, SAME_FUNCTION));
@@ -214,11 +214,11 @@ DesignFlowStep_Status Vectorize::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Classifying statement of BB" + STR(block->number));
          for(const auto& statement : block->CGetStmtList())
          {
-            ClassifyTreeNode(bb_node_info->loop_id, GET_CONST_NODE(statement));
+            ClassifyTreeNode(bb_node_info->loop_id, statement);
          }
          for(const auto& phi : block->CGetPhiList())
          {
-            ClassifyTreeNode(bb_node_info->loop_id, GET_CONST_NODE(phi));
+            ClassifyTreeNode(bb_node_info->loop_id, phi);
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Classified statement of BB" + STR(block->number));
       }
@@ -540,7 +540,7 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
          const BBGraphConstRef bb_fcfg = function_behavior->CGetBBGraph(FunctionBehavior::FBB);
          const auto loop_index =
              bb_fcfg->CGetBBNodeInfo(bb_fcfg->CGetBBGraphInfo()->bb_index_map.find(bb_index)->second)->loop_id;
-         if(GetPointer<const gimple_pragma>(GET_CONST_NODE(sa->CGetDefStmt())))
+         if(GetPointer<const gimple_pragma>(sa->CGetDefStmt()))
          {
             // SKIP
          }
@@ -548,7 +548,7 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
          {
             transformations[tree_node->index] = NONE;
          }
-         else if(GET_CONST_NODE(tree_helper::CGetType(tree_node))->get_kind() == pointer_type_K or sa->virtual_flag)
+         else if(tree_helper::CGetType(tree_node)->get_kind() == pointer_type_K or sa->virtual_flag)
          {
             transformations[tree_node->index] = SCALAR;
          }
@@ -625,7 +625,7 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
          /// Check if the phi is in the header of an outer loop
          else if(loop->GetId() == gp->bb_index and simd_loop_type[loop->GetId()] == SIMD_OUTER)
          {
-            if(gp->virtual_flag || GET_CONST_NODE(tree_helper::CGetType(gp->res))->get_kind() == boolean_type_K)
+            if(gp->virtual_flag || tree_helper::CGetType(gp->res)->get_kind() == boolean_type_K)
             {
                transformations[gp->index] = SIMD;
             }
@@ -949,8 +949,8 @@ unsigned int Vectorize::DuplicateIncrement(const unsigned int loop_id, const tre
    for(const auto& phi : bb_graph->GetBBNodeInfo(loop->GetHeader())->block->CGetPhiList())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "---Replacing " + ga->op0->ToString() + " with " + GET_CONST_NODE(ssa_tree_node)->ToString() +
-                         " in " + phi->ToString());
+                     "---Replacing " + ga->op0->ToString() + " with " + ssa_tree_node->ToString() + " in " +
+                         phi->ToString());
       TM->ReplaceTreeNode(phi, ga->op0, ssa_tree_node);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Result: " + phi->ToString());
    }
@@ -962,7 +962,7 @@ unsigned int Vectorize::DuplicateIncrement(const unsigned int loop_id, const tre
    const auto gimple_cond_stmt = stmt_list.back();
    auto* gc = GetPointer<gimple_cond>(gimple_cond_stmt);
    const auto condition_to_be_duplicated = gc->op0;
-   auto* cond_op = GetPointer<ssa_name>(GET_CONST_NODE(condition_to_be_duplicated));
+   auto* cond_op = GetPointer<ssa_name>(condition_to_be_duplicated);
    THROW_ASSERT(cond_op, "Cond expression operand is " + STR(condition_to_be_duplicated));
    THROW_ASSERT(cond_op->CGetDefStmts().size() == 1, "Cond argument is not defined in a single assignment");
    auto def_statement = cond_op->CGetDefStmt();
@@ -985,11 +985,11 @@ unsigned int Vectorize::DuplicateIncrement(const unsigned int loop_id, const tre
       /// Look for phi computing the guard of header
       THROW_ASSERT(guards.find(loop_id) != guards.end(), "");
       const auto header_guard_tn = guards.find(loop_id)->second;
-      if(GET_CONST_NODE(header_guard_tn)->get_kind() != integer_cst_K)
+      if(header_guard_tn->get_kind() != integer_cst_K)
       {
-         const auto header_guard_sn = GetPointer<const ssa_name>(GET_CONST_NODE(header_guard_tn));
+         const auto header_guard_sn = GetPointer<const ssa_name>(header_guard_tn);
          THROW_ASSERT(header_guard_sn, STR(header_guard_tn));
-         const auto header_guard_stmt_tn = GET_CONST_NODE(header_guard_sn->CGetDefStmt());
+         const auto header_guard_stmt_tn = header_guard_sn->CGetDefStmt();
          const auto header_guard_gp = GetPointer<const gimple_phi>(header_guard_stmt_tn);
          THROW_ASSERT(header_guard_gp, STR(header_guard_stmt_tn));
          const auto feedback_condition = [&]() -> tree_nodeRef {
@@ -1003,16 +1003,15 @@ unsigned int Vectorize::DuplicateIncrement(const unsigned int loop_id, const tre
             THROW_UNREACHABLE("");
             return tree_nodeRef();
          }();
-         const auto feedback_condition_sn = GetPointer<const ssa_name>(GET_CONST_NODE(feedback_condition));
+         const auto feedback_condition_sn = GetPointer<const ssa_name>(feedback_condition);
          THROW_ASSERT(feedback_condition_sn, "");
-         const auto feedback_condition_def_stmt = GET_CONST_NODE(feedback_condition_sn->CGetDefStmt());
+         const auto feedback_condition_def_stmt = feedback_condition_sn->CGetDefStmt();
 #if HAVE_ASSERTS
          const auto feedback_condition_def_ga = GetPointer<const gimple_assign>(feedback_condition_def_stmt);
          THROW_ASSERT(feedback_condition_def_ga, STR(feedback_condition_def_stmt));
-         const auto feedback_condition_right_ta =
-             GetPointer<const truth_and_expr>(GET_CONST_NODE(feedback_condition_def_ga->op1));
-         THROW_ASSERT(feedback_condition_right_ta, GET_CONST_NODE(feedback_condition_def_ga->op1)->get_kind_text() +
-                                                       ": " + STR(feedback_condition_def_ga->op1));
+         const auto feedback_condition_right_ta = GetPointer<const truth_and_expr>(feedback_condition_def_ga->op1);
+         THROW_ASSERT(feedback_condition_right_ta,
+                      feedback_condition_def_ga->op1->get_kind_text() + ": " + STR(feedback_condition_def_ga->op1));
          THROW_ASSERT(feedback_condition_right_ta->op0->index == condition_to_be_duplicated->index or
                           feedback_condition_right_ta->op1->index == condition_to_be_duplicated->index,
                       STR(feedback_condition_def_ga->op1));
@@ -1435,7 +1434,7 @@ void Vectorize::FixPhis()
             const auto cond_expr_node = tree_man->create_ternary_operation(
                 type, guards.at(source_id), from_source.first, from_dominator, BUILTIN_SRCP, cond_expr_K);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Created cond_expr " + GET_CONST_NODE(cond_expr_node)->ToString());
+                           "---Created cond_expr " + cond_expr_node->ToString());
 
             /// Create the ssa with the new input of the phi
             tree_nodeRef var;
@@ -1449,15 +1448,14 @@ void Vectorize::FixPhis()
                }
             }
             const auto ssa_node = tree_man->create_ssa_name(var, type, nullptr, nullptr, false, gp->virtual_flag);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Created ssa_name " + GET_CONST_NODE(ssa_node)->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created ssa_name " + ssa_node->ToString());
 
             /// Create the assign
             const auto gimple_assign_node =
                 tree_man->create_gimple_modify_stmt(ssa_node, cond_expr_node, function_id, BUILTIN_SRCP);
             fcfg_bb_graph->CGetBBNodeInfo(source)->block->PushBack(gimple_assign_node, AppM);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Created gimple_assign " + GET_CONST_NODE(gimple_assign_node)->ToString());
+                           "---Created gimple_assign " + gimple_assign_node->ToString());
             new_defs[source_id] = ssa_node;
             gp->ReplaceDefEdge(TM, from_source, gimple_phi::DefEdge(ssa_node, from_source.second));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Fixed value coming from BB" + STR(source_id));
@@ -1801,7 +1799,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             const auto element_type = tree_helper::CGetType(gp->res);
             /// vector of Boolean types are mapped on vector of unsigned integer
             const auto bit_size =
-                GET_CONST_NODE(element_type)->get_kind() != boolean_type_K ? tree_helper::SizeAlloc(element_type) : 32;
+                element_type->get_kind() != boolean_type_K ? tree_helper::SizeAlloc(element_type) : 32;
             const auto offset = TM->CreateUniqueIntegerCst(static_cast<long long int>((scalar - 1) * bit_size),
                                                            tree_man->GetUnsignedIntegerType());
             const auto size =
@@ -1883,7 +1881,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                       "Loop increment operation is not a plus expression nor a minus expression");
          auto* be = GetPointer<binary_expr>(new_ga->op1);
          THROW_ASSERT(be->op1->get_kind() == vector_cst_K, "Increment is not constant");
-         const auto type = GetPointer<const vector_type>(GET_CONST_NODE(tree_helper::CGetType(be->op1)))->elts;
+         const auto type = GetPointer<const vector_type>(tree_helper::CGetType(be->op1))->elts;
          const auto new_increment = increment * static_cast<integer_cst_t>(parallel_degree);
          const auto new_ic = TM->CreateUniqueIntegerCst(new_increment, type);
          be->op1 = TM->GetTreeNode(Transform(new_ic->index, parallel_degree, 0, new_stmt_list, new_phi_list));
@@ -1915,7 +1913,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             const auto element_type = tree_helper::CGetType(ga->op0);
             /// vector of Boolean types are mapped on vector of integer
             const auto bit_size =
-                GET_CONST_NODE(element_type)->get_kind() != boolean_type_K ? tree_helper::SizeAlloc(element_type) : 32;
+                element_type->get_kind() != boolean_type_K ? tree_helper::SizeAlloc(element_type) : 32;
             const auto offset = TM->CreateUniqueIntegerCst(static_cast<long long int>((scalar - 1) * bit_size),
                                                            tree_man->GetUnsignedIntegerType());
             const auto size =
@@ -2450,9 +2448,8 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   unsigned int bit_field_ref_index = TM->new_tree_node_id();
                   const auto element_type = tree_helper::CGetType(ga->op0);
                   /// vector of Boolean types are mapped on vector of integer
-                  const auto bit_size = GET_CONST_NODE(element_type)->get_kind() != boolean_type_K ?
-                                            tree_helper::SizeAlloc(element_type) :
-                                            32;
+                  const auto bit_size =
+                      element_type->get_kind() != boolean_type_K ? tree_helper::SizeAlloc(element_type) : 32;
                   const auto offset = TM->CreateUniqueIntegerCst(static_cast<long long int>((scalar - 1) * bit_size),
                                                                  tree_man->GetUnsignedIntegerType());
                   const auto size = TM->CreateUniqueIntegerCst(static_cast<long long int>(bit_size),
@@ -3053,9 +3050,8 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      const auto new_srcp = include_name + ":" + STR(line_number) + ":" + STR(column_number);
                      const auto element_type = tree_helper::CGetType(gp->res);
                      /// vector of Boolean types are mapped on vector of integer
-                     const auto bit_size = GET_CONST_NODE(element_type)->get_kind() != boolean_type_K ?
-                                               tree_helper::SizeAlloc(element_type) :
-                                               32U;
+                     const auto bit_size =
+                         element_type->get_kind() != boolean_type_K ? tree_helper::SizeAlloc(element_type) : 32U;
                      const auto offset = TM->CreateUniqueIntegerCst(static_cast<long long int>((scalar - 1) * bit_size),
                                                                     tree_man->GetUnsignedIntegerType());
                      const auto size = TM->CreateUniqueIntegerCst(static_cast<long long int>(bit_size),

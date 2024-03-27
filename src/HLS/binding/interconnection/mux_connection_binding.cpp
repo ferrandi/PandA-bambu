@@ -293,7 +293,7 @@ unsigned int mux_connection_binding::address_precision(unsigned int precision, c
    const auto node = TreeM->CGetTreeNode(node_id);
    const auto gm = GetPointer<const gimple_assign>(node);
    bool right_addr_expr = false;
-   if(gm && GetPointer<const addr_expr>(GET_CONST_NODE(gm->op1)))
+   if(gm && GetPointer<const addr_expr>(gm->op1))
    {
       right_addr_expr = true;
    }
@@ -361,16 +361,16 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
             const auto node = TreeM->CGetTreeNode(node_id);
             auto* gm = GetPointer<const gimple_assign>(node);
             const auto type = tree_helper::CGetType(ae->op);
-            if(type && GetPointer<const type_node>(GET_CONST_NODE(type)))
+            if(type && GetPointer<const type_node>(type))
             {
 #if USE_ALIGNMENT_INFO
                if(alignment)
                {
-                  alignment = std::min(alignment, GetPointer<const type_node>(GET_CONST_NODE(type))->algn);
+                  alignment = std::min(alignment, GetPointer<const type_node>(type)->algn);
                }
                else
                {
-                  alignment = GetPointer<const type_node>(GET_CONST_NODE(type))->algn;
+                  alignment = GetPointer<const type_node>(type)->algn;
                }
 #endif
             }
@@ -1449,31 +1449,31 @@ void mux_connection_binding::create_connections()
                unsigned int var_node_idx;
                unsigned long long Prec = 0;
                const auto type = tree_helper::CGetType(gm->op0);
-               if(type && (GET_CONST_NODE(type)->get_kind() == integer_type_K))
+               if(type && (type->get_kind() == integer_type_K))
                {
-                  Prec = GetPointerS<const integer_type>(GET_CONST_NODE(type))->prec;
+                  Prec = GetPointerS<const integer_type>(type)->prec;
                }
-               else if(type && (GET_CONST_NODE(type)->get_kind() == boolean_type_K))
+               else if(type && (type->get_kind() == boolean_type_K))
                {
                   Prec = 8;
                }
-               else if(type && (GET_CONST_NODE(type)->get_kind() == enumeral_type_K))
+               else if(type && (type->get_kind() == enumeral_type_K))
                {
-                  Prec = GetPointerS<const enumeral_type>(GET_CONST_NODE(type))->prec;
+                  Prec = GetPointerS<const enumeral_type>(type)->prec;
                }
                unsigned int algn = 0;
-               if(type && (GET_CONST_NODE(type)->get_kind() == integer_type_K))
+               if(type && (type->get_kind() == integer_type_K))
                {
-                  algn = GetPointerS<const integer_type>(GET_CONST_NODE(type))->algn;
+                  algn = GetPointerS<const integer_type>(type)->algn;
                }
-               else if(type && (GET_CONST_NODE(type)->get_kind() == boolean_type_K))
+               else if(type && (type->get_kind() == boolean_type_K))
                {
                   algn = 8;
                }
 #if USE_ALIGNMENT_INFO
-               if(type && GetPointer<const type_node>(GET_CONST_NODE(type)))
+               if(type && GetPointer<const type_node>(type))
                {
-                  algn = alignment = GetPointerS<const type_node>(GET_CONST_NODE(type))->algn;
+                  algn = alignment = GetPointerS<const type_node>(type)->algn;
                }
 #endif
                if(GET_TYPE(data, op) & TYPE_STORE)
@@ -1485,10 +1485,9 @@ void mux_connection_binding::create_connections()
 
                   if(size_var)
                   {
-                     THROW_ASSERT(
-                         tree_helper::GetConstValue(GetPointerS<const type_node>(GET_CONST_NODE(tn))->size) >= 0, "");
-                     const auto IR_var_bitsize = static_cast<unsigned int>(
-                         tree_helper::GetConstValue(GetPointerS<const type_node>(GET_CONST_NODE(tn))->size));
+                     THROW_ASSERT(tree_helper::GetConstValue(GetPointerS<const type_node>(tn)->size) >= 0, "");
+                     const auto IR_var_bitsize =
+                         static_cast<unsigned int>(tree_helper::GetConstValue(GetPointerS<const type_node>(tn)->size));
                      unsigned int var_bitsize;
                      if(Prec != algn && Prec % algn)
                      {
@@ -1559,7 +1558,7 @@ void mux_connection_binding::create_connections()
 #ifndef NDEBUG
                if(var_node->get_kind() == ssa_name_K)
                {
-                  THROW_ASSERT(GET_CONST_NODE(tree_helper::CGetType(var_node))->get_kind() == complex_type_K,
+                  THROW_ASSERT(tree_helper::CGetType(var_node)->get_kind() == complex_type_K,
                                "only complex objects are considered");
                }
 #endif
@@ -1646,8 +1645,7 @@ void mux_connection_binding::create_connections()
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                 "     - " << port_num << ". Read: " + BH->PrintVariable(tree_var));
-                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                "          * " + GET_CONST_NODE(tree_var_node)->get_kind_text());
+                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "          * " + tree_var_node->get_kind_text());
                   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                 "          * bitsize " + STR(object_bitsize(TreeM, var_read[port_num])));
                }

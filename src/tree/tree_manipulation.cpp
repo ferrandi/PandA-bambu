@@ -144,7 +144,7 @@ tree_nodeRef tree_manipulation::create_unary_operation(const tree_nodeConstRef& 
    }
 
    /// Check if it is a correct node type
-   switch(GET_CONST_NODE(type)->get_kind())
+   switch(type->get_kind())
    {
       case array_type_K:
       case boolean_type_K:
@@ -201,7 +201,7 @@ tree_nodeRef tree_manipulation::create_unary_operation(const tree_nodeConstRef& 
       case CASE_UNARY_EXPRESSION:
       default:
          THROW_ERROR(std::string("Type node not supported (") + STR(GET_INDEX_CONST_NODE(type)) + std::string("): ") +
-                     GET_CONST_NODE(type)->get_kind_text());
+                     type->get_kind_text());
    }
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
@@ -264,7 +264,7 @@ tree_nodeRef tree_manipulation::create_binary_operation(const tree_nodeConstRef&
    }
 
    /// Check if it is a correct node type
-   switch(GET_CONST_NODE(type)->get_kind())
+   switch(type->get_kind())
    {
       case array_type_K:
       case boolean_type_K:
@@ -321,7 +321,7 @@ tree_nodeRef tree_manipulation::create_binary_operation(const tree_nodeConstRef&
       case CASE_UNARY_EXPRESSION:
       default:
          THROW_ERROR(std::string("Type node not supported (") + STR(GET_INDEX_CONST_NODE(type)) + std::string("): ") +
-                     GET_CONST_NODE(type)->get_kind_text());
+                     type->get_kind_text());
    }
 
    if(operation_kind == eq_expr_K || operation_kind == ne_expr_K || operation_kind == lt_expr_K ||
@@ -395,7 +395,7 @@ tree_nodeRef tree_manipulation::create_ternary_operation(const tree_nodeConstRef
    }
 
    /// Check if it is a correct node type
-   switch(GET_CONST_NODE(type)->get_kind())
+   switch(type->get_kind())
    {
       case array_type_K:
       case boolean_type_K:
@@ -452,7 +452,7 @@ tree_nodeRef tree_manipulation::create_ternary_operation(const tree_nodeConstRef
       case CASE_UNARY_EXPRESSION:
       default:
          THROW_ERROR(std::string("Type node not supported (") + STR(GET_INDEX_CONST_NODE(type)) + std::string("): ") +
-                     GET_CONST_NODE(type)->get_kind_text());
+                     type->get_kind_text());
    }
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
@@ -461,16 +461,14 @@ tree_nodeRef tree_manipulation::create_ternary_operation(const tree_nodeConstRef
    /// some checks
    if(operation_kind == cond_expr_K)
    {
-      THROW_ASSERT(GET_INDEX_CONST_NODE(op1) == 0 ||
-                       tree_helper::Size(tree_helper::CGetType(op1)) == tree_helper::Size(type),
-                   "unexpected pattern (<" + STR(tree_helper::Size(tree_helper::CGetType(op1))) + ">" +
-                       STR(tree_helper::CGetType(op1)) + " != <" + STR(tree_helper::Size(type)) + ">" +
-                       GET_CONST_NODE(type)->ToString() + ")");
-      THROW_ASSERT(GET_INDEX_CONST_NODE(op2) == 0 ||
-                       tree_helper::Size(tree_helper::CGetType(op2)) == tree_helper::Size(type),
-                   "unexpected pattern (<" + STR(tree_helper::Size(tree_helper::CGetType(op2))) + ">" +
-                       STR(tree_helper::CGetType(op2)) + " != <" + STR(tree_helper::Size(type)) + ">" +
-                       GET_CONST_NODE(type)->ToString() + ")");
+      THROW_ASSERT(
+          GET_INDEX_CONST_NODE(op1) == 0 || tree_helper::Size(tree_helper::CGetType(op1)) == tree_helper::Size(type),
+          "unexpected pattern (<" + STR(tree_helper::Size(tree_helper::CGetType(op1))) + ">" +
+              STR(tree_helper::CGetType(op1)) + " != <" + STR(tree_helper::Size(type)) + ">" + type->ToString() + ")");
+      THROW_ASSERT(
+          GET_INDEX_CONST_NODE(op2) == 0 || tree_helper::Size(tree_helper::CGetType(op2)) == tree_helper::Size(type),
+          "unexpected pattern (<" + STR(tree_helper::Size(tree_helper::CGetType(op2))) + ">" +
+              STR(tree_helper::CGetType(op2)) + " != <" + STR(tree_helper::Size(type)) + ">" + type->ToString() + ")");
    }
    IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(type));
    IR_schema[TOK(TOK_OP0)] = STR(GET_INDEX_CONST_NODE(op0));
@@ -531,7 +529,7 @@ tree_nodeRef tree_manipulation::create_quaternary_operation(const tree_nodeConst
          THROW_ERROR("The operation given is not a quaternary expression");
    }
 
-   switch(GET_CONST_NODE(type)->get_kind())
+   switch(type->get_kind())
    {
       case array_type_K:
       case boolean_type_K:
@@ -588,7 +586,7 @@ tree_nodeRef tree_manipulation::create_quaternary_operation(const tree_nodeConst
       case CASE_UNARY_EXPRESSION:
       default:
          THROW_ERROR(std::string("Type node not supported (") + STR(GET_INDEX_CONST_NODE(type)) + std::string("): ") +
-                     GET_CONST_NODE(type)->get_kind_text());
+                     type->get_kind_text());
    }
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
@@ -865,7 +863,7 @@ tree_nodeRef tree_manipulation::create_parm_decl(const tree_nodeRef& name, const
 
    THROW_ASSERT(!srcp.empty(), "It requires a non empty string");
 
-   const auto tnode = GetPointer<const type_node>(GET_CONST_NODE(type));
+   const auto tnode = GetPointer<const type_node>(type);
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(type));
@@ -893,7 +891,7 @@ tree_nodeRef tree_manipulation::create_parm_decl(const tree_nodeRef& name, const
    const auto node_nid = TreeM->new_tree_node_id();
    const auto tn = TreeM->create_tree_node(node_nid, parm_decl_K, IR_schema);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + GET_CONST_NODE(tn)->get_kind_text() + ")");
+                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + tn->get_kind_text() + ")");
    return tn;
 }
 
@@ -1538,8 +1536,7 @@ tree_nodeRef tree_manipulation::create_ssa_name(const tree_nodeConstRef& var, co
    }
    if(var)
    {
-      THROW_ASSERT(GET_CONST_NODE(var)->get_kind() == var_decl_K or GET_CONST_NODE(var)->get_kind() == parm_decl_K,
-                   GET_CONST_NODE(var)->get_kind_text());
+      THROW_ASSERT(var->get_kind() == var_decl_K or var->get_kind() == parm_decl_K, var->get_kind_text());
       IR_schema[TOK(TOK_VAR)] = STR(GET_INDEX_CONST_NODE(var));
    }
    if(min)
@@ -1559,22 +1556,19 @@ tree_nodeRef tree_manipulation::create_ssa_name(const tree_nodeConstRef& var, co
    // TODO: use statements list of just created ssa_name should be always empty, shouldn't it?
    if(var && GetPointerS<ssa_name>(node_ref)->CGetUseStmts().empty())
    {
-      THROW_ASSERT(GET_CONST_NODE(var)->get_kind() == var_decl_K || GET_CONST_NODE(var)->get_kind() == parm_decl_K,
-                   GET_CONST_NODE(var)->get_kind_text());
+      THROW_ASSERT(var->get_kind() == var_decl_K || var->get_kind() == parm_decl_K, var->get_kind_text());
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_IR_schema;
-      if(GET_CONST_NODE(var)->get_kind() == var_decl_K && GetPointer<const var_decl>(GET_CONST_NODE(var))->scpe)
+      if(var->get_kind() == var_decl_K && GetPointer<const var_decl>(var)->scpe)
       {
-         gimple_nop_IR_schema[TOK(TOK_SCPE)] =
-             STR(GET_INDEX_CONST_NODE(GetPointerS<const var_decl>(GET_CONST_NODE(var))->scpe));
+         gimple_nop_IR_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_CONST_NODE(GetPointerS<const var_decl>(var)->scpe));
       }
-      if(GET_CONST_NODE(var)->get_kind() == parm_decl_K)
+      if(var->get_kind() == parm_decl_K)
       {
-         gimple_nop_IR_schema[TOK(TOK_SCPE)] =
-             STR(GET_INDEX_CONST_NODE(GetPointerS<const parm_decl>(GET_CONST_NODE(var))->scpe));
+         gimple_nop_IR_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_CONST_NODE(GetPointerS<const parm_decl>(var)->scpe));
       }
-      gimple_nop_IR_schema[TOK(TOK_SRCP)] = GetPointer<const srcp>(GET_CONST_NODE(var))->include_name + ":" +
-                                            STR(GetPointer<const srcp>(GET_CONST_NODE(var))->line_number) + ":" +
-                                            STR(GetPointer<const srcp>(GET_CONST_NODE(var))->column_number);
+      gimple_nop_IR_schema[TOK(TOK_SRCP)] = GetPointer<const srcp>(var)->include_name + ":" +
+                                            STR(GetPointer<const srcp>(var)->line_number) + ":" +
+                                            STR(GetPointer<const srcp>(var)->column_number);
       unsigned int gimple_nop_node_id = this->TreeM->new_tree_node_id();
       const auto gimple_nop_node_ref = TreeM->create_tree_node(gimple_nop_node_id, gimple_nop_K, gimple_nop_IR_schema);
       GetPointerS<ssa_name>(node_ref)->SetDefStmt(gimple_nop_node_ref);
@@ -1608,7 +1602,7 @@ tree_nodeRef tree_manipulation::create_gimple_modify_stmt(const tree_nodeRef& op
 
    THROW_ASSERT(GET_INDEX_CONST_NODE(op0) == 0 || GET_INDEX_CONST_NODE(op1) == 0 ||
                     tree_helper::Size(tree_helper::CGetType(op0)) == tree_helper::Size(tree_helper::CGetType(op1)),
-                "unexpected pattern - " + GET_CONST_NODE(node_ref)->ToString() + " (lhs = <" +
+                "unexpected pattern - " + node_ref->ToString() + " (lhs = <" +
                     STR(tree_helper::Size(tree_helper::CGetType(op0))) + ">(" + STR(tree_helper::CGetType(op0)) +
                     "), rhs = <" + STR(tree_helper::Size(tree_helper::CGetType(op1))) + ">(" +
                     STR(tree_helper::CGetType(op1)) + "))");
@@ -1635,7 +1629,7 @@ tree_nodeRef tree_manipulation::create_gimple_call(const tree_nodeConstRef& call
 
    const auto function_type = tree_helper::CGetType(called_function);
 #if HAVE_ASSERTS
-   const auto formal_count = GetPointer<const function_decl>(GET_CONST_NODE(called_function))->list_of_args.size();
+   const auto formal_count = GetPointer<const function_decl>(called_function)->list_of_args.size();
    THROW_ASSERT(formal_count == args.size(), "Formal parameters count different from actual parameters count: " +
                                                  STR(formal_count) + " != " + STR(args.size()));
 #endif
@@ -1987,10 +1981,10 @@ tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef& condition, 
    THROW_ASSERT(block, "expected basic block");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Extracting condition from " + condition->ToString());
 
-   const auto gc = GetPointer<const gimple_cond>(GET_CONST_NODE(condition));
+   const auto gc = GetPointer<const gimple_cond>(condition);
    THROW_ASSERT(gc, "Trying to extract condition from " + condition->ToString());
    if(tree_helper::IsBooleanType(gc->op0) &&
-      (gc->op0->get_kind() == ssa_name_K || GetPointer<const cst_node>(GET_CONST_NODE(gc->op0)) != nullptr))
+      (gc->op0->get_kind() == ssa_name_K || GetPointer<const cst_node>(gc->op0) != nullptr))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "<--Condition already available as " + gc->op0->ToString());
@@ -2002,7 +1996,7 @@ tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef& condition, 
       {
          for(const auto& statement : block->CGetStmtList())
          {
-            const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(statement));
+            const auto ga = GetPointer<const gimple_assign>(statement);
             if(ga && GET_INDEX_CONST_NODE(ga->op1) == GET_INDEX_CONST_NODE(condition) &&
                tree_helper::IsBooleanType(ga->op0))
             {
@@ -2021,9 +2015,9 @@ tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef& condition, 
              CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, bt), TreeM->CreateUniqueIntegerCst(1, bt), gc->op0,
                                 function_decl_nid, BUILTIN_SRCP);
          block->PushBack(ga, AppM);
-         ret = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga))->op0;
+         ret = GetPointerS<const gimple_assign>(ga)->op0;
       }
-      else if((GET_CONST_NODE(gc->op0))->get_kind() == integer_cst_K)
+      else if((gc->op0)->get_kind() == integer_cst_K)
       {
          const auto cst_val = tree_helper::GetConstValue(gc->op0);
          if(cst_val)
@@ -2044,7 +2038,7 @@ tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef& condition, 
              CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, bt), TreeM->CreateUniqueIntegerCst(1, bt),
                                 cond_op0, function_decl_nid, srcp_default);
          block->PushBack(op0_ga, AppM);
-         ret = GetPointerS<const gimple_assign>(GET_CONST_NODE(op0_ga))->op0;
+         ret = GetPointerS<const gimple_assign>(op0_ga)->op0;
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Condition created is " + ret->ToString());
       return ret;
@@ -2062,8 +2056,8 @@ tree_nodeRef tree_manipulation::CreateNopExpr(const tree_nodeConstRef& operand, 
    const auto ne_id = TreeM->new_tree_node_id();
    const auto ne = TreeM->create_tree_node(ne_id, nop_expr_K, ne_schema);
 
-   const auto ssa_operand = GetPointer<const ssa_name>(GET_CONST_NODE(operand));
-   const auto int_cst_operand = GetPointer<const integer_cst>(GET_CONST_NODE(operand));
+   const auto ssa_operand = GetPointer<const ssa_name>(operand);
+   const auto int_cst_operand = GetPointer<const integer_cst>(operand);
    if(!ssa_operand && !int_cst_operand)
    {
       /// THROW_ASSERT cannot be used since this function has to return an empty
@@ -2138,7 +2132,7 @@ tree_nodeRef tree_manipulation::CreateUnsigned(const tree_nodeConstRef& signed_t
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> in_schema;
    if(int_signed_type->name)
    {
-      const auto type_name = GetPointer<const decl_node>(GET_CONST_NODE(int_signed_type->name));
+      const auto type_name = GetPointer<const decl_node>(int_signed_type->name);
       if(not type_name)
       {
          THROW_ERROR(signed_type->ToString() + " has not a type decl associated");
@@ -2149,7 +2143,7 @@ tree_nodeRef tree_manipulation::CreateUnsigned(const tree_nodeConstRef& signed_t
          THROW_ERROR(signed_type->ToString() + " is not builtin");
       }
 
-      const auto in = GetPointer<identifier_node>(GET_CONST_NODE(type_name->name));
+      const auto in = GetPointer<identifier_node>(type_name->name);
       if(not in)
       {
          THROW_ERROR(signed_type->ToString() + " has not a name");
@@ -2236,7 +2230,7 @@ tree_nodeRef tree_manipulation::CreateCallExpr(const tree_nodeConstRef& called_f
    }
    ce_IR_schema[TOK(TOK_ARG)] = args_string;
    ce_IR_schema[TOK(TOK_FN)] = STR(ae_id);
-   ce_IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(GetPointer<const function_type>(GET_CONST_NODE(ft))->retn));
+   ce_IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(GetPointer<const function_type>(ft)->retn));
    ce_IR_schema[TOK(TOK_SRCP)] = srcp;
    const unsigned int ce_id = TreeM->new_tree_node_id();
    return TreeM->create_tree_node(ce_id, call_expr_K, ce_IR_schema);
@@ -2298,9 +2292,9 @@ tree_nodeRef tree_manipulation::CreateVectorType(const tree_nodeConstRef& elt_ty
 
 tree_nodeRef tree_manipulation::CloneFunction(const tree_nodeRef& tn, const std::string& fsuffix)
 {
-   THROW_ASSERT(GET_CONST_NODE(tn)->get_kind() == function_decl_K, "Type node is not a function_decl");
-   const auto fd = GetPointerS<const function_decl>(GET_CONST_NODE(tn));
-   THROW_ASSERT(GET_CONST_NODE(fd->name)->get_kind() == identifier_node_K, "operator based function not supported ");
+   THROW_ASSERT(tn->get_kind() == function_decl_K, "Type node is not a function_decl");
+   const auto fd = GetPointerS<const function_decl>(tn);
+   THROW_ASSERT(fd->name->get_kind() == identifier_node_K, "operator based function not supported ");
    const auto fname = tree_helper::print_function_name(TreeM, fd);
    const auto fu_node = TreeM->GetFunction(fname + fsuffix);
    if(fu_node)
@@ -2323,7 +2317,7 @@ tree_nodeRef tree_manipulation::CloneFunction(const tree_nodeRef& tn, const std:
 
 unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_node, const tree_nodeRef& caller_node)
 {
-   const auto call_stmt = GET_CONST_NODE(call_node);
+   const auto call_stmt = call_node;
    tree_nodeRef fn;
    tree_nodeRef ret_val = nullptr;
    std::vector<tree_nodeRef> const* args;
@@ -2334,7 +2328,7 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_node
    }
    else if(const auto ga = GetPointer<const gimple_assign>(call_stmt))
    {
-      const auto ce = GetPointer<const call_expr>(GET_CONST_NODE(ga->op1));
+      const auto ce = GetPointer<const call_expr>(ga->op1);
       THROW_ASSERT(ce, "Assign statement does not contain a function call: " + STR(call_node));
       fn = ce->fn;
       args = &ce->args;
@@ -2344,12 +2338,11 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_node
    {
       THROW_UNREACHABLE("Unsupported call statement: " + call_stmt->get_kind_text() + " " + STR(call_node));
    }
-   if(GET_CONST_NODE(fn)->get_kind() == addr_expr_K)
+   if(fn->get_kind() == addr_expr_K)
    {
-      fn = GetPointerS<const unary_expr>(GET_CONST_NODE(fn))->op;
+      fn = GetPointerS<const unary_expr>(fn)->op;
    }
-   THROW_ASSERT(GET_CONST_NODE(fn)->get_kind() == function_decl_K,
-                "Call statement should address a function declaration");
+   THROW_ASSERT(fn->get_kind() == function_decl_K, "Call statement should address a function declaration");
 
    const auto fd = GetPointer<function_decl>(caller_node);
    auto sl = GetPointerS<statement_list>(fd->body);
@@ -2409,7 +2402,7 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_node
       }
       return mlid;
    }();
-   const auto inline_fd = GetPointerS<const function_decl>(GET_CONST_NODE(fn));
+   const auto inline_fd = GetPointerS<const function_decl>(fn);
    auto output_level = parameters->getOption<int>(OPT_output_level);
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                   "Function call to " + tree_helper::print_function_name(TreeM, inline_fd) + " inlined in " +
@@ -2428,11 +2421,11 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_node
       const auto uses = tree_helper::ComputeSsaUses(stmt);
       for(const auto& use : uses)
       {
-         const auto SSA = GetPointer<const ssa_name>(GET_CONST_NODE(use.first));
+         const auto SSA = GetPointer<const ssa_name>(use.first);
          // If ssa_name references a parm_decl and is defined by a gimple_nop, it represents the formal function
          // parameter inside the function body
-         if(SSA->var != nullptr && GET_CONST_NODE(SSA->var)->get_kind() == parm_decl_K &&
-            GET_CONST_NODE(SSA->CGetDefStmt())->get_kind() == gimple_nop_K)
+         if(SSA->var != nullptr && SSA->var->get_kind() == parm_decl_K &&
+            SSA->CGetDefStmt()->get_kind() == gimple_nop_K)
          {
             auto argIt = std::find_if(
                 inline_fd->list_of_args.cbegin(), inline_fd->list_of_args.cend(),
@@ -2470,17 +2463,17 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_node
             if(!bb->CGetStmtList().empty())
             {
                const auto& last_stmt = bb->CGetStmtList().back();
-               if(GET_CONST_NODE(last_stmt)->get_kind() == gimple_call_K)
+               if(last_stmt->get_kind() == gimple_call_K)
                {
-                  const auto gc = GetPointerS<const gimple_call>(GET_CONST_NODE(last_stmt));
+                  const auto gc = GetPointerS<const gimple_call>(last_stmt);
                   auto call_fd = gc->fn;
-                  const auto ae = GetPointer<addr_expr>(GET_CONST_NODE(call_fd));
+                  const auto ae = GetPointer<addr_expr>(call_fd);
                   if(ae)
                   {
                      call_fd = ae->op;
                   }
-                  const auto fu_name = tree_helper::print_function_name(
-                      TreeM, GetPointerS<const function_decl>(GET_CONST_NODE(call_fd)));
+                  const auto fu_name =
+                      tree_helper::print_function_name(TreeM, GetPointerS<const function_decl>(call_fd));
                   if(fu_name == "abort" || fu_name == "exit")
                   {
                      return true;
@@ -2505,11 +2498,11 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_node
          ++it;
          replace_arg_with_param(stmt);
 
-         if(GET_CONST_NODE(stmt)->get_kind() == gimple_return_K)
+         if(stmt->get_kind() == gimple_return_K)
          {
             if(ret_val)
             {
-               const auto gr = GetPointerS<const gimple_return>(GET_CONST_NODE(stmt));
+               const auto gr = GetPointerS<const gimple_return>(stmt);
                THROW_ASSERT(gr->op, "");
                list_of_def_edge.push_back(std::make_pair(gr->op, bb->number));
             }
@@ -2547,7 +2540,7 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_node
 bool tree_manipulation::VersionFunctionCall(const tree_nodeRef& call_node, const tree_nodeRef& caller_node,
                                             const std::string& version_suffix)
 {
-   const auto call_stmt = GET_CONST_NODE(call_node);
+   const auto call_stmt = call_node;
    tree_nodeRef called_fn = nullptr;
    tree_nodeRef ret_val = nullptr;
    std::vector<tree_nodeRef> const* args = nullptr;
@@ -2558,7 +2551,7 @@ bool tree_manipulation::VersionFunctionCall(const tree_nodeRef& call_node, const
    }
    else if(const auto ga = GetPointer<const gimple_assign>(call_stmt))
    {
-      const auto ce = GetPointer<const call_expr>(GET_CONST_NODE(ga->op1));
+      const auto ce = GetPointer<const call_expr>(ga->op1);
       THROW_ASSERT(ce, "Assign statement does not contain a function call: " + STR(call_node));
       called_fn = ce->fn;
       args = &ce->args;
@@ -2568,12 +2561,11 @@ bool tree_manipulation::VersionFunctionCall(const tree_nodeRef& call_node, const
    {
       THROW_UNREACHABLE("Unsupported call statement: " + call_stmt->get_kind_text() + " " + STR(call_node));
    }
-   if(GET_CONST_NODE(called_fn)->get_kind() == addr_expr_K)
+   if(called_fn->get_kind() == addr_expr_K)
    {
-      called_fn = GetPointerS<const unary_expr>(GET_CONST_NODE(called_fn))->op;
+      called_fn = GetPointerS<const unary_expr>(called_fn)->op;
    }
-   THROW_ASSERT(GET_CONST_NODE(called_fn)->get_kind() == function_decl_K,
-                "Call statement should address a function declaration");
+   THROW_ASSERT(called_fn->get_kind() == function_decl_K, "Call statement should address a function declaration");
 
    if(ends_with(tree_helper::GetFunctionName(TreeM, called_fn), version_suffix))
    {
@@ -2585,7 +2577,7 @@ bool tree_manipulation::VersionFunctionCall(const tree_nodeRef& call_node, const
    const auto caller_id = GET_INDEX_CONST_NODE(caller_node);
    if(ret_val)
    {
-      const auto has_args = !GetPointer<const function_decl>(GET_CONST_NODE(version_fn))->list_of_args.empty();
+      const auto has_args = !GetPointer<const function_decl>(version_fn)->list_of_args.empty();
       const auto ce = CreateCallExpr(version_fn, has_args ? *args : std::vector<tree_nodeRef>(), BUILTIN_SRCP);
       const auto ga = GetPointerS<const gimple_assign>(call_stmt);
       CustomUnorderedSet<unsigned int> already_visited;

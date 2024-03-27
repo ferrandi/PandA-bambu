@@ -248,7 +248,7 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
             const auto bitsize = std::max(bitsize0, bitsize1);
 
             const auto div_by_constant = [&]() {
-               if(GetPointer<const integer_cst>(GET_CONST_NODE(be->op1)))
+               if(GetPointer<const integer_cst>(be->op1))
                {
                   const auto cst_val = tree_helper::GetConstValue(be->op1);
                   if((cst_val & (cst_val - 1)) == 0)
@@ -259,8 +259,7 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                return false;
             }();
 
-            if(!div_by_constant && GET_CONST_NODE(expr_type)->get_kind() == integer_type_K &&
-               (bitsize == 32 || bitsize == 64))
+            if(!div_by_constant && expr_type->get_kind() == integer_type_K && (bitsize == 32 || bitsize == 64))
             {
                const auto fu_suffix = be_type == trunc_mod_expr_K ? "mod" : "div";
                const auto bitsize_str = bitsize == 32 ? "s" : "d";
@@ -286,7 +285,7 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
          else if(be_type == frem_expr_K)
          {
             const auto expr_type = tree_helper::CGetType(be->op0);
-            THROW_ASSERT(GET_CONST_NODE(expr_type)->get_kind() == real_type_K, "unexpected case");
+            THROW_ASSERT(expr_type->get_kind() == real_type_K, "unexpected case");
             const auto bitsize = tree_helper::Size(expr_type);
             const std::string fu_name = bitsize == 32 ? "fmodf" : "fmod";
             const auto called_function = TreeM->GetFunction(fu_name);
@@ -311,13 +310,13 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
             const auto bitsize = std::max(bitsize0, bitsize1);
             auto doTransf = false;
             std::string fname;
-            if(use64bitMul && GET_CONST_NODE(expr_type)->get_kind() == integer_type_K && bitsize == 64)
+            if(use64bitMul && expr_type->get_kind() == integer_type_K && bitsize == 64)
             {
                const auto unsignedp = tree_helper::IsUnsignedIntegerType(expr_type);
                fname = unsignedp ? "__umul64" : "__mul64";
                doTransf = true;
             }
-            if(use32bitMul && GET_CONST_NODE(expr_type)->get_kind() == integer_type_K && bitsize == 32)
+            if(use32bitMul && expr_type->get_kind() == integer_type_K && bitsize == 32)
             {
                const auto unsignedp = tree_helper::IsUnsignedIntegerType(expr_type);
                fname = unsignedp ? "__umul32" : "__mul32";
@@ -384,60 +383,57 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
          }
          break;
       }
-      case gimple_call_K:
-      case gimple_nop_K:
-      case var_decl_K:
-      case parm_decl_K:
-      case ssa_name_K:
-      case lut_expr_K:
-      case gimple_cond_K:
-      case gimple_switch_K:
-      case gimple_multi_way_if_K:
-      case gimple_return_K:
-      case gimple_for_K:
-      case gimple_while_K:
+      case CASE_PRAGMA_NODES:
       case CASE_TYPE_NODES:
-      case type_decl_K:
-      case template_decl_K:
-      case target_mem_ref_K:
-      case target_mem_ref461_K:
-      case real_cst_K:
+      case case_label_expr_K:
       case complex_cst_K:
-      case string_cst_K:
-      case integer_cst_K:
       case field_decl_K:
       case function_decl_K:
+      case gimple_asm_K:
+      case gimple_call_K:
+      case gimple_cond_K:
+      case gimple_for_K:
+      case gimple_goto_K:
+      case gimple_label_K:
+      case gimple_multi_way_if_K:
+      case gimple_nop_K:
+      case gimple_pragma_K:
+      case gimple_return_K:
+      case gimple_switch_K:
+      case gimple_while_K:
+      case integer_cst_K:
       case label_decl_K:
+      case lut_expr_K:
+      case parm_decl_K:
+      case real_cst_K:
       case result_decl_K:
+      case ssa_name_K:
+      case string_cst_K:
+      case target_mem_ref461_K:
+      case target_mem_ref_K:
+      case template_decl_K:
+      case tree_vec_K:
+      case type_decl_K:
+      case var_decl_K:
       case vector_cst_K:
       case void_cst_K:
-      case tree_vec_K:
-      case case_label_expr_K:
-      case gimple_label_K:
-      case gimple_asm_K:
-      case gimple_goto_K:
-      case CASE_PRAGMA_NODES:
-      case gimple_pragma_K:
          break;
+      case CASE_CPP_NODES:
+      case CASE_FAKE_NODES:
       case binfo_K:
       case block_K:
       case const_decl_K:
-      case CASE_CPP_NODES:
+      case error_mark_K:
       case gimple_bind_K:
       case gimple_phi_K:
       case gimple_predict_K:
       case gimple_resx_K:
       case identifier_node_K:
-      case last_tree_K:
       case namespace_decl_K:
-      case none_K:
-      case placeholder_expr_K:
       case statement_list_K:
-      case translation_unit_decl_K:
-      case error_mark_K:
-      case using_decl_K:
-      case tree_reindex_K:
       case target_expr_K:
+      case translation_unit_decl_K:
+      case using_decl_K:
       {
          THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Not supported node: " + curr_tn->get_kind_text());
          break;

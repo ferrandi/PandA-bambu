@@ -216,10 +216,9 @@ class tree_manager
 
    /**
     * Add to the tree manager the current node.
-    * @param i position in the tree_vector. Note that the raw file start from 1
     * @param curr is the added element
     */
-   void AddTreeNode(const unsigned int i, const tree_nodeRef& curr);
+   void AddTreeNode(const tree_nodeRef& curr);
 
    /**
     * Return a tree_reindex wrapping the  i-th tree_node.
