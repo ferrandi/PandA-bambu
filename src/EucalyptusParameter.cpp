@@ -654,7 +654,7 @@ void EucalyptusParameter::SetDefaults()
    setOption(OPT_reset_type, "no");
    setOption(OPT_reg_init_value, false);
 
-   setOption(OPT_output_directory, (std::filesystem::current_path() / "HLS_output/").string());
+   setOption(OPT_output_directory, "HLS_output");
    setOption(OPT_reset_level, false);
    setOption(OPT_mixed_design, true);
 }
