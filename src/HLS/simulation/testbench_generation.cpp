@@ -136,7 +136,7 @@ void TestbenchGeneration::Initialize()
    const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
    THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
    const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(top_symbols.front());
-   const auto top_hls = HLSMgr->get_HLS(GET_INDEX_CONST_NODE(top_fnode));
+   const auto top_hls = HLSMgr->get_HLS(top_fnode->index);
    cir = top_hls->top->get_circ();
    THROW_ASSERT(GetPointer<const module>(cir), "Not a module");
    mod = GetPointer<const module>(cir);
@@ -187,7 +187,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
       THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
       const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(top_symbols.front());
-      return GET_INDEX_CONST_NODE(top_fnode);
+      return top_fnode->index;
    }();
    const auto top_fb = HLSMgr->CGetFunctionBehavior(top_id);
    const auto top_bh = top_fb->CGetBehavioralHelper();
@@ -272,10 +272,10 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       std::list<structural_objectRef> master_ports;
       for(const auto& par : top_bh->GetParameters())
       {
-         const auto par_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(par));
+         const auto par_name = top_bh->PrintVariable(par->index);
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Parameter " + par_name);
          const auto par_bitsize = tree_helper::SizeAlloc(par);
-         const auto par_symbol = HLSMgr->Rmem->get_symbol(GET_INDEX_CONST_NODE(par), top_id);
+         const auto par_symbol = HLSMgr->Rmem->get_symbol(par->index, top_id);
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
                         "---Interface: " + STR(par_bitsize) + "-bits memory mapped at " +
                             STR(par_symbol->get_address()));
@@ -290,12 +290,12 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--");
       }
 
-      const auto return_type = tree_helper::GetFunctionReturnType(HLSMgr->get_tree_manager()->CGetTreeNode(top_id));
+      const auto return_type = tree_helper::GetFunctionReturnType(HLSMgr->get_tree_manager()->GetTreeNode(top_id));
       if(return_type)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Return value port");
          const auto return_bitsize = tree_helper::SizeAlloc(return_type);
-         const auto return_symbol = HLSMgr->Rmem->get_symbol(GET_INDEX_CONST_NODE(return_type), top_id);
+         const auto return_symbol = HLSMgr->Rmem->get_symbol(return_type->index, top_id);
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
                         "---Interface: " + STR(return_bitsize) + "-bits memory mapped at " +
                             STR(return_symbol->get_address()));
@@ -386,7 +386,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       size_t idx = 0;
       for(const auto& arg : top_bh->GetParameters())
       {
-         const auto arg_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
+         const auto arg_name = top_bh->PrintVariable(arg->index);
          const auto& parm_attrs = func_arch->parms.at(arg_name);
          const auto& bundle_name = parm_attrs.at(FunctionArchitecture::parm_bundle);
          const auto& iface_attrs = func_arch->ifaces.at(bundle_name);
@@ -789,7 +789,7 @@ std::vector<std::string> TestbenchGeneration::print_var_init(const tree_managerC
                                                              const memoryRef mem)
 {
    std::vector<std::string> init_els;
-   const auto tn = TM->CGetTreeNode(var);
+   const auto tn = TM->GetTreeNode(var);
    const auto init_node = [&]() -> tree_nodeRef {
       const auto vd = GetPointer<const var_decl>(tn);
       if(vd && vd->init)
@@ -833,7 +833,7 @@ unsigned long long TestbenchGeneration::generate_init_file(const std::string& da
    std::stringstream init_bits;
    std::ofstream useless;
    unsigned long long vec_size = 0, elts_size = 0;
-   const auto var_type = tree_helper::CGetType(TM->CGetTreeNode(var));
+   const auto var_type = tree_helper::CGetType(TM->GetTreeNode(var));
    const auto bitsize_align = GetPointer<const type_node>(var_type)->algn;
    THROW_ASSERT((bitsize_align % 8) == 0, "Alignment is not byte aligned.");
    fu_binding::fill_array_ref_memory(init_bits, useless, var, vec_size, elts_size, mem, TM, false, bitsize_align);

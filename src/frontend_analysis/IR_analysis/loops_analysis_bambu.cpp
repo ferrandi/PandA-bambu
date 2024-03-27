@@ -80,7 +80,7 @@ LoopsAnalysisBambu::ComputeFrontendRelationships(const DesignFlowStep::Relations
          relationships.insert(std::make_pair(LOOPS_COMPUTATION, SAME_FUNCTION));
          relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
          const auto is_simd = tree_helper::has_omp_simd(GetPointer<const statement_list>(
-             GetPointer<const function_decl>(AppM->get_tree_manager()->CGetTreeNode(function_id))->body));
+             GetPointer<const function_decl>(AppM->get_tree_manager()->GetTreeNode(function_id))->body));
          if(is_simd)
          {
             relationships.insert(std::make_pair(SERIALIZE_MUTUAL_EXCLUSIONS, SAME_FUNCTION));

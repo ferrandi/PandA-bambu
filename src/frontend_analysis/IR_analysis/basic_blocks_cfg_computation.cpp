@@ -151,7 +151,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
 {
    const auto TM = AppM->get_tree_manager();
    const auto bbgc = function_behavior->bbgc;
-   const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function_id));
+   const auto fd = GetPointer<const function_decl>(TM->GetTreeNode(function_id));
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
    const auto sl = GetPointer<const statement_list>(fd->body);
    THROW_ASSERT(sl, "Body is not a statement_list");
@@ -238,7 +238,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
                const auto le = GetPointerS<const gimple_label>(first);
                label_to_bb[le->op] = su;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Gimple label of BB" + STR(su) + " is " + STR(GET_INDEX_CONST_NODE(le->op)));
+                              "---Gimple label of BB" + STR(su) + " is " + STR(le->op->index));
             }
             const auto se = GetPointer<const gimple_switch>(last);
             THROW_ASSERT(se->op1, "case_label_exprs not found");
@@ -247,16 +247,15 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
             for(const auto& op : tv->list_of_op)
             {
                const auto cl = GetPointer<const case_label_expr>(op);
-               THROW_ASSERT(label_to_bb.count(cl->got), "There is not corresponding case_label_exprs with index " +
-                                                            STR(GET_INDEX_CONST_NODE(cl->got)));
+               THROW_ASSERT(label_to_bb.count(cl->got),
+                            "There is not corresponding case_label_exprs with index " + STR(cl->got->index));
                if(cl->default_flag)
                {
                   bbgc->add_bb_edge_info(current, bbgc->Cget_vertex(label_to_bb[cl->got]), CFG_SELECTOR, default_COND);
                }
                else
                {
-                  bbgc->add_bb_edge_info(current, bbgc->Cget_vertex(label_to_bb[cl->got]), CFG_SELECTOR,
-                                         GET_INDEX_CONST_NODE(op));
+                  bbgc->add_bb_edge_info(current, bbgc->Cget_vertex(label_to_bb[cl->got]), CFG_SELECTOR, op->index);
                }
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");

@@ -679,17 +679,17 @@ void VarComputation::AnalyzeVops(const vertex op_vertex, const gimple_node* vop)
 {
    for(const auto& vuse : vop->vuses)
    {
-      ogc->AddVariable(op_vertex, GET_INDEX_NODE(vuse), FunctionBehavior_VariableType::VIRTUAL,
+      ogc->AddVariable(op_vertex, vuse->index, FunctionBehavior_VariableType::VIRTUAL,
                        FunctionBehavior_VariableAccessType::USE);
    }
    if(vop->vdef)
    {
-      ogc->AddVariable(op_vertex, GET_INDEX_NODE(vop->vdef), FunctionBehavior_VariableType::VIRTUAL,
+      ogc->AddVariable(op_vertex, vop->vdef->index, FunctionBehavior_VariableType::VIRTUAL,
                        FunctionBehavior_VariableAccessType::DEFINITION);
    }
    for(auto const& vover : vop->vovers)
    {
-      ogc->AddVariable(op_vertex, GET_INDEX_NODE(vover), FunctionBehavior_VariableType::VIRTUAL,
+      ogc->AddVariable(op_vertex, vover->index, FunctionBehavior_VariableType::VIRTUAL,
                        FunctionBehavior_VariableAccessType::OVER);
    }
 }

@@ -86,7 +86,7 @@ DiscrepancyLog::DiscrepancyLog(const HLS_managerConstRef HLSMgr, const vcd_trace
       fun_id(t.op_info.stg_fun_id),
       op_start_state(t.fsm_ss_it->value),
       fu_name(HLSMgr->CGetFunctionBehavior(t.op_info.stg_fun_id)->CGetBehavioralHelper()->get_function_name()),
-      stmt_string(HLSMgr->get_tree_manager()->CGetTreeNode(t.op_info.op_id)->ToString()),
+      stmt_string(HLSMgr->get_tree_manager()->GetTreeNode(t.op_info.op_id)->ToString()),
       c_val(std::move(_c_val)),
       vcd_val(t.out_var_it->value),
       fullsigname(t.fullsigname),
@@ -895,7 +895,7 @@ bool vcd_utility::detect_fixed_address_mismatch(const DiscrepancyOpInfo& op_info
    }
    /* don't detect mismatch for out of bounds address */
    const uint64_t memory_area_bitsize =
-       std::max(8ull, tree_helper::SizeAlloc(tree_helper::CGetType(TM->CGetTreeNode(base_index))));
+       std::max(8ull, tree_helper::SizeAlloc(tree_helper::CGetType(TM->GetTreeNode(base_index))));
    THROW_ASSERT(memory_area_bitsize % 8 == 0,
                 "bitsize of a variable in memory must be multiple of 8 --> is " + STR(memory_area_bitsize));
    if(c_offset_is_negative || ((memory_area_bitsize / 8) <= (c_addr - c_base_addr)))
@@ -939,7 +939,7 @@ bool vcd_utility::detect_address_mismatch(const DiscrepancyOpInfo& op_info, cons
                                           const std::string& c_val, const std::string& vcd_val,
                                           unsigned int& base_index)
 {
-   const auto* ssa = GetPointer<const ssa_name>(TM->CGetTreeNode(op_info.ssa_name_node_id));
+   const auto* ssa = GetPointer<const ssa_name>(TM->GetTreeNode(op_info.ssa_name_node_id));
    base_index = tree_helper::get_base_index(TM, op_info.ssa_name_node_id);
    if(base_index != 0 && HLSMgr->Rmem->has_base_address(base_index))
    {
@@ -954,7 +954,7 @@ bool vcd_utility::detect_address_mismatch(const DiscrepancyOpInfo& op_info, cons
 #endif
          for(const tree_nodeRef& pointed_var_decl_id : ssa->use_set->variables)
          {
-            base_index = tree_helper::get_base_index(TM, GET_INDEX_NODE(pointed_var_decl_id));
+            base_index = tree_helper::get_base_index(TM, pointed_var_decl_id->index);
             THROW_ASSERT(base_index != 0 && HLSMgr->Rmem->has_base_address(base_index),
                          "opid = " + STR(op_info.op_id) + " base index = " + STR(base_index) + " has no base address");
             THROW_ASSERT(Discr->c_addr_map.find(c_context) != Discr->c_addr_map.end(),
@@ -1054,7 +1054,7 @@ bool vcd_utility::detect_regular_mismatch(const vcd_trace_head& t, const std::st
    }
    else // is an integer
    {
-      std::string bitvalue = GetPointer<const ssa_name>(TM->CGetTreeNode(t.op_info.ssa_name_node_id))->bit_values;
+      std::string bitvalue = GetPointer<const ssa_name>(TM->GetTreeNode(t.op_info.ssa_name_node_id))->bit_values;
       auto first_not_x_pos = bitvalue.find_first_not_of("xX");
       if(first_not_x_pos == std::string::npos)
       {
@@ -1112,11 +1112,10 @@ void vcd_utility::print_discrepancy(const DiscrepancyLog& l, bool one_hot_encodi
                          compute_fsm_state_from_vcd_string(l.op_start_state, one_hot_encoding) +
                          "\n"
                          "|  assigned ssa id " +
-                         STR(GetPointer<const ssa_name>(TM->CGetTreeNode(l.ssa_id))) +
+                         STR(GetPointer<const ssa_name>(TM->GetTreeNode(l.ssa_id))) +
                          "\n"
                          "|  bitvalue string for ssa id is " +
-                         STR(l.ssa_id) + " " + GetPointer<const ssa_name>(TM->CGetTreeNode(l.ssa_id))->bit_values +
-                         "\n";
+                         STR(l.ssa_id) + " " + GetPointer<const ssa_name>(TM->GetTreeNode(l.ssa_id))->bit_values + "\n";
 
    if(l.type & DISCR_ADDR)
    {
@@ -1142,7 +1141,7 @@ void vcd_utility::print_discrepancy(const DiscrepancyLog& l, bool one_hot_encodi
          out_msg += "|  address offset in C: " + STR(c_addr_offset) + "\n";
 #if HAVE_ASSERTS
          const uint64_t memory_area_bitsize =
-             std::max(8ull, tree_helper::SizeAlloc(tree_helper::CGetType(TM->CGetTreeNode(l.base_index))));
+             std::max(8ull, tree_helper::SizeAlloc(tree_helper::CGetType(TM->GetTreeNode(l.base_index))));
          THROW_ASSERT(memory_area_bitsize % 8 == 0, "bitsize of a variable in memory must be multiple of 8 --> is " +
                                                         STR(memory_area_bitsize) +
                                                         ": this should be catched by an assertion earlier");

@@ -132,12 +132,12 @@ void operations_graph_constructor::AddOperation(const tree_managerRef TM, const 
                     STR(op_graph->CGetOpNodeInfo(current)->GetNodeId()));
    if(node_id > 0 && node_id != ENTRY_ID && node_id != EXIT_ID)
    {
-      op_graph->GetOpNodeInfo(current)->node = TM->CGetTreeNode(node_id);
+      op_graph->GetOpNodeInfo(current)->node = TM->GetTreeNode(node_id);
    }
    const unsigned int updated_node_id = op_graph->GetOpNodeInfo(current)->GetNodeId();
    if(updated_node_id != 0 && updated_node_id != ENTRY_ID && updated_node_id != EXIT_ID)
    {
-      GetPointer<gimple_node>(TM->CGetTreeNode(updated_node_id))->operation = operation_t;
+      GetPointer<gimple_node>(TM->GetTreeNode(updated_node_id))->operation = operation_t;
    }
    GET_NODE_INFO(og, OpNodeInfo, current)->bb_index = bb_index;
    if(src == ENTRY)

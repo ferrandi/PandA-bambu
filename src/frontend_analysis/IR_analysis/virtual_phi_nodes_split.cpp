@@ -124,7 +124,7 @@ DesignFlowStep_Status virtual_phi_nodes_split::InternalExec()
    /// replace[source, target] has been inserted
    std::map<std::pair<unsigned int, unsigned int>, unsigned int> replace;
 
-   tree_nodeRef temp = TM->CGetTreeNode(function_id);
+   tree_nodeRef temp = TM->GetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(temp);
    auto* sl = GetPointer<statement_list>(fd->body);
    std::map<unsigned int, blocRef>& list_of_bloc = sl->list_of_bloc;
@@ -156,10 +156,10 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
                                                 std::map<unsigned int, blocRef>& list_of_bloc, const tree_managerRef TM,
                                                 std::map<std::pair<unsigned int, unsigned int>, unsigned int>& replace)
 {
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Splitting phi node " + STR(GET_INDEX_NODE(tree_phi)));
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Splitting phi node " + STR(tree_phi->index));
    auto* phi = GetPointer<gimple_phi>(tree_phi);
    THROW_ASSERT(phi, "A non-phi node is stored in the phi_list");
-   // std::cout << "Analyzing phi-node: @" << GET_INDEX_NODE(tree_phi) << std::endl;
+   // std::cout << "Analyzing phi-node: @" << tree_phi->index << std::endl;
    if(phi->virtual_flag)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Phi node is virtual so no splitting is performed");
@@ -171,7 +171,7 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
 
       /// create the new ssa
       auto* ssa_var = GetPointer<ssa_name>(phi->res);
-      THROW_ASSERT(ssa_var, "unexpected condition " + STR(GET_INDEX_NODE(phi->res)));
+      THROW_ASSERT(ssa_var, "unexpected condition " + STR(phi->res->index));
       const auto type_node = tree_helper::CGetType(phi->res);
       const auto res = tree_man->create_ssa_name(type_node, ssa_var->var, nullptr, nullptr);
 
@@ -312,14 +312,12 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
 
             // Inserting phi
             new_bb->PushBack(created_stmt, AppM);
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                          "Inserted new gimple " + STR(GET_INDEX_CONST_NODE(created_stmt)));
+            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Inserted new gimple " + STR(created_stmt->index));
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Finished creation of new basic block");
          }
          else
          {
-            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                          "Inserted new gimple " + STR(GET_INDEX_CONST_NODE(created_stmt)));
+            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Inserted new gimple " + STR(created_stmt->index));
             source_bb->PushBack(created_stmt, AppM);
          }
          break;

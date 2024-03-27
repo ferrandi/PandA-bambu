@@ -327,7 +327,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                }
                TM->create_tree_node(ssa_node_nid, ssa_name_K, ssa_schema);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Created " + STR(TM->CGetTreeNode(ssa_node_nid)));
+                              "---Created " + STR(TM->GetTreeNode(ssa_node_nid)));
 
                std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_phi_schema;
                const auto gimple_phi_id = TM->new_tree_node_id();
@@ -336,7 +336,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                gimple_phi_schema[TOK(TOK_TYPE)] = STR(type);
                gimple_phi_schema[TOK(TOK_RES)] = STR(ssa_node_nid);
                TM->create_tree_node(gimple_phi_id, gimple_phi_K, gimple_phi_schema);
-               auto new_gp = GetPointer<gimple_phi>(TM->CGetTreeNode(gimple_phi_id));
+               auto new_gp = GetPointer<gimple_phi>(TM->GetTreeNode(gimple_phi_id));
                new_gp->SetSSAUsesComputed();
 
                const auto zero = [&]() -> tree_nodeRef {
@@ -376,8 +376,7 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                new_block->AddPhi(TM->GetTreeNode(gimple_phi_id));
                gp->SetDefEdgeList(TM, end_if_new_def_edge_list);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "<--Added phi " + STR(TM->CGetTreeNode(gimple_phi_id)) + " - Fixed phi " +
-                                  gp->ToString());
+                              "<--Added phi " + STR(TM->GetTreeNode(gimple_phi_id)) + " - Fixed phi " + gp->ToString());
             }
             bb_modified = true;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");

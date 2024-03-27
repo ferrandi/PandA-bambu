@@ -214,7 +214,7 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
    static size_t counter = 0;
 
    const tree_manipulationConstRef tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters, AppM));
-   auto* fd = GetPointer<function_decl>(TM->CGetTreeNode(function_id));
+   auto* fd = GetPointer<function_decl>(TM->GetTreeNode(function_id));
    auto* sl = GetPointer<statement_list>(fd->body);
    for(const auto& block : sl->list_of_bloc)
    {
@@ -410,7 +410,7 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
                            "---Written BB_Inside_" + GetName() + "_" + STR(counter) + ".dot");
             counter++;
          }
-         const double new_time = schedule->GetEndingTime(GET_INDEX_CONST_NODE(root_gimple_node));
+         const double new_time = schedule->GetEndingTime(root_gimple_node->index);
          if(new_time + EPSILON > old_time)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Error in estimation");

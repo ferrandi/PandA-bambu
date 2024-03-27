@@ -211,7 +211,7 @@ void mux_connection_binding::create_single_conn(const OpGraphConstRef data, cons
          {
             bool found_branch = false;
             const tree_managerRef TreeM = HLSMgr->get_tree_manager();
-            const auto gp = GetPointer<const gimple_phi>(TreeM->CGetTreeNode(data->CGetOpNodeInfo(op)->GetNodeId()));
+            const auto gp = GetPointer<const gimple_phi>(TreeM->GetTreeNode(data->CGetOpNodeInfo(op)->GetNodeId()));
             for(const auto& def_edge : gp->CGetDefEdgesList())
             {
                auto bbID = def_edge.second;
@@ -290,7 +290,7 @@ unsigned int mux_connection_binding::address_precision(unsigned int precision, c
 {
    auto fu_type = HLS->Rfu->get_assign(op);
    auto node_id = data->CGetOpNodeInfo(op)->GetNodeId();
-   const auto node = TreeM->CGetTreeNode(node_id);
+   const auto node = TreeM->GetTreeNode(node_id);
    const auto gm = GetPointer<const gimple_assign>(node);
    bool right_addr_expr = false;
    if(gm && GetPointer<const addr_expr>(gm->op1))
@@ -305,8 +305,8 @@ unsigned int mux_connection_binding::address_precision(unsigned int precision, c
                          HLS->allocation_information->get_proxy_memory_var(fu_type);
       if(var && HLSMgr->Rmem->is_private_memory(var))
       {
-         unsigned long long int max_addr = HLSMgr->Rmem->get_base_address(var, HLS->functionId) +
-                                           tree_helper::SizeAlloc(TreeM->CGetTreeNode(var)) / 8;
+         unsigned long long int max_addr =
+             HLSMgr->Rmem->get_base_address(var, HLS->functionId) + tree_helper::SizeAlloc(TreeM->GetTreeNode(var)) / 8;
          unsigned int address_bitsize;
          for(address_bitsize = 1; max_addr > (1ull << address_bitsize); ++address_bitsize)
          {
@@ -324,7 +324,7 @@ bool mux_connection_binding::isConstantObj(unsigned int tree_index, const tree_m
    {
       return true;
    }
-   tree_nodeRef tn = TreeM->CGetTreeNode(tree_index);
+   tree_nodeRef tn = TreeM->GetTreeNode(tree_index);
    if(GetPointer<integer_cst>(tn))
    {
       return true;
@@ -358,7 +358,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          {
             auto* ae = GetPointer<addr_expr>(tn);
             auto node_id = data->CGetOpNodeInfo(op)->GetNodeId();
-            const auto node = TreeM->CGetTreeNode(node_id);
+            const auto node = TreeM->GetTreeNode(node_id);
             auto* gm = GetPointer<const gimple_assign>(node);
             const auto type = tree_helper::CGetType(ae->op);
             if(type && GetPointer<const type_node>(type))
@@ -378,35 +378,34 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
             {
                const auto ref_var = tree_helper::GetBaseVariable(gm->op0);
                auto local_precision = bus_addr_bitsize;
-               if(FB->is_variable_mem(GET_INDEX_CONST_NODE(ref_var)))
+               if(FB->is_variable_mem(ref_var->index))
                {
-                  unsigned long long int max_addr =
-                      HLSMgr->Rmem->get_base_address(GET_INDEX_CONST_NODE(ref_var), HLS->functionId) +
-                      tree_helper::SizeAlloc(ref_var) / 8;
+                  unsigned long long int max_addr = HLSMgr->Rmem->get_base_address(ref_var->index, HLS->functionId) +
+                                                    tree_helper::SizeAlloc(ref_var) / 8;
                   for(local_precision = 1; max_addr > (1ull << local_precision); ++local_precision)
                   {
                      ;
                   }
                }
-               determine_connection(op, HLS_manager::io_binding_type(GET_INDEX_NODE(ae->op), 0), fu_obj, port_num,
-                                    port_index, data, local_precision, alignment);
+               determine_connection(op, HLS_manager::io_binding_type(ae->op->index, 0), fu_obj, port_num, port_index,
+                                    data, local_precision, alignment);
             }
             else
             {
-               determine_connection(op, HLS_manager::io_binding_type(GET_INDEX_NODE(ae->op), 0), fu_obj, port_num,
-                                    port_index, data, precision, alignment);
+               determine_connection(op, HLS_manager::io_binding_type(ae->op->index, 0), fu_obj, port_num, port_index,
+                                    data, precision, alignment);
             }
             return;
          }
          case mem_ref_K:
          {
             auto* mr = GetPointer<mem_ref>(tn);
-            auto base_index = GET_INDEX_NODE(mr->op0);
+            auto base_index = mr->op0->index;
             THROW_ASSERT(std::numeric_limits<long long>::min() <= tree_helper::GetConstValue(mr->op1) &&
                              tree_helper::GetConstValue(mr->op1) <= std::numeric_limits<long long>::max(),
                          "");
             auto offset = static_cast<long long>(tree_helper::GetConstValue(mr->op1));
-            auto offset_index = offset ? GET_INDEX_NODE(mr->op1) : 0;
+            auto offset_index = offset ? mr->op1->index : 0;
             generic_objRef current_operand;
             auto local_precision = address_precision(precision, op, data, TreeM);
             if(offset_index)
@@ -675,7 +674,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
 unsigned int mux_connection_binding::extract_parm_decl(unsigned int tree_var, const tree_managerRef TreeM)
 {
    unsigned int base_index;
-   tree_nodeRef node = TreeM->CGetTreeNode(tree_var);
+   tree_nodeRef node = TreeM->GetTreeNode(tree_var);
    if(GetPointer<parm_decl>(node))
    {
       base_index = tree_var;
@@ -683,7 +682,7 @@ unsigned int mux_connection_binding::extract_parm_decl(unsigned int tree_var, co
    else
    {
       auto* sn = GetPointer<ssa_name>(node);
-      base_index = GET_INDEX_NODE(sn->var);
+      base_index = sn->var->index;
    }
    return base_index;
 }
@@ -709,7 +708,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
          if(state_info && state_info->is_duplicated && !state_info->all_paths)
          {
             bool found_branch = false;
-            const auto gp = GetPointer<const gimple_phi>(TreeM->CGetTreeNode(data->CGetOpNodeInfo(op)->GetNodeId()));
+            const auto gp = GetPointer<const gimple_phi>(TreeM->GetTreeNode(data->CGetOpNodeInfo(op)->GetNodeId()));
             for(const auto& def_edge : gp->CGetDefEdgesList())
             {
                auto bbID = def_edge.second;
@@ -1007,7 +1006,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                   {
                      THROW_UNREACHABLE("not expected from " + HLS->Rliv->get_name(state) + " to " +
                                        HLS->Rliv->get_name(tgt_state) + " " +
-                                       HLSMgr->get_tree_manager()->CGetTreeNode(tree_var)->ToString());
+                                       HLSMgr->get_tree_manager()->GetTreeNode(tree_var)->ToString());
                   }
                }
                else if(state_info && state_info->is_duplicated && state_info->clonedState != NULL_VERTEX &&
@@ -1016,7 +1015,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                            state_info->moved_exec_op.end())
                {
                   const auto gp =
-                      GetPointer<const gimple_phi>(TreeM->CGetTreeNode(data->CGetOpNodeInfo(def_op)->GetNodeId()));
+                      GetPointer<const gimple_phi>(TreeM->GetTreeNode(data->CGetOpNodeInfo(def_op)->GetNodeId()));
                   bool phi_postponed = false;
                   unsigned int tree_temp = 0;
                   for(const auto& def_edge : gp->CGetDefEdgesList())
@@ -1198,8 +1197,8 @@ void mux_connection_binding::add_conversion(unsigned int num, vertex op, unsigne
                                             const tree_managerRef TreeM, unsigned int tree_var)
 {
    const HLS_manager::io_binding_type& varObj = HLS_manager::io_binding_type(tree_var, 0);
-   const auto var = TreeM->CGetTreeNode(tree_var);
-   const auto parm = TreeM->CGetTreeNode(form_par_type);
+   const auto var = TreeM->GetTreeNode(tree_var);
+   const auto parm = TreeM->GetTreeNode(form_par_type);
    const auto size_tree_var = tree_helper::Size(var);
    const auto inIP = tree_helper::IsSignedIntegerType(var);
    const auto inUP =
@@ -1435,7 +1434,7 @@ void mux_connection_binding::create_connections()
          if(GET_TYPE(data, op) & (TYPE_LOAD | TYPE_STORE))
          {
             auto node_id = data->CGetOpNodeInfo(op)->GetNodeId();
-            const tree_nodeRef node = TreeM->CGetTreeNode(node_id);
+            const tree_nodeRef node = TreeM->GetTreeNode(node_id);
             auto* gm = GetPointer<gimple_assign>(node);
             THROW_ASSERT(gm, "only gimple_assign's are allowed as memory operations");
 
@@ -1479,9 +1478,9 @@ void mux_connection_binding::create_connections()
                if(GET_TYPE(data, op) & TYPE_STORE)
                {
                   size_var = std::get<0>(var_read[0]);
-                  tn = tree_helper::CGetType(TreeM->CGetTreeNode(size_var));
+                  tn = tree_helper::CGetType(TreeM->GetTreeNode(size_var));
                   var_node = gm->op0;
-                  var_node_idx = GET_INDEX_NODE(gm->op0);
+                  var_node_idx = gm->op0->index;
 
                   if(size_var)
                   {
@@ -1551,9 +1550,9 @@ void mux_connection_binding::create_connections()
                else
                {
                   size_var = HLSMgr->get_produced_value(HLS->functionId, op);
-                  tn = tree_helper::CGetType(TreeM->CGetTreeNode(size_var));
+                  tn = tree_helper::CGetType(TreeM->GetTreeNode(size_var));
                   var_node = gm->op1;
-                  var_node_idx = GET_INDEX_NODE(gm->op1);
+                  var_node_idx = gm->op1->index;
                }
 #ifndef NDEBUG
                if(var_node->get_kind() == ssa_name_K)
@@ -1622,7 +1621,7 @@ void mux_connection_binding::create_connections()
             for(unsigned int port_num = 0; port_num < var_read.size(); port_num++)
             {
                const auto tree_var = std::get<0>(var_read[port_num]);
-               const auto tree_var_node = tree_var == 0 ? nullptr : TreeM->CGetTreeNode(tree_var);
+               const auto tree_var_node = tree_var == 0 ? nullptr : TreeM->GetTreeNode(tree_var);
                const auto& node = data->CGetOpNodeInfo(op)->node;
                const auto form_par_type = tree_helper::GetFormalIth(node, port_num);
                auto size_form_par = form_par_type ? tree_helper::Size(form_par_type) : 0;
@@ -1703,7 +1702,7 @@ void mux_connection_binding::create_connections()
          {
             const StateInfoConstRef state_info =
                 is_PC ? StateInfoConstRef() : HLS->STG->GetStg()->CGetStateInfo(estate);
-            const auto gp = GetPointer<const gimple_phi>(TreeM->CGetTreeNode(data->CGetOpNodeInfo(op)->GetNodeId()));
+            const auto gp = GetPointer<const gimple_phi>(TreeM->GetTreeNode(data->CGetOpNodeInfo(op)->GetNodeId()));
             for(const auto& def_edge : gp->CGetDefEdgesList())
             {
                auto tree_temp = def_edge.first->index;
@@ -1757,9 +1756,9 @@ void mux_connection_binding::create_connections()
                             "phi cannot manage memory objects: @" + STR(tree_temp));
                THROW_ASSERT(!HLSMgr->Rmem->has_base_address(var_written),
                             "phi cannot manage memory objects: @" + STR(var_written));
-               THROW_ASSERT(TreeM->CGetTreeNode(tree_temp)->get_kind() != array_ref_K, "unexpected phi use");
-               THROW_ASSERT(TreeM->CGetTreeNode(tree_temp)->get_kind() != indirect_ref_K, "unexpected phi use");
-               THROW_ASSERT(TreeM->CGetTreeNode(tree_temp)->get_kind() != misaligned_indirect_ref_K,
+               THROW_ASSERT(TreeM->GetTreeNode(tree_temp)->get_kind() != array_ref_K, "unexpected phi use");
+               THROW_ASSERT(TreeM->GetTreeNode(tree_temp)->get_kind() != indirect_ref_K, "unexpected phi use");
+               THROW_ASSERT(TreeM->GetTreeNode(tree_temp)->get_kind() != misaligned_indirect_ref_K,
                             "unexpected phi use");
 
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -1775,9 +1774,8 @@ void mux_connection_binding::create_connections()
                   auto out_bitsize = object_bitsize(TreeM, HLS_manager::io_binding_type(var_written, 0));
                   HLS_manager::check_bitwidth(out_bitsize);
                   generic_objRef tgt_reg_obj = HLS->Rreg->get(r_index);
-                  THROW_ASSERT(
-                      tree_helper::IsSameType(TreeM->CGetTreeNode(tree_temp), TreeM->CGetTreeNode(var_written)),
-                      "conversion required");
+                  THROW_ASSERT(tree_helper::IsSameType(TreeM->GetTreeNode(tree_temp), TreeM->GetTreeNode(var_written)),
+                               "conversion required");
                   if(phi_postponed)
                   {
                      if(HLS->Rliv->has_state_out(estate, op, var_written))
@@ -1955,7 +1953,7 @@ void mux_connection_binding::create_connections()
                            {
                               THROW_ERROR("not expected conversion " + STR(cur_phi_tree_var) + " " + STR(in_bitsize) +
                                           " " + STR(out_bitsize) + " " +
-                                          TreeM->CGetTreeNode(data->CGetOpNodeInfo(op)->GetNodeId())->ToString());
+                                          TreeM->GetTreeNode(data->CGetOpNodeInfo(op)->GetNodeId())->ToString());
                            }
                         }
                         else
@@ -2009,7 +2007,7 @@ void mux_connection_binding::create_connections()
                   {
                      if(in_bitsize != out_bitsize)
                      {
-                        add_conversion(0, op, tree_helper::CGetType(TreeM->CGetTreeNode(var_written))->index,
+                        add_conversion(0, op, tree_helper::CGetType(TreeM->GetTreeNode(var_written))->index,
                                        out_bitsize, 0, tgt_reg_obj, data, TreeM, tree_temp);
                      }
                      else
@@ -2070,7 +2068,7 @@ void mux_connection_binding::create_connections()
             {
                HLS->Rconn->add_data_transfer(fu_obj, TargetPort, 0, 0,
                                              data_transfer(var_written,
-                                                           tree_helper::Size(TreeM->CGetTreeNode(var_written)), estate,
+                                                           tree_helper::Size(TreeM->GetTreeNode(var_written)), estate,
                                                            NULL_VERTEX, op));
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                              "       - add data transfer from " << fu_obj->get_string() << " to "
@@ -2094,7 +2092,7 @@ void mux_connection_binding::create_connections()
             {
                HLS->Rconn->add_data_transfer(fu_obj, TargetPort, 0, 0,
                                              data_transfer(var_written,
-                                                           tree_helper::Size(TreeM->CGetTreeNode(var_written)), estate,
+                                                           tree_helper::Size(TreeM->GetTreeNode(var_written)), estate,
                                                            NULL_VERTEX, op));
                PRINT_DBG_MEX(
                    DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -2128,7 +2126,7 @@ void mux_connection_binding::create_connections()
                      generic_objRef tgt_reg_obj = HLS->Rreg->get(r_index);
                      HLS->Rconn->add_data_transfer(fu_obj, tgt_reg_obj, 0, 0,
                                                    data_transfer(var_written,
-                                                                 tree_helper::Size(TreeM->CGetTreeNode(var_written)),
+                                                                 tree_helper::Size(TreeM->GetTreeNode(var_written)),
                                                                  estate, *s_out_it, op));
                      PRINT_DBG_MEX(
                          DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -2380,7 +2378,7 @@ unsigned long long mux_connection_binding::object_bitsize(const tree_managerRef 
    const auto second = std::get<1>(obj);
    if(first)
    {
-      const auto type = tree_helper::CGetType(TreeM->CGetTreeNode(first));
+      const auto type = tree_helper::CGetType(TreeM->GetTreeNode(first));
       const auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
 
       if(tree_helper::IsArrayType(type) || tree_helper::IsStructType(type) ||
@@ -2390,7 +2388,7 @@ unsigned long long mux_connection_binding::object_bitsize(const tree_managerRef 
       }
       else
       {
-         return tree_helper::Size(TreeM->CGetTreeNode(first));
+         return tree_helper::Size(TreeM->GetTreeNode(first));
       }
    }
    else

@@ -155,7 +155,7 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
    const tree_managerRef TM = AppM->get_tree_manager();
    const tree_nodeRef curr_tn = tn;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Analyzing recursively " + curr_tn->get_kind_text() + " " + STR(GET_INDEX_NODE(tn)) + ": " +
+                  "-->Analyzing recursively " + curr_tn->get_kind_text() + " " + STR(tn->index) + ": " +
                       curr_tn->ToString());
    switch(curr_tn->get_kind())
    {
@@ -263,11 +263,11 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
       {
          if(curr_tn->get_kind() == addr_expr_K)
          {
-            if(already_visited_ae.find(GET_INDEX_NODE(tn)) != already_visited_ae.end())
+            if(already_visited_ae.find(tn->index) != already_visited_ae.end())
             {
                break;
             }
-            already_visited_ae.insert(GET_INDEX_NODE(tn));
+            already_visited_ae.insert(tn->index);
          }
          auto* ue = GetPointer<unary_expr>(curr_tn);
          recursive_analysis(ue->op, srcp);
@@ -455,24 +455,23 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
       }
       case string_cst_K:
       {
-         if(string_cst_map.find(GET_INDEX_NODE(tn)) == string_cst_map.end())
+         if(string_cst_map.find(tn->index) == string_cst_map.end())
          {
             auto* sc = GetPointer<string_cst>(curr_tn);
             const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
             const auto* type_sc = GetPointer<const type_node>(sc->type);
-            const std::string local_var_name = "__bambu_artificial_var_string_cst_" + STR(GET_INDEX_NODE(tn));
+            const std::string local_var_name = "__bambu_artificial_var_string_cst_" + STR(tn->index);
             auto local_var_identifier = tree_man->create_identifier_node(local_var_name);
             auto global_scpe = tree_man->create_translation_unit_decl();
-            auto new_var_decl = tree_man->create_var_decl(
-                local_var_identifier, TM->CGetTreeNode(GET_INDEX_NODE(sc->type)), global_scpe,
-                TM->CGetTreeNode(GET_INDEX_NODE(type_sc->size)), tree_nodeRef(), TM->CGetTreeNode(GET_INDEX_NODE(tn)),
-                srcp, type_sc->algn, 1, true, -1, false, false, true, false, true);
-            string_cst_map[GET_INDEX_NODE(tn)] = new_var_decl;
+            auto new_var_decl =
+                tree_man->create_var_decl(local_var_identifier, sc->type, global_scpe, type_sc->size, tree_nodeRef(),
+                                          tn, srcp, type_sc->algn, 1, true, -1, false, false, true, false, true);
+            string_cst_map[tn->index] = new_var_decl;
             tn = new_var_decl;
          }
          else
          {
-            tn = string_cst_map.find(GET_INDEX_NODE(tn))->second;
+            tn = string_cst_map.find(tn->index)->second;
          }
          break;
       }
@@ -516,7 +515,6 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
       default:
          THROW_UNREACHABLE("");
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "<--Analyzed recursively " + STR(GET_INDEX_NODE(tn)) + ": " + STR(tn));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed recursively " + STR(tn->index) + ": " + STR(tn));
    return;
 }

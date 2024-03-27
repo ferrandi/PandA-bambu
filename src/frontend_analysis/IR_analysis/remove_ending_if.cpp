@@ -165,7 +165,7 @@ void RemoveEndingIf::Initialize()
 {
    TM = AppM->get_tree_manager();
    tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
-   const auto temp = TM->CGetTreeNode(function_id);
+   const auto temp = TM->GetTreeNode(function_id);
    auto fd = GetPointer<function_decl>(temp);
    sl = GetPointer<statement_list>(fd->body);
 #if HAVE_ILP_BUILT

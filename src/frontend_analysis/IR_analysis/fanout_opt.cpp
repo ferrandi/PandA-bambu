@@ -147,7 +147,7 @@ DesignFlowStep_Status fanout_opt::InternalExec()
    }
    bool IR_changed = false;
 
-   tree_nodeRef temp = TM->CGetTreeNode(function_id);
+   tree_nodeRef temp = TM->GetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(temp);
    auto* sl = GetPointer<statement_list>(fd->body);
    const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
@@ -247,8 +247,7 @@ DesignFlowStep_Status fanout_opt::InternalExec()
                   }
                   tree_nodeRef new_res_var;
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---starting from phi " + phi->ToString());
-                  auto new_phi =
-                      tree_man->create_phi_node(new_res_var, list_of_def_edge, GET_INDEX_CONST_NODE(gp->scpe));
+                  auto new_phi = tree_man->create_phi_node(new_res_var, list_of_def_edge, gp->scpe->index);
                   auto new_res_var_ssa = GetPointer<ssa_name>(new_res_var);
                   new_res_var_ssa->min = ssa_defined->min;
                   new_res_var_ssa->max = ssa_defined->max;
@@ -271,7 +270,7 @@ DesignFlowStep_Status fanout_opt::InternalExec()
       {
          for(const auto& stmt : block.second->CGetStmtList())
          {
-            schedule->UpdateTime(GET_INDEX_NODE(stmt));
+            schedule->UpdateTime(stmt->index);
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered BB" + STR(block.first));

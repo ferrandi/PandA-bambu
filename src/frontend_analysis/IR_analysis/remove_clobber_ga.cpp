@@ -108,7 +108,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
    std::map<unsigned int, tree_nodeRef> var_substitution_table;
    std::map<unsigned int, CustomOrderedSet<tree_nodeRef>> stmt_to_be_removed;
 
-   tree_nodeRef temp = TM->CGetTreeNode(function_id);
+   tree_nodeRef temp = TM->GetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(temp);
    auto* sl = GetPointer<statement_list>(fd->body);
    const bool is_single_write_memory =
@@ -136,7 +136,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
          }
          if(is_single_write_memory)
          {
-            var_substitution_table[GET_INDEX_NODE(ga->memdef)] = ga->memuse;
+            var_substitution_table[ga->memdef->index] = ga->memuse;
          }
          stmt_to_be_removed[curr_bb].insert(stmt);
       }
@@ -163,19 +163,18 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
             {
                for(const auto& def_edge : gp->CGetDefEdgesList())
                {
-                  if(var_substitution_table.find(GET_INDEX_NODE(def_edge.first)) != var_substitution_table.end())
+                  if(var_substitution_table.find(def_edge.first->index) != var_substitution_table.end())
                   {
-                     tree_nodeRef res = var_substitution_table.find(GET_INDEX_NODE(def_edge.first))->second;
-                     while(var_substitution_table.find(GET_INDEX_NODE(res)) != var_substitution_table.end())
+                     tree_nodeRef res = var_substitution_table.find(def_edge.first->index)->second;
+                     while(var_substitution_table.find(res->index) != var_substitution_table.end())
                      {
-                        res = var_substitution_table.find(GET_INDEX_NODE(res))->second;
+                        res = var_substitution_table.find(res->index)->second;
                      }
                      THROW_ASSERT(!(GetPointer<ssa_name>(res) &&
                                     GetPointer<gimple_assign>(GetPointer<ssa_name>(res)->CGetDefStmt()) &&
                                     GetPointer<gimple_assign>(GetPointer<ssa_name>(res)->CGetDefStmt())->clobber),
                                   "unexpected condition");
-                     gp->ReplaceDefEdge(TM, def_edge,
-                                        gimple_phi::DefEdge(TM->GetTreeNode(GET_INDEX_NODE(res)), def_edge.second));
+                     gp->ReplaceDefEdge(TM, def_edge, gimple_phi::DefEdge(res, def_edge.second));
                   }
                }
             }
@@ -190,10 +189,9 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
             {
                continue;
             }
-            if(var_substitution_table.find(GET_INDEX_NODE(gn->memuse)) != var_substitution_table.end())
+            if(var_substitution_table.find(gn->memuse->index) != var_substitution_table.end())
             {
-               gn->memuse =
-                   TM->GetTreeNode(GET_INDEX_NODE(var_substitution_table.find(GET_INDEX_NODE(gn->memuse))->second));
+               gn->memuse = var_substitution_table.at(gn->memuse->index);
             }
          }
       }

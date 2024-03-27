@@ -166,7 +166,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
             endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
             endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
             taste_address = taste_address + 8;
-            const auto byte_size = tree_helper::SizeAlloc(TreeM->CGetTreeNode(tree_parameter_type)) / 8;
+            const auto byte_size = tree_helper::SizeAlloc(TreeM->GetTreeNode(tree_parameter_type)) / 8;
             if(byte_size == 8)
             {
                registers += 2;
@@ -181,7 +181,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
          else
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->INTEGER (not first level)");
-            const auto byte_size = tree_helper::SizeAlloc(TreeM->CGetTreeNode(tree_parameter_type)) / 8;
+            const auto byte_size = tree_helper::SizeAlloc(TreeM->GetTreeNode(tree_parameter_type)) / 8;
             if(byte_size <= 4)
             {
                little_endianess ? address_translation->Append(",0," + STR(bambu_address)) :
@@ -232,7 +232,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
       {
          if(first_level)
          {
-            const auto byte_size = tree_helper::SizeAlloc(TreeM->CGetTreeNode(tree_parameter_type)) / 8;
+            const auto byte_size = tree_helper::SizeAlloc(TreeM->GetTreeNode(tree_parameter_type)) / 8;
             if(byte_size == 8)
             {
                address_translation->Append(",0,0,");
@@ -255,7 +255,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
          }
          else
          {
-            const auto byte_size = tree_helper::SizeAlloc(TreeM->CGetTreeNode(tree_parameter_type)) / 8;
+            const auto byte_size = tree_helper::SizeAlloc(TreeM->GetTreeNode(tree_parameter_type)) / 8;
             if(byte_size == 4)
             {
                little_endianess ? address_translation->Append(",0," + STR(bambu_address)) :
@@ -295,7 +295,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
       case AsnType_Kind::SEQUENCE:
       {
          const auto sequence = GetPointer<const SequenceAsnType>(asn_type);
-         const auto tree_record_type = GetPointer<const record_type>(TreeM->CGetTreeNode(tree_parameter_type));
+         const auto tree_record_type = GetPointer<const record_type>(TreeM->GetTreeNode(tree_parameter_type));
          const auto tree_fields = tree_record_type->list_of_flds;
          size_t tree_field_index = 0;
          for(const auto& field : sequence->fields)
@@ -311,7 +311,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
             const auto next_field_beginning = [&]() -> unsigned long long int {
                if(tree_field_index + 1 > tree_fields.size())
                {
-                  return tree_helper::SizeAlloc(TreeM->CGetTreeNode(tree_parameter_type)) / 8;
+                  return tree_helper::SizeAlloc(TreeM->GetTreeNode(tree_parameter_type)) / 8;
                }
                else
                {
@@ -337,7 +337,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
          const auto element_type = aadl_information->CGetAsnType(sequenceof->element);
          for(size_t counter = 0; counter < sequenceof->size; counter++)
          {
-            ComputeAddress(element_type, tree_helper::CGetPointedType(TreeM->CGetTreeNode(tree_parameter_type))->index,
+            ComputeAddress(element_type, tree_helper::CGetPointedType(TreeM->GetTreeNode(tree_parameter_type))->index,
                            bambu_address, taste_address, registers, false, little_endianess);
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -346,7 +346,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
       case AsnType_Kind::SET:
       {
          const auto set = GetPointer<const SetAsnType>(asn_type);
-         const auto tree_record_type = GetPointer<const record_type>(TreeM->CGetTreeNode(tree_parameter_type));
+         const auto tree_record_type = GetPointer<const record_type>(TreeM->GetTreeNode(tree_parameter_type));
          const auto tree_fields = tree_record_type->list_of_flds;
          size_t tree_field_index = 0;
          for(const auto& field : set->fields)
@@ -362,7 +362,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
             const auto next_field_beginning = [&]() -> unsigned long long {
                if(tree_field_index + 1 > tree_fields.size())
                {
-                  return tree_helper::SizeAlloc(TreeM->CGetTreeNode(tree_parameter_type)) / 8;
+                  return tree_helper::SizeAlloc(TreeM->GetTreeNode(tree_parameter_type)) / 8;
                }
                else
                {
@@ -387,7 +387,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
          const auto element_type = aadl_information->CGetAsnType(setof->element);
          for(size_t counter = 0; counter < setof->size; counter++)
          {
-            ComputeAddress(element_type, tree_helper::CGetPointedType(TreeM->CGetTreeNode(tree_parameter_type))->index,
+            ComputeAddress(element_type, tree_helper::CGetPointedType(TreeM->GetTreeNode(tree_parameter_type))->index,
                            bambu_address, taste_address, registers, false, little_endianess);
          }
          break;

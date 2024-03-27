@@ -207,7 +207,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--No because of call_expr in right part");
       return FunctionFrontendFlowStep_Movable::UNMOVABLE;
    }
-   if(tree_helper::is_constant(TM, GET_INDEX_NODE(ga->op1)))
+   if(tree_helper::is_constant(TM, ga->op1->index))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because right part is constant");
       return FunctionFrontendFlowStep_Movable::MOVABLE;
@@ -280,8 +280,8 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
          {
             auto* be = GetPointer<binary_expr>(right);
             auto n_bit = std::max(tree_helper::Size(be->op0), tree_helper::Size(be->op1));
-            bool is_constant = tree_helper::is_constant(TM, GET_INDEX_NODE(be->op0)) ||
-                               tree_helper::is_constant(TM, GET_INDEX_NODE(be->op1));
+            bool is_constant =
+                tree_helper::is_constant(TM, be->op0->index) || tree_helper::is_constant(TM, be->op1->index);
             if(n_bit > 9 && !is_constant)
             {
                zero_delay = false;
@@ -302,7 +302,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
          {
             auto* te = GetPointer<ternary_expr>(right);
             auto n_bit = tree_helper::Size(te->op0);
-            bool is_constant = tree_helper::is_constant(TM, GET_INDEX_NODE(te->op1));
+            bool is_constant = tree_helper::is_constant(TM, te->op1->index);
             if(n_bit > 9 && !is_constant)
             {
                zero_delay = false;
@@ -435,8 +435,8 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
             auto* be = GetPointer<binary_expr>(right);
             auto n_bit = std::max(tree_helper::Size(be->op0), tree_helper::Size(be->op1));
             auto n_bit_min = std::min(tree_helper::Size(be->op0), tree_helper::Size(be->op1));
-            bool is_constant = tree_helper::is_constant(TM, GET_INDEX_NODE(be->op0)) ||
-                               tree_helper::is_constant(TM, GET_INDEX_NODE(be->op1));
+            bool is_constant =
+                tree_helper::is_constant(TM, be->op0->index) || tree_helper::is_constant(TM, be->op1->index);
             if((n_bit > 9 && !is_constant && n_bit_min != 1) || n_bit > 16)
             {
                zero_delay = false;
@@ -462,8 +462,8 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
                 std::max(std::max(tree_helper::Size(be->op0), tree_helper::Size(be->op1)), tree_helper::Size(be->op2));
             auto n_bit_min =
                 std::min(std::min(tree_helper::Size(be->op0), tree_helper::Size(be->op1)), tree_helper::Size(be->op2));
-            bool is_constant = tree_helper::is_constant(TM, GET_INDEX_NODE(be->op0)) ||
-                               tree_helper::is_constant(TM, GET_INDEX_NODE(be->op1));
+            bool is_constant =
+                tree_helper::is_constant(TM, be->op0->index) || tree_helper::is_constant(TM, be->op1->index);
             if((n_bit > 9 && !is_constant && n_bit_min != 1) || n_bit > 16)
             {
                zero_delay = false;
@@ -476,7 +476,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       {
          auto* ne = GetPointer<negate_expr>(right);
          auto n_bit = tree_helper::Size(ne->op);
-         bool is_constant = tree_helper::is_constant(TM, GET_INDEX_NODE(ne->op));
+         bool is_constant = tree_helper::is_constant(TM, ne->op->index);
          if((n_bit > 9 && !is_constant) || n_bit > 16)
          {
             zero_delay = false;
@@ -651,7 +651,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
    bool modified = false;
    restart_ifmwi_opt = false;
 
-   const auto fd = GetPointerS<const function_decl>(TM->CGetTreeNode(function_id));
+   const auto fd = GetPointerS<const function_decl>(TM->GetTreeNode(function_id));
    const auto sl = GetPointerS<const statement_list>(fd->body);
 
    const auto isFunctionPipelined = AppM->CGetFunctionBehavior(function_id)->is_simple_pipeline();
@@ -1041,7 +1041,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             }
             if(only_phis && zero_delay)
             {
-               zero_delay_stmts.insert(GET_INDEX_NODE(*statement));
+               zero_delay_stmts.insert((*statement)->index);
             }
             if(check_movable == FunctionFrontendFlowStep_Movable::TIMING or (!only_phis && !zero_delay))
             {

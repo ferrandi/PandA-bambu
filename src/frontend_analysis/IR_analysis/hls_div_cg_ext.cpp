@@ -171,10 +171,10 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
       for(const auto& stmt : BB->CGetStmtList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Examine " + STR(GET_INDEX_NODE(stmt)) + " " + stmt->ToString());
+                        "-->Examine " + STR(stmt->index) + " " + stmt->ToString());
          modified |= recursive_examinate(stmt, stmt, tree_man);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "<--Examined " + STR(GET_INDEX_NODE(stmt)) + " " + stmt->ToString());
+                        "<--Examined " + STR(stmt->index) + " " + stmt->ToString());
       }
    }
 
@@ -276,7 +276,7 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced " + STR(current_statement));
                TreeM->ReplaceTreeNode(current_statement, current_tree_node, ce);
                CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index,
-                                                       GET_INDEX_CONST_NODE(current_statement),
+                                                       current_statement->index,
                                                        FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---      -> " + STR(current_statement));
                modified = true;
@@ -297,8 +297,8 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced " + STR(current_statement));
             TreeM->ReplaceTreeNode(current_statement, current_tree_node, ce);
             CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index,
-                                                    GET_INDEX_CONST_NODE(current_statement),
-                                                    FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
+                                                    current_statement->index, FunctionEdgeInfo::CallType::direct_call,
+                                                    DEBUG_LEVEL_NONE);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---      -> " + STR(current_statement));
             modified = true;
          }
@@ -334,7 +334,7 @@ bool hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced " + STR(current_statement));
                TreeM->ReplaceTreeNode(current_statement, current_tree_node, ce);
                CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index,
-                                                       GET_INDEX_CONST_NODE(current_statement),
+                                                       current_statement->index,
                                                        FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---      -> " + STR(current_statement));
                modified = true;

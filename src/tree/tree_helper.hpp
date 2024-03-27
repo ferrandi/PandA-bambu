@@ -821,8 +821,7 @@ class tree_helper
     * @param mem is the node of the memory access
     * @return the base variable of a memory access
     */
-   static tree_nodeConstRef GetBaseVariable(const tree_nodeConstRef& mem,
-                                            std::vector<tree_nodeConstRef>* field_offset = nullptr);
+   static tree_nodeRef GetBaseVariable(const tree_nodeRef& mem, std::vector<tree_nodeRef>* field_offset = nullptr);
 
    static
        /// FIXME: to be remove after substitution with IsPointerResolved
@@ -1321,7 +1320,7 @@ class tree_helper
    static bool is_a_nop_function_decl(const function_decl* fd);
 
    static void get_required_values(std::vector<std::tuple<unsigned int, unsigned int>>& required,
-                                   const tree_nodeRef& tn);
+                                   const tree_nodeConstRef& tn);
 
    /**
     * Return true if statement must be the last of a basic block

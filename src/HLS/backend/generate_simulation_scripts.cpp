@@ -141,7 +141,7 @@ DesignFlowStep_Status GenerateSimulationScripts::Exec()
    const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
    THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
    const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(top_symbols.front());
-   const auto top_hls = HLSMgr->get_HLS(GET_INDEX_CONST_NODE(top_fnode));
+   const auto top_hls = HLSMgr->get_HLS(top_fnode->index);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Generating simulation scripts");
    std::list<std::string> full_list;
    std::copy(HLSMgr->aux_files.begin(), HLSMgr->aux_files.end(), std::back_inserter(full_list));
@@ -156,8 +156,7 @@ DesignFlowStep_Status GenerateSimulationScripts::Exec()
 
    HLSMgr->RSim->sim_tool = SimulationTool::CreateSimulationTool(
        SimulationTool::to_sim_type(parameters->getOption<std::string>(OPT_simulator)), parameters,
-       HLSMgr->CGetFunctionBehavior(GET_INDEX_CONST_NODE(top_fnode))->CGetBehavioralHelper()->GetMangledFunctionName(),
-       inc_dirs);
+       HLSMgr->CGetFunctionBehavior(top_fnode->index)->CGetBehavioralHelper()->GetMangledFunctionName(), inc_dirs);
 
    HLSMgr->RSim->sim_tool->GenerateSimulationScript(top_hls->top->get_circ()->get_id(), full_list);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Generated simulation scripts");

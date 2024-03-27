@@ -345,16 +345,6 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
    (((t) && (t)->get_kind() == tree_reindex_K) ? GetPointerS<const tree_reindex>(t)->actual_tree_node : (t))
 
 /**
- * Macro used to hide implementation details when accessing a tree_node from another tree_node
- * @param t is the tree_nodeRef to access
- * @return the index of t in tree_manager
- */
-#define GET_INDEX_NODE(t) (t)->index
-// unsigned int GET_INDEX_NODE(const tree_nodeRef& t);
-#define GET_INDEX_CONST_NODE(t) (t)->index
-// unsigned int GET_INDEX_CONST_NODE(const tree_nodeConstRef& t);
-
-/**
  * This macro collects all case labels for unary_expr objects.
  * Its use it is quite simple: just add the following line in the switch statement
  * case CASE_UNARY_EXPRESSION:

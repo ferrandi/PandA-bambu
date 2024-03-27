@@ -241,7 +241,7 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
                format[0] = top_symbols.front();
             }
             const auto f_node = TreeM->GetFunction(format[0]);
-            return f_node ? GET_INDEX_CONST_NODE(f_node) : 0;
+            return f_node ? f_node->index : 0;
          }();
 
          if(!f_index)
@@ -341,7 +341,7 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
                {
                   const auto called = boost::target(*ei, *TopCG);
                   const auto fname = tree_helper::print_function_name(
-                      TreeM, GetPointerS<const function_decl>(TreeM->CGetTreeNode(CGM->get_function(called))));
+                      TreeM, GetPointerS<const function_decl>(TreeM->GetTreeNode(CGM->get_function(called))));
                   const auto called_fname = strip_fname(fname);
                   if(static_cast<bool>(libm_func.count(called_fname)))
                   {
@@ -528,13 +528,13 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
       for(const auto& ssa_uses : hwParam)
       {
          const auto ssa = ssa_uses.first;
-         const auto ssa_ridx = TreeM->GetTreeNode(ssa->index);
+         const auto ssa_node = TreeM->GetTreeNode(ssa->index);
          const auto out_int = outputInterface.find(ssa);
          std::vector<tree_nodeRef>* out_ssa =
              out_int != outputInterface.end() ? &std::get<1>(out_int->second) : nullptr;
          for(const auto& call_stmt_idx : ssa_uses.second)
          {
-            const auto call_stmt = TreeM->CGetTreeNode(call_stmt_idx);
+            const auto call_stmt = TreeM->GetTreeNode(call_stmt_idx);
             const auto call_node = GetPointerS<const gimple_node>(call_stmt);
             const auto& call_bb = sl->list_of_bloc.at(call_node->bb_index);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -542,17 +542,17 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                                call_node->ToString());
             // At this time ssa->type is still real_type, thus we can exploit that (it will be modified after)
             const auto arg_vc =
-                tree_man->create_unary_operation(ssa->type, ssa_ridx, BUILTIN_SRCP, view_convert_expr_K);
+                tree_man->create_unary_operation(ssa->type, ssa_node, BUILTIN_SRCP, view_convert_expr_K);
             const auto vc_stmt = tree_man->CreateGimpleAssign(ssa->type, tree_nodeRef(), tree_nodeRef(), arg_vc,
                                                               function_id, BUILTIN_SRCP);
             const auto vc_ssa = GetPointerS<gimple_assign>(vc_stmt)->op0;
             call_bb->PushBefore(vc_stmt, call_stmt, AppM);
-            TreeM->ReplaceTreeNode(call_stmt, ssa_ridx, vc_ssa);
+            TreeM->ReplaceTreeNode(call_stmt, ssa_node, vc_ssa);
             if(out_ssa)
             {
                std::replace_if(
-                   out_ssa->begin(), out_ssa->end(),
-                   [&](const tree_nodeRef& t) { return GET_INDEX_CONST_NODE(t) == call_stmt_idx; }, vc_stmt);
+                   out_ssa->begin(), out_ssa->end(), [&](const tree_nodeRef& t) { return t->index == call_stmt_idx; },
+                   vc_stmt);
             }
          }
       }
@@ -573,11 +573,11 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "-->View-convert for " + ssa->ToString() + " in BB" + STR(call_bb->number) + " " +
                             def_node->ToString());
-         const auto ssa_ridx = TreeM->GetTreeNode(ssa->index);
+         const auto ssa_node = TreeM->GetTreeNode(ssa->index);
          // Hardware calls are for sure dealing with standard IEEE formats only
          const auto int_ret_type = tree_helper::Size(ssa->type) == 32 ? float32_type : float64_type;
          const auto ret_vc =
-             tree_man->create_unary_operation(int_ret_type, ssa_ridx, BUILTIN_SRCP, view_convert_expr_K);
+             tree_man->create_unary_operation(int_ret_type, ssa_node, BUILTIN_SRCP, view_convert_expr_K);
          const auto vc_stmt = tree_man->CreateGimpleAssign(int_ret_type, tree_nodeRef(), tree_nodeRef(), ret_vc,
                                                            function_id, BUILTIN_SRCP);
          const auto vc_ssa = GetPointerS<const gimple_assign>(vc_stmt)->op0;
@@ -597,7 +597,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Replace use - before: " + stmt_use.first->ToString());
-            TreeM->ReplaceTreeNode(stmt_use.first, ssa_ridx, vc_ssa);
+            TreeM->ReplaceTreeNode(stmt_use.first, ssa_node, vc_ssa);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---               after: " + stmt_use.first->ToString());
          }
@@ -631,7 +631,6 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
             const auto parmSSA = GetPointerS<ssa_name>(parm);
             if(lowering_needed(parmSSA))
             {
-               const auto parm_ridx = TreeM->CGetTreeNode(parmSSA->index);
                const auto parm_type = int_type_for(parmSSA->type, false);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "Lowering top function parameter type of " + parmSSA->ToString() + ": " +
@@ -639,12 +638,11 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                tree_nodeRef vc_stmt;
                if(parm_type->get_kind() == pointer_type_K)
                {
-                  vc_stmt = tree_man->CreateNopExpr(parm_ridx, parm_type, tree_nodeRef(), tree_nodeRef(), function_id);
+                  vc_stmt = tree_man->CreateNopExpr(parm, parm_type, tree_nodeRef(), tree_nodeRef(), function_id);
                }
                else
                {
-                  const auto vc =
-                      tree_man->create_unary_operation(parm_type, parm_ridx, BUILTIN_SRCP, view_convert_expr_K);
+                  const auto vc = tree_man->create_unary_operation(parm_type, parm, BUILTIN_SRCP, view_convert_expr_K);
                   vc_stmt = tree_man->CreateGimpleAssign(parm_type, tree_nodeRef(), tree_nodeRef(), vc, function_id,
                                                          BUILTIN_SRCP);
                   if(!_version->ieee_format())
@@ -675,7 +673,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                const auto parm_uses = parmSSA->CGetUseStmts();
                for(const auto& stmt_uses : parm_uses)
                {
-                  TreeM->ReplaceTreeNode(stmt_uses.first, parm_ridx, lowered_parm);
+                  TreeM->ReplaceTreeNode(stmt_uses.first, parm, lowered_parm);
                }
                first_bb->PushFront(vc_stmt, AppM);
                viewConvert.erase(parmSSA);
@@ -739,7 +737,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                             "Unexpected parameter node type (" + param->get_kind_text() + ")");
                const auto parmSSA = GetPointerS<ssa_name>(param);
 
-               if(GET_INDEX_NODE(pd->type) != GET_INDEX_NODE(parmSSA->type))
+               if(pd->type->index != parmSSA->type->index)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "Lowering type of " + parmSSA->ToString() + " bound to paremeter " + pd->ToString() +
@@ -875,7 +873,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          for(const auto& ssaUse : ssaUses)
          {
             const auto& useStmt = ssaUse.first;
-            if(std::find(exclude.begin(), exclude.end(), GET_INDEX_NODE(useStmt)) != exclude.end())
+            if(std::find(exclude.begin(), exclude.end(), useStmt->index) != exclude.end())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---Skipping replacement for statement " + useStmt->ToString());
@@ -996,7 +994,7 @@ bool soft_float_cg_ext::signature_lowering(function_decl* f_decl) const
    const auto dup_ft = tree_node_dup(remapping, AppM)
                            .create_tree_node(is_ptr_type ? GetPointerS<pointer_type>(decl_type)->ptd : decl_type,
                                              tree_node_dup_mode::RENAME);
-   const auto f_type = TreeM->CGetTreeNode(dup_ft);
+   const auto f_type = TreeM->GetTreeNode(dup_ft);
 
    tree_list* prms = nullptr;
    if(tree_helper::IsFunctionType(f_type))
@@ -1076,9 +1074,9 @@ void soft_float_cg_ext::ssa_lowering(ssa_name* ssa, bool internal_type) const
          }
          else if(ue->get_kind() == imagpart_expr_K || ue->get_kind() == realpart_expr_K)
          {
-            const auto ssa_ridx = TreeM->CGetTreeNode(ssa->index);
+            const auto ssa_node = TreeM->GetTreeNode(ssa->index);
             const auto def_bb = GetPointerS<statement_list>(fd->body)->list_of_bloc.at(def->bb_index);
-            const auto vc = tree_man->create_unary_operation(vc_type, ssa_ridx, BUILTIN_SRCP, view_convert_expr_K);
+            const auto vc = tree_man->create_unary_operation(vc_type, ssa_node, BUILTIN_SRCP, view_convert_expr_K);
             const auto vc_stmt =
                 tree_man->CreateGimpleAssign(vc_type, tree_nodeRef(), tree_nodeRef(), vc, function_id, BUILTIN_SRCP);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -1089,7 +1087,7 @@ void soft_float_cg_ext::ssa_lowering(ssa_name* ssa, bool internal_type) const
             const auto ssa_uses = ssa->CGetUseStmts();
             for(const auto& stmt_uses : ssa_uses)
             {
-               TreeM->ReplaceTreeNode(stmt_uses.first, ssa_ridx, lowered_ssa);
+               TreeM->ReplaceTreeNode(stmt_uses.first, ssa_node, lowered_ssa);
             }
             def_bb->PushAfter(vc_stmt, defStmt, AppM);
             return;
@@ -1112,7 +1110,7 @@ void soft_float_cg_ext::ssa_lowering(ssa_name* ssa, bool internal_type) const
       const auto vd = GetPointer<var_decl>(ssa->var);
       THROW_ASSERT(vd, "SSA name associated variable is espected to be a variable declaration " +
                            ssa->var->get_kind_text() + " " + ssa->var->ToString());
-      if(GET_INDEX_NODE(vd->type) != GET_INDEX_NODE(ssa->type))
+      if(vd->type->index != ssa->type->index)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Variable declaration before - " + vd->ToString() + " " + vd->type->ToString());
@@ -1497,8 +1495,8 @@ void soft_float_cg_ext::replaceWithCall(const FloatFormatRef& specFF, const std:
    TreeM->ReplaceTreeNode(current_statement, current_tree_node,
                           tree_man->CreateCallExpr(called_function, args, current_srcp));
    CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function->index,
-                                           GET_INDEX_CONST_NODE(current_statement),
-                                           FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
+                                           current_statement->index, FunctionEdgeInfo::CallType::direct_call,
+                                           DEBUG_LEVEL_NONE);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added call point for " + STR(called_function->index));
 
    // Update functions float format map
@@ -1546,7 +1544,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
          }
          return _version->ieee_format();
       }
-      const auto fn_v = AppM->CGetCallGraphManager()->GetVertex(GET_INDEX_CONST_NODE(fn));
+      const auto fn_v = AppM->CGetCallGraphManager()->GetVertex(fn->index);
       const auto ff_it = funcFF.find(fn_v);
       if(ff_it != funcFF.end())
       {
@@ -1583,7 +1581,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
       int type_i = is_internal_call(fn) ? INTERFACE_TYPE_NONE : INTERFACE_TYPE_OUTPUT;
       // Hardware implemented functions need arguments to still be real_type, thus it is necessary to add a view_convert
       // operation before
-      if(AppM->get_tree_manager()->get_implementation_node(GET_INDEX_CONST_NODE(fn)) == 0)
+      if(AppM->get_tree_manager()->get_implementation_node(fn->index) == 0)
       {
          type_i |= INTERFACE_TYPE_REAL;
       }
@@ -1638,8 +1636,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---Replacing libm call with templatized version");
                // libm function calls may be replaced with their templatized version if available, avoiding conversion
-               AppM->GetCallGraphManager()->RemoveCallPoint(function_id, GET_INDEX_CONST_NODE(fn),
-                                                            GET_INDEX_CONST_NODE(current_statement));
+               AppM->GetCallGraphManager()->RemoveCallPoint(function_id, fn->index, current_statement->index);
                is_f32 |= !ce->args.empty() && tree_helper::Size(ce->args.front()) == 32;
                const auto specFF = _version->ieee_format() ? (is_f32 ? float32FF : float64FF) : _version->userRequired;
                replaceWithCall(specFF, "__" + tf_fname, ce->args, current_statement, ga->op1, current_srcp);
@@ -1659,8 +1656,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
 
                   // Hardware implemented functions need the return value to still be real_type, thus it is necessary to
                   // add a view_convert operation after
-                  if(fname != BUILTIN_WAIT_CALL &&
-                     AppM->get_tree_manager()->get_implementation_node(GET_INDEX_CONST_NODE(fn)) == 0)
+                  if(fname != BUILTIN_WAIT_CALL && AppM->get_tree_manager()->get_implementation_node(fn->index) == 0)
                   {
                      ti |= INTERFACE_TYPE_REAL;
                   }
@@ -1713,14 +1709,14 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
 
             if(type_interface & INTERFACE_TYPE_REAL)
             {
-               if(GET_INDEX_CONST_NODE(SSA->CGetDefStmt()) == GET_INDEX_CONST_NODE(current_statement))
+               if(SSA->CGetDefStmt()->index == current_statement->index)
                {
                   hwReturn.push_back(SSA);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Internal input interface required");
                }
                else
                {
-                  hwParam[SSA].insert(GET_INDEX_CONST_NODE(current_statement));
+                  hwParam[SSA].insert(current_statement->index);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Internal output interface required");
                }
             }
@@ -1735,9 +1731,8 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
             if(SSA->var != nullptr && SSA->var->get_kind() == parm_decl_K &&
                SSA->CGetDefStmt()->get_kind() == gimple_nop_K)
             {
-               auto argIt = std::find_if(args.begin(), args.end(), [&](const tree_nodeRef& arg) {
-                  return GET_INDEX_CONST_NODE(arg) == GET_INDEX_CONST_NODE(SSA->var);
-               });
+               auto argIt = std::find_if(args.begin(), args.end(),
+                                         [&](const tree_nodeRef& arg) { return arg->index == SSA->var->index; });
                THROW_ASSERT(argIt != args.end(), "parm_decl associated with ssa_name not found in function parameters");
                const auto arg_pos = static_cast<size_t>(argIt - args.begin());
                THROW_ASSERT(arg_pos < args.size(), "Computed parameter position outside actual parameters number");
@@ -1765,12 +1760,11 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                   if(iif == inputInterface.end())
                   {
                      THROW_ASSERT(ssa_ff, "");
-                     inputInterface.insert(
-                         {SSA, {ssa_ff, std::vector<unsigned int>({GET_INDEX_CONST_NODE(current_statement)})}});
+                     inputInterface.insert({SSA, {ssa_ff, std::vector<unsigned int>({current_statement->index})}});
                   }
                   else
                   {
-                     std::get<1>(iif->second).push_back(GET_INDEX_CONST_NODE(current_statement));
+                     std::get<1>(iif->second).push_back(current_statement->index);
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Skipping input interface for current parameter");
@@ -1788,7 +1782,7 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                const auto iif = inputInterface.find(SSA);
                if(iif != inputInterface.end())
                {
-                  std::get<1>(iif->second).push_back(GET_INDEX_CONST_NODE(current_statement));
+                  std::get<1>(iif->second).push_back(current_statement->index);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uninterfaced value forward required");
                }
                else
@@ -1933,9 +1927,8 @@ bool soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                         TreeM->ReplaceTreeNode(current_statement, current_tree_node,
                                                tree_man->CreateCallExpr(called_function, args, current_srcp));
                         CallGraphManager::addCallPointAndExpand(
-                            already_visited, AppM, function_id, called_function->index,
-                            GET_INDEX_CONST_NODE(current_statement), FunctionEdgeInfo::CallType::direct_call,
-                            DEBUG_LEVEL_NONE);
+                            already_visited, AppM, function_id, called_function->index, current_statement->index,
+                            FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "---Added call point for " + STR(called_function->index));
                         if(inline_conversion)

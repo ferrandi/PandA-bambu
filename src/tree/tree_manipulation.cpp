@@ -200,20 +200,20 @@ tree_nodeRef tree_manipulation::create_unary_operation(const tree_nodeConstRef& 
       case CASE_TERNARY_EXPRESSION:
       case CASE_UNARY_EXPRESSION:
       default:
-         THROW_ERROR(std::string("Type node not supported (") + STR(GET_INDEX_CONST_NODE(type)) + std::string("): ") +
+         THROW_ERROR(std::string("Type node not supported (") + STR(type->index) + std::string("): ") +
                      type->get_kind_text());
    }
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    unsigned int node_nid = this->TreeM->new_tree_node_id();
 
-   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(type));
-   IR_schema[TOK(TOK_OP)] = STR(GET_INDEX_CONST_NODE(op));
+   IR_schema[TOK(TOK_TYPE)] = STR(type->index);
+   IR_schema[TOK(TOK_OP)] = STR(op->index);
    IR_schema[TOK(TOK_SRCP)] = srcp;
 
    const auto tn = TreeM->create_tree_node(node_nid, operation_kind, IR_schema);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + tn->get_kind_text() + ")");
+                 "Created node " + STR(tn->index) + " (" + tn->get_kind_text() + ")");
    return tn;
 }
 
@@ -320,7 +320,7 @@ tree_nodeRef tree_manipulation::create_binary_operation(const tree_nodeConstRef&
       case CASE_TERNARY_EXPRESSION:
       case CASE_UNARY_EXPRESSION:
       default:
-         THROW_ERROR(std::string("Type node not supported (") + STR(GET_INDEX_CONST_NODE(type)) + std::string("): ") +
+         THROW_ERROR(std::string("Type node not supported (") + STR(type->index) + std::string("): ") +
                      type->get_kind_text());
    }
 
@@ -337,14 +337,14 @@ tree_nodeRef tree_manipulation::create_binary_operation(const tree_nodeConstRef&
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    unsigned int node_nid = this->TreeM->new_tree_node_id();
 
-   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(type));
-   IR_schema[TOK(TOK_OP0)] = STR(GET_INDEX_CONST_NODE(op0));
-   IR_schema[TOK(TOK_OP1)] = STR(GET_INDEX_CONST_NODE(op1));
+   IR_schema[TOK(TOK_TYPE)] = STR(type->index);
+   IR_schema[TOK(TOK_OP0)] = STR(op0->index);
+   IR_schema[TOK(TOK_OP1)] = STR(op1->index);
    IR_schema[TOK(TOK_SRCP)] = srcp;
 
    const auto tn = TreeM->create_tree_node(node_nid, operation_kind, IR_schema);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + tn->get_kind_text() + ")");
+                 "Created node " + STR(tn->index) + " (" + tn->get_kind_text() + ")");
    return tn;
 }
 
@@ -451,7 +451,7 @@ tree_nodeRef tree_manipulation::create_ternary_operation(const tree_nodeConstRef
       case CASE_TERNARY_EXPRESSION:
       case CASE_UNARY_EXPRESSION:
       default:
-         THROW_ERROR(std::string("Type node not supported (") + STR(GET_INDEX_CONST_NODE(type)) + std::string("): ") +
+         THROW_ERROR(std::string("Type node not supported (") + STR(type->index) + std::string("): ") +
                      type->get_kind_text());
    }
 
@@ -461,24 +461,24 @@ tree_nodeRef tree_manipulation::create_ternary_operation(const tree_nodeConstRef
    /// some checks
    if(operation_kind == cond_expr_K)
    {
-      THROW_ASSERT(
-          GET_INDEX_CONST_NODE(op1) == 0 || tree_helper::Size(tree_helper::CGetType(op1)) == tree_helper::Size(type),
-          "unexpected pattern (<" + STR(tree_helper::Size(tree_helper::CGetType(op1))) + ">" +
-              STR(tree_helper::CGetType(op1)) + " != <" + STR(tree_helper::Size(type)) + ">" + type->ToString() + ")");
-      THROW_ASSERT(
-          GET_INDEX_CONST_NODE(op2) == 0 || tree_helper::Size(tree_helper::CGetType(op2)) == tree_helper::Size(type),
-          "unexpected pattern (<" + STR(tree_helper::Size(tree_helper::CGetType(op2))) + ">" +
-              STR(tree_helper::CGetType(op2)) + " != <" + STR(tree_helper::Size(type)) + ">" + type->ToString() + ")");
+      THROW_ASSERT(op1->index == 0 || tree_helper::Size(tree_helper::CGetType(op1)) == tree_helper::Size(type),
+                   "unexpected pattern (<" + STR(tree_helper::Size(tree_helper::CGetType(op1))) + ">" +
+                       STR(tree_helper::CGetType(op1)) + " != <" + STR(tree_helper::Size(type)) + ">" +
+                       type->ToString() + ")");
+      THROW_ASSERT(op2->index == 0 || tree_helper::Size(tree_helper::CGetType(op2)) == tree_helper::Size(type),
+                   "unexpected pattern (<" + STR(tree_helper::Size(tree_helper::CGetType(op2))) + ">" +
+                       STR(tree_helper::CGetType(op2)) + " != <" + STR(tree_helper::Size(type)) + ">" +
+                       type->ToString() + ")");
    }
-   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(type));
-   IR_schema[TOK(TOK_OP0)] = STR(GET_INDEX_CONST_NODE(op0));
-   IR_schema[TOK(TOK_OP1)] = STR(GET_INDEX_CONST_NODE(op1));
-   IR_schema[TOK(TOK_OP2)] = STR(GET_INDEX_CONST_NODE(op2));
+   IR_schema[TOK(TOK_TYPE)] = STR(type->index);
+   IR_schema[TOK(TOK_OP0)] = STR(op0->index);
+   IR_schema[TOK(TOK_OP1)] = STR(op1->index);
+   IR_schema[TOK(TOK_OP2)] = STR(op2->index);
    IR_schema[TOK(TOK_SRCP)] = srcp;
 
    const auto tn = TreeM->create_tree_node(node_nid, operation_kind, IR_schema);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + tn->get_kind_text() + ")");
+                 "Created node " + STR(tn->index) + " (" + tn->get_kind_text() + ")");
    return tn;
 }
 
@@ -585,23 +585,23 @@ tree_nodeRef tree_manipulation::create_quaternary_operation(const tree_nodeConst
       case CASE_TERNARY_EXPRESSION:
       case CASE_UNARY_EXPRESSION:
       default:
-         THROW_ERROR(std::string("Type node not supported (") + STR(GET_INDEX_CONST_NODE(type)) + std::string("): ") +
+         THROW_ERROR(std::string("Type node not supported (") + STR(type->index) + std::string("): ") +
                      type->get_kind_text());
    }
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    unsigned int node_nid = this->TreeM->new_tree_node_id();
 
-   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(type));
-   IR_schema[TOK(TOK_OP0)] = STR(GET_INDEX_CONST_NODE(op0));
-   IR_schema[TOK(TOK_OP1)] = STR(GET_INDEX_CONST_NODE(op1));
-   IR_schema[TOK(TOK_OP2)] = STR(GET_INDEX_CONST_NODE(op2));
-   IR_schema[TOK(TOK_OP3)] = STR(GET_INDEX_CONST_NODE(op3));
+   IR_schema[TOK(TOK_TYPE)] = STR(type->index);
+   IR_schema[TOK(TOK_OP0)] = STR(op0->index);
+   IR_schema[TOK(TOK_OP1)] = STR(op1->index);
+   IR_schema[TOK(TOK_OP2)] = STR(op2->index);
+   IR_schema[TOK(TOK_OP3)] = STR(op3->index);
    IR_schema[TOK(TOK_SRCP)] = srcp;
 
    const auto tn = TreeM->create_tree_node(node_nid, operation_kind, IR_schema);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + tn->get_kind_text() + ")");
+                 "Created node " + STR(tn->index) + " (" + tn->get_kind_text() + ")");
    return tn;
 }
 
@@ -616,42 +616,42 @@ tree_nodeRef tree_manipulation::create_lut_expr(const tree_nodeConstRef& type, c
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    unsigned int node_nid = this->TreeM->new_tree_node_id();
 
-   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(type));
-   IR_schema[TOK(TOK_OP0)] = STR(GET_INDEX_CONST_NODE(op0));
-   IR_schema[TOK(TOK_OP1)] = STR(GET_INDEX_CONST_NODE(op1));
+   IR_schema[TOK(TOK_TYPE)] = STR(type->index);
+   IR_schema[TOK(TOK_OP0)] = STR(op0->index);
+   IR_schema[TOK(TOK_OP1)] = STR(op1->index);
    if(op2)
    {
-      IR_schema[TOK(TOK_OP2)] = STR(GET_INDEX_CONST_NODE(op2));
+      IR_schema[TOK(TOK_OP2)] = STR(op2->index);
    }
    if(op3)
    {
-      IR_schema[TOK(TOK_OP3)] = STR(GET_INDEX_CONST_NODE(op3));
+      IR_schema[TOK(TOK_OP3)] = STR(op3->index);
    }
    if(op4)
    {
-      IR_schema[TOK(TOK_OP4)] = STR(GET_INDEX_CONST_NODE(op4));
+      IR_schema[TOK(TOK_OP4)] = STR(op4->index);
    }
    if(op5)
    {
-      IR_schema[TOK(TOK_OP5)] = STR(GET_INDEX_CONST_NODE(op5));
+      IR_schema[TOK(TOK_OP5)] = STR(op5->index);
    }
    if(op6)
    {
-      IR_schema[TOK(TOK_OP6)] = STR(GET_INDEX_CONST_NODE(op6));
+      IR_schema[TOK(TOK_OP6)] = STR(op6->index);
    }
    if(op7)
    {
-      IR_schema[TOK(TOK_OP7)] = STR(GET_INDEX_CONST_NODE(op7));
+      IR_schema[TOK(TOK_OP7)] = STR(op7->index);
    }
    if(op8)
    {
-      IR_schema[TOK(TOK_OP8)] = STR(GET_INDEX_CONST_NODE(op8));
+      IR_schema[TOK(TOK_OP8)] = STR(op8->index);
    }
    IR_schema[TOK(TOK_SRCP)] = srcp;
 
    const auto tn = TreeM->create_tree_node(node_nid, lut_expr_K, IR_schema);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + tn->get_kind_text() + ")");
+                 "Created node " + STR(tn->index) + " (" + tn->get_kind_text() + ")");
    return tn;
 }
 
@@ -663,14 +663,14 @@ tree_nodeRef tree_manipulation::create_extract_bit_expr(const tree_nodeRef& op0,
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    unsigned int node_nid = this->TreeM->new_tree_node_id();
 
-   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(boolType));
-   IR_schema[TOK(TOK_OP0)] = STR(GET_INDEX_CONST_NODE(op0));
-   IR_schema[TOK(TOK_OP1)] = STR(GET_INDEX_CONST_NODE(op1));
+   IR_schema[TOK(TOK_TYPE)] = STR(boolType->index);
+   IR_schema[TOK(TOK_OP0)] = STR(op0->index);
+   IR_schema[TOK(TOK_OP1)] = STR(op1->index);
    IR_schema[TOK(TOK_SRCP)] = srcp;
 
    const auto tn = TreeM->create_tree_node(node_nid, extract_bit_expr_K, IR_schema);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + tn->get_kind_text() + ")");
+                 "Created node " + STR(tn->index) + " (" + tn->get_kind_text() + ")");
    return tn;
 }
 /// CONST_OBJ_TREE_NODES
@@ -680,7 +680,7 @@ tree_nodeRef tree_manipulation::CreateIntegerCst(const tree_nodeConstRef& type, 
                                                  const unsigned int integer_cst_nid) const
 {
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
-   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(type));
+   IR_schema[TOK(TOK_TYPE)] = STR(type->index);
    IR_schema[TOK(TOK_VALUE)] = STR(value);
 
    tree_nodeRef node_ref;
@@ -691,13 +691,13 @@ tree_nodeRef tree_manipulation::CreateIntegerCst(const tree_nodeConstRef& type, 
    // {
    node_ref = TreeM->create_tree_node(integer_cst_nid, integer_cst_K, IR_schema);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(node_ref)) + " (" + node_ref->get_kind_text() + ")");
+                 "Created node " + STR(node_ref->index) + " (" + node_ref->get_kind_text() + ")");
    // }
    // else
    // {
    //    node_ref = TreeM->GetTreeNode(node_nid);
    //    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-   //                  "Found   node " + STR(GET_INDEX_CONST_NODE(node_ref)) + " (" +
+   //                  "Found   node " + STR(node_ref->index) + " (" +
    //                  node_ref->get_kind_text() + ")");
    // }
    return node_ref;
@@ -722,15 +722,13 @@ tree_nodeRef tree_manipulation::create_identifier_node(const std::string& strg) 
       node_nid = this->TreeM->new_tree_node_id();
       node_ref = TreeM->create_tree_node(node_nid, identifier_node_K, IR_schema);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Created node " + STR(GET_INDEX_CONST_NODE(node_ref)) + " (" + node_ref->get_kind_text() + " " +
-                        strg + ")");
+                    "Created node " + STR(node_ref->index) + " (" + node_ref->get_kind_text() + " " + strg + ")");
    }
    else
    {
       node_ref = TreeM->GetTreeNode(node_nid);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Found   node " + STR(GET_INDEX_CONST_NODE(node_ref)) + " (" + node_ref->get_kind_text() + " " +
-                        strg + ")");
+                    "Found   node " + STR(node_ref->index) + " (" + node_ref->get_kind_text() + " " + strg + ")");
    }
    return node_ref;
 }
@@ -753,20 +751,20 @@ tree_nodeRef tree_manipulation::create_var_decl(
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    if(name)
    {
-      IR_schema[TOK(TOK_NAME)] = STR(GET_INDEX_CONST_NODE(name));
+      IR_schema[TOK(TOK_NAME)] = STR(name->index);
    }
    if(smt_ann)
    {
-      IR_schema[TOK(TOK_SMT_ANN)] = STR(GET_INDEX_CONST_NODE(smt_ann));
+      IR_schema[TOK(TOK_SMT_ANN)] = STR(smt_ann->index);
    }
    if(init)
    {
-      IR_schema[TOK(TOK_INIT)] = STR(GET_INDEX_CONST_NODE(init));
+      IR_schema[TOK(TOK_INIT)] = STR(init->index);
    }
 
-   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(type));
-   IR_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_CONST_NODE(scpe));
-   IR_schema[TOK(TOK_SIZE)] = STR(GET_INDEX_CONST_NODE(size));
+   IR_schema[TOK(TOK_TYPE)] = STR(type->index);
+   IR_schema[TOK(TOK_SCPE)] = STR(scpe->index);
+   IR_schema[TOK(TOK_SIZE)] = STR(size->index);
    IR_schema[TOK(TOK_ALGN)] = STR(algn);
    IR_schema[TOK(TOK_USED)] = STR(used);
    IR_schema[TOK(TOK_SRCP)] = srcp;
@@ -783,7 +781,7 @@ tree_nodeRef tree_manipulation::create_var_decl(
 
    const auto tn = TreeM->create_tree_node(node_nid, var_decl_K, IR_schema);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + tn->get_kind_text() + ")");
+                 "Created node " + STR(tn->index) + " (" + tn->get_kind_text() + ")");
    return tn;
 }
 
@@ -799,14 +797,14 @@ tree_nodeRef tree_manipulation::create_translation_unit_decl() const
       translation_unit_decl_node =
           TreeM->create_tree_node(translation_unit_decl_nid, translation_unit_decl_K, IR_schema);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Created node " + STR(GET_INDEX_CONST_NODE(translation_unit_decl_node)) + " (" +
+                    "Created node " + STR(translation_unit_decl_node->index) + " (" +
                         translation_unit_decl_node->get_kind_text() + ")");
    }
    else
    {
       translation_unit_decl_node = TreeM->GetTreeNode(translation_unit_decl_nid);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Found   node " + STR(GET_INDEX_CONST_NODE(translation_unit_decl_node)) + " (" +
+                    "Found   node " + STR(translation_unit_decl_node->index) + " (" +
                         translation_unit_decl_node->get_kind_text() + ")");
    }
    return translation_unit_decl_node;
@@ -826,29 +824,29 @@ tree_nodeRef tree_manipulation::create_result_decl(const tree_nodeRef& name, con
    unsigned int node_nid = this->TreeM->new_tree_node_id();
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
-   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(type));
-   IR_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_CONST_NODE(scpe));
-   IR_schema[TOK(TOK_SIZE)] = STR(GET_INDEX_CONST_NODE(size));
+   IR_schema[TOK(TOK_TYPE)] = STR(type->index);
+   IR_schema[TOK(TOK_SCPE)] = STR(scpe->index);
+   IR_schema[TOK(TOK_SIZE)] = STR(size->index);
    IR_schema[TOK(TOK_ALGN)] = STR(algn);
    IR_schema[TOK(TOK_SRCP)] = srcp;
    IR_schema[TOK(TOK_ARTIFICIAL)] = STR(artificial_flag);
 
    if(smt_ann)
    {
-      IR_schema[TOK(TOK_SMT_ANN)] = STR(GET_INDEX_CONST_NODE(smt_ann));
+      IR_schema[TOK(TOK_SMT_ANN)] = STR(smt_ann->index);
    }
    if(name)
    {
-      IR_schema[TOK(TOK_NAME)] = STR(GET_INDEX_CONST_NODE(name));
+      IR_schema[TOK(TOK_NAME)] = STR(name->index);
    }
    if(init)
    {
-      IR_schema[TOK(TOK_INIT)] = STR(GET_INDEX_CONST_NODE(init));
+      IR_schema[TOK(TOK_INIT)] = STR(init->index);
    }
 
    const auto tn = TreeM->create_tree_node(node_nid, result_decl_K, IR_schema);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + tn->get_kind_text() + ")");
+                 "Created node " + STR(tn->index) + " (" + tn->get_kind_text() + ")");
    return tn;
 }
 
@@ -866,10 +864,10 @@ tree_nodeRef tree_manipulation::create_parm_decl(const tree_nodeRef& name, const
    const auto tnode = GetPointer<const type_node>(type);
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
-   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(type));
-   IR_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_CONST_NODE(scpe));
-   IR_schema[TOK(TOK_SIZE)] = STR(GET_INDEX_CONST_NODE(tnode->size));
-   IR_schema[TOK(TOK_ARGT)] = STR(GET_INDEX_CONST_NODE(argt));
+   IR_schema[TOK(TOK_TYPE)] = STR(type->index);
+   IR_schema[TOK(TOK_SCPE)] = STR(scpe->index);
+   IR_schema[TOK(TOK_SIZE)] = STR(tnode->size->index);
+   IR_schema[TOK(TOK_ARGT)] = STR(argt->index);
    IR_schema[TOK(TOK_ALGN)] = STR(tnode->algn);
    IR_schema[TOK(TOK_USED)] = STR(used);
    IR_schema[TOK(TOK_SRCP)] = srcp;
@@ -877,21 +875,21 @@ tree_nodeRef tree_manipulation::create_parm_decl(const tree_nodeRef& name, const
    IR_schema[TOK(TOK_READONLY)] = STR(readonly_flag);
    if(smt_ann)
    {
-      IR_schema[TOK(TOK_SMT_ANN)] = STR(GET_INDEX_CONST_NODE(smt_ann));
+      IR_schema[TOK(TOK_SMT_ANN)] = STR(smt_ann->index);
    }
    if(name)
    {
-      IR_schema[TOK(TOK_NAME)] = STR(GET_INDEX_CONST_NODE(name));
+      IR_schema[TOK(TOK_NAME)] = STR(name->index);
    }
    if(init)
    {
-      IR_schema[TOK(TOK_INIT)] = STR(GET_INDEX_CONST_NODE(init));
+      IR_schema[TOK(TOK_INIT)] = STR(init->index);
    }
 
    const auto node_nid = TreeM->new_tree_node_id();
    const auto tn = TreeM->create_tree_node(node_nid, parm_decl_K, IR_schema);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(tn)) + " (" + tn->get_kind_text() + ")");
+                 "Created node " + STR(tn->index) + " (" + tn->get_kind_text() + ")");
    return tn;
 }
 
@@ -915,7 +913,7 @@ tree_nodeRef tree_manipulation::GetVoidType() const
    {
       void_type_nid = this->TreeM->new_tree_node_id();
       unsigned int type_decl_nid = this->TreeM->new_tree_node_id();
-      unsigned int void_identifier_nid = GET_INDEX_CONST_NODE(create_identifier_node("void")); //@63
+      unsigned int void_identifier_nid = create_identifier_node("void")->index; //@63
 
       /// Create the void_type
       ///@41  void_type        name: @58      algn: 8
@@ -932,15 +930,13 @@ tree_nodeRef tree_manipulation::GetVoidType() const
       void_node = TreeM->create_tree_node(type_decl_nid, type_decl_K, IR_schema);
       tree_reindex_remove(*TreeM).operator()(vt);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Created node " + STR(GET_INDEX_CONST_NODE(void_node)) + " (" + void_node->get_kind_text() +
-                        " void)");
+                    "Created node " + STR(void_node->index) + " (" + void_node->get_kind_text() + " void)");
    }
    else
    {
       void_node = TreeM->GetTreeNode(void_type_nid);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Found   node " + STR(GET_INDEX_CONST_NODE(void_node)) + " (" + void_node->get_kind_text() +
-                        " void)");
+                    "Found   node " + STR(void_node->index) + " (" + void_node->get_kind_text() + " void)");
    }
    return void_node;
 }
@@ -960,7 +956,7 @@ tree_nodeRef tree_manipulation::GetBitsizeType() const
    ///@32    identifier_node  strg: "bitsizetype"  lngt: 13
    /// it is equivalent to "unsigned long long int"
    tree_nodeRef bit_size_identifier_node = create_identifier_node("unsigned long long int");
-   unsigned int bit_size_identifier_nid = GET_INDEX_CONST_NODE(bit_size_identifier_node);
+   unsigned int bit_size_identifier_nid = bit_size_identifier_node->index;
 
    ///@18    integer_type   name: @32   size: @33   algn: 64    prec: 64 unsigned
    /// min : @34   max : @35
@@ -984,8 +980,7 @@ tree_nodeRef tree_manipulation::GetBitsizeType() const
       IR_schema[TOK(TOK_MAX)] = STR(max_node_nid);
       bit_size_node = TreeM->create_tree_node(bit_size_type_nid, integer_type_K, IR_schema);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Created node " + STR(GET_INDEX_CONST_NODE(bit_size_node)) + " (" + bit_size_node->get_kind_text() +
-                        " bit_size)");
+                    "Created node " + STR(bit_size_node->index) + " (" + bit_size_node->get_kind_text() + " bit_size)");
 
       ///@33    integer_cst      type: @18      low : 64
       CreateIntegerCst(bit_size_node, SIZE_VALUE_BIT_SIZE, size_node_nid);
@@ -1002,8 +997,7 @@ tree_nodeRef tree_manipulation::GetBitsizeType() const
    {
       bit_size_node = TreeM->GetTreeNode(bit_size_type_nid);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Found   node " + STR(GET_INDEX_CONST_NODE(bit_size_node)) + " (" + bit_size_node->get_kind_text() +
-                        " bit_size)");
+                    "Found   node " + STR(bit_size_node->index) + " (" + bit_size_node->get_kind_text() + " bit_size)");
    }
    return bit_size_node;
 }
@@ -1028,7 +1022,7 @@ tree_nodeRef tree_manipulation::GetSizeType() const
    //@124    identifier_node  strg: "sizetype"             lngt: 8
    /// sizetype will translated in unsigned long
    tree_nodeRef size_identifier_node = create_identifier_node("unsigned long");
-   unsigned int size_identifier_nid = GET_INDEX_CONST_NODE(size_identifier_node);
+   unsigned int size_identifier_nid = size_identifier_node->index;
 
    //@96     integer_type name: @124 size: @15 algn: 32 prec: 32 unsigned min :
    //@125 max : @126
@@ -1044,7 +1038,7 @@ tree_nodeRef tree_manipulation::GetSizeType() const
       unsigned int max_node_nid = this->TreeM->new_tree_node_id();
       ///@18    integer_type   name: @32   size: @33   algn: 64    prec: 64
       /// unsigned   min : @34   max : @35
-      IR_schema[TOK(TOK_SIZE)] = STR(GET_INDEX_CONST_NODE(bit_size_node));
+      IR_schema[TOK(TOK_SIZE)] = STR(bit_size_node->index);
       IR_schema[TOK(TOK_ALGN)] = STR(ALGN_BIT_SIZE);
       IR_schema[TOK(TOK_PREC)] = STR(PREC_BIT_SIZE);
       IR_schema[TOK(TOK_UNSIGNED)] = STR(true);
@@ -1052,8 +1046,7 @@ tree_nodeRef tree_manipulation::GetSizeType() const
       IR_schema[TOK(TOK_MAX)] = STR(max_node_nid);
       size_node = TreeM->create_tree_node(size_type_nid, integer_type_K, IR_schema);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Created node " + STR(GET_INDEX_CONST_NODE(size_node)) + " (" + size_node->get_kind_text() +
-                        " bit_size)");
+                    "Created node " + STR(size_node->index) + " (" + size_node->get_kind_text() + " bit_size)");
 
       ///@34    integer_cst      type: @18      low : 0
       CreateIntegerCst(size_node, integer_cst_t(MIN_VALUE_BIT_SIZE), min_node_nid);
@@ -1067,8 +1060,7 @@ tree_nodeRef tree_manipulation::GetSizeType() const
    {
       size_node = TreeM->GetTreeNode(size_type_nid);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Found   node " + STR(GET_INDEX_CONST_NODE(size_node)) + " (" + size_node->get_kind_text() +
-                        " bit_size)");
+                    "Found   node " + STR(size_node->index) + " (" + size_node->get_kind_text() + " bit_size)");
    }
    return size_node;
 }
@@ -1085,7 +1077,7 @@ tree_nodeRef tree_manipulation::GetBooleanType() const
    tree_nodeRef boolean_type_node;
 
    tree_nodeRef boolean_identifier_node = create_identifier_node("_Bool");
-   unsigned int boolean_identifier_nid = GET_INDEX_CONST_NODE(boolean_identifier_node); ///@58
+   unsigned int boolean_identifier_nid = boolean_identifier_node->index; ///@58
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
 
@@ -1109,14 +1101,14 @@ tree_nodeRef tree_manipulation::GetBooleanType() const
 
       ///@48 boolean_type name: @55 size: @7 algn: 8
       IR_schema.clear();
-      IR_schema[TOK(TOK_NAME)] = STR(GET_INDEX_CONST_NODE(td));        //@55
-      IR_schema[TOK(TOK_SIZE)] = STR(GET_INDEX_CONST_NODE(size_node)); //@7
+      IR_schema[TOK(TOK_NAME)] = STR(td->index);        //@55
+      IR_schema[TOK(TOK_SIZE)] = STR(size_node->index); //@7
       IR_schema[TOK(TOK_ALGN)] = STR(ALGN_BOOLEAN);
       boolean_type_node = TreeM->create_tree_node(boolean_type_nid, boolean_type_K, IR_schema);
       tree_reindex_remove(*TreeM).operator()(td);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Created node " + STR(GET_INDEX_CONST_NODE(boolean_type_node)) + " (" +
-                        boolean_type_node->get_kind_text() + " boolean)");
+                    "Created node " + STR(boolean_type_node->index) + " (" + boolean_type_node->get_kind_text() +
+                        " boolean)");
    }
    else
    {
@@ -1133,8 +1125,8 @@ tree_nodeRef tree_manipulation::GetBooleanType() const
 
       boolean_type_node = TreeM->GetTreeNode(boolean_type_nid);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Found   node " + STR(GET_INDEX_CONST_NODE(boolean_type_node)) + " (" +
-                        boolean_type_node->get_kind_text() + " boolean)");
+                    "Found   node " + STR(boolean_type_node->index) + " (" + boolean_type_node->get_kind_text() +
+                        " boolean)");
    }
    return boolean_type_node;
 }
@@ -1155,7 +1147,7 @@ tree_nodeRef tree_manipulation::GetUnsignedIntegerType() const
 
    ///@41     identifier_node  strg: "unsigned int"         lngt: 12
    tree_nodeRef unsigned_int_identifier_node = create_identifier_node("unsigned int");
-   unsigned int unsigned_int_identifier_nid = GET_INDEX_CONST_NODE(unsigned_int_identifier_node); ///@41
+   unsigned int unsigned_int_identifier_nid = unsigned_int_identifier_node->index; ///@41
 
    ///@20     type_decl        name: @41      type: @8       srcp:
    ///"<built-in>:0:0"
@@ -1184,8 +1176,8 @@ tree_nodeRef tree_manipulation::GetUnsignedIntegerType() const
       ///@8      integer_type     name: @20      size: @12      algn: 32 prec: 32
       /// unsigned       min : @21    max : @22
       IR_schema.clear();
-      IR_schema[TOK(TOK_NAME)] = STR(GET_INDEX_CONST_NODE(td));
-      IR_schema[TOK(TOK_SIZE)] = STR(GET_INDEX_CONST_NODE(size_node));
+      IR_schema[TOK(TOK_NAME)] = STR(td->index);
+      IR_schema[TOK(TOK_SIZE)] = STR(size_node->index);
       IR_schema[TOK(TOK_ALGN)] = STR(ALGN_UNSIGNED_INT);
       IR_schema[TOK(TOK_PREC)] = STR(PREC_UNSIGNED_INT);
       IR_schema[TOK(TOK_UNSIGNED)] = STR(true);
@@ -1194,8 +1186,8 @@ tree_nodeRef tree_manipulation::GetUnsignedIntegerType() const
       integer_type_node = TreeM->create_tree_node(integer_type_nid, integer_type_K, IR_schema);
       trr(td);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Created node " + STR(GET_INDEX_CONST_NODE(integer_type_node)) + " (" +
-                        integer_type_node->get_kind_text() + " unsigned_int)");
+                    "Created node " + STR(integer_type_node->index) + " (" + integer_type_node->get_kind_text() +
+                        " unsigned_int)");
 
       ///@21     integer_cst      type: @8       low : 0
       CreateIntegerCst(integer_type_node, MIN_VALUE_UNSIGNED_INT, min_node_nid);
@@ -1220,8 +1212,8 @@ tree_nodeRef tree_manipulation::GetUnsignedIntegerType() const
 
       integer_type_node = TreeM->GetTreeNode(integer_type_nid);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Found   node " + STR(GET_INDEX_CONST_NODE(integer_type_node)) + " (" +
-                        integer_type_node->get_kind_text() + " unsigned int)");
+                    "Found   node " + STR(integer_type_node->index) + " (" + integer_type_node->get_kind_text() +
+                        " unsigned int)");
    }
    return integer_type_node;
 }
@@ -1232,7 +1224,7 @@ tree_nodeRef tree_manipulation::GetUnsignedLongLongType() const
    tree_nodeRef integer_type_node;
 
    tree_nodeRef unsigned_int_identifier_node = create_identifier_node("unsigned long long int");
-   unsigned int unsigned_int_identifier_nid = GET_INDEX_CONST_NODE(unsigned_int_identifier_node); ///@41
+   unsigned int unsigned_int_identifier_nid = unsigned_int_identifier_node->index; ///@41
 
    IR_schema.clear();
    IR_schema[TOK(TOK_NAME)] = STR(unsigned_int_identifier_nid);
@@ -1255,8 +1247,8 @@ tree_nodeRef tree_manipulation::GetUnsignedLongLongType() const
                     "Created node " + STR(type_decl_nid) + " (type_decl unsigned_int)");
 
       IR_schema.clear();
-      IR_schema[TOK(TOK_NAME)] = STR(GET_INDEX_CONST_NODE(td));
-      IR_schema[TOK(TOK_SIZE)] = STR(GET_INDEX_CONST_NODE(size_node));
+      IR_schema[TOK(TOK_NAME)] = STR(td->index);
+      IR_schema[TOK(TOK_SIZE)] = STR(size_node->index);
       IR_schema[TOK(TOK_ALGN)] = STR(ALGN_UNSIGNED_LONG_LONG_INT);
       IR_schema[TOK(TOK_PREC)] = STR(PREC_UNSIGNED_LONG_LONG_INT);
       IR_schema[TOK(TOK_UNSIGNED)] = STR(true);
@@ -1265,8 +1257,8 @@ tree_nodeRef tree_manipulation::GetUnsignedLongLongType() const
       integer_type_node = TreeM->create_tree_node(integer_type_nid, integer_type_K, IR_schema);
       trr(td);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Created node " + STR(GET_INDEX_CONST_NODE(integer_type_node)) + " (" +
-                        integer_type_node->get_kind_text() + " unsigned long long int int)");
+                    "Created node " + STR(integer_type_node->index) + " (" + integer_type_node->get_kind_text() +
+                        " unsigned long long int int)");
 
       ///@21     integer_cst      type: @8       low : 0
       CreateIntegerCst(integer_type_node, integer_cst_t(MIN_VALUE_UNSIGNED_LONG_LONG_INT), min_node_nid);
@@ -1291,8 +1283,8 @@ tree_nodeRef tree_manipulation::GetUnsignedLongLongType() const
 
       integer_type_node = TreeM->GetTreeNode(integer_type_nid);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "Found  node " + STR(GET_INDEX_CONST_NODE(integer_type_node)) + " (" +
-                         integer_type_node->get_kind_text() + " unsigned long long int)");
+                     "Found  node " + STR(integer_type_node->index) + " (" + integer_type_node->get_kind_text() +
+                         " unsigned long long int)");
    }
    return integer_type_node;
 }
@@ -1314,7 +1306,7 @@ tree_nodeRef tree_manipulation::GetSignedIntegerType() const
 
    ///@36     identifier_node  strg: "int" lngt: 3
    tree_nodeRef int_identifier_node = create_identifier_node("int");
-   unsigned int int_identifier_nid = GET_INDEX_CONST_NODE(int_identifier_node); ///@36
+   unsigned int int_identifier_nid = int_identifier_node->index; ///@36
 
    ///@19     type_decl        name: @36      type: @8       srcp:
    ///"<built-in>:0:0"
@@ -1344,8 +1336,8 @@ tree_nodeRef tree_manipulation::GetSignedIntegerType() const
       ///@8      integer_type     name: @19      size: @11   algn: 32   prec: 32
       /// min : @20      max : @21
       IR_schema.clear();
-      IR_schema[TOK(TOK_NAME)] = STR(GET_INDEX_CONST_NODE(td));
-      IR_schema[TOK(TOK_SIZE)] = STR(GET_INDEX_CONST_NODE(size_node));
+      IR_schema[TOK(TOK_NAME)] = STR(td->index);
+      IR_schema[TOK(TOK_SIZE)] = STR(size_node->index);
       IR_schema[TOK(TOK_ALGN)] = STR(ALGN_INT);
       IR_schema[TOK(TOK_PREC)] = STR(PREC_INT);
       IR_schema[TOK(TOK_UNSIGNED)] = STR(false);
@@ -1354,8 +1346,8 @@ tree_nodeRef tree_manipulation::GetSignedIntegerType() const
       integer_type_node = TreeM->create_tree_node(integer_type_nid, integer_type_K, IR_schema);
       trr(td);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Created node " + STR(GET_INDEX_CONST_NODE(integer_type_node)) + " (" +
-                        integer_type_node->get_kind_text() + " int)");
+                    "Created node " + STR(integer_type_node->index) + " (" + integer_type_node->get_kind_text() +
+                        " int)");
 
       ///@20     integer_cst      type: @8       high: -1  low : -2147483648
       CreateIntegerCst(integer_type_node, MIN_VALUE_INT, min_node_nid);
@@ -1382,8 +1374,8 @@ tree_nodeRef tree_manipulation::GetSignedIntegerType() const
       integer_type_node = TreeM->GetTreeNode(integer_type_nid);
 
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                    "Found   node " + STR(GET_INDEX_CONST_NODE(integer_type_node)) + " (" +
-                        integer_type_node->get_kind_text() + " int)");
+                    "Found   node " + STR(integer_type_node->index) + " (" + integer_type_node->get_kind_text() +
+                        " int)");
    }
    return integer_type_node;
 }
@@ -1395,7 +1387,7 @@ tree_nodeRef tree_manipulation::GetPointerType(const tree_nodeConstRef& ptd, uns
    /// of the pointer
    ///@12     integer_cst      type: @26      low : 32       @26 is bit_size_type
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
-   IR_schema[TOK(TOK_PTD)] = STR(GET_INDEX_CONST_NODE(ptd));
+   IR_schema[TOK(TOK_PTD)] = STR(ptd->index);
    auto m64P = parameters->getOption<std::string>(OPT_gcc_m_env).find("-m64") != std::string::npos;
    if(!algn)
    {
@@ -1415,7 +1407,7 @@ tree_nodeRef tree_manipulation::GetPointerType(const tree_nodeConstRef& ptd, uns
 
       ///@12     integer_cst      type: @26      low : 32       @26 is
       /// bit_size_type
-      IR_schema[TOK(TOK_SIZE)] = STR(GET_INDEX_CONST_NODE(size_node));
+      IR_schema[TOK(TOK_SIZE)] = STR(size_node->index);
       pointer_type_node = TreeM->create_tree_node(pointer_type_nid, pointer_type_K, IR_schema);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                     "Created node " + STR(pointer_type_nid) + " (pointer_type)");
@@ -1445,7 +1437,7 @@ tree_nodeRef tree_manipulation::GetCustomIntegerType(unsigned long long prec, bo
       const auto min_node_nid = TreeM->new_tree_node_id();
       const auto max_node_nid = TreeM->new_tree_node_id();
 
-      IR_schema[TOK(TOK_SIZE)] = STR(GET_INDEX_CONST_NODE(size_node));
+      IR_schema[TOK(TOK_SIZE)] = STR(size_node->index);
       IR_schema[TOK(TOK_MIN)] = STR(min_node_nid);
       IR_schema[TOK(TOK_MAX)] = STR(max_node_nid);
       integer_type_node = TreeM->create_tree_node(integer_type_nid, integer_type_K, IR_schema);
@@ -1492,7 +1484,7 @@ tree_nodeRef tree_manipulation::GetFunctionType(const tree_nodeConstRef& returnT
    for(const auto& par_type : boost::adaptors::reverse(argsT))
    {
       tree_list_node_nid = this->TreeM->new_tree_node_id();
-      IR_schema[TOK(TOK_VALU)] = STR(GET_INDEX_CONST_NODE(par_type));
+      IR_schema[TOK(TOK_VALU)] = STR(par_type->index);
       if(prev_tree_list_node_nid)
       {
          IR_schema[TOK(TOK_CHAN)] = STR(prev_tree_list_node_nid);
@@ -1503,9 +1495,9 @@ tree_nodeRef tree_manipulation::GetFunctionType(const tree_nodeConstRef& returnT
    }
 
    auto function_type_id = TreeM->new_tree_node_id();
-   IR_schema[TOK(TOK_SIZE)] = STR(GET_INDEX_CONST_NODE(size_node));
+   IR_schema[TOK(TOK_SIZE)] = STR(size_node->index);
    IR_schema[TOK(TOK_ALGN)] = STR(8);
-   IR_schema[TOK(TOK_RETN)] = STR(GET_INDEX_CONST_NODE(returnType));
+   IR_schema[TOK(TOK_RETN)] = STR(returnType->index);
    if(tree_list_node_nid)
    {
       IR_schema[TOK(TOK_PRMS)] = STR(tree_list_node_nid);
@@ -1532,20 +1524,20 @@ tree_nodeRef tree_manipulation::create_ssa_name(const tree_nodeConstRef& var, co
 
    if(type)
    {
-      IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(type));
+      IR_schema[TOK(TOK_TYPE)] = STR(type->index);
    }
    if(var)
    {
       THROW_ASSERT(var->get_kind() == var_decl_K or var->get_kind() == parm_decl_K, var->get_kind_text());
-      IR_schema[TOK(TOK_VAR)] = STR(GET_INDEX_CONST_NODE(var));
+      IR_schema[TOK(TOK_VAR)] = STR(var->index);
    }
    if(min)
    {
-      IR_schema[TOK(TOK_MIN)] = STR(GET_INDEX_CONST_NODE(min));
+      IR_schema[TOK(TOK_MIN)] = STR(min->index);
    }
    if(max)
    {
-      IR_schema[TOK(TOK_MAX)] = STR(GET_INDEX_CONST_NODE(max));
+      IR_schema[TOK(TOK_MAX)] = STR(max->index);
    }
    IR_schema[TOK(TOK_VERS)] = STR(vers);
    IR_schema[TOK(TOK_VOLATILE)] = STR(volatile_flag);
@@ -1560,11 +1552,11 @@ tree_nodeRef tree_manipulation::create_ssa_name(const tree_nodeConstRef& var, co
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_IR_schema;
       if(var->get_kind() == var_decl_K && GetPointer<const var_decl>(var)->scpe)
       {
-         gimple_nop_IR_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_CONST_NODE(GetPointerS<const var_decl>(var)->scpe));
+         gimple_nop_IR_schema[TOK(TOK_SCPE)] = STR(GetPointerS<const var_decl>(var)->scpe->index);
       }
       if(var->get_kind() == parm_decl_K)
       {
-         gimple_nop_IR_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_CONST_NODE(GetPointerS<const parm_decl>(var)->scpe));
+         gimple_nop_IR_schema[TOK(TOK_SCPE)] = STR(GetPointerS<const parm_decl>(var)->scpe->index);
       }
       gimple_nop_IR_schema[TOK(TOK_SRCP)] = GetPointer<const srcp>(var)->include_name + ":" +
                                             STR(GetPointer<const srcp>(var)->line_number) + ":" +
@@ -1591,8 +1583,8 @@ tree_nodeRef tree_manipulation::create_gimple_modify_stmt(const tree_nodeRef& op
    unsigned int node_nid = this->TreeM->new_tree_node_id();
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    IR_schema[TOK(TOK_SRCP)] = srcp;
-   IR_schema[TOK(TOK_OP0)] = STR(GET_INDEX_CONST_NODE(op0));
-   IR_schema[TOK(TOK_OP1)] = STR(GET_INDEX_CONST_NODE(op1));
+   IR_schema[TOK(TOK_OP0)] = STR(op0->index);
+   IR_schema[TOK(TOK_OP1)] = STR(op1->index);
    IR_schema[TOK(TOK_SCPE)] = STR(function_decl_nid);
    // TODO: function decl arg should be a tree_nodeRef
    THROW_ASSERT(!function_decl_nid || TreeM->GetTreeNode(function_decl_nid),
@@ -1600,7 +1592,7 @@ tree_nodeRef tree_manipulation::create_gimple_modify_stmt(const tree_nodeRef& op
    const auto node_ref = TreeM->create_tree_node(node_nid, gimple_assign_K, IR_schema);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created node " + STR(node_ref));
 
-   THROW_ASSERT(GET_INDEX_CONST_NODE(op0) == 0 || GET_INDEX_CONST_NODE(op1) == 0 ||
+   THROW_ASSERT(op0->index == 0 || op1->index == 0 ||
                     tree_helper::Size(tree_helper::CGetType(op0)) == tree_helper::Size(tree_helper::CGetType(op1)),
                 "unexpected pattern - " + node_ref->ToString() + " (lhs = <" +
                     STR(tree_helper::Size(tree_helper::CGetType(op0))) + ">(" + STR(tree_helper::CGetType(op0)) +
@@ -1633,8 +1625,8 @@ tree_nodeRef tree_manipulation::create_gimple_call(const tree_nodeConstRef& call
    THROW_ASSERT(formal_count == args.size(), "Formal parameters count different from actual parameters count: " +
                                                  STR(formal_count) + " != " + STR(args.size()));
 #endif
-   ae_IR_schema[TOK(TOK_OP)] = STR(GET_INDEX_CONST_NODE(called_function));
-   ae_IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(GetPointerType(function_type)));
+   ae_IR_schema[TOK(TOK_OP)] = STR(called_function->index);
+   ae_IR_schema[TOK(TOK_TYPE)] = STR(GetPointerType(function_type)->index);
    ae_IR_schema[TOK(TOK_SRCP)] = srcp;
 
    std::string args_string;
@@ -1644,14 +1636,14 @@ tree_nodeRef tree_manipulation::create_gimple_call(const tree_nodeConstRef& call
       {
          args_string += "_";
       }
-      args_string += STR(GET_INDEX_CONST_NODE(arg));
+      args_string += STR(arg->index);
    }
 
    const unsigned int ae_id = TreeM->new_tree_node_id();
    const auto ae = TreeM->create_tree_node(ae_id, addr_expr_K, ae_IR_schema);
    gc_IR_schema[TOK(TOK_ARG)] = args_string;
-   gc_IR_schema[TOK(TOK_FN)] = STR(GET_INDEX_CONST_NODE(ae));
-   gc_IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(function_type));
+   gc_IR_schema[TOK(TOK_FN)] = STR(ae->index);
+   gc_IR_schema[TOK(TOK_TYPE)] = STR(function_type->index);
    gc_IR_schema[TOK(TOK_SCPE)] = STR(function_decl_nid);
    // TODO: function decl arg should be a tree_nodeRef
    THROW_ASSERT(!function_decl_nid || TreeM->GetTreeNode(function_decl_nid),
@@ -1679,8 +1671,8 @@ tree_nodeRef tree_manipulation::create_gimple_cond(const tree_nodeRef& expr, uns
 
    ///@116 gimple_cond type: @62 srcp: "array.c":1 op: @115
    IR_schema.clear();
-   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(GetVoidType()));
-   IR_schema[TOK(TOK_OP0)] = STR(GET_INDEX_CONST_NODE(expr));
+   IR_schema[TOK(TOK_TYPE)] = STR(GetVoidType()->index);
+   IR_schema[TOK(TOK_OP0)] = STR(expr->index);
    IR_schema[TOK(TOK_SCPE)] = STR(function_decl_nid);
    // TODO: function decl arg should be a tree_nodeRef
    THROW_ASSERT(!function_decl_nid || TreeM->GetTreeNode(function_decl_nid),
@@ -1688,7 +1680,7 @@ tree_nodeRef tree_manipulation::create_gimple_cond(const tree_nodeRef& expr, uns
    IR_schema[TOK(TOK_SRCP)] = srcp;
    const auto node_ref = TreeM->create_tree_node(gimple_cond_name_nid, gimple_cond_K, IR_schema);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(node_ref)) + " (" + node_ref->get_kind_text() + ")");
+                 "Created node " + STR(node_ref->index) + " (" + node_ref->get_kind_text() + ")");
    return node_ref;
 }
 
@@ -1701,15 +1693,15 @@ tree_nodeRef tree_manipulation::create_gimple_return(const tree_nodeConstRef& ty
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    if(type)
    {
-      IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(type));
+      IR_schema[TOK(TOK_TYPE)] = STR(type->index);
    }
    else
    {
-      IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(GetVoidType()));
+      IR_schema[TOK(TOK_TYPE)] = STR(GetVoidType()->index);
    }
    if(expr)
    {
-      IR_schema[TOK(TOK_OP)] = STR(GET_INDEX_CONST_NODE(expr));
+      IR_schema[TOK(TOK_OP)] = STR(expr->index);
    }
    IR_schema[TOK(TOK_SCPE)] = STR(function_decl_nid);
    // TODO: function decl arg should be a tree_nodeRef
@@ -1758,7 +1750,7 @@ tree_manipulation::create_phi_node(tree_nodeRef& ssa_res,
 
    // Create the gimple_phi
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
-   IR_schema[TOK(TOK_RES)] = STR(GET_INDEX_CONST_NODE(ssa_res));
+   IR_schema[TOK(TOK_RES)] = STR(ssa_res->index);
    IR_schema[TOK(TOK_SCPE)] = STR(function_decl_nid);
    // TODO: function decl arg should be a tree_nodeRef
    THROW_ASSERT(!function_decl_nid || TreeM->GetTreeNode(function_decl_nid),
@@ -1781,7 +1773,7 @@ tree_manipulation::create_phi_node(tree_nodeRef& ssa_res,
    }
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                 "Created node " + STR(GET_INDEX_CONST_NODE(phi_stmt)) + " (" + phi_stmt->get_kind_text() + ")");
+                 "Created node " + STR(phi_stmt->index) + " (" + phi_stmt->get_kind_text() + ")");
    return phi_stmt;
 }
 
@@ -1814,8 +1806,8 @@ tree_nodeRef tree_manipulation::create_function_decl(const std::string& function
 
    const auto function_type = GetFunctionType(returnType, argsT);
    IR_schema[TOK(TOK_NAME)] = STR(function_name_id);
-   IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(function_type));
-   IR_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_CONST_NODE(scpe));
+   IR_schema[TOK(TOK_TYPE)] = STR(function_type->index);
+   IR_schema[TOK(TOK_SCPE)] = STR(scpe->index);
    IR_schema[TOK(TOK_SRCP)] = srcp;
    if(with_body)
    {
@@ -1859,10 +1851,8 @@ tree_nodeRef tree_manipulation::CreateOrExpr(const tree_nodeConstRef& first_cond
          if(ga)
          {
             const auto toe = GetPointer<const truth_or_expr>(ga->op1);
-            if(toe and ((GET_INDEX_CONST_NODE(toe->op0) == GET_INDEX_CONST_NODE(first_condition) and
-                         GET_INDEX_CONST_NODE(toe->op1) == GET_INDEX_CONST_NODE(second_condition)) or
-                        (GET_INDEX_CONST_NODE(toe->op0) == GET_INDEX_CONST_NODE(second_condition) and
-                         GET_INDEX_CONST_NODE(toe->op1) == GET_INDEX_CONST_NODE(first_condition))))
+            if(toe and ((toe->op0->index == first_condition->index and toe->op1->index == second_condition->index) or
+                        (toe->op0->index == second_condition->index and toe->op1->index == first_condition->index)))
             {
                THROW_ASSERT(ga->op0->get_kind() == ssa_name_K, "unexpected condition");
                auto ssa0 = GetPointerS<ssa_name>(ga->op0);
@@ -1878,9 +1868,9 @@ tree_nodeRef tree_manipulation::CreateOrExpr(const tree_nodeConstRef& first_cond
    const auto truth_or_expr_id = TreeM->new_tree_node_id();
    const auto bt = GetBooleanType();
    truth_or_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-   truth_or_expr_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(bt));
-   truth_or_expr_schema[TOK(TOK_OP0)] = STR(GET_INDEX_CONST_NODE(first_condition));
-   truth_or_expr_schema[TOK(TOK_OP1)] = STR(GET_INDEX_CONST_NODE(second_condition));
+   truth_or_expr_schema[TOK(TOK_TYPE)] = STR(bt->index);
+   truth_or_expr_schema[TOK(TOK_OP0)] = STR(first_condition->index);
+   truth_or_expr_schema[TOK(TOK_OP1)] = STR(second_condition->index);
    const auto truth_or_expr = TreeM->create_tree_node(truth_or_expr_id, truth_or_expr_K, truth_or_expr_schema);
 
    auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, bt), TreeM->CreateUniqueIntegerCst(1, bt),
@@ -1904,10 +1894,8 @@ tree_nodeRef tree_manipulation::CreateAndExpr(const tree_nodeConstRef& first_con
          if(ga)
          {
             const auto toe = GetPointer<const truth_and_expr>(ga->op1);
-            if(toe and ((GET_INDEX_CONST_NODE(toe->op0) == GET_INDEX_CONST_NODE(first_condition) and
-                         GET_INDEX_CONST_NODE(toe->op1) == GET_INDEX_CONST_NODE(second_condition)) or
-                        (GET_INDEX_CONST_NODE(toe->op0) == GET_INDEX_CONST_NODE(second_condition) and
-                         GET_INDEX_CONST_NODE(toe->op1) == GET_INDEX_CONST_NODE(first_condition))))
+            if(toe and ((toe->op0->index == first_condition->index and toe->op1->index == second_condition->index) or
+                        (toe->op0->index == second_condition->index and toe->op1->index == first_condition->index)))
             {
                THROW_ASSERT(ga->op0->get_kind() == ssa_name_K, "unexpected condition");
                auto ssa0 = GetPointerS<ssa_name>(ga->op0);
@@ -1922,9 +1910,9 @@ tree_nodeRef tree_manipulation::CreateAndExpr(const tree_nodeConstRef& first_con
    const auto truth_and_expr_id = TreeM->new_tree_node_id();
    const auto bt = GetBooleanType();
    truth_and_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-   truth_and_expr_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(bt));
-   truth_and_expr_schema[TOK(TOK_OP0)] = STR(GET_INDEX_CONST_NODE(first_condition));
-   truth_and_expr_schema[TOK(TOK_OP1)] = STR(GET_INDEX_CONST_NODE(second_condition));
+   truth_and_expr_schema[TOK(TOK_TYPE)] = STR(bt->index);
+   truth_and_expr_schema[TOK(TOK_OP0)] = STR(first_condition->index);
+   truth_and_expr_schema[TOK(TOK_OP1)] = STR(second_condition->index);
    const auto truth_or_expr = TreeM->create_tree_node(truth_and_expr_id, truth_and_expr_K, truth_and_expr_schema);
 
    auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, bt), TreeM->CreateUniqueIntegerCst(1, bt),
@@ -1947,7 +1935,7 @@ tree_nodeRef tree_manipulation::CreateNotExpr(const tree_nodeConstRef& condition
          if(ga)
          {
             const auto tne = GetPointer<const truth_not_expr>(ga->op1);
-            if(tne and GET_INDEX_CONST_NODE(tne->op) == GET_INDEX_CONST_NODE(condition))
+            if(tne and tne->op->index == condition->index)
             {
                THROW_ASSERT(ga->op0->get_kind() == ssa_name_K, "unexpected condition");
                auto ssa0 = GetPointerS<ssa_name>(ga->op0);
@@ -1962,8 +1950,8 @@ tree_nodeRef tree_manipulation::CreateNotExpr(const tree_nodeConstRef& condition
    const auto truth_not_expr_id = TreeM->new_tree_node_id();
    const auto bt = GetBooleanType();
    truth_not_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-   truth_not_expr_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(bt));
-   truth_not_expr_schema[TOK(TOK_OP)] = STR(GET_INDEX_CONST_NODE(condition));
+   truth_not_expr_schema[TOK(TOK_TYPE)] = STR(bt->index);
+   truth_not_expr_schema[TOK(TOK_OP)] = STR(condition->index);
    const auto truth_not_expr = TreeM->create_tree_node(truth_not_expr_id, truth_not_expr_K, truth_not_expr_schema);
 
    auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, bt), TreeM->CreateUniqueIntegerCst(1, bt),
@@ -1997,8 +1985,7 @@ tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef& condition, 
          for(const auto& statement : block->CGetStmtList())
          {
             const auto ga = GetPointer<const gimple_assign>(statement);
-            if(ga && GET_INDEX_CONST_NODE(ga->op1) == GET_INDEX_CONST_NODE(condition) &&
-               tree_helper::IsBooleanType(ga->op0))
+            if(ga && ga->op1->index == condition->index && tree_helper::IsBooleanType(ga->op0))
             {
                THROW_ASSERT(ga->op0->get_kind() == ssa_name_K, "unexpected condition");
                auto ssa0 = GetPointerS<ssa_name>(ga->op0);
@@ -2050,9 +2037,9 @@ tree_nodeRef tree_manipulation::CreateNopExpr(const tree_nodeConstRef& operand, 
                                               unsigned int function_decl_nid) const
 {
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ne_schema, ga_schema;
-   ne_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(type));
+   ne_schema[TOK(TOK_TYPE)] = STR(type->index);
    ne_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-   ne_schema[TOK(TOK_OP)] = STR(GET_INDEX_CONST_NODE(operand));
+   ne_schema[TOK(TOK_OP)] = STR(operand->index);
    const auto ne_id = TreeM->new_tree_node_id();
    const auto ne = TreeM->create_tree_node(ne_id, nop_expr_K, ne_schema);
 
@@ -2092,7 +2079,7 @@ tree_nodeRef tree_manipulation::CreateUnsigned(const tree_nodeConstRef& signed_t
       THROW_ERROR(signed_type->ToString() + " has qualifiers");
    }
 
-   ut_schema[TOK(TOK_SIZE)] = STR(GET_INDEX_CONST_NODE(int_signed_type->size));
+   ut_schema[TOK(TOK_SIZE)] = STR(int_signed_type->size->index);
    ut_schema[TOK(TOK_ALGN)] = STR(int_signed_type->algn);
    ut_schema[TOK(TOK_UNSIGNED)] = STR(false);
 
@@ -2107,7 +2094,7 @@ tree_nodeRef tree_manipulation::CreateUnsigned(const tree_nodeConstRef& signed_t
       const auto min_id = TreeM->new_tree_node_id();
       return TreeM->create_tree_node(min_id, integer_cst_K, min_schema);
    }();
-   ut_schema[TOK(TOK_MIN)] = STR(GET_INDEX_CONST_NODE(min));
+   ut_schema[TOK(TOK_MIN)] = STR(min->index);
 
    const auto max = [&]() -> tree_nodeRef {
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> max_schema;
@@ -2120,7 +2107,7 @@ tree_nodeRef tree_manipulation::CreateUnsigned(const tree_nodeConstRef& signed_t
       const auto max_id = TreeM->new_tree_node_id();
       return TreeM->create_tree_node(max_id, integer_cst_K, max_schema);
    }();
-   ut_schema[TOK(TOK_MAX)] = STR(GET_INDEX_CONST_NODE(max));
+   ut_schema[TOK(TOK_MAX)] = STR(max->index);
    ut_schema[TOK(TOK_PREC)] = STR(int_signed_type->prec);
    ut_schema[TOK(TOK_UNSIGNED)] = STR(true);
    const auto find = TreeM->find(integer_type_K, ut_schema);
@@ -2175,10 +2162,8 @@ tree_nodeRef tree_manipulation::CreateEqExpr(const tree_nodeConstRef& first_oper
          if(ga)
          {
             const auto ee = GetPointer<const eq_expr>(ga->op1);
-            if(ee and ((GET_INDEX_CONST_NODE(ee->op0) == GET_INDEX_CONST_NODE(first_operand) and
-                        GET_INDEX_CONST_NODE(ee->op1) == GET_INDEX_CONST_NODE(second_operand)) or
-                       (GET_INDEX_CONST_NODE(ee->op0) == GET_INDEX_CONST_NODE(second_operand) and
-                        GET_INDEX_CONST_NODE(ee->op1) == GET_INDEX_CONST_NODE(first_operand))))
+            if(ee and ((ee->op0->index == first_operand->index and ee->op1->index == second_operand->index) or
+                       (ee->op0->index == second_operand->index and ee->op1->index == first_operand->index)))
             {
                THROW_ASSERT(ga->op0->get_kind() == ssa_name_K, "unexpected condition");
                auto ssa0 = GetPointerS<ssa_name>(ga->op0);
@@ -2194,9 +2179,9 @@ tree_nodeRef tree_manipulation::CreateEqExpr(const tree_nodeConstRef& first_oper
    const auto bt = GetBooleanType();
    const auto eq_expr_id = TreeM->new_tree_node_id();
    eq_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-   eq_expr_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(bt));
-   eq_expr_schema[TOK(TOK_OP0)] = STR(GET_INDEX_CONST_NODE(first_operand));
-   eq_expr_schema[TOK(TOK_OP1)] = STR(GET_INDEX_CONST_NODE(second_operand));
+   eq_expr_schema[TOK(TOK_TYPE)] = STR(bt->index);
+   eq_expr_schema[TOK(TOK_OP0)] = STR(first_operand->index);
+   eq_expr_schema[TOK(TOK_OP1)] = STR(second_operand->index);
    const auto eq = TreeM->create_tree_node(eq_expr_id, eq_expr_K, eq_expr_schema);
 
    auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, bt), TreeM->CreateUniqueIntegerCst(1, bt), eq,
@@ -2212,9 +2197,9 @@ tree_nodeRef tree_manipulation::CreateCallExpr(const tree_nodeConstRef& called_f
                                                const std::vector<tree_nodeRef>& args, const std::string& srcp) const
 {
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ae_IR_schema, ce_IR_schema;
-   ae_IR_schema[TOK(TOK_OP)] = STR(GET_INDEX_CONST_NODE(called_function));
+   ae_IR_schema[TOK(TOK_OP)] = STR(called_function->index);
    const auto ft = tree_helper::CGetType(called_function);
-   ae_IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(GetPointerType(ft)));
+   ae_IR_schema[TOK(TOK_TYPE)] = STR(GetPointerType(ft)->index);
    ae_IR_schema[TOK(TOK_SRCP)] = srcp;
    const unsigned int ae_id = TreeM->new_tree_node_id();
    TreeM->create_tree_node(ae_id, addr_expr_K, ae_IR_schema);
@@ -2226,11 +2211,11 @@ tree_nodeRef tree_manipulation::CreateCallExpr(const tree_nodeConstRef& called_f
       {
          args_string += "_";
       }
-      args_string += STR(GET_INDEX_CONST_NODE(arg));
+      args_string += STR(arg->index);
    }
    ce_IR_schema[TOK(TOK_ARG)] = args_string;
    ce_IR_schema[TOK(TOK_FN)] = STR(ae_id);
-   ce_IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(GetPointer<const function_type>(ft)->retn));
+   ce_IR_schema[TOK(TOK_TYPE)] = STR(GetPointer<const function_type>(ft)->retn->index);
    ce_IR_schema[TOK(TOK_SRCP)] = srcp;
    const unsigned int ce_id = TreeM->new_tree_node_id();
    return TreeM->create_tree_node(ce_id, call_expr_K, ce_IR_schema);
@@ -2240,7 +2225,7 @@ tree_nodeRef tree_manipulation::CreateAddrExpr(const tree_nodeConstRef& tn, cons
 {
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ae_IR_schema;
    const auto type_node = tree_helper::CGetType(tn);
-   ae_IR_schema[TOK(TOK_OP)] = STR(GET_INDEX_CONST_NODE(tn));
+   ae_IR_schema[TOK(TOK_OP)] = STR(tn->index);
    auto align = 8u;
    if(tn->get_kind() == var_decl_K)
    {
@@ -2248,7 +2233,7 @@ tree_nodeRef tree_manipulation::CreateAddrExpr(const tree_nodeConstRef& tn, cons
       align = vd->algn;
    }
    const auto ptr_type = GetPointerType(type_node, align);
-   ae_IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(ptr_type));
+   ae_IR_schema[TOK(TOK_TYPE)] = STR(ptr_type->index);
    ae_IR_schema[TOK(TOK_SRCP)] = srcp;
    const unsigned int ae_id = TreeM->new_tree_node_id();
    return TreeM->create_tree_node(ae_id, addr_expr_K, ae_IR_schema);
@@ -2263,7 +2248,7 @@ tree_nodeRef tree_manipulation::CreateGimpleAssignAddrExpr(const tree_nodeConstR
    auto ga = GetPointer<gimple_assign>(assign_node);
    auto ssa = GetPointer<ssa_name>(ga->op0);
    ssa->use_set = PointToSolutionRef(new PointToSolution());
-   ssa->use_set->Add(TreeM->CGetTreeNode(GET_INDEX_CONST_NODE(tn)));
+   ssa->use_set->Add(TreeM->GetTreeNode(tn->index));
    return assign_node;
 }
 
@@ -2274,8 +2259,8 @@ tree_nodeRef tree_manipulation::CreateVectorType(const tree_nodeConstRef& elt_ty
        TreeM->CreateUniqueIntegerCst(number_of_elements * tree_helper::SizeAlloc(elt_type), GetSizeType());
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
-   IR_schema[TOK(TOK_ELTS)] = STR(GET_INDEX_CONST_NODE(elt_type));
-   IR_schema[TOK(TOK_SIZE)] = STR(GET_INDEX_CONST_NODE(size));
+   IR_schema[TOK(TOK_ELTS)] = STR(elt_type->index);
+   IR_schema[TOK(TOK_SIZE)] = STR(size->index);
 
    auto vector_type_id = TreeM->find(vector_type_K, IR_schema);
 
@@ -2304,12 +2289,12 @@ tree_nodeRef tree_manipulation::CloneFunction(const tree_nodeRef& tn, const std:
    const auto clone_fname = create_identifier_node(fname + fsuffix);
    CustomUnorderedMapStable<unsigned int, unsigned int> remapping;
    tree_node_dup tnd(remapping, AppM);
-   remapping[GET_INDEX_CONST_NODE(fd->name)] = GET_INDEX_CONST_NODE(clone_fname);
+   remapping[fd->name->index] = clone_fname->index;
    if(fd->mngl)
    {
       const auto fmngl = tree_helper::GetMangledFunctionName(fd);
       const auto clone_mngl = create_identifier_node(fmngl + fsuffix);
-      remapping[GET_INDEX_CONST_NODE(fd->mngl)] = GET_INDEX_CONST_NODE(clone_mngl);
+      remapping[fd->mngl->index] = clone_mngl->index;
    }
    const auto clone_fd = tnd.create_tree_node(tn, tree_node_dup_mode::FUNCTION);
    return TreeM->GetTreeNode(clone_fd);
@@ -2378,9 +2363,8 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_node
       }
    }
    {
-      auto it = std::find_if(block->CGetStmtList().begin(), block->CGetStmtList().end(), [&](const tree_nodeRef& tn) {
-         return GET_INDEX_CONST_NODE(tn) == GET_INDEX_CONST_NODE(call_node);
-      });
+      auto it = std::find_if(block->CGetStmtList().begin(), block->CGetStmtList().end(),
+                             [&](const tree_nodeRef& tn) { return tn->index == call_node->index; });
       THROW_ASSERT(it != block->CGetStmtList().end(), "");
       ++it;
       while(it != block->CGetStmtList().end())
@@ -2409,12 +2393,11 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_node
                       tree_helper::print_function_name(TreeM, fd));
    CustomUnorderedMapStable<unsigned int, unsigned int> remapping;
    remapping.insert(std::make_pair(inline_fd->index, fd->index));
-   std::for_each(inline_fd->list_of_args.cbegin(), inline_fd->list_of_args.cend(), [&](const tree_nodeRef& tn) {
-      remapping.insert(std::make_pair(GET_INDEX_CONST_NODE(tn), GET_INDEX_CONST_NODE(tn)));
-   });
+   std::for_each(inline_fd->list_of_args.cbegin(), inline_fd->list_of_args.cend(),
+                 [&](const tree_nodeRef& tn) { remapping.insert(std::make_pair(tn->index, tn->index)); });
    tree_node_dup tnd(remapping, AppM, splitBBI + 1, max_loop_id + 1, true);
    const auto dup_sl_id = tnd.create_tree_node(inline_fd->body, tree_node_dup_mode::RENAME);
-   const auto dup_sl = GetPointer<const statement_list>(TreeM->CGetTreeNode(dup_sl_id));
+   const auto dup_sl = GetPointer<const statement_list>(TreeM->GetTreeNode(dup_sl_id));
    THROW_ASSERT(dup_sl, "");
 
    const auto replace_arg_with_param = [&](const tree_nodeRef& stmt) {
@@ -2427,9 +2410,8 @@ unsigned int tree_manipulation::InlineFunctionCall(const tree_nodeRef& call_node
          if(SSA->var != nullptr && SSA->var->get_kind() == parm_decl_K &&
             SSA->CGetDefStmt()->get_kind() == gimple_nop_K)
          {
-            auto argIt = std::find_if(
-                inline_fd->list_of_args.cbegin(), inline_fd->list_of_args.cend(),
-                [&](const tree_nodeRef& arg) { return GET_INDEX_CONST_NODE(arg) == GET_INDEX_CONST_NODE(SSA->var); });
+            auto argIt = std::find_if(inline_fd->list_of_args.cbegin(), inline_fd->list_of_args.cend(),
+                                      [&](const tree_nodeRef& arg) { return arg->index == SSA->var->index; });
             THROW_ASSERT(argIt != inline_fd->list_of_args.cend(),
                          "parm_decl associated with ssa_name not found in function parameters");
             size_t arg_pos = static_cast<size_t>(argIt - inline_fd->list_of_args.cbegin());
@@ -2574,19 +2556,17 @@ bool tree_manipulation::VersionFunctionCall(const tree_nodeRef& call_node, const
    }
    const auto version_fn = CloneFunction(called_fn, version_suffix);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call before versioning : " + STR(call_node));
-   const auto caller_id = GET_INDEX_CONST_NODE(caller_node);
+   const auto caller_id = caller_node->index;
    if(ret_val)
    {
       const auto has_args = !GetPointer<const function_decl>(version_fn)->list_of_args.empty();
       const auto ce = CreateCallExpr(version_fn, has_args ? *args : std::vector<tree_nodeRef>(), BUILTIN_SRCP);
       const auto ga = GetPointerS<const gimple_assign>(call_stmt);
       CustomUnorderedSet<unsigned int> already_visited;
-      AppM->GetCallGraphManager()->RemoveCallPoint(caller_id, GET_INDEX_CONST_NODE(called_fn),
-                                                   GET_INDEX_CONST_NODE(call_node));
+      AppM->GetCallGraphManager()->RemoveCallPoint(caller_id, called_fn->index, call_node->index);
       TreeM->ReplaceTreeNode(call_node, ga->op1, ce);
-      CallGraphManager::addCallPointAndExpand(already_visited, AppM, caller_id, GET_INDEX_CONST_NODE(version_fn),
-                                              GET_INDEX_CONST_NODE(call_node), FunctionEdgeInfo::CallType::direct_call,
-                                              DEBUG_LEVEL_NONE);
+      CallGraphManager::addCallPointAndExpand(already_visited, AppM, caller_id, version_fn->index, call_node->index,
+                                              FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call after versioning  : " + STR(call_node));
    }
    else

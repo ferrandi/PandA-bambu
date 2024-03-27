@@ -96,7 +96,7 @@ class Operand
          std::vector<gimple_phi::DefEdge> validDE;
          for(const auto& de : deList)
          {
-            if(GET_INDEX_CONST_NODE(de.first) == ssaOperand->index)
+            if(de.first->index == ssaOperand->index)
             {
                validDE.push_back(de);
             }
@@ -550,10 +550,9 @@ struct ValueDFS_Compare
       if(!VD.Def && VD.U)
       {
          const auto* PHI = GetPointer<const gimple_phi>(VD.U->getUser());
-         auto phiDefEdge = std::find_if(
-             PHI->CGetDefEdgesList().begin(), PHI->CGetDefEdgesList().end(), [&](const gimple_phi::DefEdge& de) {
-                return GET_INDEX_CONST_NODE(de.first) == GET_INDEX_CONST_NODE(VD.U->getOperand());
-             });
+         auto phiDefEdge =
+             std::find_if(PHI->CGetDefEdgesList().begin(), PHI->CGetDefEdgesList().end(),
+                          [&](const gimple_phi::DefEdge& de) { return de.first->index == VD.U->getOperand()->index; });
          THROW_ASSERT(phiDefEdge != PHI->CGetDefEdgesList().end(), "Unable to find variable in phi definitions");
          return std::make_pair(phiDefEdge->second, PHI->bb_index);
       }
@@ -657,10 +656,9 @@ bool stackIsInScope(const ValueDFSStack& Stack, const ValueDFS& VDUse, const Ord
          return false;
       }
       // Check edge
-      auto EdgePredIt = std::find_if(
-          PHI->CGetDefEdgesList().begin(), PHI->CGetDefEdgesList().end(), [&](const gimple_phi::DefEdge& de) {
-             return GET_INDEX_CONST_NODE(de.first) == GET_INDEX_CONST_NODE(VDUse.U->getOperand());
-          });
+      auto EdgePredIt =
+          std::find_if(PHI->CGetDefEdgesList().begin(), PHI->CGetDefEdgesList().end(),
+                       [&](const gimple_phi::DefEdge& de) { return de.first->index == VDUse.U->getOperand()->index; });
       if(EdgePredIt->second != getBranchBlock(Stack.back().PInfo))
       {
          return false;
@@ -757,7 +755,7 @@ void convertUsesToDFSOrdered(tree_nodeRef Op, std::vector<ValueDFS>& DFSOrderedS
          // #endif
          for(const auto& def_edge : gp->CGetDefEdgesList())
          {
-            if(GET_INDEX_CONST_NODE(def_edge.first) == GET_INDEX_CONST_NODE(Op))
+            if(def_edge.first->index == Op->index)
             {
                // #if HAVE_ASSERTS
                //                found = true;
@@ -1202,7 +1200,7 @@ void eSSA::Initialize()
 DesignFlowStep_Status eSSA::InternalExec()
 {
    auto TM = AppM->get_tree_manager();
-   const auto* fd = GetPointer<const function_decl>(TM->CGetTreeNode(function_id));
+   const auto* fd = GetPointer<const function_decl>(TM->GetTreeNode(function_id));
    auto* sl = GetPointer<statement_list>(fd->body);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Extended SSA step");

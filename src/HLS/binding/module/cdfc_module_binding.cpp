@@ -227,7 +227,7 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation& co
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "-->Considering operation " + GET_NAME(data, current_v) + " " +
-                         STR(TreeM->CGetTreeNode(data->CGetOpNodeInfo(current_v)->GetNodeId())));
+                         STR(TreeM->GetTreeNode(data->CGetOpNodeInfo(current_v)->GetNodeId())));
       std::vector<HLS_manager::io_binding_type> vars_read = HLSMgr->get_required_values(HLS->functionId, current_v);
       size_t n_ports = vars_read.size();
       con_rel[current_v].resize(n_ports);
@@ -237,7 +237,7 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation& co
          auto tree_var = std::get<0>(vars_read[port_index]);
          if(tree_var != 0)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(TreeM->CGetTreeNode(tree_var)));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(TreeM->GetTreeNode(tree_var)));
             CustomOrderedSet<std::pair<conn_code, std::pair<unsigned int, vertex>>>& con_rel_per_vertex_per_port_index =
                 con_rel[current_v][port_index];
             const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(current_v);
@@ -2280,7 +2280,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                      {
                         INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
                                        "---" + GET_NAME(sdg, current_vert) + "(" +
-                                           TreeM->CGetTreeNode(node_id)->ToString() + ") bound to " +
+                                           TreeM->GetTreeNode(node_id)->ToString() + ") bound to " +
                                            allocation_information->get_string_name(fu_unit) + "(" +
                                            STR(numModule[fu_unit]) + ")");
                      }
@@ -2300,7 +2300,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                      {
                         INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
                                        "---" + GET_NAME(sdg, current_vert) + "(" +
-                                           TreeM->CGetTreeNode(node_id)->ToString() + ") bound to " +
+                                           TreeM->GetTreeNode(node_id)->ToString() + ") bound to " +
                                            allocation_information->get_string_name(fu_unit) + "(" + STR(num) + ")");
                      }
                   }

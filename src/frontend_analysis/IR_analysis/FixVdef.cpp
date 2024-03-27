@@ -135,7 +135,7 @@ void FixVdef::ComputeRelationships(DesignFlowStepSet& relationship,
 DesignFlowStep_Status FixVdef::InternalExec()
 {
    const auto TM = AppM->get_tree_manager();
-   const auto tn = TM->CGetTreeNode(function_id);
+   const auto tn = TM->GetTreeNode(function_id);
    const auto fd = GetPointer<const function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
    const auto sl = GetPointer<const statement_list>(fd->body);

@@ -88,7 +88,7 @@ void tree_reindex_remove::fix_reference(tree_nodeRef& tn) const
 {
    if(tn && tn->get_kind() == tree_reindex_K)
    {
-      tn = TM.CGetTreeNode(tn->index);
+      tn = TM.GetTreeNode(tn->index);
    }
 }
 

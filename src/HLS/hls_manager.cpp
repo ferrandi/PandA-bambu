@@ -161,7 +161,7 @@ hlsRef HLS_manager::create_HLS(const HLS_managerRef HLSMgr, unsigned int functio
 std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long long precision)
 {
    std::string trimmed_value;
-   const auto node = TM->CGetTreeNode(node_id);
+   const auto node = TM->GetTreeNode(node_id);
    const auto node_type = tree_helper::CGetType(node);
    if(tree_helper::IsRealType(node_type))
    {
@@ -186,7 +186,7 @@ std::string HLS_manager::get_constant_string(unsigned int node_id, unsigned long
       trimmed_value = "";
       for(unsigned int i = 0; i < n_elm; ++i)
       {
-         trimmed_value = get_constant_string(GET_INDEX_NODE(vc->list_of_valu[i]), elm_prec) + trimmed_value;
+         trimmed_value = get_constant_string(vc->list_of_valu[i]->index, elm_prec) + trimmed_value;
       }
    }
    else if(tree_helper::IsComplexType(node_type))
@@ -295,7 +295,7 @@ bool HLS_manager::is_register_compatible(unsigned int var) const
 
 bool HLS_manager::is_reading_writing_function(unsigned funID) const
 {
-   auto fun_node = TM->CGetTreeNode(funID);
+   auto fun_node = TM->GetTreeNode(funID);
    auto fd = GetPointer<function_decl>(fun_node);
    THROW_ASSERT(fd, "unexpected condition");
    return fd->reading_memory || fd->writing_memory;

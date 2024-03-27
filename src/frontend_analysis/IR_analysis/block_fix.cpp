@@ -105,7 +105,7 @@ BlockFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType re
 DesignFlowStep_Status BlockFix::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
-   tree_nodeRef temp = TM->CGetTreeNode(function_id);
+   tree_nodeRef temp = TM->GetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(temp);
    auto* sl = GetPointer<statement_list>(fd->body);
 
@@ -149,7 +149,7 @@ DesignFlowStep_Status BlockFix::InternalExec()
          {
             THROW_ASSERT(gg->op and GetPointer<const label_decl>(gg->op), "Unexpexted condition :" + gg->ToString());
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found a reachable label " + gg->op->ToString());
-            reachable_labels.insert(GET_INDEX_NODE(gg->op));
+            reachable_labels.insert(gg->op->index);
          }
          const auto gs = GetPointer<const gimple_switch>(statement);
          if(gs)

@@ -216,7 +216,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef BH,
    {
       const auto& par = params.at(par_idx);
       const auto parm_type = tree_helper::CGetType(par);
-      const auto param = BH->PrintVariable(GET_INDEX_CONST_NODE(par));
+      const auto param = BH->PrintVariable(par->index);
       const auto has_file_init = [&]() {
          if(parm_attrs.size()) // FIX: this is probably always true
          {
@@ -376,7 +376,7 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef BH)
    const auto& parms = HLSMgr->module_arch->GetArchitecture(top_fname_mngl)->parms;
    for(const auto& par : BH->GetParameters())
    {
-      const auto param = BH->PrintVariable(GET_INDEX_CONST_NODE(par));
+      const auto param = BH->PrintVariable(par->index);
       if(!is_first_argument)
       {
          indented_output_stream->Append(", ");
@@ -424,7 +424,7 @@ void HLSCWriter::InternalWriteFile()
    const auto top_symbols = Param->getOption<std::vector<std::string>>(OPT_top_functions_names);
    THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
    const auto top_fnode = TM->GetFunction(top_symbols.front());
-   const auto top_fb = HLSMgr->CGetFunctionBehavior(GET_INDEX_CONST_NODE(top_fnode));
+   const auto top_fb = HLSMgr->CGetFunctionBehavior(top_fnode->index);
    const auto top_bh = top_fb->CGetBehavioralHelper();
    const auto top_fname = top_bh->get_function_name();
    const auto top_fname_mngl = top_bh->GetMangledFunctionName();
@@ -441,7 +441,7 @@ void HLSCWriter::InternalWriteFile()
    {
       for(const auto& arg : top_params)
       {
-         const auto parm_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(arg));
+         const auto parm_name = top_bh->PrintVariable(arg->index);
          THROW_ASSERT(func_arch->parms.find(parm_name) != func_arch->parms.end(),
                       "Attributes missing for parameter " + parm_name + " in function " + top_fname);
          const auto& parm_attrs = func_arch->parms.at(parm_name);

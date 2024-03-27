@@ -103,7 +103,7 @@ call_expr_fix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
 DesignFlowStep_Status call_expr_fix::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
-   tree_nodeRef temp = TM->CGetTreeNode(function_id);
+   tree_nodeRef temp = TM->GetTreeNode(function_id);
    auto* fdcur = GetPointer<function_decl>(temp);
    auto* sl = GetPointer<statement_list>(fdcur->body);
    bool bb_modified = false;

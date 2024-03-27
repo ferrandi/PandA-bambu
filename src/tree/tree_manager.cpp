@@ -151,12 +151,7 @@ tree_nodeRef tree_manager::GetTreeReindex(unsigned int index)
    return tree_nodeRef(new tree_reindex(index, tree_nodes[index]));
 }
 
-tree_nodeRef tree_manager::GetTreeNode(const unsigned int index) const
-{
-   return CGetTreeNode(index);
-}
-
-tree_nodeRef tree_manager::CGetTreeNode(const unsigned int i) const
+tree_nodeRef tree_manager::GetTreeNode(const unsigned int i) const
 {
    const auto it = tree_nodes.find(i);
    THROW_ASSERT(it != tree_nodes.end(), "Tree node with index " + STR(i) + " not found");
@@ -412,7 +407,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
                   "-->Replacing " + old_node->ToString() + " (" + old_node->get_kind_text() + ") with " +
                       new_node->ToString() + "(" + new_node->get_kind_text() +
                       ") starting from node: " + tn->ToString() + "(" + tn->get_kind_text() + ")");
-   if(GET_INDEX_NODE(tn) == GET_INDEX_NODE(old_node))
+   if(tn->index == old_node->index)
    {
       /// Check if we need to update uses or definitions
       const auto gn = GetPointer<const gimple_node>(stmt);
@@ -802,7 +797,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
       case CASE_PRAGMA_NODES:
       case CASE_TYPE_NODES:
       default:
-         THROW_ERROR(std::string("Node not supported (") + STR(GET_INDEX_NODE(tn)) + std::string("): ") +
+         THROW_ERROR(std::string("Node not supported (") + STR(tn->index) + std::string("): ") +
                      curr_tn->get_kind_text());
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, GET_FUNCTION_DEBUG_LEVEL(Param),
@@ -813,8 +808,8 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
 void tree_manager::erase_usage_info(const tree_nodeRef& tn, const tree_nodeRef& stmt)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                  "-->Erase usage into node " + STR(GET_INDEX_NODE(tn)) + " (" + tn->get_kind_text() +
-                      "). Statement: " + STR(GET_INDEX_NODE(stmt)) + " (" + stmt->get_kind_text() + ")");
+                  "-->Erase usage into node " + STR(tn->index) + " (" + tn->get_kind_text() +
+                      "). Statement: " + STR(stmt->index) + " (" + stmt->get_kind_text() + ")");
    tree_nodeRef curr_tn = tn;
    switch(curr_tn->get_kind())
    {
@@ -951,7 +946,7 @@ void tree_manager::erase_usage_info(const tree_nodeRef& tn, const tree_nodeRef& 
          auto* sn = GetPointer<ssa_name>(curr_tn);
          for(const auto& use_stmt : sn->CGetUseStmts())
          {
-            if(GET_INDEX_NODE(use_stmt.first) == GET_INDEX_NODE(stmt))
+            if(use_stmt.first->index == stmt->index)
             {
                for(decltype(use_stmt.second) repetition = 0; repetition < use_stmt.second; repetition++)
                {
@@ -1014,19 +1009,19 @@ void tree_manager::erase_usage_info(const tree_nodeRef& tn, const tree_nodeRef& 
       case CASE_PRAGMA_NODES:
       case CASE_TYPE_NODES:
       default:
-         THROW_ERROR(std::string("Node not supported (") + STR(GET_INDEX_NODE(tn)) + std::string("): ") +
+         THROW_ERROR(std::string("Node not supported (") + STR(tn->index) + std::string("): ") +
                      curr_tn->get_kind_text());
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                  "<--Erased usage into node " + STR(GET_INDEX_NODE(tn)) + " (" + tn->get_kind_text() +
-                      "). Statement: " + STR(GET_INDEX_NODE(stmt)) + " (" + stmt->get_kind_text() + ")");
+                  "<--Erased usage into node " + STR(tn->index) + " (" + tn->get_kind_text() +
+                      "). Statement: " + STR(stmt->index) + " (" + stmt->get_kind_text() + ")");
 }
 
 void tree_manager::insert_usage_info(const tree_nodeRef& tn, const tree_nodeRef& stmt)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                  "-->Insert usage info into node " + STR(GET_INDEX_NODE(tn)) + " (" + tn->get_kind_text() +
-                      "). Statement: " + STR(GET_INDEX_NODE(stmt)) + " (" + stmt->get_kind_text() + ")");
+                  "-->Insert usage info into node " + STR(tn->index) + " (" + tn->get_kind_text() +
+                      "). Statement: " + STR(stmt->index) + " (" + stmt->get_kind_text() + ")");
    tree_nodeRef curr_tn = tn;
    switch(curr_tn->get_kind())
    {
@@ -1217,12 +1212,12 @@ void tree_manager::insert_usage_info(const tree_nodeRef& tn, const tree_nodeRef&
       case CASE_PRAGMA_NODES:
       case CASE_TYPE_NODES:
       default:
-         THROW_ERROR(std::string("Node not supported (") + STR(GET_INDEX_NODE(tn)) + std::string("): ") +
+         THROW_ERROR(std::string("Node not supported (") + STR(tn->index) + std::string("): ") +
                      curr_tn->get_kind_text());
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                  "<--Inserted usage info into node " + STR(GET_INDEX_NODE(tn)) + " (" + tn->get_kind_text() +
-                      "). Statement: " + STR(GET_INDEX_NODE(stmt)) + " (" + stmt->get_kind_text() + ")");
+                  "<--Inserted usage info into node " + STR(tn->index) + " (" + tn->get_kind_text() +
+                      "). Statement: " + STR(stmt->index) + " (" + stmt->get_kind_text() + ")");
 }
 
 void tree_manager::add_parallel_loop()
@@ -1305,16 +1300,14 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
             if(tn->get_kind() == record_type_K and GetPointer<record_type>(tn)->unql and
                GetPointer<record_type>(tn)->qual == TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN)
             {
-               global_type_symbol_table["u struct " + symbol_name] = GET_INDEX_NODE(GetPointer<record_type>(tn)->unql);
-               global_type_unql_symbol_table[GET_INDEX_NODE(GetPointer<record_type>(tn)->unql)] =
-                   "u struct " + symbol_name;
+               global_type_symbol_table["u struct " + symbol_name] = GetPointer<record_type>(tn)->unql->index;
+               global_type_unql_symbol_table[GetPointer<record_type>(tn)->unql->index] = "u struct " + symbol_name;
             }
             else if(tn->get_kind() == union_type_K and GetPointer<union_type>(tn)->unql and
                     GetPointer<union_type>(tn)->qual == TreeVocabularyTokenTypes_TokenEnum::FIRST_TOKEN)
             {
-               global_type_symbol_table["u union " + symbol_name] = GET_INDEX_NODE(GetPointer<union_type>(tn)->unql);
-               global_type_unql_symbol_table[GET_INDEX_NODE(GetPointer<union_type>(tn)->unql)] =
-                   "u union " + symbol_name;
+               global_type_symbol_table["u union " + symbol_name] = GetPointer<union_type>(tn)->unql->index;
+               global_type_unql_symbol_table[GetPointer<union_type>(tn)->unql->index] = "u union " + symbol_name;
             }
          }
       }
@@ -1505,33 +1498,30 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
                auto gst_it = global_type_symbol_table.find("u struct " + symbol_name);
                if(gst_it != global_type_symbol_table.end())
                {
-                  remap[GET_INDEX_NODE(GetPointer<record_type>(tn)->unql)] = gst_it->second;
-                  global_type_unql_symbol_table[GET_INDEX_NODE(GetPointer<record_type>(tn)->unql)] =
-                      "u struct " + symbol_name;
+                  remap[GetPointer<record_type>(tn)->unql->index] = gst_it->second;
+                  global_type_unql_symbol_table[GetPointer<record_type>(tn)->unql->index] = "u struct " + symbol_name;
                   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                                 STR(GET_INDEX_NODE(GetPointer<record_type>(tn)->unql)) + "-nutype>" + symbol_name);
+                                 STR(GetPointer<record_type>(tn)->unql->index) + "-nutype>" + symbol_name);
                   // std::cout << "remap unql: " + gst_it->first << " " << gst_it->second << std::endl;
                }
                else
                {
                   unsigned int new_tree_index;
-                  if(remap.find(GET_INDEX_NODE(GetPointer<record_type>(tn)->unql)) == remap.end())
+                  if(remap.find(GetPointer<record_type>(tn)->unql->index) == remap.end())
                   {
-                     new_tree_index = new_tree_node_id(GET_INDEX_NODE(GetPointer<record_type>(tn)->unql));
-                     not_yet_remapped.insert(GET_INDEX_NODE(GetPointer<record_type>(tn)->unql));
-                     remap[GET_INDEX_NODE(GetPointer<record_type>(tn)->unql)] = new_tree_index;
-                     to_be_visited.insert(GET_INDEX_NODE(GetPointer<record_type>(tn)->unql));
+                     new_tree_index = new_tree_node_id(GetPointer<record_type>(tn)->unql->index);
+                     not_yet_remapped.insert(GetPointer<record_type>(tn)->unql->index);
+                     remap[GetPointer<record_type>(tn)->unql->index] = new_tree_index;
+                     to_be_visited.insert(GetPointer<record_type>(tn)->unql->index);
                   }
                   else
                   {
-                     new_tree_index = remap[GET_INDEX_NODE(GetPointer<record_type>(tn)->unql)];
+                     new_tree_index = remap[GetPointer<record_type>(tn)->unql->index];
                   }
                   global_type_symbol_table["u struct " + symbol_name] = new_tree_index;
-                  global_type_unql_symbol_table[GET_INDEX_NODE(GetPointer<record_type>(tn)->unql)] =
-                      "u struct " + symbol_name;
+                  global_type_unql_symbol_table[GetPointer<record_type>(tn)->unql->index] = "u struct " + symbol_name;
                   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                                 "other " + STR(GET_INDEX_NODE(GetPointer<record_type>(tn)->unql)) + "-nutype>" +
-                                     symbol_name);
+                                 "other " + STR(GetPointer<record_type>(tn)->unql->index) + "-nutype>" + symbol_name);
                }
             }
             else if(tn->get_kind() == union_type_K and GetPointer<union_type>(tn)->unql and
@@ -1540,33 +1530,30 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
                auto gst_it = global_type_symbol_table.find("u union " + symbol_name);
                if(gst_it != global_type_symbol_table.end())
                {
-                  remap[GET_INDEX_NODE(GetPointer<union_type>(tn)->unql)] = gst_it->second;
-                  global_type_unql_symbol_table[GET_INDEX_NODE(GetPointer<union_type>(tn)->unql)] =
-                      "u union " + symbol_name;
+                  remap[GetPointer<union_type>(tn)->unql->index] = gst_it->second;
+                  global_type_unql_symbol_table[GetPointer<union_type>(tn)->unql->index] = "u union " + symbol_name;
                   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                                 STR(GET_INDEX_NODE(GetPointer<union_type>(tn)->unql)) + "-nutype>" + symbol_name);
+                                 STR(GetPointer<union_type>(tn)->unql->index) + "-nutype>" + symbol_name);
                   // std::cout << "remap unql: " + gst_it->first << std::endl;
                }
                else
                {
                   unsigned int new_tree_index;
-                  if(remap.find(GET_INDEX_NODE(GetPointer<union_type>(tn)->unql)) == remap.end())
+                  if(remap.find(GetPointer<union_type>(tn)->unql->index) == remap.end())
                   {
-                     new_tree_index = new_tree_node_id(GET_INDEX_NODE(GetPointer<union_type>(tn)->unql));
-                     remap[GET_INDEX_NODE(GetPointer<union_type>(tn)->unql)] = new_tree_index;
-                     not_yet_remapped.insert(GET_INDEX_NODE(GetPointer<union_type>(tn)->unql));
-                     to_be_visited.insert(GET_INDEX_NODE(GetPointer<union_type>(tn)->unql));
+                     new_tree_index = new_tree_node_id(GetPointer<union_type>(tn)->unql->index);
+                     remap[GetPointer<union_type>(tn)->unql->index] = new_tree_index;
+                     not_yet_remapped.insert(GetPointer<union_type>(tn)->unql->index);
+                     to_be_visited.insert(GetPointer<union_type>(tn)->unql->index);
                   }
                   else
                   {
-                     new_tree_index = remap[GET_INDEX_NODE(GetPointer<union_type>(tn)->unql)];
+                     new_tree_index = remap[GetPointer<union_type>(tn)->unql->index];
                   }
                   global_type_symbol_table["u union " + symbol_name] = new_tree_index;
-                  global_type_unql_symbol_table[GET_INDEX_NODE(GetPointer<union_type>(tn)->unql)] =
-                      "u union " + symbol_name;
+                  global_type_unql_symbol_table[GetPointer<union_type>(tn)->unql->index] = "u union " + symbol_name;
                   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                                 "other " + STR(GET_INDEX_NODE(GetPointer<union_type>(tn)->unql)) + "-nutype>" +
-                                     symbol_name);
+                                 "other " + STR(GetPointer<union_type>(tn)->unql->index) + "-nutype>" + symbol_name);
                }
             }
             auto gst_it = global_type_symbol_table.find(symbol_name);
@@ -1910,7 +1897,7 @@ bool tree_manager::check_for_decl(const tree_nodeRef& tn, const tree_managerRef&
    const function_decl* fd = GetPointer<function_decl>(tn);
    if(!fd and dn->scpe and GetPointer<type_node>(dn->scpe) and
       (!GetPointer<type_node>(dn->scpe)->name and
-       global_type_unql_symbol_table.find(GET_INDEX_NODE(dn->scpe)) == global_type_unql_symbol_table.end()))
+       global_type_unql_symbol_table.find(dn->scpe->index) == global_type_unql_symbol_table.end()))
    {
       return true;
    }
@@ -1978,7 +1965,7 @@ bool tree_manager::check_for_decl(const tree_nodeRef& tn, const tree_managerRef&
       }
       else
       {
-         type_name = tree_helper::get_type_name(TM_this, GET_INDEX_NODE(type->name));
+         type_name = tree_helper::get_type_name(TM_this, type->name->index);
       }
       if(type->name and (type->name->get_kind() == type_decl_K))
       {
@@ -2001,15 +1988,15 @@ bool tree_manager::check_for_decl(const tree_nodeRef& tn, const tree_managerRef&
       }
    }
    else if(dn->scpe and GetPointer<type_node>(dn->scpe) and !GetPointer<type_node>(dn->scpe)->name and
-           global_type_unql_symbol_table.find(GET_INDEX_NODE(dn->scpe)) != global_type_unql_symbol_table.end())
+           global_type_unql_symbol_table.find(dn->scpe->index) != global_type_unql_symbol_table.end())
    {
-      symbol_scope = global_type_unql_symbol_table.find(GET_INDEX_NODE(dn->scpe))->second;
+      symbol_scope = global_type_unql_symbol_table.find(dn->scpe->index)->second;
    }
    else if(fd)
    {
       if(fd->scpe && fd->static_flag)
       {
-         symbol_scope = "#F:" + STR(GET_INDEX_NODE(fd->scpe));
+         symbol_scope = "#F:" + STR(fd->scpe->index);
       }
       else
       {
@@ -2048,7 +2035,7 @@ bool tree_manager::check_for_type(const tree_nodeRef& tn, const tree_managerRef&
    }
    else
    {
-      type_name = tree_helper::get_type_name(TM, GET_INDEX_NODE(type->name));
+      type_name = tree_helper::get_type_name(TM, type->name->index);
    }
    if(type->name and (type->name->get_kind() == type_decl_K || type->unql))
    {
@@ -2320,7 +2307,7 @@ bool tree_manager::check_ssa_uses(unsigned int fun_id) const
                   {
                      return false;
                   }
-                  if(GET_INDEX_CONST_NODE(use.first) == GET_INDEX_CONST_NODE(statement_node))
+                  if(use.first->index == statement_node->index)
                   {
                      found = true;
                   }
@@ -2330,7 +2317,7 @@ bool tree_manager::check_ssa_uses(unsigned int fun_id) const
                   std::cerr << "stmt: " << orig_string << " var: " << sn->ToString() << std::endl;
                   for(auto& stmt : sn->CGetUseStmts())
                   {
-                     std::cerr << "stmt referred: " << GET_INDEX_CONST_NODE(stmt.first) << std::endl;
+                     std::cerr << "stmt referred: " << stmt.first->index << std::endl;
                   }
                   return false;
                }

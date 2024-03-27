@@ -150,11 +150,11 @@ DesignFlowStep_Status parm2ssa::InternalExec()
    // TODO: should not be requested, but removing this causes issues with BitValue Inference steps
    for(const auto& arg : fd->list_of_args)
    {
-      if(!AppM->getSSAFromParm(function_id, GET_INDEX_CONST_NODE(arg)))
+      if(!AppM->getSSAFromParm(function_id, arg->index))
       {
          const auto pd = GetPointer<const parm_decl>(arg);
          const auto ssa_par = IRman->create_ssa_name(arg, pd->type, tree_nodeRef(), tree_nodeRef());
-         AppM->setSSAFromParm(function_id, GET_INDEX_CONST_NODE(arg), GET_INDEX_CONST_NODE(ssa_par));
+         AppM->setSSAFromParm(function_id, arg->index, ssa_par->index);
       }
    }
 
@@ -175,7 +175,7 @@ void parm2ssa::recursive_analysis(const tree_nodeRef& tn, const std::string& src
    const auto TM = AppM->get_tree_manager();
    const auto curr_tn = tn;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Analyzing recursively " + curr_tn->get_kind_text() + " " + STR(GET_INDEX_NODE(tn)) + ": " +
+                  "-->Analyzing recursively " + curr_tn->get_kind_text() + " " + STR(tn->index) + ": " +
                       curr_tn->ToString());
    switch(curr_tn->get_kind())
    {
@@ -233,9 +233,8 @@ void parm2ssa::recursive_analysis(const tree_nodeRef& tn, const std::string& src
             if(sn->var->get_kind() == parm_decl_K && defStmt->get_kind() == gimple_nop_K)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---Setting " + STR(GET_INDEX_NODE(sn->var)) + "-> " + STR(GET_INDEX_NODE(tn)) + " " +
-                                  STR(GET_INDEX_NODE(tn)));
-               AppM->setSSAFromParm(function_id, GET_INDEX_NODE(sn->var), GET_INDEX_NODE(tn));
+                              "---Setting " + STR(sn->var->index) + "-> " + STR(tn->index) + " " + STR(tn->index));
+               AppM->setSSAFromParm(function_id, sn->var->index, tn->index);
             }
             recursive_analysis(sn->var, srcp, already_visited_ae);
          }
@@ -255,11 +254,11 @@ void parm2ssa::recursive_analysis(const tree_nodeRef& tn, const std::string& src
       {
          if(curr_tn->get_kind() == addr_expr_K)
          {
-            if(already_visited_ae.find(GET_INDEX_NODE(tn)) != already_visited_ae.end())
+            if(already_visited_ae.find(tn->index) != already_visited_ae.end())
             {
                break;
             }
-            already_visited_ae.insert(GET_INDEX_NODE(tn));
+            already_visited_ae.insert(tn->index);
          }
          const auto ue = GetPointerS<unary_expr>(curr_tn);
          recursive_analysis(ue->op, srcp, already_visited_ae);
@@ -487,7 +486,6 @@ void parm2ssa::recursive_analysis(const tree_nodeRef& tn, const std::string& src
       default:
          THROW_UNREACHABLE("");
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "<--Analyzed recursively " + STR(GET_INDEX_NODE(tn)) + ": " + STR(tn));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed recursively " + STR(tn->index) + ": " + STR(tn));
    return;
 }

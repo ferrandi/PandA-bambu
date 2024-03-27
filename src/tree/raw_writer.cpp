@@ -107,7 +107,7 @@ void raw_writer::write_when_not_null(const std::string& str, const tree_nodeRef&
 {
    if(t)
    {
-      os << " " << str << ": @" << GET_INDEX_NODE(t);
+      os << " " << str << ": @" << t->index;
    }
 }
 

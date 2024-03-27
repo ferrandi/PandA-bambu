@@ -65,5 +65,5 @@ void tree_reindex::visit(tree_node_visitor* const v) const
 
 bool lt_tree_reindex::operator()(const tree_nodeRef& x, const tree_nodeRef& y) const
 {
-   return GET_INDEX_NODE(x) < GET_INDEX_NODE(y);
+   return x->index < y->index;
 }

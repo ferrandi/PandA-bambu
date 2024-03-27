@@ -126,7 +126,7 @@ DesignFlowStep_Status PredicateStatements::InternalExec()
    const auto true_value = TM->CreateUniqueIntegerCst(1, boolean_type);
 
    bool bb_modified = false;
-   const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function_id));
+   const auto fd = GetPointer<const function_decl>(TM->GetTreeNode(function_id));
    const auto sl = GetPointer<const statement_list>(fd->body);
    for(const auto& block : sl->list_of_bloc)
    {

@@ -122,7 +122,7 @@ DesignFlowStep_Status parm_decl_taken_address_fix::InternalExec()
                auto* ae = GetPointer<addr_expr>(ga->op1);
                if(ae->op->get_kind() == parm_decl_K)
                {
-                  parm_decl_addr.insert(GET_INDEX_NODE(ae->op));
+                  parm_decl_addr.insert(ae->op->index);
                }
             }
          }
@@ -130,7 +130,7 @@ DesignFlowStep_Status parm_decl_taken_address_fix::InternalExec()
    }
    for(auto par_index : parm_decl_addr)
    {
-      auto par = TM->CGetTreeNode(par_index);
+      auto par = TM->GetTreeNode(par_index);
       const auto* pd = GetPointer<const parm_decl>(par);
       THROW_ASSERT(pd, "unexpected condition");
       const auto& p_type = pd->type;
@@ -166,7 +166,7 @@ DesignFlowStep_Status parm_decl_taken_address_fix::InternalExec()
       const auto first_block = sl->list_of_bloc.at(bb_index);
       for(auto par_index : parm_decl_addr)
       {
-         auto par = TM->CGetTreeNode(par_index);
+         auto par = TM->GetTreeNode(par_index);
          auto vd = parm_decl_var_decl_rel.at(par_index);
          const auto* pd = GetPointer<const parm_decl>(par);
          THROW_ASSERT(pd, "unexpected condition");

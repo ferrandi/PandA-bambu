@@ -97,7 +97,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
    const tree_managerRef TM = AppM->get_tree_manager();
 
    const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
-   tree_nodeRef temp = TM->CGetTreeNode(function_id);
+   tree_nodeRef temp = TM->GetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(temp);
    auto* sl = GetPointer<statement_list>(fd->body);
    auto& list_of_block = sl->list_of_bloc;
@@ -338,15 +338,15 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                auto* ld = GetPointer<label_decl>(le->op);
                unsigned int new_label_decl_id = TM->new_tree_node_id();
                std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
-               IR_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(ld->type));
-               IR_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(ld->scpe));
+               IR_schema[TOK(TOK_TYPE)] = STR(ld->type->index);
+               IR_schema[TOK(TOK_SCPE)] = STR(ld->scpe->index);
                IR_schema[TOK(TOK_SRCP)] = ld->include_name + ":" + STR(ld->line_number) + ":" + STR(ld->column_number);
                IR_schema[TOK(TOK_ARTIFICIAL)] = STR(ld->artificial_flag);
                const auto new_label_decl = TM->create_tree_node(new_label_decl_id, label_decl_K, IR_schema);
                unsigned int new_label_expr_id = TM->new_tree_node_id();
                IR_schema.clear();
-               IR_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(ld->scpe));
-               IR_schema[TOK(TOK_OP)] = STR(GET_INDEX_CONST_NODE(new_label_decl));
+               IR_schema[TOK(TOK_SCPE)] = STR(ld->scpe->index);
+               IR_schema[TOK(TOK_OP)] = STR(new_label_decl->index);
                IR_schema[TOK(TOK_SRCP)] = le->include_name + ":" + STR(le->line_number) + ":" + STR(ld->column_number);
                const auto new_label = TM->create_tree_node(new_label_expr_id, gimple_label_K, IR_schema);
                auto* te = GetPointer<tree_vec>(gs->op1);
@@ -354,7 +354,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                for(auto& ind : list_of_op)
                {
                   auto* cl = GetPointer<case_label_expr>(ind);
-                  if(GET_INDEX_NODE(cl->got) == GET_INDEX_NODE(le->op))
+                  if(cl->got->index == le->op->index)
                   {
                      cl->got = new_label_decl;
                   }
@@ -412,7 +412,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                const auto gl = GetPointer<const gimple_label>(label);
                THROW_ASSERT(gl, STR(label));
                tree_nodeRef cond = nullptr;
-               for(const auto& case_label : case_labels.at(GET_INDEX_CONST_NODE(gl->op)))
+               for(const auto& case_label : case_labels.at(gl->op->index))
                {
                   const auto cle = GetPointer<const case_label_expr>(case_label);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering case " + cle->ToString());

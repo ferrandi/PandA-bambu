@@ -189,7 +189,7 @@ DesignFlowStep_Status CSE::InternalExec()
    /// define a map relating variables and columns
    std::map<vertex, CustomUnorderedMapStable<CSE_tuple_key_type, tree_nodeRef>> unique_table;
 
-   const auto temp = TM->CGetTreeNode(function_id);
+   const auto temp = TM->GetTreeNode(function_id);
    const auto fd = GetPointerS<const function_decl>(temp);
    const auto sl = GetPointerS<const statement_list>(fd->body);
 
@@ -385,7 +385,7 @@ DesignFlowStep_Status CSE::InternalExec()
       {
          for(const auto& stmt : B->CGetStmtList())
          {
-            schedule->UpdateTime(GET_INDEX_CONST_NODE(stmt));
+            schedule->UpdateTime(stmt->index);
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered BB" + STR(B->number));
@@ -423,7 +423,7 @@ bool CSE::has_memory_access(const gimple_assign* ga) const
          skip_check = true;
       }
       if(code1 == var_decl_K &&
-         fun_mem_data.find(GET_INDEX_CONST_NODE(GetPointerS<const unary_expr>(ga->op1)->op)) != fun_mem_data.end())
+         fun_mem_data.find(GetPointerS<const unary_expr>(ga->op1)->op->index) != fun_mem_data.end())
       {
          skip_check = true;
       }
@@ -455,8 +455,8 @@ bool CSE::has_memory_access(const gimple_assign* ga) const
    {
       skip_check = true;
    }
-   if(fun_mem_data.find(GET_INDEX_CONST_NODE(ga->op0)) != fun_mem_data.end() ||
-      fun_mem_data.find(GET_INDEX_CONST_NODE(ga->op1)) != fun_mem_data.end())
+   if(fun_mem_data.find(ga->op0->index) != fun_mem_data.end() ||
+      fun_mem_data.find(ga->op1->index) != fun_mem_data.end())
    {
       skip_check = true;
    }
@@ -559,29 +559,29 @@ CSE::hash_check(const tree_nodeRef& tn, vertex bb_vertex, const statement_list* 
               rhs_kind == float_expr_K || rhs_kind == fix_trunc_expr_K)
       {
          const auto ue = GetPointerS<const unary_expr>(rhs);
-         ins.push_back(GET_INDEX_CONST_NODE(ue->op));
+         ins.push_back(ue->op->index);
          const auto type_index = tree_helper::CGetType(ga->op0)->index;
          ins.push_back(type_index);
       }
       else if(GetPointer<const unary_expr>(rhs))
       {
          const auto ue = GetPointerS<const unary_expr>(rhs);
-         ins.push_back(GET_INDEX_CONST_NODE(ue->op));
+         ins.push_back(ue->op->index);
       }
       else if(GetPointer<const binary_expr>(rhs))
       {
          const auto be = GetPointerS<const binary_expr>(rhs);
-         ins.push_back(GET_INDEX_CONST_NODE(be->op0));
-         ins.push_back(GET_INDEX_CONST_NODE(be->op1));
+         ins.push_back(be->op0->index);
+         ins.push_back(be->op1->index);
       }
       else if(GetPointer<const ternary_expr>(rhs))
       {
          const auto te = GetPointerS<const ternary_expr>(rhs);
-         ins.push_back(GET_INDEX_CONST_NODE(te->op0));
-         ins.push_back(GET_INDEX_CONST_NODE(te->op1));
+         ins.push_back(te->op0->index);
+         ins.push_back(te->op1->index);
          if(te->op2)
          {
-            ins.push_back(GET_INDEX_CONST_NODE(te->op2));
+            ins.push_back(te->op2->index);
          }
       }
       else if(GetPointer<const call_expr>(rhs))
@@ -591,7 +591,7 @@ CSE::hash_check(const tree_nodeRef& tn, vertex bb_vertex, const statement_list* 
          {
             const auto addr_node = ce->fn;
             const auto ae = GetPointerS<const addr_expr>(addr_node);
-            ins.push_back(GET_INDEX_CONST_NODE(ae->op));
+            ins.push_back(ae->op->index);
             const auto fd = GetPointerS<const function_decl>(ae->op);
             // TODO: may be optimized
             if(fd->undefined_flag || fd->writing_memory || fd->reading_memory || ga->vuses.size())
@@ -601,7 +601,7 @@ CSE::hash_check(const tree_nodeRef& tn, vertex bb_vertex, const statement_list* 
             }
             for(const auto& arg : ce->args)
             {
-               ins.push_back(GET_INDEX_CONST_NODE(arg));
+               ins.push_back(arg->index);
             }
          }
          else
@@ -613,35 +613,35 @@ CSE::hash_check(const tree_nodeRef& tn, vertex bb_vertex, const statement_list* 
       else if(GetPointer<const lut_expr>(rhs))
       {
          const auto le = GetPointerS<const lut_expr>(rhs);
-         ins.push_back(GET_INDEX_CONST_NODE(le->op0));
-         ins.push_back(GET_INDEX_CONST_NODE(le->op1));
+         ins.push_back(le->op0->index);
+         ins.push_back(le->op1->index);
          if(le->op2)
          {
-            ins.push_back(GET_INDEX_CONST_NODE(le->op2));
+            ins.push_back(le->op2->index);
          }
          if(le->op3)
          {
-            ins.push_back(GET_INDEX_CONST_NODE(le->op3));
+            ins.push_back(le->op3->index);
          }
          if(le->op4)
          {
-            ins.push_back(GET_INDEX_CONST_NODE(le->op4));
+            ins.push_back(le->op4->index);
          }
          if(le->op5)
          {
-            ins.push_back(GET_INDEX_CONST_NODE(le->op5));
+            ins.push_back(le->op5->index);
          }
          if(le->op6)
          {
-            ins.push_back(GET_INDEX_CONST_NODE(le->op6));
+            ins.push_back(le->op6->index);
          }
          if(le->op7)
          {
-            ins.push_back(GET_INDEX_CONST_NODE(le->op7));
+            ins.push_back(le->op7->index);
          }
          if(le->op8)
          {
-            ins.push_back(GET_INDEX_CONST_NODE(le->op8));
+            ins.push_back(le->op8->index);
          }
       }
       else

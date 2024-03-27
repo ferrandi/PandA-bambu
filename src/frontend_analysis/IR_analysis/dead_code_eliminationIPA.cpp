@@ -166,7 +166,7 @@ DesignFlowStep_Status dead_code_eliminationIPA::Exec()
       const auto top_functions = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
       std::transform(top_functions.begin(), top_functions.end(),
                      std::inserter(interface_functions, interface_functions.end()),
-                     [&](const auto& fname) { return GET_INDEX_CONST_NODE(TM->GetFunction(fname)); });
+                     [&](const auto& fname) { return TM->GetFunction(fname)->index; });
       const auto addr_funcs = CGM->GetAddressedFunctions();
       interface_functions.insert(addr_funcs.begin(), addr_funcs.end());
    }
@@ -212,8 +212,8 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
       auto idx = static_cast<unsigned int>(parms.size() - 1);
       for(auto it = parms.rbegin(); it != parms.rend(); ++it, --idx)
       {
-         const auto ssa = AppM->getSSAFromParm(function_id, GET_INDEX_CONST_NODE(*it));
-         if(GetPointer<const ssa_name>(TM->CGetTreeNode(ssa))->CGetUseStmts().empty())
+         const auto ssa = AppM->getSSAFromParm(function_id, (*it)->index);
+         if(GetPointer<const ssa_name>(TM->GetTreeNode(ssa))->CGetUseStmts().empty())
          {
             unused_parm_indices.push_back(idx);
          }
@@ -283,7 +283,7 @@ bool dead_code_eliminationIPA::signature_opt(const tree_managerRef& TM, function
          INDENT_DBG_MEX(
              DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
              "Analysing call points from " +
-                 tree_helper::GetMangledFunctionName(GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
+                 tree_helper::GetMangledFunctionName(GetPointerS<const function_decl>(TM->GetTreeNode(caller_id))));
          for(const auto& call_id : fei->direct_call_points)
          {
             const auto call_stmt = TM->GetTreeNode(call_id);

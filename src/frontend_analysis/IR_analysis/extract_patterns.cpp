@@ -155,7 +155,7 @@ DesignFlowStep_Status extract_patterns::InternalExec()
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, " --------- EXTRACT_PATTERNS ---------- ");
    const auto TM = AppM->get_tree_manager();
-   const auto tn = TM->CGetTreeNode(function_id);
+   const auto tn = TM->GetTreeNode(function_id);
    // tree_nodeRef Scpe = TM->GetTreeNode(function_id);
    const auto fd = GetPointer<const function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
@@ -214,7 +214,7 @@ DesignFlowStep_Status extract_patterns::InternalExec()
                            const auto srcp_default = ga_dest->include_name + ":" + STR(ga_dest->line_number) + ":" +
                                                      STR(ga_dest->column_number);
                            const auto binop_dest = GetPointerS<const binary_expr>(ga_dest->op1);
-                           if(GET_INDEX_CONST_NODE(ga->op0) == GET_INDEX_CONST_NODE(binop_dest->op0))
+                           if(ga->op0->index == binop_dest->op0->index)
                            {
                               const auto ternary_op = IRman->create_ternary_operation(
                                   binop_dest->type, binop0->op0, binop0->op1, binop_dest->op1, srcp_default,

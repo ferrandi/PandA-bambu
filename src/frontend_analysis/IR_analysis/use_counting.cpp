@@ -99,7 +99,7 @@ use_counting::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTyp
 DesignFlowStep_Status use_counting::InternalExec()
 {
    const auto TM = AppM->get_tree_manager();
-   const auto fd = GetPointerS<const function_decl>(TM->CGetTreeNode(function_id));
+   const auto fd = GetPointerS<const function_decl>(TM->GetTreeNode(function_id));
    const auto sl = GetPointerS<const statement_list>(fd->body);
    const auto th_debug = tree_helper::debug_level;
    tree_helper::debug_level = debug_level;

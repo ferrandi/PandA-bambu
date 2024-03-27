@@ -300,10 +300,10 @@ const CustomOrderedSet<unsigned int>& AllocationInformation::can_implement_set(c
       {
          return exit_string_cst;
       }
-      return GetPointer<const gimple_node>(TreeM->CGetTreeNode(v))->operation;
+      return GetPointer<const gimple_node>(TreeM->GetTreeNode(v))->operation;
    }();
    const auto vtf_it = node_id_to_fus.find(std::pair<unsigned int, std::string>(v, node_operation));
-   THROW_ASSERT(vtf_it != node_id_to_fus.end(), "unmapped operation " + TreeM->CGetTreeNode(v)->ToString());
+   THROW_ASSERT(vtf_it != node_id_to_fus.end(), "unmapped operation " + TreeM->GetTreeNode(v)->ToString());
    return vtf_it->second;
 }
 
@@ -317,7 +317,7 @@ bool AllocationInformation::CanImplementSetNotEmpty(const unsigned int v) const
    {
       return true;
    }
-   const auto node_operation = GetPointer<const gimple_node>(TreeM->CGetTreeNode(v))->operation;
+   const auto node_operation = GetPointer<const gimple_node>(TreeM->GetTreeNode(v))->operation;
    return node_id_to_fus.find(std::pair<unsigned int, std::string>(v, node_operation)) != node_id_to_fus.end();
 }
 
@@ -340,7 +340,7 @@ double AllocationInformation::get_execution_time(const unsigned int fu_name, uns
       return 0.0;
    }
    const auto operation_name =
-       tree_helper::NormalizeTypename(GetPointer<const gimple_node>(TreeM->CGetTreeNode(v))->operation);
+       tree_helper::NormalizeTypename(GetPointer<const gimple_node>(TreeM->GetTreeNode(v))->operation);
    technology_nodeRef node_op = GetPointer<functional_unit>(list_of_FU[fu_name])->get_operation(operation_name);
    THROW_ASSERT(GetPointer<operation>(node_op)->time_m,
                 "Timing information not specified for unit " + id_to_fu_names.find(fu_name)->second.first);
@@ -431,7 +431,7 @@ double AllocationInformation::get_attribute_of_fu_per_op(const vertex v, const O
       {
          return "Exit";
       }
-      return GetPointer<const gimple_node>(TreeM->CGetTreeNode(node_id))->operation;
+      return GetPointer<const gimple_node>(TreeM->GetTreeNode(node_id))->operation;
    }();
    const CustomOrderedSet<unsigned int>& fu_set =
        node_id_to_fus.find(std::pair<unsigned int, std::string>(node_id, node_operation))->second;
@@ -602,7 +602,7 @@ unsigned int AllocationInformation::min_number_of_resources(const vertex v) cons
    {
       return INFINITE_UINT;
    }
-   const auto operation = GetPointer<const gimple_node>(TreeM->CGetTreeNode(node_id))->operation;
+   const auto operation = GetPointer<const gimple_node>(TreeM->GetTreeNode(node_id))->operation;
 
    const CustomOrderedSet<unsigned int>& fu_set =
        node_id_to_fus.find(std::pair<unsigned int, std::string>(node_id, operation))->second;
@@ -674,7 +674,7 @@ double AllocationInformation::GetStatementArea(const unsigned int statement_inde
       return get_area(GetFuType(statement_index));
    }
 
-   const auto stmt = TreeM->CGetTreeNode(statement_index);
+   const auto stmt = TreeM->GetTreeNode(statement_index);
    const auto stmt_kind = stmt->get_kind();
    if(stmt_kind == gimple_assign_K)
    {
@@ -775,7 +775,7 @@ ControlStep AllocationInformation::get_initiation_time(const unsigned int fu_nam
    {
       return ControlStep(0u);
    }
-   const auto operation_name = GetPointer<const gimple_node>(TreeM->CGetTreeNode(statement_index))->operation;
+   const auto operation_name = GetPointer<const gimple_node>(TreeM->GetTreeNode(statement_index))->operation;
    THROW_ASSERT(can_implement_set(statement_index).find(fu_name) != can_implement_set(statement_index).end(),
                 "This function (" + get_string_name(fu_name) + ") cannot implement the operation " + operation_name);
    if(!has_to_be_synthetized(fu_name))
@@ -803,7 +803,7 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index, unsig
 {
    const technology_nodeRef node = get_fu(fu_type);
    std::string op_string =
-       tree_helper::NormalizeTypename(GetPointer<const gimple_node>(TreeM->CGetTreeNode(index))->operation);
+       tree_helper::NormalizeTypename(GetPointer<const gimple_node>(TreeM->GetTreeNode(index))->operation);
    const functional_unit* fu = GetPointer<functional_unit>(node);
    const technology_nodeRef op_node = fu->get_operation(op_string);
    THROW_ASSERT(op_node, get_fu_name(fu_type).first + " cannot execute " + op_string);
@@ -826,7 +826,7 @@ bool AllocationInformation::is_operation_PI_registered(const unsigned int index,
 {
    const technology_nodeRef node = get_fu(fu_type);
    std::string op_string =
-       tree_helper::NormalizeTypename(GetPointer<const gimple_node>(TreeM->CGetTreeNode(index))->operation);
+       tree_helper::NormalizeTypename(GetPointer<const gimple_node>(TreeM->GetTreeNode(index))->operation);
    const functional_unit* fu = GetPointer<functional_unit>(node);
    const technology_nodeRef op_node = fu->get_operation(op_string);
    THROW_ASSERT(GetPointer<operation>(op_node), "Op node is not an operation");
@@ -848,7 +848,7 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index) const
    {
       return is_operation_bounded(index, GetFuType(index));
    }
-   auto tn = TreeM->CGetTreeNode(index);
+   auto tn = TreeM->GetTreeNode(index);
    const auto ga = GetPointer<const gimple_assign>(tn);
 
    /// currently all the operations introduced after the allocation has been performed are bounded
@@ -961,7 +961,7 @@ bool AllocationInformation::is_vertex_bounded_with(const unsigned int v, unsigne
       /// If this codition is true, the operation changed type from last time it was performed allocation; we do not
       /// invalidate binding since this function is const
       if(v != ENTRY_ID && v != EXIT_ID &&
-         GetPointer<const gimple_node>(TreeM->CGetTreeNode(v))->operation != binding.find(v)->second.first)
+         GetPointer<const gimple_node>(TreeM->GetTreeNode(v))->operation != binding.find(v)->second.first)
       {
          return false;
       }
@@ -1046,7 +1046,7 @@ double AllocationInformation::get_stage_period(const unsigned int fu_name, const
    {
       return 0.0;
    }
-   const std::string operation_t = GetPointer<const gimple_node>(TreeM->CGetTreeNode(v))->operation;
+   const std::string operation_t = GetPointer<const gimple_node>(TreeM->GetTreeNode(v))->operation;
    THROW_ASSERT(can_implement_set(v).find(fu_name) != can_implement_set(v).end(),
                 "This function (" + get_string_name(fu_name) + ") cannot implement the operation " +
                     tree_helper::NormalizeTypename(operation_t));
@@ -1151,7 +1151,7 @@ unsigned int AllocationInformation::get_cycles(const unsigned int fu_name, const
    {
       return 0;
    }
-   const std::string operation_t = GetPointer<const gimple_node>(TreeM->CGetTreeNode(v))->operation;
+   const std::string operation_t = GetPointer<const gimple_node>(TreeM->GetTreeNode(v))->operation;
    THROW_ASSERT(can_implement_set(v).find(fu_name) != can_implement_set(v).end(),
                 "This function (" + get_string_name(fu_name) + ") cannot implement the operation " +
                     tree_helper::NormalizeTypename(operation_t));
@@ -1275,7 +1275,7 @@ unsigned int AllocationInformation::max_number_of_resources(const vertex v) cons
    {
       return INFINITE_UINT;
    }
-   const auto operation = GetPointer<const gimple_node>(TreeM->CGetTreeNode(node_id))->operation;
+   const auto operation = GetPointer<const gimple_node>(TreeM->GetTreeNode(node_id))->operation;
 
    const CustomOrderedSet<unsigned int>& fu_set =
        node_id_to_fus.find(std::pair<unsigned int, std::string>(node_id, operation))->second;
@@ -1343,9 +1343,9 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       {
          first_valid_id = id;
       }
-      if(current_op == "cond_expr" && id && !tree_helper::IsConstant(TreeM->CGetTreeNode(id)))
+      if(current_op == "cond_expr" && id && !tree_helper::IsConstant(TreeM->GetTreeNode(id)))
       {
-         if(tree_helper::Size(TreeM->CGetTreeNode(id)) == 1)
+         if(tree_helper::Size(TreeM->GetTreeNode(id)) == 1)
          {
             is_cond_expr_bool_test = true;
          }
@@ -1358,7 +1358,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       { /// no constant characterization for cond expr
          is_second_constant = true;
       }
-      if(id == 0 || ((tree_helper::IsConstant(TreeM->CGetTreeNode(id)) ||
+      if(id == 0 || ((tree_helper::IsConstant(TreeM->GetTreeNode(id)) ||
                       tree_helper::is_concat_bit_ior_expr(TreeM, g->CGetOpNodeInfo(node)->GetNodeId())) &&
                      !is_constrained && !is_second_constant && vars_read.size() != 1 && current_op != "mult_expr" &&
                      current_op != "widen_mult_expr" && current_op != "insertelement_expr" &&
@@ -1372,7 +1372,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          constant_id = *itr;
          if(id)
          {
-            const auto var_node = TreeM->CGetTreeNode(id);
+            const auto var_node = TreeM->GetTreeNode(id);
             type = tree_helper::CGetType(var_node);
             if(tree_helper::IsVectorType(type))
             {
@@ -1392,7 +1392,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       }
       else
       {
-         const auto var_node = TreeM->CGetTreeNode(id);
+         const auto var_node = TreeM->GetTreeNode(id);
          type = tree_helper::CGetType(var_node);
          if(tree_helper::IsArrayType(type) || tree_helper::IsStructType(type) ||
             tree_helper::IsUnionType(type) /*|| tree_helper::IsComplexType(type)*/)
@@ -1444,7 +1444,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
    }
    else
    {
-      type = tree_helper::CGetType(TreeM->CGetTreeNode(first_valid_id));
+      type = tree_helper::CGetType(TreeM->GetTreeNode(first_valid_id));
       is_a_pointer = tree_helper::IsPointerType(type);
    }
    if(is_a_pointer || tree_helper::IsArrayType(type) || tree_helper::IsStructType(type) ||
@@ -1510,7 +1510,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
    if(current_op == "widen_mult_expr" || current_op == "mult_expr")
    {
       const auto nodeOutput_id = hls_manager->get_produced_value(function_index, node);
-      const auto out_node = TreeM->CGetTreeNode(nodeOutput_id);
+      const auto out_node = TreeM->GetTreeNode(nodeOutput_id);
       type = tree_helper::CGetType(out_node);
       if(tree_helper::IsVectorType(type))
       {
@@ -1593,7 +1593,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       auto nodeOutput_id = hls_manager->get_produced_value(function_index, node);
       if(nodeOutput_id)
       {
-         const auto out_node = TreeM->CGetTreeNode(nodeOutput_id);
+         const auto out_node = TreeM->GetTreeNode(nodeOutput_id);
          type = tree_helper::CGetType(out_node);
          if(tree_helper::IsArrayType(type) || tree_helper::IsStructType(type) ||
             tree_helper::IsUnionType(type) /*|| tree_helper::IsComplexType(type)*/)
@@ -1647,7 +1647,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
    {
       auto nodeOutput_id = hls_manager->get_produced_value(function_index, node);
       THROW_ASSERT(nodeOutput_id, "unexpected condition");
-      const auto out_node = TreeM->CGetTreeNode(nodeOutput_id);
+      const auto out_node = TreeM->GetTreeNode(nodeOutput_id);
       type = tree_helper::CGetType(out_node);
       auto out_prec = tree_helper::Size(out_node);
       if(tree_helper::IsVectorType(type))
@@ -1703,7 +1703,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
    {
       auto nodeOutput_id = hls_manager->get_produced_value(function_index, node);
       THROW_ASSERT(nodeOutput_id, "unexpected condition");
-      const auto out_node = TreeM->CGetTreeNode(nodeOutput_id);
+      const auto out_node = TreeM->GetTreeNode(nodeOutput_id);
       type = tree_helper::CGetType(out_node);
       info->output_prec = resize_1_8_pow2(tree_helper::Size(out_node));
       if(tree_helper::IsVectorType(type))
@@ -1890,7 +1890,7 @@ void AllocationInformation::print_allocated_resources() const
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                        "    Corresponding operation: " +
                            tree_helper::NormalizeTypename(
-                               GetPointer<const gimple_node>(TreeM->CGetTreeNode(bind.first))->operation) +
+                               GetPointer<const gimple_node>(TreeM->GetTreeNode(bind.first))->operation) +
                            "(" + STR(bind.second.second) + ")");
          auto* fu = dynamic_cast<functional_unit*>(GetPointer<functional_unit>(list_of_FU[bind.second.second]));
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "    Vertex bound to: " + fu->get_name());
@@ -1905,7 +1905,7 @@ void AllocationInformation::print_allocated_resources() const
          }
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                        "  Vertex " + STR(bind.first.first) + "(" +
-                           GetPointer<const gimple_node>(TreeM->CGetTreeNode(bind.first.first))->operation + ")");
+                           GetPointer<const gimple_node>(TreeM->GetTreeNode(bind.first.first))->operation + ")");
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "    Operation can be implemented by the following FUs:");
          for(const auto fu_id : bind.second)
          {
@@ -1938,7 +1938,7 @@ unsigned int AllocationInformation::GetCycleLatency(const unsigned int operation
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Get cycle latency of " + ((operationID != ENTRY_ID && operationID != EXIT_ID) ?
-                                                    STR(TreeM->CGetTreeNode(operationID)) :
+                                                    STR(TreeM->GetTreeNode(operationID)) :
                                                     "Entry/Exit"));
    if(CanImplementSetNotEmpty(operationID))
    {
@@ -1949,7 +1949,7 @@ unsigned int AllocationInformation::GetCycleLatency(const unsigned int operation
    }
 
    THROW_ASSERT(operationID != ENTRY_ID && operationID != EXIT_ID, "Entry or exit not allocated");
-   const auto tn = TreeM->CGetTreeNode(operationID);
+   const auto tn = TreeM->GetTreeNode(operationID);
    const auto ga = GetPointer<const gimple_assign>(tn);
    if(ga)
    {
@@ -2059,7 +2059,7 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Initial execution time " + STR(actual_execution_time));
       auto n_ins = [&]() -> unsigned {
          unsigned res = 0;
-         auto tn = TreeM->CGetTreeNode(time_operation_index);
+         auto tn = TreeM->GetTreeNode(time_operation_index);
          const auto ga = GetPointer<const gimple_assign>(tn);
          if(ga && ga->op1->get_kind() == lut_expr_K)
          {
@@ -2106,7 +2106,7 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
       double initial_execution_time =
           actual_execution_time -
           get_correction_time(
-              fu_type, GetPointer<const gimple_node>(TreeM->CGetTreeNode(time_operation_index))->operation, n_ins);
+              fu_type, GetPointer<const gimple_node>(TreeM->GetTreeNode(time_operation_index))->operation, n_ins);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "---Initial corrected execution time " + STR(initial_execution_time));
       double op_execution_time = initial_execution_time;
@@ -2129,7 +2129,7 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
          initial_stage_period =
              actual_stage_period -
              get_correction_time(
-                 fu_type, GetPointer<const gimple_node>(TreeM->CGetTreeNode(time_operation_index))->operation, n_ins);
+                 fu_type, GetPointer<const gimple_node>(TreeM->GetTreeNode(time_operation_index))->operation, n_ins);
       }
       double stage_period = initial_stage_period;
 
@@ -2153,7 +2153,7 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not yet available: building time model");
       THROW_ASSERT(time_operation_index != ENTRY_ID && time_operation_index != EXIT_ID, "Entry or exit not allocated");
-      const auto op_stmt = TreeM->CGetTreeNode(time_operation_index);
+      const auto op_stmt = TreeM->GetTreeNode(time_operation_index);
       const auto op_stmt_kind = op_stmt->get_kind();
       if(op_stmt_kind == gimple_assign_K)
       {
@@ -2281,7 +2281,7 @@ double AllocationInformation::GetPhiConnectionLatency(const unsigned int stateme
       {
          return 0;
       }
-      const auto tn = TreeM->CGetTreeNode(statement_index);
+      const auto tn = TreeM->GetTreeNode(statement_index);
       if(tn->get_kind() != gimple_assign_K)
       {
          return 0;
@@ -2323,7 +2323,7 @@ double AllocationInformation::GetPhiConnectionLatency(const unsigned int stateme
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Delay is 0.0");
       return 0.0;
    }
-   const auto statement = TreeM->CGetTreeNode(statement_index);
+   const auto statement = TreeM->GetTreeNode(statement_index);
    THROW_ASSERT(statement->get_kind() == gimple_assign_K, statement->ToString());
    const auto sn = GetPointerS<const gimple_assign>(statement)->op0;
    THROW_ASSERT(sn, "");
@@ -2336,7 +2336,7 @@ double AllocationInformation::GetPhiConnectionLatency(const unsigned int stateme
 
 double AllocationInformation::GetCondExprTimeLatency(const unsigned int operation_index) const
 {
-   const auto tn = TreeM->CGetTreeNode(operation_index);
+   const auto tn = TreeM->GetTreeNode(operation_index);
    const auto gp = GetPointer<const gimple_phi>(tn);
    THROW_ASSERT(gp, "Tree node is " + STR(tn));
    /// Computing time of cond_expr as time of cond_expr_FU - setup_time
@@ -2364,7 +2364,7 @@ unsigned int AllocationInformation::GetFuType(const unsigned int operation) cons
          {
             INDENT_OUT_MEX(0, 0, get_fu_name(fu).first);
          }
-         THROW_UNREACHABLE("Multiple fus not supported: " + STR(TreeM->CGetTreeNode(operation)));
+         THROW_UNREACHABLE("Multiple fus not supported: " + STR(TreeM->GetTreeNode(operation)));
       }
       else
       {
@@ -2569,7 +2569,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       }
       is_single_variable = single_var_lambda(var);
 
-      const auto type_node = tree_helper::CGetType(TreeM->CGetTreeNode(var));
+      const auto type_node = tree_helper::CGetType(TreeM->GetTreeNode(var));
       elmt_bitsize = tree_helper::AccessedMaximumBitsize(type_node, 1);
 #if ARRAY_CORRECTION
       if(tree_helper::IsArrayEquivType(type_node))
@@ -2610,7 +2610,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       unsigned var = get_memory_var(fu);
       is_single_variable = single_var_lambda(var);
 
-      const auto type_node = tree_helper::CGetType(TreeM->CGetTreeNode(var));
+      const auto type_node = tree_helper::CGetType(TreeM->GetTreeNode(var));
       elmt_bitsize = tree_helper::AccessedMaximumBitsize(type_node, 1);
 #if ARRAY_CORRECTION
       if(tree_helper::IsArrayEquivType(type_node))
@@ -2713,7 +2713,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
             }
          }
 
-         const auto type_node = tree_helper::CGetType(TreeM->CGetTreeNode(var));
+         const auto type_node = tree_helper::CGetType(TreeM->GetTreeNode(var));
          elmt_bitsize = tree_helper::AccessedMaximumBitsize(type_node, 1);
       }
       else
@@ -2735,7 +2735,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       res_value = res_value + cur_exec_delta;
 
 #if ARRAY_CORRECTION
-      const auto type_node = tree_helper::CGetType(TreeM->CGetTreeNode(var));
+      const auto type_node = tree_helper::CGetType(TreeM->GetTreeNode(var));
       if(tree_helper::IsArrayEquivType(type_node))
       {
          const auto dims = tree_helper::GetArrayDimensions(type_node);
@@ -3082,8 +3082,8 @@ CustomSet<unsigned int> AllocationInformation::ComputeRoots(const unsigned int s
          }
          already_analyzed_ssas.insert(current_tn_index);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Considering " + STR(TreeM->CGetTreeNode(current_tn_index)));
-         const auto current_sn = GetPointer<const ssa_name>(TreeM->CGetTreeNode(current_tn_index));
+                        "-->Considering " + STR(TreeM->GetTreeNode(current_tn_index)));
+         const auto current_sn = GetPointer<const ssa_name>(TreeM->GetTreeNode(current_tn_index));
          if(not current_sn)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ignored since not ssa");
@@ -3188,14 +3188,14 @@ CustomSet<unsigned int> AllocationInformation::ComputeDrivenCondExpr(const unsig
       cond_expr_bb_versions.find(ssa)->second == bb_version)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "---Computing cond_exprs starting from " + STR(TreeM->CGetTreeNode(ssa)) +
+                     "---Computing cond_exprs starting from " + STR(TreeM->GetTreeNode(ssa)) +
                          " - Using cached values");
       return ssa_cond_exprs.find(ssa)->second;
    }
    else
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Computing cond_exprs starting from " + STR(TreeM->CGetTreeNode(ssa)));
+                     "-->Computing cond_exprs starting from " + STR(TreeM->GetTreeNode(ssa)));
       CustomSet<unsigned int> cond_expr_ga_indices;
       CustomSet<unsigned int> ssa_to_be_analyzeds;
       CustomSet<unsigned int> already_analyzed_ssas;
@@ -3205,8 +3205,8 @@ CustomSet<unsigned int> AllocationInformation::ComputeDrivenCondExpr(const unsig
          const auto current_tn_index = *(ssa_to_be_analyzeds.begin());
          ssa_to_be_analyzeds.erase(ssa_to_be_analyzeds.begin());
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Considering " + STR(TreeM->CGetTreeNode(current_tn_index)));
-         const auto current_sn = GetPointer<const ssa_name>(TreeM->CGetTreeNode(current_tn_index));
+                        "-->Considering " + STR(TreeM->GetTreeNode(current_tn_index)));
+         const auto current_sn = GetPointer<const ssa_name>(TreeM->GetTreeNode(current_tn_index));
          if(!current_sn)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ignored since not ssa");
@@ -3293,12 +3293,12 @@ CustomSet<unsigned int> AllocationInformation::ComputeDrivenCondExpr(const unsig
             }
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "<--Considered " + STR(TreeM->CGetTreeNode(current_tn_index)));
+                        "<--Considered " + STR(TreeM->GetTreeNode(current_tn_index)));
       }
       cond_expr_bb_versions[ssa] = bb_version;
       ssa_cond_exprs[ssa] = cond_expr_ga_indices;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "<--Computed cond_exprs starting from " + STR(TreeM->CGetTreeNode(ssa)));
+                     "<--Computed cond_exprs starting from " + STR(TreeM->GetTreeNode(ssa)));
       return cond_expr_ga_indices;
    }
 }
@@ -3326,7 +3326,7 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Get end delay of " + STR(first_operation));
       double end_delay = 0.0;
-      const auto first_operation_tn = TreeM->CGetTreeNode(first_operation);
+      const auto first_operation_tn = TreeM->GetTreeNode(first_operation);
       if(GetPointer<const gimple_multi_way_if>(first_operation_tn) ||
          GetPointer<const gimple_switch>(first_operation_tn) || GetPointer<const gimple_cond>(first_operation_tn))
       {
@@ -3354,7 +3354,7 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "-->Computing overall connection time " + STR(first_operation) + "-->" + STR(second_operation) +
                          " Second operation has registered inputs");
-      const auto second_operation_tn = TreeM->CGetTreeNode(second_operation);
+      const auto second_operation_tn = TreeM->GetTreeNode(second_operation);
       const auto second_operation_name = GetPointer<const gimple_node>(second_operation_tn)->operation;
       const auto called_function = TreeM->GetFunction(second_operation_name);
       THROW_ASSERT(called_function, STR(second_operation_tn) + " has registered inputs but it is not a call");
@@ -3381,7 +3381,7 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
    }
    else
    {
-      const auto second_operation_tn = TreeM->CGetTreeNode(second_operation);
+      const auto second_operation_tn = TreeM->GetTreeNode(second_operation);
       tree_nodeRef cond_def;
 
       double connection_time = 0.0;
@@ -3391,7 +3391,7 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "-->Computing connection time due to fanout " + STR(first_operation) + "-->" +
                          STR(second_operation));
-      for(const auto& used_ssa : tree_helper::ComputeSsaUses(TreeM->CGetTreeNode(second_operation)))
+      for(const auto& used_ssa : tree_helper::ComputeSsaUses(TreeM->GetTreeNode(second_operation)))
       {
          const auto used_ssa_sn = GetPointer<const ssa_name>(used_ssa.first);
          if(used_ssa_sn && used_ssa_sn->CGetDefStmt()->index == first_operation)
@@ -3408,12 +3408,12 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
                size_t n_fo = 0;
                for(const auto cond_expr_ga_index : cond_expr_ga_indices)
                {
-                  const auto current_ga = GetPointer<const gimple_assign>(TreeM->CGetTreeNode(cond_expr_ga_index));
+                  const auto current_ga = GetPointer<const gimple_assign>(TreeM->GetTreeNode(cond_expr_ga_index));
                   const auto cond_def_sn = GetPointer<const ssa_name>(current_ga->op0);
                   const auto local_fo = tree_helper::Size(current_ga->op0) * cond_def_sn->CGetNumberUses();
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Incrementing fan out of " + STR(local_fo) + " because of " +
-                                     STR(TreeM->CGetTreeNode(cond_expr_ga_index)));
+                                     STR(TreeM->GetTreeNode(cond_expr_ga_index)));
                   n_fo += local_fo;
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -3479,7 +3479,7 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
       }
       if(first_operation != ENTRY_ID)
       {
-         const auto first_operation_tn = TreeM->CGetTreeNode(first_operation);
+         const auto first_operation_tn = TreeM->GetTreeNode(first_operation);
          const bool is_first_load = behavioral_helper->IsLoad(first_operation);
          if(is_first_load)
          {
@@ -3533,9 +3533,9 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
             }
          }
       }
-      if(first_operation != ENTRY_ID && TreeM->CGetTreeNode(first_operation)->get_kind() == gimple_assign_K)
+      if(first_operation != ENTRY_ID && TreeM->GetTreeNode(first_operation)->get_kind() == gimple_assign_K)
       {
-         const auto first_operation_tn = TreeM->CGetTreeNode(first_operation);
+         const auto first_operation_tn = TreeM->GetTreeNode(first_operation);
          const auto ga = GetPointer<const gimple_assign>(first_operation_tn);
          const auto ne = GetPointer<const nop_expr>(ga->op1);
          if(ne)
@@ -3578,9 +3578,9 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Connection time due to DSP connection " + STR(output_DSP_connection_time));
       }
-      if(first_operation != ENTRY_ID && TreeM->CGetTreeNode(first_operation)->get_kind() == gimple_assign_K)
+      if(first_operation != ENTRY_ID && TreeM->GetTreeNode(first_operation)->get_kind() == gimple_assign_K)
       {
-         const auto first_operation_tn = TreeM->CGetTreeNode(first_operation);
+         const auto first_operation_tn = TreeM->GetTreeNode(first_operation);
          const auto op1_kind = GetPointer<const gimple_assign>(first_operation_tn)->op1->get_kind();
          if(op1_kind == plus_expr_K || op1_kind == minus_expr_K || op1_kind == ternary_plus_expr_K ||
             op1_kind == ternary_pm_expr_K || op1_kind == ternary_mp_expr_K || op1_kind == ternary_mm_expr_K ||
@@ -3594,11 +3594,11 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
                   return true;
                }
                const auto first_bb_index =
-                   GetPointer<const gimple_assign>(TreeM->CGetTreeNode(first_operation))->bb_index;
+                   GetPointer<const gimple_assign>(TreeM->GetTreeNode(first_operation))->bb_index;
                const auto zero_distance_operations = GetZeroDistanceOperations(second_operation);
                for(const auto zero_distance_operation : zero_distance_operations)
                {
-                  if(GetPointer<const gimple_node>(TreeM->CGetTreeNode(zero_distance_operation))->bb_index ==
+                  if(GetPointer<const gimple_node>(TreeM->GetTreeNode(zero_distance_operation))->bb_index ==
                      first_bb_index)
                   {
                      const auto other_delay = GetTimeLatency(zero_distance_operation, fu_binding::UNKNOWN);
@@ -3633,7 +3633,7 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
 bool AllocationInformation::can_be_asynchronous_ram(tree_managerConstRef TM, unsigned int var, unsigned int threshold,
                                                     bool is_read_only_variable, unsigned channel_number)
 {
-   tree_nodeRef var_node = TM->CGetTreeNode(var);
+   tree_nodeRef var_node = TM->GetTreeNode(var);
    auto* vd = GetPointer<const var_decl>(var_node);
    auto var_bitsize = tree_helper::Size(var_node);
    const auto hls_d = hls_manager->get_HLS_device();
@@ -3702,7 +3702,7 @@ bool AllocationInformation::IsVariableExecutionTime(const unsigned int) const
    {
       return false;
    }
-   else if(GetPointer<const gimple_node>(TreeM->CGetTreeNode(operation))->operation == LOAD)
+   else if(GetPointer<const gimple_node>(TreeM->GetTreeNode(operation))->operation == LOAD)
    {
       return true;
    }
@@ -3732,8 +3732,8 @@ bool AllocationInformation::CanBeMerged(const unsigned int first_operation, cons
       return true;
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Checking if " + STR(TreeM->CGetTreeNode(first_operation)) + " can be fused in " +
-                      STR(TreeM->CGetTreeNode(second_operation)));
+                  "-->Checking if " + STR(TreeM->GetTreeNode(first_operation)) + " can be fused in " +
+                      STR(TreeM->GetTreeNode(second_operation)));
    //   const auto first_delay = GetTimeLatency(first_operation, fu_binding::UNKNOWN);
    const auto second_delay = GetTimeLatency(second_operation, fu_binding::UNKNOWN);
    if(/*(first_delay.first <= epsilon and first_delay.second <= epsilon) || */ (second_delay.first <= epsilon &&
@@ -3742,8 +3742,8 @@ bool AllocationInformation::CanBeMerged(const unsigned int first_operation, cons
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because one of the operations has zero delay");
       return true;
    }
-   const auto ga0 = GetPointer<const gimple_assign>(TreeM->CGetTreeNode(first_operation));
-   const auto ga1 = GetPointer<const gimple_assign>(TreeM->CGetTreeNode(second_operation));
+   const auto ga0 = GetPointer<const gimple_assign>(TreeM->GetTreeNode(first_operation));
+   const auto ga1 = GetPointer<const gimple_assign>(TreeM->GetTreeNode(second_operation));
 
    if(ga0 && tree_helper::Size(ga0->op0) == 1 && ga1 && tree_helper::Size(ga1->op1) == 1 &&
       (!CanImplementSetNotEmpty(second_operation) || get_DSPs(GetFuType(second_operation)) == 0.0))
@@ -3771,8 +3771,8 @@ bool AllocationInformation::CanBeChained(const unsigned int first_statement_inde
    {
       return true;
    }
-   const auto first_tree_node = TreeM->CGetTreeNode(first_statement_index);
-   const auto second_tree_node = TreeM->CGetTreeNode(second_statement_index);
+   const auto first_tree_node = TreeM->GetTreeNode(first_statement_index);
+   const auto second_tree_node = TreeM->GetTreeNode(second_statement_index);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "-->Checking if (" + STR(second_statement_index) + ") " + STR(second_tree_node) +
                       " can be chained with (" + STR(first_statement_index) + ") " + STR(first_tree_node));
@@ -3989,8 +3989,8 @@ double AllocationInformation::GetToDspRegisterDelay(const unsigned int statement
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking path to DSP register");
    double ret = 0.0;
    const auto zero_distance_operations = GetZeroDistanceOperations(statement_index);
-   const auto statement_bb_index = GetPointer<const gimple_node>(TreeM->CGetTreeNode(statement_index))->bb_index;
-   const auto tn = TreeM->CGetTreeNode(statement_index);
+   const auto statement_bb_index = GetPointer<const gimple_node>(TreeM->GetTreeNode(statement_index))->bb_index;
+   const auto tn = TreeM->GetTreeNode(statement_index);
    const bool is_carry = [&]() -> bool {
       const auto ga = GetPointer<const gimple_assign>(tn);
       if(!ga)
@@ -4015,7 +4015,7 @@ double AllocationInformation::GetToDspRegisterDelay(const unsigned int statement
       if(CanImplementSetNotEmpty(zero_distance_operation) && get_DSPs(GetFuType(zero_distance_operation)) != 0.0)
       {
          const auto zero_distance_operation_bb_index =
-             GetPointer<const gimple_node>(TreeM->CGetTreeNode(zero_distance_operation))->bb_index;
+             GetPointer<const gimple_node>(TreeM->GetTreeNode(zero_distance_operation))->bb_index;
          auto to_dsp_register_delay =
              (parameters->IsParameter("ToDSPRegisterDelay") ? parameters->GetParameter<double>("ToDSPRegisterDelay") :
                                                               0.6) *
@@ -4079,8 +4079,8 @@ CustomSet<unsigned int> AllocationInformation::GetZeroDistanceOperations(const u
          to_be_analyzed_ops.erase(to_be_analyzed_ops.begin());
          already_analyzed.insert(current_tn_index);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Considering " + STR(TreeM->CGetTreeNode(current_tn_index)));
-         const auto current_ga = GetPointer<const gimple_assign>(TreeM->CGetTreeNode(current_tn_index));
+                        "-->Considering " + STR(TreeM->GetTreeNode(current_tn_index)));
+         const auto current_ga = GetPointer<const gimple_assign>(TreeM->GetTreeNode(current_tn_index));
          if(!current_ga)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not continuing since not gimple_assign ");
@@ -4119,7 +4119,7 @@ CustomSet<unsigned int> AllocationInformation::GetZeroDistanceOperations(const u
             zero_distance_ops[statement_index].insert(use_stmt_index);
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "<--Considered " + STR(TreeM->CGetTreeNode(current_tn_index)));
+                        "<--Considered " + STR(TreeM->GetTreeNode(current_tn_index)));
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "<--Computed Zero Distance Operations of " + STR(statement_index));

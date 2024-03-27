@@ -299,7 +299,7 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string& filename) cons
    BBGraphsCollectionRef GCC_bb_graphs_collection(new BBGraphsCollection(bb_graph_info, parameters));
    BBGraphRef GCC_bb_graph(new BBGraph(GCC_bb_graphs_collection, CFG_SELECTOR));
    CustomUnorderedMap<unsigned int, vertex> inverse_vertex_map;
-   const tree_nodeConstRef function_tree_node = AppM->get_tree_manager()->CGetTreeNode(function_id);
+   const tree_nodeConstRef function_tree_node = AppM->get_tree_manager()->GetTreeNode(function_id);
    const auto fd = GetPointer<const function_decl>(function_tree_node);
    const auto sl = GetPointer<const statement_list>(fd->body);
    /// add vertices

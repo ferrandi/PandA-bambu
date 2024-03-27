@@ -132,7 +132,7 @@ DesignFlowStep_Status SplitReturn::InternalExec()
 {
    const auto TM = AppM->get_tree_manager();
    const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
-   const auto f_node = TM->CGetTreeNode(function_id);
+   const auto f_node = TM->GetTreeNode(function_id);
    const auto ret_type = tree_helper::GetFunctionReturnType(f_node);
    const auto fd = GetPointerS<const function_decl>(f_node);
    const auto sl = GetPointerS<statement_list>(fd->body);
@@ -210,7 +210,7 @@ DesignFlowStep_Status SplitReturn::InternalExec()
             const auto bb_index = bb->number;
             const auto gp = GetPointerS<const gimple_phi>(bb->CGetPhiList().front());
             const auto gr = GetPointerS<const gimple_return>(stmt);
-            if(gr->op && GET_INDEX_NODE(gp->res) == GET_INDEX_NODE(gr->op))
+            if(gr->op && gp->res->index == gr->op->index)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "--- There is a split return possible at BB" + STR(bb_index));

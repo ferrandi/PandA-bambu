@@ -185,7 +185,7 @@ void dead_code_elimination::fix_sdc_motion(DesignFlowManagerConstRef design_flow
    {
       const auto sdc_scheduling =
           GetPointer<SDCScheduling>(design_flow_graph->CGetDesignFlowStepInfo(sdc_scheduling_step)->design_flow_step);
-      const auto removed_index = GET_INDEX_CONST_NODE(removedStmt);
+      const auto removed_index = removedStmt->index;
       sdc_scheduling->movements_list.remove_if(
           [&](const std::vector<unsigned int>& mv) { return mv[0] == removed_index; });
    }
@@ -216,9 +216,9 @@ void dead_code_elimination::kill_uses(const tree_managerRef& TM, const tree_node
          const auto utype = tree_man->GetUnsignedIntegerType();
          const auto zeroVal = TM->CreateUniqueIntegerCst(0LL, utype);
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ne_schema;
-         ne_schema[TOK(TOK_TYPE)] = STR(GET_INDEX_CONST_NODE(ssa_type));
+         ne_schema[TOK(TOK_TYPE)] = STR(ssa_type->index);
          ne_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
-         ne_schema[TOK(TOK_OP)] = STR(GET_INDEX_CONST_NODE(zeroVal));
+         ne_schema[TOK(TOK_OP)] = STR(zeroVal->index);
          const auto ne_id = TM->new_tree_node_id();
          TM->create_tree_node(ne_id, nop_expr_K, ne_schema);
          val = TM->GetTreeNode(ne_id);
@@ -243,7 +243,7 @@ void dead_code_elimination::kill_uses(const tree_managerRef& TM, const tree_node
 tree_nodeRef dead_code_elimination::kill_vdef(const tree_managerRef& TM, const tree_nodeRef& vdef)
 {
    const auto v_ssa = GetPointerS<ssa_name>(vdef);
-   const auto function_id = GET_INDEX_CONST_NODE(GetPointerS<gimple_node>(v_ssa->CGetDefStmt())->scpe);
+   const auto function_id = GetPointerS<gimple_node>(v_ssa->CGetDefStmt())->scpe->index;
    const auto gimple_nop_id = TM->new_tree_node_id();
    {
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
@@ -391,8 +391,8 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             THROW_ASSERT(gn->vovers.empty() || gn->vdef, "unexpected condition");
             for(const auto& vo : gn->vovers)
             {
-               vdefvover_map[GET_INDEX_NODE(vo)].insert(GET_INDEX_NODE(gn->vdef));
-               // vdefvover_map.insert(GET_INDEX_NODE(vo));
+               vdefvover_map[vo->index].insert(gn->vdef->index);
+               // vdefvover_map.insert(vo->index);
             }
          }
       }
@@ -532,8 +532,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                     if(addressedVar->get_kind() == var_decl_K)
                                     {
                                        const auto varDecl = GetPointerS<var_decl>(addressedVar);
-                                       if(varDecl->scpe && function_id == GET_INDEX_NODE(varDecl->scpe) &&
-                                          !varDecl->static_flag)
+                                       if(varDecl->scpe && function_id == varDecl->scpe->index && !varDecl->static_flag)
                                        {
                                           ssa_name* ssaDef = nullptr;
                                           if(ga->vdef)
@@ -590,8 +589,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                                            "---read_bw: " + STR(read_bw) +
                                                                                " written_bw: " + STR(written_bw));
-                                                            if(GET_INDEX_NODE(mr->op0) ==
-                                                                   GET_INDEX_NODE(mr_used->op0) &&
+                                                            if(mr->op0->index == mr_used->op0->index &&
                                                                written_bw == read_bw &&
                                                                tree_helper::IsSameType(
                                                                    type_r,
@@ -611,8 +609,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                                   --curr_stmt;
                                                                   while(true)
                                                                   {
-                                                                     if(GET_INDEX_NODE(*curr_stmt) ==
-                                                                        GET_INDEX_NODE(use.first))
+                                                                     if((*curr_stmt)->index == use.first->index)
                                                                      {
                                                                         found_load = true;
                                                                         break;
@@ -625,8 +622,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                                          (vdefvover_map.find(ssaDef->index) !=
                                                                               vdefvover_map.end() &&
                                                                           vdefvover_map.find(ssaDef->index)
-                                                                                  ->second.find(
-                                                                                      GET_INDEX_NODE(gn_curr->vdef)) !=
+                                                                                  ->second.find(gn_curr->vdef->index) !=
                                                                               vdefvover_map.find(ssaDef->index)
                                                                                   ->second.end())))
                                                                      {
@@ -807,9 +803,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                               do0ConstantCondRemoval = true;
                            }
                         }
-                        else if(condIndex2BBdest.find(GET_INDEX_NODE(cond.first)) == condIndex2BBdest.end())
+                        else if(condIndex2BBdest.find(cond.first->index) == condIndex2BBdest.end())
                         {
-                           condIndex2BBdest[GET_INDEX_NODE(cond.first)] = cond.second;
+                           condIndex2BBdest[cond.first->index] = cond.second;
                         }
                         else if(!blocks.at(cond.second)->CGetStmtList().empty())
                         {
@@ -818,7 +814,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                           "---gimple_multi_way_if duplicated condition from BB" + STR(bb->number) +
                                               " to BB" + STR(cond.second));
                            const auto new_bb = move2emptyBB(TM, get_new_bbi(), sl, bb, cond.second,
-                                                            condIndex2BBdest.at(GET_INDEX_NODE(cond.first)));
+                                                            condIndex2BBdest.at(cond.first->index));
                            new_bbs.push_back(new_bb);
                            cond.second = new_bb->number;
                         }
@@ -1155,7 +1151,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                      /// all vovers become vuse
                      for(const auto& vo : gn->vovers)
                      {
-                        if(!gn->vdef || (GET_INDEX_NODE(vo) != GET_INDEX_NODE(gn->vdef)))
+                        if(!gn->vdef || (vo->index != gn->vdef->index))
                         {
                            if(gn->AddVuse(vo))
                            {
@@ -1297,7 +1293,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
    const auto calledSet = AppM->CGetCallGraphManager()->get_called_by(function_id);
    for(const auto i : calledSet)
    {
-      const auto fdCalled = GetPointerS<const function_decl>(AppM->get_tree_manager()->CGetTreeNode(i));
+      const auto fdCalled = GetPointerS<const function_decl>(AppM->get_tree_manager()->GetTreeNode(i));
       last_writing_memory[i] = fdCalled->writing_memory;
       last_reading_memory[i] = fdCalled->reading_memory;
    }

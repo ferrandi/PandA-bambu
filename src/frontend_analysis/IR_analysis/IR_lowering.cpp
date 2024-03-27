@@ -1387,8 +1387,8 @@ bool IR_lowering::expand_target_mem_ref(target_mem_ref461* tmr, const tree_nodeR
       {
          type_sum = tree_man->GetSizeType();
       }
-      auto type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(tmr->idx2));
-      if(type_index != GET_INDEX_NODE(type_sum))
+      auto type_index = tree_helper::get_type_index(TM, tmr->idx2->index);
+      if(type_index != type_sum->index)
       {
          tree_nodeRef ne = tree_man->create_unary_operation(type_sum, tmr->idx2, srcp_default, nop_expr_K);
          tree_nodeRef casted_idx2_ga =
@@ -1507,7 +1507,7 @@ tree_nodeRef IR_lowering::expand_mult_highpart(const tree_nodeRef& op0, unsigned
 
    long long int v0 = static_cast<long long int>(ml) & ((1LL << half_data_bitsize) - 1);
    long long int v1;
-   bool unsignedp = tree_helper::is_unsigned(TM, GET_INDEX_NODE(type_expr));
+   bool unsignedp = tree_helper::is_unsigned(TM, type_expr->index);
    if(unsignedp)
    {
       v1 = static_cast<long long int>(ml >> half_data_bitsize);
@@ -1745,7 +1745,7 @@ tree_nodeRef IR_lowering::array_ref_lowering(array_ref* AR, const std::string& s
    tree_nodeRef offset_type = tree_man->GetSizeType();
    auto ar_op1_type_index = tree_helper::CGetType(AR->op1)->index;
    tree_nodeRef offset_node;
-   if(ar_op1_type_index != GET_INDEX_NODE(offset_type))
+   if(ar_op1_type_index != offset_type->index)
    {
       tree_nodeRef ne = tree_man->create_unary_operation(offset_type, AR->op1, srcp_default, nop_expr_K);
       tree_nodeRef nop_ga =

@@ -67,7 +67,7 @@ bool BitLatticeManipulator::IsSignedIntegerType(const tree_nodeConstRef& tn) con
 std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b,
                                                    const unsigned int output_uid) const
 {
-   return sup(a, b, TM->CGetTreeNode(output_uid));
+   return sup(a, b, TM->GetTreeNode(output_uid));
 }
 
 std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b,
@@ -105,7 +105,7 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>
 std::deque<bit_lattice> BitLatticeManipulator::inf(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b,
                                                    const unsigned int output_uid) const
 {
-   return inf(a, b, TM->CGetTreeNode(output_uid));
+   return inf(a, b, TM->GetTreeNode(output_uid));
 }
 
 std::deque<bit_lattice> BitLatticeManipulator::inf(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b,
@@ -146,7 +146,7 @@ std::deque<bit_lattice> BitLatticeManipulator::constructor_bitstring(const tree_
    auto* c = GetPointerS<const constructor>(ctor_tn);
    std::vector<unsigned long long> array_dims;
    unsigned long long elements_bitsize;
-   tree_helper::get_array_dim_and_bitsize(TM, GET_INDEX_CONST_NODE(c->type), array_dims, elements_bitsize);
+   tree_helper::get_array_dim_and_bitsize(TM, c->type->index, array_dims, elements_bitsize);
    unsigned int initialized_elements = 0;
    std::deque<bit_lattice> current_inf;
    current_inf.push_back(bit_lattice::X);
@@ -236,7 +236,7 @@ bool BitLatticeManipulator::mix()
             b.second = sup_lattice;
             updated = true;
 #ifndef NDEBUG
-            const auto tn = TM->CGetTreeNode(b.first);
+            const auto tn = TM->GetTreeNode(b.first);
 #endif
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, bl_debug_level,
                            "Changes in " +
