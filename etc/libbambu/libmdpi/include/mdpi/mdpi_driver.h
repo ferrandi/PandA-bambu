@@ -125,7 +125,7 @@ class channel_interface : public interface
    channel_interface(uint8_t idx, ac_channel<T>& chan, unsigned int max_size = 0)
        : interface(idx), _chan(chan), _count(0), _max_size(max_size)
    {
-      debug("Interface channel %d with %u/%u read/write elements.\n", (int)_idx, _read_size(), _write_size());
+      if_debug("Channel interface with %u/%u read/write elements.\n", _read_size(), _write_size());
    }
 
    int read(bptr_t data, uint16_t /*bitsize*/, ptr_t /*addr*/, bool shift) override
@@ -139,6 +139,7 @@ class channel_interface : public interface
       {
          *reinterpret_cast<T*>(data) = _chan.read();
          ++_count;
+         if_debug("Item pop (%u left).\n", _read_size());
       }
       else
       {
@@ -158,6 +159,7 @@ class channel_interface : public interface
       {
          _chan.write(*reinterpret_cast<T*>(data));
          ++_count;
+         if_debug("Item push (%u free).\n", _write_size());
       }
       else
       {
