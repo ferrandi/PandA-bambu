@@ -1,5 +1,3 @@
-version: '3'
-
 volumes:
   bambu_compilers:
     name: bambu_compilers
