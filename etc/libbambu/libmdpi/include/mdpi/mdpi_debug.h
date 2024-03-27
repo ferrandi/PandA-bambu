@@ -62,15 +62,19 @@
 
 #if __M_OUT_LVL >= 3
 #define info(str, ...) fprintf(stdout, "%s: " str, mdpi_entity_str(__LOCAL_ENTITY), ##__VA_ARGS__)
+#define info_append(str, ...) fprintf(stdout, str, ##__VA_ARGS__)
 #else
 #define info(...)
+#define info_append(...)
 #endif
 
 #if __M_OUT_LVL > 4
 #define debug(str, ...) fprintf(stdout, "%s %10s: " str, mdpi_entity_str(__LOCAL_ENTITY), __func__, ##__VA_ARGS__)
+#define debug_append(str, ...) fprintf(stdout, str, ##__VA_ARGS__)
 #define error(str, ...) debug("ERROR: " str, ##__VA_ARGS__)
 #else
 #define debug(...)
+#define debug_append(...)
 #define error(str, ...) fprintf(stderr, "ERROR: %s: " str, mdpi_entity_str(__LOCAL_ENTITY), ##__VA_ARGS__)
 #endif
 
