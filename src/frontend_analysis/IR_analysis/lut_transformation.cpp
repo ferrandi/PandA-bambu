@@ -1112,10 +1112,10 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             }
 
             // if the first operand has already been processed then the previous signal is used
-            if(nodeRefToSignal.find(GET_INDEX_NODE(op)) != nodeRefToSignal.end())
+            if(nodeRefToSignal.find(op->index) != nodeRefToSignal.end())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + op->ToString());
-               ops.push_back(nodeRefToSignal[GET_INDEX_NODE(op)]);
+               ops.push_back(nodeRefToSignal[op->index]);
             }
             else
             { // otherwise the operand is a primary input
@@ -1140,7 +1140,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                   THROW_ERROR("unexpected condition: " + op->ToString());
                }
 
-               nodeRefToSignal[GET_INDEX_NODE(op)] = kop;
+               nodeRefToSignal[op->index] = kop;
                ops.push_back(kop);
             }
          }
@@ -1151,7 +1151,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          THROW_ASSERT(tree_helper::GetConstValue(le->op0, false) <= std::numeric_limits<unsigned long long>::max(),
                       "Cast will change signedness of current value: " + STR(cst_val));
          auto res = klut_e.create_lut(ops, static_cast<long long>(cst_val));
-         nodeRefToSignal[GET_INDEX_NODE(gimpleAssign->op0)] = res;
+         nodeRefToSignal[gimpleAssign->op0->index] = res;
 
          if(this->CheckIfPO(gimpleAssign))
          {
@@ -1181,10 +1181,10 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          for(auto op : {ne->op})
          {
             // if the first operand has already been processed then the previous signal is used
-            if(nodeRefToSignal.find(GET_INDEX_NODE(op)) != nodeRefToSignal.end())
+            if(nodeRefToSignal.find(op->index) != nodeRefToSignal.end())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + op->ToString());
-               ops.push_back(nodeRefToSignal[GET_INDEX_NODE(op)]);
+               ops.push_back(nodeRefToSignal[op->index]);
             }
             else
             { // otherwise the operand is a primary input
@@ -1208,14 +1208,14 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                   THROW_ERROR("unexpected condition");
                }
 
-               nodeRefToSignal[GET_INDEX_NODE(op)] = kop;
+               nodeRefToSignal[op->index] = kop;
                ops.push_back(kop);
             }
          }
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---translating in klut");
          auto res = klut_e.create_not(ops.at(0));
-         nodeRefToSignal[GET_INDEX_NODE(gimpleAssign->op0)] = res;
+         nodeRefToSignal[gimpleAssign->op0->index] = res;
 
          if(this->CheckIfPO(gimpleAssign))
          {
@@ -1247,10 +1247,10 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          for(auto op : {ce->op0, ce->op1, ce->op2})
          {
             // if the first operand has already been processed then the previous signal is used
-            if(nodeRefToSignal.find(GET_INDEX_NODE(op)) != nodeRefToSignal.end())
+            if(nodeRefToSignal.find(op->index) != nodeRefToSignal.end())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + op->ToString());
-               ops.push_back(nodeRefToSignal[GET_INDEX_NODE(op)]);
+               ops.push_back(nodeRefToSignal[op->index]);
             }
             else
             { // otherwise the operand is a primary input
@@ -1274,14 +1274,14 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                   THROW_ERROR("unexpected condition: " + op->ToString());
                }
 
-               nodeRefToSignal[GET_INDEX_NODE(op)] = kop;
+               nodeRefToSignal[op->index] = kop;
                ops.push_back(kop);
             }
          }
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---translating in klut");
          auto res = klut_e.create_ite(ops.at(0), ops.at(1), ops.at(2));
-         nodeRefToSignal[GET_INDEX_NODE(gimpleAssign->op0)] = res;
+         nodeRefToSignal[gimpleAssign->op0->index] = res;
 
          if(this->CheckIfPO(gimpleAssign))
          {
@@ -1326,10 +1326,10 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          mockturtle::klut_network::signal op2 = 0;
 
          // if the first operand has already been processed then the previous signal is used
-         if(nodeRefToSignal.find(GET_INDEX_NODE(binaryExpression->op0)) != nodeRefToSignal.end())
+         if(nodeRefToSignal.find(binaryExpression->op0->index) != nodeRefToSignal.end())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + binaryExpression->op0->ToString());
-            op1 = nodeRefToSignal[GET_INDEX_NODE(binaryExpression->op0)];
+            op1 = nodeRefToSignal[binaryExpression->op0->index];
          }
          else
          { // otherwise the operand is a primary input
@@ -1346,7 +1346,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                op1 = klut_e.create_pi();
                pis.push_back(binaryExpression->op0);
                pis_offset.push_back(0);
-               nodeRefToSignal[GET_INDEX_NODE(binaryExpression->op0)] = op1;
+               nodeRefToSignal[binaryExpression->op0->index] = op1;
             }
             else
             {
@@ -1355,10 +1355,10 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          }
 
          // if the second operand has already been processed then the previous signal is used
-         if(nodeRefToSignal.find(GET_INDEX_NODE(binaryExpression->op1)) != nodeRefToSignal.end())
+         if(nodeRefToSignal.find(binaryExpression->op1->index) != nodeRefToSignal.end())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + binaryExpression->op1->ToString());
-            op2 = nodeRefToSignal[GET_INDEX_NODE(binaryExpression->op1)];
+            op2 = nodeRefToSignal[binaryExpression->op1->index];
          }
          else
          { // otherwise the operand is a primary input
@@ -1375,7 +1375,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                op2 = klut_e.create_pi();
                pis.push_back(binaryExpression->op1);
                pis_offset.push_back(0);
-               nodeRefToSignal[GET_INDEX_NODE(binaryExpression->op1)] = op2;
+               nodeRefToSignal[binaryExpression->op1->index] = op2;
             }
             else
             {
@@ -1384,7 +1384,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          }
 
          res = (klut_e.*nodeCreateFn)(op1, op2);
-         nodeRefToSignal[GET_INDEX_NODE(gimpleAssign->op0)] = res;
+         nodeRefToSignal[gimpleAssign->op0->index] = res;
 
          if(this->CheckIfPO(gimpleAssign))
          {
@@ -1421,10 +1421,10 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          std::vector<mockturtle::klut_network::signal> op2 = {};
 
          // if the first operand has already been processed then the previous signal is used
-         if(nodeRefToSignalBus.find(GET_INDEX_NODE(binaryExpression->op0)) != nodeRefToSignalBus.end())
+         if(nodeRefToSignalBus.find(binaryExpression->op0->index) != nodeRefToSignalBus.end())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + binaryExpression->op0->ToString());
-            op1 = nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op0)];
+            op1 = nodeRefToSignalBus[binaryExpression->op0->index];
          }
          else
          { // otherwise the operand is a primary input
@@ -1449,7 +1449,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                   ++index;
                });
 
-               nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op0)] = op1;
+               nodeRefToSignalBus[binaryExpression->op0->index] = op1;
             }
             else
             {
@@ -1458,10 +1458,10 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          }
 
          // if the second operand has already been processed then the previous signal is used
-         if(nodeRefToSignalBus.find(GET_INDEX_NODE(binaryExpression->op1)) != nodeRefToSignalBus.end())
+         if(nodeRefToSignalBus.find(binaryExpression->op1->index) != nodeRefToSignalBus.end())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PI " + binaryExpression->op1->ToString());
-            op2 = nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op1)];
+            op2 = nodeRefToSignalBus[binaryExpression->op1->index];
          }
          else
          { // otherwise the operand is a primary input
@@ -1486,19 +1486,19 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                   ++index;
                });
 
-               nodeRefToSignalBus[GET_INDEX_NODE(binaryExpression->op1)] = op2;
+               nodeRefToSignalBus[binaryExpression->op1->index] = op2;
             }
             else
             {
                THROW_ERROR("unexpected condition");
             }
          }
-         bool isSigned = tree_helper::is_int(TM, GET_INDEX_NODE(binaryExpression->op0));
+         bool isSigned = tree_helper::is_int(TM, binaryExpression->op0->index);
          res = (klut_e.*nodeCreateFn)(op1, op2, isSigned);
-         nodeRefToSignalBus[GET_INDEX_NODE(gimpleAssign->op0)] = res;
+         nodeRefToSignalBus[gimpleAssign->op0->index] = res;
          if(res.size() == 1)
          {
-            nodeRefToSignal[GET_INDEX_NODE(gimpleAssign->op0)] = res.at(0);
+            nodeRefToSignal[gimpleAssign->op0->index] = res.at(0);
          }
          if(this->CheckIfPO(gimpleAssign))
          {
@@ -1671,7 +1671,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             else if(lut.fan_in.size() == 1 && lut.lut_constant == 2)
             {
                const auto op1_type_node = tree_helper::CGetType(op1);
-               if(GET_INDEX_NODE(ssa_ga_op0->type) == op1_type_node->index)
+               if(ssa_ga_op0->type->index == op1_type_node->index)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Replacing " + STR(gimpleAssign->op1) + " with " + STR(op1));
@@ -1883,7 +1883,7 @@ DesignFlowStep_Status lut_transformation::InternalExec()
    {
       return DesignFlowStep_Status::UNCHANGED;
    }
-   const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function_id));
+   const auto fd = GetPointer<const function_decl>(TM->GetTreeNode(function_id));
    THROW_ASSERT(fd && fd->body, "Node is not a function or it has not a body");
    const auto sl = GetPointer<const statement_list>(fd->body);
    THROW_ASSERT(sl, "Body is not a statement list");

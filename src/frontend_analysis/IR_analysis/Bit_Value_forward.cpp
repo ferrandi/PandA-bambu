@@ -62,7 +62,7 @@
 
 std::deque<bit_lattice> Bit_Value::get_current(const tree_nodeConstRef& tn) const
 {
-   const auto nid = GET_INDEX_CONST_NODE(tn);
+   const auto nid = tn->index;
    const auto node = tn;
    if(node->get_kind() == ssa_name_K || node->get_kind() == parm_decl_K)
    {
@@ -138,7 +138,7 @@ void Bit_Value::forward()
       if(stmt_kind == gimple_assign_K)
       {
          const auto ga = GetPointerS<const gimple_assign>(stmt_node);
-         const auto output_nid = GET_INDEX_CONST_NODE(ga->op0);
+         const auto output_nid = ga->op0->index;
          const auto ssa = GetPointer<const ssa_name>(ga->op0);
          if(ssa)
          {
@@ -151,7 +151,7 @@ void Bit_Value::forward()
             }
             bool hasRequiredValues = true;
             std::vector<std::tuple<unsigned int, unsigned int>> vars_read;
-            tree_helper::get_required_values(vars_read, TM->GetTreeNode(stmt_node->index));
+            tree_helper::get_required_values(vars_read, stmt_node);
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Requires " + STR(vars_read.size()) + " values");
             for(const auto& var_pair : vars_read)
             {
@@ -160,7 +160,7 @@ void Bit_Value::forward()
                {
                   continue;
                }
-               const auto use_node = TM->CGetTreeNode(use_node_id);
+               const auto use_node = TM->GetTreeNode(use_node_id);
                if(!IsHandledByBitvalue(use_node))
                {
                   continue;
@@ -218,7 +218,7 @@ void Bit_Value::forward()
          const auto gp = GetPointerS<const gimple_phi>(stmt_node);
          THROW_ASSERT(!gp->virtual_flag, "unexpected case");
 
-         const auto output_nid = GET_INDEX_CONST_NODE(gp->res);
+         const auto output_nid = gp->res->index;
          const auto ssa = GetPointerS<const ssa_name>(gp->res);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "phi: " + STR(stmt_node->index));
          if(!IsHandledByBitvalue(gp->res) || ssa->CGetUseStmts().empty())
@@ -238,7 +238,7 @@ void Bit_Value::forward()
 #endif
          for(const auto& def_edge : gp->CGetDefEdgesList())
          {
-            const auto def_id = GET_INDEX_CONST_NODE(def_edge.first);
+            const auto def_id = def_edge.first->index;
             if(def_id == output_nid)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -341,7 +341,7 @@ void Bit_Value::forward()
             const auto ssa = GetPointer<const ssa_name>(tl->valu);
             if(ssa && !ssa->CGetUseStmts().empty() && IsHandledByBitvalue(tl->valu))
             {
-               const auto output_nid = GET_INDEX_CONST_NODE(tl->valu);
+               const auto output_nid = tl->valu->index;
                THROW_ASSERT(best.count(output_nid), "");
                current[output_nid] = best.at(output_nid);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -358,7 +358,7 @@ void Bit_Value::forward()
    // Update current to perform sup with best after all return statements bitvalues have been propagated
    if(current.count(function_id))
    {
-      update_current(current.at(function_id), TM->CGetTreeNode(function_id));
+      update_current(current.at(function_id), TM->GetTreeNode(function_id));
    }
 }
 
@@ -419,7 +419,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          const auto op_signed = IsSignedIntegerType(operation->op);
          auto op_bitstring = get_current(operation->op);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                        "---forward_transfer, operand(" + STR(GET_INDEX_NODE(operation->op)) +
+                        "---forward_transfer, operand(" + STR(operation->op->index) +
                             "): " + bitstring_to_string(op_bitstring));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---=> " + tree_node::GetString(rhs_kind));
 
@@ -608,11 +608,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
 
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---forward_transfer");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                        "---   operand0(" + STR(GET_INDEX_NODE(operation->op0)) +
-                            "): " + bitstring_to_string(op0_bitstring));
+                        "---   operand0(" + STR(operation->op0->index) + "): " + bitstring_to_string(op0_bitstring));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                        "---   operand1(" + STR(GET_INDEX_NODE(operation->op1)) +
-                            "): " + bitstring_to_string(op1_bitstring));
+                        "---   operand1(" + STR(operation->op1->index) + "): " + bitstring_to_string(op1_bitstring));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---=> " + tree_node::GetString(rhs_kind));
 
          if(rhs_kind == bit_and_expr_K)
@@ -1544,14 +1542,11 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
 
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---forward_transfer");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                        "---   operand0(" + STR(GET_INDEX_NODE(operation->op0)) +
-                            "): " + bitstring_to_string(op0_bitstring));
+                        "---   operand0(" + STR(operation->op0->index) + "): " + bitstring_to_string(op0_bitstring));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                        "---   operand1(" + STR(GET_INDEX_NODE(operation->op1)) +
-                            "): " + bitstring_to_string(op1_bitstring));
+                        "---   operand1(" + STR(operation->op1->index) + "): " + bitstring_to_string(op1_bitstring));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                        "---   operand2(" + STR(GET_INDEX_NODE(operation->op2)) +
-                            "): " + bitstring_to_string(op2_bitstring));
+                        "---   operand2(" + STR(operation->op2->index) + "): " + bitstring_to_string(op2_bitstring));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---=> " + tree_node::GetString(rhs_kind));
 
          if(rhs_kind == bit_ior_concat_expr_K)
@@ -1859,7 +1854,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          if(call_it != direct_call_id_to_called_id.end())
          {
             const auto called_id = call_it->second;
-            const auto tn = TM->CGetTreeNode(called_id);
+            const auto tn = TM->GetTreeNode(called_id);
             THROW_ASSERT(tn->get_kind() == function_decl_K, "node " + STR(called_id) + " is not a function_decl");
             const auto* fd = GetPointerS<const function_decl>(tn);
             if(fd->bit_values.empty())

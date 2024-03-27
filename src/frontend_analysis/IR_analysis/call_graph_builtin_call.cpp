@@ -57,7 +57,7 @@ static tree_nodeRef getFunctionPointerType(tree_nodeRef fptr);
 void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Update recursively node: " + STR(TN) + " id: " + STR(GET_INDEX_NODE(TN)));
+                  "-->Update recursively node: " + STR(TN) + " id: " + STR(TN->index));
 
    const tree_managerRef TM = AppM->get_tree_manager();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + TN->get_kind_text());
@@ -83,8 +83,8 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
                {
                   unsigned int calledFunctionId = builtinArgZero->index;
                   CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, calledFunctionId,
-                                                          GET_INDEX_CONST_NODE(TN),
-                                                          FunctionEdgeInfo::CallType::indirect_call, debug_level);
+                                                          TN->index, FunctionEdgeInfo::CallType::indirect_call,
+                                                          debug_level);
                   modified = true;
                }
                else if(builtinArgZero->get_kind() == ssa_name_K)
@@ -104,7 +104,7 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
          THROW_ASSERT(FN, "Address expression with null op");
          if(FN->get_kind() == function_decl_K)
          {
-            unsigned int functionDeclIdx = GET_INDEX_NODE(FN);
+            unsigned int functionDeclIdx = FN->index;
             std::string funName = tree_helper::name_function(TM, functionDeclIdx);
             if(funName == BUILTIN_WAIT_CALL)
             {
@@ -115,8 +115,8 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
                {
                   unsigned int calledFunctionId = builtinArgZero->index;
                   CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, calledFunctionId,
-                                                          GET_INDEX_CONST_NODE(TN),
-                                                          FunctionEdgeInfo::CallType::indirect_call, debug_level);
+                                                          TN->index, FunctionEdgeInfo::CallType::indirect_call,
+                                                          debug_level);
                   modified = true;
                }
                else if(builtinArgZero->get_kind() == ssa_name_K)
@@ -199,7 +199,7 @@ void CallGraphBuiltinCall::lookForBuiltinCall(const tree_nodeRef TN)
          THROW_UNREACHABLE("");
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Updated recursively " + STR(GET_INDEX_NODE(TN)));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Updated recursively " + STR(TN->index));
 }
 
 void CallGraphBuiltinCall::ExtendCallGraph(unsigned int callerIdx, tree_nodeRef funType, unsigned int stmtIdx)
@@ -263,7 +263,7 @@ void CallGraphBuiltinCall::buildTypeToDeclaration()
       function_decl_refs fdr_visitor(allFunctions);
       for(const auto root_function : root_functions)
       {
-         tree_nodeRef rf = TM->CGetTreeNode(root_function);
+         tree_nodeRef rf = TM->GetTreeNode(root_function);
          rf->visit(&fdr_visitor);
       }
       for(unsigned int allFunction : allFunctions)
@@ -271,9 +271,9 @@ void CallGraphBuiltinCall::buildTypeToDeclaration()
          std::string functionName = tree_helper::name_function(TM, allFunction);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Analyzing function " + STR(allFunction) + " " + functionName);
-         tree_nodeRef function = TM->CGetTreeNode(allFunction);
+         tree_nodeRef function = TM->GetTreeNode(allFunction);
          auto* funDecl = GetPointer<function_decl>(function);
-         std::string type = tree_helper::print_type(TM, GET_INDEX_NODE(funDecl->type));
+         std::string type = tree_helper::print_type(TM, funDecl->type->index);
          if(funDecl->body && functionName != "__start_pragma__" && functionName != "__close_pragma__" &&
             !starts_with(functionName, "__pragma__"))
          {

@@ -200,7 +200,7 @@ unsigned int pragma_manager::AddOmpSimdPragma(const std::string& line, unsigned 
 
    unsigned int simd_id = TM->new_tree_node_id();
    TM->create_tree_node(simd_id, omp_simd_pragma_K, simd_tree_node_schema);
-   auto* osp = GetPointer<omp_simd_pragma>(TM->CGetTreeNode(simd_id));
+   auto* osp = GetPointer<omp_simd_pragma>(TM->GetTreeNode(simd_id));
    if(line != "#pragma omp declare simd")
    {
       osp->clauses = ExtractClauses(line.substr(line.find("#pragma omp declare simd ")));
@@ -401,7 +401,7 @@ void pragma_manager::CheckAddOmpSimd(const unsigned int function_index, const ve
                      for(const auto& stmt_uses : vdef_uses)
                      {
                         const auto gn = GetPointerS<gimple_node>(stmt_uses.first);
-                        if(gn->memuse && GET_INDEX_NODE(gn->memuse) == GET_INDEX_NODE(pn->vdef))
+                        if(gn->memuse && gn->memuse->index == pn->vdef->index)
                         {
                            ssa_vdef->RemoveUse(stmt_uses.first);
                            gn->memuse = nullptr;

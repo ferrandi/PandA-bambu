@@ -98,7 +98,7 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
    const auto behavioral_helper = function_behavior->CGetBehavioralHelper();
    tree_managerRef TM = AppM->get_tree_manager();
    tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
-   tree_nodeRef tn = TM->CGetTreeNode(function_id);
+   tree_nodeRef tn = TM->GetTreeNode(function_id);
    auto* fd = GetPointerS<function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
    auto* sl = GetPointerS<statement_list>(fd->body);
@@ -133,7 +133,7 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
             {
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                              "check for an initialization such as var[const_index] = const_value; " +
-                                 STR(GET_INDEX_NODE(ga->op0)));
+                                 STR(ga->op0->index));
                auto* ar = GetPointerS<array_ref>(ga->op0);
                if(ar->op0->get_kind() == var_decl_K && ar->op1->get_kind() == integer_cst_K)
                {
@@ -272,7 +272,7 @@ static bool varFound(tree_nodeRef node, unsigned& vd_index, tree_nodeRef& vd_nod
       return false;
    }
    THROW_ASSERT(ae_op->get_kind() == var_decl_K, "unexpected condition: " + ae_op->get_kind_text());
-   vd_index = GET_INDEX_NODE(ae->op);
+   vd_index = ae->op->index;
    vd_node = ae->op;
    return true;
 }
@@ -648,12 +648,12 @@ bool rebuild_initialization2::extract_var_decl(const mem_ref* me, unsigned& vd_i
    }
 }
 
-#define foundNonConstant(VD)           \
-   do                                  \
-   {                                   \
-      nonConstantVars.insert(VD);      \
-      auto key = TM->CGetTreeNode(VD); \
-      inits.erase(key);                \
+#define foundNonConstant(VD)          \
+   do                                 \
+   {                                  \
+      nonConstantVars.insert(VD);     \
+      auto key = TM->GetTreeNode(VD); \
+      inits.erase(key);               \
    } while(0)
 
 #if REBUILD2_DEVEL
@@ -672,7 +672,7 @@ tree_nodeRef getAssign(tree_nodeRef SSAop, unsigned vd_index, CustomOrderedSet<u
    if(ssa_def_stmt->get_kind() == gimple_nop_K || ssa_def_stmt->get_kind() == gimple_phi_K)
    {
       nonConstantVars.insert(vd_index);
-      auto key = TM->CGetTreeNode(vd_index);
+      auto key = TM->GetTreeNode(vd_index);
       inits.erase(key);
       return tree_nodeRef();
    }
@@ -689,7 +689,7 @@ bool rebuild_initialization2::look_for_ROMs()
 {
    tree_managerRef TM = AppM->get_tree_manager();
    tree_manipulationRef tree_man(new tree_manipulation(TM, parameters, AppM));
-   tree_nodeRef tn = TM->CGetTreeNode(function_id);
+   tree_nodeRef tn = TM->GetTreeNode(function_id);
    auto* fd = GetPointerS<function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
    auto* sl = GetPointerS<statement_list>(fd->body);
@@ -738,12 +738,12 @@ bool rebuild_initialization2::look_for_ROMs()
                {
                   THROW_ASSERT(vd_index && vd_node, "unexpected condition");
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---variable written: " + TM->CGetTreeNode(vd_index)->ToString());
+                                 "---variable written: " + TM->GetTreeNode(vd_index)->ToString());
                   /// are we writing a constant value
                   if(!GetPointer<cst_node>(op1))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---variable is not constant(1): " + TM->CGetTreeNode(vd_index)->ToString());
+                                    "---variable is not constant(1): " + TM->GetTreeNode(vd_index)->ToString());
                      foundNonConstant(vd_index);
                   }
                   if(nonConstantVars.find(vd_index) == nonConstantVars.end())
@@ -751,7 +751,7 @@ bool rebuild_initialization2::look_for_ROMs()
                      if(VarsReadSeen.find(vd_index) != VarsReadSeen.end())
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---variable is not constant(2): " + TM->CGetTreeNode(vd_index)->ToString());
+                                       "---variable is not constant(2): " + TM->GetTreeNode(vd_index)->ToString());
                         foundNonConstant(vd_index);
                      }
                      else if(var_writing_BB_relation.find(vd_index) == var_writing_BB_relation.end())
@@ -761,13 +761,13 @@ bool rebuild_initialization2::look_for_ROMs()
                         if(vd->init)
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                          "---variable is initialized: " + TM->CGetTreeNode(vd_index)->ToString());
+                                          "---variable is initialized: " + TM->GetTreeNode(vd_index)->ToString());
                            foundNonConstant(vd_index);
                         }
                         else if(not vd->scpe or vd->scpe->get_kind() == translation_unit_decl_K)
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                          "---variable is not local: " + TM->CGetTreeNode(vd_index)->ToString());
+                                          "---variable is not local: " + TM->GetTreeNode(vd_index)->ToString());
                            foundNonConstant(vd_index);
                         }
                         else
@@ -791,7 +791,7 @@ bool rebuild_initialization2::look_for_ROMs()
                               {
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                 "---variable is not constant(3): " +
-                                                    TM->CGetTreeNode(vd_index)->ToString());
+                                                    TM->GetTreeNode(vd_index)->ToString());
                                  foundNonConstant(vd_index);
                               }
                            }
@@ -799,7 +799,7 @@ bool rebuild_initialization2::look_for_ROMs()
                            {
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                              "---variable is currently classified as non-constant: " +
-                                                 TM->CGetTreeNode(vd_index)->ToString());
+                                                 TM->GetTreeNode(vd_index)->ToString());
                               foundNonConstant(vd_index);
                            }
                         }
@@ -807,7 +807,7 @@ bool rebuild_initialization2::look_for_ROMs()
                      else if(var_writing_BB_relation.find(vd_index)->second != B->number)
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---variable is not constant(4): " + TM->CGetTreeNode(vd_index)->ToString());
+                                       "---variable is not constant(4): " + TM->GetTreeNode(vd_index)->ToString());
                         foundNonConstant(vd_index);
                      }
                      /// if it is still a good candidate
@@ -825,7 +825,7 @@ bool rebuild_initialization2::look_for_ROMs()
                               {
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                 "---variable is not constant(9): " +
-                                                    TM->CGetTreeNode(vd_index)->ToString());
+                                                    TM->GetTreeNode(vd_index)->ToString());
                               }
                               else
                               {
@@ -847,7 +847,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                        {
                                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                          "---variable is not constant(9c): " +
-                                                             TM->CGetTreeNode(vd_index)->ToString());
+                                                             TM->GetTreeNode(vd_index)->ToString());
                                           foundNonConstant(vd_index);
                                        }
                                        else
@@ -861,7 +861,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                              {
                                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                                "---variable is not constant(9): " +
-                                                                   TM->CGetTreeNode(vd_index)->ToString());
+                                                                   TM->GetTreeNode(vd_index)->ToString());
                                              }
                                              else
                                              {
@@ -878,7 +878,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                                    {
                                                       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                                      "---variable is not constant(5a): " +
-                                                                         TM->CGetTreeNode(vd_index)->ToString());
+                                                                         TM->GetTreeNode(vd_index)->ToString());
                                                       foundNonConstant(vd_index);
                                                    }
                                                 }
@@ -891,7 +891,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                                 {
                                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                                   "---variable is not constant(5b): " +
-                                                                      TM->CGetTreeNode(vd_index)->ToString());
+                                                                      TM->GetTreeNode(vd_index)->ToString());
                                                    foundNonConstant(vd_index);
                                                 }
                                                 else
@@ -919,7 +919,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                     {
                                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                       "---variable is not constant(9): " +
-                                                          TM->CGetTreeNode(vd_index)->ToString());
+                                                          TM->GetTreeNode(vd_index)->ToString());
                                     }
                                     else
                                     {
@@ -939,7 +939,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                              {
                                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                                "---variable is not constant(5c): " +
-                                                                   TM->CGetTreeNode(vd_index)->ToString());
+                                                                   TM->GetTreeNode(vd_index)->ToString());
                                              }
                                              else if(offset_assign2_op1->get_kind() == integer_cst_K)
                                              {
@@ -950,7 +950,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                              {
                                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                                "---variable is not constant(5c): " +
-                                                                   TM->CGetTreeNode(vd_index)->ToString());
+                                                                   TM->GetTreeNode(vd_index)->ToString());
                                                 foundNonConstant(vd_index);
                                              }
                                           }
@@ -976,7 +976,7 @@ bool rebuild_initialization2::look_for_ROMs()
                                        {
                                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                          "---variable is not constant(9): " +
-                                                             TM->CGetTreeNode(vd_index)->ToString());
+                                                             TM->GetTreeNode(vd_index)->ToString());
                                        }
                                        else
                                        {
@@ -1077,7 +1077,7 @@ bool rebuild_initialization2::look_for_ROMs()
                if(resolved)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---variable read: " + TM->CGetTreeNode(vd_index)->ToString());
+                                 "---variable read: " + TM->GetTreeNode(vd_index)->ToString());
                   VarsReadSeen.insert(vd_index);
                }
                else
@@ -1193,7 +1193,7 @@ bool rebuild_initialization2::look_for_ROMs()
                      if(GCC_bb_graph->IsReachable(inverse_vertex_map[BB_written], inverse_vertex_map[B->number]))
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---variable is not constant(6): " + TM->CGetTreeNode(vd_index)->ToString());
+                                       "---variable is not constant(6): " + TM->GetTreeNode(vd_index)->ToString());
                         foundNonConstant(vd_index);
                      }
                   }
@@ -1214,7 +1214,7 @@ bool rebuild_initialization2::look_for_ROMs()
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "---variable is not constant(7): " +
-                                           TM->CGetTreeNode(var_written.first)->ToString());
+                                           TM->GetTreeNode(var_written.first)->ToString());
                         foundNonConstant(var_written.first);
                      }
                   }
@@ -1232,7 +1232,7 @@ bool rebuild_initialization2::look_for_ROMs()
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "---variable is not constant(8): " +
-                                        TM->CGetTreeNode(var_written.first)->ToString());
+                                        TM->GetTreeNode(var_written.first)->ToString());
                      foundNonConstant(var_written.first);
                   }
                }
@@ -1249,14 +1249,14 @@ bool rebuild_initialization2::look_for_ROMs()
    {
       if(nonConstantVars.find(vars.first) == nonConstantVars.end())
       {
-         auto key = TM->CGetTreeNode(vars.first);
+         auto key = TM->GetTreeNode(vars.first);
          auto initIt = inits.find(key);
          THROW_ASSERT(initIt != inits.end(), "unexpected condition");
          THROW_ASSERT(var_writing_size_relation.find(vars.first) != var_writing_size_relation.end(),
                       "unexpected condition");
          if(initIt->second.size() == var_writing_size_relation.find(vars.first)->second)
          {
-            auto vd_node = TM->CGetTreeNode(vars.first);
+            auto vd_node = TM->GetTreeNode(vars.first);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Constant variable: " + vd_node->ToString());
             ConstantVars.insert(vars.first);
             GetPointerS<var_decl>(vd_node)->readonly_flag = true;

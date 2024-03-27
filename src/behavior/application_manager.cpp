@@ -172,7 +172,7 @@ const pragma_managerRef application_manager::get_pragma_manager() const
 unsigned int application_manager::get_produced_value(unsigned int fun_id, const vertex& v) const
 {
    const auto node = GetProducedValue(fun_id, v);
-   return node ? GET_INDEX_CONST_NODE(node) : 0;
+   return node ? node->index : 0;
 }
 
 tree_nodeConstRef application_manager::GetProducedValue(unsigned int fun_id, const vertex& v) const
@@ -185,7 +185,7 @@ tree_nodeConstRef application_manager::GetProducedValue(unsigned int fun_id, con
 unsigned int application_manager::get_produced_value(const tree_nodeRef& tn) const
 {
    const auto node = GetProducedValue(tn);
-   return node ? GET_INDEX_CONST_NODE(node) : 0;
+   return node ? node->index : 0;
 }
 
 tree_nodeConstRef application_manager::GetProducedValue(const tree_nodeConstRef& tn) const

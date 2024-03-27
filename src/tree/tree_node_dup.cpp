@@ -772,7 +772,7 @@ void tree_node_dup::operator()(const attr* obj, unsigned int& mask)
 #define SET_NODE_ID(field, type)                                                 \
    if(GetPointer<type>(source_tn)->field)                                        \
    {                                                                             \
-      unsigned int node_id = GET_INDEX_NODE(GetPointer<type>(source_tn)->field); \
+      unsigned int node_id = GetPointer<type>(source_tn)->field->index;          \
       if(remap.find(node_id) != remap.end())                                     \
       {                                                                          \
          node_id = remap.find(node_id)->second;                                  \
@@ -813,7 +813,7 @@ void tree_node_dup::operator()(const attr* obj, unsigned int& mask)
    {                                                                                           \
       for(const auto& i : GetPointer<type>(source_tn)->list_field)                             \
       {                                                                                        \
-         unsigned int node_id = GET_INDEX_NODE(i);                                             \
+         unsigned int node_id = i->index;                                                      \
          if(remap.find(node_id) != remap.end())                                                \
             node_id = remap.find(node_id)->second;                                             \
          else                                                                                  \
@@ -834,7 +834,7 @@ void tree_node_dup::operator()(const attr* obj, unsigned int& mask)
       std::list<tree_nodeRef>::const_iterator vend = GetPointer<type>(source_tn)->list_field.end();                    \
       for(std::list<tree_nodeRef>::const_iterator i = GetPointer<type>(source_tn)->list_field.begin(); i != vend; ++i) \
       {                                                                                                                \
-         unsigned int node_id = GET_INDEX_NODE(*i);                                                                    \
+         unsigned int node_id = (*i)->index;                                                                           \
          if(remap.find(node_id) != remap.end())                                                                        \
             node_id = remap.find(node_id)->second;                                                                     \
          else                                                                                                          \
@@ -1032,7 +1032,7 @@ void tree_node_dup::operator()(const binfo* obj, unsigned int& mask)
       auto vend = GetPointer<binfo>(source_tn)->list_of_access_binf.end();
       for(auto i = GetPointer<binfo>(source_tn)->list_of_access_binf.begin(); i != vend; ++i)
       {
-         unsigned int node_id = GET_INDEX_NODE(i->second);
+         unsigned int node_id = i->second->index;
          THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index");
          node_id = remap.find(node_id)->second;
          dynamic_cast<binfo*>(curr_tree_node_ptr)->add_access_binf(TM->GetTreeNode(node_id), i->first);
@@ -1140,8 +1140,8 @@ void tree_node_dup::operator()(const constructor* obj, unsigned int& mask)
       auto vend = GetPointer<constructor>(source_tn)->list_of_idx_valu.end();
       for(auto i = GetPointer<constructor>(source_tn)->list_of_idx_valu.begin(); i != vend; ++i)
       {
-         unsigned int node_id1 = i->first ? GET_INDEX_NODE(i->first) : 0;
-         unsigned int node_id2 = GET_INDEX_NODE(i->second);
+         unsigned int node_id1 = i->first ? i->first->index : 0;
+         unsigned int node_id2 = i->second->index;
          if(mode && node_id1 && remap.find(node_id1) == remap.end())
          {
             tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;
@@ -1389,7 +1389,7 @@ void tree_node_dup::operator()(const gimple_phi* obj, unsigned int& mask)
    SET_NODE_ID(res, gimple_phi);
    for(const auto& def_edge : GetPointer<gimple_phi>(source_tn)->CGetDefEdgesList())
    {
-      unsigned int node_id = GET_INDEX_NODE(def_edge.first);
+      unsigned int node_id = def_edge.first->index;
       if(mode)
       {
          const auto rnode = remap.find(node_id);
@@ -1538,7 +1538,7 @@ void tree_node_dup::operator()(const ssa_name* obj, unsigned int& mask)
    {
       if(mode)
       {
-         unsigned int node_id = GET_INDEX_NODE(def_stmt);
+         unsigned int node_id = def_stmt->index;
          const auto rnode = remap.find(node_id);
          if(rnode != remap.end())
          {
@@ -1818,7 +1818,7 @@ void tree_node_dup::operator()(const bloc* obj, unsigned int& mask)
    }
    for(const auto& phi : source_bloc->CGetPhiList())
    {
-      unsigned int node_id = GET_INDEX_NODE(phi);
+      unsigned int node_id = phi->index;
       if(mode)
       {
          const auto rnode = remap.find(node_id);
@@ -1846,7 +1846,7 @@ void tree_node_dup::operator()(const bloc* obj, unsigned int& mask)
    }
    for(const auto& stmt : source_bloc->CGetStmtList())
    {
-      unsigned int node_id = GET_INDEX_CONST_NODE(stmt);
+      unsigned int node_id = stmt->index;
       if(mode)
       {
          const auto rnode = remap.find(node_id);
@@ -1900,7 +1900,7 @@ void tree_node_dup::operator()(const gimple_multi_way_if* obj, unsigned int& mas
       {
          if(cond.first)
          {
-            unsigned int node_id = GET_INDEX_NODE(cond.first);
+            unsigned int node_id = cond.first->index;
             if(mode)
             {
                if(remap.find(node_id) != remap.end())
@@ -1919,7 +1919,7 @@ void tree_node_dup::operator()(const gimple_multi_way_if* obj, unsigned int& mas
             }
             else
             {
-               THROW_ASSERT(remap.find(node_id) != remap.end(), "missing " + STR(TM->CGetTreeNode(node_id)));
+               THROW_ASSERT(remap.find(node_id) != remap.end(), "missing " + STR(TM->GetTreeNode(node_id)));
                node_id = remap.find(node_id)->second;
                THROW_ASSERT(node_id, "");
             }

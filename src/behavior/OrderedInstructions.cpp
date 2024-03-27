@@ -65,18 +65,18 @@ bool OrderedBasicBlock::instComesBefore(const tree_nodeConstRef& A, const tree_n
    // Number all instructions up to the point where we find 'A' or 'B'.
    for(; II != IE; ++II)
    {
-      idx = GET_INDEX_CONST_NODE(*II);
+      idx = (*II)->index;
       NumberedInsts[idx] = NextInstPos++;
-      if(idx == GET_INDEX_CONST_NODE(A) || idx == GET_INDEX_CONST_NODE(B))
+      if(idx == A->index || idx == B->index)
       {
          break;
       }
    }
 
    THROW_ASSERT(II != IE, "Instruction not found?");
-   THROW_ASSERT((idx == GET_INDEX_CONST_NODE(A) || idx == GET_INDEX_CONST_NODE(B)), "Should find A or B");
+   THROW_ASSERT((idx == A->index || idx == B->index), "Should find A or B");
    LastInstFound = II;
-   return idx != GET_INDEX_CONST_NODE(B);
+   return idx != B->index;
 }
 
 OrderedBasicBlock::OrderedBasicBlock(const blocRef& BasicB)
@@ -85,7 +85,7 @@ OrderedBasicBlock::OrderedBasicBlock(const blocRef& BasicB)
    unsigned int phiPos = 0U;
    for(const auto& gp : BasicB->CGetPhiList())
    {
-      NumberedInsts.insert({GET_INDEX_CONST_NODE(gp), phiPos++});
+      NumberedInsts.insert({gp->index, phiPos++});
    }
 }
 
@@ -111,8 +111,8 @@ bool OrderedBasicBlock::dominates(const tree_nodeConstRef& A, const tree_nodeCon
    // have numbered NB as well if it didn't. The same is true for NB. If it
    // exists, but NA does not, NA must come after it. If neither exist, we need
    // to number the block and cache the results instComesBefore.
-   const auto NAI = NumberedInsts.find(GET_INDEX_CONST_NODE(A));
-   const auto NBI = NumberedInsts.find(GET_INDEX_CONST_NODE(B));
+   const auto NAI = NumberedInsts.find(A->index);
+   const auto NBI = NumberedInsts.find(B->index);
    if(NAI != NumberedInsts.end() && NBI != NumberedInsts.end())
    {
       return NAI->second < NBI->second;

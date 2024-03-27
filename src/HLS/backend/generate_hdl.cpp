@@ -114,7 +114,7 @@ DesignFlowStep_Status generate_hdl::Exec()
    for(const auto& symbol : top_symbols)
    {
       const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(symbol);
-      top_circuits.push_back(HLSMgr->get_HLS(GET_INDEX_CONST_NODE(top_fnode))->top->get_circ());
+      top_circuits.push_back(HLSMgr->get_HLS(top_fnode->index)->top->get_circ());
    }
 
    HM.hdl_gen(file_name, top_circuits, HLSMgr->hdl_files, HLSMgr->aux_files, false);

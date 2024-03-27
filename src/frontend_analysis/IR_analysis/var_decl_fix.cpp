@@ -149,7 +149,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
    const tree_managerRef TM = AppM->get_tree_manager();
    const tree_nodeRef curr_tn = tn;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Analyzing recursively " + curr_tn->get_kind_text() + " " + STR(GET_INDEX_NODE(tn)) + ": " +
+                  "-->Analyzing recursively " + curr_tn->get_kind_text() + " " + STR(tn->index) + ": " +
                       curr_tn->ToString());
    switch(curr_tn->get_kind())
    {
@@ -199,9 +199,9 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
       case var_decl_K:
       case parm_decl_K:
       {
-         if(already_examinated_decls.find(GET_INDEX_NODE(tn)) == already_examinated_decls.end())
+         if(already_examinated_decls.find(tn->index) == already_examinated_decls.end())
          {
-            already_examinated_decls.insert(GET_INDEX_NODE(tn));
+            already_examinated_decls.insert(tn->index);
             auto* dn = GetPointer<decl_node>(tn);
             recursive_examinate(dn->type, already_examinated_decls, already_examinated_names,
                                 already_examinated_type_names, already_visited_ae);
@@ -275,11 +275,11 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
       {
          if(curr_tn->get_kind() == addr_expr_K)
          {
-            if(already_visited_ae.find(GET_INDEX_NODE(tn)) != already_visited_ae.end())
+            if(already_visited_ae.find(tn->index) != already_visited_ae.end())
             {
                break;
             }
-            already_visited_ae.insert(GET_INDEX_NODE(tn));
+            already_visited_ae.insert(tn->index);
          }
          const unary_expr* ue = GetPointer<unary_expr>(curr_tn);
          recursive_examinate(ue->op, already_examinated_decls, already_examinated_names, already_examinated_type_names,
@@ -447,9 +447,9 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
       }
       case CASE_TYPE_NODES:
       {
-         if(already_examinated_decls.find(GET_INDEX_NODE(tn)) == already_examinated_decls.end())
+         if(already_examinated_decls.find(tn->index) == already_examinated_decls.end())
          {
-            already_examinated_decls.insert(GET_INDEX_NODE(tn));
+            already_examinated_decls.insert(tn->index);
             auto* ty = GetPointer<type_node>(tn);
             if(ty && ty->name && ty->name->get_kind() == type_decl_K)
             {
@@ -602,8 +602,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
       default:
          THROW_UNREACHABLE("");
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "<--Analyzed recursively " + STR(GET_INDEX_NODE(tn)) + ": " + STR(tn));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed recursively " + STR(tn->index) + ": " + STR(tn));
    return;
 }
 

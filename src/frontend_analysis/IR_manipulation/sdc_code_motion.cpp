@@ -127,7 +127,7 @@ DesignFlowStep_Status SDCCodeMotion::InternalExec()
    restart_ifmwi_opt = false;
 
    const tree_managerRef TM = AppM->get_tree_manager();
-   auto* fd = GetPointer<function_decl>(TM->CGetTreeNode(function_id));
+   auto* fd = GetPointer<function_decl>(TM->GetTreeNode(function_id));
    auto* sl = GetPointer<statement_list>(fd->body);
    std::map<unsigned int, blocRef>& list_of_bloc = sl->list_of_bloc;
 
@@ -166,7 +166,7 @@ DesignFlowStep_Status SDCCodeMotion::InternalExec()
          restart_ifmwi_opt = true;
       }
       list_of_bloc.at(new_basic_block)->PushBack(TM->GetTreeNode(statement_index), AppM);
-      AppM->RegisterTransformation(GetName(), TM->CGetTreeNode(statement_index));
+      AppM->RegisterTransformation(GetName(), TM->GetTreeNode(statement_index));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Moved " + STR(statement_index));
    }
    function_behavior->UpdateBBVersion();

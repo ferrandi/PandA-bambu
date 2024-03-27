@@ -96,7 +96,7 @@ static std::string __arg_suffix(const std::vector<tree_nodeRef>& tns)
       }
       else
       {
-         suffix << "_" << STR(GET_INDEX_CONST_NODE(tn));
+         suffix << "_" << STR(tn->index);
       }
    }
    const auto hash = std::hash<std::string>{}(suffix.str());
@@ -218,12 +218,12 @@ void FunctionCallOpt::Initialize()
                if(inline_attr->second == "self")
                {
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Required always inline for function " + symbol);
-                  always_inline.insert(GET_INDEX_CONST_NODE(fnode));
+                  always_inline.insert(fnode->index);
                }
                else if(inline_attr->second == "off")
                {
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Required never inline for function " + symbol);
-                  never_inline.insert(GET_INDEX_CONST_NODE(fnode));
+                  never_inline.insert(fnode->index);
                }
                else if(inline_attr->second == "recursive")
                {
@@ -255,7 +255,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    const auto TM = AppM->get_tree_manager();
-   const auto fnode = TM->CGetTreeNode(function_id);
+   const auto fnode = TM->GetTreeNode(function_id);
    const auto fd = GetPointerS<function_decl>(fnode);
    THROW_ASSERT(fd->body, "");
    const auto sl = GetPointerS<statement_list>(fd->body);
@@ -270,7 +270,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
       {
          const auto& stmt_id = std::get<0>(stmt_opt);
          const auto& opt_type = std::get<1>(stmt_opt);
-         const auto stmt = TM->CGetTreeNode(stmt_id);
+         const auto stmt = TM->GetTreeNode(stmt_id);
          if(stmt)
          {
             const auto gn = GetPointerS<const gimple_node>(stmt);
@@ -279,7 +279,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
             {
                const auto& bb = bb_it->second;
                if(std::find_if(bb->CGetStmtList().cbegin(), bb->CGetStmtList().cend(), [&](const tree_nodeRef& tn) {
-                     return GET_INDEX_CONST_NODE(tn) == stmt_id;
+                     return tn->index == stmt_id;
                   }) != bb->CGetStmtList().cend())
                {
                   if(!AppM->ApplyNewTransformation())
@@ -408,9 +408,9 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "Analysing call points from " +
                                   tree_helper::GetMangledFunctionName(
-                                      GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
+                                      GetPointerS<const function_decl>(TM->GetTreeNode(caller_id))));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-               const auto caller_node = TM->CGetTreeNode(caller_id);
+               const auto caller_node = TM->GetTreeNode(caller_id);
                THROW_ASSERT(caller_node->get_kind() == function_decl_K, "");
                const auto caller_fd = GetPointerS<const function_decl>(caller_node);
                THROW_ASSERT(caller_fd->body, "");
@@ -429,7 +429,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                bool all_inlined = true;
                for(const auto& call_id : caller_info->direct_call_points)
                {
-                  const auto call_stmt = TM->CGetTreeNode(call_id);
+                  const auto call_stmt = TM->GetTreeNode(call_id);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "Analysing direct call point " + STR(call_stmt));
                   const auto call_gn = GetPointerS<const gimple_node>(call_stmt);
@@ -487,7 +487,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                             "---Inlining of functions with internal loops disabled with OpenMP, skipping...");
                      }
                   }
-                  const auto all_const_args = HasConstantArgs(TM->CGetTreeNode(call_id));
+                  const auto all_const_args = HasConstantArgs(TM->GetTreeNode(call_id));
                   if(all_const_args && loop_count == 0)
                   {
                      opt_call[caller_id].insert(std::make_pair(call_id, FunctionOptType::VERSION));
@@ -505,7 +505,7 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "Analysed call points from " +
                                   tree_helper::GetMangledFunctionName(
-                                      GetPointerS<const function_decl>(TM->CGetTreeNode(caller_id))));
+                                      GetPointerS<const function_decl>(TM->GetTreeNode(caller_id))));
             }
          }
       }
@@ -538,7 +538,7 @@ void FunctionCallOpt::RequestCallOpt(const tree_nodeConstRef& call_stmt, unsigne
    }
 #endif
    THROW_ASSERT(is_call, "Statement does not contain a call");
-   opt_call[caller_id].insert(std::make_pair(GET_INDEX_CONST_NODE(call_stmt), opt));
+   opt_call[caller_id].insert(std::make_pair(call_stmt->index, opt));
 }
 
 bool FunctionCallOpt::HasConstantArgs(const tree_nodeConstRef& call_stmt)

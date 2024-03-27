@@ -1003,7 +1003,7 @@ void gimple_phi::AddDefEdge(const tree_managerRef& TM, const DefEdge& def_edge)
       const auto sn = GetPointer<ssa_name>(def_edge.first);
       if(sn)
       {
-         sn->AddUseStmt(TM->CGetTreeNode(index));
+         sn->AddUseStmt(TM->GetTreeNode(index));
       }
    }
 }

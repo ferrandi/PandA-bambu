@@ -819,9 +819,9 @@ const std::map<bit_lattice, std::map<bit_lattice, bit_lattice>> Bit_Value::bit_a
 unsigned long long Bit_Value::pointer_resizing(unsigned int output_id) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "-->Pointer resizing starting from " + TM->CGetTreeNode(output_id)->ToString());
+                  "-->Pointer resizing starting from " + TM->GetTreeNode(output_id)->ToString());
    unsigned int var = tree_helper::get_base_index(TM, output_id);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Base variable is " + TM->CGetTreeNode(var)->ToString());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Base variable is " + TM->GetTreeNode(var)->ToString());
    unsigned long long address_bitsize;
    if(not_frontend)
    {
@@ -831,7 +831,7 @@ unsigned long long Bit_Value::pointer_resizing(unsigned int output_id) const
          if(var and function_behavior->is_variable_mem(var))
          {
             unsigned long long int max_addr =
-                hm->Rmem->get_base_address(var, function_id) + tree_helper::TypeSize(TM->CGetTreeNode(var)) / 8;
+                hm->Rmem->get_base_address(var, function_id) + tree_helper::TypeSize(TM->GetTreeNode(var)) / 8;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Maximum address is " + STR(max_addr - 1));
             for(address_bitsize = 1; max_addr > (1ull << address_bitsize); ++address_bitsize)
             {
@@ -843,7 +843,7 @@ unsigned long long Bit_Value::pointer_resizing(unsigned int output_id) const
                address_bitsize = 4;
             }
             /// check if it clash with the alignment:
-            auto vd = GetPointer<const var_decl>(TM->CGetTreeNode(var));
+            auto vd = GetPointer<const var_decl>(TM->GetTreeNode(var));
             if(hm->Rmem->get_base_address(var, function_id) == 0 && vd)
             {
                auto align = vd->algn;
@@ -976,7 +976,7 @@ void Bit_Value::Initialize()
        ApplicationFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BAMBU_FRONTEND_FLOW);
    not_frontend = design_flow_manager.lock()->GetStatus(bambu_frontend_flow_signature) == DesignFlowStep_Status::EMPTY;
 
-   const auto tn = TM->CGetTreeNode(function_id);
+   const auto tn = TM->GetTreeNode(function_id);
    THROW_ASSERT(tn->get_kind() == function_decl_K, "Node is not a function");
    const auto fd = GetPointerS<const function_decl>(tn);
    THROW_ASSERT(fd->body, "Function has not a body");
@@ -1205,7 +1205,7 @@ void Bit_Value::initialize()
       }
    }
 
-   const auto tn = TM->CGetTreeNode(function_id);
+   const auto tn = TM->GetTreeNode(function_id);
    const auto fd = GetPointerS<const function_decl>(tn);
 
    /*
@@ -1213,13 +1213,13 @@ void Bit_Value::initialize()
     */
    for(const auto& parm_decl_node : fd->list_of_args)
    {
-      const auto parmssa_id = AppM->getSSAFromParm(function_id, GET_INDEX_CONST_NODE(parm_decl_node));
+      const auto parmssa_id = AppM->getSSAFromParm(function_id, parm_decl_node->index);
       const auto parm_type = tree_helper::CGetType(parm_decl_node);
       if(!IsHandledByBitvalue(parm_type))
       {
          continue;
       }
-      const auto parmssa = TM->CGetTreeNode(parmssa_id);
+      const auto parmssa = TM->GetTreeNode(parmssa_id);
       const auto p = GetPointerS<const ssa_name>(parmssa);
       const auto b = p->CGetUseStmts().empty() ?
                          create_x_bitstring(1) :
@@ -1228,8 +1228,8 @@ void Bit_Value::initialize()
       best[parmssa_id] = b;
       arguments.insert(parmssa_id);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                     "Parameter " + STR(parm_decl_node) + "(" + STR(GET_INDEX_CONST_NODE(parm_decl_node)) +
-                         ") bound to " + parmssa->ToString() + ": " + bitstring_to_string(b) + "");
+                     "Parameter " + STR(parm_decl_node) + "(" + STR(parm_decl_node->index) + ") bound to " +
+                         parmssa->ToString() + ": " + bitstring_to_string(b) + "");
    }
 
    /*
@@ -1294,7 +1294,7 @@ void Bit_Value::initialize()
                // handle lhs
                if(lhs->get_kind() == ssa_name_K)
                {
-                  const auto lhs_nid = GET_INDEX_CONST_NODE(ga->op0);
+                  const auto lhs_nid = ga->op0->index;
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                  "Analyzing " + stmt_node->get_kind_text() + "(" + STR(stmt_node->index) +
                                      "): " + STR(stmt_node));
@@ -1321,7 +1321,7 @@ void Bit_Value::initialize()
                         ga_op1_kind == target_mem_ref461_K || ga_op1_kind == var_decl_K)
                      {
                         const auto hm = GetPointer<const HLS_manager>(AppM);
-                        const auto base_index = tree_helper::get_base_index(TM, GET_INDEX_CONST_NODE(ga->op1));
+                        const auto base_index = tree_helper::get_base_index(TM, ga->op1->index);
                         const auto var_node = TM->GetTreeNode(base_index);
                         auto vd = GetPointer<var_decl>(var_node);
                         if(base_index &&
@@ -1405,7 +1405,7 @@ void Bit_Value::initialize()
                                          bitstring_to_string(current_inf));
                                  for(const auto& cur_var : hm->Rmem->get_source_values(base_index))
                                  {
-                                    const auto cur_node = TM->CGetTreeNode(cur_var);
+                                    const auto cur_node = TM->GetTreeNode(cur_var);
                                     const auto source_is_signed = tree_helper::IsSignedIntegerType(cur_node);
                                     const auto source_type = tree_helper::CGetType(cur_node);
                                     const auto source_type_size = tree_helper::TypeSize(source_type);
@@ -1514,7 +1514,7 @@ void Bit_Value::initialize()
                                     "Analyzing " + stmt_node->get_kind_text() + "(" + STR(stmt_node->index) + ")");
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                     "---Initializing bitstring for an asm instruction");
-                     best[GET_INDEX_CONST_NODE(tl->valu)] = create_u_bitstring(tree_helper::TypeSize(tl->valu));
+                     best[tl->valu->index] = create_u_bitstring(tree_helper::TypeSize(tl->valu));
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Analyzed " + stmt_node->get_kind_text());
                   }
                }
@@ -1584,7 +1584,7 @@ void Bit_Value::initialize()
                   }
                   AppM->RegisterTransformation(GetName(), ssa_node);
                   use_node = cst_value;
-                  node_id = GET_INDEX_NODE(cst_value);
+                  node_id = cst_value->index;
                }
             }
          }
@@ -1618,13 +1618,12 @@ void Bit_Value::initialize()
 
       for(const auto& phi : B->CGetPhiList())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                        "Analyzing phi(" + STR(GET_INDEX_CONST_NODE(phi)) + "): " + STR(phi));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Analyzing phi(" + STR(phi->index) + "): " + STR(phi));
          const auto pn = GetPointerS<const gimple_phi>(phi);
          const auto is_virtual = pn->virtual_flag;
          if(!is_virtual)
          {
-            const auto res_nid = GET_INDEX_CONST_NODE(pn->res);
+            const auto res_nid = pn->res->index;
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---LHS: " + STR(res_nid));
             auto ssa = GetPointer<ssa_name>(pn->res);
             THROW_ASSERT(ssa, "unexpected condition");
@@ -1673,7 +1672,7 @@ void Bit_Value::initialize()
 
                for(const auto& def_edge : pn->CGetDefEdgesList())
                {
-                  set_value(GET_INDEX_CONST_NODE(def_edge.first));
+                  set_value(def_edge.first->index);
                }
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Analyzed phi: " + STR(phi));
@@ -1686,8 +1685,7 @@ void Bit_Value::initialize()
          // we can skip this assignment and focus on the ssa variable
          const auto stmt_node = stmt;
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                        "Analyzing " + stmt_node->get_kind_text() + "(" + STR(GET_INDEX_CONST_NODE(stmt)) +
-                            "): " + STR(stmt_node));
+                        "Analyzing " + stmt_node->get_kind_text() + "(" + STR(stmt->index) + "): " + STR(stmt_node));
          if(stmt_node->get_kind() == gimple_assign_K)
          {
             const auto ga = GetPointerS<const gimple_assign>(stmt_node);
@@ -1697,7 +1695,7 @@ void Bit_Value::initialize()
             if(ga->op0->get_kind() == ssa_name_K)
             {
                auto lhs_ssa = GetPointerS<ssa_name>(ga->op0);
-               const auto lhs_nid = GET_INDEX_CONST_NODE(ga->op0);
+               const auto lhs_nid = ga->op0->index;
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->LHS: " + STR(lhs_ssa));
                if(!IsHandledByBitvalue(ga->op0))
                {
@@ -1792,7 +1790,7 @@ void Bit_Value::initialize()
                      if(lhs_ssa->bit_values.empty())
                      {
                         auto u_string = create_u_bitstring(tree_helper::TypeSize(ga->op0));
-                        if(lhs_signed && tree_helper::is_natural(TM, GET_INDEX_CONST_NODE(ga->op0)))
+                        if(lhs_signed && tree_helper::is_natural(TM, ga->op0->index))
                         {
                            u_string.pop_front();
                            u_string.push_front(bit_lattice::ZERO);

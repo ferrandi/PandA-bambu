@@ -196,10 +196,10 @@ void CallGraphManager::AddCallPoint(unsigned int caller_id, unsigned int called_
 #if !defined(NDEBUG) || HAVE_ASSERTS
    const auto caller_name = "(" + STR(caller_id) + ") " +
                             tree_helper::print_function_name(
-                                tree_manager, GetPointerS<const function_decl>(tree_manager->CGetTreeNode(caller_id)));
+                                tree_manager, GetPointerS<const function_decl>(tree_manager->GetTreeNode(caller_id)));
    const auto called_name = "(" + STR(called_id) + ") " +
                             tree_helper::print_function_name(
-                                tree_manager, GetPointerS<const function_decl>(tree_manager->CGetTreeNode(called_id)));
+                                tree_manager, GetPointerS<const function_decl>(tree_manager->GetTreeNode(called_id)));
 #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "---Adding call with id: " + STR(call_id) + " from " + caller_name + " to " + called_name);
@@ -291,10 +291,10 @@ bool CallGraphManager::IsCallPoint(unsigned int caller_id, unsigned int called_i
 #if HAVE_ASSERTS
    const auto caller_name = "(" + STR(caller_id) + ") " +
                             tree_helper::print_function_name(
-                                tree_manager, GetPointerS<const function_decl>(tree_manager->CGetTreeNode(caller_id)));
+                                tree_manager, GetPointerS<const function_decl>(tree_manager->GetTreeNode(caller_id)));
    const auto called_name = "(" + STR(called_id) + ") " +
                             tree_helper::print_function_name(
-                                tree_manager, GetPointerS<const function_decl>(tree_manager->CGetTreeNode(called_id)));
+                                tree_manager, GetPointerS<const function_decl>(tree_manager->GetTreeNode(called_id)));
 #endif
    THROW_ASSERT(found, "call id " + STR(call_id) + " from " + caller_name + " to " + called_name +
                            " was not in the call graph");
@@ -341,7 +341,7 @@ void CallGraphManager::AddFunctionAndCallPoint(const application_managerRef AppM
                                                enum FunctionEdgeInfo::CallType call_type)
 {
    if(tree_helper::print_function_name(
-          tree_manager, GetPointer<const function_decl>(tree_manager->CGetTreeNode(called_id))) != BUILTIN_WAIT_CALL)
+          tree_manager, GetPointer<const function_decl>(tree_manager->GetTreeNode(called_id))) != BUILTIN_WAIT_CALL)
    {
       if(!IsVertex(called_id))
       {
@@ -362,7 +362,7 @@ void CallGraphManager::RemoveCallPoint(EdgeDescriptor e, const unsigned int call
 {
    const auto called_id = Cget_node_info<FunctionInfo, CallGraph>(boost::target(e, *call_graph), *call_graph)->nodeID;
    const auto called_name = tree_helper::print_function_name(
-       tree_manager, GetPointerS<const function_decl>(tree_manager->CGetTreeNode(called_id)));
+       tree_manager, GetPointerS<const function_decl>(tree_manager->GetTreeNode(called_id)));
    if(called_name == BUILTIN_WAIT_CALL)
    {
       return;
@@ -405,7 +405,7 @@ void CallGraphManager::RemoveCallPoint(EdgeDescriptor e, const unsigned int call
 #if !defined(NDEBUG) || HAVE_ASSERTS
    const auto caller_name = "(" + STR(caller_id) + ") " +
                             tree_helper::print_function_name(
-                                tree_manager, GetPointerS<const function_decl>(tree_manager->CGetTreeNode(caller_id)));
+                                tree_manager, GetPointerS<const function_decl>(tree_manager->GetTreeNode(caller_id)));
 #endif
    THROW_ASSERT(found_calls, "call id " + STR(callid) + " is not a call point in function " + caller_name +
                                  " for function (" + STR(called_id) + ") " + called_name);
@@ -447,7 +447,7 @@ void CallGraphManager::RemoveCallPoint(const unsigned int caller_id, const unsig
                                        const unsigned int call_id)
 {
    const auto called_name = tree_helper::print_function_name(
-       tree_manager, GetPointer<const function_decl>(tree_manager->CGetTreeNode(called_id)));
+       tree_manager, GetPointer<const function_decl>(tree_manager->GetTreeNode(called_id)));
    if(called_name == BUILTIN_WAIT_CALL)
    {
       return;
@@ -460,7 +460,7 @@ void CallGraphManager::RemoveCallPoint(const unsigned int caller_id, const unsig
 #if HAVE_ASSERTS
    const auto caller_name = "(" + STR(caller_id) + ") " +
                             tree_helper::print_function_name(
-                                tree_manager, GetPointerS<const function_decl>(tree_manager->CGetTreeNode(caller_id)));
+                                tree_manager, GetPointerS<const function_decl>(tree_manager->GetTreeNode(caller_id)));
 #endif
    THROW_ASSERT(found, "call id " + STR(call_id) + " is not a call point in function " + caller_name +
                            " for function (" + STR(called_id) + ") " + called_name);
@@ -679,7 +679,7 @@ void CallGraphManager::expandCallGraphFromFunction(CustomUnorderedSet<unsigned i
    if(has_body)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, DL, "---Analyze body of " + tree_helper::name_function(TM, f_id));
-      const auto fun = TM->CGetTreeNode(f_id);
+      const auto fun = TM->GetTreeNode(f_id);
       const auto fd = GetPointerS<const function_decl>(fun);
       const auto sl = GetPointerS<const statement_list>(fd->body);
       if(sl->list_of_bloc.empty())
@@ -717,7 +717,7 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
                                                         unsigned int node_stmt,
                                                         enum FunctionEdgeInfo::CallType call_type, int DL)
 {
-   unsigned int ind = GET_INDEX_NODE(tn);
+   unsigned int ind = tn->index;
    if(tn->get_kind() != function_decl_K)
    {
       if(AV.find(ind) != AV.end())
@@ -743,7 +743,7 @@ void CallGraphManager::call_graph_computation_recursive(CustomUnorderedSet<unsig
             ind = impl;
          }
          /// check for nested function
-         const tree_nodeRef fun = TM->CGetTreeNode(ind);
+         const tree_nodeRef fun = TM->GetTreeNode(ind);
          const auto* fd = GetPointer<const function_decl>(fun);
          if(fd->scpe && fd->scpe->get_kind() == function_decl_K)
          {

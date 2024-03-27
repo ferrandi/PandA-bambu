@@ -101,8 +101,8 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
    bool modified = false;
    const auto TreeM = AppM->get_tree_manager();
    const auto tree_man = tree_manipulationRef(new tree_manipulation(TreeM, parameters, AppM));
-   const auto curr_tn = TreeM->CGetTreeNode(function_id);
-   const auto Scpe = TreeM->CGetTreeNode(function_id);
+   const auto curr_tn = TreeM->GetTreeNode(function_id);
+   const auto Scpe = TreeM->GetTreeNode(function_id);
    const auto fd = GetPointerS<const function_decl>(curr_tn);
    const auto sl = GetPointerS<const statement_list>(fd->body);
    for(const auto& block : sl->list_of_bloc)
@@ -158,7 +158,7 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(new_ga));
             const auto new_not = tree_man->create_unary_operation(
                 booleanType, GetPointerS<const gimple_assign>(new_ga)->op0, srcp_string, truth_not_expr_K);
-            if(GET_INDEX_CONST_NODE(be->type) != GET_INDEX_CONST_NODE(booleanType))
+            if(be->type->index != booleanType->index)
             {
                const auto new_ga_not = tree_man->CreateGimpleAssign(
                    booleanType, TreeM->CreateUniqueIntegerCst(0, booleanType),

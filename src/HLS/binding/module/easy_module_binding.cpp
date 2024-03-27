@@ -192,7 +192,7 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
                            "---" + GET_NAME(sdg, op) + "(" +
                                (node_id == ENTRY_ID ?
                                     "ENTRY" :
-                                    (node_id == EXIT_ID ? "EXIT" : TM->CGetTreeNode(node_id)->ToString())) +
+                                    (node_id == EXIT_ID ? "EXIT" : TM->GetTreeNode(node_id)->ToString())) +
                                ") bound to " + allocation_information->get_fu_name(fu_unit).first + "(0)");
          }
       }
@@ -224,7 +224,7 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
                               "---" + GET_NAME(sdg, op) + "(" +
                                   (node_id == ENTRY_ID ?
                                        "ENTRY" :
-                                       (node_id == EXIT_ID ? "EXIT" : TM->CGetTreeNode(node_id)->ToString())) +
+                                       (node_id == EXIT_ID ? "EXIT" : TM->GetTreeNode(node_id)->ToString())) +
                                   ") bound to " + allocation_information->get_fu_name(fu_unit).first + "(0)");
             }
          }

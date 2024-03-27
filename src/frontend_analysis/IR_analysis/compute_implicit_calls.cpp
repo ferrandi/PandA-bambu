@@ -137,7 +137,7 @@ compute_implicit_calls::ComputeFrontendRelationships(const DesignFlowStep::Relat
 
 DesignFlowStep_Status compute_implicit_calls::InternalExec()
 {
-   tree_nodeRef node = TM->CGetTreeNode(function_id);
+   tree_nodeRef node = TM->GetTreeNode(function_id);
    const auto fd = GetPointer<function_decl>(node);
    if(!fd || !fd->body)
    {
@@ -377,7 +377,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       /// retrieve the starting variable
       const auto ga = GetPointerS<gimple_assign>(stmt_bb_pair.first);
       const auto mr = GetPointerS<mem_ref>(ga->op0);
-      const auto var = TM->CGetTreeNode(tree_helper::GetBaseVariable(mr->op0)->index);
+      const auto var = tree_helper::GetBaseVariable(mr->op0);
       auto init_var = mr->op0;
       const auto srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
       auto type_node1 = tree_helper::CGetType(var);
@@ -472,7 +472,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       /// We must use pointer since we are erasing elements in the list
       for(auto statement = list_of_stmt.begin(); statement != list_of_stmt.end(); statement++)
       {
-         if(GET_INDEX_NODE(*statement) == GET_INDEX_CONST_NODE(stmt_bb_pair.first))
+         if((*statement)->index == stmt_bb_pair.first->index)
          {
             /// move var = {}; to BBN1
             found_memset_statement = true;

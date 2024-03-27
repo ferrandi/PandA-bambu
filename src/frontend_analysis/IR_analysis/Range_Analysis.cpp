@@ -145,7 +145,7 @@ union vcDouble
 
 bool tree_reindexCompare::operator()(const tree_nodeConstRef& lhs, const tree_nodeConstRef& rhs) const
 {
-   return GET_INDEX_CONST_NODE(lhs) < GET_INDEX_CONST_NODE(rhs);
+   return lhs->index < rhs->index;
 }
 
 namespace
@@ -1219,8 +1219,7 @@ int VarNode::updateIR(const tree_managerRef& TM,
                       ,
                       application_managerRef AppM)
 {
-   const auto ssa_node = TM->GetTreeNode(GET_INDEX_CONST_NODE(V));
-   auto* SSA = GetPointer<ssa_name>(ssa_node);
+   auto* SSA = GetPointer<ssa_name>(TM->GetTreeNode(V->index));
    if(SSA == nullptr || interval->isUnknown())
    {
       return ut_None;
@@ -3641,8 +3640,7 @@ RangeRef TernaryOpNode::eval() const
                         const auto& constant = CondOp0->get_kind() == integer_cst_K ? CondOp0 : CondOp1;
                         const auto& opV1 = I->op1;
                         const auto& opV2 = I->op2;
-                        if(GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(opV1) ||
-                           GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(opV2))
+                        if(variable->index == opV1->index || variable->index == opV2->index)
                         {
                            const auto CR = tree_helper::Range(constant);
                            THROW_ASSERT(CR->isConstant(), "Range from constant should be constant (" +
@@ -3654,7 +3652,7 @@ RangeRef TernaryOpNode::eval() const
                                                                makeSatisfyingCmpRegion(swappred, CR);
                            THROW_ASSERT(!tmpT->isFullSet(), "");
 
-                           if(GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(opV2))
+                           if(variable->index == opV2->index)
                            {
                               RangeRef FValues(new Range(*tmpT->getAnti()));
                               op3 = op3->intersectWith(FValues);
@@ -3905,7 +3903,7 @@ static RangeRef constructor_range(const tree_managerConstRef TM, const tree_node
    const auto* c = GetPointer<const constructor>(tn);
    std::vector<unsigned long long> array_dims;
    unsigned long long elements_bitsize;
-   tree_helper::get_array_dim_and_bitsize(TM, GET_INDEX_CONST_NODE(c->type), array_dims, elements_bitsize);
+   tree_helper::get_array_dim_and_bitsize(TM, c->type->index, array_dims, elements_bitsize);
    unsigned int initialized_elements = 0;
    auto ctor_range = RangeRef(init->clone());
    for(const auto& i : c->list_of_idx_valu)
@@ -3971,12 +3969,12 @@ LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function
          ga->op1->get_kind() == target_mem_ref_K || ga->op1->get_kind() == target_mem_ref461_K ||
          ga->op1->get_kind() == var_decl_K)
       {
-         auto base_index = tree_helper::get_base_index(TM, GET_INDEX_NODE(ga->op1));
+         auto base_index = tree_helper::get_base_index(TM, ga->op1->index);
          const auto* hm = GetPointer<HLS_manager>(AppM);
          if(base_index && AppM->get_written_objects().find(base_index) == AppM->get_written_objects().end() && hm &&
             hm->Rmem && FB->is_variable_mem(base_index) && hm->Rmem->is_sds_var(base_index))
          {
-            const auto* vd = GetPointer<const var_decl>(TM->CGetTreeNode(base_index));
+            const auto* vd = GetPointer<const var_decl>(TM->GetTreeNode(base_index));
             if(vd && vd->init)
             {
                if(vd->init->get_kind() == constructor_K)
@@ -4004,7 +4002,7 @@ LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function
             hm->Rmem && hm->Rmem->get_enable_hls_bit_value() && FB->is_variable_mem(base_index) &&
             hm->Rmem->is_private_memory(base_index) && hm->Rmem->is_sds_var(base_index))
          {
-            const auto* vd = GetPointer<const var_decl>(TM->CGetTreeNode(base_index));
+            const auto* vd = GetPointer<const var_decl>(TM->GetTreeNode(base_index));
             if(vd && vd->init)
             {
                if(vd->init->get_kind() == constructor_K)
@@ -4033,7 +4031,7 @@ LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function
             }
             for(const auto& cur_var : hm->Rmem->get_source_values(base_index))
             {
-               const auto cur_node = TM->CGetTreeNode(cur_var);
+               const auto cur_node = TM->GetTreeNode(cur_var);
                THROW_ASSERT(cur_node, "");
                auto init_range = tree_helper::Range(cur_node);
                if(init_range->getBitWidth() != bw)
@@ -4392,7 +4390,7 @@ void Nuutila::visit(const tree_nodeConstRef& V, std::stack<tree_nodeConstRef>& s
    }
 
    // The second phase of the algorithm assigns components to stacked nodes
-   if(GET_INDEX_CONST_NODE(root[V]) == GET_INDEX_CONST_NODE(V))
+   if(root[V]->index == V->index)
    {
       // Neither the worklist nor the map of components is part of Nuutila's
       // original algorithm. We are using these data structures to get a
@@ -4424,7 +4422,7 @@ bool Nuutila::checkWorklist() const
       auto v1 = *nit;
       for(const auto& v2 : boost::make_iterator_range(++nit, cend()))
       {
-         if(GET_INDEX_CONST_NODE(v1) == GET_INDEX_CONST_NODE(v2))
+         if(v1->index == v2->index)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "[Nuutila::checkWorklist] Duplicated entry in worklist " + v1->ToString());
@@ -4564,8 +4562,8 @@ bool Meet::fixed(OpNode* op)
    if(op->getInstruction())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "FIXED::@" + STR(GET_INDEX_CONST_NODE(op->getInstruction())) + ": " + oldInterval->ToString() +
-                         " -> " + newInterval->ToString());
+                     "FIXED::@" + STR(op->getInstruction()->index) + ": " + oldInterval->ToString() + " -> " +
+                         newInterval->ToString());
    }
    else
    {
@@ -4659,8 +4657,8 @@ bool Meet::widen(OpNode* op, const std::vector<APInt>& constantvector)
    if(op->getInstruction())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "WIDEN::@" + STR(GET_INDEX_CONST_NODE(op->getInstruction())) + ": " + oldRange->ToString() +
-                         " -> " + newRange->ToString() + " -> " + sinkRange->ToString());
+                     "WIDEN::@" + STR(op->getInstruction()->index) + ": " + oldRange->ToString() + " -> " +
+                         newRange->ToString() + " -> " + sinkRange->ToString());
    }
    else
    {
@@ -4706,8 +4704,8 @@ bool Meet::growth(OpNode* op)
    if(op->getInstruction())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "GROWTH::@" + STR(GET_INDEX_CONST_NODE(op->getInstruction())) + ": " + oldRange->ToString() +
-                         " -> " + sinkRange->ToString());
+                     "GROWTH::@" + STR(op->getInstruction()->index) + ": " + oldRange->ToString() + " -> " +
+                         sinkRange->ToString());
    }
    else
    {
@@ -4807,8 +4805,8 @@ bool Meet::narrow(OpNode* op, const std::vector<APInt>& constantvector)
    if(op->getInstruction())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "NARROW::@" + STR(GET_INDEX_CONST_NODE(op->getInstruction())) + ": " + oldRange->ToString() +
-                         " -> " + sinkRange->ToString());
+                     "NARROW::@" + STR(op->getInstruction()->index) + ": " + oldRange->ToString() + " -> " +
+                         sinkRange->ToString());
    }
    else
    {
@@ -4851,8 +4849,8 @@ bool Meet::crop(OpNode* op)
    if(op->getInstruction())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "CROP::@" + STR(GET_INDEX_CONST_NODE(op->getInstruction())) + ": " + oldRange->ToString() +
-                         " -> " + sinkRange->ToString());
+                     "CROP::@" + STR(op->getInstruction()->index) + ": " + oldRange->ToString() + " -> " +
+                         sinkRange->ToString());
    }
    else
    {
@@ -5053,9 +5051,8 @@ class ConstraintGraph : public NodeContainer
                            "Variable bitwidth is " + STR(tree_helper::TypeSize(variable)) + " and constant value is " +
                                constant->ToString());
 
-            auto TValues = (GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(bin_op->op0)) ?
-                               makeSatisfyingCmpRegion(pred, CR) :
-                               makeSatisfyingCmpRegion(swappred, CR);
+            auto TValues = (variable->index == bin_op->op0->index) ? makeSatisfyingCmpRegion(pred, CR) :
+                                                                     makeSatisfyingCmpRegion(swappred, CR);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Condition is true on " + TValues->ToString());
             auto FValues = TValues->isFullSet() ? tree_helper::TypeRange(variable, Empty) : TValues->getAnti();
             // When dealing with eq/ne conditions it is safer to propagate only the constant branch value
@@ -5083,7 +5080,7 @@ class ConstraintGraph : public NodeContainer
                {
                   const auto* cast_inst = GetPointer<const unary_expr>(VDef->op1);
 #ifndef NDEBUG
-                  if(GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(bin_op->op0))
+                  if(variable->index == bin_op->op0->index)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                     "Op0 comes from a cast expression " + cast_inst->ToString());
@@ -5276,9 +5273,8 @@ class ConstraintGraph : public NodeContainer
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "Variable bitwidth is " + STR(bw) + " and constant value is " + STR(constant->value));
 
-               const auto tmpT = (GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(cmp_op->op0)) ?
-                                     makeSatisfyingCmpRegion(pred, CR) :
-                                     makeSatisfyingCmpRegion(swappred, CR);
+               const auto tmpT = (variable->index == cmp_op->op0->index) ? makeSatisfyingCmpRegion(pred, CR) :
+                                                                           makeSatisfyingCmpRegion(swappred, CR);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Condition is true on " + tmpT->ToString());
 
                RangeRef TValues = tmpT->isFullSet() ? RangeRef(new Range(Regular, bw)) : tmpT;
@@ -5296,7 +5292,7 @@ class ConstraintGraph : public NodeContainer
                   {
                      const auto* cast_inst = GetPointer<const unary_expr>(VDef->op1);
 #ifndef NDEBUG
-                     if(GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(cmp_op->op0))
+                     if(variable->index == cmp_op->op0->index)
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "Op0 comes from a cast expression " + cast_inst->ToString());
@@ -5789,9 +5785,8 @@ class ConstraintGraph : public NodeContainer
          if(SSA->var != nullptr && SSA->var->get_kind() == parm_decl_K &&
             SSA->CGetDefStmt()->get_kind() == gimple_nop_K)
          {
-            auto argIt = std::find_if(args.begin(), args.end(), [&](const tree_nodeRef& arg) {
-               return GET_INDEX_CONST_NODE(arg) == GET_INDEX_CONST_NODE(SSA->var);
-            });
+            auto argIt = std::find_if(args.begin(), args.end(),
+                                      [&](const tree_nodeRef& arg) { return arg->index == SSA->var->index; });
             THROW_ASSERT(argIt != args.end(), "parm_decl associated with ssa_name not found in function parameters");
             size_t arg_pos = static_cast<size_t>(argIt - args.begin());
             THROW_ASSERT(arg_pos < args.size(), "Computed parameter position outside actual parameters number");
@@ -5890,7 +5885,7 @@ class ConstraintGraph : public NodeContainer
    {
       const auto TM = AppM->get_tree_manager();
       const auto FB = AppM->CGetFunctionBehavior(function_id);
-      const auto* FD = GetPointer<const function_decl>(TM->CGetTreeNode(function_id));
+      const auto* FD = GetPointer<const function_decl>(TM->GetTreeNode(function_id));
       const auto* SL = GetPointer<const statement_list>(FD->body);
 #ifndef NDEBUG
       std::string fn_name =
@@ -6087,10 +6082,9 @@ class ConstraintGraph : public NodeContainer
 #endif
             // iterate a fixed number of time before widening
             update(static_cast<size_t>(component.size() * 16L), compUseMap, entryPoints);
-            INDENT_DBG_MEX(
-                DEBUG_LEVEL_VERY_PEDANTIC, graph_debug,
-                "Printed constraint graph to " +
-                    printToFile("after_" + step_name + ".fixed." + STR(GET_INDEX_CONST_NODE(n)) + ".dot", parameters));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug,
+                           "Printed constraint graph to " +
+                               printToFile("after_" + step_name + ".fixed." + STR(n->index) + ".dot", parameters));
 
             generateEntryPoints(component, entryPoints);
 #ifndef NDEBUG
@@ -6103,8 +6097,7 @@ class ConstraintGraph : public NodeContainer
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, " --");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug,
                            "Printed constraint graph to " +
-                               printToFile("after_" + step_name + ".futures." + STR(GET_INDEX_CONST_NODE(n)) + ".dot",
-                                           parameters));
+                               printToFile("after_" + step_name + ".futures." + STR(n->index) + ".dot", parameters));
 
             for(VarNode* varNode : component)
             {
@@ -6115,10 +6108,9 @@ class ConstraintGraph : public NodeContainer
                   varNode->setRange(varNode->getMaxRange());
                }
             }
-            INDENT_DBG_MEX(
-                DEBUG_LEVEL_VERY_PEDANTIC, graph_debug,
-                "Printed constraint graph to " +
-                    printToFile("after_" + step_name + ".int." + STR(GET_INDEX_CONST_NODE(n)) + ".dot", parameters));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug,
+                           "Printed constraint graph to " +
+                               printToFile("after_" + step_name + ".int." + STR(n->index) + ".dot", parameters));
 
             // Second iterate till fix point
             std::set<tree_nodeConstRef, tree_reindexCompare> activeVars;
@@ -6287,7 +6279,7 @@ static void TopFunctionUserHits(unsigned int function_id, const application_mana
 )
 {
    const auto TM = AppM->get_tree_manager();
-   const auto fd = TM->CGetTreeNode(function_id);
+   const auto fd = TM->GetTreeNode(function_id);
    const auto* FD = GetPointer<const function_decl>(fd);
 
    const auto& parmMap = CG->getParmMap();
@@ -6337,7 +6329,7 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
 )
 {
    const auto TM = AppM->get_tree_manager();
-   const auto fd = TM->CGetTreeNode(function_id);
+   const auto fd = TM->GetTreeNode(function_id);
    const auto* FD = GetPointer<const function_decl>(fd);
 #if !defined(NDEBUG) or HAVE_ASSERTS
    std::string fn_name = tree_helper::print_type(

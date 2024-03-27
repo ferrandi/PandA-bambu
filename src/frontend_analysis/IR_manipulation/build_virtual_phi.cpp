@@ -731,8 +731,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                const auto phi_stmt = GetPointerS<gimple_phi>(bbv_phi.second);
                const auto vssa = GetPointerS<ssa_name>(phi_stmt->res);
                if(vssa->CGetNumberUses() == 0 ||
-                  (vssa->CGetNumberUses() == 1 &&
-                   GET_INDEX_NODE(vssa->CGetUseStmts().begin()->first) == phi_stmt->index))
+                  (vssa->CGetNumberUses() == 1 && vssa->CGetUseStmts().begin()->first->index == phi_stmt->index))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Removing just created dead phi from BB" + STR(bb->number) + " - (" +

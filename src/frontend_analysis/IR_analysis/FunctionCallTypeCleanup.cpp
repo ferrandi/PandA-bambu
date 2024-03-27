@@ -109,7 +109,7 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
    bool changed = false;
    const auto TM = AppM->get_tree_manager();
    const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
-   const auto tn = TM->CGetTreeNode(function_id);
+   const auto tn = TM->GetTreeNode(function_id);
    const auto fd = GetPointerS<const function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
    const auto sl = GetPointerS<const statement_list>(fd->body);
@@ -175,7 +175,7 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                         changed = true;
                      }
                   }
-                  const auto called_id = GET_INDEX_NODE(ae->op);
+                  const auto called_id = ae->op->index;
                   if(called_body_fun_ids.find(called_id) != called_body_fun_ids.end())
                   {
                      changed |= ParametersTypeCleanup(TM, tree_man, block.second, stmt, ce->args, srcp_default);
@@ -200,7 +200,7 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                const auto ae = GetPointerS<const addr_expr>(addr_node);
                THROW_ASSERT(ae->op->get_kind() == function_decl_K,
                             "node  " + STR(ae->op) + " is not function_decl but " + ae->op->get_kind_text());
-               const auto called_id = GET_INDEX_CONST_NODE(ae->op);
+               const auto called_id = ae->op->index;
                if(called_body_fun_ids.find(called_id) != called_body_fun_ids.end())
                {
                   const auto srcp_default =
@@ -250,8 +250,7 @@ bool FunctionCallTypeCleanup::ParametersTypeCleanup(const tree_managerRef& TM, c
       if(((*arg_it)->get_kind() == integer_cst_K || (*arg_it)->get_kind() == ssa_name_K) &&
          !tree_helper::IsSameType(formal_type, actual_type))
       {
-         ga_cleanup = tree_man->CreateNopExpr(*arg_it, TM->CGetTreeNode(formal_type->index), tree_nodeRef(),
-                                              tree_nodeRef(), function_id);
+         ga_cleanup = tree_man->CreateNopExpr(*arg_it, formal_type, tree_nodeRef(), tree_nodeRef(), function_id);
       }
       else if((*arg_it)->get_kind() == addr_expr_K || (*arg_it)->get_kind() == nop_expr_K ||
               (*arg_it)->get_kind() == view_convert_expr_K) /// required by CLANG/LLVM
@@ -273,7 +272,7 @@ bool FunctionCallTypeCleanup::ParametersTypeCleanup(const tree_managerRef& TM, c
          auto tmp_arg_it = args.begin();
          for(; tmp_arg_it != args.end(); tmp_arg_it++, k++)
          {
-            if(GET_INDEX_CONST_NODE(*arg_it) == GET_INDEX_CONST_NODE(*tmp_arg_it) &&
+            if((*arg_it)->index == (*tmp_arg_it)->index &&
                tree_helper::GetFormalIth(stmt, k)->index == formal_type->index)
             {
                TM->RecursiveReplaceTreeNode(*tmp_arg_it, *tmp_arg_it, new_ssa, stmt, false);

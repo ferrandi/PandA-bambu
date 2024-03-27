@@ -126,7 +126,7 @@ determine_memory_accesses::ComputeFrontendRelationships(const DesignFlowStep::Re
 
 DesignFlowStep_Status determine_memory_accesses::InternalExec()
 {
-   const auto tn = TM->CGetTreeNode(function_id);
+   const auto tn = TM->GetTreeNode(function_id);
    const auto fd = GetPointer<const function_decl>(tn);
    if(!fd || !fd->body)
    {
@@ -275,7 +275,7 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& tn, bool l
                   load_candidate = true;
                }
                if(code1 == var_decl_K &&
-                  function_behavior->is_variable_mem(GET_INDEX_NODE(GetPointerS<const unary_expr>(op1)->op)))
+                  function_behavior->is_variable_mem(GetPointerS<const unary_expr>(op1)->op->index))
                {
                   load_candidate = true;
                }
@@ -294,7 +294,7 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& tn, bool l
                   store_candidate = true;
                }
                if(code0 == var_decl_K &&
-                  function_behavior->is_variable_mem(GET_INDEX_CONST_NODE(GetPointerS<const unary_expr>(op0)->op)))
+                  function_behavior->is_variable_mem(GetPointerS<const unary_expr>(op0)->op->index))
                {
                   store_candidate = true;
                }
@@ -306,10 +306,10 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& tn, bool l
                 (op0_type->get_kind() == union_type_K && op1_type->get_kind() == union_type_K &&
                  op1_kind != view_convert_expr_K) ||
                 (op0_type->get_kind() == array_type_K) ||
-                (function_behavior->is_variable_mem(GET_INDEX_NODE(gm->op0)) &&
-                 function_behavior->is_variable_mem(GET_INDEX_NODE(gm->op1))) ||
-                (function_behavior->is_variable_mem(GET_INDEX_NODE(gm->op0)) && load_candidate) ||
-                (store_candidate && function_behavior->is_variable_mem(GET_INDEX_NODE(gm->op1)))))
+                (function_behavior->is_variable_mem(gm->op0->index) &&
+                 function_behavior->is_variable_mem(gm->op1->index)) ||
+                (function_behavior->is_variable_mem(gm->op0->index) && load_candidate) ||
+                (store_candidate && function_behavior->is_variable_mem(gm->op1->index))))
             {
                if(op0_kind == mem_ref_K)
                {
@@ -397,7 +397,7 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& tn, bool l
             {
                const auto vd = GetPointerS<const var_decl>(ue->op);
                bool address_externally_used = false;
-               function_behavior->add_function_mem(GET_INDEX_NODE(ue->op));
+               function_behavior->add_function_mem(ue->op->index);
                if((((!vd->scpe || vd->scpe->get_kind() == translation_unit_decl_K) && !vd->static_flag) ||
                    tree_helper::IsVolatile(tn)))
                {
@@ -406,33 +406,33 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& tn, bool l
                      address_externally_used = true;
                   }
                   function_behavior->set_has_globals(true);
-                  function_behavior->add_state_variable(GET_INDEX_NODE(ue->op));
+                  function_behavior->add_state_variable(ue->op->index);
                   if(address_externally_used)
                   {
                      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
                                     "---Global variable externally accessible found: " +
-                                        behavioral_helper->PrintVariable(GET_INDEX_NODE(ue->op)));
+                                        behavioral_helper->PrintVariable(ue->op->index));
                   }
                }
                else
                {
-                  function_behavior->add_state_variable(GET_INDEX_NODE(ue->op));
+                  function_behavior->add_state_variable(ue->op->index);
                }
 
                if((!no_dynamic_address || address_externally_used))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Variable for which the dynamic address is used-1: " +
-                                     behavioral_helper->PrintVariable(GET_INDEX_NODE(ue->op)));
-                  function_behavior->add_dynamic_address(GET_INDEX_NODE(ue->op));
+                                     behavioral_helper->PrintVariable(ue->op->index));
+                  function_behavior->add_dynamic_address(ue->op->index);
                   if(!vd->readonly_flag)
                   {
-                     AppM->add_written_object(GET_INDEX_NODE(ue->op));
+                     AppM->add_written_object(ue->op->index);
                   }
                }
                if(left_p && !vd->readonly_flag)
                {
-                  AppM->add_written_object(GET_INDEX_NODE(ue->op));
+                  AppM->add_written_object(ue->op->index);
                }
                if(already_visited_ae.find(node_id) == already_visited_ae.end())
                {
@@ -446,46 +446,46 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& tn, bool l
             }
             else if(ue_op_kind == parm_decl_K)
             {
-               function_behavior->add_function_mem(GET_INDEX_NODE(ue->op));
+               function_behavior->add_function_mem(ue->op->index);
                if(!no_dynamic_address)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Variable for which the dynamic address is used-2: " +
-                                     behavioral_helper->PrintVariable(GET_INDEX_NODE(ue->op)));
-                  function_behavior->add_dynamic_address(GET_INDEX_NODE(ue->op));
+                                     behavioral_helper->PrintVariable(ue->op->index));
+                  function_behavior->add_dynamic_address(ue->op->index);
                }
                /// an address of a parm decl may be used in writing so it has to be copied
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                             "  Analyzing node: formal parameter copied " + STR(GET_INDEX_NODE(ue->op)));
-               function_behavior->add_parm_decl_copied(GET_INDEX_NODE(ue->op));
-               AppM->add_written_object(GET_INDEX_NODE(ue->op));
+                             "  Analyzing node: formal parameter copied " + STR(ue->op->index));
+               function_behavior->add_parm_decl_copied(ue->op->index);
+               AppM->add_written_object(ue->op->index);
             }
             else if(ue_op_kind == string_cst_K)
             {
-               function_behavior->add_function_mem(GET_INDEX_NODE(ue->op));
+               function_behavior->add_function_mem(ue->op->index);
                if(!no_dynamic_address)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Variable for which the dynamic address is used-3: " +
-                                     behavioral_helper->PrintVariable(GET_INDEX_NODE(ue->op)));
-                  function_behavior->add_dynamic_address(GET_INDEX_NODE(ue->op));
-                  AppM->add_written_object(GET_INDEX_NODE(ue->op));
+                                     behavioral_helper->PrintVariable(ue->op->index));
+                  function_behavior->add_dynamic_address(ue->op->index);
+                  AppM->add_written_object(ue->op->index);
                }
             }
             else if(ue_op_kind == result_decl_K)
             {
-               function_behavior->add_function_mem(GET_INDEX_NODE(ue->op));
+               function_behavior->add_function_mem(ue->op->index);
                if(!no_dynamic_address)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Variable for which the dynamic address is used-4: " +
-                                     behavioral_helper->PrintVariable(GET_INDEX_NODE(ue->op)));
-                  function_behavior->add_dynamic_address(GET_INDEX_NODE(ue->op));
-                  AppM->add_written_object(GET_INDEX_NODE(ue->op));
+                                     behavioral_helper->PrintVariable(ue->op->index));
+                  function_behavior->add_dynamic_address(ue->op->index);
+                  AppM->add_written_object(ue->op->index);
                }
                INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
                               "---result_decl variable added to memory: " +
-                                  behavioral_helper->PrintVariable(GET_INDEX_NODE(ue->op)));
+                                  behavioral_helper->PrintVariable(ue->op->index));
             }
             else if(ue_op_kind == component_ref_K || ue_op_kind == realpart_expr_K || ue_op_kind == imagpart_expr_K ||
                     ue_op_kind == array_ref_K)
@@ -786,7 +786,7 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& tn, bool l
             break;
          }
 
-         if(AppM->GetFunctionBehavior(GET_INDEX_NODE(ae->op))->get_unaligned_accesses())
+         if(AppM->GetFunctionBehavior(ae->op->index)->get_unaligned_accesses())
          {
             function_behavior->set_unaligned_accesses(true);
          }
@@ -816,9 +816,9 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& tn, bool l
             const auto arg_end = ce->args.cend();
             for(; arg != arg_end && formal_it != formal_it_end; ++arg, ++formal_it)
             {
-               tree_nodeConstRef actual_par = *arg;
+               auto actual_par = *arg;
                const auto formal_par = *formal_it;
-               unsigned int calledFundID = GET_INDEX_NODE(ae->op);
+               unsigned int calledFundID = ae->op->index;
                if(tree_helper::IsPointerType(actual_par) && tree_helper::GetBaseVariable(actual_par))
                {
                   actual_par = tree_helper::GetBaseVariable(actual_par);
@@ -828,7 +828,7 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& tn, bool l
                const auto formal_ssa_index = AppM->getSSAFromParm(calledFundID, formal_par->index);
                if(function_behavior->is_variable_mem(actual_par->index) && formal_ssa_index)
                {
-                  const auto formal_ssa_node = TM->CGetTreeNode(formal_ssa_index);
+                  const auto formal_ssa_node = TM->GetTreeNode(formal_ssa_index);
                   const auto formal_ssa = GetPointerS<const ssa_name>(formal_ssa_node);
                   const auto is_singleton = formal_ssa->use_set->is_a_singleton() &&
                                             actual_par->index == formal_ssa->use_set->variables.front()->index;
@@ -840,7 +840,7 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& tn, bool l
                      function_behavior->add_dynamic_address(actual_par->index);
                      AppM->add_written_object(actual_par->index);
                      /// if the formal parameter has not been allocated in memory then it has to be initialized
-                     if(!FBcalled->is_variable_mem(formal_par->index) && GET_INDEX_NODE(*arg) == actual_par->index)
+                     if(!FBcalled->is_variable_mem(formal_par->index) && (*arg)->index == actual_par->index)
                      {
                         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                       "  Analyzing node: actual parameter loaded " + STR(actual_par));
@@ -1060,9 +1060,9 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& tn, bool l
             const auto arg_end = ce->args.cend();
             for(; arg != arg_end && formal_it != formal_it_end; ++arg, ++formal_it)
             {
-               tree_nodeConstRef actual_par = *arg;
+               auto actual_par = *arg;
                const auto formal_par = *formal_it;
-               unsigned int calledFundID = GET_INDEX_NODE(ae->op);
+               unsigned int calledFundID = ae->op->index;
                if(tree_helper::IsPointerType(actual_par) && tree_helper::GetBaseVariable(actual_par))
                {
                   actual_par = tree_helper::GetBaseVariable(actual_par);
@@ -1072,7 +1072,7 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& tn, bool l
                const auto formal_ssa_index = AppM->getSSAFromParm(calledFundID, formal_par->index);
                if(function_behavior->is_variable_mem(actual_par->index) && formal_ssa_index)
                {
-                  const auto formal_ssa_node = TM->CGetTreeNode(formal_ssa_index);
+                  const auto formal_ssa_node = TM->GetTreeNode(formal_ssa_index);
                   const auto formal_ssa = GetPointer<const ssa_name>(formal_ssa_node);
                   const auto is_singleton = formal_ssa->use_set->is_a_singleton() &&
                                             actual_par->index == formal_ssa->use_set->variables.front()->index;
@@ -1084,8 +1084,7 @@ void determine_memory_accesses::analyze_node(const tree_nodeConstRef& tn, bool l
                      function_behavior->add_dynamic_address(actual_par->index);
                      AppM->add_written_object(actual_par->index);
                      /// if the formal parameter has not been allocated in memory then it has to be initialized
-                     if(!FBcalled->is_variable_mem(formal_par->index) &&
-                        GET_INDEX_CONST_NODE(*arg) == actual_par->index)
+                     if(!FBcalled->is_variable_mem(formal_par->index) && (*arg)->index == actual_par->index)
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "---actual parameter loaded " + STR(actual_par->index));

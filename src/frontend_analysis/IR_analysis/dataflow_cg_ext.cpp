@@ -154,7 +154,7 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
          THROW_ERROR("Address/indirect function calls not supported in dataflow.");
       }
 
-      const auto fnode = TM->CGetTreeNode(function_id);
+      const auto fnode = TM->GetTreeNode(function_id);
       auto is_single_call = boost::in_degree(tgt, *CG) == 1;
       std::vector<unsigned int> call_points(is_single_call ? ++(call_info->direct_call_points.begin()) :
                                                              call_info->direct_call_points.begin(),
@@ -162,7 +162,7 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
 
       for(auto call_id : call_points)
       {
-         const auto call_node = TM->CGetTreeNode(call_id);
+         const auto call_node = TM->GetTreeNode(call_id);
          const auto module_suffix = "_" + std::to_string(call_id);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Clone module " + tsymbol + " -> " + tsymbol + module_suffix);
@@ -170,7 +170,7 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
          const auto version_symbol = tsymbol + module_suffix;
          const auto version_fnode = TM->GetFunction(version_symbol);
          THROW_ASSERT(version_fnode, "Expected version function node for " + version_symbol);
-         new_modules.push_back(GET_INDEX_CONST_NODE(version_fnode));
+         new_modules.push_back(version_fnode->index);
          const auto march = FunctionArchitectureRef(new FunctionArchitecture(*tarch));
          march->attrs.at(FunctionArchitecture::func_symbol) += module_suffix;
          march->attrs.at(FunctionArchitecture::func_symbol) += module_suffix;
@@ -183,7 +183,7 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
       std::vector<unsigned int> call_points(call_info->direct_call_points.begin(), call_info->direct_call_points.end());
       for(auto call_id : call_points)
       {
-         const auto call_node = TM->CGetTreeNode(call_id);
+         const auto call_node = TM->GetTreeNode(call_id);
          CleanVirtuals(TM, call_node);
       }
    }

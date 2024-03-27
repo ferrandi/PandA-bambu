@@ -200,7 +200,7 @@ DesignFlowStep_Status CheckSystemType::InternalExec()
 
    for(const auto f : AppM->get_functions_without_body())
    {
-      recursive_examinate(TM->CGetTreeNode(f), already_visited);
+      recursive_examinate(TM->GetTreeNode(f), already_visited);
    }
 
    for(const auto& bbi_bb : sl->list_of_bloc)
@@ -222,7 +222,7 @@ DesignFlowStep_Status CheckSystemType::InternalExec()
 void CheckSystemType::recursive_examinate(const tree_nodeRef& tn,
                                           CustomUnorderedSet<unsigned int>& already_visited) const
 {
-   recursive_examinate(tn, GET_INDEX_NODE(tn), already_visited);
+   recursive_examinate(tn, tn->index, already_visited);
 }
 
 void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const unsigned int index,

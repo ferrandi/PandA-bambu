@@ -186,7 +186,7 @@ void short_circuit_taf::Initialize()
 DesignFlowStep_Status short_circuit_taf::InternalExec()
 {
    const auto TM = AppM->get_tree_manager();
-   const auto temp = TM->CGetTreeNode(function_id);
+   const auto temp = TM->GetTreeNode(function_id);
    const auto fd = GetPointer<const function_decl>(temp);
    const auto sl = GetPointer<statement_list>(fd->body);
 
@@ -495,7 +495,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
          /// second, create the gimple assignment
          const auto res_type = tree_helper::CGetType(mc_phi->res);
          auto condition_type = tree_helper::CGetType(cond1);
-         auto isAVectorType = tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(condition_type));
+         auto isAVectorType = tree_helper::is_a_vector(TM, condition_type->index);
          const auto cond_expr_node = tree_man->create_ternary_operation(
              res_type, cond1, op1, op2, BUILTIN_SRCP, (isAVectorType ? vec_cond_expr_K : cond_expr_K));
          const auto created_stmt =

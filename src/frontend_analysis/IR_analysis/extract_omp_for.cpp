@@ -186,7 +186,7 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
                THROW_ASSERT(loop->main_iv, "");
                if(not induction_variable or induction_variable->index != loop->main_iv)
                {
-                  THROW_ERROR("Induction variable is " + TM->CGetTreeNode(loop->main_iv)->ToString() +
+                  THROW_ERROR("Induction variable is " + TM->GetTreeNode(loop->main_iv)->ToString() +
                               " - Second operation of loop body is " + second_node->ToString());
                }
                const auto call_op = GetPointer<const addr_expr>(call->fn);
@@ -268,7 +268,7 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
                   THROW_ERROR(statement->ToString());
                }
             }
-            auto fd = GetPointer<function_decl>(TM->CGetTreeNode(function_id));
+            auto fd = GetPointer<function_decl>(TM->GetTreeNode(function_id));
             function_behavior->UpdateBBVersion();
             fd->omp_for_wrapper = parameters->getOption<size_t>(OPT_num_accelerators);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped loop " + STR(loop->GetId()));
@@ -331,7 +331,7 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
             THROW_ASSERT(loop->main_iv, "");
             if(not induction_variable or induction_variable->index != loop->main_iv)
             {
-               THROW_ERROR("Induction variable is " + TM->CGetTreeNode(loop->main_iv)->ToString() +
+               THROW_ERROR("Induction variable is " + TM->GetTreeNode(loop->main_iv)->ToString() +
                            " - Second operation of loop body is " + second_node->ToString());
             }
             const auto call_op = GetPointer<const addr_expr>(call->fn);
@@ -377,7 +377,7 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
                   THROW_ERROR(statement->ToString());
                }
             }
-            auto fd = GetPointer<function_decl>(TM->CGetTreeNode(function_id));
+            auto fd = GetPointer<function_decl>(TM->GetTreeNode(function_id));
             function_behavior->UpdateBBVersion();
             fd->omp_for_wrapper = parameters->getOption<size_t>(OPT_num_accelerators);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped loop " + STR(loop->GetId()));

@@ -715,7 +715,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
 
    const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
    THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
-   const auto top_id = GET_INDEX_CONST_NODE(HLSMgr->get_tree_manager()->GetFunction(top_symbols.front()));
+   const auto top_id = HLSMgr->get_tree_manager()->GetFunction(top_symbols.front())->index;
    const auto top_module = HLSMgr->get_HLS(top_id)->top->get_circ();
 
    // scope_id starts from 1 because 0 are the non-initialized ones

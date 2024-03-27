@@ -1045,7 +1045,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
       for(const auto& phi : block.second->CGetPhiList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---phi operation");
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---phi index: " + STR(GET_INDEX_NODE(phi)));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---phi index: " + STR(phi->index));
          const auto pn = GetPointerS<gimple_phi>(phi);
          const auto srcp_default = pn->include_name + ":" + STR(pn->line_number) + ":" + STR(pn->column_number);
 
@@ -1298,7 +1298,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                }
                const auto manage_realpart = [&](const tree_nodeRef op, tree_nodeRef type) -> tree_nodeRef {
                   auto* rpe = GetPointer<realpart_expr>(op);
-                  auto type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(rpe->op));
+                  auto type_index = tree_helper::get_type_index(TM, rpe->op->index);
                   const auto op_type = TM->GetTreeNode(type_index);
                   auto size_complex = tree_helper::Size(op_type);
                   auto align = size_complex / 2;
@@ -1332,7 +1332,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                };
                const auto manage_imagpart = [&](const tree_nodeRef op, tree_nodeRef type) -> tree_nodeRef {
                   auto* ipe = GetPointer<imagpart_expr>(op);
-                  auto type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ipe->op));
+                  auto type_index = tree_helper::get_type_index(TM, ipe->op->index);
                   tree_nodeRef op_type = TM->GetTreeNode(type_index);
                   auto size_complex = tree_helper::Size(op_type);
                   auto align = size_complex / 2;
@@ -1367,8 +1367,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                };
                if(code1 == array_ref_K)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                 "---expand array_ref 1 " + STR(GET_INDEX_NODE(ga->op1)));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---expand array_ref 1 " + STR(ga->op1->index));
                   auto* AR = GetPointer<array_ref>(ga->op1);
                   ga->op1 = array_ref_lowering(AR, srcp_default, block, it_los, true);
                   restart_analysis = true;
@@ -1449,8 +1448,8 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            }
                            else
                            {
-                              auto type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(MR->op0));
-                              if(type_index != GET_INDEX_NODE(ae->type))
+                              auto type_index = tree_helper::get_type_index(TM, MR->op0->index);
+                              if(type_index != ae->type->index)
                               {
                                  const auto ga_nop = tree_man->CreateNopExpr(MR->op0, ae->type, tree_nodeRef(),
                                                                              tree_nodeRef(), function_id);
@@ -1589,7 +1588,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      /// check missing cast
 #if 1
                      auto* pt_ae = GetPointerS<pointer_type>(ae->type);
-                     auto ptd_index = GET_INDEX_CONST_NODE(pt_ae->ptd);
+                     auto ptd_index = pt_ae->ptd->index;
                      const auto op_type_node = tree_helper::CGetType(ae->op);
                      const auto op_type_id = op_type_node->index;
                      if(op_type_id != ptd_index)
@@ -1662,8 +1661,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                else if(code1 == mem_ref_K)
                {
                   auto mem_ref1 = [&] {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                    "---expand mem_ref 1 " + STR(GET_INDEX_NODE(ga->op1)));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---expand mem_ref 1 " + STR(ga->op1->index));
                      auto* MR = GetPointer<mem_ref>(ga->op1);
                      const auto mem_op0_kind = MR->op0->get_kind();
                      if(mem_op0_kind == addr_expr_K || mem_op0_kind == pointer_plus_expr_K ||
@@ -2149,7 +2147,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      }
                      else if(ue->op->get_kind() != ssa_name_K && !GetPointer<cst_node>(ue->op))
                      {
-                        auto type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ue->op));
+                        auto type_index = tree_helper::get_type_index(TM, ue->op->index);
                         tree_nodeRef op_type = TM->GetTreeNode(type_index);
                         tree_nodeRef op_ga = tree_man->CreateGimpleAssign(op_type, tree_nodeRef(), tree_nodeRef(),
                                                                           ue->op, function_id, srcp_default);
@@ -2443,7 +2441,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   {
                      auto me_expr1 = [&] {
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                       "-->Expanding mult_expr  " + STR(GET_INDEX_NODE(ga->op1)));
+                                       "-->Expanding mult_expr  " + STR(ga->op1->index));
                         tree_nodeRef op1 = GetPointer<binary_expr>(ga->op1)->op1;
                         if(GetPointer<integer_cst>(op1))
                         {
@@ -2453,10 +2451,10 @@ DesignFlowStep_Status IR_lowering::InternalExec()
 
                            if(cn)
                            {
-                              auto prev_index = GET_INDEX_NODE(ga->op1);
+                              auto prev_index = ga->op1->index;
                               ga->op1 = expand_MC(op0, cn, ga->op1, *it_los, block.second, type_expr, srcp_default);
-                              restart_analysis = restart_analysis || (prev_index != GET_INDEX_NODE(ga->op1));
-                              if(prev_index != GET_INDEX_NODE(ga->op1))
+                              restart_analysis = restart_analysis || (prev_index != ga->op1->index);
+                              if(prev_index != ga->op1->index)
                               {
                                  AppM->RegisterTransformation(GetName(), *it_los);
                               }
@@ -2468,7 +2466,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         {
                            tree_nodeRef type_expr = GetPointer<binary_expr>(ga->op1)->type;
 
-                           bool realp = tree_helper::is_real(TM, GET_INDEX_NODE(type_expr));
+                           bool realp = tree_helper::is_real(TM, type_expr->index);
                            if(!realp)
                            {
                               /// check if a mult_expr may become a widen_mult_expr
@@ -2489,7 +2487,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                                                  "\n");
                               if(std::max(data_bitsize_in0, data_bitsize_in1) * 2 == data_bitsize_out)
                               {
-                                 auto type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0));
+                                 auto type_index = tree_helper::get_type_index(TM, ga->op0->index);
                                  tree_nodeRef op0_type = TM->GetTreeNode(type_index);
                                  ga->op1 = tree_man->create_binary_operation(
                                      op0_type, GetPointer<binary_expr>(ga->op1)->op0,
@@ -2511,7 +2509,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         if(GetPointer<cst_node>(op1) && !GetPointer<vector_cst>(op1))
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                          "-->Expanding widen_mult_expr  " + STR(GET_INDEX_NODE(ga->op1)));
+                                          "-->Expanding widen_mult_expr  " + STR(ga->op1->index));
                            auto* cn = GetPointer<cst_node>(op1);
                            tree_nodeRef op0 = GetPointer<binary_expr>(ga->op1)->op0;
                            tree_nodeRef type_expr = GetPointer<binary_expr>(ga->op1)->type;
@@ -2519,11 +2517,11 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            bool realp = tree_helper::IsRealType(type_expr);
                            if(!realp)
                            {
-                              auto prev_index = GET_INDEX_NODE(ga->op1);
+                              auto prev_index = ga->op1->index;
                               ga->op1 = expand_MC(op0, static_cast<integer_cst*>(cn), ga->op1, *it_los, block.second,
                                                   type_expr, srcp_default);
-                              restart_analysis = restart_analysis || (prev_index != GET_INDEX_NODE(ga->op1));
-                              if(prev_index != GET_INDEX_NODE(ga->op1))
+                              restart_analysis = restart_analysis || (prev_index != ga->op1->index);
+                              if(prev_index != ga->op1->index)
                               {
                                  AppM->RegisterTransformation(GetName(), *it_los);
                               }
@@ -2590,10 +2588,10 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   {
                      auto lt_expr1 = [&] {
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                       "-->Expanding lt_expr " + STR(GET_INDEX_NODE(ga->op1)));
+                                       "-->Expanding lt_expr " + STR(ga->op1->index));
                         auto be = GetPointer<binary_expr>(ga->op1);
                         tree_nodeRef op0 = be->op0;
-                        bool intp = tree_helper::is_int(TM, GET_INDEX_NODE(op0));
+                        bool intp = tree_helper::is_int(TM, op0->index);
                         if(intp)
                         {
                            tree_nodeRef op1 = be->op1;
@@ -2601,7 +2599,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            {
                               if(tree_helper::GetConstValue(op1) == 0)
                               {
-                                 auto type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(op0));
+                                 auto type_index = tree_helper::get_type_index(TM, op0->index);
                                  tree_nodeRef op0_type = TM->GetTreeNode(type_index);
                                  tree_nodeRef right_shift_value = TM->CreateUniqueIntegerCst(
                                      static_cast<long long>(tree_helper::Size(op0) - 1), op0_type);
@@ -2655,9 +2653,9 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   {
                      auto ge_expr1 = [&] {
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                       "-->Expanding ge_expr " + STR(GET_INDEX_NODE(ga->op1)));
+                                       "-->Expanding ge_expr " + STR(ga->op1->index));
                         tree_nodeRef op0 = GetPointer<binary_expr>(ga->op1)->op0;
-                        bool intp = tree_helper::is_int(TM, GET_INDEX_NODE(op0));
+                        bool intp = tree_helper::is_int(TM, op0->index);
                         if(intp)
                         {
                            tree_nodeRef op1 = GetPointer<binary_expr>(ga->op1)->op1;
@@ -2666,7 +2664,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                               const auto op1_value = tree_helper::GetConstValue(op1);
                               if(op1_value == 0)
                               {
-                                 auto type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(op0));
+                                 auto type_index = tree_helper::get_type_index(TM, op0->index);
                                  tree_nodeRef op0_type = TM->GetTreeNode(type_index);
                                  tree_nodeRef right_shift_value = TM->CreateUniqueIntegerCst(
                                      static_cast<long long>(tree_helper::Size(op0) - 1), op0_type);
@@ -2725,7 +2723,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   {
                      auto pe_expr1 = [&] {
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                       "-->Expanding plus_expr " + STR(GET_INDEX_NODE(ga->op1)));
+                                       "-->Expanding plus_expr " + STR(ga->op1->index));
                         tree_nodeRef bop0 = GetPointer<binary_expr>(ga->op1)->op0;
                         tree_nodeRef bop1 = GetPointer<binary_expr>(ga->op1)->op1;
                         if(tree_helper::Size(tree_helper::CGetType(ga->op0)) !=
@@ -2757,7 +2755,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                         bool intp = tree_helper::IsSignedIntegerType(bop0) || tree_helper::IsUnsignedIntegerType(bop0);
                         if(intp)
                         {
-                           if(GET_INDEX_NODE(bop0) == GET_INDEX_NODE(bop1))
+                           if(bop0->index == bop1->index)
                            {
                               tree_nodeRef type = GetPointer<binary_expr>(ga->op1)->type;
                               tree_nodeRef left_shift_value = TM->CreateUniqueIntegerCst(1, type);
@@ -2804,8 +2802,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
 
                if(code0 == array_ref_K)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                 "---expand array_ref 2 " + STR(GET_INDEX_NODE(ga->op0)));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---expand array_ref 2 " + STR(ga->op0->index));
                   auto* AR = GetPointer<array_ref>(ga->op0);
                   ga->op0 = array_ref_lowering(AR, srcp_default, block, it_los, true);
                   restart_analysis = true;
@@ -2813,8 +2810,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                else if(code0 == mem_ref_K)
                {
                   auto mem_ref0 = [&] {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                    "---expand mem_ref 2 " + STR(GET_INDEX_NODE(ga->op0)));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---expand mem_ref 2 " + STR(ga->op0->index));
                      auto* MR = GetPointer<mem_ref>(ga->op0);
                      const auto mem_op0_kind = MR->op0->get_kind();
                      if(mem_op0_kind == addr_expr_K || mem_op0_kind == pointer_plus_expr_K ||
@@ -2839,12 +2835,12 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                                                GetPointer<constructor>(ga->op1)->list_of_idx_valu.size() == 0;
                         if(implicit_memset)
                         {
-                           auto var = tree_helper::get_base_index(TM, GET_INDEX_NODE(MR->op0));
+                           auto var = tree_helper::get_base_index(TM, MR->op0->index);
                            implicit_memset = var != 0;
                            if(implicit_memset)
                            {
                               auto type_index = tree_helper::get_type_index(TM, var);
-                              const auto type_node = TM->CGetTreeNode(type_index);
+                              const auto type_node = TM->GetTreeNode(type_index);
                               implicit_memset = type_node->get_kind() == array_type_K;
                            }
                         }
@@ -2876,7 +2872,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      if(!view_convert_pattern && ga->op1->get_kind() != ssa_name_K && !GetPointer<cst_node>(ga->op1) &&
                         ga->op1->get_kind() != mem_ref_K && ga->op1->get_kind() != constructor_K)
                      {
-                        auto type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op1));
+                        auto type_index = tree_helper::get_type_index(TM, ga->op1->index);
                         const auto op_type = TM->GetTreeNode(type_index);
                         const auto op_ga = tree_man->CreateGimpleAssign(op_type, tree_nodeRef(), tree_nodeRef(),
                                                                         ga->op1, function_id, srcp_default);
@@ -3100,7 +3096,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                {
                   auto tmr0 = [&] {
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                    "---expand target_mem_ref 2 " + STR(GET_INDEX_NODE(ga->op0)));
+                                    "---expand target_mem_ref 2 " + STR(ga->op0->index));
 
                      auto* tmr = GetPointer<target_mem_ref461>(ga->op0);
                      /// split the target_mem_ref in a address computation statement and in a store statement
@@ -3149,7 +3145,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   //                     /// check if volatile attribute is missing
                   //                     /// it may happen with gcc v4.8 or greater
                   //                     if(vd->scpe && vd->scpe->get_kind() != translation_unit_decl_K &&
-                  //                     !vd->static_flag && !tree_helper::is_volatile(TM,GET_INDEX_NODE(ga->op1)) &&
+                  //                     !vd->static_flag && !tree_helper::is_volatile(TM,ga->op1->index) &&
                   //                           vd->type->get_kind() != array_type_K &&
                   //                           vd->type->get_kind() != record_type_K &&
                   //                           vd->type->get_kind() != union_type_K)
@@ -3420,7 +3416,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                }
                else if(code0 == result_decl_K)
                {
-                  auto type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0));
+                  auto type_index = tree_helper::get_type_index(TM, ga->op0->index);
                   tree_nodeRef op_type = TM->GetTreeNode(type_index);
                   tree_nodeRef new_ga = tree_man->CreateGimpleAssign(op_type, tree_nodeRef(), tree_nodeRef(), ga->op1,
                                                                      function_id, srcp_default);

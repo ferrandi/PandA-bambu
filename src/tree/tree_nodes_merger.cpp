@@ -40,34 +40,35 @@
  * Last modified by $Author$
  *
  */
-
 #include "tree_nodes_merger.hpp"
-#include "exceptions.hpp"       // for THROW_ASSERT, THROW...
-#include "ext_tree_node.hpp"    // for gimple_pragma, gimp...
-#include "token_interface.hpp"  // for TOK, TreeVocabulary...
-#include "tree_basic_block.hpp" // for tree_nodeRef, bloc
-#include "tree_common.hpp"      // for CharType_K, abs_expr_K
-#include "tree_manager.hpp"     // for tree_nodeRef, tree_...
-#include "tree_node.hpp"        // for tree_nodeRef, tree_...
-#include "tree_reindex.hpp"     // for tree_reindex, tree_...
-#include <string>               // for string, operator+
-#include <utility>              // for pair
-#include <vector>               // for vector, vector<>::c...
 
-#define CHECK_AND_ADD(Tree_Node, visit_index)                                 \
-   {                                                                          \
-      if((Tree_Node) && remap.find(GET_INDEX_NODE(Tree_Node)) == remap.end()) \
-      {                                                                       \
-         SET_VISIT_INDEX(mask, visit_index);                                  \
-         unsigned int node_id = GET_INDEX_NODE(Tree_Node);                    \
-         remap[node_id] = TM->new_tree_node_id(node_id);                      \
-         not_yet_remapped.insert(node_id);                                    \
-      }                                                                       \
+#include "exceptions.hpp"
+#include "ext_tree_node.hpp"
+#include "token_interface.hpp"
+#include "tree_basic_block.hpp"
+#include "tree_common.hpp"
+#include "tree_manager.hpp"
+#include "tree_node.hpp"
+#include "tree_reindex.hpp"
+
+#include <string>
+#include <utility>
+#include <vector>
+
+#define CHECK_AND_ADD(Tree_Node, visit_index)                          \
+   {                                                                   \
+      if((Tree_Node) && remap.find((Tree_Node)->index) == remap.end()) \
+      {                                                                \
+         SET_VISIT_INDEX(mask, visit_index);                           \
+         unsigned int node_id = (Tree_Node)->index;                    \
+         remap[node_id] = TM->new_tree_node_id(node_id);               \
+         not_yet_remapped.insert(node_id);                             \
+      }                                                                \
    }
 
 void tree_node_reached::operator()(const tree_node* obj, unsigned int&)
 {
-   THROW_ERROR("tree_node not supported: " + std::string(obj->get_kind_text()));
+   THROW_ERROR("tree_node not supported: " + obj->get_kind_text());
 }
 
 void tree_node_reached::operator()(const tree_reindex*, unsigned int& mask)
@@ -1449,7 +1450,7 @@ void tree_node_index_factory::operator()(const attr* obj, unsigned int& mask)
 #define SET_NODE_ID(field, type)                                                                        \
    if(GetPointer<type>(source_tn)->field)                                                               \
    {                                                                                                    \
-      unsigned int node_id = GET_INDEX_NODE(GetPointer<type>(source_tn)->field);                        \
+      unsigned int node_id = GetPointer<type>(source_tn)->field->index;                                 \
       THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index: " + std::to_string(node_id)); \
       node_id = remap.find(node_id)->second;                                                            \
       dynamic_cast<type*>(curr_tree_node_ptr)->field = TM->GetTreeReindex(node_id);                     \
@@ -1460,7 +1461,7 @@ void tree_node_index_factory::operator()(const attr* obj, unsigned int& mask)
    {                                                                                                       \
       for(const auto& i : GetPointer<type>(source_tn)->list_field)                                         \
       {                                                                                                    \
-         unsigned int node_id = GET_INDEX_NODE(i);                                                         \
+         unsigned int node_id = i->index;                                                                  \
          THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index: " + std::to_string(node_id)); \
          node_id = remap.find(node_id)->second;                                                            \
          dynamic_cast<type*>(curr_tree_node_ptr)->list_field.push_back(TM->GetTreeReindex(node_id));       \
@@ -1472,7 +1473,7 @@ void tree_node_index_factory::operator()(const attr* obj, unsigned int& mask)
    {                                                                                                       \
       for(const auto& i : GetPointer<type>(source_tn)->list_field)                                         \
       {                                                                                                    \
-         unsigned int node_id = GET_INDEX_NODE(i);                                                         \
+         unsigned int node_id = i->index;                                                                  \
          THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index: " + std::to_string(node_id)); \
          node_id = remap.find(node_id)->second;                                                            \
          dynamic_cast<type*>(curr_tree_node_ptr)->list_field.insert(TM->GetTreeReindex(node_id));          \
@@ -1485,7 +1486,7 @@ void tree_node_index_factory::operator()(const attr* obj, unsigned int& mask)
       std::list<tree_nodeRef>::const_iterator vend = GetPointer<type>(source_tn)->list_field.end();                    \
       for(std::list<tree_nodeRef>::const_iterator i = GetPointer<type>(source_tn)->list_field.begin(); i != vend; ++i) \
       {                                                                                                                \
-         unsigned int node_id = GET_INDEX_NODE(*i);                                                                    \
+         unsigned int node_id = (*i)->index;                                                                           \
          THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index: " + std::to_string(node_id));             \
          node_id = remap.find(node_id)->second;                                                                        \
          dynamic_cast<type*>(curr_tree_node_ptr)->list_field.push_back(TM->GetTreeReindex(node_id));                   \
@@ -1675,7 +1676,7 @@ void tree_node_index_factory::operator()(const binfo* obj, unsigned int& mask)
       auto vend = GetPointer<binfo>(source_tn)->list_of_access_binf.end();
       for(auto i = GetPointer<binfo>(source_tn)->list_of_access_binf.begin(); i != vend; ++i)
       {
-         unsigned int node_id = GET_INDEX_NODE(i->second);
+         unsigned int node_id = i->second->index;
          THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index");
          node_id = remap.find(node_id)->second;
          dynamic_cast<binfo*>(curr_tree_node_ptr)->add_access_binf(TM->GetTreeReindex(node_id), i->first);
@@ -1772,8 +1773,8 @@ void tree_node_index_factory::operator()(const constructor* obj, unsigned int& m
       auto vend = GetPointer<constructor>(source_tn)->list_of_idx_valu.end();
       for(auto i = GetPointer<constructor>(source_tn)->list_of_idx_valu.begin(); i != vend; ++i)
       {
-         unsigned int node_id1 = i->first ? GET_INDEX_NODE(i->first) : 0;
-         unsigned int node_id2 = GET_INDEX_NODE(i->second);
+         unsigned int node_id1 = i->first ? i->first->index : 0;
+         unsigned int node_id2 = i->second->index;
          THROW_ASSERT(!node_id1 || remap.find(node_id1) != remap.end(), "missing an index");
          node_id1 = node_id1 ? remap.find(node_id1)->second : 0;
          THROW_ASSERT(remap.find(node_id2) != remap.end(), "missing an index");
@@ -1979,7 +1980,7 @@ void tree_node_index_factory::operator()(const gimple_phi* obj, unsigned int& ma
    SET_NODE_ID(res, gimple_phi);
    for(const auto& def_edge : GetPointer<gimple_phi>(source_tn)->CGetDefEdgesList())
    {
-      unsigned int node_id = GET_INDEX_NODE(def_edge.first);
+      unsigned int node_id = def_edge.first->index;
       THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index");
       node_id = remap.find(node_id)->second;
       dynamic_cast<gimple_phi*>(curr_tree_node_ptr)
@@ -2335,14 +2336,14 @@ void tree_node_index_factory::operator()(const bloc* obj, unsigned int& mask)
    curr_bloc->false_edge = source_bloc->false_edge;
    for(const auto& phi : source_bloc->CGetPhiList())
    {
-      unsigned int node_id = GET_INDEX_NODE(phi);
+      unsigned int node_id = phi->index;
       THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index");
       node_id = remap.find(node_id)->second;
       curr_bloc->AddPhi(TM->GetTreeReindex(node_id));
    }
    for(const auto& stmt : source_bloc->CGetStmtList())
    {
-      unsigned int node_id = GET_INDEX_NODE(stmt);
+      unsigned int node_id = stmt->index;
       THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index");
       node_id = remap.find(node_id)->second;
       curr_bloc->PushBack(TM->GetTreeReindex(node_id), application_managerRef());

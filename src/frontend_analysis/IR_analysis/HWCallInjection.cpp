@@ -100,7 +100,7 @@ bool HWCallInjection::HasToBeExecuted() const
 DesignFlowStep_Status HWCallInjection::InternalExec()
 {
    const auto TM = AppM->get_tree_manager();
-   const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function_id));
+   const auto fd = GetPointer<const function_decl>(TM->GetTreeNode(function_id));
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
    const auto sl = GetPointerS<statement_list>(fd->body);
    THROW_ASSERT(sl, "Body is not a statement_list");
@@ -171,16 +171,16 @@ void HWCallInjection::buildBuiltinCall(const blocRef& block, const tree_nodeRef&
    {
       const auto vararg_list_idx = TM->new_tree_node_id();
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> attr_map;
-      attr_map[TOK(TOK_VALU)] = STR(GET_INDEX_NODE(IRman->GetSignedIntegerType()));
+      attr_map[TOK(TOK_VALU)] = STR(IRman->GetSignedIntegerType()->index);
       TM->create_tree_node(vararg_list_idx, tree_list_K, attr_map);
       attr_map.clear();
 
       const auto ftype_idx = TM->new_tree_node_id();
-      attr_map[TOK(TOK_RETN)] = STR(GET_INDEX_NODE(IRman->GetVoidType()));
+      attr_map[TOK(TOK_RETN)] = STR(IRman->GetVoidType()->index);
       attr_map[TOK(TOK_VARARGS)] = STR(1);
       attr_map[TOK(TOK_PRMS)] = STR(vararg_list_idx);
       const auto funTypeSize = TM->CreateUniqueIntegerCst(8, IRman->GetSignedIntegerType());
-      attr_map[TOK(TOK_SIZE)] = STR(GET_INDEX_CONST_NODE(funTypeSize));
+      attr_map[TOK(TOK_SIZE)] = STR(funTypeSize->index);
       attr_map[TOK(TOK_ALIGNED)] = STR(8);
       TM->create_tree_node(ftype_idx, function_type_K, attr_map);
       attr_map.clear();
@@ -188,7 +188,7 @@ void HWCallInjection::buildBuiltinCall(const blocRef& block, const tree_nodeRef&
       builtinWaitCallDeclIdx = TM->new_tree_node_id();
       attr_map[TOK(TOK_TYPE)] = STR(ftype_idx);
       const auto builtinIdString = IRman->create_identifier_node(BUILTIN_WAIT_CALL);
-      attr_map[TOK(TOK_NAME)] = STR(GET_INDEX_CONST_NODE(builtinIdString));
+      attr_map[TOK(TOK_NAME)] = STR(builtinIdString->index);
       attr_map[TOK(TOK_SRCP)] = BUILTIN_SRCP;
       TM->create_tree_node(builtinWaitCallDeclIdx, function_decl_K, attr_map);
       attr_map.clear();
@@ -201,8 +201,8 @@ void HWCallInjection::buildBuiltinCall(const blocRef& block, const tree_nodeRef&
    {
       const auto addr_expr_idx = TM->new_tree_node_id();
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> attr_map;
-      const auto functionDecl = GetPointerS<const function_decl>(TM->CGetTreeNode(builtinWaitCallDeclIdx));
-      attr_map[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(IRman->GetPointerType(functionDecl->type, 8)));
+      const auto functionDecl = GetPointerS<const function_decl>(TM->GetTreeNode(builtinWaitCallDeclIdx));
+      attr_map[TOK(TOK_TYPE)] = STR(IRman->GetPointerType(functionDecl->type, 8)->index);
       attr_map[TOK(TOK_OP)] = STR(builtinWaitCallDeclIdx);
       attr_map[TOK(TOK_SRCP)] = srcp_str;
       TM->create_tree_node(addr_expr_idx, addr_expr_K, attr_map);
@@ -212,12 +212,12 @@ void HWCallInjection::buildBuiltinCall(const blocRef& block, const tree_nodeRef&
       if(stmt_kind == gimple_call_K)
       {
          const auto GC = GetPointerS<const gimple_call>(stmt);
-         attr_map[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(GC->scpe));
+         attr_map[TOK(TOK_SCPE)] = STR(GC->scpe->index);
       }
       else if(stmt_kind == gimple_assign_K)
       {
          const auto GA = GetPointerS<const gimple_assign>(stmt);
-         attr_map[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(GA->scpe));
+         attr_map[TOK(TOK_SCPE)] = STR(GA->scpe->index);
       }
       attr_map[TOK(TOK_SRCP)] = srcp_str;
       TM->create_tree_node(builtin_stmt_idx, gimple_call_K, attr_map);
@@ -304,8 +304,8 @@ void HWCallInjection::buildBuiltinCall(const blocRef& block, const tree_nodeRef&
          {
             std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> addrExprReturnValueMap;
             const auto typeRetVar = tree_helper::CGetType(retVar);
-            addrExprReturnValueMap[TOK(TOK_TYPE)] = STR(GET_INDEX_NODE(IRman->GetPointerType(typeRetVar)));
-            addrExprReturnValueMap[TOK(TOK_OP)] = STR(GET_INDEX_CONST_NODE(retVar));
+            addrExprReturnValueMap[TOK(TOK_TYPE)] = STR(IRman->GetPointerType(typeRetVar)->index);
+            addrExprReturnValueMap[TOK(TOK_OP)] = STR(retVar->index);
             addrExprReturnValueMap[TOK(TOK_SRCP)] = srcp_str;
             TM->create_tree_node(addrExprReturnValue, addr_expr_K, addrExprReturnValueMap);
          }

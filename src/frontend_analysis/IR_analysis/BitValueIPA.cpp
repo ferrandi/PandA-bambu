@@ -212,7 +212,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
       const auto fu_name = AppM->CGetFunctionBehavior(fu_id)->CGetBehavioralHelper()->get_function_name();
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                      "-->Analyzing function \"" + fu_name + "\": id = " + STR(fu_id));
-      const auto fu_node = TM->CGetTreeNode(fu_id);
+      const auto fu_node = TM->GetTreeNode(fu_id);
       const auto fd = GetPointer<function_decl>(fu_node);
       THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
       const auto fu_type = tree_helper::CGetType(fu_node);
@@ -226,7 +226,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing parameters");
       for(const auto& parm_decl_node : fd->list_of_args)
       {
-         const auto p_decl_id = AppM->getSSAFromParm(fu_id, GET_INDEX_CONST_NODE(parm_decl_node));
+         const auto p_decl_id = AppM->getSSAFromParm(fu_id, parm_decl_node->index);
          const auto parmssa = TM->GetTreeNode(p_decl_id);
          THROW_ASSERT(parmssa->get_kind() == ssa_name_K, "expected an ssa variable");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -277,7 +277,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                      "-->Analyzing function \"" + fu_name + "\": id = " + STR(fu_id));
 
-      const auto fu_node = TM->CGetTreeNode(fu_id);
+      const auto fu_node = TM->GetTreeNode(fu_id);
       const auto fd = GetPointer<const function_decl>(fu_node);
       THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
       const auto fu_type = tree_helper::CGetType(fu_node);
@@ -334,7 +334,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                for(const auto& i : call_edge_info->direct_call_points)
                {
                   THROW_ASSERT(i, "unexpected condition");
-                  const auto call_node = TM->CGetTreeNode(i);
+                  const auto call_node = TM->GetTreeNode(i);
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                  "-->examining direct call point " + call_node->ToString());
                   if(call_node->get_kind() == gimple_assign_K)
@@ -431,8 +431,8 @@ DesignFlowStep_Status BitValueIPA::Exec()
             {
                break;
             }
-            const auto pd_id = AppM->getSSAFromParm(fu_id, GET_INDEX_NODE(pd));
-            const auto parmssa = TM->CGetTreeNode(pd_id);
+            const auto pd_id = AppM->getSSAFromParm(fu_id, pd->index);
+            const auto parmssa = TM->GetTreeNode(pd_id);
             THROW_ASSERT(parmssa->get_kind() == ssa_name_K, "expected an ssa variable");
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                            "parm_decl ssa id: " + STR(pd_id) + " " + parmssa->ToString());
@@ -481,7 +481,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->examining direct call point " + STR(i));
                         std::deque<bit_lattice> res_tmp;
                         THROW_ASSERT(i, "unexpected condition");
-                        const auto call_node = TM->CGetTreeNode(i);
+                        const auto call_node = TM->GetTreeNode(i);
                         if(call_node->get_kind() == gimple_assign_K)
                         {
                            const auto ga = GetPointer<const gimple_assign>(call_node);
@@ -494,7 +494,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                                         "actual parameters: " + STR(ce->args.size()) +
                                             " formal parameters: " + STR(fd->list_of_args.size()));
                            const auto ap = std::next(ce->args.cbegin(), args_n - 1);
-                           const auto ap_id = GET_INDEX_CONST_NODE(*ap);
+                           const auto ap_id = (*ap)->index;
                            const auto& ap_node = *ap;
                            const auto ap_kind = ap_node->get_kind();
                            THROW_ASSERT(IsHandledByBitvalue(ap_node), "actual parameter not handled by bitvalue");
@@ -518,9 +518,8 @@ DesignFlowStep_Status BitValueIPA::Exec()
                               res_tmp =
                                   create_bitstring_from_constant(cst_val, tree_helper::TypeSize(ap_node), parm_signed);
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                             "actual parameter " + STR(ap_node) +
-                                                 " is a constant value id: " + STR(GET_INDEX_CONST_NODE(ap_node)) +
-                                                 " bitstring: " + bitstring_to_string(res_tmp));
+                                             "actual parameter " + STR(ap_node) + " is a constant value id: " +
+                                                 STR(ap_node->index) + " bitstring: " + bitstring_to_string(res_tmp));
                            }
                            else
                            {
@@ -536,7 +535,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                                         "actual parameters: " + STR(gc->args.size()) +
                                             " formal parameters: " + STR(fd->list_of_args.size()));
                            const auto ap = std::next(gc->args.cbegin(), args_n - 1);
-                           const auto ap_id = GET_INDEX_CONST_NODE(*ap);
+                           const auto ap_id = (*ap)->index;
                            const auto& ap_node = *ap;
                            const auto ap_kind = ap_node->get_kind();
                            THROW_ASSERT(IsHandledByBitvalue(ap_node), "actual parameter not handled by bitvalue");
@@ -560,9 +559,8 @@ DesignFlowStep_Status BitValueIPA::Exec()
                               res_tmp =
                                   create_bitstring_from_constant(cst_val, tree_helper::TypeSize(ap_node), parm_signed);
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                             "actual parameter " + STR(ap_node) +
-                                                 " is a constant value id: " + STR(GET_INDEX_CONST_NODE(ap_node)) +
-                                                 " bitstring: " + bitstring_to_string(res_tmp));
+                                             "actual parameter " + STR(ap_node) + " is a constant value id: " +
+                                                 STR(ap_node->index) + " bitstring: " + bitstring_to_string(res_tmp));
                            }
                            else
                            {
@@ -624,7 +622,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
       const auto new_bitvalue = bitstring_to_string(b.second);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                      "---updating node id: " + STR(tn_id) + " bitstring: " + new_bitvalue);
-      const auto tn = TM->CGetTreeNode(tn_id);
+      const auto tn = TM->GetTreeNode(tn_id);
       const auto kind = tn->get_kind();
 
       std::string null_string = "";
@@ -656,7 +654,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
          size = tree_helper::TypeSize(tn);
          THROW_ASSERT(pd->var && pd->var->get_kind() == parm_decl_K, "unexpected pattern");
          const auto pdecl = GetPointerS<const parm_decl>(pd->var);
-         restart_fun_id = GET_INDEX_CONST_NODE(pdecl->scpe);
+         restart_fun_id = pdecl->scpe->index;
       }
       else
       {

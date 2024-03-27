@@ -74,7 +74,7 @@ check_tree_node_opt(const std::map<TreeVocabularyTokenTypes_TokenEnum, std::stri
                     const std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>::const_iterator& it_end,
                     const tree_nodeRef& tn, const std::string&)
 {
-   return it_element == it_end || (tn && GET_INDEX_NODE(tn) == std::stoull(it_element->second));
+   return it_element == it_end || (tn && tn->index == std::stoull(it_element->second));
 }
 
 #define CHECK_TREE_NODE_OPT(token, treeN) \

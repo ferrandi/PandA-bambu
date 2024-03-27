@@ -208,7 +208,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
    const auto max_lut_size = hls_d->get_parameter<size_t>("max_lut_size");
 
    const tree_manipulationConstRef tree_man(new tree_manipulation(TM, parameters, AppM));
-   const auto fd = GetPointerS<const function_decl>(TM->CGetTreeNode(function_id));
+   const auto fd = GetPointerS<const function_decl>(TM->GetTreeNode(function_id));
    const auto sl = GetPointerS<const statement_list>(fd->body);
    for(const auto& block : sl->list_of_bloc)
    {
@@ -373,7 +373,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          new_tree_nodes.push_back(curr_stmt);
 
          tree_nodeRef and_first_cond;
-         if(GET_INDEX_NODE(first_ce->op0) == GET_INDEX_NODE(second_ce->op0))
+         if(first_ce->op0->index == second_ce->op0->index)
          {
             /// simplified version
             if(!first_operand_of_first && !first_operand_of_second)
@@ -557,7 +557,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
                            "---Written BB_Inside_" + GetName() + "_" + STR(counter) + ".dot");
             counter++;
          }
-         const double new_time = schedule->GetEndingTime(GET_INDEX_CONST_NODE(root_gimple_node));
+         const double new_time = schedule->GetEndingTime(root_gimple_node->index);
          if(new_time + EPSILON > old_time)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Error in estimation");

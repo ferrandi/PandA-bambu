@@ -235,14 +235,6 @@ class tree_manager
    tree_nodeRef GetTreeNode(const unsigned int index) const;
 
    /**
-    * Return the reference to the i-th tree_node Constant version of get_tree_node.
-    * @param i is the index of the tree_node of the considered function.
-    * @return the reference to the tree_node.
-    * FIXME: this should return tree_nodeConstRef
-    */
-   tree_nodeRef CGetTreeNode(const unsigned int i) const;
-
-   /**
     * Return true if there exists a tree node associated with the given id, false otherwise
     * @param i is the index of the tree_node to be checked
     */

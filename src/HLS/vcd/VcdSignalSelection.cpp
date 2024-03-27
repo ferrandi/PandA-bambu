@@ -117,7 +117,7 @@ void VcdSignalSelection::SelectInitialAddrParam(const CustomOrderedSet<unsigned 
 {
    for(const unsigned int fun_id : reached_body_fun_ids)
    {
-      const tree_nodeConstRef fun_decl_node = TM->CGetTreeNode(fun_id);
+      const tree_nodeConstRef fun_decl_node = TM->GetTreeNode(fun_id);
       THROW_ASSERT(fun_decl_node->get_kind() == function_decl_K,
                    fun_decl_node->ToString() + " is of kind " + tree_node::GetString(fun_decl_node->get_kind()));
       const auto* fu_dec = GetPointer<const function_decl>(fun_decl_node);
@@ -125,7 +125,7 @@ void VcdSignalSelection::SelectInitialAddrParam(const CustomOrderedSet<unsigned 
       {
          THROW_ASSERT(parm_decl_node->get_kind() == parm_decl_K,
                       parm_decl_node->ToString() + " is of kind " + tree_node::GetString(parm_decl_node->get_kind()));
-         if(IsAddressType(tree_helper::get_type_index(TM, GET_INDEX_NODE(parm_decl_node))))
+         if(IsAddressType(tree_helper::get_type_index(TM, parm_decl_node->index)))
          {
             address_parameters[fun_id].insert(parm_decl_node);
          }
@@ -203,17 +203,17 @@ void VcdSignalSelection::InitialSsaIsAddress(
    if(rhs_kind == nop_expr_K)
    {
       const auto* nop = GetPointer<const nop_expr>(rhs);
-      rhs_type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(nop->op));
+      rhs_type_index = tree_helper::get_type_index(TM, nop->op->index);
    }
    else if(rhs_kind == convert_expr_K)
    {
       const auto* convert = GetPointer<const convert_expr>(rhs);
-      rhs_type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(convert->op));
+      rhs_type_index = tree_helper::get_type_index(TM, convert->op->index);
    }
    else if(rhs_kind == view_convert_expr_K)
    {
       const auto* view_convert = GetPointer<const view_convert_expr>(rhs);
-      rhs_type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(view_convert->op));
+      rhs_type_index = tree_helper::get_type_index(TM, view_convert->op->index);
    }
    else
    {
@@ -264,13 +264,13 @@ void VcdSignalSelection::SelectInitialSsa(
             continue;
          }
          THROW_ASSERT(st_tn_id, "operation vertex has id = 0");
-         const tree_nodeConstRef curr_tn = TM->CGetTreeNode(st_tn_id);
+         const tree_nodeConstRef curr_tn = TM->GetTreeNode(st_tn_id);
          const unsigned int assigned_tree_node_id = HLSMgr->get_produced_value(fid, *vi);
          if(assigned_tree_node_id == 0)
          {
             continue;
          }
-         const tree_nodeRef assigned_ssa_tree_node = TM->CGetTreeNode(assigned_tree_node_id);
+         const tree_nodeRef assigned_ssa_tree_node = TM->GetTreeNode(assigned_tree_node_id);
          if(assigned_ssa_tree_node->get_kind() != ssa_name_K)
          {
             continue;
@@ -375,7 +375,7 @@ void VcdSignalSelection::PropagateAddrParamToSsa(
             continue;
          }
          THROW_ASSERT(st_tn_id, "operation vertex has id = 0");
-         const tree_nodeConstRef curr_tn = TM->CGetTreeNode(st_tn_id);
+         const tree_nodeConstRef curr_tn = TM->GetTreeNode(st_tn_id);
          if(curr_tn->get_kind() == gimple_assign_K)
          {
             const auto* g_as_node = GetPointer<const gimple_assign>(curr_tn);
@@ -419,7 +419,7 @@ void VcdSignalSelection::SingleStepPropagateAddrSsa(const tree_nodeRef& curr_tn)
          if(rhs_kind == bit_field_ref_K)
          {
             const auto* bfr = GetPointer<const bit_field_ref>(rhs);
-            if(tree_helper::is_a_vector(TM, GET_INDEX_NODE(bfr->op0)))
+            if(tree_helper::is_a_vector(TM, bfr->op0->index))
             {
                is_a_vector_bitfield = true;
             }
@@ -509,12 +509,12 @@ void VcdSignalSelection::DetectInvalidReturns(const CustomOrderedSet<unsigned in
          {
             continue;
          }
-         const tree_nodeConstRef tn = TM->CGetTreeNode(node_id);
+         const tree_nodeConstRef tn = TM->GetTreeNode(node_id);
          if(tn->get_kind() == gimple_return_K)
          {
             const auto* gr = GetPointer<const gimple_return>(tn);
             if((gr->op != nullptr) &&
-               (IsAddressType(tree_helper::get_type_index(TM, GET_INDEX_NODE(gr->op))) ||
+               (IsAddressType(tree_helper::get_type_index(TM, gr->op->index)) ||
                 ((gr->op->get_kind() == ssa_name_K) && (Discr->address_ssa.find(gr->op) != Discr->address_ssa.end()))))
             {
                addr_fun_ids.insert(i);
@@ -572,7 +572,7 @@ void VcdSignalSelection::CrossPropagateAddrSsa(
              * If the return value of an address function is assigned to an ssa,
              * then the ssa itself must be marked as address
              */
-            const tree_nodeConstRef call_node = TM->CGetTreeNode(callid);
+            const tree_nodeConstRef call_node = TM->GetTreeNode(callid);
             const BehavioralHelperConstRef called_BH = HLSMgr->CGetFunctionBehavior(called_id)->CGetBehavioralHelper();
             if(call_node->get_kind() == gimple_assign_K)
             {
@@ -660,11 +660,11 @@ void VcdSignalSelection::CrossPropagateAddrSsa(
              * the indirect call apart and propagate correctly the parameters
              */
             const unsigned int direct_called_id = *callopinfo->called.begin();
-            const tree_nodeConstRef direct_called_fun_decl_node = TM->CGetTreeNode(direct_called_id);
+            const tree_nodeConstRef direct_called_fun_decl_node = TM->GetTreeNode(direct_called_id);
 #if HAVE_ASSERTS
             const auto* direct_fu_dec = GetPointer<const function_decl>(direct_called_fun_decl_node);
 #endif
-            const tree_nodeConstRef called_fun_decl_node = TM->CGetTreeNode(called_id);
+            const tree_nodeConstRef called_fun_decl_node = TM->GetTreeNode(called_id);
             const auto* fu_dec = GetPointer<const function_decl>(called_fun_decl_node);
             std::list<unsigned int>::const_iterator par_id_it, par_id_end;
             if(called_id == direct_called_id)
@@ -836,7 +836,7 @@ void VcdSignalSelection::SelectInternalSignals(
          {
             continue;
          }
-         const auto op_node = TM->CGetTreeNode(op_node_id);
+         const auto op_node = TM->GetTreeNode(op_node_id);
          if(op_node->get_kind() == gimple_assign_K)
          {
             const auto fu_type_id = fu_bind->get_assign(*op_vi);

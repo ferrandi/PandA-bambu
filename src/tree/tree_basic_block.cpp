@@ -86,7 +86,7 @@ bool bloc::check_function_call(const tree_nodeRef& statement, gimple_assign* ga,
          const auto fn = GetPointerS<const addr_expr>(ce->fn)->op;
          if(fn->get_kind() == function_decl_K)
          {
-            called_function_id = GET_INDEX_CONST_NODE(fn);
+            called_function_id = fn->index;
             return true;
          }
       }
@@ -99,7 +99,7 @@ bool bloc::check_function_call(const tree_nodeRef& statement, gimple_assign* ga,
          const auto fn = GetPointerS<const addr_expr>(gc->fn)->op;
          if(fn->get_kind() == function_decl_K)
          {
-            called_function_id = GET_INDEX_NODE(fn);
+            called_function_id = fn->index;
             return true;
          }
       }
@@ -208,12 +208,11 @@ void bloc::manageCallGraph(const application_managerRef& AppM, const tree_nodeRe
       unsigned int called_function_id;
       if(check_function_call(statement, ga, called_function_id))
       {
-         const auto function_id = GET_INDEX_NODE(GetPointerS<const gimple_node>(statement)->scpe);
+         const auto function_id = GetPointerS<const gimple_node>(statement)->scpe->index;
          if(cg_man->IsVertex(function_id))
          {
             CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function_id,
-                                                    GET_INDEX_CONST_NODE(statement),
-                                                    FunctionEdgeInfo::CallType::direct_call, 0);
+                                                    statement->index, FunctionEdgeInfo::CallType::direct_call, 0);
          }
       }
    }
@@ -429,13 +428,13 @@ void bloc::RemoveStmt(const tree_nodeRef statement, const application_managerRef
       if(check_function_call(statement, ga, called_function_id))
       {
          THROW_ASSERT(GetPointerS<const gimple_node>(statement)->scpe, "statement " + statement->ToString());
-         const auto fun_id = GET_INDEX_NODE(GetPointerS<const gimple_node>(statement)->scpe);
+         const auto fun_id = GetPointerS<const gimple_node>(statement)->scpe->index;
          const auto fun_cg_vertex = cg_man->GetVertex(fun_id);
          const auto cg = cg_man->CGetCallGraph();
          CustomOrderedSet<EdgeDescriptor> to_remove;
          OutEdgeIterator oei, oei_end;
          boost::tie(oei, oei_end) = boost::out_edges(fun_cg_vertex, *cg);
-         const auto call_id = GET_INDEX_NODE(statement);
+         const auto call_id = statement->index;
          for(; oei != oei_end; oei++)
          {
             const auto& direct_calls = cg->CGetFunctionEdgeInfo(*oei)->direct_call_points;
@@ -447,9 +446,9 @@ void bloc::RemoveStmt(const tree_nodeRef statement, const application_managerRef
          }
          THROW_ASSERT(
              to_remove.size() ||
-                 tree_helper::print_function_name(
-                     AppM->get_tree_manager(), GetPointer<const function_decl>(AppM->get_tree_manager()->CGetTreeNode(
-                                                   called_function_id))) == BUILTIN_WAIT_CALL,
+                 tree_helper::print_function_name(AppM->get_tree_manager(),
+                                                  GetPointer<const function_decl>(AppM->get_tree_manager()->GetTreeNode(
+                                                      called_function_id))) == BUILTIN_WAIT_CALL,
              "Call to be removed not found in call graph " + STR(call_id) + " " + STR(fun_id) + " " + STR(statement) +
                  " | " +
                  tree_helper::print_function_name(

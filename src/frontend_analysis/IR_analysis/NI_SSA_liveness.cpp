@@ -158,7 +158,7 @@ void NI_SSA_liveness::Up_and_Mark(blocRef B, tree_nodeRef v, statement_list* sl)
    }
    THROW_ASSERT(v_ssa_name->CGetDefStmts().size() == 1,
                 "SSA " + v_ssa_name->ToString() + " (" + STR(v_ssa_name->index) + ") is not in SSA form");
-   unsigned int def_stmt = GET_INDEX_NODE(v_ssa_name->CGetDefStmt());
+   unsigned int def_stmt = v_ssa_name->CGetDefStmt()->index;
    if(v_ssa_name->CGetDefStmt()->get_kind() == gimple_nop_K && v_ssa_name->var->get_kind() == parm_decl_K)
    {
       return;
@@ -166,13 +166,13 @@ void NI_SSA_liveness::Up_and_Mark(blocRef B, tree_nodeRef v, statement_list* sl)
 
    for(const auto& stmt : B->CGetStmtList())
    {
-      if(def_stmt == GET_INDEX_NODE(stmt))
+      if(def_stmt == stmt->index)
       {
          return;
       }
    }
    /// if v ∈ LiveIn(B) then return >    Propagation already done, stop
-   unsigned int v_index = GET_INDEX_NODE(v);
+   unsigned int v_index = v->index;
    if(B->live_in.find(v_index) != B->live_in.end())
    {
       return;
@@ -183,7 +183,7 @@ void NI_SSA_liveness::Up_and_Mark(blocRef B, tree_nodeRef v, statement_list* sl)
    for(const auto& phi : B->CGetPhiList())
    {
       auto* pn = GetPointer<gimple_phi>(phi);
-      if(GET_INDEX_NODE(pn->res) == v_index)
+      if(pn->res->index == v_index)
       {
          return;
       }
@@ -201,7 +201,7 @@ void NI_SSA_liveness::Up_and_Mark(blocRef B, tree_nodeRef v, statement_list* sl)
 DesignFlowStep_Status NI_SSA_liveness::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
-   tree_nodeRef tn = TM->CGetTreeNode(function_id);
+   tree_nodeRef tn = TM->GetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
    auto* sl = GetPointer<statement_list>(fd->body);
@@ -229,7 +229,7 @@ DesignFlowStep_Status NI_SSA_liveness::InternalExec()
                   {
                      /// in the original algorithm the live out has all the PhiUses of B, that is:
                      /// LiveOut(B) = LiveOut(B) ∪ {v}
-                     B->live_out.insert(GET_INDEX_NODE(def_edge.first));
+                     B->live_out.insert(def_edge.first->index);
                      Up_and_Mark(B, def_edge.first, sl);
                   }
                }
@@ -291,7 +291,7 @@ void NI_SSA_liveness::Initialize()
    if(bb_version != 0 and bb_version != function_behavior->GetBBVersion())
    {
       const auto TM = AppM->get_tree_manager();
-      auto tn = TM->CGetTreeNode(function_id);
+      auto tn = TM->GetTreeNode(function_id);
       auto fd = GetPointer<function_decl>(tn);
       THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
       auto sl = GetPointer<statement_list>(fd->body);

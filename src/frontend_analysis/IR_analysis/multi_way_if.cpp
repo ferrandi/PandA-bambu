@@ -155,7 +155,7 @@ void multi_way_if::Initialize()
    bb_modified = false;
    TM = AppM->get_tree_manager();
    tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters, AppM));
-   const auto temp = TM->CGetTreeNode(function_id);
+   const auto temp = TM->GetTreeNode(function_id);
    const auto fd = GetPointerS<const function_decl>(temp);
    sl = GetPointerS<statement_list>(fd->body);
 #if HAVE_ILP_BUILT
@@ -412,7 +412,7 @@ void multi_way_if::MergeCondMulti(const blocRef& pred_bb, const blocRef& curr_bb
    IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    IR_schema[TOK(TOK_SCPE)] = STR(function_id);
    TM->create_tree_node(gimple_multi_way_if_id, gimple_multi_way_if_K, IR_schema);
-   auto new_gwi = GetPointerS<gimple_multi_way_if>(TM->CGetTreeNode(gimple_multi_way_if_id));
+   auto new_gwi = GetPointerS<gimple_multi_way_if>(TM->GetTreeNode(gimple_multi_way_if_id));
    new_gwi->bb_index = pred_bb->number;
 
    const auto old_gwi = GetPointerS<const gimple_multi_way_if>(curr_bb->CGetStmtList().back());
@@ -478,7 +478,7 @@ void multi_way_if::MergeMultiMulti(const blocRef& pred_bb, const blocRef& curr_b
    IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    IR_schema[TOK(TOK_SCPE)] = STR(function_id);
    TM->create_tree_node(gimple_multi_way_if_id, gimple_multi_way_if_K, IR_schema);
-   auto new_gwi = GetPointerS<gimple_multi_way_if>(TM->CGetTreeNode(gimple_multi_way_if_id));
+   auto new_gwi = GetPointerS<gimple_multi_way_if>(TM->GetTreeNode(gimple_multi_way_if_id));
    new_gwi->bb_index = pred_bb->number;
 
    const auto old_gwi1 = GetPointerS<const gimple_multi_way_if>(pred_bb->CGetStmtList().back());
@@ -600,7 +600,7 @@ void multi_way_if::MergeMultiCond(const blocRef& pred_bb, const blocRef& curr_bb
    IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    IR_schema[TOK(TOK_SCPE)] = STR(function_id);
    TM->create_tree_node(gimple_multi_way_if_id, gimple_multi_way_if_K, IR_schema);
-   auto new_gwi = GetPointerS<gimple_multi_way_if>(TM->CGetTreeNode(gimple_multi_way_if_id));
+   auto new_gwi = GetPointerS<gimple_multi_way_if>(TM->GetTreeNode(gimple_multi_way_if_id));
    new_gwi->bb_index = pred_bb->number;
 
    const auto old_gwi = GetPointerS<const gimple_multi_way_if>(pred_bb->CGetStmtList().back());

@@ -115,7 +115,7 @@ void PhiOpt::Initialize()
    bb_modified = false;
    TM = AppM->get_tree_manager();
    tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters, AppM));
-   const auto fd = GetPointerS<const function_decl>(TM->CGetTreeNode(function_id));
+   const auto fd = GetPointerS<const function_decl>(TM->GetTreeNode(function_id));
    sl = GetPointerS<statement_list>(fd->body);
 #if HAVE_ILP_BUILT
    if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING &&
@@ -572,7 +572,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
                      {
                         return false;
                      }
-                     if(GET_INDEX_CONST_NODE(use_stmt.first) == GET_INDEX_CONST_NODE(stmt))
+                     if(use_stmt.first->index == stmt->index)
                      {
                         return false;
                      }
@@ -792,7 +792,7 @@ void PhiOpt::ApplyIfMerge(const unsigned int bb_index)
       {
          /// Create the cond expr
          auto condition_type = tree_helper::CGetType(condition);
-         auto isAVectorType = tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(condition_type));
+         auto isAVectorType = tree_helper::is_a_vector(TM, condition_type->index);
          const auto cond_expr_node =
              tree_man->create_ternary_operation(type_node, condition, true_value, false_value, BUILTIN_SRCP,
                                                 (isAVectorType ? vec_cond_expr_K : cond_expr_K));
@@ -1019,7 +1019,7 @@ void PhiOpt::ApplyIfRemove(const unsigned int bb_index)
       {
          /// Create the cond expr
          auto condition_type = tree_helper::CGetType(condition);
-         auto isAVectorType = tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(condition_type));
+         auto isAVectorType = tree_helper::is_a_vector(TM, condition_type->index);
          const auto cond_expr_node =
              tree_man->create_ternary_operation(type_node, condition, true_value, false_value, BUILTIN_SRCP,
                                                 (isAVectorType ? vec_cond_expr_K : cond_expr_K));
@@ -1067,7 +1067,8 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
 
    /// The gimple multi way if
    THROW_ASSERT(pred_stmt_list.back()->get_kind() == gimple_multi_way_if_K, "");
-   const auto gmwi = GetPointerS<gimple_multi_way_if>(pred_stmt_list.back());
+   const auto gmwi_node = pred_stmt_list.back();
+   const auto gmwi = GetPointerS<gimple_multi_way_if>(gmwi_node);
 
    /// Temporary remove gimple multi way if
    pred_block->RemoveStmt(pred_stmt_list.back(), AppM);
@@ -1211,7 +1212,7 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
       {
          /// Create the cond expr
          auto condition_type = tree_helper::CGetType(first_condition.first);
-         auto isAVectorType = tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(condition_type));
+         auto isAVectorType = tree_helper::is_a_vector(TM, condition_type->index);
          const auto cond_expr_node =
              tree_man->create_ternary_operation(type_node, first_condition.first, first_value, second_value,
                                                 BUILTIN_SRCP, (isAVectorType ? vec_cond_expr_K : cond_expr_K));
@@ -1245,7 +1246,7 @@ void PhiOpt::ApplyMultiMerge(const unsigned int bb_index)
    /// Readding gimple multi way if it has more than two exits
    if(gmwi->list_of_cond.size() >= 2)
    {
-      pred_block->PushBack(TM->GetTreeNode(gmwi->index), AppM);
+      pred_block->PushBack(gmwi_node, AppM);
    }
 
    /// Refactoring of the cfg - updating the predecessor
@@ -1321,7 +1322,8 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
 
    /// The gimple multi way if
    THROW_ASSERT(pred_stmt_list.back()->get_kind() == gimple_multi_way_if_K, "");
-   const auto gmwi = GetPointerS<gimple_multi_way_if>(pred_stmt_list.back());
+   const auto gmwi_node = pred_stmt_list.back();
+   const auto gmwi = GetPointerS<gimple_multi_way_if>(gmwi_node);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Multi way if is " + gmwi->ToString());
 
    /// Temporary remove gimple multi way if
@@ -1469,7 +1471,7 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
       {
          /// Create the cond expr
          auto condition_type = tree_helper::CGetType(first_condition.first);
-         auto isAVectorType = tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(condition_type));
+         auto isAVectorType = tree_helper::is_a_vector(TM, condition_type->index);
          const auto cond_expr_node =
              tree_man->create_ternary_operation(type_node, first_condition.first, first_value, second_value,
                                                 BUILTIN_SRCP, (isAVectorType ? vec_cond_expr_K : cond_expr_K));
@@ -1488,7 +1490,7 @@ void PhiOpt::ApplyMultiRemove(const unsigned int bb_index)
    /// Readd multi way if
    if(gmwi->list_of_cond.size() >= 2)
    {
-      pred_block->PushBack(TM->GetTreeNode(gmwi->index), AppM);
+      pred_block->PushBack(gmwi_node, AppM);
    }
 
    while(succ_block->CGetPhiList().size())
@@ -1743,7 +1745,7 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
 
             /// Create the cond expr
             auto condition_type = tree_helper::CGetType(condition);
-            auto isAVectorType = tree_helper::is_a_vector(TM, GET_INDEX_CONST_NODE(condition_type));
+            auto isAVectorType = tree_helper::is_a_vector(TM, condition_type->index);
             const auto cond_expr_node =
                 tree_man->create_ternary_operation(type_node, condition, first_value, second_value, BUILTIN_SRCP,
                                                    (isAVectorType ? vec_cond_expr_K : cond_expr_K));
@@ -1755,7 +1757,7 @@ PhiOpt_PatternType PhiOpt::IdentifyPattern(const unsigned int bb_index) const
                 tree_man->create_gimple_modify_stmt(first_value, cond_expr_node, function_id, BUILTIN_SRCP);
 
             /// Created statement is not added to the predecessor
-            if(schedule && schedule->CanBeMoved(GET_INDEX_CONST_NODE(gimple_assign_node), pred_block->number) !=
+            if(schedule && schedule->CanBeMoved(gimple_assign_node->index, pred_block->number) !=
                                FunctionFrontendFlowStep_Movable::MOVABLE)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
