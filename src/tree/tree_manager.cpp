@@ -1837,10 +1837,12 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Already remapped tree_node");
+#ifndef NDEBUG
    for(auto& [old_idx, new_idx] : remap)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Original " + STR(old_idx) + " New " + STR(new_idx));
    }
+#endif
 
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Starting remapping remaining nodes");
    for(const auto idx : not_yet_remapped)
