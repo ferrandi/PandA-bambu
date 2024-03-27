@@ -413,6 +413,7 @@ class fifo_interface : public interface
       if(shift)
       {
          _base += _align;
+         if_debug("Item pop (%u left).\n", _size());
       }
       return _size();
    }
@@ -429,6 +430,7 @@ class fifo_interface : public interface
       if(shift)
       {
          _base += _align;
+         if_debug("Item push (%u free).\n", _size());
       }
       return _size();
    }
@@ -456,7 +458,7 @@ class mem_interface : public interface
       if_debug("Memory interface.\n");
    }
 
-   int read(bptr_t data, uint16_t bitsize, ptr_t addr, bool shift) override
+   int read(bptr_t data, uint16_t bitsize, ptr_t addr, bool /*shift*/) override
    {
       assert((bitsize % 8) == 0 && "Expected byte-aligned memory address");
       bptr_t __addr = __m_mapper->addrmap(addr);
@@ -473,7 +475,7 @@ class mem_interface : public interface
       return IF_OK;
    }
 
-   int write(bptr_t data, uint16_t bitsize, ptr_t addr, bool shift) override
+   int write(bptr_t data, uint16_t bitsize, ptr_t addr, bool /*shift*/) override
    {
       bptr_t __addr = __m_mapper->addrmap(addr);
       if(__addr)
@@ -796,8 +798,8 @@ static void* __m_driver_loop(void*)
                debug("Interface %u operation: ", __m_ipc_operation.payload.interface.id);
                if(__m_ipc_operation.type & MDPI_OP_TYPE_IF_READ)
                {
-                  debug("read %u bits at " PTR_FORMAT ".\n", __m_ipc_operation.payload.interface.bitsize,
-                        __m_ipc_operation.payload.interface.addr);
+                  debug_append("read %u bits at " PTR_FORMAT ".\n", __m_ipc_operation.payload.interface.bitsize,
+                               __m_ipc_operation.payload.interface.addr);
                   __m_ipc_operation.payload.interface.info =
                       __m_interfaces.at(__m_ipc_operation.payload.interface.id)
                           ->read(__m_ipc_operation.payload.interface.buffer,
@@ -806,8 +808,8 @@ static void* __m_driver_loop(void*)
                }
                else if(__m_ipc_operation.type & MDPI_OP_TYPE_IF_WRITE)
                {
-                  debug("write %u bits at " PTR_FORMAT ".\n", __m_ipc_operation.payload.interface.bitsize,
-                        __m_ipc_operation.payload.interface.addr);
+                  debug_append("write %u bits at " PTR_FORMAT ".\n", __m_ipc_operation.payload.interface.bitsize,
+                               __m_ipc_operation.payload.interface.addr);
                   __m_ipc_operation.payload.interface.info =
                       __m_interfaces.at(__m_ipc_operation.payload.interface.id)
                           ->write(__m_ipc_operation.payload.interface.buffer,
@@ -816,7 +818,7 @@ static void* __m_driver_loop(void*)
                }
                else
                {
-                  debug("state (data: %u).\n", __m_ipc_operation.payload.interface.info);
+                  debug_append("state (data: %u).\n", __m_ipc_operation.payload.interface.info);
                   __m_ipc_operation.payload.interface.info = __m_interfaces.at(__m_ipc_operation.payload.interface.id)
                                                                  ->state(__m_ipc_operation.payload.interface.info);
                }
