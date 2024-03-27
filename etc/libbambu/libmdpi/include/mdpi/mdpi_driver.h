@@ -137,14 +137,11 @@ class channel_interface : public interface
       }
       if(shift)
       {
-         *reinterpret_cast<T*>(data) = _chan.read();
+         _chan.read();
          ++_count;
          if_debug("Item pop (%u left).\n", _read_size());
       }
-      else
-      {
-         *reinterpret_cast<T*>(data) = _chan[0];
-      }
+      *reinterpret_cast<T*>(data) = _chan[0];
       return _read_size();
    }
 

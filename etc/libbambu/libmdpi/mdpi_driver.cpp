@@ -409,12 +409,12 @@ class fifo_interface : public interface
          if_error("Read on empty FIFO.\n");
          return IF_EMPTY;
       }
-      memcpy(data, _base, _esize);
       if(shift)
       {
          _base += _align;
          if_debug("Item pop (%u left).\n", _size());
       }
+      memcpy(data, _base, _esize);
       return _size();
    }
 
@@ -804,7 +804,7 @@ static void* __m_driver_loop(void*)
                       __m_interfaces.at(__m_ipc_operation.payload.interface.id)
                           ->read(__m_ipc_operation.payload.interface.buffer,
                                  __m_ipc_operation.payload.interface.bitsize, __m_ipc_operation.payload.interface.addr,
-                                 __m_ipc_operation.type & MDPI_OP_TYPE_IF_POP);
+                                 (__m_ipc_operation.type & MDPI_OP_TYPE_IF_POP) == MDPI_OP_TYPE_IF_POP);
                }
                else if(__m_ipc_operation.type & MDPI_OP_TYPE_IF_WRITE)
                {
@@ -814,7 +814,7 @@ static void* __m_driver_loop(void*)
                       __m_interfaces.at(__m_ipc_operation.payload.interface.id)
                           ->write(__m_ipc_operation.payload.interface.buffer,
                                   __m_ipc_operation.payload.interface.bitsize, __m_ipc_operation.payload.interface.addr,
-                                  __m_ipc_operation.type & MDPI_OP_TYPE_IF_PUSH);
+                                  (__m_ipc_operation.type & MDPI_OP_TYPE_IF_PUSH) == MDPI_OP_TYPE_IF_PUSH);
                }
                else
                {
