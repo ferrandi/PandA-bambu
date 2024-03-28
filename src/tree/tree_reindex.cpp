@@ -53,14 +53,7 @@ tree_reindex::~tree_reindex() = default;
 
 void tree_reindex::print(std::ostream& os) const
 {
-   if(html)
-   {
-      os << "<a href=\"" << index << "\">@" << index << "</a>";
-   }
-   else
-   {
-      os << "@" << index;
-   }
+   os << "@" << index;
 }
 
 void tree_reindex::visit(tree_node_visitor* const v) const
@@ -70,9 +63,7 @@ void tree_reindex::visit(tree_node_visitor* const v) const
    VISIT_MEMBER(mask, actual_tree_node, visit(v));
 }
 
-bool tree_reindex::html = false;
-
 bool lt_tree_reindex::operator()(const tree_nodeRef& x, const tree_nodeRef& y) const
 {
-   return GET_INDEX_NODE(x) < GET_INDEX_NODE(y);
+   return x->index < y->index;
 }

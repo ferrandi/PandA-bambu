@@ -99,8 +99,8 @@ use_counting::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTyp
 DesignFlowStep_Status use_counting::InternalExec()
 {
    const auto TM = AppM->get_tree_manager();
-   const auto fd = GetPointerS<const function_decl>(TM->CGetTreeNode(function_id));
-   const auto sl = GetPointerS<const statement_list>(GET_CONST_NODE(fd->body));
+   const auto fd = GetPointerS<const function_decl>(TM->GetTreeNode(function_id));
+   const auto sl = GetPointerS<const statement_list>(fd->body);
    const auto th_debug = tree_helper::debug_level;
    tree_helper::debug_level = debug_level;
    for(const auto& bbi_bb : sl->list_of_bloc)
@@ -111,7 +111,7 @@ DesignFlowStep_Status use_counting::InternalExec()
          const auto ssa_uses = tree_helper::ComputeSsaUses(statement_node);
          for(const auto& ssa_use : ssa_uses)
          {
-            const auto sn = GetPointerS<ssa_name>(GET_NODE(ssa_use.first));
+            const auto sn = GetPointerS<ssa_name>(ssa_use.first);
             for(auto uses = ssa_use.second; uses; --uses)
             {
                sn->AddUseStmt(statement_node);
@@ -123,13 +123,13 @@ DesignFlowStep_Status use_counting::InternalExec()
          const auto ssa_uses = tree_helper::ComputeSsaUses(phi_node);
          for(const auto& ssa_use : ssa_uses)
          {
-            const auto sn = GetPointerS<ssa_name>(GET_NODE(ssa_use.first));
+            const auto sn = GetPointerS<ssa_name>(ssa_use.first);
             for(auto uses = ssa_use.second; uses; --uses)
             {
                sn->AddUseStmt(phi_node);
             }
          }
-         GetPointerS<gimple_phi>(GET_NODE(phi_node))->SetSSAUsesComputed();
+         GetPointerS<gimple_phi>(phi_node)->SetSSAUsesComputed();
       }
       bb->SetSSAUsesComputed();
    }

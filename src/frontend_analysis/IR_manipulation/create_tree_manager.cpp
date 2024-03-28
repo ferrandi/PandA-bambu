@@ -303,7 +303,7 @@ DesignFlowStep_Status create_tree_manager::Exec()
          {
             continue;
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--Loading " + archive.path().string());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Loading " + archive.path().string());
          const auto TM_new = ParseTreeFile(parameters, archive.path().string());
          TM->merge_tree_managers(TM_new);
       }
@@ -399,7 +399,7 @@ DesignFlowStep_Status create_tree_manager::Exec()
          }
          continue;
       }
-      const auto fd = GetPointer<function_decl>(GET_NODE(fnode));
+      const auto fd = GetPointer<function_decl>(fnode);
       for(auto& [attr, val] : arch->attrs)
       {
          if(attr == FunctionArchitecture::func_pipeline_style)

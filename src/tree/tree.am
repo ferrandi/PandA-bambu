@@ -35,6 +35,7 @@ if BUILD_LIB_TREE_MANIPULATION
       tree/tree_node_finder.hpp \
       tree/tree_node_mask.hpp \
       tree/tree_nodes_merger.hpp \
+      tree/tree_reindex_remove.hpp \
       tree/type_casting.hpp \
       tree/var_pp_functor.hpp
    lib_tree_manipulation_la_CPPFLAGS =\
@@ -62,6 +63,7 @@ if BUILD_LIB_TREE_MANIPULATION
       tree/tree_node_finder.cpp \
       tree/tree_node_mask.cpp \
       tree/tree_nodes_merger.cpp \
+      tree/tree_reindex_remove.cpp \
       tree/type_casting.cpp \
       tree/var_pp_functor.cpp
 endif

@@ -127,8 +127,8 @@ DesignFlowStep_Status SDCCodeMotion::InternalExec()
    restart_ifmwi_opt = false;
 
    const tree_managerRef TM = AppM->get_tree_manager();
-   auto* fd = GetPointer<function_decl>(TM->get_tree_node_const(function_id));
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   auto* fd = GetPointer<function_decl>(TM->GetTreeNode(function_id));
+   auto* sl = GetPointer<statement_list>(fd->body);
    std::map<unsigned int, blocRef>& list_of_bloc = sl->list_of_bloc;
 
    /// Retrieve result of sdc scheduling
@@ -151,7 +151,7 @@ DesignFlowStep_Status SDCCodeMotion::InternalExec()
                        list_of_bloc.find(new_basic_block) != list_of_bloc.end(),
                    "unexpected condition: BB are missing");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Moving " + STR(TM->GetTreeReindex(statement_index)) + " from BB" + STR(old_basic_block) +
+                     "-->Moving " + STR(TM->GetTreeNode(statement_index)) + " from BB" + STR(old_basic_block) +
                          " to BB" + STR(new_basic_block));
       if(not AppM->ApplyNewTransformation())
       {
@@ -159,14 +159,14 @@ DesignFlowStep_Status SDCCodeMotion::InternalExec()
                         "<--Skipped because reached limit of cfg transformations");
          continue;
       }
-      list_of_bloc.at(old_basic_block)->RemoveStmt(TM->GetTreeReindex(statement_index), AppM);
+      list_of_bloc.at(old_basic_block)->RemoveStmt(TM->GetTreeNode(statement_index), AppM);
       if(list_of_bloc.at(old_basic_block)->CGetStmtList().empty() &&
          list_of_bloc.at(old_basic_block)->CGetPhiList().empty())
       {
          restart_ifmwi_opt = true;
       }
-      list_of_bloc.at(new_basic_block)->PushBack(TM->GetTreeReindex(statement_index), AppM);
-      AppM->RegisterTransformation(GetName(), TM->CGetTreeNode(statement_index));
+      list_of_bloc.at(new_basic_block)->PushBack(TM->GetTreeNode(statement_index), AppM);
+      AppM->RegisterTransformation(GetName(), TM->GetTreeNode(statement_index));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Moved " + STR(statement_index));
    }
    function_behavior->UpdateBBVersion();

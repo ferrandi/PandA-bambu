@@ -99,12 +99,12 @@ DesignFlowStep_Status HDLFunctionDeclFix::Exec()
 
    for(const auto function : TM->GetAllFunctions())
    {
-      auto fd = GetPointer<function_decl>(TM->get_tree_node_const(function));
+      auto fd = GetPointer<function_decl>(TM->GetTreeNode(function));
       if(not fd->name)
       {
          continue;
       }
-      auto in = GetPointer<identifier_node>(GET_NODE(fd->name));
+      auto in = GetPointer<identifier_node>(fd->name);
       const auto identifier =
           hdl_writer_type == HDLWriter_Language::VHDL ? boost::to_upper_copy<std::string>(in->strg) : in->strg;
       if(found_names.find(identifier) != found_names.end())

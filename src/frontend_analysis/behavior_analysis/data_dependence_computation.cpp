@@ -216,7 +216,7 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
       const auto& local_defs = GetVariables<type>(*vi, FunctionBehavior_VariableAccessType::DEFINITION);
       for(auto local_def : local_defs)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + TM->get_tree_node_const(local_def)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + TM->GetTreeNode(local_def)->ToString());
          defs[local_def].insert(*vi);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -229,8 +229,7 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
       const auto& local_overs = GetVariables<type>(*vi, FunctionBehavior_VariableAccessType::OVER);
       for(auto local_over : local_overs)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---" + TM->get_tree_node_const(local_over)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + TM->GetTreeNode(local_over)->ToString());
          overs[local_over].insert(*vi);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -244,7 +243,7 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
       for(auto local_use : GetVariables<type>(*vi, FunctionBehavior_VariableAccessType::USE))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Considering use of " + TM->get_tree_node_const(local_use)->ToString());
+                        "-->Considering use of " + TM->GetTreeNode(local_use)->ToString());
          if(defs.find(local_use) != defs.end())
          {
             for(const auto this_def : defs.find(local_use)->second)

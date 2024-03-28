@@ -116,9 +116,8 @@ static unsigned long long get_data_bus_bitsize(const hlsRef HLS, const HLS_manag
    {
       if(function_parameter.first != HLS->functionId)
       {
-         data_bus_bitsize =
-             std::max(data_bus_bitsize,
-                      tree_helper::Size(HLSMgr->get_tree_manager()->CGetTreeReindex(function_parameter.first)));
+         data_bus_bitsize = std::max(
+             data_bus_bitsize, tree_helper::Size(HLSMgr->get_tree_manager()->GetTreeNode(function_parameter.first)));
       }
    }
    return data_bus_bitsize;

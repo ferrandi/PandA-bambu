@@ -138,9 +138,8 @@ const std::string OpNodeInfo::GetOperation() const
       return NOP;
    }
    THROW_ASSERT(node, "");
-   THROW_ASSERT(GetPointer<const gimple_node>(GET_NODE(node)),
-                "Node is not a gimple_node but a " + GET_NODE(node)->get_kind_text());
-   return GetPointer<const gimple_node>(GET_NODE(node))->operation;
+   THROW_ASSERT(GetPointer<const gimple_node>(node), "Node is not a gimple_node but a " + node->get_kind_text());
+   return GetPointer<const gimple_node>(node)->operation;
 }
 
 unsigned int OpNodeInfo::GetNodeId() const

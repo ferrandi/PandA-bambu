@@ -140,8 +140,8 @@ DesignFlowStep_Status call_graph_computation::Exec()
       if(fnode)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---Root function " + STR(GET_INDEX_CONST_NODE(fnode)) + " - " + symbol);
-         functions.insert(GET_INDEX_CONST_NODE(fnode));
+                        "---Root function " + STR(fnode->index) + " - " + symbol);
+         functions.insert(fnode->index);
       }
    }
    CGM->SetRootFunctions(functions);
@@ -158,9 +158,9 @@ DesignFlowStep_Status call_graph_computation::Exec()
          continue;
       }
       // avoid nested functions
-      const auto fun = TM->CGetTreeNode(f_id);
+      const auto fun = TM->GetTreeNode(f_id);
       const auto fd = GetPointerS<const function_decl>(fun);
-      if(fd->scpe && GET_NODE(fd->scpe)->get_kind() == function_decl_K)
+      if(fd->scpe && fd->scpe->get_kind() == function_decl_K)
       {
          THROW_ERROR_CODE(NESTED_FUNCTIONS_EC, "Nested functions not yet supported " + STR(f_id));
       }

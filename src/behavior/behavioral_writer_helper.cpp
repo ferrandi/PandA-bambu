@@ -170,7 +170,7 @@ void BBWriter::operator()(std::ostream& out, const vertex& v) const
          for(const auto& statement : bb_node_info->block->CGetStmtList())
          {
             const var_pp_functorConstRef svpf(new std_var_pp_functor(helper));
-            auto res = STR(GET_INDEX_NODE(statement));
+            auto res = STR(statement->index);
 #if HAVE_HLS_BUILT
             if(schedule)
             {
@@ -178,8 +178,7 @@ void BBWriter::operator()(std::ostream& out, const vertex& v) const
             }
 #endif
             res += " -> " + helper->PrintNode(statement, nullptr, svpf);
-            const tree_nodeRef node = GET_NODE(statement);
-            switch(node->get_kind())
+            switch(statement->get_kind())
             {
                case gimple_assign_K:
                case gimple_call_K:

@@ -40,32 +40,30 @@
  * Last modified by $Author$
  *
  */
+#include "tree_node_factory.hpp"
 
-/// parser/compiler include
-#include "token_interface.hpp"
-
-/// tree includes
 #include "ext_tree_node.hpp"
+#include "token_interface.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
-#include "tree_node_factory.hpp"
 #include "tree_reindex.hpp"
 #include "utility.hpp"
 
 #define CREATE_TREE_NODE_CASE_BODY(tree_node_name, node_id) \
    {                                                        \
       auto tnn = new tree_node_name(node_id);               \
-      tree_nodeRef cur = tree_nodeRef(tnn);                 \
-      TM.AddTreeNode(node_id, cur);                         \
+      cur = tree_nodeRef(tnn);                              \
+      TM.AddTreeNode(cur);                                  \
       curr_tree_node_ptr = tnn;                             \
       tnn->visit(this);                                     \
       curr_tree_node_ptr = nullptr;                         \
       break;                                                \
    }
 
-void tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_node_type)
+tree_nodeRef tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_node_type)
 {
+   tree_nodeRef cur;
    switch(tree_node_type)
    {
       case abs_expr_K:
@@ -552,7 +550,6 @@ void tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_no
          CREATE_TREE_NODE_CASE_BODY(null_node, node_id)
       case identifier_node_K: /// special care is reserved for identifier_nodes
       {
-         tree_nodeRef cur;
          if(tree_node_schema.find(TOK(TOK_STRG)) != tree_node_schema.end())
          {
             cur = tree_nodeRef(new identifier_node(node_id, tree_node_schema.find(TOK(TOK_STRG))->second, &TM));
@@ -566,7 +563,7 @@ void tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_no
          {
             THROW_ERROR("Incorrect schema for identifier_node: no TOK_STRG nor TOK_OPERATOR");
          }
-         TM.AddTreeNode(node_id, cur);
+         TM.AddTreeNode(cur);
          break;
       }
       case widen_sum_expr_K:
@@ -612,6 +609,8 @@ void tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_no
       default:
          THROW_UNREACHABLE("");
    }
+   THROW_ASSERT(cur, "");
+   return cur;
 }
 
 void tree_node_factory::operator()(const tree_node* obj, unsigned int&)

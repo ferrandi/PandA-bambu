@@ -224,15 +224,15 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships,
                         const auto top_fnode = AppM->get_tree_manager()->GetFunction(top_symbol);
                         const auto hls_step_factory =
                             GetPointer<const HLSFlowStepFactory>(DFMgr->CGetDesignFlowStepFactory("HLS"));
-                        const auto hls_top_function = DFMgr->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(
-                            HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(),
-                            GET_INDEX_CONST_NODE(top_fnode)));
+                        const auto hls_top_function = DFMgr->GetDesignFlowStep(
+                            HLSFunctionStep::ComputeSignature(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW,
+                                                              HLSFlowStepSpecializationConstRef(), top_fnode->index));
                         const auto hls_top_function_step =
                             hls_top_function ? DFMgr->CGetDesignFlowGraph()
                                                    ->CGetDesignFlowStepInfo(hls_top_function)
                                                    ->design_flow_step :
                                                hls_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW,
-                                                                                   GET_INDEX_CONST_NODE(top_fnode));
+                                                                                   top_fnode->index);
                         relationships.insert(hls_top_function_step);
                      }
                   }

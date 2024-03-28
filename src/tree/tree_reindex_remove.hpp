@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *              Copyright (C) 2024 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,61 +31,48 @@
  *
  */
 /**
- * @file tree_node_finder.hpp
- * @brief tree node finder. This class exploiting the visitor design pattern find a tree node in a tree_manager.
+ * @file tree_reindex_remove.hpp
+ * @brief tree reindex remove class
  *
- * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
  *
  */
-#ifndef TREE_NODE_FINDER_HPP
-#define TREE_NODE_FINDER_HPP
+#ifndef TREE_REINDEX_REMOVE_HPP
+#define TREE_REINDEX_REMOVE_HPP
 
-#include "custom_map.hpp"
 #include "refcount.hpp"
-#include "token_interface.hpp"
-#include "tree_node.hpp"
 #include "tree_node_mask.hpp"
 
 #include <boost/preprocessor/facilities/empty.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
 
-#include <string>
+class tree_manager;
+REF_FORWARD_DECL(tree_node);
 
-/**
- * @name forward declarations
- */
-//@{
-REF_FORWARD_DECL(tree_node_finder);
-//@}
-
-struct tree_node_finder : public tree_node_mask
+struct tree_reindex_remove : public tree_node_mask
 {
-   /// default constructor
-   explicit tree_node_finder(const std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>& _tree_node_schema)
-       : find_res(true), tree_node_schema(_tree_node_schema)
-   {
-   }
+   /**
+    * @brief Construct a new tree node dup object
+    *
+    * @param TM the tree manager instance
+    */
+   tree_reindex_remove(const tree_manager& TM);
+
    /// tree_node visitors
    BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO_DECL, BOOST_PP_EMPTY, OBJ_SPECIALIZED_SEQ)
    BOOST_PP_SEQ_FOR_EACH(OPERATOR_MACRO, BOOST_PP_EMPTY, OBJ_NOT_SPECIALIZED_SEQ)
 
-   /// Return true in case the tree node is compatible with the tree_node_schema. Usually called by
-   /// tree_manager::create_tree_node.
-   bool check(const tree_nodeRef& t)
-   {
-      find_res = true;
-      t->visit(this);
-      return find_res;
-   }
+   void operator()(const tree_nodeRef& tn);
 
  private:
-   /// result of the search
-   bool find_res;
-   /// tree_node_schema expresses the value of the fields of the tree node we are looking for.
-   const std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>& tree_node_schema;
+   const tree_manager& TM;
+   tree_nodeRef source_tn;
+   CustomUnorderedSet<unsigned int> already_visited;
+
+   void fix_reference(tree_nodeRef& tn) const;
 };
 
 #endif

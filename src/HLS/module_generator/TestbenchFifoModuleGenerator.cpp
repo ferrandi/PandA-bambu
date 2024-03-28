@@ -74,7 +74,6 @@ void TestbenchFifoModuleGenerator::InternalExec(std::ostream& out, structural_ob
 
    const auto top_bh = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
    const auto top_fname = top_bh->GetMangledFunctionName();
-   const auto top_fnode = HLSMgr->get_tree_manager()->CGetTreeReindex(function_id);
    const auto& iface_attrs = HLSMgr->module_arch->GetArchitecture(top_fname)->ifaces.at(arg_name);
    const auto if_dir = port_o::to_port_direction(iface_attrs.at(FunctionArchitecture::iface_direction));
    const auto if_alignment = iface_attrs.at(FunctionArchitecture::iface_alignment);

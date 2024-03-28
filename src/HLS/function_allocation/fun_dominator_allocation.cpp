@@ -253,7 +253,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
       const auto BH = function_behavior->CGetBehavioralHelper();
       const auto fname = BH->get_function_name();
       if(tree_helper::is_a_nop_function_decl(
-             GetPointerS<const function_decl>(HLSMgr->get_tree_manager()->CGetTreeNode(funID))))
+             GetPointerS<const function_decl>(HLSMgr->get_tree_manager()->GetTreeNode(funID))))
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                         "---Warning: " + fname + " is empty or the compiler killed all the statements");

@@ -47,7 +47,6 @@
 #include "function_frontend_flow_step.hpp"
 
 #include "refcount.hpp"
-#include "tree_basic_block.hpp"
 /**
  * @name forward declarations
  */
@@ -55,6 +54,7 @@
 REF_FORWARD_DECL(Bit_Value_opt);
 REF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_manipulation);
+REF_FORWARD_DECL(tree_node);
 struct function_decl;
 struct ssa_name;
 //@}
