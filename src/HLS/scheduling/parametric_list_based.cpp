@@ -551,7 +551,13 @@ enum ResourceAttribute
    LOAD_STORE_OP = 2,
    UNBOUNDED = 4,
    UNBOUNDED_RW = 8,
-   SEEMULTICYCLE = 16
+   SEEMULTICYCLE = 16,
+   cstep_vuses_ARRAYs = 32
+};
+
+enum DConstraints
+{
+   cstep_vuses_others = 0
 };
 
 /// definition of the data structure used to check if a resource is available given a vertex
@@ -565,6 +571,8 @@ struct resource_table
    void initResource(unsigned fu, unsigned n);
    unsigned& getRefResource(unsigned fu);
    unsigned& getRefAttribute();
+   unsigned getDConstraint(unsigned constraintID);
+   unsigned setDConstraint(unsigned constraintID, unsigned value);
 };
 
 template <>
@@ -575,6 +583,10 @@ struct resource_table<true>
       if(used_resources.size() != II)
       {
          used_resources.resize(II);
+      }
+      if(Dconstraints.size() != II)
+      {
+         Dconstraints.resize(II);
       }
       if(used_attribute.size() != II)
       {
@@ -595,6 +607,25 @@ struct resource_table<true>
       THROW_ASSERT(hasResource(fu), "unexpected condition");
       return used_resources.at(current_cycle).at(fu);
    }
+   unsigned getDConstraint(unsigned constraintID)
+   {
+      if(Dconstraints.at(current_cycle).find(constraintID) == Dconstraints.at(current_cycle).end())
+      {
+         return 0;
+      }
+      return Dconstraints.at(current_cycle).at(constraintID);
+   }
+   void setDConstraint(unsigned constraintID, unsigned value)
+   {
+      if(Dconstraints.at(current_cycle).find(constraintID) == Dconstraints.at(current_cycle).end())
+      {
+         Dconstraints.at(current_cycle)[constraintID] = value;
+      }
+      else
+      {
+         Dconstraints.at(current_cycle)[constraintID] += value;
+      }
+   }
    unsigned& getRefAttribute()
    {
       return used_attribute.at(current_cycle);
@@ -602,6 +633,7 @@ struct resource_table<true>
 
  private:
    std::vector<CustomMap<unsigned int, unsigned int>> used_resources;
+   std::vector<CustomMap<unsigned int, unsigned int>> Dconstraints;
    unsigned current_cycle{0};
    std::vector<unsigned int> used_attribute;
 };
@@ -630,9 +662,29 @@ struct resource_table<false>
    {
       return used_attribute;
    }
+   unsigned getDConstraint(unsigned constraintID)
+   {
+      if(Dconstraints.find(constraintID) == Dconstraints.end())
+      {
+         return 0;
+      }
+      return Dconstraints.at(constraintID);
+   }
+   void setDConstraint(unsigned constraintID, unsigned value)
+   {
+      if(Dconstraints.find(constraintID) == Dconstraints.end())
+      {
+         Dconstraints[constraintID] = value;
+      }
+      else
+      {
+         Dconstraints[constraintID] += value;
+      }
+   }
 
  private:
    CustomMap<unsigned int, unsigned int> used_resources;
+   CustomMap<unsigned int, unsigned int> Dconstraints;
    unsigned used_attribute{ResourceAttribute::NONE};
 };
 
@@ -1000,7 +1052,6 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
 #else
    PriorityQueues priority_queues(n_resources, std::set<vertex, PrioritySorter>(PrioritySorter(Priority, flow_graph)));
 #endif
-   unsigned int cstep_vuses_ARRAYs = 0;
    unsigned int cstep_vuses_others = 0;
    bool cstep_has_RET_conflict = false;
 
@@ -1023,6 +1074,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
    while((schedule->num_scheduled() - already_sch) != operations_number)
    {
       used_resources.init(current_cycle - initialCycle, LP_II);
+      unsigned int cstep_vuses_ARRAYs = used_resources.getRefAttribute() & ResourceAttribute::cstep_vuses_ARRAYs;
       bool unbounded = used_resources.getRefAttribute() & ResourceAttribute::UNBOUNDED;
       bool unbounded_RW = used_resources.getRefAttribute() & ResourceAttribute::UNBOUNDED_RW;
       bool seeMulticycle = used_resources.getRefAttribute() & ResourceAttribute::SEEMULTICYCLE;
@@ -1254,7 +1306,9 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                                                  HLS->allocation_information->get_memory_var(fu_type) :
                                                  HLS->allocation_information->get_proxy_memory_var(fu_type)) :
                                             0;
-                  if(is_array && cstep_vuses_others && !HLSMgr->Rmem->is_private_memory(var))
+                  if(is_array &&
+                     (cstep_vuses_others + used_resources.getDConstraint(DConstraints::cstep_vuses_others)) &&
+                     !HLSMgr->Rmem->is_private_memory(var))
                   {
                      postponed = true;
                   }
@@ -1263,7 +1317,8 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                      postponed = true;
                   }
                   /*
-                  if(!postponed && !cstep_vuses_ARRAYs && !cstep_vuses_others)
+                  if(!postponed && !cstep_vuses_ARRAYs &&
+                  ((cstep_vuses_others+used_resources.getDConstraint(DConstraints::cstep_vuses_others)) == 0))
                   {
                      for(auto cur_fu_type: ready_resources)
                      {
@@ -1764,9 +1819,11 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                                             0;
                   if(!var || !HLSMgr->Rmem->is_private_memory(var))
                   {
-                     if(HLS->allocation_information->is_direct_access_memory_unit(fu_type) && !cstep_vuses_others)
+                     if(HLS->allocation_information->is_direct_access_memory_unit(fu_type) &&
+                        ((cstep_vuses_others + used_resources.getDConstraint(DConstraints::cstep_vuses_others)) == 0))
                      {
                         cstep_vuses_ARRAYs = 1;
+                        attrib_update = attrib_update | ResourceAttribute::cstep_vuses_ARRAYs;
                      }
                      else
                      {
@@ -1775,6 +1832,7 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                                   parameters->getOption<std::string>(OPT_memory_controller_type) != "D10") ?
                                      1 :
                                      0);
+                        used_resources.setDConstraint(DConstraints::cstep_vuses_others, cstep_vuses_others);
                      }
                   }
                }
@@ -1980,8 +2038,6 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
          }
       }
 #endif
-      /// clear the vuses
-      cstep_vuses_ARRAYs = cstep_vuses_ARRAYs > 0 ? cstep_vuses_ARRAYs - 1 : 0;
       cstep_vuses_others = cstep_vuses_others > 0 ? cstep_vuses_others - 1 : 0;
       /// move to the next cycle
       ++current_cycle;
