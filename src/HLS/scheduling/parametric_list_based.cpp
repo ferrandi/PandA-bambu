@@ -645,6 +645,7 @@ struct resource_table<false>
    {
       used_resources.clear();
       used_attribute = ResourceAttribute::NONE;
+      Dconstraints.clear();
    }
    bool hasResource(unsigned fu)
    {
@@ -1340,14 +1341,27 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                 "                  MEMORY_CTRL cannot run together with BRAM direct accesses " +
                                     GET_NAME(flow_graph, current_vertex) + " mapped on " +
-                                    HLS->allocation_information->get_fu_name(fu_type).first + "at cstep " +
+                                    HLS->allocation_information->get_fu_name(fu_type).first + " at cstep " +
                                     STR(current_cycle));
                   if(black_list.find(fu_type) == black_list.end())
                   {
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   }
                   black_list.at(fu_type).insert(current_vertex);
-                  continue;
+                  schedulable = false;
+               }
+               if(LPBB_predicate)
+               {
+                  if(!schedulable)
+                  {
+                     if(update_Infeasible())
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "<--Schedule of operation " + GET_NAME(flow_graph, current_vertex) +
+                                           " not feasible given this II=" + STR(LP_II));
+                        return false;
+                     }
+                  }
                }
 
                bool is_live = check_if_is_live_in_next_cycle(live_vertices, current_cycle, starting_time, ending_time,
@@ -1485,15 +1499,12 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                {
                   if(LPBB_predicate)
                   {
-                     if(!schedulable)
+                     if(update_Infeasible())
                      {
-                        if(update_Infeasible())
-                        {
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                          "---Schedule of operation " + GET_NAME(flow_graph, current_vertex) +
-                                              " not feasible given this II=" + STR(LP_II));
-                           return false;
-                        }
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---Schedule of operation " + GET_NAME(flow_graph, current_vertex) +
+                                           " not feasible given this II=" + STR(LP_II));
+                        return false;
                      }
                   }
                   continue;
@@ -1732,15 +1743,12 @@ bool parametric_list_based::exec(const OpVertexSet& Operations, ControlStep curr
                {
                   if(LPBB_predicate)
                   {
-                     if(!schedulable)
+                     if(update_Infeasible())
                      {
-                        if(update_Infeasible())
-                        {
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                          "---Schedule of operation " + GET_NAME(flow_graph, current_vertex) +
-                                              " not feasible given this II=" + STR(LP_II));
-                           return false;
-                        }
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---Schedule of operation " + GET_NAME(flow_graph, current_vertex) +
+                                           " not feasible given this II=" + STR(LP_II));
+                        return false;
                      }
                   }
                   continue;
