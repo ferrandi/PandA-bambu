@@ -170,7 +170,7 @@ std::string PragmaParser::substitutePragmas(const std::string& input_filename)
             {
                for(auto& open_pragma : OpenPragmas[level])
                {
-                  fileOutput << std::string(STR_CST_pragma_function_end) + "(\"" << open_pragma << "\");" << std::endl;
+                  fileOutput << STR_CST_pragma_function_end "(\"" << open_pragma << "\");" << std::endl;
                }
                OpenPragmas[level].clear();
             }
@@ -268,7 +268,7 @@ bool PragmaParser::recognize_omp_pragma(std::string& line)
       {
          search_function = true;
          single_line_pragma = true;
-         line = std::string(STR_CST_pragma_function_single_line_one_argument) + "(\"" STR_CST_pragma_keyword_omp "\", ";
+         line = STR_CST_pragma_function_single_line_one_argument "(\"" STR_CST_pragma_keyword_omp "\", ";
          break;
       }
       case(pragma_manager::OMP_DECLARE_SIMD):
@@ -285,7 +285,7 @@ bool PragmaParser::recognize_omp_pragma(std::string& line)
       case(pragma_manager::OMP_SECTIONS):
       case(pragma_manager::OMP_TASK):
       {
-         line = std::string(STR_CST_pragma_function_start) + "(\"" STR_CST_pragma_keyword_omp "\", ";
+         line = STR_CST_pragma_function_start "(\"" STR_CST_pragma_keyword_omp "\", ";
          break;
       }
       case(pragma_manager::OMP_UNKNOWN):
@@ -319,14 +319,14 @@ bool PragmaParser::recognize_omp_pragma(std::string& line)
 bool PragmaParser::recognize_call_point_hw_pragma(std::string& line) const
 {
    const std::string old_line = line;
-   line = std::string(STR_CST_pragma_function_single_line_two_arguments) + "(";
-   line += "\"" + std::string(STR_CST_pragma_keyword_map) + "\"";
+   line = STR_CST_pragma_function_single_line_two_arguments "(";
+   line += "\"" STR_CST_pragma_keyword_map "\"";
    line += ", ";
    const auto splitted = string_to_container<std::vector<std::string>>(old_line, " ");
    THROW_ASSERT(splitted.size() == 4 or splitted.size() == 5, "Error in syntax of mapping pragma: " + old_line);
-   THROW_ASSERT(splitted[2] == std::string(STR_CST_pragma_keyword_call_point_hw),
-                "Expecting " + std::string(STR_CST_pragma_keyword_call_point_hw) + " - Found : " + splitted[2]);
-   line += "\"" + std::string(STR_CST_pragma_keyword_call_point_hw) + "\"";
+   THROW_ASSERT(splitted[2] == STR_CST_pragma_keyword_call_point_hw,
+                "Expecting " STR_CST_pragma_keyword_call_point_hw " - Found : " + splitted[2]);
+   line += "\"" STR_CST_pragma_keyword_call_point_hw "\"";
    line += ", \"" + splitted[3] + "\"";
    if(splitted.size() == 5)
    {
