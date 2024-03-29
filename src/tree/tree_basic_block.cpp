@@ -202,14 +202,14 @@ void bloc::manageCallGraph(const application_managerRef& AppM, const tree_nodeRe
    if((ga && (ga->op1->get_kind() == call_expr_K || ga->op1->get_kind() == aggr_init_expr_K)) ||
       statement->get_kind() == gimple_call_K)
    {
-      const auto cg_man = AppM->GetCallGraphManager();
-      THROW_ASSERT(cg_man, "");
+      const auto CGM = AppM->GetCallGraphManager();
+      THROW_ASSERT(CGM, "");
       THROW_ASSERT(GetPointerS<const gimple_node>(statement)->scpe, "statement " + statement->ToString());
       unsigned int called_function_id;
       if(check_function_call(statement, ga, called_function_id))
       {
          const auto function_id = GetPointerS<const gimple_node>(statement)->scpe->index;
-         if(cg_man->IsVertex(function_id))
+         if(CGM->IsVertex(function_id))
          {
             CallGraphManager::addCallPointAndExpand(already_visited, AppM, function_id, called_function_id,
                                                     statement->index, FunctionEdgeInfo::CallType::direct_call, 0);
@@ -419,29 +419,27 @@ void bloc::Replace(const tree_nodeRef old_stmt, const tree_nodeRef new_stmt, con
 void bloc::RemoveStmt(const tree_nodeRef statement, const application_managerRef AppM)
 {
    const auto ga = GetPointer<gimple_assign>(statement);
-   if((ga && (ga->op1->get_kind() == call_expr_K || ga->op1->get_kind() == aggr_init_expr_K)) ||
-      statement->get_kind() == gimple_call_K)
+   if(AppM && ((ga && (ga->op1->get_kind() == call_expr_K || ga->op1->get_kind() == aggr_init_expr_K)) ||
+               statement->get_kind() == gimple_call_K))
    {
-      const auto cg_man = AppM->GetCallGraphManager();
-      THROW_ASSERT(cg_man, "");
+      const auto CGM = AppM->GetCallGraphManager();
+      THROW_ASSERT(CGM, "");
       unsigned int called_function_id;
       if(check_function_call(statement, ga, called_function_id))
       {
          THROW_ASSERT(GetPointerS<const gimple_node>(statement)->scpe, "statement " + statement->ToString());
          const auto fun_id = GetPointerS<const gimple_node>(statement)->scpe->index;
-         const auto fun_cg_vertex = cg_man->GetVertex(fun_id);
-         const auto cg = cg_man->CGetCallGraph();
+         const auto fun_cg_vertex = CGM->GetVertex(fun_id);
+         const auto cg = CGM->CGetCallGraph();
          CustomOrderedSet<EdgeDescriptor> to_remove;
-         OutEdgeIterator oei, oei_end;
-         boost::tie(oei, oei_end) = boost::out_edges(fun_cg_vertex, *cg);
          const auto call_id = statement->index;
-         for(; oei != oei_end; oei++)
+         BOOST_FOREACH(EdgeDescriptor oe, boost::out_edges(fun_cg_vertex, *cg))
          {
-            const auto& direct_calls = cg->CGetFunctionEdgeInfo(*oei)->direct_call_points;
+            const auto& direct_calls = cg->CGetFunctionEdgeInfo(oe)->direct_call_points;
             auto call_it = direct_calls.find(call_id);
             if(call_it != direct_calls.end())
             {
-               to_remove.insert(*oei);
+               to_remove.insert(oe);
             }
          }
          THROW_ASSERT(
@@ -455,7 +453,7 @@ void bloc::RemoveStmt(const tree_nodeRef statement, const application_managerRef
                      AppM->get_tree_manager(), GetPointerS<function_decl>(GetPointerS<gimple_node>(statement)->scpe)));
          for(const auto& e : to_remove)
          {
-            cg_man->RemoveCallPoint(e, call_id);
+            CGM->RemoveCallPoint(e, call_id);
          }
       }
    }
