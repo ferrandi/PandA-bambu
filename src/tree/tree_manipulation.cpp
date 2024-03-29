@@ -1446,30 +1446,29 @@ tree_nodeRef tree_manipulation::GetCustomIntegerType(unsigned long long prec, bo
       CreateIntegerCst(integer_type_node, (integer_cst_t(1) << (prec - !unsigned_p)) - 1, max_node_nid);
 
       tree_reindex_remove(*TreeM).operator()(integer_type_node);
-
-      if(auto& it_name = GetPointerS<integer_type>(integer_type_node)->name)
-      {
-         if(it_name->get_kind() == identifier_node_K)
-         {
-            auto in = GetPointerS<identifier_node>(it_name);
-            if(in->strg == "sizetype")
-            {
-               it_name = create_identifier_node("unsigned long");
-            }
-            else if(in->strg == "ssizetype")
-            {
-               it_name = create_identifier_node("long");
-            }
-            else if(in->strg == "bitsizetype" || in->strg == "bit_size_type")
-            {
-               it_name = create_identifier_node("unsigned long long int");
-            }
-         }
-      }
    }
    else
    {
       integer_type_node = TreeM->GetTreeNode(integer_type_nid);
+   }
+   if(auto& it_name = GetPointerS<integer_type>(integer_type_node)->name)
+   {
+      if(it_name->get_kind() == identifier_node_K)
+      {
+         auto in = GetPointerS<identifier_node>(it_name);
+         if(in->strg == "sizetype")
+         {
+            it_name = create_identifier_node("unsigned long");
+         }
+         else if(in->strg == "ssizetype")
+         {
+            it_name = create_identifier_node("long");
+         }
+         else if(in->strg == "bitsizetype" || in->strg == "bit_size_type")
+         {
+            it_name = create_identifier_node("unsigned long long int");
+         }
+      }
    }
    return integer_type_node;
 }

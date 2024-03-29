@@ -606,8 +606,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
                      if(parameters->isOption(OPT_gcc_standard) &&
                         parameters->getOption<std::string>(OPT_gcc_standard) == "c99" && in->strg == "_Bool")
                      {
-                        const std::string INT = "int";
-                        in->strg = INT;
+                        in->strg = "int";
                      }
                   }
                }
@@ -712,23 +711,15 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
                   const auto in = GetPointerS<identifier_node>(it->name);
                   if(in->strg == "sizetype")
                   {
-                     const std::string INT = "unsigned long";
-                     in->strg = INT;
+                     in->strg = "unsigned long";
                   }
-                  if(in->strg == "ssizetype")
+                  else if(in->strg == "ssizetype")
                   {
-                     const std::string INT = "long";
-                     in->strg = INT;
+                     in->strg = "long";
                   }
-                  else if(in->strg == "bitsizetype")
+                  else if(in->strg == "bitsizetype" || in->strg == "bit_size_type")
                   {
-                     const std::string INT = "unsigned long long int";
-                     in->strg = INT;
-                  }
-                  else if(in->strg == "bit_size_type")
-                  {
-                     const std::string INT = "unsigned long long int";
-                     in->strg = INT;
+                     in->strg = "unsigned long long int";
                   }
                }
                break;
