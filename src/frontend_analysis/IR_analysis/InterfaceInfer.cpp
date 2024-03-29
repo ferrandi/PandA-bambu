@@ -1320,8 +1320,6 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
       }
       THROW_ASSERT(!valid_ptr || tree_helper::IsPointerType(valid_ptr), "Valid type must be bool pointer");
       THROW_ASSERT(!gn->memdef && !gn->memuse, "");
-      THROW_ASSERT(gn->vdef, "");
-      const auto vdef = gn->vdef;
 
       const auto data_size = tree_helper::Size(interface_datatype);
       const auto sel_type = tree_man->GetBooleanType();
@@ -1372,9 +1370,10 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
          const auto ga_store = tree_man->create_gimple_modify_stmt(data_ref, data_mask, fd->index, BUILTIN_SRCP);
          if(valid_var)
          {
-            auto newSSAVdef = tree_man->create_ssa_name(tree_nodeRef(), tree_helper::CGetType(vdef), tree_nodeRef(),
-                                                        tree_nodeRef(), false, true);
-            GetPointerS<gimple_assign>(GET_NODE(ga_store))->SetVdef(newSSAVdef);
+            const auto vdef =
+                tree_man->create_ssa_name(tree_nodeRef(), tree_man->GetPointerType(tree_man->GetVoidType()),
+                                          tree_nodeRef(), tree_nodeRef(), false, true);
+            GetPointerS<gimple_assign>(GET_NODE(ga_store))->SetVdef(vdef);
             for(const auto& vuse : GetPointerS<gimple_assign>(GET_NODE(stmt))->vuses)
             {
                if(GetPointerS<gimple_node>(GET_NODE(ga_store))->AddVuse(vuse))
@@ -1382,13 +1381,14 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
                   GetPointerS<ssa_name>(GET_NODE(vuse))->AddUseStmt(ga_store);
                }
             }
-            THROW_ASSERT(GET_NODE(vdef)->get_kind() == ssa_name_K, "unexpected condition");
-            auto vdef_ssa = GetPointerS<ssa_name>(GET_NODE(vdef));
+            THROW_ASSERT(gn->vdef, "Expected virtual ssa definition on store operation: " + gn->ToString());
+            THROW_ASSERT(GET_NODE(gn->vdef)->get_kind() == ssa_name_K, "unexpected condition");
+            auto vdef_ssa = GetPointerS<ssa_name>(GET_NODE(gn->vdef));
             for(const auto& usingStmt : vdef_ssa->CGetUseStmts())
             {
-               if(GetPointerS<gimple_node>(GET_NODE(usingStmt.first))->AddVuse(newSSAVdef))
+               if(GetPointerS<gimple_node>(GET_NODE(usingStmt.first))->AddVuse(vdef))
                {
-                  GetPointerS<ssa_name>(GET_NODE(newSSAVdef))->AddUseStmt(usingStmt.first);
+                  GetPointerS<ssa_name>(GET_NODE(vdef))->AddUseStmt(usingStmt.first);
                }
             }
             curr_bb->PushBefore(ga_store, stmt, AppM);
