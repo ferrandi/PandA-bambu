@@ -3896,6 +3896,22 @@ namespace llvm
             auto val = isSigned ? range.getSignedMin() : range.getUnsignedMin();
             return getIntegerCST(isSigned, inst->getContext(), val, TREE_TYPE(t));
          }
+         else if(inst->getType()->isSized() &&
+                 DL->getTypeAllocSizeInBits(inst->getType()) != DL->getTypeSizeInBits(inst->getType()))
+         {
+            auto bitSize = DL->getTypeSizeInBits(inst->getType());
+            if(isSigned)
+            {
+               auto val = APInt(bitSize, 1, isSigned);
+               val = val << (bitSize - 1);
+               return getIntegerCST(isSigned, inst->getContext(), val, TREE_TYPE(t));
+            }
+            else
+            {
+               auto val = APInt(bitSize, 0, isSigned);
+               return getIntegerCST(isSigned, inst->getContext(), val, TREE_TYPE(t));
+            }
+         }
          else
             return nullptr;
       }
@@ -3926,6 +3942,23 @@ namespace llvm
          {
             auto val = isSigned ? range.getSignedMax() : range.getUnsignedMax();
             return getIntegerCST(isSigned, inst->getContext(), val, TREE_TYPE(t));
+         }
+         else if(inst->getType()->isSized() &&
+                 DL->getTypeAllocSizeInBits(inst->getType()) != DL->getTypeSizeInBits(inst->getType()))
+         {
+            auto bitSize = DL->getTypeSizeInBits(inst->getType());
+            if(isSigned)
+            {
+               auto val = APInt(bitSize, 1, isSigned);
+               val = (val << (bitSize - 1)) - 1;
+               return getIntegerCST(isSigned, inst->getContext(), val, TREE_TYPE(t));
+            }
+            else
+            {
+               auto val = APInt(bitSize, 0, isSigned);
+               val = ~val;
+               return getIntegerCST(isSigned, inst->getContext(), val, TREE_TYPE(t));
+            }
          }
          else
          {

@@ -161,7 +161,44 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
             }
             const auto signed_p = IsSignedIntegerType(sa->type);
             const auto bv_test = __sign_reduce_bitstring(sa->bit_values, signed_p);
+            auto n_bits = bv_test.size();
+            if(sa->min && sa->max && GET_CONST_NODE(sa->min)->get_kind() == integer_cst_K &&
+               GET_CONST_NODE(sa->max)->get_kind() == integer_cst_K)
+            {
+               const auto signed_p = IsSignedIntegerType(sa->type);
+               const auto max = GetConstValue(sa->max, signed_p);
+               const auto min = GetConstValue(sa->min, signed_p);
+               std::size_t nbits_local;
+               if(signed_p)
+               {
+                  nbits_local = std::max(min.minBitwidth(true), max.minBitwidth(true));
+               }
+               else
+               {
+                  nbits_local = max.minBitwidth(false);
+               }
+               if(nbits_local != n_bits)
+               {
+                  std::cerr << "Difference " << nbits_local << " " << n_bits << " " << sa->ToString() << "\n";
+               }
+               return std::min(nbits_local, n_bits);
+            }
             return bv_test.size();
+         }
+         else if(sa->min && sa->max && GET_CONST_NODE(sa->min)->get_kind() == integer_cst_K &&
+                 GET_CONST_NODE(sa->max)->get_kind() == integer_cst_K)
+         {
+            const auto signed_p = IsSignedIntegerType(sa->type);
+            const auto max = GetConstValue(sa->max, signed_p);
+            const auto min = GetConstValue(sa->min, signed_p);
+            if(signed_p)
+            {
+               return std::max(min.minBitwidth(true), max.minBitwidth(true));
+            }
+            else
+            {
+               return max.minBitwidth(false);
+            }
          }
          return sa->var ? Size(sa->var) : Size(sa->type);
       }
@@ -1272,8 +1309,8 @@ void tree_helper::RecursiveGetTypesToBeDeclared(std::set<tree_nodeConstRef, Tree
                      }
                      return false;
                   }();
-                  /// Non pointer fields must be declared before structs, pointer fields can be declared after; in some
-                  /// cases they must be declared after (circular dependencies)
+                  /// Non pointer fields must be declared before structs, pointer fields can be declared after; in
+                  /// some cases they must be declared after (circular dependencies)
                   if(before)
                   {
                      if(!IsPointerType(field_type) || !pointer_to_unnamed_structure)
@@ -1347,8 +1384,8 @@ void tree_helper::RecursiveGetTypesToBeDeclared(std::set<tree_nodeConstRef, Tree
                      }
                      return false;
                   }();
-                  /// Non pointer fields must be declared before structs, pointer fields can be declared after; in some
-                  /// cases they must be declared after (circular dependencies)
+                  /// Non pointer fields must be declared before structs, pointer fields can be declared after; in
+                  /// some cases they must be declared after (circular dependencies)
                   if(before)
                   {
                      if(!IsPointerType(field_type) || !pointer_to_unnamed_structure)
@@ -6012,8 +6049,8 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
          THROW_ASSERT(!node_var, "Received something of unexpected");
          auto lnode = GetPointer<const tree_list>(node_type);
          res += PrintType(TM, lnode->valu, global, print_qualifiers);
-         /// tree_list are used for parameters declaration: in that case void_type has to be removed from the last type
-         /// parameter
+         /// tree_list are used for parameters declaration: in that case void_type has to be removed from the last
+         /// type parameter
          std::list<tree_nodeRef> prmtrs;
          while(lnode->chan)
          {
@@ -7008,8 +7045,8 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
       case(addr_expr_K):
       {
          const auto ae = GetPointer<const addr_expr>(parameter);
-         /// Note that this part can not be transfromed in recursion because size of array ref corresponds to the size
-         /// of the element itself
+         /// Note that this part can not be transfromed in recursion because size of array ref corresponds to the
+         /// size of the element itself
          const tree_nodeRef addr_expr_argument = GET_NODE(ae->op);
          switch(addr_expr_argument->get_kind())
          {
