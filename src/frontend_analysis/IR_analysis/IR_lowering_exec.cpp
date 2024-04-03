@@ -1167,15 +1167,6 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      {
                         auto is_op_signed = tree_helper::IsSignedIntegerType(nop->op);
                         auto is_res_signed = tree_helper::IsSignedIntegerType(nop->type);
-
-                        if(tree_helper::IsSignedIntegerType(nop->type))
-                        {
-                           std::cerr << "signed ";
-                        }
-                        else
-                        {
-                           std::cerr << "unsigned ";
-                        }
                         if(is_op_signed == is_res_signed)
                         {
                            min = opssa->min;
