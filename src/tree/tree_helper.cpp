@@ -165,7 +165,6 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
             if(sa->min && sa->max && GET_CONST_NODE(sa->min)->get_kind() == integer_cst_K &&
                GET_CONST_NODE(sa->max)->get_kind() == integer_cst_K)
             {
-               const auto signed_p = IsSignedIntegerType(sa->type);
                const auto max = GetConstValue(sa->max, signed_p);
                const auto min = GetConstValue(sa->min, signed_p);
                std::size_t nbits_local;
