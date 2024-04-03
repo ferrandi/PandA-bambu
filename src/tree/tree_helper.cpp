@@ -177,10 +177,6 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
                {
                   nbits_local = max.minBitwidth(false);
                }
-               if(nbits_local != n_bits)
-               {
-                  std::cerr << "Difference " << nbits_local << " " << n_bits << " " << sa->ToString() << "\n";
-               }
                return std::min(nbits_local, n_bits);
             }
             return bv_test.size();
