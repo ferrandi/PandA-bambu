@@ -161,39 +161,7 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
             }
             const auto signed_p = IsSignedIntegerType(sa->type);
             const auto bv_test = __sign_reduce_bitstring(sa->bit_values, signed_p);
-            auto n_bits = bv_test.size();
-            if(sa->min && sa->max && GET_CONST_NODE(sa->min)->get_kind() == integer_cst_K &&
-               GET_CONST_NODE(sa->max)->get_kind() == integer_cst_K)
-            {
-               const auto max = GetConstValue(sa->max, signed_p);
-               const auto min = GetConstValue(sa->min, signed_p);
-               std::size_t nbits_local;
-               if(signed_p)
-               {
-                  nbits_local = std::max(min.minBitwidth(true), max.minBitwidth(true));
-               }
-               else
-               {
-                  nbits_local = max.minBitwidth(false);
-               }
-               return std::min(nbits_local, n_bits);
-            }
             return bv_test.size();
-         }
-         else if(sa->min && sa->max && GET_CONST_NODE(sa->min)->get_kind() == integer_cst_K &&
-                 GET_CONST_NODE(sa->max)->get_kind() == integer_cst_K)
-         {
-            const auto signed_p = IsSignedIntegerType(sa->type);
-            const auto max = GetConstValue(sa->max, signed_p);
-            const auto min = GetConstValue(sa->min, signed_p);
-            if(signed_p)
-            {
-               return std::max(min.minBitwidth(true), max.minBitwidth(true));
-            }
-            else
-            {
-               return max.minBitwidth(false);
-            }
          }
          return sa->var ? Size(sa->var) : Size(sa->type);
       }
