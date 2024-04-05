@@ -1316,8 +1316,8 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          if(vector)
          {
             const auto element_type = tree_helper::CGetElements(be->type);
-            const auto element_size = tree_helper::Size(element_type);
-            const auto size = tree_helper::Size(be->type);
+            const auto element_size = tree_helper::SizeAlloc(element_type);
+            const auto size = tree_helper::SizeAlloc(be->type);
             const auto vector_size = size / element_size;
             res += "(" + tree_helper::PrintType(TM, be->type) + ") ";
             res += "{";
@@ -1401,8 +1401,8 @@ std::string BehavioralHelper::PrintNode(const tree_nodeConstRef& _node, vertex v
          if(vector)
          {
             const auto element_type = tree_helper::CGetElements(be->type);
-            const auto element_size = tree_helper::Size(element_type);
-            const auto size = tree_helper::Size(be->type);
+            const auto element_size = tree_helper::SizeAlloc(element_type);
+            const auto size = tree_helper::SizeAlloc(be->type);
             const auto vector_size = size / element_size;
             res += "(" + tree_helper::PrintType(TM, be->type) + ") ";
             res += "{";

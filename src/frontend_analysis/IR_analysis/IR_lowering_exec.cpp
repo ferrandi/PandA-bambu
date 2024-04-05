@@ -1775,8 +1775,8 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                               return tree_man->GetBooleanType();
                            }
                            const auto element_type = tree_helper::CGetElements(lhs_type);
-                           const auto element_size = tree_helper::Size(element_type);
-                           const auto vector_size = tree_helper::Size(lhs_type);
+                           const auto element_size = tree_helper::SizeAlloc(element_type);
+                           const auto vector_size = tree_helper::SizeAlloc(lhs_type);
                            const auto num_elements = vector_size / element_size;
                            return tree_man->CreateVectorType(tree_man->GetBooleanType(), num_elements);
                         }();
