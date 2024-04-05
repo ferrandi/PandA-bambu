@@ -1279,7 +1279,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
       max_byte_size = ceil_pow2(max_byte_size);
       HLSMgr->Rmem->set_internal_base_address_alignment(max_byte_size);
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                     "Sparse memory alignemnt set to " + STR(max_byte_size) + " bytes");
+                     "Sparse memory alignment set to " + STR(max_byte_size) + " bytes");
    }
 
    const auto memory_mapped_top_if = parameters->getOption<bool>(OPT_memory_mapped_top);
