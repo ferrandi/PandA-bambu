@@ -354,8 +354,17 @@ unsigned long long tree_helper::SizeAlloc(const tree_nodeConstRef& _t)
       {
          return 32ull;
       }
-      case lut_expr_K:
       case CASE_DECL_NODES:
+      {
+         if(t->get_kind() == field_decl_K)
+         {
+            const auto snode = GetPointerS<const field_decl>(t)->size;
+            THROW_ASSERT(snode, "unexpected pattern");
+            return static_cast<unsigned long long>(GetConstValue(snode));
+         }
+         return SizeAlloc(GetPointerS<const decl_node>(t)->type);
+      }
+      case lut_expr_K:
       case CASE_UNARY_EXPRESSION:
       case CASE_BINARY_EXPRESSION:
       case CASE_TERNARY_EXPRESSION:
