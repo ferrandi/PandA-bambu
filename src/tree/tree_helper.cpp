@@ -345,12 +345,16 @@ unsigned long long tree_helper::SizeAlloc(const tree_nodeConstRef& _t)
       case union_type_K:
       case vector_type_K:
       case boolean_type_K:
-      case lut_expr_K:
       {
-         const auto snode = GetPointerS<const type_node>(t)->size;
+         const auto snode = GetPointer<const type_node>(t)->size;
          THROW_ASSERT(snode, "unexpected pattern");
          return static_cast<unsigned long long>(GetConstValue(snode));
       }
+      case gimple_call_K:
+      {
+         return 32ull;
+      }
+      case lut_expr_K:
       case CASE_DECL_NODES:
       case CASE_UNARY_EXPRESSION:
       case CASE_BINARY_EXPRESSION:
@@ -361,7 +365,6 @@ unsigned long long tree_helper::SizeAlloc(const tree_nodeConstRef& _t)
       case call_expr_K:
       case constructor_K:
       case gimple_assign_K:
-      case gimple_call_K:
       case gimple_phi_K:
       case gimple_return_K:
       case integer_cst_K:
@@ -375,9 +378,6 @@ unsigned long long tree_helper::SizeAlloc(const tree_nodeConstRef& _t)
       {
          return SizeAlloc(CGetType(t));
       }
-         {
-            return 8ull;
-         }
       case void_type_K:
       {
          return 8ull;
