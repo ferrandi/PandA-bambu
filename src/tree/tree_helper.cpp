@@ -326,9 +326,24 @@ unsigned long long tree_helper::SizeAlloc(const tree_nodeConstRef& _t)
    const auto t = _t->get_kind() == tree_reindex_K ? GET_CONST_NODE(_t) : _t;
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                   "---Getting size of " + t->get_kind_text() + " " + STR(t->index) + ": " + t->ToString());
+   std::cerr <<  "---Getting size of " + t->get_kind_text() + " " + STR(t->index) << "\n";
    switch(t->get_kind())
    {
       case array_type_K:
+      {
+         const auto at = GetPointerS<const array_type>(t);
+         if(at->size)
+         {
+            const auto ic = GetPointer<const integer_cst>(GET_CONST_NODE(at->size));
+            if(ic)
+            {
+               return static_cast<unsigned long long>(GetConstValue(at->size));
+            }
+            THROW_UNREACHABLE("What should be the size here? " + t->ToString());
+            return 32ull; // TODO: should this be pointer size? or should be zero?
+         }
+         return 0;
+      }
       case integer_type_K:
       case enumeral_type_K:
       case CharType_K:
@@ -346,7 +361,7 @@ unsigned long long tree_helper::SizeAlloc(const tree_nodeConstRef& _t)
       case vector_type_K:
       case boolean_type_K:
       {
-         const auto snode = GetPointer<const type_node>(t)->size;
+         const auto snode = GetPointerS<const type_node>(t)->size;
          THROW_ASSERT(snode, "unexpected pattern");
          return static_cast<unsigned long long>(GetConstValue(snode));
       }
