@@ -274,7 +274,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       {
          const auto par_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(par));
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Parameter " + par_name);
-         const auto par_bitsize = tree_helper::Size(par);
+         const auto par_bitsize = tree_helper::SizeAlloc(par);
          const auto par_symbol = HLSMgr->Rmem->get_symbol(GET_INDEX_CONST_NODE(par), top_id);
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
                         "---Interface: " + STR(par_bitsize) + "-bits memory mapped at " +
@@ -294,7 +294,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       if(return_type)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Return value port");
-         const auto return_bitsize = tree_helper::Size(return_type);
+         const auto return_bitsize = tree_helper::SizeAlloc(return_type);
          const auto return_symbol = HLSMgr->Rmem->get_symbol(GET_INDEX_CONST_NODE(return_type), top_id);
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
                         "---Interface: " + STR(return_bitsize) + "-bits memory mapped at " +
