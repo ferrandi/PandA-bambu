@@ -359,8 +359,10 @@ unsigned long long tree_helper::SizeAlloc(const tree_nodeConstRef& _t)
          if(t->get_kind() == field_decl_K)
          {
             const auto snode = GetPointerS<const field_decl>(t)->size;
-            THROW_ASSERT(snode, "unexpected pattern");
-            return static_cast<unsigned long long>(GetConstValue(snode));
+            if(snode)
+            {
+               return static_cast<unsigned long long>(GetConstValue(snode));
+            }
          }
          return SizeAlloc(GetPointerS<const decl_node>(t)->type);
       }
