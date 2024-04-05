@@ -321,6 +321,109 @@ unsigned long long tree_helper::Size(const tree_nodeConstRef& _t)
    return 0;
 }
 
+unsigned long long tree_helper::SizeAlloc(const tree_nodeConstRef& _t)
+{
+   const auto t = _t->get_kind() == tree_reindex_K ? GET_CONST_NODE(_t) : _t;
+   INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
+                  "---Getting size of " + t->get_kind_text() + " " + STR(t->index) + ": " + t->ToString());
+   switch(t->get_kind())
+   {
+      case array_type_K:
+      case integer_type_K:
+      case enumeral_type_K:
+      case CharType_K:
+      case complex_type_K:
+      case function_type_K:
+      case method_type_K:
+      case nullptr_type_K:
+      case pointer_type_K:
+      case real_type_K:
+      case record_type_K:
+      case reference_type_K:
+      case type_argument_pack_K:
+      case type_pack_expansion_K:
+      case union_type_K:
+      case vector_type_K:
+      case boolean_type_K:
+      case lut_expr_K:
+      {
+         const auto snode = GetPointerS<const type_node>(t)->size;
+         THROW_ASSERT(snode, "unexpected pattern");
+         return static_cast<unsigned long long>(GetConstValue(snode));
+      }
+      case CASE_DECL_NODES:
+      case CASE_UNARY_EXPRESSION:
+      case CASE_BINARY_EXPRESSION:
+      case CASE_TERNARY_EXPRESSION:
+      case ssa_name_K:
+      case aggr_init_expr_K:
+      case array_ref_K:
+      case call_expr_K:
+      case constructor_K:
+      case gimple_assign_K:
+      case gimple_call_K:
+      case gimple_phi_K:
+      case gimple_return_K:
+      case integer_cst_K:
+      case real_cst_K:
+      case complex_cst_K:
+      case string_cst_K:
+      case target_mem_ref461_K:
+      case target_mem_ref_K:
+      case vector_cst_K:
+      case void_cst_K:
+      {
+         return SizeAlloc(CGetType(t));
+      }
+         {
+            return 8ull;
+         }
+      case void_type_K:
+      {
+         return 8ull;
+      }
+      case CASE_CPP_NODES:
+      case CASE_FAKE_NODES:
+      case CASE_PRAGMA_NODES:
+      case array_range_ref_K:
+      case binfo_K:
+      case block_K:
+      case case_label_expr_K:
+      case error_mark_K:
+      case gimple_asm_K:
+      case gimple_bind_K:
+      case gimple_cond_K:
+      case gimple_for_K:
+      case gimple_goto_K:
+      case gimple_label_K:
+      case gimple_multi_way_if_K:
+      case gimple_nop_K:
+      case gimple_pragma_K:
+      case gimple_predict_K:
+      case gimple_resx_K:
+      case gimple_switch_K:
+      case gimple_while_K:
+      case identifier_node_K:
+      case lang_type_K:
+      case offset_type_K:
+      case qual_union_type_K:
+      case set_type_K:
+      case statement_list_K:
+      case target_expr_K:
+      case template_type_parm_K:
+      case tree_list_K:
+      case tree_vec_K:
+      case typename_type_K:
+      default:
+      {
+         THROW_UNREACHABLE(std::string("Unexpected type pattern ") + t->get_kind_text());
+         break;
+      }
+   }
+   THROW_UNREACHABLE(std::string("Unexpected type pattern ") + t->get_kind_text());
+   return 0;
+}
+
 unsigned long long tree_helper::TypeSize(const tree_nodeConstRef& tn)
 {
    return Size(CGetType(tn));
@@ -2481,14 +2584,14 @@ static bool same_size_fields(const tree_nodeConstRef& t)
       }
    }
 
-   const auto sizeFlds = tree_helper::Size(listOfTypes.front());
+   const auto sizeFlds = tree_helper::SizeAlloc(listOfTypes.front());
    if(ceil_pow2(sizeFlds) != sizeFlds)
    {
       return false;
    }
    for(const auto& fldType : listOfTypes)
    {
-      if(sizeFlds != tree_helper::Size(fldType))
+      if(sizeFlds != tree_helper::SizeAlloc(fldType))
       {
          return false;
       }
@@ -2607,7 +2710,7 @@ bool tree_helper::is_a_misaligned_vector(const tree_managerConstRef& TM, const u
    THROW_ASSERT(Type, "expected a type index");
    const auto vt = GetPointer<const vector_type>(GET_CONST_NODE(Type));
    THROW_ASSERT(vt, "expected a vector type");
-   return vt->algn != Size(Type);
+   return vt->algn != SizeAlloc(Type);
 }
 
 bool tree_helper::is_an_addr_expr(const tree_managerConstRef& TM, const unsigned int index)
@@ -4973,7 +5076,7 @@ unsigned long long tree_helper::GetArrayElementSize(const tree_nodeConstRef& _no
    }
    if(node->get_kind() != array_type_K)
    {
-      return Size(node);
+      return SizeAlloc(node);
    }
    const auto at = GetPointerS<const array_type>(node);
    THROW_ASSERT(at->elts, "elements type expected");
@@ -4986,7 +5089,7 @@ unsigned long long tree_helper::GetArrayElementSize(const tree_nodeConstRef& _no
    else
    {
       const auto type = CGetType(at->elts);
-      return_value = Size(type);
+      return_value = SizeAlloc(type);
       const auto fd = GetPointer<const field_decl>(GET_CONST_NODE(type));
       if(!fd || !fd->is_bitfield())
       {
@@ -5003,7 +5106,7 @@ void tree_helper::get_array_dim_and_bitsize(const tree_managerConstRef& TM, cons
    if(node->get_kind() == record_type_K || node->get_kind() == union_type_K)
    {
       elts_bitsize = get_array_data_bitsize(TM, index);
-      dims.push_back(Size(node) / elts_bitsize);
+      dims.push_back(SizeAlloc(node) / elts_bitsize);
       return;
    }
    THROW_ASSERT(node->get_kind() == array_type_K, "array_type expected: @" + STR(index));
@@ -5040,7 +5143,7 @@ void tree_helper::get_array_dim_and_bitsize(const tree_managerConstRef& TM, cons
    else
    {
       const auto etype = CGetType(at->elts);
-      elts_bitsize = Size(etype);
+      elts_bitsize = SizeAlloc(etype);
       const auto fd = GetPointer<const field_decl>(GET_CONST_NODE(etype));
       if(!fd || !fd->is_bitfield())
       {
@@ -5064,7 +5167,7 @@ std::vector<unsigned long long> tree_helper::GetArrayDimensions(const tree_nodeC
       if(tn->get_kind() == record_type_K || tn->get_kind() == union_type_K)
       {
          auto elmt_bitsize = GetArrayElementSize(tn);
-         dims.push_back(Size(tn) / elmt_bitsize);
+         dims.push_back(SizeAlloc(tn) / elmt_bitsize);
          return;
       }
       THROW_ASSERT(tn->get_kind() == array_type_K, "array_type expected: @" + STR(tn));
@@ -5512,7 +5615,7 @@ std::string tree_helper::PrintType(const tree_managerConstRef& TM, const tree_no
                /// Ad hoc management of vector of bool
                if(GET_CONST_NODE(vt->elts)->get_kind() == boolean_type_K)
                {
-                  res += "int __attribute__((vector_size(" + STR(Size(node_type) * 4) + ")))";
+                  res += "int __attribute__((vector_size(" + STR(SizeAlloc(node_type) * 4) + ")))";
                }
                else
                {
@@ -6799,7 +6902,7 @@ unsigned long long tree_helper::AccessedMaximumBitsize(const tree_nodeConstRef& 
       }
       case complex_type_K:
       {
-         return std::max(bitsize, Size(type_node) / 2); /// it is composed by two identical parts
+         return std::max(bitsize, SizeAlloc(type_node) / 2); /// it is composed by two identical parts
       }
       case real_type_K:
       case integer_type_K:
@@ -6809,7 +6912,7 @@ unsigned long long tree_helper::AccessedMaximumBitsize(const tree_nodeConstRef& 
       case void_type_K:
       case vector_type_K:
       {
-         return std::max(bitsize, Size(type_node));
+         return std::max(bitsize, SizeAlloc(type_node));
       }
       case function_decl_K:
       case function_type_K:
@@ -6930,7 +7033,7 @@ unsigned long long tree_helper::AccessedMinimunBitsize(const tree_nodeConstRef& 
       }
       case complex_type_K:
       {
-         return std::min(bitsize, Size(type_node) / 2); /// it is composed by two identical parts
+         return std::min(bitsize, SizeAlloc(type_node) / 2); /// it is composed by two identical parts
       }
       case real_type_K:
       case integer_type_K:
@@ -6940,7 +7043,7 @@ unsigned long long tree_helper::AccessedMinimunBitsize(const tree_nodeConstRef& 
       case void_type_K:
       case vector_type_K:
       {
-         return std::min(bitsize, Size(type_node));
+         return std::min(bitsize, SizeAlloc(type_node));
       }
       case boolean_type_K:
       {
@@ -7181,7 +7284,7 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
          const auto at = GetPointer<const array_type>(parameter);
          /// This call check if we can perform deep copy of the single element
          AllocatedMemorySize(GET_NODE(at->elts));
-         const size_t bit_parameter_size = Size(parameter);
+         const size_t bit_parameter_size = SizeAlloc(parameter);
          /// Round to upper multiple word size
          const size_t byte_parameter_size = bit_parameter_size / 8;
          INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
@@ -7209,7 +7312,7 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
             AllocatedMemorySize(CGetType(*field));
             INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Analyzed field " + (*field)->ToString());
          }
-         const size_t bit_parameter_size = Size(parameter) + fields_pointed_size;
+         const size_t bit_parameter_size = SizeAlloc(parameter) + fields_pointed_size;
          /// Round to upper multiple word size
          const size_t byte_parameter_size = bit_parameter_size / 8;
          INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
@@ -7240,7 +7343,7 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
       case(real_type_K):
       case(string_cst_K):
       {
-         const size_t bit_parameter_size = Size(parameter);
+         const size_t bit_parameter_size = SizeAlloc(parameter);
          /// Round to upper multiple word size
          const size_t byte_parameter_size = bit_parameter_size / 8;
          INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,

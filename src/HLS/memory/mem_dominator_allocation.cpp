@@ -669,7 +669,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   const auto var_read = HLSMgr->get_required_values(fun_id, v);
                   const auto size_var = std::get<0>(var_read[0]);
                   const auto size_type = tree_helper::CGetType(TM->CGetTreeReindex(size_var));
-                  value_bitsize = tree_helper::Size(size_type);
+                  value_bitsize = tree_helper::SizeAlloc(size_type);
                   const auto fd = GetPointer<const field_decl>(GET_CONST_NODE(size_type));
                   if(!fd || !fd->is_bitfield())
                   {
@@ -723,7 +723,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   alignment = (1ull << n_last_zerobits) * 8;
                   const auto size_var = HLSMgr->get_produced_value(fun_id, v);
                   const auto size_type = tree_helper::CGetType(TM->CGetTreeReindex(size_var));
-                  value_bitsize = tree_helper::Size(size_type);
+                  value_bitsize = tree_helper::SizeAlloc(size_type);
                   const auto fd = GetPointer<const field_decl>(GET_CONST_NODE(size_type));
                   if(!fd || !fd->is_bitfield())
                   {
@@ -1269,7 +1269,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                THROW_ASSERT(var_id, "null var index unexpected");
                if(pair.second && (!HLSMgr->Rmem->is_private_memory(var_id) || null_pointer_check))
                {
-                  const auto curr_size = compute_n_bytes(tree_helper::Size(TM->CGetTreeReindex(var_id)));
+                  const auto curr_size = compute_n_bytes(tree_helper::SizeAlloc(TM->CGetTreeReindex(var_id)));
                   max_byte_size = std::max(static_cast<unsigned long long>(curr_size), max_byte_size);
                }
             }
@@ -1393,7 +1393,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
                            "---Base Address: " + STR(Rmem->get_base_address(var_id, f_id)));
             INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
-                           "---Size: " + STR(compute_n_bytes(tree_helper::Size(var_node))));
+                           "---Size: " + STR(compute_n_bytes(tree_helper::SizeAlloc(var_node))));
             if(HLSMgr->Rmem->is_private_memory(var_id))
             {
                INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl, "---Is a private memory");

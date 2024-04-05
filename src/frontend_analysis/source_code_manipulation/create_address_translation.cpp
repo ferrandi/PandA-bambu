@@ -166,7 +166,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
             endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
             endianess_check->Append("," + std::string(little_endianess ? "0" : "1"));
             taste_address = taste_address + 8;
-            const auto byte_size = tree_helper::Size(TreeM->get_tree_node_const(tree_parameter_type)) / 8;
+            const auto byte_size = tree_helper::SizeAlloc(TreeM->get_tree_node_const(tree_parameter_type)) / 8;
             if(byte_size == 8)
             {
                registers += 2;
@@ -181,7 +181,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
          else
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->INTEGER (not first level)");
-            const auto byte_size = tree_helper::Size(TreeM->get_tree_node_const(tree_parameter_type)) / 8;
+            const auto byte_size = tree_helper::SizeAlloc(TreeM->get_tree_node_const(tree_parameter_type)) / 8;
             if(byte_size <= 4)
             {
                little_endianess ? address_translation->Append(",0," + STR(bambu_address)) :
@@ -232,7 +232,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
       {
          if(first_level)
          {
-            const auto byte_size = tree_helper::Size(TreeM->get_tree_node_const(tree_parameter_type)) / 8;
+            const auto byte_size = tree_helper::SizeAlloc(TreeM->get_tree_node_const(tree_parameter_type)) / 8;
             if(byte_size == 8)
             {
                address_translation->Append(",0,0,");
@@ -255,7 +255,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
          }
          else
          {
-            const auto byte_size = tree_helper::Size(TreeM->get_tree_node_const(tree_parameter_type)) / 8;
+            const auto byte_size = tree_helper::SizeAlloc(TreeM->get_tree_node_const(tree_parameter_type)) / 8;
             if(byte_size == 4)
             {
                little_endianess ? address_translation->Append(",0," + STR(bambu_address)) :
@@ -312,7 +312,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
             const auto next_field_beginning = [&]() -> unsigned long long int {
                if(tree_field_index + 1 > tree_fields.size())
                {
-                  return tree_helper::Size(TreeM->get_tree_node_const(tree_parameter_type)) / 8;
+                  return tree_helper::SizeAlloc(TreeM->get_tree_node_const(tree_parameter_type)) / 8;
                }
                else
                {
@@ -326,7 +326,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
                       8);
                }
             }();
-            const auto field_size = tree_helper::Size(tree_fields[tree_field_index]) / 8;
+            const auto field_size = tree_helper::SizeAlloc(tree_fields[tree_field_index]) / 8;
             bambu_address = bambu_address + (field_size - (next_field_beginning - current_field_beginning));
             tree_field_index++;
          }
@@ -366,7 +366,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
             const auto next_field_beginning = [&]() -> unsigned long long {
                if(tree_field_index + 1 > tree_fields.size())
                {
-                  return tree_helper::Size(TreeM->get_tree_node_const(tree_parameter_type)) / 8;
+                  return tree_helper::SizeAlloc(TreeM->get_tree_node_const(tree_parameter_type)) / 8;
                }
                else
                {
@@ -380,7 +380,7 @@ void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const u
                       8);
                }
             }();
-            const auto field_size = tree_helper::Size(tree_fields[tree_field_index]) / 8;
+            const auto field_size = tree_helper::SizeAlloc(tree_fields[tree_field_index]) / 8;
             bambu_address = bambu_address + (field_size - (next_field_beginning - current_field_beginning));
             tree_field_index++;
          }
