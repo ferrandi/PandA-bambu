@@ -2752,7 +2752,8 @@ tree_nodeRef tree_manipulation::CreateGimpleAssignAddrExpr(const tree_nodeConstR
 tree_nodeRef tree_manipulation::CreateVectorType(const tree_nodeConstRef& elt_type,
                                                  integer_cst_t number_of_elements) const
 {
-   const auto size = TreeM->CreateUniqueIntegerCst(number_of_elements, GetSizeType());
+   const auto size =
+       TreeM->CreateUniqueIntegerCst(number_of_elements * tree_helper::SizeAlloc(elt_type), GetSizeType());
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    IR_schema[TOK(TOK_ELTS)] = STR(elt_type->index);

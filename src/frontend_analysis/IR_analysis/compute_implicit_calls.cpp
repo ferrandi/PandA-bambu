@@ -240,7 +240,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
                const auto dst_type = tree_helper::CGetType(mr->op0);
                const auto dst_ptr_t = GetPointer<const pointer_type>(GET_CONST_NODE(dst_type));
                THROW_ASSERT(dst_ptr_t, "unexpected condition");
-               const auto dst_size = tree_helper::Size(dst_ptr_t->ptd);
+               const auto dst_size = tree_helper::SizeAlloc(dst_ptr_t->ptd);
                if(dst_size)
                {
                   if(op1->get_kind() == constructor_K && GetPointer<constructor>(op1) &&
@@ -415,7 +415,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       const auto dst_type = tree_helper::CGetType(mr->op0);
       const auto dst_ptr_t = GetPointer<const pointer_type>(GET_CONST_NODE(dst_type));
       THROW_ASSERT(dst_ptr_t, "unexpected condition");
-      const auto dst_size = tree_helper::Size(dst_ptr_t->ptd);
+      const auto dst_size = tree_helper::SizeAlloc(dst_ptr_t->ptd);
       THROW_ASSERT(dst_size % 8 == 0, "unexpected condition");
       const auto copy_byte_size = dst_size / 8;
       const auto copy_byte_size_node =
@@ -432,7 +432,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Create statement " + GET_NODE(pp_ga)->ToString());
 
       const auto size_node =
-          TM->CreateUniqueIntegerCst(static_cast<long long int>(tree_helper::Size(type_node1) / 8), offset_type);
+          TM->CreateUniqueIntegerCst(static_cast<long long int>(tree_helper::SizeAlloc(type_node1) / 8), offset_type);
       const auto pp_ind = tree_man->create_binary_operation(pt, gp->res, size_node, srcp_default, pointer_plus_expr_K);
       const auto pp_ga_ind =
           tree_man->CreateGimpleAssign(pt, tree_nodeRef(), tree_nodeRef(), pp_ind, function_id, srcp_default);
@@ -570,22 +570,22 @@ void compute_implicit_calls::replace_with_memcpy(tree_nodeRef stmt, const statem
       unsigned long long dst_size;
       if(dst_ptr_t)
       {
-         dst_size = tree_helper::Size(dst_ptr_t->ptd);
+         dst_size = tree_helper::SizeAlloc(dst_ptr_t->ptd);
       }
       else
       {
          const auto dst_rptr_t = GetPointer<const reference_type>(GET_CONST_NODE(dst_type));
-         dst_size = tree_helper::Size(dst_rptr_t->refd);
+         dst_size = tree_helper::SizeAlloc(dst_rptr_t->refd);
       }
       unsigned long long src_size;
       if(src_ptr_t)
       {
-         src_size = tree_helper::Size(src_ptr_t->ptd);
+         src_size = tree_helper::SizeAlloc(src_ptr_t->ptd);
       }
       else
       {
          const auto src_rptr_t = GetPointer<const reference_type>(GET_CONST_NODE(src_type));
-         src_size = tree_helper::Size(src_rptr_t->refd);
+         src_size = tree_helper::SizeAlloc(src_rptr_t->refd);
       }
       if(src_size != dst_size)
       {
@@ -612,7 +612,7 @@ void compute_implicit_calls::replace_with_memcpy(tree_nodeRef stmt, const statem
       const auto dst_type = tree_helper::CGetType(mr_lhs->op0);
       const auto dst_ptr_t = GetPointer<const pointer_type>(GET_CONST_NODE(dst_type));
       THROW_ASSERT(dst_ptr_t, "");
-      const auto dst_bitsize = tree_helper::Size(dst_ptr_t->ptd);
+      const auto dst_bitsize = tree_helper::SizeAlloc(dst_ptr_t->ptd);
       THROW_ASSERT(dst_bitsize % 8U == 0, "");
       const auto dst_size = dst_bitsize / 8U;
       const auto sc = GetPointer<const string_cst>(rhs_node);
@@ -644,8 +644,8 @@ void compute_implicit_calls::replace_with_memcpy(tree_nodeRef stmt, const statem
       const auto src_ptr_t = GetPointer<const pointer_type>(src_type);
       THROW_ASSERT(dst_ptr_t, "");
       THROW_ASSERT(src_ptr_t, "");
-      const auto dst_size = tree_helper::Size(dst_ptr_t->ptd);
-      const auto src_size = tree_helper::Size(src_ptr_t->ptd);
+      const auto dst_size = tree_helper::SizeAlloc(dst_ptr_t->ptd);
+      const auto src_size = tree_helper::SizeAlloc(src_ptr_t->ptd);
       if(src_size != dst_size)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -707,7 +707,7 @@ void compute_implicit_calls::replace_with_memset(tree_nodeRef stmt, const statem
    const auto dst_type = tree_helper::CGetType(mr_lhs->op0);
    const auto dst_ptr_t = GetPointer<const pointer_type>(GET_CONST_NODE(dst_type));
    THROW_ASSERT(dst_ptr_t, "");
-   const auto dst_size = tree_helper::Size(dst_ptr_t->ptd);
+   const auto dst_size = tree_helper::SizeAlloc(dst_ptr_t->ptd);
    THROW_ASSERT(dst_size % 8U == 0, "");
    copy_byte_size = dst_size / 8U;
    THROW_ASSERT(copy_byte_size <= std::numeric_limits<unsigned long int>::max(), "");

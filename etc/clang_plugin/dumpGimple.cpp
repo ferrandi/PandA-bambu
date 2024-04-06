@@ -3264,7 +3264,7 @@ namespace llvm
          case llvm::Type::IntegerTyID:
          {
             llvm::Type* casted_ty = const_cast<llvm::Type*>(ty);
-            return DL->getTypeAllocSizeInBits(casted_ty);
+            return DL->getTypeSizeInBits(casted_ty);
          }
          case llvm::Type::HalfTyID:
          case llvm::Type::FloatTyID:
@@ -3326,7 +3326,7 @@ namespace llvm
       const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
       bool isSigned = CheckSignedTag(Cty) || TREE_CODE(t) == GT(SIGNEDPOINTERTYPE);
       llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
-      auto obj_size = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) ? 32 : DL->getTypeAllocSizeInBits(ty);
+      auto obj_size = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) ? DL->getPointerSizeInBits() : DL->getTypeSizeInBits(ty);
       auto val = isSigned ? llvm::APInt::getSignedMinValue(obj_size) : llvm::APInt::getMinValue(obj_size);
       auto context = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) ? moduleContext : &ty->getContext();
       return getIntegerCST(isSigned, *context, val, t);
@@ -3337,7 +3337,7 @@ namespace llvm
       const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
       bool isSigned = CheckSignedTag(Cty) || TREE_CODE(t) == GT(SIGNEDPOINTERTYPE);
       llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
-      auto obj_size = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) ? 32 : DL->getTypeAllocSizeInBits(ty);
+      auto obj_size = TREE_CODE(t) == GT(SIGNEDPOINTERTYPE) ? DL->getPointerSizeInBits() : DL->getTypeSizeInBits(ty);
       auto val = isSigned ? llvm::APInt::getSignedMaxValue(obj_size) : llvm::APInt::getMaxValue(obj_size);
       if(maxValueITtable.find(t) != maxValueITtable.end())
       {
@@ -3387,7 +3387,7 @@ namespace llvm
       llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
       if(TREE_CODE(t) == GT(SIGNEDPOINTERTYPE))
       {
-         auto obj_size = llvm::APInt(64, 32u);
+         auto obj_size = llvm::APInt(64, DL->getPointerSizeInBits());
          if(uicTable.find(obj_size) == uicTable.end())
          {
             uicTable[obj_size] = assignCodeAuto(llvm::ConstantInt::get(ty->getContext(), obj_size));

@@ -684,16 +684,24 @@ void structural_object::type_resize(unsigned long long new_bit_size)
          type->size = new_bit_size;
          break;
       }
-      case structural_type_descriptor::USER:
       case structural_type_descriptor::VECTOR_INT:
       case structural_type_descriptor::VECTOR_UINT:
+      {
+         if(type->size < new_bit_size)
+         {
+            type->size = new_bit_size;
+         }
+         break;
+      }
+
+      case structural_type_descriptor::USER:
       case structural_type_descriptor::VECTOR_REAL:
       case structural_type_descriptor::VECTOR_USER:
       case structural_type_descriptor::OTHER:
       case structural_type_descriptor::UNKNOWN:
       default:
          THROW_ERROR("Not correct resizing  " + get_path() + " (" + type->id_type + ") New size " +
-                     std::to_string(new_bit_size));
+                     std::to_string(new_bit_size) + " old size " + std::to_string(type->size));
    }
 }
 

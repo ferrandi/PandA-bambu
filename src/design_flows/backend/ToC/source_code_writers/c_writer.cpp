@@ -1901,7 +1901,7 @@ void CWriter::WriteBuiltinWaitCall()
       for(const auto& I : BH->GetParameters())
       {
          const auto type_node = tree_helper::CGetType(I);
-         const auto type_size = tree_helper::Size(type_node);
+         const auto type_size = tree_helper::SizeAlloc(type_node);
          auto type = tree_helper::PrintType(TM, type_node);
          if(tree_helper::IsSignedIntegerType(type_node))
          {
@@ -1935,7 +1935,7 @@ void CWriter::WriteBuiltinWaitCall()
       std::string returnType;
       if(returnType_node)
       {
-         const auto returnType_size = tree_helper::Size(returnType_node);
+         const auto returnType_size = tree_helper::SizeAlloc(returnType_node);
          returnType = tree_helper::PrintType(TM, returnType_node);
          if(tree_helper::IsSignedIntegerType(returnType_node))
          {
