@@ -334,8 +334,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        The speculative SDC is more conservative, in case \n"
       << "        --panda-parameter=enable-conservative-sdc=1 is passed.\n\n"
 #endif
-      << "    --pipelining,-p\n"
-      << "        Perform functional pipelining starting from the top function.\n\n"
       << "    --pipelining,-p=<func_name>[=<init_interval>][,<func_name>[=<init_interval>]]*\n"
       << "        Perform pipelining of comma separated list of specified functions with optional \n"
       << "        initiation interval (default II=1).\n"

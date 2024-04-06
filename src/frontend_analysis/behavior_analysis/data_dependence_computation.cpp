@@ -262,9 +262,12 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
                   function_behavior->ogc->add_edge_info(this_def, *vi, DFG_SELECTOR, local_use);
                   if(function_behavior->CheckFeedbackReachability(*vi, this_def))
                   {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Adding fb_adg_selector dependence " + GET_NAME(cfg, *vi) + "-->" +
+                                        GET_NAME(cfg, this_def));
                      function_behavior->ogc->AddEdge(*vi, this_def, fb_adg_selector);
                      /// NOTE: label associated with forward selector also on feedback edge
-                     function_behavior->ogc->add_edge_info(this_def, *vi, ADG_SELECTOR, local_use);
+                     function_behavior->ogc->add_edge_info(*vi, this_def, ADG_SELECTOR, local_use);
                   }
                }
 
@@ -275,19 +278,30 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
                                      GET_NAME(cfg, *vi));
                   if(*vi != this_def)
                   {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Adding adg_selector dependence " + GET_NAME(cfg, *vi) + "-->" +
+                                        GET_NAME(cfg, this_def));
                      function_behavior->ogc->AddEdge(*vi, this_def, adg_selector);
                      function_behavior->ogc->add_edge_info(*vi, this_def, ADG_SELECTOR, local_use);
                   }
                   if(function_behavior->CheckFeedbackReachability(this_def, *vi))
                   {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Adding fb_dfg_selector dependence " + GET_NAME(cfg, this_def) + "-->" +
+                                        GET_NAME(cfg, *vi));
                      function_behavior->ogc->AddEdge(this_def, *vi, fb_dfg_selector);
-                     /// NOTE: label associated with forward selector also on feedback edge
+                     /// NOTE: label associated with forward selector also on feedback edgeADG_SELECTOR
+                     /// (ADG_SCA_SELECTADG_SELECTOR (ADG_SCA_SELECTOR | ADG_AGG_SELECTOR) FeedOR | ADG_AGG_SELECTOR)
+                     /// Feed
                      function_behavior->ogc->add_edge_info(this_def, *vi, DFG_SELECTOR, local_use);
                   }
                }
 
                if(*vi == this_def)
                {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Adding2 fb_dfg_selector dependence " + GET_NAME(cfg, *vi) + "-->" +
+                                     GET_NAME(cfg, *vi));
                   function_behavior->ogc->AddEdge(*vi, *vi, fb_dfg_selector);
                   function_behavior->ogc->add_edge_info(*vi, *vi, DFG_SELECTOR, local_use);
                }
@@ -301,7 +315,8 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
                if(dependence)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---Adding anti dependence " + GET_NAME(cfg, *vi) + "-->" + GET_NAME(cfg, this_over));
+                                 "---Adding adg_selector dependence " + GET_NAME(cfg, *vi) + "-->" +
+                                     GET_NAME(cfg, this_over));
                   function_behavior->ogc->AddEdge(*vi, this_over, adg_selector);
                   function_behavior->ogc->add_edge_info(*vi, this_over, ADG_SELECTOR, local_use);
                }
@@ -322,10 +337,15 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
                const bool forward_dependence = function_behavior->CheckReachability(this_def, *vi);
                if(forward_dependence)
                {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---Adding output dependence " + GET_NAME(cfg, this_def) + "-->" + GET_NAME(cfg, *vi));
                   function_behavior->ogc->AddEdge(this_def, *vi, ODG_AGG_SELECTOR);
                   function_behavior->ogc->add_edge_info(this_def, *vi, ODG_SELECTOR, local_def);
                   if(function_behavior->CheckFeedbackReachability(*vi, this_def))
                   {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---Adding FB_ODG_AGG_SELECTOR dependence " + GET_NAME(cfg, *vi) + "-->" +
+                                        GET_NAME(cfg, this_def));
                      function_behavior->ogc->AddEdge(*vi, this_def, FB_ODG_AGG_SELECTOR);
                      /// NOTE: label associated with forward selector also on feedback edge
                      function_behavior->ogc->add_edge_info(*vi, this_def, ODG_SELECTOR, local_def);
