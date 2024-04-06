@@ -153,11 +153,11 @@ void MemoryInitializationWriter::Process(const std::string& content)
    switch(GET_CONST_NODE(base_type)->get_kind())
    {
       case integer_type_K:
-         size = tree_helper::Size(base_type);
+         size = tree_helper::SizeAlloc(base_type);
          binary_value = ConvertInBinary(content, size, false, tree_helper::IsUnsignedIntegerType(base_type));
          break;
       case real_type_K:
-         size = tree_helper::Size(base_type);
+         size = tree_helper::SizeAlloc(base_type);
          binary_value = ConvertInBinary(content, size, true, false);
          break;
       case pointer_type_K:

@@ -449,7 +449,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    auto cond1 = ce1->op0;
    auto type_node = tree_helper::CGetType(cond1);
    const auto tree_man = tree_manipulationConstRef(new tree_manipulation(TM, parameters, AppM));
-   if(tree_helper::IsBooleanType(type_node))
+   if(!tree_helper::IsBooleanType(type_node))
    {
       type_node = tree_man->GetBooleanType();
    }

@@ -584,7 +584,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
       indented_output_stream->Append(";\\n\");\n");
 
       const auto ssa_type = tree_helper::CGetType(ssa);
-      const auto type_bitsize = tree_helper::Size(ssa_type);
+      const auto type_bitsize = tree_helper::SizeAlloc(ssa_type);
       const auto var_name = BH->PrintVariable(ssa->index);
       const auto ssa_bitsize = tree_helper::Size(ssa);
       if(ssa_bitsize > type_bitsize)
@@ -626,7 +626,7 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
          THROW_ASSERT(ssa_bitsize == type_bitsize,
                       "ssa node id = " + STR(ssa->index) + " type node id = " + STR(ssa_type->index));
 
-         const auto elem_bitsize = tree_helper::Size(tree_helper::CGetElements(ssa_type));
+         const auto elem_bitsize = tree_helper::SizeAlloc(tree_helper::CGetElements(ssa_type));
 
          THROW_ASSERT(type_bitsize % elem_bitsize == 0,
                       "ssa node id = " + STR(ssa->index) + " type node id = " + STR(ssa_type->index) +
@@ -949,7 +949,7 @@ void DiscrepancyAnalysisCWriter::WriteExtraInitCode()
    {
       if(HLSMgr->Rmem->has_base_address(var_node->index) && !tree_helper::IsSystemType(var_node))
       {
-         const auto bitsize = tree_helper::Size(var_node);
+         const auto bitsize = tree_helper::SizeAlloc(var_node);
          THROW_ASSERT(bitsize % 8 == 0 || bitsize == 1,
                       "bitsize of a variable in memory must be multiple of 8 --> is " + STR(bitsize));
          indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"VARDECL_ID " + STR(var_node->index) +
@@ -990,7 +990,7 @@ void DiscrepancyAnalysisCWriter::DeclareLocalVariables(const CustomSet<unsigned 
    {
       if(FB->is_variable_mem(GET_INDEX_CONST_NODE(par)))
       {
-         const auto bitsize = tree_helper::Size(par);
+         const auto bitsize = tree_helper::SizeAlloc(par);
          THROW_ASSERT(bitsize % 8 == 0 || bitsize == 1,
                       "bitsize of a variable in memory must be multiple of 8 --> is " + STR(bitsize));
          indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"VARDECL_ID " +
@@ -1003,7 +1003,7 @@ void DiscrepancyAnalysisCWriter::DeclareLocalVariables(const CustomSet<unsigned 
    {
       if(FB->is_variable_mem(var))
       {
-         const auto bitsize = tree_helper::Size(TM->CGetTreeReindex(var));
+         const auto bitsize = tree_helper::SizeAlloc(TM->CGetTreeReindex(var));
          THROW_ASSERT(bitsize % 8 == 0 || bitsize == 1,
                       "bitsize of a variable in memory must be multiple of 8 --> is " + STR(bitsize));
          indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"VARDECL_ID " + STR(var) +

@@ -89,7 +89,7 @@ void BuiltinWaitCallNModuleGenerator::InternalExec(std::ostream& out, structural
          const auto return_type = tree_helper::GetFunctionReturnType(called_ftype);
          if(return_type)
          {
-            return tree_helper::Size(return_type);
+            return tree_helper::SizeAlloc(return_type);
          }
       }
       return 0ULL;

@@ -317,7 +317,7 @@ void memory_allocation::finalize_memory_allocation()
       for(unsigned int p : parm_decl_stored)
       {
          maximum_bus_size =
-             std::max(maximum_bus_size, tree_helper::Size(tree_helper::CGetType(TreeM->CGetTreeReindex(p))));
+             std::max(maximum_bus_size, tree_helper::SizeAlloc(tree_helper::CGetType(TreeM->CGetTreeReindex(p))));
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "param with maximum_bus_size=" + STR(maximum_bus_size));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
@@ -401,14 +401,14 @@ void memory_allocation::finalize_memory_allocation()
             {
                const auto size_var = std::get<0>(var_read[0]);
                const auto size_type = tree_helper::CGetType(TreeM->CGetTreeReindex(size_var));
-               value_bitsize = tree_helper::Size(size_type);
+               value_bitsize = tree_helper::SizeAlloc(size_type);
                PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "store with value_bitsize=" + STR(value_bitsize));
             }
             else
             {
                const auto size_var = HLSMgr->get_produced_value(fun_id, *v);
                const auto size_type = tree_helper::CGetType(TreeM->CGetTreeReindex(size_var));
-               value_bitsize = tree_helper::Size(size_type);
+               value_bitsize = tree_helper::SizeAlloc(size_type);
                PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "load with value_bitsize=" + STR(value_bitsize));
             }
             if(!(function_behavior->is_variable_mem(var->index) && HLSMgr->Rmem->is_private_memory(var->index)))
@@ -488,13 +488,13 @@ void memory_allocation::finalize_memory_allocation()
             }
             else
             {
-               maximum_bus_size = std::max(tree_helper::Size(par), maximum_bus_size);
+               maximum_bus_size = std::max(tree_helper::SizeAlloc(par), maximum_bus_size);
             }
          }
          const auto function_return = tree_helper::GetFunctionReturnType(fnode);
          if(function_return)
          {
-            maximum_bus_size = std::max(tree_helper::Size(function_return), maximum_bus_size);
+            maximum_bus_size = std::max(tree_helper::SizeAlloc(function_return), maximum_bus_size);
          }
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
@@ -653,7 +653,7 @@ void memory_allocation::allocate_parameters(unsigned int functionId, memoryRef R
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
                   "---Base Address: " + STR(Rmem->get_parameter_base_address(functionId, functionId)));
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
-                  "---Size: " + STR(compute_n_bytes(tree_helper::Size(
+                  "---Size: " + STR(compute_n_bytes(tree_helper::SizeAlloc(
                                     tree_helper::CGetType(HLSMgr->get_tree_manager()->CGetTreeReindex(functionId))))));
    // Allocate every parameter on chip.
    const auto& topParams = behavioral_helper->get_parameters();
@@ -668,7 +668,7 @@ void memory_allocation::allocate_parameters(unsigned int functionId, memoryRef R
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
                      "---Base Address: " + STR(Rmem->get_parameter_base_address(functionId, *itr)));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
-                     "---Size: " + STR(tree_helper::Size(HLSMgr->get_tree_manager()->CGetTreeReindex(*itr)) / 8u));
+                     "---Size: " + STR(tree_helper::SizeAlloc(HLSMgr->get_tree_manager()->CGetTreeReindex(*itr)) / 8u));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl, "<--");
    }
 
@@ -680,9 +680,9 @@ void memory_allocation::allocate_parameters(unsigned int functionId, memoryRef R
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl, "---Id: " + STR(function_return));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
                      "---Base Address: " + STR(Rmem->get_parameter_base_address(functionId, function_return)));
-      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
-                     "---Size: " +
-                         STR(tree_helper::Size(HLSMgr->get_tree_manager()->CGetTreeReindex(function_return)) / 8u));
+      INDENT_OUT_MEX(
+          OUTPUT_LEVEL_VERBOSE, out_lvl,
+          "---Size: " + STR(tree_helper::SizeAlloc(HLSMgr->get_tree_manager()->CGetTreeReindex(function_return)) / 8u));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl, "<--");
    }
 }

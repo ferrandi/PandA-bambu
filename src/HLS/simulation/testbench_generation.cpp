@@ -274,7 +274,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       {
          const auto par_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(par));
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Parameter " + par_name);
-         const auto par_bitsize = tree_helper::Size(par);
+         const auto par_bitsize = tree_helper::SizeAlloc(par);
          const auto par_symbol = HLSMgr->Rmem->get_symbol(GET_INDEX_CONST_NODE(par), top_id);
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
                         "---Interface: " + STR(par_bitsize) + "-bits memory mapped at " +
@@ -294,7 +294,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       if(return_type)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Return value port");
-         const auto return_bitsize = tree_helper::Size(return_type);
+         const auto return_bitsize = tree_helper::SizeAlloc(return_type);
          const auto return_symbol = HLSMgr->Rmem->get_symbol(GET_INDEX_CONST_NODE(return_type), top_id);
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
                         "---Interface: " + STR(return_bitsize) + "-bits memory mapped at " +
@@ -820,7 +820,7 @@ std::vector<std::string> TestbenchGeneration::print_var_init(const tree_managerC
       }
       else
       {
-         const auto data_bitsize = tree_helper::Size(tn);
+         const auto data_bitsize = tree_helper::SizeAlloc(tn);
          init_els.push_back(std::string(data_bitsize, '0'));
       }
    }
@@ -836,7 +836,7 @@ unsigned long long TestbenchGeneration::generate_init_file(const std::string& da
    unsigned long long vec_size = 0, elts_size = 0;
    const auto var_type = tree_helper::CGetType(TM->CGetTreeReindex(var));
    const auto bitsize_align = GetPointer<const type_node>(GET_CONST_NODE(var_type))->algn;
-   THROW_ASSERT((bitsize_align % 8) == 0, "Alignement is not byte aligned.");
+   THROW_ASSERT((bitsize_align % 8) == 0, "Alignment is not byte aligned.");
    fu_binding::fill_array_ref_memory(init_bits, useless, var, vec_size, elts_size, mem, TM, false, bitsize_align);
 
    std::ofstream init_dat(dat_filename, std::ios::binary);
@@ -858,6 +858,6 @@ unsigned long long TestbenchGeneration::generate_init_file(const std::string& da
       }
    }
    unsigned long long bytes = static_cast<unsigned long long>(init_dat.tellp());
-   THROW_ASSERT((bytes % (bitsize_align / 8)) == 0, "Memory initalization bytes not aligned");
+   THROW_ASSERT((bytes % (bitsize_align / 8)) == 0, "Memory initialization bytes not aligned");
    return bytes;
 }

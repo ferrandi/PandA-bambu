@@ -1999,6 +1999,8 @@ src/design_flows/backend/ToC/source_code_writers/hls_instruction_writer.cpp
 src/design_flows/backend/ToC/source_code_writers/hls_instruction_writer.hpp
 src/design_flows/backend/ToC/source_code_writers/instruction_writer.cpp
 src/design_flows/backend/ToC/source_code_writers/instruction_writer.hpp
+src/design_flows/backend/ToC/source_code_writers/mdpi_wrapper_c_writer.cpp
+src/design_flows/backend/ToC/source_code_writers/mdpi_wrapper_c_writer.hpp
 src/design_flows/backend/ToDataFile/generate_fu_list.cpp
 src/design_flows/backend/ToDataFile/generate_fu_list.hpp
 src/design_flows/backend/ToDataFile/to_data_file_step.cpp
