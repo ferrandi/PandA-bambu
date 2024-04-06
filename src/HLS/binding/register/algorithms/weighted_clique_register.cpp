@@ -130,11 +130,11 @@ DesignFlowStep_Status weighted_clique_register::RegisterBinding()
    {
       if(clique_covering_algorithm == CliqueCovering_Algorithm::BIPARTITE_MATCHING)
       {
-         const std::list<vertex>& support = HLS->Rliv->get_support();
+         const auto& support = HLS->Rliv->get_support();
          unsigned current_partition = 0;
          for(auto vState : support)
          {
-            const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(vState);
+            const auto& live = HLS->Rliv->get_live_in(vState);
             for(auto l : live)
             {
                unsigned int sv = HLS->storage_value_information->get_storage_value_index(vState, l);
@@ -175,7 +175,7 @@ DesignFlowStep_Status weighted_clique_register::RegisterBinding()
       HLS->Rreg = reg_binding::create_reg_binding(HLS, HLSMgr);
       for(const auto v : HLS->Rliv->get_support())
       {
-         for(const auto k : HLS->Rliv->get_live_in(v))
+         for(const auto& k : HLS->Rliv->get_live_in(v))
          {
             unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(v, k);
             HLS->Rreg->bind(storage_value_index, v2c[verts[storage_value_index]]);
@@ -207,6 +207,7 @@ DesignFlowStep_Status weighted_clique_register::RegisterBinding()
                       (num_registers == register_lower_bound ? "" : ("(LB:" + STR(register_lower_bound) + ")")));
    if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
    {
+      THROW_ASSERT(HLS->Rreg, "unexpected condition");
       HLS->Rreg->print();
    }
    if(output_level >= OUTPUT_LEVEL_MINIMUM && output_level <= OUTPUT_LEVEL_PEDANTIC)
