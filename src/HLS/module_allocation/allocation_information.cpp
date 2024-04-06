@@ -1681,7 +1681,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          info->real_output_nelem = 0;
          info->base128_output_nelem = 0;
       }
-      if(current_op == "cond_expr" && max_size_in > 64 && info->node_kind == "VECTOR_BOOL")
+      if(current_op == "cond_expr" && max_size_in > 64)
       {
          max_size_in = 64;
       }

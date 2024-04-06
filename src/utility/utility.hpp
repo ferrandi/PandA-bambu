@@ -157,7 +157,7 @@ constexpr void string_to_container(_OutputIt first, const std::string& str, cons
       }
       last += _len + 1;
       curr += _len + 1;
-   } while(last < str.size());
+   } while(last <= str.size());
 }
 
 template <typename _Container>

@@ -190,7 +190,7 @@ void reg_binding::compute_is_without_enable()
    {
       const auto dummy_offset = HLS->Rliv->is_a_dummy_state(v) ? 1U : 0U;
       const auto& live_in = HLS->Rliv->get_live_in(v);
-      for(const auto li : live_in)
+      for(const auto& li : live_in)
       {
          if(n_in.find(li) == n_in.end())
          {
@@ -202,7 +202,7 @@ void reg_binding::compute_is_without_enable()
          }
       }
       const auto& live_out = HLS->Rliv->get_live_out(v);
-      for(const auto lo : live_out)
+      for(const auto& lo : live_out)
       {
          if(!n_out.count(lo))
          {
@@ -222,8 +222,8 @@ void reg_binding::compute_is_without_enable()
    for(auto i = 0U; i < get_used_regs(); i++)
    {
       const auto all_woe = [&]() {
-         const auto store_vars_set = get_vars(i);
-         for(const auto sv : store_vars_set)
+         const auto& store_vars_set = get_vars(i);
+         for(const auto& sv : store_vars_set)
          {
             if(n_in.find(sv) == n_in.end() || n_in.find(sv)->second != 1 || n_out.find(sv) == n_out.end() ||
                n_out.find(sv)->second != 1)
