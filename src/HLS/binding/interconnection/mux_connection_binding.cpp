@@ -1590,24 +1590,13 @@ void mux_connection_binding::create_connections()
                determine_connection(op, HLS_manager::io_binding_type(var_node_idx, 0), fu_obj, port_offset(1),
                                     port_index, data, bus_addr_bitsize, alignment);
                /// connect size port
-               if(Prec != algn && Prec % algn)
-               {
-                  Prec = std::max(8ull, resize_1_8_pow2(Prec));
-                  HLS_manager::check_bitwidth(Prec);
-                  determine_connection(
-                      op, HLS_manager::io_binding_type(0, Prec), fu_obj, port_offset(2), port_index, data,
-                      static_cast<unsigned>(object_bitsize(TreeM, HLS_manager::io_binding_type(0, Prec))));
-               }
-               else
-               {
-                  const auto IR_var_bitsize = tree_helper::SizeAlloc(tn);
-                  HLS_manager::check_bitwidth(IR_var_bitsize);
-                  unsigned int var_bitsize;
-                  var_bitsize = static_cast<unsigned int>(IR_var_bitsize);
-                  determine_connection(
-                      op, HLS_manager::io_binding_type(0, var_bitsize), fu_obj, port_offset(2), port_index, data,
-                      static_cast<unsigned>(object_bitsize(TreeM, HLS_manager::io_binding_type(0, var_bitsize))));
-               }
+               const auto IR_var_bitsize = tree_helper::SizeAlloc(tn);
+               HLS_manager::check_bitwidth(IR_var_bitsize);
+               unsigned int var_bitsize;
+               var_bitsize = static_cast<unsigned int>(IR_var_bitsize);
+               determine_connection(
+                   op, HLS_manager::io_binding_type(0, var_bitsize), fu_obj, port_offset(2), port_index, data,
+                   static_cast<unsigned>(object_bitsize(TreeM, HLS_manager::io_binding_type(0, var_bitsize))));
             }
             else
             {
