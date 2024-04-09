@@ -104,6 +104,7 @@ class NP_functionality
       GRAPH,
       FSM,
       FSM_CS,
+      FSM_STAGES,
       SC_PROVIDED,
       VHDL_PROVIDED,
       VERILOG_PROVIDED,

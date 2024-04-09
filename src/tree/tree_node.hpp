@@ -2758,6 +2758,8 @@ CREATE_TREE_NODE_CLASS(floor_mod_expr, binary_expr);
  */
 struct function_decl : public decl_node, public attr
 {
+   using pipeline_style_t = enum { STP_STYLE, FLP_STYLE, FRP_STYLE };
+
    /// constructor
    explicit function_decl(unsigned int i);
 
@@ -2784,6 +2786,9 @@ struct function_decl : public decl_node, public attr
 
    /// True if pipelining is enabled for the function
    bool pipeline_enabled;
+
+   /// Specify function pipelining style
+   pipeline_style_t pipeline_style;
 
    /// initiation time in case function is pipelined
    unsigned initiation_time;
@@ -2908,6 +2913,10 @@ struct function_decl : public decl_node, public attr
    bool is_pipelined();
 
    void set_pipelining(bool v);
+
+   void set_pipeline_style(pipeline_style_t ps);
+
+   pipeline_style_t get_pipeline_style() const;
 
    unsigned get_initiation_time();
 

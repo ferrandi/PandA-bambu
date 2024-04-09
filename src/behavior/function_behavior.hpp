@@ -370,6 +370,9 @@ class FunctionBehavior
    /// true when pipelining is enabled for the function
    bool pipeline_enabled;
 
+   /// true when functional pipelining uses STP style
+   bool is_stallable_pipelined_function;
+
    /// initiation time of the pipelined function
    unsigned initiation_time;
 
@@ -805,6 +808,21 @@ class FunctionBehavior
    void disable_function_pipelining()
    {
       pipeline_enabled = false;
+   }
+
+   void enable_function_pipelining()
+   {
+      pipeline_enabled = true;
+   }
+
+   void disable_stp()
+   {
+      is_stallable_pipelined_function = false;
+   }
+
+   bool is_stp() const
+   {
+      return is_stallable_pipelined_function;
    }
 
    unsigned int get_initiation_time() const

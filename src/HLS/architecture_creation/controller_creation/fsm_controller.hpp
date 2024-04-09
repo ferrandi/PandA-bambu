@@ -71,10 +71,16 @@ class fsm_controller : public ControllerCreatorBaseStep
 
  protected:
    /**
-    * Set the correct NP functionality
+    * Set the FSM functionality
     * @param state_representation is the state representation of the FSM
     */
-   virtual void add_correct_transition_memory(const std::string& state_representation, structural_managerRef SM);
+   virtual void add_FSM(const std::string& state_representation, structural_managerRef SM);
+
+   /**
+    * @brief add_FSM_stages serialize in a string all the stage information required for the FSM generation
+    * @param SM is the structural manager at which the info are added to.
+    */
+   virtual void add_FSM_stages(structural_managerRef SM);
 
  public:
    /**

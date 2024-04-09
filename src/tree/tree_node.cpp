@@ -817,6 +817,16 @@ void function_decl::set_pipelining(bool v)
    pipeline_enabled = v;
 }
 
+void function_decl::set_pipeline_style(pipeline_style_t ps)
+{
+   pipeline_style = ps;
+}
+
+function_decl::pipeline_style_t function_decl::get_pipeline_style() const
+{
+   return pipeline_style;
+}
+
 unsigned function_decl::get_initiation_time()
 {
    return initiation_time;

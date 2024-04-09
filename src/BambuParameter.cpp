@@ -2496,24 +2496,20 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
          setOption(OPT_gcc_optimizations, optimizations);
       }
    }
-   /// Set the default value for OPT_gcc_m32_mx32
-   if(!isOption(OPT_gcc_m32_mx32))
+   /// Set the default value for OPT_gcc_m_env
+   if(!isOption(OPT_gcc_m_env))
    {
-      if(CompilerWrapper::hasCompilerM64(default_compiler))
+      if(CompilerWrapper::hasCompilerM32(default_compiler))
       {
-         setOption(OPT_gcc_m32_mx32, "-m64");
+         setOption(OPT_gcc_m_env, "-m32");
       }
-      if(CompilerWrapper::hasCompilerMX32(default_compiler))
+      else if(CompilerWrapper::hasCompilerMX32(default_compiler))
       {
-         setOption(OPT_gcc_m32_mx32, "-mx32");
+         setOption(OPT_gcc_m_env, "-mx32");
       }
-      if(CompilerWrapper::hasCompilerGCCM32(default_compiler))
+      else if(CompilerWrapper::hasCompilerM64(default_compiler))
       {
-         setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
-      }
-      if(CompilerWrapper::hasCompilerCLANGM32(default_compiler))
-      {
-         setOption(OPT_gcc_m32_mx32, "-m32");
+         setOption(OPT_gcc_m_env, "-m64");
       }
    }
 }

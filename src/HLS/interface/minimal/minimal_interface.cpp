@@ -493,7 +493,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                    TestbenchGeneration::print_var_init(HLSMgr->get_tree_manager(), m->first, HLSMgr->Rmem);
                unsigned int byte_allocated = 0;
                unsigned long long int actual_byte =
-                   tree_helper::Size(HLSMgr->get_tree_manager()->CGetTreeReindex(m->first)) / 8;
+                   tree_helper::SizeAlloc(HLSMgr->get_tree_manager()->CGetTreeReindex(m->first)) / 8;
                std::vector<std::string> eightbit_string;
                for(const auto& i : splitted)
                {

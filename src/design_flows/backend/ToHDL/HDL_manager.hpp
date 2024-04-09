@@ -160,7 +160,8 @@ class HDL_manager
     * @param cir is the module.
     * @param fsm_desc is the string-based FSM description.
     */
-   void write_fsm(const language_writerRef writer, const structural_objectRef& cir, const std::string& fsm_desc) const;
+   void write_fsm(const language_writerRef writer, const structural_objectRef& cir, const std::string& fsm_desc,
+                  const std::string& fsm_stage_i) const;
 
    /**
     * Writes the behavioral description associated with the component

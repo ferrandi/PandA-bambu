@@ -792,13 +792,11 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Found " + STR(return_value.size()) + " simd pragmas");
       return return_value;
    }();
-   const CustomSet<vertex> to_be_parallelized = CustomSet<vertex>();
    const tree_manipulationConstRef tree_man(new tree_manipulation(TM, parameters, AppM));
 
    for(const auto bb_vertex : bb_sorted_vertices)
    {
       const auto curr_bb = direct_vertex_map.at(bb_vertex);
-      bool parallel_bb = to_be_parallelized.find(bb_vertex) != to_be_parallelized.end();
       if(curr_bb == bloc::ENTRY_BLOCK_ID)
       {
          continue;
@@ -807,8 +805,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
       {
          continue;
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "-->Analyzing BB" + STR(curr_bb) + (parallel_bb ? "(Parallel)" : ""));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(curr_bb));
       bool restart_bb_code_motion = false;
       do
       {
@@ -875,8 +872,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             }
 
             THROW_ASSERT(gn, "unexpected condition");
-            if(!storeCanBePredicated && !ld_st_predication_forced && !parallel_bb &&
-               gn->vdef) /// load can be loop pipelined/predicated
+            if(!storeCanBePredicated && !ld_st_predication_forced && gn->vdef) /// load can be loop pipelined/predicated
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of memory store");
                continue;
@@ -965,12 +961,12 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                continue;
             }
             if((gn->vuses.size() && GetPointer<gimple_assign>(tn) &&
-                GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == call_expr_K && !parallel_bb) ||
+                GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == call_expr_K) ||
                ((gn->vuses.size() || (GetPointer<gimple_assign>(tn) &&
                                       (GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K ||
                                        GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == call_expr_K)))
                 // && (!schedule)
-                && !loadCanBePredicated && !ld_st_predication_forced && !parallel_bb))
+                && !loadCanBePredicated && !ld_st_predication_forced))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of vuses");
                continue; /// load cannot be code moved
@@ -1101,8 +1097,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             {
                check_movable = FunctionFrontendFlowStep_Movable::MOVABLE;
             }
-            if(!ld_st_predication_forced && !parallel_bb &&
-               check_movable == FunctionFrontendFlowStep_Movable::UNMOVABLE)
+            if(!ld_st_predication_forced && check_movable == FunctionFrontendFlowStep_Movable::UNMOVABLE)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because cannot be moved");
                continue;
@@ -1138,7 +1133,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             {
                zero_delay_stmts.insert(GET_INDEX_NODE(*statement));
             }
-            if(check_movable == FunctionFrontendFlowStep_Movable::TIMING or (!only_phis && !zero_delay && !parallel_bb))
+            if(check_movable == FunctionFrontendFlowStep_Movable::TIMING or (!only_phis && !zero_delay))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "---Going down of one level because of non-zero delay");
@@ -1344,8 +1339,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
          }
          if(restart_bb_code_motion)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---Restart Analyzing BB" + STR(curr_bb) + (parallel_bb ? "(Parallel)" : ""));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Restart Analyzing BB" + STR(curr_bb));
          }
       } while(restart_bb_code_motion);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(curr_bb));

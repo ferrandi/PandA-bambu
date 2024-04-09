@@ -583,7 +583,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
          {
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - set as VECTOR CONCATENATION operation");
             const auto co = GetPointerS<const constructor>(GET_CONST_NODE(me->op1));
-            const auto size_obj = tree_helper::Size(co->type);
+            const auto size_obj = tree_helper::SizeAlloc(co->type);
             const auto n_byte = size_obj / 8;
             ogc->AddOperation(TM, actual_name,
                               VECT_CONCATENATION + STR("_") + STR(n_byte) + "_" + STR(co->list_of_idx_valu.size()),

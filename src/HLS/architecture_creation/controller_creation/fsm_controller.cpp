@@ -123,11 +123,8 @@ DesignFlowStep_Status fsm_controller::InternalExec()
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating state machine representations...");
    std::string state_representation;
    this->create_state_machine(state_representation);
-   add_correct_transition_memory(state_representation, SM); // if CS is activated some register are memory
-
-   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Machine encoding");
-   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, state_representation);
-   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "****");
+   add_FSM(state_representation, SM);
+   add_FSM_stages(SM);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Circuit created without errors!");
    out_ports.clear();
@@ -157,12 +154,8 @@ void fsm_controller::create_state_machine(std::string& parse)
    const auto astg = HLS->STG->CGetAstg();
    const auto FB = HLSMgr->CGetFunctionBehavior(funId);
    const auto data = FB->CGetOpGraph(FunctionBehavior::CFG);
-   const auto fsymbol = FB->CGetBehavioralHelper()->GetMangledFunctionName();
-   const auto func_arch = HLSMgr->module_arch->GetArchitecture(fsymbol);
-   const auto is_dataflow_top =
-       func_arch && func_arch->attrs.find(FunctionArchitecture::func_dataflow_top) != func_arch->attrs.end() &&
-       func_arch->attrs.find(FunctionArchitecture::func_dataflow_top)->second == "1";
    const auto is_function_pipelined = FB->is_function_pipelined();
+   const auto TreeM = HLSMgr->get_tree_manager();
 
    const auto entry = HLS->STG->get_entry_state();
    THROW_ASSERT(boost::out_degree(entry, *stg) == 1, "Non deterministic initial state");
@@ -253,7 +246,6 @@ void fsm_controller::create_state_machine(std::string& parse)
       }
 
       CustomOrderedSet<generic_objRef> active_fu;
-      const auto TreeM = HLSMgr->get_tree_manager();
       const auto& operations = astg->CGetStateInfo(v)->executing_operations;
       for(const auto& op : operations)
       {
@@ -280,10 +272,9 @@ void fsm_controller::create_state_machine(std::string& parse)
             THROW_ERROR("Unbounded operations have to have both done_port and start_port ports!" +
                         STR(TreeM->CGetTreeNode(data->CGetOpNodeInfo(op)->GetNodeId())));
          }
-         bool is_starting_operation =
-             is_dataflow_top || std::find(stg->CGetStateInfo(v)->starting_operations.begin(),
-                                          stg->CGetStateInfo(v)->starting_operations.end(),
-                                          op) != stg->CGetStateInfo(v)->starting_operations.end();
+         bool is_starting_operation = std::find(stg->CGetStateInfo(v)->starting_operations.begin(),
+                                                stg->CGetStateInfo(v)->starting_operations.end(),
+                                                op) != stg->CGetStateInfo(v)->starting_operations.end();
 
          if((!GetPointer<operation>(op_tn)->is_bounded()))
          {
@@ -292,27 +283,26 @@ void fsm_controller::create_state_machine(std::string& parse)
             {
                const auto nodeGA = GetPointerS<const gimple_assign>(node);
                const auto ssaIndex = GET_INDEX_CONST_NODE(nodeGA->op0);
-               const auto stepIn = HLS->Rliv->GetStep(v, op, ssaIndex, false);
-               if(HLS->storage_value_information->is_a_storage_value(v, ssaIndex, stepIn))
+               const auto stepOut = HLS->Rliv->GetStep(v, op, ssaIndex, false);
+               if(HLS->storage_value_information->is_a_storage_value(v, ssaIndex, stepOut))
                {
                   const auto storage_value_index =
-                      HLS->storage_value_information->get_storage_value_index(v, ssaIndex, stepIn);
+                      HLS->storage_value_information->get_storage_value_index(v, ssaIndex, stepOut);
                   const auto written_reg = HLS->Rreg->get_register(storage_value_index);
                   const auto doneCommand =
                       HLS->Rconn->bind_selector_port(conn_binding::OUT, commandport_obj::UNBOUNDED, op, data);
                   const auto doneVertex = GetPointer<commandport_obj>(doneCommand)->get_vertex();
                   THROW_ASSERT(cond_ports.find(doneVertex) != cond_ports.end(), "unexpected condition");
                   const auto reg_obj = HLS->Rreg->get(written_reg);
-                  const auto sel_port =
-                      HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::WRENABLE, reg_obj, written_reg);
+                  const auto sel_port = GetPointer<register_obj>(reg_obj)->get_wr_enable();
                   THROW_ASSERT(out_ports.find(sel_port) != out_ports.end(), "");
                   bypass_signals[1 + out_ports.find(sel_port)->second][v].insert(cond_ports.find(doneVertex)->second);
                }
             }
          }
 
-         if((!GetPointer<operation>(op_tn)->is_bounded() || start_port_i) &&
-            (!stg->CGetStateInfo(v)->is_dummy || is_dataflow_top) && is_starting_operation)
+         if((!GetPointer<operation>(op_tn)->is_bounded() || start_port_i) && (!stg->CGetStateInfo(v)->is_dummy) &&
+            is_starting_operation)
          {
             const auto unbounded_port =
                 out_ports[HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::UNBOUNDED, op, data)];
@@ -376,6 +366,9 @@ void fsm_controller::create_state_machine(std::string& parse)
                      }
                   }
                }
+               else if(current_port->get_command_type() == commandport_obj::command_type::OPERATION)
+               {
+               }
             }
          }
       }
@@ -428,7 +421,6 @@ void fsm_controller::create_state_machine(std::string& parse)
    }
    parse += ";\n";
 
-   const tree_managerRef TreeM = HLSMgr->get_tree_manager();
    const auto exit_state = HLS->STG->get_exit_state();
    const auto entry_state = HLS->STG->get_entry_state();
    for(const auto& v : working_list)
@@ -750,8 +742,187 @@ std::string fsm_controller::get_guard_value(const tree_managerRef TM, const unsi
    }
 }
 
-void fsm_controller::add_correct_transition_memory(const std::string& state_representation, structural_managerRef SM)
+void fsm_controller::add_FSM(const std::string& state_representation, structural_managerRef SM)
 {
    structural_objectRef circuit = SM->get_circ();
    SM->add_NP_functionality(circuit, NP_functionality::FSM, state_representation);
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Machine encoding");
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, state_representation);
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "****");
+}
+
+void fsm_controller::add_FSM_stages(structural_managerRef SM)
+{
+   const auto FB = HLSMgr->CGetFunctionBehavior(funId);
+   const auto is_function_pipelined = FB->is_function_pipelined();
+   if(is_function_pipelined && !FB->is_stp())
+   {
+      const auto data = FB->CGetOpGraph(FunctionBehavior::CFG);
+      std::list<vertex> working_list;
+      const auto astg = HLS->STG->CGetAstg();
+      const auto stg = HLS->STG->CGetStg();
+      astg->TopologicalSort(working_list);
+      const auto n_stages = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->n_stages;
+      std::string stage_table = std::to_string(n_stages) + "|";
+      const auto TreeM = HLSMgr->get_tree_manager();
+      const auto entry_state = HLS->STG->get_entry_state();
+      const auto exit_state = HLS->STG->get_exit_state();
+      bool first_ds_state = false;
+      bool done_port_is_registered = HLS->registered_done_port;
+
+      for(const auto& v : working_list)
+      {
+         if(entry_state == v)
+         {
+            continue;
+         }
+         if(astg->CGetStateInfo(v)->is_dummy)
+         {
+            if(!first_ds_state)
+            {
+               first_ds_state = true;
+            }
+            else
+            {
+               stage_table += ";";
+            }
+            stage_table += astg->CGetStateInfo(v)->name;
+         }
+      }
+      stage_table += "|";
+      for(const auto& v : working_list)
+      {
+         if(entry_state == v)
+         {
+            continue;
+         }
+         for(const auto& op : astg->CGetStateInfo(v)->ending_operations)
+         {
+            auto node = TreeM->CGetTreeNode(data->CGetOpNodeInfo(op)->GetNodeId());
+            if(node->get_kind() == gimple_assign_K)
+            {
+               const auto nodeGA = GetPointerS<const gimple_assign>(node);
+               const auto ssaIndex = GET_INDEX_CONST_NODE(nodeGA->op0);
+               const auto reg_stage = HLS->Rliv->GetStepWrite(v, op);
+               if(HLS->storage_value_information->is_a_storage_value(v, ssaIndex, reg_stage))
+               {
+                  const auto storage_value_index =
+                      HLS->storage_value_information->get_storage_value_index(v, ssaIndex, reg_stage);
+                  const auto written_reg = HLS->Rreg->get_register(storage_value_index);
+                  const auto reg_obj = HLS->Rreg->get(written_reg);
+
+                  const auto sel_port = GetPointer<register_obj>(reg_obj)->get_wr_enable();
+
+                  THROW_ASSERT(out_ports.find(sel_port) != out_ports.end(), "");
+                  auto reg_port = 1 + out_ports.at(sel_port);
+                  stage_table += astg->CGetStateInfo(v)->name + ":" + std::to_string(reg_port) + ":" +
+                                 std::to_string(reg_stage) + ";";
+               }
+            }
+         }
+         for(const auto& op : astg->CGetStateInfo(v)->starting_operations)
+         {
+            const auto tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(op));
+            const auto op_tn = GetPointer<functional_unit>(tn)->get_operation(
+                tree_helper::NormalizeTypename(data->CGetOpNodeInfo(op)->GetOperation()));
+            const auto CM = GetPointer<functional_unit>(tn)->CM;
+            if(!CM)
+            {
+               continue;
+            }
+            const auto top = CM->get_circ();
+            THROW_ASSERT(top, "expected");
+            const auto fu_module = GetPointer<module>(top);
+            THROW_ASSERT(fu_module, "expected");
+            const auto start_port_i = fu_module->find_member(START_PORT_NAME, port_o_K, top);
+            if(start_port_i)
+            {
+               const auto op_port =
+                   1 +
+                   out_ports[HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::UNBOUNDED, op, data)];
+               auto op_stage = 1 + HLS->Rliv->GetStepOp(v, op);
+               stage_table +=
+                   astg->CGetStateInfo(v)->name + ":" + std::to_string(op_port) + ":" + std::to_string(op_stage) + ";";
+            }
+         }
+         for(const auto& op : astg->CGetStateInfo(v)->executing_operations)
+         {
+            if((GET_TYPE(data, op) & TYPE_PHI) == 0)
+            {
+               auto fu = HLS->Rfu->get_assign(op);
+               auto idx = HLS->Rfu->get_index(op);
+               const auto tmp_ops_node_size =
+                   GetPointer<functional_unit>(HLS->allocation_information->get_fu(fu))->get_operations().size();
+               bool is_starting_operation = std::find(astg->CGetStateInfo(v)->starting_operations.begin(),
+                                                      astg->CGetStateInfo(v)->starting_operations.end(),
+                                                      op) != astg->CGetStateInfo(v)->starting_operations.end();
+
+               if(tmp_ops_node_size > 1U && (!(GET_TYPE(data, op) & (TYPE_LOAD | TYPE_STORE)) || is_starting_operation))
+               {
+                  const auto selector_obj = GetPointer<funit_obj>(HLS->Rfu->get(fu, idx))
+                                                ->GetSelector_op(data->CGetOpNodeInfo(op)->GetOperation());
+                  const auto op_port = 1 + out_ports[selector_obj];
+                  auto op_stage = 1 + HLS->Rliv->GetStepOp(v, op);
+                  stage_table += astg->CGetStateInfo(v)->name + ":" + std::to_string(op_port) + ":" +
+                                 std::to_string(op_stage) + ";";
+               }
+            }
+         }
+         if(done_port_is_registered)
+         {
+            bool assert_done_port = false;
+            BOOST_FOREACH(EdgeDescriptor oe, boost::out_edges(v, *stg))
+            {
+               vertex tgt = boost::target(oe, *stg);
+               if(tgt == exit_state)
+               {
+                  assert_done_port = true;
+                  break;
+               }
+            }
+            if(assert_done_port)
+            {
+               stage_table +=
+                   astg->CGetStateInfo(v)->name + ":" + std::to_string(0) + ":" + std::to_string(n_stages) + ";";
+            }
+         }
+         else if(exit_state == v)
+         {
+            stage_table +=
+                astg->CGetStateInfo(v)->name + ":" + std::to_string(0) + ":" + std::to_string(n_stages) + ";";
+         }
+      }
+
+      /// manage input condition
+      stage_table += "|";
+      for(const auto& v : working_list)
+      {
+         if(entry_state == v)
+         {
+            continue;
+         }
+         BOOST_FOREACH(EdgeDescriptor oe, boost::out_edges(v, *stg))
+         {
+            auto transitionType = stg->CGetTransitionInfo(oe)->get_type();
+            if(transitionType == ALL_FINISHED || transitionType == NOT_ALL_FINISHED)
+            {
+               auto ops = stg->CGetTransitionInfo(oe)->get_operations();
+               if(ops.size() == 1)
+               {
+                  auto op = *(ops.begin());
+                  auto op_port = cond_ports.find(op)->second;
+                  auto op_stage = HLS->Rliv->GetStepOp(v, op);
+                  stage_table += astg->CGetStateInfo(v)->name + ":" + std::to_string(op_port) + ":" +
+                                 std::to_string(op_stage) + ";";
+               }
+            }
+         }
+      }
+
+      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "FSM stage table");
+      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, stage_table);
+      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "****");
+      structural_objectRef circuit = SM->get_circ();
+      SM->add_NP_functionality(circuit, NP_functionality::FSM_STAGES, stage_table);
+   }
 }

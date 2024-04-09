@@ -988,6 +988,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding inputs");
    std::map<structural_objectRef, std::list<structural_objectRef>> calls;
    std::map<structural_objectRef, std::list<vertex>> start_to_vertex;
+   std::map<vertex, structural_objectRef> vertex_to_selector;
    if(selectors.find(conn_binding::IN) != selectors.end())
    {
       auto connection_binding_sets = selectors.find(conn_binding::IN)->second;
@@ -1070,6 +1071,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
                if(GetPointer<commandport_obj>(j->second)->get_command_type() == commandport_obj::UNBOUNDED)
                {
                   vertex op = GetPointer<commandport_obj>(j->second)->get_vertex();
+                  vertex_to_selector[op] = sel_obj;
                   generic_objRef fu_unit = HLS->Rfu->get(op);
                   structural_objectRef fu_obj = fu_unit->get_structural_obj();
                   structural_objectRef start = fu_obj->find_member(START_PORT_NAME, port_o_K, fu_obj);
@@ -1210,6 +1212,21 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
          const auto& port_obj = port->get_port(j);
          SM->add_connection(port_obj, sig[done]);
          ++j;
+      }
+      structural_objectRef Starts = mu_mod->find_member("starts", port_vector_o_K, mu_mod);
+      if(Starts)
+      {
+         j = 0u;
+         auto* sport = GetPointer<port_o>(Starts);
+         for(const auto& op : ops)
+         {
+            THROW_ASSERT(vertex_to_selector.find(op) != vertex_to_selector.end(), "unexpected condition");
+            auto inSelector = vertex_to_selector.at(op);
+            THROW_ASSERT(sport->get_port(j), "sport->get_port(j) not found");
+            const auto& sport_obj = sport->get_port(j);
+            SM->add_connection(sport_obj, inSelector);
+            ++j;
+         }
       }
       HLS->Rconn->bind_selector_port(conn_binding::OUT, commandport_obj::MULTI_UNBOUNDED, mu, 0);
    }

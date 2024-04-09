@@ -512,7 +512,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                      const auto mr = GetPointerS<mem_ref>(op0);
                      THROW_ASSERT(GET_NODE(mr->op1)->get_kind() == integer_cst_K, "unexpected condition");
                      const auto type_w = tree_helper::CGetType(ga->op1);
-                     const auto written_bw = std::max(8ULL, ceil_pow2(tree_helper::Size(type_w)));
+                     const auto written_bw = tree_helper::SizeAlloc(type_w);
                      if(tree_helper::GetConstValue(mr->op1) == 0)
                      {
                         if(GET_NODE(mr->op0)->get_kind() == integer_cst_K)
@@ -593,8 +593,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                             tree_helper::GetConstValue(mr_used->op1))
                                                          {
                                                             const auto type_r = tree_helper::CGetType(ga_used->op0);
-                                                            const auto read_bw =
-                                                                std::max(8ULL, ceil_pow2(tree_helper::Size(type_r)));
+                                                            const auto read_bw = tree_helper::SizeAlloc(type_r);
                                                             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                                                            "---read_bw: " + STR(read_bw) +
                                                                                " written_bw: " + STR(written_bw));

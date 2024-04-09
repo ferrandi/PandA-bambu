@@ -73,7 +73,9 @@ void VerilatorWrapper::GenerateVerilatorMain(const std::filesystem::path& filena
    PP(os, "#include <verilated.h>\n");
    PP(os, "\n");
    PP(os, "#if VM_TRACE\n");
-   PP(os, "# include <verilated_vcd_c.h>\n");
+   PP(os, "#include <verilated_vcd_c.h>\n");
+   PP(os, "#define _dtos(str) #str\n");
+   PP(os, "#define VCD_OUT_FILENAME(dir, stem) _dtos(dir) \"/\" stem\n");
    PP(os, "#endif\n");
    PP(os, "\n");
    PP(os, "#include \"Vbambu_testbench.h\"\n");
@@ -100,7 +102,7 @@ void VerilatorWrapper::GenerateVerilatorMain(const std::filesystem::path& filena
    PP(os, "top->trace (tfp.get(), 99);\n");
    PP(os, "tfp->set_time_unit(\"p\");\n");
    PP(os, "tfp->set_time_resolution(\"p\");\n");
-   PP(os, "tfp->open (\"" + beh_dir.string() + "/test.vcd\");\n");
+   PP(os, "tfp->open(VCD_OUT_FILENAME(VCD_OUT_DIR, \"test.vcd\"));\n");
    PP(os, "#endif\n");
    PP(os, "top->" CLOCK_PORT_NAME " = 1;\n");
    PP(os, "while (!Verilated::gotFinish())\n");
@@ -225,7 +227,7 @@ std::string VerilatorWrapper::GenerateScript(std::ostream& script, const std::st
    const auto nThreadsMake =
        Param->isOption(OPT_verilator_parallel) ? Param->getOption<int>(OPT_verilator_parallel) : 1;
    script << "make -C ${obj_dir}  -j " << nThreadsMake
-          << " OPT=\"-fstrict-aliasing\" -f Vbambu_testbench.mk Vbambu_testbench";
+          << " OPT=\"-fstrict-aliasing -DVCD_OUT_DIR=\"${SIM_DIR}\"\" -f Vbambu_testbench.mk Vbambu_testbench";
 #ifdef _WIN32
    /// VM_PARALLEL_BUILDS=1 removes the dependency from perl
    script << " VM_PARALLEL_BUILDS=1 CFG_CXXFLAGS_NO_UNUSED=\"\"";

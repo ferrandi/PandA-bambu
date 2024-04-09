@@ -479,7 +479,7 @@ void tree_panda_gcc_parameter::SetDefaults()
    // -- GCC options -- //
    setOption(OPT_default_compiler, CompilerWrapper::getDefaultCompiler());
    setOption(OPT_compatible_compilers, CompilerWrapper::getCompatibleCompilers());
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
+   setOption(OPT_gcc_m_env, "-m32");
    setOption(OPT_without_transformation, true);
    setOption(OPT_precision, 3);
    setOption(OPT_compute_size_of, true);

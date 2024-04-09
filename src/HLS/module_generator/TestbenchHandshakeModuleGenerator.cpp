@@ -84,10 +84,6 @@ void TestbenchHandshakeModuleGenerator::InternalExec(std::ostream& out, structur
       np_library += " " + port_name;
    };
    out << "localparam BITSIZE_data=BITSIZE_" << arg_name << (in_suffix.size() ? in_suffix : out_suffix) << ";\n";
-   if(if_dir == port_o::IN)
-   {
-      out << "assign tb_done_port = 1'b1;\n\n";
-   }
    if(if_dir == port_o::IN || if_dir == port_o::IO)
    {
       add_port_parametric(in_suffix, port_o::OUT, 1U);
@@ -110,8 +106,7 @@ void TestbenchHandshakeModuleGenerator::InternalExec(std::ostream& out, structur
       add_port_parametric(out_suffix + "_ack", port_o::OUT, 0U);
       ip_components.push_back("TestbenchFifoWrite");
       out << "wire _full_n;\n\n"
-          << "assign " << arg_name << out_suffix << "_ack = _full_n;\n"
-          << "assign tb_done_port = ~_full_n;\n\n"
+          << "assign " << arg_name << out_suffix << "_ack = _full_n;\n\n"
           << "TestbenchFifoWrite #(.index(index),\n"
           << "  .BITSIZE_din(BITSIZE_data)) fifo_write(.clock(clock),\n"
           << "  .setup_port(setup_port),\n"

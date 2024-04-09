@@ -1883,7 +1883,7 @@ DesignFlowStep_Status allocation::InternalExec()
             if(tree_helper::IsVectorType(type))
             {
                const auto element_type = tree_helper::CGetElements(type);
-               const auto element_size = tree_helper::Size(element_type);
+               const auto element_size = tree_helper::SizeAlloc(element_type);
                allocation_information->precision_map[current_size] = element_size;
             }
             else
@@ -1937,7 +1937,7 @@ DesignFlowStep_Status allocation::InternalExec()
                   if(tree_helper::IsVectorType(type))
                   {
                      const auto element_type = tree_helper::CGetElements(type);
-                     const auto element_size = tree_helper::Size(element_type);
+                     const auto element_size = tree_helper::SizeAlloc(element_type);
                      allocation_information->precision_map[current_size] = element_size;
                   }
                   else
@@ -1974,7 +1974,7 @@ DesignFlowStep_Status allocation::InternalExec()
                if(tree_helper::IsVectorType(type))
                {
                   const auto element_type = tree_helper::CGetElements(type);
-                  const auto element_size = tree_helper::Size(element_type);
+                  const auto element_size = tree_helper::SizeAlloc(element_type);
                   allocation_information->precision_map[current_size] = element_size;
                }
                else
@@ -2934,7 +2934,7 @@ void allocation::IntegrateTechnologyLibraries()
                    "Something of wrong happened");
       allocation_information->vars_to_memory_units[var] = current_size;
       allocation_information->memory_units[current_size] = var;
-      allocation_information->memory_units_sizes[current_size] = tree_helper::Size(TM->CGetTreeReindex(var)) / 8;
+      allocation_information->memory_units_sizes[current_size] = tree_helper::SizeAlloc(TM->CGetTreeReindex(var)) / 8;
       allocation_information->precision_map[current_size] = 0;
       /// check clock constraints compatibility
       auto* fu_br = GetPointer<functional_unit>(current_fu);

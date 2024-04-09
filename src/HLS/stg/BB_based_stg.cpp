@@ -893,6 +893,21 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "<--Built STG of BB" + STR(fbb->CGetBBNodeInfo(*vit)->block->number));
+      if(is_function_pipelined)
+      {
+         HLS->STG->GetStg()->GetStateTransitionGraphInfo()->n_stages =
+             1 + from_strongtype_cast<unsigned int>(max_cstep - min_cstep);
+      }
+      if(isLP)
+      {
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                        "---Iteration latency for function " + FB->CGetBehavioralHelper()->get_function_name() + ":BB" +
+                            std::to_string(BBIndex) + " = " +
+                            std::to_string(1 + from_strongtype_cast<unsigned int>(max_cstep - min_cstep)));
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                        "---Initiation Interval for function " + FB->CGetBehavioralHelper()->get_function_name() +
+                            ":BB" + std::to_string(BBIndex) + " = " + std::to_string(LPII));
+      }
    }
 
    /// connect two states belonging to different basic blocks
@@ -1064,7 +1079,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
 
    ///*****************************************************
 
-   HLS->STG->ComputeCyclesCount(is_function_pipelined);
+   HLS->STG->ComputeCyclesCount();
    HLS->registered_done_port = [&]() {
       if(HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles != 1 && !is_function_pipelined)
       {
@@ -1091,9 +1106,11 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                   "-->State Transition Graph Information of function " +
                       FB->CGetBehavioralHelper()->get_function_name() + ":");
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                  "---Number of operations: " + STR(boost::num_vertices(*(FB->CGetOpGraph(FunctionBehavior::CFG)))));
+                  "---Number of operations: " +
+                      STR(boost::num_vertices(*(FB->CGetOpGraph(FunctionBehavior::CFG))) - 2));
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level,
-                  "---Number of basic blocks: " + STR(boost::num_vertices(*(FB->CGetBBGraph(FunctionBehavior::BB)))));
+                  "---Number of basic blocks: " +
+                      STR(boost::num_vertices(*(FB->CGetBBGraph(FunctionBehavior::BB))) - 2));
    HLS->STG->print_statistics();
    if(has_registered_inputs)
    {

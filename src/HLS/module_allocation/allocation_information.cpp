@@ -1377,7 +1377,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
             if(tree_helper::IsVectorType(type))
             {
                const auto element_type = tree_helper::CGetElements(type);
-               const auto element_size = tree_helper::Size(element_type);
+               const auto element_size = tree_helper::SizeAlloc(element_type);
                max_size_in = std::max(max_size_in, element_size);
                if(min_n_elements == 0 || ((128 / element_size) < min_n_elements))
                {
@@ -1415,8 +1415,8 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
             if(tree_helper::IsVectorType(type))
             {
                const auto element_type = tree_helper::CGetElements(type);
-               const auto vector_size = tree_helper::Size(type);
-               const auto element_size = tree_helper::Size(element_type);
+               const auto vector_size = tree_helper::SizeAlloc(type);
+               const auto element_size = tree_helper::SizeAlloc(element_type);
                info->real_input_nelem.push_back(vector_size / element_size);
                info->base128_input_nelem.push_back(128 / element_size);
                info->input_prec.push_back(element_size);
@@ -1515,8 +1515,8 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       if(tree_helper::IsVectorType(type))
       {
          const auto element_type = tree_helper::CGetElements(type);
-         const auto element_size = tree_helper::Size(element_type);
-         const auto output_size = resize_1_8_pow2(tree_helper::Size(out_node));
+         const auto element_size = tree_helper::SizeAlloc(element_type);
+         const auto output_size = tree_helper::SizeAlloc(out_node);
          info->real_output_nelem = output_size / element_size;
          info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;
@@ -1607,7 +1607,8 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
             if(tree_helper::IsVectorType(type))
             {
                const auto element_type = tree_helper::CGetElements(type);
-               const auto element_size = tree_helper::Size(element_type);
+               const auto element_size = tree_helper::SizeAlloc(element_type);
+               info->output_prec = tree_helper::SizeAlloc(out_node);
                info->base128_output_nelem = 128 / element_size;
                info->real_output_nelem = info->output_prec / element_size;
                info->output_prec = element_size;
@@ -1652,9 +1653,9 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       if(tree_helper::IsVectorType(type))
       {
          const auto element_type = tree_helper::CGetElements(type);
-         const auto element_size = tree_helper::Size(element_type);
-         const auto output_size = resize_1_8_pow2(out_prec);
-         info->real_output_nelem = output_size / element_size;
+         const auto element_size = tree_helper::SizeAlloc(element_type);
+         out_prec = tree_helper::SizeAlloc(out_node);
+         info->real_output_nelem = out_prec / element_size;
          info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;
       }
@@ -1680,7 +1681,7 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
          info->real_output_nelem = 0;
          info->base128_output_nelem = 0;
       }
-      if(current_op == "cond_expr" && max_size_in > 64 && info->node_kind == "VECTOR_BOOL")
+      if(current_op == "cond_expr" && max_size_in > 64)
       {
          max_size_in = 64;
       }
@@ -1708,7 +1709,8 @@ void AllocationInformation::GetNodeTypePrec(const vertex node, const OpGraphCons
       if(tree_helper::IsVectorType(type))
       {
          const auto element_type = tree_helper::CGetElements(type);
-         const auto element_size = tree_helper::Size(element_type);
+         const auto element_size = tree_helper::SizeAlloc(element_type);
+         info->output_prec = tree_helper::SizeAlloc(out_node);
          info->real_output_nelem = info->output_prec / element_size;
          info->base128_output_nelem = 128 / element_size;
          info->output_prec = element_size;

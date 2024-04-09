@@ -413,7 +413,19 @@ DesignFlowStep_Status create_tree_manager::Exec()
                fd->set_pipelining(true);
                if(val == "frp")
                {
-                  /// TO BE FIXED once the other pipeline styles are implemented
+                  fd->set_pipeline_style(function_decl::FRP_STYLE);
+               }
+               else if(val == "flp")
+               {
+                  fd->set_pipeline_style(function_decl::FLP_STYLE);
+               }
+               else if(val == "stp")
+               {
+                  fd->set_pipeline_style(function_decl::STP_STYLE);
+               }
+               else
+               {
+                  THROW_ERROR("Unsupported function pipelining style");
                }
             }
          }

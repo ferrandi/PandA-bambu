@@ -84,7 +84,7 @@
 #define DEFAULT_MAX_CYCLES_BOUNDED (8)
 
 StateTransitionGraphManager::StateTransitionGraphManager(const HLS_managerConstRef _HLSMgr, hlsRef _HLS,
-                                                         const ParameterConstRef _Param, bool is_function_pipelined)
+                                                         const ParameterConstRef _Param, bool _is_function_pipelined)
     : state_transition_graphs_collection(StateTransitionGraphsCollectionRef(new StateTransitionGraphsCollection(
           StateTransitionGraphInfoRef(new StateTransitionGraphInfo(
               _HLSMgr->CGetFunctionBehavior(_HLS->functionId)->CGetOpGraph(FunctionBehavior::CFG))),
@@ -104,12 +104,13 @@ StateTransitionGraphManager::StateTransitionGraphManager(const HLS_managerConstR
       _max_cycles_bounded(_Param->IsParameter(PP_MAX_CYCLES_BOUNDED) ?
                               _Param->GetParameter<unsigned int>(PP_MAX_CYCLES_BOUNDED) :
                               DEFAULT_MAX_CYCLES_BOUNDED),
+      is_function_pipelined(_is_function_pipelined),
       HLS(_HLS),
       STG_builder(StateTransitionGraph_constructorRef(
           new StateTransitionGraph_constructor(state_transition_graphs_collection, _HLSMgr, _HLS->functionId)))
 {
    STG_builder->create_entry_state();
-   if(!is_function_pipelined)
+   if(!_is_function_pipelined)
    {
       STG_builder->create_exit_state();
    }
@@ -132,10 +133,10 @@ const StateTransitionGraphConstRef StateTransitionGraphManager::CGetEPPStg() con
    return EPP_STG_graph;
 }
 
-void StateTransitionGraphManager::ComputeCyclesCount(bool is_pipelined)
+void StateTransitionGraphManager::ComputeCyclesCount()
 {
    auto info = STG_graph->GetStateTransitionGraphInfo();
-   if(is_pipelined || (info->is_a_dag && !Param->getOption<bool>(OPT_disable_bounded_function)))
+   if(is_function_pipelined || (info->is_a_dag && !Param->getOption<bool>(OPT_disable_bounded_function)))
    {
       std::list<vertex> sorted_vertices;
       ACYCLIC_STG_graph->TopologicalSort(sorted_vertices);
@@ -165,11 +166,12 @@ void StateTransitionGraphManager::ComputeCyclesCount(bool is_pipelined)
       }
       THROW_ASSERT(CSteps_min.find(info->exit_node) != CSteps_min.end(), "Exit node not reachable");
       THROW_ASSERT(CSteps_max.find(info->exit_node) != CSteps_max.end(), "Exit node not reachable");
-      info->min_cycles = CSteps_min.find(info->exit_node)->second - (is_pipelined ? 0 : 1);
-      info->max_cycles = CSteps_max.find(info->exit_node)->second - (is_pipelined ? 0 : 1);
+      info->min_cycles = CSteps_min.find(info->exit_node)->second - (is_function_pipelined ? 0 : 1);
+      info->max_cycles = CSteps_max.find(info->exit_node)->second - (is_function_pipelined ? 0 : 1);
+      info->has_dummy_state = has_dummy_state || Param->getOption<bool>(OPT_disable_bounded_function);
       info->bounded =
-          is_pipelined || (info->min_cycles == info->max_cycles && info->max_cycles <= _max_cycles_bounded &&
-                           info->min_cycles > 0 && !has_dummy_state);
+          is_function_pipelined || (info->min_cycles == info->max_cycles && info->max_cycles <= _max_cycles_bounded &&
+                                    info->min_cycles > 0 && !has_dummy_state);
    }
 }
 
@@ -258,7 +260,8 @@ StateTransitionGraphRef StateTransitionGraphManager::GetEPPStg()
 
 unsigned int StateTransitionGraphManager::get_number_of_states() const
 {
-   return static_cast<unsigned int>(boost::num_vertices(*state_transition_graphs_collection) - 2);
+   return static_cast<unsigned int>(boost::num_vertices(*state_transition_graphs_collection) - 2 +
+                                    (is_function_pipelined ? 1 : 0));
 }
 
 void StateTransitionGraphManager::print_statistics() const
@@ -296,6 +299,11 @@ void StateTransitionGraphManager::specialise_mu(structural_objectRef& mu_mod, ge
    const auto& ops = mut->get_ops();
    auto n_in_ports = static_cast<unsigned int>(ops.size());
    port->add_n_ports(n_in_ports, inOps);
+   if(is_function_pipelined)
+   {
+      structural_objectRef inStarts = mu_mod->find_member("starts", port_vector_o_K, mu_mod);
+      GetPointer<port_o>(inStarts)->add_n_ports(n_in_ports, inStarts);
+   }
 }
 
 void StateTransitionGraphManager::add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port)
@@ -307,9 +315,19 @@ void StateTransitionGraphManager::add_to_SM(structural_objectRef clock_port, str
    {
       auto mu = state2mu.second;
       std::string name = mu->get_string();
-      std::string library = HLS->HLS_D->get_technology_manager()->get_library(SIMPLEJOIN_STD);
-      structural_objectRef mu_mod = SM->add_module_from_technology_library(name, SIMPLEJOIN_STD, library, circuit,
-                                                                           HLS->HLS_D->get_technology_manager());
+      structural_objectRef mu_mod;
+      if(is_function_pipelined)
+      {
+         std::string library = HLS->HLS_D->get_technology_manager()->get_library(COMPLEXJOIN_STD);
+         mu_mod = SM->add_module_from_technology_library(name, COMPLEXJOIN_STD, library, circuit,
+                                                         HLS->HLS_D->get_technology_manager());
+      }
+      else
+      {
+         std::string library = HLS->HLS_D->get_technology_manager()->get_library(SIMPLEJOIN_STD);
+         mu_mod = SM->add_module_from_technology_library(name, SIMPLEJOIN_STD, library, circuit,
+                                                         HLS->HLS_D->get_technology_manager());
+      }
       specialise_mu(mu_mod, mu);
 
       structural_objectRef port_ck = mu_mod->find_member(CLOCK_PORT_NAME, port_o_K, mu_mod);

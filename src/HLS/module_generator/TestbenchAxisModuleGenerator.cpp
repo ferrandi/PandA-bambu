@@ -96,8 +96,7 @@ void TestbenchAxisModuleGenerator::InternalExec(std::ostream& out, structural_ob
    if(if_dir == port_o::IN)
    {
       ip_components = "TestbenchFifoRead";
-      out << "assign tb_done_port = 1'b1;\n\n"
-          << "TestbenchFifoRead #(.index(index),\n"
+      out << "TestbenchFifoRead #(.index(index),\n"
           << "  .CHECK_ACK(1),\n"
           << "  .BITSIZE_dout(BITSIZE_data)) fifo_read(.clock(clock),\n"
           << "  .setup_port(setup_port),\n"
@@ -110,8 +109,7 @@ void TestbenchAxisModuleGenerator::InternalExec(std::ostream& out, structural_ob
    {
       ip_components = "TestbenchFifoWrite";
       out << "wire _full_n;\n"
-          << "assign " << port_prefix << "_TREADY = _full_n;\n"
-          << "assign tb_done_port = ~_full_n;\n\n"
+          << "assign " << port_prefix << "_TREADY = _full_n;\n\n"
           << "TestbenchFifoWrite #(.index(index),\n"
           << "  .BITSIZE_din(BITSIZE_data)) fifo_write(.clock(clock),\n"
           << "  .setup_port(setup_port),\n"

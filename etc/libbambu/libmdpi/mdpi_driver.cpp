@@ -262,9 +262,13 @@ class shared_memmap : public memmap
 };
 #endif
 
+interface::interface(uint8_t idx) : _idx(idx)
+{
+}
+
 int interface::state(int data)
 {
-   error("Information not available for this interface.\n");
+   if_error("Unknown data required: %d.\n", data);
    return interface::IF_ERROR;
 }
 
@@ -275,13 +279,13 @@ class port_interface : public interface
    const bptr_t _data;
 
  public:
-   port_interface(void* data, uint16_t bitsize)
-       : interface(),
+   port_interface(uint8_t idx, void* data, uint16_t bitsize)
+       : interface(idx),
          _data(reinterpret_cast<bptr_t>(data)),
          _bitsize(bitsize),
          _size(bitsize / 8 + ((bitsize % 8) ? 1 : 0))
    {
-      debug("Interface port for " BPTR_FORMAT " %u bits.\n", bptr_to_int(_data), _bitsize);
+      if_debug("Port interface for " BPTR_FORMAT " %u bits.\n", bptr_to_int(_data), _bitsize);
    }
 
    int read(bptr_t data, uint16_t bitsize, ptr_t /*addr*/, bool /*shift*/) override
@@ -301,7 +305,7 @@ class port_interface : public interface
 
 void __m_interface_port(uint8_t idx, void* bits, uint16_t bitsize)
 {
-   __m_interface_set(idx, new port_interface(bits, bitsize));
+   __m_interface_set(idx, new port_interface(idx, bits, bitsize));
 }
 
 void __m_interface_ptr(uint8_t idx, bptr_t* bits, uint16_t bitsize)
@@ -313,7 +317,7 @@ void __m_interface_ptr(uint8_t idx, bptr_t* bits, uint16_t bitsize)
       info("Pointer parameter " BPTR_FORMAT " mapped at " PTR_FORMAT "\n", bptr_to_int(addr), dst);
       assert((bitsize == PTR_SIZE || dst < (UINT64_MAX >> (64 - PTR_SIZE))) && "Pointer value overflow.");
       *bits = ptr_to_bptr(dst);
-      return __m_interface_set(idx, new port_interface(bits, bitsize));
+      return __m_interface_set(idx, new port_interface(idx, bits, bitsize));
    }
    error("Unknown parameter %u address mapping for " BPTR_FORMAT "\n", idx, bptr_to_int(addr));
    // TODO: report to simulator
@@ -329,16 +333,16 @@ class array_interface : public interface
    const uint64_t _size;
 
  public:
-   array_interface(void* data, uint16_t bitsize, uint8_t align, uint64_t size)
-       : interface(),
+   array_interface(uint8_t idx, void* data, uint16_t bitsize, uint8_t align, uint64_t size)
+       : interface(idx),
          _base(reinterpret_cast<bptr_t>(data)),
          _bitsize(bitsize),
          _align(align),
          _esize(bitsize / 8 + ((bitsize % 8 ? 1 : 0))),
          _size(size)
    {
-      debug("Interface array for " BPTR_FORMAT ", %llu elements of %u bits aligned at %u bytes.\n", bptr_to_int(_base),
-            _size, _bitsize, _align);
+      if_debug("Array interface for " BPTR_FORMAT ", %llu elements of %u bits aligned at %u bytes.\n",
+               bptr_to_int(_base), _size, _bitsize, _align);
    }
 
    int read(bptr_t data, uint16_t DEBUG_PARAM(bitsize), ptr_t addr, bool /*shift*/) override
@@ -346,7 +350,7 @@ class array_interface : public interface
       assert(bitsize == _bitsize && "Bitsize mismatch");
       if(addr >= _size)
       {
-         error("Access out of bounds: " PTR_FORMAT " > %llu\n", addr, _size);
+         if_error("Access out of bounds: " PTR_FORMAT " > %llu\n", addr, _size);
          return IF_ERROR;
       }
       memcpy(data, _base + (_align * addr), _esize);
@@ -358,7 +362,7 @@ class array_interface : public interface
       assert(bitsize == _bitsize && "Bitsize mismatch");
       if(addr >= _size)
       {
-         error("Access out of bounds: " PTR_FORMAT " > %llu\n", addr, _size);
+         if_error("Access out of bounds: " PTR_FORMAT " > %llu\n", addr, _size);
          return IF_ERROR;
       }
       memcpy(_base + (_align * addr), data, _esize);
@@ -368,7 +372,7 @@ class array_interface : public interface
 
 void __m_interface_array(uint8_t idx, void* base, uint16_t bitsize, uint8_t align, uint64_t size)
 {
-   __m_interface_set(idx, new array_interface(base, bitsize, align, size));
+   __m_interface_set(idx, new array_interface(idx, base, bitsize, align, size));
 }
 
 class fifo_interface : public interface
@@ -385,16 +389,16 @@ class fifo_interface : public interface
    }
 
  public:
-   fifo_interface(void* data, uint16_t bitsize, uint8_t align, uint64_t size)
-       : interface(),
+   fifo_interface(uint8_t idx, void* data, uint16_t bitsize, uint8_t align, uint64_t size)
+       : interface(idx),
          _base(reinterpret_cast<bptr_t>(data)),
          _end(_base + (align * size)),
          _bitsize(bitsize),
          _align(align),
          _esize(bitsize / 8 + ((bitsize % 8 ? 1 : 0)))
    {
-      debug("Interface FIFO for " BPTR_FORMAT ", %llu elements of %u bits aligned at %u bytes.\n", bptr_to_int(_base),
-            size, _bitsize, _align);
+      if_debug("FIFO interface for " BPTR_FORMAT ", %llu elements of %u bits aligned at %u bytes.\n",
+               bptr_to_int(_base), size, _bitsize, _align);
    }
 
    int read(bptr_t data, uint16_t DEBUG_PARAM(bitsize), ptr_t /*addr*/, bool shift) override
@@ -402,13 +406,19 @@ class fifo_interface : public interface
       assert(bitsize == _bitsize && "Bitsize mismatch");
       if(_base == _end)
       {
-         return IF_EMPTY;
+         if(shift)
+         {
+            if_error("Read on empty FIFO.\n");
+            return IF_EMPTY;
+         }
+         return 0;
       }
-      memcpy(data, _base, _esize);
       if(shift)
       {
          _base += _align;
+         if_debug("Item pop (%u left).\n", _size());
       }
+      memcpy(data, _base, _esize);
       return _size();
    }
 
@@ -417,12 +427,14 @@ class fifo_interface : public interface
       assert(bitsize == _bitsize && "Bitsize mismatch");
       if(_base == _end)
       {
+         if_error("Write on full FIFO.\n");
          return IF_FULL;
       }
       memcpy(_base, data, _esize);
       if(shift)
       {
          _base += _align;
+         if_debug("Item push (%u free).\n", _size());
       }
       return _size();
    }
@@ -433,46 +445,46 @@ class fifo_interface : public interface
       {
          return _size();
       }
-      return IF_ERROR;
+      return interface::state(data);
    }
 };
 
 void __m_interface_fifo(uint8_t idx, void* base, uint16_t bitsize, uint8_t align, uint64_t size)
 {
-   __m_interface_set(idx, new fifo_interface(base, bitsize, align, size));
+   __m_interface_set(idx, new fifo_interface(idx, base, bitsize, align, size));
 }
 
 class mem_interface : public interface
 {
  public:
-   mem_interface() : interface()
+   mem_interface(uint8_t idx) : interface(idx)
    {
-      debug("Interface memory.\n");
+      if_debug("Memory interface.\n");
    }
 
-   int read(bptr_t data, uint16_t bitsize, ptr_t addr, bool shift) override
+   int read(bptr_t data, uint16_t bitsize, ptr_t addr, bool /*shift*/) override
    {
       assert((bitsize % 8) == 0 && "Expected byte-aligned memory address");
       bptr_t __addr = __m_mapper->addrmap(addr);
       if(__addr)
       {
-         debug("Read %u bytes at " PTR_FORMAT "->" BPTR_FORMAT "\n", bitsize / 8, addr, bptr_to_int(__addr));
+         if_debug("Read %u bytes at " PTR_FORMAT "->" BPTR_FORMAT "\n", bitsize / 8, addr, bptr_to_int(__addr));
          memcpy(data, __addr, bitsize / 8);
       }
       else
       {
-         error("Read to non-mapped address " PTR_FORMAT ".\n", addr);
+         if_error("Read to non-mapped address " PTR_FORMAT ".\n", addr);
          return IF_ERROR;
       }
       return IF_OK;
    }
 
-   int write(bptr_t data, uint16_t bitsize, ptr_t addr, bool shift) override
+   int write(bptr_t data, uint16_t bitsize, ptr_t addr, bool /*shift*/) override
    {
       bptr_t __addr = __m_mapper->addrmap(addr);
       if(__addr)
       {
-         debug("Write %u bits at " PTR_FORMAT "->" BPTR_FORMAT "\n", bitsize, addr, bptr_to_int(__addr));
+         if_debug("Write %u bits at " PTR_FORMAT "->" BPTR_FORMAT "\n", bitsize, addr, bptr_to_int(__addr));
          auto floor_bytes = bitsize / 8;
          memcpy(__addr, data, floor_bytes);
          auto spare = bitsize % 8;
@@ -484,7 +496,7 @@ class mem_interface : public interface
       }
       else
       {
-         error("Write to non-mapped address " PTR_FORMAT ".\n", addr);
+         if_error("Write to non-mapped address " PTR_FORMAT ".\n", addr);
          return IF_ERROR;
       }
       return IF_OK;
@@ -493,7 +505,7 @@ class mem_interface : public interface
 
 void __m_interface_mem(uint8_t idx)
 {
-   __m_interface_set(idx, new mem_interface());
+   __m_interface_set(idx, new mem_interface(idx));
 }
 
 static FORCE_INLINE void __ipc_exit(mdpi_state_t state, uint8_t retval)
@@ -790,27 +802,27 @@ static void* __m_driver_loop(void*)
                debug("Interface %u operation: ", __m_ipc_operation.payload.interface.id);
                if(__m_ipc_operation.type & MDPI_OP_TYPE_IF_READ)
                {
-                  debug("read %u bits at " PTR_FORMAT ".\n", __m_ipc_operation.payload.interface.bitsize,
-                        __m_ipc_operation.payload.interface.addr);
+                  debug_append("read %u bits at " PTR_FORMAT ".\n", __m_ipc_operation.payload.interface.bitsize,
+                               __m_ipc_operation.payload.interface.addr);
                   __m_ipc_operation.payload.interface.info =
                       __m_interfaces.at(__m_ipc_operation.payload.interface.id)
                           ->read(__m_ipc_operation.payload.interface.buffer,
                                  __m_ipc_operation.payload.interface.bitsize, __m_ipc_operation.payload.interface.addr,
-                                 __m_ipc_operation.type & MDPI_OP_TYPE_IF_POP);
+                                 (__m_ipc_operation.type & MDPI_OP_TYPE_IF_POP) == MDPI_OP_TYPE_IF_POP);
                }
                else if(__m_ipc_operation.type & MDPI_OP_TYPE_IF_WRITE)
                {
-                  debug("write %u bits at " PTR_FORMAT ".\n", __m_ipc_operation.payload.interface.bitsize,
-                        __m_ipc_operation.payload.interface.addr);
+                  debug_append("write %u bits at " PTR_FORMAT ".\n", __m_ipc_operation.payload.interface.bitsize,
+                               __m_ipc_operation.payload.interface.addr);
                   __m_ipc_operation.payload.interface.info =
                       __m_interfaces.at(__m_ipc_operation.payload.interface.id)
                           ->write(__m_ipc_operation.payload.interface.buffer,
                                   __m_ipc_operation.payload.interface.bitsize, __m_ipc_operation.payload.interface.addr,
-                                  __m_ipc_operation.type & MDPI_OP_TYPE_IF_PUSH);
+                                  (__m_ipc_operation.type & MDPI_OP_TYPE_IF_PUSH) == MDPI_OP_TYPE_IF_PUSH);
                }
                else
                {
-                  debug("state (data: %u).\n", __m_ipc_operation.payload.interface.info);
+                  debug_append("state (data: %u).\n", __m_ipc_operation.payload.interface.info);
                   __m_ipc_operation.payload.interface.info = __m_interfaces.at(__m_ipc_operation.payload.interface.id)
                                                                  ->state(__m_ipc_operation.payload.interface.info);
                }

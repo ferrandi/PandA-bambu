@@ -719,11 +719,12 @@ class tree_manipulation
                                            const std::string& srcp) const;
 
    /**
-    * Create a vector bool type
-    * @param number_of_elements is the number of elements of a vector
+    * Create a vector type
+    * @param elt_type is the type of the element of the vector
+    * @param number_of_elements is the number of elements of the vector
     * @return the tree reindex of the created node
     */
-   tree_nodeRef CreateVectorBooleanType(const unsigned long long number_of_elements) const;
+   tree_nodeRef CreateVectorType(const tree_nodeConstRef& elt_type, integer_cst_t number_of_elements) const;
 
    /**
     * @brief CloneFunction duplicates a function

@@ -1154,11 +1154,44 @@ DesignFlowStep_Status IR_lowering::InternalExec()
             }();
 
             const auto extract_expr = [&](tree_nodeRef& op, bool set_temp_addr) {
+               tree_nodeRef min;
+               tree_nodeRef max;
                auto op_node = GET_NODE(op);
+               if(op_node->get_kind() == nop_expr_K)
+               {
+                  auto nop = GetPointer<nop_expr>(op_node);
+                  if(GET_NODE(nop->op)->get_kind() == ssa_name_K)
+                  {
+                     auto opssa = GetPointerS<ssa_name>(GET_NODE(nop->op));
+                     if(opssa->min && opssa->max)
+                     {
+                        auto is_op_signed = tree_helper::IsSignedIntegerType(nop->op);
+                        auto is_res_signed = tree_helper::IsSignedIntegerType(nop->type);
+                        if(is_op_signed == is_res_signed)
+                        {
+                           min = opssa->min;
+                           max = opssa->max;
+                        }
+                        else
+                        {
+                           auto size_op = tree_helper::Size(nop->op);
+                           if(is_res_signed)
+                           {
+                              min = TM->CreateUniqueIntegerCst(-(integer_cst_t(1ll) << (size_op - 1)), nop->type);
+                              max = TM->CreateUniqueIntegerCst((integer_cst_t(1ll) << (size_op - 1)) - 1, nop->type);
+                           }
+                           else
+                           {
+                              min = TM->CreateUniqueIntegerCst(0, nop->type);
+                              max = TM->CreateUniqueIntegerCst((integer_cst_t(1ll) << size_op) - 1, nop->type);
+                           }
+                        }
+                     }
+                  }
+               }
                const auto en_type = GetPointer<expr_node>(op_node) ? GetPointerS<expr_node>(op_node)->type :
                                                                      GetPointer<constructor>(op_node)->type;
-               const auto new_ga =
-                   tree_man->CreateGimpleAssign(en_type, tree_nodeRef(), tree_nodeRef(), op, function_id, srcp_default);
+               const auto new_ga = tree_man->CreateGimpleAssign(en_type, min, max, op, function_id, srcp_default);
                const auto ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
                op = ssa_vd;
                if(set_temp_addr)
@@ -1742,10 +1775,10 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                               return tree_man->GetBooleanType();
                            }
                            const auto element_type = tree_helper::CGetElements(lhs_type);
-                           const auto element_size = tree_helper::Size(element_type);
-                           const auto vector_size = tree_helper::Size(lhs_type);
+                           const auto element_size = tree_helper::SizeAlloc(element_type);
+                           const auto vector_size = tree_helper::SizeAlloc(lhs_type);
                            const auto num_elements = vector_size / element_size;
-                           return tree_man->CreateVectorBooleanType(num_elements);
+                           return tree_man->CreateVectorType(tree_man->GetBooleanType(), num_elements);
                         }();
                         GetPointer<binary_expr>(GET_NODE(ga->op1))->type = new_left_type;
                         const auto lt_ga = tree_man->CreateGimpleAssign(new_left_type, nullptr, nullptr, ga->op1,

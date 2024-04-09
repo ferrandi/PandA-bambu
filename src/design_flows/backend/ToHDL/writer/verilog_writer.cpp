@@ -1379,6 +1379,32 @@ void verilog_writer::write_state_declaration(const structural_objectRef& cir,
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Completed state declaration");
 }
 
+void verilog_writer::write_stage_declaration(const structural_objectRef& cir, int n_stages)
+{
+   auto* mod = GetPointer<module>(cir);
+   const NP_functionalityRef& np = mod->get_NP_functionality();
+   if(np->exist_NP_functionality(NP_functionality::FSM_CS)) // stages for context_switch
+   {
+      indented_output_stream->Append("reg [" + STR(n_stages - 1) + ":0] _present_stages[" +
+                                     STR(parameters->getOption<unsigned int>(OPT_context_switch) - 1) + ":0];\n");
+      indented_output_stream->Append("reg [" + STR(n_stages - 1) + ":0] _next_stages;\n");
+      // start initializing memory_FSM
+      indented_output_stream->Append("integer i;\n");
+      indented_output_stream->Append("initial begin\n");
+      indented_output_stream->Append("  for (i=0; i<" + STR(parameters->getOption<unsigned int>(OPT_context_switch)) +
+                                     "; i=i+1) begin\n");
+      indented_output_stream->Append("    _present_stages[i] = " + STR(n_stages) + "'d0;\n");
+      indented_output_stream->Append("  end\n");
+      indented_output_stream->Append("end\n");
+   }
+   else
+   {
+      indented_output_stream->Append("reg [" + STR(n_stages - 1) + ":0] _present_stages=0;\n");
+      indented_output_stream->Append("reg [" + STR(n_stages - 1) + ":0] _next_stages;\n");
+   }
+   indented_output_stream->Append("wire [" + STR(n_stages - 1) + ":0] _current_stages;\n");
+}
+
 void verilog_writer::write_present_state_update(const structural_objectRef cir, const std::string& reset_state,
                                                 const std::string& reset_port, const std::string& clock_port,
                                                 const std::string& reset_type, bool connect_present_next_state_signals)
@@ -1433,11 +1459,63 @@ void verilog_writer::write_present_state_update(const structural_objectRef cir, 
    }
 }
 
+void verilog_writer::write_present_stages_update(const structural_objectRef cir, const std::string& reset_port,
+                                                 const std::string& clock_port, const std::string& reset_type,
+                                                 const std::string& start_port, int n_stages)
+{
+   if(reset_type == "no" || reset_type == "sync")
+   {
+      indented_output_stream->Append("always @(posedge " + clock_port + ")\n");
+   }
+   else if(!parameters->getOption<bool>(OPT_reset_level))
+   {
+      indented_output_stream->Append("always @(posedge " + clock_port + " or negedge " + reset_port + ")\n");
+   }
+   else
+   {
+      indented_output_stream->Append("always @(posedge " + clock_port + " or posedge " + reset_port + ")\n");
+   }
+   indented_output_stream->Indent();
+   /// reset is needed even in case of reset_type == "no"
+   auto* mod = GetPointer<module>(cir);
+   const NP_functionalityRef& np = mod->get_NP_functionality();
+   if(np->exist_NP_functionality(NP_functionality::FSM_CS)) // stages for context_switch
+   {
+      if(!parameters->getOption<bool>(OPT_reset_level))
+      {
+         indented_output_stream->Append("if (" + reset_port + " == 1'b0) _present_stages[" +
+                                        STR(SELECTOR_REGISTER_FILE) + "] <= 0;\n");
+      }
+      else
+      {
+         indented_output_stream->Append("if (" + reset_port + " == 1'b1) _present_stages[" +
+                                        STR(SELECTOR_REGISTER_FILE) + "] <= 0;\n");
+      }
+      indented_output_stream->Append("else _present_stages[" + STR(SELECTOR_REGISTER_FILE) + "] <= _next_stages;\n");
+   }
+   else
+   {
+      if(!parameters->getOption<bool>(OPT_reset_level))
+      {
+         indented_output_stream->Append("if (" + reset_port + " == 1'b0) _present_stages <= 0;\n");
+      }
+      else
+      {
+         indented_output_stream->Append("if (" + reset_port + " == 1'b1) _present_stages <= 0;\n");
+      }
+      indented_output_stream->Append("else _present_stages <= _next_stages;\n");
+   }
+   indented_output_stream->Deindent();
+   indented_output_stream->Append("assign _current_stages = _present_stages | {{" + std::to_string(n_stages - 1) +
+                                  "{1'b0}}," + start_port + "};\n");
+}
+
 void verilog_writer::write_transition_output_functions(
     bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state,
     const std::string& reset_port, const std::string& start_port, const std::string& clock_port,
     std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool is_yosys,
-    const std::map<unsigned int, std::map<std::string, std::set<unsigned int>>>& bypass_signals)
+    const std::map<unsigned int, std::map<std::string, std::set<unsigned int>>>& bypass_signals,
+    const std::string& fsm_stage_i)
 {
    using tokenizer = boost::tokenizer<boost::char_separator<char>>;
    const char soc[3] = {STD_OPENING_CHAR, '\n', '\0'};
@@ -1463,6 +1541,44 @@ void verilog_writer::write_transition_output_functions(
    {
       numInputIgnored = 3;
    }
+
+   /// initialization of the stage data structures
+   std::set<std::string> dummy_states;
+   std::map<std::string, std::map<int, int>> stages_relations_out;
+   std::map<std::string, std::map<int, int>> stages_relations_in;
+
+   int n_stages = 0;
+   if(fsm_stage_i.size())
+   {
+      const auto StageVec = string_to_container<std::vector<std::string>>(fsm_stage_i, "|", false);
+      THROW_ASSERT(StageVec.size() == 4, "unexpected stage format");
+      n_stages = std::stoi(StageVec.at(0));
+      THROW_ASSERT(n_stages > 1, "at least two stages are needed in a pipelined function");
+      const auto DS = string_to_container<std::vector<std::string>>(StageVec.at(1), ";", false);
+      for(const auto& ds : DS)
+      {
+         dummy_states.insert(ds);
+      }
+      const auto StagesOut = string_to_container<std::vector<std::string>>(StageVec.at(2), ";", true);
+      for(const auto& st_tuple : StagesOut)
+      {
+         const auto tuple = string_to_container<std::vector<std::string>>(st_tuple, ":", true);
+         THROW_ASSERT(tuple.size() == 3, "unexpected stage format");
+         auto cmd_stage = std::stoi(tuple.at(2)) - 1;
+         THROW_ASSERT(cmd_stage >= 0, "Unexpected stage value");
+         stages_relations_out[tuple.at(0)][std::stoi(tuple.at(1))] = cmd_stage;
+      }
+      const auto StagesIn = string_to_container<std::vector<std::string>>(StageVec.at(3), ";", true);
+      for(const auto& st_tuple : StagesIn)
+      {
+         const auto tuple = string_to_container<std::vector<std::string>>(st_tuple, ":", true);
+         THROW_ASSERT(tuple.size() == 3, "unexpected stage format");
+         auto cmd_stage = std::stoi(tuple.at(2));
+         THROW_ASSERT(cmd_stage >= 0, "Unexpected stage value");
+         stages_relations_in[tuple.at(0)][std::stoi(tuple.at(1))] = cmd_stage;
+      }
+   }
+
    /// state transitions description
 #ifdef VERILOG_2001_SUPPORTED
    indented_output_stream->Append("\nalways @(*)\nbegin");
@@ -1488,6 +1604,10 @@ void verilog_writer::write_transition_output_functions(
    if(!single_proc && output_index == mod->get_out_port_size())
    {
       indented_output_stream->Append("_next_state = " + reset_state + ";\n");
+   }
+   if(fsm_stage_i.size())
+   {
+      indented_output_stream->Append("_next_stages = _current_stages;\n");
    }
 
    /// compute the default output
@@ -1616,7 +1736,17 @@ void verilog_writer::write_transition_output_functions(
                      if(bypass_signals.find(i) == bypass_signals.end() ||
                         bypass_signals.find(i)->second.find(present_state) == bypass_signals.find(i)->second.end())
                      {
-                        indented_output_stream->Append(port_name + " = 1'b1;\n");
+                        if(stages_relations_out.count(present_state) &&
+                           stages_relations_out.at(present_state).count(static_cast<int>(i)))
+                        {
+                           indented_output_stream->Append(
+                               port_name + " = _current_stages[" +
+                               std::to_string(stages_relations_out.at(present_state).at(static_cast<int>(i))) + "];\n");
+                        }
+                        else
+                        {
+                           indented_output_stream->Append(port_name + " = 1'b1;\n");
+                        }
                      }
                      else
                      {
@@ -1859,6 +1989,16 @@ void verilog_writer::write_transition_output_functions(
                               {
                                  first_test_or = false;
                               }
+                              if(stages_relations_in.count(present_state) &&
+                                 stages_relations_in.at(present_state).count(static_cast<int>(ind)))
+                              {
+                                 res_or_conditions +=
+                                     " _current_stages[" +
+                                     std::to_string(stages_relations_in.at(present_state).at(static_cast<int>(ind))) +
+                                     "] == 1'b1";
+                                 res_or_conditions += " && ";
+                                 need_parenthesis = true;
+                              }
 
                               res_or_conditions += port_name;
                               if((*in_or_conditions_tokens_it)[0] == '&')
@@ -1923,6 +2063,11 @@ void verilog_writer::write_transition_output_functions(
             if(single_proc || output_index == mod->get_out_port_size())
             {
                indented_output_stream->Append("_next_state = " + next_state + ";\n");
+               if(fsm_stage_i.size() && dummy_states.find(next_state) == dummy_states.end())
+               {
+                  indented_output_stream->Append("_next_stages = {_current_stages[" + std::to_string(n_stages - 2) +
+                                                 ":0],1'b0};\n");
+               }
             }
             for(unsigned int ind = 0; ind < mod->get_out_port_size(); ind++)
             {
@@ -1951,7 +2096,18 @@ void verilog_writer::write_transition_output_functions(
                         {
                            if(transition_outputs[ind] == "0" || transition_outputs[ind] == "1")
                            {
-                              indented_output_stream->Append(port_name + " = 1'b" + transition_outputs[ind] + ";\n");
+                              if(transition_outputs[ind] == "1" && stages_relations_out.count(present_state) &&
+                                 stages_relations_out.at(present_state).count(static_cast<int>(ind)))
+                              {
+                                 indented_output_stream->Append(
+                                     port_name + " = _current_stages[" +
+                                     std::to_string(stages_relations_out.at(present_state).at(static_cast<int>(ind))) +
+                                     "];\n");
+                              }
+                              else
+                              {
+                                 indented_output_stream->Append(port_name + " = 1'b" + transition_outputs[ind] + ";\n");
+                              }
                            }
                            else
                            {

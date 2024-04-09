@@ -1140,6 +1140,7 @@ end
           <parameter name="RESFILE">&quot;&quot;results.txt&quot;&quot;</parameter>
           <parameter name="RESET_ACTIVE">0</parameter>
           <parameter name="RESET_CYCLES">1</parameter>
+          <parameter name="RESET_ALWAYS">0</parameter>
           <parameter name="CLOCK_PERIOD">2.0</parameter>
           <parameter name="MAX_SIM_CYCLES">200000000</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -1157,7 +1158,7 @@ end
           <port_o id="start_port" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="TestbenchFSM RESFILE RESET_ACTIVE RESET_CYCLES CLOCK_PERIOD MAX_SIM_CYCLES" VERILOG_PROVIDED="`ifdef VERILATOR
+          <NP_functionality LIBRARY="TestbenchFSM RESFILE RESET_ACTIVE RESET_CYCLES RESET_ALWAYS CLOCK_PERIOD MAX_SIM_CYCLES" VERILOG_PROVIDED="`ifdef VERILATOR
 timeunit 1ps;
 timeprecision 1ps;
 `endif
@@ -1198,8 +1199,8 @@ begin
   state_succ_next = STATE_READY;
   rst = RESET_ACTIVE;
   rst_next = RESET_ACTIVE;
-  rst_count = RESET_CYCLES - 1;
-  rst_count_next = RESET_CYCLES - 1;
+  rst_count = RESET_CYCLES;
+  rst_count_next = RESET_CYCLES;
   setup = 0;
   setup_next = 0;
   start = 0;
@@ -1250,7 +1251,7 @@ begin
   STATE_RUNNING:
     begin
       automatic time curr_cycle = $rtoi($time/CLOCK_PERIOD);
-      if(curr_cycle >= over_time)
+      if(curr_cycle &gt;= over_time)
       begin
         automatic integer res_file;
         res_file = $fopen(RESFILE, &quot;a&quot;);
@@ -1312,22 +1313,34 @@ begin
       state_next = state_succ;
       if(state_succ == STATE_SETUP)
       begin
-        rst_next = RESET_ACTIVE;
-        rst_count_next = RESET_CYCLES - 1;
+        if(RESET_ALWAYS || rst_count &gt; 0)
+        begin
+          rst_next = RESET_ACTIVE;
+          rst_count_next = RESET_CYCLES;
+        end
+        else
+        begin
+          rst_count_next = 1;
+        end
       end
     end
   STATE_SETUP:
     begin
-      if(rst_count >= 0)
+      if(rst_count &gt; 1)
       begin
         setup_next = rst_count == 0;
-        rst_next = rst_count > 0 ? RESET_ACTIVE : ~RESET_ACTIVE;
+        rst_next = RESET_ACTIVE;
         rst_count_next = rst_count - 1;
+      end
+      else if(rst_count == 1)
+      begin
+        setup_next = 1;
+        rst_next = ~RESET_ACTIVE;
+        rst_count_next = 0;
       end
       else
       begin
         state_next = STATE_RUNNING;
-        rst_next = ~RESET_ACTIVE;
         setup_next = 0;
         start_next = 1;
       end
@@ -2599,19 +2612,10 @@ end"/>
             IP_COMPONENT="if_utils"
             LIBRARY="IF_PORT_OUT index val_port"
             VERILOG_PROVIDED="if_utils #(index, BITSIZE_val_port) m_utils();
-// TODO: remove done_once patch when pipielining done signal has been fixed
-reg done_once;
-initial done_once = 0;
-
 always @(posedge clock)
 begin
-  if(1RESET_VALUE)
+  if(done_port)
   begin
-    done_once = 0;
-  end
-  else if(done_port &amp; ~done_once)
-  begin
-    done_once = 1;
     void'(m_utils.write(val_port));
   end
 end"/>
@@ -2829,9 +2833,6 @@ endgenerate
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="tb_done_port" dir="OUT" is_memory="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
           <NP_functionality LIBRARY="TestbenchAcknowledge index" VERILOG_GENERATOR="TestbenchAcknowledgeModuleGenerator"/>
         </component_o>
       </circuit>
@@ -2853,9 +2854,6 @@ endgenerate
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="tb_done_port" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="TestbenchValid index" VERILOG_GENERATOR="TestbenchValidModuleGenerator"/>
@@ -2881,9 +2879,6 @@ endgenerate
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="tb_done_port" dir="OUT" is_memory="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
           <NP_functionality LIBRARY="TestbenchOvalid index" VERILOG_GENERATOR="TestbenchOvalidModuleGenerator"/>
         </component_o>
       </circuit>
@@ -2907,9 +2902,6 @@ endgenerate
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="tb_done_port" dir="OUT" is_memory="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
           <NP_functionality LIBRARY="TestbenchHandshake index" VERILOG_GENERATOR="TestbenchHandshakeModuleGenerator"/>
         </component_o>
       </circuit>
@@ -2931,9 +2923,6 @@ endgenerate
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="tb_done_port" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="TestbenchAxis index" VERILOG_GENERATOR="TestbenchAxisModuleGenerator"/>
@@ -2974,14 +2963,12 @@ if_utils #(index, BITSIZE_dout) m_utils();
 
 reg enable, enable_next;
 reg _empty_n, _empty_n_next;
-reg _empty_n_succ, _empty_n_succ_next;
 reg [BITSIZE_dout-1:0] val, val_next;
 
 initial
 begin
   enable = 0;
   _empty_n = 0;
-  _empty_n_succ = 0;
   val = 0;
 end
 
@@ -2992,17 +2979,15 @@ always @(posedge clock)
 begin
   enable &lt;= enable_next;
   _empty_n &lt;= _empty_n_next;
-  _empty_n_succ &lt;= _empty_n_succ_next;
   val &lt;= val_next;
   if(setup_port)
   begin
     automatic int data = 0;
     val &lt;= m_utils.read_i(data);
-    _empty_n &lt;= data &gt;= 0;
-    _empty_n_succ &lt;= data &gt; 0;
+    _empty_n &lt;= data &gt; 0;
     enable &lt;= 1&apos;b1;
   end
-  if((enable_next | done_port) &amp; read)
+  else if((enable_next | done_port) &amp; read)
   begin
     automatic int data = 0;
     if(~_empty_n_next)
@@ -3010,12 +2995,8 @@ begin
       $display(&quot;Too many read requests on interface %0d&quot;, index);
       $finish;
     end
-    if(_empty_n_succ_next)
-    begin
-      val &lt;= m_utils.pop(data);
-    end
-    _empty_n &lt;= _empty_n_succ_next;
-    _empty_n_succ &lt;= data &gt; 0;
+    val &lt;= m_utils.pop(data);
+    _empty_n &lt;= data &gt; 0;
   end
 end
 
@@ -3023,7 +3004,6 @@ always @(*)
 begin
   enable_next = enable &amp; ~done_port;
   _empty_n_next = _empty_n;
-  _empty_n_succ_next = _empty_n_succ;
   val_next = val;
 end
 
@@ -3042,8 +3022,7 @@ generate
       end
       if(done_port &amp; ~ack_check_next)
       begin
-        $display(&quot;Acknowledge signal never asserted on interface %0d.&quot;, index);
-        $finish;
+        $display(&quot;WARNING: Acknowledge signal never asserted on interface %0d.&quot;, index);
       end
     end
   end
@@ -3146,9 +3125,6 @@ end
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <port_o id="tb_done_port" dir="OUT" is_memory="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
           <NP_functionality LIBRARY="TestbenchFifo index" VERILOG_GENERATOR="TestbenchFifoModuleGenerator"/>
         </component_o>
       </circuit>
@@ -3170,9 +3146,6 @@ end
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
-          <port_o id="tb_done_port" dir="OUT" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="TestbenchNone index" VERILOG_GENERATOR="TestbenchNoneModuleGenerator"/>

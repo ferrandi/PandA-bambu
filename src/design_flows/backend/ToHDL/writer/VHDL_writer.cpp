@@ -1462,11 +1462,18 @@ void VHDL_writer::write_state_declaration(const structural_objectRef&, const std
    }
 }
 
+void VHDL_writer::write_stage_declaration(const structural_objectRef&, int n_stages)
+{
+   indented_output_stream->Append("signal present_stages : std_logic_vector(" + STR(n_stages - 1) + " downto 0);\n");
+   indented_output_stream->Append("signal next_stages : std_logic_vector(" + STR(n_stages - 1) + " downto 0);\n");
+   indented_output_stream->Append("signal current_stages : std_logic_vector(" + STR(n_stages - 1) + " downto 0);\n");
+}
+
 void VHDL_writer::write_present_state_update(const structural_objectRef, const std::string& reset_state,
                                              const std::string& reset_port, const std::string& clock_port,
                                              const std::string& reset_type, bool)
 {
-   write_comment("concurrent process#1: state registers\n");
+   write_comment("concurrent process#1: state register\n");
    if(reset_type == "no" || reset_type == "sync")
    {
       indented_output_stream->Append("state_reg: process(" + clock_port + ")\n");
@@ -1517,17 +1524,111 @@ void VHDL_writer::write_present_state_update(const structural_objectRef, const s
    indented_output_stream->Append("end process;\n");
 }
 
+void VHDL_writer::write_present_stages_update(const structural_objectRef, const std::string& reset_port,
+                                              const std::string& clock_port, const std::string& reset_type,
+                                              const std::string& start_port, int n_stages)
+{
+   write_comment("concurrent process#1: stages register\n");
+   if(reset_type == "no" || reset_type == "sync")
+   {
+      indented_output_stream->Append("state_reg: process(" + clock_port + ")\n");
+      indented_output_stream->Append("begin\n");
+      indented_output_stream->Indent();
+      indented_output_stream->Append("if (" + clock_port + "'event and " + clock_port + "='1') then\n");
+      indented_output_stream->Indent();
+      if(!parameters->getOption<bool>(OPT_reset_level))
+      {
+         indented_output_stream->Append("if (" + reset_port + "='0') then\n");
+      }
+      else
+      {
+         indented_output_stream->Append("if (" + reset_port + "='1') then\n");
+      }
+      indented_output_stream->Indent();
+      indented_output_stream->Append("present_stages <= (others => '0');\n");
+      indented_output_stream->Deindent();
+      indented_output_stream->Append("else\n");
+      indented_output_stream->Indent();
+      indented_output_stream->Append("present_stages <= next_state;\n");
+      indented_output_stream->Deindent();
+      indented_output_stream->Append("end if;\n");
+   }
+   else
+   {
+      indented_output_stream->Append("state_reg: process(" + clock_port + ", " + reset_port + ")\n");
+      indented_output_stream->Append("begin\n");
+      indented_output_stream->Indent();
+      if(!parameters->getOption<bool>(OPT_reset_level))
+      {
+         indented_output_stream->Append("if (" + reset_port + "='0') then\n");
+      }
+      else
+      {
+         indented_output_stream->Append("if (" + reset_port + "='1') then\n");
+      }
+      indented_output_stream->Indent();
+      indented_output_stream->Append("present_stages <= (others => '0');\n");
+      indented_output_stream->Deindent();
+      indented_output_stream->Append("elsif (" + clock_port + "'event and " + clock_port + "='1') then\n");
+      indented_output_stream->Indent();
+      indented_output_stream->Append("present_stages <= next_stages;\n");
+   }
+   indented_output_stream->Deindent();
+   indented_output_stream->Append("end if;\n");
+   indented_output_stream->Deindent();
+   indented_output_stream->Append("end process;\n");
+   indented_output_stream->Append("current_stages <= present_stages or (" + std::to_string(n_stages - 1) +
+                                  " downto 1 => '0') & " + start_port + ");\n");
+}
+
 void VHDL_writer::write_transition_output_functions(
     bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state,
     const std::string& reset_port, const std::string& start_port, const std::string& clock_port,
     std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool,
-    const std::map<unsigned int, std::map<std::string, std::set<unsigned int>>>& bypass_signals)
+    const std::map<unsigned int, std::map<std::string, std::set<unsigned int>>>& bypass_signals,
+    const std::string& fsm_stage_i)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing transition output function");
    auto* mod = GetPointer<module>(cir);
    boost::char_separator<char> state_sep(":", nullptr);
    boost::char_separator<char> sep(" ", nullptr);
    using tokenizer = boost::tokenizer<boost::char_separator<char>>;
+
+   /// initialization of the stage data structures
+   std::set<std::string> dummy_states;
+   std::map<std::string, std::map<int, int>> stages_relations_out;
+   std::map<std::string, std::map<int, int>> stages_relations_in;
+   int n_stages = 0;
+   if(fsm_stage_i.size())
+   {
+      const auto StageVec = string_to_container<std::vector<std::string>>(fsm_stage_i, "|", false);
+      THROW_ASSERT(StageVec.size() == 4, "unexpected stage format");
+      n_stages = std::stoi(StageVec.at(0));
+      THROW_ASSERT(n_stages > 1, "at least two stages are needed in a pipelined function");
+      const auto DS = string_to_container<std::vector<std::string>>(StageVec.at(1), ";", false);
+      for(const auto& ds : DS)
+      {
+         dummy_states.insert(ds);
+      }
+      const auto StagesOut = string_to_container<std::vector<std::string>>(StageVec.at(2), ";", true);
+      for(const auto& st_tuple : StagesOut)
+      {
+         const auto tuple = string_to_container<std::vector<std::string>>(st_tuple, ":", true);
+         THROW_ASSERT(tuple.size() == 3, "unexpected stage format");
+         auto cmd_stage = std::stoi(tuple.at(2)) - 1;
+         THROW_ASSERT(cmd_stage >= 0, "Unexpected stage value");
+         stages_relations_out[tuple.at(0)][std::stoi(tuple.at(1))] = cmd_stage;
+      }
+      const auto StagesIn = string_to_container<std::vector<std::string>>(StageVec.at(3), ";", true);
+      for(const auto& st_tuple : StagesIn)
+      {
+         const auto tuple = string_to_container<std::vector<std::string>>(st_tuple, ":", true);
+         THROW_ASSERT(tuple.size() == 3, "unexpected stage format");
+         auto cmd_stage = std::stoi(tuple.at(2));
+         THROW_ASSERT(cmd_stage >= 0, "Unexpected stage value");
+         stages_relations_in[tuple.at(0)][std::stoi(tuple.at(1))] = cmd_stage;
+      }
+   }
 
    /// get the default output of the reset state
 
@@ -1569,6 +1670,10 @@ void VHDL_writer::write_transition_output_functions(
    if(single_proc || output_index == mod->get_out_port_size())
    {
       indented_output_stream->Append("next_state <= " + reset_state + ";\n");
+   }
+   if(fsm_stage_i.size())
+   {
+      indented_output_stream->Append("next_stages = current_stages;\n");
    }
 
    indented_output_stream->Append("case present_state is\n");
@@ -1692,7 +1797,17 @@ void VHDL_writer::write_transition_output_functions(
                      if(bypass_signals.find(i) == bypass_signals.end() ||
                         bypass_signals.find(i)->second.find(present_state) == bypass_signals.find(i)->second.end())
                      {
-                        indented_output_stream->Append(port_name + " <= '1';\n");
+                        if(stages_relations_out.count(present_state) &&
+                           stages_relations_out.at(present_state).count(static_cast<int>(i)))
+                        {
+                           indented_output_stream->Append(
+                               port_name + " <= current_stages(" +
+                               std::to_string(stages_relations_out.at(present_state).at(static_cast<int>(i))) + ");\n");
+                        }
+                        else
+                        {
+                           indented_output_stream->Append(port_name + " <= '1';\n");
+                        }
                      }
                      else
                      {
@@ -1863,6 +1978,11 @@ void VHDL_writer::write_transition_output_functions(
             if(single_proc || output_index == mod->get_out_port_size())
             {
                indented_output_stream->Append("next_state <= " + next_state + ";\n");
+               if(fsm_stage_i.size() && dummy_states.find(next_state) == dummy_states.end())
+               {
+                  indented_output_stream->Append("next_stages <= current_stages(" + std::to_string(n_stages - 2) +
+                                                 " downto 0) & '0';\n");
+               }
             }
             for(unsigned int i2 = 0; i2 < mod->get_out_port_size(); i2++)
             {
@@ -1889,7 +2009,18 @@ void VHDL_writer::write_transition_output_functions(
                      {
                         if(transition_outputs[i2] == "0" || transition_outputs[i2] == "1")
                         {
-                           indented_output_stream->Append(port_name + " <= '" + transition_outputs[i2] + "';\n");
+                           if(transition_outputs[i2] == "1" && stages_relations_out.count(present_state) &&
+                              stages_relations_out.at(present_state).count(static_cast<int>(i2)))
+                           {
+                              indented_output_stream->Append(
+                                  port_name + " <= current_stages(" +
+                                  std::to_string(stages_relations_out.at(present_state).at(static_cast<int>(i2))) +
+                                  ");\n");
+                           }
+                           else
+                           {
+                              indented_output_stream->Append(port_name + " <= '" + transition_outputs[i2] + "';\n");
+                           }
                         }
                         else
                         {

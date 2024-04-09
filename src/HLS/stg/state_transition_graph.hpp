@@ -284,7 +284,14 @@ struct StateTransitionGraphInfo : public GraphInfo
    /// true when the FSM has cycles
    bool is_a_dag;
 
+   /// true in case the STG is for a fixed latency function
    bool bounded;
+
+   /// true when at least one state is a dummy state
+   bool has_dummy_state;
+
+   /// number of stages in case the function is pipelined
+   unsigned n_stages;
 
    /// in case of a dag it is possible to compute the minimum number of cycles
    unsigned int min_cycles;

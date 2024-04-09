@@ -101,7 +101,7 @@ void controller_cs::add_selector_register_file_port(structural_objectRef circuit
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - Selector signal added!");
 }
 
-void controller_cs::add_correct_transition_memory(const std::string& state_representation, structural_managerRef SM)
+void controller_cs::add_FSM(const std::string& state_representation, structural_managerRef SM)
 {
    structural_objectRef circuit = SM->get_circ();
    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
@@ -126,4 +126,7 @@ void controller_cs::add_correct_transition_memory(const std::string& state_repre
    {
       SM->add_NP_functionality(circuit, NP_functionality::FSM, state_representation);
    }
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Machine encoding");
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, state_representation);
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "****");
 }

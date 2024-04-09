@@ -151,6 +151,7 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       has_undefined_function_receiveing_pointers(false),
       state_variables(),
       pipeline_enabled(false),
+      is_stallable_pipelined_function(false),
       initiation_time(1),
       _channels_number(
           _parameters->isOption(OPT_channels_number) ? _parameters->getOption<unsigned int>(OPT_channels_number) : 0),
@@ -174,6 +175,7 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
    if(!_parameters->isOption(OPT_pipelining))
    {
       pipeline_enabled = decl_node->is_pipelined();
+      is_stallable_pipelined_function = decl_node->get_pipeline_style() == function_decl::STP_STYLE;
       initiation_time = decl_node->get_initiation_time();
       if(pipeline_enabled)
       {

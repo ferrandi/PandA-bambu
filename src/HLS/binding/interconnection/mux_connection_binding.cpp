@@ -65,6 +65,7 @@
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "liveness.hpp"
+#include "math_function.hpp"
 #include "memory.hpp"
 #include "memory_symbol.hpp"
 #include "multi_unbounded_obj.hpp"
@@ -248,8 +249,8 @@ unsigned int mux_connection_binding::address_precision(unsigned int precision, c
                          HLS->allocation_information->get_proxy_memory_var(fu_type);
       if(var && HLSMgr->Rmem->is_private_memory(var))
       {
-         unsigned long long int max_addr =
-             HLSMgr->Rmem->get_base_address(var, HLS->functionId) + tree_helper::Size(TreeM->CGetTreeReindex(var)) / 8;
+         unsigned long long int max_addr = HLSMgr->Rmem->get_base_address(var, HLS->functionId) +
+                                           tree_helper::SizeAlloc(TreeM->CGetTreeReindex(var)) / 8;
          unsigned int address_bitsize;
          for(address_bitsize = 1; max_addr > (1ull << address_bitsize); ++address_bitsize)
          {
@@ -326,7 +327,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
                {
                   unsigned long long int max_addr =
                       HLSMgr->Rmem->get_base_address(GET_INDEX_CONST_NODE(ref_var), HLS->functionId) +
-                      tree_helper::Size(ref_var) / 8;
+                      tree_helper::SizeAlloc(ref_var) / 8;
                   for(local_precision = 1; max_addr > (1ull << local_precision); ++local_precision)
                   {
                      ;
@@ -1457,25 +1458,14 @@ void mux_connection_binding::create_connections()
 
                   determine_connection(op, HLS_manager::io_binding_type(var_node_idx, 0), fu_obj, port_offset(1),
                                        port_index, data, bus_addr_bitsize, alignment, rstate, NULL_VERTEX, 0);
-                  if(Prec != algn && Prec % algn)
-                  {
-                     HLS_manager::check_bitwidth(Prec);
-                     determine_connection(
-                         op, HLS_manager::io_binding_type(0, Prec), fu_obj, port_offset(2), port_index, data,
-                         static_cast<unsigned>(object_bitsize(TreeM, HLS_manager::io_binding_type(0, Prec))), 0, rstate,
-                         NULL_VERTEX, 0);
-                  }
-                  else
-                  {
-                     const auto IR_var_bitsize = Prec != 0 ? Prec : tree_helper::Size(tn);
-                     HLS_manager::check_bitwidth(IR_var_bitsize);
-                     unsigned int var_bitsize;
-                     var_bitsize = static_cast<unsigned int>(IR_var_bitsize);
-                     determine_connection(
-                         op, HLS_manager::io_binding_type(0, var_bitsize), fu_obj, port_offset(2), port_index, data,
-                         static_cast<unsigned>(object_bitsize(TreeM, HLS_manager::io_binding_type(0, var_bitsize))), 0,
-                         rstate, NULL_VERTEX, 0);
-                  }
+                  const auto IR_var_bitsize = tree_helper::SizeAlloc(tn);
+                  HLS_manager::check_bitwidth(IR_var_bitsize);
+                  unsigned int var_bitsize;
+                  var_bitsize = static_cast<unsigned int>(IR_var_bitsize);
+                  determine_connection(
+                      op, HLS_manager::io_binding_type(0, var_bitsize), fu_obj, port_offset(2), port_index, data,
+                      static_cast<unsigned>(object_bitsize(TreeM, HLS_manager::io_binding_type(0, var_bitsize))), 0,
+                      rstate, NULL_VERTEX, 0);
                }
                else
                {

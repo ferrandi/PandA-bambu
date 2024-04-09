@@ -538,32 +538,6 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             ++idx;
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-
-         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Generating control flow loop for dataflow module");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-         const auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
-         THROW_ASSERT(sl->list_of_bloc.count(BB_ENTRY) && sl->list_of_bloc.count(BB_EXIT),
-                      "Expected entry and exit basic blocks for function " + fsymbol);
-         const auto& bb_entry = sl->list_of_bloc.at(BB_ENTRY);
-         THROW_ASSERT(bb_entry->list_of_succ.size() == 1, "Expected single entry basic block for function " + fsymbol);
-         const auto& bb_first = sl->list_of_bloc.at(bb_entry->list_of_succ.front());
-         for(auto& [bbi, bb] : sl->list_of_bloc)
-         {
-            if(std::find(bb->list_of_succ.begin(), bb->list_of_succ.end(), BB_EXIT) != bb->list_of_succ.end())
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---BB" + std::to_string(bbi) + " loop-back to entry BB" +
-                                  std::to_string(bb_first->number));
-               bb->list_of_succ.clear();
-               bb->list_of_succ.push_back(bb_first->number);
-               bb_first->list_of_pred.push_back(bbi);
-               const auto return_stmt = bb->CGetStmtList().back();
-               THROW_ASSERT(GetPointer<const gimple_return>(GET_CONST_NODE(return_stmt)),
-                            "Expected return statement as last statement");
-               bb->RemoveStmt(return_stmt, AppM);
-            }
-         }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
 
       std::map<std::string, TreeNodeSet> bundle_vdefs;
@@ -1320,14 +1294,11 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
       }
       THROW_ASSERT(!valid_ptr || tree_helper::IsPointerType(valid_ptr), "Valid type must be bool pointer");
       THROW_ASSERT(!gn->memdef && !gn->memuse, "");
-      THROW_ASSERT(gn->vdef, "");
-      const auto vdef = gn->vdef;
 
-      const auto data_size = tree_helper::Size(data_type);
+      const auto data_size = tree_helper::Size(interface_datatype);
       const auto sel_type = tree_man->GetBooleanType();
       const auto ret_type = tree_man->GetCustomIntegerType(data_size + 1, true);
-      const auto out_type = tree_man->GetCustomIntegerType(data_size, true);
-      const auto out_ptr_type = tree_man->GetPointerType(out_type);
+      const auto out_ptr_type = tree_man->GetPointerType(interface_datatype);
       const auto fdecl_node = [&]() {
          const auto interface_fname = ENCODE_FDNAME(arg_name, valid_var ? "_ReadAsync" : "_Read", "Channel");
          operationsR.insert(interface_fname);
@@ -1345,7 +1316,7 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
 
       // Mask and cast read data
       const auto retval = GetPointerS<const gimple_assign>(GET_CONST_NODE(new_call))->op0;
-      auto ga_mask = tree_man->CreateNopExpr(retval, out_type, nullptr, nullptr, fd->index);
+      auto ga_mask = tree_man->CreateNopExpr(retval, interface_datatype, nullptr, nullptr, fd->index);
       curr_bb->PushBefore(ga_mask, stmt, AppM);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  MASK: " + ga_mask->ToString());
       auto data_mask = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_mask))->op0;
@@ -1369,13 +1340,14 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
       {
          const auto data_ptr_type = tree_helper::CGetType(data_ptr);
          const auto data_ref = tree_man->create_binary_operation(
-             data_type, data_ptr, TM->CreateUniqueIntegerCst(0, data_ptr_type), BUILTIN_SRCP, mem_ref_K);
+             interface_datatype, data_ptr, TM->CreateUniqueIntegerCst(0, data_ptr_type), BUILTIN_SRCP, mem_ref_K);
          const auto ga_store = tree_man->create_gimple_modify_stmt(data_ref, data_mask, fd->index, BUILTIN_SRCP);
          if(valid_var)
          {
-            auto newSSAVdef = tree_man->create_ssa_name(tree_nodeRef(), tree_helper::CGetType(vdef), tree_nodeRef(),
-                                                        tree_nodeRef(), false, true);
-            GetPointerS<gimple_assign>(GET_NODE(ga_store))->SetVdef(newSSAVdef);
+            const auto vdef =
+                tree_man->create_ssa_name(tree_nodeRef(), tree_man->GetPointerType(tree_man->GetVoidType()),
+                                          tree_nodeRef(), tree_nodeRef(), false, true);
+            GetPointerS<gimple_assign>(GET_NODE(ga_store))->SetVdef(vdef);
             for(const auto& vuse : GetPointerS<gimple_assign>(GET_NODE(stmt))->vuses)
             {
                if(GetPointerS<gimple_node>(GET_NODE(ga_store))->AddVuse(vuse))
@@ -1383,13 +1355,14 @@ void InterfaceInfer::setReadInterface(tree_nodeRef stmt, const std::string& arg_
                   GetPointerS<ssa_name>(GET_NODE(vuse))->AddUseStmt(ga_store);
                }
             }
-            THROW_ASSERT(GET_NODE(vdef)->get_kind() == ssa_name_K, "unexpected condition");
-            auto vdef_ssa = GetPointerS<ssa_name>(GET_NODE(vdef));
+            THROW_ASSERT(gn->vdef, "Expected virtual ssa definition on store operation: " + gn->ToString());
+            THROW_ASSERT(GET_NODE(gn->vdef)->get_kind() == ssa_name_K, "unexpected condition");
+            auto vdef_ssa = GetPointerS<ssa_name>(GET_NODE(gn->vdef));
             for(const auto& usingStmt : vdef_ssa->CGetUseStmts())
             {
-               if(GetPointerS<gimple_node>(GET_NODE(usingStmt.first))->AddVuse(newSSAVdef))
+               if(GetPointerS<gimple_node>(GET_NODE(usingStmt.first))->AddVuse(vdef))
                {
-                  GetPointerS<ssa_name>(GET_NODE(newSSAVdef))->AddUseStmt(usingStmt.first);
+                  GetPointerS<ssa_name>(GET_NODE(vdef))->AddUseStmt(usingStmt.first);
                }
             }
             curr_bb->PushBefore(ga_store, stmt, AppM);
@@ -1572,10 +1545,8 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
       }
 
       const auto data_type = tree_helper::CGetType(data_obj);
-      const auto data_size = tree_helper::Size(data_type);
       const auto sel_type = tree_man->GetBooleanType();
-      const auto out_type = tree_man->GetCustomIntegerType(data_size, true);
-      const auto out_ptr_type = tree_man->GetPointerType(out_type);
+      const auto out_ptr_type = tree_man->GetPointerType(interface_datatype);
       const auto fdecl_node = [&]() {
          const auto interface_fname = ENCODE_FDNAME(arg_name, valid_var ? "_WriteAsync" : "_Write", "Channel");
          operationsW.insert(interface_fname);
@@ -1593,9 +1564,9 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "--- PCAST: " + ga_ptr->ToString());
          const auto out_data_ptr = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_ptr))->op0;
          const auto data_ref = tree_man->create_binary_operation(
-             out_type, out_data_ptr, TM->CreateUniqueIntegerCst(0, out_ptr_type), BUILTIN_SRCP, mem_ref_K);
+             interface_datatype, out_data_ptr, TM->CreateUniqueIntegerCst(0, out_ptr_type), BUILTIN_SRCP, mem_ref_K);
          const auto ga_load =
-             tree_man->CreateGimpleAssign(out_type, nullptr, nullptr, data_ref, fd->index, BUILTIN_SRCP);
+             tree_man->CreateGimpleAssign(interface_datatype, nullptr, nullptr, data_ref, fd->index, BUILTIN_SRCP);
          curr_bb->Replace(stmt, ga_load, true, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  LOAD: " + ga_load->ToString());
          data_obj = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_load))->op0;
@@ -1604,7 +1575,8 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
       else if(tree_helper::IsRealType(data_type))
       {
          const auto vc = tree_man->create_unary_operation(data_type, data_obj, BUILTIN_SRCP, view_convert_expr_K);
-         const auto ga_vc = tree_man->CreateGimpleAssign(out_type, nullptr, nullptr, vc, fd->index, BUILTIN_SRCP);
+         const auto ga_vc =
+             tree_man->CreateGimpleAssign(interface_datatype, nullptr, nullptr, vc, fd->index, BUILTIN_SRCP);
          curr_bb->PushBefore(ga_vc, stmt, AppM);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---  VIEW: " + ga_vc->ToString());
          data_obj = GetPointerS<const gimple_assign>(GET_CONST_NODE(ga_vc))->op0;

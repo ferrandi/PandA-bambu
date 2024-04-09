@@ -384,7 +384,7 @@ void MdpiWrapperCWriter::InternalWriteFile()
       args_init += "__m_param_alloc(" + std::to_string(param_idx) + ", sizeof(retval));\n";
       args_decl += "{&retval, 1, m_map_default(&retval)}";
       args_set += "m_interface_default(" + std::to_string(param_idx) + ", args[" + std::to_string(param_idx) +
-                  "].map_addr, " + std::to_string(tree_helper::Size(return_type)) + ", sizeof(retval));\n";
+                  "].map_addr, " + std::to_string(tree_helper::SizeAlloc(return_type)) + ", sizeof(retval));\n";
       ++param_idx;
    }
    args_set += "__m_interface_mem(" + std::to_string(param_idx) + ");\n";

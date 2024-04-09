@@ -130,11 +130,21 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
    const auto CGM = AppM->GetCallGraphManager();
    const auto CG = CGM->CGetCallGraph();
    const auto f_v = CGM->GetVertex(function_id);
+   /// Top has to be function pipelined
+   const auto fTopnode = TM->CGetTreeReindex(function_id);
+   auto fTNd = GET_NODE(fTopnode);
+   THROW_ASSERT(fTNd->get_kind() == function_decl_K, "unexpected condition");
+   auto fdT = GetPointerS<function_decl>(fTNd);
+   fdT->set_pipelining(true);
+   fdT->set_pipeline_style(function_decl::FRP_STYLE);
+   function_behavior->enable_function_pipelining();
+   function_behavior->disable_stp();
 
    tree_manipulation tree_man(TM, parameters, AppM);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Expand Dataflow modules");
    std::vector<unsigned int> new_modules;
+   std::set<unsigned int> module_ids;
    BOOST_FOREACH(EdgeDescriptor ie, boost::out_edges(f_v, *CG))
    {
       auto tgt = boost::target(ie, *CG);
@@ -149,13 +159,12 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Function " + tsymbol + " is not a dataflow module");
          continue;
       }
+      module_ids.insert(target_id);
       const auto call_info = CG->CGetFunctionEdgeInfo(ie);
       if(call_info->function_addresses.size() || call_info->indirect_call_points.size())
       {
          THROW_ERROR("Address/indirect function calls not supported in dataflow.");
       }
-
-      const auto fnode = TM->CGetTreeReindex(function_id);
       auto is_single_call = boost::in_degree(tgt, *CG) == 1;
       std::vector<unsigned int> call_points(is_single_call ? ++(call_info->direct_call_points.begin()) :
                                                              call_info->direct_call_points.begin(),
@@ -167,7 +176,7 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
          const auto module_suffix = "_" + std::to_string(call_id);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "---Clone module " + tsymbol + " -> " + tsymbol + module_suffix);
-         tree_man.VersionFunctionCall(call_node, fnode, module_suffix);
+         tree_man.VersionFunctionCall(call_node, fTopnode, module_suffix);
          const auto version_symbol = tsymbol + module_suffix;
          const auto version_fnode = TM->GetFunction(version_symbol);
          THROW_ASSERT(version_fnode, "Expected version function node for " + version_symbol);
@@ -180,12 +189,16 @@ DesignFlowStep_Status dataflow_cg_ext::InternalExec()
    }
    BOOST_FOREACH(EdgeDescriptor ie, boost::out_edges(f_v, *CG))
    {
-      const auto call_info = CG->CGetFunctionEdgeInfo(ie);
-      std::vector<unsigned int> call_points(call_info->direct_call_points.begin(), call_info->direct_call_points.end());
-      for(auto call_id : call_points)
+      auto tgt = boost::target(ie, *CG);
+      const auto target_id = CGM->get_function(tgt);
+      if(module_ids.count(target_id))
       {
-         const auto call_node = TM->CGetTreeReindex(call_id);
-         CleanVirtuals(TM, call_node);
+         const auto call_info = CG->CGetFunctionEdgeInfo(ie);
+         for(auto call_id : call_info->direct_call_points)
+         {
+            const auto call_node = TM->CGetTreeReindex(call_id);
+            CleanVirtuals(TM, call_node);
+         }
       }
    }
 

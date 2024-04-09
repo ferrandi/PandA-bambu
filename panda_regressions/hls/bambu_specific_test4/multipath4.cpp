@@ -41,7 +41,6 @@ class SubSystem
    }
 };
 
-
 class SimpleSystem
 {
    AddBlock<5> a5;

@@ -38,7 +38,7 @@
  * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
-//#undef NDEBUG
+// #undef NDEBUG
 #include "plugin_includes.hpp"
 
 #include <clang/AST/AST.h>
@@ -579,7 +579,7 @@ class PipelineHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
       {
          if(iequals(attr.first.id, "style"))
          {
-            if(!iequals(attr.second, "frp"))
+            if(!(iequals(attr.second, "stp") || iequals(attr.second, "flp") || iequals(attr.second, "frp")))
             {
                ReportError(attr.first.loc, "Not supported function pipelining style");
             }
@@ -821,19 +821,25 @@ const char* UnrollHLSPragmaHandler::PragmaKeyword = "unroll";
 
 class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
 {
+   int _parseAction;
+
    void forceNoInline(FunctionDecl* FD) const
    {
-      if(!FD->hasAttr<NoInlineAttr>())
+      if(_parseAction & ParseAction_Optimize)
       {
-         FD->addAttr(NoInlineAttr::CreateImplicit(FD->getASTContext()));
-         FD->dropAttr<AlwaysInlineAttr>();
+         if(!FD->hasAttr<NoInlineAttr>())
+         {
+            FD->addAttr(NoInlineAttr::CreateImplicit(FD->getASTContext()));
+            FD->dropAttr<AlwaysInlineAttr>();
+         }
+         FD->dropAttr<InternalLinkageAttr>();
       }
-      FD->dropAttr<InternalLinkageAttr>();
    }
 
  public:
-   DataflowHLSPragmaHandler(ASTContext& ctx, PrintingPolicy& pp, std::map<std::string, func_attr_t>& func_attributes)
-       : HLSPragmaAnalyzer(ctx, pp, func_attributes), HLSPragmaParser()
+   DataflowHLSPragmaHandler(ASTContext& ctx, PrintingPolicy& pp, int ParseAction,
+                            std::map<std::string, func_attr_t>& func_attributes)
+       : HLSPragmaAnalyzer(ctx, pp, func_attributes), HLSPragmaParser(), _parseAction(ParseAction)
    {
    }
    ~DataflowHLSPragmaHandler() = default;
@@ -868,7 +874,7 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
                if(auto callExpr = dyn_cast<CallExpr>(stmt))
                {
                   const auto calleeDecl = callExpr->getDirectCallee();
-                  if(calleeDecl)
+                  if(calleeDecl && !calleeDecl->isConstexpr())
                   {
                      LLVM_DEBUG(dbgs() << " -> " << MangledName(calleeDecl) << "\n");
                      GetFuncAttr(calleeDecl).attrs[key_loc_t("dataflow_module", SourceLocation())] = "1";
@@ -1657,7 +1663,7 @@ class HLSASTConsumer : public ASTConsumer
    } while(false)
 
       ADD_HANDLER(InterfaceHLSPragmaHandler, ctx, _PP, _pa, _func_attributes);
-      ADD_HANDLER(DataflowHLSPragmaHandler, ctx, _PP, _func_attributes);
+      ADD_HANDLER(DataflowHLSPragmaHandler, ctx, _PP, _pa, _func_attributes);
 
       if(_pa & ParseAction_Analyze)
       {

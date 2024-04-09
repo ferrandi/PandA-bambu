@@ -97,8 +97,8 @@ void Read_fifoModuleGenerator::InternalExec(std::ostream& out, structural_object
       THROW_ERROR("Registered FIFO interface not yet implemented.");
    }
 
-   out << "reg started, started_0;\n"
-       << "reg done_0;\n\n";
+   out << "reg started;\n"
+       << "wire started_0, done_0;\n\n";
 
    out << "always @(posedge clock 1RESET_EDGE)\n"
        << "begin\n"
@@ -112,14 +112,14 @@ void Read_fifoModuleGenerator::InternalExec(std::ostream& out, structural_object
        << "  end\n"
        << "end\n\n";
 
-   out << "always @(*)\n"
-       << "begin\n"
-       << "  started_0 = (started | " << _ports_in[i_start].name << ") & ~" << _ports_in[i_empty_n].name << ";\n"
-       << "  done_0 = ( started | " << _ports_in[i_start].name << ") & " << _ports_in[i_empty_n].name << ";\n"
-       << "end\n\n";
+   out << "assign started_0 = (started | " << _ports_in[i_start].name << ") & ~" << _ports_in[i_empty_n].name
+       << " & (~(1&" << _ports_in[i_in1].name << "));\n";
+   out << "assign done_0 = ( started | " << _ports_in[i_start].name << ") & (" << _ports_in[i_empty_n].name << "|(1&"
+       << _ports_in[i_in1].name << "));\n";
 
    out << "assign " << _ports_out[o_out1].name << " = {" << _ports_in[i_empty_n].name << ", " << _ports_in[i_dout].name
        << "};\n";
    out << "assign " << _ports_out[o_done].name << " = done_0;\n";
-   out << "assign " << _ports_out[o_read].name << " = done_0;\n";
+   out << "assign " << _ports_out[o_read].name << " = ( started | " << _ports_in[i_start].name << ") & "
+       << _ports_in[i_empty_n].name << ";\n";
 }

@@ -126,6 +126,13 @@ class tree_helper
    static unsigned long long TypeSize(const tree_nodeConstRef& tn);
 
    /**
+    * Return the size of a tree object when allocated in memory
+    * @param tn is the tree object
+    * @return the size of the object
+    */
+   static unsigned long long SizeAlloc(const tree_nodeConstRef& tn);
+
+   /**
     * Return the range of a tree object
     * @param tn is the tree object
     * @return the range of the object

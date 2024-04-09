@@ -241,6 +241,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
    const BBGraphConstRef fbb = FB->CGetBBGraph(FunctionBehavior::FBB);
    const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::DFG);
    auto is_function_pipelined = FB->is_function_pipelined();
+   auto has_pipelined_states = is_function_pipelined;
 
    /// Map between basic block node index and vertices
    CustomUnorderedMap<unsigned int, vertex> bb_index_map;
@@ -318,6 +319,7 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       // add pipelined state
       if(state_info->is_pipelined_state)
       {
+         has_pipelined_states = true;
          for(auto op : state_info->step_in)
          {
             HLS->Rliv->set_step(rosl, op.first, op.second, true);
@@ -394,224 +396,228 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
    vertex prev_state = exit_state;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                   "---prev_state: " + stg->CGetStateInfo(prev_state)->name + " prev_bb_index: " + STR(prev_bb_index));
-   for(const auto& rosl : reverse_order_state_list)
+   for(auto ind = (has_pipelined_states ? 0 : 1); ind < 2; ++ind)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                     "-->Computing live out for state " + HLS->STG->get_state_name(rosl));
-      // skip exit state
-      if(rosl == exit_state && !is_function_pipelined)
+      for(const auto& rosl : reverse_order_state_list)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Is an exit state");
-         continue;
-      }
-
-      StateInfoConstRef state_info = stg->CGetStateInfo(rosl);
-      // skip dummy states
-      if(state_info->is_dummy)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Is a dummy state");
-         continue;
-      }
-
-      unsigned int bb_index = get_bb_index_from_state_info(data, state_info);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---bb_index: " + STR(bb_index));
-      if(state_info->is_pipelined_state)
-      {
-         OutEdgeIterator o_e_it, o_e_end;
-         for(boost::tie(o_e_it, o_e_end) = boost::out_edges(rosl, *stg); o_e_it != o_e_end; ++o_e_it)
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "-->Computing live out for state " + HLS->STG->get_state_name(rosl));
+         // skip exit state
+         if(rosl == exit_state && !is_function_pipelined)
          {
-            vertex target_state = boost::target(*o_e_it, *stg);
-            prev_state = target_state;
-            StateInfoConstRef tgt_state_info = stg->CGetStateInfo(target_state);
-            prev_bb_index = get_bb_index_from_state_info(data, tgt_state_info);
-            if(prev_bb_index != bb_index)
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Is an exit state");
+            continue;
+         }
+
+         StateInfoConstRef state_info = stg->CGetStateInfo(rosl);
+         // skip dummy states
+         if(state_info->is_dummy)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Is a dummy state");
+            continue;
+         }
+
+         unsigned int bb_index = get_bb_index_from_state_info(data, state_info);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---bb_index: " + STR(bb_index));
+         if(state_info->is_pipelined_state)
+         {
+            OutEdgeIterator o_e_it, o_e_end;
+            for(boost::tie(o_e_it, o_e_end) = boost::out_edges(rosl, *stg); o_e_it != o_e_end; ++o_e_it)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---prev_bb_index " + STR(prev_bb_index) + " != bb_index " + STR(bb_index));
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---adding live out of BB " + STR(bb_index) + " to live out of state " +
-                                  state_info->name);
-               for(const auto& lo : fbb->CGetBBNodeInfo(bb_index_map[bb_index])->get_live_out())
+               vertex target_state = boost::target(*o_e_it, *stg);
+               prev_state = target_state;
+               StateInfoConstRef tgt_state_info = stg->CGetStateInfo(target_state);
+               prev_bb_index = get_bb_index_from_state_info(data, tgt_state_info);
+               if(prev_bb_index != bb_index)
                {
-                  if(HLSMgr->is_register_compatible(lo))
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---prev_bb_index " + STR(prev_bb_index) + " != bb_index " + STR(bb_index));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---adding live out of BB " + STR(bb_index) + " to live out of state " +
+                                     state_info->name);
+                  for(const auto& lo : fbb->CGetBBNodeInfo(bb_index_map[bb_index])->get_live_out())
                   {
-                     auto step = HLS->Rliv->GetStepOut(lo);
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---" + FB->CGetBehavioralHelper()->PrintVariable(lo) + "-" + STR(step));
-                     HLS->Rliv->set_live_out(rosl, lo, step);
+                     if(HLSMgr->is_register_compatible(lo))
+                     {
+                        auto step = HLS->Rliv->GetStepOut(lo);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---" + FB->CGetBehavioralHelper()->PrintVariable(lo) + "-" + STR(step));
+                        HLS->Rliv->set_live_out(rosl, lo, step);
+                     }
                   }
                }
-            }
-            else
-            {
-               bool is_feedback = stg->GetSelector(*o_e_it) & TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK;
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                              "---adding live out of " + stg->CGetStateInfo(target_state)->name +
-                                  " to live out of state " + state_info->name);
-               const auto prev_live_out = HLS->Rliv->get_live_out(rosl);
-               if(target_state != rosl)
+               else
                {
-                  for(const auto& lo : HLS->Rliv->get_live_out(target_state))
+                  bool is_feedback = stg->GetSelector(*o_e_it) & TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK;
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "---adding live out of " + stg->CGetStateInfo(target_state)->name +
+                                     " to live out of state " + state_info->name);
+                  const auto prev_live_out = HLS->Rliv->get_live_out(rosl);
+                  if(target_state != rosl)
                   {
-                     auto pre_pair = HLS->Rliv->GetPrevStep(bb_index, lo.first, lo.second, 1);
-                     // std::cerr << "checking " << FB->CGetBehavioralHelper()->PrintVariable(lo.first) << "\n";
-                     if(pre_pair.first)
+                     for(const auto& lo : HLS->Rliv->get_live_out(target_state))
                      {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---" + FB->CGetBehavioralHelper()->PrintVariable(lo.first) + "-" +
-                                           STR(pre_pair.second));
-                        HLS->Rliv->set_live_out(rosl, lo.first, pre_pair.second);
-                     }
-                     else if(state_info->is_last_state)
-                     {
-                        if(!tree_helper::is_parameter(HLSMgr->get_tree_manager(), lo.first) &&
-                           std::find(tgt_state_info->ending_operations.begin(), tgt_state_info->ending_operations.end(),
-                                     HLS->Rliv->get_op_where_defined(lo.first)) ==
-                               tgt_state_info->ending_operations.end())
+                        auto pre_pair = HLS->Rliv->GetPrevStep(bb_index, lo.first, lo.second, 1);
+                        // std::cerr << "checking " << FB->CGetBehavioralHelper()->PrintVariable(lo.first) << "\n";
+                        if(pre_pair.first)
                         {
-                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "is_last_state");
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                           "---" + FB->CGetBehavioralHelper()->PrintVariable(lo.first) + "-" +
                                               STR(pre_pair.second));
                            HLS->Rliv->set_live_out(rosl, lo.first, pre_pair.second);
                         }
+                        else if(state_info->is_last_state)
+                        {
+                           if(!tree_helper::is_parameter(HLSMgr->get_tree_manager(), lo.first) &&
+                              std::find(
+                                  tgt_state_info->ending_operations.begin(), tgt_state_info->ending_operations.end(),
+                                  HLS->Rliv->get_op_where_defined(lo.first)) == tgt_state_info->ending_operations.end())
+                           {
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "is_last_state");
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                             "---" + FB->CGetBehavioralHelper()->PrintVariable(lo.first) + "-" +
+                                                 STR(pre_pair.second));
+                              HLS->Rliv->set_live_out(rosl, lo.first, pre_pair.second);
+                           }
+                        }
+                     }
+                  }
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "update_liveout_with_prev");
+                  update_liveout_with_prev(HLSMgr, HLS, stg, data, rosl, bb_index, target_state, is_feedback,
+                                           state_info->LP_II, funId, debug_level);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "add back initial liveout");
+                  for(const auto& lo : prev_live_out)
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---" + FB->CGetBehavioralHelper()->PrintVariable(lo.first) + "-" + STR(lo.second));
+                     HLS->Rliv->set_live_out(rosl, lo.first, lo.second);
+                  }
+               }
+            }
+         }
+         // handle duplicated states
+         else if(state_info->is_duplicated)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Is duplicated state");
+            if(state_info->isOriginalState)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Is the original copy");
+               StateInfoConstRef cloned_state_info = stg->CGetStateInfo(rosl);
+               unsigned int cloned_bb_index = *cloned_state_info->BB_ids.begin();
+               prev_state = rosl;
+               prev_bb_index = cloned_bb_index;
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---update prev_state: " + stg->CGetStateInfo(prev_state)->name +
+                                  " prev_bb_index: " + STR(prev_bb_index));
+            }
+            else
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Is the cloned copy");
+               THROW_ASSERT(state_info->clonedState != NULL_VERTEX, "");
+               StateInfoConstRef cloned_state_info = stg->CGetStateInfo(state_info->clonedState);
+               unsigned int cloned_bb_index = *cloned_state_info->BB_ids.begin();
+               bool found = false;
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---cloned_bb_index: " + STR(cloned_bb_index));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "-->Considering successors of: " + cloned_state_info->name);
+               BOOST_FOREACH(EdgeDescriptor oe, boost::out_edges(state_info->clonedState, *astg))
+               {
+                  vertex target_state = boost::target(oe, *astg);
+                  StateInfoConstRef target_state_info = astg->CGetStateInfo(target_state);
+                  unsigned int target_bb_index = *target_state_info->BB_ids.begin();
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "successor: " + target_state_info->name);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "target_bb_index: " + STR(target_bb_index));
+                  if(cloned_bb_index == target_bb_index and target_state != rosl)
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---updating live out of : " + state_info->name + ", " + cloned_state_info->name);
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                    "---adding live out of : " + target_state_info->name);
+                     HLS->Rliv->set_live_out(rosl, HLS->Rliv->get_live_out(target_state));
+                     HLS->Rliv->set_live_out(state_info->clonedState, HLS->Rliv->get_live_out(target_state));
+                     update_liveout_with_prev(HLSMgr, HLS, stg, data, state_info->clonedState, cloned_bb_index,
+                                              target_state, false, 0, funId, debug_level);
+                     update_liveout_with_prev(HLSMgr, HLS, stg, data, rosl, bb_index, target_state, false, 0, funId,
+                                              debug_level);
+                     found = true;
+                  }
+               }
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "<--Considered successors of: " + cloned_state_info->name);
+
+               if(not found)
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "no valid successors found");
+                  for(const auto lo : fbb->CGetBBNodeInfo(bb_index_map[cloned_bb_index])->get_live_out())
+                  {
+                     if(HLSMgr->is_register_compatible(lo))
+                     {
+#ifndef NDEBUG
+                        const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---adding to live out of " + state_info->name + " var " +
+                                           BH->PrintVariable(lo));
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                       "---adding to live out of " + cloned_state_info->name + " var " +
+                                           BH->PrintVariable(lo));
+#endif
+                        HLS->Rliv->set_live_out(rosl, lo, 0);
+                        HLS->Rliv->set_live_out(state_info->clonedState, lo, 0);
                      }
                   }
                }
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "update_liveout_with_prev");
-               update_liveout_with_prev(HLSMgr, HLS, stg, data, rosl, bb_index, target_state, is_feedback,
-                                        state_info->LP_II, funId, debug_level);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "add back initial liveout");
-               for(const auto& lo : prev_live_out)
+               prev_state = rosl;
+               prev_bb_index = cloned_bb_index;
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "---update prev_state: " + stg->CGetStateInfo(prev_state)->name +
+                                  " prev_bb_index: " + STR(prev_bb_index));
+            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
+            continue;
+         }
+         else if(prev_bb_index != bb_index)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---prev_bb_index " + STR(prev_bb_index) + " != bb_index " + STR(bb_index));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---adding live out of BB " + STR(bb_index) + " to live out of state " + state_info->name);
+            for(const auto lo : fbb->CGetBBNodeInfo(bb_index_map[bb_index])->get_live_out())
+            {
+               if(HLSMgr->is_register_compatible(lo))
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---" + FB->CGetBehavioralHelper()->PrintVariable(lo.first) + "-" + STR(lo.second));
-                  HLS->Rliv->set_live_out(rosl, lo.first, lo.second);
+                  auto step = HLS->Rliv->GetStepOut(lo);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                 "---" + FB->CGetBehavioralHelper()->PrintVariable(lo) + "-" + STR(step));
+                  HLS->Rliv->set_live_out(rosl, lo, step);
                }
             }
-         }
-      }
-      // handle duplicated states
-      else if(state_info->is_duplicated)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Is duplicated state");
-         if(state_info->isOriginalState)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Is the original copy");
-            StateInfoConstRef cloned_state_info = stg->CGetStateInfo(rosl);
-            unsigned int cloned_bb_index = *cloned_state_info->BB_ids.begin();
-            prev_state = rosl;
-            prev_bb_index = cloned_bb_index;
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---update prev_state: " + stg->CGetStateInfo(prev_state)->name +
-                               " prev_bb_index: " + STR(prev_bb_index));
          }
          else
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Is the cloned copy");
-            THROW_ASSERT(state_info->clonedState != NULL_VERTEX, "");
-            StateInfoConstRef cloned_state_info = stg->CGetStateInfo(state_info->clonedState);
-            unsigned int cloned_bb_index = *cloned_state_info->BB_ids.begin();
-            bool found = false;
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---cloned_bb_index: " + STR(cloned_bb_index));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "-->Considering successors of: " + cloned_state_info->name);
-            BOOST_FOREACH(EdgeDescriptor oe, boost::out_edges(state_info->clonedState, *astg))
+                           "---adding live out of " + stg->CGetStateInfo(prev_state)->name + " to live out of state " +
+                               state_info->name);
+            for(const auto& lo : HLS->Rliv->get_live_out(prev_state))
             {
-               vertex target_state = boost::target(oe, *astg);
-               StateInfoConstRef target_state_info = astg->CGetStateInfo(target_state);
-               unsigned int target_bb_index = *target_state_info->BB_ids.begin();
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "successor: " + target_state_info->name);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "target_bb_index: " + STR(target_bb_index));
-               if(cloned_bb_index == target_bb_index and target_state != rosl)
+               auto pre_pair = HLS->Rliv->GetPrevStep(bb_index, lo.first, lo.second, 1);
+               if(pre_pair.first)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---updating live out of : " + state_info->name + ", " + cloned_state_info->name);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "---adding live out of : " + target_state_info->name);
-                  HLS->Rliv->set_live_out(rosl, HLS->Rliv->get_live_out(target_state));
-                  HLS->Rliv->set_live_out(state_info->clonedState, HLS->Rliv->get_live_out(target_state));
-                  update_liveout_with_prev(HLSMgr, HLS, stg, data, state_info->clonedState, cloned_bb_index,
-                                           target_state, false, 0, funId, debug_level);
-                  update_liveout_with_prev(HLSMgr, HLS, stg, data, rosl, bb_index, target_state, false, 0, funId,
-                                           debug_level);
-                  found = true;
+                  const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                 BH->PrintVariable(lo.first) + "-" + STR(pre_pair.second));
+                  HLS->Rliv->set_live_out(rosl, lo.first, pre_pair.second);
                }
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "<--Considered successors of: " + cloned_state_info->name);
-
-            if(not found)
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "no valid successors found");
-               for(const auto lo : fbb->CGetBBNodeInfo(bb_index_map[cloned_bb_index])->get_live_out())
-               {
-                  if(HLSMgr->is_register_compatible(lo))
-                  {
-#ifndef NDEBUG
-                     const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---adding to live out of " + state_info->name + " var " + BH->PrintVariable(lo));
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---adding to live out of " + cloned_state_info->name + " var " +
-                                        BH->PrintVariable(lo));
-#endif
-                     HLS->Rliv->set_live_out(rosl, lo, 0);
-                     HLS->Rliv->set_live_out(state_info->clonedState, lo, 0);
-                  }
-               }
-            }
-            prev_state = rosl;
-            prev_bb_index = cloned_bb_index;
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                           "---update prev_state: " + stg->CGetStateInfo(prev_state)->name +
-                               " prev_bb_index: " + STR(prev_bb_index));
+            update_liveout_with_prev(HLSMgr, HLS, stg, data, rosl, bb_index, prev_state, false, 0, funId, debug_level);
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
-         continue;
-      }
-      else if(prev_bb_index != bb_index)
-      {
+         prev_state = rosl;
+         prev_bb_index = bb_index;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---prev_bb_index " + STR(prev_bb_index) + " != bb_index " + STR(bb_index));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---adding live out of BB " + STR(bb_index) + " to live out of state " + state_info->name);
-         for(const auto lo : fbb->CGetBBNodeInfo(bb_index_map[bb_index])->get_live_out())
-         {
-            if(HLSMgr->is_register_compatible(lo))
-            {
-               auto step = HLS->Rliv->GetStepOut(lo);
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                              "---" + FB->CGetBehavioralHelper()->PrintVariable(lo) + "-" + STR(step));
-               HLS->Rliv->set_live_out(rosl, lo, step);
-            }
-         }
+                        "---update prev_state: " + stg->CGetStateInfo(prev_state)->name +
+                            " prev_bb_index: " + STR(prev_bb_index));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                        "<--Computed live out for state " + HLS->STG->get_state_name(rosl));
       }
-      else
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "---adding live out of " + stg->CGetStateInfo(prev_state)->name + " to live out of state " +
-                            state_info->name);
-         for(const auto& lo : HLS->Rliv->get_live_out(prev_state))
-         {
-            auto pre_pair = HLS->Rliv->GetPrevStep(bb_index, lo.first, lo.second, 1);
-            if(pre_pair.first)
-            {
-               const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                              BH->PrintVariable(lo.first) + "-" + STR(pre_pair.second));
-               HLS->Rliv->set_live_out(rosl, lo.first, pre_pair.second);
-            }
-         }
-         update_liveout_with_prev(HLSMgr, HLS, stg, data, rosl, bb_index, prev_state, false, 0, funId, debug_level);
-      }
-      prev_state = rosl;
-      prev_bb_index = bb_index;
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                     "---update prev_state: " + stg->CGetStateInfo(prev_state)->name +
-                         " prev_bb_index: " + STR(prev_bb_index));
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                     "<--Computed live out for state " + HLS->STG->get_state_name(rosl));
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Computed live out");
 

@@ -96,6 +96,8 @@ class StateTransitionGraphManager
 
    const unsigned int _max_cycles_bounded;
 
+   bool is_function_pipelined;
+
    // Tells to the get_states method which states you are looking for
    enum StateTypes
    {
@@ -138,7 +140,7 @@ class StateTransitionGraphManager
     * Compute minimum and maximum number of cycles for bounded scheduling
     * @param is_pipelined True if scheduling is pipelined
     */
-   void ComputeCyclesCount(bool is_pipelined);
+   void ComputeCyclesCount();
 
    /**
     * Returns pointer to state transition graph created.

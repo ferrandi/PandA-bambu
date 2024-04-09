@@ -74,8 +74,16 @@ EXTERN_C void __m_abort(void);
 EXTERN_C void __m_assert_fail(const char* __assertion, const char* __file, unsigned int __line, const char* __function);
 
 #if defined(__cplusplus) && __cplusplus >= 201103L
+
+#define if_error(str, ...) error("Interface %d: " str, (int)_idx, ##__VA_ARGS__)
+#define if_debug(str, ...) debug("Interface %d: " str, (int)_idx, ##__VA_ARGS__)
+#define if_info(str, ...) info("Interface %d: " str, (int)_idx, ##__VA_ARGS__)
+
 class interface
 {
+ protected:
+   const uint8_t _idx;
+
  public:
    enum state
    {
@@ -85,7 +93,7 @@ class interface
       IF_EMPTY = -3
    };
 
-   interface() = default;
+   interface(uint8_t idx);
 
    virtual ~interface() = default;
 
@@ -114,27 +122,30 @@ class channel_interface : public interface
    }
 
  public:
-   channel_interface(ac_channel<T>& chan, unsigned int max_size = 0)
-       : interface(), _chan(chan), _count(0), _max_size(max_size)
+   channel_interface(uint8_t idx, ac_channel<T>& chan, unsigned int max_size = 0)
+       : interface(idx), _chan(chan), _count(0), _max_size(max_size)
    {
-      debug("Interface channel with %u/%u read/write elements.\n", _read_size(), _write_size());
+      if_debug("Channel interface with %u/%u read/write elements.\n", _read_size(), _write_size());
    }
 
    int read(bptr_t data, uint16_t /*bitsize*/, ptr_t /*addr*/, bool shift) override
    {
       if(!_read_size())
       {
-         return IF_EMPTY;
+         if(shift)
+         {
+            if_error("Read on empty channel.\n");
+            return IF_EMPTY;
+         }
+         return 0;
       }
       if(shift)
       {
-         *reinterpret_cast<T*>(data) = _chan.read();
+         _chan.read();
          ++_count;
+         if_debug("Item pop (%u left).\n", _read_size());
       }
-      else
-      {
-         *reinterpret_cast<T*>(data) = _chan[0];
-      }
+      *reinterpret_cast<T*>(data) = _chan[0];
       return _read_size();
    }
 
@@ -142,12 +153,14 @@ class channel_interface : public interface
    {
       if(!_write_size())
       {
+         if_error("Write on full channel.\n");
          return IF_FULL;
       }
       if(shift)
       {
          _chan.write(*reinterpret_cast<T*>(data));
          ++_count;
+         if_debug("Item push (%u free).\n", _write_size());
       }
       else
       {
@@ -173,7 +186,7 @@ class channel_interface : public interface
 template <typename T>
 void __m_interface_channel(uint8_t id, ac_channel<T>& chan, unsigned int max_size = 0)
 {
-   __m_interface_set(id, new channel_interface<T>(chan, max_size));
+   __m_interface_set(id, new channel_interface<T>(id, chan, max_size));
 }
 
 void __m_interface_set(uint8_t id, interface* if_manager);

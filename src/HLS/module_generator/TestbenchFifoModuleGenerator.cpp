@@ -98,8 +98,7 @@ void TestbenchFifoModuleGenerator::InternalExec(std::ostream& out, structural_ob
       addPort(arg_name + "_empty_n", if_ndir, 0U);
       addPort(arg_name + "_read", if_dir, 0U);
       ip_components.push_back("TestbenchFifoRead");
-      out << "assign tb_done_port = 1'b1;\n\n"
-          << "TestbenchFifoRead #(.index(index),\n"
+      out << "TestbenchFifoRead #(.index(index),\n"
           << "  .CHECK_ACK(1),\n"
           << "  .BITSIZE_dout(BITSIZE_data)) fifo_read(.clock(clock),\n"
           << "  .setup_port(setup_port),\n"
@@ -115,8 +114,7 @@ void TestbenchFifoModuleGenerator::InternalExec(std::ostream& out, structural_ob
       addPort(arg_name + "_write", if_ndir, 0U);
       ip_components.push_back("TestbenchFifoWrite");
       out << "wire _full_n;\n\n"
-          << "assign " << arg_name << "_full_n = _full_n;\n"
-          << "assign tb_done_port = ~_full_n;\n\n"
+          << "assign " << arg_name << "_full_n = _full_n;\n\n"
           << "TestbenchFifoWrite #(.index(index),\n"
           << "  .BITSIZE_din(BITSIZE_data)) fifo_write(.clock(clock),\n"
           << "  .setup_port(setup_port),\n"

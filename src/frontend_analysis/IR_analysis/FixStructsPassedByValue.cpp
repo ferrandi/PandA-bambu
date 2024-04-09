@@ -179,7 +179,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
             const auto original_param_name =
                 pd->name ? GetPointerS<const identifier_node>(GET_CONST_NODE(pd->name))->strg : "";
 
-            auto ptd_type_size = tree_helper::Size(p_type);
+            auto ptd_type_size = tree_helper::SizeAlloc(p_type);
             if(ptd_type_size % 8)
             {
                ptd_type_size += 8;

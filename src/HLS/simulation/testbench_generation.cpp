@@ -274,7 +274,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       {
          const auto par_name = top_bh->PrintVariable(GET_INDEX_CONST_NODE(par));
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Parameter " + par_name);
-         const auto par_bitsize = tree_helper::Size(par);
+         const auto par_bitsize = tree_helper::SizeAlloc(par);
          const auto par_symbol = HLSMgr->Rmem->get_symbol(GET_INDEX_CONST_NODE(par), top_id);
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
                         "---Interface: " + STR(par_bitsize) + "-bits memory mapped at " +
@@ -294,7 +294,7 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
       if(return_type)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Return value port");
-         const auto return_bitsize = tree_helper::Size(return_type);
+         const auto return_bitsize = tree_helper::SizeAlloc(return_type);
          const auto return_symbol = HLSMgr->Rmem->get_symbol(GET_INDEX_CONST_NODE(return_type), top_id);
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
                         "---Interface: " + STR(return_bitsize) + "-bits memory mapped at " +
@@ -480,73 +480,6 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
 
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Connecting DUT control ports...");
    {
-      const auto has_dataflow =
-          std::any_of(HLSMgr->module_arch->begin(), HLSMgr->module_arch->end(), [](const auto& fsymbol_arch) {
-             return (fsymbol_arch.second->attrs.find(FunctionArchitecture::func_dataflow_top) !=
-                         fsymbol_arch.second->attrs.end() &&
-                     fsymbol_arch.second->attrs.find(FunctionArchitecture::func_dataflow_top)->second == "1") ||
-                    (fsymbol_arch.second->attrs.find(FunctionArchitecture::func_dataflow_module) !=
-                         fsymbol_arch.second->attrs.end() &&
-                     fsymbol_arch.second->attrs.find(FunctionArchitecture::func_dataflow_module)->second == "1");
-          });
-      if(has_dataflow)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Generating dataflow termination logic...");
-         std::vector<structural_objectRef> tb_done_ports;
-         for(const auto& if_obj : if_modules)
-         {
-            const auto tb_done_port = if_obj->find_member("tb_done_port", port_o_K, if_obj);
-            if(tb_done_port)
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level,
-                              "---Considering testbench done port form " + if_obj->get_path());
-               tb_done_ports.push_back(tb_done_port);
-            }
-         }
-         if(tb_done_ports.size())
-         {
-            // Compute logic AND between all dataflow done ports from testbench interface modules
-            const auto tb_done =
-                tb_top->add_module_from_technology_library("tb_done_and", AND_GATE_STD, LIBRARY_STD, tb_cir, TechM);
-            const auto tb_done_out = GetPointerS<module>(tb_done)->get_out_port(0);
-            {
-               const auto merge_port = GetPointerS<module>(tb_done)->get_in_port(0);
-               const auto merge_port_o = GetPointerS<port_o>(merge_port);
-               merge_port_o->add_n_ports(static_cast<unsigned int>(tb_done_ports.size()), merge_port);
-
-               unsigned int i = 0;
-               for(const auto& tb_done_port : tb_done_ports)
-               {
-                  const auto sig =
-                      tb_top->add_sign("sig_tb_done_" + std::to_string(i), tb_cir, tb_done_port->get_typeRef());
-                  tb_top->add_connection(tb_done_port, sig);
-                  tb_top->add_connection(sig, merge_port_o->get_port(i));
-                  ++i;
-               }
-            }
-
-            // Compute logic OR between dataflow done ports' logic AND and standard DUT done port
-            const auto done_or =
-                tb_top->add_module_from_technology_library("tb_done_port", OR_GATE_STD, LIBRARY_STD, tb_cir, TechM);
-            const auto tb_done_port = GetPointerS<module>(done_or)->get_out_port(0);
-            {
-               const auto merge_port = GetPointerS<module>(done_or)->get_in_port(0);
-               const auto merge_port_o = GetPointerS<port_o>(merge_port);
-               merge_port_o->add_n_ports(2U, merge_port);
-
-               add_internal_connection(merge_port_o->get_port(0U), dut_done);
-               {
-                  const auto sig = tb_top->add_sign("sig_tb_done_port", tb_cir, tb_done_out->get_typeRef());
-                  tb_top->add_connection(tb_done_out, sig);
-                  tb_top->add_connection(sig, merge_port_o->get_port(1U));
-               }
-            }
-
-            dut_done = tb_done_port;
-            INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--");
-         }
-      }
-
       const auto dut_reset = dut->find_member(RESET_PORT_NAME, port_o_K, dut);
       THROW_ASSERT(dut_reset, "");
       add_internal_connection(fsm_reset, dut_reset);
@@ -820,7 +753,7 @@ std::vector<std::string> TestbenchGeneration::print_var_init(const tree_managerC
       }
       else
       {
-         const auto data_bitsize = tree_helper::Size(tn);
+         const auto data_bitsize = tree_helper::SizeAlloc(tn);
          init_els.push_back(std::string(data_bitsize, '0'));
       }
    }
@@ -836,7 +769,7 @@ unsigned long long TestbenchGeneration::generate_init_file(const std::string& da
    unsigned long long vec_size = 0, elts_size = 0;
    const auto var_type = tree_helper::CGetType(TM->CGetTreeReindex(var));
    const auto bitsize_align = GetPointer<const type_node>(GET_CONST_NODE(var_type))->algn;
-   THROW_ASSERT((bitsize_align % 8) == 0, "Alignement is not byte aligned.");
+   THROW_ASSERT((bitsize_align % 8) == 0, "Alignment is not byte aligned.");
    fu_binding::fill_array_ref_memory(init_bits, useless, var, vec_size, elts_size, mem, TM, false, bitsize_align);
 
    std::ofstream init_dat(dat_filename, std::ios::binary);
@@ -858,6 +791,6 @@ unsigned long long TestbenchGeneration::generate_init_file(const std::string& da
       }
    }
    unsigned long long bytes = static_cast<unsigned long long>(init_dat.tellp());
-   THROW_ASSERT((bytes % (bitsize_align / 8)) == 0, "Memory initalization bytes not aligned");
+   THROW_ASSERT((bytes % (bitsize_align / 8)) == 0, "Memory initialization bytes not aligned");
    return bytes;
 }

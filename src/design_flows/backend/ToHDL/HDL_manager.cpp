@@ -1060,7 +1060,12 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
       }
       THROW_ASSERT(fsm_desc != "",
                    "Behavior not expected: " + HDL_manager::convert_to_identifier(writer.get(), GET_TYPE_NAME(cir)));
-      write_fsm(writer, cir, fsm_desc);
+      std::string fsm_stages;
+      if(np->exist_NP_functionality(NP_functionality::FSM_STAGES))
+      {
+         fsm_stages = np->get_NP_functionality(NP_functionality::FSM_STAGES);
+      }
+      write_fsm(writer, cir, fsm_desc, fsm_stages);
    }
    else if(np)
    {
@@ -1179,7 +1184,7 @@ void HDL_manager::write_behavioral(const language_writerRef writer, const struct
 }
 
 void HDL_manager::write_fsm(const language_writerRef writer, const structural_objectRef& cir,
-                            const std::string& fsm_desc_i) const
+                            const std::string& fsm_desc_i, const std::string& fsm_stage_i) const
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Start writing the FSM...");
 
@@ -1280,6 +1285,14 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
 
    writer->write_state_declaration(cir, list_of_states, reset_port, reset_state, one_hot_encoding);
 
+   if(fsm_stage_i.size())
+   {
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "write stage declaration");
+      const auto StageVec = string_to_container<std::vector<std::string>>(fsm_stage_i, "|", false);
+      THROW_ASSERT(StageVec.size() == 4, "unexpected stage format");
+      writer->write_stage_declaration(cir, std::stoi(StageVec.at(0)));
+   }
+
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "write module_instantiation begin");
    // write module_instantiation begin
    writer->write_module_definition_begin(cir);
@@ -1289,6 +1302,16 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
    writer->write_present_state_update(cir, reset_state, reset_port, clock_port,
                                       parameters->getOption<std::string>(OPT_reset_type),
                                       cir->find_member(PRESENT_STATE_PORT_NAME, port_o_K, cir).get() != nullptr);
+
+   if(fsm_stage_i.size())
+   {
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "write the present_stages update");
+      const auto StageVec = string_to_container<std::vector<std::string>>(fsm_stage_i, "|", false);
+      THROW_ASSERT(StageVec.size() == 4, "unexpected stage format");
+      writer->write_present_stages_update(cir, reset_port, clock_port,
+                                          parameters->getOption<std::string>(OPT_reset_type), start_port,
+                                          std::stoi(StageVec.at(0)));
+   }
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "write transition and output functions");
    /// write transition and output functions
@@ -1307,13 +1330,13 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
             continue;
          }
          writer->write_transition_output_functions(false, output_index, cir, reset_state, reset_port, start_port,
-                                                   clock_port, first, end, is_yosys, bypass_signals);
+                                                   clock_port, first, end, is_yosys, bypass_signals, fsm_stage_i);
       }
    }
    else
    {
       writer->write_transition_output_functions(true, 0, cir, reset_state, reset_port, start_port, clock_port, first,
-                                                end, is_yosys, bypass_signals);
+                                                end, is_yosys, bypass_signals, fsm_stage_i);
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "FSM writing completed!");
 }

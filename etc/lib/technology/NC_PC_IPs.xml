@@ -83,6 +83,91 @@ end
       </circuit>
     </cell>
     <cell>
+      <name>COMPLEXJOIN_FU</name>
+      <operation operation_name="COMPLEXJOIN_FU"/>
+      <circuit>
+        <component_o id="COMPLEXJOIN_FU">
+          <structural_type_descriptor id_type="COMPLEXJOIN_FU"/>
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2024-2024 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+          </port_o>
+          <port_o id="enable" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+          </port_o>
+          <port_vector_o id="ops" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+          </port_vector_o>
+          <port_vector_o id="starts" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+          </port_vector_o>
+          <port_o id="sop" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+          </port_o>
+          <NP_functionality LIBRARY="COMPLEXJOIN_FU ops starts" VERILOG_PROVIDED="
+// synthesis attribute use_sync_reset of current is no;
+reg [PORTSIZE_ops-1:0] current 1INIT_ZERO_VALUE;
+reg started 1INIT_ZERO_VALUE;
+wire started0;
+wire [PORTSIZE_ops-1:0] or_temp;
+wire [PORTSIZE_ops-1:0] ops2;
+wire sop_temp;
+function reduce_INs;
+input [PORTSIZE_ops-1 : 0] instring;
+integer i;
+begin
+   reduce_INs = 1&apos;b1;
+   for(i = 0; i &lt; PORTSIZE_ops; i = i + 1)
+   begin
+      reduce_INs = reduce_INs &amp; instring[i];
+   end
+end
+endfunction
+function [PORTSIZE_ops-1:0] NEXT_CURR ;
+input sop_temp1;
+input [PORTSIZE_ops-1 : 0] ops1;
+input [PORTSIZE_ops-1 : 0] current1;
+input st;
+integer i;
+begin
+   for(i = 0; i &lt; PORTSIZE_ops; i = i + 1)
+   begin
+      NEXT_CURR[i] = ~sop_temp1 &amp; ((current1[i]) | (st &amp; ops1[i]));
+   end
+end
+endfunction
+always @(posedge clock 1RESET_EDGE)
+  if (1RESET_VALUE)
+    started &lt;= 0;
+  else
+    started &lt;= started0;
+assign started0 = ~sop_temp &amp; (started | enable);
+assign ops2 = ops | ({PORTSIZE_ops{enable}} &amp; (~(starts)));
+assign or_temp = current | ops2;
+assign sop_temp = reduce_INs(or_temp);
+assign sop = sop_temp;
+always @ (posedge clock 1RESET_EDGE)
+begin
+if(1RESET_VALUE)
+  begin
+    current &lt;= {PORTSIZE_ops{1&apos;b0}};
+  end
+else
+  begin
+    current &lt;= NEXT_CURR(sop_temp,ops2,current,started0);
+  end
+end
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
       <name>FC_FU</name>
       <operation operation_name="FC_FU"/>
       <circuit>

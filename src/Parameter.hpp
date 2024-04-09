@@ -135,7 +135,7 @@ enum class CompilerWrapper_CompilerTarget;
 
 #define COMPILER_OPTIONS                                                                                              \
    (gcc_config)(gcc_costs)(gcc_defines)(gcc_extra_options)(gcc_include_sysdir)(gcc_includes)(gcc_libraries)(          \
-       gcc_library_directories)(gcc_openmp_simd)(compiler_opt_level)(gcc_m32_mx32)(gcc_optimizations)(                \
+       gcc_library_directories)(gcc_openmp_simd)(compiler_opt_level)(gcc_m_env)(gcc_optimizations)(                   \
        gcc_optimization_set)(gcc_parameters)(gcc_plugindir)(gcc_read_xml)(gcc_standard)(gcc_undefines)(gcc_warnings)( \
        gcc_c)(gcc_E)(gcc_S)(gcc_write_xml)
 

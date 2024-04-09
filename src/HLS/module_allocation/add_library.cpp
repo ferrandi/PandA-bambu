@@ -241,7 +241,7 @@ DesignFlowStep_Status add_library::InternalExec()
       const auto is_function_pipelined = FB->is_function_pipelined();
       if(is_function_pipelined)
       {
-         op->bounded = true;
+         op->bounded = HLS->STG && !HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->has_dummy_state;
       }
       else
       {

@@ -196,6 +196,13 @@ class verilog_writer : public language_writer
     */
    void write_state_declaration(const structural_objectRef& cir, const std::list<std::string>& list_of_states,
                                 const std::string& reset_port, const std::string& reset_state, bool one_hot) override;
+
+   /**
+    * write the declaration for the stage register
+    * @param n_stages is the number of stages.
+    */
+   void write_stage_declaration(const structural_objectRef& cir, int n_stages) override;
+
    /**
     * write the present_state update process
     * @param reset_state is the reset state.
@@ -206,6 +213,17 @@ class verilog_writer : public language_writer
    void write_present_state_update(const structural_objectRef cir, const std::string& reset_state,
                                    const std::string& reset_port, const std::string& clock_port,
                                    const std::string& reset_type, bool connect_present_next_state_signals) override;
+
+   /**
+    * write the present_stages update process
+    * @param reset_state is the reset state.
+    * @param reset_port is the reset port.
+    * @param clock_port is the clock port.
+    * @param reset_type when true the FSM will have an synchronous reset
+    */
+   void write_present_stages_update(const structural_objectRef cir, const std::string& reset_port,
+                                    const std::string& clock_port, const std::string& reset_type,
+                                    const std::string& start_port, int n_stages) override;
 
    /**
     * Write the transition and output functions.
@@ -220,7 +238,8 @@ class verilog_writer : public language_writer
        bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state,
        const std::string& reset_port, const std::string& start_port, const std::string& clock_port,
        std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool is_yosys,
-       const std::map<unsigned int, std::map<std::string, std::set<unsigned int>>>& bypass_signals) override;
+       const std::map<unsigned int, std::map<std::string, std::set<unsigned int>>>& bypass_signals,
+       const std::string& fsm_stage_i) override;
 
    /**
     * Write in the proper language the behavioral description of the module described in "Not Parsed" form.

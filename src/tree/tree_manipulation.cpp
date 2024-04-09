@@ -1478,7 +1478,7 @@ tree_nodeRef tree_manipulation::GetPointerType(const tree_nodeConstRef& ptd, uns
    ///@12     integer_cst      type: @26      low : 32       @26 is bit_size_type
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    IR_schema[TOK(TOK_PTD)] = STR(ptd->index);
-   auto m64P = parameters->getOption<std::string>(OPT_gcc_m32_mx32).find("-m64") != std::string::npos;
+   auto m64P = parameters->getOption<std::string>(OPT_gcc_m_env).find("-m64") != std::string::npos;
    if(!algn)
    {
       algn = m64P ? ALGN_POINTER_M64 : ALGN_POINTER_M32;
@@ -2749,13 +2749,14 @@ tree_nodeRef tree_manipulation::CreateGimpleAssignAddrExpr(const tree_nodeConstR
    return assign_node;
 }
 
-tree_nodeRef tree_manipulation::CreateVectorBooleanType(const unsigned long long number_of_elements) const
+tree_nodeRef tree_manipulation::CreateVectorType(const tree_nodeConstRef& elt_type,
+                                                 integer_cst_t number_of_elements) const
 {
-   const auto boolean_type = GetBooleanType();
-   const auto size = TreeM->CreateUniqueIntegerCst(static_cast<long long>(number_of_elements), GetSizeType());
+   const auto size =
+       TreeM->CreateUniqueIntegerCst(number_of_elements * tree_helper::SizeAlloc(elt_type), GetSizeType());
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
-   IR_schema[TOK(TOK_ELTS)] = STR(boolean_type->index);
+   IR_schema[TOK(TOK_ELTS)] = STR(elt_type->index);
    IR_schema[TOK(TOK_SIZE)] = STR(size->index);
 
    auto vector_type_id = TreeM->find(vector_type_K, IR_schema);
