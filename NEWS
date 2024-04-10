@@ -1,3 +1,13 @@
+=========== PANDA 2024.04 ===========
+Tirteenth private release of PandA framework.
+
+New features introduced:
+- Enhanced functional pipelining and loop pipelining support
+- Support for variable latency operations in pipelined design (stallable pipeline)
+- Enhanced support for dataflow architecture and nested dataflow architecture
+- Enhanced support for dataflow co-simulation
+- Minor fixes
+
 =========== PANDA 2024.03 ===========
 Twelfth public release of PandA framework.
 
