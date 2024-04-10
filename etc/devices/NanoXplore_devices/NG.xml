@@ -155,7 +155,7 @@
       <cmd name="outdir = os.path.abspath('${__nxpython_outdir__}/output')"/>
       <cmd name="if path.exists(os.path.join(dir, 'pads.py')): os.remove(os.path.join(dir, 'pads.py'))" condition="!${__connect_iob__}"/>
       <cmd name="sys.path.append(dir)"/>
-      <cmd name="project = createProject(outdir)"/>
+      <cmd name="project = createProject()"/>
       <cmd name="if nx_suite_version &gt;= 3: setLogDirectory(outdir)"/>
       <cmd name="project.setVariantName('${__target_family__}-EMBEDDED')" condition="!${__connect_iob__}"/>
       <cmd name="project.setVariantName('${__target_family__}')" condition="${__connect_iob__}"/>
