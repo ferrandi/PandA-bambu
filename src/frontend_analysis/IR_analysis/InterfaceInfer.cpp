@@ -94,7 +94,8 @@ enum class InterfaceInfer::m_axi_type
 enum class InterfaceInfer::datatype
 {
    generic,
-   ac_type
+   ac_type,
+   bool_type
 };
 
 struct InterfaceInfer::interface_info
@@ -130,7 +131,7 @@ struct InterfaceInfer::interface_info
 
    void update(const tree_nodeRef& tn, const std::string& _type_name, ParameterConstRef parameters)
    {
-      if(type != datatype::ac_type)
+      if(type != datatype::ac_type && type != datatype::bool_type)
       {
          bool is_signed, is_fixed;
          const auto type_name =
@@ -180,6 +181,13 @@ struct InterfaceInfer::interface_info
             }
             const auto _alignment = static_cast<unsigned>(get_aligned_bitsize(_bitwidth) >> 3);
             alignment = std::max(alignment, _alignment);
+         }
+
+         else if(std::regex_search(_type_name, std::regex(("bool[&*]"))))
+         {
+            _bitwidth = 1;
+            type = datatype::bool_type;
+            alignment = 8;
          }
 
          if(_fixed_size && bitwidth && bitwidth != _bitwidth)
@@ -644,8 +652,9 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   {
                      continue;
                   }
-                  THROW_ERROR("Parameter '" + arg_name + "' cannot have interface type '" + interface_type +
-                              "' since no load/store is associated with it");
+                  THROW_WARNING("Parameter '" + arg_name + "' cannot have interface type '" + interface_type +
+                                "' since no load/store is associated with it");
+                  continue;
                }
 
                info.factor = std::max(
