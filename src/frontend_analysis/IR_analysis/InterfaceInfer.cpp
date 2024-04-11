@@ -183,7 +183,8 @@ struct InterfaceInfer::interface_info
             alignment = std::max(alignment, _alignment);
          }
 
-         else if(std::regex_search(_type_name, std::regex(("bool[&*]"))))
+         else if(std::regex_search(_type_name, std::regex(("bool[&*]"))) ||
+                 std::regex_search(_type_name, std::regex(("_Bool[&*]"))))
          {
             _bitwidth = 1;
             type = datatype::bool_type;
