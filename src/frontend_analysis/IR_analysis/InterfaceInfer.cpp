@@ -653,6 +653,9 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   {
                      continue;
                   }
+                  // BEAWARE: none is used here in place of default to avoid memory allocation to consider this as
+                  // an active pointer parameter
+                  interface_type = "none";
                   THROW_WARNING("Parameter '" + arg_name + "' cannot have interface type '" + interface_type +
                                 "' since no load/store is associated with it");
                   continue;
