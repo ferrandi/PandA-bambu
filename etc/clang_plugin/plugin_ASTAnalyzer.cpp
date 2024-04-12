@@ -1303,6 +1303,41 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          parmIncludePaths = getIncludePaths(paramTypeRemTD);
       };
 
+      auto normalizeInterface = [&]() {
+         if(ifaceMode == "ap_fifo")
+         {
+            ifaceMode = "fifo";
+         }
+         else if(ifaceMode == "ap_none")
+         {
+            ifaceMode = "none";
+         }
+         else if(ifaceMode == "ap_vld")
+         {
+            ifaceMode = "valid";
+         }
+         else if(ifaceMode == "ap_ovld")
+         {
+            ifaceMode = "ovalid";
+         }
+         else if(ifaceMode == "ap_ack")
+         {
+            ifaceMode = "acknowledge";
+         }
+         else if(ifaceMode == "ap_hs")
+         {
+            ifaceMode = "handshake";
+         }
+         else if(ifaceMode == "bram")
+         {
+            ReportError(ifaceModeReq->first.loc, "Not support HLS interface mode");
+            ifaceMode = "array";
+         }
+         else if(ifaceMode == "ap_memory")
+         {
+            ifaceMode = "array";
+         }
+      };
       if(isa<DecayedType>(argType))
       {
          const auto DT = cast<DecayedType>(argType)->getOriginalType().IgnoreParens();
@@ -1318,6 +1353,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
             parmOriginalTypename = GetTypeNameCanonical(argType, _PP);
             parmIncludePaths = getIncludePaths(argType);
          }
+         normalizeInterface();
          if(ifaceMode != "default")
          {
             if(ifaceMode != "handshake" && ifaceMode != "fifo" && ifaceMode != "array" && ifaceMode != "bus" &&
@@ -1345,6 +1381,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          }
          const auto is_channel_if = parmTypename.find("ac_channel<") == 0 || parmTypename.find("stream<") == 0 ||
                                     parmTypename.find("hls::stream<") == 0;
+         normalizeInterface();
          if(ifaceMode != "default")
          {
             if((ifaceMode != "ptrdefault" && ifaceMode != "none" && ifaceMode != "handshake" && ifaceMode != "valid" &&
@@ -1367,6 +1404,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          parmTypename = GetTypeNameCanonical(paramTypeRemTD, _PP);
          parmOriginalTypename = GetTypeNameCanonical(argType, _PP);
          parmIncludePaths = getIncludePaths(argType);
+         normalizeInterface();
          if(ifaceMode != "default")
          {
             if(ifaceMode != "default" && ifaceMode != "none" && ifaceMode != "handshake" && ifaceMode != "valid" &&

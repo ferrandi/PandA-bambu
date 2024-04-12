@@ -656,6 +656,10 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                      THROW_WARNING("Parameter '" + arg_name + "' not used by any statement");
                   }
                }
+               if(unused_port && info.type == datatype::generic)
+               {
+                  info.bitwidth = 8ULL * std::stoull(parm_attrs.at(FunctionArchitecture::parm_size_in_bytes));
+               }
 
                info.factor = std::max(
                    info.type == datatype::generic ?
@@ -760,6 +764,10 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                         }
                         return "valid";
                      }
+                  }
+                  else if(unused_port && interface_type == "ptrdefault")
+                  {
+                     return "none";
                   }
                   return interface_type;
                }();
@@ -1770,7 +1778,7 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
       port_o::port_interface port_if = port_o::port_interface::PI_RNONE;
       if(if_name == "axis")
       {
-         port_data_name = "_s_axis_" + info.arg_id + "_TDATA";
+         port_data_name = "_" + info.arg_id + "_TDATA";
          port_if = port_o::port_interface::PI_S_AXIS_TDATA;
       }
       else if(if_name == "fifo")
@@ -1805,11 +1813,9 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
       }
       if(if_name == "axis")
       {
-         const auto inPort_empty_n =
-             CM->add_port("_s_axis_" + info.arg_id + "_TVALID", port_o::IN, interface_top, bool_type);
+         const auto inPort_empty_n = CM->add_port("_" + info.arg_id + "_TVALID", port_o::IN, interface_top, bool_type);
          GetPointerS<port_o>(inPort_empty_n)->set_port_interface(port_o::port_interface::PI_S_AXIS_TVALID);
-         const auto inPort_read =
-             CM->add_port("_s_axis_" + info.arg_id + "_TREADY", port_o::OUT, interface_top, bool_type);
+         const auto inPort_read = CM->add_port("_" + info.arg_id + "_TREADY", port_o::OUT, interface_top, bool_type);
          GetPointerS<port_o>(inPort_read)->set_port_interface(port_o::port_interface::PI_S_AXIS_TREADY);
       }
 
@@ -1920,7 +1926,7 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
       port_o::port_interface port_if = port_o::port_interface::PI_WNONE;
       if(if_name == "axis")
       {
-         port_data_name = "_m_axis_" + info.arg_id + "_TDATA";
+         port_data_name = "_" + info.arg_id + "_TDATA";
          port_if = port_o::port_interface::PI_M_AXIS_TDATA;
       }
       else if(if_name == "fifo")
@@ -1955,11 +1961,9 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
       }
       if(if_name == "axis")
       {
-         const auto inPort_full_n =
-             CM->add_port("_m_axis_" + info.arg_id + "_TREADY", port_o::IN, interface_top, bool_type);
+         const auto inPort_full_n = CM->add_port("_" + info.arg_id + "_TREADY", port_o::IN, interface_top, bool_type);
          GetPointerS<port_o>(inPort_full_n)->set_port_interface(port_o::port_interface::PI_M_AXIS_TREADY);
-         const auto inPort_read =
-             CM->add_port("_m_axis_" + info.arg_id + "_TVALID", port_o::OUT, interface_top, bool_type);
+         const auto inPort_read = CM->add_port("_" + info.arg_id + "_TVALID", port_o::OUT, interface_top, bool_type);
          GetPointerS<port_o>(inPort_read)->set_port_interface(port_o::port_interface::PI_M_AXIS_TVALID);
       }
 
