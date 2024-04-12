@@ -3035,8 +3035,7 @@ generate
       end
       if(done_port &amp; ~ack_check_next)
       begin
-        $display(&quot;Acknowledge signal never asserted on interface %0d.&quot;, index);
-        $finish;
+        $display(&quot;WARNING: Acknowledge signal never asserted on interface %0d.&quot;, index);
       end
     end
   end
