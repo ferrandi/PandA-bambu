@@ -849,6 +849,7 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
       for(auto& attr : p.attrs)
       {
          ReportError(attr.first.loc, "Unexpected attribute");
+         return;
       }
       GetFuncAttr(FD).attrs.emplace(key_loc_t("dataflow_top", p.loc), "1");
    }
@@ -892,6 +893,7 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
             if(!hasModule)
             {
                ReportError(FD->getLocation(), "Dataflow function has no valid submodule");
+               return;
             }
          }
       }
@@ -932,6 +934,7 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             if(bus_size < 32 || bus_size > 1024 || (bus_size & (bus_size - 1)) != 0)
             {
                ReportError(attr.first.loc, "Invalid cache bus size");
+               return;
             }
          }
          else if(iequals(attr.first.id, "ways"))
@@ -939,6 +942,7 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             if(std::stoi(attr.second) <= 0)
             {
                ReportError(attr.first.loc, "Invalid cache way count");
+               return;
             }
          }
          else if(iequals(attr.first.id, "line_count"))
@@ -946,6 +950,7 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             if(std::stoi(attr.second) <= 0)
             {
                ReportError(attr.first.loc, "Invalid cache line count");
+               return;
             }
          }
          else if(iequals(attr.first.id, "line_size"))
@@ -953,6 +958,7 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             if(std::stoi(attr.second) <= 0)
             {
                ReportError(attr.first.loc, "Invalid cache line size");
+               return;
             }
          }
          else if(iequals(attr.first.id, "num_write_outstanding"))
@@ -960,6 +966,7 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             if(std::stoi(attr.second) <= 0)
             {
                ReportError(attr.first.loc, "Invalid number of outstanding write operations");
+               return;
             }
          }
          else if(iequals(attr.first.id, "rep_policy"))
@@ -967,6 +974,7 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             if(attr.second != "lru" && attr.second != "tree")
             {
                ReportError(attr.first.loc, "Invalid cache replacement policy");
+               return;
             }
          }
          else if(iequals(attr.first.id, "write_policy"))
@@ -974,6 +982,7 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             if(attr.second != "wb" && attr.second != "wt")
             {
                ReportError(attr.first.loc, "Invalid cache write policy");
+               return;
             }
          }
          else
@@ -991,10 +1000,12 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
       if(iface.find(key_loc_t("cache_line_count", SourceLocation())) == iface.end())
       {
          ReportError(p.loc, "Missing cache line count attribute");
+         return;
       }
       if(iface.find(key_loc_t("cache_line_size", SourceLocation())) == iface.end())
       {
          ReportError(p.loc, "Missing cache line size attribute");
+         return;
       }
    }
 
@@ -1007,6 +1018,8 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
    ASTContext& _ASTContext;
    SourceManager& _SM;
    int _parseAction;
+
+   static const std::map<std::string, std::string> _ifMapper;
 
    const NamedDecl* getBaseTypeDecl(const QualType& qt) const
    {
@@ -1192,6 +1205,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
       if(isUnsupportedInterface(FD))
       {
          ReportError(p.loc, "HLS pragma not supported on variadic function declarations");
+         return;
       }
       auto portName = p.attrs.find(key_loc_t("port", SourceLocation()));
       if(portName == p.attrs.end())
@@ -1258,6 +1272,15 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
 
       const auto argType = parmDecl->getType();
       auto& ifaceMode = bundle_attrs.insert(*ifaceModeReq).first->second;
+      if(_ifMapper.find(ifaceMode) != _ifMapper.end())
+      {
+         ifaceMode = _ifMapper.at(ifaceMode);
+         if(ifaceMode.empty())
+         {
+            ReportError(ifaceModeReq->first.loc, "Interface mode not supported.");
+            return;
+         }
+      }
       auto& parmTypename = parm_attrs[key_loc_t("typename", SourceLocation())];
       auto& parmSizeInBytes = parm_attrs[key_loc_t("size_in_bytes", SourceLocation())];
       auto& parmOriginalTypename = parm_attrs[key_loc_t("original_typename", SourceLocation())];
@@ -1303,41 +1326,6 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          parmIncludePaths = getIncludePaths(paramTypeRemTD);
       };
 
-      auto normalizeInterface = [&]() {
-         if(ifaceMode == "ap_fifo")
-         {
-            ifaceMode = "fifo";
-         }
-         else if(ifaceMode == "ap_none")
-         {
-            ifaceMode = "none";
-         }
-         else if(ifaceMode == "ap_vld")
-         {
-            ifaceMode = "valid";
-         }
-         else if(ifaceMode == "ap_ovld")
-         {
-            ifaceMode = "ovalid";
-         }
-         else if(ifaceMode == "ap_ack")
-         {
-            ifaceMode = "acknowledge";
-         }
-         else if(ifaceMode == "ap_hs")
-         {
-            ifaceMode = "handshake";
-         }
-         else if(ifaceMode == "bram")
-         {
-            ReportError(ifaceModeReq->first.loc, "Not support HLS interface mode");
-            ifaceMode = "array";
-         }
-         else if(ifaceMode == "ap_memory")
-         {
-            ifaceMode = "array";
-         }
-      };
       if(isa<DecayedType>(argType))
       {
          const auto DT = cast<DecayedType>(argType)->getOriginalType().IgnoreParens();
@@ -1353,13 +1341,13 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
             parmOriginalTypename = GetTypeNameCanonical(argType, _PP);
             parmIncludePaths = getIncludePaths(argType);
          }
-         normalizeInterface();
          if(ifaceMode != "default")
          {
             if(ifaceMode != "handshake" && ifaceMode != "fifo" && ifaceMode != "array" && ifaceMode != "bus" &&
                ifaceMode != "m_axi" && ifaceMode != "axis")
             {
                ReportError(ifaceModeReq->first.loc, "Invalid HLS interface mode");
+               return;
             }
          }
       }
@@ -1381,7 +1369,6 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          }
          const auto is_channel_if = parmTypename.find("ac_channel<") == 0 || parmTypename.find("stream<") == 0 ||
                                     parmTypename.find("hls::stream<") == 0;
-         normalizeInterface();
          if(ifaceMode != "default")
          {
             if((ifaceMode != "ptrdefault" && ifaceMode != "none" && ifaceMode != "handshake" && ifaceMode != "valid" &&
@@ -1390,6 +1377,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
                (is_channel_if && ifaceMode != "fifo" && ifaceMode != "axis"))
             {
                ReportError(ifaceModeReq->first.loc, "Invalid HLS interface mode");
+               return;
             }
          }
          else
@@ -1404,13 +1392,13 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          parmTypename = GetTypeNameCanonical(paramTypeRemTD, _PP);
          parmOriginalTypename = GetTypeNameCanonical(argType, _PP);
          parmIncludePaths = getIncludePaths(argType);
-         normalizeInterface();
          if(ifaceMode != "default")
          {
             if(ifaceMode != "default" && ifaceMode != "none" && ifaceMode != "handshake" && ifaceMode != "valid" &&
                ifaceMode != "ovalid" && ifaceMode != "acknowledge")
             {
                ReportError(ifaceModeReq->first.loc, "Invalid HLS interface mode");
+               return;
             }
             if((argType->isBuiltinType() || argType->isEnumeralType()) && ifaceMode == "none")
             {
@@ -1426,6 +1414,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
       if(ifaceMode == "array" && parm_attrs.find(key_loc_t("elem_count", SourceLocation())) == parm_attrs.end())
       {
          ReportError(ifaceModeReq->first.loc, "HLS interface array element count missing");
+         return;
       }
 
       parmTypename = removeSpaces(parmTypename);
@@ -1541,6 +1530,9 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
    }
    static const char* PragmaKeyword;
 };
+const std::map<std::string, std::string> InterfaceHLSPragmaHandler::_ifMapper = {
+    {"ap_fifo", "fifo"},       {"ap_none", "none"},    {"ap_vld", "valid"},    {"ap_ovld", "ovalid"},
+    {"ap_ack", "acknowledge"}, {"ap_hs", "handshake"}, {"ap_memory", "array"}, {"bram", ""}};
 const char* InterfaceHLSPragmaHandler::PragmaKeyword = "interface";
 
 class HLSASTConsumer : public ASTConsumer
