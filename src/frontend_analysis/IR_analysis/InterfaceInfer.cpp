@@ -183,8 +183,7 @@ struct InterfaceInfer::interface_info
             alignment = std::max(alignment, _alignment);
          }
 
-         else if(std::regex_search(_type_name, std::regex(("bool[&*]"))) ||
-                 std::regex_search(_type_name, std::regex(("_Bool[&*]"))))
+         else if(std::regex_search(_type_name, std::regex("(_B|b)ool[&*]")))
          {
             _bitwidth = 1;
             type = datatype::bool_type;
@@ -620,20 +619,18 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             const auto arg_ssa_id = AppM->getSSAFromParm(root_id, arg_id);
             const auto arg_ssa = TM->GetTreeReindex(arg_ssa_id);
             THROW_ASSERT(GET_CONST_NODE(arg_ssa)->get_kind() == ssa_name_K, "");
+            bool unused_port = false;
             if(GetPointerS<const ssa_name>(GET_CONST_NODE(arg_ssa))->CGetUseStmts().empty())
             {
                THROW_WARNING("Parameter '" + arg_name + "' not used by any statement");
                if(tree_helper::IsPointerType(arg_type))
                {
-                  // BEAWARE: none is used here in place of default to avoid memory allocation to consider this as
-                  // an active pointer parameter
-                  interface_type = "none";
+                  unused_port = true;
                }
                else
                {
                   THROW_ERROR("parameter not used: specified interface does not make sense - " + interface_type);
                }
-               continue;
             }
             if(tree_helper::IsPointerType(arg_type))
             {
@@ -649,16 +646,15 @@ DesignFlowStep_Status InterfaceInfer::Exec()
 
                if(!isRead && !isWrite)
                {
-                  if(interface_type == "m_axi" || starts_with(arg_name, "DF_bambu_"))
+                  if(starts_with(arg_name, "DF_bambu_"))
                   {
                      continue;
                   }
-                  // BEAWARE: none is used here in place of default to avoid memory allocation to consider this as
-                  // an active pointer parameter
-                  interface_type = "none";
-                  THROW_WARNING("Parameter '" + arg_name + "' cannot have interface type '" + interface_type +
-                                "' since no load/store is associated with it");
-                  continue;
+                  if(!unused_port)
+                  {
+                     unused_port = true;
+                     THROW_WARNING("Parameter '" + arg_name + "' not used by any statement");
+                  }
                }
 
                info.factor = std::max(
@@ -807,7 +803,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   add_to_modified(stmt);
                   store_vdef(stmt);
                }
-               create_resource(operationsR, operationsW, info, func_arch);
+               create_resource(operationsR, operationsW, info, func_arch, unused_port, root_id);
             }
             else if(interface_type == "none")
             {
@@ -1721,9 +1717,10 @@ void InterfaceInfer::setWriteInterface(tree_nodeRef stmt, const std::string& arg
 }
 
 void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& operations, const interface_info& info,
-                                                 FunctionArchitectureRef func_arch, bool IO_port) const
+                                                 FunctionArchitectureRef func_arch, bool IO_port, bool unused_port,
+                                                 unsigned root_id) const
 {
-   if(operations.empty())
+   if(operations.empty() && !unused_port)
    {
       return;
    }
@@ -1820,6 +1817,10 @@ void InterfaceInfer::create_resource_Read_simple(const std::set<std::string>& op
       CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR,
                                "Read_" + if_name + "ModuleGenerator");
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
+      if(unused_port)
+      {
+         HLSMgr->unused_interfaces[root_id].insert(std::make_pair(INTERFACE_LIBRARY, ResourceName));
+      }
       for(const auto& fdName : operations)
       {
          TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
@@ -2013,7 +2014,7 @@ void InterfaceInfer::create_resource_Write_simple(const std::set<std::string>& o
 
 void InterfaceInfer::create_resource_array(const std::set<std::string>& operationsR,
                                            const std::set<std::string>& operationsW, const interface_info& info,
-                                           FunctionArchitectureRef func_arch) const
+                                           FunctionArchitectureRef func_arch, bool unused_port, unsigned root_id) const
 {
    const auto n_channels = parameters->getOption<unsigned int>(OPT_channels_number);
    const auto isDP = n_channels == 2;
@@ -2102,7 +2103,7 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
             GetPointerS<port_o>(inPort_we1)->set_port_interface(port_o::port_interface::PI_WRITEENABLE);
          }
       }
-      if(!operationsR.empty())
+      if(!operationsR.empty() || unused_port)
       {
          const auto inPort_din = CM->add_port("_" + bundle_name + "_q0", port_o::IN, interface_top, dataType);
          GetPointerS<port_o>(inPort_din)->set_port_interface(port_o::port_interface::PI_DIN);
@@ -2127,6 +2128,10 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
       CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR,
                                read_write_string + info.name + "ModuleGenerator");
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
+      if(unused_port)
+      {
+         HLSMgr->unused_interfaces[root_id].insert(std::make_pair(INTERFACE_LIBRARY, ResourceName));
+      }
       const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
       fu->area_m = area_info::factory(parameters);
       fu->area_m->set_area_value(0);
@@ -2181,7 +2186,8 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
 
 void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operationsR,
                                            const std::set<std::string>& operationsW, const interface_info& info,
-                                           FunctionArchitectureRef func_arch) const
+                                           FunctionArchitectureRef func_arch, bool unused_port,
+                                           unsigned int root_id) const
 {
    THROW_ASSERT(GetPointer<HLS_manager>(AppM), "");
    const auto HLSMgr = GetPointerS<HLS_manager>(AppM);
@@ -2397,6 +2403,7 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       GetPointerS<port_o>(rready)->set_port_interface(port_o::port_interface::M_AXI_RREADY);
 
       bool has_slave = false;
+      bool has_direct = false;
       for(auto& p : func_arch->parms)
       {
          if(p.second.at(FunctionArchitecture::parm_bundle) == bundle_name)
@@ -2408,11 +2415,16 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
             }
             else if(parm_offset == "direct")
             {
+               has_direct = true;
                const auto offset_port =
                    CM->add_port("_" + p.first, port_o::IN, interface_top, address_interface_datatype);
                GetPointerS<port_o>(offset_port)->set_port_interface(port_o::port_interface::PI_M_AXI_DIRECT);
             }
          }
+      }
+      if(!has_direct)
+      {
+         THROW_ERROR("only 'direct' axi interfaces are supported");
       }
       if(has_slave)
       {
@@ -2462,7 +2474,10 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
                                "ReadWrite_" + info.name + "ModuleGenerator");
 
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
-
+      if(unused_port)
+      {
+         HLSMgr->unused_interfaces[root_id].insert(std::make_pair(INTERFACE_LIBRARY, ResourceName));
+      }
       const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
       fu->area_m = area_info::factory(parameters);
       fu->area_m->set_area_value(0);
@@ -2511,23 +2526,24 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
 }
 
 void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
-                                     const interface_info& info, FunctionArchitectureRef func_arch) const
+                                     const interface_info& info, FunctionArchitectureRef func_arch, bool unused_port,
+                                     unsigned root_id) const
 {
    if(info.name == "none" || info.name == "acknowledge" || info.name == "valid" || info.name == "ovalid" ||
       info.name == "handshake" || info.name == "fifo" || info.name == "axis")
    {
-      THROW_ASSERT(!operationsR.empty() || !operationsW.empty(), "unexpected condition");
+      THROW_ASSERT(!operationsR.empty() || !operationsW.empty() || unused_port, "unexpected condition");
       const auto IO_P = !operationsR.empty() && !operationsW.empty();
-      create_resource_Read_simple(operationsR, info, func_arch, IO_P);
+      create_resource_Read_simple(operationsR, info, func_arch, IO_P, unused_port, root_id);
       create_resource_Write_simple(operationsW, info, func_arch, IO_P);
    }
    else if(info.name == "array")
    {
-      create_resource_array(operationsR, operationsW, info, func_arch);
+      create_resource_array(operationsR, operationsW, info, func_arch, unused_port, root_id);
    }
    else if(info.name == "m_axi")
    {
-      create_resource_m_axi(operationsR, operationsW, info, func_arch);
+      create_resource_m_axi(operationsR, operationsW, info, func_arch, unused_port, root_id);
    }
    else
    {

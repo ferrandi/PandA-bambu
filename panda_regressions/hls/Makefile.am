@@ -108,6 +108,8 @@ EXTRA_DIST= \
    %D%/bambu_interface_test/simpleif_c1_none.c \
    %D%/bambu_interface_test/simpleif_c1_none_test.xml \
    %D%/bambu_interface_test/simple_test.c \
+   %D%/bambu_interface_test/unused_param.c \
+   %D%/bambu_interface_test/unused_param.xml \
    %D%/bambu_specific_test5/adders.c \
    %D%/bambu_specific_test5/function_call.c \
    %D%/bambu_specific_test5/if_clauses.c \
