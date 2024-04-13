@@ -1057,53 +1057,40 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                         else
                         {
                            /// check if we have axis master interface
-                           int_port = wrappedObj->find_member("_m_axis_" + port_name + "_TDATA", port_o_K, wrappedObj);
-                           if(int_port)
+                           int_port = wrappedObj->find_member("_" + port_name + "_TDATA", port_o_K, wrappedObj);
+                           if(int_port &&
+                              (GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_FDIN ||
+                               GetPointer<port_o>(int_port)->get_port_interface() ==
+                                   port_o::port_interface::PI_M_AXIS_TDATA))
                            {
-                              if(GetPointer<port_o>(int_port)->get_port_interface() ==
-                                     port_o::port_interface::PI_FDIN ||
-                                 GetPointer<port_o>(int_port)->get_port_interface() ==
-                                     port_o::port_interface::PI_M_AXIS_TDATA)
-                              {
-                                 int_port = wrappedObj->find_member(port_name, port_o_K, wrappedObj);
-                                 THROW_ASSERT(int_port, "unexpected condition");
-                                 portsToSkip.insert(int_port);
-                              }
+                              int_port = wrappedObj->find_member(port_name, port_o_K, wrappedObj);
+                              THROW_ASSERT(int_port, "unexpected condition");
+                              portsToSkip.insert(int_port);
                            }
                            else
                            {
                               /// check if we have axis slave interface
-                              int_port =
-                                  wrappedObj->find_member("_s_axis_" + port_name + "_TDATA", port_o_K, wrappedObj);
-                              if(int_port)
+                              int_port = wrappedObj->find_member("_" + port_name + "_TDATA", port_o_K, wrappedObj);
+                              if(int_port && (GetPointer<port_o>(int_port)->get_port_interface() ==
+                                                  port_o::port_interface::PI_FDOUT ||
+                                              GetPointer<port_o>(int_port)->get_port_interface() ==
+                                                  port_o::port_interface::PI_S_AXIS_TDATA))
                               {
-                                 if(GetPointer<port_o>(int_port)->get_port_interface() ==
-                                        port_o::port_interface::PI_FDOUT ||
-                                    GetPointer<port_o>(int_port)->get_port_interface() ==
-                                        port_o::port_interface::PI_S_AXIS_TDATA)
+                                 portsToSkip.insert(int_port);
+                                 if(port_in->get_kind() == port_vector_o_K)
                                  {
-                                    portsToSkip.insert(int_port);
-                                    if(port_in->get_kind() == port_vector_o_K)
-                                    {
-                                       ext_port = SM_minimal_interface->add_port_vector(
-                                           "s_axis_" + port_name + "_TDATA", port_o::IN,
-                                           GetPointer<port_o>(int_port)->get_ports_size(), interfaceObj,
-                                           int_port->get_typeRef());
-                                    }
-                                    else
-                                    {
-                                       ext_port =
-                                           SM_minimal_interface->add_port("s_axis_" + port_name + "_TDATA", port_o::IN,
-                                                                          interfaceObj, int_port->get_typeRef());
-                                    }
-                                    port_o::fix_port_properties(int_port, ext_port);
-                                    SM_minimal_interface->add_connection(int_port, ext_port);
+                                    ext_port = SM_minimal_interface->add_port_vector(
+                                        port_name + "_TDATA", port_o::IN,
+                                        GetPointer<port_o>(int_port)->get_ports_size(), interfaceObj,
+                                        int_port->get_typeRef());
                                  }
-                                 else if(GetPointer<port_o>(int_port)->get_port_interface() !=
-                                         port_o::port_interface::PI_DEFAULT)
+                                 else
                                  {
-                                    THROW_ERROR("not yet supported port interface");
+                                    ext_port = SM_minimal_interface->add_port(port_name + "_TDATA", port_o::IN,
+                                                                              interfaceObj, int_port->get_typeRef());
                                  }
+                                 port_o::fix_port_properties(int_port, ext_port);
+                                 SM_minimal_interface->add_connection(int_port, ext_port);
                               }
                            }
                         }

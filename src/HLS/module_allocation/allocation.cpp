@@ -2178,12 +2178,7 @@ DesignFlowStep_Status allocation::InternalExec()
                std::string specialized_fuName = "";
 
                const auto has_to_be_generated =
-                   structManager_obj && (GetPointer<module>(structManager_obj->get_circ())
-                                             ->get_NP_functionality()
-                                             ->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) ||
-                                         GetPointer<module>(structManager_obj->get_circ())
-                                             ->get_NP_functionality()
-                                             ->exist_NP_functionality(NP_functionality::VHDL_GENERATOR));
+                   structManager_obj && GetPointer<module>(structManager_obj->get_circ())->has_to_be_generated();
                if(has_to_be_generated)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Unit has to be specialized.");

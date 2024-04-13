@@ -132,8 +132,12 @@ class channel_interface : public interface
    {
       if(!_read_size())
       {
-         if_error("Read on empty channel.\n");
-         return IF_EMPTY;
+         if(shift)
+         {
+            if_error("Read on empty channel.\n");
+            return IF_EMPTY;
+         }
+         return 0;
       }
       if(shift)
       {

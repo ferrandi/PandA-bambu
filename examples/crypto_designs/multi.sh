@@ -25,7 +25,7 @@ return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-timeout 2h bambu --simulator=MODELSIM --use-raw --top-fname=keccak_coproc --channels-type=MEM_ACC_11 --device-name=LFE335EA8FN484C src/keccak -I./include --simulate --generate-tb=$root_dir/multi-keccak/tb_keccak.c --print-dot "$@"
+timeout 2h bambu --simulator=MODELSIM --use-raw --top-fname=keccak_coproc --channels-type=MEM_ACC_11 --compiler=I386_GCC49 --device-name=LFE335EA8FN484C src/keccak -I./include --simulate --generate-tb=$root_dir/multi-keccak/tb_keccak.c --print-dot "$@"
 return_value=$?
 if test $return_value != 0; then
    exit $return_value
