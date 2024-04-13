@@ -45,6 +45,8 @@
 
 #include "fu_binding.hpp"
 
+#include "ModuleGeneratorManager.hpp"
+#include "exceptions.hpp"
 #include "fu_binding_cs.hpp"
 #include "funit_obj.hpp"
 
@@ -1110,7 +1112,9 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
 
    const auto cg_man = HLSMgr->CGetCallGraphManager();
    const auto top_function_ids = cg_man->GetRootFunctions();
-   if(top_function_ids.find(HLS->functionId) != top_function_ids.end() && cg_man->ExistsAddressedFunction())
+   if(top_function_ids.find(HLS->functionId) != top_function_ids.end() &&
+      (cg_man->ExistsAddressedFunction() ||
+       HLSMgr->unused_interfaces.find(HLS->functionId) != HLSMgr->unused_interfaces.end()))
    {
       const auto addressed_functions = cg_man->GetAddressedFunctions();
       const auto constBitZero =
@@ -1187,7 +1191,51 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          manage_module_ports(HLSMgr, HLS, SM, FU, 0);
          memory::propagate_memory_parameters(FU, HLS->datapath);
       }
+      if(HLSMgr->unused_interfaces.find(HLS->functionId) != HLSMgr->unused_interfaces.end())
+      {
+         const auto HLS_D = HLSMgr->get_HLS_device();
+         const auto TechMan = HLS_D->get_technology_manager();
+         const auto& res_pair_set = HLSMgr->unused_interfaces.at(HLS->functionId);
+         for(const auto& [UPlibrary, FUName] : res_pair_set)
+         {
+            auto fu_name = FUName;
+            technology_nodeRef fuObj = TechMan->get_fu(fu_name, UPlibrary);
+            const auto structManager_obj = GetPointer<functional_unit>(fuObj)->CM;
+            THROW_ASSERT(structManager_obj, "unexpected condition");
+            const auto has_to_be_generated = GetPointer<module>(structManager_obj->get_circ())->has_to_be_generated();
+            if(has_to_be_generated)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Unit has to be specialized.");
+               const ModuleGeneratorManagerRef modGen(new ModuleGeneratorManager(HLSMgr, parameters));
+               {
+                  fu_name = fu_name + "_modgen";
+               }
+               const auto& specialized_fuName = fu_name;
+
+               const auto check_lib = TechM->get_library(specialized_fuName);
+               modGen->create_generic_module(FUName, NULL_VERTEX, FB, UPlibrary, specialized_fuName);
+            }
+            const auto FU = SM->add_module_from_technology_library(fu_name + "_i0", fu_name, UPlibrary, circuit, TechM);
+            if(std::find(memory_modules.begin(), memory_modules.end(), FU) == memory_modules.end())
+            {
+               memory_modules.push_back(FU);
+            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding unused interface component: " + FUName);
+            if(const auto clk_prt = FU->find_member(CLOCK_PORT_NAME, port_o_K, FU))
+            {
+               SM->add_connection(clk_prt, circuit->find_member(CLOCK_PORT_NAME, port_o_K, circuit));
+            }
+            if(const auto reset_prt = FU->find_member(RESET_PORT_NAME, port_o_K, FU))
+            {
+               SM->add_connection(reset_prt, circuit->find_member(RESET_PORT_NAME, port_o_K, circuit));
+            }
+
+            manage_module_ports(HLSMgr, HLS, SM, FU, 0);
+            memory::propagate_memory_parameters(FU, HLS->datapath);
+         }
+      }
    }
+
    if(parameters->IsParameter("chained-memory-modules") && parameters->GetParameter<int>("chained-memory-modules") == 1)
    {
       manage_memory_ports_chained(SM, memory_modules, circuit);

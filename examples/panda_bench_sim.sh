@@ -1,6 +1,6 @@
 #!/bin/bash
 script_dir="$(dirname $(readlink -e $0))"
-BATCH_ARGS=("--simulate")
+BATCH_ARGS=("--simulate" "--compiler=I386_GCC49")
 OUT_SUFFIX="pb_sim"
 
 python3 $script_dir/../etc/scripts/test_panda.py --tool=bambu  \

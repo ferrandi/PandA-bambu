@@ -2979,7 +2979,9 @@ int CompilerWrapper::getCompatibleCompilers()
 int CompilerWrapper::getDefaultCompiler()
 {
    return
-#if HAVE_I386_CLANG7_COMPILER && defined(_WIN32)
+#if HAVE_I386_CLANG16_COMPILER
+       static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG16);
+#elif HAVE_I386_CLANG7_COMPILER && defined(_WIN32)
        static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG7);
 #elif HAVE_I386_GCC49_COMPILER
        static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC49);
@@ -3011,8 +3013,6 @@ int CompilerWrapper::getDefaultCompiler()
        static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG12);
 #elif HAVE_I386_CLANG13_COMPILER
        static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG13);
-#elif HAVE_I386_CLANG16_COMPILER
-       static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG16);
 #elif HAVE_I386_CLANGVVD_COMPILER
        static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD);
 #else

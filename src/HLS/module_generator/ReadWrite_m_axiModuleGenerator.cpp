@@ -186,8 +186,12 @@ void ReadWrite_m_axiModuleGenerator::InternalExec(std::ostream& out, structural_
        << "  BITSIZE_bid=" << _ports_in[i_bid].type_size << ",\n"
        << "  BITSIZE_rid=" << _ports_in[i_rid].type_size << ";\n\n";
 
-   out << "// BITSIZE_log_data_size = log2(BITISZE_in3 >> 3)\n"
-       << "localparam BITSIZE_log_data_size = " << ceil_log2(_ports_in[i_in3].type_size / 8) << ";\n ";
+   if(line_count != 0)
+   {
+      out << "// BITSIZE_log_data_size = log2(BITISZE_in3 >> 3)\n"
+          << "localparam BITSIZE_log_data_size = " << ceil_log2(std::max(_ports_in[i_in3].type_size, 8ull) / 8)
+          << ";\n ";
+   }
 
    /* No cache, build the AXI controller */
    std::string ip_components;

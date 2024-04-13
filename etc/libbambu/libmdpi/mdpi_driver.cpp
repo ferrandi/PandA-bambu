@@ -406,8 +406,12 @@ class fifo_interface : public interface
       assert(bitsize == _bitsize && "Bitsize mismatch");
       if(_base == _end)
       {
-         if_error("Read on empty FIFO.\n");
-         return IF_EMPTY;
+         if(shift)
+         {
+            if_error("Read on empty FIFO.\n");
+            return IF_EMPTY;
+         }
+         return 0;
       }
       if(shift)
       {
