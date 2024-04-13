@@ -2033,6 +2033,12 @@ class module : public structural_object
    const NP_functionalityRef& get_NP_functionality() const;
 
    /**
+    * @brief has_to_be_generated
+    * @return true in case the functionality has to be generated
+    */
+   bool has_to_be_generated() const;
+
+   /**
     * Return the list of object that can be parametrized.
     * This function is usually used by the backend.
     * @param owner is the refcount version of this.

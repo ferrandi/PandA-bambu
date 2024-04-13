@@ -849,7 +849,6 @@ class DataflowHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParse
       for(auto& attr : p.attrs)
       {
          ReportError(attr.first.loc, "Unexpected attribute");
-         return;
       }
       GetFuncAttr(FD).attrs.emplace(key_loc_t("dataflow_top", p.loc), "1");
    }
@@ -934,7 +933,7 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             if(bus_size < 32 || bus_size > 1024 || (bus_size & (bus_size - 1)) != 0)
             {
                ReportError(attr.first.loc, "Invalid cache bus size");
-               return;
+               continue;
             }
          }
          else if(iequals(attr.first.id, "ways"))
@@ -942,7 +941,7 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             if(std::stoi(attr.second) <= 0)
             {
                ReportError(attr.first.loc, "Invalid cache way count");
-               return;
+               continue;
             }
          }
          else if(iequals(attr.first.id, "line_count"))
@@ -950,7 +949,7 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             if(std::stoi(attr.second) <= 0)
             {
                ReportError(attr.first.loc, "Invalid cache line count");
-               return;
+               continue;
             }
          }
          else if(iequals(attr.first.id, "line_size"))
@@ -958,7 +957,7 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             if(std::stoi(attr.second) <= 0)
             {
                ReportError(attr.first.loc, "Invalid cache line size");
-               return;
+               continue;
             }
          }
          else if(iequals(attr.first.id, "num_write_outstanding"))
@@ -966,7 +965,7 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             if(std::stoi(attr.second) <= 0)
             {
                ReportError(attr.first.loc, "Invalid number of outstanding write operations");
-               return;
+               continue;
             }
          }
          else if(iequals(attr.first.id, "rep_policy"))
@@ -974,7 +973,7 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             if(attr.second != "lru" && attr.second != "tree")
             {
                ReportError(attr.first.loc, "Invalid cache replacement policy");
-               return;
+               continue;
             }
          }
          else if(iequals(attr.first.id, "write_policy"))
@@ -982,7 +981,7 @@ class CacheHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaParser
             if(attr.second != "wb" && attr.second != "wt")
             {
                ReportError(attr.first.loc, "Invalid cache write policy");
-               return;
+               continue;
             }
          }
          else

@@ -1202,12 +1202,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             technology_nodeRef fuObj = TechMan->get_fu(fu_name, UPlibrary);
             const auto structManager_obj = GetPointer<functional_unit>(fuObj)->CM;
             THROW_ASSERT(structManager_obj, "unexpected condition");
-            const auto has_to_be_generated = GetPointer<module>(structManager_obj->get_circ())
-                                                 ->get_NP_functionality()
-                                                 ->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) ||
-                                             GetPointer<module>(structManager_obj->get_circ())
-                                                 ->get_NP_functionality()
-                                                 ->exist_NP_functionality(NP_functionality::VHDL_GENERATOR);
+            const auto has_to_be_generated = GetPointer<module>(structManager_obj->get_circ())->has_to_be_generated();
             if(has_to_be_generated)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Unit has to be specialized.");

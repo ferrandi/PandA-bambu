@@ -3318,6 +3318,12 @@ const NP_functionalityRef& module::get_NP_functionality() const
    return NP_descriptions;
 }
 
+bool module::has_to_be_generated() const
+{
+   return get_NP_functionality()->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) ||
+          get_NP_functionality()->exist_NP_functionality(NP_functionality::VHDL_GENERATOR);
+}
+
 void module::get_NP_library_parameters(
     structural_objectRef _owner, std::vector<std::pair<std::string, structural_objectRef>>& computed_parameters) const
 {
