@@ -3058,12 +3058,16 @@ function [n_byte_on_databus*2-1:0] CONV;
   input [n_byte_on_databus*2-1:0] po2;
 begin
   case (po2)
-    1:CONV=(1&lt;&lt;1)-1;
-    2:CONV=(1&lt;&lt;2)-1;
-    4:CONV=(1&lt;&lt;4)-1;
-    8:CONV=(1&lt;&lt;8)-1;
-    16:CONV=(1&lt;&lt;16)-1;
-    32:CONV=(1&lt;&lt;32)-1;
+    1:CONV=({{n_byte_on_databus*2-1{1&apos;b0}},1&apos;b1}&lt;&lt;1)-1;
+    2:CONV=({{n_byte_on_databus*2-1{1&apos;b0}},1&apos;b1}&lt;&lt;2)-1;
+    4:CONV=({{n_byte_on_databus*2-1{1&apos;b0}},1&apos;b1}&lt;&lt;4)-1;
+    8:CONV=({{n_byte_on_databus*2-1{1&apos;b0}},1&apos;b1}&lt;&lt;8)-1;
+    16:CONV=({{n_byte_on_databus*2-1{1&apos;b0}},1&apos;b1}&lt;&lt;16)-1;
+    32:CONV=({{n_byte_on_databus*2-1{1&apos;b0}},1&apos;b1}&lt;&lt;32)-1;
+    64:CONV=({{n_byte_on_databus*2-1{1&apos;b0}},1&apos;b1}&lt;&lt;64)-1;
+    128:CONV=({{n_byte_on_databus*2-1{1&apos;b0}},1&apos;b1}&lt;&lt;128)-1;
+    256:CONV=({{n_byte_on_databus*2-1{1&apos;b0}},1&apos;b1}&lt;&lt;256)-1;
+    512:CONV=({{n_byte_on_databus*2-1{1&apos;b0}},1&apos;b1}&lt;&lt;512)-1;
     default:CONV=-1;
   endcase
 end
@@ -3719,12 +3723,16 @@ function [n_byte_on_databus*max_n_writes-1:0] CONV;
   input [n_byte_on_databus*max_n_writes-1:0] po2;
 begin
   case (po2)
-    1:CONV=(1&lt;&lt;1)-1;
-    2:CONV=(1&lt;&lt;2)-1;
-    4:CONV=(1&lt;&lt;4)-1;
-    8:CONV=(1&lt;&lt;8)-1;
-    16:CONV=(1&lt;&lt;16)-1;
-    32:CONV=(1&lt;&lt;32)-1;
+    1:CONV=({{n_byte_on_databus*2-1{1&apos;b0}},1&apos;b1}&lt;&lt;1)-1;
+    2:CONV=({{n_byte_on_databus*2-1{1&apos;b0}},1&apos;b1}&lt;&lt;2)-1;
+    4:CONV=({{n_byte_on_databus*2-1{1&apos;b0}},1&apos;b1}&lt;&lt;4)-1;
+    8:CONV=({{n_byte_on_databus*2-1{1&apos;b0}},1&apos;b1}&lt;&lt;8)-1;
+    16:CONV=({{n_byte_on_databus*2-1{1&apos;b0}},1&apos;b1}&lt;&lt;16)-1;
+    32:CONV=({{n_byte_on_databus*2-1{1&apos;b0}},1&apos;b1}&lt;&lt;32)-1;
+    64:CONV=({{n_byte_on_databus*2-1{1&apos;b0}},1&apos;b1}&lt;&lt;64)-1;
+    128:CONV=({{n_byte_on_databus*2-1{1&apos;b0}},1&apos;b1}&lt;&lt;128)-1;
+    256:CONV=({{n_byte_on_databus*2-1{1&apos;b0}},1&apos;b1}&lt;&lt;256)-1;
+    512:CONV=({{n_byte_on_databus*2-1{1&apos;b0}},1&apos;b1}&lt;&lt;512)-1;
     default:CONV=-1;
   endcase
 end
