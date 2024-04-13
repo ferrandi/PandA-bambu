@@ -13413,10 +13413,16 @@ endgenerate"/>
 wire [(n_byte_on_databus/2)*8-1:0] dina;
 wire [(n_byte_on_databus/2)*8-1:0] dinb;
 wire [n_byte_on_databus*8-1:0] din;
+wire [n_byte_on_databus/2-1:0] be0;
+wire [n_byte_on_databus/2-1:0] be1;
+wire [n_byte_on_databus-1:0] beTot;
 
 assign dina = din_value_aggregated_swapped[memory_offset+:(n_byte_on_databus/2)*8];
 assign dinb = din_value_aggregated_swapped[2*BRAM_BITSIZE+memory_offset+:(n_byte_on_databus/2)*8];
 assign din = {dinb,dina};
+assign be0 = be_swapped[n_byte_on_databus_offset+:n_byte_on_databus/2];
+assign be1 = be_swapped[n_byte_on_databus+n_byte_on_databus_offset+:n_byte_on_databus/2];
+assign beTot = {be1,be0};
 
 generate
 if(n_elements == 1)
@@ -13440,7 +13446,7 @@ begin
   .bram_write(bram_write),
   .memory_addr_a(memory_addr_a),
   .din_value_aggregated(din),
-  .be({be_swapped[n_byte_on_databus+n_byte_on_databus_offset+:n_byte_on_databus/2],be_swapped[n_byte_on_databus_offset+:n_byte_on_databus/2]}),
+  .be(beTot),
   .dout_a(dout_a));
 end
 else
@@ -13466,8 +13472,8 @@ begin
     .memory_addr_b(memory_addr_a[2*BITSIZE_memory_addr_a-1:BITSIZE_memory_addr_a]),
     .din_value_aggregated_a(dina),
     .din_value_aggregated_b(dinb),
-    .be_a(be_swapped[n_byte_on_databus_offset+:n_byte_on_databus/2]),
-    .be_b(be_swapped[n_byte_on_databus+n_byte_on_databus_offset+:n_byte_on_databus/2]),
+    .be_a(be0),
+    .be_b(be1),
     .dout_a(dout_a[BRAM_BITSIZE-1:0]),
     .dout_b(dout_a[2*BRAM_BITSIZE-1:BRAM_BITSIZE])
   );
