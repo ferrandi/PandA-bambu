@@ -113,7 +113,7 @@ def print_results(comp_list, base_dict, new_dict, datapoints, score_computed):
         print(row_format.format(
             'Mean', *[diff_string(x / len(comp_list) + 1.0) for x in means]))
         print(row_format.format('Standard deviation', *
-              [diff_string(math.sqrt((x / len(comp_list)) - ((means[idx] / len(comp_list)) ** 2)) + 1.0) for idx, x in enumerate(vars)]))
+              [diff_string(math.sqrt(abs((x / len(comp_list)) - ((means[idx] / len(comp_list)) ** 2))) + 1.0) for idx, x in enumerate(vars)]))
 
 
 def print_results_to_csv(comp_list, base_dict, new_dict, datapoints, score_weights, score_computed, csv_file, first_col='Benchmark'):
