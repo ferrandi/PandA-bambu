@@ -144,6 +144,7 @@ using namespace __AC_NAMESPACE;
    if(includes.size())
    {
       indented_output_stream->Append("#define " + top_fname + " __keep_your_declaration_out_of_my_code\n");
+      indented_output_stream->Append("#define main __keep_your_main_out_of_my_code\n");
 
       const auto output_directory = Param->getOption<std::filesystem::path>(OPT_output_directory) / "simulation";
       for(const auto& inc : includes)
@@ -158,6 +159,7 @@ using namespace __AC_NAMESPACE;
          }
       }
       indented_output_stream->Append("#undef " + top_fname + "\n");
+      indented_output_stream->Append("#undef main\n");
    }
    indented_output_stream->Append(R"(
 
