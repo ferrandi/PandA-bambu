@@ -961,18 +961,11 @@ void InterfaceInfer::ChasePointerInterfaceRecurse(CustomOrderedSet<unsigned>& Vi
          }();
          if(called_fname.find(STR_CST_interface_parameter_keyword) != std::string::npos)
          {
-            const auto arg_id = called_fname.substr(0, called_fname.find(STR_CST_interface_parameter_keyword));
-            if(arg_id != info.arg_id)
+            const auto bundle_id = called_fname.substr(0, called_fname.find(STR_CST_interface_parameter_keyword));
+            if(bundle_id != info.arg_id && bundle_id != info.parm_attrs.at(FunctionArchitecture::parm_bundle))
             {
-               const auto func_arch = GetPointer<HLS_manager>(AppM)->module_arch->GetArchitecture(info.interface_fname);
-               THROW_ASSERT(func_arch, "Expected initialized architecture for function " + info.interface_fname);
-               const auto bundle_id = func_arch->parms.at(arg_id).at(FunctionArchitecture::parm_bundle);
-               const auto info_bundle_id = func_arch->parms.at(info.arg_id).at(FunctionArchitecture::parm_bundle);
-               if(bundle_id != info_bundle_id)
-               {
-                  THROW_ERROR("Pattern not supported with required I/O interface: parameters '" + arg_id + "' and '" +
-                              info.arg_id + "' share a memory operation");
-               }
+               THROW_ERROR("Pattern not supported with required I/O interface: parameters '" + bundle_id + "' and '" +
+                           info.arg_id + "' share a memory operation");
             }
             return call_type::ct_forward;
          }
