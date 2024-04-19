@@ -44,7 +44,7 @@
 
 #include <mdpi/mdpi_debug.h>
 
-#if __M_OUT_LVL <= 4
+#if __M_OUT_LVL <= 4 && !defined(NDEBUG)
 #define NDEBUG
 #endif
 
@@ -546,21 +546,37 @@ void __m_sig_handler(int __sig)
    }
    else
    {
+      error("Abrupt exception: %s\n", strsignal(__sig));
       if(__m_sim_pid)
       {
-         kill(__m_sim_pid, SIGKILL);
-         info("Killing simulation process (PID: %d).\n", __m_sim_pid);
+         pid_t sim_pid = __m_sim_pid;
          __m_sim_pid = 0;
-         wait(NULL);
+         debug("Sending abort report to simulation process.\n");
+         __ipc_exit(MDPI_STATE_ABORT, EXIT_FAILURE);
+         sleep(2);
+         do
+         {
+            info("Killing simulation process (PID: %d).\n", sim_pid);
+            if(kill(sim_pid, SIGTERM) == -1)
+            {
+               if(errno == EAGAIN || errno == EINTR)
+                  continue;
+               error("Unable to kill simulation process (PID: %d).\n", sim_pid);
+               perror("kill failed");
+            }
+            break;
+         } while(1);
+         if(wait(NULL) == -1)
+         {
+            error("Error waiting for simulation process.\n");
+            perror("wait failed");
+         }
       }
-      error("Abrupt exception: %u\n", __sig);
    }
-#if __M_OUT_LVL > 4
    fflush(stdout);
-#else
+#if __M_OUT_LVL < 4
    fflush(stderr);
 #endif
-   __ipc_exit(MDPI_STATE_ABORT, EXIT_FAILURE);
    exit(EXIT_FAILURE);
 }
 
@@ -568,7 +584,7 @@ void __m_exit(int __status)
 {
    info("Exit called with value %d\n", __status);
    __ipc_exit(MDPI_STATE_END, __status);
-   exit(__status);
+   _exit(__status);
 }
 
 void __m_abort()
