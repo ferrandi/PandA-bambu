@@ -87,54 +87,47 @@
 #include "basic_blocks_profiling_c_writer.hpp"
 #endif
 
-#if HAVE_UNORDERED
+#if SIZE_WIDTH < 64
 #include <boost/functional/hash/hash.hpp>
+#endif
 
 /// Hash function for std::pair<tree_nodeRef, tree_nodeRef>
-namespace std
+struct TreeNodesPairHash
 {
-   template <>
-   struct hash<std::pair<tree_nodeRef, tree_nodeRef>>
-       : public std::unary_function<std::pair<tree_nodeRef, tree_nodeRef>, std::size_t>
+   size_t operator()(const std::pair<tree_nodeRef, tree_nodeRef>& val) const
    {
-      std::size_t operator()(const std::pair<tree_nodeRef, tree_nodeRef>& val) const
-      {
-         std::size_t hash_value = 0;
-         boost::hash_combine(hash_value, val.first);
-         boost::hash_combine(hash_value, val.second);
-         return hash_value;
-      }
-   };
-} // namespace std
-class TreeNodesPairSet : public CustomUnorderedSet<std::pair<tree_nodeRef, tree_nodeRef>>
-{
-};
+      size_t hash_value = 0;
+#if SIZE_WIDTH < 64
+      boost::hash_combine(hash_value, val.first);
+      boost::hash_combine(hash_value, val.second);
 #else
-class TreeNodesPairSorter
-    : public std::binary_function<std::pair<tree_nodeRef, tree_nodeRef>, std::pair<tree_nodeRef, tree_nodeRef>, bool>
-{
- public:
-   /**
-    * Compare position of two const tree nodes
-    * @param x is the first pair
-    * @param y is the second pair
-    * @return true if x is less than y
-    */
-   bool operator()(const std::pair<tree_nodeRef, tree_nodeRef>& x, const std::pair<tree_nodeRef, tree_nodeRef>& y) const
-   {
-      if(x.first->index == y.first->index)
-      {
-         return x.second->index < y.second->index;
-      }
-      else
-      {
-         return x.first->index < y.first->index;
-      }
+      hash_value = (static_cast<size_t>(val.second->index) << 32) | val.first->index;
+#endif
+      return hash_value;
    }
 };
-class TreeNodesPairSet : public OrderedSetStd<std::pair<tree_nodeRef, tree_nodeRef>, TreeNodesPairSorter>
+
+struct TreeNodesPairEqual
 {
+   bool operator()(const std::pair<tree_nodeRef, tree_nodeRef>& x, const std::pair<tree_nodeRef, tree_nodeRef>& y) const
+   {
+      return x.first->index == y.first->index && x.second->index == y.second->index;
+   }
 };
+
+struct TreeNodesPairSorter
+{
+   bool operator()(const std::pair<tree_nodeRef, tree_nodeRef>& x, const std::pair<tree_nodeRef, tree_nodeRef>& y) const
+   {
+      return x.first->index == y.first->index ? x.second->index < y.second->index : x.first->index < y.first->index;
+   }
+};
+
+#if HAVE_UNORDERED
+using TreeNodesPairSet =
+    CustomUnorderedSet<std::pair<tree_nodeRef, tree_nodeRef>, TreeNodesPairHash, TreeNodesPairEqual>;
+#else
+using TreeNodesPairSet = CustomOrderedSet<std::pair<tree_nodeRef, tree_nodeRef>, TreeNodesPairSorter>;
 #endif
 
 CWriter::CWriter(const HLS_managerConstRef _HLSMgr, const InstructionWriterRef _instruction_writer,

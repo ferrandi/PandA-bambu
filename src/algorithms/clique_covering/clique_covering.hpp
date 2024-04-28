@@ -175,8 +175,7 @@ class clique_covering
     * @param graph_type is the kind of graph you are going to create
     * @return a reference to the desired solver
     */
-   static typename refcount<clique_covering<VertexType>> create_solver(CliqueCovering_Algorithm solver,
-                                                                       unsigned int nvert);
+   static refcount<clique_covering<VertexType>> create_solver(CliqueCovering_Algorithm solver, unsigned int nvert);
 
    /**
     * Adds a vertex to graph. It checks if element is already into graph. If it is, an assertion fails, otherwise

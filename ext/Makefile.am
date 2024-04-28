@@ -780,8 +780,8 @@ or-tools/ortools/graph/linear_assignment.h\
 or-tools/ortools/graph/assignment.h
 
 
-SUBDIRS = abseil-cpp
-DIST_SUBDIRS = abseil-cpp
+SUBDIRS = abseil
+DIST_SUBDIRS = abseil
 
 if BUILD_COIN_OR
    SUBDIRS += Coin-Cbc

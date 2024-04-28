@@ -46,26 +46,24 @@
  */
 #ifndef TREE_NODE_HPP
 #define TREE_NODE_HPP
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "exceptions.hpp"
+#include "panda_types.hpp"
+#include "refcount.hpp"
+#include "tree_common.hpp"
 
-/// Autoheader include
+#include <cstddef>
+#include <functional>
+#include <iosfwd>
+#include <list>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "config_HAVE_UNORDERED.hpp"
-
-#include <cstddef>    // for size_t
-#include <functional> // for binary_function
-#include <iosfwd>     // for ostream
-#include <list>       // for list
-#include <memory>     // for allocator_traits...
-#include <string>     // for string
-#include <utility>    // for pair
-#include <vector>     // for vector
-
-#include "custom_map.hpp" // for CustomMap
-#include "custom_set.hpp"
-#include "exceptions.hpp" // for throw_error
-#include "panda_types.hpp"
-#include "refcount.hpp"    // for GetPointer, refc...
-#include "tree_common.hpp" // for GET_KIND, BINARY...
 
 /**
  * @name forward declarations
@@ -76,8 +74,6 @@ REF_FORWARD_DECL(tree_manager);
 CONSTREF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(Range);
-template <class value>
-class TreeNodeMap;
 enum class TreeVocabularyTokenTypes_TokenEnum;
 //@}
 
@@ -206,132 +202,73 @@ class tree_node
    static std::string GetString(const enum kind k);
 };
 
-/**
- * RefCount type definition of the tree_node class structure
- */
 using tree_nodeRef = refcount<tree_node>;
 using tree_nodeConstRef = refcount<const tree_node>;
 
-class TreeNodeConstSorter : std::binary_function<tree_nodeConstRef, tree_nodeConstRef, bool>
+struct TreeNodeSorter
 {
- public:
-   /**
-    * Constructor
-    */
-   TreeNodeConstSorter();
-
-   /**
-    * Compare position of two const tree nodes
-    * @param x is the first tree node
-    * @param y is the second tree node
-    * @return true if index of x is less than y
-    */
-   bool operator()(const tree_nodeConstRef& x, const tree_nodeConstRef& y) const;
-};
-
-/**
- * A set of const tree node
- */
-#if HAVE_UNORDERED
-struct TreeNodeConstHash : public std::unary_function<tree_nodeConstRef, size_t>
-{
-   size_t operator()(tree_nodeConstRef tn) const
+   bool operator()(const tree_nodeRef& x, const tree_nodeRef& y) const
    {
-      std::hash<unsigned int> hasher;
-      return hasher(tn->index);
+      return x->index < y->index;
    }
 };
 
-struct TreeNodeConstEqualTo : public std::binary_function<tree_nodeConstRef, tree_nodeConstRef, bool>
+struct TreeNodeConstSorter
 {
- public:
-   /**
-    * Constructor
-    */
-   TreeNodeConstEqualTo();
-
-   /**
-    * Compare two const tree nodes
-    * @param x is the first tree node
-    * @param y is the second tree node
-    * @return true if index of x is the same of y
-    */
-   bool operator()(const tree_nodeConstRef x, const tree_nodeConstRef y) const;
-};
-
-class TreeNodeConstSet : public CustomUnorderedSet<tree_nodeConstRef, TreeNodeConstHash, TreeNodeConstEqualTo>
-{
-};
-#else
-
-class TreeNodeConstSet : public OrderedSetStd<tree_nodeConstRef, TreeNodeConstSorter>
-{
- public:
-   /**
-    * Constructor
-    */
-   TreeNodeConstSet();
-};
-#endif
-
-/**
- * A set of tree node
- */
-#if HAVE_UNORDERED
-struct TreeNodeHash : public std::unary_function<tree_nodeRef, size_t>
-{
-   size_t operator()(tree_nodeRef tn) const
+   bool operator()(const tree_nodeConstRef& x, const tree_nodeConstRef& y) const
    {
-      std::hash<unsigned int> hasher;
-      return hasher(tn->index);
+      return x->index < y->index;
    }
 };
 
-class TreeNodeSet : public UnorderedSetStd<tree_nodeRef, TreeNodeHash, TreeNodeConstEqualTo>
+struct TreeNodeEqual
 {
-};
-#else
-class TreeNodeSorter : std::binary_function<tree_nodeRef, tree_nodeRef, bool>
-{
- public:
-   /**
-    * Constructor
-    */
-   TreeNodeSorter();
-
-   /**
-    * Compare position of two const tree nodes
-    * @param x is the first tree node
-    * @param y is the second tree node
-    * @return true if index of x is less than y
-    */
-   bool operator()(const tree_nodeRef& x, const tree_nodeRef& y) const;
+   bool operator()(const tree_nodeRef& x, const tree_nodeRef& y) const
+   {
+      return x->index == y->index;
+   }
 };
 
-class TreeNodeSet : public OrderedSetStd<tree_nodeRef, TreeNodeSorter>
+struct TreeNodeConstEqual
 {
- public:
-   /**
-    * Constructor
-    */
-   TreeNodeSet();
+   bool operator()(const tree_nodeConstRef& x, const tree_nodeConstRef& y) const
+   {
+      return x->index == y->index;
+   }
 };
-#endif
 
-/**
- * A map with key tree_nodeRef
- */
 #if HAVE_UNORDERED
-template <typename value>
-class TreeNodeMap : public UnorderedMapStd<tree_nodeRef, value, TreeNodeHash, TreeNodeConstEqualTo>
+struct TreeNodeHash
 {
+   size_t operator()(const tree_nodeRef& tn) const
+   {
+      return tn->index;
+   }
 };
+
+struct TreeNodeConstHash
+{
+   size_t operator()(const tree_nodeConstRef& tn) const
+   {
+      return tn->index;
+   }
+};
+
+using TreeNodeSet = CustomUnorderedSet<tree_nodeRef, TreeNodeHash, TreeNodeEqual>;
+using TreeNodeConstSet = CustomUnorderedSet<tree_nodeConstRef, TreeNodeConstHash, TreeNodeConstEqual>;
+
+template <typename T>
+using TreeNodeMap = CustomUnorderedMap<tree_nodeRef, T, TreeNodeHash, TreeNodeEqual>;
+template <typename T>
+using TreeNodeConstMap = CustomUnorderedMap<tree_nodeConstRef, T, TreeNodeConstHash, TreeNodeConstEqual>;
 #else
-/// FIXME: add third template to custom map
-template <typename value>
-class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
-{
-};
+using TreeNodeSet = CustomOrderedSet<tree_nodeRef, TreeNodeSorter>;
+using TreeNodeConstSet = CustomOrderedSet<tree_nodeConstRef, TreeNodeConstSorter>;
+
+template <typename T>
+using TreeNodeMap = CustomOrderedMap<tree_nodeRef, T, TreeNodeSorter>;
+template <typename T>
+using TreeNodeConstMap = CustomOrderedMap<tree_nodeConstRef, T, TreeNodeConstSorter>;
 #endif
 
 /**

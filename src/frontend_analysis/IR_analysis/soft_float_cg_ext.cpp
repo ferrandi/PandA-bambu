@@ -804,13 +804,12 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "Generating input interface for " + STR(inputInterface.size()) + " variables");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-      for(auto& if_info : inputInterface)
+      for(auto& [SSA, if_info] : inputInterface)
       {
-         const auto* SSA = if_info.first;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Input interface for " + SSA->ToString());
          const auto ssa = TreeM->GetTreeNode(SSA->index);
-         auto& exclude = std::get<1>(if_info.second);
-         const auto oentry = outputInterface.find(if_info.first);
+         auto& [fformat, exclude] = if_info;
+         const auto oentry = outputInterface.find(SSA);
          if(oentry != outputInterface.end())
          {
             const auto& oentry_list = std::get<1>(oentry->second);
@@ -863,12 +862,11 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                            "Input interface for parameter will be inserted in BB" + STR(bb->number));
          }
 
-         const auto convertedSSA =
-             generate_interface(bb, defStmt, ssa, std::get<0>(if_info.second), _version->userRequired);
+         const auto convertedSSA = generate_interface(bb, defStmt, ssa, fformat, _version->userRequired);
          const auto convertedSSA_type = tree_helper::CGetType(convertedSSA);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                        "-->Interface from " + std::get<0>(if_info.second)->ToString() + " to " +
-                            _version->userRequired->ToString() + " generated output " + convertedSSA->ToString());
+                        "-->Interface from " + fformat->ToString() + " to " + _version->userRequired->ToString() +
+                            " generated output " + convertedSSA->ToString());
 
          for(const auto& ssaUse : ssaUses)
          {
@@ -904,11 +902,10 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                      "Generating output interface for " + STR(outputInterface.size()) + " variables");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-      for(const auto& if_info : outputInterface)
+      for(const auto& [SSA, if_info] : outputInterface)
       {
-         const auto* SSA = if_info.first;
          const auto ssa = TreeM->GetTreeNode(SSA->index);
-         const auto& useStmts = std::get<1>(if_info.second);
+         const auto& [fformat, useStmts] = if_info;
 
          auto defStmt = SSA->CGetDefStmt();
          const auto gn = GetPointerS<gimple_node>(defStmt);
@@ -927,8 +924,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "Output interface for " + SSA->ToString() + " will be inserted in BB" + STR(bb->number));
 
-         const auto convertedSSA =
-             generate_interface(bb, defStmt, ssa, _version->userRequired, std::get<0>(if_info.second));
+         const auto convertedSSA = generate_interface(bb, defStmt, ssa, _version->userRequired, fformat);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "Interface generated output " + convertedSSA->ToString());
          for(const auto& stmt : useStmts)

@@ -49,9 +49,11 @@
 #include "custom_set.hpp"
 #include "panda_types.hpp"
 #include "refcount.hpp"
+#include "tree_node.hpp"
 
 #include <cstddef>
 #include <list>
+#include <set>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -61,9 +63,6 @@ struct function_decl;
 struct integer_cst;
 struct ssa_name;
 struct statement_list;
-class TreeNodeConstSorter;
-template <typename value>
-class TreeNodeMap;
 enum class TreeVocabularyTokenTypes_TokenEnum;
 CONSTREF_FORWARD_DECL(tree_manager);
 CONSTREF_FORWARD_DECL(tree_node);

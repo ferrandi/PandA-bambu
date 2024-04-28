@@ -1607,38 +1607,3 @@ void expr_pack_expansion::visit(tree_node_visitor* const v) const
    VISIT_MEMBER(mask, param_packs, visit(v));
    VISIT_MEMBER(mask, arg, visit(v));
 }
-
-#if HAVE_UNORDERED
-TreeNodeConstEqualTo::TreeNodeConstEqualTo()
-{
-}
-
-bool TreeNodeConstEqualTo::operator()(const tree_nodeConstRef x, const tree_nodeConstRef y) const
-{
-   return x->index == y->index;
-}
-
-#endif
-
-TreeNodeConstSorter::TreeNodeConstSorter() = default;
-
-bool TreeNodeConstSorter::operator()(const tree_nodeConstRef& x, const tree_nodeConstRef& y) const
-{
-   return x->index < y->index;
-}
-
-#if !HAVE_UNORDERED
-TreeNodeSorter::TreeNodeSorter() = default;
-bool TreeNodeSorter::operator()(const tree_nodeRef& x, const tree_nodeRef& y) const
-{
-   return x->index < y->index;
-}
-
-TreeNodeSet::TreeNodeSet() : OrderedSetStd<tree_nodeRef, TreeNodeSorter>()
-{
-}
-
-TreeNodeConstSet::TreeNodeConstSet() : OrderedSetStd<tree_nodeConstRef, TreeNodeConstSorter>()
-{
-}
-#endif
