@@ -1663,12 +1663,11 @@ void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const
          if(!is_virtual)
          {
             bb_dest_definition[dest_i] = si->block->number;
-            for(const auto& def_edge : pn->CGetDefEdgesList())
+            for(const auto& [src, edge_id] : pn->CGetDefEdgesList())
             {
-               if(def_edge.second == bi_id)
+               if(edge_id == bi_id)
                {
-                  tree_nodeRef src = def_edge.first;
-                  unsigned int src_i = def_edge.first->index;
+                  unsigned int src_i = src->index;
                   copy_set.insert(std::pair<tree_nodeRef, tree_nodeRef>(src, dest));
                   map[src_i] = src_i;
                   map[dest_i] = dest_i;
@@ -1683,12 +1682,14 @@ void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const
    /// Pass two: Set up the worklist of initial copies
    for(auto cs_it = copy_set.begin(); cs_it != copy_set.end();)
    {
-      auto current_it = cs_it;
-      ++cs_it;
-      if(used_by_another.find(current_it->second->index) == used_by_another.end())
+      if(used_by_another.find(cs_it->second->index) == used_by_another.end())
       {
-         worklist.insert(*current_it);
-         copy_set.erase(current_it);
+         worklist.insert(*cs_it);
+         cs_it = copy_set.erase(cs_it);
+      }
+      else
+      {
+         ++cs_it;
       }
    }
 
@@ -1752,14 +1753,16 @@ void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const
             basic_block_tail[bi_id] += copy_statement;
             // map[src_i] = dest_i;
 
-            for(auto cs1_it = copy_set.begin(); cs1_it != copy_set.end();)
+            for(auto cs_it = copy_set.begin(); cs_it != copy_set.end();)
             {
-               auto current1_it = cs1_it;
-               ++cs1_it;
-               if(src == current1_it->second)
+               if(src == cs_it->second)
                {
-                  worklist_restart.insert(*current1_it);
-                  copy_set.erase(current1_it);
+                  worklist_restart.insert(*cs_it);
+                  cs_it = copy_set.erase(cs_it);
+               }
+               else
+               {
+                  ++cs_it;
                }
             }
          }
@@ -1767,36 +1770,28 @@ void CWriter::schedule_copies(vertex b, const BBGraphConstRef bb_domGraph, const
          worklist_restart.clear();
       } while(!worklist.empty());
 
-      auto cs2_it_end = copy_set.end();
-      auto cs2_it = copy_set.begin();
-      if(cs2_it != cs2_it_end)
+      if(copy_set.size())
       {
-         auto current2_it = cs2_it;
-         unsigned int dest_i = current2_it->second->index;
+         const auto begin_it = copy_set.begin();
+         unsigned int dest_i = begin_it->second->index;
          /// check if dest_i is source of any other pair in copy_set
          /// this optimization is not described in the original algorithm
-         ++cs2_it;
-         bool add_temporary = false;
-         for(; cs2_it != cs2_it_end; ++cs2_it)
+         for(auto cs_it = std::next(begin_it); cs_it != copy_set.end(); ++cs_it)
          {
-            if(cs2_it->first->index == dest_i)
+            if(cs_it->first->index == dest_i)
             {
-               add_temporary = true;
+               /// create a new symbol
+               unsigned int t_i = create_new_identifier(symbol_table);
+               /// insert a copy from dest to a new temp t at the end of b
+               basic_block_tail[bi_id] += symbol_table.at(t_i) + " = " + (*variableFunctor)(dest_i) + ";\n";
+               created_variables[t_i] = dest_i;
+               map[t_i] = t_i;
+               map[dest_i] = t_i;
                break;
             }
          }
-         if(add_temporary)
-         {
-            /// create a new symbol
-            unsigned int t_i = create_new_identifier(symbol_table);
-            /// insert a copy from dest to a new temp t at the end of b
-            basic_block_tail[bi_id] += symbol_table.find(t_i)->second + " = " + (*variableFunctor)(dest_i) + ";\n";
-            created_variables[t_i] = dest_i;
-            map[t_i] = t_i;
-            map[dest_i] = t_i;
-         }
-         worklist.insert(*current2_it);
-         copy_set.erase(current2_it);
+         worklist.insert(*begin_it);
+         copy_set.erase(begin_it);
       }
    }
 }

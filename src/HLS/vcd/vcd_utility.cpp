@@ -736,21 +736,16 @@ void vcd_utility::update_discr_list(const vcd_trace_head& t, const uint64_t c_co
        * remove from the list of soft discrepancies those that happen after the
        * first hard discrepancy
        */
-      std::list<decltype(soft_discr_list.begin())> soft_discr_to_remove;
-      auto soft_discr_it = soft_discr_list.begin();
-      const auto soft_discr_end = soft_discr_list.cend();
-
-      for(; soft_discr_it != soft_discr_end; soft_discr_it++)
+      for(auto soft_discr_it = soft_discr_list.begin(); soft_discr_it != soft_discr_list.end();)
       {
          if(soft_discr_it->op_end_time > t.op_end_time)
          {
-            soft_discr_to_remove.push_back(soft_discr_it);
+            soft_discr_it = soft_discr_list.erase(soft_discr_it);
          }
-      }
-
-      for(const auto& s : soft_discr_to_remove)
-      {
-         soft_discr_list.erase(s);
+         else
+         {
+            ++soft_discr_it;
+         }
       }
    }
    else
