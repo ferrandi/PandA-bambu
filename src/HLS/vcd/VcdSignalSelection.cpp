@@ -34,6 +34,7 @@
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
 #include "VcdSignalSelection.hpp"
+
 #include "Discrepancy.hpp"
 #include "Parameter.hpp"
 #include "UnfoldedFunctionInfo.hpp"
@@ -52,7 +53,7 @@
 #include "memory.hpp"
 #include "reg_binding.hpp"
 #include "storage_value_information.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "string_manipulation.hpp"
 #include "structural_objects.hpp"
 #include "technology_node.hpp"
 #include "tree_helper.hpp"
@@ -117,10 +118,10 @@ void VcdSignalSelection::SelectInitialAddrParam(const CustomOrderedSet<unsigned 
 {
    for(const unsigned int fun_id : reached_body_fun_ids)
    {
-      const tree_nodeConstRef fun_decl_node = TM->GetTreeNode(fun_id);
+      const auto fun_decl_node = TM->GetTreeNode(fun_id);
       THROW_ASSERT(fun_decl_node->get_kind() == function_decl_K,
                    fun_decl_node->ToString() + " is of kind " + tree_node::GetString(fun_decl_node->get_kind()));
-      const auto* fu_dec = GetPointer<const function_decl>(fun_decl_node);
+      const auto fu_dec = GetPointer<const function_decl>(fun_decl_node);
       for(const auto& parm_decl_node : fu_dec->list_of_args)
       {
          THROW_ASSERT(parm_decl_node->get_kind() == parm_decl_K,
@@ -131,7 +132,6 @@ void VcdSignalSelection::SelectInitialAddrParam(const CustomOrderedSet<unsigned 
          }
       }
    }
-   return;
 }
 
 void VcdSignalSelection::InitialSsaIsAddress(
@@ -142,7 +142,7 @@ void VcdSignalSelection::InitialSsaIsAddress(
                 tn->ToString() + " is of kind " + tree_node::GetString(tn->get_kind()));
    const auto* g_as_node = GetPointer<const gimple_assign>(tn);
    /* check if the left value is an ssa_name_K */
-   const tree_nodeRef ssa_node = g_as_node->op0;
+   const auto ssa_node = g_as_node->op0;
    if(ssa_node->get_kind() != ssa_name_K)
    {
       return;
@@ -153,7 +153,7 @@ void VcdSignalSelection::InitialSsaIsAddress(
       return;
    }
 
-   const tree_nodeConstRef rhs = g_as_node->op1;
+   const auto rhs = g_as_node->op1;
    const auto rhs_kind = rhs->get_kind();
    /*
     * If the user does not specify OPT_discrepancy_no_load_pointers, all the
@@ -231,18 +231,16 @@ void VcdSignalSelection::InitialSsaIsAddress(
 void VcdSignalSelection::InitialPhiResIsAddress(const tree_nodeConstRef& tn)
 {
    THROW_ASSERT(tn->get_kind() == gimple_phi_K, tn->ToString() + " is of kind " + tree_node::GetString(tn->get_kind()));
-   const gimple_phi& phi = *GetPointer<const gimple_phi>(tn);
-   auto phi_it = phi.CGetDefEdgesList().begin();
-   const auto phi_end = phi.CGetDefEdgesList().end();
-   const TreeNodeSet& address_ssa = Discr->address_ssa;
-   const auto is_address = [&address_ssa](const std::pair<tree_nodeRef, unsigned int>& p) -> bool {
-      return (p.first->get_kind() == addr_expr_K) or (address_ssa.find(p.first) != address_ssa.end());
+   const auto phi = GetPointer<const gimple_phi>(tn);
+   auto phi_edges = phi->CGetDefEdgesList();
+   const auto is_address = [&](const std::pair<tree_nodeRef, unsigned int>& p) -> bool {
+      return (p.first->get_kind() == addr_expr_K) || (Discr->address_ssa.find(p.first) != Discr->address_ssa.end());
    };
-   if(std::find_if(phi_it, phi_end, is_address) != phi_end)
+   if(std::find_if(phi_edges.begin(), phi_edges.end(), is_address) != phi_edges.end())
    {
-      THROW_ASSERT(phi.res->get_kind() == ssa_name_K,
-                   "phi node id: " + STR(tn->index) + " result node id: " + STR(phi.res->index) + "\n");
-      Discr->address_ssa.insert(phi.res);
+      THROW_ASSERT(phi->res->get_kind() == ssa_name_K,
+                   "phi node id: " + STR(tn->index) + " result node id: " + STR(phi->res->index) + "\n");
+      Discr->address_ssa.insert(phi->res);
    }
 }
 
@@ -252,25 +250,24 @@ void VcdSignalSelection::SelectInitialSsa(
 {
    for(const auto fid : reached_body_fun_ids)
    {
-      const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(fid);
-      const OpGraphConstRef op_graph = FB->CGetOpGraph(FunctionBehavior::FCFG);
-      const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
-      VertexIterator vi, vi_end;
-      for(boost::tie(vi, vi_end) = boost::vertices(*op_graph); vi != vi_end; vi++)
+      const auto FB = HLSMgr->CGetFunctionBehavior(fid);
+      const auto op_graph = FB->CGetOpGraph(FunctionBehavior::FCFG);
+      const auto BH = FB->CGetBehavioralHelper();
+      BOOST_FOREACH(vertex vi, boost::vertices(*op_graph))
       {
-         const unsigned int st_tn_id = op_graph->CGetOpNodeInfo(*vi)->GetNodeId();
+         const auto st_tn_id = op_graph->CGetOpNodeInfo(vi)->GetNodeId();
          if(st_tn_id == ENTRY_ID || st_tn_id == EXIT_ID)
          {
             continue;
          }
          THROW_ASSERT(st_tn_id, "operation vertex has id = 0");
-         const tree_nodeConstRef curr_tn = TM->GetTreeNode(st_tn_id);
-         const unsigned int assigned_tree_node_id = HLSMgr->get_produced_value(fid, *vi);
+         const auto curr_tn = TM->GetTreeNode(st_tn_id);
+         const auto assigned_tree_node_id = HLSMgr->get_produced_value(fid, vi);
          if(assigned_tree_node_id == 0)
          {
             continue;
          }
-         const tree_nodeRef assigned_ssa_tree_node = TM->GetTreeNode(assigned_tree_node_id);
+         const auto assigned_ssa_tree_node = TM->GetTreeNode(assigned_tree_node_id);
          if(assigned_ssa_tree_node->get_kind() != ssa_name_K)
          {
             continue;
@@ -281,7 +278,7 @@ void VcdSignalSelection::SelectInitialSsa(
           * ssa is not used, the output wire is not placed by the interconnection and
           * the simulator dies when it tries to find it
           */
-         const auto* ssa = GetPointer<const ssa_name>(assigned_ssa_tree_node);
+         const auto ssa = GetPointer<const ssa_name>(assigned_ssa_tree_node);
          if(ssa->CGetUseStmts().empty())
          {
             Discr->ssa_to_skip.insert(assigned_ssa_tree_node);
@@ -320,18 +317,14 @@ void VcdSignalSelection::SelectInitialSsa(
          }
       }
    }
-   return;
 }
 
 void VcdSignalSelection::SingleStepPropagateParamToSsa(const TreeNodeMap<size_t>& used_ssa,
                                                        const TreeNodeSet& address_parameters)
 {
-   auto ssause_it = used_ssa.begin();
-   const auto ssause_end = used_ssa.end();
-   for(; ssause_it != ssause_end; ++ssause_it)
+   for(const auto& [ssa_node, use_count] : used_ssa)
    {
-      const tree_nodeRef ssa_node = ssause_it->first;
-      const auto* ssa = GetPointer<const ssa_name>(ssa_node);
+      const auto ssa = GetPointer<const ssa_name>(ssa_node);
       if(!ssa->var)
       {
          continue;
@@ -339,15 +332,14 @@ void VcdSignalSelection::SingleStepPropagateParamToSsa(const TreeNodeMap<size_t>
       if(address_parameters.find(ssa->var) != address_parameters.end())
       {
          const auto def = ssa->CGetDefStmts();
-         THROW_ASSERT(not def.empty(), ssa_node->ToString() + " has no def_stmts");
-         if(def.size() == 1 and (((*def.begin())->get_kind() == gimple_nop_K) or ssa->volatile_flag))
+         THROW_ASSERT(!def.empty(), ssa_node->ToString() + " has no def_stmts");
+         if(def.size() == 1 && (((*def.begin())->get_kind() == gimple_nop_K) || ssa->volatile_flag))
          {
             Discr->address_ssa.insert(ssa_node);
             Discr->ssa_to_skip.insert(ssa_node);
          }
       }
    }
-   return;
 }
 
 void VcdSignalSelection::PropagateAddrParamToSsa(
@@ -356,58 +348,53 @@ void VcdSignalSelection::PropagateAddrParamToSsa(
 {
    for(const auto fid : reached_body_fun_ids)
    {
-      const CustomUnorderedMap<unsigned int, TreeNodeSet>::const_iterator addrp_it = address_parameters.find(fid);
+      const auto addrp_it = address_parameters.find(fid);
       bool has_addr_param = (addrp_it != address_parameters.end());
-      if(not has_addr_param)
+      if(!has_addr_param)
       {
          continue;
       }
-      const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(fid);
-      const OpGraphConstRef op_graph = FB->CGetOpGraph(FunctionBehavior::FCFG);
-      const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
-      VertexIterator vi, vi_end;
-      for(boost::tie(vi, vi_end) = boost::vertices(*op_graph); vi != vi_end; vi++)
+      const auto FB = HLSMgr->CGetFunctionBehavior(fid);
+      const auto op_graph = FB->CGetOpGraph(FunctionBehavior::FCFG);
+      const auto BH = FB->CGetBehavioralHelper();
+      BOOST_FOREACH(vertex vi, boost::vertices(*op_graph))
       {
-         const OpNodeInfoConstRef op_info = op_graph->CGetOpNodeInfo(*vi);
-         const unsigned int st_tn_id = op_info->GetNodeId();
+         const auto op_info = op_graph->CGetOpNodeInfo(vi);
+         const auto st_tn_id = op_info->GetNodeId();
          if(st_tn_id == ENTRY_ID || st_tn_id == EXIT_ID)
          {
             continue;
          }
          THROW_ASSERT(st_tn_id, "operation vertex has id = 0");
-         const tree_nodeConstRef curr_tn = TM->GetTreeNode(st_tn_id);
+         const auto curr_tn = TM->GetTreeNode(st_tn_id);
          if(curr_tn->get_kind() == gimple_assign_K)
          {
-            const auto* g_as_node = GetPointer<const gimple_assign>(curr_tn);
-            const TreeNodeMap<size_t> used_ssa = tree_helper::ComputeSsaUses(g_as_node->op1);
+            const auto g_as_node = GetPointer<const gimple_assign>(curr_tn);
+            const auto used_ssa = tree_helper::ComputeSsaUses(g_as_node->op1);
             SingleStepPropagateParamToSsa(used_ssa, addrp_it->second);
          }
          else
          {
-            const TreeNodeMap<size_t> used_ssa = tree_helper::ComputeSsaUses(op_info->node);
+            const auto used_ssa = tree_helper::ComputeSsaUses(op_info->node);
             SingleStepPropagateParamToSsa(used_ssa, addrp_it->second);
          }
       }
    }
-   return;
 }
 
-void VcdSignalSelection::SingleStepPropagateAddrSsa(const tree_nodeRef& curr_tn)
+void VcdSignalSelection::SingleStepPropagateAddrSsa(const tree_nodeRef& tn, TreeNodeSet& new_address_ssa)
 {
-   const tree_nodeConstRef tn = curr_tn;
    if(tn->get_kind() == gimple_assign_K)
    {
-      const auto* g_as_node = GetPointer<const gimple_assign>(tn);
+      const auto g_as_node = GetPointer<const gimple_assign>(tn);
       /* check if the left value is an ssa_name_K */
-      const tree_nodeRef ssa_node = g_as_node->op0;
-      if(tree_helper::is_real(TM, ssa_node->index) or tree_helper::is_a_complex(TM, ssa_node->index))
+      if(tree_helper::is_real(TM, g_as_node->op0->index) or tree_helper::is_a_complex(TM, g_as_node->op0->index))
       {
          return;
       }
-      if(ssa_node->get_kind() == ssa_name_K)
+      if(g_as_node->op0->get_kind() == ssa_name_K)
       {
-         const tree_nodeConstRef rhs = g_as_node->op1;
-         const auto rhs_kind = rhs->get_kind();
+         const auto rhs_kind = g_as_node->op1->get_kind();
 
          const bool rhs_is_comparison = rhs_kind == lt_expr_K || rhs_kind == le_expr_K || rhs_kind == gt_expr_K ||
                                         rhs_kind == ge_expr_K || rhs_kind == eq_expr_K || rhs_kind == ne_expr_K ||
@@ -418,7 +405,7 @@ void VcdSignalSelection::SingleStepPropagateAddrSsa(const tree_nodeRef& curr_tn)
          bool is_a_vector_bitfield = false;
          if(rhs_kind == bit_field_ref_K)
          {
-            const auto* bfr = GetPointer<const bit_field_ref>(rhs);
+            const auto bfr = GetPointer<const bit_field_ref>(g_as_node->op1);
             if(tree_helper::is_a_vector(TM, bfr->op0->index))
             {
                is_a_vector_bitfield = true;
@@ -433,41 +420,38 @@ void VcdSignalSelection::SingleStepPropagateAddrSsa(const tree_nodeRef& curr_tn)
 
          if(rhs_kind == view_convert_expr_K)
          {
-            const auto* vc = GetPointer<const view_convert_expr>(rhs);
+            const auto vc = GetPointer<const view_convert_expr>(g_as_node->op1);
             const auto vc_kind = tree_helper::CGetType(vc->op)->get_kind();
             if(vc_kind == record_type_K || vc_kind == union_type_K)
             {
                rhs_is_load_candidate = true;
             }
-            if(vc_kind == array_type_K && ssa_node->get_kind() == vector_type_K)
+            if(vc_kind == array_type_K && g_as_node->op0->get_kind() == vector_type_K)
             {
                rhs_is_load_candidate = true;
             }
          }
 
-         if((not rhs_is_comparison) and (not rhs_is_load_candidate) and not(rhs_kind == call_expr_K))
+         if(!rhs_is_comparison && !rhs_is_load_candidate && rhs_kind != call_expr_K)
          {
-            Discr->address_ssa.insert(ssa_node);
+            new_address_ssa.insert(g_as_node->op0);
          }
       }
    }
    else if(tn->get_kind() == gimple_phi_K)
    {
-      const gimple_phi& phi = *GetPointer<const gimple_phi>(tn);
-      auto phi_it = phi.CGetDefEdgesList().begin();
-      const auto phi_end = phi.CGetDefEdgesList().end();
-      const TreeNodeSet& address_ssa = Discr->address_ssa;
-      const auto is_address = [&address_ssa](const std::pair<tree_nodeRef, unsigned int>& p) -> bool {
-         return (p.first->get_kind() == addr_expr_K) or (address_ssa.find(p.first) != address_ssa.end());
+      const auto phi = GetPointer<const gimple_phi>(tn);
+      const auto phi_edges = phi->CGetDefEdgesList();
+      const auto is_address = [&](const gimple_phi::DefEdge& p) -> bool {
+         return (p.first->get_kind() == addr_expr_K) || (Discr->address_ssa.find(p.first) != Discr->address_ssa.end());
       };
-      if(std::find_if(phi_it, phi_end, is_address) != phi_end)
+      if(std::find_if(phi_edges.begin(), phi_edges.end(), is_address) != phi_edges.end())
       {
-         THROW_ASSERT(phi.res->get_kind() == ssa_name_K,
-                      "phi node id: " + STR(tn->index) + " result node id: " + STR(phi.res->index) + "\n");
-         Discr->address_ssa.insert(phi.res);
+         THROW_ASSERT(phi->res->get_kind() == ssa_name_K,
+                      "phi node id: " + STR(tn->index) + " result node id: " + STR(phi->res->index) + "\n");
+         new_address_ssa.insert(phi->res);
       }
    }
-   return;
 }
 
 void VcdSignalSelection::PropagateAddrSsa()
@@ -475,18 +459,19 @@ void VcdSignalSelection::PropagateAddrSsa()
    size_t previous_address_ssa_size;
    do
    {
-      previous_address_ssa_size = static_cast<size_t>(Discr->address_ssa.size());
+      previous_address_ssa_size = Discr->address_ssa.size();
+      TreeNodeSet new_address_ssa;
       for(const auto& addr : Discr->address_ssa)
       {
          THROW_ASSERT(addr->get_kind() == ssa_name_K,
                       addr->ToString() + " is of kind " + tree_node::GetString(addr->get_kind()));
-         for(const auto& stmt_using_ssa : GetPointer<const ssa_name>(addr)->CGetUseStmts())
+         for(const auto& [ssa_node, use_count] : GetPointer<const ssa_name>(addr)->CGetUseStmts())
          {
-            SingleStepPropagateAddrSsa(stmt_using_ssa.first);
+            SingleStepPropagateAddrSsa(ssa_node, new_address_ssa);
          }
       }
-   } while(previous_address_ssa_size != static_cast<size_t>(Discr->address_ssa.size()));
-   return;
+      Discr->address_ssa.insert(new_address_ssa.begin(), new_address_ssa.end());
+   } while(previous_address_ssa_size != Discr->address_ssa.size());
 }
 
 void VcdSignalSelection::DetectInvalidReturns(const CustomOrderedSet<unsigned int>& reached_body_functions,
@@ -498,21 +483,21 @@ void VcdSignalSelection::DetectInvalidReturns(const CustomOrderedSet<unsigned in
       {
          continue;
       }
-      const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(i);
-      const OpGraphConstRef op_graph = FB->CGetOpGraph(FunctionBehavior::FCFG);
-      const vertex exit_vertex = op_graph->CGetOpGraphInfo()->exit_vertex;
-      for(const EdgeDescriptor& edge : op_graph->CGetInEdges(exit_vertex))
+      const auto FB = HLSMgr->CGetFunctionBehavior(i);
+      const auto op_graph = FB->CGetOpGraph(FunctionBehavior::FCFG);
+      const auto exit_vertex = op_graph->CGetOpGraphInfo()->exit_vertex;
+      for(const auto& edge : op_graph->CGetInEdges(exit_vertex))
       {
-         const vertex& op = boost::source(edge, *op_graph);
+         const auto op = boost::source(edge, *op_graph);
          const unsigned int node_id = op_graph->CGetOpNodeInfo(op)->GetNodeId();
          if(node_id == ENTRY_ID or node_id == EXIT_ID)
          {
             continue;
          }
-         const tree_nodeConstRef tn = TM->GetTreeNode(node_id);
+         const auto tn = TM->GetTreeNode(node_id);
          if(tn->get_kind() == gimple_return_K)
          {
-            const auto* gr = GetPointer<const gimple_return>(tn);
+            const auto gr = GetPointer<const gimple_return>(tn);
             if((gr->op != nullptr) &&
                (IsAddressType(tree_helper::get_type_index(TM, gr->op->index)) ||
                 ((gr->op->get_kind() == ssa_name_K) && (Discr->address_ssa.find(gr->op) != Discr->address_ssa.end()))))
@@ -532,7 +517,6 @@ void VcdSignalSelection::InProcedurePropagateAddr(
    PropagateAddrParamToSsa(address_parameters, reached_body_functions);
    PropagateAddrSsa();
    DetectInvalidReturns(reached_body_functions, addr_fun_ids);
-   return;
 }
 
 void VcdSignalSelection::CrossPropagateAddrSsa(
@@ -543,9 +527,9 @@ void VcdSignalSelection::CrossPropagateAddrSsa(
 {
    for(const unsigned int caller_fun_id : reached_body_functions)
    {
-      const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(caller_fun_id);
-      const OpGraphConstRef op_graph = FB->CGetOpGraph(FunctionBehavior::FCFG);
-      const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
+      const auto FB = HLSMgr->CGetFunctionBehavior(caller_fun_id);
+      const auto op_graph = FB->CGetOpGraph(FunctionBehavior::FCFG);
+      const auto BH = FB->CGetBehavioralHelper();
       THROW_ASSERT(fu_id_to_call_ids.find(caller_fun_id) != fu_id_to_call_ids.end(),
                    "caller_id = " + STR(caller_fun_id));
       for(const unsigned int callid : fu_id_to_call_ids.at(caller_fun_id))
@@ -572,13 +556,13 @@ void VcdSignalSelection::CrossPropagateAddrSsa(
              * If the return value of an address function is assigned to an ssa,
              * then the ssa itself must be marked as address
              */
-            const tree_nodeConstRef call_node = TM->GetTreeNode(callid);
-            const BehavioralHelperConstRef called_BH = HLSMgr->CGetFunctionBehavior(called_id)->CGetBehavioralHelper();
+            const auto call_node = TM->GetTreeNode(callid);
+            const auto called_BH = HLSMgr->CGetFunctionBehavior(called_id)->CGetBehavioralHelper();
             if(call_node->get_kind() == gimple_assign_K)
             {
-               const auto* g_as = GetPointer<const gimple_assign>(call_node);
-               const tree_nodeRef ssa_node = g_as->op0;
-               const tree_nodeConstRef rhs = g_as->op1;
+               const auto g_as = GetPointer<const gimple_assign>(call_node);
+               const auto ssa_node = g_as->op0;
+               const auto rhs = g_as->op1;
                if(ssa_node->get_kind() == ssa_name_K and
                   (rhs->get_kind() == call_expr_K || rhs->get_kind() == aggr_init_expr_K))
                {
@@ -639,7 +623,7 @@ void VcdSignalSelection::CrossPropagateAddrSsa(
              * retrieve the OpNodeInfo related to the tree node corresponding to
              * the call id
              */
-            const OpNodeInfoConstRef callopinfo =
+            const auto callopinfo =
                 op_graph->CGetOpNodeInfo(op_graph->CGetOpGraphInfo()->tree_node_to_operation.at(callid));
             if(callopinfo->called.size() == 0)
             {
@@ -660,12 +644,12 @@ void VcdSignalSelection::CrossPropagateAddrSsa(
              * the indirect call apart and propagate correctly the parameters
              */
             const unsigned int direct_called_id = *callopinfo->called.begin();
-            const tree_nodeConstRef direct_called_fun_decl_node = TM->GetTreeNode(direct_called_id);
+            const auto direct_called_fun_decl_node = TM->GetTreeNode(direct_called_id);
 #if HAVE_ASSERTS
             const auto* direct_fu_dec = GetPointer<const function_decl>(direct_called_fun_decl_node);
 #endif
-            const tree_nodeConstRef called_fun_decl_node = TM->GetTreeNode(called_id);
-            const auto* fu_dec = GetPointer<const function_decl>(called_fun_decl_node);
+            const auto called_fun_decl_node = TM->GetTreeNode(called_id);
+            const auto fu_dec = GetPointer<const function_decl>(called_fun_decl_node);
             std::list<unsigned int>::const_iterator par_id_it, par_id_end;
             if(called_id == direct_called_id)
             {
@@ -712,7 +696,7 @@ void VcdSignalSelection::CrossPropagateAddrSsa(
             const auto par_decl_end = fu_dec->list_of_args.cend();
             for(; (par_id_it != par_id_end) and (par_decl_it != par_decl_end); ++par_id_it, ++par_decl_it)
             {
-               const tree_nodeRef ssa_node = TM->GetTreeNode(*par_id_it);
+               const auto ssa_node = TM->GetTreeNode(*par_id_it);
                if(ssa_node->get_kind() == ssa_name_K)
                {
                   if(Discr->address_ssa.find(ssa_node) != Discr->address_ssa.end())
@@ -729,15 +713,14 @@ void VcdSignalSelection::CrossPropagateAddrSsa(
          }
       }
    }
-   return;
 }
 
 void VcdSignalSelection::SelectAddrSsa(
     const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& fu_id_to_call_ids,
     const CustomUnorderedMap<unsigned int, UnorderedSetStdStable<unsigned int>>& call_id_to_called_id)
 {
-   const CallGraphManagerConstRef CGMan = HLSMgr->CGetCallGraphManager();
-   const CallGraphConstRef cg = CGMan->CGetCallGraph();
+   const auto CGMan = HLSMgr->CGetCallGraphManager();
+   const auto cg = CGMan->CGetCallGraph();
 
    /*
     * initialize the set of fun_ids representing an address
@@ -746,10 +729,10 @@ void VcdSignalSelection::SelectAddrSsa(
    const auto reached_body_fun_ids = CGMan->GetReachedBodyFunctions();
    for(auto f_id : reached_body_fun_ids)
    {
-      const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(f_id);
-      const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
-      const unsigned int return_type_index = BH->GetFunctionReturnType(f_id);
-      if(return_type_index and IsAddressType(return_type_index))
+      const auto FB = HLSMgr->CGetFunctionBehavior(f_id);
+      const auto BH = FB->CGetBehavioralHelper();
+      const auto return_type_index = BH->GetFunctionReturnType(f_id);
+      if(return_type_index && IsAddressType(return_type_index))
       {
          addr_fun_ids.insert(f_id);
       }
@@ -779,7 +762,7 @@ void VcdSignalSelection::SelectAddrSsa(
    size_t previous_address_ssa_n;
    do
    {
-      previous_address_ssa_n = static_cast<size_t>(Discr->address_ssa.size());
+      previous_address_ssa_n = Discr->address_ssa.size();
       /*
        * now we have to propagate addresses across the functional units. this is
        * necessary because we can have for example a function taking an integer
@@ -792,8 +775,7 @@ void VcdSignalSelection::SelectAddrSsa(
        * then we have to propagate again internally to the procedures
        */
       InProcedurePropagateAddr(address_parameters, reached_body_fun_ids, addr_fun_ids);
-   } while(previous_address_ssa_n != static_cast<size_t>(Discr->address_ssa.size()));
-   return;
+   } while(previous_address_ssa_n != Discr->address_ssa.size());
 }
 
 void VcdSignalSelection::SelectInternalSignals(
@@ -927,7 +909,7 @@ DesignFlowStep_Status VcdSignalSelection::Exec()
    for(const auto& vs : Discr->unfolded_v_to_scope)
    {
       const unsigned int f_id = Cget_node_info<UnfoldedFunctionInfo>(vs.first, Discr->DiscrepancyCallGraph)->f_id;
-      const BehavioralHelperConstRef BH =
+      const auto BH =
           Cget_node_info<UnfoldedFunctionInfo>(vs.first, Discr->DiscrepancyCallGraph)->behavior->CGetBehavioralHelper();
       if(not BH->has_implementation() or not BH->function_has_to_be_printed(f_id))
       {
@@ -994,7 +976,7 @@ DesignFlowStep_Status VcdSignalSelection::Exec()
    for(const auto& s : Discr->address_ssa)
    {
       const unsigned int ssa_index = s->index;
-      const auto* ssa = GetPointer<const ssa_name>(s);
+      const auto ssa = GetPointer<const ssa_name>(s);
       if(ssa and IsAddressType(tree_helper::get_type_index(TM, ssa_index)))
       {
          pointers_n++;

@@ -33,10 +33,9 @@
 /**
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  */
-
+#ifndef VCD_SIGNAL_SELECTION_HPP
+#define VCD_SIGNAL_SELECTION_HPP
 #include "hls_step.hpp"
-
-// tree/ include
 #include "tree_node.hpp"
 
 CONSTREF_FORWARD_DECL(tree_manager);
@@ -122,7 +121,7 @@ class VcdSignalSelection : public HLS_step
    /**
     * Single step used in the loop of PropagateAddrSsa()
     */
-   void SingleStepPropagateAddrSsa(const tree_nodeRef& curr_tn);
+   void SingleStepPropagateAddrSsa(const tree_nodeRef& curr_tn, TreeNodeSet& new_address_ssa);
 
    /**
     * Propagates the information on the ssa representing addresses across
@@ -208,3 +207,4 @@ class VcdSignalSelection : public HLS_step
 
    bool HasToBeExecuted() const override;
 };
+#endif
