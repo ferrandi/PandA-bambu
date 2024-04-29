@@ -40,20 +40,19 @@
 
 #ifndef DESIGN_FLOW_MANAGER_HPP
 #define DESIGN_FLOW_MANAGER_HPP
-
 #include "custom_map.hpp"
-#include "graph.hpp"    // for vertex, Paramete...
-#include "refcount.hpp" // for REF_FORWARD_DECL
-#include <cstddef>      // for size_t
-#include <functional>   // for binary_function
-#include <set>          // for set
-#include <string>       // for string
+#include "design_flow_step.hpp"
+#include "graph.hpp"
+#include "refcount.hpp"
 
-class DesignFlowStepSet;
+#include <cstddef>
+#include <functional>
+#include <set>
+#include <string>
+
 CONSTREF_FORWARD_DECL(DesignFlowGraph);
 REF_FORWARD_DECL(DesignFlowGraph);
 REF_FORWARD_DECL(DesignFlowGraphsCollection);
-REF_FORWARD_DECL(DesignFlowStep);
 enum class DesignFlowStep_Status;
 CONSTREF_FORWARD_DECL(DesignFlowStepFactory);
 REF_FORWARD_DECL(DesignFlowStepInfo);

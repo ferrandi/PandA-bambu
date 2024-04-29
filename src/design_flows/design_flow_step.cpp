@@ -41,9 +41,11 @@
  *
  */
 #include "design_flow_step.hpp"
-#include "Parameter.hpp"           // for Parameter, OPT_debug_level
-#include "design_flow_manager.hpp" // for DesignFlowStepRef, DesignF...
-#include <ostream>                 // for operator<<, basic_ostream
+
+#include "Parameter.hpp"
+#include "design_flow_manager.hpp"
+
+#include <ostream>
 
 DesignFlowStep::DesignFlowStep(const DesignFlowManagerConstRef _design_flow_manager,
                                const ParameterConstRef _parameters)
@@ -90,15 +92,17 @@ void DesignFlowStep::PrintFinalIR() const
 {
 }
 
-#if not HAVE_UNORDERED
-DesignFlowStepSorter::DesignFlowStepSorter() = default;
-
-bool DesignFlowStepSorter::operator()(const DesignFlowStepRef x, const DesignFlowStepRef y) const
+size_t DesignFlowStepHash::operator()(const DesignFlowStepRef& step) const
 {
-   return x->GetName() < y->GetName();
+   return std::hash<std::string>()(step->GetSignature());
 }
 
-DesignFlowStepSet::DesignFlowStepSet() : std::set<DesignFlowStepRef, DesignFlowStepSorter>(DesignFlowStepSorter())
+bool DesignFlowStepEqual::operator()(const DesignFlowStepRef& x, const DesignFlowStepRef& y) const
 {
+   return x->GetSignature() == y->GetSignature();
 }
-#endif
+
+bool DesignFlowStepSorter::operator()(const DesignFlowStepRef& x, const DesignFlowStepRef& y) const
+{
+   return x->GetSignature() < y->GetSignature();
+}

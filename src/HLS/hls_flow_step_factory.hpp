@@ -40,17 +40,15 @@
 
 #ifndef HLS_FLOW_STEP_FACTORY_HPP
 #define HLS_FLOW_STEP_FACTORY_HPP
-
 #include "custom_set.hpp"
+#include "design_flow_step.hpp"
 #include "design_flow_step_factory.hpp"
 
 #include <vector>
 
-REF_FORWARD_DECL(DesignFlowStep);
 REF_FORWARD_DECL(HLS_manager);
 CONSTREF_FORWARD_DECL(HLSFlowStepSpecialization);
 class xml_element;
-class DesignFlowStepSet;
 enum class HLSFlowStep_Type;
 
 class HLSFlowStepFactory : public DesignFlowStepFactory
