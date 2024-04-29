@@ -373,9 +373,9 @@ DesignFlowStep_Status FunctionCallOpt::InternalExec()
          BOOST_FOREACH(EdgeDescriptor ie, boost::in_edges(function_v, *CG))
          {
             const auto caller_info = CG->CGetFunctionEdgeInfo(ie);
-            call_points += static_cast<size_t>(caller_info->direct_call_points.size());
-            call_points += static_cast<size_t>(caller_info->indirect_call_points.size());
-            call_points += static_cast<size_t>(caller_info->function_addresses.size());
+            call_points += caller_info->direct_call_points.size();
+            call_points += caller_info->indirect_call_points.size();
+            call_points += caller_info->function_addresses.size();
          }
          return call_points;
       }();

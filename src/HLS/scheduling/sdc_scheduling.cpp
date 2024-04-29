@@ -173,7 +173,7 @@ class SDCSorter : std::binary_function<vertex, vertex, bool>
                }
                for(const auto cluster_op : to_process)
                {
-                  op_levels[cluster_op] = static_cast<size_t>(op_levels.size());
+                  op_levels[cluster_op] = op_levels.size();
                }
             }
          }

@@ -1576,7 +1576,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
          else
          {
             p_it->second.insert(*ui);
-            max_size = std::max(max_size, static_cast<size_t>(p_it->second.size()));
+            max_size = std::max(max_size, p_it->second.size());
          }
       }
       return max_size;
@@ -1856,7 +1856,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
       THROW_ASSERT(v2uv.find(v) != v2uv.end(), "vertex not added");
       C_vertex C_v = v2uv.find(v)->second;
       partitions[id].insert(C_v);
-      num_cols = std::max(static_cast<size_t>(partitions[id].size()), num_cols);
+      num_cols = std::max(partitions[id].size(), num_cols);
    }
 
    void suggest_min_resources(size_t n_resources) override

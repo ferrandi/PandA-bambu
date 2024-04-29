@@ -1437,9 +1437,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                size_t max_references = 0;
                for(const auto& fun_vertex_set : var_referring_vertex_map.at(var_id))
                {
-                  max_references = max_references > static_cast<size_t>(fun_vertex_set.second.size()) ?
-                                       max_references :
-                                       static_cast<size_t>(fun_vertex_set.second.size());
+                  max_references =
+                      max_references > fun_vertex_set.second.size() ? max_references : fun_vertex_set.second.size();
                }
                Rmem->set_maximum_references(var_id, max_references);
                INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,
@@ -1450,9 +1449,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                size_t max_loads = 0;
                for(const auto& fun_vertex_set : var_load_vertex_map.at(var_id))
                {
-                  max_loads = max_loads > static_cast<size_t>(fun_vertex_set.second.size()) ?
-                                  max_loads :
-                                  static_cast<size_t>(fun_vertex_set.second.size());
+                  max_loads = max_loads > fun_vertex_set.second.size() ? max_loads : fun_vertex_set.second.size();
                }
                Rmem->set_maximum_loads(var_id, max_loads);
                INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, out_lvl,

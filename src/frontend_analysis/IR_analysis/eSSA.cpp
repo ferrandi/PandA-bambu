@@ -1349,7 +1349,7 @@ DesignFlowStep_Status eSSA::InternalExec()
       }
    }
 #ifndef NDEBUG
-   if(static_cast<size_t>(DFSInfos.size()) < (DT->num_bblocks() + 2))
+   if(DFSInfos.size() < (DT->num_bblocks() + 2))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Dominator tree has some unreachable blocks");
    }

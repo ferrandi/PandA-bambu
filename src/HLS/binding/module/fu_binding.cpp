@@ -2643,10 +2643,9 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
                eightbit_string.push_back("00000000");
             }
          }
-         if(static_cast<size_t>(tree_helper::SizeAlloc(array_type_node) / 8) > eightbit_string.size())
+         if((tree_helper::SizeAlloc(array_type_node) / 8U) > eightbit_string.size())
          {
-            size_t tail_bytes =
-                static_cast<size_t>(tree_helper::SizeAlloc(array_type_node) / 8) - eightbit_string.size();
+            size_t tail_bytes = (tree_helper::SizeAlloc(array_type_node) / 8U) - eightbit_string.size();
             for(size_t l = 0; l < tail_bytes; ++l)
             {
                eightbit_string.push_back("00000000");

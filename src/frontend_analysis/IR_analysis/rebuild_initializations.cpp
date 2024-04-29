@@ -1117,8 +1117,7 @@ bool rebuild_initialization2::look_for_ROMs()
          break;
       }
    }
-   if(not_supported || var_writing_BB_relation.empty() ||
-      var_writing_BB_relation.size() == static_cast<size_t>(nonConstantVars.size()))
+   if(not_supported || var_writing_BB_relation.empty() || var_writing_BB_relation.size() == nonConstantVars.size())
    {
       return false;
    }

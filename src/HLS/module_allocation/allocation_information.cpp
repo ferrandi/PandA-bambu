@@ -2308,7 +2308,7 @@ double AllocationInformation::GetPhiConnectionLatency(const unsigned int stateme
                   phi_inputs.insert(def_edge.first->index);
                }
             }
-            auto curr_in_degree = static_cast<size_t>(phi_inputs.size());
+            auto curr_in_degree = phi_inputs.size();
             if(curr_in_degree > 4)
             {
                curr_in_degree = 4;

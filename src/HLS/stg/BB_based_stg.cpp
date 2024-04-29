@@ -238,8 +238,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       for(boost::tie(ie_it, ie_it_end) = boost::in_edges(current_vertex, *subgraph); ie_it != ie_it_end; ++ie_it)
       {
          const auto* info = Cget_edge_info<FunctionEdgeInfo, const CallGraph>(*ie_it, *subgraph);
-         n_call_sites += static_cast<size_t>(info->direct_call_points.size()) +
-                         static_cast<size_t>(info->indirect_call_points.size());
+         n_call_sites += info->direct_call_points.size() + info->indirect_call_points.size();
       }
       HLS->call_sites_number = n_call_sites;
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Number of function call sites = " + STR(n_call_sites));
