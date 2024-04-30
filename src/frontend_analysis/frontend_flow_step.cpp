@@ -43,28 +43,28 @@
  */
 #include "frontend_flow_step.hpp"
 
-#include "Parameter.hpp"                      // for Parameter, OPT_output_...
-#include "application_frontend_flow_step.hpp" // for ApplicationFrontendFlo...
-#include "application_manager.hpp"            // for application_manager
-#include "call_graph_manager.hpp"             // for application_managerCon...
-#include "custom_set.hpp"                     // for set
-#include "design_flow_graph.hpp"              // for DesignFlowGraph, Desig...
-#include "design_flow_manager.hpp"            // for DesignFlowManager, Des...
-#include "exceptions.hpp"                     // for THROW_UNREACHABLE
-#include "frontend_flow_step_factory.hpp"     // for DesignFlowStepRef, Fro...
-#include "function_frontend_flow_step.hpp"    // for DesignFlowManagerConstRef
-#include "graph.hpp"                          // for vertex
-#include "hash_helper.hpp"                    // for hash
-#include "string_manipulation.hpp"            // for STR GET_CLASS
-#include "tree_manager.hpp"                   // for tree_managerConstRef
+#include "Parameter.hpp"
+#include "application_frontend_flow_step.hpp"
+#include "application_manager.hpp"
+#include "call_graph_manager.hpp"
+#include "custom_set.hpp"
+#include "design_flow_graph.hpp"
+#include "design_flow_manager.hpp"
+#include "exceptions.hpp"
+#include "frontend_flow_step_factory.hpp"
+#include "function_frontend_flow_step.hpp"
+#include "graph.hpp"
+#include "hash_helper.hpp"
+#include "string_manipulation.hpp"
+#include "tree_manager.hpp"
 
-#include <iosfwd> // for ofstream
+#include <iosfwd>
 
-FrontendFlowStep::FrontendFlowStep(const application_managerRef _AppM,
+FrontendFlowStep::FrontendFlowStep(const std::string& _uid, const application_managerRef _AppM,
                                    const FrontendFlowStepType _frontend_flow_step_type,
                                    const DesignFlowManagerConstRef _design_flow_manager,
                                    const ParameterConstRef _parameters)
-    : DesignFlowStep(_design_flow_manager, _parameters),
+    : DesignFlowStep(_uid, _design_flow_manager, _parameters),
       AppM(_AppM),
       frontend_flow_step_type(_frontend_flow_step_type),
       print_counter(0)
@@ -79,15 +79,12 @@ void FrontendFlowStep::CreateSteps(
     const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>& frontend_relationships,
     const application_managerConstRef application_manager, DesignFlowStepSet& relationships)
 {
-   const DesignFlowGraphConstRef design_flow_graph = design_flow_manager->CGetDesignFlowGraph();
-   const auto* frontend_flow_step_factory =
+   const auto design_flow_graph = design_flow_manager->CGetDesignFlowGraph();
+   const auto frontend_flow_step_factory =
        GetPointer<const FrontendFlowStepFactory>(design_flow_manager->CGetDesignFlowStepFactory("Frontend"));
-   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>::const_iterator frontend_relationship,
-       frontend_relationship_end = frontend_relationships.end();
-   for(frontend_relationship = frontend_relationships.begin(); frontend_relationship != frontend_relationship_end;
-       ++frontend_relationship)
+   for(const auto& [step_type, rel_type] : frontend_relationships)
    {
-      switch(frontend_relationship->second)
+      switch(rel_type)
       {
          case(ALL_FUNCTIONS):
          {
@@ -102,25 +99,18 @@ void FrontendFlowStep::CreateSteps(
             for(const auto function_with_body_id : functions_with_body)
             {
                const auto sdf_step = design_flow_manager->GetDesignFlowStep(
-                   FunctionFrontendFlowStep::ComputeSignature(frontend_relationship->first, function_with_body_id));
+                   FunctionFrontendFlowStep::ComputeSignature(step_type, function_with_body_id));
                const auto design_flow_step =
-                   sdf_step ? design_flow_graph->CGetDesignFlowStepInfo(sdf_step)->design_flow_step :
-                              frontend_flow_step_factory->CreateFunctionFrontendFlowStep(frontend_relationship->first,
-                                                                                         function_with_body_id);
+                   sdf_step ?
+                       design_flow_graph->CGetDesignFlowStepInfo(sdf_step)->design_flow_step :
+                       frontend_flow_step_factory->CreateFunctionFrontendFlowStep(step_type, function_with_body_id);
                relationships.insert(design_flow_step);
             }
             break;
          }
-         case(CALLING_FUNCTIONS):
-         case(CALLED_FUNCTIONS):
-         case(SAME_FUNCTION):
-         {
-            /// This is managed by FunctionFrontendFlowStep::ComputeRelationships
-            break;
-         }
          case(WHOLE_APPLICATION):
          {
-            const auto sdf_signature = ApplicationFrontendFlowStep::ComputeSignature(frontend_relationship->first);
+            const auto sdf_signature = ApplicationFrontendFlowStep::ComputeSignature(step_type);
             const auto sdf_step = design_flow_manager->GetDesignFlowStep(sdf_signature);
             DesignFlowStepRef design_flow_step;
             if(sdf_step)
@@ -129,9 +119,16 @@ void FrontendFlowStep::CreateSteps(
             }
             else
             {
-               design_flow_step = frontend_flow_step_factory->GenerateFrontendStep(frontend_relationship->first);
+               design_flow_step = frontend_flow_step_factory->GenerateFrontendStep(step_type);
             }
             relationships.insert(design_flow_step);
+            break;
+         }
+         case(CALLING_FUNCTIONS):
+         case(CALLED_FUNCTIONS):
+         case(SAME_FUNCTION):
+         {
+            /// This is managed by FunctionFrontendFlowStep::ComputeRelationships
             break;
          }
          default:
@@ -145,8 +142,7 @@ void FrontendFlowStep::CreateSteps(
 void FrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relationships,
                                             const DesignFlowStep::RelationshipType relationship_type)
 {
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> frontend_relationships =
-       ComputeFrontendRelationships(relationship_type);
+   const auto frontend_relationships = ComputeFrontendRelationships(relationship_type);
    CreateSteps(design_flow_manager.lock(), frontend_relationships, AppM, relationships);
 }
 

@@ -64,12 +64,12 @@ class CBackendStepFactory : public DesignFlowStepFactory
    CBackendStepFactory(const DesignFlowManagerConstRef design_flow_manager,
                        const application_managerConstRef application_manager, const ParameterConstRef _parameters);
 
-   const std::string GetPrefix() const override;
+   std::string GetPrefix() const override;
 
    /**
     * Create a backend c step
     * @param c_backend_information is the information about the frontend to be generated
     */
-   const DesignFlowStepRef CreateCBackendStep(const CBackendInformationConstRef c_backend_information) const;
+   DesignFlowStepRef CreateCBackendStep(const CBackendInformationConstRef c_backend_information) const;
 };
 #endif

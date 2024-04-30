@@ -80,7 +80,7 @@
 
 #define EPSILON 0.0001
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 commutative_expr_restructuring::ComputeFrontendRelationships(
     const DesignFlowStep::RelationshipType relationship_type) const
 {

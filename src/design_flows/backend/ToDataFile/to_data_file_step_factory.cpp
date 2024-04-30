@@ -58,12 +58,12 @@ ToDataFileStepFactory::ToDataFileStepFactory(const generic_deviceRef _device,
 
 ToDataFileStepFactory::~ToDataFileStepFactory() = default;
 
-const std::string ToDataFileStepFactory::GetPrefix() const
+std::string ToDataFileStepFactory::GetPrefix() const
 {
    return "ToDataFile";
 }
 
-const DesignFlowStepRef ToDataFileStepFactory::CreateStep(const std::string& signature) const
+DesignFlowStepRef ToDataFileStepFactory::CreateStep(const std::string& signature) const
 {
    THROW_ASSERT(signature.compare(0, std::string("ToDataFile::").size(), "ToDataFile::") == 0,
                 "Wrong signature " + signature);

@@ -62,7 +62,7 @@ parm_decl_taken_address_fix::parm_decl_taken_address_fix(const ParameterConstRef
 
 parm_decl_taken_address_fix::~parm_decl_taken_address_fix() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 parm_decl_taken_address_fix::ComputeFrontendRelationships(
     const DesignFlowStep::RelationshipType relationship_type) const
 {

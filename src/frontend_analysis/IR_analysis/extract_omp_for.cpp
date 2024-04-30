@@ -82,7 +82,7 @@ ExtractOmpFor::ExtractOmpFor(const application_managerRef _AppM, unsigned int _f
 
 ExtractOmpFor::~ExtractOmpFor() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 ExtractOmpFor::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    const auto TM = AppM->get_tree_manager();

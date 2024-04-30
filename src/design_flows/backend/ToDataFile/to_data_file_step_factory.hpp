@@ -69,13 +69,13 @@ class ToDataFileStepFactory : public DesignFlowStepFactory
    /**
     * Return the prefix of the steps created by the factory
     */
-   const std::string GetPrefix() const override;
+   std::string GetPrefix() const override;
 
    /**
     * Creates a step
     * @param signature is the signature of the step to be created
     * @return the created step
     */
-   const DesignFlowStepRef CreateStep(const std::string& signature) const;
+   DesignFlowStepRef CreateStep(const std::string& signature) const;
 };
 #endif

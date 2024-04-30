@@ -38,10 +38,10 @@
  *
  */
 #include "design_flow_factory.hpp"
-#include "design_flow.hpp"             // for DesignFlow_Type, DesignFlow
-#include "design_flow_step.hpp"        // for DesignFlowStepRef, DesignFlo...
-#include "exceptions.hpp"              // for THROW_UNREACHABLE, THROW_ASSERT
-#include "non_deterministic_flows.hpp" // for NonDeterministicFlows
+#include "design_flow.hpp"
+#include "design_flow_step.hpp"
+#include "exceptions.hpp"
+#include "non_deterministic_flows.hpp"
 
 DesignFlowFactory::DesignFlowFactory(const DesignFlowManagerConstRef _design_flow_manager,
                                      const ParameterConstRef _parameters)
@@ -51,7 +51,7 @@ DesignFlowFactory::DesignFlowFactory(const DesignFlowManagerConstRef _design_flo
 
 DesignFlowFactory::~DesignFlowFactory() = default;
 
-const std::string DesignFlowFactory::GetPrefix() const
+std::string DesignFlowFactory::GetPrefix() const
 {
    return "DF";
 }
@@ -63,7 +63,7 @@ DesignFlowStepRef DesignFlowFactory::CreateFlowStep(const std::string& signature
    return CreateDesignFlow(design_flow_type);
 }
 
-const DesignFlowStepRef DesignFlowFactory::CreateDesignFlow(const DesignFlow_Type design_flow_type) const
+DesignFlowStepRef DesignFlowFactory::CreateDesignFlow(const DesignFlow_Type design_flow_type) const
 {
    switch(design_flow_type)
    {

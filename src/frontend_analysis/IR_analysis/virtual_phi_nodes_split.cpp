@@ -77,7 +77,7 @@ virtual_phi_nodes_split::virtual_phi_nodes_split(const ParameterConstRef _parame
 
 virtual_phi_nodes_split::~virtual_phi_nodes_split() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 virtual_phi_nodes_split::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;

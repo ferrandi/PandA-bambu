@@ -82,14 +82,14 @@ class FrontendFlowStepFactory : public DesignFlowStepFactory
     * Create the frontend design flow steps
     * @param frontend_flow_step_types is the set of frontend flow transformation to be considered
     */
-   const DesignFlowStepSet
+   DesignFlowStepSet
    GenerateFrontendSteps(const CustomUnorderedSet<FrontendFlowStepType>& frontend_flow_step_types) const;
 
    /**
     * Create the frontend design flow step
     * @param frontend_flow_step_type is the frontend flow to be considered
     */
-   const DesignFlowStepRef GenerateFrontendStep(FrontendFlowStepType frontend_flow_step_type) const;
+   DesignFlowStepRef GenerateFrontendStep(FrontendFlowStepType frontend_flow_step_type) const;
 
    /**
     * Create an application frontend flow step
@@ -97,19 +97,19 @@ class FrontendFlowStepFactory : public DesignFlowStepFactory
     * @param design_flow_step is the type of step to be created
     * @param parameters is the set of input parameters
     */
-   const DesignFlowStepRef CreateApplicationFrontendFlowStep(const FrontendFlowStepType design_flow_step_type) const;
+   DesignFlowStepRef CreateApplicationFrontendFlowStep(const FrontendFlowStepType design_flow_step_type) const;
 
    /**
     * Create a function frontend flow step
     * @param design_flow_step is the type of step to be created
     * @param function_id is the index of the function
     */
-   const DesignFlowStepRef CreateFunctionFrontendFlowStep(const FrontendFlowStepType design_flow_step_type,
-                                                          const unsigned int function_id) const;
+   DesignFlowStepRef CreateFunctionFrontendFlowStep(const FrontendFlowStepType design_flow_step_type,
+                                                    const unsigned int function_id) const;
 
    /**
     * Return the prefix of the steps created by the factory
     */
-   const std::string GetPrefix() const override;
+   std::string GetPrefix() const override;
 };
 #endif

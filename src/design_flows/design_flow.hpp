@@ -40,9 +40,9 @@
  */
 #ifndef DESIGN_FLOW_HPP
 #define DESIGN_FLOW_HPP
-
 #include "design_flow_step.hpp"
-#include <string> // for string
+
+#include <string>
 
 enum class DesignFlow_Type
 {
@@ -55,6 +55,9 @@ class DesignFlow : public DesignFlowStep
    /// The type of this design flow
    const DesignFlow_Type design_flow_type;
 
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
+
  public:
    /**
     * Constructor
@@ -65,18 +68,13 @@ class DesignFlow : public DesignFlowStep
    DesignFlow(const DesignFlowManagerConstRef design_flow_manager, const DesignFlow_Type design_flow_type,
               const ParameterConstRef parameters);
 
-   /**
-    * Destructor
-    */
    ~DesignFlow() override;
 
-   /**
-    * Compute the relationships of a step with other steps
-    * @param relationship is where relationships will be stored
-    * @param relationship_type is the type of relationship to be computed
-    */
-   void ComputeRelationships(DesignFlowStepSet& relationship,
-                             const DesignFlowStep::RelationshipType relationship_type) override;
+   std::string GetName() const override;
+
+   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
+
+   bool HasToBeExecuted() const override;
 
    /**
     * Compute the signature of a step
@@ -86,17 +84,6 @@ class DesignFlow : public DesignFlowStep
    static std::string ComputeSignature(const DesignFlow_Type design_flow_type);
 
    /**
-    * Return the signature of this step
-    */
-   std::string GetSignature() const override;
-
-   /**
-    * Return the name of this design step
-    * @return the name of the pass (for debug purpose)
-    */
-   std::string GetName() const override;
-
-   /**
     * Return the name of the type
     * @param design_flow_type is the type of the design flow
     * @return the name
@@ -104,22 +91,10 @@ class DesignFlow : public DesignFlowStep
    static const std::string EnumToKindText(const DesignFlow_Type design_flow_type);
 
    /**
-    * Return the factory to create this type of steps
-    * @return the factory to create frontend flow step
-    */
-   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
-
-   /**
     * Given the name of design flow, return the enum
     * @param name is the name of the design flow
     * @return the corresponding enum
     */
    static DesignFlow_Type KindTextToEnum(const std::string& name);
-
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
-   bool HasToBeExecuted() const override;
 };
 #endif

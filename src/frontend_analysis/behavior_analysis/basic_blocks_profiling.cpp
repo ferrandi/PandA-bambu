@@ -73,7 +73,7 @@ BasicBlocksProfiling::BasicBlocksProfiling(const application_managerRef _AppM,
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 BasicBlocksProfiling::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;

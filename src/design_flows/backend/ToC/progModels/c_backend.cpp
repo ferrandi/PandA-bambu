@@ -68,7 +68,7 @@
 CBackend::CBackend(const CBackendInformationConstRef _c_backend_information,
                    const DesignFlowManagerConstRef _design_flow_manager, const application_managerConstRef _AppM,
                    const ParameterConstRef _parameters)
-    : DesignFlowStep(_design_flow_manager, _parameters),
+    : DesignFlowStep(ComputeSignature(_c_backend_information), _design_flow_manager, _parameters),
       writer(CWriter::CreateCWriter(_c_backend_information, RefcountCast<const HLS_manager>(_AppM),
                                     IndentedOutputStreamRef(new IndentedOutputStream()))),
       AppM(_AppM),
@@ -82,19 +82,9 @@ DesignFlowStepFactoryConstRef CBackend::CGetDesignFlowStepFactory() const
    return design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend");
 }
 
-std::string CBackend::GetSignature() const
-{
-   return ComputeSignature(c_backend_info);
-}
-
 std::string CBackend::ComputeSignature(const CBackendInformationConstRef c_backend_info)
 {
    return c_backend_info->GetSignature();
-}
-
-std::string CBackend::GetName() const
-{
-   return GetSignature();
 }
 
 void CBackend::ComputeRelationships(DesignFlowStepSet& relationships,

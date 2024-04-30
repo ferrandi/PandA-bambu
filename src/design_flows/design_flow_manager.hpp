@@ -37,23 +37,21 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
 #ifndef DESIGN_FLOW_MANAGER_HPP
 #define DESIGN_FLOW_MANAGER_HPP
-
 #include "custom_map.hpp"
-#include "graph.hpp"    // for vertex, Paramete...
-#include "refcount.hpp" // for REF_FORWARD_DECL
-#include <cstddef>      // for size_t
-#include <functional>   // for binary_function
-#include <set>          // for set
-#include <string>       // for string
+#include "custom_set.hpp"
+#include "design_flow_step.hpp"
+#include "graph.hpp"
+#include "refcount.hpp"
 
-class DesignFlowStepSet;
+#include <cstddef>
+#include <set>
+#include <string>
+
 CONSTREF_FORWARD_DECL(DesignFlowGraph);
 REF_FORWARD_DECL(DesignFlowGraph);
 REF_FORWARD_DECL(DesignFlowGraphsCollection);
-REF_FORWARD_DECL(DesignFlowStep);
 enum class DesignFlowStep_Status;
 CONSTREF_FORWARD_DECL(DesignFlowStepFactory);
 REF_FORWARD_DECL(DesignFlowStepInfo);
@@ -63,7 +61,7 @@ REF_FORWARD_DECL(Parameter);
  * The key comparison functor for design flow step; it puts necessary steps before unnecessary ones;
  * in this way steps which depend on unnecessary steps are executed later
  */
-class DesignFlowStepNecessitySorter : std::binary_function<vertex, vertex, bool>
+class DesignFlowStepNecessitySorter
 {
  private:
    /// The design flow graph
@@ -103,7 +101,7 @@ class DesignFlowManager final
 
    /// The set of potentially ready steps; when a step is added to set is ready to be executed, but it can become
    /// unready because of new added vertices
-   std::set<vertex, DesignFlowStepNecessitySorter> possibly_ready;
+   CustomOrderedSet<vertex, DesignFlowStepNecessitySorter> possibly_ready;
 
    /// The registered factories
    CustomUnorderedMap<std::string, DesignFlowStepFactoryConstRef> design_flow_step_factories;
@@ -204,7 +202,7 @@ class DesignFlowManager final
     * Return the design flow graph
     * @return the design flow graph
     */
-   const DesignFlowGraphConstRef CGetDesignFlowGraph() const;
+   DesignFlowGraphConstRef CGetDesignFlowGraph() const;
 
    /**
     * Return the vertex associated with a design step if exists, NULL_VERTEX otherwise
@@ -236,7 +234,7 @@ class DesignFlowManager final
     * @param signature is the signature of the step to be created
     * @return the created design flow step
     */
-   const DesignFlowStepRef CreateFlowStep(const std::string& signature) const;
+   DesignFlowStepRef CreateFlowStep(const std::string& signature) const;
 };
 
 using DesignFlowManagerRef = refcount<DesignFlowManager>;

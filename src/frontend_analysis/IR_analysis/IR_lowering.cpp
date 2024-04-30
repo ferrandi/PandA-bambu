@@ -86,7 +86,7 @@ IR_lowering::IR_lowering(const ParameterConstRef Param, const application_manage
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 IR_lowering::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;

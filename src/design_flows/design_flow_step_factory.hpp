@@ -43,9 +43,9 @@
 
 #ifndef DESIGN_FLOW_STEP_FACTORY_HPP
 #define DESIGN_FLOW_STEP_FACTORY_HPP
-
 #include "refcount.hpp"
-#include <string> // for string
+
+#include <string>
 
 CONSTREF_FORWARD_DECL(DesignFlowManager);
 REF_FORWARD_DECL(DesignFlowStep);
@@ -79,7 +79,7 @@ class DesignFlowStepFactory
    /**
     * Return the prefix of the steps created by the factory
     */
-   virtual const std::string GetPrefix() const = 0;
+   virtual std::string GetPrefix() const = 0;
 
    /**
     * Return a step given the signature

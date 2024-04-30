@@ -66,7 +66,7 @@ HWCallInjection::HWCallInjection(const ParameterConstRef Param, const applicatio
 
 HWCallInjection::~HWCallInjection() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 HWCallInjection::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType RT) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;

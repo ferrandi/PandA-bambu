@@ -58,7 +58,8 @@ HLSFunctionStep::HLSFunctionStep(const ParameterConstRef _Param, const HLS_manag
                                  const DesignFlowManagerConstRef _design_flow_manager,
                                  const HLSFlowStep_Type _hls_flow_step_type,
                                  const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
-    : HLS_step(_Param, _HLSMgr, _design_flow_manager, _hls_flow_step_type, _hls_flow_step_specialization),
+    : HLS_step(ComputeSignature(_hls_flow_step_type, _hls_flow_step_specialization, _funId), _Param, _HLSMgr,
+               _design_flow_manager, _hls_flow_step_type, _hls_flow_step_specialization),
       funId(_funId),
       bb_version(0),
       bitvalue_version(0),
@@ -115,11 +116,6 @@ void HLSFunctionStep::Initialize()
    HLS = HLSMgr->get_HLS(funId);
 }
 
-std::string HLSFunctionStep::GetSignature() const
-{
-   return ComputeSignature(hls_flow_step_type, hls_flow_step_specialization, funId);
-}
-
 std::string HLSFunctionStep::ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
                                               const HLSFlowStepSpecializationConstRef hls_flow_step_specialization,
                                               const unsigned int function_id)
@@ -129,35 +125,34 @@ std::string HLSFunctionStep::ComputeSignature(const HLSFlowStep_Type hls_flow_st
 
 std::string HLSFunctionStep::GetName() const
 {
+   const auto function =
+       funId ? ("::" + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name()) : "";
+   return "HLS::" + GetKindText() + function
 #ifndef NDEBUG
-   const std::string version = std::string(bb_version != 0 ? ("(" + STR(bb_version) + ")") : "") +
-                               std::string(bitvalue_version != 0 ? ("(" + STR(bitvalue_version) + ")") : "") +
-                               std::string(memory_version != 0 ? ("(" + STR(memory_version) + ")") : "");
-#else
-   const std::string version = "";
+          + (bb_version != 0 ? ("(" + STR(bb_version) + ")") : "") +
+          (bitvalue_version != 0 ? ("(" + STR(bitvalue_version) + ")") : "") +
+          (memory_version != 0 ? ("(" + STR(memory_version) + ")") : "")
 #endif
-   const std::string function =
-       funId ? "::" + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() : "";
-   return "HLS::" + GetKindText() + function + version;
+       ;
 }
 
 void HLSFunctionStep::ComputeRelationships(DesignFlowStepSet& design_flow_step_set,
                                            const DesignFlowStep::RelationshipType relationship_type)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing relationships of " + GetName());
-   const auto* hls_flow_step_factory = GetPointer<const HLSFlowStepFactory>(CGetDesignFlowStepFactory());
-   const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-   const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
-   const tree_managerRef TreeM = HLSMgr->get_tree_manager();
-   const HLS_deviceRef HLS_D = HLSMgr->get_HLS_device();
-   const technology_managerRef TM = HLS_D->get_technology_manager();
+   const auto hls_flow_step_factory = GetPointer<const HLSFlowStepFactory>(CGetDesignFlowStepFactory());
+   const auto DFM = design_flow_manager.lock();
+   const auto design_flow_graph = DFM->CGetDesignFlowGraph();
+   const auto call_graph_manager = HLSMgr->CGetCallGraphManager();
+   const auto TreeM = HLSMgr->get_tree_manager();
+   const auto HLS_D = HLSMgr->get_HLS_device();
+   const auto TM = HLS_D->get_technology_manager();
 
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-       steps_to_be_created = ComputeHLSRelationships(relationship_type);
+   const auto steps_to_be_created = ComputeHLSRelationships(relationship_type);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Computed steps to be created");
-   for(auto const& step_to_be_created : steps_to_be_created)
+   for(auto const& [step_type, step_spec, rel_type] : steps_to_be_created)
    {
-      switch(std::get<2>(step_to_be_created))
+      switch(rel_type)
       {
          case HLSFlowStep_Relationship::CALLED_FUNCTIONS:
          {
@@ -166,12 +161,11 @@ void HLSFunctionStep::ComputeRelationships(DesignFlowStepSet& design_flow_step_s
             {
                if(function != funId)
                {
-                  const auto hls_step = design_flow_manager.lock()->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(
-                      std::get<0>(step_to_be_created), std::get<1>(step_to_be_created), function));
+                  const auto hls_step =
+                      DFM->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(step_type, step_spec, function));
                   const auto design_flow_step =
                       hls_step ? design_flow_graph->CGetDesignFlowStepInfo(hls_step)->design_flow_step :
-                                 hls_flow_step_factory->CreateHLSFlowStep(std::get<0>(step_to_be_created), function,
-                                                                          std::get<1>(step_to_be_created));
+                                 hls_flow_step_factory->CreateHLSFlowStep(step_type, function, step_spec);
                   design_flow_step_set.insert(design_flow_step);
                }
             }
@@ -179,12 +173,11 @@ void HLSFunctionStep::ComputeRelationships(DesignFlowStepSet& design_flow_step_s
          }
          case HLSFlowStep_Relationship::SAME_FUNCTION:
          {
-            const auto hls_step = design_flow_manager.lock()->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(
-                std::get<0>(step_to_be_created), std::get<1>(step_to_be_created), funId));
-            const auto design_flow_step =
-                hls_step ? design_flow_graph->CGetDesignFlowStepInfo(hls_step)->design_flow_step :
-                           hls_flow_step_factory->CreateHLSFlowStep(std::get<0>(step_to_be_created), funId,
-                                                                    std::get<1>(step_to_be_created));
+            const auto hls_step =
+                DFM->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(step_type, step_spec, funId));
+            const auto design_flow_step = hls_step ?
+                                              design_flow_graph->CGetDesignFlowStepInfo(hls_step)->design_flow_step :
+                                              hls_flow_step_factory->CreateHLSFlowStep(step_type, funId, step_spec);
             design_flow_step_set.insert(design_flow_step);
             break;
          }
@@ -213,7 +206,7 @@ DesignFlowStep_Status HLSFunctionStep::Exec()
    bb_version = FB->GetBBVersion();
    bitvalue_version = FB->GetBitValueVersion();
    memory_version = HLSMgr->GetMemVersion();
-   const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
+   const auto call_graph_manager = HLSMgr->CGetCallGraphManager();
    const auto called_functions = call_graph_manager->GetReachedFunctionsFrom(funId);
    for(auto const called_function : called_functions)
    {
@@ -221,7 +214,7 @@ DesignFlowStep_Status HLSFunctionStep::Exec()
       {
          continue;
       }
-      const FunctionBehaviorConstRef FBCalled = HLSMgr->CGetFunctionBehavior(called_function);
+      const auto FBCalled = HLSMgr->CGetFunctionBehavior(called_function);
       last_bb_ver[called_function] = FBCalled->GetBBVersion();
       last_bitvalue_ver[called_function] = FBCalled->GetBitValueVersion();
    }

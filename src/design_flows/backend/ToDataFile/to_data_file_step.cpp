@@ -45,7 +45,8 @@
 
 ToDataFileStep::ToDataFileStep(const DesignFlowManagerConstRef _design_flow_manager,
                                const ToDataFileStep_Type _to_data_file_step_type, const ParameterConstRef _parameters)
-    : DesignFlowStep(_design_flow_manager, _parameters), to_data_file_step_type(_to_data_file_step_type)
+    : DesignFlowStep(ComputeSignature(_to_data_file_step_type), _design_flow_manager, _parameters),
+      to_data_file_step_type(_to_data_file_step_type)
 {
 }
 
@@ -94,11 +95,6 @@ ToDataFileStep_Type ToDataFileStep::NameToEnum(const std::string&
 bool ToDataFileStep::HasToBeExecuted() const
 {
    return true;
-}
-
-std::string ToDataFileStep::GetSignature() const
-{
-   return ComputeSignature(to_data_file_step_type);
 }
 
 std::string ToDataFileStep::GetName() const

@@ -40,11 +40,7 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
 #include "RTL_characterization.hpp"
-
-/// Autoheader includes
-#include "config_HAVE_FLOPOCO.hpp"
 
 #include "BackendFlow.hpp"
 #include "HDL_manager.hpp"
@@ -61,6 +57,7 @@
 #include "op_graph.hpp"
 #include "parse_technology.hpp"
 #include "polixml.hpp"
+#include "string_manipulation.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_flow_step.hpp"
@@ -69,21 +66,24 @@
 #include "technology_node.hpp"
 #include "time_info.hpp"
 #include "xml_helper.hpp"
-#include <algorithm>
-#include <list>
-#include <string>
+
+#include "config_HAVE_FLOPOCO.hpp"
+
 #if HAVE_FLOPOCO
 #include "flopoco_wrapper.hpp"
 #endif
-#include "string_manipulation.hpp" // for GET_CLASS
+
+#include <algorithm>
+#include <list>
+#include <string>
 
 #define PORT_VECTOR_N_PORTS 2
 
 RTLCharacterization::RTLCharacterization(const generic_deviceRef _device, const std::string& _cells,
                                          const DesignFlowManagerConstRef _design_flow_manager,
                                          const ParameterConstRef _parameters)
-    : DesignFlowStep(_design_flow_manager, _parameters),
-      FunctionalUnitStep(_device, _design_flow_manager, _parameters),
+    : DesignFlowStep("RTLCharacterization", _design_flow_manager, _parameters),
+      FunctionalUnitStep(_device),
       component(ComputeComponent(_cells)),
       cells(ComputeCells(_cells))
 #ifndef NDEBUG
@@ -726,16 +726,6 @@ bool RTLCharacterization::HasToBeExecuted() const
    return true;
 }
 
-std::string RTLCharacterization::GetSignature() const
-{
-   return "RTLCharacterization";
-}
-
-std::string RTLCharacterization::GetName() const
-{
-   return "RTLCharacterization";
-}
-
 void RTLCharacterization::ComputeRelationships(DesignFlowStepSet& relationship,
                                                const DesignFlowStep::RelationshipType relationship_type)
 {
@@ -743,8 +733,8 @@ void RTLCharacterization::ComputeRelationships(DesignFlowStepSet& relationship,
    {
       case DesignFlowStep::DEPENDENCE_RELATIONSHIP:
       {
-         const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const auto* technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(
+         const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const auto technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(
              design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
          const std::string technology_flow_signature =
              TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
@@ -1320,7 +1310,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
    }
 }
 
-const std::string RTLCharacterization::ComputeComponent(const std::string& input) const
+std::string RTLCharacterization::ComputeComponent(const std::string& input) const
 {
    const auto component_cell = string_to_container<std::vector<std::string>>(input, ",");
    THROW_ASSERT(component_cell.size() > 0, input);
@@ -1329,7 +1319,7 @@ const std::string RTLCharacterization::ComputeComponent(const std::string& input
    return component_or_cell[0];
 }
 
-const CustomSet<std::string> RTLCharacterization::ComputeCells(const std::string& input) const
+CustomSet<std::string> RTLCharacterization::ComputeCells(const std::string& input) const
 {
    CustomSet<std::string> ret;
    const auto component_cells = string_to_container<std::vector<std::string>>(input, ",");

@@ -68,7 +68,7 @@ LoopsAnalysisBambu::LoopsAnalysisBambu(const ParameterConstRef _parameters, cons
 
 LoopsAnalysisBambu::~LoopsAnalysisBambu() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 LoopsAnalysisBambu::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;

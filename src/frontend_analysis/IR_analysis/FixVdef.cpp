@@ -65,7 +65,7 @@ FixVdef::FixVdef(const ParameterConstRef Param, const application_managerRef _Ap
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 FixVdef::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;

@@ -77,7 +77,7 @@ ExtractOmpAtomic::ExtractOmpAtomic(const application_managerRef _AppM, unsigned 
 
 ExtractOmpAtomic::~ExtractOmpAtomic() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 ExtractOmpAtomic::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    const auto TM = AppM->get_tree_manager();

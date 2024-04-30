@@ -116,7 +116,7 @@ void BuildVirtualPhi::ComputeRelationships(DesignFlowStepSet& relationship,
    FunctionFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 BuildVirtualPhi::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;

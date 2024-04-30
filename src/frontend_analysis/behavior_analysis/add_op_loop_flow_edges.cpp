@@ -74,7 +74,7 @@ AddOpLoopFlowEdges::AddOpLoopFlowEdges(const ParameterConstRef _parameters, cons
 
 AddOpLoopFlowEdges::~AddOpLoopFlowEdges() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 AddOpLoopFlowEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;

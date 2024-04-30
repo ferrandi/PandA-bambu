@@ -41,14 +41,13 @@
  * Last modified by $Author$
  *
  */
-
 #ifndef FUNCTION_FRONTEND_FLOW_STEP_HPP
 #define FUNCTION_FRONTEND_FLOW_STEP_HPP
+#include "design_flow_step.hpp"
+#include "frontend_flow_step.hpp"
+#include "refcount.hpp"
 
-#include "design_flow_step.hpp"   // for DesignFlowStep_S...
-#include "frontend_flow_step.hpp" // for FrontendFlowStep...
-#include "refcount.hpp"           // for REF_FORWARD_DECL
-#include <string>                 // for string
+#include <string>
 
 REF_FORWARD_DECL(ArchManager);
 CONSTREF_FORWARD_DECL(DesignFlowManager);
@@ -66,13 +65,13 @@ enum class FunctionFrontendFlowStep_Movable
 
 class FunctionFrontendFlowStep : public FrontendFlowStep
 {
- protected:
+ private:
    /**
-    * Execute the step
-    * @return the exit status of this step
+    * Check if this function is reachable from the top functions
     */
-   virtual DesignFlowStep_Status InternalExec() = 0;
+   bool HasToBeExecuted0() const;
 
+ protected:
    /// The function behavior of the function to be analyzed
    const FunctionBehaviorRef function_behavior;
 
@@ -86,16 +85,19 @@ class FunctionFrontendFlowStep : public FrontendFlowStep
    unsigned int bitvalue_version;
 
    /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   virtual DesignFlowStep_Status InternalExec() = 0;
+
+   /**
     * Write the current version of statement list in dot format
     * @param filename is the file name to be written
     */
    void WriteBBGraphDot(const std::string& filename) const;
 
- private:
-   /**
-    * Check if this function is reachable from the top functions
-    */
-   bool HasToBeExecuted0() const;
+   void ComputeRelationships(DesignFlowStepSet& relationship,
+                             const DesignFlowStep::RelationshipType relationship_type) override;
 
  public:
    /**
@@ -109,47 +111,17 @@ class FunctionFrontendFlowStep : public FrontendFlowStep
    /**
     * Destructor
     */
-   ~FunctionFrontendFlowStep() override;
+   virtual ~FunctionFrontendFlowStep() override;
 
-   /**
-    * Compute the relationships of a step with other steps
-    * @param dependencies is where relationships will be stored
-    * @param relationship_type is the type of relationship to be computed
-    */
-   void ComputeRelationships(DesignFlowStepSet& relationship,
-                             const DesignFlowStep::RelationshipType relationship_type) override;
+   std::string GetName() const final;
 
-   /**
-    * Return the signature of this step
-    */
-   std::string GetSignature() const override;
-
-   /**
-    * Return the name of this design step
-    * @return the name of the pass (for debug purpose)
-    */
-   std::string GetName() const override;
-
-   /**
-    * Execute the step
-    * @return the exit status of this step
-    */
    DesignFlowStep_Status Exec() final;
 
-   /**
-    * Compute the signature of a function frontend flow step
-    * @param frontend_flow_step_type is the type of frontend flow
-    * @param function_id is the index of the function
-    * @return the corresponding signature
-    */
-   static const std::string ComputeSignature(const FrontendFlowStepType frontend_flow_step_type,
-                                             const unsigned int function_id);
-
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
    bool HasToBeExecuted() const override;
+
+   void PrintInitialIR() const override;
+
+   void PrintFinalIR() const override;
 
    /**
     * @return on which bb version this step has been executed last time
@@ -162,13 +134,12 @@ class FunctionFrontendFlowStep : public FrontendFlowStep
    unsigned int GetBitValueVersion() const;
 
    /**
-    * Dump the initial intermediate representation
+    * Compute the signature of a function frontend flow step
+    * @param frontend_flow_step_type is the type of frontend flow
+    * @param function_id is the index of the function
+    * @return the corresponding signature
     */
-   void PrintInitialIR() const override;
-
-   /**
-    * Dump the final intermediate representation
-    */
-   void PrintFinalIR() const override;
+   static std::string ComputeSignature(const FrontendFlowStepType frontend_flow_step_type,
+                                       const unsigned int function_id);
 };
 #endif

@@ -41,17 +41,21 @@
  *
  */
 #include "design_flow_step.hpp"
-#include "Parameter.hpp"           // for Parameter, OPT_debug_level
-#include "design_flow_manager.hpp" // for DesignFlowStepRef, DesignF...
-#include <ostream>                 // for operator<<, basic_ostream
 
-DesignFlowStep::DesignFlowStep(const DesignFlowManagerConstRef _design_flow_manager,
+#include "Parameter.hpp"
+#include "design_flow_manager.hpp"
+
+#include <ostream>
+#include <string>
+
+DesignFlowStep::DesignFlowStep(const std::string& _signature, const DesignFlowManagerConstRef _design_flow_manager,
                                const ParameterConstRef _parameters)
     : composed(false),
       design_flow_manager(_design_flow_manager),
       parameters(_parameters),
       debug_level(parameters->getOption<int>(OPT_debug_level)),
-      output_level(parameters->getOption<int>(OPT_output_level))
+      output_level(parameters->getOption<int>(OPT_output_level)),
+      signature(_signature)
 {
 }
 
@@ -72,6 +76,16 @@ void DesignFlowStep::Initialize()
 {
 }
 
+const std::string& DesignFlowStep::GetSignature() const
+{
+   return signature;
+}
+
+std::string DesignFlowStep::GetName() const
+{
+   return signature;
+}
+
 int DesignFlowStep::CGetDebugLevel() const
 {
    return debug_level;
@@ -90,15 +104,17 @@ void DesignFlowStep::PrintFinalIR() const
 {
 }
 
-#if not HAVE_UNORDERED
-DesignFlowStepSorter::DesignFlowStepSorter() = default;
-
-bool DesignFlowStepSorter::operator()(const DesignFlowStepRef x, const DesignFlowStepRef y) const
+size_t DesignFlowStepHash::operator()(const DesignFlowStepRef& step) const
 {
-   return x->GetName() < y->GetName();
+   return std::hash<std::string>()(step->GetSignature());
 }
 
-DesignFlowStepSet::DesignFlowStepSet() : std::set<DesignFlowStepRef, DesignFlowStepSorter>(DesignFlowStepSorter())
+bool DesignFlowStepEqual::operator()(const DesignFlowStepRef& x, const DesignFlowStepRef& y) const
 {
+   return x->GetSignature() == y->GetSignature();
 }
-#endif
+
+bool DesignFlowStepSorter::operator()(const DesignFlowStepRef& x, const DesignFlowStepRef& y) const
+{
+   return x->GetSignature() < y->GetSignature();
+}

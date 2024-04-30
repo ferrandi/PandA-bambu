@@ -42,15 +42,18 @@
  */
 #include "design_flow_aux_step.hpp"
 
-#include "exceptions.hpp" // for THROW_UNREACHABLE
+#include "exceptions.hpp"
 #include "string_manipulation.hpp"
-#include <ostream> // for operator<<, basic_ostream
+
+#include <ostream>
 #include <utility>
 
 AuxDesignFlowStep::AuxDesignFlowStep(std::string _name, const AuxDesignFlowStepType _type,
                                      const DesignFlowManagerConstRef _design_flow_manager,
                                      const ParameterConstRef _parameters)
-    : DesignFlowStep(_design_flow_manager, _parameters), type(_type), name(std::move(_name))
+    : DesignFlowStep(ComputeSignature(_name, _type), _design_flow_manager, _parameters),
+      type(_type),
+      name(std::move(_name))
 {
 }
 
@@ -73,11 +76,6 @@ DesignFlowStep_Status AuxDesignFlowStep::Exec()
 std::string AuxDesignFlowStep::GetName() const
 {
    return name;
-}
-
-std::string AuxDesignFlowStep::GetSignature() const
-{
-   return ComputeSignature(name, type);
 }
 
 void AuxDesignFlowStep::WriteDot(std::ostream& out) const

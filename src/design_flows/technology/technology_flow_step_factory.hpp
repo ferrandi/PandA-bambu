@@ -81,7 +81,7 @@ class TechnologyFlowStepFactory : public DesignFlowStepFactory
    /**
     * Return the prefix of the steps created by the factory
     */
-   const std::string GetPrefix() const override;
+   std::string GetPrefix() const override;
 
    /**
     * Create a scheduling design flow step

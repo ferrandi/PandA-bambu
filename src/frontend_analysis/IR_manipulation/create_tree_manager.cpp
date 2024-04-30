@@ -86,12 +86,9 @@ void create_tree_manager::ComputeRelationships(DesignFlowStepSet& relationship,
 {
    switch(relationship_type)
    {
-      case(PRECEDENCE_RELATIONSHIP):
-      {
-         break;
-      }
       case DEPENDENCE_RELATIONSHIP:
       {
+         const auto DFM = design_flow_manager.lock();
 #if HAVE_FROM_AADL_ASN_BUILT
          if(parameters->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_AADL)
          {
@@ -100,42 +97,43 @@ void create_tree_manager::ComputeRelationships(DesignFlowStepSet& relationship,
                const auto file_format = parameters->GetFileFormat(input_file);
                if(file_format == Parameters_FileFormat::FF_AADL)
                {
-                  const auto signature = ParserFlowStep::ComputeSignature(ParserFlowStep_Type::AADL, input_file);
-                  vertex parser_step = design_flow_manager.lock()->GetDesignFlowStep(signature);
-                  const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-                  const DesignFlowStepRef design_flow_step =
+                  const auto pfs_signature = ParserFlowStep::ComputeSignature(ParserFlowStep_Type::AADL, input_file);
+                  vertex parser_step = DFM->GetDesignFlowStep(pfs_signature);
+                  const auto design_flow_graph = DFM->CGetDesignFlowGraph();
+                  const auto design_flow_step =
                       parser_step != NULL_VERTEX ?
                           design_flow_graph->CGetDesignFlowStepInfo(parser_step)->design_flow_step :
-                          design_flow_manager.lock()->CreateFlowStep(signature);
+                          DFM->CreateFlowStep(pfs_signature);
                   relationship.insert(design_flow_step);
                }
                else if(file_format == Parameters_FileFormat::FF_ASN)
                {
-                  const auto signature = ParserFlowStep::ComputeSignature(ParserFlowStep_Type::ASN, input_file);
-                  vertex parser_step = design_flow_manager.lock()->GetDesignFlowStep(signature);
-                  const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-                  const DesignFlowStepRef design_flow_step =
+                  const auto pfs_signature = ParserFlowStep::ComputeSignature(ParserFlowStep_Type::ASN, input_file);
+                  vertex parser_step = DFM->GetDesignFlowStep(pfs_signature);
+                  const auto design_flow_graph = DFM->CGetDesignFlowGraph();
+                  const auto design_flow_step =
                       parser_step != NULL_VERTEX ?
                           design_flow_graph->CGetDesignFlowStepInfo(parser_step)->design_flow_step :
-                          design_flow_manager.lock()->CreateFlowStep(signature);
+                          DFM->CreateFlowStep(pfs_signature);
                   relationship.insert(design_flow_step);
                }
             }
          }
 #endif
-         const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const auto* technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(
-             design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
+         const auto design_flow_graph = DFM->CGetDesignFlowGraph();
+         const auto technology_flow_step_factory =
+             GetPointer<const TechnologyFlowStepFactory>(DFM->CGetDesignFlowStepFactory("Technology"));
          const std::string technology_flow_signature =
              TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
-         const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
-         const DesignFlowStepRef technology_design_flow_step =
+         const vertex technology_flow_step = DFM->GetDesignFlowStep(technology_flow_signature);
+         const auto technology_design_flow_step =
              technology_flow_step ?
                  design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
                  technology_flow_step_factory->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          relationship.insert(technology_design_flow_step);
          break;
       }
+      case PRECEDENCE_RELATIONSHIP:
       case INVALIDATION_RELATIONSHIP:
       {
          break;
@@ -146,7 +144,7 @@ void create_tree_manager::ComputeRelationships(DesignFlowStepSet& relationship,
    ApplicationFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
 }
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 create_tree_manager::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;

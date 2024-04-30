@@ -167,7 +167,7 @@ FrontendFlowStepFactory::FrontendFlowStepFactory(const application_managerRef _A
 
 FrontendFlowStepFactory::~FrontendFlowStepFactory() = default;
 
-const DesignFlowStepSet FrontendFlowStepFactory::GenerateFrontendSteps(
+DesignFlowStepSet FrontendFlowStepFactory::GenerateFrontendSteps(
     const CustomUnorderedSet<FrontendFlowStepType>& frontend_flow_step_types) const
 {
    DesignFlowStepSet frontend_flow_steps;
@@ -181,8 +181,7 @@ const DesignFlowStepSet FrontendFlowStepFactory::GenerateFrontendSteps(
    return frontend_flow_steps;
 }
 
-const DesignFlowStepRef
-FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow_step_type) const
+DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow_step_type) const
 {
    switch(frontend_flow_step_type)
    {
@@ -311,7 +310,7 @@ FrontendFlowStepFactory::GenerateFrontendStep(FrontendFlowStepType frontend_flow
    return DesignFlowStepRef();
 }
 
-const DesignFlowStepRef
+DesignFlowStepRef
 FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowStepType design_flow_step_type) const
 {
    switch(design_flow_step_type)
@@ -491,7 +490,7 @@ FrontendFlowStepFactory::CreateApplicationFrontendFlowStep(const FrontendFlowSte
    return DesignFlowStepRef();
 }
 
-const DesignFlowStepRef
+DesignFlowStepRef
 FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepType design_flow_step_type,
                                                         const unsigned int function_id) const
 {
@@ -881,7 +880,7 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
    return DesignFlowStepRef();
 }
 
-const std::string FrontendFlowStepFactory::GetPrefix() const
+std::string FrontendFlowStepFactory::GetPrefix() const
 {
    return "Frontend";
 }

@@ -76,7 +76,7 @@ remove_clobber_ga::remove_clobber_ga(const application_managerRef _AppM, unsigne
 
 remove_clobber_ga::~remove_clobber_ga() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>>
 remove_clobber_ga::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;

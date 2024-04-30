@@ -76,7 +76,7 @@ class PragmaAnalysis : public ApplicationFrontendFlowStep
     */
    tree_nodeRef create_omp_pragma(const tree_nodeRef& tn) const;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:

@@ -41,39 +41,27 @@
  * Last modified by $Author$
  *
  */
-
-// include class header
 #include "BitValueIPA.hpp"
 
-// include from src/
 #include "Parameter.hpp"
-
-// include from src/behavior/
+#include "application_manager.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
-
-// include from src/design_flow/
-#include "application_manager.hpp"
-#include "design_flow_graph.hpp"
-#include "design_flow_manager.hpp"
-
-// include from src/frontend_analysis/
-#include "function_frontend_flow_step.hpp"
-
-#include "behavioral_helper.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "dbgPrintHelper.hpp"
+#include "design_flow_graph.hpp"
+#include "design_flow_manager.hpp"
+#include "function_behavior.hpp"
+#include "function_frontend_flow_step.hpp"
+#include "string_manipulation.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-/// STD include
 #include <string>
 #include <utility>
 
@@ -87,7 +75,7 @@ BitValueIPA::BitValueIPA(const application_managerRef AM, const DesignFlowManage
 
 BitValueIPA::~BitValueIPA() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 BitValueIPA::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
@@ -130,12 +118,13 @@ void BitValueIPA::ComputeRelationships(DesignFlowStepSet& relationships,
 {
    if(relationship_type == INVALIDATION_RELATIONSHIP)
    {
+      const auto DFM = design_flow_manager.lock();
       for(const auto& i : fun_id_to_restart)
       {
          const auto step_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, i);
-         const auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);
+         const auto frontend_step = DFM->GetDesignFlowStep(step_signature);
          THROW_ASSERT(frontend_step != NULL_VERTEX, "step " + step_signature + " is not present");
-         const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const auto design_flow_graph = DFM->CGetDesignFlowGraph();
          const auto design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
          relationships.insert(design_flow_step);
       }
@@ -143,9 +132,9 @@ void BitValueIPA::ComputeRelationships(DesignFlowStepSet& relationships,
       for(const auto& i : fun_id_to_restart_caller)
       {
          const auto step_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, i);
-         const auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);
+         const auto frontend_step = DFM->GetDesignFlowStep(step_signature);
          THROW_ASSERT(frontend_step != NULL_VERTEX, "step " + step_signature + " is not present");
-         const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const auto design_flow_graph = DFM->CGetDesignFlowGraph();
          const auto design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
          relationships.insert(design_flow_step);
       }

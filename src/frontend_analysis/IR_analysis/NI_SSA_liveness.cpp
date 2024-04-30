@@ -109,7 +109,7 @@ NI_SSA_liveness::NI_SSA_liveness(const ParameterConstRef _parameters, const appl
 
 NI_SSA_liveness::~NI_SSA_liveness() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 NI_SSA_liveness::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;

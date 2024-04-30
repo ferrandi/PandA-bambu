@@ -70,7 +70,7 @@ class BitValueIPA : public ApplicationFrontendFlowStep, public BitLatticeManipul
 
    std::map<unsigned int, unsigned int> last_bb_ver;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    void ComputeRelationships(DesignFlowStepSet& relationships,

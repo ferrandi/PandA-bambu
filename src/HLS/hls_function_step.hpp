@@ -37,11 +37,8 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
 #ifndef HLS_FUNCION_STEP_HPP
 #define HLS_FUNCION_STEP_HPP
-
-/// Superclass include
 #include "hls_step.hpp"
 
 class HLSFunctionStep : public HLS_step
@@ -93,27 +90,15 @@ class HLSFunctionStep : public HLS_step
        const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
        const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
 
-   /**
-    * Destructor
-    */
    ~HLSFunctionStep() override;
 
-   /**
-    * Check if this step has actually to be executed
-    * @return true if the step has to be executed
-    */
    bool HasToBeExecuted() const override;
 
-   /**
-    * Initialize the step (i.e., like a constructor, but executed just before exec
-    */
    void Initialize() override;
 
-   /**
-    * Return a unified identifier of this design step
-    * @return the signature of the design step
-    */
-   std::string GetSignature() const final;
+   std::string GetName() const final;
+
+   DesignFlowStep_Status Exec() final;
 
    /**
     * Compute the signature of a hls flow step
@@ -125,17 +110,5 @@ class HLSFunctionStep : public HLS_step
    static std::string ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
                                        const HLSFlowStepSpecializationConstRef hls_flow_step_specialization,
                                        const unsigned int function_id);
-
-   /**
-    * Return the name of this design step
-    * @return the name of the pass (for debug purpose)
-    */
-   std::string GetName() const final;
-
-   /**
-    * Execute the step
-    * @return the exit status of this step
-    */
-   DesignFlowStep_Status Exec() final;
 };
 #endif

@@ -222,7 +222,7 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
     */
    std::deque<bit_lattice> get_current_or_best(const tree_nodeConstRef& tn) const;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:

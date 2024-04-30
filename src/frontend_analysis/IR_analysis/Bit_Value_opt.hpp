@@ -68,7 +68,7 @@ class Bit_Value_opt : public FunctionFrontendFlowStep
    /// when true IR has been modified
    bool modified;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**

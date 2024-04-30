@@ -98,7 +98,7 @@ class CSE : public FunctionFrontendFlowStep
    /// when true PHI_OPT step has to restart
    bool restart_phi_opt;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /// define the type of the unique table key

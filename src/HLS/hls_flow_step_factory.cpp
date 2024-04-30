@@ -142,7 +142,7 @@ HLSFlowStepFactory::HLSFlowStepFactory(const DesignFlowManagerConstRef _design_f
 
 HLSFlowStepFactory::~HLSFlowStepFactory() = default;
 
-const std::string HLSFlowStepFactory::GetPrefix() const
+std::string HLSFlowStepFactory::GetPrefix() const
 {
    return "HLS";
 }
@@ -582,7 +582,7 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
    return design_flow_step;
 }
 
-const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
+DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
     const CustomUnorderedSet<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>>& hls_flow_steps) const
 {
    const CallGraphManagerConstRef call_graph_manager = HLS_mgr->CGetCallGraphManager();
@@ -700,7 +700,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
    return ret;
 }
 
-const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
+DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
     const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>& hls_flow_step) const
 {
    CustomUnorderedSet<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>> hls_flow_steps;
@@ -708,7 +708,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
    return CreateHLSFlowSteps(hls_flow_steps);
 }
 
-const DesignFlowStepSet
+DesignFlowStepSet
 HLSFlowStepFactory::CreateHLSFlowSteps(const HLSFlowStep_Type type,
                                        const HLSFlowStepSpecializationConstRef hls_flow_step_specialization) const
 {
@@ -717,13 +717,13 @@ HLSFlowStepFactory::CreateHLSFlowSteps(const HLSFlowStep_Type type,
    return CreateHLSFlowSteps(hls_flow_step);
 }
 
-const DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(
+DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(
     const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>& hls_flow_step) const
 {
    return *CreateHLSFlowSteps(hls_flow_step).cbegin();
 }
 
-const DesignFlowStepRef
+DesignFlowStepRef
 HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type,
                                       const HLSFlowStepSpecializationConstRef hls_flow_step_specialization) const
 {

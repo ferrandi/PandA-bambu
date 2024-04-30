@@ -62,7 +62,7 @@ ParserFlowStepFactory::ParserFlowStepFactory(const DesignFlowManagerConstRef _de
 
 ParserFlowStepFactory::~ParserFlowStepFactory() = default;
 
-const std::string ParserFlowStepFactory::GetPrefix() const
+std::string ParserFlowStepFactory::GetPrefix() const
 {
    return "Parser";
 }

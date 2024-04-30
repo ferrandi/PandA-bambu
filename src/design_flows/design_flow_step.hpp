@@ -43,54 +43,40 @@
 
 #ifndef DESIGN_FLOW_STEP_HPP
 #define DESIGN_FLOW_STEP_HPP
-#include "config_HAVE_UNORDERED.hpp" // for HAVE_UNORDERED
+#include "custom_set.hpp"
+#include "graph.hpp"
+#include "refcount.hpp"
 
-#include "graph.hpp"    // for vertex
-#include "refcount.hpp" // for CONSTREF_FORWARD...
-#include <iosfwd>       // for ostream
-#include <string>       // for string
+#include <iosfwd>
+#include <string>
+
+#include "config_HAVE_UNORDERED.hpp"
 
 CONSTREF_FORWARD_DECL(DesignFlowManager);
 REF_FORWARD_DECL(DesignFlowStep);
 CONSTREF_FORWARD_DECL(DesignFlowStepFactory);
 CONSTREF_FORWARD_DECL(Parameter);
+class DesignFlowStepNecessitySorter;
 
-/**
- * A set of design flow step
- */
+struct DesignFlowStepHash
+{
+   size_t operator()(const DesignFlowStepRef& step) const;
+};
+
+struct DesignFlowStepEqual
+{
+   bool operator()(const DesignFlowStepRef& x, const DesignFlowStepRef& y) const;
+};
+
+struct DesignFlowStepSorter
+{
+   bool operator()(const DesignFlowStepRef& x, const DesignFlowStepRef& y) const;
+};
+
 #if HAVE_UNORDERED
-#include "custom_set.hpp"
-class DesignFlowStepSet : public CustomUnorderedSet<DesignFlowStepRef>
-{
-};
+using DesignFlowStepSet = CustomUnorderedSet<DesignFlowStepRef, DesignFlowStepHash, DesignFlowStepEqual>;
 #else
-#include <functional> // for binary_function
-#include <set>        // for set
-class DesignFlowStepSorter : std::binary_function<vertex, vertex, bool>
-{
- public:
-   /**
-    * Constructor
-    */
-   DesignFlowStepSorter();
-
-   /**
-    * Compare position of two vertices
-    * @param x is the first step
-    * @param y is the second step
-    * @return true if x is necessary and y is unnecessary
-    */
-   bool operator()(const DesignFlowStepRef x, const DesignFlowStepRef y) const;
-};
-
-class DesignFlowStepSet : public std::set<DesignFlowStepRef, DesignFlowStepSorter>
-{
- public:
-   /**
-    * Constructor
-    */
-   DesignFlowStepSet();
-};
+using DesignFlowStepSet = CustomOrderedSet<DesignFlowStepRef, DesignFlowStepSorter>;
 #endif
 
 /// The status of a step
@@ -128,6 +114,8 @@ class DesignFlowStep
    /// The output level
    const int output_level;
 
+   const std::string signature;
+
  public:
    /**
     * The relationship type
@@ -144,7 +132,8 @@ class DesignFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   DesignFlowStep(const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   DesignFlowStep(const std::string& signature, const DesignFlowManagerConstRef design_flow_manager,
+                  const ParameterConstRef parameters);
 
    /**
     * Destructor
@@ -172,13 +161,13 @@ class DesignFlowStep
     * Return a unified identifier of this design step
     * @return the signature of the design step
     */
-   virtual std::string GetSignature() const = 0;
+   const std::string& GetSignature() const;
 
    /**
     * Return the name of this design step
     * @return the name of the pass (for debug purpose)
     */
-   virtual std::string GetName() const = 0;
+   virtual std::string GetName() const;
 
    /**
     * Return the status of this design step

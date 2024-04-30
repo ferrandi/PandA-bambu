@@ -127,7 +127,7 @@ RemoveEndingIf::RemoveEndingIf(const ParameterConstRef _parameters, const applic
 
 RemoveEndingIf::~RemoveEndingIf() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 RemoveEndingIf::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;

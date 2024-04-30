@@ -50,34 +50,25 @@
 ParserFlowStep::ParserFlowStep(const DesignFlowManagerConstRef _design_flow_manager,
                                const ParserFlowStep_Type _parser_step_type, const std::string& _file_name,
                                const ParameterConstRef _parameters)
-    : DesignFlowStep(_design_flow_manager, _parameters), parser_step_type(_parser_step_type), file_name(_file_name)
+    : DesignFlowStep(ComputeSignature(_parser_step_type, _file_name), _design_flow_manager, _parameters),
+      parser_step_type(_parser_step_type),
+      file_name(_file_name)
 {
 }
 
 ParserFlowStep::~ParserFlowStep() = default;
-
-std::string ParserFlowStep::GetSignature() const
-{
-   return ComputeSignature(parser_step_type, file_name);
-}
 
 std::string ParserFlowStep::GetName() const
 {
    return "Parser::" + GetKindText() + "::" + file_name;
 }
 
-const std::string ParserFlowStep::ComputeSignature(const ParserFlowStep_Type parser_step_type,
-                                                   const std::string& file_name)
+std::string ParserFlowStep::ComputeSignature(const ParserFlowStep_Type parser_step_type, const std::string& file_name)
 {
    return "Parser::" + STR(parser_step_type) + "::" + file_name;
 }
 
-std::string ParserFlowStep::GetKindText() const
-{
-   return EnumToKindText(parser_step_type);
-}
-
-const std::string ParserFlowStep::EnumToKindText(const ParserFlowStep_Type parser_step_type)
+static std::string EnumToKindText(const ParserFlowStep_Type parser_step_type)
 {
    switch(parser_step_type)
    {
@@ -92,6 +83,11 @@ const std::string ParserFlowStep::EnumToKindText(const ParserFlowStep_Type parse
    }
    THROW_UNREACHABLE("");
    return "";
+}
+
+std::string ParserFlowStep::GetKindText() const
+{
+   return EnumToKindText(parser_step_type);
 }
 
 bool ParserFlowStep::HasToBeExecuted() const

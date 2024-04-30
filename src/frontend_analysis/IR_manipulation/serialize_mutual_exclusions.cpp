@@ -80,7 +80,7 @@ SerializeMutualExclusions::SerializeMutualExclusions(const application_managerRe
 
 SerializeMutualExclusions::~SerializeMutualExclusions() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 SerializeMutualExclusions::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;

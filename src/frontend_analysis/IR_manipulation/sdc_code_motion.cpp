@@ -68,7 +68,7 @@ SDCCodeMotion::SDCCodeMotion(const application_managerRef _AppM, unsigned int _f
 
 SDCCodeMotion::~SDCCodeMotion() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 SDCCodeMotion::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;

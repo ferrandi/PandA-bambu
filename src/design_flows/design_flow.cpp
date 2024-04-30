@@ -45,7 +45,8 @@
 
 DesignFlow::DesignFlow(const DesignFlowManagerConstRef _design_flow_manager, const DesignFlow_Type _design_flow_type,
                        const ParameterConstRef _parameters)
-    : DesignFlowStep(_design_flow_manager, _parameters), design_flow_type(_design_flow_type)
+    : DesignFlowStep(ComputeSignature(_design_flow_type), _design_flow_manager, _parameters),
+      design_flow_type(_design_flow_type)
 {
 }
 
@@ -53,11 +54,6 @@ DesignFlow::~DesignFlow() = default;
 
 void DesignFlow::ComputeRelationships(DesignFlowStepSet&, const DesignFlowStep::RelationshipType)
 {
-}
-
-std::string DesignFlow::GetSignature() const
-{
-   return ComputeSignature(design_flow_type);
 }
 
 std::string DesignFlow::GetName() const

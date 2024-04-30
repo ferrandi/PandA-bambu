@@ -73,7 +73,7 @@ UpdateSchedule::UpdateSchedule(const application_managerRef _AppM, unsigned int 
 
 UpdateSchedule::~UpdateSchedule() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 UpdateSchedule::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;

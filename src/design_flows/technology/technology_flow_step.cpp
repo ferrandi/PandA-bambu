@@ -37,19 +37,30 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "technology_flow_step.hpp"
 
-/// design_flows include
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-
-/// design_flows/technology include
 #include "string_manipulation.hpp"
 #include "technology_flow_step_factory.hpp"
 
-const std::string TechnologyFlowStep::EnumToName(const TechnologyFlowStep_Type technology_flow_step_type)
+TechnologyFlowStep::TechnologyFlowStep(const technology_managerRef _TM, const generic_deviceRef _target,
+                                       const DesignFlowManagerConstRef _design_flow_manager,
+                                       const TechnologyFlowStep_Type _technology_flow_step_type,
+                                       const ParameterConstRef _parameters)
+    : DesignFlowStep(ComputeSignature(_technology_flow_step_type), _design_flow_manager, _parameters),
+      technology_flow_step_type(_technology_flow_step_type),
+      TM(_TM),
+      target(_target)
+{
+}
+
+std::string TechnologyFlowStep::ComputeSignature(const TechnologyFlowStep_Type technology_flow_step_type)
+{
+   return "Technology::" + STR(static_cast<int>(technology_flow_step_type));
+}
+
+static std::string EnumToName(const TechnologyFlowStep_Type technology_flow_step_type)
 {
    switch(technology_flow_step_type)
    {
@@ -73,16 +84,6 @@ const std::string TechnologyFlowStep::EnumToName(const TechnologyFlowStep_Type t
          THROW_UNREACHABLE("");
    }
    return "";
-}
-
-const std::string TechnologyFlowStep::ComputeSignature(const TechnologyFlowStep_Type technology_flow_step_type)
-{
-   return "Technology::" + STR(static_cast<int>(technology_flow_step_type));
-}
-
-std::string TechnologyFlowStep::GetSignature() const
-{
-   return ComputeSignature(technology_flow_step_type);
 }
 
 std::string TechnologyFlowStep::GetName() const
@@ -109,17 +110,6 @@ void TechnologyFlowStep::ComputeRelationships(DesignFlowStepSet& steps,
 DesignFlowStepFactoryConstRef TechnologyFlowStep::CGetDesignFlowStepFactory() const
 {
    return design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology");
-}
-
-TechnologyFlowStep::TechnologyFlowStep(const technology_managerRef _TM, const generic_deviceRef _target,
-                                       const DesignFlowManagerConstRef _design_flow_manager,
-                                       const TechnologyFlowStep_Type _technology_flow_step_type,
-                                       const ParameterConstRef _parameters)
-    : DesignFlowStep(_design_flow_manager, _parameters),
-      technology_flow_step_type(_technology_flow_step_type),
-      TM(_TM),
-      target(_target)
-{
 }
 
 bool TechnologyFlowStep::HasToBeExecuted() const

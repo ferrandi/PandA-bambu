@@ -77,7 +77,7 @@ dead_code_eliminationIPA::dead_code_eliminationIPA(const application_managerRef 
 
 dead_code_eliminationIPA::~dead_code_eliminationIPA() = default;
 
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
+CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>>
 dead_code_eliminationIPA::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;

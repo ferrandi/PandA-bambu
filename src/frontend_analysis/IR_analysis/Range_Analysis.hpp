@@ -84,7 +84,7 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
    std::map<unsigned int, unsigned int> last_bitvalue_ver;
    std::map<unsigned int, unsigned int> last_bb_ver;
 
-   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>
    ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
    void ComputeRelationships(DesignFlowStepSet& relationships,
                              const DesignFlowStep::RelationshipType relationship_type) override;
