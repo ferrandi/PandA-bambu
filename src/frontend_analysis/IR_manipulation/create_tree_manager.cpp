@@ -46,8 +46,6 @@
 #include "Parameter.hpp"
 #include "application_manager.hpp"
 #include "compiler_wrapper.hpp"
-#include "config_HAVE_FROM_AADL_ASN_BUILT.hpp"
-#include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "cost_latency_table.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
@@ -55,6 +53,7 @@
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
 #include "parse_tree.hpp"
+#include "parser_flow_step_factory.hpp"
 #include "string_manipulation.hpp"
 #include "technology_flow_step.hpp"
 #include "technology_flow_step_factory.hpp"
@@ -64,6 +63,9 @@
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
 #include "utility.hpp"
+
+#include "config_HAVE_FROM_AADL_ASN_BUILT.hpp"
+#include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 
 #if HAVE_FROM_AADL_ASN_BUILT
 #include "parser_flow_step.hpp"
@@ -92,6 +94,8 @@ void create_tree_manager::ComputeRelationships(DesignFlowStepSet& relationship,
 #if HAVE_FROM_AADL_ASN_BUILT
          if(parameters->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_AADL)
          {
+            const auto parser_factory =
+                GetPointer<const ParserFlowStepFactory>(DFM->CGetDesignFlowStepFactory(DesignFlowStep::PARSER));
             for(const auto& input_file : AppM->input_files)
             {
                const auto file_format = parameters->GetFileFormat(input_file);
@@ -103,7 +107,7 @@ void create_tree_manager::ComputeRelationships(DesignFlowStepSet& relationship,
                   const auto design_flow_step =
                       parser_step != NULL_VERTEX ?
                           design_flow_graph->CGetDesignFlowStepInfo(parser_step)->design_flow_step :
-                          DFM->CreateFlowStep(pfs_signature);
+                          parser_factory->CreateParserStep(ParserFlowStep_Type::AADL, input_file);
                   relationship.insert(design_flow_step);
                }
                else if(file_format == Parameters_FileFormat::FF_ASN)
@@ -114,7 +118,7 @@ void create_tree_manager::ComputeRelationships(DesignFlowStepSet& relationship,
                   const auto design_flow_step =
                       parser_step != NULL_VERTEX ?
                           design_flow_graph->CGetDesignFlowStepInfo(parser_step)->design_flow_step :
-                          DFM->CreateFlowStep(pfs_signature);
+                          parser_factory->CreateParserStep(ParserFlowStep_Type::ASN, input_file);
                   relationship.insert(design_flow_step);
                }
             }
@@ -122,8 +126,8 @@ void create_tree_manager::ComputeRelationships(DesignFlowStepSet& relationship,
 #endif
          const auto design_flow_graph = DFM->CGetDesignFlowGraph();
          const auto technology_flow_step_factory =
-             GetPointer<const TechnologyFlowStepFactory>(DFM->CGetDesignFlowStepFactory("Technology"));
-         const std::string technology_flow_signature =
+             GetPointer<const TechnologyFlowStepFactory>(DFM->CGetDesignFlowStepFactory(DesignFlowStep::TECHNOLOGY));
+         const auto technology_flow_signature =
              TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          const vertex technology_flow_step = DFM->GetDesignFlowStep(technology_flow_signature);
          const auto technology_design_flow_step =

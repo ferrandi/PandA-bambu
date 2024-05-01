@@ -43,17 +43,17 @@
 
 #ifndef DESIGN_FLOW_GRAPH_HPP
 #define DESIGN_FLOW_GRAPH_HPP
+#include "custom_map.hpp"
+#include "design_flow_step.hpp"
+#include "edge_info.hpp"
+#include "graph.hpp"
+#include "graph_info.hpp"
+#include "node_info.hpp"
+#include "refcount.hpp"
 
-#include "edge_info.hpp"  // for EdgeInfo, EdgeIn...
-#include "graph.hpp"      // for vertex, EdgeDesc...
-#include "graph_info.hpp" // for GraphInfo
-#include "node_info.hpp"  // for NodeInfo
-#include "refcount.hpp"   // for refcount, Refcou...
-#include <cstddef>        // for size_t
-#include <iosfwd>         // for ostream
-#include <string>         // for string
-
-#include "custom_map.hpp" // for unordered_map
+#include <cstddef>
+#include <iosfwd>
+#include <string>
 
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(DesignFlowGraphsCollection);
@@ -86,9 +86,6 @@ struct DesignFlowDependenceInfo : public EdgeInfo
     */
    DesignFlowDependenceInfo();
 
-   /**
-    * Destructor
-    */
    ~DesignFlowDependenceInfo() override;
 };
 using DesignFlowDependenceInfoRef = refcount<DesignFlowDependenceInfo>;
@@ -110,7 +107,7 @@ class DesignFlowGraphsCollection : public graphs_collection
 {
  protected:
    /// Map a signature of a step to the corresponding vertex
-   CustomUnorderedMap<std::string, vertex> signature_to_vertex;
+   CustomUnorderedMap<DesignFlowStep::signature_t, vertex> signature_to_vertex;
 
  public:
    /**
@@ -118,16 +115,13 @@ class DesignFlowGraphsCollection : public graphs_collection
     */
    explicit DesignFlowGraphsCollection(const ParameterConstRef parameters);
 
-   /**
-    * Destructor
-    */
    ~DesignFlowGraphsCollection() override;
 
    /**
     * Return the vertex associated with a design step if exists, NULL_VERTEX otherwise
     * @param signature is the signature of the design step
     */
-   vertex GetDesignFlowStep(const std::string& signature) const;
+   vertex GetDesignFlowStep(DesignFlowStep::signature_t signature) const;
 
    /**
     * Add a design flow dependence
@@ -204,7 +198,7 @@ class DesignFlowGraph : public graph
     * Return the vertex associated with a design step if exists, NULL_VERTEX otherwise
     * @param signature is the signature of the design step
     */
-   vertex GetDesignFlowStep(const std::string& signature) const;
+   vertex GetDesignFlowStep(DesignFlowStep::signature_t signature) const;
 
    /**
     * @param step is the vertex
@@ -220,7 +214,7 @@ class DesignFlowGraph : public graph
     * @param step is the vertex
     * @return the info associated with the vertex
     */
-   inline const DesignFlowStepInfoConstRef CGetDesignFlowStepInfo(const vertex step) const
+   inline DesignFlowStepInfoConstRef CGetDesignFlowStepInfo(const vertex step) const
    {
       return RefcountCast<const DesignFlowStepInfo>(graph::CGetNodeInfo(step));
    }
@@ -238,7 +232,7 @@ class DesignFlowGraph : public graph
     * Return the info associated with the graph
     * @return the info associated with the graph
     */
-   inline const DesignFlowGraphInfoConstRef CGetDesignFlowGraphInfo() const
+   inline DesignFlowGraphInfoConstRef CGetDesignFlowGraphInfo() const
    {
       return RefcountCast<const DesignFlowGraphInfo>(graph::CGetGraphInfo());
    }
@@ -292,16 +286,8 @@ class DesignFlowStepWriter : public VertexWriter
        const CustomMap<vertex, std::string>& actor_names = CustomMap<vertex, std::string>(),
        const int detail_level = 0);
 
-   /**
-    * Destructor
-    */
    ~DesignFlowStepWriter() override;
 
-   /**
-    * Functor actually called by the boost library to perform the writing
-    * @param out is the stream where the nodes have to be printed
-    * @param v is the vertex to be printed
-    */
    void operator()(std::ostream& out, const vertex& v) const override;
 };
 
@@ -332,11 +318,6 @@ class DesignFlowEdgeWriter : public EdgeWriter
            CustomUnorderedMapStable<EdgeDescriptor, int>(),
        const int detail_level = 0);
 
-   /**
-    * Functor actually called by the boost library to perform the writing
-    * @param out is the stream where the edges have to be printed
-    * @param edge is the edge to be printed
-    */
    void operator()(std::ostream& out, const EdgeDescriptor& edge) const override;
 };
 

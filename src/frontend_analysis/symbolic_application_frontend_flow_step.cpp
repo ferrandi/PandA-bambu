@@ -102,11 +102,11 @@ std::string SymbolicApplicationFrontendFlowStep::GetKindText() const
    return "SymbolicApplicationFrontendFlowStep(" + EnumToKindText(represented_frontend_flow_step_type) + ")";
 }
 
-std::string
+DesignFlowStep::signature_t
 SymbolicApplicationFrontendFlowStep::ComputeSignature(const FrontendFlowStepType represented_frontend_flow_step_type)
 {
-   return "Frontend::" + STR(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP) + "(" + STR(represented_frontend_flow_step_type) +
-          ")";
+   return DesignFlowStep::ComputeSignature(SYMBOLIC_APPLICATION_FRONTEND, SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP,
+                                           represented_frontend_flow_step_type);
 }
 
 bool SymbolicApplicationFrontendFlowStep::HasToBeExecuted() const

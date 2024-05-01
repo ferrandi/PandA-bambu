@@ -44,12 +44,13 @@
 #ifndef FRONTEND_FLOW_STEP_FACTORY_HPP
 #define FRONTEND_FLOW_STEP_FACTORY_HPP
 
-#include "custom_set.hpp"               // for unordered_set
-#include "design_flow_step.hpp"         // for DesignFlowStep (...
-#include "design_flow_step_factory.hpp" // for DesignFlowStepFa...
-#include "frontend_flow_step.hpp"       // for FrontendFlowStep...
-#include "refcount.hpp"                 // for REF_FORWARD_DECL
-#include <string>                       // for string
+#include "custom_set.hpp"
+#include "design_flow_step.hpp"
+#include "design_flow_step_factory.hpp"
+#include "frontend_flow_step.hpp"
+#include "refcount.hpp"
+
+#include <string>
 
 /// Forward declaration
 REF_FORWARD_DECL(application_manager);
@@ -73,9 +74,6 @@ class FrontendFlowStepFactory : public DesignFlowStepFactory
    FrontendFlowStepFactory(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager,
                            const ParameterConstRef parameters);
 
-   /**
-    * Destructor
-    */
    ~FrontendFlowStepFactory() override;
 
    /**
@@ -106,10 +104,5 @@ class FrontendFlowStepFactory : public DesignFlowStepFactory
     */
    DesignFlowStepRef CreateFunctionFrontendFlowStep(const FrontendFlowStepType design_flow_step_type,
                                                     const unsigned int function_id) const;
-
-   /**
-    * Return the prefix of the steps created by the factory
-    */
-   std::string GetPrefix() const override;
 };
 #endif

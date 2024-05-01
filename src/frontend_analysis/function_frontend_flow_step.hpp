@@ -139,7 +139,7 @@ class FunctionFrontendFlowStep : public FrontendFlowStep
     * @param function_id is the index of the function
     * @return the corresponding signature
     */
-   static std::string ComputeSignature(const FrontendFlowStepType frontend_flow_step_type,
+   static signature_t ComputeSignature(const FrontendFlowStepType frontend_flow_step_type,
                                        const unsigned int function_id);
 };
 #endif

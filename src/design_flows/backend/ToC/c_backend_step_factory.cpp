@@ -49,14 +49,10 @@
 CBackendStepFactory::CBackendStepFactory(const DesignFlowManagerConstRef _design_flow_manager,
                                          const application_managerConstRef _application_manager,
                                          const ParameterConstRef _parameters)
-    : DesignFlowStepFactory(_design_flow_manager, _parameters), application_manager(_application_manager)
+    : DesignFlowStepFactory(DesignFlowStep::C_BACKEND, _design_flow_manager, _parameters),
+      application_manager(_application_manager)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
-}
-
-std::string CBackendStepFactory::GetPrefix() const
-{
-   return "CBackend";
 }
 
 DesignFlowStepRef CBackendStepFactory::CreateCBackendStep(const CBackendInformationConstRef c_backend_information) const

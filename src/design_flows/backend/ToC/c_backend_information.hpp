@@ -58,7 +58,7 @@ class CBackendInformation : public HLSFlowStepSpecialization
 {
  public:
    using Type = enum {
-      CB_BBP, /* Sequential c with instrumentation for basic block profiling */
+      CB_BBP = 0, /* Sequential c with instrumentation for basic block profiling */
 #if HAVE_HLS_BUILT
       /**
        * Sequential C code instrumented to dump information on the state
@@ -80,9 +80,9 @@ class CBackendInformation : public HLSFlowStepSpecialization
    CBackendInformation(Type type, const std::filesystem::path& src_filename,
                        const std::filesystem::path& out_filename = "");
 
-   std::string GetKindText() const override;
+   std::string GetName() const override;
 
-   std::string GetSignature() const override;
+   context_t GetSignatureContext() const override;
 };
 using CBackendInformationConstRef = refcount<const CBackendInformation>;
 using CBackendInformationRef = refcount<CBackendInformation>;

@@ -136,10 +136,10 @@ CallGraphUnfolding::CallGraphUnfolding(const ParameterConstRef _Param, const HLS
 
 CallGraphUnfolding::~CallGraphUnfolding() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 CallGraphUnfolding::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   HLSRelationships ret;
 
    switch(relationship_type)
    {

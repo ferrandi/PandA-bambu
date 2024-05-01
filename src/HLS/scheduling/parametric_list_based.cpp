@@ -294,7 +294,7 @@ ParametricListBasedSpecialization::ParametricListBasedSpecialization(
 {
 }
 
-std::string ParametricListBasedSpecialization::GetKindText() const
+std::string ParametricListBasedSpecialization::GetName() const
 {
    switch(parametric_list_based_metric)
    {
@@ -310,9 +310,9 @@ std::string ParametricListBasedSpecialization::GetKindText() const
    return "";
 }
 
-std::string ParametricListBasedSpecialization::GetSignature() const
+HLSFlowStepSpecialization::context_t ParametricListBasedSpecialization::GetSignatureContext() const
 {
-   return GetKindText();
+   return ComputeSignatureContext(PARAMETRIC_LIST_BASED, static_cast<unsigned char>(parametric_list_based_metric));
 }
 
 parametric_list_based::parametric_list_based(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
@@ -2174,11 +2174,10 @@ bool parametric_list_based::check_LOAD_chaining(const CustomUnorderedSet<vertex>
    return false;
 }
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 parametric_list_based::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret =
-       Scheduling::ComputeHLSRelationships(relationship_type);
+   HLSRelationships ret = Scheduling::ComputeHLSRelationships(relationship_type);
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:

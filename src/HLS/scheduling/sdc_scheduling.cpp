@@ -511,7 +511,7 @@ void SDCScheduling::ComputeRelationships(DesignFlowStepSet& relationship,
                 frontend_step != NULL_VERTEX ?
                     design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step :
                     GetPointer<const FrontendFlowStepFactory>(
-                        design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))
+                        design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND))
                         ->CreateFunctionFrontendFlowStep(FrontendFlowStepType::SDC_CODE_MOTION, funId);
             relationship.insert(design_flow_step);
          }
@@ -520,11 +520,10 @@ void SDCScheduling::ComputeRelationships(DesignFlowStepSet& relationship,
    Scheduling::ComputeRelationships(relationship, relationship_type);
 }
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 SDCScheduling::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret =
-       Scheduling::ComputeHLSRelationships(relationship_type);
+   HLSRelationships ret = Scheduling::ComputeHLSRelationships(relationship_type);
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:

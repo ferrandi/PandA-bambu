@@ -76,7 +76,7 @@ class AuxDesignFlowStep : public DesignFlowStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   AuxDesignFlowStep(std::string name, const AuxDesignFlowStepType type,
+   AuxDesignFlowStep(const std::string& name, AuxDesignFlowStepType type,
                      const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    ~AuxDesignFlowStep() override;
@@ -93,10 +93,9 @@ class AuxDesignFlowStep : public DesignFlowStep
 
    /**
     * Compute the signature of a sdf design flow step
-    * @param name is the name of the step
     * @param type is the type of auxiliary step
     * @return the signature corresponding to the analysis/transformation
     */
-   static const std::string ComputeSignature(const std::string& name, const AuxDesignFlowStepType type);
+   static signature_t ComputeSignature(AuxDesignFlowStepType type);
 };
 #endif

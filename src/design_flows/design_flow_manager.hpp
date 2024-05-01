@@ -104,7 +104,7 @@ class DesignFlowManager final
    CustomOrderedSet<vertex, DesignFlowStepNecessitySorter> possibly_ready;
 
    /// The registered factories
-   CustomUnorderedMap<std::string, DesignFlowStepFactoryConstRef> design_flow_step_factories;
+   CustomUnorderedMap<DesignFlowStep::StepClass, DesignFlowStepFactoryConstRef> design_flow_step_factories;
 
 #ifndef NDEBUG
    /// This structure stores "history of design flow graph manager - vertices"
@@ -208,20 +208,20 @@ class DesignFlowManager final
     * Return the vertex associated with a design step if exists, NULL_VERTEX otherwise
     * @param signature is the signature of the design step
     */
-   vertex GetDesignFlowStep(const std::string& signature) const;
+   vertex GetDesignFlowStep(DesignFlowStep::signature_t signature) const;
 
    /**
     * Return the status of a design step (if it does not exist return NONEXISTENT)
     * @param signature is the signature of the design step
     */
-   DesignFlowStep_Status GetStatus(const std::string& signature) const;
+   DesignFlowStep_Status GetStatus(DesignFlowStep::signature_t signature) const;
 
    /**
-    * Return the factory which can create design flow step with signature beginning with prefix
-    * @param prefix is the beginning of the steps that the factory should be created
+    * Return the factory which can create design flow step with given step class
+    * @param step_class is step class of the factory
     * @return the corresponding factory
     */
-   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory(const std::string& prefix) const;
+   DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory(DesignFlowStep::StepClass step_class) const;
 
    /**
     * Register a design flow step factory
@@ -234,7 +234,7 @@ class DesignFlowManager final
     * @param signature is the signature of the step to be created
     * @return the created design flow step
     */
-   DesignFlowStepRef CreateFlowStep(const std::string& signature) const;
+   DesignFlowStepRef CreateFlowStep(DesignFlowStep::signature_t signature) const;
 };
 
 using DesignFlowManagerRef = refcount<DesignFlowManager>;

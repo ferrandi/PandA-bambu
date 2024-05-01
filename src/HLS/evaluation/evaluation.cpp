@@ -73,12 +73,12 @@ Evaluation::Evaluation(const ParameterConstRef _parameters, const HLS_managerRef
 
 Evaluation::~Evaluation() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 Evaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    auto objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
    const auto objective_vector = string_to_container<std::vector<std::string>>(objective_string, ",");
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   HLSRelationships ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:

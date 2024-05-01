@@ -69,15 +69,7 @@ class HLSFlowStepFactory : public DesignFlowStepFactory
    HLSFlowStepFactory(const DesignFlowManagerConstRef design_flow_manager, const HLS_managerRef _HLS_mgr,
                       const ParameterConstRef parameters);
 
-   /**
-    * Destructor
-    */
    ~HLSFlowStepFactory() override;
-
-   /**
-    * Return the prefix of the steps created by the factory
-    */
-   std::string GetPrefix() const override;
 
    /**
     * Create a scheduling design flow step

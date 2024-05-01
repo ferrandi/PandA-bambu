@@ -75,7 +75,7 @@ TasteInterfaceGeneration::TasteInterfaceGeneration(const ParameterConstRef _Para
 
 TasteInterfaceGeneration::~TasteInterfaceGeneration() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 TasteInterfaceGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    const auto temp_ret = module_interface::ComputeHLSRelationships(relationship_type);

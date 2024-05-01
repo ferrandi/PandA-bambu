@@ -109,7 +109,7 @@ void GenerateFuList::ComputeRelationships(DesignFlowStepSet& relationship,
          const auto DFM = design_flow_manager.lock();
          const auto design_flow_graph = DFM->CGetDesignFlowGraph();
          const auto technology_flow_step_factory =
-             GetPointer<const TechnologyFlowStepFactory>(DFM->CGetDesignFlowStepFactory("Technology"));
+             GetPointer<const TechnologyFlowStepFactory>(DFM->CGetDesignFlowStepFactory(DesignFlowStep::TECHNOLOGY));
          {
             const auto technology_flow_signature =
                 TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_FILE_TECHNOLOGY);

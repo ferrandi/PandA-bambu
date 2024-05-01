@@ -79,12 +79,17 @@ CBackend::CBackend(const CBackendInformationConstRef _c_backend_information,
 
 DesignFlowStepFactoryConstRef CBackend::CGetDesignFlowStepFactory() const
 {
-   return design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend");
+   return design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::C_BACKEND);
 }
 
-std::string CBackend::ComputeSignature(const CBackendInformationConstRef c_backend_info)
+std::string CBackend::GetName() const
 {
-   return c_backend_info->GetSignature();
+   return "CBackend::" + c_backend_info->GetName();
+}
+
+DesignFlowStep::signature_t CBackend::ComputeSignature(const CBackendInformationConstRef c_backend_info)
+{
+   return DesignFlowStep::ComputeSignature(C_BACKEND, 0, c_backend_info->GetSignatureContext());
 }
 
 void CBackend::ComputeRelationships(DesignFlowStepSet& relationships,
@@ -134,8 +139,8 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships,
                // before this is executed. At that time the top
                // function will be ready. The dependencies from HLS steps are
                // added after the check on the call graph for this reason.
-               const auto frontend_step_factory =
-                   GetPointer<const FrontendFlowStepFactory>(DFMgr->CGetDesignFlowStepFactory("Frontend"));
+               const auto frontend_step_factory = GetPointer<const FrontendFlowStepFactory>(
+                   DFMgr->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND));
                const auto call_graph_computation_step =
                    DFMgr->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(COMPLETE_CALL_GRAPH));
                const auto cg_design_flow_step =
@@ -153,7 +158,7 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships,
                if(boost::num_vertices(*(CGM->CGetCallGraph())))
                {
                   const auto hls_step_factory =
-                      GetPointer<const HLSFlowStepFactory>(DFMgr->CGetDesignFlowStepFactory("HLS"));
+                      GetPointer<const HLSFlowStepFactory>(DFMgr->CGetDesignFlowStepFactory(DesignFlowStep::HLS));
                   relationships.insert(hls_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::TEST_VECTOR_PARSER,
                                                                            HLSFlowStepSpecializationConstRef()));
                }
@@ -190,8 +195,8 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships,
                   // before this is executed. At that time the top
                   // function will be ready. The dependencies from HLS steps are
                   // added after the check on the call graph for this reason.
-                  const auto frontend_step_factory =
-                      GetPointer<const FrontendFlowStepFactory>(DFMgr->CGetDesignFlowStepFactory("Frontend"));
+                  const auto frontend_step_factory = GetPointer<const FrontendFlowStepFactory>(
+                      DFMgr->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND));
                   const auto call_graph_computation_step =
                       DFMgr->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(COMPLETE_CALL_GRAPH));
                   const auto cg_design_flow_step =
@@ -213,7 +218,7 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships,
                      {
                         const auto top_fnode = AppM->get_tree_manager()->GetFunction(top_symbol);
                         const auto hls_step_factory =
-                            GetPointer<const HLSFlowStepFactory>(DFMgr->CGetDesignFlowStepFactory("HLS"));
+                            GetPointer<const HLSFlowStepFactory>(DFMgr->CGetDesignFlowStepFactory(DesignFlowStep::HLS));
                         const auto hls_top_function = DFMgr->GetDesignFlowStep(
                             HLSFunctionStep::ComputeSignature(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW,
                                                               HLSFlowStepSpecializationConstRef(), top_fnode->index));

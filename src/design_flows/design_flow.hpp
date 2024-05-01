@@ -46,7 +46,7 @@
 
 enum class DesignFlow_Type
 {
-   NON_DETERMINISTIC_FLOWS
+   NON_DETERMINISTIC_FLOWS = 0
 };
 
 class DesignFlow : public DesignFlowStep
@@ -65,7 +65,7 @@ class DesignFlow : public DesignFlowStep
     * @param design_flow_type is the type of the flow
     * @param parameters is the set of the parameters
     */
-   DesignFlow(const DesignFlowManagerConstRef design_flow_manager, const DesignFlow_Type design_flow_type,
+   DesignFlow(const DesignFlowManagerConstRef design_flow_manager, DesignFlow_Type design_flow_type,
               const ParameterConstRef parameters);
 
    ~DesignFlow() override;
@@ -81,14 +81,14 @@ class DesignFlow : public DesignFlowStep
     * @param design_flow_type is the type of design flow
     * @return the signature corresponding to the design flow
     */
-   static std::string ComputeSignature(const DesignFlow_Type design_flow_type);
+   static signature_t ComputeSignature(DesignFlow_Type design_flow_type);
 
    /**
     * Return the name of the type
     * @param design_flow_type is the type of the design flow
     * @return the name
     */
-   static const std::string EnumToKindText(const DesignFlow_Type design_flow_type);
+   static std::string EnumToKindText(const DesignFlow_Type design_flow_type);
 
    /**
     * Given the name of design flow, return the enum

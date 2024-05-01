@@ -92,6 +92,6 @@ class ParserFlowStep : public DesignFlowStep
     * @param file_name is the file name
     * @return the corresponding signature
     */
-   static std::string ComputeSignature(const ParserFlowStep_Type parser_step_type, const std::string& file_name);
+   static signature_t ComputeSignature(const ParserFlowStep_Type parser_step_type, const std::string& file_name);
 };
 #endif

@@ -80,7 +80,7 @@ vertex DesignFlowGraphsCollection::AddDesignFlowStep(const DesignFlowStepRef des
    return new_vertex;
 }
 
-vertex DesignFlowGraphsCollection::GetDesignFlowStep(const std::string& signature) const
+vertex DesignFlowGraphsCollection::GetDesignFlowStep(DesignFlowStep::signature_t signature) const
 {
    if(signature_to_vertex.find(signature) != signature_to_vertex.end())
    {
@@ -113,7 +113,7 @@ DesignFlowGraph::DesignFlowGraph(const DesignFlowGraphsCollectionRef design_flow
 
 DesignFlowGraph::~DesignFlowGraph() = default;
 
-vertex DesignFlowGraph::GetDesignFlowStep(const std::string& signature) const
+vertex DesignFlowGraph::GetDesignFlowStep(DesignFlowStep::signature_t signature) const
 {
    return dynamic_cast<DesignFlowGraphsCollection*>(collection)->GetDesignFlowStep(signature);
 }

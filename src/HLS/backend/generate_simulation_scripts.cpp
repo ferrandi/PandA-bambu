@@ -74,10 +74,10 @@ GenerateSimulationScripts::GenerateSimulationScripts(const ParameterConstRef _pa
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 GenerateSimulationScripts::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   HLSRelationships ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -111,8 +111,8 @@ void GenerateSimulationScripts::ComputeRelationships(DesignFlowStepSet& design_f
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         const auto c_backend_factory =
-             GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
+         const auto c_backend_factory = GetPointer<const CBackendStepFactory>(
+             design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::C_BACKEND));
 
          design_flow_step_set.insert(c_backend_factory->CreateCBackendStep(
              CBackendInformationConstRef(new CBackendInformation(CBackendInformation::CB_HLS, _c_testbench))));

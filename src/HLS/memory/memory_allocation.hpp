@@ -103,15 +103,9 @@ class MemoryAllocationSpecialization : public HLSFlowStepSpecialization
    MemoryAllocationSpecialization(const MemoryAllocation_Policy memory_allocation_policy,
                                   const MemoryAllocation_ChannelsType memory_allocation_channels_type);
 
-   /**
-    * Return the string representation of this
-    */
-   std::string GetKindText() const override;
+   std::string GetName() const override;
 
-   /**
-    * Return the contribution to the signature of a step given by the specialization
-    */
-   std::string GetSignature() const override;
+   context_t GetSignatureContext() const override;
 };
 
 /**
@@ -147,8 +141,7 @@ class memory_allocation : public HLS_step
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   HLSRelationships ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * Execute the step

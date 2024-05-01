@@ -511,7 +511,7 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
    if(debug_level >= DEBUG_LEVEL_PEDANTIC && parameters->getOption<bool>(OPT_print_dot) &&
       (!parameters->IsParameter("print-dot-FF") || parameters->GetParameter<unsigned int>("print-dot-FF")))
    {
-      AppM->CGetCallGraphManager()->CGetCallGraph()->WriteDot("compute_implicit_calls" + GetSignature() + ".dot");
+      AppM->CGetCallGraphManager()->CGetCallGraph()->WriteDot("compute_implicit_calls." + GetName() + ".dot");
    }
    if(update_bb_ver)
    {

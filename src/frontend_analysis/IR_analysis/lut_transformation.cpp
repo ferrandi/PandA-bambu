@@ -1846,7 +1846,7 @@ void lut_transformation::ComputeRelationships(DesignFlowStepSet& relationship,
       {
          const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
          const auto technology_flow_step_factory = GetPointerS<const TechnologyFlowStepFactory>(
-             design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
+             design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::TECHNOLOGY));
          const auto technology_flow_signature =
              TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          const auto technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);

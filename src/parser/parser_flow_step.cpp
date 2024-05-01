@@ -37,15 +37,12 @@
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
-
-/// Header include
 #include "parser_flow_step.hpp"
 
-#include <utility>
-
-/// design_flows include
 #include "design_flow_manager.hpp"
-#include "string_manipulation.hpp" // for STR
+#include "string_manipulation.hpp"
+
+#include <string>
 
 ParserFlowStep::ParserFlowStep(const DesignFlowManagerConstRef _design_flow_manager,
                                const ParserFlowStep_Type _parser_step_type, const std::string& _file_name,
@@ -63,9 +60,11 @@ std::string ParserFlowStep::GetName() const
    return "Parser::" + GetKindText() + "::" + file_name;
 }
 
-std::string ParserFlowStep::ComputeSignature(const ParserFlowStep_Type parser_step_type, const std::string& file_name)
+DesignFlowStep::signature_t ParserFlowStep::ComputeSignature(const ParserFlowStep_Type parser_step_type,
+                                                             const std::string& file_name)
 {
-   return "Parser::" + STR(parser_step_type) + "::" + file_name;
+   return DesignFlowStep::ComputeSignature(PARSER, static_cast<unsigned short>(parser_step_type),
+                                           std::hash<std::string>()(file_name));
 }
 
 static std::string EnumToKindText(const ParserFlowStep_Type parser_step_type)
@@ -101,5 +100,5 @@ void ParserFlowStep::ComputeRelationships(DesignFlowStepSet&, const DesignFlowSt
 
 DesignFlowStepFactoryConstRef ParserFlowStep::CGetDesignFlowStepFactory() const
 {
-   return design_flow_manager.lock()->CGetDesignFlowStepFactory("Parser");
+   return design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::PARSER);
 }

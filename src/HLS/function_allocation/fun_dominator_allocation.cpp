@@ -95,7 +95,7 @@ void fun_dominator_allocation::ComputeRelationships(DesignFlowStepSet& relations
       {
          const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
          const auto frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(
-             design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
+             design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND));
          const auto frontend_flow_signature = ApplicationFrontendFlowStep::ComputeSignature(BAMBU_FRONTEND_FLOW);
          const auto frontend_flow_step = design_flow_manager.lock()->GetDesignFlowStep(frontend_flow_signature);
          const auto design_flow_step =
@@ -104,7 +104,7 @@ void fun_dominator_allocation::ComputeRelationships(DesignFlowStepSet& relations
          relationship.insert(design_flow_step);
 
          const auto technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(
-             design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
+             design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::TECHNOLOGY));
          const auto technology_flow_signature =
              TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          const auto technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);

@@ -60,11 +60,11 @@
 
 #include <iosfwd>
 
-FrontendFlowStep::FrontendFlowStep(const std::string& _uid, const application_managerRef _AppM,
+FrontendFlowStep::FrontendFlowStep(DesignFlowStep::signature_t _signature, const application_managerRef _AppM,
                                    const FrontendFlowStepType _frontend_flow_step_type,
                                    const DesignFlowManagerConstRef _design_flow_manager,
                                    const ParameterConstRef _parameters)
-    : DesignFlowStep(_uid, _design_flow_manager, _parameters),
+    : DesignFlowStep(_signature, _design_flow_manager, _parameters),
       AppM(_AppM),
       frontend_flow_step_type(_frontend_flow_step_type),
       print_counter(0)
@@ -80,8 +80,8 @@ void FrontendFlowStep::CreateSteps(
     const application_managerConstRef application_manager, DesignFlowStepSet& relationships)
 {
    const auto design_flow_graph = design_flow_manager->CGetDesignFlowGraph();
-   const auto frontend_flow_step_factory =
-       GetPointer<const FrontendFlowStepFactory>(design_flow_manager->CGetDesignFlowStepFactory("Frontend"));
+   const auto frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(
+       design_flow_manager->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND));
    for(const auto& [step_type, rel_type] : frontend_relationships)
    {
       switch(rel_type)
@@ -370,7 +370,7 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 
 DesignFlowStepFactoryConstRef FrontendFlowStep::CGetDesignFlowStepFactory() const
 {
-   return design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend");
+   return design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND);
 }
 
 void FrontendFlowStep::PrintTreeManager(const bool before) const

@@ -86,6 +86,6 @@ class SymbolicApplicationFrontendFlowStep : public ApplicationFrontendFlowStep
     * @param frontend_flow_step_type is the type of frontend flow
     * @return the corresponding signature
     */
-   static std::string ComputeSignature(const FrontendFlowStepType frontend_flow_step_type);
+   static signature_t ComputeSignature(const FrontendFlowStepType frontend_flow_step_type);
 };
 #endif

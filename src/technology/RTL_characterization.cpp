@@ -82,7 +82,7 @@
 RTLCharacterization::RTLCharacterization(const generic_deviceRef _device, const std::string& _cells,
                                          const DesignFlowManagerConstRef _design_flow_manager,
                                          const ParameterConstRef _parameters)
-    : DesignFlowStep("RTLCharacterization", _design_flow_manager, _parameters),
+    : DesignFlowStep(DesignFlowStep::ComputeSignature(RTL_CHARACTERIZATION, 0, 0), _design_flow_manager, _parameters),
       FunctionalUnitStep(_device),
       component(ComputeComponent(_cells)),
       cells(ComputeCells(_cells))
@@ -96,6 +96,11 @@ RTLCharacterization::RTLCharacterization(const generic_deviceRef _device, const 
 }
 
 RTLCharacterization::~RTLCharacterization() = default;
+
+std::string RTLCharacterization::GetName() const
+{
+   return "RTLCharacterization";
+}
 
 void RTLCharacterization::Initialize()
 {
@@ -735,8 +740,8 @@ void RTLCharacterization::ComputeRelationships(DesignFlowStepSet& relationship,
       {
          const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
          const auto technology_flow_step_factory = GetPointer<const TechnologyFlowStepFactory>(
-             design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology"));
-         const std::string technology_flow_signature =
+             design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::TECHNOLOGY));
+         const auto technology_flow_signature =
              TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          const vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(technology_flow_signature);
          const DesignFlowStepRef technology_design_flow_step =

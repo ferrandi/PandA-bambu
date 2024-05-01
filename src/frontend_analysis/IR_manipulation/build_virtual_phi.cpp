@@ -103,7 +103,7 @@ void BuildVirtualPhi::ComputeRelationships(DesignFlowStepSet& relationship,
             const auto step_signature =
                 FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::SIMPLE_CODE_MOTION, function_id);
             const auto frontend_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);
-            THROW_ASSERT(frontend_step != NULL_VERTEX, "step " + step_signature + " is not present");
+            THROW_ASSERT(frontend_step != NULL_VERTEX, "step is not present");
             const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
             const auto design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
             relationship.insert(design_flow_step);

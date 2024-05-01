@@ -46,7 +46,7 @@
 
 #include "config_HAVE_CIRCUIT_BUILT.hpp"
 
-enum class ToDataFileStep_Type
+enum class ToDataFileStep_Type : unsigned short
 {
    UNKNOWN = 0,
 #if HAVE_CIRCUIT_BUILT
@@ -84,7 +84,7 @@ class ToDataFileStep : public virtual DesignFlowStep
     * @param to_data_file_step is the type to be considered
     * @return the name of the type
     */
-   static const std::string EnumToName(const ToDataFileStep_Type to_data_file_step);
+   static std::string EnumToName(const ToDataFileStep_Type to_data_file_step);
 
    /**
     * Given the name of data file step type, return the enum
@@ -98,6 +98,6 @@ class ToDataFileStep : public virtual DesignFlowStep
     * @param to_data_file_step_type is the type of the step
     * @return the corresponding signature
     */
-   static const std::string ComputeSignature(const ToDataFileStep_Type to_data_file_step_type);
+   static signature_t ComputeSignature(const ToDataFileStep_Type to_data_file_step_type);
 };
 #endif

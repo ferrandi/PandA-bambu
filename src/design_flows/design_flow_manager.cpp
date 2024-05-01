@@ -171,12 +171,12 @@ void DesignFlowManager::AddSteps(const DesignFlowStepSet& steps)
 void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet& steps, const bool unnecessary)
 {
    static size_t temp_counter = 0;
-   const DesignFlowGraphInfoRef design_flow_graph_info = design_flow_graph->GetDesignFlowGraphInfo();
+   const auto design_flow_graph_info = design_flow_graph->GetDesignFlowGraphInfo();
    for(const auto& design_flow_step : steps)
    {
-      const std::string signature = design_flow_step->GetSignature();
+      const auto signature = design_flow_step->GetSignature();
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                     "-->Adding design flow step " + design_flow_step->GetName() + " - Signature " + signature);
+                     "-->Adding design flow step " + design_flow_step->GetName() + " - Signature " + STR(signature));
 
       /// Get vertex from design flow graph; there are four cases
       vertex step_vertex = GetDesignFlowStep(signature);
@@ -192,7 +192,7 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet& steps, cons
          }
          else
          {
-            const DesignFlowStepInfoRef design_flow_step_info = design_flow_graph->GetDesignFlowStepInfo(step_vertex);
+            const auto design_flow_step_info = design_flow_graph->GetDesignFlowStepInfo(step_vertex);
             if(design_flow_step_info->status == DesignFlowStep_Status::UNNECESSARY)
             {
                /// The step already exists and it was unnecessary; now we are switching to necessary; note that
@@ -244,16 +244,16 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet& steps, cons
       RecursivelyAddSteps(relationships, unnecessary);
       for(const auto& relationship : relationships)
       {
-         const std::string relationship_signature = relationship->GetSignature();
+         const auto relationship_signature = relationship->GetSignature();
          vertex relationship_vertex = GetDesignFlowStep(relationship_signature);
          design_flow_graphs_collection->AddDesignFlowDependence(relationship_vertex, step_vertex,
                                                                 DesignFlowGraph::DEPENDENCE_SELECTOR);
 #ifndef NDEBUG
          if(parameters->IsParameter("DebugDFM") and parameters->GetParameter<bool>("DebugDFM"))
          {
+            std::list<vertex> vertices;
             try
             {
-               std::list<vertex> vertices;
                design_flow_graph->TopologicalSort(vertices);
             }
             catch(...)
@@ -274,7 +274,7 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet& steps, cons
       RecursivelyAddSteps(relationships, true);
       for(const auto& relationship : relationships)
       {
-         const std::string relationship_signature = relationship->GetSignature();
+         const auto relationship_signature = relationship->GetSignature();
          vertex relationship_vertex = GetDesignFlowStep(relationship_signature);
          design_flow_graphs_collection->AddDesignFlowDependence(relationship_vertex, step_vertex,
                                                                 DesignFlowGraph::PRECEDENCE_SELECTOR);
@@ -361,7 +361,7 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet& steps, cons
                                                                 DesignFlowGraph::AUX_SELECTOR);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                     "<--Added design flow step " + design_flow_step->GetName() + " - Signature " + signature);
+                     "<--Added design flow step " + design_flow_step->GetName() + " - Signature " + STR(signature));
    }
 }
 
@@ -659,7 +659,7 @@ void DesignFlowManager::Exec()
          invalidations = not relationships.empty();
          for(const auto& relationship : relationships)
          {
-            const std::string relationship_signature = relationship->GetSignature();
+            const auto relationship_signature = relationship->GetSignature();
             vertex relationship_vertex = GetDesignFlowStep(relationship_signature);
             THROW_ASSERT(relationship_vertex, "Missing vertex " + relationship_signature);
             if(design_flow_graph->IsReachable(relationship_vertex, next))
@@ -929,21 +929,21 @@ void DesignFlowManager::Exec()
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Ended execution of design flow");
 }
 
-vertex DesignFlowManager::GetDesignFlowStep(const std::string& signature) const
+vertex DesignFlowManager::GetDesignFlowStep(DesignFlowStep::signature_t signature) const
 {
    return design_flow_graphs_collection->GetDesignFlowStep(signature);
 }
 
-DesignFlowStepFactoryConstRef DesignFlowManager::CGetDesignFlowStepFactory(const std::string& prefix) const
+DesignFlowStepFactoryConstRef DesignFlowManager::CGetDesignFlowStepFactory(DesignFlowStep::StepClass step_class) const
 {
-   THROW_ASSERT(design_flow_step_factories.find(prefix) != design_flow_step_factories.end(),
-                "No factory to create steps with prefix " + prefix + " found");
-   return design_flow_step_factories.find(prefix)->second;
+   THROW_ASSERT(design_flow_step_factories.find(step_class) != design_flow_step_factories.end(),
+                "No factory to create steps with class " + STR(step_class) + " found");
+   return design_flow_step_factories.at(step_class);
 }
 
 void DesignFlowManager::RegisterFactory(const DesignFlowStepFactoryConstRef factory)
 {
-   design_flow_step_factories[factory->GetPrefix()] = factory;
+   design_flow_step_factories[factory->GetClass()] = factory;
 }
 
 void DesignFlowManager::DeExecute(const vertex starting_vertex, const bool force_execution)
@@ -1066,7 +1066,7 @@ void DesignFlowManager::DeExecute(const vertex starting_vertex, const bool force
    }
 }
 
-DesignFlowStep_Status DesignFlowManager::GetStatus(const std::string& signature) const
+DesignFlowStep_Status DesignFlowManager::GetStatus(DesignFlowStep::signature_t signature) const
 {
    const vertex step = GetDesignFlowStep(signature);
    if(step == NULL_VERTEX)
@@ -1079,11 +1079,9 @@ DesignFlowStep_Status DesignFlowManager::GetStatus(const std::string& signature)
    }
 }
 
-DesignFlowStepRef DesignFlowManager::CreateFlowStep(const std::string& signature) const
+DesignFlowStepRef DesignFlowManager::CreateFlowStep(DesignFlowStep::signature_t signature) const
 {
-   THROW_ASSERT(signature.find("::") != std::string::npos, signature);
-   const auto prefix = signature.substr(0, signature.find("::"));
-   return CGetDesignFlowStepFactory(prefix)->CreateFlowStep(signature);
+   return CGetDesignFlowStepFactory(DesignFlowStep::GetStepClass(signature))->CreateFlowStep(signature);
 }
 
 #ifndef NDEBUG

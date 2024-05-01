@@ -110,10 +110,12 @@ class CBackend : public DesignFlowStep
 
    DesignFlowStepFactoryConstRef CGetDesignFlowStepFactory() const override;
 
+   std::string GetName() const override;
+
    /**
     * Compute the signature for a c backend step
     */
-   static std::string ComputeSignature(const CBackendInformationConstRef type);
+   static signature_t ComputeSignature(const CBackendInformationConstRef type);
 };
 using CBackendRef = refcount<CBackend>;
 using CBackendConstRef = refcount<const CBackend>;

@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
           new TechnologyFlowStepFactory(TM, device, design_flow_manager, parameters));
       design_flow_manager->RegisterFactory(technology_flow_step_factory);
 
-      const std::string technology_flow_signature =
+      const auto technology_flow_signature =
           TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
       const vertex technology_flow_step = design_flow_manager->GetDesignFlowStep(technology_flow_signature);
       const DesignFlowStepRef technology_design_flow_step =

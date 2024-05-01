@@ -48,12 +48,10 @@
 #include <ostream>
 #include <utility>
 
-AuxDesignFlowStep::AuxDesignFlowStep(std::string _name, const AuxDesignFlowStepType _type,
+AuxDesignFlowStep::AuxDesignFlowStep(const std::string& _name, AuxDesignFlowStepType _type,
                                      const DesignFlowManagerConstRef _design_flow_manager,
                                      const ParameterConstRef _parameters)
-    : DesignFlowStep(ComputeSignature(_name, _type), _design_flow_manager, _parameters),
-      type(_type),
-      name(std::move(_name))
+    : DesignFlowStep(ComputeSignature(_type), _design_flow_manager, _parameters), type(_type), name(_name)
 {
 }
 
@@ -63,9 +61,9 @@ void AuxDesignFlowStep::ComputeRelationships(DesignFlowStepSet&, const DesignFlo
 {
 }
 
-const std::string AuxDesignFlowStep::ComputeSignature(const std::string& name, const AuxDesignFlowStepType type)
+DesignFlowStep::signature_t AuxDesignFlowStep::ComputeSignature(const AuxDesignFlowStepType type)
 {
-   return "AUX::" + STR(type) + "::" + name;
+   return DesignFlowStep::ComputeSignature(AUX, type, 0);
 }
 
 DesignFlowStep_Status AuxDesignFlowStep::Exec()
@@ -75,7 +73,7 @@ DesignFlowStep_Status AuxDesignFlowStep::Exec()
 
 std::string AuxDesignFlowStep::GetName() const
 {
-   return name;
+   return "AUX::" + name;
 }
 
 void AuxDesignFlowStep::WriteDot(std::ostream& out) const

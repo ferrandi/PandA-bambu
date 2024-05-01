@@ -48,7 +48,7 @@
 #include <ostream>
 #include <string>
 
-DesignFlowStep::DesignFlowStep(const std::string& _signature, const DesignFlowManagerConstRef _design_flow_manager,
+DesignFlowStep::DesignFlowStep(signature_t _signature, const DesignFlowManagerConstRef _design_flow_manager,
                                const ParameterConstRef _parameters)
     : composed(false),
       design_flow_manager(_design_flow_manager),
@@ -76,14 +76,14 @@ void DesignFlowStep::Initialize()
 {
 }
 
-const std::string& DesignFlowStep::GetSignature() const
+DesignFlowStep::signature_t DesignFlowStep::GetSignature() const
 {
    return signature;
 }
 
 std::string DesignFlowStep::GetName() const
 {
-   return signature;
+   return "DesignFlowStep::" + STR(signature);
 }
 
 int DesignFlowStep::CGetDebugLevel() const
@@ -104,17 +104,35 @@ void DesignFlowStep::PrintFinalIR() const
 {
 }
 
+DesignFlowStep::signature_t DesignFlowStep::ComputeSignature(StepClass step_class, unsigned short step_type,
+                                                             unsigned long long context)
+{
+   THROW_ASSERT(context < (1ULL << 40), "Only 40-bits context is allowed.");
+   return static_cast<signature_t>(step_class) << 56 | static_cast<signature_t>(step_type) << 40 |
+          (context & 0xFFFFFFFFFF);
+}
+
+DesignFlowStep::StepClass DesignFlowStep::GetStepClass(signature_t signature)
+{
+   return static_cast<StepClass>(signature >> 56U);
+}
+
+unsigned short DesignFlowStep::GetStepType(signature_t signature)
+{
+   return static_cast<unsigned short>(signature >> 40U);
+}
+
+unsigned long long DesignFlowStep::GetSignatureContext(signature_t signature)
+{
+   return signature & 0xFFFFFFFFFF;
+}
+
 size_t DesignFlowStepHash::operator()(const DesignFlowStepRef& step) const
 {
-   return std::hash<std::string>()(step->GetSignature());
+   return step->GetSignature();
 }
 
 bool DesignFlowStepEqual::operator()(const DesignFlowStepRef& x, const DesignFlowStepRef& y) const
 {
    return x->GetSignature() == y->GetSignature();
-}
-
-bool DesignFlowStepSorter::operator()(const DesignFlowStepRef& x, const DesignFlowStepRef& y) const
-{
-   return x->GetSignature() < y->GetSignature();
 }

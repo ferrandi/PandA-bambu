@@ -177,6 +177,8 @@ class RTLCharacterization : public FunctionalUnitStep
 
    ~RTLCharacterization() override;
 
+   std::string GetName() const override;
+
    bool HasToBeExecuted() const override;
 
    void Initialize() override;

@@ -96,7 +96,7 @@ class TechnologyFlowStep : public DesignFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const CustomUnorderedSet<TechnologyFlowStep_Type>
+   virtual CustomUnorderedSet<TechnologyFlowStep_Type>
    ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const = 0;
 
    void ComputeRelationships(DesignFlowStepSet& steps,
@@ -126,6 +126,6 @@ class TechnologyFlowStep : public DesignFlowStep
     * @param technology_flow_step_type is the type of the step
     * @return the corresponding signature
     */
-   static std::string ComputeSignature(const TechnologyFlowStep_Type technology_flow_step_type);
+   static signature_t ComputeSignature(const TechnologyFlowStep_Type technology_flow_step_type);
 };
 #endif

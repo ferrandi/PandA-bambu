@@ -93,10 +93,12 @@ FunctionFrontendFlowStep::FunctionFrontendFlowStep(const application_managerRef 
 
 FunctionFrontendFlowStep::~FunctionFrontendFlowStep() = default;
 
-std::string FunctionFrontendFlowStep::ComputeSignature(const FrontendFlowStepType frontend_flow_step_type,
-                                                       const unsigned int function_id)
+DesignFlowStep::signature_t
+FunctionFrontendFlowStep::ComputeSignature(const FrontendFlowStepType frontend_flow_step_type,
+                                           const unsigned int function_id)
 {
-   return "Frontend::" + STR(frontend_flow_step_type) + "::" + std::to_string(function_id);
+   return DesignFlowStep::ComputeSignature(FUNCTION_FRONTEND, static_cast<unsigned short>(frontend_flow_step_type),
+                                           function_id);
 }
 
 std::string FunctionFrontendFlowStep::GetName() const

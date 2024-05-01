@@ -195,9 +195,9 @@ bool RemoveEndingIf::HasToBeExecuted() const
 DesignFlowStep_Status RemoveEndingIf::InternalExec()
 {
    bool bb_modified = false;
-   const auto HLS = GetPointer<const HLS_manager>(AppM)->get_HLS(function_id);
-   const auto clock_period = HLS->HLS_C->get_clock_period();
-   const auto clock_period_margin = HLS->allocation_information->GetClockPeriodMargin();
+   const auto funcHLS = GetPointer<const HLS_manager>(AppM)->get_HLS(function_id);
+   const auto clock_period = funcHLS->HLS_C->get_clock_period();
+   const auto clock_period_margin = funcHLS->allocation_information->GetClockPeriodMargin();
    const auto net_clock_period = clock_period - clock_period_margin;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Remove ending if is starting");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Looking for feasible blocs");

@@ -42,7 +42,6 @@
  */
 #ifndef APPLICATION_FRONTEND_FLOW_STEP_HPP
 #define APPLICATION_FRONTEND_FLOW_STEP_HPP
-
 #include "custom_set.hpp"
 #include "design_flow_step.hpp"
 #include "frontend_flow_step.hpp"
@@ -53,7 +52,7 @@
 class ApplicationFrontendFlowStep : public FrontendFlowStep
 {
  protected:
-   ApplicationFrontendFlowStep(const std::string& signature, const application_managerRef AppM,
+   ApplicationFrontendFlowStep(signature_t signature, const application_managerRef AppM,
                                const FrontendFlowStepType frontend_flow_step_type,
                                const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
@@ -81,6 +80,6 @@ class ApplicationFrontendFlowStep : public FrontendFlowStep
     * @param frontend_flow_step_type is the type of frontend flow
     * @return the corresponding signature
     */
-   static std::string ComputeSignature(const FrontendFlowStepType frontend_flow_step_type);
+   static signature_t ComputeSignature(const FrontendFlowStepType frontend_flow_step_type);
 };
 #endif

@@ -54,7 +54,7 @@
 #include "config_HAVE_ILP_BUILT.hpp"
 #include "config_HAVE_TASTE.hpp"
 
-ApplicationFrontendFlowStep::ApplicationFrontendFlowStep(const std::string& _signature,
+ApplicationFrontendFlowStep::ApplicationFrontendFlowStep(DesignFlowStep::signature_t _signature,
                                                          const application_managerRef _AppM,
                                                          const FrontendFlowStepType _frontend_flow_step_type,
                                                          const DesignFlowManagerConstRef _design_flow_manager,
@@ -75,7 +75,8 @@ ApplicationFrontendFlowStep::ApplicationFrontendFlowStep(const application_manag
 
 ApplicationFrontendFlowStep::~ApplicationFrontendFlowStep() = default;
 
-std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFlowStepType frontend_flow_step_type)
+DesignFlowStep::signature_t
+ApplicationFrontendFlowStep::ComputeSignature(const FrontendFlowStepType frontend_flow_step_type)
 {
    switch(frontend_flow_step_type)
    {
@@ -195,13 +196,15 @@ std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFlowStep
       case(STRING_CST_FIX):
       case(SYMBOLIC_APPLICATION_FRONTEND_FLOW_STEP):
       {
-         return "Frontend::" + STR(frontend_flow_step_type);
+         return DesignFlowStep::ComputeSignature(APPLICATION_FRONTEND,
+                                                 static_cast<unsigned short>(frontend_flow_step_type), 0);
       }
 
       default:
-         THROW_UNREACHABLE("Frontend flow step type does not exist");
+         break;
    }
-   return "";
+   THROW_UNREACHABLE("Frontend flow step type does not exist");
+   return 0;
 }
 
 std::string ApplicationFrontendFlowStep::GetName() const

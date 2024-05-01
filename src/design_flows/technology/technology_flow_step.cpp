@@ -55,9 +55,10 @@ TechnologyFlowStep::TechnologyFlowStep(const technology_managerRef _TM, const ge
 {
 }
 
-std::string TechnologyFlowStep::ComputeSignature(const TechnologyFlowStep_Type technology_flow_step_type)
+DesignFlowStep::signature_t
+TechnologyFlowStep::ComputeSignature(const TechnologyFlowStep_Type technology_flow_step_type)
 {
-   return "Technology::" + STR(static_cast<int>(technology_flow_step_type));
+   return DesignFlowStep::ComputeSignature(TECHNOLOGY, static_cast<unsigned short>(technology_flow_step_type), 0);
 }
 
 static std::string EnumToName(const TechnologyFlowStep_Type technology_flow_step_type)
@@ -94,13 +95,14 @@ std::string TechnologyFlowStep::GetName() const
 void TechnologyFlowStep::ComputeRelationships(DesignFlowStepSet& steps,
                                               const DesignFlowStep::RelationshipType relationship_type)
 {
-   const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+   const auto DFM = design_flow_manager.lock();
+   const auto design_flow_graph = DFM->CGetDesignFlowGraph();
    const auto step_factory = GetPointer<const TechnologyFlowStepFactory>(CGetDesignFlowStepFactory());
    const auto step_types = ComputeTechnologyRelationships(relationship_type);
    for(const auto& step_type : step_types)
    {
-      vertex technology_flow_step = design_flow_manager.lock()->GetDesignFlowStep(ComputeSignature(step_type));
-      const DesignFlowStepRef design_flow_step =
+      vertex technology_flow_step = DFM->GetDesignFlowStep(ComputeSignature(step_type));
+      const auto design_flow_step =
           technology_flow_step ? design_flow_graph->CGetDesignFlowStepInfo(technology_flow_step)->design_flow_step :
                                  step_factory->CreateTechnologyFlowStep(step_type);
       steps.insert(design_flow_step);
@@ -109,7 +111,7 @@ void TechnologyFlowStep::ComputeRelationships(DesignFlowStepSet& steps,
 
 DesignFlowStepFactoryConstRef TechnologyFlowStep::CGetDesignFlowStepFactory() const
 {
-   return design_flow_manager.lock()->CGetDesignFlowStepFactory("Technology");
+   return design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::TECHNOLOGY);
 }
 
 bool TechnologyFlowStep::HasToBeExecuted() const

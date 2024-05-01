@@ -207,14 +207,14 @@ CDFCModuleBindingSpecialization::CDFCModuleBindingSpecialization(
 {
 }
 
-std::string CDFCModuleBindingSpecialization::GetKindText() const
+std::string CDFCModuleBindingSpecialization::GetName() const
 {
    return CliqueCovering_AlgorithmToString(clique_covering_algorithm);
 }
 
-std::string CDFCModuleBindingSpecialization::GetSignature() const
+HLSFlowStepSpecialization::context_t CDFCModuleBindingSpecialization::GetSignatureContext() const
 {
-   return STR(static_cast<unsigned int>(clique_covering_algorithm));
+   return ComputeSignatureContext(CDFC_MODULE_BINDING, static_cast<unsigned char>(clique_covering_algorithm));
 }
 
 void cdfc_module_binding::initialize_connection_relation(connection_relation& con_rel,
@@ -1421,7 +1421,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING)
          {
             regb =
-                GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
+                GetPointer<const HLSFlowStepFactory>(
+                    design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::HLS))
                     ->CreateHLSFlowStep(
                         HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId,
                         HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(
@@ -1429,7 +1430,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          }
          else
          {
-            regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
+            regb = GetPointer<const HLSFlowStepFactory>(
+                       design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::HLS))
                        ->CreateHLSFlowStep(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm),
                                            funId);
          }
@@ -1869,20 +1871,20 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                if(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm) ==
                   HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING)
                {
-                  regb =
-                      GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
-                          ->CreateHLSFlowStep(
-                              HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId,
-                              HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(
-                                  parameters->getOption<CliqueCovering_Algorithm>(
-                                      OPT_weighted_clique_register_algorithm))));
+                  regb = GetPointer<const HLSFlowStepFactory>(
+                             design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::HLS))
+                             ->CreateHLSFlowStep(
+                                 HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId,
+                                 HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(
+                                     parameters->getOption<CliqueCovering_Algorithm>(
+                                         OPT_weighted_clique_register_algorithm))));
                }
                else
                {
-                  regb =
-                      GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
-                          ->CreateHLSFlowStep(
-                              parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm), funId);
+                  regb = GetPointer<const HLSFlowStepFactory>(
+                             design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::HLS))
+                             ->CreateHLSFlowStep(
+                                 parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm), funId);
                }
                regb->Initialize();
                regb->Exec();

@@ -40,7 +40,6 @@
  * Last modified by $Author$
  *
  */
-
 #ifndef C_BACKEND_STEP_FACTORY_HPP
 #define C_BACKEND_STEP_FACTORY_HPP
 
@@ -63,8 +62,6 @@ class CBackendStepFactory : public DesignFlowStepFactory
     */
    CBackendStepFactory(const DesignFlowManagerConstRef design_flow_manager,
                        const application_managerConstRef application_manager, const ParameterConstRef _parameters);
-
-   std::string GetPrefix() const override;
 
    /**
     * Create a backend c step

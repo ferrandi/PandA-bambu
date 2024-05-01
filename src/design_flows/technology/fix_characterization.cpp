@@ -355,7 +355,7 @@ DesignFlowStep_Status FixCharacterization::Exec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-const CustomUnorderedSet<TechnologyFlowStep_Type>
+CustomUnorderedSet<TechnologyFlowStep_Type>
 FixCharacterization::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<TechnologyFlowStep_Type> relationships;

@@ -68,16 +68,7 @@ struct DesignFlowStepEqual
    bool operator()(const DesignFlowStepRef& x, const DesignFlowStepRef& y) const;
 };
 
-struct DesignFlowStepSorter
-{
-   bool operator()(const DesignFlowStepRef& x, const DesignFlowStepRef& y) const;
-};
-
-#if HAVE_UNORDERED
 using DesignFlowStepSet = CustomUnorderedSet<DesignFlowStepRef, DesignFlowStepHash, DesignFlowStepEqual>;
-#else
-using DesignFlowStepSet = CustomOrderedSet<DesignFlowStepRef, DesignFlowStepSorter>;
-#endif
 
 /// The status of a step
 enum class DesignFlowStep_Status
@@ -97,6 +88,40 @@ enum class DesignFlowStep_Status
  */
 class DesignFlowStep
 {
+ public:
+   /**
+    * The relationship type
+    */
+   enum RelationshipType
+   {
+      DEPENDENCE_RELATIONSHIP = 0, //! Source must be executed to satisfy target
+      INVALIDATION_RELATIONSHIP,   //! Target must be reexecuted
+      PRECEDENCE_RELATIONSHIP      //! Source must be executed before target
+   };
+
+   /**
+    * @brief Set of derivate classes for unique signature
+    *
+    */
+   enum StepClass
+   {
+      AUX = 0,
+      DESIGN_FLOW,
+      C_BACKEND,
+      TO_DATA_FILE,
+      TECHNOLOGY,
+      FRONTEND,
+      APPLICATION_FRONTEND,
+      SYMBOLIC_APPLICATION_FRONTEND,
+      FUNCTION_FRONTEND,
+      HLS,
+      HLS_FUNCTION,
+      PARSER,
+      RTL_CHARACTERIZATION
+   };
+
+   using signature_t = unsigned long long int;
+
  protected:
    /// True if this step represents a composition of design flow steps (e.g., a flow); must be set by specialized
    /// constructors
@@ -114,25 +139,15 @@ class DesignFlowStep
    /// The output level
    const int output_level;
 
-   const std::string signature;
+   const signature_t signature;
 
  public:
-   /**
-    * The relationship type
-    */
-   enum RelationshipType
-   {
-      DEPENDENCE_RELATIONSHIP,   //! Source must be executed to satisfy target
-      INVALIDATION_RELATIONSHIP, //! Target must be reexecuted
-      PRECEDENCE_RELATIONSHIP    //! Source must be executed before target
-   };
-
    /**
     * Constructor
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   DesignFlowStep(const std::string& signature, const DesignFlowManagerConstRef design_flow_manager,
+   DesignFlowStep(const signature_t signature, const DesignFlowManagerConstRef design_flow_manager,
                   const ParameterConstRef parameters);
 
    /**
@@ -161,7 +176,7 @@ class DesignFlowStep
     * Return a unified identifier of this design step
     * @return the signature of the design step
     */
-   const std::string& GetSignature() const;
+   signature_t GetSignature() const;
 
    /**
     * Return the name of this design step
@@ -214,6 +229,40 @@ class DesignFlowStep
     * Dump the final intermediate representation
     */
    virtual void PrintFinalIR() const;
+
+   /**
+    * @brief Compute design flow step signature
+    *
+    * @param step_class Design flow step super class id
+    * @param step_type Design flow step type id
+    * @param context Additional 40-bits context id
+    * @return signature_t Design flow step unique id
+    */
+   static signature_t ComputeSignature(StepClass step_class, unsigned short step_type, unsigned long long context);
+
+   /**
+    * @brief Get the step class from signature
+    *
+    * @param signature
+    * @return StepClass
+    */
+   static StepClass GetStepClass(signature_t signature);
+
+   /**
+    * @brief Get the step type from signature
+    *
+    * @param signature
+    * @return unsigned short
+    */
+   static unsigned short GetStepType(signature_t signature);
+
+   /**
+    * @brief Get the signature context from signature
+    *
+    * @param signature
+    * @return unsigned long long
+    */
+   static unsigned long long GetSignatureContext(signature_t signature);
 };
 using DesignFlowStepRef = refcount<DesignFlowStep>;
 using DesignFlowStepConstRef = refcount<const DesignFlowStep>;

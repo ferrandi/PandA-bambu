@@ -78,7 +78,7 @@ MemoryAllocationSpecialization::MemoryAllocationSpecialization(
 {
 }
 
-std::string MemoryAllocationSpecialization::GetKindText() const
+std::string MemoryAllocationSpecialization::GetName() const
 {
    std::string ret;
    switch(memory_allocation_policy)
@@ -126,10 +126,14 @@ std::string MemoryAllocationSpecialization::GetKindText() const
    return ret;
 }
 
-std::string MemoryAllocationSpecialization::GetSignature() const
+HLSFlowStepSpecialization::context_t MemoryAllocationSpecialization::GetSignatureContext() const
 {
-   return STR(static_cast<unsigned int>(memory_allocation_policy)) +
-          "::" + STR(static_cast<unsigned int>(memory_allocation_channels_type));
+   THROW_ASSERT(static_cast<unsigned long long>(memory_allocation_policy) < (1 << 4) &&
+                    static_cast<unsigned long long>(memory_allocation_channels_type) < (1 << 4),
+                "Signature clash may occurr.");
+   return ComputeSignatureContext(
+       MEMORY_ALLOCATION, static_cast<unsigned char>(static_cast<unsigned char>(memory_allocation_policy) << 4U) |
+                              static_cast<unsigned char>(memory_allocation_channels_type));
 }
 
 memory_allocation::memory_allocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
@@ -151,10 +155,10 @@ memory_allocation::memory_allocation(const ParameterConstRef _parameters, const 
 
 memory_allocation::~memory_allocation() = default;
 
-const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
+HLS_step::HLSRelationships
 memory_allocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   HLSRelationships ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:

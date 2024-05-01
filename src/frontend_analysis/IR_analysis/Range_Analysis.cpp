@@ -6750,7 +6750,7 @@ void RangeAnalysis::ComputeRelationships(DesignFlowStepSet& relationships,
          {
             const auto bv_signature = FunctionFrontendFlowStep::ComputeSignature(BIT_VALUE, f_id);
             const auto frontend_bv = dfm->GetDesignFlowStep(bv_signature);
-            THROW_ASSERT(frontend_bv != NULL_VERTEX, "step " + bv_signature + " is not present");
+            THROW_ASSERT(frontend_bv != NULL_VERTEX, "step is not present");
             const auto bv = design_flow_graph->CGetDesignFlowStepInfo(frontend_bv)->design_flow_step;
             relationships.insert(bv);
          }

@@ -239,7 +239,7 @@ class FrontendFlowStep : public DesignFlowStep
     * @param frontend_flow_step_type is the type of the analysis
     * @param _Param is the set of the parameters
     */
-   FrontendFlowStep(const std::string& uid, const application_managerRef AppM,
+   FrontendFlowStep(DesignFlowStep::signature_t signature, const application_managerRef AppM,
                     const FrontendFlowStepType frontend_flow_step_type,
                     const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 

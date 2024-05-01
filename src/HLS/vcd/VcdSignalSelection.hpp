@@ -54,8 +54,7 @@ class VcdSignalSelection : public HLS_step
    /**
     * Return the set of analyses in relationship with this design step
     */
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   HLSRelationships ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * Selects the initial set of function parameters to skip, iterating on

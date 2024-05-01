@@ -38,6 +38,7 @@
  *
  */
 #include "design_flow_factory.hpp"
+
 #include "design_flow.hpp"
 #include "design_flow_step.hpp"
 #include "exceptions.hpp"
@@ -45,21 +46,16 @@
 
 DesignFlowFactory::DesignFlowFactory(const DesignFlowManagerConstRef _design_flow_manager,
                                      const ParameterConstRef _parameters)
-    : DesignFlowStepFactory(_design_flow_manager, _parameters)
+    : DesignFlowStepFactory(DesignFlowStep::DESIGN_FLOW, _design_flow_manager, _parameters)
 {
 }
 
 DesignFlowFactory::~DesignFlowFactory() = default;
 
-std::string DesignFlowFactory::GetPrefix() const
+DesignFlowStepRef DesignFlowFactory::CreateFlowStep(DesignFlowStep::signature_t signature) const
 {
-   return "DF";
-}
-
-DesignFlowStepRef DesignFlowFactory::CreateFlowStep(const std::string& signature) const
-{
-   THROW_ASSERT(signature.substr(0, GetPrefix().size() + 2) == GetPrefix() + "::", signature);
-   const auto design_flow_type = DesignFlow::KindTextToEnum(signature.substr(4));
+   THROW_ASSERT(DesignFlowStep::GetStepClass(signature) == GetClass(), "Wrong step class");
+   const auto design_flow_type = static_cast<DesignFlow_Type>(DesignFlowStep::GetStepType(signature));
    return CreateDesignFlow(design_flow_type);
 }
 

@@ -113,9 +113,9 @@ BitValueRange::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
 
 DesignFlowStep_Status BitValueRange::InternalExec()
 {
-   const auto design_flow_step =
-       GetPointerS<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))
-           ->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE_OPT, function_id);
+   const auto design_flow_step = GetPointerS<const FrontendFlowStepFactory>(
+                                     design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::FRONTEND))
+                                     ->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE_OPT, function_id);
    design_flow_step->Initialize();
    const auto return_status = design_flow_step->Exec();
    return_status == DesignFlowStep_Status::SUCCESS ? function_behavior->UpdateBBVersion() : 0;

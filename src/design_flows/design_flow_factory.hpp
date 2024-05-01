@@ -57,9 +57,7 @@ class DesignFlowFactory : public DesignFlowStepFactory
 
    ~DesignFlowFactory() override;
 
-   std::string GetPrefix() const override;
-
-   DesignFlowStepRef CreateFlowStep(const std::string& signature) const override;
+   DesignFlowStepRef CreateFlowStep(DesignFlowStep::signature_t signature) const override;
 
    /**
     * Create a design flow

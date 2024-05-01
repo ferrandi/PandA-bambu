@@ -116,18 +116,23 @@ void HLSFunctionStep::Initialize()
    HLS = HLSMgr->get_HLS(funId);
 }
 
-std::string HLSFunctionStep::ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
-                                              const HLSFlowStepSpecializationConstRef hls_flow_step_specialization,
-                                              const unsigned int function_id)
+DesignFlowStep::signature_t
+HLSFunctionStep::ComputeSignature(const HLSFlowStep_Type hls_flow_step_type,
+                                  const HLSFlowStepSpecializationConstRef hls_flow_step_specialization,
+                                  const unsigned int function_id)
 {
-   return HLS_step::ComputeSignature(hls_flow_step_type, hls_flow_step_specialization) + "::" + STR(function_id);
+   THROW_ASSERT(function_id < (1 << 24), "Signature clash may occurr.");
+   return DesignFlowStep::ComputeSignature(
+       HLS_FUNCTION, static_cast<unsigned short>(hls_flow_step_type),
+       static_cast<unsigned long long>(function_id & 0xFFFFFF) << 16 |
+           (hls_flow_step_specialization ? hls_flow_step_specialization->GetSignatureContext() : 0));
 }
 
 std::string HLSFunctionStep::GetName() const
 {
    const auto function =
        funId ? ("::" + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name()) : "";
-   return "HLS::" + GetKindText() + function
+   return HLS_step::GetName() + function
 #ifndef NDEBUG
           + (bb_version != 0 ? ("(" + STR(bb_version) + ")") : "") +
           (bitvalue_version != 0 ? ("(" + STR(bitvalue_version) + ")") : "") +

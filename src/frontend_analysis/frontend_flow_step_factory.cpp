@@ -53,11 +53,11 @@
 #include "basic_blocks_cfg_computation.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-#include "config_HAVE_ILP_BUILT.hpp"    // for HAVE_ILP_BUILT
-#include "config_HAVE_PRAGMA_BUILT.hpp" // for HAVE_PRAGMA_B...
-#include "config_HAVE_TASTE.hpp"        // for HAVE_TASTE
+#include "config_HAVE_ILP_BUILT.hpp"
+#include "config_HAVE_PRAGMA_BUILT.hpp"
+#include "config_HAVE_TASTE.hpp"
 #include "design_flow_step.hpp"
-#include "exceptions.hpp" // for THROW_UNREACH...
+#include "exceptions.hpp"
 #if HAVE_HOST_PROFILING_BUILT
 #include "basic_blocks_profiling.hpp"
 #endif
@@ -113,7 +113,7 @@
 #include "loops_computation.hpp"
 #include "lut_transformation.hpp"
 #include "multi_way_if.hpp"
-#include "multiple_entry_if_reduction.hpp" //modified here
+#include "multiple_entry_if_reduction.hpp"
 #include "op_cdg_computation.hpp"
 #include "op_feedback_edges_computation.hpp"
 #include "op_order_computation.hpp"
@@ -161,7 +161,7 @@
 FrontendFlowStepFactory::FrontendFlowStepFactory(const application_managerRef _AppM,
                                                  const DesignFlowManagerConstRef _design_flow_manager,
                                                  const ParameterConstRef _parameters)
-    : DesignFlowStepFactory(_design_flow_manager, _parameters), AppM(_AppM)
+    : DesignFlowStepFactory(DesignFlowStep::FRONTEND, _design_flow_manager, _parameters), AppM(_AppM)
 {
 }
 
@@ -878,9 +878,4 @@ FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(const FrontendFlowStepTy
          THROW_UNREACHABLE("Frontend flow step type does not exist");
    }
    return DesignFlowStepRef();
-}
-
-std::string FrontendFlowStepFactory::GetPrefix() const
-{
-   return "Frontend";
 }

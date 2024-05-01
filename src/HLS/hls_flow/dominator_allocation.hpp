@@ -49,8 +49,7 @@
 class dominator_allocation : public HLS_step
 {
  protected:
-   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>
-   ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   HLSRelationships ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    dominator_allocation(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr,
