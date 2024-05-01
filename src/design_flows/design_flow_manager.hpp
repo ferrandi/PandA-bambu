@@ -35,6 +35,7 @@
  * @brief Wrapper of design_flow
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
 #ifndef DESIGN_FLOW_MANAGER_HPP
@@ -44,6 +45,8 @@
 #include "design_flow_step.hpp"
 #include "graph.hpp"
 #include "refcount.hpp"
+
+#include <absl/numeric/int128.h>
 
 #include <cstddef>
 #include <set>
@@ -57,30 +60,80 @@ CONSTREF_FORWARD_DECL(DesignFlowStepFactory);
 REF_FORWARD_DECL(DesignFlowStepInfo);
 REF_FORWARD_DECL(Parameter);
 
-/**
- * The key comparison functor for design flow step; it puts necessary steps before unnecessary ones;
- * in this way steps which depend on unnecessary steps are executed later
- */
-class DesignFlowStepNecessitySorter
+class DesignFlowStepPrioritySet
 {
+ public:
+   using key_t = absl::uint128;
+   using map_t = CustomMap<key_t, vertex>;
+
  private:
-   /// The design flow graph
-   const DesignFlowGraphConstRef design_flow_graph;
+   using reverse_map_t = CustomUnorderedMap<vertex, key_t>;
+
+   map_t _steps_map;
+
+   reverse_map_t _keys_map;
+
+   const DesignFlowGraphRef _dfg;
+
+   /**
+    * @brief Compute vertex ordering key
+    *
+    * Key is computed such that necessary steps before unnecessary ones. Thus, steps which depend on unnecessary steps
+    * are executed later.
+    *
+    * @param v Vertex to compute the key for
+    * @return key_t Computed ordering key
+    */
+   key_t compute_key(const vertex v) const;
 
  public:
-   /**
-    * Constructor
-    * @param design_flow_graph is the graph to which design flow steps belong
-    */
-   explicit DesignFlowStepNecessitySorter(const DesignFlowGraphConstRef _design_flow_graph);
+   DesignFlowStepPrioritySet(const DesignFlowGraphRef& dfg);
 
    /**
-    * Compare position of two vertices
-    * @param x is the first vertex
-    * @param y is the second vertex
-    * @return true if x is necessary and y is unnecessary
+    * @brief Insert vertex into the set
+    *
+    * Insert vertex v into the set. If vertex is already present, key is not updated.
+    *
+    * @param v Vertex to add
+    * @return true If vertex has been inserted
+    * @return false If vertex was already present
     */
-   bool operator()(const vertex x, const vertex y) const;
+   bool insert(const vertex v);
+
+   /**
+    * @brief Insert vertex into the set
+    *
+    * Insert vertex v into the set. If vertex is already present, key is updated.
+    *
+    * @param v Vertex to add
+    */
+   void insert_or_assign(const vertex v);
+
+   /**
+    * @brief Update vertex ordering
+    *
+    * Update vertex key based on design flow step information. Update is performed only if the vertex is already present
+    * in the list and if the key has changed.
+    *
+    * @param v Vertex to update
+    * @return true If vertex was present in the set
+    * @return false If vertex was not found
+    */
+   bool Update(const vertex v);
+
+   /**
+    * @brief Extract vertex at position pos from the set
+    *
+    * @param pos Position of the vertex to extract
+    * @return vertex Vertex removed from the set
+    */
+   vertex Extract(map_t::size_type pos = 0);
+
+   map_t::size_type size() const;
+
+   map_t::const_iterator begin() const;
+
+   map_t::const_iterator end() const;
 };
 
 class DesignFlowManager final
@@ -101,7 +154,7 @@ class DesignFlowManager final
 
    /// The set of potentially ready steps; when a step is added to set is ready to be executed, but it can become
    /// unready because of new added vertices
-   CustomOrderedSet<vertex, DesignFlowStepNecessitySorter> possibly_ready;
+   DesignFlowStepPrioritySet possibly_ready;
 
    /// The registered factories
    CustomUnorderedMap<DesignFlowStep::StepClass, DesignFlowStepFactoryConstRef> design_flow_step_factories;
@@ -152,14 +205,27 @@ class DesignFlowManager final
     * @param unnecessary specify if the steps have to be added only as a possible precedence of other steps (i.e., they
     * could be not executed if no step depends on them)
     */
-   void RecursivelyAddSteps(const DesignFlowStepSet& steps, const bool unnecessary);
+   void RecursivelyAddSteps(const DesignFlowStepSet& steps, const bool unnecessary,
+                            CustomUnorderedSet<std::pair<DesignFlowStep::signature_t, bool>>& already_visited);
+
+   inline void RecursivelyAddSteps(const DesignFlowStepSet& steps, const bool unnecessary)
+   {
+      CustomUnorderedSet<std::pair<DesignFlowStep::signature_t, bool>> already_visited;
+      RecursivelyAddSteps(steps, unnecessary, already_visited);
+   }
 
    /**
     * Recursively remove executed flag starting from a vertex
     * @param starting_vertex is the starting vertex
     * @param force_execution specifies if a skipped vertex has to be changed into a unexecuted
     */
-   void DeExecute(const vertex starting_vertex, bool force_execution);
+   void DeExecute(const vertex starting_vertex, bool force_execution, CustomUnorderedSet<vertex>& already_visited);
+
+   inline void DeExecute(const vertex starting_vertex, bool force_execution)
+   {
+      CustomUnorderedSet<vertex> already_visited;
+      DeExecute(starting_vertex, force_execution, already_visited);
+   }
 
    /**
     * Connect source and sink vertices to entry and exit

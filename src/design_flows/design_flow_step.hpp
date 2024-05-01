@@ -106,17 +106,17 @@ class DesignFlowStep
    enum StepClass
    {
       AUX = 0,
+      TECHNOLOGY,
       DESIGN_FLOW,
+      PARSER,
       C_BACKEND,
       TO_DATA_FILE,
-      TECHNOLOGY,
-      FRONTEND,
-      APPLICATION_FRONTEND,
-      SYMBOLIC_APPLICATION_FRONTEND,
-      FUNCTION_FRONTEND,
-      HLS,
       HLS_FUNCTION,
-      PARSER,
+      HLS,
+      FRONTEND,
+      FUNCTION_FRONTEND,
+      SYMBOLIC_APPLICATION_FRONTEND,
+      APPLICATION_FRONTEND,
       RTL_CHARACTERIZATION
    };
 

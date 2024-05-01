@@ -35,6 +35,7 @@
  * @brief Wrapper of design_flow
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
+ * @author Michele Fiorito <michele.fiorito@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
@@ -71,45 +72,99 @@
 #include <random>
 #endif
 
-DesignFlowStepNecessitySorter::DesignFlowStepNecessitySorter(const DesignFlowGraphConstRef _design_flow_graph)
-    : design_flow_graph(_design_flow_graph)
+DesignFlowStepPrioritySet::DesignFlowStepPrioritySet(const DesignFlowGraphRef& dfg) : _dfg(dfg)
 {
 }
 
-bool DesignFlowStepNecessitySorter::operator()(const vertex x, const vertex y) const
+DesignFlowStepPrioritySet::key_t DesignFlowStepPrioritySet::compute_key(const vertex v) const
 {
-   const auto x_info = design_flow_graph->CGetDesignFlowStepInfo(x);
-   const auto y_info = design_flow_graph->CGetDesignFlowStepInfo(y);
-   const bool x_composed = x_info->design_flow_step->IsComposed();
-   const bool y_composed = y_info->design_flow_step->IsComposed();
-   const bool x_unnecessary =
-       x_info->status == DesignFlowStep_Status::SKIPPED or x_info->status == DesignFlowStep_Status::UNNECESSARY;
-   const bool y_unnecessary =
-       y_info->status == DesignFlowStep_Status::SKIPPED or y_info->status == DesignFlowStep_Status::UNNECESSARY;
-   if(x_composed and not y_composed)
-   {
-      return true;
-   }
-   else if(not x_composed and y_composed)
-   {
-      return false;
-   }
-   else if(x_unnecessary and not y_unnecessary)
-   {
-      return false;
-   }
-   else if(not x_unnecessary and y_unnecessary)
-   {
-      return true;
-   }
-   else
-   {
+   key_t idx = 0;
+   const auto info = _dfg->CGetDesignFlowStepInfo(v);
+   idx += info->design_flow_step->IsComposed() ? 0 : absl::MakeUint128(2, 0);
+   idx += (info->status == DesignFlowStep_Status::SKIPPED || info->status == DesignFlowStep_Status::UNNECESSARY) ?
+              absl::MakeUint128(1, 0) :
+              0;
+   idx +=
 #if HAVE_UNORDERED
-      return x < y;
+       static_cast<unsigned long>(v)
 #else
-      return x_info->design_flow_step->GetSignature() < y_info->design_flow_step->GetSignature();
+       info->design_flow_step->GetSignature()
 #endif
+       ;
+   return idx;
+}
+
+bool DesignFlowStepPrioritySet::insert(const vertex v)
+{
+   const auto k_it = _keys_map.find(v);
+   if(k_it == _keys_map.end())
+   {
+      const auto v_key = compute_key(v);
+      _keys_map.emplace(v, v_key);
+      _steps_map.emplace(v_key, v);
+      return true;
    }
+   return false;
+}
+
+void DesignFlowStepPrioritySet::insert_or_assign(const vertex v)
+{
+   const auto k_it = _keys_map.find(v);
+   const auto v_key = compute_key(v);
+   if(k_it != _keys_map.end())
+   {
+      if(k_it->second == v_key)
+      {
+         return;
+      }
+      _steps_map.erase(k_it->second);
+      _keys_map.erase(k_it);
+   }
+   _keys_map.emplace(v, v_key);
+   _steps_map.emplace(v_key, v);
+}
+
+bool DesignFlowStepPrioritySet::Update(const vertex v)
+{
+   const auto k_it = _keys_map.find(v);
+   if(k_it != _keys_map.end())
+   {
+      const auto new_key = compute_key(v);
+      if(new_key != k_it->second)
+      {
+         _steps_map.erase(k_it->second);
+         _keys_map.erase(k_it);
+         _keys_map.emplace(v, new_key);
+         _steps_map.emplace(new_key, v);
+      }
+      return true;
+   }
+   return false;
+}
+
+vertex DesignFlowStepPrioritySet::Extract(map_t::size_type pos)
+{
+   THROW_ASSERT(pos < size(), "");
+   const auto it = std::next(_steps_map.begin(), static_cast<ptrdiff_t>(pos));
+   const auto v = it->second;
+   _keys_map.erase(v);
+   _steps_map.erase(it);
+   return v;
+}
+
+DesignFlowStepPrioritySet::map_t::size_type DesignFlowStepPrioritySet::size() const
+{
+   return _steps_map.size();
+}
+
+DesignFlowStepPrioritySet::map_t::const_iterator DesignFlowStepPrioritySet::begin() const
+{
+   return _steps_map.begin();
+}
+
+DesignFlowStepPrioritySet::map_t::const_iterator DesignFlowStepPrioritySet::end() const
+{
+   return _steps_map.end();
 }
 
 DesignFlowManager::DesignFlowManager(const ParameterConstRef _parameters)
@@ -121,31 +176,31 @@ DesignFlowManager::DesignFlowManager(const ParameterConstRef _parameters)
           new DesignFlowGraph(design_flow_graphs_collection,
                               DesignFlowGraph::DEPENDENCE_SELECTOR | DesignFlowGraph::PRECEDENCE_SELECTOR |
                                   DesignFlowGraph::AUX_SELECTOR | DesignFlowGraph::DEPENDENCE_FEEDBACK_SELECTOR)),
-      possibly_ready(DesignFlowStepNecessitySorter(design_flow_graph)),
+      possibly_ready(design_flow_graph),
       parameters(_parameters),
       output_level(_parameters->getOption<int>(OPT_output_level))
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
-   const DesignFlowGraphInfoRef design_flow_graph_info = design_flow_graph->GetDesignFlowGraphInfo();
+   const auto design_flow_graph_info = design_flow_graph->GetDesignFlowGraphInfo();
    null_deleter nullDel;
    design_flow_graph_info->entry = design_flow_graphs_collection->AddDesignFlowStep(
        DesignFlowStepRef(
            new AuxDesignFlowStep("Entry", DESIGN_FLOW_ENTRY, DesignFlowManagerConstRef(this, nullDel), parameters)),
        false);
 #ifndef NDEBUG
-   if(debug_level >= DEBUG_LEVEL_PARANOIC or parameters->IsParameter("profile_steps"))
+   if(debug_level >= DEBUG_LEVEL_PARANOIC || parameters->IsParameter("profile_steps"))
    {
       step_names[design_flow_graph_info->entry] = "Entry";
    }
 #endif
-   const DesignFlowStepInfoRef entry_info = design_flow_graph->GetDesignFlowStepInfo(design_flow_graph_info->entry);
+   const auto entry_info = design_flow_graph->GetDesignFlowStepInfo(design_flow_graph_info->entry);
    entry_info->status = DesignFlowStep_Status::EMPTY;
    design_flow_graph_info->exit = design_flow_graphs_collection->AddDesignFlowStep(
        DesignFlowStepRef(
            new AuxDesignFlowStep("Exit", DESIGN_FLOW_EXIT, DesignFlowManagerConstRef(this, nullDel), parameters)),
        false);
 #ifndef NDEBUG
-   if(debug_level >= DEBUG_LEVEL_PARANOIC or parameters->IsParameter("profile_steps"))
+   if(debug_level >= DEBUG_LEVEL_PARANOIC || parameters->IsParameter("profile_steps"))
    {
       step_names[design_flow_graph_info->exit] = "Exit";
    }
@@ -168,13 +223,20 @@ void DesignFlowManager::AddSteps(const DesignFlowStepSet& steps)
    RecursivelyAddSteps(steps, false);
 }
 
-void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet& steps, const bool unnecessary)
+void DesignFlowManager::RecursivelyAddSteps(
+    const DesignFlowStepSet& steps, const bool unnecessary,
+    CustomUnorderedSet<std::pair<DesignFlowStep::signature_t, bool>>& already_visited)
 {
    static size_t temp_counter = 0;
    const auto design_flow_graph_info = design_flow_graph->GetDesignFlowGraphInfo();
    for(const auto& design_flow_step : steps)
    {
       const auto signature = design_flow_step->GetSignature();
+      if(already_visited.count({signature, unnecessary}))
+      {
+         continue;
+      }
+      already_visited.emplace(signature, unnecessary);
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                      "-->Adding design flow step " + design_flow_step->GetName() + " - Signature " + STR(signature));
 
@@ -199,17 +261,8 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet& steps, cons
                /// computation of relationships of this node is performed to propagate the necessity If design flow step
                /// was ready I have to reinsert it into the set because of the ordering; so the setting of the
                /// unnecessary flag can not be factorized
-               bool it_belongs = possibly_ready.find(step_vertex) != possibly_ready.end();
-               possibly_ready.erase(step_vertex);
-               if(it_belongs)
-               {
-                  design_flow_step_info->status = DesignFlowStep_Status::UNEXECUTED;
-                  possibly_ready.insert(step_vertex);
-               }
-               else
-               {
-                  design_flow_step_info->status = DesignFlowStep_Status::UNEXECUTED;
-               }
+               design_flow_step_info->status = DesignFlowStep_Status::UNEXECUTED;
+               possibly_ready.Update(step_vertex);
                INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                               "---This step already exist but was unnecessary. Now it becomes necessary");
             }
@@ -241,7 +294,7 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet& steps, cons
       /// Add edges from dependencies
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Adding dependencies of " + design_flow_step->GetName());
       design_flow_step->ComputeRelationships(relationships, DesignFlowStep::DEPENDENCE_RELATIONSHIP);
-      RecursivelyAddSteps(relationships, unnecessary);
+      RecursivelyAddSteps(relationships, unnecessary, already_visited);
       for(const auto& relationship : relationships)
       {
          const auto relationship_signature = relationship->GetSignature();
@@ -271,7 +324,7 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet& steps, cons
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Adding precedences of " + design_flow_step->GetName());
       relationships.clear();
       design_flow_step->ComputeRelationships(relationships, DesignFlowStep::PRECEDENCE_RELATIONSHIP);
-      RecursivelyAddSteps(relationships, true);
+      RecursivelyAddSteps(relationships, true, already_visited);
       for(const auto& relationship : relationships)
       {
          const auto relationship_signature = relationship->GetSignature();
@@ -346,14 +399,18 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet& steps, cons
          design_flow_graphs_collection->AddDesignFlowDependence(design_flow_graph_info->entry, step_vertex,
                                                                 DesignFlowGraph::AUX_SELECTOR);
       }
+      CustomOrderedSet<EdgeDescriptor> to_be_removeds;
       BOOST_FOREACH(EdgeDescriptor ie, boost::in_edges(step_vertex, *design_flow_graph))
       {
          const auto source = boost::source(ie, *design_flow_graph);
          if(design_flow_graph->ExistsEdge(source, design_flow_graph_info->exit))
          {
-            design_flow_graphs_collection->RemoveSelector(source, design_flow_graph_info->exit,
-                                                          DesignFlowGraph::AUX_SELECTOR);
+            to_be_removeds.insert(ie);
          }
+      }
+      for(const auto& to_be_removed : to_be_removeds)
+      {
+         design_flow_graphs_collection->RemoveSelector(to_be_removed, DesignFlowGraph::AUX_SELECTOR);
       }
       if(boost::out_degree(step_vertex, *design_flow_graph) == 0)
       {
@@ -387,70 +444,72 @@ void DesignFlowManager::Exec()
 #endif
 
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Started execution of design flow");
+#ifndef NDEBUG
    if(debug_level >= DEBUG_LEVEL_PARANOIC)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Writing initial design flow graph");
       feedback_design_flow_graph->WriteDot("Design_Flow_" + STR(step_counter));
    }
+#endif
    size_t executed_passes = 0;
    size_t skipped_passes = 0;
    size_t graph_changes = 0;
    long design_flow_manager_time = 0;
+   const auto dump_statistics = parameters->IsParameter("dfm_statistics");
    while(possibly_ready.size())
    {
-      const size_t initial_number_vertices = boost::num_vertices(*feedback_design_flow_graph);
-      const size_t initial_number_edges = boost::num_vertices(*feedback_design_flow_graph);
+      const auto initial_number_vertices = boost::num_vertices(*design_flow_graphs_collection);
+      const auto initial_number_edges = boost::num_edges(*design_flow_graphs_collection);
       long before_time = 0;
-      if(parameters->IsParameter("dfm_statistics"))
+      if(dump_statistics)
       {
          START_TIME(before_time);
       }
       step_counter++;
-      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Ready steps are");
 #ifndef NDEBUG
-      for(const auto ready_step : possibly_ready)
+      if(debug_level >= DEBUG_LEVEL_PARANOIC)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                        "---" + design_flow_graph->CGetDesignFlowStepInfo(ready_step)->design_flow_step->GetName());
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Ready steps are");
+         for(const auto& [step_key, ready_step] : possibly_ready)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
+                           "---" + design_flow_graph->CGetDesignFlowStepInfo(ready_step)->design_flow_step->GetName());
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--");
       }
 #endif
-      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--");
       const vertex next = [&]() -> vertex {
+         size_t offset = 0;
 #if !HAVE_UNORDERED
 #ifndef NDEBUG
          if(parameters->isOption(OPT_test_single_non_deterministic_flow))
          {
             const size_t random = generator();
-            const size_t offset = random % possibly_ready.size();
+            offset = random % possibly_ready.size();
             INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                            "---Random is " + STR(random) + " - Offset is " + STR(offset) + " (Size is " +
                                STR(possibly_ready.size()) + ")");
-            auto begin = possibly_ready.begin();
-            std::advance(begin, offset);
-            return *begin;
          }
 #endif
 #endif
-         return *(possibly_ready.begin());
+         return possibly_ready.Extract(offset);
       }();
-#if HAVE_ASSERTS
-      const auto erased_elements =
-#endif
-          possibly_ready.erase(next);
-      const DesignFlowStepInfoRef design_flow_step_info = design_flow_graph->GetDesignFlowStepInfo(next);
-      const DesignFlowStepRef step = design_flow_step_info->design_flow_step;
+      const auto design_flow_step_info = design_flow_graph->GetDesignFlowStepInfo(next);
+      const auto step = design_flow_step_info->design_flow_step;
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                      "-->Beginning iteration number " + STR(step_counter) + " - Considering step " + step->GetName());
-      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Other ready steps are");
 #ifndef NDEBUG
-      for(const auto ready_step : possibly_ready)
+      if(debug_level >= DEBUG_LEVEL_PARANOIC)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                        "---" + design_flow_graph->CGetDesignFlowStepInfo(ready_step)->design_flow_step->GetName());
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Other ready steps are");
+         for(const auto& [step_key, ready_step] : possibly_ready)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
+                           "---" + design_flow_graph->CGetDesignFlowStepInfo(ready_step)->design_flow_step->GetName());
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--");
       }
 #endif
-      INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--");
-      THROW_ASSERT(erased_elements == 1, "Number of erased elements is " + STR(erased_elements));
 
       /// Now check if next is actually ready
       /// First of all check if there are new dependence to add
@@ -469,7 +528,7 @@ void DesignFlowManager::Exec()
          const vertex pre_dependence_vertex = design_flow_graph->GetDesignFlowStep(pre_dependence_step->GetSignature());
          design_flow_graphs_collection->AddDesignFlowDependence(pre_dependence_vertex, next,
                                                                 DesignFlowGraph::DEPENDENCE_SELECTOR);
-         const DesignFlowStepInfoRef pre_info = design_flow_graph->GetDesignFlowStepInfo(pre_dependence_vertex);
+         const auto pre_info = design_flow_graph->GetDesignFlowStepInfo(pre_dependence_vertex);
          switch(pre_info->status)
          {
             case DesignFlowStep_Status::ABORTED:
@@ -500,11 +559,10 @@ void DesignFlowManager::Exec()
       /// Now iterate on ingoing precedence edge
       for(const auto& pre_precedence_step : pre_precedence_steps)
       {
-         const vertex pre_precedence_vertex =
-             design_flow_graph->GetDesignFlowStep((pre_precedence_step)->GetSignature());
+         const vertex pre_precedence_vertex = design_flow_graph->GetDesignFlowStep(pre_precedence_step->GetSignature());
          design_flow_graphs_collection->AddDesignFlowDependence(pre_precedence_vertex, next,
                                                                 DesignFlowGraph::PRECEDENCE_SELECTOR);
-         const DesignFlowStepInfoRef pre_info = design_flow_graph->GetDesignFlowStepInfo(pre_precedence_vertex);
+         const auto pre_info = design_flow_graph->GetDesignFlowStepInfo(pre_precedence_vertex);
          switch(pre_info->status)
          {
             case DesignFlowStep_Status::ABORTED:
@@ -532,16 +590,14 @@ void DesignFlowManager::Exec()
             }
          }
       }
-      if(not current_ready)
+      if(!current_ready)
       {
+#ifndef NDEBUG
          if(debug_level >= DEBUG_LEVEL_PARANOIC)
          {
             feedback_design_flow_graph->WriteDot("Design_Flow_" + STR(step_counter));
             INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Writing Design_Flow_" + STR(step_counter));
-         }
-#ifndef NDEBUG
-         if(debug_level >= DEBUG_LEVEL_PARANOIC)
-         {
+
             /// Save the current status of the graph in history
             BOOST_FOREACH(vertex temp_step, boost::vertices(*design_flow_graph))
             {
@@ -555,15 +611,15 @@ void DesignFlowManager::Exec()
          }
 #endif
          INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Ended iteration number " + STR(step_counter));
-         const size_t final_number_vertices = boost::num_vertices(*feedback_design_flow_graph);
-         const size_t final_number_edges = boost::num_vertices(*feedback_design_flow_graph);
-         if(final_number_vertices > initial_number_vertices or final_number_edges > initial_number_edges)
+         const auto final_number_vertices = boost::num_vertices(*design_flow_graphs_collection);
+         const auto final_number_edges = boost::num_edges(*design_flow_graphs_collection);
+         if(final_number_vertices > initial_number_vertices || final_number_edges > initial_number_edges)
          {
             graph_changes++;
          }
          continue;
       }
-      if(parameters->IsParameter("dfm_statistics"))
+      if(dump_statistics)
       {
          STOP_TIME(before_time);
          design_flow_manager_time += before_time;
@@ -644,19 +700,19 @@ void DesignFlowManager::Exec()
 #endif
       }
       long after_time = 0;
-      if(parameters->IsParameter("dfm_statistics"))
+      if(dump_statistics)
       {
          START_TIME(after_time);
       }
       bool invalidations = false;
-      if(not parameters->IsParameter("disable-invalidations"))
+      if(!parameters->IsParameter("disable-invalidations"))
       {
          /// Add steps and edges from post dependencies
          INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "-->Adding post-dependencies of " + step->GetName());
          DesignFlowStepSet relationships;
          step->ComputeRelationships(relationships, DesignFlowStep::INVALIDATION_RELATIONSHIP);
          INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Got steps");
-         invalidations = not relationships.empty();
+         invalidations = !relationships.empty();
          for(const auto& relationship : relationships)
          {
             const auto relationship_signature = relationship->GetSignature();
@@ -683,7 +739,7 @@ void DesignFlowManager::Exec()
       BOOST_FOREACH(EdgeDescriptor oe, boost::out_edges(next, *design_flow_graph))
       {
          const vertex target = boost::target(oe, *design_flow_graph);
-         DesignFlowStepInfoRef target_info = design_flow_graph->GetDesignFlowStepInfo(target);
+         auto target_info = design_flow_graph->GetDesignFlowStepInfo(target);
          switch(target_info->status)
          {
             case DesignFlowStep_Status::ABORTED:
@@ -718,7 +774,7 @@ void DesignFlowManager::Exec()
          BOOST_FOREACH(EdgeDescriptor ie, boost::in_edges(target, *design_flow_graph))
          {
             const vertex source = boost::source(ie, *design_flow_graph);
-            const DesignFlowStepInfoRef source_info = design_flow_graph->GetDesignFlowStepInfo(source);
+            const auto source_info = design_flow_graph->GetDesignFlowStepInfo(source);
             INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                            "-->Examining predecessor " + source_info->design_flow_step->GetName());
             switch(source_info->status)
@@ -751,7 +807,7 @@ void DesignFlowManager::Exec()
                   THROW_UNREACHABLE("");
                }
             }
-            if(not target_ready)
+            if(!target_ready)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "<--Not ready");
                break;
@@ -783,12 +839,12 @@ void DesignFlowManager::Exec()
       {
          design_flow_graphs_collection->RemoveSelector(to_be_removed, DesignFlowGraph::AUX_SELECTOR);
       }
+#ifndef NDEBUG
       if(debug_level >= DEBUG_LEVEL_PARANOIC)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "---Writing Design_Flow_" + STR(step_counter));
          feedback_design_flow_graph->WriteDot("Design_Flow_" + STR(step_counter));
 
-#ifndef NDEBUG
          /// Save the current status of the graph in history
          BOOST_FOREACH(vertex temp_step, boost::vertices(*design_flow_graph))
          {
@@ -799,20 +855,20 @@ void DesignFlowManager::Exec()
          {
             edge_history[step_counter][edge] = design_flow_graph->GetSelector(edge);
          }
-#endif
       }
-      if(parameters->IsParameter("dfm_statistics"))
+#endif
+      if(dump_statistics)
       {
          STOP_TIME(after_time);
          design_flow_manager_time += after_time;
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                      "<--Ended iteration number " + STR(step_counter) + " - Step " + step->GetName());
-      const size_t final_number_vertices = boost::num_vertices(*feedback_design_flow_graph);
-      const size_t final_number_edges = boost::num_vertices(*feedback_design_flow_graph);
-      if(parameters->IsParameter("dfm_statistics"))
+      if(dump_statistics)
       {
-         if(final_number_vertices > initial_number_vertices or final_number_edges > initial_number_edges or
+         const auto final_number_vertices = boost::num_vertices(*design_flow_graphs_collection);
+         const auto final_number_edges = boost::num_edges(*design_flow_graphs_collection);
+         if(final_number_vertices > initial_number_vertices || final_number_edges > initial_number_edges or
             invalidations)
          {
             graph_changes++;
@@ -851,18 +907,17 @@ void DesignFlowManager::Exec()
                   }
                }
             }
+            INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "-->DesignFlowManager - Iteration " + STR(step_counter));
+            INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "---Executed step: " + step->GetName());
             if(previous_executed_vertices > executed_vertices)
             {
                INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level,
-                              "dfm_statistics - number of invalidated vertices by " + step->GetName() + ": " +
-                                  STR(previous_executed_vertices - executed_vertices));
+                              "---Invalidated vertices: " + STR(previous_executed_vertices - executed_vertices));
             }
             INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level,
-                           "dfm_statistics - number of vertices at the end of iteration " + STR(step_counter) + ": " +
-                               STR(executed_vertices) + " / " + STR(final_number_vertices));
-            INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level,
-                           "dfm_statistics - number of edges at the end of iteration " + STR(step_counter) + ": " +
-                               STR(final_number_edges));
+                           "---Executed    vertices: " + STR(executed_vertices) + " / " + STR(final_number_vertices));
+            INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "---Edges: " + STR(final_number_edges));
+            INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "<--");
             previous_executed_vertices = executed_vertices;
          }
       }
@@ -893,22 +948,17 @@ void DesignFlowManager::Exec()
       feedback_design_flow_graph->WriteDot("Design_Flow_Error");
       THROW_UNREACHABLE("Design flow didn't end");
    }
-   if(parameters->IsParameter("dfm_statistics"))
+   if(dump_statistics)
    {
+      INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "-->DesignFlowManager - Final summary");
+      INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "---Vertices: " + STR(boost::num_vertices(*design_flow_graph)));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "---Edges   : " + STR(boost::num_edges(*design_flow_graph)));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "---Passes executed : " + STR(executed_passes));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "---Passes skipped  : " + STR(skipped_passes));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "---Graph changes   : " + STR(graph_changes));
       INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level,
-                     "dfm_statistics - number of vertices in final graph: " +
-                         STR(boost::num_vertices(*design_flow_graph)));
-      INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level,
-                     "dfm_statistics - number of edges in final graph: " + STR(boost::num_edges(*design_flow_graph)));
-      INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level,
-                     "dfm_statistics - number of executed passes: " + STR(executed_passes));
-      INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level,
-                     "dfm_statistics - number of skipped passes: " + STR(skipped_passes));
-      INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level,
-                     "dfm_statistics - number of graph changes: " + STR(graph_changes));
-      INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level,
-                     "dfm_statistics - design flow manager time: " + print_cpu_time(design_flow_manager_time) +
-                         " seconds");
+                     "---Pass engine time: " + print_cpu_time(design_flow_manager_time) + " seconds");
+      INDENT_OUT_MEX(OUTPUT_LEVEL_NONE, output_level, "<--");
    }
 #ifndef NDEBUG
    if(parameters->IsParameter("profile_steps"))
@@ -946,10 +996,11 @@ void DesignFlowManager::RegisterFactory(const DesignFlowStepFactoryConstRef fact
    design_flow_step_factories[factory->GetClass()] = factory;
 }
 
-void DesignFlowManager::DeExecute(const vertex starting_vertex, const bool force_execution)
+void DesignFlowManager::DeExecute(const vertex starting_vertex, const bool force_execution,
+                                  CustomUnorderedSet<vertex>& already_visited)
 {
    /// Set not executed on the starting vertex
-   const DesignFlowStepInfoRef design_flow_step_info = design_flow_graph->GetDesignFlowStepInfo(starting_vertex);
+   const auto design_flow_step_info = design_flow_graph->GetDesignFlowStepInfo(starting_vertex);
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
                   "---DeExecuting " + design_flow_step_info->design_flow_step->GetName());
    switch(design_flow_step_info->status)
@@ -971,6 +1022,7 @@ void DesignFlowManager::DeExecute(const vertex starting_vertex, const bool force
          if(force_execution)
          {
             design_flow_step_info->status = DesignFlowStep_Status::UNEXECUTED;
+            possibly_ready.Update(starting_vertex);
          }
          else
          {
@@ -999,7 +1051,7 @@ void DesignFlowManager::DeExecute(const vertex starting_vertex, const bool force
    BOOST_FOREACH(EdgeDescriptor ie, boost::in_edges(starting_vertex, *design_flow_graph))
    {
       vertex pre_dependence_vertex = boost::source(ie, *design_flow_graph);
-      const DesignFlowStepInfoRef pre_info = design_flow_graph->GetDesignFlowStepInfo(pre_dependence_vertex);
+      const auto pre_info = design_flow_graph->GetDesignFlowStepInfo(pre_dependence_vertex);
       switch(pre_info->status)
       {
          case DesignFlowStep_Status::ABORTED:
@@ -1032,11 +1084,13 @@ void DesignFlowManager::DeExecute(const vertex starting_vertex, const bool force
       possibly_ready.insert(starting_vertex);
    }
 
+   already_visited.insert(starting_vertex);
+
    /// Propagating to successor
    BOOST_FOREACH(EdgeDescriptor oe, boost::out_edges(starting_vertex, *design_flow_graph))
    {
       const vertex target = boost::target(oe, *design_flow_graph);
-      const DesignFlowStepInfoRef target_info = design_flow_graph->GetDesignFlowStepInfo(target);
+      const auto target_info = design_flow_graph->GetDesignFlowStepInfo(target);
       switch(target_info->status)
       {
          case DesignFlowStep_Status::ABORTED:
@@ -1045,7 +1099,10 @@ void DesignFlowManager::DeExecute(const vertex starting_vertex, const bool force
          case DesignFlowStep_Status::UNCHANGED:
          case DesignFlowStep_Status::SKIPPED:
          {
-            DeExecute(target, false);
+            if(!already_visited.count(target))
+            {
+               DeExecute(target, false, already_visited);
+            }
             break;
          }
          case DesignFlowStep_Status::UNNECESSARY:

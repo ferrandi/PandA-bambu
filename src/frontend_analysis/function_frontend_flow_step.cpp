@@ -129,12 +129,12 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
       {
          if(rel_type == SAME_FUNCTION)
          {
-            const auto step_sig = FunctionFrontendFlowStep::ComputeSignature(step_type, function_id);
             const auto symbolic_signature = SymbolicApplicationFrontendFlowStep::ComputeSignature(step_type);
             const auto symbolic_step = DFM->GetDesignFlowStep(symbolic_signature);
             if(symbolic_step)
             {
 #ifndef NDEBUG
+               const auto step_sig = FunctionFrontendFlowStep::ComputeSignature(step_type, function_id);
                if(!(DFM->GetStatus(symbolic_signature) == DesignFlowStep_Status::UNEXECUTED ||
                     DFM->GetStatus(step_sig) == DesignFlowStep_Status::SUCCESS ||
                     DFM->GetStatus(step_sig) == DesignFlowStep_Status::UNCHANGED))
