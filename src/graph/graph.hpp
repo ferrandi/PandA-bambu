@@ -769,13 +769,24 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
  protected:
    /**
     * Get the node property
+    * @param node is the vertex whose property is asked
+    * @return the associated property
+    */
+   inline NodeInfoRef GetNodeInfo(typename boost::graph_traits<graphs_collection>::vertex_descriptor node)
+   {
+      NodeInfoRef info = (*this)[node];
+      THROW_ASSERT(info, "Node without associate info");
+      return info;
+   }
+
+   /**
+    * Get the node property
     * @param node is the node whose property is asked
     * @return the associated property
     */
-   inline const NodeInfoConstRef
-   CGetNodeInfo(typename boost::graph_traits<graphs_collection>::vertex_descriptor node) const
+   inline NodeInfoConstRef CGetNodeInfo(typename boost::graph_traits<graphs_collection>::vertex_descriptor node) const
    {
-      const NodeInfoRef info = (*this)[node];
+      const NodeInfoConstRef info = (*this)[node];
       THROW_ASSERT(info, "Node without associate info");
       return info;
    }
@@ -802,9 +813,8 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
     * @param target is the target vertex of the edge
     * @return the associated property
     */
-   inline const EdgeInfoConstRef
-   CGetEdgeInfo(typename boost::graph_traits<graphs_collection>::vertex_descriptor source,
-                typename boost::graph_traits<graphs_collection>::vertex_descriptor target) const
+   inline EdgeInfoConstRef CGetEdgeInfo(typename boost::graph_traits<graphs_collection>::vertex_descriptor source,
+                                        typename boost::graph_traits<graphs_collection>::vertex_descriptor target) const
    {
       bool found;
       typename boost::graph_traits<graphs_collection>::edge_descriptor edge;
@@ -818,7 +828,7 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
     * @param edge is the edge whose property is asked
     * @return the associated property
     */
-   inline EdgeInfoRef GetEdgeInfo(typename boost::graph_traits<graphs_collection>::edge_descriptor edge) const
+   inline EdgeInfoRef GetEdgeInfo(typename boost::graph_traits<graphs_collection>::edge_descriptor edge)
    {
       const EdgeInfoRef info = (*this)[edge].info;
       THROW_ASSERT(info, "Info not associated with the edge");
@@ -1003,39 +1013,25 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
       CustomUnorderedSet<boost::graph_traits<graphs_collection>::vertex_descriptor> encountered_vertices;
       running_vertices.push_back(x);
       encountered_vertices.insert(x);
-      while(not running_vertices.empty())
+      while(!running_vertices.empty())
       {
-         const boost::graph_traits<graphs_collection>::vertex_descriptor current = running_vertices.front();
+         const auto current = running_vertices.front();
          running_vertices.pop_front();
-         boost::graph_traits<graph>::out_edge_iterator oe, oe_end;
-         for(boost::tie(oe, oe_end) = boost::out_edges(current, *this); oe != oe_end; oe++)
+         BOOST_FOREACH(typename boost::graph_traits<graphs_collection>::edge_descriptor oe,
+                       boost::out_edges(current, *this))
          {
-            const boost::graph_traits<graphs_collection>::vertex_descriptor target = boost::target(*oe, *this);
+            const auto target = boost::target(oe, *this);
             if(target == y)
             {
                return true;
             }
-            if(encountered_vertices.find(target) == encountered_vertices.end())
+            if(encountered_vertices.insert(target).second)
             {
-               encountered_vertices.insert(target);
                running_vertices.push_back(target);
             }
          }
       }
       return false;
-   }
-
-   /**
-    * FIXME: this method should become protected and called by equivalent method in subclasses
-    * Get the node property
-    * @param node is the vertex whose property is asked
-    * @return the associated property
-    */
-   inline NodeInfoRef GetNodeInfo(typename boost::graph_traits<graphs_collection>::vertex_descriptor node)
-   {
-      NodeInfoRef info = (*this)[node];
-      THROW_ASSERT(info, "Node without associate info");
-      return info;
    }
 
    /**
@@ -1054,7 +1050,7 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
     * Get the graph property
     * @return the property associated with the graph
     */
-   inline const GraphInfoConstRef CGetGraphInfo() const
+   inline GraphInfoConstRef CGetGraphInfo() const
    {
       GraphInfoRef info = boost_CGetOpGraph_property(*this);
       return info;

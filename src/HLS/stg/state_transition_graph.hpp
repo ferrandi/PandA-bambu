@@ -366,7 +366,7 @@ struct StateTransitionGraph : public graph
     * Return the info associated with a state
     * @param state is the state to be considered
     */
-   inline const StateInfoConstRef CGetStateInfo(const vertex state) const
+   inline StateInfoConstRef CGetStateInfo(const vertex state) const
    {
       return RefcountCast<const StateInfo>(graph::CGetNodeInfo(state));
    }
@@ -375,7 +375,7 @@ struct StateTransitionGraph : public graph
     * Return the info associated with a state, given its ID
     * @state_id is the ID of the state to be considered
     */
-   inline const StateInfoConstRef CGetStateInfo(unsigned int state_id) const
+   inline StateInfoConstRef CGetStateInfo(unsigned int state_id) const
    {
       return CGetStateInfo(GetVertex(state_id));
    }
@@ -404,7 +404,7 @@ struct StateTransitionGraph : public graph
     * Return the info associated with a transition
     * @param transition is the transition to be considered
     */
-   inline const TransitionInfoConstRef CGetTransitionInfo(const EdgeDescriptor transition) const
+   inline TransitionInfoConstRef CGetTransitionInfo(const EdgeDescriptor transition) const
    {
       return RefcountCast<const TransitionInfo>(graph::CGetEdgeInfo(transition));
    }
@@ -422,7 +422,7 @@ struct StateTransitionGraph : public graph
     * Return the info associated with the graph
     * @return the info associated with the graph
     */
-   inline const StateTransitionGraphInfoConstRef CGetStateTransitionGraphInfo() const
+   inline StateTransitionGraphInfoConstRef CGetStateTransitionGraphInfo() const
    {
       return RefcountCast<const StateTransitionGraphInfo>(graph::CGetGraphInfo());
    }

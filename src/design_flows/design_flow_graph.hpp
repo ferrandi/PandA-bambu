@@ -78,19 +78,6 @@ struct DesignFlowStepInfo : public NodeInfo
 using DesignFlowStepInfoRef = refcount<DesignFlowStepInfo>;
 using DesignFlowStepInfoConstRef = refcount<const DesignFlowStepInfo>;
 
-struct DesignFlowDependenceInfo : public EdgeInfo
-{
- public:
-   /**
-    * Constructor
-    */
-   DesignFlowDependenceInfo();
-
-   ~DesignFlowDependenceInfo() override;
-};
-using DesignFlowDependenceInfoRef = refcount<DesignFlowDependenceInfo>;
-using DesignFlowDependenceInfoConstRef = refcount<const DesignFlowDependenceInfo>;
-
 struct DesignFlowGraphInfo : public GraphInfo
 {
  public:
@@ -136,7 +123,7 @@ class DesignFlowGraphsCollection : public graphs_collection
       }
       else
       {
-         return InternalAddEdge(source, target, selector, EdgeInfoRef(new DesignFlowDependenceInfo()));
+         return InternalAddEdge(source, target, selector, EdgeInfoRef(nullptr));
       }
    }
 
@@ -189,9 +176,6 @@ class DesignFlowGraph : public graph
    DesignFlowGraph(const DesignFlowGraphsCollectionRef design_flow_graphs_collection, const int _selector,
                    const CustomUnorderedSet<vertex>& vertices);
 
-   /**
-    * Destructor
-    */
    ~DesignFlowGraph() override;
 
    /**
@@ -206,7 +190,7 @@ class DesignFlowGraph : public graph
     */
    inline DesignFlowStepInfoRef GetDesignFlowStepInfo(const vertex step)
    {
-      return RefcountCast<DesignFlowStepInfo>(graph::GetNodeInfo(step));
+      return std::reinterpret_pointer_cast<DesignFlowStepInfo>(graph::GetNodeInfo(step));
    }
 
    /**
@@ -216,7 +200,7 @@ class DesignFlowGraph : public graph
     */
    inline DesignFlowStepInfoConstRef CGetDesignFlowStepInfo(const vertex step) const
    {
-      return RefcountCast<const DesignFlowStepInfo>(graph::CGetNodeInfo(step));
+      return std::reinterpret_pointer_cast<const DesignFlowStepInfo>(graph::CGetNodeInfo(step));
    }
 
    /**
@@ -225,7 +209,7 @@ class DesignFlowGraph : public graph
     */
    inline DesignFlowGraphInfoRef GetDesignFlowGraphInfo()
    {
-      return RefcountCast<DesignFlowGraphInfo>(graph::GetGraphInfo());
+      return std::reinterpret_pointer_cast<DesignFlowGraphInfo>(graph::GetGraphInfo());
    }
 
    /**
@@ -234,7 +218,7 @@ class DesignFlowGraph : public graph
     */
    inline DesignFlowGraphInfoConstRef CGetDesignFlowGraphInfo() const
    {
-      return RefcountCast<const DesignFlowGraphInfo>(graph::CGetGraphInfo());
+      return std::reinterpret_pointer_cast<const DesignFlowGraphInfo>(graph::CGetGraphInfo());
    }
 
    /**

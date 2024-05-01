@@ -380,7 +380,7 @@ struct BBGraph : public graph
     * @param node is the basic block vertex to be considered
     * @return the info associated with a basic block
     */
-   inline const BBNodeInfoConstRef CGetBBNodeInfo(const vertex node) const
+   inline BBNodeInfoConstRef CGetBBNodeInfo(const vertex node) const
    {
       return RefcountCast<const BBNodeInfo>(graph::CGetNodeInfo(node));
    }
@@ -396,7 +396,7 @@ struct BBGraph : public graph
    /**
     * Returns the info associated with an edge
     */
-   inline const BBEdgeInfoConstRef CGetBBEdgeInfo(const EdgeDescriptor e) const
+   inline BBEdgeInfoConstRef CGetBBEdgeInfo(const EdgeDescriptor e) const
    {
       return RefcountCast<const BBEdgeInfo>(graph::CGetEdgeInfo(e));
    }
@@ -414,7 +414,7 @@ struct BBGraph : public graph
     * Returns the property associated with the graph
     * @return the proprty associated with the graph
     */
-   inline const BBGraphInfoConstRef CGetBBGraphInfo() const
+   inline BBGraphInfoConstRef CGetBBGraphInfo() const
    {
       return RefcountCast<const BBGraphInfo>(graph::CGetGraphInfo());
    }

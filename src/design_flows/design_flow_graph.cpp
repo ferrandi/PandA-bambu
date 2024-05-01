@@ -61,10 +61,6 @@ DesignFlowStepInfo::DesignFlowStepInfo(const DesignFlowStepRef _design_flow_step
 {
 }
 
-DesignFlowDependenceInfo::DesignFlowDependenceInfo() = default;
-
-DesignFlowDependenceInfo::~DesignFlowDependenceInfo() = default;
-
 DesignFlowGraphsCollection::DesignFlowGraphsCollection(const ParameterConstRef _parameters)
     : graphs_collection(GraphInfoRef(new DesignFlowGraphInfo()), _parameters)
 {
@@ -74,22 +70,18 @@ DesignFlowGraphsCollection::~DesignFlowGraphsCollection() = default;
 
 vertex DesignFlowGraphsCollection::AddDesignFlowStep(const DesignFlowStepRef design_flow_step, const bool unnecessary)
 {
-   const DesignFlowStepInfoRef info(new DesignFlowStepInfo(design_flow_step, unnecessary));
-   const vertex new_vertex = AddVertex(RefcountCast<NodeInfo>(info));
-   signature_to_vertex[design_flow_step->GetSignature()] = new_vertex;
-   return new_vertex;
+   return signature_to_vertex[design_flow_step->GetSignature()] =
+              AddVertex(NodeInfoRef(new DesignFlowStepInfo(design_flow_step, unnecessary)));
 }
 
 vertex DesignFlowGraphsCollection::GetDesignFlowStep(DesignFlowStep::signature_t signature) const
 {
-   if(signature_to_vertex.find(signature) != signature_to_vertex.end())
+   const auto stov_it = signature_to_vertex.find(signature);
+   if(stov_it != signature_to_vertex.end())
    {
-      return signature_to_vertex.find(signature)->second;
+      return stov_it->second;
    }
-   else
-   {
-      return NULL_VERTEX;
-   }
+   return NULL_VERTEX;
 }
 
 const int DesignFlowGraph::DEPENDENCE_SELECTOR = 1;
@@ -115,7 +107,7 @@ DesignFlowGraph::~DesignFlowGraph() = default;
 
 vertex DesignFlowGraph::GetDesignFlowStep(DesignFlowStep::signature_t signature) const
 {
-   return dynamic_cast<DesignFlowGraphsCollection*>(collection)->GetDesignFlowStep(signature);
+   return reinterpret_cast<DesignFlowGraphsCollection*>(collection)->GetDesignFlowStep(signature);
 }
 
 void DesignFlowGraph::WriteDot(const std::filesystem::path& file_name, const int) const
@@ -162,8 +154,8 @@ DesignFlowStepWriter::~DesignFlowStepWriter() = default;
 void DesignFlowStepWriter::operator()(std::ostream& out, const vertex& v) const
 {
    out << "[";
-   const DesignFlowStepInfoConstRef design_flow_step_info =
-       dynamic_cast<const DesignFlowGraph*>(printing_graph)->CGetDesignFlowStepInfo(v);
+   const auto design_flow_step_info =
+       reinterpret_cast<const DesignFlowGraph*>(printing_graph)->CGetDesignFlowStepInfo(v);
    if(vertex_history.size())
    {
       if(vertex_history.find(v) == vertex_history.end())
@@ -299,8 +291,8 @@ void DesignFlowEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e
       }
       else
       {
-         const DesignFlowStep_Status source_status = vertex_history.find(source)->second;
-         const DesignFlowStep_Status target_status = vertex_history.find(target)->second;
+         const auto source_status = vertex_history.at(source);
+         const auto target_status = vertex_history.at(target);
          const bool source_executed =
              source_status == DesignFlowStep_Status::EMPTY or source_status == DesignFlowStep_Status::SKIPPED or
              source_status == DesignFlowStep_Status::SUCCESS or source_status == DesignFlowStep_Status::UNCHANGED;
@@ -327,10 +319,8 @@ void DesignFlowEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e
    }
    else
    {
-      const DesignFlowStepInfoConstRef source_info =
-          dynamic_cast<const DesignFlowGraph*>(printing_graph)->CGetDesignFlowStepInfo(source);
-      const DesignFlowStepInfoConstRef target_info =
-          dynamic_cast<const DesignFlowGraph*>(printing_graph)->CGetDesignFlowStepInfo(target);
+      const auto source_info = reinterpret_cast<const DesignFlowGraph*>(printing_graph)->CGetDesignFlowStepInfo(source);
+      const auto target_info = reinterpret_cast<const DesignFlowGraph*>(printing_graph)->CGetDesignFlowStepInfo(target);
       const bool source_executed = source_info->status == DesignFlowStep_Status::EMPTY or
                                    source_info->status == DesignFlowStep_Status::SKIPPED or
                                    source_info->status == DesignFlowStep_Status::SUCCESS or

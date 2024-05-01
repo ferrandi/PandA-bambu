@@ -185,7 +185,7 @@ class CallGraph : public graph
     * Return the info associated with an edge
     * @param edge is the edge to be considered
     */
-   inline const FunctionEdgeInfoConstRef CGetFunctionEdgeInfo(const EdgeDescriptor edge) const
+   inline FunctionEdgeInfoConstRef CGetFunctionEdgeInfo(const EdgeDescriptor edge) const
    {
       return RefcountCast<const FunctionEdgeInfo>(graph::CGetEdgeInfo(edge));
    }
@@ -194,7 +194,7 @@ class CallGraph : public graph
     * Return the info associated with the call graph
     * @return the info associated with the call graph
     */
-   inline const CallGraphInfoConstRef CGetCallGraphInfo() const
+   inline CallGraphInfoConstRef CGetCallGraphInfo() const
    {
       return RefcountCast<const CallGraphInfo>(graph::CGetGraphInfo());
    }

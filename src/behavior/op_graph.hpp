@@ -828,7 +828,7 @@ struct OpGraph : public graph
     * @param node is the operation to be considered
     * @return the associated property
     */
-   inline const OpNodeInfoConstRef CGetOpNodeInfo(const vertex node) const
+   inline OpNodeInfoConstRef CGetOpNodeInfo(const vertex node) const
    {
       return RefcountCast<const OpNodeInfo>(graph::CGetNodeInfo(node));
    }
@@ -838,7 +838,7 @@ struct OpGraph : public graph
     * @param edge is the edge to be analyzed
     * @return the associated property
     */
-   inline const OpEdgeInfoConstRef CGetOpEdgeInfo(const EdgeDescriptor edge) const
+   inline OpEdgeInfoConstRef CGetOpEdgeInfo(const EdgeDescriptor edge) const
    {
       return RefcountCast<const OpEdgeInfo>(graph::CGetEdgeInfo(edge));
    }
@@ -856,7 +856,7 @@ struct OpGraph : public graph
     * Returns the property associated with the graph
     * @return the graph property
     */
-   inline const OpGraphInfoConstRef CGetOpGraphInfo() const
+   inline OpGraphInfoConstRef CGetOpGraphInfo() const
    {
       return RefcountCast<const OpGraphInfo>(CGetGraphInfo());
    }
