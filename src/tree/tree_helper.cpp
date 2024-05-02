@@ -1186,9 +1186,8 @@ bool tree_helper::look_for_binfo_inheritance(const binfo* b, const std::string& 
 
 tree_nodeRef tree_helper::find_obj_type_ref_function(const tree_nodeConstRef& tn)
 {
-   const auto curr_tn = tn;
    unsigned int ind = tn->index;
-   const auto otr = GetPointer<const obj_type_ref>(curr_tn);
+   const auto otr = GetPointer<const obj_type_ref>(tn);
    THROW_ASSERT(otr, "tree node is not an obj_type_ref");
    THROW_ASSERT(otr->type && otr->op1 && otr->op2, "obj_type_ref has missing fields");
    tree_nodeRef type;
@@ -1923,18 +1922,17 @@ tree_nodeConstRef tree_helper::CGetElements(const tree_nodeConstRef& type)
 std::string tree_helper::get_type_name(const tree_managerConstRef& TM, const unsigned int index)
 {
    const auto type = CGetType(TM->GetTreeNode(index));
-   unsigned int type_index = type->index;
    THROW_ASSERT(GetPointer<const type_node>(type), "Node type not type_node");
-   const auto tn = GetPointer<const type_node>(type);
+   const auto tn = GetPointerS<const type_node>(type);
    if(tn->name)
    {
       tree_nodeRef name;
       if(tn->name->get_kind() == type_decl_K)
       {
-         name = GetPointer<const type_decl>(tn->name)->name;
+         name = GetPointerS<const type_decl>(tn->name)->name;
          if(!name)
          {
-            return "Internal_" + STR(type_index);
+            return "Internal_" + STR(type->index);
          }
       }
       else
@@ -1942,12 +1940,11 @@ std::string tree_helper::get_type_name(const tree_managerConstRef& TM, const uns
          name = tn->name;
       }
       THROW_ASSERT(name && name->get_kind() == identifier_node_K, "Not an identifier node:" + STR(index));
-      const auto id = GetPointer<const identifier_node>(name);
-      return id->strg;
+      return GetPointerS<const identifier_node>(name)->strg;
    }
    else
    {
-      return "Internal_" + STR(type_index);
+      return "Internal_" + STR(type->index);
    }
 }
 
@@ -7958,12 +7955,9 @@ TreeNodeMap<size_t> tree_helper::ComputeSsaUses(const tree_nodeRef& tn)
 
 void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ssa_uses)
 {
-   const auto curr_tn = tn;
    INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level,
-                  "-->Computing ssa uses in " + curr_tn->ToString() + " (" + curr_tn->get_kind_text() + ")");
-   const auto gn = GetPointer<const gimple_node>(curr_tn);
-   if(gn)
-   {
+                  "-->Computing ssa uses in " + tn->ToString() + " (" + tn->get_kind_text() + ")");
+   const auto recurse_virtuals = [&](const gimple_node* gn) {
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Computing virtual ssa uses");
       if(gn->memuse)
       {
@@ -7978,13 +7972,14 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
          ComputeSsaUses(vover, ssa_uses);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_PARANOIC, debug_level, "Computed virtual ssa uses");
-   }
+   };
 
-   switch(curr_tn->get_kind())
+   switch(tn->get_kind())
    {
       case gimple_return_K:
       {
-         const auto re = GetPointerS<gimple_return>(curr_tn);
+         const auto re = GetPointerS<gimple_return>(tn);
+         recurse_virtuals(re);
          if(re->op)
          {
             ComputeSsaUses(re->op, ssa_uses);
@@ -7993,15 +7988,16 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case gimple_assign_K:
       {
-         const auto me = GetPointerS<gimple_assign>(curr_tn);
-         if(me->op0->get_kind() != ssa_name_K)
+         const auto ga = GetPointerS<gimple_assign>(tn);
+         recurse_virtuals(ga);
+         if(ga->op0->get_kind() != ssa_name_K)
          {
-            ComputeSsaUses(me->op0, ssa_uses);
+            ComputeSsaUses(ga->op0, ssa_uses);
          }
-         ComputeSsaUses(me->op1, ssa_uses);
-         if(me->predicate)
+         ComputeSsaUses(ga->op1, ssa_uses);
+         if(ga->predicate)
          {
-            ComputeSsaUses(me->predicate, ssa_uses);
+            ComputeSsaUses(ga->predicate, ssa_uses);
          }
          break;
       }
@@ -8012,7 +8008,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       case call_expr_K:
       case aggr_init_expr_K:
       {
-         const auto ce = GetPointerS<call_expr>(curr_tn);
+         const auto ce = GetPointerS<call_expr>(tn);
          ComputeSsaUses(ce->fn, ssa_uses);
          for(const auto& arg : ce->args)
          {
@@ -8022,9 +8018,10 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case gimple_call_K:
       {
-         const auto ce = GetPointerS<gimple_call>(curr_tn);
-         ComputeSsaUses(ce->fn, ssa_uses);
-         for(const auto& arg : ce->args)
+         const auto gc = GetPointerS<gimple_call>(tn);
+         recurse_virtuals(gc);
+         ComputeSsaUses(gc->fn, ssa_uses);
+         for(const auto& arg : gc->args)
          {
             ComputeSsaUses(arg, ssa_uses);
          }
@@ -8032,14 +8029,15 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case gimple_cond_K:
       {
-         const auto gc = GetPointerS<gimple_cond>(curr_tn);
+         const auto gc = GetPointerS<gimple_cond>(tn);
+         recurse_virtuals(gc);
          ComputeSsaUses(gc->op0, ssa_uses);
          break;
       }
       /* Unary expressions.  */
       case CASE_UNARY_EXPRESSION:
       {
-         const auto ue = GetPointerS<unary_expr>(curr_tn);
+         const auto ue = GetPointerS<unary_expr>(tn);
          if(ue->op->get_kind() != function_decl_K)
          {
             ComputeSsaUses(ue->op, ssa_uses);
@@ -8048,7 +8046,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case CASE_BINARY_EXPRESSION:
       {
-         const auto be = GetPointerS<binary_expr>(curr_tn);
+         const auto be = GetPointerS<binary_expr>(tn);
          ComputeSsaUses(be->op0, ssa_uses);
          ComputeSsaUses(be->op1, ssa_uses);
          break;
@@ -8056,13 +8054,14 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       /*ternary expressions*/
       case gimple_switch_K:
       {
-         const auto se = GetPointerS<gimple_switch>(curr_tn);
+         const auto se = GetPointerS<gimple_switch>(tn);
+         recurse_virtuals(se);
          ComputeSsaUses(se->op0, ssa_uses);
          break;
       }
       case CASE_TERNARY_EXPRESSION:
       {
-         const auto te = GetPointerS<ternary_expr>(curr_tn);
+         const auto te = GetPointerS<ternary_expr>(tn);
          ComputeSsaUses(te->op0, ssa_uses);
          ComputeSsaUses(te->op1, ssa_uses);
          if(te->op2)
@@ -8073,7 +8072,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
-         const auto qe = GetPointerS<quaternary_expr>(curr_tn);
+         const auto qe = GetPointerS<quaternary_expr>(tn);
          ComputeSsaUses(qe->op0, ssa_uses);
          ComputeSsaUses(qe->op1, ssa_uses);
          if(qe->op2)
@@ -8088,7 +8087,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case lut_expr_K:
       {
-         const auto le = GetPointerS<lut_expr>(curr_tn);
+         const auto le = GetPointerS<lut_expr>(tn);
          ComputeSsaUses(le->op0, ssa_uses);
          ComputeSsaUses(le->op1, ssa_uses);
          if(le->op2)
@@ -8123,7 +8122,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case constructor_K:
       {
-         const auto c = GetPointerS<constructor>(curr_tn);
+         const auto c = GetPointerS<constructor>(tn);
          for(const auto& iv : c->list_of_idx_valu)
          {
             ComputeSsaUses(iv.second, ssa_uses);
@@ -8133,7 +8132,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       case var_decl_K:
       {
          /// var decl performs an assignment when init is not null
-         // const auto vd = GetPointerS<var_decl>(curr_tn);
+         // const auto vd = GetPointerS<var_decl>(tn);
          // if(vd->init)
          // {
          //   ComputeSsaUses(vd->init, ssa_uses);
@@ -8142,7 +8141,8 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case gimple_asm_K:
       {
-         const auto ae = GetPointerS<gimple_asm>(curr_tn);
+         const auto ae = GetPointerS<gimple_asm>(tn);
+         recurse_virtuals(ae);
          if(ae->out)
          {
             ComputeSsaUses(ae->out, ssa_uses);
@@ -8159,13 +8159,14 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case gimple_goto_K:
       {
-         const auto ge = GetPointerS<gimple_goto>(curr_tn);
+         const auto ge = GetPointerS<gimple_goto>(tn);
+         recurse_virtuals(ge);
          ComputeSsaUses(ge->op, ssa_uses);
          break;
       }
       case tree_list_K:
       {
-         auto tl = GetPointerS<const tree_list>(curr_tn);
+         auto tl = GetPointerS<const tree_list>(tn);
          std::list<const tree_list*> tl_list;
          do
          {
@@ -8187,7 +8188,8 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case gimple_multi_way_if_K:
       {
-         const auto gmwi = GetPointerS<gimple_multi_way_if>(curr_tn);
+         const auto gmwi = GetPointerS<gimple_multi_way_if>(tn);
+         recurse_virtuals(gmwi);
          for(const auto& cond : gmwi->list_of_cond)
          {
             if(cond.first)
@@ -8199,7 +8201,8 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case gimple_phi_K:
       {
-         const auto gp = GetPointerS<gimple_phi>(curr_tn);
+         const auto gp = GetPointerS<gimple_phi>(tn);
+         recurse_virtuals(gp);
          for(const auto& def_edge : gp->CGetDefEdgesList())
          {
             ComputeSsaUses(def_edge.first, ssa_uses);
@@ -8224,7 +8227,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case target_mem_ref_K:
       {
-         const auto tmr = GetPointerS<target_mem_ref>(curr_tn);
+         const auto tmr = GetPointerS<target_mem_ref>(tn);
          if(tmr->base)
          {
             ComputeSsaUses(tmr->base, ssa_uses);
@@ -8242,7 +8245,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       }
       case target_mem_ref461_K:
       {
-         const auto tmr = GetPointerS<target_mem_ref461>(curr_tn);
+         const auto tmr = GetPointerS<target_mem_ref461>(tn);
          if(tmr->base)
          {
             ComputeSsaUses(tmr->base, ssa_uses);
@@ -8290,7 +8293,7 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef& tn, TreeNodeMap<size_t>& ss
       case gimple_while_K:
       case error_mark_K:
       {
-         THROW_UNREACHABLE("Node is " + curr_tn->get_kind_text());
+         THROW_UNREACHABLE("Node is " + tn->get_kind_text());
          break;
       }
       default:
