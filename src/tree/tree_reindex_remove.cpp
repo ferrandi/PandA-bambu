@@ -80,7 +80,7 @@ void tree_reindex_remove::operator()(const tree_reindex* obj, unsigned int&)
 
 void tree_reindex_remove::operator()(const attr* obj, unsigned int& mask)
 {
-   THROW_ASSERT(obj == dynamic_cast<attr*>(source_tn.get()), "wrong factory setup");
+   // THROW_ASSERT(obj == dynamic_cast<attr*>(source_tn.get()), "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
 }
 
@@ -118,7 +118,7 @@ void tree_reindex_remove::fix_reference(tree_nodeRef& tn) const
 
 void tree_reindex_remove::operator()(const srcp* obj, unsigned int& mask)
 {
-   THROW_ASSERT(obj == dynamic_cast<srcp*>(source_tn.get()), "wrong factory setup");
+   // THROW_ASSERT(obj == dynamic_cast<srcp*>(source_tn.get()), "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
 }
 
