@@ -64,7 +64,7 @@ DesignFlowStep::signature_t ParserFlowStep::ComputeSignature(const ParserFlowSte
                                                              const std::string& file_name)
 {
    return DesignFlowStep::ComputeSignature(PARSER, static_cast<unsigned short>(parser_step_type),
-                                           std::hash<std::string>()(file_name));
+                                           std::hash<std::string>()(file_name) & 0xFFFFFFFFFFULL);
 }
 
 static std::string EnumToKindText(const ParserFlowStep_Type parser_step_type)

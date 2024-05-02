@@ -107,9 +107,9 @@ void DesignFlowStep::PrintFinalIR() const
 DesignFlowStep::signature_t DesignFlowStep::ComputeSignature(StepClass step_class, unsigned short step_type,
                                                              unsigned long long context)
 {
-   THROW_ASSERT(context < (1ULL << 40), "Only 40-bits context is allowed.");
-   return static_cast<signature_t>(step_class) << 56 | static_cast<signature_t>(step_type) << 40 |
-          (context & 0xFFFFFFFFFF);
+   THROW_ASSERT(context < (1ULL << 40U), "Only 40-bits context is allowed.");
+   return static_cast<signature_t>(step_class) << 56U | static_cast<signature_t>(step_type) << 40U |
+          (context & 0xFFFFFFFFFFULL);
 }
 
 DesignFlowStep::StepClass DesignFlowStep::GetStepClass(signature_t signature)
@@ -124,7 +124,7 @@ unsigned short DesignFlowStep::GetStepType(signature_t signature)
 
 unsigned long long DesignFlowStep::GetSignatureContext(signature_t signature)
 {
-   return signature & 0xFFFFFFFFFF;
+   return signature & 0xFFFFFFFFFFULL;
 }
 
 size_t DesignFlowStepHash::operator()(const DesignFlowStepRef& step) const
