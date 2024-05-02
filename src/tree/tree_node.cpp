@@ -341,9 +341,9 @@ void gimple_node::visit(tree_node_visitor* const v) const
    VISIT_SC(mask, srcp, visit(v));
    VISIT_MEMBER(mask, memuse, visit(v));
    VISIT_MEMBER(mask, memdef, visit(v));
-   SEQ_VISIT_MEMBER(mask, vuses, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, vuses, visit(v));
    VISIT_MEMBER(mask, vdef, visit(v));
-   SEQ_VISIT_MEMBER(mask, vovers, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, vovers, visit(v));
    VISIT_MEMBER(mask, use_set, visit(v));
    VISIT_MEMBER(mask, clobbered_set, visit(v));
    VISIT_MEMBER(mask, scpe, visit(v));
@@ -455,7 +455,7 @@ void gimple_bind::visit(tree_node_visitor* const v) const
    unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
    VISIT_SC(mask, expr_node, visit(v));
-   SEQ_VISIT_MEMBER(mask, list_of_vars, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, list_of_vars, visit(v));
    VISIT_MEMBER(mask, body, visit(v));
 }
 
@@ -567,7 +567,7 @@ void PointToSolution::visit(tree_node_visitor* const v) const
 {
    unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
-   SEQ_VISIT_MEMBER(mask, variables, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, variables, visit(v));
 }
 
 void call_expr::visit(tree_node_visitor* const v) const
@@ -576,7 +576,7 @@ void call_expr::visit(tree_node_visitor* const v) const
    (*v)(this, mask);
    VISIT_SC(mask, expr_node, visit(v));
    VISIT_MEMBER(mask, fn, visit(v));
-   SEQ_VISIT_MEMBER(mask, args, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, args, visit(v));
 }
 
 call_expr::call_expr(const unsigned int i) : expr_node(i)
@@ -610,7 +610,7 @@ void gimple_call::visit(tree_node_visitor* const v) const
    (*v)(this, mask);
    VISIT_SC(mask, gimple_node, visit(v));
    VISIT_MEMBER(mask, fn, visit(v));
-   SEQ_VISIT_MEMBER(mask, args, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, args, visit(v));
 }
 
 void gimple_call::AddArg(const tree_nodeRef& arg)
@@ -757,7 +757,7 @@ void function_decl::visit(tree_node_visitor* const v) const
    VISIT_MEMBER(mask, fn, visit(v));
    VISIT_MEMBER(mask, tmpl_parms, visit(v));
    VISIT_MEMBER(mask, tmpl_args, visit(v));
-   SEQ_VISIT_MEMBER(mask, list_of_args, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, list_of_args, visit(v));
    VISIT_MEMBER(mask, body, visit(v));
    VISIT_MEMBER(mask, inline_body, visit(v));
 }
@@ -1111,8 +1111,8 @@ void record_type::visit(tree_node_visitor* const v) const
    (*v)(this, mask);
    VISIT_SC(mask, type_node, visit(v));
    VISIT_MEMBER(mask, vfld, visit(v));
-   SEQ_VISIT_MEMBER(mask, list_of_flds, tree_node, visit, tree_node_visitor, v);
-   SEQ_VISIT_MEMBER(mask, list_of_fncs, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, list_of_flds, visit(v));
+   SEQ_VISIT_MEMBER(mask, list_of_fncs, visit(v));
    VISIT_MEMBER(mask, ptd, visit(v));
    VISIT_MEMBER(mask, cls, visit(v));
    VISIT_MEMBER(mask, bfld, visit(v));
@@ -1235,7 +1235,7 @@ void ssa_name::visit(tree_node_visitor* const v) const
    VISIT_SC(mask, tree_node, visit(v));
    VISIT_MEMBER(mask, type, visit(v));
    VISIT_MEMBER(mask, var, visit(v));
-   SEQ_VISIT_MEMBER(mask, def_stmts, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, def_stmts, visit(v));
    VISIT_MEMBER(mask, min, visit(v));
    VISIT_MEMBER(mask, max, visit(v));
    VISIT_MEMBER(mask, use_set, visit(v));
@@ -1370,7 +1370,7 @@ void statement_list::visit(tree_node_visitor* const v) const
    unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
    VISIT_SC(mask, tree_node, visit(v));
-   SEQ_VISIT_MEMBER(mask, list_of_stmt, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, list_of_stmt, visit(v));
    auto mend = list_of_bloc.end();
    for(auto i = list_of_bloc.begin(); i != mend; ++i)
    {
@@ -1454,7 +1454,7 @@ void tree_vec::visit(tree_node_visitor* const v) const
    unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
    VISIT_SC(mask, tree_node, visit(v));
-   SEQ_VISIT_MEMBER(mask, list_of_op, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, list_of_op, visit(v));
 }
 
 void try_block::visit(tree_node_visitor* const v) const
@@ -1481,8 +1481,8 @@ void union_type::visit(tree_node_visitor* const v) const
    unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
    VISIT_SC(mask, type_node, visit(v));
-   SEQ_VISIT_MEMBER(mask, list_of_flds, tree_node, visit, tree_node_visitor, v);
-   SEQ_VISIT_MEMBER(mask, list_of_fncs, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, list_of_flds, visit(v));
+   SEQ_VISIT_MEMBER(mask, list_of_fncs, visit(v));
    VISIT_MEMBER(mask, binf, visit(v));
 }
 
@@ -1517,7 +1517,7 @@ void vector_cst::visit(tree_node_visitor* const v) const
    unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
    VISIT_SC(mask, cst_node, visit(v));
-   SEQ_VISIT_MEMBER(mask, list_of_valu, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, list_of_valu, visit(v));
 }
 
 void vector_type::visit(tree_node_visitor* const v) const

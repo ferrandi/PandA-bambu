@@ -50,7 +50,7 @@
 #include "function_behavior.hpp"
 #include "op_graph.hpp"
 #include "schedule.hpp"
-#include "string_manipulation.hpp" // for STR
+#include "string_manipulation.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
@@ -70,8 +70,8 @@ void bloc::visit(tree_node_visitor* const v) const
 {
    unsigned int mask = ALL_VISIT;
    (*v)(this, mask);
-   SEQ_VISIT_MEMBER(mask, list_of_phi, tree_node, visit, tree_node_visitor, v);
-   SEQ_VISIT_MEMBER(mask, list_of_stmt, tree_node, visit, tree_node_visitor, v);
+   SEQ_VISIT_MEMBER(mask, list_of_phi, visit(v));
+   SEQ_VISIT_MEMBER(mask, list_of_stmt, visit(v));
    /// live in and out not visited by design
 }
 
