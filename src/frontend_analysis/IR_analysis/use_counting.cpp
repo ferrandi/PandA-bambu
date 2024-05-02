@@ -42,16 +42,17 @@
 
 #include "Parameter.hpp"
 #include "application_manager.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "ext_tree_node.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "string_manipulation.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+
 #include <list>
 #include <utility>
 
@@ -103,16 +104,15 @@ DesignFlowStep_Status use_counting::InternalExec()
    const auto sl = GetPointerS<const statement_list>(fd->body);
    const auto th_debug = tree_helper::debug_level;
    tree_helper::debug_level = debug_level;
-   for(const auto& bbi_bb : sl->list_of_bloc)
+   for(const auto& [idx, bb] : sl->list_of_bloc)
    {
-      const auto& bb = bbi_bb.second;
       for(const auto& statement_node : bb->CGetStmtList())
       {
          const auto ssa_uses = tree_helper::ComputeSsaUses(statement_node);
-         for(const auto& ssa_use : ssa_uses)
+         for(const auto& [ssa, use_count] : ssa_uses)
          {
-            const auto sn = GetPointerS<ssa_name>(ssa_use.first);
-            for(auto uses = ssa_use.second; uses; --uses)
+            const auto sn = GetPointerS<ssa_name>(ssa);
+            for(auto uses = use_count; uses; --uses)
             {
                sn->AddUseStmt(statement_node);
             }
@@ -121,10 +121,10 @@ DesignFlowStep_Status use_counting::InternalExec()
       for(const auto& phi_node : bb->CGetPhiList())
       {
          const auto ssa_uses = tree_helper::ComputeSsaUses(phi_node);
-         for(const auto& ssa_use : ssa_uses)
+         for(const auto& [ssa, use_count] : ssa_uses)
          {
-            const auto sn = GetPointerS<ssa_name>(ssa_use.first);
-            for(auto uses = ssa_use.second; uses; --uses)
+            const auto sn = GetPointerS<ssa_name>(ssa);
+            for(auto uses = use_count; uses; --uses)
             {
                sn->AddUseStmt(phi_node);
             }
@@ -135,6 +135,5 @@ DesignFlowStep_Status use_counting::InternalExec()
    }
 
    tree_helper::debug_level = th_debug;
-   // THROW_ASSERT(TM->check_ssa_uses(function_id), "Inconsistent ssa uses: post");
    return DesignFlowStep_Status::SUCCESS;
 }
